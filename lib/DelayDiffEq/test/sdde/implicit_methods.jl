@@ -33,11 +33,16 @@ sol = solve(prob, MethodOfSteps(ImplicitEM()))
 @test SciMLBase.successful_retcode(sol)
 @test sol.u[end] != zeros(1)
 
-# ImplicitEulerHeun — Stratonovich error estimator uses dW^2 (without -dt
-# subtraction), so the controller drives dt to dtmin on this stiff Hayes
-# model under adaptive stepping. Use fixed dt (same as ImplicitRKMil below
-# and matching the StochasticDiffEq standalone test pattern in
-# `StochasticDiffEq/test/implicit_time_parameter_test.jl`).
+# ImplicitEulerHeun — adaptive stepping drives dt → dtmin under this
+# `MethodOfSteps` wrapping. Note this is NOT the Stratonovich error
+# estimator — all four methods (incl. Itô-flavored `ImplicitEM`/`ISSEM`)
+# step fine adaptively on the *non-delay* SDE with the same coefficients.
+# The failure is SDDE-specific: `ISSEM` (Itô, mean-zero `dW²-dt` estimator)
+# inflates from 34 steps on the SDE to 572 on the SDDE — a
+# `MethodOfSteps` history × implicit-split interaction, not the estimator.
+# Use fixed dt (same as `ImplicitRKMil` below and matching
+# `StochasticDiffEq/test/implicit_time_parameter_test.jl`). Revisit once
+# the DelayDiffEq × StochasticDiffEq history/initial-dt path is fixed.
 sol = solve(prob, MethodOfSteps(ImplicitEulerHeun()), dt = 0.01, adaptive = false)
 @test SciMLBase.successful_retcode(sol)
 @test sol.u[end] != zeros(1)
@@ -52,8 +57,10 @@ sol = solve(prob, MethodOfSteps(ISSEM()), dt = 0.01)
 @test SciMLBase.successful_retcode(sol)
 @test sol.u[end] != zeros(1)
 
-# ISSEulerHeun (Implicit Split-Step Euler-Heun) — same Stratonovich-flavored
-# adaptive-stepping issue as ImplicitEulerHeun above.
+# ISSEulerHeun (Implicit Split-Step Euler-Heun) — same
+# `MethodOfSteps` × implicit-split adaptive failure as
+# `ImplicitEulerHeun` above. Terminates with `DtLessThanMin` at
+# t≈0.02 under `adaptive = true`.
 sol = solve(prob, MethodOfSteps(ISSEulerHeun()), dt = 0.01, adaptive = false)
 @test SciMLBase.successful_retcode(sol)
 @test sol.u[end] != zeros(1)
