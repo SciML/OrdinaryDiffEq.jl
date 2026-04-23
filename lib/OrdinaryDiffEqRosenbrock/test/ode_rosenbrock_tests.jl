@@ -207,9 +207,6 @@ end
 
     prob = prob_ode_linear
 
-    # Use larger dts than the default (1/2).^(6:-1:3): the linear test problem
-    # is so small that Rodas6P (order 6) hits Float64 roundoff at dt=1/64,
-    # corrupting the measured convergence slope.
     rodas6p_dts = (1 / 2) .^ (5:-1:2)
     sim = test_convergence(rodas6p_dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
