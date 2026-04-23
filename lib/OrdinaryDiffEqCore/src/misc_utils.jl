@@ -46,6 +46,67 @@ end
 
 error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
 
+# `isapprox` for timeseries solutions.
+#
+# The generic `Base.isapprox(::AbstractArray, ::AbstractArray)` computes
+# `norm(x - y) <= max(atol, rtol*max(norm(x), norm(y)))`. When an
+# `AbstractTimeseriesSolution` (e.g. `ODESolution`) is iterated via the
+# `AbstractArray` fallback, iteration can yield an object whose type equals the
+# container type (because the solution subtypes `AbstractVectorOfArray{T,N}` and
+# its leaf container is a `VectorOfArray` whose `eltype` resolves to a scalar
+# while the iterator itself yields an array-like element). Under
+# `RecursiveArrayTools` v4 / Julia 1.12, `LinearAlgebra.norm(itr)` first calls
+# `norm_recursive_check` which throws
+#   ArgumentError: cannot evaluate norm recursively if the type of the initial
+#   element is identical to that of the container
+# for these nested / `StructArray`-backed storages. Compare snapshot-by-snapshot
+# instead, which also sidesteps the cross-container-type issue when comparing
+# solutions whose element storage differs (e.g. `Vector{SVector}` vs
+# `StructArray{SVector}`).
+function Base.isapprox(
+        x::SciMLBase.AbstractTimeseriesSolution,
+        y::SciMLBase.AbstractTimeseriesSolution;
+        atol::Real = 0,
+        rtol::Real = Base.rtoldefault(
+            _cmp_eltype(x), _cmp_eltype(y), atol
+        ),
+        nans::Bool = false,
+        norm = LinearAlgebra.norm
+    )
+    length(x.u) == length(y.u) || return false
+    isapprox(x.t, y.t; atol = atol, rtol = rtol, nans = nans) || return false
+    for i in eachindex(x.u)
+        _isapprox_snapshot(x.u[i], y.u[i]; atol, rtol, nans, norm) || return false
+    end
+    return true
+end
+
+# Element-wise comparison of solution snapshots. Snapshots may be plain arrays
+# or `VectorOfArray`s. Compare by reducing to a materialised numeric array whose
+# `eltype` is a scalar or small static vector, so `LinearAlgebra.norm` does not
+# recurse into a container whose element type equals itself.
+_isapprox_snapshot(a, b; kwargs...) = isapprox(a, b; kwargs...)
+function _isapprox_snapshot(
+        a::RecursiveArrayTools.AbstractVectorOfArray,
+        b::RecursiveArrayTools.AbstractVectorOfArray;
+        kwargs...
+    )
+    return _isapprox_materialised(_snapshot_array(a), _snapshot_array(b); kwargs...)
+end
+
+_snapshot_array(a) = a
+_snapshot_array(a::RecursiveArrayTools.AbstractVectorOfArray) = _snapshot_array(parent(a))
+
+# Materialise into `Array` so we don't rely on arithmetic dispatch for exotic
+# backing types (e.g. `StructArray{<:SVector}`), which can produce a container
+# whose eltype equals its own type under `-`.
+function _isapprox_materialised(a::AbstractArray, b::AbstractArray; kwargs...)
+    size(a) == size(b) || return false
+    return isapprox(collect(a), collect(b); kwargs...)
+end
+
+_cmp_eltype(sol::SciMLBase.AbstractTimeseriesSolution) = recursive_bottom_eltype(sol.u)
+
 abstract type AbstractThreadingOption end
 struct Sequential <: AbstractThreadingOption end
 struct BaseThreads <: AbstractThreadingOption end
