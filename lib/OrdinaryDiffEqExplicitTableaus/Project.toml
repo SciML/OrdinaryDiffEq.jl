@@ -16,12 +16,12 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
-OrdinaryDiffEq = {path = "../OrdinaryDiffEq"}
+OrdinaryDiffEq = {path = "../.."}
 
 [compat]
 DiffEqBase = "7"
 DiffEqDevTools = "3"
-ODEProblemLibrary = "0.1"
+ODEProblemLibrary = "1"
 OrdinaryDiffEq = "6, 7"
 Test = "<0.0.1, 1"
 julia = "1.10"
