@@ -1,4 +1,5 @@
 using StochasticDiffEq, OrdinaryDiffEq, Test
+using OrdinaryDiffEqRosenbrock: Rodas5
 import SciMLBase
 
 function f(du, u, p, t)
