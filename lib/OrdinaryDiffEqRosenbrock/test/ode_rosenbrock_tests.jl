@@ -207,7 +207,11 @@ end
 
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    # Use larger dts than the default (1/2).^(6:-1:3): the linear test problem
+    # is so small that Rodas6P (order 6) hits Float64 roundoff at dt=1/64,
+    # corrupting the measured convergence slope.
+    rodas6p_dts = (1 / 2) .^ (5:-1:2)
+    sim = test_convergence(rodas6p_dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2] ≈ 6 atol = testTol
 
@@ -217,7 +221,7 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    sim = test_convergence(rodas6p_dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2] ≈ 6 atol = testTol
 
@@ -256,6 +260,8 @@ end
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
+        # Krylov linear solvers need tight tolerance for the outer-method
+        # convergence order to surface; LinearSolve now respects reltol/abstol.
         sim = test_convergence(
             dts, prob,
             Rodas5P(
@@ -264,7 +270,8 @@ end
                 ),
                 linsolve = LinearSolve.KrylovJL()
             ),
-            dense_errors = true
+            dense_errors = true,
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
@@ -277,7 +284,8 @@ end
                 ),
                 linsolve = LinearSolve.KrylovJL_GMRES()
             ),
-            dense_errors = true
+            dense_errors = true,
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
