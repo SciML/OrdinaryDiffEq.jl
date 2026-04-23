@@ -1,4 +1,11 @@
 module DiffEqBase
+
+# `@max_methods 1` constrains method-table resolution to a single matching
+# method per call site. For `DiffEqBase`'s heavily-overloaded interface
+# functions (`solve`, `init`, `step!`, `ODE_DEFAULT_NORM`, etc.) this keeps
+# latency proportional to the number of dispatches actually used rather than
+# the full cross-product of all `AbstractSciMLAlgorithm` × `AbstractSciMLProblem`
+# combinations across the ecosystem.
 if isdefined(Base, :Experimental) &&
         isdefined(Base.Experimental, Symbol("@max_methods"))
     @eval Base.Experimental.@max_methods 1
