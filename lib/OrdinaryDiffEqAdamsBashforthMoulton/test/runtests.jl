@@ -19,12 +19,15 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Adams Variable Coefficients Tests" include("adams_tests.jl")
 end
 
-# Threaded tests require Polyester.jl (for FastBroadcast.Threaded() support)
-if TEST_GROUP == "Threaded" || TEST_GROUP == "ALL"
+# Threaded tests require Polyester.jl (for FastBroadcast.Threaded() support).
+# Runs only on explicit `ODEDIFFEQ_TEST_GROUP=Threaded` — the SublibraryCI
+# matrix (lib/OrdinaryDiffEqAdamsBashforthMoulton/test/test_groups.toml)
+# schedules this as its own Julia 1 / 2-thread job. Matches the GPU-group
+# convention in sibling sublibs (LowStorageRK, Rosenbrock, BDF).
+if TEST_GROUP == "Threaded"
     activate_threaded_env()
     @time @safetestset "ABM Threaded Convergence Tests" include("threaded/abm_threaded_convergence_tests.jl")
     @time @safetestset "Regression test for threading versions vs non threading versions" include("threaded/regression_test_threading.jl")
-    Pkg.activate(ORIGINAL_PROJECT)
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
