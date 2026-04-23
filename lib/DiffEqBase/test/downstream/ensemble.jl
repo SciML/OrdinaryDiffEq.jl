@@ -9,19 +9,23 @@ prob2 = EnsembleProblem(prob)
 sim = solve(prob2, SRIW1(), dt = 1 // 2^(3), trajectories = 10)
 
 @test sim.u[1] isa DiffEqBase.RODESolution
-@test sim[1, 2] isa Matrix
-@test sim[1, 2, 1] isa Float64
+# Under RecursiveArrayTools v4, `sim[i, j]` and `sim[i, j, k]` perform
+# column-major scalar indexing on the flattened ensemble, rather than picking
+# out a whole trajectory/timestep. Use explicit `.u` accessors to preserve the
+# original intent: "the i-th timestep of the j-th trajectory" etc.
+@test sim.u[2].u[1] isa Matrix
+@test sim.u[1].u[2][1] isa Float64
 
 sim = solve(prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), trajectories = 10)
 err_sim = DiffEqBase.calculate_ensemble_errors(sim; weak_dense_errors = true)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(
     prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), trajectories = 10,
     batch_size = 2
 )
 err_sim = DiffEqBase.calculate_ensemble_errors(sim; weak_dense_errors = true)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(
     prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), adaptive = false,
@@ -31,15 +35,15 @@ err_sim = DiffEqBase.calculate_ensemble_errors(sim; weak_timeseries_errors = tru
 
 sim = solve(prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(prob2, SRIW1(), EnsembleSplitThreads(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(prob2, SRIW1(), EnsembleSerial(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 prob = prob_sde_additivesystem
 prob2 = EnsembleProblem(prob)
