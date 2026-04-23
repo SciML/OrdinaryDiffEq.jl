@@ -2,6 +2,7 @@ import OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
 using LinearAlgebra: Diagonal
 using ADTypes
+using SciMLBase: FullSpecialize
 using JET
 
 @testset "JET Tests" begin
@@ -23,8 +24,16 @@ using JET
         end
         dae_func = ODEFunction(dae, mass_matrix = Diagonal([1.0, 0.0]))
         dae_oop_func = ODEFunction(dae_oop, mass_matrix = Diagonal([1.0, 0.0]))
-        mm_prob = ODEProblem(dae_func, [0.0, 1.0], (0.0, 1.0))
-        mm_oop_prob = ODEProblem(dae_oop_func, [0.0, 1.0], (0.0, 1.0))
+        # Use `FullSpecialize` so that `ODEProblem`'s default
+        # `FunctionWrapperSpecialize` doesn't introduce a `FunctionWrappersWrapper`
+        # in the call chain — JET flags runtime dispatch inside
+        # `FunctionWrappers.reinit_wrapper` which is not part of the solver's
+        # own type-stability surface and is an upstream limitation of
+        # FunctionWrappers' opaque `objptr` field.
+        mm_prob = ODEProblem{true, FullSpecialize}(dae_func, [0.0, 1.0], (0.0, 1.0))
+        mm_oop_prob = ODEProblem{false, FullSpecialize}(
+            dae_oop_func, [0.0, 1.0], (0.0, 1.0)
+        )
         ad = AutoForwardDiff(chunksize = 2)
 
         # DAE problem for DAE solvers
@@ -33,7 +42,9 @@ using JET
         end
         u0 = [1.0]
         du0 = [-1.0]
-        dae_prob = DAEProblem(simple_dae!, du0, u0, (0.0, 1.0))
+        dae_prob = DAEProblem{true, FullSpecialize}(
+            simple_dae!, du0, u0, (0.0, 1.0)
+        )
 
 
         # Solvers which are not fully type-stable for initialization

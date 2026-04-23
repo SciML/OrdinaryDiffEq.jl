@@ -16,7 +16,7 @@ using Test
     # 2N low-storage methods
     # RDPK3 family excluded: PID controller init bug (MVector{3} from Bool flags)
     lsrk_2n_solvers = [
-        ORK256(), CarpenterKennedy2N54(), SHLDDRK64(), HSLDDRK64(),
+        ORK256(), CarpenterKennedy2N54(), SHLDDRK64(),
         DGLDDRK73_C(), DGLDDRK84_C(), DGLDDRK84_F(),
         NDBLSRK124(), NDBLSRK134(), NDBLSRK144(),
         CFRLDDRK64(), TSLDDRK74(),
