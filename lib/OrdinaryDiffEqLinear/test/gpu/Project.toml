@@ -2,12 +2,19 @@
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqLinear = "521117fe-8c41-49f8-b3b6-30780b3f0fb5"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEq]
 path = "../../../.."
 
+[sources.OrdinaryDiffEqLinear]
+path = "../.."
+
 [compat]
 CUDA = "4, 5"
 OrdinaryDiffEq = "7"
+OrdinaryDiffEqLinear = "1"
+SciMLOperators = "1.4"

@@ -72,7 +72,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
     end
 
     @testset "High-order convergence tests" begin
-        using OrdinaryDiffEq, Random
+        using OrdinaryDiffEq, OrdinaryDiffEqExplicitRK, Random
         using ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
         setprecision(400)
@@ -107,7 +107,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
     end
 
     @testset "Deduce Butcher tableau" begin
-        using OrdinaryDiffEq
+        using OrdinaryDiffEq, OrdinaryDiffEqLowOrderRK
 
         function coefficients_as_in_tableau(A, b, c, tab)
             if size(A) == size(tab.A)
@@ -131,7 +131,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
             @test cc ≈ tab.c
         end
 
-        let erk = OrdinaryDiffEq.Euler()
+        let erk = OrdinaryDiffEqLowOrderRK.Euler()
             A, b, c = deduce_Butcher_tableau(erk)
             tab = ET.Euler()
             AA, bb, cc = coefficients_as_in_tableau(A, b, c, tab)
@@ -140,7 +140,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
             @test cc ≈ tab.c
         end
 
-        let erk = OrdinaryDiffEq.RK4()
+        let erk = OrdinaryDiffEqLowOrderRK.RK4()
             A, b, c = deduce_Butcher_tableau(erk)
             tab = ET.RK4()
             AA, bb, cc = coefficients_as_in_tableau(A, b, c, tab)
