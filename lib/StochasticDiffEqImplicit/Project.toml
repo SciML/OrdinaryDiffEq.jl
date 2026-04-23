@@ -1,7 +1,7 @@
 name = "StochasticDiffEqImplicit"
 uuid = "5080b986-4c76-4669-b5dc-373a41579d5b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.2.0"
+version = "1.2.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
