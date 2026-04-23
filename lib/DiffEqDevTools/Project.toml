@@ -44,8 +44,11 @@ StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 
 [compat]
-BVProblemLibrary = "0.1"
-BoundaryValueDiffEq = "5"
+# BoundaryValueDiffEq and BVProblemLibrary are intentionally omitted from the
+# DiffEqDevTools test env: no registered BoundaryValueDiffEq version admits
+# DiffEqBase v7 yet (5.20.0 caps DiffEqBase at "6.183 - 6"). Re-add both here,
+# in [extras], in [targets].test, and re-enable the BVP `@testset` in
+# test/benchmark_tests.jl once an upstream compat bump is registered.
 DDEProblemLibrary = "0.1"
 DelayDiffEq = "5.74"
 DiffEqBase = "7"
@@ -89,8 +92,6 @@ StructArrays = "0.6, 0.7"
 julia = "1.10"
 
 [extras]
-BVProblemLibrary = "ded0fc24-dfea-4565-b1d9-79c027d14d84"
-BoundaryValueDiffEq = "764a87c0-6b3e-53db-9096-fe964310641d"
 DDEProblemLibrary = "f42792ee-6ffc-4e2a-ae83-8ee2f22de800"
 DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
@@ -124,4 +125,4 @@ StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["BoundaryValueDiffEq", "BVProblemLibrary", "DelayDiffEq", "DDEProblemLibrary", "ImplicitDiscreteSolve", "NonlinearSolve", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "ParameterizedFunctions", "Plots", "Random", "SDEProblemLibrary", "StochasticDiffEq", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqIIF", "StochasticDiffEqImplicit", "StochasticDiffEqLeaping", "StochasticDiffEqLevyArea", "StochasticDiffEqLowOrder", "StochasticDiffEqMilstein", "StochasticDiffEqROCK", "StochasticDiffEqRODE", "StochasticDiffEqWeak", "Test"]
+test = ["DelayDiffEq", "DDEProblemLibrary", "ImplicitDiscreteSolve", "NonlinearSolve", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "ParameterizedFunctions", "Plots", "Random", "SDEProblemLibrary", "StochasticDiffEq", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqIIF", "StochasticDiffEqImplicit", "StochasticDiffEqLeaping", "StochasticDiffEqLevyArea", "StochasticDiffEqLowOrder", "StochasticDiffEqMilstein", "StochasticDiffEqROCK", "StochasticDiffEqRODE", "StochasticDiffEqWeak", "Test"]
