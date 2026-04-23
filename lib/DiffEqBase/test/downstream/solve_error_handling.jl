@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StochasticDiffEq, Test
+using OrdinaryDiffEq, StochasticDiffEq, SciMLBase, Test
 
 f_oop(u, p, t) = 2u
 u0 = 0.5

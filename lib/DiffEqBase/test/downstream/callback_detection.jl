@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, SciMLBase
 # https://github.com/SciML/DiffEqBase.jl/issues/1231
 @testset "Successive different callbacks in same integration step" begin
     cb = ContinuousCallback(

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqBase, Test
+using OrdinaryDiffEq, DiffEqBase, SciMLBase, Test
 
 # Basic auto callback merging test
 do_nothing = DiscreteCallback(
