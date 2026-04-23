@@ -176,9 +176,6 @@ using Random
     )
 
     # Compare saveat values with dense solution sampled at same times.
-    # Use `length(sol_saveat.u)` (number of saved timepoints) rather than
-    # `length(sol_saveat)`, since the latter follows the standard
-    # `AbstractArray` convention `prod(size(sol))` in RecursiveArrayTools 4.x.
     phase_saveat = [sol_saveat.u[i][2] for i in 1:length(sol_saveat.u)]
     phase_dense_sampled = [sol_dense(t)[2] for t in sol_saveat.t]
 
