@@ -50,14 +50,21 @@ using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs
         find_algebraic_vars_eqs(M_small)
         find_algebraic_vars_eqs(M_large)
 
-        # Measure
-        t_small = @elapsed for _ in 1:10
-            find_algebraic_vars_eqs(M_small)
+        # Measure using best-of-N to reduce scheduler / GC noise on shared runners.
+        # Ratio still reflects algorithmic complexity: O(n^2) would yield a ratio
+        # near 16 even with the minimum, while O(nnz) = O(n) yields ~4.
+        function _best_time(f, M)
+            best = Inf
+            for _ in 1:5
+                t = @elapsed for _ in 1:10
+                    f(M)
+                end
+                best = min(best, t)
+            end
+            return best
         end
-
-        t_large = @elapsed for _ in 1:10
-            find_algebraic_vars_eqs(M_large)
-        end
+        t_small = _best_time(find_algebraic_vars_eqs, M_small)
+        t_large = _best_time(find_algebraic_vars_eqs, M_large)
 
         ratio = t_large / t_small
         size_ratio = n_large / n_small  # 4x size increase
@@ -67,8 +74,10 @@ using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs
         # Allow some tolerance for measurement noise
         @test ratio < size_ratio * 2  # Should be closer to linear than quadratic
 
-        # Absolute sanity check: processing 40k diagonal shouldn't take > 100ms
-        t_single = @elapsed find_algebraic_vars_eqs(M_large)
+        # Absolute sanity check: processing 40k diagonal shouldn't take > 100ms.
+        # Use minimum of a few runs for the same reason (single @elapsed can be
+        # dominated by a stray GC pause on shared CI runners).
+        t_single = minimum(@elapsed(find_algebraic_vars_eqs(M_large)) for _ in 1:5)
         @test t_single < 0.1  # Should be < 100ms, typically < 1ms
     end
 
