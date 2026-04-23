@@ -35,8 +35,28 @@ end
     @test SciMLBase.successful_retcode(sol)
 
     if isempty(VERSION.prerelease)
+        # `prob_ode_2Dlinear`'s RHS `@. du = p*u` is time-independent, so
+        # `tgrad ≡ 0`. Provide it analytically — Enzyme 0.13.x forward-mode
+        # cannot differentiate the in-place broadcast through its
+        # `Broadcast.preprocess_args` path, even with
+        # `set_runtime_activity(Forward)` (tracked upstream in Enzyme.jl).
+        # Rosenbrock23 uses `dT` additively in its embedded error
+        # estimator, so a garbage tgrad blows up `EEst` and forces `dt`
+        # below floating-point epsilon. Other Rosenbrock variants
+        # (Rodas4/5P/23W) fold `dT` into a linsolve where its effect is
+        # attenuated and happen to stumble through. Supplying the exact
+        # zero tgrad keeps the AutoEnzyme-forward Jacobian path under test
+        # while routing around the Enzyme-internal broadcast bug.
+        prob_enzyme = ODEProblem(
+            ODEFunction(
+                prob.f.f;
+                analytic = prob.f.analytic,
+                tgrad = (dT, u, p, t) -> fill!(dT, 0),
+            ),
+            prob.u0, prob.tspan, prob.p
+        )
         sim = test_convergence(
-            dts, prob, Rosenbrock23(
+            dts, prob_enzyme, Rosenbrock23(
                 autodiff = AutoEnzyme(
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 )
@@ -45,7 +65,7 @@ end
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
 
         sol = solve(
-            prob, Rosenbrock23(
+            prob_enzyme, Rosenbrock23(
                 autodiff = AutoEnzyme(
                     mode = set_runtime_activity(Enzyme.Forward), function_annotation = Enzyme.Const
                 )
