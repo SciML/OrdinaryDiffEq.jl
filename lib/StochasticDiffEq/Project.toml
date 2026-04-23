@@ -31,6 +31,7 @@ ImplicitDiscreteSolve = {path = "../ImplicitDiscreteSolve"}
 OrdinaryDiffEq = {path = "../../"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
 StochasticDiffEqCore = {path = "../StochasticDiffEqCore"}
 StochasticDiffEqHighOrder = {path = "../StochasticDiffEqHighOrder"}
 StochasticDiffEqIIF = {path = "../StochasticDiffEqIIF"}
@@ -78,6 +79,7 @@ LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
@@ -90,4 +92,4 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "ImplicitDiscreteSolve", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]
+test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "ImplicitDiscreteSolve", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqRosenbrock", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]
