@@ -5,14 +5,6 @@ alg_order(alg::ISSEM) = 1 // 2
 alg_order(alg::ISSEulerHeun) = 1 // 2
 alg_order(alg::SKenCarp) = 2 // 1
 
-# SDE error estimates are noisy. `PredictiveController.step_reject_controller!`
-# does `dt_new = success_iter == 0 ? 0.1dt : dt / qold` — a monotonic shrink
-# that collapses `dt` under a noisy stochastic error estimate (especially
-# through `MethodOfSteps` where history-interpolation discontinuities
-# compound the signal noise). `PIController` uses the gentler
-# `dt *= max(qmin, min(1, qacc))` on rejection, which is what all six of
-# these solvers were defaulted to pre-#3485 via `ispredictive` being `false`
-# for every `StochasticDiffEqAlgorithm`.
 default_controller(QT, alg::ImplicitEM) = PIController(QT, alg)
 default_controller(QT, alg::ImplicitEulerHeun) = PIController(QT, alg)
 default_controller(QT, alg::ImplicitRKMil) = PIController(QT, alg)
