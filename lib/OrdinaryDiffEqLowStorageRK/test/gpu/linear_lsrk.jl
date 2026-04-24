@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, CUDA, Test
+using OrdinaryDiffEq, SciMLBase, CUDA, Test
 CUDA.allowscalar(false)
 N = 256
 # Define the initial condition as normal arrays
