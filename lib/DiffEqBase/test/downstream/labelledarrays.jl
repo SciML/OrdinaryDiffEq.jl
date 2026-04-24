@@ -1,5 +1,6 @@
 using OrdinaryDiffEq
 using OrdinaryDiffEqBDF: DImplicitEuler
+using OrdinaryDiffEqRosenbrock: Rodas5
 using LabelledArrays
 using ADTypes
 
