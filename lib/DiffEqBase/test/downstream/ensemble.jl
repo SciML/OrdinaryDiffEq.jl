@@ -9,10 +9,6 @@ prob2 = EnsembleProblem(prob)
 sim = solve(prob2, SRIW1(), dt = 1 // 2^(3), trajectories = 10)
 
 @test sim.u[1] isa DiffEqBase.RODESolution
-# Under RecursiveArrayTools v4, `sim[i, j]` and `sim[i, j, k]` perform
-# column-major scalar indexing on the flattened ensemble, rather than picking
-# out a whole trajectory/timestep. Use explicit `.u` accessors to preserve the
-# original intent: "the i-th timestep of the j-th trajectory" etc.
 @test sim.u[2].u[1] isa Matrix
 @test sim.u[1].u[2][1] isa Float64
 
