@@ -431,9 +431,9 @@ version = "0.1.10"
 
 [[deps.FastBroadcast]]
 deps = ["ArrayInterface", "LinearAlgebra"]
-git-tree-sha1 = "e3e64918b1604ba8b1734c4a27febdfe5d09e235"
+git-tree-sha1 = "7feeed2c9a7fa272189a5561bebf0c4ccaedb6ec"
 uuid = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
-version = "1.3.1"
+version = "1.3.2"
 
     [deps.FastBroadcast.extensions]
     FastBroadcastPolyesterExt = "Polyester"
@@ -1450,9 +1450,9 @@ version = "0.7.0"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "Random", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "8bab97f412ea11e3d80c4892961f922c56ed2dab"
+git-tree-sha1 = "6360c98eb5f2698d9df01014fe2c8d636005bca5"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "3.4.3"
+version = "3.5.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
