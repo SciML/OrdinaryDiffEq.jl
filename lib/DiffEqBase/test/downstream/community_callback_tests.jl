@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, DiffEqCallbacks, LinearAlgebra
 using SciMLBase: terminate!, set_u!
+using OrdinaryDiffEqBDF: DFBDF
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 
 # https://github.com/SciML/DiffEqBase.jl/issues/564 : Fixed
 gravity = 9.8
@@ -236,8 +238,11 @@ odefun = ODEFunction((u, p, t) -> [u[2], u[2] - p]; mass_matrix = [1 0; 0 0])
 callback = PresetTimeCallback(0.5, integ -> (integ.p = -integ.p))
 prob = ODEProblem(odefun, [0.0, -1.0], (0.0, 1), 1; callback)
 #test that reinit happens for both FSAL and non FSAL integrators
+# v7: DefaultInit is CheckInit, so pass BrownFullBasicInit explicitly to let
+# the solver fix the inconsistent initial u0 and re-solve the algebraic
+# constraint after the callback flips p.
 @testset "dae re-init" for alg in [FBDF(), Rodas5P()]
-    sol = solve(prob, alg)
+    sol = solve(prob, alg; initializealg = BrownFullBasicInit())
     # test that the callback flipping p caused u[2] to get flipped.
     first_t = findfirst(isequal(0.5), sol.t)
     @test sol.u[first_t][2] == -sol.u[first_t + 1][2]
@@ -248,7 +253,7 @@ prob = DAEProblem(
     daefun, [0.0, 0.0], [0.0, -1.0], (0.0, 1), 1;
     differential_vars = [true, false], callback
 )
-sol = solve(prob, DFBDF())
+sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 # test that the callback flipping p caused u[2] to get flipped.
 first_t = findfirst(isequal(0.5), sol.t)
 @test sol.u[first_t][2] == -sol.u[first_t + 1][2]
