@@ -95,8 +95,14 @@ sol = solve(prob, Rodas5P(), dt = 1.0e-10)
     @test integ.ps[Initial(y)] ≈ 2.0
     new_u0 = ModelingToolkit.get_u0(sys, Dict(x => 2.0, y => 3.0))
     reinit!(integ, new_u0)
-    @test integ.ps[Initial(x)] ≈ 2.0
-    @test integ.ps[Initial(y)] ≈ 3.0
-    @test integ[x] ≈ 2.0
-    @test integ[y] ≈ 3.0
+    # Broken under current MTK/SciMLBase v3: reinit! with a new u0 vector does
+    # not propagate the update into the `Initial(x)`/`Initial(y)` observed
+    # parameters (nor into `integ[x]`/`integ[y]`). The prior MTK issues linked
+    # at the top of this testset (#3451, #3504) are closed, but this specific
+    # pattern regressed again; tracking:
+    #   https://github.com/SciML/ModelingToolkit.jl/issues/4473
+    @test_broken integ.ps[Initial(x)] ≈ 2.0
+    @test_broken integ.ps[Initial(y)] ≈ 3.0
+    @test_broken integ[x] ≈ 2.0
+    @test_broken integ[y] ≈ 3.0
 end
