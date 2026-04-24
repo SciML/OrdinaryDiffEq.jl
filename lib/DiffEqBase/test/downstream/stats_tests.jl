@@ -1,5 +1,6 @@
 # ncondition tests
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqVerner: Vern9
 
 function f(u, p, t)
     return 5 * u
