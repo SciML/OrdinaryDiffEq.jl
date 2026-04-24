@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, SciMLBase, CUDA, Test
+using OrdinaryDiffEqLowStorageRK: ORK256, CarpenterKennedy2N54, SHLDDRK64, DGLDDRK73_C
 CUDA.allowscalar(false)
 N = 256
 # Define the initial condition as normal arrays
