@@ -40,13 +40,16 @@ end
 
 ensemble_prob = EnsembleProblem(prob, prob_func = lorenz_prob_func, safetycopy = true)
 
+# v7: EnsembleSolution is an AbstractArray, so length(sim) returns
+# prod(size(sim)) over (state, time, trajectory). Trajectory count is
+# length(sim.u). See NEWS.md "EnsembleSolution indexing".
 println("Running EnsembleSerial()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleSerial(), trajectories = 100)) == 100
+@test length(solve(ensemble_prob, Tsit5(), EnsembleSerial(), trajectories = 100).u) == 100
 println("Running EnsembleThreads()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleThreads(), trajectories = 100)) == 100
+@test length(solve(ensemble_prob, Tsit5(), EnsembleThreads(), trajectories = 100).u) == 100
 println("Running EnsembleDistributed()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleDistributed(), trajectories = 100)) ==
+@test length(solve(ensemble_prob, Tsit5(), EnsembleDistributed(), trajectories = 100).u) ==
     100
 println("Running EnsembleSplitThreads()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleSplitThreads(), trajectories = 100)) ==
+@test length(solve(ensemble_prob, Tsit5(), EnsembleSplitThreads(), trajectories = 100).u) ==
     100
