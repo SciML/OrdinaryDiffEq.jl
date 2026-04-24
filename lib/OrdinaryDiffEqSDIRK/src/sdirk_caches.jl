@@ -35,7 +35,7 @@ function alg_cache(
     recursivefill!(atmp, false)
 
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     return ImplicitEulerCache(
         u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!
