@@ -1,4 +1,6 @@
 using ModelingToolkit, OrdinaryDiffEq, NonlinearSolve, Test
+using OrdinaryDiffEqRosenbrock: Rodas5, Rodas5P
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ModelingToolkit: D_nounits as D, t_nounits as t
 
 @parameters g e b
