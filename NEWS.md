@@ -106,7 +106,7 @@ The new names already exist under SciMLBase v2 with deprecation warnings. Update
 All of these printed a deprecation warning under SciMLBase v2. They are gone in v3:
 
 - `has_destats` function → use `has_stats`
-- `symbol_to_ReturnCode` and Symbol-to-ReturnCode conversion → construct `ReturnCode.*` directly
+- `symbol_to_ReturnCode` and Symbol-to-ReturnCode conversion → use `ReturnCode.*` directly (see next section)
 - `syms`/`paramsyms`/`indepsym` kwargs on all `SciMLFunction` constructors → use the problem's `sys` / MTK symbolic interface
 - `sol.x` on `AbstractOptimizationSolution` → use `sol.u`
 - `prob.lb`/`prob.ub` on `IntegralProblem` → use `prob.domain`
@@ -117,6 +117,36 @@ All of these printed a deprecation warning under SciMLBase v2. They are gone in 
 - `EnsembleProblem` vector-of-problems constructor → use a `prob_func`
 - `IntegralProblem` `nout`/`batch` kwargs → set on the integrand function directly
 - `SciMLBaseMLStyleExt` extension (`MLStyle` dependency removed)
+
+### `sol.retcode` is a `ReturnCode.T`, not a `Symbol`
+
+Comparing a solution's retcode against a `Symbol` no longer works:
+
+```julia
+# Worked on v1/v2, BROKEN on v3
+sol.retcode == :Success
+```
+
+The `Symbol` return codes were deprecated years ago in favor of the
+`ReturnCode.T` enum, with a deprecation warning printed on every use across
+the entire v2 series. The deprecation shim has now been removed.
+
+**Migration:** prefer `SciMLBase.successful_retcode(sol)` over equality
+against a specific `ReturnCode.*` value. `successful_retcode` correctly
+accepts every success-ish return code (`Success`, `StalledSuccess`,
+`ExactSolutionLeft`, `ExactSolutionRight`, `FloatingPointLimit`, …), not
+just `Success` — so a solver that terminated at an exact solution or hit
+a floating-point limit isn't misclassified as a failure.
+
+| Old | New (v3) |
+|-----|----------|
+| `sol.retcode == :Success` | `SciMLBase.successful_retcode(sol)` |
+| `sol.retcode == :Failure` | `!SciMLBase.successful_retcode(sol)` (or match the specific `ReturnCode.Failure` if you really need that exact code) |
+| `sol.retcode == :MaxIters` | `sol.retcode == ReturnCode.MaxIters` |
+| `sol.retcode == :Default` | `sol.retcode == ReturnCode.Default` |
+
+The full enum is defined in `SciMLBase/src/retcodes.jl` and documented at
+<https://docs.sciml.ai/SciMLBase/stable/interfaces/Solutions/#retcodes>.
 
 ### Changed defaults
 
