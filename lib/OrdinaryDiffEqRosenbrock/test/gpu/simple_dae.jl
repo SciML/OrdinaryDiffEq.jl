@@ -37,8 +37,6 @@ odef = ODEFunction(dae!, mass_matrix = mass_matrix, jac_prototype = jac_prototyp
 
 tspan = (0.0, 5.0)
 prob = ODEProblem(odef, u0, tspan, p)
-# v7: DefaultInit is CheckInit, so pass BrownFullBasicInit explicitly to let
-# the solver fix the inconsistent initial u0 before integrating.
 sol = solve(prob, Rodas5P(); initializealg = BrownFullBasicInit())
 
 # gpu version
