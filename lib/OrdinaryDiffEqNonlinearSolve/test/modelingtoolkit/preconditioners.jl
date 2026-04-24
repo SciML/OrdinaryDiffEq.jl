@@ -1,4 +1,9 @@
-using OrdinaryDiffEq, OrdinaryDiffEqSDIRK, LinearSolve, Test, IncompleteLU, SparseArrays
+# v7 `OrdinaryDiffEq` only re-exports a small solver set; pull in the sublibraries
+# that own the solvers used below (KenCarp47, TRBDF2 live in OrdinaryDiffEqSDIRK;
+# Rodas4/Rodas5 live in OrdinaryDiffEqRosenbrock).
+using OrdinaryDiffEq, LinearSolve, Test, IncompleteLU, SparseArrays
+using OrdinaryDiffEqSDIRK: KenCarp47, TRBDF2
+using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas4, Rodas5
 
 # Required due to https://github.com/JuliaSmoothOptimizers/Krylov.jl/pull/477
 Base.eltype(::IncompleteLU.ILUFactorization{Tv, Ti}) where {Tv, Ti} = Tv
