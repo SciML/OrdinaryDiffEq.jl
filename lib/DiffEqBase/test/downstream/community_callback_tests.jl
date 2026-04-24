@@ -304,3 +304,37 @@ prob_consistent_dae = DAEProblem(
     first_t = findfirst(isequal(0.5), sol.t)
     @test sol.u[first_t][2] == -sol.u[first_t + 1][2]
 end
+
+# v7 third variant: the callback itself carries `initializealg = BrownFullBasicInit()`.
+# u0 is consistent at t=0 (so the default CheckInit passes there) and the affect!
+# only flips p — it leaves u[2] inconsistent with the new p. The integrator then
+# invokes the callback's initializealg (BrownFullBasicInit) to re-solve u[2]
+# against the algebraic constraint. No solve-level `initializealg` kwarg is used.
+callback_with_init = PresetTimeCallback(
+    0.5, integ -> (integ.p = -integ.p); initializealg = BrownFullBasicInit()
+)
+prob_cbinit = ODEProblem(
+    ODEFunction((u, p, t) -> [u[2], u[2] - p]; mass_matrix = [1 0; 0 0]),
+    [0.0, 1.0], (0.0, 1), 1; callback = callback_with_init
+)
+@testset "dae re-init (BrownFullBasicInit on callback)" for alg in [FBDF(), Rodas5P()]
+    sol = solve(prob_cbinit, alg)
+    @test successful_retcode(sol)
+    first_t = findfirst(isequal(0.5), sol.t)
+    @test sol.u[first_t][2] == -sol.u[first_t + 1][2]
+end
+
+callback_with_init_dae = PresetTimeCallback(
+    0.5, integ -> (integ.p = -integ.p); initializealg = BrownFullBasicInit()
+)
+prob_cbinit_dae = DAEProblem(
+    DAEFunction((du, u, p, t) -> [du[1] - u[2], u[2] - p]),
+    [1.0, 0.0], [0.0, 1.0], (0.0, 1), 1;
+    differential_vars = [true, false], callback = callback_with_init_dae
+)
+@testset "dae re-init DAEProblem (BrownFullBasicInit on callback)" begin
+    sol = solve(prob_cbinit_dae, DFBDF())
+    @test successful_retcode(sol)
+    first_t = findfirst(isequal(0.5), sol.t)
+    @test sol.u[first_t][2] == -sol.u[first_t + 1][2]
+end
