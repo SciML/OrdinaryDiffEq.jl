@@ -2447,8 +2447,9 @@ end
 
         p_order = 2 * num_stages
         utilde = @.. (u_h - u_H) / (2^p_order - 1)
-        integrator.EEst = internalnorm(
-            calculate_residuals(utilde, uprev, u_h, atol, rtol, internalnorm, t), t
+        OrdinaryDiffEqCore.set_EEst!(
+            integrator,
+            internalnorm(calculate_residuals(utilde, uprev, u_h, atol, rtol, internalnorm, t), t),
         )
 
         u = u_h
@@ -2466,7 +2467,7 @@ end
         z_for_fsal = z_out
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages
@@ -2530,10 +2531,12 @@ end
         end
 
         needfactor = iter == 1
-        linres = dolinsolve(
-            integrator, linsolve;
-            A = needfactor ? W : nothing, b = ubuff, linu = ubuff
-        )
+        linsolve.b = ubuff
+        linsolve.u = ubuff
+        if needfactor
+            LinearSolve.reinit!(linsolve; A = W)
+        end
+        linres = LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
         cache.linsolve = linres.cache
         integrator.stats.nsolve += 1
 
@@ -2637,7 +2640,7 @@ end
         denom = 2^p_order - 1
         @.. u_full = (u - u_full) / denom
         calculate_residuals!(atmp, u_full, uprev, u, atol, rtol, internalnorm, t)
-        integrator.EEst = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
     else
         ok = _gausslegendre_substep!(u, uprev, t, dt, J, cache, integrator, alg)
         if !ok
@@ -2651,7 +2654,7 @@ end
         step_limiter!(u, integrator, p, t + dt)
     end
 
-    if integrator.EEst <= oneunit(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages

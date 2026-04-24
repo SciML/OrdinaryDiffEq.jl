@@ -244,7 +244,7 @@ for Hamiltonian systems and problems requiring long-time geometric integration.
     extra_keyword_default = extra_keyword_default
 )
 struct GaussLegendre{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -257,6 +257,7 @@ struct GaussLegendre{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     step_limiter!::StepLimiter
     num_stages::Int
     autodiff::AD
+    concrete_jac::CJ
 end
 
 @inline function _process_AD_choice(autodiff, chunk_size, diff_type)
@@ -268,7 +269,7 @@ function GaussLegendre(;
         chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing, precs = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
@@ -278,7 +279,7 @@ function GaussLegendre(;
 
     return GaussLegendre{
         _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+        typeof(precs), diff_type, _unwrap_val(standardtag), typeof(_unwrap_val(concrete_jac)),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!),
     }(
@@ -293,6 +294,7 @@ function GaussLegendre(;
         controller,
         step_limiter!,
         num_stages,
-        AD_choice
+        AD_choice,
+        _unwrap_val(concrete_jac)
     )
 end
