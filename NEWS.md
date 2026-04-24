@@ -131,12 +131,17 @@ The `Symbol` return codes were deprecated years ago in favor of the
 `ReturnCode.T` enum, with a deprecation warning printed on every use across
 the entire v2 series. The deprecation shim has now been removed.
 
-**Migration:**
+**Migration:** prefer `SciMLBase.successful_retcode(sol)` over equality
+against a specific `ReturnCode.*` value. `successful_retcode` correctly
+accepts every success-ish return code (`Success`, `StalledSuccess`,
+`ExactSolutionLeft`, `ExactSolutionRight`, `FloatingPointLimit`, …), not
+just `Success` — so a solver that terminated at an exact solution or hit
+a floating-point limit isn't misclassified as a failure.
 
 | Old | New (v3) |
 |-----|----------|
-| `sol.retcode == :Success` | `SciMLBase.successful_retcode(sol)` *or* `sol.retcode == ReturnCode.Success` |
-| `sol.retcode == :Failure` | `sol.retcode == ReturnCode.Failure` |
+| `sol.retcode == :Success` | `SciMLBase.successful_retcode(sol)` |
+| `sol.retcode == :Failure` | `!SciMLBase.successful_retcode(sol)` (or match the specific `ReturnCode.Failure` if you really need that exact code) |
 | `sol.retcode == :MaxIters` | `sol.retcode == ReturnCode.MaxIters` |
 | `sol.retcode == :Default` | `sol.retcode == ReturnCode.Default` |
 
