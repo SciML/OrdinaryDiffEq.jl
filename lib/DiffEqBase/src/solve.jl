@@ -90,7 +90,7 @@ end
 
 Base.@constprop :aggressive function init(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, verbose = DEFAULT_VERBOSE, kwargs...
+        u0 = nothing, p = nothing, verbose = nothing, kwargs...
     )
     if sensealg === nothing && has_kwargs(prob) && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -99,7 +99,16 @@ Base.@constprop :aggressive function init(
     u0 = u0 !== nothing ? u0 : prob.u0
     p = p !== nothing ? p : prob.p
 
-    return init_up(prob, sensealg, u0, p, args...; verbose, kwargs...)
+    # Do not forward a verbose default here: downstream solver packages
+    # (e.g. BoundaryValueDiffEqCore with `BVPVerbosity`) own their own
+    # verbosity types and defaults. Forwarding `DiffEqBase.DEVerbosity`
+    # would force their `_process_verbose_param` dispatch tables to
+    # match against a foreign type they do not handle.
+    return if verbose === nothing
+        init_up(prob, sensealg, u0, p, args...; kwargs...)
+    else
+        init_up(prob, sensealg, u0, p, args...; verbose, kwargs...)
+    end
 end
 
 function init(prob::AbstractJumpProblem, args...; kwargs...)
@@ -590,7 +599,7 @@ the extension to other types is straightforward.
 """
 Base.@constprop :aggressive function solve(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, wrap = Val(true), verbose = DEFAULT_VERBOSE, kwargs...
+        u0 = nothing, p = nothing, wrap = Val(true), verbose = nothing, kwargs...
     )
     if sensealg === nothing && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -599,20 +608,41 @@ Base.@constprop :aggressive function solve(
     u0 = u0 !== nothing ? u0 : prob.u0
     p = p !== nothing ? p : prob.p
 
+    # Do not forward a verbose default here: downstream solver packages
+    # (e.g. BoundaryValueDiffEqCore with `BVPVerbosity`) own their own
+    # verbosity types and defaults. Forwarding `DiffEqBase.DEVerbosity`
+    # would force their `_process_verbose_param` dispatch tables to
+    # match against a foreign type they do not handle.
     return if wrap isa Val{true}
         wrap_sol(
+            if verbose === nothing
+                solve_up(
+                    prob, sensealg, u0, p, args...;
+                    originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
+                    kwargs...
+                )
+            else
+                solve_up(
+                    prob, sensealg, u0, p, args...;
+                    originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
+                    verbose, kwargs...
+                )
+            end
+        )
+    else
+        if verbose === nothing
+            solve_up(
+                prob, sensealg, u0, p, args...;
+                originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
+                kwargs...
+            )
+        else
             solve_up(
                 prob, sensealg, u0, p, args...;
                 originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
                 verbose, kwargs...
             )
-        )
-    else
-        solve_up(
-            prob, sensealg, u0, p, args...;
-            originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-            verbose, kwargs...
-        )
+        end
     end
 end
 
