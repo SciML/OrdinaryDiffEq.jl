@@ -197,6 +197,21 @@ end
     @. bottom_sign = sign(bottom_condition)
 
     prev_simultaneous_events = integrator.callback_cache.prev_simultaneous_events
+    (; simultaneous_events) = integrator.callback_cache
+    # Snapshot the previous step's triggered events into `prev_simultaneous_events`
+    # BEFORE using them for the nudge logic, then clear `simultaneous_events` so it
+    # can be populated with events detected during this step. Previously this was
+    # done only after the nudge block, which left `prev_simultaneous_events` stale
+    # on the step immediately following an event — causing the repeat-detection
+    # avoidance logic (which relies on `prev_simultaneous_events[idx]`) to be
+    # skipped and the just-fired event to be re-detected.
+    if integrator.event_last_time == callback_idx
+        @. prev_simultaneous_events = !iszero(simultaneous_events)
+    else
+        prev_simultaneous_events .= false
+    end
+    simultaneous_events .= Int8(0)
+
     if integrator.event_last_time == callback_idx
         # If there was a previous event, nudge tprev on the right
         # side of the root (if necessary) to avoid repeat detection
@@ -234,13 +249,6 @@ end
     # Check if an event occurred
     event_occurred, event_idx, top_t, top_sign =
         check_event_occurrence(integrator, callback, bottom_sign)
-
-    # Track simultaneous events
-    (; simultaneous_events) = integrator.callback_cache
-    if event_occurred
-        @. prev_simultaneous_events = !iszero(simultaneous_events)
-        simultaneous_events .= Int8(0)
-    end
 
     # Find callback time if occurrence
     if !event_occurred
