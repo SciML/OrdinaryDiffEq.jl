@@ -8,6 +8,8 @@ println("There are $(nprocs()) processes")
     Pkg.develop(PackageSpec(path = joinpath(pwd(), "..")))
     Pkg.instantiate()
     using OrdinaryDiffEq
+    using SciMLBase: EnsembleProblem, EnsembleSerial, EnsembleThreads,
+        EnsembleDistributed, EnsembleSplitThreads
     prob = ODEProblem((u, p, t) -> 1.01u, 0.5, (0.0, 1.0))
     u0s = [rand() * prob.u0 for i in 1:2]
     function simple_prob_func(prob, ctx)

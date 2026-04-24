@@ -1,4 +1,5 @@
 using OrdinaryDiffEq
+using OrdinaryDiffEqBDF: DImplicitEuler
 using LabelledArrays
 using ADTypes
 

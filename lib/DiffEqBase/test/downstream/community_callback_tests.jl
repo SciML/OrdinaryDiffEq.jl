@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqCallbacks, LinearAlgebra
+using SciMLBase: terminate!, set_u!
 
 # https://github.com/SciML/DiffEqBase.jl/issues/564 : Fixed
 gravity = 9.8
