@@ -7,17 +7,15 @@ OrdinaryDiffEqStabilizedRK = "358294b1-0aab-51c3-aafe-ad5ab194a2ad"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqStabilizedRK]
-path = "../../"
+[sources]
+OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
+OrdinaryDiffEqStabilizedRK = {path = "../.."}
 
 [compat]
 AllocCheck = "0.2"
 Aqua = "0.8.11"
 JET = "0.9, 0.11"
-julia = "1.10"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqStabilizedRK = "1"
 SciMLBase = "3"
+julia = "1.10"

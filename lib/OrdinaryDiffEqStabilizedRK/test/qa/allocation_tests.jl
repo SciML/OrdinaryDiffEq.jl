@@ -14,7 +14,7 @@ using Test
     prob = ODEProblem{true, FullSpecialize}(simple_system!, [1.0, 1.0], (0.0, 1.0))
 
     # All stabilized RK methods have allocations in perform_step!
-    all_solvers = [ROCK2(), ROCK4(), RKC(), ESERK4(), ESERK5(), SERK2()]
+    all_solvers = [ROCK2(), ROCK4(), RKC(), ESERK4(), ESERK5(), SERK2(), RKL1(), RKL2()]
 
     @testset "StabilizedRK perform_step! Static Analysis" begin
         for solver in all_solvers

@@ -1,6 +1,6 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-const RKCAlgs = Union{RKC, TSRKC3, ESERK4, ESERK5, SERK2, ROCK2, ROCK4}
+const RKCAlgs = Union{RKC, TSRKC3, ESERK4, ESERK5, SERK2, ROCK2, ROCK4, RKL1, RKL2}
 
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
