@@ -106,7 +106,7 @@ The new names already exist under SciMLBase v2 with deprecation warnings. Update
 All of these printed a deprecation warning under SciMLBase v2. They are gone in v3:
 
 - `has_destats` function → use `has_stats`
-- `symbol_to_ReturnCode` and Symbol-to-ReturnCode conversion → construct `ReturnCode.*` directly (see next section — this one affects every out-of-tree solver wrapper)
+- `symbol_to_ReturnCode` and Symbol-to-ReturnCode conversion → use `ReturnCode.*` directly (see next section)
 - `syms`/`paramsyms`/`indepsym` kwargs on all `SciMLFunction` constructors → use the problem's `sys` / MTK symbolic interface
 - `sol.x` on `AbstractOptimizationSolution` → use `sol.u`
 - `prob.lb`/`prob.ub` on `IntegralProblem` → use `prob.domain`
@@ -118,50 +118,30 @@ All of these printed a deprecation warning under SciMLBase v2. They are gone in 
 - `IntegralProblem` `nout`/`batch` kwargs → set on the integrand function directly
 - `SciMLBaseMLStyleExt` extension (`MLStyle` dependency removed)
 
-### `retcode` must now be a `ReturnCode.T` — Symbol retcodes removed
+### `sol.retcode` is a `ReturnCode.T`, not a `Symbol`
 
-Under SciMLBase v2, `build_solution` / `OptimizationSolution` / other solution
-constructors accepted `retcode::Symbol` (e.g. `retcode = :Success`) and converted
-it to `ReturnCode.T` via a `Base.convert(::Type{ReturnCode.T}, ::Symbol)` method
-and the `symbol_to_ReturnCode` helper. Both emitted a deprecation warning on v2
-and have been **removed in v3**.
+Comparing a solution's retcode against a `Symbol` no longer works:
 
-Downstream solver wrappers that still pass a `Symbol` (including the
-`retcode = Symbol(converged_bool)` / `retcode = Symbol(converged_result.status)`
-idiom) will now error at solution construction:
-
+```julia
+# Worked on v1/v2, BROKEN on v3
+sol.retcode == :Success
 ```
-ERROR: MethodError: Cannot `convert` an object of type Symbol to an object of type SciMLBase.ReturnCode.T
-```
+
+The `Symbol` return codes were deprecated years ago in favor of the
+`ReturnCode.T` enum, with a deprecation warning printed on every use across
+the entire v2 series. The deprecation shim has now been removed.
 
 **Migration:**
 
-| Old (v2) | New (v3) |
-|----------|----------|
-| `retcode = :Success` | `retcode = ReturnCode.Success` |
-| `retcode = :Failure` | `retcode = ReturnCode.Failure` |
-| `retcode = :MaxIters` | `retcode = ReturnCode.MaxIters` |
-| `retcode = Symbol(converged_bool)` | `retcode = converged_bool ? ReturnCode.Success : ReturnCode.Failure` |
-| `symbol_to_ReturnCode(s)` / `convert(ReturnCode.T, s)` | Construct the `ReturnCode.*` value directly |
+| Old | New (v3) |
+|-----|----------|
+| `sol.retcode == :Success` | `SciMLBase.successful_retcode(sol)` *or* `sol.retcode == ReturnCode.Success` |
+| `sol.retcode == :Failure` | `sol.retcode == ReturnCode.Failure` |
+| `sol.retcode == :MaxIters` | `sol.retcode == ReturnCode.MaxIters` |
+| `sol.retcode == :Default` | `sol.retcode == ReturnCode.Default` |
 
 The full enum is defined in `SciMLBase/src/retcodes.jl` and documented at
-<https://docs.sciml.ai/SciMLBase/stable/interfaces/Solutions/#retcodes>. For
-solver wrappers that need to map string status reasons (common with C/Python
-solvers — NLopt, Ipopt, PRIMA, SciPy, etc.) rather than bools,
-`OptimizationBase.deduce_retcode(::String)` regex-maps common stop reasons to
-`ReturnCode.T` values.
-
-**Why it was removed without a warning on v3:** the `convert` method silently
-accepted any `Symbol` and mapped unknown symbols to `ReturnCode.Failure`, masking
-typos (`retcode = :sucess` reported a failed solve instead of erroring). Forcing
-the typed enum surfaces misuse at the call site.
-
-**Detection:** grep your package for `retcode = :` and `retcode = Symbol(`. The
-CI breakage typically shows up as the stack trace above pointing at
-`SciMLBase.build_solution` / `SciMLBase.OptimizationSolution`. This affected
-`OptimizationOptimJL` (SciML/Optimization.jl#1187), and a matching audit of the
-other `Optimization.jl` sublibraries may be required for any out-of-tree solver
-wrapper in the ecosystem.
+<https://docs.sciml.ai/SciMLBase/stable/interfaces/Solutions/#retcodes>.
 
 ### Changed defaults
 
