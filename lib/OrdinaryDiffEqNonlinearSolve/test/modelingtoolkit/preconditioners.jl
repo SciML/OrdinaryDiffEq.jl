@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, Test, IncompleteLU, SparseArrays
+using OrdinaryDiffEq, LinearSolve, LinearAlgebra, Test, IncompleteLU, SparseArrays
 using OrdinaryDiffEqSDIRK: KenCarp47, TRBDF2
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas4, Rodas5
 
@@ -86,13 +86,10 @@ prob_ode_brusselator_2d_sparse = ODEProblem(
     u0, (0.0, 11.5), p
 )
 
-function incompletelu(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        Pl = ilu(convert(AbstractMatrix, W), τ = 50.0)
-    else
-        Pl = Plprev
-    end
-    return Pl, nothing
+# Preconditioner using the new LinearSolve interface: precs(A, p) -> (Pl, Pr)
+function incompletelu(A, p)
+    Pl = ilu(convert(AbstractMatrix, A), τ = 50.0)
+    return Pl, I
 end
 
 iter[] = 0
@@ -105,7 +102,7 @@ iter[] = 0;
 sol2 = solve(
     prob_ode_brusselator_2d_sparse,
     KenCarp47(
-        linsolve = KrylovJL_GMRES(), precs = incompletelu,
+        linsolve = KrylovJL_GMRES(precs = incompletelu),
         concrete_jac = true
     ), save_everystep = false
 );
@@ -125,7 +122,7 @@ iter[] = 0;
 sol2 = solve(
     prob_ode_brusselator_2d_sparse,
     Rosenbrock23(
-        linsolve = KrylovJL_GMRES(), precs = incompletelu,
+        linsolve = KrylovJL_GMRES(precs = incompletelu),
         concrete_jac = true
     ), save_everystep = false
 );
@@ -144,7 +141,10 @@ iter1 = iter[];
 iter[] = 0;
 sol2 = solve(
     prob_ode_brusselator_2d_sparse,
-    Rodas4(linsolve = KrylovJL_GMRES(), precs = incompletelu, concrete_jac = true),
+    Rodas4(
+        linsolve = KrylovJL_GMRES(precs = incompletelu),
+        concrete_jac = true
+    ),
     save_everystep = false
 );
 iter2 = iter[];
@@ -162,25 +162,10 @@ iter1 = iter[];
 iter[] = 0;
 sol2 = solve(
     prob_ode_brusselator_2d_sparse,
-    Rodas5(linsolve = KrylovJL_GMRES(), precs = incompletelu, concrete_jac = true),
-    save_everystep = false
-);
-iter2 = iter[];
-
-@test sol1.retcode === ReturnCode.Success
-@test sol2.retcode === ReturnCode.Success
-@test iter2 < iter1
-
-iter[] = 0;
-sol1 = solve(
-    prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
-    save_everystep = false
-);
-iter1 = iter[];
-iter[] = 0;
-sol2 = solve(
-    prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = incompletelu, concrete_jac = true),
+    Rodas5(
+        linsolve = KrylovJL_GMRES(precs = incompletelu),
+        concrete_jac = true
+    ),
     save_everystep = false
 );
 iter2 = iter[];
@@ -199,7 +184,28 @@ iter[] = 0;
 sol2 = solve(
     prob_ode_brusselator_2d_sparse,
     TRBDF2(
-        linsolve = KrylovJL_GMRES(), precs = incompletelu,
+        linsolve = KrylovJL_GMRES(precs = incompletelu),
+        concrete_jac = true
+    ),
+    save_everystep = false
+);
+iter2 = iter[];
+
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test iter2 < iter1
+
+iter[] = 0;
+sol1 = solve(
+    prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
+    save_everystep = false
+);
+iter1 = iter[];
+iter[] = 0;
+sol2 = solve(
+    prob_ode_brusselator_2d_sparse,
+    TRBDF2(
+        linsolve = KrylovJL_GMRES(precs = incompletelu),
         concrete_jac = true
     ), save_everystep = false
 );
