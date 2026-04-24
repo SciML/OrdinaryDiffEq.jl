@@ -57,6 +57,24 @@ sol_old = RaggedVectorOfArray(sol)   # indexes like v3: sol_old[i] is the i-th t
 
 **Full fallback:** see the "Fallback for RAT v4 indexing" section above — wrapping with `RaggedVectorOfArray` from `RecursiveArrayToolsRaggedArrays.jl` restores v3 indexing.
 
+### EnsembleSolution indexing
+
+The same `AbstractArray` migration applies to `EnsembleSolution` (from `EnsembleProblem` trajectories) and to `EnsembleAnalysis` helpers — an ensemble's `.u` is a `Vector{<:ODESolution}` and the solution itself subtypes `AbstractVectorOfArray`:
+
+| Operation | v3 (old) | v4 (new) | Migration |
+|---|---|---|---|
+| `sim[j]` | j-th trajectory (`ODESolution`) | j-th scalar element of the flattened container | Use `sim.u[j]` |
+| `sim[i, j]` | Trajectory `j`'s i-th timestep (`Matrix` / `Vector`) | Scalar element at column-major position `(i, j)` | Use `sim.u[j].u[i]` |
+| `sim[i, j, k]` | Row `k` of trajectory `j`'s i-th timestep | Scalar at `(i, j, k)` | Use `sim.u[j].u[i][k]` |
+| `length(sim)` | Number of trajectories | `prod(size(sim))` (total scalar count) | Use `length(sim.u)` |
+| `for sol in sim` | Iterate trajectories | Iterate scalar elements (column-major) | Use `for sol in sim.u` |
+
+**Migration shortcut:** as with `ODESolution`, `sim.u[j]` / `sim.u[j].u[i]` / `length(sim.u)` are the forward-compatible forms that work under both v3 and v4.
+
+**EnsembleAnalysis helpers (SciMLBase ≥ 3.4.3):** `get_timestep`, `get_timepoint`, `timeseries_steps_mean/median/quantile/meanvar/meancov/meancor/weighted_meancov`, `EnsembleSummary`, and the weak-error path in `calculate_ensemble_errors` were updated to iterate `sim.u` and use `length(sim.u[1].t)` for the timestep count rather than `length(sim)` / `length(sim.u[1])`. If you pin SciMLBase < 3.4.3 you may hit a `BoundsError` at `calculate_ensemble_errors` on a weak `EnsembleProblem` with `error_estimate`; bump to 3.4.3 or later.
+
+See [SciML/OrdinaryDiffEq.jl#3532](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3532) and [SciML/SciMLBase.jl#1326](https://github.com/SciML/SciMLBase.jl/pull/1326) for the specific v3→v4 ensemble-indexing migrations.
+
 ### Other RAT v4 changes
 
 - `zero(VectorOfArray)` now preserves container type (e.g. `StructVector`) via `rewrap`
