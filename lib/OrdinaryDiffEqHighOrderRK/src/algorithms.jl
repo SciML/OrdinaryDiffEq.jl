@@ -82,3 +82,22 @@ end
 function PFRK87(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
     return PFRK87(stage_limiter!, step_limiter!, False(), omega)
 end
+
+
+
+
+@doc explicit_rk_docstring(
+    "Explicit 15-stage Runge-Kutta method of order 10 by Stepanov (2025).",
+    "FW15Stage10",
+    references = """@article{stepanov2025rk10,
+    title={On Runge-Kutta methods of order 10},
+    author={Stepanov, Misha},
+    year={2025},
+    journal={arXiv preprint arXiv:2504.17329}
+    }"""
+)
+Base.@kwdef struct FW15Stage10{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
