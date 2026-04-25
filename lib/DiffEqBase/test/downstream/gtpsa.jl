@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, GTPSA, Test
+using OrdinaryDiffEqSymplecticRK: Yoshida6
 using DifferentiationInterface
 using ADTypes: AutoForwardDiff
 using ForwardDiff

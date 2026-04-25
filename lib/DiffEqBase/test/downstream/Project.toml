@@ -17,6 +17,7 @@ OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -33,6 +34,7 @@ OrdinaryDiffEqLowOrderRK = {path = "../../../OrdinaryDiffEqLowOrderRK"}
 OrdinaryDiffEqNonlinearSolve = {path = "../../../OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSymplecticRK = {path = "../../../OrdinaryDiffEqSymplecticRK"}
 OrdinaryDiffEqVerner = {path = "../../../OrdinaryDiffEqVerner"}
 StochasticDiffEq = {path = "../../../StochasticDiffEq"}
 
