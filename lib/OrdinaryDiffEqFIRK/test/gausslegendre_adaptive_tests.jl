@@ -1,4 +1,5 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
+import OrdinaryDiffEqCore
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 testTol = 0.6
@@ -45,8 +46,23 @@ end
     end
 end
 
-# test that Richardson step-doubling tightens the step count when the tolerance is tightened
-@testset "GaussLegendre: Richardson tightens step count when tol tightens" begin
+@testset "GaussLegendre: adaptive controller defaults to PI" begin
+    alg = GaussLegendre(num_stages = 3)
+    integrator = init(
+        prob_ode_linear, alg;
+        reltol = 1.0e-6, abstol = 1.0e-9
+    )
+
+    controller = integrator.controller_cache.controller
+    order = 2 * alg.num_stages
+    @test alg.controller === :PI
+    @test integrator.controller_cache isa OrdinaryDiffEqCore.PIControllerCache
+    @test controller.beta1 ≈ 7 / (10 * order)
+    @test controller.beta2 ≈ 2 / (5 * order)
+end
+
+# test that Richardson step-doubling tightens step count with tolerance
+@testset "GaussLegendre: PI/Richardson tightens step count when tol tightens" begin
     s = 3
     sol_loose = solve(
         prob_ode_linear, GaussLegendre(num_stages = s);

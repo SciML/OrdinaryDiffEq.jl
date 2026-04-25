@@ -243,7 +243,7 @@ for Hamiltonian systems and problems requiring long-time geometric integration.
     extra_keyword_description = extra_keyword_description,
     extra_keyword_default = extra_keyword_default
 )
-struct GaussLegendre{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
+struct GaussLegendre{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
@@ -260,29 +260,19 @@ struct GaussLegendre{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     concrete_jac::CJ
 end
 
-@inline function _process_AD_choice(autodiff, chunk_size, diff_type)
-    return _fixup_ad(autodiff), chunk_size, diff_type
-end
-
 function GaussLegendre(;
         num_stages = 2,
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, precs = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
+        controller = :PI, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return GaussLegendre{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), typeof(_unwrap_val(concrete_jac)),
-        typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff), typeof(step_limiter!),
-    }(
+    return GaussLegendre(
         linsolve,
         precs,
         smooth_est,
@@ -294,7 +284,7 @@ function GaussLegendre(;
         controller,
         step_limiter!,
         num_stages,
-        AD_choice,
+        autodiff,
         _unwrap_val(concrete_jac)
     )
 end

@@ -30,6 +30,8 @@ qmax_default(alg::GaussLegendre) = 8
 
 alg_order(alg::GaussLegendre) = 2 * alg.num_stages
 
+default_controller(QT, alg::GaussLegendre) = PIController(QT, alg)
+
 isfirk(alg::GaussLegendre) = true
 
 # Richardson step-doubling controller
