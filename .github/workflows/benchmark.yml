@@ -9,21 +9,73 @@ permissions:
   pull-requests: write
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         version: ["1", "lts"]
-    env:
-      # Force consistent Julia depot path for self-hosted runners
-      JULIA_DEPOT_PATH: ~/.julia
     steps:
-      - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
+      - name: Check out PR head
+        uses: actions/checkout@v6
         with:
-          julia-version: ${{ matrix.version }}
-          script: "benchmark/benchmarks.jl"
-          extra-pkgs: "StableRNGs,StaticArrays"
-          job-summary: true
+          path: head
+
+      - name: Check out PR base
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Cache Julia depot
+        uses: julia-actions/cache@v3
+        continue-on-error: true
+
+      # The umbrella OrdinaryDiffEq Project.toml depends on a number of
+      # in-tree-only sublibraries (e.g. OrdinaryDiffEqRosenbrockTableaus) that
+      # are wired up via [sources]. AirspeedVelocity's `benchpkg` adds the
+      # umbrella from a git URL, which on Julia 1.10 doesn't honour [sources]
+      # and therefore can't resolve those deps. The helper script handles this
+      # by walking [sources] and `Pkg.develop`-ing each path entry first.
+
+      - name: Benchmark PR base
+        run: |
+          julia --startup-file=no head/.github/scripts/run_benchmarks.jl \
+            base \
+            "$GITHUB_WORKSPACE/results/base.json" \
+            StableRNGs StaticArrays
+
+      - name: Benchmark PR head
+        run: |
+          julia --startup-file=no head/.github/scripts/run_benchmarks.jl \
+            head \
+            "$GITHUB_WORKSPACE/results/head.json" \
+            StableRNGs StaticArrays
+
+      - name: Render comparison
+        if: success()
+        run: |
+          julia --startup-file=no head/.github/scripts/compare_benchmarks.jl \
+            "$GITHUB_WORKSPACE/results/base.json" \
+            "$GITHUB_WORKSPACE/results/head.json" \
+            "Benchmark results (Julia ${{ matrix.version }})" \
+            > "$GITHUB_WORKSPACE/results/summary.md"
+          cat "$GITHUB_WORKSPACE/results/summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmark-${{ matrix.version }}
+          path: results/
+          if-no-files-found: ignore
