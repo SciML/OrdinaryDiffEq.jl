@@ -22,7 +22,7 @@ OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
 [compat]
-DiffEqDevTools = "4"
+DiffEqDevTools = "3"
 ImplicitDiscreteSolve = "2"
 IncompleteLU = "0.2"
 LinearSolve = "3"
