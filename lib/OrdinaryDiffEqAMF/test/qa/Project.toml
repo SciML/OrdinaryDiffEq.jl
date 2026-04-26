@@ -14,8 +14,8 @@ path = "../../../OrdinaryDiffEqCore"
 
 [compat]
 AllocCheck = "0.2"
-OrdinaryDiffEqAMF = "1"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqAMF = "1, 2"
+OrdinaryDiffEqCore = "4, 5"
 SciMLBase = "3"
 SciMLOperators = "1"
 julia = "1.10"

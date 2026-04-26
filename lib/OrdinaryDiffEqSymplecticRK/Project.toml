@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSymplecticRK"
 uuid = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.13.0"
+version = "2.0.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -30,16 +30,16 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 [compat]
 Statistics = "<0.0.1, 1"
 Pkg = "1"
-OrdinaryDiffEqTsit5 = "1.4.0"
+OrdinaryDiffEqTsit5 = "1.4.0, 2"
 Test = "<0.0.1, 1"
 FastBroadcast = "1.3"
 Random = "<0.0.1, 1"
-DiffEqDevTools = "3"
+DiffEqDevTools = "3, 4"
 MuladdMacro = "0.2"
 LinearAlgebra = "1.10"
-OrdinaryDiffEqRKN = "1.4.0"
+OrdinaryDiffEqRKN = "1.4.0, 2"
 SciMLBase = "3"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4, 5"
 julia = "1.10"
 RecursiveArrayTools = "4"
 DiffEqBase = "7"

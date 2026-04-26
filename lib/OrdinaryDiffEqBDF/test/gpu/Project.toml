@@ -8,4 +8,4 @@ path = "../../../OrdinaryDiffEqBDF"
 
 [compat]
 CUDA = "4, 5"
-OrdinaryDiffEqBDF = "1"
+OrdinaryDiffEqBDF = "1, 2"

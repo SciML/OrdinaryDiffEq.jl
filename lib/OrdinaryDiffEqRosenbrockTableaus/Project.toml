@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRosenbrockTableaus"
 uuid = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.0.1"
+version = "2.0.0"
 
 [extras]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -14,7 +14,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 ADTypes = "1.16"
-DiffEqDevTools = "3"
+DiffEqDevTools = "3, 4"
 Enzyme = "0.13"
 LinearAlgebra = "1.10"
 LinearSolve = "3.46"
