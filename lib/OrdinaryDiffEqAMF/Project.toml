@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqAMF"
 uuid = "08082164-f6a1-4363-b3df-3aa6fcf571ad"
 authors = ["Utkarsh <rajpututkarsh530@gmail.com>"]
-version = "1.0.0"
+version = "2.0.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -15,7 +15,7 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 LinearAlgebra = "1.10"
 SafeTestsets = "0.1.0"
 LinearSolve = "3.46"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4, 5"
 Reexport = "1.2"
 SciMLBase = "3"
 SciMLOperators = "1.4"

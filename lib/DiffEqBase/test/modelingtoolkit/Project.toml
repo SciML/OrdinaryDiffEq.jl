@@ -19,7 +19,7 @@ OrdinaryDiffEq = {path = "../../../.."}
 ADTypes = "1"
 DifferentiationInterface = "0.7"
 ForwardDiff = "0.10, 1"
-ImplicitDiscreteSolve = "1.11"
+ImplicitDiscreteSolve = "1.11, 2"
 ModelingToolkit = "10, 11"
 Mooncake = "0.4, 0.5"
 OrdinaryDiffEq = "7"

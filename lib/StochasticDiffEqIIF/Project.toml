@@ -1,7 +1,7 @@
 name = "StochasticDiffEqIIF"
 uuid = "ebf54054-c36b-4494-9aba-657e36df524f"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.1.0"
+version = "2.0.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -25,12 +25,12 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqBase = "7"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4, 5"
 Pkg = "1"
 RecursiveArrayTools = "4"
 Reexport = "0.2, 1.0"
 SciMLBase = "3"
-StochasticDiffEqCore = "1"
+StochasticDiffEqCore = "1, 2"
 Test = "<0.0.1, 1"
 SafeTestsets = "0.1.0"
 julia = "1.10"

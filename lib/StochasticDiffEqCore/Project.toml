@@ -1,7 +1,7 @@
 name = "StochasticDiffEqCore"
 uuid = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.1.1"
+version = "2.0.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -48,11 +48,11 @@ FastPower = "1"
 FiniteDiff = "2"
 ForwardDiff = "0.10.3, 1"
 JumpProcesses = "9.13.1"
-StochasticDiffEqLevyArea = "1"
+StochasticDiffEqLevyArea = "1, 2"
 LinearAlgebra = "1.10"
 Logging = "1.10"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4, 5"
 Pkg = "1"
 Random = "<0.0.1, 1"
 RecursiveArrayTools = "4"
