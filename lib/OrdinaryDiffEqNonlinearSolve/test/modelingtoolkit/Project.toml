@@ -22,14 +22,14 @@ OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
 [compat]
-DiffEqDevTools = "3, 4"
-ImplicitDiscreteSolve = "1.11, 2"
+DiffEqDevTools = "4"
+ImplicitDiscreteSolve = "2"
 IncompleteLU = "0.2"
 LinearSolve = "3"
 ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqBDF = "1, 2"
-OrdinaryDiffEqNonlinearSolve = "1, 2"
-OrdinaryDiffEqRosenbrock = "1, 2"
-OrdinaryDiffEqSDIRK = "1, 2"
+OrdinaryDiffEqBDF = "2"
+OrdinaryDiffEqNonlinearSolve = "2"
+OrdinaryDiffEqRosenbrock = "2"
+OrdinaryDiffEqSDIRK = "2"

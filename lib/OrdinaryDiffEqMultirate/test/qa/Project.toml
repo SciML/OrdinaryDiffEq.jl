@@ -13,7 +13,7 @@ path = "../../"
 
 [compat]
 AllocCheck = "0.2"
-OrdinaryDiffEqCore = "4, 5"
-OrdinaryDiffEqMultirate = "1, 2"
+OrdinaryDiffEqCore = "5"
+OrdinaryDiffEqMultirate = "2"
 SciMLBase = "3"
 julia = "1.10"

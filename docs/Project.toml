@@ -61,7 +61,7 @@ OrdinaryDiffEqTsit5 = {path = "../lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
 
 [compat]
-DiffEqDevTools = "3, 4"
+DiffEqDevTools = "4"
 Documenter = "0.27, 1"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqAMF = "1, 2"
+OrdinaryDiffEqAMF = "2"

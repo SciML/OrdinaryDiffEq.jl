@@ -10,5 +10,5 @@ OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
 
 [compat]
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqBDF = "1, 2"
+OrdinaryDiffEqBDF = "2"
 Sundials = "4, 5, 6"
