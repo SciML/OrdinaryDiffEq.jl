@@ -16,5 +16,5 @@ path = "../.."
 [compat]
 CUDA = "4, 5"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqLinear = "1, 2"
+OrdinaryDiffEqLinear = "2"
 SciMLOperators = "1.4"

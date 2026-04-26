@@ -21,7 +21,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 [compat]
 julia = "1.10"
 Pkg = "1"
-OrdinaryDiffEqSDIRK = "1.6.0, 2"
+OrdinaryDiffEqSDIRK = "2"
 SafeTestsets = "0.1.0"
 Test = "<0.0.1, 1"
 DiffEqBase = "7"

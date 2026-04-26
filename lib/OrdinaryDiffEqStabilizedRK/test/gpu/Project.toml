@@ -19,6 +19,6 @@ path = "../.."
 [compat]
 CUDA = "4, 5"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqLowOrderRK = "1, 2"
-OrdinaryDiffEqStabilizedRK = "1, 2"
+OrdinaryDiffEqLowOrderRK = "2"
+OrdinaryDiffEqStabilizedRK = "2"
 RecursiveArrayTools = "4"

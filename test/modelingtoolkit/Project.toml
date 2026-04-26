@@ -9,12 +9,12 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-DiffEqDevTools = "3, 4"
+DiffEqDevTools = "4"
 ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
-OrdinaryDiffEqBDF = "1, 2"
-OrdinaryDiffEqNonlinearSolve = "1, 2"
-OrdinaryDiffEqSDIRK = "1, 2"
+OrdinaryDiffEqBDF = "2"
+OrdinaryDiffEqNonlinearSolve = "2"
+OrdinaryDiffEqSDIRK = "2"
 
 [sources]
 OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}

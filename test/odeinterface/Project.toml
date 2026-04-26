@@ -11,10 +11,10 @@ OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 ODEInterface = "0.5"
 ODEInterfaceDiffEq = "3.13, 4"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqCore = "4, 5"
-OrdinaryDiffEqExplicitRK = "1, 2"
-OrdinaryDiffEqHighOrderRK = "1, 2"
-OrdinaryDiffEqLowOrderRK = "1, 2"
+OrdinaryDiffEqCore = "5"
+OrdinaryDiffEqExplicitRK = "2"
+OrdinaryDiffEqHighOrderRK = "2"
+OrdinaryDiffEqLowOrderRK = "2"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}

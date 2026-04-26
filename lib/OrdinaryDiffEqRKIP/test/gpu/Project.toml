@@ -13,6 +13,6 @@ path = "../../../OrdinaryDiffEqRKIP"
 [compat]
 CUDA = "4, 5"
 FFTW = "1.8"
-OrdinaryDiffEqRKIP = "1, 2"
+OrdinaryDiffEqRKIP = "2"
 SciMLBase = "3"
 SciMLOperators = "1.3"
