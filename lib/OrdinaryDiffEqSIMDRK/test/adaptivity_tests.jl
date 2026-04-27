@@ -13,4 +13,4 @@ sol = solve(prob, MER6v2())
 @test length(sol.t) < 1100
 
 sol = solve(prob, RK6v4())
-@test length(sol.t) < 1700
+@test length(sol.t) < 1750

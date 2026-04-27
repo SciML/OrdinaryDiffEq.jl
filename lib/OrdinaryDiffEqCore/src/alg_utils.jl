@@ -468,6 +468,16 @@ qsteady_max_default(alg) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
+
+# qmax_first_step is the upper bound on dt growth on the very first accepted
+# step — see https://github.com/SciML/DifferentialEquations.jl/issues/299.
+# 10000 mirrors the historical Sundials CVODE behavior.
+qmax_first_step_default(alg) = 10000
+
+# failfactor is the post-Newton-failure dt shrink factor used by
+# `post_newton_controller!`.  Default of 2 matches the historical
+# `integrator.opts.failfactor` default.
+failfactor_default(alg) = 2
 #TODO
 #SciMLBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
 
