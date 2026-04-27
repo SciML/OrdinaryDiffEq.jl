@@ -202,6 +202,9 @@ solve(prob, KenCarp4())
 
 **Migration:** add `using OrdinaryDiffEq<Family>` for any non-default solver you use. The sublibrary name is predictable — `KenCarp*`/`TRBDF2` → `OrdinaryDiffEqSDIRK`, `Rosenbrock*`/`Rodas*` except `Rosenbrock23`/`Rodas5P` → `OrdinaryDiffEqRosenbrock`, `RadauIIA*` → `OrdinaryDiffEqFIRK`, etc. Every family has its own `lib/OrdinaryDiffEq<X>` directory in the repo.
 
+**Note** If you are still manually choosing `Rodas5`, we highly recommend changing to `Rodas5P` because it has a very similar performance profile while being much more robust in terms
+of accuracy.
+
 ### Algorithm struct type parameters removed
 
 All `{CS, AD, FDT, ST, CJ}` type parameters removed from algorithm abstract and concrete types. Over 100 structs affected across BDF, SDIRK, Rosenbrock, FIRK, Extrapolation, ExponentialRK, IMEXMultistep, PDIRK, Newmark, StabilizedIRK, and StochasticDiffEqImplicit.
