@@ -1,7 +1,6 @@
 using OrdinaryDiffEqStabilizedRK, DiffEqDevTools, Test, LinearAlgebra, Random
 using OrdinaryDiffEqStabilizedRK: maxeig!
-using SciMLBase: ReturnCode
-using OrdinaryDiffEqCore: step!
+using SciMLBase: ReturnCode, step!
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
