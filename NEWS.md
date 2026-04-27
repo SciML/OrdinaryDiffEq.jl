@@ -365,6 +365,74 @@ DiffEqBase is now a sublibrary under `lib/DiffEqBase` (migrated from standalone 
 
 ---
 
+## Callback changes
+
+### `VectorContinuousCallback` now fires every simultaneous event
+
+Previously, when several conditions of a single `VectorContinuousCallback` crossed zero on the same step, only the first crossing's affect was applied. Other simultaneous events were silently dropped, even though their root was within the step's resolution. Bouncing-balls, multi-contact mechanics, and any callback used as a friction/threshold state machine were all affected.
+
+In v7, `VectorContinuousCallback` resolves all simultaneous events on the same step and dispatches them in one call to the user's `affect!`. See [SciML/OrdinaryDiffEq.jl#3230](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3230) (rolled into the v7 merge [#3242](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3242)) and the follow-up fix [#3549](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3549).
+
+### Breaking: `VectorContinuousCallback` `affect!` signature changed
+
+The `affect!` callback for `VectorContinuousCallback` used to be invoked once per triggering condition, with the index of that single event:
+
+```julia
+# v6
+affect!(integrator, event_index::Int)
+```
+
+In v7 it is invoked **once per step** with a `Vector{Int8}` mask describing every condition's status:
+
+```julia
+# v7
+affect!(integrator, simultaneous_events::Vector{Int8})
+```
+
+Each entry of `simultaneous_events` encodes both whether condition `i` triggered and which way it crossed:
+
+| value | meaning |
+|---|---|
+| `0`  | condition did not trigger this step |
+| `-1` | upcrossing (condition went from negative to positive) |
+| `+1` | downcrossing (condition went from positive to negative) |
+
+The vector's length is the callback's `len`; the entries are stable across steps. `affect_neg!` is no longer called for `VectorContinuousCallback` — your single `affect!` handles both crossing directions by inspecting the sign of each nonzero entry.
+
+**Migration:**
+
+```julia
+# v6: branch on the event index, optionally a separate affect_neg!
+function affect!(integrator, event_index)
+    if event_index == 1
+        # ball 1 hit the ground
+    elseif event_index == 2
+        # ball 2 hit the ground
+    end
+end
+cb = VectorContinuousCallback(condition, affect!, affect_neg!, 2)
+
+# v7: branch on which entries fired, sign tells you the direction
+function affect!(integrator, simultaneous_events)
+    for i in eachindex(simultaneous_events)
+        s = simultaneous_events[i]
+        s == 0 && continue
+        if i == 1
+            # ball 1 hit the ground; s == -1 upcrossing, s == +1 downcrossing
+        elseif i == 2
+            # ball 2 hit the ground
+        end
+    end
+end
+cb = VectorContinuousCallback(condition, affect!, 2)
+```
+
+The previous "call `affect!` once per event index" behavior was load-bearing for very few users, since the pre-v7 implementation already only invoked it for the *first* simultaneous event anyway. The new shape makes the simultaneous case representable without additional API surface.
+
+**Why a `Vector{Int8}` rather than `Vector{Bool}`:** the sign carries the crossing direction, which previously required a separate `affect_neg!` callback. Folding both into the mask removes the `affect!` / `affect_neg!` split for `VectorContinuousCallback`, so users no longer have to maintain two parallel functions to get up- and down-crossing handling. (The `ContinuousCallback` `affect!` / `affect_neg!` split is unchanged.)
+
+---
+
 ## OrdinaryDiffEqCore changes
 
 - `DEOptions` struct: removed `gamma`, `qmax`, `qmin`, `qsteady_max`, `qsteady_min`, `qoldinit`, `controller` fields and the `Controller` type parameter (moved to controller object; see Controller refactor above)
