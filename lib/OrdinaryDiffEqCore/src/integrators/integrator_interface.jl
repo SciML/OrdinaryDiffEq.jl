@@ -472,14 +472,6 @@ function SciMLBase.reinit!(
         # want to avoid. So we pass an empty array of pairs to make it think this is
         # a symbolic `remake` and it can modify `newp` inplace. The array of pairs is a
         # const global to avoid allocating every time this function is called.
-        #
-        # SciMLBase 3.6.0 added a `LateBindingUpdateU0PContext` argument to
-        # `late_binding_update_u0_p` (see SciMLBase remake.jl). Its 6-arg wrapper now
-        # forwards through the 7-arg `(prob, root_indp, ..., ctx)` overload, so the
-        # MTK overload that takes `(prob, sys::AbstractSystem, ...)` without `ctx` is
-        # never reached and `Initial(...)` parameters are not propagated. We sidestep
-        # the new context-aware dispatch by computing `root_indp` ourselves and calling
-        # the 7-arg form (without `ctx`), which still hits MTK's overload.
         root_indp = SciMLBase.get_root_indp(integrator.sol.prob)
         u0,
             newp = SciMLBase.late_binding_update_u0_p(
