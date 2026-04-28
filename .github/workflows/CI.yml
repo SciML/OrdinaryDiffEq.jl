@@ -98,6 +98,21 @@ jobs:
           key: julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};run_id=${{ github.run_id }};run_attempt=${{ github.run_attempt }}
           restore-keys: |
             julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
+      - name: Refresh General registry directly from git
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          # Force a fresh git clone of General to dodge pkg server lag.
+          # Must run BEFORE the Pkg.develop step below: that step's resolve
+          # needs current versions of registered deps (e.g. SciMLBase v3,
+          # CoverageTools), and the cached pkg-server registry is often
+          # several days stale, so develop's resolve fails with "expected
+          # package <X> to be registered".
+          try
+              Pkg.Registry.rm("General")
+          catch
+          end
+          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
       - name: Develop local path deps (Julia < 1.11)
         shell: julia --color=yes --project=. {0}
         run: |
@@ -119,16 +134,6 @@ jobs:
               isempty(specs) || Pkg.develop(specs)
             end
           end
-      - name: Refresh General registry directly from git
-        shell: julia --color=yes --project=. {0}
-        run: |
-          using Pkg
-          # Force a fresh git clone of General to dodge pkg server lag.
-          try
-              Pkg.Registry.rm("General")
-          catch
-          end
-          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:

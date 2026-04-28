@@ -61,6 +61,13 @@ end
         # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
             developed = Set{String}()
+            # Never develop the active project: when sublibraries cyclically
+            # reference each other via [sources] (e.g. DiffEqDevTools points
+            # back at OrdinaryDiffEqCore), the transitive walk below would
+            # otherwise try to `Pkg.develop` the active project itself, which
+            # Pkg refuses with "package <X> has the same name or UUID as the
+            # active project".
+            push!(developed, normpath(joinpath(lib_dir, base_group)))
             specs = Pkg.PackageSpec[]
             queue = [joinpath(lib_dir, base_group)]
             while !isempty(queue)
