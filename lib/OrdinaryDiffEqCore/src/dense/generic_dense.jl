@@ -647,6 +647,15 @@ function _evaluate_interpolant(
         cache, idxs,
         deriv, ks, ts, p, differential_vars
     ) where {F}
+    # Linear fallback when the per-step k storage is empty (e.g. SDE/SDDE
+    # solutions that reuse OrdinaryDiffEqCore.InterpolationData but never
+    # populate ks). Without this, ks[i₊] throws a BoundsError before we
+    # ever reach the linear-fallback inside _ode_interpolant.
+    if isempty(ks)
+        return linear_interpolant(
+            Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv
+        )
+    end
     _ode_addsteps!(
         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
         cache
@@ -732,7 +741,10 @@ function evaluate_interpolant(
             Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv, differential_vars
         )
-    elseif !id.dense
+    elseif !id.dense || isempty(ks)
+        # SDE/SDDE solutions reuse OrdinaryDiffEqCore.InterpolationData but
+        # never populate ks; fall back to linear interpolation in that case
+        # to avoid a BoundsError when accessing ks[i₊] below.
         return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
     elseif cache isa CompositeCache
         return evaluate_composite_cache(
@@ -856,7 +868,7 @@ function ode_interpolation!(
                     )
                 )
             end
-        elseif !id.dense
+        elseif !id.dense || isempty(ks)
             if _vals_eltype(vals) <: AbstractArray
                 linear_interpolant!(
                     _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
@@ -1048,7 +1060,7 @@ function ode_interpolation(
                 Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars
             )
-        elseif !id.dense
+        elseif !id.dense || isempty(ks)
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif cache isa CompositeCache
             _ode_addsteps!(
@@ -1168,7 +1180,7 @@ function ode_interpolation!(
                 out, Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars
             )
-        elseif !id.dense
+        elseif !id.dense || isempty(ks)
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif cache isa CompositeCache
             _ode_addsteps!(
