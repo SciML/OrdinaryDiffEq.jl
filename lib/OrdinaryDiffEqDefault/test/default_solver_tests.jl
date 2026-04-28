@@ -150,7 +150,6 @@ prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success
 
-# Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/XXXX:
 # the autoswitch detector inside DefaultODEAlgorithm must treat a NaN
 # spectral-radius estimate as "stiff" so it can fall back to an implicit
 # method, instead of as "not stiff" (which gets it stuck on the explicit
