@@ -16,36 +16,36 @@ using NonlinearSolve: NonlinearVerbosity
         @test v1 isa DEVerbosity
 
         # Test solver verbosity
-        @test v1.linear_verbosity isa SciMLLogging.Minimal
-        @test v1.nonlinear_verbosity isa SciMLLogging.Minimal
+        @test v1.linear_verbosity == SciMLLogging.Minimal()
+        @test v1.nonlinear_verbosity == SciMLLogging.Minimal()
 
         # Test error control group (default: WarnLevel except newton_convergence, step_rejected, step_accepted, convergence_limit)
-        @test v1.dt_NaN isa SciMLLogging.WarnLevel
-        @test v1.init_NaN isa SciMLLogging.WarnLevel
-        @test v1.dense_output_saveat isa SciMLLogging.WarnLevel
-        @test v1.max_iters isa SciMLLogging.WarnLevel
-        @test v1.dt_min_unstable isa SciMLLogging.WarnLevel
-        @test v1.instability isa SciMLLogging.WarnLevel
-        @test v1.newton_convergence isa SciMLLogging.Silent
-        @test v1.step_rejected isa SciMLLogging.Silent
-        @test v1.step_accepted isa SciMLLogging.Silent
-        @test v1.convergence_limit isa SciMLLogging.Silent
+        @test v1.dt_NaN == SciMLLogging.WarnLevel
+        @test v1.init_NaN == SciMLLogging.WarnLevel
+        @test v1.dense_output_saveat == SciMLLogging.WarnLevel
+        @test v1.max_iters == SciMLLogging.WarnLevel
+        @test v1.dt_min_unstable == SciMLLogging.WarnLevel
+        @test v1.instability == SciMLLogging.WarnLevel
+        @test v1.newton_convergence == SciMLLogging.Silent
+        @test v1.step_rejected == SciMLLogging.Silent
+        @test v1.step_accepted == SciMLLogging.Silent
+        @test v1.convergence_limit == SciMLLogging.Silent
 
         # Test performance group (default: Silent except mismatched_input_output_type)
-        @test v1.alg_switch isa SciMLLogging.Silent
-        @test v1.stiff_detection isa SciMLLogging.Silent
-        @test v1.mismatched_input_output_type isa SciMLLogging.WarnLevel
-        @test v1.jacobian_update isa SciMLLogging.Silent
-        @test v1.w_factorization isa SciMLLogging.Silent
-        @test v1.newton_iterations isa SciMLLogging.Silent
+        @test v1.alg_switch == SciMLLogging.Silent
+        @test v1.stiff_detection == SciMLLogging.Silent
+        @test v1.mismatched_input_output_type == SciMLLogging.WarnLevel
+        @test v1.jacobian_update == SciMLLogging.Silent
+        @test v1.w_factorization == SciMLLogging.Silent
+        @test v1.newton_iterations == SciMLLogging.Silent
 
         # Test numerical group (default: WarnLevel except shampine_dt, stability_check)
-        @test v1.rosenbrock_no_differential_states isa SciMLLogging.WarnLevel
-        @test v1.shampine_dt isa SciMLLogging.Silent
-        @test v1.unlimited_dt isa SciMLLogging.WarnLevel
-        @test v1.dt_epsilon isa SciMLLogging.WarnLevel
-        @test v1.stability_check isa SciMLLogging.Silent
-        @test v1.near_singular isa SciMLLogging.Silent
+        @test v1.rosenbrock_no_differential_states == SciMLLogging.WarnLevel
+        @test v1.shampine_dt == SciMLLogging.Silent
+        @test v1.unlimited_dt == SciMLLogging.WarnLevel
+        @test v1.dt_epsilon == SciMLLogging.WarnLevel
+        @test v1.stability_check == SciMLLogging.Silent
+        @test v1.near_singular == SciMLLogging.Silent
     end
 
     @testset "DEVerbosity preset constructors" begin
@@ -56,114 +56,114 @@ using NonlinearSolve: NonlinearVerbosity
         v_all = DEVerbosity(SciMLLogging.All())
 
         # Test None - everything Silent
-        @test v_none.linear_verbosity isa SciMLLogging.None
-        @test v_none.nonlinear_verbosity isa SciMLLogging.None
-        @test v_none.dt_NaN isa SciMLLogging.Silent
-        @test v_none.init_NaN isa SciMLLogging.Silent
-        @test v_none.alg_switch isa SciMLLogging.Silent
-        @test v_none.rosenbrock_no_differential_states isa SciMLLogging.Silent
+        @test v_none.linear_verbosity == SciMLLogging.None()
+        @test v_none.nonlinear_verbosity == SciMLLogging.None()
+        @test v_none.dt_NaN == SciMLLogging.Silent
+        @test v_none.init_NaN == SciMLLogging.Silent
+        @test v_none.alg_switch == SciMLLogging.Silent
+        @test v_none.rosenbrock_no_differential_states == SciMLLogging.Silent
 
         # Test Minimal - only critical errors
-        @test v_minimal.linear_verbosity isa SciMLLogging.Minimal
-        @test v_minimal.nonlinear_verbosity isa SciMLLogging.Minimal
-        @test v_minimal.dt_NaN isa SciMLLogging.WarnLevel
-        @test v_minimal.init_NaN isa SciMLLogging.WarnLevel
-        @test v_minimal.max_iters isa SciMLLogging.WarnLevel
-        @test v_minimal.newton_convergence isa SciMLLogging.WarnLevel
-        @test v_minimal.near_singular isa SciMLLogging.WarnLevel
-        @test v_minimal.alg_switch isa SciMLLogging.Silent
-        @test v_minimal.dense_output_saveat isa SciMLLogging.Silent
-        @test v_minimal.mismatched_input_output_type isa SciMLLogging.Silent
+        @test v_minimal.linear_verbosity == SciMLLogging.Minimal()
+        @test v_minimal.nonlinear_verbosity == SciMLLogging.Minimal()
+        @test v_minimal.dt_NaN == SciMLLogging.WarnLevel
+        @test v_minimal.init_NaN == SciMLLogging.WarnLevel
+        @test v_minimal.max_iters == SciMLLogging.WarnLevel
+        @test v_minimal.newton_convergence == SciMLLogging.WarnLevel
+        @test v_minimal.near_singular == SciMLLogging.WarnLevel
+        @test v_minimal.alg_switch == SciMLLogging.Silent
+        @test v_minimal.dense_output_saveat == SciMLLogging.Silent
+        @test v_minimal.mismatched_input_output_type == SciMLLogging.Silent
 
         # Test Standard - same as default
-        @test v_standard.dt_NaN isa SciMLLogging.WarnLevel
-        @test v_standard.init_NaN isa SciMLLogging.WarnLevel
-        @test v_standard.alg_switch isa SciMLLogging.Silent
-        @test v_standard.dense_output_saveat isa SciMLLogging.WarnLevel
-        @test v_standard.mismatched_input_output_type isa SciMLLogging.WarnLevel
+        @test v_standard.dt_NaN == SciMLLogging.WarnLevel
+        @test v_standard.init_NaN == SciMLLogging.WarnLevel
+        @test v_standard.alg_switch == SciMLLogging.Silent
+        @test v_standard.dense_output_saveat == SciMLLogging.WarnLevel
+        @test v_standard.mismatched_input_output_type == SciMLLogging.WarnLevel
 
         # Test Detailed - includes debugging info
-        @test v_detailed.linear_verbosity isa SciMLLogging.Detailed
-        @test v_detailed.nonlinear_verbosity isa SciMLLogging.Detailed
-        @test v_detailed.alg_switch isa SciMLLogging.InfoLevel
-        @test v_detailed.dense_output_saveat isa SciMLLogging.InfoLevel
-        @test v_detailed.shampine_dt isa SciMLLogging.InfoLevel
-        @test v_detailed.jacobian_update isa SciMLLogging.InfoLevel
-        @test v_detailed.w_factorization isa SciMLLogging.InfoLevel
-        @test v_detailed.convergence_limit isa SciMLLogging.InfoLevel
+        @test v_detailed.linear_verbosity == SciMLLogging.Detailed()
+        @test v_detailed.nonlinear_verbosity == SciMLLogging.Detailed()
+        @test v_detailed.alg_switch == SciMLLogging.InfoLevel
+        @test v_detailed.dense_output_saveat == SciMLLogging.InfoLevel
+        @test v_detailed.shampine_dt == SciMLLogging.InfoLevel
+        @test v_detailed.jacobian_update == SciMLLogging.InfoLevel
+        @test v_detailed.w_factorization == SciMLLogging.InfoLevel
+        @test v_detailed.convergence_limit == SciMLLogging.InfoLevel
 
         # Test All - maximum verbosity
-        @test v_all.linear_verbosity isa SciMLLogging.All
-        @test v_all.nonlinear_verbosity isa SciMLLogging.All
-        @test v_all.alg_switch isa SciMLLogging.InfoLevel
-        @test v_all.shampine_dt isa SciMLLogging.InfoLevel
-        @test v_all.dense_output_saveat isa SciMLLogging.InfoLevel
-        @test v_all.step_rejected isa SciMLLogging.InfoLevel
-        @test v_all.step_accepted isa SciMLLogging.InfoLevel
-        @test v_all.stiff_detection isa SciMLLogging.InfoLevel
+        @test v_all.linear_verbosity == SciMLLogging.All()
+        @test v_all.nonlinear_verbosity == SciMLLogging.All()
+        @test v_all.alg_switch == SciMLLogging.InfoLevel
+        @test v_all.shampine_dt == SciMLLogging.InfoLevel
+        @test v_all.dense_output_saveat == SciMLLogging.InfoLevel
+        @test v_all.step_rejected == SciMLLogging.InfoLevel
+        @test v_all.step_accepted == SciMLLogging.InfoLevel
+        @test v_all.stiff_detection == SciMLLogging.InfoLevel
     end
 
     @testset "Group-level keyword constructors" begin
-        v_error = DEVerbosity(error_control = SciMLLogging.ErrorLevel())
+        v_error = DEVerbosity(error_control = SciMLLogging.ErrorLevel)
         # Test all error_control fields
-        @test v_error.dt_NaN isa SciMLLogging.ErrorLevel
-        @test v_error.init_NaN isa SciMLLogging.ErrorLevel
-        @test v_error.dense_output_saveat isa SciMLLogging.ErrorLevel
-        @test v_error.max_iters isa SciMLLogging.ErrorLevel
-        @test v_error.dt_min_unstable isa SciMLLogging.ErrorLevel
-        @test v_error.instability isa SciMLLogging.ErrorLevel
-        @test v_error.newton_convergence isa SciMLLogging.ErrorLevel
-        @test v_error.step_rejected isa SciMLLogging.ErrorLevel
-        @test v_error.step_accepted isa SciMLLogging.ErrorLevel
-        @test v_error.convergence_limit isa SciMLLogging.ErrorLevel
+        @test v_error.dt_NaN == SciMLLogging.ErrorLevel
+        @test v_error.init_NaN == SciMLLogging.ErrorLevel
+        @test v_error.dense_output_saveat == SciMLLogging.ErrorLevel
+        @test v_error.max_iters == SciMLLogging.ErrorLevel
+        @test v_error.dt_min_unstable == SciMLLogging.ErrorLevel
+        @test v_error.instability == SciMLLogging.ErrorLevel
+        @test v_error.newton_convergence == SciMLLogging.ErrorLevel
+        @test v_error.step_rejected == SciMLLogging.ErrorLevel
+        @test v_error.step_accepted == SciMLLogging.ErrorLevel
+        @test v_error.convergence_limit == SciMLLogging.ErrorLevel
 
-        v_numerical = DEVerbosity(numerical = SciMLLogging.Silent())
+        v_numerical = DEVerbosity(numerical = SciMLLogging.Silent)
         # Test all numerical fields
-        @test v_numerical.rosenbrock_no_differential_states isa SciMLLogging.Silent
-        @test v_numerical.shampine_dt isa SciMLLogging.Silent
-        @test v_numerical.unlimited_dt isa SciMLLogging.Silent
-        @test v_numerical.dt_epsilon isa SciMLLogging.Silent
-        @test v_numerical.stability_check isa SciMLLogging.Silent
-        @test v_numerical.near_singular isa SciMLLogging.Silent
+        @test v_numerical.rosenbrock_no_differential_states == SciMLLogging.Silent
+        @test v_numerical.shampine_dt == SciMLLogging.Silent
+        @test v_numerical.unlimited_dt == SciMLLogging.Silent
+        @test v_numerical.dt_epsilon == SciMLLogging.Silent
+        @test v_numerical.stability_check == SciMLLogging.Silent
+        @test v_numerical.near_singular == SciMLLogging.Silent
 
-        v_performance = DEVerbosity(performance = SciMLLogging.InfoLevel())
+        v_performance = DEVerbosity(performance = SciMLLogging.InfoLevel)
         # Test all performance fields
-        @test v_performance.alg_switch isa SciMLLogging.InfoLevel
-        @test v_performance.stiff_detection isa SciMLLogging.InfoLevel
-        @test v_performance.mismatched_input_output_type isa SciMLLogging.InfoLevel
-        @test v_performance.jacobian_update isa SciMLLogging.InfoLevel
-        @test v_performance.w_factorization isa SciMLLogging.InfoLevel
-        @test v_performance.newton_iterations isa SciMLLogging.InfoLevel
+        @test v_performance.alg_switch == SciMLLogging.InfoLevel
+        @test v_performance.stiff_detection == SciMLLogging.InfoLevel
+        @test v_performance.mismatched_input_output_type == SciMLLogging.InfoLevel
+        @test v_performance.jacobian_update == SciMLLogging.InfoLevel
+        @test v_performance.w_factorization == SciMLLogging.InfoLevel
+        @test v_performance.newton_iterations == SciMLLogging.InfoLevel
     end
 
     @testset "Mixed group and individual settings" begin
         v_mixed = DEVerbosity(
-            numerical = SciMLLogging.Silent(),
-            shampine_dt = SciMLLogging.WarnLevel(),
-            performance = SciMLLogging.InfoLevel()
+            numerical = SciMLLogging.Silent,
+            shampine_dt = SciMLLogging.WarnLevel,
+            performance = SciMLLogging.InfoLevel
         )
         # Individual override should take precedence
-        @test v_mixed.shampine_dt isa SciMLLogging.WarnLevel
+        @test v_mixed.shampine_dt == SciMLLogging.WarnLevel
         # Other numerical options should use group setting
-        @test v_mixed.rosenbrock_no_differential_states isa SciMLLogging.Silent
-        @test v_mixed.unlimited_dt isa SciMLLogging.Silent
+        @test v_mixed.rosenbrock_no_differential_states == SciMLLogging.Silent
+        @test v_mixed.unlimited_dt == SciMLLogging.Silent
         # Performance group setting should apply
-        @test v_mixed.alg_switch isa SciMLLogging.InfoLevel
-        @test v_mixed.mismatched_input_output_type isa SciMLLogging.InfoLevel
+        @test v_mixed.alg_switch == SciMLLogging.InfoLevel
+        @test v_mixed.mismatched_input_output_type == SciMLLogging.InfoLevel
     end
 
     @testset "Individual keyword arguments" begin
         v_individual = DEVerbosity(
-            dt_NaN = SciMLLogging.ErrorLevel(),
-            alg_switch = SciMLLogging.InfoLevel(),
-            shampine_dt = SciMLLogging.Silent()
+            dt_NaN = SciMLLogging.ErrorLevel,
+            alg_switch = SciMLLogging.InfoLevel,
+            shampine_dt = SciMLLogging.Silent
         )
-        @test v_individual.dt_NaN isa SciMLLogging.ErrorLevel
-        @test v_individual.alg_switch isa SciMLLogging.InfoLevel
-        @test v_individual.shampine_dt isa SciMLLogging.Silent
+        @test v_individual.dt_NaN == SciMLLogging.ErrorLevel
+        @test v_individual.alg_switch == SciMLLogging.InfoLevel
+        @test v_individual.shampine_dt == SciMLLogging.Silent
         # Unspecified options should use defaults
-        @test v_individual.init_NaN isa SciMLLogging.WarnLevel
-        @test v_individual.unlimited_dt isa SciMLLogging.WarnLevel
+        @test v_individual.init_NaN == SciMLLogging.WarnLevel
+        @test v_individual.unlimited_dt == SciMLLogging.WarnLevel
     end
 
     @testset "Linear and nonlinear verbosity passthrough" begin
@@ -171,15 +171,15 @@ using NonlinearSolve: NonlinearVerbosity
             linear_verbosity = SciMLLogging.Detailed(),
             nonlinear_verbosity = SciMLLogging.Minimal()
         )
-        @test v_with_solvers.linear_verbosity isa SciMLLogging.Detailed
-        @test v_with_solvers.nonlinear_verbosity isa SciMLLogging.Minimal
+        @test v_with_solvers.linear_verbosity == SciMLLogging.Detailed()
+        @test v_with_solvers.nonlinear_verbosity == SciMLLogging.Minimal()
 
         v_with_solvers2 = DEVerbosity(
             linear_verbosity = SciMLLogging.None(),
             nonlinear_verbosity = SciMLLogging.All()
         )
-        @test v_with_solvers2.linear_verbosity isa SciMLLogging.None
-        @test v_with_solvers2.nonlinear_verbosity isa SciMLLogging.All
+        @test v_with_solvers2.linear_verbosity == SciMLLogging.None()
+        @test v_with_solvers2.nonlinear_verbosity == SciMLLogging.All()
     end
 
     @testset "Validation tests" begin
@@ -200,39 +200,39 @@ using NonlinearSolve: NonlinearVerbosity
 
     @testset "Multiple group settings" begin
         v = DEVerbosity(
-            error_control = SciMLLogging.ErrorLevel(),
-            performance = SciMLLogging.InfoLevel(),
-            numerical = SciMLLogging.Silent()
+            error_control = SciMLLogging.ErrorLevel,
+            performance = SciMLLogging.InfoLevel,
+            numerical = SciMLLogging.Silent
         )
-        @test v.dt_NaN isa SciMLLogging.ErrorLevel
-        @test v.alg_switch isa SciMLLogging.InfoLevel
-        @test v.shampine_dt isa SciMLLogging.Silent
+        @test v.dt_NaN == SciMLLogging.ErrorLevel
+        @test v.alg_switch == SciMLLogging.InfoLevel
+        @test v.shampine_dt == SciMLLogging.Silent
     end
 
     @testset "Complex mixed settings" begin
         v = DEVerbosity(
-            error_control = SciMLLogging.WarnLevel(),
-            performance = SciMLLogging.InfoLevel(),
-            numerical = SciMLLogging.Silent(),
+            error_control = SciMLLogging.WarnLevel,
+            performance = SciMLLogging.InfoLevel,
+            numerical = SciMLLogging.Silent,
             linear_verbosity = SciMLLogging.Detailed(),
             nonlinear_verbosity = SciMLLogging.Minimal(),
-            dt_NaN = SciMLLogging.ErrorLevel(),  # Override specific error_control field
-            shampine_dt = SciMLLogging.WarnLevel()  # Override specific numerical field
+            dt_NaN = SciMLLogging.ErrorLevel,  # Override specific error_control field
+            shampine_dt = SciMLLogging.WarnLevel  # Override specific numerical field
         )
         # Check overrides took precedence
-        @test v.dt_NaN isa SciMLLogging.ErrorLevel
-        @test v.shampine_dt isa SciMLLogging.WarnLevel
+        @test v.dt_NaN == SciMLLogging.ErrorLevel
+        @test v.shampine_dt == SciMLLogging.WarnLevel
         # Check other fields follow group settings
-        @test v.init_NaN isa SciMLLogging.WarnLevel
-        @test v.alg_switch isa SciMLLogging.InfoLevel
-        @test v.unlimited_dt isa SciMLLogging.Silent
+        @test v.init_NaN == SciMLLogging.WarnLevel
+        @test v.alg_switch == SciMLLogging.InfoLevel
+        @test v.unlimited_dt == SciMLLogging.Silent
         # Check solver verbosity
-        @test v.linear_verbosity isa SciMLLogging.Detailed
-        @test v.nonlinear_verbosity isa SciMLLogging.Minimal
+        @test v.linear_verbosity == SciMLLogging.Detailed()
+        @test v.nonlinear_verbosity == SciMLLogging.Minimal()
     end
 
     @testset "Stiff Switching Message" begin
-        verb = DEVerbosity(alg_switch = SciMLLogging.InfoLevel())
+        verb = DEVerbosity(alg_switch = SciMLLogging.InfoLevel)
         solve(prob_ode_vanderpol_stiff, AutoTsit5(Rodas5()), verbose = verb)
     end
 

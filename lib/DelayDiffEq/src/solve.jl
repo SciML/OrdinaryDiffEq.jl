@@ -72,14 +72,7 @@ function SciMLBase.__init(
     order_discontinuity_t0 = is_stochastic ? Int(prob.order_discontinuity_t0) :
         prob.order_discontinuity_t0
 
-    # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
-    if verbose isa Bool
-        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
-    elseif verbose isa AbstractVerbosityPreset
-        verbose_spec = DEVerbosity(verbose)
-    else
-        verbose_spec = verbose
-    end
+    verbose_spec = _process_verbose_param(verbose)
 
     if !is_stochastic && alg.alg isa CompositeAlgorithm && alg.alg.choice_function isa AutoSwitch
         auto = alg.alg.choice_function

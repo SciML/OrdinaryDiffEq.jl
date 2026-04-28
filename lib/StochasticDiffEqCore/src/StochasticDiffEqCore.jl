@@ -63,7 +63,7 @@ using SciMLLogging: AbstractVerbositySpecifier, AbstractVerbosityPreset,
     AbstractMessageLevel, None, Minimal, Standard, Detailed, All,
     Silent, DebugLevel, InfoLevel, WarnLevel, ErrorLevel, @SciMLMessage
 
-using OrdinaryDiffEqCore: DEVerbosity
+using OrdinaryDiffEqCore: DEVerbosity, _process_verbose_param
 
 using LinearAlgebra, Random
 

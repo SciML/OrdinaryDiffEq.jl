@@ -37,7 +37,7 @@ using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
 
-using DiffEqBase: is_diagonal_noise, DEVerbosity
+using DiffEqBase: is_diagonal_noise, DEVerbosity, _process_verbose_param
 
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm
