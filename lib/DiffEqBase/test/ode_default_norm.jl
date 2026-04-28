@@ -1,4 +1,4 @@
-using Test, RecursiveArrayTools, StaticArrays, ForwardDiff
+using Test, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, StaticArrays, ForwardDiff
 
 using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM
 
@@ -54,3 +54,11 @@ u8_ref = 1.2909944487358056
 @test ODE_DEFAULT_NORM(u8, 4.0) ≈ u8_ref
 @test ODE_DEFAULT_NORM(u8, ForwardDiff.Dual{:b}(4.0, true)) isa Float64
 @test ODE_DEFAULT_NORM(u8, ForwardDiff.Dual{:b}(4.0, true)) ≈ u8_ref
+
+r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
+@test UNITLESS_ABS2(r) ≈ 6.0
+@test recursive_length(r) == 6
+# RMS norm of 6 ones = sqrt(6/6) = 1
+@test ODE_DEFAULT_NORM(r, 0.0) ≈ 1.0
+# Unnormalised Euclidean norm would be sqrt(6) ≈ 2.449 — make sure we don't get that
+@test ODE_DEFAULT_NORM(r, 0.0) < 2.0
