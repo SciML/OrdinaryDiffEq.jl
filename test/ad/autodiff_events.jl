@@ -90,13 +90,6 @@ function test_f2(
         _prob, alg, sensealg = sensealg, controller = controller,
         abstol = 1.0e-14, reltol = 1.0e-14, callback = cb, save_everystep = false
     )
-    # Reach into `u.u` directly. Under RecursiveArrayTools v4, `u[end]`
-    # returns the last scalar element (column-major) rather than the last
-    # timestep, and SciMLBase's `getindex(::ODESolution, ::Int)` rrules
-    # (Zygote / Mooncake) still treat the integer as a timestep index,
-    # so going through `u[end][end]` triggers a BoundsError under reverse
-    # AD. `u.u[end][end]` matches the v3 semantics the rrule was written
-    # against.
     return u.u[end][end]
 end
 
