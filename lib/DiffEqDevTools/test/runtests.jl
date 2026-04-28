@@ -2,12 +2,7 @@ using DiffEqDevTools
 using Pkg
 using Test
 
-# SublibraryCI sets GROUP to "<pkg>_<group>" (e.g. "DiffEqDevTools_QA").
-# CI.yml-style workflows set ODEDIFFEQ_TEST_GROUP. Default to ALL when neither
-# is set so local `Pkg.test()` runs the full suite.
-const RAW_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", get(ENV, "GROUP", "ALL"))
-const TEST_GROUP = endswith(RAW_GROUP, "_QA") ? "QA" :
-    (RAW_GROUP == "DiffEqDevTools" ? "Core" : RAW_GROUP)
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 function activate_qa_env()
     Pkg.activate(joinpath(@__DIR__, "qa"))
