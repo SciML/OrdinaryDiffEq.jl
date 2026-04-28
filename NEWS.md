@@ -1,3 +1,37 @@
+# OrdinaryDiffEq.jl v7 / DifferentialEquations.jl v8 Breaking Changes
+
+This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes breaking changes across **DiffEqBase**, **OrdinaryDiffEqCore**, and all solver sublibraries. It also coincides with the **DifferentialEquations.jl v8** umbrella release, which is itself a breaking change to the user-facing meta-package.
+
+## DifferentialEquations.jl v8: scope reduction
+
+**`DifferentialEquations.jl` v8 no longer re-exports the full SciML solver suite.** Previously, `using DifferentialEquations` pulled in `OrdinaryDiffEq`, `StochasticDiffEq`, `DelayDiffEq`, `BoundaryValueDiffEq`, `Sundials`, `JumpProcesses`, `SteadyStateDiffEq`, `LinearSolve`, `NonlinearSolve`, `Optimization`, etc. — a large default surface that drove up `using` time and made it unclear which package any given solver actually came from.
+
+In v8, `using DifferentialEquations` only loads `OrdinaryDiffEq`. **All other solver families have been removed from the umbrella.** If your code relied on `DifferentialEquations` for SDEs, DDEs, BVPs, jumps, steady states, or any non-ODE solver, you will need to add the topic-specific package to your project explicitly.
+
+### Migration
+
+Find the topic you need a solver for and add the corresponding sublib(s) directly. The [DiffEqDocs](https://docs.sciml.ai/DiffEqDocs/stable/) tutorials and solver pages now specify, per algorithm, which package it ships from. Common cases:
+
+| Topic | Old (DiffEq v7 umbrella) | New (DiffEq v8) |
+|---|---|---|
+| ODEs | `using DifferentialEquations` | `using OrdinaryDiffEq` (or `using OrdinaryDiffEqTsit5`, `OrdinaryDiffEqRosenbrock`, … for individual solver families) |
+| Stochastic ODEs | `using DifferentialEquations` | `using StochasticDiffEq` |
+| Delay ODEs | `using DifferentialEquations` | `using DelayDiffEq` |
+| Boundary value problems | `using DifferentialEquations` | `using BoundaryValueDiffEq` (or one of `BoundaryValueDiffEqMIRK`, `BoundaryValueDiffEqFIRK`, `BoundaryValueDiffEqShooting`, …) |
+| Jump processes | `using DifferentialEquations` | `using JumpProcesses` |
+| Steady state | `using DifferentialEquations` | `using SteadyStateDiffEq` |
+| DAEs (mass matrix or implicit) | `using DifferentialEquations` | `using OrdinaryDiffEq` (mass matrix), `using Sundials` (`IDA`), or topic sublib |
+| Sundials wrappers (CVODE, IDA, ARKODE) | `using DifferentialEquations` | `using Sundials` |
+| Linear / nonlinear / optimization | `using DifferentialEquations` | `using LinearSolve` / `using NonlinearSolve` / `using Optimization` |
+
+For ODE work specifically, prefer importing only the sublib you need (e.g. `using OrdinaryDiffEqTsit5: Tsit5`) rather than the umbrella `using OrdinaryDiffEq` — the v7 ecosystem split lets you trim `using` time substantially. The DiffEqDocs tutorials and solver index annotate every algorithm with its host sublib.
+
+### Why
+
+Removing the meta-package's broad re-exports lets each topic's package version cycle independently, eliminates the long `using DifferentialEquations` precompile chain for users who only need ODEs, and makes the dependency graph for any given script honest about what's actually being loaded.
+
+This change is independent of the `OrdinaryDiffEq` v7 changes below — `OrdinaryDiffEq` v7 ships with `DifferentialEquations` v8, but you can also use `OrdinaryDiffEq` v7 directly without the umbrella package at all.
+
 # OrdinaryDiffEq.jl v7 Breaking Changes
 
 This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes breaking changes across **DiffEqBase**, **OrdinaryDiffEqCore**, and all solver sublibraries.
