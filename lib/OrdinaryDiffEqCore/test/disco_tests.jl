@@ -1,7 +1,8 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqLowOrderRK
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error)) 
+using BenchmarkTools
 
 #TEST 1: SIMPLE DISCONTINUITY
 #test example discontinuous at u = 1
@@ -33,6 +34,9 @@ sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-6)
 #  59.542 μs (7248 allocations: 233.67 KiB)
 sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
 #  46.500 μs (7129 allocations: 226.22 KiB)
+
+sol_disco_BS5= solve(prob, BS5(); callback = cb, reltol = 1e-6)
+sol_no_disco_BS5 = solve(prob, BS5(); callback = cb2, reltol = 1e-6)
 
 #TEST 2: TWO DISCONTINUITIES
 #two discontinuity functions
@@ -133,6 +137,13 @@ sol_disco_tsit5 = solve(prob_multi, Tsit5(); callback=cb_multi, reltol=1e-7, abs
 sol_no_disco_tsit5 = solve(prob_multi, Tsit5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
 #  95.250 μs (1499 allocations: 73.62 KiB)
 
+sol_disco_BS3 = solve(prob_multi, BS3(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+sol_no_disco_BS3 = solve(prob_multi, BS3(); callback=cb_multi2, reltol=1e-7, abstol=1e-9)
+
+@profview for i in 1:1000 
+    solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9)
+end
+
 #TEST 4: STIFF DISCONTINUITY
 # very stiff discontinuous system
 function f_stiff_disc!(du, u, p, t)
@@ -171,6 +182,11 @@ sol_disco_tsit5 = solve(prob_stiff, Tsit5(); callback=cb_stiff, reltol=1e-9, abs
 #  93.833 μs (2040 allocations: 80.59 KiB)
 sol_no_disco_tsit5 = solve(prob_stiff, Tsit5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
 #  82.750 μs (1898 allocations: 72.12 KiB)
+
+sol_disco_BS3 = solve(prob_stiff, BS3(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
+#   1.121 ms (12460 allocations: 595.30 KiB)
+sol_no_disco_BS3 = solve(prob_stiff, BS3(); callback=cb_stiff_f, reltol=1e-9, abstol=1e-11)
+#   1.102 ms (12229 allocations: 582.34 KiB)
 
 #TEST 5: DISCONTINUOUS DAE
 # discontinuous DAE with mass matrix

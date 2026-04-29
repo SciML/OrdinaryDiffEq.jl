@@ -38,6 +38,9 @@ function find_discontinuity(u, uprev, integrator, cache)
         disco_zero.cache = cache
         disco_zero.differential_vars = differential_vars
         disco_zero.idxs = save_idxs
+        disco_zero.tprev = t
+        disco_zero.f = integrator.f
+        disco_zero.p = p
         if (i isa VectorContinuousCallback)
             len_cb = i.len
             out_prev = similar(u)

@@ -16,7 +16,7 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType}
+mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
     #integrator_ref::IntegratorType
     u₁::uType
     callback::callbackType
@@ -29,9 +29,13 @@ mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsTy
     differential_vars::varsType
     ind::Int
     out::outType
+    f::FunctionType
+    tprev::tType2
+    p::ParameterType
 end
 
 function (z::zero_func_struct)(θ, p)
+    _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
     return zero_condition(z.callback, z.out, z.u₁, z.dt + θ * z.dt, z, z.ind)
 end
@@ -773,7 +777,7 @@ function _ode_init(
         if i.is_discontinuity
             u₁ = similar(u)
             out = i isa VectorContinuousCallback ? similar(u) : nothing
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out)
+            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, f, tprev, p)
             disco_probs[idx] = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
             idx += 1
         end
