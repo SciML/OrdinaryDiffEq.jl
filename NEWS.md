@@ -359,7 +359,7 @@ Fields `EEst`, `qold`, `q11`, `erracc`, `dtacc` removed from `ODEIntegrator` str
 
 ### williamson_condition default changed
 
-All 2N low-storage RK methods: default changed from `williamson_condition=true` to `williamson_condition=false`. **Why:** this optimization only works for mutable `Array`-style state. Having it on by default silently made the method wrong (or errored) for `StaticArrays`, GPU arrays, `ComponentArrays`, etc. Off-by-default is the safe choice; opt in with `williamson_condition=true` when you know your state is a plain `Array`. 
+All 2N low-storage RK methods: default changed from `williamson_condition=true` to `williamson_condition=false`. **Why:** this optimization only works for mutable `Array`-style state. Having it on by default silently made the method wrong (or errored) for `StaticArrays`, GPU arrays, `ComponentArrays`, etc. Off-by-default is the safe choice; opt in with `williamson_condition=true` when you know your state is a plain `Array`.
 
 ### Threading interface changed
 
