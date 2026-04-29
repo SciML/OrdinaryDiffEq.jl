@@ -90,7 +90,7 @@ function test_f2(
         _prob, alg, sensealg = sensealg, controller = controller,
         abstol = 1.0e-14, reltol = 1.0e-14, callback = cb, save_everystep = false
     )
-    return u[end][end]
+    return u[end]
 end
 
 @test test_f2(p) == test_f(p)[end]
