@@ -163,7 +163,7 @@ function clamped_kink_rhs!(du, u, p, t)
     @views du[2:end] .= 0.0
     return nothing
 end
-prob_kink = ODEProblem(clamped_kink_rhs!, zeros(20), (0.0, 1e-3))
+prob_kink = ODEProblem(clamped_kink_rhs!, zeros(20), (0.0, 0.1))
 sol_kink = solve(prob_kink; abstol = 1.0e-12, reltol = 1.0e-9, maxiters = 1_000)
 @test sol_kink.retcode == ReturnCode.Success
 # Without the NaN-safe is_stiff form the run stays on Vern7 the entire time
