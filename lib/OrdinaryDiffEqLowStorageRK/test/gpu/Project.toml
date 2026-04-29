@@ -14,5 +14,5 @@ path = "../.."
 [compat]
 CUDA = "4, 5"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqLowStorageRK = "2"
+OrdinaryDiffEqLowStorageRK = "3"
 SciMLBase = "3"
