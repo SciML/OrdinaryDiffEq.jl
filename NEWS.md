@@ -151,6 +151,7 @@ All of these printed a deprecation warning under SciMLBase v2. They are gone in 
 - `EnsembleProblem` vector-of-problems constructor → use a `prob_func`
 - `IntegralProblem` `nout`/`batch` kwargs → set on the integrand function directly
 - `SciMLBaseMLStyleExt` extension (`MLStyle` dependency removed)
+- Moshi-backed clock ADT support removed from SciMLBase's common runtime surface. Solver interpolation only needs the `AbstractClock` / `IndexedClock` API; richer clock ADTs now belong in ModelingToolkit.
 
 ### `sol.retcode` is a `ReturnCode.T`, not a `Symbol`
 
@@ -238,6 +239,12 @@ solve(prob, KenCarp4())
 
 **Note** If you are still manually choosing `Rodas5`, we highly recommend changing to `Rodas5P` because it has a very similar performance profile while being much more robust in terms
 of accuracy.
+
+### Rosenbrock tableau data split
+
+Non-essential Rosenbrock/Rodas tableau coefficient data moved into the new `OrdinaryDiffEqRosenbrockTableaus` sublibrary ([#3361](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3361)). `OrdinaryDiffEqRosenbrock` still owns the solver algorithms, caches, and perform-step code, and keeps the essential tableaus for `Rosenbrock23`/`Rosenbrock32`, `Rodas5P`/`Rodas5Pe`, `Rodas6P`, `Rodas23W`, and `Tsit5DA` directly available.
+
+The extracted package contains the shared `RodasTableau` definition plus research and less commonly used tableau data such as the `Rodas4*`, `ROS2*`, `ROS3*`, `ROS34*`, `GRK4*`, `RosShamp4`, `Veldd4`, `Velds4`, `Ros4LStab`, `ROK4a`, and `RosenbrockW6S4OS` families. Normal solver use through `OrdinaryDiffEqRosenbrock` is unchanged. Code that imported internal tableau constructors directly should import them from `OrdinaryDiffEqRosenbrockTableaus`.
 
 ### Algorithm struct type parameters removed
 
@@ -360,6 +367,12 @@ Fields `EEst`, `qold`, `q11`, `erracc`, `dtacc` removed from `ODEIntegrator` str
 ### williamson_condition default changed
 
 All 2N low-storage RK methods: default changed from `williamson_condition=true` to `williamson_condition=false`. **Why:** this optimization only works for mutable `Array`-style state. Having it on by default silently made the method wrong (or errored) for `StaticArrays`, GPU arrays, `ComponentArrays`, etc. Off-by-default is the safe choice; opt in with `williamson_condition=true` when you know your state is a plain `Array`.
+
+### d_discontinuities shifted past the discontinuity
+
+`d_discontinuities` now has an explicit right-discontinuity convention ([#3394](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3394)). When the integrator lands on a discontinuity time `t_d`, it advances `t` by one ULP in the integration direction and re-evaluates FSAL data on the post-discontinuity side. This makes user code written as `if t > t_d; new_regime; else; old_regime; end` behave as intended instead of taking the first post-discontinuity step with stale pre-discontinuity derivative data.
+
+Starting-time derivative discontinuities are now handled too: a `d_discontinuities` entry equal to `tspan[1]` is no longer silently skipped by the strict `tstops` bounds. For non-`AbstractFloat` time types the one-ULP shift is a no-op, preserving the old behavior. This clarification also distinguishes `d_discontinuities` from plain `tstops`: `tstops` only forces the solver to step at a time, while `d_discontinuities` marks a vector-field derivative discontinuity and refreshes FSAL state on the correct side of that discontinuity.
 
 ### Threading interface changed
 
