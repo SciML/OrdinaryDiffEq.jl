@@ -150,6 +150,27 @@ prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success
 
+# the autoswitch detector inside DefaultODEAlgorithm must treat a NaN
+# spectral-radius estimate as "stiff" so it can fall back to an implicit
+# method, instead of as "not stiff" (which gets it stuck on the explicit
+# branch). NaN arises here because the `max(u, 1e-50)` clamp collapses every
+# stage value of the inactive components to the same floor, giving
+# (k_last - k_prev)[i] / (g_last - g_prev)[i] = 0/0 in
+# eigen_est = max(abs((k_last - k_prev) ./ (g_last - g_prev))).
+function clamped_kink_rhs!(du, u, p, t)
+    u = max.(u, 1.0e-50)
+    du[1] = -1000.0 * u[1] + 1.0
+    @views du[2:end] .= 0.0
+    return nothing
+end
+prob_kink = ODEProblem(clamped_kink_rhs!, zeros(20), (0.0, 0.1))
+sol_kink = solve(prob_kink; abstol = 1.0e-12, reltol = 1.0e-9, maxiters = 1_000)
+@test sol_kink.retcode == ReturnCode.Success
+# Without the NaN-safe is_stiff form the run stays on Vern7 the entire time
+# (alg_choice == [2]); with it, autoswitch sees a degenerate eigen estimate
+# and switches to a stiff method (>=3).
+@test any(c -> c >= 3, sol_kink.alg_choice)
+
 # Make sure callback doesn't recurse init, which would cause initialize to be hit twice
 counter = Ref{Int}(0)
 cb = DiscreteCallback(
