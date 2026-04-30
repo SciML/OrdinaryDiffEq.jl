@@ -185,55 +185,6 @@ function jacobian(f::F, x, integrator) where {F}
     return jac
 end
 
-# Inner-Dual eltype that the prepared ForwardDiff JacobianConfig allocates for
-# its xdual buffer. Returns `nothing` for non-ForwardDiff preps (e.g.
-# AutoFiniteDiff), so the widening fast-path below is a single type-stable
-# no-op dispatch in that case.
-function _jac_prep_inner_dual_eltype(prep)
-    hasfield(typeof(prep), :config) || return nothing
-    cfg = getfield(prep, :config)
-    cfg isa ForwardDiff.JacobianConfig || return nothing
-    duals = cfg.duals
-    duals isa Tuple && length(duals) >= 2 || return nothing
-    return eltype(duals[2])
-end
-
-# When the integrator's stored `p` (held in `f::UJacobianWrapper`) is a
-# `Vector{<:Dual}` because we are *inside* an outer ForwardDiff Jacobian /
-# gradient, the inner Rosenbrock Jacobian widens `u` into a deeper nested-Dual
-# type via the prepared `JacobianConfig`. If the user-facing function is a
-# plain Julia function (the `FullSpecialize`/`NoSpecialize` case), then the
-# subsequent `p[i] * u[i]` inside the user body multiplies values at two
-# different Dual nesting levels, which dispatches through ForwardDiff's
-# `tagcount`-based tag precedence. That precedence is a `@generated` function
-# whose literal value is baked at first compile and depends on which package
-# precompiled which tag type first, so the result type can come out wrong and
-# crash inside `setindex!(du, ...)` with `Float64(::nested_dual)`.
-#
-# Lift `p` into the inner nested-Dual type once, *before* delegating to
-# `DI.jacobian!`, so the user body never multiplies across tag levels. The
-# widened `p` carries zero inner partials (correct — `p` does not depend on
-# `u`). The per-step `convert.(inner_T, p)` allocation is amortized across
-# every chunk evaluation DI performs inside one `jacobian!` call.
-#
-# This handles both `FullSpecialize` (direct user function) and
-# `AutoSpecialize` (FunctionWrappersWrapper). For the latter, DiffEqBase's
-# `wrapfun_iip` compiles Jacobian-case signatures with the promoted `p` type,
-# so FWW dispatches to the nested-`p` slot whose compiled body multiplies
-# `u*p` within a single tag hierarchy.
-_widen_uf_p_for_jac(f, prep) = f
-function _widen_uf_p_for_jac(f::UJacobianWrapper, prep)
-    inner_T = _jac_prep_inner_dual_eltype(prep)
-    inner_T === nothing && return f
-    p = f.p
-    p isa AbstractArray || return f
-    Tp = eltype(p)
-    Tp <: ForwardDiff.Dual || return f
-    Tp === inner_T && return f
-    inner_T <: ForwardDiff.Dual || return f
-    return @set f.p = convert.(inner_T, p)
-end
-
 function jacobian!(
         J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
@@ -289,16 +240,14 @@ function jacobian!(
         config = jac_config[1]
     end
 
-    f_eff = _widen_uf_p_for_jac(f, config)
-
     if integrator.iter == 1
         try
-            DI.jacobian!(f_eff, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
+            DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f_eff, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
+        DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
     end
 
     return nothing
