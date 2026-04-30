@@ -78,7 +78,7 @@ const ROSENBROCK_ALGS_TO_TEST = (
 )
 
 @testset "Nested ForwardDiff through solve (issue #3486) — $(nameof(typeof(alg))) iip=$iip" for alg in
-                                                                                                                                                        ROSENBROCK_ALGS_TO_TEST,
+        ROSENBROCK_ALGS_TO_TEST,
         iip in (false, true)
 
     loss = make_loss(alg, Val(iip))

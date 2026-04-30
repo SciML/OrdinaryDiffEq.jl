@@ -312,16 +312,6 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     jac_reuse::JRType
 end
 
-function Rosenbrock23ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, dtgamma_zero, max_jac_age::Int = 20
-    ) where {T}
-    tab = Rosenbrock23Tableau(T)
-    return Rosenbrock23ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        _make_jac_reuse_state(dtgamma_zero, max_jac_age)
-    )
-end
-
 function alg_cache(
         alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -333,12 +323,13 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
     # Seed JacReuseState with `zero(dt)` rather than a `constvalue`-stripped
     # type: under nested ForwardDiff (e.g. `hessian`), dt is a Dual-of-Dual and
     # dtgamma inherits that full type; a Float64 field would reject the assign.
     return Rosenbrock23ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), zero(dt), alg.max_jac_age
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -355,16 +346,6 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     jac_reuse::JRType
 end
 
-function Rosenbrock32ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, dtgamma_zero, max_jac_age::Int = 20
-    ) where {T}
-    tab = Rosenbrock32Tableau(T)
-    return Rosenbrock32ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        _make_jac_reuse_state(dtgamma_zero, max_jac_age)
-    )
-end
-
 function alg_cache(
         alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -376,11 +357,12 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
     # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt)` here
     # rather than a `constvalue`-stripped type.
     return Rosenbrock32ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), zero(dt), alg.max_jac_age
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
