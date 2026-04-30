@@ -1,5 +1,5 @@
 @verbosity_specifier DEVerbosity begin
-    specifiers = (:linear_verbosity, :nonlinear_verbosity)
+    sub_specifiers = (:linear_verbosity, :nonlinear_verbosity)
     toggles = (
         :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
