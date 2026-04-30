@@ -15,12 +15,14 @@ using ForwardDiff
 # and can't be stored into a Float64 field. The fix seeds the state from
 # `zero(dt)` instead, so the field type matches dtgamma's true solve-time type.
 #
-# Cover one representative from each Rosenbrock cache path:
-#   * Rosenbrock23ConstantCache (via Rosenbrock23)
-#   * Rosenbrock32ConstantCache (via Rosenbrock32)
-#   * RosenbrockCombinedConstantCache (via the RodasTableauAlgorithms union)
-# For the combined cache path we spot-check across several methods (different
-# tableaus exercise different stage counts / interp_order branches).
+# Cover both OOP and IIP code paths, and both styles of constant/mutable
+# cache:
+#   * Rosenbrock23 / Rosenbrock32: their own constant- and mutable-cache types
+#     (Rosenbrock23ConstantCache / Rosenbrock23Cache etc.).
+#   * RodasTableauAlgorithms: shared RosenbrockCombinedConstantCache (OOP) and
+#     RosenbrockCache (IIP).
+# Spot-check across several RodasTableau methods so different stage counts /
+# interp_order branches get exercised.
 
 # Analytic reference for u' = -p₁*u², u(0)=1, integrated to t=p₂:
 #   u(t) = 1 / (1 + p₁*t)
@@ -31,14 +33,32 @@ using ForwardDiff
 #   ∂²u/∂p₁∂p₂ = (2p₁*t - 1 - p₁*t) / (1 + p₁*t)³ (mixed)   # at p₁=p₂=1 →  0
 # So at p = [1,1], gradient ≈ [-1/4, -1/4] and hessian ≈ [1/4 0; 0 1/4].
 rhs_oop_simple(u, p, t) = [-p[1] * u[1] * u[1]]
+function rhs_iip_simple!(du, u, p, t)
+    du[1] = -p[1] * u[1] * u[1]
+    return nothing
+end
+
 # Tight tolerances so the lower-order methods (Rosenbrock23 etc.) land close
 # enough to the analytic values that this test reads as "did AD actually
 # propagate through correctly" rather than "did the integrator's default
 # tolerance happen to be tight enough".
-make_loss(alg) = p -> begin
-    prob = ODEProblem{false}(rhs_oop_simple, [1.0], (0.0, p[2]), p)
-    sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
-    only(last(sol.u))
+function make_loss(alg, ::Val{iip}) where {iip}
+    if iip
+        # u0 must be promoted to eltype(p) so the in-place writes don't blow up
+        # on a Float64 buffer when p (and hence du) is Dual.
+        return p -> begin
+            u0 = [one(eltype(p))]
+            prob = ODEProblem{true}(rhs_iip_simple!, u0, (zero(eltype(p)), p[2]), p)
+            sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
+            only(last(sol.u))
+        end
+    else
+        return p -> begin
+            prob = ODEProblem{false}(rhs_oop_simple, [1.0], (0.0, p[2]), p)
+            sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
+            only(last(sol.u))
+        end
+    end
 end
 
 const ROSENBROCK_ALGS_TO_TEST = (
@@ -57,10 +77,11 @@ const ROSENBROCK_ALGS_TO_TEST = (
     Rodas5P(),
 )
 
-@testset "Nested ForwardDiff through solve (issue #3486) — $(nameof(typeof(alg)))" for alg in
-                                                                                                                          ROSENBROCK_ALGS_TO_TEST
+@testset "Nested ForwardDiff through solve (issue #3486) — $(nameof(typeof(alg))) iip=$iip" for alg in
+                                                                                                                                                        ROSENBROCK_ALGS_TO_TEST,
+        iip in (false, true)
 
-    loss = make_loss(alg)
+    loss = make_loss(alg, Val(iip))
 
     # First-order differentiation already worked before the fix — included as
     # a correctness anchor.
