@@ -30,8 +30,10 @@ using ForwardDiff
 
     outer_f = function (p)
         prob = ODEProblem(ode_f, [1.0, 1.0], (0.0, 1.0), p)
-        sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2));
-            reltol = 1.0e-8, abstol = 1.0e-8)
+        sol = solve(
+            prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2));
+            reltol = 1.0e-8, abstol = 1.0e-8
+        )
         return sol.u[end]
     end
 
@@ -48,8 +50,10 @@ using ForwardDiff
         ForwardDiff.Dual{T}(2.0, ForwardDiff.Partials{2, Float64}((0.0, 1.0))),
     ]
     prob = ODEProblem(ode_f, [1.0, 1.0], (0.0, 1.0), p_dual)
-    sol = solve(prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2));
-        reltol = 1.0e-8, abstol = 1.0e-8)
+    sol = solve(
+        prob, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2));
+        reltol = 1.0e-8, abstol = 1.0e-8
+    )
     @test SciMLBase.successful_retcode(sol)
     @test all(u -> all(isfinite, u), sol.u)
 
@@ -59,8 +63,10 @@ using ForwardDiff
     # multiplies `u*p` within one tag hierarchy.
     ode_f_auto = ODEFunction{true, SciMLBase.AutoSpecialize}(ode!)
     prob_auto = ODEProblem(ode_f_auto, [1.0, 1.0], (0.0, 1.0), p_dual)
-    sol_auto = solve(prob_auto, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2));
-        reltol = 1.0e-8, abstol = 1.0e-8)
+    sol_auto = solve(
+        prob_auto, Rosenbrock23(autodiff = AutoForwardDiff(chunksize = 2));
+        reltol = 1.0e-8, abstol = 1.0e-8
+    )
     @test SciMLBase.successful_retcode(sol_auto)
     @test all(u -> all(isfinite, u), sol_auto.u)
 end
