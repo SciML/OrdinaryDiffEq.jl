@@ -11,9 +11,15 @@ function activate_modelingtoolkit_env()
             PackageSpec(path = dirname(dirname(dirname(@__DIR__)))),
             PackageSpec(path = dirname(@__DIR__)),
             PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqBDF")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqRosenbrock")),
             PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqSDIRK")),
         ]
     )
+    return Pkg.instantiate()
+end
+
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
     return Pkg.instantiate()
 end
 
@@ -29,12 +35,14 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "W-Operator Prototype Tests" include("wprototype_tests.jl")
     @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
     @time @safetestset "CheckInit Tests" include("checkinit_tests.jl")
+    @time @safetestset "Nested AD over NonlinearSolveAlg" include("nested_ad_nlsolvealg_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)
 if TEST_GROUP ∉ ("Core", "ModelingToolkit") && isempty(VERSION.prerelease)
-    @time @safetestset "JET Tests" include("jet.jl")
-    @time @safetestset "Aqua" include("qa.jl")
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end
 
 # Run ModelingToolkit tests (separate environment due to heavy MTK dependency)

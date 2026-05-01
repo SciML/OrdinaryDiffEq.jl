@@ -68,7 +68,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -155,7 +155,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -290,7 +290,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = uᵢ₋₁
@@ -427,7 +427,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     @.. broadcast = false integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
@@ -451,11 +451,8 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    # The the number of degree for Chebyshev polynomial
-    #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
-    maxm = 50
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
-    mdeg = (mdeg > maxm) ? maxm : mdeg
+    # The number of degree for Chebyshev polynomial
+    mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
 
     w0 = 1 + 2 / (13 * (mdeg^2))
     temp1 = w0^2 - 1
@@ -508,18 +505,19 @@ end
             d2z1 = d2z
         end
     end
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + gprev)
+        tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + integrator.fsallast)
         atmp = calculate_residuals(
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
@@ -537,11 +535,8 @@ end
     (; k, tmp, gprev2, gprev, atmp) = cache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    # The the number of degree for Chebyshev polynomial
-    #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/10eps(t)))))
-    maxm = 50
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
-    mdeg = (mdeg > maxm) ? maxm : mdeg
+    # The number of degree for Chebyshev polynomial
+    mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
 
     w0 = 1 + 2 / (13 * (mdeg^2))
     temp1 = w0^2 - 1
@@ -580,8 +575,8 @@ end
             dt * μs * (k - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (1 - νs)
         if (iter < mdeg)
-            gprev2 = gprev
-            gprev = u
+            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false gprev = u
             th2 = th1
             th1 = th
             b2 = b1
@@ -594,18 +589,18 @@ end
             d2z1 = d2z
         end
     end
+    f(integrator.fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + gprev)
+        @.. broadcast = false tmp = 0.8 * (uprev - u) + 0.4 * dt * (fsalfirst + integrator.fsallast)
         calculate_residuals!(
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
-    f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
@@ -683,7 +678,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -765,7 +760,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -846,7 +841,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = f(u, p, t + dt)
@@ -928,7 +923,7 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt)
@@ -994,7 +989,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = k
@@ -1059,9 +1054,275 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast = k
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::TSRKC3ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::TSRKC3ConstantCache, repeat_step = false)
+    (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
+
+    q = (t - tprev) / dt
+    onemq = 1 - q
+    onepq = 1 + q
+    onepq2 = onepq * onepq
+
+    # The first and possibly second steps are calculated via the one-step RKC method.
+    rkcstep = q < 0.49
+
+    alg = unwrap_alg(integrator, true)
+    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    dtsw0 = zero(typeof(cache.tsw0))
+    d2tsw0 = zero(typeof(cache.tsw0))
+    if (rkcstep)
+        mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
+        w0 = 1 + 2 / (13 * (mdeg^2))
+        temp1 = w0^2 - 1
+        temp2 = sqrt(temp1)
+        arg = mdeg * log(w0 + temp2)
+        w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
+        b1 = 1 / ((2 * w0)^2)
+        b = b1
+        b2 = b1
+    else
+        mdeg = floor(Int, sqrt(4 + 1.267029788142009 * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (0.44256220745562963 + q))))) + 1
+        mdeg2 = mdeg^2
+        tsw0 = cache.tsw0
+        acoshtsw0 = cache.acoshtsw0
+        acoshtsw0dm = acoshtsw0 / mdeg
+        w0 = cosh(acoshtsw0dm)
+        w0sq = w0^2
+        w0sqm1 = w0sq - 1
+        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+        d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
+        d3tsw0 = ((1 + 2 * w0sq + mdeg2 * w0sqm1) * dtsw0 - 3 * mdeg2 * w0 * tsw0) / (w0sqm1^2)
+        w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + 4 * q * dtsw0 * d3tsw0)) / (2 * d3tsw0)
+
+        b1 = 0.25 * sinh((mdeg - 2) * acoshtsw0dm) / sinh((mdeg - 1) * acoshtsw0dm)
+        b = 15 / ((8 * w0)^2)
+        b2 = b1
+    end
+
+    # stage-1
+    gprev2 = uprev
+    μs = w1 * b1
+    gprev = uprev + dt * μs * fsalfirst
+    th2 = zero(eltype(u))
+    th1 = μs
+    z1 = w0
+    z2 = one(eltype(u))
+    dz1 = one(eltype(u))
+    dz2 = zero(eltype(u))
+    d2z1 = zero(eltype(u))
+    d2z2 = zero(eltype(u))
+    z = 2 * w0 * z1 - z2
+    dz = 2 * w0 * dz1 - dz2 + 2 * z1
+    d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+
+    # stage 2 - mdeg
+    for iter in 2:mdeg
+        νs = 1 - z1 * b1
+        μ = (2 * w0 * b) / b1
+        ν = -b / b2
+        μs = μ * w1 / w0
+        #using u as temporary storage
+        u = f(gprev, p, t + dt * th1)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev + dt * μs * (u - νs * fsalfirst)
+        if (iter < mdeg)
+            gprev2 = gprev
+            gprev = u
+            th = μ * th1 + ν * th2 + μs * (1 - νs)
+            th2 = th1
+            th1 = th
+            b2 = b1
+            b1 = b
+            z2 = z1
+            z1 = z
+            dz2 = dz1
+            dz1 = dz
+            d2z2 = d2z1
+            d2z1 = d2z
+
+            z = 2 * w0 * z1 - z2
+            dz = 2 * w0 * dz1 - dz2 + 2 * z1
+            d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+
+            b = d2z / (dz^2)
+        end
+    end
+
+    if (!rkcstep)
+        a = onepq / (q * dtsw0 + w1 * d2tsw0)
+        g = (a * dtsw0 - 1) / q
+        b = a / (b * w1)
+        μ = 1 - g - b
+        u = μ * uprev + g * uprev2 + b * u
+    end
+
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # error estimate
+    if integrator.opts.adaptive
+        if (rkcstep)
+            tmp = 1.2 * (uprev - u) + 0.6 * dt * (fsalfirst + integrator.fsallast)
+        else
+            tmp = 0.6 * (uprev / q - uprev2 / (q * onepq2) - u * (2 + q) / onepq2 + dt * integrator.fsallast / onepq)
+        end
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::TSRKC3Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+@muladd function perform_step!(integrator, cache::TSRKC3Cache, repeat_step = false)
+    (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
+    (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
+
+    q = (t - tprev) / dt
+    onemq = 1 - q
+    onepq = 1 + q
+    onepq2 = onepq * onepq
+
+    # The first and possibly second steps are calculated via the one-step RKC method.
+    rkcstep = q < 0.49
+
+    alg = unwrap_alg(integrator, true)
+    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    dtsw0 = zero(typeof(constantcache.tsw0))
+    d2tsw0 = zero(typeof(constantcache.tsw0))
+    if (rkcstep)
+        mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
+        w0 = 1 + 2 / (13 * (mdeg^2))
+        temp1 = w0^2 - 1
+        temp2 = sqrt(temp1)
+        arg = mdeg * log(w0 + temp2)
+        w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
+        b1 = 1 / ((2 * w0)^2)
+        b = b1
+        b2 = b1
+    else
+        mdeg = floor(Int, sqrt(4 + 1.267029788142009 * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (0.44256220745562963 + q))))) + 1
+        mdeg2 = mdeg^2
+        tsw0 = constantcache.tsw0
+        acoshtsw0 = constantcache.acoshtsw0
+        acoshtsw0dm = acoshtsw0 / mdeg
+        w0 = cosh(acoshtsw0dm)
+        w0sq = w0^2
+        w0sqm1 = w0sq - 1
+        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+        d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
+        d3tsw0 = ((1 + 2 * w0sq + mdeg2 * w0sqm1) * dtsw0 - 3 * mdeg2 * w0 * tsw0) / (w0sqm1^2)
+        w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + 4 * q * dtsw0 * d3tsw0)) / (2 * d3tsw0)
+
+        b1 = 0.25 * sinh((mdeg - 2) * acoshtsw0dm) / sinh((mdeg - 1) * acoshtsw0dm)
+        b = 15 / ((8 * w0)^2)
+        b2 = b1
+    end
+
+    # stage-1
+    @.. broadcast = false gprev2 = uprev
+    μs = w1 * b1
+    @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
+    th2 = zero(eltype(u))
+    th1 = μs
+    z1 = w0
+    z2 = one(eltype(u))
+    dz1 = one(eltype(u))
+    dz2 = zero(eltype(u))
+    d2z1 = zero(eltype(u))
+    d2z2 = zero(eltype(u))
+    z = 2 * w0 * z1 - z2
+    dz = 2 * w0 * dz1 - dz2 + 2 * z1
+    d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+
+    # stage 2 - mdeg
+    for iter in 2:mdeg
+        νs = 1 - z1 * b1
+        μ = (2 * w0 * b) / b1
+        ν = -b / b2
+        μs = μ * w1 / w0
+        f(k, gprev, p, t + dt * th1)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        @.. broadcast = false u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev +
+            dt * μs * (k - νs * fsalfirst)
+        if (iter < mdeg)
+            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false gprev = u
+            th = μ * th1 + ν * th2 + μs * (1 - νs)
+            th2 = th1
+            th1 = th
+            b2 = b1
+            b1 = b
+            z2 = z1
+            z1 = z
+            dz2 = dz1
+            dz1 = dz
+            d2z2 = d2z1
+            d2z1 = d2z
+
+            z = 2 * w0 * z1 - z2
+            dz = 2 * w0 * dz1 - dz2 + 2 * z1
+            d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+
+            b = d2z / (dz^2)
+        end
+    end
+
+    if (!rkcstep)
+        a = onepq / (q * dtsw0 + w1 * d2tsw0)
+        g = (a * dtsw0 - 1) / q
+        b = a / (b * w1)
+        μ = 1 - g - b
+        @.. broadcast = false u = μ * uprev + g * uprev2 + b * u
+    end
+
+    f(integrator.fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # error estimate
+    if integrator.opts.adaptive
+        if (rkcstep)
+            @.. broadcast = false tmp = 1.2 * (uprev - u) + 0.6 * dt * (fsalfirst + integrator.fsallast)
+        else
+            @.. broadcast = false tmp = 0.6 * (uprev / q - uprev2 / (q * onepq2) - u * (2 + q) / onepq2 + dt * integrator.fsallast / onepq)
+        end
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end

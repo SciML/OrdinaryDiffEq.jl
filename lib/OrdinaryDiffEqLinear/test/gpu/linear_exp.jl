@@ -3,6 +3,8 @@ using SparseArrays
 using CUDA
 using CUDA.CUSPARSE
 using OrdinaryDiffEq
+using OrdinaryDiffEqLinear
+using SciMLOperators
 
 # Linear exponential solvers
 A = MatrixOperator([2.0 -1.0; -1.0 2.0])

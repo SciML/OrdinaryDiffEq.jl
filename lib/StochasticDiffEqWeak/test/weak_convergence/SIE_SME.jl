@@ -10,7 +10,8 @@ using Random
 using DiffEqDevTools
 #using DiffEqGPU
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -39,7 +40,7 @@ seeds = rand(UInt, numtraj)
 prob = SDEProblem(f, g, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(sol.u[end]), false),
+    output_func = (sol, ctx) -> (h1(sol.u[end]), false),
     prob_func = prob_func
 )
 
@@ -95,7 +96,7 @@ p = [3 // 2, 1 // 100]
 prob = SDEProblem(f1!, g1!, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(sol.u[end][1]), false),
+    output_func = (sol, ctx) -> (h1(sol.u[end][1]), false),
     prob_func = prob_func
 )
 
@@ -163,7 +164,7 @@ h3(z) = z^2 # == 1//10**exp(3//2*t) if h3(z) = z and  == 1//100**exp(301//100*t)
 prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h3(sol.u[end][1]), false),
+    output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
     prob_func = prob_func
 )
 

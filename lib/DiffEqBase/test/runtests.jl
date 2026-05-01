@@ -46,6 +46,7 @@ end
         @time @safetestset "DynamicQuantities extension" include("dynamicquantities_ext.jl")
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
+        @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 
     # QA tests — Aqua quality checks

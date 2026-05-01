@@ -9,3 +9,10 @@ FunctionMap
 ExplicitRK
 IDSolve
 ```
+
+## Internal Interpolation Utilities
+
+```@docs
+OrdinaryDiffEqExplicitRK.generic_rk_interpolant
+OrdinaryDiffEqExplicitRK.generic_rk_interpolant!
+```

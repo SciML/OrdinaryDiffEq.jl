@@ -132,10 +132,10 @@ end
     @test sol.resid isa SVector{1, Float64}
 end
 
-@testset "`u_modified!` works on null integrators" begin
+@testset "`derivative_discontinuity!` works on null integrators" begin
     prob = ODEProblem(Returns(nothing), nothing, (0.0, 1.0))
     integ = init(prob, Tsit5())
-    @test_nowarn SciMLBase.u_modified!(integ, Float64[])
+    @test_nowarn SciMLBase.derivative_discontinuity!(integ, Float64[])
     @test SciMLBase.successful_retcode(SciMLBase.check_error(integ))
 end
 

@@ -117,7 +117,8 @@ sol = solve(prob_swaplinear)
 @test sol(0.5) isa Vector{Float64} # test dense output
 # for some reason the timestepping here is different from regular Rodas5P (including the initial timestep)
 
-# test mass matrix DAE where we have to initialize algebraic variables
+# test mass matrix DAE with consistent initial conditions
+# v7 default init is CheckInit, so u0 must satisfy the algebraic constraint y₁+y₂+y₃=1
 function rober_mm(du, u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
@@ -127,7 +128,7 @@ function rober_mm(du, u, p, t)
     return nothing
 end
 f = ODEFunction(rober_mm, mass_matrix = [1 0 0; 0 1 0; 0 0 0])
-prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
+prob_rober_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 sol = solve(prob_rober_mm)
 @test all(isequal(4), sol.alg_choice)
 @test sol(0.5) isa Vector{Float64} # test dense output
@@ -148,6 +149,27 @@ schrod_eq(state, time, s) = -im * time * H(s) * state
 prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success
+
+# the autoswitch detector inside DefaultODEAlgorithm must treat a NaN
+# spectral-radius estimate as "stiff" so it can fall back to an implicit
+# method, instead of as "not stiff" (which gets it stuck on the explicit
+# branch). NaN arises here because the `max(u, 1e-50)` clamp collapses every
+# stage value of the inactive components to the same floor, giving
+# (k_last - k_prev)[i] / (g_last - g_prev)[i] = 0/0 in
+# eigen_est = max(abs((k_last - k_prev) ./ (g_last - g_prev))).
+function clamped_kink_rhs!(du, u, p, t)
+    u = max.(u, 1.0e-50)
+    du[1] = -1000.0 * u[1] + 1.0
+    @views du[2:end] .= 0.0
+    return nothing
+end
+prob_kink = ODEProblem(clamped_kink_rhs!, zeros(20), (0.0, 0.1))
+sol_kink = solve(prob_kink; abstol = 1.0e-12, reltol = 1.0e-9, maxiters = 1_000)
+@test sol_kink.retcode == ReturnCode.Success
+# Without the NaN-safe is_stiff form the run stays on Vern7 the entire time
+# (alg_choice == [2]); with it, autoswitch sees a degenerate eigen estimate
+# and switches to a stiff method (>=3).
+@test any(c -> c >= 3, sol_kink.alg_choice)
 
 # Make sure callback doesn't recurse init, which would cause initialize to be hit twice
 counter = Ref{Int}(0)

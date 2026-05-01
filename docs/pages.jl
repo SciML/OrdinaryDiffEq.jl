@@ -17,6 +17,7 @@ pages = [
     ],
     "Semi-Implicit Solvers" => [
         "semiimplicit/Rosenbrock.md",
+        "semiimplicit/AMF.md",
         "semiimplicit/StabilizedRK.md",
         "semiimplicit/ExponentialRK.md",
     ],

@@ -2,6 +2,8 @@
 # https://github.com/SciML/ModelingToolkit.jl/issues/4078
 
 using OrdinaryDiffEq, DiffEqCallbacks, Test
+using OrdinaryDiffEqFunctionMap, OrdinaryDiffEqTsit5, OrdinaryDiffEqLowOrderRK,
+    OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF
 
 @testset "Null u0 with callbacks" begin
     @testset "Explicit solvers" begin

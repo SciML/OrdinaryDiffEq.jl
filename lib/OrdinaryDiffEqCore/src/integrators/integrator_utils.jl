@@ -36,7 +36,7 @@ function loopheader!(integrator)
             )
             # ACCEPT
             @SciMLMessage(
-                lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(integrator.EEst)",
+                lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(get_EEst(integrator))",
                 integrator.opts.verbose, :step_accepted
             )
             integrator.success_iter += 1
@@ -49,8 +49,8 @@ function loopheader!(integrator)
             # REJECT
             handle_step_rejection!(integrator)
         end
-    elseif integrator.u_modified # && integrator.iter == 0
-        on_u_modified_at_init!(integrator)
+    elseif integrator.derivative_discontinuity # && integrator.iter == 0
+        on_derivative_discontinuity_at_init!(integrator)
     end
 
     integrator.iter += 1
@@ -64,7 +64,7 @@ end
 # Handles step rejection in loopheader: adjust dt, reject noise, and call post_step_reject!.
 function handle_step_rejection!(integrator)
     @SciMLMessage(
-        lazy"Step rejected: t = $(integrator.t), EEst = $(integrator.EEst)",
+        lazy"Step rejected: t = $(integrator.t), EEst = $(get_EEst(integrator))",
         integrator.opts.verbose, :step_rejected
     )
     if integrator.isout
@@ -89,7 +89,7 @@ post_step_reject!(integrator) = nothing
 
 # Called at iter==0 when u was modified by callbacks during init.
 # For SDE: isdae=false skips DAE re-init; isfsal=false makes update_fsal! a no-op.
-function on_u_modified_at_init!(integrator)
+function on_derivative_discontinuity_at_init!(integrator)
     if integrator.isdae
         DiffEqBase.initialize_dae!(integrator)
     end
@@ -131,10 +131,11 @@ function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
             first_discontinuity(integrator) == integrator.tdir * integrator.t
         handle_discontinuities!(integrator)
+        shift_past_discontinuity!(integrator)
         get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
     elseif all_fsal(integrator.alg, integrator.cache) ||
             get_current_isfsal(integrator.alg, integrator.cache)
-        if integrator.reeval_fsal || integrator.u_modified ||
+        if integrator.reeval_fsal || integrator.derivative_discontinuity ||
                 (isdp8(integrator.alg) && !integrator.opts.calck) ||
                 (
                 only_diagonal_mass_matrix(integrator.alg) &&
@@ -177,11 +178,26 @@ function modify_dt_for_tstops!(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         distance_to_tstop = abs(tdir_tstop - tdir_t)
+        # Floating-point tolerance so that a dt whose nominal value matches
+        # distance_to_tstop to within rounding still triggers the tstop
+        # branch.  Without this, accumulated `t + dt + dt + …` can drift
+        # just past the last tstop and produce a spurious micro-step.
+        tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
+                isfinite(integrator.t)
+            100 * eps(
+                float(
+                    max(abs(integrator.t), abs(tdir_tstop)) /
+                        oneunit(integrator.t)
+                )
+            ) * oneunit(integrator.t)
+        else
+            zero(distance_to_tstop)
+        end
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
-            if original_dt < distance_to_tstop
+            if original_dt + tstop_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
             else
                 _set_tstop_flag!(
@@ -197,7 +213,7 @@ function modify_dt_for_tstops!(integrator)
         elseif integrator.dtchangeable && !integrator.force_stepfail
             # always try to step! with dtcache, but lower if a tstop
             # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            if abs(integrator.dtcache) < distance_to_tstop
+            if abs(integrator.dtcache) + tstop_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
             else
                 _set_tstop_flag!(
@@ -309,7 +325,7 @@ end
 # ODE: polynomial interpolation via addsteps!/ode_interpolant (always available,
 #   regardless of opts.dense which only controls post-solve k-array storage).
 # SDE: linear interpolation between uprev and u.
-function interp_at_saveat(Θ, integrator, idxs, deriv)
+function interp_at_saveat(Θ, integrator, idxs, ::Type{deriv}) where {deriv}
     if isnothing(_get_W(integrator))
         # ODE/DDE: polynomial interpolation
         SciMLBase.addsteps!(integrator)
@@ -496,7 +512,7 @@ function _loopfooter!(integrator)
             !integrator.isout &&
                 accept_step_controller(
                 integrator,
-                integrator.opts.controller
+                integrator.alg
             )
         ) ||
             (
@@ -567,10 +583,10 @@ is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 # For SDE, reeval_fsal is always false so resetting is a no-op.
 function loopfooter_reset!(integrator)
     # Carry-over from callback
-    # This is set to true if u_modified requires callback FSAL reset
+    # This is set to true if derivative_discontinuity requires callback FSAL reset
     # But not set to false when reset so algorithms can check if reset occurred
     integrator.reeval_fsal = false
-    return integrator.u_modified = false
+    return integrator.derivative_discontinuity = false
 end
 
 # Handle force_stepfail in adaptive mode: reduce dt after Newton failure.
@@ -681,7 +697,7 @@ function handle_callbacks!(integrator)
         savevalues!(integrator)
     end
 
-    integrator.u_modified = continuous_modified | discrete_modified
+    integrator.derivative_discontinuity = continuous_modified | discrete_modified
     on_callbacks_complete!(integrator)
     return nothing
 end
@@ -692,7 +708,7 @@ end
 function on_callbacks_complete!(integrator)
     if isfsal(integrator.alg)
         integrator.reeval_fsal && handle_callback_modifiers!(integrator)
-    elseif integrator.u_modified && !isnothing(_get_W(integrator))
+    elseif integrator.derivative_discontinuity && !isnothing(_get_W(integrator))
         integrator.do_error_check = false
         handle_callback_modifiers!(integrator)
     end
@@ -722,6 +738,34 @@ function update_uprev!(integrator)
 end
 
 handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
+
+"""
+    shift_past_discontinuity!(integrator)
+
+Advance `integrator.t` by one ULP in the `integrator.tdir` direction. Called
+right after `handle_discontinuities!` so that subsequent RHS evaluations —
+including the FSAL re-evaluation that follows in `update_fsal!` — take place
+on the post-discontinuity side of `t`-dependent branches in the user's `f`.
+
+By convention, a `d_discontinuities` entry at `t_d` marks the vector field as
+right-discontinuous there: `f` evaluated at `t_d` is the "old" regime, and
+`f` at `nextfloat(t_d)` is the "new" regime. This pairs with user code
+written as `if t > t_d; new; else; old; end` and lets starting-time
+discontinuities (`t_d == t0`) work by advancing forward into the tspan.
+
+The state `u` is continuous across `t_d` (only the vector field changes), so
+it is left untouched. For non-`AbstractFloat` time types (e.g. `Rational`),
+there is no ULP to shift to and the call is a no-op.
+"""
+@inline function shift_past_discontinuity!(integrator)
+    _shift_past_discontinuity!(integrator, integrator.t, integrator.tdir)
+    return nothing
+end
+@inline function _shift_past_discontinuity!(integrator, t::AbstractFloat, tdir)
+    integrator.t = tdir > 0 ? nextfloat(t) : prevfloat(t)
+    return nothing
+end
+@inline _shift_past_discontinuity!(integrator, t, tdir) = nothing
 
 function calc_dt_propose!(integrator, dtnew)
     dtnew = if has_dtnew_modification(integrator.alg) &&

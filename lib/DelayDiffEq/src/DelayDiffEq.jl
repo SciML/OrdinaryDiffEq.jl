@@ -1,6 +1,7 @@
 module DelayDiffEq
 
 import Reexport: @reexport, Reexport
+import SciMLBase
 @reexport using SciMLBase
 import OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqDifferentiation,
     OrdinaryDiffEqRosenbrock
@@ -22,40 +23,38 @@ import SymbolicIndexingInterface as SII
 using SciMLBase: AbstractDDEAlgorithm, AbstractDDEIntegrator, AbstractODEIntegrator,
     DEIntegrator
 using SciMLBase: AbstractSDDEProblem, SDDEProblem
+using SciMLBase: ProblemSolverPairingError
 
 using Base: deleteat!
 import FastBroadcast: @..
 
 using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
-    alg_extrapolates, alg_maximum_order, initialize!, DEVerbosity
+    alg_extrapolates, alg_maximum_order, initialize!
 using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
-    StochasticDiffEqRODEAlgorithm,
-    StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
+    StochasticDiffEqRODEAlgorithm
 using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
 
-using DiffEqBase: is_diagonal_noise
+using DiffEqBase: is_diagonal_noise, DEVerbosity
 
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
-using SciMLBase: CallbackSet, DAEProblem, DDEProblem, DESolution, ODEProblem, ReturnCode,
+using SciMLBase: CallbackSet, DAEProblem, DDEProblem, AbstractSciMLSolution, ODEProblem, ReturnCode,
     VectorContinuousCallback, addat!, addat_non_user_cache!,
     deleteat_non_user_cache!,
     du_cache, full_cache, get_tmp_cache, isinplace,
     reeval_internals_due_to_modification!,
     reinit!, resize_non_user_cache!, savevalues!, u_cache, user_cache,
-    step!, terminate!, u_modified!, get_proposed_dt, set_proposed_dt!,
+    step!, terminate!, get_proposed_dt, set_proposed_dt!,
     auto_dt_reset!,
     add_tstop!, add_saveat!, get_du, get_du!, addsteps!,
     change_t_via_interpolation!, isadaptive
 using DiffEqBase: initialize!
 import DiffEqBase
-using SciMLLogging: AbstractVerbosityPreset, None, @SciMLMessage
-
-import SciMLBase
+using SciMLLogging: AbstractVerbosityPreset, @SciMLMessage
 
 const SDEAlgUnion = Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
 
@@ -128,6 +127,16 @@ function SciMLBase.__init(
     return SciMLBase.__init(prob, MethodOfSteps(alg), args...; kwargs...)
 end
 function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::SDEAlgUnion)
+    return nothing
+end
+function DiffEqBase.check_prob_alg_pairing(
+        prob::SDDEProblem,
+        alg::AbstractMethodOfStepsAlgorithm
+    )
+    # MethodOfSteps wrapping an SDE algorithm is valid for SDDEProblem
+    if !(alg.alg isa SDEAlgUnion)
+        throw(ProblemSolverPairingError(prob, alg))
+    end
     return nothing
 end
 

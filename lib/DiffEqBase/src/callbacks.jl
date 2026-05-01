@@ -15,14 +15,14 @@ function initialize!(
         c::DECallback, cs::DECallback...
     )
     c.initialize(c, u, t, integrator)
-    return initialize!(u, t, integrator, any_modified || integrator.u_modified, cs...)
+    return initialize!(u, t, integrator, any_modified || integrator.derivative_discontinuity, cs...)
 end
 function initialize!(
         u, t, integrator::DEIntegrator, any_modified::Bool,
         c::DECallback
     )
     c.initialize(c, u, t, integrator)
-    return any_modified || integrator.u_modified
+    return any_modified || integrator.derivative_discontinuity
 end
 
 """
@@ -39,14 +39,14 @@ function finalize!(
         c::DECallback, cs::DECallback...
     )
     c.finalize(c, u, t, integrator)
-    return finalize!(u, t, integrator, any_modified || integrator.u_modified, cs...)
+    return finalize!(u, t, integrator, any_modified || integrator.derivative_discontinuity, cs...)
 end
 function finalize!(
         u, t, integrator::DEIntegrator, any_modified::Bool,
         c::DECallback
     )
     c.finalize(c, u, t, integrator)
-    return any_modified || integrator.u_modified
+    return any_modified || integrator.derivative_discontinuity
 end
 
 # Helpers
@@ -196,8 +196,23 @@ end
     bottom_condition = get_condition(integrator, callback, integrator.tprev)
     @. bottom_sign = sign(bottom_condition)
 
+    prev_simultaneous_events = integrator.callback_cache.prev_simultaneous_events
+    (; simultaneous_events) = integrator.callback_cache
+    # Snapshot the previous step's triggered events into `prev_simultaneous_events`
+    # BEFORE using them for the nudge logic, then clear `simultaneous_events` so it
+    # can be populated with events detected during this step. Previously this was
+    # done only after the nudge block, which left `prev_simultaneous_events` stale
+    # on the step immediately following an event — causing the repeat-detection
+    # avoidance logic (which relies on `prev_simultaneous_events[idx]`) to be
+    # skipped and the just-fired event to be re-detected.
     if integrator.event_last_time == callback_idx
-        nudged_idx = integrator.vector_event_last_time
+        @. prev_simultaneous_events = !iszero(simultaneous_events)
+    else
+        prev_simultaneous_events .= false
+    end
+    simultaneous_events .= Int8(0)
+
+    if integrator.event_last_time == callback_idx
         # If there was a previous event, nudge tprev on the right
         # side of the root (if necessary) to avoid repeat detection
 
@@ -205,32 +220,50 @@ end
             addsteps!(integrator)
         end
 
+        # Find the condition value closest to zero across all triggered events
+        min_condition_val = zero(eltype(bottom_condition))
+        min_abs_condition = typemax(eltype(bottom_condition))
+        for idx in 1:callback.len
+            if prev_simultaneous_events[idx]
+                cond_val = ArrayInterface.allowed_getindex(bottom_condition, idx)
+                if abs(cond_val) < min_abs_condition
+                    min_abs_condition = abs(cond_val)
+                    min_condition_val = cond_val
+                end
+            end
+        end
+
         # Evaluate condition slightly in future
-        nudged_t = nudge_tprev(integrator, callback, ArrayInterface.allowed_getindex(bottom_condition, nudged_idx))
+        nudged_t = nudge_tprev(integrator, callback, min_condition_val)
         tmp_condition = get_condition(integrator, callback, nudged_t)
 
-        ArrayInterface.allowed_setindex!(bottom_sign, sign(ArrayInterface.allowed_getindex(tmp_condition, nudged_idx)), nudged_idx)
+        for idx in 1:callback.len
+            if prev_simultaneous_events[idx]
+                ArrayInterface.allowed_setindex!(bottom_sign, sign(ArrayInterface.allowed_getindex(tmp_condition, idx)), idx)
+            end
+        end
     else
-        nudged_idx = -1
         nudged_t = bottom_t
     end
 
-    # Check if an event occured
+    # Check if an event occurred
     event_occurred, event_idx, top_t, top_sign =
-        check_event_occurence(integrator, callback, bottom_sign)
+        check_event_occurrence(integrator, callback, bottom_sign)
 
-    # Find callback time if occurence
+    # Find callback time if occurrence
     if !event_occurred
         callback_t = integrator.t
         min_event_idx = 1
         residual = zero(eltype(bottom_condition))
     elseif isdiscrete(integrator.alg) || callback.rootfind == SciMLBase.NoRootFind
         callback_t = top_t
-        min_event_idx = 1
+        min_event_idx = -1
         for i in 1:length(event_idx)
             if ArrayInterface.allowed_getindex(event_idx, i) == 1
-                min_event_idx = i
-                break
+                if min_event_idx < 0
+                    min_event_idx = i
+                end
+                simultaneous_events[i] = Int8(sign(ArrayInterface.allowed_getindex(bottom_sign, i)))
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -251,16 +284,20 @@ end
                 if iszero(ArrayInterface.allowed_getindex(top_sign, idx))
                     cbi_t = top_t
                 else
-                    if idx == nudged_idx
+                    if integrator.event_last_time == callback_idx && prev_simultaneous_events[idx]
                         cbi_t = find_root(zero_func, (nudged_t, top_t), callback.rootfind)
                     else
                         cbi_t = find_root(zero_func, (bottom_t, top_t), callback.rootfind)
                     end
                 end
                 if integrator.tdir * cbi_t < integrator.tdir * callback_t
+                    simultaneous_events .= Int8(0)
+                end
+                if integrator.tdir * cbi_t <= integrator.tdir * callback_t
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
+                    simultaneous_events[idx] = Int8(sign(ArrayInterface.allowed_getindex(bottom_sign, idx)))
                 end
             end
         end
@@ -270,7 +307,8 @@ end
         end
     end
 
-    return callback_t, ArrayInterface.allowed_getindex(bottom_sign, min_event_idx),
+    # We still pass around the min_event_idx for now because some stuff in OrdinaryDiffEqCore expects it to be an Int
+    return callback_t, bottom_sign,
         event_occurred::Bool, min_event_idx::Int, residual
 end
 
@@ -298,9 +336,9 @@ end
     end
     bottom_sign = sign(bottom_condition)
 
-    # Check if an event occured
+    # Check if an event occurred
     event_occurred, event_idx, top_t, top_sign =
-        check_event_occurence(integrator, callback, bottom_sign)
+        check_event_occurrence(integrator, callback, bottom_sign)
 
     if !event_occurred
         callback_t = integrator.t
@@ -321,8 +359,8 @@ end
 """
 Return a nudged (if necessary) value of `integrator.tprev` to avoid repeat event detection
 - `integrator`
-- `callback`: Last occuring callback
-- `condition_tprev`: Condition of last occuring callback evaluated at `integrator.tprev`
+- `callback`: Last occurring callback
+- `condition_tprev`: Condition of last occurring callback evaluated at `integrator.tprev`
 """
 function nudge_tprev(integrator, callback, condition_tprev)
     # Assume the previous event might affect the condition/root
@@ -336,12 +374,12 @@ function nudge_tprev(integrator, callback, condition_tprev)
 end
 
 """
-Determine if an event occured in the integration time step
+Determine if an event occurred in the integration time step
 """
-function check_event_occurence(integrator, callback, bottom_sign)
+function check_event_occurrence(integrator, callback, bottom_sign)
     top_t = integrator.t
     event_occurred, event_idx, top_sign =
-        check_event_occurence_upto(integrator, callback, bottom_sign, top_t)
+        check_event_occurrence_upto(integrator, callback, bottom_sign, top_t)
 
     if callback.interp_points != 0 && !isdiscrete(integrator.alg) &&
             any(iszero, event_idx)
@@ -350,7 +388,7 @@ function check_event_occurence(integrator, callback, bottom_sign)
         for i in 2:length(ts)
             top_t = ts[i]
             event_occurred, event_idx, top_sign =
-                check_event_occurence_upto(integrator, callback, bottom_sign, top_t)
+                check_event_occurrence_upto(integrator, callback, bottom_sign, top_t)
             if event_occurred
                 break
             end
@@ -361,22 +399,22 @@ function check_event_occurence(integrator, callback, bottom_sign)
 end
 
 """
-Determine if an event occured before `top_t``
+Determine if an event occurred before `top_t``
 """
-function check_event_occurence_upto(integrator, callback::ContinuousCallback, bottom_sign, top_t)
+function check_event_occurrence_upto(integrator, callback::ContinuousCallback, bottom_sign, top_t)
     top_sign = sign(get_condition(integrator, callback, top_t))
-    event_occurred = is_event_occurence(bottom_sign, top_sign, callback.affect!, callback.affect_neg!)
+    event_occurred = is_event_occurrence(bottom_sign, top_sign, callback.affect!, callback.affect_neg!)
     event_idx = event_occurred ? 1.0 : 0.0
     return event_occurred, event_idx, top_sign
 end
 
-function check_event_occurence_upto(integrator, callback::VectorContinuousCallback, bottom_sign, top_t)
+function check_event_occurrence_upto(integrator, callback::VectorContinuousCallback, bottom_sign, top_t)
     event_idx = top_condition = @views(integrator.callback_cache.next_condition[1:(callback.len)])
     top_sign = @view(integrator.callback_cache.next_sign[1:(callback.len)])
     copyto!(top_condition, get_condition(integrator, callback, top_t))
     @. top_sign = sign(top_condition)
 
-    # Determine event occurence
+    # Determine event occurrence
     event_occurred = findall_events!(
         top_condition, callback.affect!, callback.affect_neg!,
         bottom_sign
@@ -410,7 +448,7 @@ findall_events!(next_sign,affect!,affect_neg!,prev_sign)
 
 Modifies `next_sign` to be an array of booleans for if there is a sign change
 in the interval between prev_sign and next_sign.
-Return `true` if any event occured.
+Return `true` if any event occurred.
 """
 function findall_events!(
         next_sign::Union{Array, SubArray}, affect!::F1, affect_neg!::F2,
@@ -435,15 +473,40 @@ function findall_events!(next_sign, affect!::F1, affect_neg!::F2, prev_sign) whe
 end
 
 """
-Return `true` if an event occured.
+Return `true` if an event occurred.
 """
-function is_event_occurence(prev_sign::Number, next_sign::Number, affect!::F1, affect_neg!::F2) where {F1, F2}
+function is_event_occurrence(prev_sign::Number, next_sign::Number, affect!::F1, affect_neg!::F2) where {F1, F2}
     return (
         (prev_sign < 0 && affect! !== nothing) ||
             (prev_sign > 0 && affect_neg! !== nothing)
     ) && prev_sign * next_sign <= 0
 end
 
+"""
+    apply_callback!(integrator, callback, cb_time, prev_sign, event_idx)
+
+Apply a continuous callback at the determined event time.
+
+For `ContinuousCallback`, the `affect!` or `affect_neg!` function is called based on the
+crossing direction (`prev_sign`):
+  - `prev_sign < 0` (upcrossing): `callback.affect!(integrator)` is called
+  - `prev_sign > 0` (downcrossing): `callback.affect_neg!(integrator)` is called
+
+For `VectorContinuousCallback`, `callback.affect!` is called once with the full
+`simultaneous_events::Vector{Int8}` array from the callback cache:
+
+    callback.affect!(integrator, simultaneous_events)
+
+Each element of `simultaneous_events` encodes both whether the event triggered and
+its crossing direction:
+  - `0`: event did not trigger
+  - `-1`: event triggered via upcrossing (condition went from negative to positive)
+  - `+1`: event triggered via downcrossing (condition went from positive to negative)
+
+Multiple events may be nonzero simultaneously when they occur at the same time.
+The `affect_neg!` field is not called for `VectorContinuousCallback`; the user's
+`affect!` function should handle both crossing directions using the sign information.
+"""
 function apply_callback!(
         integrator,
         callback::Union{ContinuousCallback, VectorContinuousCallback},
@@ -472,25 +535,31 @@ function apply_callback!(
         savedexactly || savevalues!(integrator, true)
     end
 
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
-    if prev_sign < 0
+    if callback isa VectorContinuousCallback
         if callback.affect! === nothing
-            integrator.u_modified = false
+            integrator.derivative_discontinuity = false
         else
-            callback isa VectorContinuousCallback ?
-                callback.affect!(integrator, event_idx) : callback.affect!(integrator)
+            callback.affect!(integrator, integrator.callback_cache.simultaneous_events)
         end
-    elseif prev_sign > 0
-        if callback.affect_neg! === nothing
-            integrator.u_modified = false
-        else
-            callback isa VectorContinuousCallback ?
-                callback.affect_neg!(integrator, event_idx) : callback.affect_neg!(integrator)
+    else
+        if prev_sign < 0
+            if callback.affect! === nothing
+                integrator.derivative_discontinuity = false
+            else
+                callback.affect!(integrator)
+            end
+        elseif prev_sign > 0
+            if callback.affect_neg! === nothing
+                integrator.derivative_discontinuity = false
+            else
+                callback.affect_neg!(integrator)
+            end
         end
     end
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         reeval_internals_due_to_modification!(
             integrator, callback_initializealg = callback.initializealg
         )
@@ -522,9 +591,9 @@ end
             # if already saved then skip saving
             savedexactly || savevalues!(integrator, true)
         end
-        integrator.u_modified = true
+        integrator.derivative_discontinuity = true
         callback.affect!(integrator)
-        if integrator.u_modified
+        if integrator.derivative_discontinuity
             reeval_internals_due_to_modification!(
                 integrator, false, callback_initializealg = callback.initializealg
             )
@@ -538,7 +607,7 @@ end
         end
     end
     integrator.sol.stats.ncondition += 1
-    return integrator.u_modified, saved_in_cb
+    return integrator.derivative_discontinuity, saved_in_cb
 end
 
 #Starting: Get bool from first and do next
@@ -610,6 +679,8 @@ mutable struct CallbackCache{conditionType, signType}
     next_condition::conditionType
     next_sign::signType
     prev_sign::signType
+    simultaneous_events::Vector{Int8}
+    prev_simultaneous_events::Vector{Bool}
 end
 
 function CallbackCache(
@@ -620,7 +691,12 @@ function CallbackCache(
     next_condition = similar(u, conditionType, max_len)
     next_sign = similar(u, signType, max_len)
     prev_sign = similar(u, signType, max_len)
-    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign)
+    simultaneous_events = zeros(Int8, max_len)
+    prev_simultaneous_events = zeros(Bool, max_len)
+    return CallbackCache(
+        tmp_condition, next_condition, next_sign, prev_sign,
+        simultaneous_events, prev_simultaneous_events
+    )
 end
 
 function CallbackCache(
@@ -631,5 +707,10 @@ function CallbackCache(
     next_condition = zeros(conditionType, max_len)
     next_sign = zeros(signType, max_len)
     prev_sign = zeros(signType, max_len)
-    return CallbackCache(tmp_condition, next_condition, next_sign, prev_sign)
+    simultaneous_events = zeros(Int8, max_len)
+    prev_simultaneous_events = zeros(Bool, max_len)
+    return CallbackCache(
+        tmp_condition, next_condition, next_sign, prev_sign,
+        simultaneous_events, prev_simultaneous_events
+    )
 end

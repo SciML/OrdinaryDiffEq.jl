@@ -52,6 +52,12 @@ end
 # for the non-unitful case the correct type is just u
 _rate_prototype(u, t::T, onet::T) where {T} = u
 
+# Strip only the unit wrapper, leaving AD/uncertainty wrappers (Dual, Measurement,
+# Tracker, etc.) intact. Extensions for Unitful, DynamicQuantities, and FlexUnits
+# override this to return the underlying numeric value.
+# Complementary to `value` (strips everything) and `unitfulvalue` (strips AD, keeps units).
+stripunits(x) = x
+
 # Nonlinear Solve functionality
 @inline __fast_scalar_indexing(args...) = all(ArrayInterface.fast_scalar_indexing, args)
 
@@ -107,11 +113,6 @@ function __nonlinearsolve_is_approx(
 end
 
 @inline function __add_and_norm(::Nothing, x, y)
-    Base.depwarn(
-        "Not specifying the internal norm of termination conditions has been \
-                  deprecated. Using inf-norm currently.",
-        :__add_and_norm
-    )
     return __maximum_abs(+, x, y)
 end
 @inline __add_and_norm(::typeof(Base.Fix1(maximum, abs)), x, y) = __maximum_abs(+, x, y)

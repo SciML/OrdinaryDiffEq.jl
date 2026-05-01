@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - master
+      - v7
   push:
     branches:
       - master
+      - v7
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
@@ -22,7 +24,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
       - name: Compute affected sublibraries from dependency graph
@@ -65,12 +67,54 @@ jobs:
         include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v3
+      # Same workaround as CI.yml: only write the cache from master pushes
+      # to avoid the Azure SAS auth failure storm during PR matrix uploads.
+      # SublibraryCI's matrix shape is dynamic (group/version/runner/timeout/
+      # num_threads), so we don't try to construct a restore-only key for
+      # PRs here — PRs simply skip the cache. This workflow only fires when
+      # files in lib/ change, so the lost cache hit on PRs is small.
+      - name: Cache Julia depot (push only)
+        if: github.event_name == 'push'
+        uses: julia-actions/cache@v3
+        continue-on-error: true
         with:
           cache-compiled: 'false'
+      - name: Refresh General registry directly from git
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          # Force a fresh git clone of General to dodge pkg server lag.
+          # Must run BEFORE the Pkg.develop step below: that step's resolve
+          # needs current versions of registered deps (e.g. SciMLBase v3),
+          # and the cached pkg-server registry is often several days stale,
+          # so develop's resolve fails with "expected package <X> to be
+          # registered".
+          try
+              Pkg.Registry.rm("General")
+          catch
+          end
+          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
+      - name: Develop local path deps (Julia < 1.11)
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          if VERSION < v"1.11.0-DEV.0"
+            toml = Pkg.TOML.parsefile("Project.toml")
+            if haskey(toml, "sources")
+              specs = Pkg.PackageSpec[]
+              for (dep, spec) in toml["sources"]
+                if spec isa Dict && haskey(spec, "path") && isdir(spec["path"])
+                  @info "Developing" dep spec["path"]
+                  push!(specs, Pkg.PackageSpec(path=spec["path"]))
+                end
+              end
+              # Batch the develop call so Pkg resolves all path deps together.
+              isempty(specs) || Pkg.develop(specs)
+            end
+          end
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:

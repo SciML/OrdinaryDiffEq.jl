@@ -45,9 +45,13 @@ Kaps = "Kaps"
 Rentrop = "Rentrop"
 Rang = "Rang"
 Darmstadt = "Darmstadt"
-Méthodes = "Méthodes"
-différentiels = "différentiels"
-algébriques = "algébriques"
+"Méthodes" = "Méthodes"
+"différentiels" = "différentiels"
+"algébriques" = "algébriques"
+"problèmes" = "problèmes"
+problemes = "problemes"  # French word in citation without accent
+Ono = "Ono"  # Hiroshi Ono, author of Ono10/Ono12 RK methods
+padd = "padd"  # variable name in analyticless_convergence_tests.jl
 Preprint = "Preprint"
 Nr = "Nr"
 Wouver = "Wouver"
@@ -59,8 +63,7 @@ Numer = "Numer"
 Jcon = "Jcon"
 arXiv = "arXiv"
 
-# Common journal abbreviations 
-Numer = "Numer"  # As in "P. Numer. Math." (Periodica Numerica Mathematica)
+# (Numer already declared above for "BIT Numer" context.)
 
 # Technical variable names
 dorder = "dorder"  # Parameter for delta order / order change
@@ -135,11 +138,6 @@ clos = "clos"  # closure abbreviation
 
 # Journal abbreviations in BibTeX citations
 Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
-
-# Function names with historical spelling (API-stable)
-occurence = "occurence"  # in check_event_occurence, is_event_occurence
-occured = "occured"  # in comments near occurence functions
-occuring = "occuring"  # in comments near occurence functions
 
 # Julia spelling convention
 inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"

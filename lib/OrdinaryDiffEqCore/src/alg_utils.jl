@@ -41,15 +41,15 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
 function SciMLBase.forwarddiff_chunksize(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
-            DAEAlgorithm{CS, AD},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
-            CompositeAlgorithm{CS, AD},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            DAEAlgorithm,
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         }
-    ) where {CS, AD}
-    return _get_fwd_chunksize(AD)
+    )
+    hasfield(typeof(alg), :autodiff) || return Val{0}()
+    return _get_fwd_chunksize(typeof(alg.autodiff))
 end
 
 SciMLBase.allows_late_binding_tstops(::OrdinaryDiffEqAlgorithm) = true
@@ -211,6 +211,13 @@ anyadaptive(alg) = isadaptive(alg)
 has_dtnew_modification(alg) = false
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
+# Whether the algorithm's alg_cache / perform_step! handle `u === nothing` directly.
+# Default: false, and __init coerces a null u0 to Float64[] so generic cache code
+# (zero(u), similar(u), broadcasts) still works. Solvers that want to preserve the
+# `nothing` signal — e.g., to bypass nonlinear solvers or skip allocation — override
+# to true.
+allows_null_u0(alg) = false
+
 # Whether an algorithm uses a posteriori dt estimates (always accepts, then picks next dt).
 # Default is false. CaoTauLeaping overrides to true.
 isaposteriori(alg) = false
@@ -234,16 +241,6 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 qmax_default(alg) = 10
 
-function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
-    return alg isa Union{
-        OrdinaryDiffEqExponentialAlgorithm,
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-        OrdinaryDiffEqImplicitAlgorithm,
-        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-        DAEAlgorithm,
-        CompositeAlgorithm,
-    }
-end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
@@ -254,6 +251,7 @@ _get_fwd_chunksize_int(::Type{<:AutoForwardDiff{nothing}}) = 0
 _get_fwd_chunksize_int(::Type{<:AutoForwardDiff{CS}}) where {CS} = CS
 _get_fwd_chunksize(AD) = Val(0)
 _get_fwd_chunksize_int(AD) = 0
+_get_fwd_chunksize_int(::AutoForwardDiff{nothing}) = 0
 _get_fwd_chunksize_int(::AutoForwardDiff{CS}) where {CS} = CS
 _get_fwd_tag(::AutoForwardDiff{CS, T}) where {CS, T} = T
 
@@ -262,15 +260,15 @@ _get_fdtype(::Type{<:AutoFiniteDiff{T1}}) where {T1} = T1
 
 function get_chunksize(
         alg::Union{
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
-            DAEAlgorithm{CS, AD},
-            CompositeAlgorithm{CS, AD},
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            DAEAlgorithm,
         }
-    ) where {CS, AD}
-    return _get_fwd_chunksize(AD)
+    )
+    hasfield(typeof(alg), :autodiff) || return Val{0}()
+    return _get_fwd_chunksize(typeof(alg.autodiff))
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
@@ -279,15 +277,15 @@ end
 
 function get_chunksize_int(
         alg::Union{
-            OrdinaryDiffEqExponentialAlgorithm{CS},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD},
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD},
-            DAEAlgorithm{CS, AD},
-            CompositeAlgorithm{CS, AD},
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            DAEAlgorithm,
         }
-    ) where {CS, AD}
-    return _get_fwd_chunksize_int(AD)
+    )
+    hasfield(typeof(alg), :autodiff) || return 0
+    return _get_fwd_chunksize_int(typeof(alg.autodiff))
 end
 
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
@@ -347,63 +345,36 @@ end
 
 function alg_difftype(
         alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{
-                CS, AD, FDT, ST,
-                CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+            OrdinaryDiffEqImplicitAlgorithm,
+            OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+            DAEAlgorithm,
         }
-    ) where {
-        CS, AD, FDT, ST,
-        CJ,
-    }
-    return _get_fdtype(AD)
+    )
+    hasfield(typeof(alg), :autodiff) || return Val{:forward}
+    return _get_fdtype(alg.autodiff)
 end
 
-function standardtag(
-        alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{
-                CS, AD, FDT, ST,
-                CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
-        }
-    ) where {
-        CS, AD, FDT, ST,
-        CJ,
+standardtag(
+    alg::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+        OrdinaryDiffEqImplicitAlgorithm,
+        OrdinaryDiffEqExponentialAlgorithm,
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        DAEAlgorithm,
     }
-    return ST
-end
+) = true
 
-function concrete_jac(
-        alg::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{
-                CS, AD, FDT, ST, CJ,
-            },
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ},
-            OrdinaryDiffEqAdaptiveExponentialAlgorithm{
-                CS, AD, FDT, ST,
-                CJ,
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ},
-        }
-    ) where {
-        CS, AD, FDT, ST,
-        CJ,
+concrete_jac(
+    alg::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+        OrdinaryDiffEqImplicitAlgorithm,
+        OrdinaryDiffEqExponentialAlgorithm,
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        DAEAlgorithm,
     }
-    return CJ
-end
+) = alg.concrete_jac
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
@@ -414,7 +385,13 @@ function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
 end
 alg_order(alg::CompositeAlgorithm) = maximum(alg_order, alg.algs)
 
-function get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, cache)
+function get_current_alg_order(
+        alg::Union{
+            OrdinaryDiffEqAlgorithm, DAEAlgorithm,
+            StochasticDiffEqAlgorithm,
+            StochasticDiffEqRODEAlgorithm,
+        }, cache
+    )
     return alg_order(alg)
 end
 function get_current_alg_order(alg::CompositeAlgorithm, cache)
@@ -427,10 +404,7 @@ function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgor
 end
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
-function get_current_adaptive_order(
-        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
-        cache
-    )
+function get_current_adaptive_order(alg, cache)
     return alg_adaptive_order(alg)
 end
 function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
@@ -440,61 +414,20 @@ end
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
-alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
+alg_adaptive_order(alg) = alg_order(alg) - 1
 
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
-function default_controller_v7(QT, alg)
-    if ispredictive(alg)
-        return NewPredictiveController(QT, alg)
-    elseif isstandard(alg)
-        return NewIController(QT, alg)
-    else
-        return NewPIController(QT, alg)
-    end
+function default_controller(QT, alg)
+    return PIController(QT, alg)
 end
 
-function default_controller_v7(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
-    return nothing # This forces a fall-back to the legacy implementation
-    # beta2 = convert(QT, beta2_default(alg.algs[1]))
-    # beta1 = convert(QT, beta1_default(alg.algs[1], beta2))
-    # return PIController(beta1, beta2)
-    # TODO Uncomment this code below to when removing the legacy controllers on OrdinaryDiffEq v7.
-    # return CompositeController(
-    #     __default_controller_v7(QT, alg.algs)
-    # )
+function default_controller(QT, alg::OrdinaryDiffEqCompositeAlgorithm)
+    return CompositeController(
+        map(alg -> default_controller(QT, alg), alg.algs)
+    )
 end
-
-# @generated function __default_controller_v7(
-#     QT, algs::T
-# ) where {
-#     T <: Tuple
-# }
-#     return Expr(
-#         :tuple,
-#         map(1:length(T.types)) do i
-#             :(
-#                 default_controller_v7(QT, algs[$i])
-#             )
-#         end...
-#     )
-# end
-
-function legacy_default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
-    if ispredictive(alg)
-        return PredictiveController()
-    elseif isstandard(alg)
-        return IController()
-    else # Default is PI-controller
-        QT = typeof(qoldinit)
-        beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
-        return PIController(beta1, beta2)
-    end
-end
-
-# TODO remove this when done
-default_controller(args...) = legacy_default_controller(args...)
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     if alg isa OrdinaryDiffEqCompositeAlgorithm
@@ -562,7 +495,7 @@ ssp_coefficient(alg) = error("$alg is not a strong stability preserving method."
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 
-function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
+function unwrap_alg(alg::SciMLBase.AbstractDEAlgorithm, is_stiff)
     if !is_composite_algorithm(alg)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
@@ -616,10 +549,6 @@ uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 uses_uprev(alg, adaptive) = true
 
-ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
-isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 

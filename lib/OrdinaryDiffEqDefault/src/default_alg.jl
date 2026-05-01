@@ -30,7 +30,7 @@ const DEFAULTBETA1S = (
 callbacks_exists(integrator) = !isempty(integrator.opts.callbacks)
 current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF, current, current - NUM_STIFF)
 
-function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
+function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
@@ -70,7 +70,13 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
     ) # `abs` here is just for safety
     tol = is_stiffalg ? stol : ntol
     os = oneunit(stiffness)
-    bool = stiffness > os * tol
+    # NaN-safe form: a NaN spectral-radius estimate (e.g. 0/0 from a
+    # non-smooth RHS that collapses adjacent stage states to the same value)
+    # means the explicit Hairer-style estimator is degenerate. Treat that as
+    # "stiff" so AutoSwitch falls back to an implicit method instead of
+    # getting stuck on the explicit branch. Matches the form used by
+    # `OrdinaryDiffEqCore.is_stiff`.
+    bool = !(stiffness <= os * tol)
 
     if !bool
         integrator.alg.choice_function.successive_switches += 1
@@ -157,7 +163,7 @@ function is_mass_matrix_alg(
     return true
 end
 
-function DefaultImplicitODEAlgorithm(; lazy = true, stol = 0, ntol = Inf, kwargs...)
+function DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),

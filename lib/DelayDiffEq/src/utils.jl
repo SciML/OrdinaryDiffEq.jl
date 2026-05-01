@@ -181,7 +181,8 @@ function solution_arrays(
         ts_init,
         ks_init,
         save_idxs,
-        save_start
+        save_start,
+        is_stochastic = false
     )
     # determine types of time and state
     uType = typeof(u)
@@ -214,11 +215,16 @@ function solution_arrays(
         copyat_or_push!(ts, 1, first(tspan))
         if save_idxs === nothing
             copyat_or_push!(timeseries, 1, u)
-            copyat_or_push!(ks, 1, [rate_prototype])
+            # SDE/SDDE solvers don't populate derivative stages for dense output
+            if !is_stochastic
+                copyat_or_push!(ks, 1, [rate_prototype])
+            end
         else
             u_initial = u[save_idxs]
             copyat_or_push!(timeseries, 1, u_initial, Val{false})
-            copyat_or_push!(ks, 1, [ks_prototype])
+            if !is_stochastic
+                copyat_or_push!(ks, 1, [ks_prototype])
+            end
         end
     end
 
@@ -226,11 +232,11 @@ function solution_arrays(
 end
 
 """
-    _sizehint_solution!(sol::DESolution, n)
+    _sizehint_solution!(sol::AbstractSciMLSolution, n)
 
 Suggest that solution `sol` reserves capacity for at least `n` elements.
 """
-function _sizehint_solution!(sol::DESolution, n)
+function _sizehint_solution!(sol::AbstractSciMLSolution, n)
     sizehint!(sol.u, n)
     sizehint!(sol.t, n)
     hasproperty(sol, :k) && sol.k !== nothing && sizehint!(sol.k, n)
@@ -239,13 +245,13 @@ function _sizehint_solution!(sol::DESolution, n)
 end
 
 """
-    _sizehint_solution!(sol::DESolution, alg, tspan, tstops, saveat; kwargs...)
+    _sizehint_solution!(sol::AbstractSciMLSolution, alg, tspan, tstops, saveat; kwargs...)
 
 Suggest that solution `sol` reserves capacity for a number of elements that
 depends on the parameter settings of the numerical solver.
 """
 function _sizehint_solution!(
-        sol::DESolution, alg, tspan, tstops, saveat;
+        sol::AbstractSciMLSolution, alg, tspan, tstops, saveat;
         save_everystep, adaptive, internalnorm, dt, dtmin
     )
     # obtain integration time
@@ -318,7 +324,7 @@ function build_history_function(
         uBottomEltypeNoUnits, tTypeNoUnits, ode_uprev,
         ode_uprev, ode_f, t0, zero(tType), reltol, p,
         calck,
-        Val(isinplace(prob)), OrdinaryDiffEqCore.DEVerbosity()
+        Val(isinplace(prob)), DiffEqBase.DEVerbosity()
     )
 
     # build dense interpolation of history
@@ -438,7 +444,7 @@ function build_history_function(
         uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, ode_uprev, ode_f, t0,
         zero(tType), Val{isinplace(prob)},
-        OrdinaryDiffEqCore.DEVerbosity()
+        DiffEqBase.DEVerbosity()
     )
 
     ode_alg_choice = iscomposite(alg) ? Int[] : nothing

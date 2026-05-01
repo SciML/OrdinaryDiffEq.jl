@@ -91,7 +91,7 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     k = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -158,7 +158,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -194,7 +194,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -232,7 +232,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -309,7 +309,7 @@ end
             t
         )
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
-        integrator.EEst = convert(typeof(one(t)), 2.1342) * max(e1, e2)
+        OrdinaryDiffEqCore.set_EEst!(integrator, convert(typeof(one(t)), 2.1342) * max(e1, e2))
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -409,7 +409,7 @@ end
             thread
         )
         e2 = integrator.opts.internalnorm(atmp, t)
-        integrator.EEst = convert(typeof(one(t)), 2.1342) * max(e1, e2)
+        OrdinaryDiffEqCore.set_EEst!(integrator, convert(typeof(one(t)), 2.1342) * max(e1, e2))
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
     end
 end

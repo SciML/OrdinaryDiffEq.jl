@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore, ADTypes
+using OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqSSPRK, OrdinaryDiffEqStabilizedRK
 
 f(u, p, t) = 0.98u
 u0 = 1.0
@@ -145,7 +146,7 @@ rosenbrock_algs = [
     @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
-rkc_algs = [RKC(), ROCK2(), ROCK4(), SERK2()]
+rkc_algs = [RKC(), ROCK2(), ROCK4(), SERK2(), TSRKC3()]
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rkc_algs
     println(nameof(typeof(alg)))

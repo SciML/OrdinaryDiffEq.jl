@@ -46,9 +46,9 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
 
     integrator.u = u
@@ -94,9 +94,9 @@ end
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
 
     if integrator.opts.calck
@@ -116,7 +116,7 @@ end
     (; dtₙ₋₁, nlsolver) = cache
     dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
         integrator.fsalfirst = @.. broadcast = false (integrator.u - integrator.uprev) / dtₙ
@@ -148,12 +148,12 @@ end
             est, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     ################################### Finalize
 
-    if integrator.EEst < one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -183,7 +183,7 @@ end
     (; z, tmp) = nlsolver
     uₙ, uₙ₋₁, uₙ₋₂, dtₙ = integrator.u, integrator.uprev, integrator.uprev2, integrator.dt
 
-    if integrator.iter == 1 && !integrator.u_modified
+    if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
         @.. broadcast = false integrator.fsalfirst = (uₙ - uₙ₋₁) / dt
@@ -220,12 +220,12 @@ end
             atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     ################################### Finalize
 
-    if integrator.EEst < one(integrator.EEst)
+    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
         @.. broadcast = false cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -246,10 +246,10 @@ function initialize!(integrator, cache::DFBDFConstantCache{max_order}) where {ma
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(
@@ -349,7 +349,7 @@ function perform_step!(
             lte, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
         atmp = calculate_residuals(
@@ -419,10 +419,10 @@ function initialize!(integrator, cache::DFBDFCache{max_order}) where {max_order}
         integrator.k[i] = cache.dense[i]
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitFBDF!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(
@@ -502,7 +502,7 @@ function perform_step!(
             atmp, terk_tmp, uprev, u, abstol, reltol,
             internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         estimate_terk!(integrator, cache, k + 1, Val(max_order))
         calculate_residuals!(
             atmp, terk_tmp, uprev, u, abstol, reltol,

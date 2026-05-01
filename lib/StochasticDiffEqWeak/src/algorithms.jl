@@ -704,34 +704,32 @@ Alternative stochastic generalization of the modified Euler method.
 """
 struct SMEB <: StochasticDiffEqAlgorithm end
 
-struct IRI1{CS, AD, F, F2, P, FDT, ST, CJ, T2, Controller} <:
-    StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller}
+
+using ADTypes: AutoForwardDiff
+
+struct IRI1{AD, F, F2, T2, T3, CJ} <:
+    StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     theta::T2
     extrapolant::Symbol
-    new_jac_conv_bound::T2
+    new_jac_conv_bound::T3
+    autodiff::AD
+    concrete_jac::CJ
 end
 function IRI1(;
-        chunk_size = 0, autodiff = true, diff_type = Val{:central},
-        standardtag = Val{true}(), concrete_jac = nothing,
-        precs = OrdinaryDiffEqCore.DEFAULT_PRECS,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :constant,
         theta = 1,
         new_jac_conv_bound = 1.0e-3,
-        controller = :Predictive
     )
-    return IRI1{
-        chunk_size, autodiff,
-        typeof(linsolve), typeof(nlsolve), typeof(precs), diff_type,
-        SciMLBase._unwrap_val(standardtag),
-        SciMLBase._unwrap_val(concrete_jac),
-        typeof(new_jac_conv_bound), controller,
-    }(
-        linsolve, nlsolve, precs,
+    autodiff = OrdinaryDiffEqCore._fixup_ad(autodiff)
+    return IRI1(
+        linsolve, nlsolve,
         theta,
-        extrapolant, new_jac_conv_bound
+        extrapolant, new_jac_conv_bound,
+        autodiff, SciMLBase._unwrap_val(concrete_jac),
     )
 end

@@ -34,8 +34,8 @@ prob = prob_sde_additivesystem
 
 sol1 = solve(prob, SKenCarp())
 sol2 = solve(prob, SKenCarp(ode_error_est = false))
-@test length(sol1) < 50
-@test length(sol2) < 100
+@test length(sol1.t) < 50
+@test length(sol2.t) < 100
 
 sol = solve(prob, SRA(), dt = 1 / 2^(3))
 sol = solve(prob, SRA1(), dt = 1 / 2^(3))

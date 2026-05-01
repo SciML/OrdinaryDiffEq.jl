@@ -1,17 +1,20 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
+import OrdinaryDiffEqExplicitTableaus
 
 import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 prob = prob_ode_2Dlinear
 sol = solve(prob, Rosenbrock32(), dt = 1 / 2^4)
 
-sol = solve(prob, ExplicitRK(tableau = constructBogakiShampine3()))
+sol = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.BogakiShampine3()))
 val1 = maximum(abs.(sol.u[end] - sol.u_analytic[end]))
 
-sol2 = solve(prob, ExplicitRK(tableau = constructDormandPrince()))
+sol2 = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitRK.constructDormandPrince()))
 val2 = maximum(abs.(sol2.u[end] - sol2.u_analytic[end]))
 
-sol3 = solve(prob, ExplicitRK(tableau = constructRKF8(Float64)))
+sol3 = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.RKF8(Float64)))
 val3 = maximum(abs.(sol3.u[end] - sol3.u_analytic[end]))
 
 sol4 = solve(prob, Stepanov5())
@@ -65,7 +68,7 @@ du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
 prob = DAEProblem(lorenz, du0, u0, tspan, differential_vars = differential_vars)
-sol = solve(prob, DFBDF())
+sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
 
@@ -81,7 +84,7 @@ du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
 prob = DAEProblem{false}(lorenz, du0, u0, tspan, differential_vars = differential_vars)
-sol = solve(prob, DFBDF())
+sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
 

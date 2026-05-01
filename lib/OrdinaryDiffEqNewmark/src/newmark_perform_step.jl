@@ -12,7 +12,7 @@ end
 
     # Evaluate predictor
     vₙ, uₙ = integrator.uprev.x
-    if integrator.u_modified || !integrator.opts.adaptive
+    if integrator.derivative_discontinuity || !integrator.opts.adaptive
         f(integrator.fsalfirst, integrator.u, p, t + dt)
         integrator.stats.nf += 1
     end
@@ -40,12 +40,15 @@ end
         integrator.stats.nf += 1
 
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             @.. thread = thread atmp = (integrator.fsallast - aₙ₊₁)
-            integrator.EEst = dt * dt * (β - 1 // 6) *
-                integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
+                dt * dt * (β - 1 // 6) *
+                    integrator.opts.internalnorm(atmp, t)
+            )
         end
     end
 
@@ -67,7 +70,7 @@ end
     (; β, γ, thread, nlsolver, atmp) = cache
 
     # Evaluate predictor
-    if integrator.u_modified || !integrator.opts.adaptive
+    if integrator.derivative_discontinuity || !integrator.opts.adaptive
         integrator.fsalfirst .= f(u, p, t + dt)
         integrator.stats.nf += 1
     end
@@ -108,12 +111,15 @@ end
         integrator.stats.nf += 1
 
         if integrator.success_iter == 0
-            integrator.EEst = one(integrator.EEst)
+            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         else
             # Zienkiewicz and Xie (1991) Eq. 21
             @.. thread = thread atmp = (integrator.fsallast.x[1] - aₙ₊₁)
-            integrator.EEst = dt * dt * (β - 1 // 6) *
-                integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
+                dt * dt * (β - 1 // 6) *
+                    integrator.opts.internalnorm(atmp, t)
+            )
         end
     end
 

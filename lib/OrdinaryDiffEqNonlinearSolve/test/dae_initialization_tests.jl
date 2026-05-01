@@ -30,7 +30,10 @@ integrator = @inferred init(prob_mm, Rodas5(autodiff = AutoForwardDiff(chunksize
 @inferred SciMLBase.initialize_dae!(integrator)
 
 prob_mm = ODEProblem(f_oop, [1.0, 0.0, 0.2], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
-sol = solve(prob_mm, Rosenbrock23(), reltol = 1.0e-8, abstol = 1.0e-8)
+sol = solve(
+    prob_mm, Rosenbrock23(), reltol = 1.0e-8, abstol = 1.0e-8,
+    initializealg = BrownFullBasicInit()
+)
 @test sum(sol.u[1]) ≈ 1
 @test sol.u[1] ≈ [1.0, 0.0, 0.0]
 for alg in [Rosenbrock23(autodiff = AutoFiniteDiff()), Trapezoid()]
@@ -67,7 +70,10 @@ integrator = @inferred init(prob_mm, Rodas5(autodiff = AutoForwardDiff(chunksize
 @inferred SciMLBase.initialize_dae!(integrator)
 
 prob_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
-sol = solve(prob_mm, Rodas5(), reltol = 1.0e-8, abstol = 1.0e-8)
+sol = solve(
+    prob_mm, Rodas5(), reltol = 1.0e-8, abstol = 1.0e-8,
+    initializealg = BrownFullBasicInit()
+)
 @test sum(sol.u[1]) ≈ 1
 @test sol.u[1] ≈ [1.0, 0.0, 0.0]
 

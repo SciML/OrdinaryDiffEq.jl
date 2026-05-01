@@ -7,15 +7,16 @@
 # =============================================================================
 
 @muladd function _ode_initdt_iip(
-        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
     )
+    _tType = eltype(t)
     f = prob.f
     p = integrator.p
-    oneunit_tType = oneunit(_tType)
+    oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -55,7 +56,14 @@
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
-        if u0 isa Array && eltype(u0) isa Number
+        # When time is unitless, `f` writes `du` with `eltype(u0)` and the
+        # FunctionWrapper signature emitted by `promote_f` reflects that. Dividing
+        # by `oneunit_tType` is only meaningful for unit-aware time (e.g. Unitful);
+        # for plain numeric `t` it would spuriously promote (e.g. Float32 / Float64
+        # -> Float64) and produce a `du` whose eltype no longer matches the wrapper.
+        if recursive_unitless_eltype(u0) === eltype(u0)
+            f₀ = zero(u0)
+        elseif u0 isa Array && eltype(u0) isa Number
             T = eltype(first(u0) / oneunit_tType)
             f₀ = similar(u0, T)
             fill!(f₀, zero(T))
@@ -274,7 +282,7 @@ function ode_determine_initdt(
         integrator
     ) where {tType, uType}
     return _ode_initdt_iip(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing, nothing,
         get_current_alg_order(integrator.alg, integrator.cache), integrator
     )
@@ -307,15 +315,16 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function _ode_initdt_oop(
-        u0, t, _tType, tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, order, integrator
     )
+    _tType = eltype(t)
     f = prob.f
     p = prob.p
-    oneunit_tType = oneunit(_tType)
+    oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, eps(t)))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -406,7 +415,7 @@ function ode_determine_initdt(
         integrator
     ) where {uType, tType}
     return _ode_initdt_oop(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing,
         get_current_alg_order(integrator.alg, integrator.cache), integrator
     )
@@ -441,7 +450,7 @@ function ode_determine_initdt(
         nothing
     effective_order = g !== nothing ? order + 1 // 2 : order
     return _ode_initdt_iip(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_proto, effective_order, integrator
     )
 end
@@ -458,7 +467,7 @@ function ode_determine_initdt(
     g = prob.f.g
     effective_order = g !== nothing ? order + 1 // 2 : order
     return _ode_initdt_oop(
-        u0, t, eltype(tType), tdir, dtmax, abstol, reltol, internalnorm,
+        u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, effective_order, integrator
     )
 end

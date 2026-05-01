@@ -86,7 +86,7 @@ end
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)
     # Save Taylor coefficients for dense output interpolation
@@ -123,13 +123,140 @@ end
             atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, P + 1)
     # Copy Taylor coefficients into k for dense output interpolation.
     # Use map! to avoid the intermediate allocation from get_coefficient.
     for i in 1:P
         map!(ts -> get_coefficient(ts, i), integrator.k[i], utaylor)
+    end
+    return nothing
+end
+
+function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderCache)
+end
+
+@muladd function perform_step!(
+        integrator, cache::ExplicitTaylorAdaptiveOrderCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
+    alg = unwrap_alg(integrator, false)
+    (; jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
+
+    min_order_value = get_value(min_order)
+    max_order_value = get_value(max_order)
+    push!(cache.order_history, current_order[])
+    jet_index = current_order[] - min_order_value + 1
+    # compute one additional order for adaptive order
+    jet = jets[jet_index + 1]
+    jet(utaylor, uprev, t)
+    for i in eachindex(utaylor)
+        u[i] = @inline evaluate_polynomial(utaylor[i], dt)
+    end
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    if integrator.opts.adaptive
+        min_work = Inf
+        start_order = max(min_order_value, current_order[] - 1)
+        end_order = min(max_order_value - 1, current_order[] + 1)
+        dtn = dt^start_order
+        for i in start_order:end_order
+            A = i * i
+            for ix in eachindex(utaylor)
+                utilde[ix] = TaylorDiff.partials(utaylor[ix])[i] * dtn
+            end
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            EEst = integrator.opts.internalnorm(atmp, t)
+
+            # backup — pseudo-step the controller to estimate the work at
+            # this order without leaking state back out.
+            saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+            saved_cache = deepcopy(integrator.controller_cache)
+            # calculate dt
+            OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
+            dtpropose = step_accept_controller!(
+                integrator, alg,
+                stepsize_controller!(integrator, alg)
+            )
+            # restore
+            OrdinaryDiffEqCore.sync_controllers!(
+                integrator.controller_cache, saved_cache
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
+
+            work = A / dtpropose
+            if work < min_work
+                cache.current_order[] = i
+                min_work = work
+                OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
+            end
+            dtn *= dt
+        end
+    end
+    return nothing
+end
+
+function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderConstantCache)
+    max_order_value = get_value(cache.max_order)
+    integrator.kshortsize = max_order_value
+    integrator.k = typeof(integrator.k)(undef, max_order_value)
+    return nothing
+end
+
+@muladd function perform_step!(
+        integrator, cache::ExplicitTaylorAdaptiveOrderConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, u, f, p) = integrator
+    alg = unwrap_alg(integrator, false)
+    (; jets, current_order, min_order, max_order) = cache
+
+    min_order_value = get_value(min_order)
+    max_order_value = get_value(max_order)
+    jet_index = current_order[] - min_order_value + 1
+    # compute one additional order for adaptive order
+    jet = jets[jet_index + 1]
+    utaylor = jet(uprev, t)
+    u = map(x -> evaluate_polynomial(x, dt), utaylor)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    if integrator.opts.adaptive
+        min_work = Inf
+        start_order = max(min_order_value, current_order[] - 1)
+        end_order = min(max_order_value, current_order[] + 1)
+        for i in start_order:end_order
+            A = i * i
+            utilde = TaylorDiff.get_coefficient(utaylor, i) * dt^i
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            EEst = integrator.opts.internalnorm(atmp, t)
+
+            # backup — pseudo-step the controller to estimate the work at
+            # this order without leaking state back out.
+            saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+            saved_cache = deepcopy(integrator.controller_cache)
+            # calculate dt
+            OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
+            dtpropose = step_accept_controller!(
+                integrator, alg,
+                stepsize_controller!(integrator, alg)
+            )
+            # restore
+            OrdinaryDiffEqCore.sync_controllers!(
+                integrator.controller_cache, saved_cache
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
+
+            work = A / dtpropose
+            if work < min_work
+                cache.current_order[] = i
+                min_work = work
+                OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
+            end
+        end
     end
     return nothing
 end

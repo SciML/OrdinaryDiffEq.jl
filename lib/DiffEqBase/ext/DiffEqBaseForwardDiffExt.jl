@@ -4,7 +4,7 @@ using DiffEqBase, ForwardDiff
 using DiffEqBase.ArrayInterface
 using DiffEqBase: Void, FunctionWrappersWrappers, OrdinaryDiffEqTag,
     AbstractTimeseriesSolution,
-    RecursiveArrayTools, reduce_tup, _promote_tspan, has_continuous_callback
+    RecursiveArrayTools, _promote_tspan, has_continuous_callback
 import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, prob2dtmin,
     promote_tspan, ODE_DEFAULT_NORM
 import SciMLBase: isdualtype, DualEltypeChecker, sse, __sum
@@ -61,6 +61,27 @@ function wrapfun_oop(ff, inputs::Tuple = ())
     )
 end
 
+# Construct FunctionWrappersWrapper bypassing the convenience constructor.
+# The convenience constructor's `map` doesn't infer when the callable has many
+# type parameters (e.g. ODEFunction with 20+), because the FunctionWrapper
+# constructor in the separately-precompiled FunctionWrappers package can't be
+# traced through for complex types. Using Type{A} dispatch binds the arglist
+# types as type parameters, making FW{Nothing, A}(vff) fully inferrable.
+function _make_fww(
+        @nospecialize(vff),
+        ::Type{A1}, ::Type{A2}, ::Type{A3}, ::Type{A4},
+    ) where {A1, A2, A3, A4}
+    FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
+    fwt = (
+        FW{Nothing, A1}(vff), FW{Nothing, A2}(vff),
+        FW{Nothing, A3}(vff), FW{Nothing, A4}(vff),
+    )
+    cs = FunctionWrappersWrappers.SingleCacheStorage()
+    return FunctionWrappersWrappers.FunctionWrappersWrapper{
+        typeof(fwt), FunctionWrappersWrappers.AllowNonIsBits, typeof(cs),
+    }(fwt, cs)
+end
+
 function wrapfun_iip(
         ff,
         inputs::Tuple{T1, T2, T3, T4}
@@ -71,19 +92,13 @@ function wrapfun_iip(
     dualT2 = ArrayInterface.promote_eltype(T2, dualT)
     dualT4 = dualgen(promote_type(T, T4))
 
-    iip_arglists = (
+    return _make_fww(
+        Void(ff),
         Tuple{T1, T2, T3, T4},
         Tuple{dualT1, dualT2, T3, T4},
         Tuple{dualT1, T2, T3, dualT4},
-        Tuple{dualT1, dualT2, T3, dualT4},
+        Tuple{dualT1, dualT2, T3, dualT4}
     )
-
-    iip_returnlists = ntuple(x -> Nothing, 4)
-
-    fwt = map(iip_arglists, iip_returnlists) do A, R
-        FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper{R, A}(Void(ff))
-    end
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{typeof(fwt), false}(fwt)
 end
 
 # 3-arg version: compile FunctionWrapper variants with the specified chunk size.
@@ -106,51 +121,15 @@ function wrapfun_iip(
     dualT1_time = ArrayInterface.promote_eltype(T1, dualT_time)
     dualT4_time = dualgen(promote_type(T, T4))
 
-    iip_arglists = (
-        Tuple{T1, T2, T3, T4},                                  # plain
-        Tuple{dualT1_jac, dualT2_jac, T3, T4},                  # Jacobian (u dual, chunk=CS)
-        Tuple{dualT1_time, T2, T3, dualT4_time},                # time derivative (chunk=1)
-        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time},         # both
+    return _make_fww(
+        Void(ff),
+        Tuple{T1, T2, T3, T4},
+        Tuple{dualT1_jac, dualT2_jac, T3, T4},
+        Tuple{dualT1_time, T2, T3, dualT4_time},
+        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time}
     )
-
-    iip_returnlists = ntuple(x -> Nothing, 4)
-
-    fwt = map(iip_arglists, iip_returnlists) do A, R
-        FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper{R, A}(Void(ff))
-    end
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{typeof(fwt), false}(fwt)
 end
 
-const iip_arglists_default = (
-    Tuple{
-        Vector{Float64}, Vector{Float64}, Vector{Float64},
-        Float64,
-    },
-    Tuple{
-        Vector{Float64}, Vector{Float64},
-        SciMLBase.NullParameters,
-        Float64,
-    },
-    Tuple{Vector{dualT}, Vector{Float64}, Vector{Float64}, dualT},
-    Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, dualT},
-    Tuple{Vector{dualT}, Vector{dualT}, Vector{Float64}, Float64},
-    Tuple{
-        Vector{dualT}, Vector{dualT}, SciMLBase.NullParameters,
-        Float64,
-    },
-    Tuple{
-        Vector{dualT}, Vector{Float64},
-        SciMLBase.NullParameters, dualT,
-    },
-)
-const iip_returnlists_default = ntuple(x -> Nothing, length(iip_arglists_default))
-
-function wrapfun_iip(@nospecialize(ff))
-    fwt = map(iip_arglists_default, iip_returnlists_default) do A, R
-        FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper{R, A}(Void(ff))
-    end
-    return FunctionWrappersWrappers.FunctionWrappersWrapper{typeof(fwt), false}(fwt)
-end
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)
     if (haskey(kwargs, :callback) && has_continuous_callback(kwargs[:callback])) ||

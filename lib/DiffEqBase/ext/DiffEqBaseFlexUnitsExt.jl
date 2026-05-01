@@ -11,6 +11,8 @@ value(x::Quantity{T, U}) where {T, U} = dstrip(x)
 unitfulvalue(::Type{T}) where {T <: Quantity} = T
 unitfulvalue(x::Quantity) = x
 
+DiffEqBase.stripunits(x::Quantity) = dstrip(x)
+
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::AbstractArray{
             <:Quantity,

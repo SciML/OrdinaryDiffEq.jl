@@ -34,24 +34,3 @@ function SciMLBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
         return cache.caches[integrator.cache.current]
     end
 end
-
-@deprecate alg_cache(
-    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, u, rate_prototype,
-    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f,
-    t, dt, reltol, p, calck, ::Type{Val{iip}}
-) where {iip} alg_cache(
-    alg,
-    u,
-    rate_prototype,
-    uEltypeNoUnits,
-    uBottomEltypeNoUnits,
-    tTypeNoUnits,
-    uprev,
-    uprev2,
-    f, t,
-    dt,
-    reltol,
-    p,
-    calck,
-    Val(iip)
-)

@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test
 import ODEProblemLibrary: prob_ode_2Dlinear
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 prob = prob_ode_2Dlinear
 
 integrator = init(prob, Euler(); dt = 1 // 2^(4))

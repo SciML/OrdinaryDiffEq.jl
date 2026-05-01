@@ -9,19 +9,19 @@ prob2 = EnsembleProblem(prob)
 sim = solve(prob2, SRIW1(), dt = 1 // 2^(3), trajectories = 10)
 
 @test sim.u[1] isa DiffEqBase.RODESolution
-@test sim[1, 2] isa Matrix
-@test sim[1, 2, 1] isa Float64
+@test sim.u[2].u[1] isa Matrix
+@test sim.u[1].u[2][1] isa Float64
 
 sim = solve(prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), trajectories = 10)
 err_sim = DiffEqBase.calculate_ensemble_errors(sim; weak_dense_errors = true)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(
     prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), trajectories = 10,
     batch_size = 2
 )
 err_sim = DiffEqBase.calculate_ensemble_errors(sim; weak_dense_errors = true)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(
     prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), adaptive = false,
@@ -31,22 +31,22 @@ err_sim = DiffEqBase.calculate_ensemble_errors(sim; weak_timeseries_errors = tru
 
 sim = solve(prob2, SRIW1(), EnsembleThreads(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(prob2, SRIW1(), EnsembleSplitThreads(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 sim = solve(prob2, SRIW1(), EnsembleSerial(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
-@test length(sim) == 10
+@test length(sim.u) == 10
 
 prob = prob_sde_additivesystem
 prob2 = EnsembleProblem(prob)
 sim = solve(prob2, SRA1(), dt = 1 // 2^(3), trajectories = 10)
 DiffEqBase.calculate_ensemble_errors(sim)
 
-output_func = function (sol, i)
+output_func = function (sol, ctx)
     return last(last(sol))^2, false
 end
 prob2 = EnsembleProblem(prob, output_func = output_func)
@@ -56,12 +56,12 @@ prob = prob_sde_lorenz
 prob2 = EnsembleProblem(prob)
 sim = solve(prob2, SRIW1(), dt = 1 // 2^(3), trajectories = 10)
 
-output_func = function (sol, i)
+output_func = function (sol, ctx)
     return last(sol), false
 end
 
 prob = prob_ode_linear
-prob_func = function (prob, i, repeat)
+prob_func = function (prob, ctx)
     return ODEProblem(prob.f, rand() * prob.u0, prob.tspan, 1.01)
 end
 
@@ -81,7 +81,8 @@ prob2 = EnsembleProblem(
 sim = solve(prob2, Tsit5(), trajectories = 10000, batch_size = 20)
 @test sim.converged == true
 
-prob_func = function (prob, i, repeat)
+prob_func = function (prob, ctx)
+    i = ctx.sim_id
     return ODEProblem(prob.f, (1 + i / 100) * prob.u0, prob.tspan, 1.01)
 end
 
@@ -109,7 +110,7 @@ sim2 = solve(prob2, Tsit5(), trajectories = 100, batch_size = 20)
 @test sum(sim.u) / length(sim.u) ≈ sim2.u / 100
 
 struct SomeUserType end
-output_func = function (sol, i)
+output_func = function (sol, ctx)
     return (SomeUserType(), false)
 end
 prob2 = EnsembleProblem(prob, prob_func = prob_func, output_func = output_func)

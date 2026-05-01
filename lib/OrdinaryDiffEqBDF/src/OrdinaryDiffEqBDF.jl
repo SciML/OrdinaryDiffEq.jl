@@ -3,11 +3,11 @@ module OrdinaryDiffEqBDF
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_extrapolates,
-    OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqAlgorithm, default_controller, IController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqNewtonAlgorithm,
-    AbstractController, DEFAULT_PRECS,
+    AbstractController,
     CompiledFloats, uses_uprev,
     alg_cache, _vec, _reshape, @cache,
     isfsal, full_cache,
@@ -19,9 +19,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     stepsize_controller!,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
-    u_modified!, DAEAlgorithm, _unwrap_val, DummyController,
-    get_fsalfirstlast, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice,
+    DAEAlgorithm, _unwrap_val, DummyController,
+    get_fsalfirstlast, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity
 using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
@@ -31,22 +30,11 @@ using MuladdMacro: @muladd
 using MacroTools: @capture
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: mul!, I
 import ArrayInterface
 using ArrayInterface: ismutable
 import OrdinaryDiffEqCore
-
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller
-    end
-else
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller
-    end
-end
+import OrdinaryDiffEqCore: default_controller
 
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
     @eval begin

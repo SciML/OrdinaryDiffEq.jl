@@ -1,5 +1,8 @@
 using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
+using OrdinaryDiffEqCore: add_tstop!
 import ODEProblemLibrary: prob_ode_linear
+using OrdinaryDiffEqLowOrderRK
+
 Random.seed!(100)
 
 @testset "Tstops Tests on the Interval [0, 1]" begin
@@ -131,7 +134,7 @@ end
         prob_static, Vern9(); reltol = 1.0e-12, abstol = 1.0e-15,
         tstops = tstops
     )
-    @test SciMLBase.successful_retcode(sol_static)
+    @test successful_retcode(sol_static)
     for tstop in tstops
         @test tstop ∈ sol_static.t
     end
@@ -141,7 +144,7 @@ end
         prob_array, Vern9(); reltol = 1.0e-12, abstol = 1.0e-15,
         tstops = tstops
     )
-    @test SciMLBase.successful_retcode(sol_array)
+    @test successful_retcode(sol_array)
     for tstop in tstops
         @test tstop ∈ sol_array.t
     end
@@ -160,7 +163,7 @@ end
 
     prob = ODEProblem(decay_ode, u0, tspan)
     sol = solve(prob, Vern9(); tstops = tstops, reltol = 1.0e-12, abstol = 1.0e-15)
-    @test SciMLBase.successful_retcode(sol)
+    @test successful_retcode(sol)
     for tstop in tstops
         @test tstop ∈ sol.t
     end
@@ -190,7 +193,7 @@ end
         reltol = 1.0e-10, abstol = 1.0e-12
     )
 
-    @test SciMLBase.successful_retcode(sol)
+    @test successful_retcode(sol)
     for time in critical_times
         @test any(abs.(sol.t .- time) .< 1.0e-10)
     end
@@ -212,8 +215,102 @@ end
 
     prob = ODEProblem(oscillator, u0, tspan)
     sol = solve(prob, Vern9(); tstops = close_tstops, reltol = 1.0e-12, abstol = 1.0e-15)
-    @test SciMLBase.successful_retcode(sol)
+    @test successful_retcode(sol)
     for time in [1.0, 2.0, 3.0]
         @test any(abs.(sol.t .- time) .< 1.0e-10)
     end
+end
+
+# Tests for the `t > t_d` convention on `d_discontinuities`:
+# v7 advances `integrator.t` by one ULP past a d_discontinuity so the
+# post-discontinuity side of `t`-dependent branches in `f` is reached.
+@testset "d_discontinuities: interior discontinuity with t > t_d" begin
+    # f has slope 0 for t < 5 and slope 1 for t > 5.
+    # Exact solution: u(t) = 0 for t ≤ 5, u(t) = t - 5 for t > 5. So u(10) = 5.
+    # With a fixed-step non-adaptive integrator, a stale pre-discontinuity FSAL
+    # would cause the first post-discontinuity step to use f(u, 5) = 0 and drop
+    # accumulated value by exactly one step (0.5 with dt = 0.5).
+    f(u, p, t) = t > 5.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 0.0, (0.0, 10.0))
+    sol = solve(
+        prob, Euler(); dt = 0.5, d_discontinuities = [5.0],
+        adaptive = false
+    )
+    @test sol.u[end] ≈ 5.0 atol = 1.0e-10
+
+    # Same setup with Tsit5 (FSAL, adaptive) at tight tolerance.
+    sol_tsit5 = solve(
+        prob, Tsit5(); d_discontinuities = [5.0],
+        reltol = 1.0e-12, abstol = 1.0e-14
+    )
+    @test sol_tsit5.u[end] ≈ 5.0 atol = 1.0e-10
+    @test 5.0 ∈ sol_tsit5.t
+end
+
+@testset "d_discontinuities: starting-time discontinuity" begin
+    # f has slope 0 at t = 0 and slope 1 for t > 0. Without handling of
+    # t_d == t0, the starting-time discontinuity would be silently dropped
+    # (filtered out of the tstops heap by the strict-inequality tspan check)
+    # and fsalfirst would be stuck at 0.
+    f(u, p, t) = t > 0.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 0.0, (0.0, 5.0))
+    sol = solve(
+        prob, Euler(); dt = 0.5, d_discontinuities = [0.0],
+        adaptive = false
+    )
+    @test sol.u[end] ≈ 5.0 atol = 1.0e-10
+end
+
+@testset "d_discontinuities: backward integration shifts with prevfloat" begin
+    # Backwards integration with discontinuity at t = 5.
+    # u(10) = 5. For t > 5 the slope is 1, so integrating backward from t = 10
+    # to t = 5 decreases u by 5 → u(5) = 0. For t ≤ 5, slope is 0, so u stays
+    # at 0 back to t = 0. Expected u(0) = 0.
+    f(u, p, t) = t > 5.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 5.0, (10.0, 0.0))
+    sol = solve(
+        prob, Tsit5(); d_discontinuities = [5.0],
+        reltol = 1.0e-12, abstol = 1.0e-14
+    )
+    @test sol.u[end] ≈ 0.0 atol = 1.0e-10
+end
+
+@testset "Fixed-dt: no spurious tiny final step from accumulated drift" begin
+    # Regression test: with fixed dt = 0.1 and tspan = (0.0, 1.0) the
+    # accumulated `t + dt + dt + ...` drifts and used to produce a spurious
+    # 12th step at 0.9999999999999999 followed by 1.0. A tolerance in
+    # modify_dt_for_tstops! ensures the final tstop is hit cleanly.
+    f!(du, u, p, t) = (du .= u; nothing)
+    u0 = [1.0]
+    prob = ODEProblem(f!, u0, (0.0, 1.0))
+    sol = solve(prob, Euler(); dt = 0.1)
+    @test length(sol.t) == 11
+    @test sol.t[end] == 1.0
+
+    # Reverse direction
+    prob_rev = ODEProblem(f!, u0, (1.0, 0.0))
+    sol_rev = solve(prob_rev, Euler(); dt = -0.1)
+    @test length(sol_rev.t) == 11
+    @test sol_rev.t[end] == 0.0
+
+    # dt that does not evenly divide tspan still hits tspan[end] cleanly
+    sol_uneven = solve(prob, Euler(); dt = 0.3)
+    @test sol_uneven.t[end] == 1.0
+end
+
+@testset "d_discontinuities: tprev advanced past discontinuity" begin
+    # Directly verify the shift-past invariant using the integrator interface:
+    # after stepping past the discontinuity, integrator.tprev should be
+    # nextfloat(t_d), not t_d itself.
+    f(u, p, t) = t > 5.0 ? 1.0 : 0.0
+    prob = ODEProblem(f, 0.0, (0.0, 10.0))
+    integrator = init(prob, Tsit5(); d_discontinuities = [5.0])
+    # Advance until we've landed on the tstop at t = 5.
+    while integrator.t < 5.0
+        step!(integrator)
+    end
+    @test integrator.t == 5.0
+    # The next step triggers update_fsal! → shift_past_discontinuity!
+    step!(integrator)
+    @test integrator.tprev == nextfloat(5.0)
 end

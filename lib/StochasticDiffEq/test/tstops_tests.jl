@@ -5,8 +5,9 @@ prob = prob_sde_linear
 
 integrator = init(prob, EM(), dt = 1 // 2^(4), tstops = [0.33])
 
-for (u, t) in tuples(integrator)
-    @show u, t
+# SciMLBase v3: `tuples(integrator)` removed; iterate integrator directly.
+for integ in integrator
+    @show integ.u, integ.t
 end
 
 sol = solve(prob, EM(), dt = 1 // 2^(4), tstops = [0.33])

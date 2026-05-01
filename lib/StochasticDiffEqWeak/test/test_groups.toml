@@ -1,45 +1,61 @@
 [Core]
 versions = ["1.11", "1", "pre"]
 
+# Weak-convergence groups are extremely expensive (Monte-Carlo trajectory
+# studies) and only exercise StochasticDiffEqWeak's own solvers, so they are
+# marked local_only: they run when this package's source/tests are edited but
+# are skipped when this package is only pulled into the matrix because an
+# upstream dependency changed.
+
 [WeakConvergence1]
 versions = ["1"]
+local_only = true
 
 [WeakConvergence2]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
+local_only = true
 
 [W2Ito1WeakConvergence]
 versions = ["1"]
+local_only = true
 
 [WeakConvergence3]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
+local_only = true
 
 [SIESMEWeakConvergence]
 versions = ["1"]
+local_only = true
 
 [WeakConvergence4]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 420
+local_only = true
 
 [WeakConvergence5]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
+local_only = true
 
 [WeakConvergence6]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
+local_only = true
 
 [IRI1WeakConvergence]
 versions = ["1"]
+local_only = true
 
 [WeakAdaptiveCPU]
 versions = ["1"]
+local_only = true
 
 [QA]
 versions = ["1"]

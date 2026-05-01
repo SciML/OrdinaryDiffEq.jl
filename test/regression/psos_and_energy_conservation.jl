@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, ADTypes, Test, Random, LinearAlgebra, SparseArrays, Statistics
+using OrdinaryDiffEqLowOrderRK
 
 # Parameters
 Nc = 22
@@ -123,7 +124,7 @@ DEFAULT_DIFFEQ_KWARGS = Dict{Symbol, Any}(:abstol => 1.0e-10, :reltol => 1.0e-10
 
 sol = solve(prob, Vern9(); extra_kw..., DEFAULT_DIFFEQ_KWARGS..., save_everystep = false)
 
-Es = [Hhh(sol[:, i]) for i in 1:length(sol)]
+Es = [Hhh(sol[:, i]) for i in 1:length(sol.t)]
 Eerror = maximum(@. abs(E - Es))
 
 a = sol[1, :]

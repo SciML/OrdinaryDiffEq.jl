@@ -10,13 +10,8 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMut
     alg_order, beta2_default, beta1_default, dt_required,
     _initialize_dae!, DefaultInit, BrownFullBasicInit, OverrideInit,
     @muladd, @.., _unwrap_val, OrdinaryDiffEqCore, isadaptive,
-    AbstractController
-
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: AbstractControllerCache
-    end
-end
+    allows_null_u0,
+    AbstractController, AbstractControllerCache
 
 using Reexport
 @reexport using SciMLBase

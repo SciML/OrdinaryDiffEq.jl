@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqBDF"
 uuid = "6ad6398a-0878-4a85-9266-38940aa047c8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.23.0"
+version = "2.0.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -16,7 +16,6 @@ OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
@@ -31,63 +30,51 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
 
 [compat]
 Pkg = "1"
 NonlinearSolve = "4.12"
 ForwardDiff = "0.10.38, 1"
 Test = "<0.0.1, 1"
-FastBroadcast = "0.3"
+FastBroadcast = "1.3"
 Random = "<0.0.1, 1"
-DiffEqDevTools = "2.44.4"
+DiffEqDevTools = "3"
 DifferentiationInterface = "0.6.54, 0.7"
 MuladdMacro = "0.2"
 LinearSolve = "3.46"
 PrecompileTools = "1.2, 1.3"
 LinearAlgebra = "1.10"
-OrdinaryDiffEqDifferentiation = "2"
-OrdinaryDiffEqSDIRK = "1.6.0"
+OrdinaryDiffEqDifferentiation = "3"
+OrdinaryDiffEqSDIRK = "2"
 TruncatedStacktraces = "1.4"
-SciMLBase = "2.141"
-OrdinaryDiffEqCore = "3.4"
-Aqua = "0.8.11"
+SciMLBase = "3"
+OrdinaryDiffEqCore = "4"
 ArrayInterface = "7.19"
 Enzyme = "0.13"
 Preferences = "1.4"
 MacroTools = "0.5.6"
-JET = "0.9, 0.11"
-StaticArrays = "1.9"
 julia = "1.10"
 ADTypes = "1.16"
-RecursiveArrayTools = "3.36"
+RecursiveArrayTools = "4"
 ODEProblemLibrary = "1"
-OrdinaryDiffEqNonlinearSolve = "1.16.0"
-AllocCheck = "0.2"
-DiffEqBase = "6.194"
+OrdinaryDiffEqNonlinearSolve = "2"
+DiffEqBase = "7"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
+StaticArrays = "1.9"
 
 [targets]
-test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "JET", "Aqua", "AllocCheck"]
-
-[sources.OrdinaryDiffEqSDIRK]
-path = "../OrdinaryDiffEqSDIRK"
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
-
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../OrdinaryDiffEqNonlinearSolve"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
+test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg"]

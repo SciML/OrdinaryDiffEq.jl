@@ -1,26 +1,46 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-DDEProblemLibrary = "f42792ee-6ffc-4e2a-ae83-8ee2f22de800"
-DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
+DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqFeagin = "101fe9f7-ebb6-4678-b671-3a81e7194747"
+OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
 [compat]
 ADTypes = "1.16"
-DDEProblemLibrary = "0.1"
-DelayDiffEq = "5.42"
 DifferentiationInterface = "0.6.54, 0.7"
+DynamicQuantities = "1.8"
 Enzyme = "0.13"
 FiniteDiff = "2.27"
 Measurements = "2.9"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "7"
+OrdinaryDiffEqFeagin = "2"
+OrdinaryDiffEqHighOrderRK = "2"
+OrdinaryDiffEqLowOrderRK = "2"
+OrdinaryDiffEqLowStorageRK = "3"
+OrdinaryDiffEqRosenbrock = "2"
+OrdinaryDiffEqSDIRK = "2"
+OrdinaryDiffEqSSPRK = "2"
 StaticArrays = "1"
-StochasticDiffEq = "6.60.1"
+StochasticDiffEq = "7"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}
+OrdinaryDiffEqFeagin = {path = "../../lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqHighOrderRK = {path = "../../lib/OrdinaryDiffEqHighOrderRK"}
+OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqLowStorageRK = {path = "../../lib/OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "../../lib/OrdinaryDiffEqSSPRK"}
+StochasticDiffEq = {path = "../../lib/StochasticDiffEq"}

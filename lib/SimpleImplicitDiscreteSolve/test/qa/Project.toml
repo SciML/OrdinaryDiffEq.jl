@@ -1,0 +1,12 @@
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+SimpleImplicitDiscreteSolve = "8b67ef88-54bd-43ff-aca0-8be02588656a"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources.SimpleImplicitDiscreteSolve]
+path = "../.."
+
+[compat]
+JET = "0.9, 0.11"
+SimpleImplicitDiscreteSolve = "2"
+julia = "1.10"

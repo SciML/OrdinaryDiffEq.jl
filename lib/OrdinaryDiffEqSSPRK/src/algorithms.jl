@@ -9,15 +9,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK53_2N2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK53_2N2(
-        stage_limiter!,
-        step_limiter!,
-        False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -32,14 +24,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK22{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK22(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -53,14 +38,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK53{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK53(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK53(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -74,14 +52,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK63{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK63(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -95,14 +66,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK83{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK83(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -133,14 +97,7 @@ Base.@kwdef struct SSPRK43{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK43(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -155,14 +112,7 @@ Base.@kwdef struct SSPRK432{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK432(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -179,15 +129,7 @@ Base.@kwdef struct SSPRKMSVS32{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRKMSVS32(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRKMSVS32(
-        stage_limiter!,
-        step_limiter!,
-        False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -201,14 +143,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK54(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -222,15 +157,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK53_2N1{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK53_2N1(
-        stage_limiter!,
-        step_limiter!,
-        False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -245,14 +172,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK104{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK104(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK104(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -269,14 +189,7 @@ Base.@kwdef struct SSPRK932{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK932(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -293,15 +206,7 @@ Base.@kwdef struct SSPRKMSVS43{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRKMSVS43(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRKMSVS43(
-        stage_limiter!,
-        step_limiter!,
-        False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -315,14 +220,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK73{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK73(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -336,14 +234,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK53_H{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK53_H(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -358,14 +249,7 @@ Fixed timestep only.",
 Base.@kwdef struct SSPRK33{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
-    return SSPRK33(
-        stage_limiter!,
-        step_limiter!, False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -383,15 +267,7 @@ end
 Base.@kwdef struct KYKSSPRK42{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
-    return KYKSSPRK42(
-        stage_limiter!,
-        step_limiter!,
-        False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -410,15 +286,7 @@ Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return KYK2014DGSSPRK_3S2(
-        stage_limiter!,
-        step_limiter!,
-        False()
-    )
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -439,7 +307,7 @@ Base.@kwdef struct pRRK22{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     kappa::T = 0.0
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -460,7 +328,7 @@ Base.@kwdef struct pRRK33{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     kappa::T = 0.0
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 
 @doc explicit_rk_docstring(
@@ -481,5 +349,5 @@ Base.@kwdef struct pRRK54{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     kappa::T = 0.0
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end

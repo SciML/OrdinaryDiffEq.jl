@@ -12,7 +12,15 @@ Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 MultiScaleArrays = "f9640e96-87f6-5992-9c3b-0743c6a49ffa"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
@@ -21,6 +29,13 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 [sources]
 DiffEqBase = {path = "../.."}
 OrdinaryDiffEq = {path = "../../../.."}
+OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqLowOrderRK = {path = "../../../OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqNonlinearSolve = {path = "../../../OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSymplecticRK = {path = "../../../OrdinaryDiffEqSymplecticRK"}
+OrdinaryDiffEqVerner = {path = "../../../OrdinaryDiffEqVerner"}
 StochasticDiffEq = {path = "../../../StochasticDiffEq"}
 
 [compat]
@@ -29,5 +44,5 @@ DifferentiationInterface = "0.7"
 ForwardDiff = "0.10, 1"
 GTPSA = "1.4"
 MultiScaleArrays = "1.8"
-OrdinaryDiffEq = "6"
-StochasticDiffEq = "6"
+OrdinaryDiffEq = "7"
+StochasticDiffEq = "7"

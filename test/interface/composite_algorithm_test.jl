@@ -1,6 +1,9 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools, ADTypes
+using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
+import OrdinaryDiffEqExplicitTableaus
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 prob = prob_ode_2Dlinear
 choice_function(integrator) = (Int(integrator.t < 0.5) + 1)
@@ -83,7 +86,7 @@ sol = solve(prob, alg = AutoVern7(Rodas5()))
 
 sol = solve(
     prob,
-    alg = OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5())
+    alg = OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(OrdinaryDiffEqExplicitTableaus.Verner7()), Rodas5())
 )
 @test sol.t[end] == 1000.0
 
@@ -108,6 +111,6 @@ M = [
 f = ODEFunction(rober, mass_matrix = M)
 prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
 cb = DiscreteCallback(
-    (u, t, integrator) -> true, (integrator) -> u_modified!(integrator, true)
+    (u, t, integrator) -> true, (integrator) -> derivative_discontinuity!(integrator, true)
 )
 sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)

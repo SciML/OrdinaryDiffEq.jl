@@ -5,6 +5,11 @@ alg_order(alg::RadauIIA5) = 5
 alg_order(alg::RadauIIA9) = 9
 alg_order(alg::AdaptiveRadau) = 5 #dummy value
 
+default_controller(QT, alg::RadauIIA3) = PredictiveController(QT, alg)
+default_controller(QT, alg::RadauIIA5) = PredictiveController(QT, alg)
+default_controller(QT, alg::RadauIIA9) = PredictiveController(QT, alg)
+default_controller(QT, alg::AdaptiveRadau) = PredictiveController(QT, alg)
+
 isfirk(alg::RadauIIA3) = true
 isfirk(alg::RadauIIA5) = true
 isfirk(alg::RadauIIA9) = true

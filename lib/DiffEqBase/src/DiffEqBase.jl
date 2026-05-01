@@ -7,7 +7,6 @@ end
 import PrecompileTools
 
 import FastPower
-@deprecate fastpow(x, y) FastPower.fastpower(x, y)
 
 using ArrayInterface
 
@@ -22,9 +21,7 @@ using FunctionWrappers: FunctionWrapper
 using MuladdMacro
 
 
-using FastBroadcast: @.., True, False
-
-using Static: reduce_tup
+using FastBroadcast: @.., Serial, Threaded
 
 import RecursiveArrayTools
 import TruncatedStacktraces
@@ -40,6 +37,10 @@ using FastClosures: @closure
 import FunctionWrappersWrappers
 
 using SciMLBase
+
+using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
+    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
+    CustomLevel, AbstractMessageLevel, @verbosity_specifier, verbosity_to_bool
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 
@@ -89,7 +90,7 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     calculate_ensemble_errors, isconstant,
     DEFAULT_REDUCTION, isautodifferentiable,
     isadaptive, isdiscrete, has_syms, AbstractAnalyticalSolution,
-    RECOMPILE_BY_DEFAULT, wrap_sol, has_destats
+    wrap_sol
 
 import SciMLBase: solve, init, step!, solve!, __init, __solve, update_coefficients!,
     update_coefficients, isadaptive, wrapfun_oop, wrapfun_iip,
@@ -150,6 +151,7 @@ include("solve.jl")
 include("internal_euler.jl")
 include("norecompile.jl")
 include("integrator_accessors.jl")
+include("verbosity.jl")
 
 # This is only used for oop stiff solvers
 default_factorize(A) = lu(A; check = false)
@@ -171,6 +173,7 @@ struct ConvergenceSetup{P, C}
     convergence_axis::C
 end
 
+export DEVerbosity
 export initialize!, finalize!
 
 export SensitivityADPassThrough

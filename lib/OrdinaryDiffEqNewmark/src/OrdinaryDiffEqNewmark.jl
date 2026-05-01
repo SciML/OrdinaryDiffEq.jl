@@ -19,6 +19,7 @@ using SciMLBase: DynamicalODEFunction
 using LinearAlgebra: mul!, I
 import FastBroadcast: @..
 import MuladdMacro: @muladd
+import ADTypes: AutoForwardDiff
 
 using NonlinearSolveFirstOrder
 

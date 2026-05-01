@@ -1,3 +1,4 @@
+using Pkg
 using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools
 using SciMLBase
 using Test
@@ -5,9 +6,14 @@ using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 # Run functional tests
-if TEST_GROUP != "QA"
-    @testset "Taylor2 Convergence Tests" begin
+if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @testset "ExplicitTaylor2 Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
@@ -17,7 +23,7 @@ if TEST_GROUP != "QA"
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
     end
 
-    @testset "TaylorN Convergence Tests" begin
+    @testset "ExplicitTaylorN Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
@@ -30,9 +36,9 @@ if TEST_GROUP != "QA"
         end
     end
 
-    @testset "TaylorN Adaptive Tests" begin
-        sol = solve(prob_ode_linear, ExplicitTaylor(order = Val(2)))
-        @test length(sol) < 20
+    @testset "ExplicitTaylorAdaptiveOrder Tests" begin
+        sol = solve(prob_ode_linear, ExplicitTaylorAdaptiveOrder(min_order = Val(6), max_order = Val(10)))
+        @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
 
@@ -56,14 +62,14 @@ if TEST_GROUP != "QA"
         for prob in (prob_auto, prob_full)
             sol2 = solve(prob, ExplicitTaylor2(), dt = 0.01)
             @test SciMLBase.successful_retcode(sol2)
-            @test length(sol2) > 1
+            @test length(sol2.t) > 1
 
             sol8 = solve(
                 prob, ExplicitTaylor(order = Val(8)),
                 abstol = 1.0e-12, reltol = 1.0e-12
             )
             @test SciMLBase.successful_retcode(sol8)
-            @test length(sol8) > 1
+            @test length(sol8.t) > 1
         end
 
         # Verify both give similar results
@@ -90,14 +96,14 @@ if TEST_GROUP != "QA"
 
         sol2 = solve(prob_oop, ExplicitTaylor2(), dt = 0.01)
         @test SciMLBase.successful_retcode(sol2)
-        @test length(sol2) > 1
+        @test length(sol2.t) > 1
 
         sol8 = solve(
             prob_oop, ExplicitTaylor(order = Val(8)),
             abstol = 1.0e-12, reltol = 1.0e-12
         )
         @test SciMLBase.successful_retcode(sol8)
-        @test length(sol8) > 1
+        @test length(sol8.t) > 1
 
         # Check solution accuracy (harmonic oscillator: u1=cos(t), u2=sin(t))
         @test sol8.u[end][1] ≈ cos(1.0) atol = 1.0e-10
@@ -239,7 +245,7 @@ if TEST_GROUP != "QA"
             abstol = 1.0e-14, reltol = 1.0e-14
         )
         @test SciMLBase.successful_retcode(sol)
-        @test length(sol) > 1
+        @test length(sol.t) > 1
 
         # Also test with AutoSpecialize
         prob_auto = ODEProblem(henon_heiles!, u0, tspan)
@@ -252,8 +258,12 @@ if TEST_GROUP != "QA"
     end
 end
 
-# Run QA tests (JET, Aqua)
-if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
-    @time @safetestset "JET Tests" include("jet.jl")
-    @time @safetestset "Aqua" include("qa.jl")
+# Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
+# Allocation tests must run before JET because JET's static analysis
+# invalidates compiled code and causes spurious runtime allocations.
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @safetestset "Allocation Tests" include("qa/allocation_tests.jl")
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end

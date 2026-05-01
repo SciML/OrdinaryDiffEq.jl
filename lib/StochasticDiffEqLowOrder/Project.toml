@@ -1,7 +1,7 @@
 name = "StochasticDiffEqLowOrder"
 uuid = "d15fe365-ce7f-450a-828a-7985bd5b681b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.0.0"
+version = "2.0.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -24,17 +24,17 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-DiffEqBase = "6.187"
+DiffEqBase = "7"
 DiffEqNoiseProcess = "5.13"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "3.22"
+OrdinaryDiffEqCore = "4"
 Pkg = "1"
-RecursiveArrayTools = "2, 3"
+RecursiveArrayTools = "4"
 Reexport = "0.2, 1.0"
-SciMLBase = "2.146"
+SciMLBase = "3"
 StaticArrays = "1.9.14"
-StochasticDiffEqCore = "1"
+StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"
 SafeTestsets = "0.1.0"
 julia = "1.10"

@@ -1,11 +1,18 @@
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEq]
 path = "../../../.."
 
+[sources.OrdinaryDiffEqLowStorageRK]
+path = "../.."
+
 [compat]
 CUDA = "4, 5"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "7"
+OrdinaryDiffEqLowStorageRK = "3"
+SciMLBase = "3"

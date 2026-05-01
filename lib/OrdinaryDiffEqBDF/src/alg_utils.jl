@@ -31,6 +31,12 @@ isadaptive(alg::DFBDF) = true
 
 has_special_newton_error(alg::QNDF) = true
 
+default_controller(QT, alg::DImplicitEuler) = IController(QT, alg)
+default_controller(QT, alg::ABDF2) = IController(QT, alg)
+default_controller(QT, alg::QNDF1) = IController(QT, alg)
+default_controller(QT, alg::QNDF2) = IController(QT, alg)
+default_controller(QT, alg::DABDF2) = IController(QT, alg)
+
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
 

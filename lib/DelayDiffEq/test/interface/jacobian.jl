@@ -54,6 +54,11 @@ using Test
 
         # check number of function evaluations
         @test !iszero(nWfact_ts[])
+        # Wfact_t is called on every step attempt (accepted + rejected), while
+        # the user-supplied `jac` is only called on accepted steps because
+        # do_newJW's errorfail branch reuses J across rejected retries. So
+        # nWfact_ts[] == njacs[] only when there are no rejections, which
+        # isn't true for Rodas5P / TRBDF2 on this DDE.
         @test_broken nWfact_ts[] == njacs[]
         @test iszero(sol_Wfact_t.stats.njacs)
         @test_broken nWfact_ts[] == sol_Wfact_t.stats.nw

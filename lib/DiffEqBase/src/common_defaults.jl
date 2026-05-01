@@ -18,6 +18,10 @@ function UNITLESS_ABS2(x::RecursiveArrayTools.ArrayPartition)
     return mapreduce(UNITLESS_ABS2, abs2_and_sum, x.x, init = zero(real(value(eltype(x)))))
 end
 
+function UNITLESS_ABS2(x::RecursiveArrayTools.AbstractRaggedVectorOfArray)
+    return mapreduce(UNITLESS_ABS2, +, x.u; init = zero(real(eltype(x))))
+end
+
 UNITLESS_ABS2(f::F, x::Number) where {F} = abs2(f(x))
 function UNITLESS_ABS2(f::F, x::AbstractArray) where {F}
     return mapreduce(
@@ -37,6 +41,7 @@ recursive_length(u::Number) = length(u)
 recursive_length(u::AbstractArray{<:AbstractArray}) = sum(recursive_length, u)
 recursive_length(u::RecursiveArrayTools.ArrayPartition) = sum(recursive_length, u.x)
 recursive_length(u::RecursiveArrayTools.VectorOfArray) = sum(recursive_length, u.u)
+recursive_length(u::RecursiveArrayTools.AbstractRaggedVectorOfArray) = sum(recursive_length, u.u; init = 0)
 function recursive_length(
         u::AbstractArray{
             <:StaticArraysCore.StaticArray{S, <:Number},
@@ -102,6 +107,7 @@ function ODE_DEFAULT_NORM(
         u::Union{
             AbstractArray,
             RecursiveArrayTools.AbstractVectorOfArray,
+            RecursiveArrayTools.AbstractRaggedVectorOfArray,
         },
         t
     )

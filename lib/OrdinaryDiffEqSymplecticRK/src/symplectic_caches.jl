@@ -137,7 +137,9 @@ function alg_cache(
     return VerletLeapfrogConstantCache(uEltypeNoUnits(1 // 2))
 end
 
-@cache struct Symplectic2Cache{uType, rateType, tableauType} <: HamiltonMutableCache
+# ===== Generic symplectic cache for drift-kick methods =====
+
+@cache struct SymplecticGenericCache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -146,8 +148,29 @@ end
     tab::tableauType
 end
 
+# Mapping from algorithm to tableau constructor
+_symplectic_tableau(::PseudoVerletLeapfrog, ::Type{T}, ::Type{T2}) where {T, T2} = PseudoVerletLeapfrogConstantCache(T, T2)
+_symplectic_tableau(::McAte2, ::Type{T}, ::Type{T2}) where {T, T2} = McAte2ConstantCache(T, T2)
+_symplectic_tableau(::Ruth3, ::Type{T}, ::Type{T2}) where {T, T2} = Ruth3ConstantCache(T, T2)
+_symplectic_tableau(::McAte3, ::Type{T}, ::Type{T2}) where {T, T2} = McAte3ConstantCache(T, T2)
+_symplectic_tableau(::CandyRoz4, ::Type{T}, ::Type{T2}) where {T, T2} = CandyRoz4ConstantCache(T, T2)
+_symplectic_tableau(::McAte4, ::Type{T}, ::Type{T2}) where {T, T2} = McAte4ConstantCache(T, T2)
+_symplectic_tableau(::CalvoSanz4, ::Type{T}, ::Type{T2}) where {T, T2} = CalvoSanz4ConstantCache(T, T2)
+_symplectic_tableau(::McAte42, ::Type{T}, ::Type{T2}) where {T, T2} = McAte42ConstantCache(T, T2)
+_symplectic_tableau(::McAte5, ::Type{T}, ::Type{T2}) where {T, T2} = McAte5ConstantCache(T, T2)
+_symplectic_tableau(::Yoshida6, ::Type{T}, ::Type{T2}) where {T, T2} = Yoshida6ConstantCache(T, T2)
+_symplectic_tableau(::KahanLi6, ::Type{T}, ::Type{T2}) where {T, T2} = KahanLi6ConstantCache(T, T2)
+_symplectic_tableau(::McAte8, ::Type{T}, ::Type{T2}) where {T, T2} = McAte8ConstantCache(T, T2)
+_symplectic_tableau(::KahanLi8, ::Type{T}, ::Type{T2}) where {T, T2} = KahanLi8ConstantCache(T, T2)
+_symplectic_tableau(::SofSpa10, ::Type{T}, ::Type{T2}) where {T, T2} = SofSpa10ConstantCache(T, T2)
+
+const SymplecticGenericAlgorithm = Union{
+    PseudoVerletLeapfrog, McAte2, Ruth3, McAte3, CandyRoz4, McAte4,
+    CalvoSanz4, McAte42, McAte5, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10,
+}
+
 function alg_cache(
-        alg::PseudoVerletLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::SymplecticGenericAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}, verbose
@@ -155,393 +178,21 @@ function alg_cache(
     tmp = zero(u)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    tab = PseudoVerletLeapfrogConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
+    tab = _symplectic_tableau(
+        alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
-    return Symplectic2Cache(u, uprev, k, tmp, fsalfirst, tab)
+    return SymplecticGenericCache(u, uprev, k, tmp, fsalfirst, tab)
 end
 
 function alg_cache(
-        alg::PseudoVerletLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::SymplecticGenericAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return PseudoVerletLeapfrogConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
+    return _symplectic_tableau(
+        alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
-end
-
-function alg_cache(
-        alg::McAte2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = McAte2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic2Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::McAte2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct Symplectic3Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::Ruth3, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = Ruth3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic3Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::Ruth3, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Ruth3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(
-        alg::McAte3, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = McAte3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic3Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::McAte3, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct Symplectic4Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::McAte4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = McAte4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic4Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::McAte4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(
-        alg::CandyRoz4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = CandyRoz4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic4Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::CandyRoz4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct Symplectic45Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::CalvoSanz4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = CalvoSanz4ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return Symplectic45Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::CalvoSanz4, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CalvoSanz4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(
-        alg::McAte42, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = McAte42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic45Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::McAte42, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct Symplectic5Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::McAte5, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = McAte5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic5Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::McAte5, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct Symplectic6Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::Yoshida6, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = Yoshida6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic6Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::Yoshida6, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return Yoshida6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct Symplectic62Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::KahanLi6, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = KahanLi6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return Symplectic62Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::KahanLi6, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return KahanLi6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct McAte8Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::McAte8, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = McAte8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return McAte8Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::McAte8, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return McAte8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct KahanLi8Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::KahanLi8, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = KahanLi8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return KahanLi8Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::KahanLi8, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return KahanLi8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-@cache struct SofSpa10Cache{uType, rateType, tableauType} <: HamiltonMutableCache
-    u::uType
-    uprev::uType
-    tmp::uType
-    k::rateType
-    fsalfirst::rateType
-    tab::tableauType
-end
-
-function alg_cache(
-        alg::SofSpa10, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = SofSpa10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return SofSpa10Cache(u, uprev, k, tmp, fsalfirst, tab)
-end
-
-function alg_cache(
-        alg::SofSpa10, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return SofSpa10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function get_fsalfirstlast(

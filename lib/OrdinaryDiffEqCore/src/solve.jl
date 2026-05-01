@@ -1,4 +1,4 @@
-function SciMLBase.__solve(
+Base.@constprop :aggressive function SciMLBase.__solve(
         prob::Union{
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
@@ -46,7 +46,7 @@ end
     return out[ind]
 end
 
-function SciMLBase.__init(
+Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
             SciMLBase.AbstractDAEProblem,
@@ -74,7 +74,7 @@ Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
 separated from `__init` so that SDE packages can call it directly, bypassing
 method dispatch (which would otherwise re-enter SDE's more specific `__init`).
 """
-function _ode_init(
+Base.@constprop :aggressive function _ode_init(
         prob,
         alg,
         timeseries_init = (),
@@ -97,20 +97,15 @@ function _ode_init(
         calck = (callback !== nothing && callback !== CallbackSet()) ||
             (dense) || !isempty(saveat), # and no dense output
         dt = nothing,
-        dtmin = eltype(prob.tspan)(0),
-        dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
+        # For runtime-unit quantities (DynamicQuantities), eltype(prob.tspan)(0) would
+        # drop units; use a value-based zero to preserve units.
+        dtmin = zero(prob.tspan[1]),
+        dtmax = (prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = anyadaptive(alg),
         abstol = nothing,
         reltol = nothing,
-        gamma = nothing,
-        qmin = nothing,
-        qmax = nothing,
-        qsteady_min = nothing,
-        qsteady_max = nothing,
-        beta1 = nothing,
-        beta2 = nothing,
-        qoldinit = nothing,
+        controller = nothing,
         fullnormalize = true,
         failfactor = 2,
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
@@ -119,7 +114,6 @@ function _ode_init(
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
-        controller = nothing,
         timeseries_errors = true,
         dense_errors = false,
         advance_to_tstop = false,
@@ -260,65 +254,35 @@ function _ode_init(
         _alg = alg
     end
 
-    use_old_kwargs = haskey(kwargs, :alias_u0) || haskey(kwargs, :alias_du0)
-
-    aliases = nothing
-    if use_old_kwargs
-        aliases = ODEAliasSpecifier()
-        if haskey(kwargs, :alias_u0)
-            message = "`alias_u0` keyword argument is deprecated, to set `alias_u0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_u0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(alias_u0 = values(kwargs).alias_u0)
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = nothing)
-        end
-
-        if haskey(kwargs, :alias_du0)
-            message = "`alias_du0` keyword argument is deprecated, to set `alias_du0`,
-            please use an ODEAliasSpecifier, e.g. `solve(prob, alias = ODEAliasSpecifier(alias_du0 = true))"
-            Base.depwarn(message, :init)
-            Base.depwarn(message, :solve)
-            aliases = ODEAliasSpecifier(
-                alias_u0 = aliases.alias_u0, alias_du0 = values(kwargs).alias_du0
-            )
-        else
-            aliases = ODEAliasSpecifier(alias_u0 = aliases.alias_u0, alias_du0 = nothing)
-        end
-
-        aliases
-
-    else
-        # If alias isa Bool, all fields of ODEAliases set to alias
-        if alias isa Bool
-            aliases = ODEAliasSpecifier(alias = alias)
-        elseif alias isa ODEAliasSpecifier
-            aliases = alias
-        end
+    alias
+    if !(alias isa ODEAliasSpecifier)
+        throw(ArgumentError("alias kwarg must be an ODEAliasSpecifier"))
     end
 
-    if isnothing(aliases.alias_f) || aliases.alias_f
+    if isnothing(alias.alias_f) || alias.alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p
+    if isnothing(alias.alias_p) || alias.alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+    if !isnothing(alias.alias_u0) && alias.alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
     end
 
-    # Handle null u0 (e.g., MTK systems with only callbacks and no state variables)
-    # Convert to empty Float64 array to allow initialization to proceed
-    if u === nothing
+    # Null u0 (e.g., MTK systems with only callbacks and no state variables).
+    # Most solvers' caches are built with zero(u)/similar(u) and can't ingest `nothing`,
+    # so coerce to Float64[] to let them limp through. Solvers that can handle the
+    # `nothing` signal directly (e.g., IDSolve bypasses NonlinearSolve entirely)
+    # opt in via allows_null_u0 and keep the richer signal.
+    if u === nothing && !allows_null_u0(_alg)
         u = Float64[]
     end
 
@@ -328,7 +292,7 @@ function _ode_init(
     end
 
     if _alg isa DAEAlgorithm
-        if !isnothing(aliases.alias_du0) && aliases.alias_du0
+        if !isnothing(alias.alias_du0) && alias.alias_du0
             du = prob.du0
         else
             du = recursivecopy(prob.du0)
@@ -344,21 +308,17 @@ function _ode_init(
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
     uEltypeNoUnits = recursive_unitless_eltype(u)
-    tTypeNoUnits = typeof(one(tType))
+    tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
+
+    scalar_type_tol =
+        uBottomEltypeNoUnits == uBottomEltype &&
+        uBottomEltype <: Union{Real, Complex}
 
     if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
         abstol_internal = false
     elseif abstol === nothing
-        if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = unitfulvalue(
-                real(
-                    convert(
-                        uBottomEltype,
-                        oneunit(uBottomEltype) *
-                            1 // 10^6
-                    )
-                )
-            )
+        if scalar_type_tol
+            abstol_internal = unitfulvalue(real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^6)))
         else
             abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
         end
@@ -369,15 +329,8 @@ function _ode_init(
     if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
         reltol_internal = false
     elseif reltol === nothing
-        if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = unitfulvalue(
-                real(
-                    convert(
-                        uBottomEltype,
-                        oneunit(uBottomEltype) * 1 // 10^3
-                    )
-                )
-            )
+        if scalar_type_tol
+            reltol_internal = unitfulvalue(real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^3)))
         else
             reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
         end
@@ -390,7 +343,12 @@ function _ode_init(
 
     if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
             uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
-        rate_prototype = recursivecopy(u)
+        # SDE delegation provides `_cache` and a non-nothing `W`. In that case
+        # `rate_prototype`'s value is unused: only its type is taken downstream,
+        # the alg_cache calls are skipped (cache is provided), get_fsalfirstlast
+        # is short-circuited, and the [rate_prototype] push is gated by
+        # `isnothing(W)` which is false for SDE. Alias instead of allocating.
+        rate_prototype = (_cache !== nothing && W !== nothing) ? u : recursivecopy(u)
     elseif prob isa DAEProblem
         rate_prototype = prob.du0
     else
@@ -398,7 +356,7 @@ function _ode_init(
                 eltype(u) <: Enum
             rate_prototype = u
         else # has units!
-            rate_prototype = u / oneunit(tType)
+            rate_prototype = u / oneunit(first(tspan))
         end
     end
     rateType = typeof(rate_prototype) ## Can be different if united
@@ -413,7 +371,7 @@ function _ode_init(
         resType = typeof(res_prototype)
     end
 
-    if isnothing(aliases.alias_tstops) || aliases.alias_tstops
+    if isnothing(alias.alias_tstops) || alias.alias_tstops
         tstops = tstops
     else
         tstops = recursivecopy(tstops)
@@ -521,16 +479,17 @@ function _ode_init(
 
     k = rateType[]
 
-    if uses_uprev(_alg, adaptive) || calck
+    if _uprev !== nothing
+        # SDE delegation provides a pre-built uprev (cache holds references to it).
+        # Use it directly instead of allocating a recursivecopy(u) that would
+        # immediately be discarded.
+        uprev = _uprev
+    elseif uses_uprev(_alg, adaptive) || calck
         uprev = recursivecopy(u)
     else
         # Some algorithms do not use `uprev` explicitly. In that case, we can save
         # some memory by aliasing `uprev = u`, e.g. for "2N" low storage methods.
         uprev = u
-    end
-    # SDE delegation: use pre-built uprev if provided (cache holds references to it)
-    if _uprev !== nothing
-        uprev = _uprev
     end
     if allow_extrapolation
         uprev2 = recursivecopy(u)
@@ -560,70 +519,21 @@ function _ode_init(
         )
     end
 
-    # Setting up the step size controller
-    if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
-        throw(ArgumentError("Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
-    end
-
-    # Deprecation warnings for users to break down which parameters they accidentally set.
-    if (beta1 !== nothing || beta2 !== nothing)
-        message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qmin !== nothing || qmax !== nothing)
-        message = "Providing the legacy PID parameters `qmin, qmax` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qsteady_min !== nothing || qsteady_max !== nothing)
-        message = "Providing the legacy PID parameters `qsteady_min, qsteady_max` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-    if (qoldinit !== nothing)
-        message = "Providing the legacy PID parameters `qoldinit` is deprecated. Use the keyword argument `controller` instead."
-        Base.depwarn(message, :init)
-        Base.depwarn(message, :solve)
-    end
-
     QT = determine_controller_datatype(u, internalnorm, tspan)
 
-    # The following code provides an upgrade path for users by preserving the old behavior.
-    legacy_controller_parameters = (gamma, qmin, qmax, qsteady_min, qsteady_max, beta1, beta2, qoldinit)
-    if controller === nothing # We have to reconstruct the old controller before breaking release.
-        if any(legacy_controller_parameters .== nothing)
-            gamma = convert(QT, gamma === nothing ? gamma_default(alg) : gamma)
-            qmin = convert(QT, qmin === nothing ? qmin_default(alg) : qmin)
-            qmax = convert(QT, qmax === nothing ? qmax_default(alg) : qmax)
-            qsteady_min = convert(QT, qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min)
-            qsteady_max = convert(QT, qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max)
-            qoldinit = convert(QT, qoldinit === nothing ? (anyadaptive(alg) ? 1 // 10^4 : 0) : qoldinit)
-        end
-        controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
-    else # Controller has been passed
-        gamma = hasfield(typeof(controller), :gamma) ? controller.gamma : gamma_default(alg)
-        qmin = hasfield(typeof(controller), :qmin) ? controller.qmin : qmin_default(alg)
-        qmax = hasfield(typeof(controller), :qmax) ? controller.qmax : qmax_default(alg)
-        qsteady_min = hasfield(typeof(controller), :qsteady_min) ? controller.qsteady_min : qsteady_min_default(alg)
-        qsteady_max = hasfield(typeof(controller), :qsteady_max) ? controller.qsteady_max : qsteady_max_default(alg)
-        qoldinit = hasfield(typeof(controller), :qoldinit) ? controller.qoldinit : (anyadaptive(alg) ? 1 // 10^4 : 0)
+    if controller === nothing
+        controller = default_controller(QT, alg)
     end
 
     EEstT = if tTypeNoUnits <: Integer
-        promote_type(typeof(qmin), typeof(qmax))
+        QT
     elseif prob isa SciMLBase.AbstractDiscreteProblem
         constvalue(tTypeNoUnits)
     else
         typeof(internalnorm(u, t))
     end
 
-    atmp = if hasfield(typeof(cache), :atmp)
-        cache.atmp
-    else
-        nothing
-    end
-    controller_cache = setup_controller_cache(_alg, atmp, controller)
+    controller_cache = setup_controller_cache(_alg, cache, controller, EEstT)
 
     save_end_user = save_end
     save_end = save_end === nothing ?
@@ -633,8 +543,6 @@ function _ode_init(
     opts = DEOptions{
         typeof(abstol_internal), typeof(reltol_internal),
         QT, tType,
-        # typeof(controller),
-        typeof(controller_cache),
         typeof(internalnorm), typeof(internalopnorm),
         typeof(save_end_user),
         typeof(callbacks_internal),
@@ -650,20 +558,8 @@ function _ode_init(
         maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
-        # TODO vvv remove this block as these are controller and not integrator parameters vvv
-        QT(gamma),
-        QT(qmax),
-        QT(qmin),
-        QT(qsteady_max),
-        QT(qsteady_min),
-        QT(qoldinit),
-        # TODO ^^^remove this block as these are controller and not integrator parameters ^^^
         QT(failfactor),
         tType(dtmax), tType(dtmin),
-        # TODO vvv remove this vvv
-        # controller,
-        controller_cache,
-        # TODO ^^^ remove this ^^^
         internalnorm,
         internalopnorm,
         save_idxs, tstops_internal,
@@ -735,7 +631,7 @@ function _ode_init(
     iter = 0
     kshortsize = 0
     reeval_fsal = false
-    u_modified = false
+    derivative_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     next_step_tstop = false
@@ -753,10 +649,7 @@ function _ode_init(
             0.0
         )
     dtchangeable = isdtchangeable(_alg)
-    q11 = QT(1)
     success_iter = 0
-    erracc = QT(1)
-    dtacc = tType(1)
     reinitialize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -782,12 +675,14 @@ function _ode_init(
             idx += 1
         end
     end 
+    # Seed the initial EEst on the controller cache (was previously
+    # `integrator.EEst = oneunit(EEstT)`).
+    set_EEst!(controller_cache, EEst)
 
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
-        tType, typeof(p),
-        typeof(eigen_est), EEstT,
-        QT, typeof(tdir), typeof(k), SolType,
+        tType, typeof(p), typeof(eigen_est),
+        typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
         typeof(last_event_error), typeof(callback_cache),
@@ -815,11 +710,11 @@ function _ode_init(
         vector_event_last_time,
         last_event_error, accept_step,
         isout, reeval_fsal,
-        u_modified, reinitialize, isdae,
+        derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng, disco_probs,
         W, P, sqdt,
-        noise, c, rate_constants, QT(1)
+        noise, c, rate_constants
     )
 
     if initialize_integrator
@@ -882,7 +777,36 @@ function _ode_init(
         !isnothing(integrator.P) && (integrator.P.dt = integrator.dt)
     end
 
+    # Starting-time discontinuity: if `d_discontinuities` names `t0`, advance
+    # past it so the first step's RHS evaluations are on the post-discontinuity
+    # side of `t`-dependent branches in `f` (e.g. `if t > t0`). The regular
+    # `update_fsal!` mechanism only fires at iter > 0, so handle the iter==0
+    # case explicitly here. Interior/end discontinuities are handled normally
+    # via the tstops heap and `update_fsal!`. Gated on `initialize_integrator`
+    # because otherwise the FSAL cache is not yet populated.
+    if initialize_integrator
+        handle_starting_time_discontinuity!(integrator)
+    end
+
     return integrator
+end
+
+"""
+    handle_starting_time_discontinuity!(integrator)
+
+If `integrator.opts.d_discontinuities` has an entry at exactly `integrator.t`
+(i.e. at `t0`), pop it, shift `t` by one ULP in the `tdir` direction, and
+re-evaluate the FSAL cache on the post-discontinuity side. No-op otherwise.
+"""
+function handle_starting_time_discontinuity!(integrator)
+    if has_discontinuity(integrator) &&
+            first_discontinuity(integrator) == integrator.tdir * integrator.t
+        handle_discontinuities!(integrator)
+        shift_past_discontinuity!(integrator)
+        get_current_isfsal(integrator.alg, integrator.cache) &&
+            reset_fsal!(integrator)
+    end
+    return nothing
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
@@ -1096,13 +1020,13 @@ function initialize_callbacks!(integrator, initialize_save = true)
     t = integrator.t
     u = integrator.u
     callbacks = integrator.opts.callback
-    integrator.u_modified = true
+    integrator.derivative_discontinuity = true
 
-    u_modified = initialize!(callbacks, u, t, integrator)
+    derivative_discontinuity = initialize!(callbacks, u, t, integrator)
 
     # if the user modifies u, we need to fix previous values before initializing
     # FSAL in order for the starting derivatives to be correct
-    if u_modified
+    if derivative_discontinuity
         if isinplace(integrator.sol.prob)
             recursivecopy!(integrator.uprev, integrator.u)
         else
@@ -1127,7 +1051,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
-    integrator.u_modified = false
+    integrator.derivative_discontinuity = false
 
     return if initialize_save
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)

@@ -1,0 +1,34 @@
+name = "OrdinaryDiffEqExplicitTableaus"
+uuid = "3278f1b1-0f5c-4cde-98e0-ba5eb00db955"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "2.0.0"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+
+[extras]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEq = {path = "../.."}
+OrdinaryDiffEqExplicitRK = {path = "../OrdinaryDiffEqExplicitRK"}
+OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
+
+[compat]
+DiffEqBase = "7"
+DiffEqDevTools = "3"
+ODEProblemLibrary = "1"
+OrdinaryDiffEq = "7"
+Test = "<0.0.1, 1"
+julia = "1.10"
+
+[targets]
+test = ["DiffEqDevTools", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqLowOrderRK", "Random", "Test"]

@@ -13,15 +13,13 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     explicit_rk_docstring, trivial_limiter!,
     _ode_interpolant, _ode_interpolant!,
     _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
-using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
-using Static: False
+using FastBroadcast: Serial
 import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using SciMLBase
-
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - master
+      - v7
   push:
     branches:
       - master
+      - v7
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
@@ -19,6 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     continue-on-error: ${{ matrix.group == 'Downstream' }}
+    env:
+      # Bypass Julia's Pkg server for registry; it lags behind JuliaRegistries/General
+      # by up to hours and caches on a TTL. Resolve against git directly so newly
+      # registered package versions are seen immediately by CI.
+      JULIA_PKG_SERVER: ""
     strategy:
       fail-fast: false
       matrix:
@@ -58,12 +65,75 @@ jobs:
             version: 'pre'
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v3
+      # Split cache restore/save by event to work around recurring GitHub
+      # Actions cache upload auth failures (Azure SAS "Server failed to
+      # authenticate the request") that show up sporadically across the
+      # ~68-cell matrix. PRs only restore from a recent master push cache;
+      # only master push runs write the cache. continue-on-error keeps a
+      # transient cache backend hiccup from flunking an otherwise green job.
+      - name: Cache Julia depot (push only — read+write)
+        if: github.event_name == 'push'
+        uses: julia-actions/cache@v3
+        continue-on-error: true
         with:
           cache-compiled: 'false'
+      - name: Cache Julia depot (PR — restore only)
+        if: github.event_name != 'push'
+        uses: actions/cache/restore@v5
+        continue-on-error: true
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/scratchspaces
+            ~/.julia/logs
+          # Primary key intentionally won't match (run_id is unique); the
+          # restore-keys prefix matches julia-actions/cache's key scheme
+          # `${cache-name};os=${runner.os};${matrix...}` so we pull the most
+          # recent cache from a master push for this same matrix cell.
+          key: julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};run_id=${{ github.run_id }};run_attempt=${{ github.run_attempt }}
+          restore-keys: |
+            julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
+      - name: Refresh General registry directly from git
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          # Force a fresh git clone of General to dodge pkg server lag.
+          # Must run BEFORE the Pkg.develop step below: that step's resolve
+          # needs current versions of registered deps (e.g. SciMLBase v3,
+          # CoverageTools), and the cached pkg-server registry is often
+          # several days stale, so develop's resolve fails with "expected
+          # package <X> to be registered".
+          try
+              Pkg.Registry.rm("General")
+          catch
+          end
+          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
+      - name: Develop local path deps (Julia < 1.11)
+        shell: julia --color=yes --project=. {0}
+        run: |
+          using Pkg
+          if VERSION < v"1.11.0-DEV.0"
+            toml = Pkg.TOML.parsefile("Project.toml")
+            if haskey(toml, "sources")
+              specs = Pkg.PackageSpec[]
+              for (dep, spec) in toml["sources"]
+                if spec isa Dict && haskey(spec, "path") && isdir(spec["path"])
+                  @info "Developing" dep spec["path"]
+                  push!(specs, Pkg.PackageSpec(path=spec["path"]))
+                end
+              end
+              # Batch the develop call so Pkg resolves all path deps together.
+              # Calling Pkg.develop once per source triggers a full re-resolve
+              # each time, which fails if any sibling path dep isn't yet
+              # registered (e.g. OrdinaryDiffEqRosenbrockTableaus).
+              isempty(specs) || Pkg.develop(specs)
+            end
+          end
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:

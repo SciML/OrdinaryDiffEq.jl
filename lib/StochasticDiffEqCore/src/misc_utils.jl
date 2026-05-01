@@ -23,7 +23,7 @@ get_du(dc::DiffCache, T) = dc.du
 
 # Default nlsolve behavior, should be removed
 
-Base.@pure determine_chunksize(u, alg::DEAlgorithm) = determine_chunksize(u, get_chunksize(alg))
+Base.@pure determine_chunksize(u, alg::AbstractDEAlgorithm) = determine_chunksize(u, get_chunksize(alg))
 Base.@pure function determine_chunksize(u, CS)
     if CS != 0
         return CS
@@ -32,37 +32,34 @@ Base.@pure function determine_chunksize(u, CS)
     end
 end
 
-struct NLSOLVEJL_SETUP{CS, AD} end
-Base.@pure NLSOLVEJL_SETUP(; chunk_size = 0, autodiff = true) = NLSOLVEJL_SETUP{
-    chunk_size, autodiff,
-}()
+struct NLSOLVEJL_SETUP{AD}
+    autodiff::AD
+end
+NLSOLVEJL_SETUP(; autodiff = AutoForwardDiff()) = NLSOLVEJL_SETUP(autodiff)
 
 # Wrapper to store the function for use with SimpleNonlinearSolve
 struct IIFNLSolveFunc{F}
     f::F
 end
 
-function (p::NLSOLVEJL_SETUP{CS, AD})(f_wrapper::IIFNLSolveFunc, u0; kwargs...) where {
-        CS, AD,
-    }
+function (p::NLSOLVEJL_SETUP)(f_wrapper::IIFNLSolveFunc, u0; kwargs...)
     f = f_wrapper.f
     # Create a NonlinearProblem-compatible function
     # The IIF methods use f(resid, u) signature (in-place)
     nlf = NonlinearFunction{true}((resid, u, p) -> (f(resid, u); nothing))
     prob = NonlinearProblem(nlf, u0)
-    ad = AD ? AutoForwardDiff() : AutoFiniteDiff()
-    alg = SimpleTrustRegion(; autodiff = ad)
+    alg = SimpleTrustRegion(; autodiff = p.autodiff)
     sol = solve(prob, alg)
     return sol.u
 end
 
-function (p::NLSOLVEJL_SETUP{CS, AD})(::Type{Val{:init}}, f, u0_prototype) where {CS, AD}
+function (p::NLSOLVEJL_SETUP)(::Type{Val{:init}}, f, u0_prototype)
     # Return a wrapper that stores the function
     return IIFNLSolveFunc(f)
 end
 
 get_chunksize(x) = 0
-get_chunksize(x::NLSOLVEJL_SETUP{CS, AD}) where {CS, AD} = CS
+get_chunksize(x::NLSOLVEJL_SETUP) = OrdinaryDiffEqCore._get_fwd_chunksize_int(x.autodiff)
 
 macro cache(expr)
     name = expr.args[2].args[1].args[1]

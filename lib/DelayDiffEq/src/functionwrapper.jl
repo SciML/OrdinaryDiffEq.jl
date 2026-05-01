@@ -7,17 +7,28 @@ macro wrap_h(signature)
     args = signature.args[2:end]
     args_wo_h = [arg for arg in args if arg !== :h]
 
+    # NOTE: we build the lambda parameter list explicitly as an `Expr(:tuple, …)`
+    # rather than writing `($(args_wo_h...))` directly. Writing
+    # `($(args_wo_h...)) -> body` in an interpolated quote with N > 1 elements
+    # parses as `Expr(:->, :a, :b, …, body)` (which Julia then interprets as a
+    # 1-argument destructuring lambda), not as a multi-argument lambda. The
+    # explicit `Expr(:tuple, …)` avoids that pitfall and is Runic-stable.
+    ip_args = Expr(:tuple, args_wo_h...)
+    ip_call = Expr(:call, :_f, args...)
+    oop_args = Expr(:tuple, args_wo_h[2:end]...)
+    oop_call = Expr(:call, :_f, args[2:end]...)
+
     return quote
         if f.$name === nothing
             nothing
         else
             if isinplace(f)
                 let _f = f.$name, h = h
-                    ($(args_wo_h...),) -> _f($(args...))
+                    $(Expr(:->, ip_args, ip_call))
                 end
             else
                 let _f = f.$name, h = h
-                    ($(args_wo_h[2:end]...),) -> _f($(args[2:end]...))
+                    $(Expr(:->, oop_args, oop_call))
                 end
             end
         end

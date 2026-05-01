@@ -1,4 +1,5 @@
 using LinearAlgebra, OrdinaryDiffEq, Test, ADTypes
+using OrdinaryDiffEqRosenbrock: Rosenbrock23
 f = (du, u, p, t) -> du .= u ./ t
 jac = (J, u, p, t) -> (J[1, 1] = 1 / t; J[2, 2] = 1 / t; J[1, 2] = 0; J[2, 1] = 0)
 
@@ -7,11 +8,11 @@ fun = ODEFunction(f; jac = jac, jac_prototype = jp_diag)
 prob = ODEProblem(fun, ones(2), (1.0, 10.0))
 sol = solve(prob, Rosenbrock23())
 @test sol.u[end] ≈ [10.0, 10.0]
-@test length(sol) < 60
+@test length(sol.t) < 60
 
 sol = solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
 @test sol.u[end] ≈ [10.0, 10.0]
-@test length(sol) < 60
+@test length(sol.t) < 60
 
 jp = Tridiagonal(jp_diag)
 fun = ODEFunction(f; jac = jac, jac_prototype = jp)
@@ -19,11 +20,11 @@ prob = ODEProblem(fun, ones(2), (1.0, 10.0))
 
 sol = solve(prob, Rosenbrock23())
 @test sol.u[end] ≈ [10.0, 10.0]
-@test length(sol) < 60
+@test length(sol.t) < 60
 
 sol = solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
 @test sol.u[end] ≈ [10.0, 10.0]
-@test length(sol) < 60
+@test length(sol.t) < 60
 
 #=
 jp = SymTridiagonal(jp_diag)
@@ -31,7 +32,7 @@ fun = ODEFunction(f; jac=jac, jac_prototype=jp)
 prob = ODEProblem(fun,ones(2),(1.0,10.0))
 sol = solve(prob,Rosenbrock23())
 @test sol[end] ≈ [10.0,10.0]
-@test length(sol) < 60
+@test length(sol.t) < 60
 =#
 
 # Don't test the autodiff=false version here because it's not as numerically stable,
@@ -44,7 +45,7 @@ sol = solve(prob,Rosenbrock23())
     local prob = ODEProblem(fun, ones(2), (1.0, 10.0))
     local sol = solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
     @test sol.u[end] ≈ [10.0, 10.0]
-    @test length(sol) < 60
+    @test length(sol.t) < 60
 end
 
 @test_broken begin
@@ -53,5 +54,5 @@ end
     local prob = ODEProblem(fun, ones(2), (1.0, 10.0))
     local sol = solve(prob, Rosenbrock23(autodiff = AutoFiniteDiff()))
     @test sol.u[end] ≈ [10.0, 10.0]
-    @test length(sol) < 60
+    @test length(sol.t) < 60
 end

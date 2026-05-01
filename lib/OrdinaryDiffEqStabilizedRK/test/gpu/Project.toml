@@ -2,13 +2,23 @@
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqStabilizedRK = "358294b1-0aab-51c3-aafe-ad5ab194a2ad"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEq]
 path = "../../../.."
 
+[sources.OrdinaryDiffEqLowOrderRK]
+path = "../../../OrdinaryDiffEqLowOrderRK"
+
+[sources.OrdinaryDiffEqStabilizedRK]
+path = "../.."
+
 [compat]
 CUDA = "4, 5"
-OrdinaryDiffEq = "6"
-RecursiveArrayTools = "3"
+OrdinaryDiffEq = "7"
+OrdinaryDiffEqLowOrderRK = "2"
+OrdinaryDiffEqStabilizedRK = "2"
+RecursiveArrayTools = "4"

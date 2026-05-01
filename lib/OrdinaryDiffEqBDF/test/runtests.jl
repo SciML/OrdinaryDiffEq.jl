@@ -8,6 +8,11 @@ function activate_gpu_env()
     return Pkg.instantiate()
 end
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 # Run GPU tests
 if TEST_GROUP == "GPU"
     activate_gpu_env()
@@ -19,7 +24,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "DAE Convergence Tests" include("dae_convergence_tests.jl")
     @time @safetestset "DAE AD Tests" include("dae_ad_tests.jl")
     @time @safetestset "DAE Event Tests" include("dae_event.jl")
-    @time @safetestset "DAE u_modified! Tests" include("dae_u_modified_tests.jl")
+    @time @safetestset "DAE derivative_discontinuity! Tests" include("dae_derivative_discontinuity_tests.jl")
     @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
 
     @time @safetestset "BDF Inference Tests" include("inference_tests.jl")
@@ -31,7 +36,8 @@ end
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-    @time @safetestset "Allocation Tests" include("allocation_tests.jl")
-    @time @safetestset "JET Tests" include("jet.jl")
-    @time @safetestset "Aqua" include("qa.jl")
+    activate_qa_env()
+    @time @safetestset "Allocation Tests" include("qa/allocation_tests.jl")
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end

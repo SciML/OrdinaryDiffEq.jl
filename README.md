@@ -25,6 +25,10 @@ import Pkg;
 Pkg.add("OrdinaryDiffEq");
 ```
 
+## v7 Breaking Changes
+
+OrdinaryDiffEq v7 bumps to **SciMLBase v3** and **RecursiveArrayTools v4** with breaking changes across all sublibraries. See [NEWS.md](NEWS.md) for the full migration guide.
+
 ## API
 
 OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.sciml.ai/DiffEqDocs/stable/getting_started/#ode_example) using the `Tsit5()` algorithm:

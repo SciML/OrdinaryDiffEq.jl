@@ -148,7 +148,7 @@ SciMLBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = SciMLBase.has_Wfact_t(f
 
 # Wrappers for computing separated DAE Jacobians: dF/du and dF/d(du).
 # These pass the differentiation variable directly to f, so ForwardDiff
-# handles mixed Float64/Dual arithmetic natively. No dualcache needed.
+# handles mixed Float64/Dual arithmetic natively. No DiffCache needed.
 
 # IIP: varies u only, du held fixed → Jacobian is dF/du
 mutable struct DAEJacobianUWrapper{F, pType, duType, tType} <: Function
@@ -308,19 +308,11 @@ function build_nlsolver(
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-        linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl,
-            Pr = wrapprecs(
-            alg.precs(
-                W, nothing, u, p, t, nothing, nothing, nothing,
-                nothing
-            )...,
-            weight, dz
-        )
+        du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
+        linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
         linsolve = init(
-            linprob, alg.linsolve,
+            linprob, wrapprecs(alg.linsolve, W, weight),
             alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-            Pl = Pl, Pr = Pr,
             assumptions = LinearSolve.OperatorAssumptions(true),
             verbose = verbose.linear_verbosity
         )
@@ -341,7 +333,17 @@ function build_nlsolver(
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                NonlinearProblem(NonlinearFunction{true}(nlf), ztmp, nlp_params)
+                # Use FullSpecialize so SciMLBase does not wrap `nlf` in a
+                # FunctionWrappersWrapper with a fixed set of Dual tag branches.
+                # The wrapper otherwise throws "No matching function wrapper was
+                # found!" when the ODE solver is itself nested inside an outer
+                # ForwardDiff.Dual layer (e.g. SciMLSensitivity, nested AD), since
+                # the inner NonlinearProblem is then called with a Dual tagged by
+                # `DiffEqBase.OrdinaryDiffEqTag` that no pre-built wrapper matches.
+                NonlinearProblem(
+                    NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf),
+                    ztmp, nlp_params
+                )
             end
             cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
@@ -467,7 +469,13 @@ function build_nlsolver(
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(NonlinearFunction{false}(nlf), copy(ztmp), nlp_params)
+            # See comment on the in-place branch above: FullSpecialize avoids
+            # the FunctionWrappersWrapper dispatch hole when the ODE solver is
+            # called inside an outer ForwardDiff layer.
+            prob = NonlinearProblem(
+                NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
+                copy(ztmp), nlp_params
+            )
             cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache

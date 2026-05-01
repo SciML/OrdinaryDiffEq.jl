@@ -56,13 +56,38 @@ isthreaded(::Sequential) = false
 isthreaded(::BaseThreads) = true
 isthreaded(::PolyesterThreads) = true
 
+@inline function _threaded_execute(f, ::Union{BaseThreads, Bool}, range)
+    return Threads.@threads :static for i in range
+        f(i)
+    end
+end
+
+function _polyester_batch(args...)
+    throw(
+        ArgumentError(
+            LazyString(
+                "PolyesterThreads() requires Polyester.jl to be loaded. ",
+                "Add `using Polyester` to your code."
+            )
+        )
+    )
+end
+
+@inline function _threaded_execute(f, ::PolyesterThreads, range)
+    return _polyester_batch(f, range)
+end
+
 macro threaded(option, ex)
+    ex.head === :for || error("@threaded expects a for loop")
+    loop_var = esc(ex.args[1].args[1])
+    range_expr = esc(ex.args[1].args[2])
+    body = esc(ex.args[2])
     return quote
         opt = $(esc(option))
-        if (opt === BaseThreads()) || ((opt isa Bool) && opt)
-            $(esc(:(Threads.@threads :static $ex)))
-        elseif opt === PolyesterThreads()
-            $(esc(:(Polyester.@batch $ex)))
+        if isthreaded(opt)
+            _threaded_execute(opt, $range_expr) do $loop_var
+                $body
+            end
         else
             $(esc(ex))
         end
@@ -133,76 +158,32 @@ _isdiag(A::AbstractMatrix) = isdiag(A)
 
 isnewton(::Any) = false
 
-function _bool_to_ADType(::Val{true}, ::Val{CS}, _) where {CS}
-    Base.depwarn(
-        "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
-        :_bool_to_ADType
-    )
-    _CS = CS === 0 ? nothing : CS
-    return AutoForwardDiff{_CS}(nothing)
-end
+# Extract the chunk size integer from an ADType for use as a type parameter.
+# Returns 0 when the chunk size should be automatically determined.
+_ad_chunksize_int(::AutoForwardDiff{nothing}) = 0
+_ad_chunksize_int(::AutoForwardDiff{CS}) where {CS} = CS
+_ad_chunksize_int(::AutoSparse{<:AutoForwardDiff{nothing}}) = 0
+_ad_chunksize_int(::AutoSparse{<:AutoForwardDiff{CS}}) where {CS} = CS
+_ad_chunksize_int(_) = 0
 
-function _bool_to_ADType(::Val{false}, _, ::Val{FD}) where {FD}
-    Base.depwarn(
-        "Using a `Bool` for keyword argument `autodiff` is deprecated. Please use an `ADType` specifier.",
-        :_bool_to_ADType
-    )
-    return AutoFiniteDiff(; fdtype = Val{FD}(), dir = 1)
-end
+# Extract the finite difference type from an ADType for use as a type parameter.
+_ad_fdtype(::AutoFiniteDiff{FD}) where {FD} = FD
+_ad_fdtype(::AutoSparse{<:AutoFiniteDiff{FD}}) where {FD} = FD
+_ad_fdtype(_) = Val{:forward}()
 
-# Functions to get ADType type from Bool or ADType object, or ADType type
-function _process_AD_choice(ad_alg::Bool, CS::Int, ::Val{FD}) where {FD}
-    return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
-end
-
-function _process_AD_choice(ad_alg::Bool, ::Val{CS}, ::Val{FD}) where {CS, FD}
-    return _bool_to_ADType(Val(ad_alg), Val{CS}(), Val{FD}()), Val{CS}(), Val{FD}()
-end
-
-function _process_AD_choice(
-        ad_alg::AutoForwardDiff{CS}, ::Val{CS2}, ::Val{FD}
-    ) where {CS, CS2, FD}
-    # Non-default `chunk_size`
-    if (CS2 != 0) && (isnothing(CS) || (CS2 !== CS))
-        @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
-        return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
-    end
-
-    _CS = CS === nothing ? 0 : CS
-    return ad_alg, Val{_CS}(), Val{FD}()
-end
-
-function _process_AD_choice(
-        ad_alg::AutoForwardDiff{CS}, CS2::Int, ::Val{FD}
-    ) where {CS, FD}
-    # Non-default `chunk_size`
-    if CS2 != 0
-        @warn "The `chunk_size` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoForwardDiff` with `chunksize=$(CS2)`."
-        return _bool_to_ADType(Val{true}(), Val{CS2}(), Val{FD}()), Val{CS2}(), Val{FD}()
-    end
-    _CS = CS === nothing ? 0 : CS
-    return ad_alg, Val{_CS}(), Val{FD}()
-end
-
-function _process_AD_choice(
-        ad_alg::AutoFiniteDiff{FD}, ::Val{CS}, ::Val{FD2}
-    ) where {FD, CS, FD2}
-    # Non-default `diff_type`
-    if FD2 !== :forward
-        @warn "The `diff_type` keyword is deprecated. Please use an `ADType` specifier. For now defaulting to using `AutoFiniteDiff` with `fdtype=Val{$FD2}()`."
-        return _bool_to_ADType(Val{false}(), Val{CS}(), Val{FD2}()), Val{CS}(), Val{FD2}()
-    end
-    if ad_alg.dir isa Bool # default dir of true makes integration non-reversible
+# Fix AutoFiniteDiff dir: default dir of true (Bool) makes integration non-reversible
+function _fixup_ad(ad_alg::AutoFiniteDiff)
+    if ad_alg.dir isa Bool
         @reset ad_alg.dir = Int(ad_alg.dir)
     end
-    return ad_alg, Val{CS}(), ad_alg.fdtype
+    return ad_alg
 end
-
-function _process_AD_choice(ad_alg::AutoSparse, cs2::Val{CS2}, fd::Val{FD}) where {CS2, FD}
-    _, cs, fd = _process_AD_choice(ad_alg.dense_ad, cs2, fd)
-    return ad_alg, cs, fd
+function _fixup_ad(ad_alg::Bool)
+    throw(
+        ArgumentError(
+            "Passing a `Bool` for keyword argument `autodiff` is no longer supported. " *
+                "Use an `ADType` specifier from ADTypes.jl, e.g. `AutoForwardDiff()` or `AutoFiniteDiff()`."
+        )
+    )
 end
-
-function _process_AD_choice(ad_alg, cs2, fd)
-    return ad_alg, cs2, fd
-end
+_fixup_ad(ad_alg) = ad_alg

@@ -4,7 +4,7 @@ using Reexport
 @reexport using StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
+import OrdinaryDiffEqCore: perform_step!, initialize!, issplit, default_controller, PIController
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, is_split_step, supports_regular_jumps, isadaptive,
@@ -45,7 +45,6 @@ include("caches/kencarp_caches.jl")
 include("perform_step/sdirk.jl")
 include("perform_step/implicit_split_step.jl")
 include("perform_step/kencarp.jl")
-include("alg_autodiff.jl")
 
 export ImplicitEM, ImplicitEulerHeun, ImplicitRKMil, STrapezoid, SImplicitMidpoint,
     ISSEM, ISSEulerHeun, SKenCarp

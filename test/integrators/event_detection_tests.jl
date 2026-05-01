@@ -2,6 +2,7 @@ using StaticArrays
 using OrdinaryDiffEq
 using DiffEqDevTools
 using Test
+using OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock
 
 @inbounds @inline function ż(z, p, t)
     A, B, D = p
@@ -33,7 +34,7 @@ sol = solve(
     save_everystep = false, save_start = false, save_end = false, maxiters = 1.0e6
 )
 
-@test length(sol) > 100
+@test length(sol.t) > 100
 @test SciMLBase.successful_retcode(sol)
 
 prob = ODEProblem(ż, z0, (0, 400.0), (A = 1, B = 0.55, D = 0.4), callback = cbf(3))
@@ -42,7 +43,7 @@ sol = solve(
     save_start = false, save_end = false, maxiters = 2.0e4
 )
 
-@test length(sol) > 100
+@test length(sol.t) > 100
 @test SciMLBase.successful_retcode(sol)
 
 prob = ODEProblem(ż, z0, (0, 5000.0), (A = 1, B = 0.55, D = 0.4), callback = cbf(3))
@@ -51,7 +52,7 @@ sol = solve(
     save_start = false, save_end = false, maxiters = 1.0e6
 )
 
-@test length(sol) > 1500
+@test length(sol.t) > 1500
 @test SciMLBase.successful_retcode(sol)
 
 @info "Bouncing Ball"
@@ -103,24 +104,51 @@ function condition(out, u, t, integrator)
     return out[2] = (10.0 - u[3])u[3]
 end
 
-function affect!(integrator, idx)
-    return if idx == 1
-        x[] += 1
-        integrator.u[2] = -0.9integrator.u[2]
-    elseif idx == 2
-        y[] += 1
-        integrator.u[4] = -0.9integrator.u[4]
+function affect!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        if idx == 1
+            x[] += 1
+            integrator.u[2] = -0.9integrator.u[2]
+        elseif idx == 2
+            y[] += 1
+            integrator.u[4] = -0.9integrator.u[4]
+        end
     end
+    return
 end
 
-function affect_neg!(integrator, idx)
-    z[] += 1
-    @show integrator.u[1]
-    return @show integrator.u[3]
+function affect_neg!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        iszero(dir) && continue
+        z[] += 1
+        @show integrator.u[1]
+        @show integrator.u[3]
+    end
+    return
+end
+
+function affect_combined!(integrator, events)
+    for (idx, dir) in enumerate(events)
+        if dir == -1 # upcrossing — old affect! path
+            z[] += 1
+            @show integrator.u[1]
+            @show integrator.u[3]
+        elseif dir == 1 # downcrossing — old affect_neg! path
+            if idx == 1
+                x[] += 1
+                integrator.u[2] = -0.9integrator.u[2]
+            elseif idx == 2
+                y[] += 1
+                integrator.u[4] = -0.9integrator.u[4]
+            end
+        end
+    end
+    return
 end
 
 cb = VectorContinuousCallback(condition, affect!, 2)
-cb2 = VectorContinuousCallback(condition, affect_neg!, affect!, 2)
+cb2 = VectorContinuousCallback(condition, affect_combined!, 2)
 
 sol = solve(prob, Tsit5(), callback = cb, dt = 1.0e-3, adaptive = false)
 @test x[] == 3

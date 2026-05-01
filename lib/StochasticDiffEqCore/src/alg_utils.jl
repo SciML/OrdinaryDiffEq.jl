@@ -67,26 +67,16 @@ for T in [
     @eval OrdinaryDiffEqCore.has_autodiff(::$T) = true
 end
 
-_alg_autodiff(::StochasticDiffEqNewtonAlgorithm{T, AD}) where {T, AD} = Val{AD}()
-_alg_autodiff(::StochasticDiffEqNewtonAdaptiveAlgorithm{T, AD}) where {T, AD} = Val{AD}()
-function _alg_autodiff(::StochasticDiffEqJumpNewtonAdaptiveAlgorithm{T, AD}) where {T, AD}
-    return Val{AD}()
-end
-function _alg_autodiff(
-        ::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-            T, AD,
-        }
-    ) where {T, AD}
-    return Val{AD}()
-end
-_alg_autodiff(alg::StochasticCompositeAlgorithm) = _alg_autodiff(alg.algs[end])
 
 function OrdinaryDiffEqCore.alg_autodiff(
         alg::Union{
-            StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
+            StochasticDiffEqNewtonAlgorithm,
+            StochasticDiffEqNewtonAdaptiveAlgorithm,
+            StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+            StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
         }
     )
-    ad = _alg_autodiff(alg)
+    ad = alg.autodiff
     if ad == Val(false)
         return ADTypes.AutoFiniteDiff()
     elseif ad == Val(true)
@@ -95,6 +85,7 @@ function OrdinaryDiffEqCore.alg_autodiff(
         return SciMLBase._unwrap_val(ad)
     end
 end
+OrdinaryDiffEqCore.alg_autodiff(alg::StochasticDiffEqCompositeAlgorithm) = OrdinaryDiffEqCore.alg_autodiff(alg.algs[end])
 
 isadaptive(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 function isadaptive(
@@ -138,8 +129,6 @@ function OrdinaryDiffEqCore.gamma_default(
     return isadaptive(alg) ? 9 // 10 : 0
 end
 
-ispredictive(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
-isstandard(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}) = false
 function qsteady_min_default(
         alg::Union{
             StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
@@ -255,64 +244,36 @@ function OrdinaryDiffEqCore.get_current_alg_autodiff(alg::StochasticDiffEqCompos
 end
 
 function OrdinaryDiffEqCore.get_chunksize(
-        alg::StochasticDiffEqNewtonAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
+        alg::Union{
+            StochasticDiffEqNewtonAlgorithm,
+            StochasticDiffEqNewtonAdaptiveAlgorithm,
+            StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+            StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
         }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val(CS)
-end
-function OrdinaryDiffEqCore.get_chunksize(
-        alg::StochasticDiffEqNewtonAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val(CS)
-end
-function OrdinaryDiffEqCore.get_chunksize(
-        alg::StochasticDiffEqJumpNewtonAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val(CS)
-end
-function OrdinaryDiffEqCore.get_chunksize(
-        alg::StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm{
-            CS, AD, FDT, ST, CJ, Controller,
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller}
-    return Val(CS)
+    )
+    return OrdinaryDiffEqCore._get_fwd_chunksize(typeof(alg.autodiff))
 end
 
-@static if isdefined(OrdinaryDiffEqCore, :standardtag)
-    OrdinaryDiffEqCore.standardtag(
-        alg::Union{
-            StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller},
-            StochasticDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ, Controller},
-        }
-    ) where {CS, AD, FDT, ST, CJ, Controller} = ST
-end
+OrdinaryDiffEqCore.standardtag(
+    alg::Union{
+        StochasticDiffEqNewtonAdaptiveAlgorithm,
+        StochasticDiffEqNewtonAlgorithm,
+    }
+) = true
 
-@static if isdefined(OrdinaryDiffEqCore, :alg_difftype)
-    OrdinaryDiffEqCore.alg_difftype(
-        alg::Union{
-            StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller},
-            StochasticDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ, Controller},
-        }
-    ) where {
-        CS, AD, FDT, ST, CJ, Controller,
-    } = FDT
-end
+OrdinaryDiffEqCore.alg_difftype(
+    alg::Union{
+        StochasticDiffEqNewtonAdaptiveAlgorithm,
+        StochasticDiffEqNewtonAlgorithm,
+    }
+) = OrdinaryDiffEqCore._get_fdtype(alg.autodiff)
 
-@static if isdefined(OrdinaryDiffEqCore, :concrete_jac)
-    OrdinaryDiffEqCore.concrete_jac(
-        alg::Union{
-            StochasticDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ, Controller},
-            StochasticDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ, Controller},
-        }
-    ) where {
-        CS, AD, FDT, ST, CJ, Controller,
-    } = CJ
-end
+OrdinaryDiffEqCore.concrete_jac(
+    alg::Union{
+        StochasticDiffEqNewtonAdaptiveAlgorithm,
+        StochasticDiffEqNewtonAlgorithm,
+    }
+) = alg.concrete_jac
 
 alg_mass_matrix_compatible(alg::StochasticDiffEqAlgorithm) = false
 alg_mass_matrix_compatible(alg::StochasticDiffEqRODEAlgorithm) = false

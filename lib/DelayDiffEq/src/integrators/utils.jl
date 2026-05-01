@@ -51,8 +51,10 @@ function advance_ode_integrator!(integrator::DDEIntegrator, always_calc_begin = 
     ode_integrator = integrator.integrator
 
     # algorithm only works if current time of DDE integrator equals final time point
-    # of solution
-    t != ode_integrator.sol.t[end] && error("cannot advance ODE integrator")
+    # of solution (allow one-ULP gap from shift_past_discontinuity!, which nudges
+    # integrator.t past a propagated discontinuity without rewriting sol.t[end])
+    abs(t - ode_integrator.sol.t[end]) > eps(t) &&
+        error("cannot advance ODE integrator")
 
     # complete interpolation data of DDE integrator for time interval [t, t+dt]
     # and copy it to ODE integrator
@@ -208,8 +210,8 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
 
     # remove all discontinuities close to the current time point as well and
     # calculate minimal order of these discontinuities
-    # integrator.EEst has unitless type of integrator.t
-    if integrator.EEst isa AbstractFloat
+    # OrdinaryDiffEqCore.get_EEst(integrator) has unitless type of integrator.t
+    if OrdinaryDiffEqCore.get_EEst(integrator) isa AbstractFloat
         maxΔt = 10eps(integrator.t)
 
         while OrdinaryDiffEqCore.has_discontinuity(integrator) &&
@@ -228,6 +230,21 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
     # add discontinuities of next order to integrator
     add_next_discontinuities!(integrator, order)
 
+    return nothing
+end
+
+# Override shift_past_discontinuity! for DDEIntegrator: nudge the DDE's
+# `integrator.t` and the ODE sub-integrator's `t` by one ULP to cross a
+# propagated derivative-discontinuity. `sol.t[end]` on both sides is left alone:
+# the step completed at the pre-shift time and that is what should appear in
+# the saved history (see `#190` testset and `saveat.jl:18/46/75`). The one-ULP
+# gap between `integrator.t` and `ode_integrator.sol.t[end]` is tolerated by
+# the relaxed equality check in `advance_ode_integrator!`.
+function OrdinaryDiffEqCore.shift_past_discontinuity!(integrator::DDEIntegrator)
+    integrator.t isa AbstractFloat || return nothing
+    newt = integrator.tdir > 0 ? nextfloat(integrator.t) : prevfloat(integrator.t)
+    integrator.t = newt
+    integrator.integrator.t = newt
     return nothing
 end
 

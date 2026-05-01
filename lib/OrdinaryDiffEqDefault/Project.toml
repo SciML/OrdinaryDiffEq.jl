@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqDefault"
 uuid = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.14.0"
+version = "2.1.0"
 
 [deps]
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
@@ -21,60 +21,45 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
 
 [compat]
 Pkg = "1"
-OrdinaryDiffEqTsit5 = "1.4.0"
+OrdinaryDiffEqTsit5 = "2"
 Test = "<0.0.1, 1"
 Random = "<0.0.1, 1"
-DiffEqDevTools = "2.44.4"
-OrdinaryDiffEqBDF = "1.9.0"
-OrdinaryDiffEqVerner = "1.5.0"
+DiffEqDevTools = "3"
+OrdinaryDiffEqBDF = "2"
+OrdinaryDiffEqVerner = "2"
 LinearSolve = "3.46"
 PrecompileTools = "1.2, 1.3"
 EnumX = "1.0"
 LinearAlgebra = "1.10"
-SciMLBase = "2.116"
-OrdinaryDiffEqCore = "3"
+SciMLBase = "3"
+OrdinaryDiffEqCore = "4"
 SparseArrays = "1.10"
-Aqua = "0.8.11"
 Preferences = "1.4"
 StaticArrays = "1.9"
 julia = "1.10"
-JET = "0.9, 0.11"
 ADTypes = "1.16"
-OrdinaryDiffEqRosenbrock = "1.15.1"
-DiffEqBase = "6.194"
+OrdinaryDiffEqRosenbrock = "2"
+DiffEqBase = "7"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
-AllocCheck = "0.2"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "Pkg"]
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../OrdinaryDiffEqTsit5"
-
-[sources.OrdinaryDiffEqBDF]
-path = "../OrdinaryDiffEqBDF"
-
-[sources.OrdinaryDiffEqRosenbrock]
-path = "../OrdinaryDiffEqRosenbrock"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqVerner]
-path = "../OrdinaryDiffEqVerner"

@@ -1,0 +1,17 @@
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqRKIP = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources.OrdinaryDiffEqCore]
+path = "../../../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqRKIP]
+path = "../.."
+
+[compat]
+JET = "0.9, 0.11"
+OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqRKIP = "2"
+julia = "1.10"

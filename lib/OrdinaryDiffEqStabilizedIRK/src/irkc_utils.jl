@@ -3,7 +3,7 @@
 const IRKCAlgs = Union{IRKC}
 
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
-    isfirst = integrator.iter == 1 || integrator.u_modified
+    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     maxiter = 50
 
@@ -101,7 +101,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
 end
 
 function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
-    isfirst = integrator.iter == 1 || integrator.u_modified
+    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     if cache isa IRKCCache
         fz, z, atmp = integrator.fsallast, cache.nlsolver.tmp, cache.atmp

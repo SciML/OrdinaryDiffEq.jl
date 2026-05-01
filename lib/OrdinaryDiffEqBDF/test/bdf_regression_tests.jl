@@ -1,4 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test
+using OrdinaryDiffEqCore: DEVerbosity
+import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -8,7 +11,7 @@ probiip = ODEProblem(fiip, ones(2), (0.0, 1000.0), 1.0)
 
 @testset "FBDF reinit" begin
     for prob in [proboop, probiip]
-        integ = init(prob, FBDF(), verbose = false) #suppress warning to clean up CI
+        integ = init(prob, FBDF(), verbose = DEVerbosity(SciMLLogging.None())) #suppress warning to clean up CI
         solve!(integ)
         @test integ.sol.retcode != ReturnCode.Success
         @test integ.sol.t[end] >= 700
@@ -23,7 +26,7 @@ function ad_helper(alg, prob)
     return function costoop(p)
         _oprob = remake(prob; p)
         sol = solve(_oprob, alg, saveat = 1:10)
-        return sum(sol)
+        return sum(sum, sol.u)
     end
 end
 
@@ -41,7 +44,7 @@ end
     # so it reaches fewer time steps on exponential growth problems.
     for MO in 1:5
         for prob in [proboop, probiip]
-            sol = solve(prob, FBDF(max_order = Val{MO}()), verbose = false)
+            sol = solve(prob, FBDF(max_order = Val{MO}()), verbose = DEVerbosity(SciMLLogging.None()))
             @test sol.t[end] >= (MO == 1 ? 250 : 700)
         end
     end
@@ -60,8 +63,8 @@ end
     )
     for MO in 1:5
         sol = solve(
-            dae_prob_mo, DFBDF(max_order = Val{MO}()),
-            abstol = 1.0e-8, reltol = 1.0e-8, verbose = false
+            dae_prob_mo, DFBDF(max_order = Val{MO}()), initializealg = BrownFullBasicInit(),
+            abstol = 1.0e-8, reltol = 1.0e-8, verbose = DEVerbosity(SciMLLogging.None())
         )
         @test sol.t[end] > 0
     end
@@ -165,7 +168,7 @@ if VERSION >= v"1.12"
         )
         integrator = init(
             dae_prob, DFBDF(), abstol = 1.0e-8, reltol = 1.0e-8,
-            save_everystep = false
+            save_everystep = false, initializealg = BrownFullBasicInit()
         )
         for _ in 1:10
             step!(integrator)

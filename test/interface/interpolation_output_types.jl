@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Test
+using OrdinaryDiffEqFunctionMap, OrdinaryDiffEqRKN, OrdinaryDiffEqSymplecticRK
 
 # in terms of the voltage across all three elements
 rlc1!(v′, v, (R, L, C), t) = -(v′ / R + v / L) / C
@@ -34,11 +35,11 @@ sol = solve(dprob, FunctionMap())
 sol(0:0.1:100; idxs = [1, 2])
 
 @test sol(0:0.1:100; idxs = [1, 2]) isa DiffEqArray
-@test length(sol(0:0.1:100; idxs = [1, 2])) == length(0:0.1:100)
+@test length(sol(0:0.1:100; idxs = [1, 2]).t) == length(0:0.1:100)
 @test length(sol(0:0.1:100; idxs = [1, 2]).u[1]) == 2
 
 @test sol(0:0.1:100) isa DiffEqArray
-@test length(sol(0:0.1:100)) == length(0:0.1:100)
+@test length(sol(0:0.1:100).t) == length(0:0.1:100)
 @test length(sol(0:0.1:100).u[1]) == 3
 
 ## Test DPRKN Interpolation

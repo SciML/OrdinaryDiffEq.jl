@@ -1,7 +1,7 @@
 name = "StochasticDiffEqImplicit"
 uuid = "5080b986-4c76-4669-b5dc-373a41579d5b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.0.0"
+version = "2.0.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -31,22 +31,22 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 ADTypes = "1"
-DiffEqBase = "6.187"
+DiffEqBase = "7"
 DiffEqNoiseProcess = "5.13"
 FiniteDiff = "2"
 ForwardDiff = "0.10, 1"
 JumpProcesses = "9.13.1"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
-OrdinaryDiffEqCore = "3.22"
-OrdinaryDiffEqDifferentiation = "2"
-OrdinaryDiffEqNonlinearSolve = "1"
+OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqDifferentiation = "3"
+OrdinaryDiffEqNonlinearSolve = "2"
 Pkg = "1"
-RecursiveArrayTools = "2, 3"
+RecursiveArrayTools = "4"
 Reexport = "0.2, 1.0"
-SciMLBase = "2.146"
+SciMLBase = "3"
 StaticArrays = "1.9.14"
-StochasticDiffEqCore = "1"
+StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"
 SafeTestsets = "0.1.0"
 julia = "1.10"

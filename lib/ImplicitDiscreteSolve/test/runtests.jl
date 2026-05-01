@@ -5,8 +5,14 @@ using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
 using SciMLBase
 using SafeTestsets
+using Pkg
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
 
 # Run functional tests
 if TEST_GROUP != "QA"
@@ -88,22 +94,19 @@ if TEST_GROUP != "QA"
     end
 
     @testset "Handle nothing in u0" begin
-        function emptyiip(residual, u_next, u, p, t) # TODO OOP variant does not work yet
-            nothing
-        end
-        function emptyoop(u_next, u, p, t) # TODO OOP variant does not work yet
-            nothing
-        end
+        emptyiip(residual, u_next, u, p, t) = nothing
+        emptyoop(u_next, u, p, t) = nothing
 
         tsteps = 5
         u0 = nothing
+
         idprob = ImplicitDiscreteProblem(emptyiip, u0, (0, tsteps), [])
-        @test_nowarn integ = init(idprob, IDSolve())
+        sol = solve(idprob, IDSolve())
+        @test sol.retcode == ReturnCode.Success
 
         idprob2 = ImplicitDiscreteProblem(emptyoop, u0, (0, tsteps), [])
-        # OOP with u0=nothing throws an error (MethodError or AssertionError depending on
-        # how far the initialization proceeds before encountering undefined operations on Nothing)
-        @test_throws Exception integ = init(idprob2, IDSolve())
+        sol2 = solve(idprob2, IDSolve())
+        @test sol2.retcode == ReturnCode.Success
     end
 
     @testset "Create NonlinearLeastSquaresProblem" begin
@@ -138,6 +141,22 @@ if TEST_GROUP != "QA"
         @test integ.cache.nlcache.prob isa NonlinearProblem
     end
 
+    @testset "Null u0 bypasses NonlinearSolve" begin
+        # IDSolve overrides allows_null_u0 so `nothing` reaches alg_cache unchanged
+        # and the `::Nothing` dispatch returns a cache with nlcache=nothing. Without
+        # the opt-in, u0 is coerced to Float64[] and NonlinearSolve fails building
+        # a 0x1 Jacobian for the least-squares branch.
+        fn = ImplicitDiscreteFunction(; resid_prototype = [0.0]) do du, unext, u, p, t
+            du[1] = 1
+        end
+        pr = ImplicitDiscreteProblem(fn, nothing, (0, 1))
+        integ = init(pr, IDSolve())
+        @test integ.cache.u === nothing
+        @test integ.cache.nlcache === nothing
+        sol = solve(pr, IDSolve())
+        @test SciMLBase.successful_retcode(sol)
+    end
+
     @testset "InitialFailure thrown" begin
         function bad(u_next, u, p, t)
             [u_next[1] - u_next[2], u_next[1] - 3, u_next[2] - 4]
@@ -155,14 +174,7 @@ end
 
 # Run QA tests (JET, Aqua)
 if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
-    using Pkg
-    Pkg.add("JET")
-    using JET
-    @testset "JET Tests" begin
-        test_package(
-            ImplicitDiscreteSolve, target_modules = (ImplicitDiscreteSolve,), mode = :typo
-        )
-    end
-
-    include("qa.jl")
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end

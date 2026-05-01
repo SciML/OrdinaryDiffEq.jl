@@ -1,4 +1,5 @@
 using OrdinaryDiffEqVerner, OrdinaryDiffEqCore, OrdinaryDiffEqExplicitRK
+import OrdinaryDiffEqExplicitTableaus
 using DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
@@ -40,7 +41,7 @@ dts = (1 / 2) .^ (8:-1:5)
 check_convergence(dts, probnumbig, Vern6(), 6)
 check_convergence(dts, probbig, Vern6(), 6)
 
-tabalg = ExplicitRK(tableau = constructVernerEfficient6(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.VernerEfficient6(BigFloat))
 sol1 = solve(probnumbig, Vern6(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test sol1.u[end] - sol2.u[end] < 1.0e-10
@@ -51,7 +52,7 @@ sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = f
 
 sol1 = solve(probbig, tabalg; dt = 1 / 2^6)
 sol2 = solve(probbig, Vern6(); dt = 1 / 2^6)
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -62,7 +63,7 @@ dts = (1 / 2) .^ (6:-1:3)
 check_convergence(dts, probnumbig, Vern7(), 7)
 check_convergence(dts, probbig, Vern7(), 7)
 
-tabalg = ExplicitRK(tableau = constructVerner7(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner7(BigFloat))
 sol1 = solve(probnumbig, Vern7(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test sol1.u[end] - sol2.u[end] < 1.0e-10
@@ -73,7 +74,7 @@ sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = f
 
 sol1 = solve(probbig, tabalg; dt = 1 / 2^6)
 sol2 = solve(probbig, Vern7(); dt = 1 / 2^6)
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -84,7 +85,7 @@ dts = (1 / 2) .^ (6:-1:3)
 check_convergence(dts, probnumbig, Vern8(), 8)
 check_convergence(dts, probbig, Vern8(), 8)
 
-tabalg = ExplicitRK(tableau = constructVerner8(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner8(BigFloat))
 sol1 = solve(probnumbig, Vern8(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test sol1.u[end] - sol2.u[end] < 1.0e-10
@@ -95,7 +96,7 @@ sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = f
 
 sol1 = solve(prob, tabalg; dt = 1 / 2^6)
 sol2 = solve(prob, Vern8(); dt = 1 / 2^6)
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -106,7 +107,7 @@ dts = (1 / 2) .^ (6:-1:3)
 check_convergence(dts, probnumbig, Vern9(), 9)
 check_convergence(dts, probbig, Vern9(), 9)
 
-tabalg = ExplicitRK(tableau = constructVernerEfficient9(BigFloat))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.VernerEfficient9(BigFloat))
 sol1 = solve(probnumbig, Vern9(); dt = 1 / 2^6, adaptive = false, save_everystep = false)
 sol2 = solve(probnumbig, tabalg; dt = 1 / 2^6, adaptive = false, save_everystep = false)
 @test abs(sol1.u[end] - sol2.u[end]) < 1.0e-15
@@ -117,7 +118,7 @@ sol2 = solve(probbig, tabalg; dt = 1 / 2^3, adaptive = false, save_everystep = f
 
 sol1 = solve(probbig, tabalg; dt = 1 / 2^6)
 sol2 = solve(probbig, Vern9(); dt = 1 / 2^6)
-@test length(sol1) == length(sol2)
+@test length(sol1.t) == length(sol2.t)
 @test SciMLBase.successful_retcode(sol1)
 @test SciMLBase.successful_retcode(sol2)
 
@@ -153,7 +154,7 @@ cb_lazy = DiscreteCallback(
         curu = similar(integrator.u)
         integrator(curu, t_mid)
         push!(interp_lazy, curu[1])
-        u_modified!(integrator, false)
+        derivative_discontinuity!(integrator, false)
     end,
     save_positions = (false, false)
 )
@@ -165,17 +166,17 @@ cb_nolazy = DiscreteCallback(
         curu = similar(integrator.u)
         integrator(curu, t_mid)
         push!(interp_nolazy, curu[1])
-        u_modified!(integrator, false)
+        derivative_discontinuity!(integrator, false)
     end,
     save_positions = (false, false)
 )
 
 solve(
-    prob_back, Vern9(lazy = true), abstol = 1.0e-12, reltol = 1.0e-12,
+    prob_back, Vern9(lazy = Val{true}()), abstol = 1.0e-12, reltol = 1.0e-12,
     callback = cb_lazy, save_everystep = false
 )
 solve(
-    prob_back, Vern9(lazy = false), abstol = 1.0e-12, reltol = 1.0e-12,
+    prob_back, Vern9(lazy = Val{false}()), abstol = 1.0e-12, reltol = 1.0e-12,
     callback = cb_nolazy, save_everystep = false
 )
 

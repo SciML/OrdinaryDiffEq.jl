@@ -61,7 +61,7 @@ end
 
 # SERK methods
 
-for Alg in [:ESERK4, :ESERK5, :RKC]
+for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC3]
     @eval begin
         struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
             eigen_est::E
@@ -150,12 +150,29 @@ function ESERK5 end
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
     """,
     """
-    controller = :PI
     eigen_est = nothing,
     """
 )
 struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-    controller::Symbol
     eigen_est::E
 end
-SERK2(; controller = :PI, eigen_est = nothing) = SERK2(controller, eigen_est)
+SERK2(; eigen_est = nothing) = SERK2(eigen_est)
+
+@doc generic_solver_docstring(
+    """Third order method. Exhibits high stability for real eigenvalues.""",
+    "TSRKC3",
+    "Two-step Stabilized Explicit Method.",
+    """A. V. Moisa. Third order two-step Runge-Kutta-Chebyshev methods,
+    Journal of Computational and Applied Mathematics, 457, pp 116291, 2025. doi:
+    https://doi.org/10.1016/j.cam.2024.116291""",
+    """
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    eigen_est = nothing,
+    """
+)
+function TSRKC3 end

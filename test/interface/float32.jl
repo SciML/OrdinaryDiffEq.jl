@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSSPRK
 function some_arbitrary_function!(du, u, p, τ)
     du = u / 100
     return nothing #function returns nothing

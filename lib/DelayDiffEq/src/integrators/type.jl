@@ -37,7 +37,7 @@ mutable struct DDEIntegrator{
         ksEltype, SolType, F, CacheType, IType, FP, O, dAbsType,
         dRelType, H,
         tstopsType, discType, FSALType, EventErrorType,
-        CallbackCacheType, DV, IA,
+        CallbackCacheType, DV, CCType, IA,
         WType, PType, SqdtType, CType,
     } <:
     AbstractDDEIntegrator{algType, IIP, uType, tType}
@@ -70,11 +70,6 @@ mutable struct DDEIntegrator{
     dtpropose::tType
     tdir::tdirType
     eigen_est::eigenType
-    EEst::tTypeNoUnits
-    qold::tTypeNoUnits
-    q11::tTypeNoUnits
-    erracc::tTypeNoUnits
-    dtacc::tType
     success_iter::Int
     iter::Int
     saveiter::Int
@@ -92,12 +87,13 @@ mutable struct DDEIntegrator{
     accept_step::Bool
     isout::Bool
     reeval_fsal::Bool
-    u_modified::Bool
+    derivative_discontinuity::Bool
     isdae::Bool
     opts::O
     stats::SciMLBase.DEStats
     history::H
     differential_vars::DV
+    controller_cache::CCType
     integrator::IType
     fsalfirst::FSALType
     fsallast::FSALType

@@ -1,10 +1,16 @@
+using Pkg
 using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    return Pkg.instantiate()
+end
+
 # Run functional tests
-if TEST_GROUP != "QA"
+if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     # Newmark methods with harmonic oscillator
     @testset "Harmonic Oscillator" begin
         u0 = fill(0.0, 2)
@@ -106,7 +112,11 @@ if TEST_GROUP != "QA"
     end
 end
 
-# Run QA tests (JET)
-if TEST_GROUP != "Core" && isempty(VERSION.prerelease)
-    @time @safetestset "JET Tests" include("jet.jl")
+# Run QA tests (AllocCheck, JET) - skip on pre-release Julia
+# Allocation tests must run before JET because JET's static analysis
+# invalidates compiled code and causes spurious runtime allocations.
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @safetestset "Allocation Tests" include("qa/allocation_tests.jl")
+    @time @safetestset "JET Tests" include("qa/jet.jl")
 end

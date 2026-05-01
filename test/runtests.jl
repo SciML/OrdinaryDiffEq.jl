@@ -55,25 +55,50 @@ end
         Pkg.activate(joinpath(lib_dir, base_group))
         # On Julia < 1.11, the [sources] section in Project.toml is not supported.
         # Manually Pkg.develop local path dependencies so CI tests the PR branch code.
+        # We resolve transitively: each developed dependency's own [sources] are also
+        # developed, so that packages like OrdinaryDiffEqRosenbrockTableaus (a source
+        # dependency of OrdinaryDiffEqRosenbrock) are correctly found even when testing
+        # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
-            toml = Pkg.TOML.parsefile(joinpath(lib_dir, base_group, "Project.toml"))
-            if haskey(toml, "sources")
-                for (dep_name, source_spec) in toml["sources"]
-                    if source_spec isa Dict && haskey(source_spec, "path")
-                        dep_path = normpath(joinpath(lib_dir, base_group, source_spec["path"]))
-                        if isdir(dep_path)
-                            @info "Developing local source dependency" dep_name dep_path
-                            Pkg.develop(Pkg.PackageSpec(path = dep_path))
+            developed = Set{String}()
+            # Never develop the active project: when sublibraries cyclically
+            # reference each other via [sources] (e.g. DiffEqDevTools points
+            # back at OrdinaryDiffEqCore), the transitive walk below would
+            # otherwise try to `Pkg.develop` the active project itself, which
+            # Pkg refuses with "package <X> has the same name or UUID as the
+            # active project".
+            push!(developed, normpath(joinpath(lib_dir, base_group)))
+            specs = Pkg.PackageSpec[]
+            queue = [joinpath(lib_dir, base_group)]
+            while !isempty(queue)
+                pkg_dir = popfirst!(queue)
+                toml_path = joinpath(pkg_dir, "Project.toml")
+                isfile(toml_path) || continue
+                toml = Pkg.TOML.parsefile(toml_path)
+                if haskey(toml, "sources")
+                    for (dep_name, source_spec) in toml["sources"]
+                        if source_spec isa Dict && haskey(source_spec, "path")
+                            dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
+                            if isdir(dep_path) && !(dep_path in developed)
+                                push!(developed, dep_path)
+                                @info "Queuing local source dependency" dep_name dep_path
+                                push!(specs, Pkg.PackageSpec(path = dep_path))
+                                # Queue this dependency so its own [sources] are also resolved.
+                                push!(queue, dep_path)
+                            end
                         end
                     end
                 end
             end
+            # Batch the develop call so Pkg resolves all path deps together;
+            # calling it one-at-a-time would re-resolve the active project and
+            # fail to find unregistered siblings.
+            isempty(specs) || Pkg.develop(specs)
         end
         withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
-        @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         # Skip on Julia LTS (oneunit(Type{Any}) not defined) and pre-release (stalls)
         # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2979
         if VERSION >= v"1.11" && isempty(VERSION.prerelease)
@@ -88,7 +113,7 @@ end
         @time @safetestset "save_idxs Tests" include("interface/ode_saveidxs_tests.jl")
         @time @safetestset "Scalar Handling Tests" include("interface/scalar_handling_tests.jl")
         @time @safetestset "Static Array Tests" include("interface/static_array_tests.jl")
-        @time @safetestset "u_modified Tests" include("interface/umodified_test.jl")
+        @time @safetestset "derivative_discontinuity Tests" include("interface/derivative_discontinuity_test.jl")
         @time @safetestset "Composite Algorithm Tests" include("interface/composite_algorithm_test.jl")
         @time @safetestset "Complex Tests" include("interface/complex_tests.jl")
         @time @safetestset "Ndim Complex Tests" include("interface/ode_ndim_complex_tests.jl")
@@ -188,9 +213,9 @@ end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
-        @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
         @time @safetestset "Time derivative Tests" include("downstream/time_derivative_test.jl")
+        @time @safetestset "DynamicQuantities + Measurements Tests" include("downstream/dynamicquantities_measurements.jl")
     end
 
     # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)

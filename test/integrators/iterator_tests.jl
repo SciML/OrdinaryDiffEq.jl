@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, RecursiveArrayTools
+using OrdinaryDiffEqLowOrderRK
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 prob = prob_ode_linear
@@ -32,23 +33,22 @@ step!(integrator)
 @test integrator.sol(0.9) == sol(0.9)
 
 integrator = init(prob, Tsit5(); dt = 1 // 2^(4), tstops = [0.5], advance_to_tstop = true)
-tupint = tuples(integrator)
-for (u, t) in tuples(integrator)
-    @test t ∈ [0.5, 1.0]
+for integ in integrator
+    @test integ.t ∈ [0.5, 1.0]
 end
 
 integrator = init(
     prob, Tsit5(); dt = 1 // 2^(4), tstops = [0.5], advance_to_tstop = true,
     stop_at_next_tstop = true
 )
-for (u, t) in tuples(integrator)
-    @test t == 0.5
+for integ in integrator
+    @test integ.t == 0.5
 end
 integrator([1.0; 2.0])
 
 integrator = init(prob, Tsit5(); dt = 1 // 2^(4), tstops = [0.5])
-for (uprev, tprev, u, t) in intervals(integrator)
-    @show tprev, t
+for integ in integrator
+    @show integ.tprev, integ.t
 end
 integrator([1.0; 2.0])
 
@@ -64,8 +64,8 @@ integrator = init(
     prob_ode_2Dlinear, Tsit5(); dt = 1 // 2^(4), tstops = [0.5],
     advance_to_tstop = true, stop_at_next_tstop = true
 )
-for (u, t) in tuples(integrator)
-    @test t == 0.5
+for integ in integrator
+    @test integ.t == 0.5
 end
 A = integrator([1.0; 2.0])
 B = integrator([1.0; 2.0], idxs = 1:2:5)
@@ -82,7 +82,14 @@ integrator(A, 0.6, idxs = 1:2:5)
 integrator = init(prob_ode_2Dlinear, Tsit5(); dt = 1 // 2^(4))
 ts = range(0, stop = 1, length = 11)
 us = Matrix{Float64}[]
-for (u, t) in TimeChoiceIterator(integrator, ts)
-    push!(us, copy(u))
+# TimeChoiceIterator was removed in SciMLBase v3; drive manually via step! + interp.
+for t in ts
+    while integrator.t < t && !isempty(integrator.opts.tstops)
+        step!(integrator)
+    end
+    while integrator.t < t
+        step!(integrator)
+    end
+    push!(us, copy(integrator(t)))
 end
 @test VectorOfArray(us) ≈ integrator.sol(ts)

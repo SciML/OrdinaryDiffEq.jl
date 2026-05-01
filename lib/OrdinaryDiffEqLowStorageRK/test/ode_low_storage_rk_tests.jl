@@ -86,7 +86,7 @@ for prob in test_problems_nonlinear
 end
 
 @testset "ORK256" begin
-    alg = ORK256()
+    alg = ORK256(; williamson_condition = true)
     alg2 = ORK256(; williamson_condition = false)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
@@ -144,7 +144,7 @@ end
 end
 
 @testset "CarpenterKennedy2N54" begin
-    alg = CarpenterKennedy2N54()
+    alg = CarpenterKennedy2N54(; williamson_condition = true)
     alg2 = CarpenterKennedy2N54(; williamson_condition = false)
     dts = 1 ./ 2 .^ (7:-1:3)
     for prob in test_problems_only_time
@@ -201,14 +201,9 @@ end
     @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
-@testset "HSLDDRK64" begin
-    # this method is deprecated
-    alg = @test_deprecated HSLDDRK64()
-    @test alg isa SHLDDRK64
-end
 
 @testset "SHLDDRK64" begin
-    alg = SHLDDRK64()
+    alg = SHLDDRK64(; williamson_condition = true)
     alg2 = SHLDDRK64(; williamson_condition = true)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
@@ -266,7 +261,7 @@ end
 end
 
 @testset "DGLDDRK73_C" begin
-    alg = DGLDDRK73_C()
+    alg = DGLDDRK73_C(; williamson_condition = true)
     alg2 = DGLDDRK73_C(; williamson_condition = false)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
@@ -324,7 +319,7 @@ end
 end
 
 @testset "DGLDDRK84_C" begin
-    alg = DGLDDRK84_C()
+    alg = DGLDDRK84_C(; williamson_condition = true)
     alg2 = DGLDDRK84_C(; williamson_condition = false)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
@@ -382,7 +377,7 @@ end
 end
 
 @testset "DGLDDRK84_F" begin
-    alg = DGLDDRK84_F()
+    alg = DGLDDRK84_F(; williamson_condition = true)
     alg2 = DGLDDRK84_F(; williamson_condition = false)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
@@ -440,7 +435,7 @@ end
 end
 
 @testset "NDBLSRK124" begin
-    alg = NDBLSRK124()
+    alg = NDBLSRK124(; williamson_condition = true)
     alg2 = NDBLSRK124(; williamson_condition = false)
     dts = 1 ./ 2 .^ (7:-1:3)
     for prob in test_problems_only_time
@@ -498,7 +493,7 @@ end
 end
 
 @testset "NDBLSRK134" begin
-    alg = NDBLSRK134()
+    alg = NDBLSRK134(; williamson_condition = true)
     alg2 = NDBLSRK134(; williamson_condition = false)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time
@@ -556,7 +551,7 @@ end
 end
 
 @testset "NDBLSRK144" begin
-    alg = NDBLSRK144()
+    alg = NDBLSRK144(; williamson_condition = true)
     alg2 = NDBLSRK144(; williamson_condition = false)
     dts = 1 ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time

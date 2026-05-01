@@ -2,7 +2,7 @@ module OrdinaryDiffEqFIRK
 
 import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
-    calculate_residuals,
+    calculate_residuals, default_controller, PredictiveController,
     OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
@@ -11,15 +11,15 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     isfsal, full_cache, constvalue, _unwrap_val,
     differentiation_rk_docstring, trivial_limiter!,
     _ode_interpolant!, _ode_addsteps!, AbstractController,
-    qmax_default, alg_adaptive_order, DEFAULT_PRECS,
+    qmax_default, alg_adaptive_order,
     stepsize_controller!, step_accept_controller!,
     step_reject_controller!,
     PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
     fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
-    isfirk, generic_solver_docstring, _bool_to_ADType,
-    _process_AD_choice, LinearAliasSpecifier
-using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
+    isfirk, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
+    LinearAliasSpecifier
+using MuladdMacro, DiffEqBase, RecursiveArrayTools
 isfirk, generic_solver_docstring
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
@@ -36,11 +36,7 @@ using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergenc
     Divergence, get_new_W_γdt_cutoff
 import ADTypes: AutoForwardDiff, AbstractADType
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: PredictiveControllerCache, NewPredictiveController
-    end
-end
+import OrdinaryDiffEqCore: PredictiveControllerCache
 
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
     @eval begin

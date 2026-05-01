@@ -88,9 +88,9 @@ function init_call(
     end
 end
 
-function init(
+Base.@constprop :aggressive function init(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, kwargs...
+        u0 = nothing, p = nothing, verbose = DEFAULT_VERBOSE, kwargs...
     )
     if sensealg === nothing && has_kwargs(prob) && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -99,14 +99,14 @@ function init(
     u0 = u0 !== nothing ? u0 : prob.u0
     p = p !== nothing ? p : prob.p
 
-    return init_up(prob, sensealg, u0, p, args...; kwargs...)
+    return init_up(prob, sensealg, u0, p, args...; verbose, kwargs...)
 end
 
 function init(prob::AbstractJumpProblem, args...; kwargs...)
     return init_call(prob, args...; kwargs...)
 end
 
-function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
+Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
@@ -216,7 +216,7 @@ function step!(integ::NullODEIntegrator, dt = nothing, stop_at_tdt = false)
     end
     return nothing
 end
-function SciMLBase.u_modified!(integ::NullODEIntegrator, u) end
+function SciMLBase.derivative_discontinuity!(integ::NullODEIntegrator, u) end
 SciMLBase.check_error(integ::NullODEIntegrator) = integ.sol.retcode
 
 function hack_null_solution_init(prob)
@@ -351,9 +351,25 @@ section at the end of this page for some example usage.
   also cannot interpolate, then `tstops` must be a multiple of `dt` or else an
   error will be thrown. `tstops` may also be a function `tstops(p, tspan)`, accepting the parameter
   object and `tspan`, returning the vector of time points to stop at. Default is `[]`.
-* `d_discontinuities:` Denotes locations of discontinuities in low order derivatives.
-  This will force FSAL algorithms which assume derivative continuity to re-evaluate
-  the derivatives at the point of discontinuity. The default is `[]`.
+* `d_discontinuities`: Denotes locations of discontinuities in low-order derivatives
+  of the vector field `f`. Each entry `t_d` is added as a tstop, and when the
+  integrator lands on `t_d` it advances `t` by one ULP in the integration direction
+  and re-evaluates the FSAL cache on the post-discontinuity side. The convention
+  is *right-continuous*: `f` evaluated at `t_d` is the "old" regime and `f` at
+  `nextfloat(t_d)` is the "new" regime, so user code should be written as
+  ```julia
+  if t > t_d
+      # new regime
+  else
+      # old regime
+  end
+  ```
+  Writing `t >= t_d` also works but means the solver takes one step of post-regime
+  integration with a pre-regime-evaluated FSAL, which is less efficient and can
+  reduce step acceptance near the discontinuity. A `d_discontinuities` entry at
+  `tspan[1]` is supported (the starting-time case), in which case the first step
+  begins at `nextfloat(tspan[1])`; this is useful for callbacks that need to
+  activate immediately. The default is `[]`.
 * `save_everystep`: Saves the result at every step.
   Default is true if `isempty(saveat)`.
 * `save_on`: Denotes whether intermediate solutions are saved. This overrides the
@@ -369,7 +385,7 @@ section at the end of this page for some example usage.
   `false`. Defaults to
   `save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat`.
 * `initialize_save`: Denotes whether to save after the callback initialization
-  phase (when `u_modified=true`). Defaults to `true`.
+  phase (when `derivative_discontinuity=true`). Defaults to `true`.
 
 Note that `dense` requires `save_everystep=true` and `saveat=false`. If you need
 additional saving while keeping dense output, see
@@ -572,9 +588,9 @@ the extension to other types is straightforward.
    to save size or because the user does not care about the others. Finally, with
    `progress = true` you are enabling the progress bar.
 """
-function solve(
+Base.@constprop :aggressive function solve(
         prob::AbstractDEProblem, args...; sensealg = nothing,
-        u0 = nothing, p = nothing, wrap = Val(true), kwargs...
+        u0 = nothing, p = nothing, wrap = Val(true), verbose = DEFAULT_VERBOSE, kwargs...
     )
     if sensealg === nothing && haskey(prob.kwargs, :sensealg)
         sensealg = prob.kwargs[:sensealg]
@@ -588,19 +604,19 @@ function solve(
             solve_up(
                 prob, sensealg, u0, p, args...;
                 originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-                kwargs...
+                verbose, kwargs...
             )
         )
     else
         solve_up(
             prob, sensealg, u0, p, args...;
             originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-            kwargs...
+            verbose, kwargs...
         )
     end
 end
 
-function solve_up(
+Base.@constprop :aggressive function solve_up(
         prob::AbstractDEProblem, sensealg, u0, p,
         args...; originator = SciMLBase.ChainRulesOriginator(),
         kwargs...
@@ -815,7 +831,7 @@ function promote_f(
         # has a sparsity pattern, since the solver may use either depending on
         # the autodiff configuration (AutoSparse creates sparse J from sparsity).
         if f.jac !== nothing && !(f.jac isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            if f.jac_prototype !== nothing
+            if f.jac_prototype !== nothing && !(f.jac_prototype isa AbstractSciMLOperator)
                 J_T = Base.promote_op(similar, typeof(f.jac_prototype), Type{uElType})
                 sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
@@ -835,7 +851,14 @@ function promote_f(
                     (Nothing, Nothing)
                 )
             else
-                sig = Tuple{Matrix{uElType}, typeof(u0), typeof(p), typeof(t)}
+                # No `jac_prototype` and no non-dense sparsity pattern. The integrator
+                # builds J via `ArrayInterface.zeromatrix(u)` (see
+                # `OrdinaryDiffEqDifferentiation/src/derivative_utils.jl`), so derive
+                # the wrapper signature from `u0` rather than hardcoding `Matrix`,
+                # which would break GPU arrays (e.g. `CuArray`) and other
+                # non-`Array` storage types.
+                J_T = Base.promote_op(ArrayInterface.zeromatrix, typeof(u0))
+                sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
                     Void(f.jac), (sig,), (Nothing,)
                 )
@@ -1052,17 +1075,6 @@ struct SensitivityADPassThrough <: AbstractDEAlgorithm end
 ### Legacy Dispatches to be Non-Breaking
 ###
 
-@deprecate concrete_solve(
-    prob::AbstractDEProblem,
-    alg::Union{AbstractDEAlgorithm, Nothing},
-    u0 = prob.u0, p = prob.p, args...; kwargs...
-) solve(
-    prob, alg,
-    args...;
-    u0 = u0,
-    p = p,
-    kwargs...
-)
 
 function _solve_adjoint(
         prob, sensealg, u0, p, originator, args...; merge_callbacks = true,

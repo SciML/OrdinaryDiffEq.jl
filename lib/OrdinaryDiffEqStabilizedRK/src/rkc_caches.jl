@@ -2,9 +2,9 @@ abstract type StabilizedRKMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::StabilizedRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
 mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{46, Int}
-    fp1::SVector{46, T}
-    fp2::SVector{46, T}
+    ms::NTuple{46, Int}
+    fp1::NTuple{46, T}
+    fp2::NTuple{46, T}
     recf::Vector{T2}
     zprev::zType
     mdeg::Int
@@ -57,7 +57,7 @@ function alg_cache(
 end
 
 mutable struct ROCK4ConstantCache{T, T2, T3, T4, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{50, Int}
+    ms::NTuple{50, Int}
     fpa::Vector{T}
     fpb::Vector{T2}
     fpbe::Vector{T3}
@@ -159,9 +159,9 @@ function alg_cache(
 end
 
 mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{46, Int}
-    Cᵤ::SVector{4, Int}
-    Cₑ::SVector{4, Int}
+    ms::NTuple{46, Int}
+    Cᵤ::NTuple{4, Int}
+    Cₑ::NTuple{4, Int}
     zprev::zType
     Bᵢ::Vector{T}
     mdeg::Int
@@ -213,9 +213,9 @@ function alg_cache(
 end
 
 mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{49, Int}
-    Cᵤ::SVector{5, Int}
-    Cₑ::SVector{5, Int}
+    ms::NTuple{49, Int}
+    Cᵤ::NTuple{5, Int}
+    Cₑ::NTuple{5, Int}
     zprev::zType
     Bᵢ::Vector{T}
     mdeg::Int
@@ -267,7 +267,7 @@ function alg_cache(
 end
 
 mutable struct SERK2ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{11, Int}
+    ms::NTuple{11, Int}
     zprev::zType
     Bᵢ::Vector{T}
     mdeg::Int
@@ -314,4 +314,53 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return SERK2ConstantCache(u)
+end
+
+mutable struct TSRKC3ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstantCache
+    #to match the types to call maxeig!
+    zprev::zType
+    tsw0::tTypeNoUnits
+    acoshtsw0::tTypeNoUnits
+end
+@cache struct TSRKC3Cache{uType, rateType, uNoUnitsType, C <: TSRKC3ConstantCache} <:
+    StabilizedRKMutableCache
+    u::uType
+    uprev::uType
+    gprev::uType
+    gprev2::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    fsalfirst::rateType
+    k::rateType
+    constantcache::C
+end
+
+function alg_cache(
+        alg::TSRKC3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tsw0 = tTypeNoUnits(1.25)
+    acoshtsw0 = tTypeNoUnits(acosh(1.25))
+    constantcache = TSRKC3ConstantCache(u, tsw0, acoshtsw0)
+    gprev = zero(u)
+    gprev2 = zero(u)
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    return TSRKC3Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, constantcache)
+end
+
+function alg_cache(
+        alg::TSRKC3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tsw0 = tTypeNoUnits(1.25)
+    acoshtsw0 = tTypeNoUnits(acosh(1.25))
+    return TSRKC3ConstantCache(u, tsw0, acoshtsw0)
 end

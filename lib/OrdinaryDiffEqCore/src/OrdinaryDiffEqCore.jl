@@ -32,7 +32,8 @@ import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
-    ODE_DEFAULT_UNSTABLE_CHECK
+    ODE_DEFAULT_UNSTABLE_CHECK,
+    DEVerbosity, DEFAULT_VERBOSE, _process_verbose_param
 
 import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
     MatrixOperator, FunctionOperator,
@@ -52,14 +53,11 @@ using ArrayInterface: ArrayInterface, issingular
 
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
-import StaticArraysCore: SArray, MVector, SVector, StaticArray, MMatrix,
-    StaticMatrix
-
 # Integrator Interface
 import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
     terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
-    u_modified!, savevalues!,
+    savevalues!,
     add_tstop!, has_tstop, first_tstop, pop_tstop!,
     add_saveat!, set_reltol!,
     set_abstol!, postamble!, last_step_failed,
@@ -68,7 +66,7 @@ import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
-using FastBroadcast: @.., True, False
+using FastBroadcast: @.., Serial, Threaded
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
@@ -81,7 +79,6 @@ import DiffEqBase: calculate_residuals,
     calculate_residuals!, @tight_loop_macros,
     timedepentdtmin
 
-import Polyester
 # MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore
 # using MacroTools, Adapt
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse, dense_ad
@@ -92,7 +89,7 @@ import Accessors: @reset
 
 using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    CustomLevel, AbstractMessageLevel, @verbosity_specifier
+    CustomLevel, AbstractMessageLevel
 
 using SymbolicIndexingInterface: state_values, parameter_values
 
@@ -133,18 +130,12 @@ end
 end
 const TryAgain = SlowConvergence
 
-DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
 
-@static if isdefined(DiffEqBase, :unitfulvalue)
-    unitfulvalue(x) = DiffEqBase.unitfulvalue(x)
-else
-    unitfulvalue(x) = DiffEqBase.ForwardDiff.value(x)
-end
+unitfulvalue(x) = DiffEqBase.unitfulvalue(x)
 
 include("doc_utils.jl")
 include("misc_utils.jl")
-include("verbosity.jl")
 
 include("algorithms.jl")
 include("composite_algs.jl")

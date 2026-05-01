@@ -6,7 +6,7 @@ end
 
 function MER5v2(;
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False()
+        thread = Serial()
     )
     return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
         stage_limiter!,
@@ -15,13 +15,6 @@ function MER5v2(;
     )
 end
 
-# for backwards compatibility
-function MER5v2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MER5v2{typeof(stage_limiter!), typeof(step_limiter!), False}(
-        stage_limiter!,
-        step_limiter!, False()
-    )
-end
 
 struct MER6v2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -31,7 +24,7 @@ end
 
 function MER6v2(;
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False()
+        thread = Serial()
     )
     return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
         stage_limiter!,
@@ -40,13 +33,6 @@ function MER6v2(;
     )
 end
 
-# for backwards compatibility
-function MER6v2(stage_limiter!, step_limiter! = trivial_limiter!)
-    return MER6v2{typeof(stage_limiter!), typeof(step_limiter!), False}(
-        stage_limiter!,
-        step_limiter!, False()
-    )
-end
 
 struct RK6v4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -56,7 +42,7 @@ end
 
 function RK6v4(;
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = False()
+        thread = Serial()
     )
     return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(
         stage_limiter!,
@@ -65,13 +51,6 @@ function RK6v4(;
     )
 end
 
-# for backwards compatibility
-function RK6v4(stage_limiter!, step_limiter! = trivial_limiter!)
-    return RK6v4{typeof(stage_limiter!), typeof(step_limiter!), False}(
-        stage_limiter!,
-        step_limiter!, False()
-    )
-end
 
 function Base.show(io::IO, alg::Union{MER5v2, MER6v2, RK6v4})
     return print(

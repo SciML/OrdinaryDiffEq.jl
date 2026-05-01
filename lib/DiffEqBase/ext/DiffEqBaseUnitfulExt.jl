@@ -11,6 +11,8 @@ value(x::Unitful.AbstractQuantity) = x.val
 unitfulvalue(x::Type{T}) where {T <: Unitful.AbstractQuantity} = T
 unitfulvalue(x::Unitful.AbstractQuantity) = x
 
+DiffEqBase.stripunits(x::Unitful.AbstractQuantity) = Unitful.ustrip(x)
+
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::AbstractArray{
             <:Unitful.AbstractQuantity,

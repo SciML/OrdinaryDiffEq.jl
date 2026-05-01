@@ -1,7 +1,7 @@
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
 OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm <:
+OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 reference = """@inproceedings{elrod2022parallelizing,
   title={Parallelizing explicit and implicit extrapolation methods for ordinary differential equations},
   author={Elrod, Chris and Ma, Yingbo and Althaus, Konstantin and Rackauckas, Christopher and others},
@@ -20,13 +20,13 @@ reference = """@inproceedings{elrod2022parallelizing,
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     """,
     """
     max_order::Int = 10,
     min_order::Int = 1,
     init_order = 3,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     """
 )
 Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
@@ -46,38 +46,37 @@ Similar to Hairer's SEULEX.",
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     """,
     extra_keyword_default = """
     max_order = 12,
     min_order = 3,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic
     """
 )
-struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitEulerExtrapolation{AD, F, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     max_order::Int
     min_order::Int
     init_order::Int
     threading::TO
     sequence::Symbol # Name of the subdividing sequence
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function ImplicitEulerExtrapolation(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(), linsolve = nothing,
-        precs = DEFAULT_PRECS,
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     linsolve = (
             linsolve === nothing &&
@@ -108,15 +107,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
           :$(sequence) --> :harmonic"
         sequence = :harmonic
     end
-    return ImplicitEulerExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading),
-    }(
-        linsolve, precs, max_order, min_order,
+    return ImplicitEulerExtrapolation(
+        linsolve, max_order, min_order,
         init_order,
-        threading, sequence, AD_choice
+        threading, sequence, autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -129,7 +125,7 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
     """,
@@ -137,7 +133,7 @@ end
     max_order = 10,
     min_order = 1,
     init_order = 5,
-    thread = OrdinaryDiffEq.True(),
+    thread = Threaded(),
     sequence = :harmonic,
     sequence_factor = 2,
     """
@@ -205,37 +201,36 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     """,
     extra_keyword_default = """
     max_order = 10,
     min_order = 1,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic,
     """
 )
-struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitDeuflhardExtrapolation{AD, F, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     autodiff::AD
+    concrete_jac::CJ
 end
 function ImplicitDeuflhardExtrapolation(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing,
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
     # Enforce 1 <=  min_order <= init_order <= max_order:
     min_order = max(1, min_order)
@@ -257,7 +252,6 @@ function ImplicitDeuflhardExtrapolation(;
 Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
             "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
-        chunk_size
     end
 
     # Warn user if sequence has been changed:
@@ -270,15 +264,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Initialize algorithm
-    return ImplicitDeuflhardExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading),
-    }(
-        linsolve, precs, min_order,
+    return ImplicitDeuflhardExtrapolation(
+        linsolve, min_order,
         init_order, max_order,
-        sequence, threading, AD_choice
+        sequence, threading, autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -292,7 +283,7 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
     """,
@@ -300,7 +291,7 @@ end
     max_order = 10,
     min_order = 2,
     init_order = 5,
-    thread = OrdinaryDiffEq.True(),
+    thread = Threaded(),
     sequence = :harmonic,
     sequence_factor = 2,
     """
@@ -370,35 +361,34 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     """,
     extra_keyword_default = """
     max_order = 10,
     min_order = 2,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic,
     """
 )
-struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitHairerWannerExtrapolation{AD, F, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function ImplicitHairerWannerExtrapolation(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
+        autodiff = AutoForwardDiff(),
+
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward}(),
+        linsolve = nothing,
         min_order = 2, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false
     )
@@ -435,17 +425,14 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
     # Initialize algorithm
-    return ImplicitHairerWannerExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading),
-    }(
-        linsolve, precs, min_order,
+    return ImplicitHairerWannerExtrapolation(
+        linsolve, min_order,
         init_order,
-        max_order, sequence, threading, AD_choice
+        max_order, sequence, threading, autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end
 
@@ -459,7 +446,7 @@ end
     - `max_order`: maximum order of the adaptive order algorithm.
     - `min_order`: minimum order of the adaptive order algorithm.
     - `init_order`: initial order of the adaptive order algorithm.
-    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads.
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     - `sequence`: the step-number sequences, also called the subdividing sequence. Possible values are `:harmonic`, `:romberg` or `:bulirsch`.
     - `sequence_factor`: denotes which even multiple of sequence to take while evaluating internal discretizations.
     """,
@@ -467,15 +454,14 @@ end
     max_order = 10,
     min_order = 3,
     init_order = 5,
-    thread = OrdinaryDiffEq.False(),
+    thread = Serial(),
     sequence = :harmonic,
     sequence_factor = 2,
     """
 )
-struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
-    OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
+struct ImplicitEulerBarycentricExtrapolation{AD, F, TO, CJ} <:
+    OrdinaryDiffEqImplicitExtrapolationAlgorithm
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -483,15 +469,14 @@ struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     threading::TO
     sequence_factor::Int
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function ImplicitEulerBarycentricExtrapolation(;
-        chunk_size = Val{0}(),
         autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(),
+
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward}(),
+        linsolve = nothing,
         min_order = 3, init_order = 5,
         max_order = 12, sequence = :harmonic,
         threading = false, sequence_factor = 2
@@ -528,22 +513,18 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
 
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
     # Initialize algorithm
-    return ImplicitEulerBarycentricExtrapolation{
-        _unwrap_val(chunk_size), typeof(AD_choice),
-        typeof(linsolve), typeof(precs), diff_type,
-        _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(threading),
-    }(
+    return ImplicitEulerBarycentricExtrapolation(
         linsolve,
-        precs,
         min_order,
         init_order,
         max_order,
         sequence,
         threading,
         sequence_factor,
-        AD_choice
+        autodiff,
+        _unwrap_val(concrete_jac)
+
     )
 end

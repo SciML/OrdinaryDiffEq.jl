@@ -2,6 +2,7 @@
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
@@ -11,13 +12,15 @@ SteadyStateDiffEq = "9672c7b4-1e72-59bd-8a11-6ac3964bc41f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
+ImplicitDiscreteSolve = {path = "../../../ImplicitDiscreteSolve"}
 OrdinaryDiffEq = {path = "../../../.."}
 
 [compat]
 ADTypes = "1"
 DifferentiationInterface = "0.7"
 ForwardDiff = "0.10, 1"
+ImplicitDiscreteSolve = "2"
 ModelingToolkit = "10, 11"
 Mooncake = "0.4, 0.5"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "7"
 StaticArrays = "1"

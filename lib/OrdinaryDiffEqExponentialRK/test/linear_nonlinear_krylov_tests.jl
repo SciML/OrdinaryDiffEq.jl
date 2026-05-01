@@ -91,8 +91,8 @@ let N = 20
             sol1 = solve(prob, alg, dt = 1 / 4, dense = true, adaptive = true)
             sol1(interp_results, interp_points)
             sol2 = solve(prob, alg, dt = 1 / 16, dense = true, adaptive = false)
-            for i in eachindex(sol2)
-                err = maximum(abs.(sol2[i] - interp_results[i]))
+            for i in eachindex(interp_results)
+                err = maximum(abs.(sol2.u[i] - interp_results[i]))
                 @test err < tol
             end
         end

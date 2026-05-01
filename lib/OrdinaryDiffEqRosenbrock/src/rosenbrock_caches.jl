@@ -1,8 +1,67 @@
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
+"""
+    JacReuseState{T}
+
+Lightweight mutable state for tracking Jacobian reuse in Rosenbrock-W methods.
+W-methods guarantee correctness with a stale Jacobian, so we can skip expensive
+Jacobian recomputations when conditions allow it.
+
+`T` is the element type of `dtgamma` at solve time — usually `Float64`, but
+`ForwardDiff.Dual` (including nested Duals under `ForwardDiff.hessian`) when
+the solve is being differentiated. Callers must construct this with a zero
+value of the right type (typically `zero(dt)`) so the same cache can hold
+Dual-valued dtgammas without any `ForwardDiff.value` unwrapping — unconditional
+unwrapping is unsafe under nested AD because it collapses a still-active
+inner derivative into a primal.
+
+Fields:
+- `last_dtgamma`: The dtgamma value from the last Jacobian computation
+- `pending_dtgamma`: The dtgamma from the current step (committed on accept)
+- `last_naccept`: The naccept count at last Jacobian computation
+- `max_jac_age`: Maximum number of accepted steps between Jacobian updates
+  (populated from `alg.max_jac_age`, default 20)
+- `cached_J`: Cached Jacobian for OOP reuse (type-erased for flexibility)
+- `cached_dT`: Cached time derivative for OOP reuse
+- `cached_W`: Cached factorized W for OOP reuse
+- `last_step_iter`: The integrator.iter at the last Rosenbrock step
+- `last_u_length`: The length of u at the last Jacobian computation
+"""
+mutable struct JacReuseState{T}
+    last_dtgamma::T
+    pending_dtgamma::T
+    last_naccept::Int
+    max_jac_age::Int
+    cached_J::Any
+    cached_dT::Any
+    cached_W::Any
+    last_step_iter::Int
+    last_u_length::Int
+end
+
+function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
+    return JacReuseState{T}(
+        dtgamma, dtgamma, 0, max_jac_age, nothing, nothing, nothing, 0, 0
+    )
+end
+
+"""
+    _make_jac_reuse_state(dtgamma, max_jac_age)
+
+Always allocate a `JacReuseState` to keep cache types concrete and avoid
+Union-type instability that breaks `@inferred` tests. When `max_jac_age ≤ 1`
+the age check in `_rosenbrock_jac_reuse_decision` triggers every step anyway,
+so the overhead is negligible.
+"""
+@inline function _make_jac_reuse_state(dtgamma, max_jac_age::Int)
+    return JacReuseState(dtgamma, max_jac_age)
+end
+
 # Fake values since non-FSAL
 get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (nothing, nothing)
+
+tabtype(::HybridExplicitImplicitRK) = Tsit5DATableau
 
 ################################################################################
 
@@ -10,7 +69,7 @@ get_fsalfirstlast(cache::RosenbrockMutableCache, u) = (nothing, nothing)
 
 mutable struct RosenbrockCache{
         uType, rateType, tabType, uNoUnitsType, JType, WType, TabType,
-        TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter,
+        TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter, JRType,
     } <:
     RosenbrockMutableCache
     u::uType
@@ -42,6 +101,7 @@ mutable struct RosenbrockCache{
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
     interp_order::Int
+    jac_reuse::JRType
 end
 function full_cache(c::RosenbrockCache)
     return [
@@ -50,7 +110,7 @@ function full_cache(c::RosenbrockCache)
     ]
 end
 
-struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
+struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD, JRType} <:
     RosenbrockConstantCache
     tf::TF
     uf::UF
@@ -60,12 +120,13 @@ struct RosenbrockCombinedConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
     linsolve::F
     autodiff::AD
     interp_order::Int
+    jac_reuse::JRType
 end
 
 @cache mutable struct Rosenbrock23Cache{
         uType, rateType, uNoUnitsType, JType, WType,
         TabType, TFType, UFType, F, JCType, GCType,
-        RTolType, A, AV, StepLimiter, StageLimiter,
+        RTolType, A, AV, StepLimiter, StageLimiter, JRType,
     } <: RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -95,12 +156,13 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+    jac_reuse::JRType
 end
 
 @cache mutable struct Rosenbrock32Cache{
         uType, rateType, uNoUnitsType, JType, WType,
         TabType, TFType, UFType, F, JCType, GCType,
-        RTolType, A, AV, StepLimiter, StageLimiter,
+        RTolType, A, AV, StepLimiter, StageLimiter, JRType,
     } <: RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -130,6 +192,7 @@ end
     algebraic_vars::AV
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
+    jac_reuse::JRType
 end
 
 function alg_cache(
@@ -163,17 +226,11 @@ function alg_cache(
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl,
-        Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -186,7 +243,7 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!
+        alg.stage_limiter!, _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -222,18 +279,11 @@ function alg_cache(
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-
-    Pl,
-        Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -244,11 +294,12 @@ function alg_cache(
     return Rosenbrock32Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
-        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!
+        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
-struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
+struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     RosenbrockConstantCache
     c₃₂::T
     d::T
@@ -258,15 +309,7 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
     W::WType
     linsolve::F
     autodiff::AD
-end
-
-function Rosenbrock23ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff
-    ) where {T}
-    tab = Rosenbrock23Tableau(T)
-    return Rosenbrock23ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff
-    )
+    jac_reuse::JRType
 end
 
 function alg_cache(
@@ -280,13 +323,17 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
+    # Seed JacReuseState with `zero(dt)` rather than a `constvalue`-stripped
+    # type: under nested ForwardDiff (e.g. `hessian`), dt is a Dual-of-Dual and
+    # dtgamma inherits that full type; a Float64 field would reject the assign.
     return Rosenbrock23ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg)
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
-struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
+struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     RosenbrockConstantCache
     c₃₂::T
     d::T
@@ -296,15 +343,7 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
     W::WType
     linsolve::F
     autodiff::AD
-end
-
-function Rosenbrock32ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff
-    ) where {T}
-    tab = Rosenbrock32Tableau(T)
-    return Rosenbrock32ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff
-    )
+    jac_reuse::JRType
 end
 
 function alg_cache(
@@ -318,9 +357,12 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
+    # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt)` here
+    # rather than a `constvalue`-stripped type.
     return Rosenbrock32ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg)
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -403,17 +445,20 @@ function alg_cache(
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     H_rows = size(tab.H, 1)
-    # Rodas3P/Rodas23W: H has 3 rows but only 2 are for interpolation;
-    # the 3rd row is for interpoldiff error estimation
-    if alg isa Union{Rodas3P, Rodas23W}
+    if H_rows == 0
+        interp_order = -1
+    elseif alg isa Union{Rodas3P, Rodas23W}
         interp_order = 2
     else
-        interp_order = H_rows > 0 ? H_rows : 2
+        interp_order = H_rows
     end
+    # Seed JacReuseState with `zero(dt)` so its dtgamma fields carry the full
+    # (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
-        alg_autodiff(alg), interp_order
+        alg_autodiff(alg), interp_order,
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -429,8 +474,12 @@ function alg_cache(
     H_rows = size(tab.H, 1)
     kshortsize = H_rows > 0 ? H_rows : 2
     # Rodas3P/Rodas23W: H has 3 rows but only 2 are for interpolation;
-    # the 3rd row is for interpoldiff error estimation
-    if alg isa Union{Rodas3P, Rodas23W}
+    # the 3rd row is for interpoldiff error estimation.
+    # Methods with empty H use generic Hermite (f₀, f₁), not Rosenbrock
+    # dense output coefficients — signal this with interp_order = -1.
+    if H_rows == 0
+        interp_order = -1
+    elseif alg isa Union{Rodas3P, Rodas23W}
         interp_order = 2
     else
         interp_order = kshortsize
@@ -465,20 +514,13 @@ function alg_cache(
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    Pl,
-        Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
-
     linsolve_tmp = zero(rate_prototype)
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
 
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -488,7 +530,8 @@ function alg_cache(
         u, uprev, dense, du, du1, du2, dtC, dtd, ks, fsalfirst, fsallast,
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
-        _get_step_limiter(alg), _get_stage_limiter(alg), interp_order
+        _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -574,7 +617,7 @@ function alg_cache(
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
-    tab = alg.tab(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return HybridExplicitImplicitConstantCache(
         tf, uf, tab, J, W, nothing, alg_autodiff(alg), size(tab.H, 1)
     )
@@ -586,7 +629,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = alg.tab(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     num_stages = size(tab.A, 1)
     interp_order = size(tab.H, 1)
 
@@ -613,41 +656,31 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
-    linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
-    Pl, Pr = wrapprecs(
-        alg.precs(
-            W, nothing, u, p, t, nothing, nothing, nothing,
-            nothing
-        )..., weight, tmp
-    )
+    linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        Pl = Pl, Pr = Pr,
+        linprob, wrapprecs(alg.linsolve, W, weight),
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        abstol = reltol, reltol = reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
 
     # Detect algebraic variables from mass matrix
     mass_matrix = f.mass_matrix
+    n = length(u)
     if mass_matrix === I
-        diff_vars = collect(1:length(u))
+        diff_vars = collect(1:n)
         alg_vars = Int[]
-        g_z = zeros(eltype(u), 0, 0)
-        g_y = zeros(eltype(u), 0, 0)
-        W_z = zeros(eltype(u), 0, 0)
-        linsolve_tmp_z = zeros(eltype(u), 0)
-        linsolve_z = nothing
     else
-        n = length(u)
         diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
         alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
-        n_g = length(alg_vars)
-        n_f = length(diff_vars)
-        g_z = zeros(eltype(u), n_g, n_g)
-        g_y = zeros(eltype(u), n_g, n_f)
-        W_z = zeros(eltype(u), n_g, n_g)
-        linsolve_tmp_z = zeros(eltype(u), n_g)
     end
+    n_g = length(alg_vars)
+    n_f = length(diff_vars)
+    g_z = zeros(eltype(u), n_g, n_g)
+    g_y = zeros(eltype(u), n_g, n_f)
+    W_z = zeros(eltype(u), n_g, n_g)
+    linsolve_tmp_z = zeros(eltype(u), n_g)
 
     return HybridExplicitImplicitCache(
         u, uprev, dense, du, du1, du2, ks,

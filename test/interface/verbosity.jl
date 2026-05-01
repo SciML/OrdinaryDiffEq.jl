@@ -2,6 +2,8 @@ using OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: DEVerbosity
 using OrdinaryDiffEq
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
+using OrdinaryDiffEqExtrapolation, OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock,
+    OrdinaryDiffEqSDIRK
 using ODEProblemLibrary: prob_ode_vanderpol_stiff
 using Test
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
@@ -37,11 +39,11 @@ using NonlinearSolve: NonlinearVerbosity
         @test v1.w_factorization isa SciMLLogging.Silent
         @test v1.newton_iterations isa SciMLLogging.Silent
 
-        # Test numerical group (default: WarnLevel except shampine_dt, dt_epsilon, stability_check)
+        # Test numerical group (default: WarnLevel except shampine_dt, stability_check)
         @test v1.rosenbrock_no_differential_states isa SciMLLogging.WarnLevel
         @test v1.shampine_dt isa SciMLLogging.Silent
         @test v1.unlimited_dt isa SciMLLogging.WarnLevel
-        @test v1.dt_epsilon isa SciMLLogging.Silent
+        @test v1.dt_epsilon isa SciMLLogging.WarnLevel
         @test v1.stability_check isa SciMLLogging.Silent
         @test v1.near_singular isa SciMLLogging.Silent
     end
@@ -189,6 +191,11 @@ using NonlinearSolve: NonlinearVerbosity
         # Test that invalid individual fields throw errors
         @test_throws ArgumentError DEVerbosity(dt_NaN = "invalid")
         @test_throws ArgumentError DEVerbosity(unknown_field = SciMLLogging.InfoLevel())
+
+        # Test that Bool verbose is no longer supported (v7 breaking change)
+        prob_simple = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+        @test_throws ArgumentError solve(prob_simple, Tsit5(); verbose = true)
+        @test_throws ArgumentError solve(prob_simple, Tsit5(); verbose = false)
     end
 
     @testset "Multiple group settings" begin

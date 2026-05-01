@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     beta2_default, beta1_default, gamma_default,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, ssp_coefficient,
-    OrdinaryDiffEqAlgorithm, ispredictive,
+    OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
     PIDController,
@@ -12,22 +12,12 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     constvalue, _unwrap_val,
     trivial_limiter!, perform_step!, initialize!,
     explicit_rk_docstring, get_fsalfirstlast
-using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Adapt
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
-import Static: False
+using FastBroadcast, MuladdMacro, RecursiveArrayTools, Adapt
+using FastBroadcast: Serial
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
 import OrdinaryDiffEqCore
 
-@static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.4"
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller_v7,
-            legacy_default_controller, NewPIDController
-    end
-else
-    @eval begin
-        import OrdinaryDiffEqCore: default_controller
-    end
-end
+import OrdinaryDiffEqCore: default_controller
 
 using Reexport
 @reexport using SciMLBase
@@ -125,7 +115,7 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
-export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
+export ORK256, CarpenterKennedy2N54, SHLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
     DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
     CFRLDDRK64, TSLDDRK74, CKLLSRK43_2, CKLLSRK54_3C,
     CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M,

@@ -303,11 +303,11 @@ SUITE["nonstiff"]["lotka_volterra"]["Vern7"] = @benchmarkable solve(
 rober_prob_instance = rober_prob()
 
 SUITE["stiff"]["rober"] = BenchmarkGroup()
-SUITE["stiff"]["rober"]["Rodas4"] = @benchmarkable solve(
-    $rober_prob_instance, Rodas4(), reltol = 1.0e-6, abstol = 1.0e-8
+SUITE["stiff"]["rober"]["Rodas5P"] = @benchmarkable solve(
+    $rober_prob_instance, Rodas5P(), reltol = 1.0e-6, abstol = 1.0e-8
 )
-SUITE["stiff"]["rober"]["TRBDF2"] = @benchmarkable solve(
-    $rober_prob_instance, TRBDF2(), reltol = 1.0e-6, abstol = 1.0e-8
+SUITE["stiff"]["rober"]["FBDF"] = @benchmarkable solve(
+    $rober_prob_instance, FBDF(), reltol = 1.0e-6, abstol = 1.0e-8
 )
 
 # Scaling benchmarks - single representative size

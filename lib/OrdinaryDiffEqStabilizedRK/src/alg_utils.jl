@@ -7,14 +7,20 @@ alg_order(alg::SERK2) = 2
 
 alg_order(alg::RKC) = 2
 
-ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
-ispredictive(alg::Union{RKC}) = true
+alg_order(alg::TSRKC3) = 3
 
-alg_adaptive_order(alg::RKC) = 2
+alg_extrapolates(alg::TSRKC3) = true
 
-gamma_default(alg::RKC) = 8 // 10
+default_controller(QT, alg::SERK2) = PredictiveController(QT, alg)
+default_controller(QT, alg::Union{RKC, TSRKC3}) = PredictiveController(QT, alg)
 
-fac_default_gamma(alg::Union{RKC, SERK2}) = true
+alg_adaptive_order(alg::Union{RKC, TSRKC3}) = 2
+
+gamma_default(alg::Union{RKC, TSRKC3}) = 8 // 10
+
+qmax_default(alg::TSRKC3) = 2
+
+fac_default_gamma(alg::Union{RKC, SERK2, TSRKC3}) = true
 has_dtnew_modification(alg::Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5}) = true
 
 function dtnew_modification(integrator, alg::ROCK2, dtnew)

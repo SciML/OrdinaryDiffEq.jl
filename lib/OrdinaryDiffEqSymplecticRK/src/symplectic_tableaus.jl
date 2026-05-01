@@ -1,8 +1,6 @@
-struct Symplectic2ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    b1::T
-    b2::T
+struct SymplecticTableau{aType, bType} <: HamiltonConstantCache
+    a::aType
+    b::bType
 end
 
 function PseudoVerletLeapfrogConstantCache(T, T2)
@@ -10,7 +8,7 @@ function PseudoVerletLeapfrogConstantCache(T, T2)
     a2 = convert(T, 0)
     b1 = convert(T, 1 // 2)
     b2 = convert(T, 1 // 2)
-    return Symplectic2ConstantCache{T, T2}(a1, a2, b1, b2)
+    return SymplecticTableau((a1, a2), (b1, b2))
 end
 
 function McAte2ConstantCache(T, T2)
@@ -18,16 +16,7 @@ function McAte2ConstantCache(T, T2)
     a1 = convert(T, 1 - a2)
     b2 = convert(T, 1 / (2 * (1 - a2)))
     b1 = convert(T, 1 - b2)
-    return Symplectic2ConstantCache{T, T2}(a1, a2, b1, b2)
-end
-
-struct Symplectic3ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    b1::T
-    b2::T
-    b3::T
+    return SymplecticTableau((a1, a2), (b1, b2))
 end
 
 function Ruth3ConstantCache(T, T2)
@@ -37,7 +26,7 @@ function Ruth3ConstantCache(T, T2)
     b1 = convert(T, 7 // 24)
     b2 = convert(T, 3 // 4)
     b3 = convert(T, -1 // 24)
-    return Symplectic3ConstantCache{T, T2}(a1, a2, a3, b1, b2, b3)
+    return SymplecticTableau((a1, a2, a3), (b1, b2, b3))
 end
 
 function McAte3ConstantCache(T, T2)
@@ -47,18 +36,7 @@ function McAte3ConstantCache(T, T2)
     b1 = convert(T, a3)
     b2 = convert(T, a2)
     b3 = convert(T, a1)
-    return Symplectic3ConstantCache{T, T2}(a1, a2, a3, b1, b2, b3)
-end
-
-struct Symplectic4ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
+    return SymplecticTableau((a1, a2, a3), (b1, b2, b3))
 end
 
 function CandyRoz4ConstantCache(T, T2)
@@ -70,7 +48,7 @@ function CandyRoz4ConstantCache(T, T2)
     b2 = convert(T, (2 - T(2)^(1 // 3))^-1)
     b3 = convert(T, (1 - T(2)^(2 // 3))^-1)
     b4 = convert(T, b2)
-    return Symplectic4ConstantCache{T, T2}(a1, a2, a3, a4, b1, b2, b3, b4)
+    return SymplecticTableau((a1, a2, a3, a4), (b1, b2, b3, b4))
 end
 
 function McAte4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -82,7 +60,7 @@ function McAte4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     b2 = convert(T, -0.224819803079420806)
     b3 = convert(T, 0.756320000515668291)
     b4 = convert(T, 0.334003603286321425)
-    return Symplectic4ConstantCache{T, T2}(a1, a2, a3, a4, b1, b2, b3, b4)
+    return SymplecticTableau((a1, a2, a3, a4), (b1, b2, b3, b4))
 end
 
 function McAte4ConstantCache(T::Type, T2::Type)
@@ -94,20 +72,7 @@ function McAte4ConstantCache(T::Type, T2::Type)
     b2 = convert(T, big"-0.224819803079420806")
     b3 = convert(T, big" 0.756320000515668291")
     b4 = convert(T, big" 0.334003603286321425")
-    return Symplectic4ConstantCache{T, T2}(a1, a2, a3, a4, b1, b2, b3, b4)
-end
-
-struct Symplectic45ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
+    return SymplecticTableau((a1, a2, a3, a4), (b1, b2, b3, b4))
 end
 
 function CalvoSanz4ConstantCache(T, T2)
@@ -121,7 +86,7 @@ function CalvoSanz4ConstantCache(T, T2)
     b3 = convert(T, 0.61479130717558)
     b4 = -convert(T, 0.14054801465937)
     b5 = convert(T, 0.12501982279453)
-    return Symplectic45ConstantCache{T, T2}(a1, a2, a3, a4, a5, b1, b2, b3, b4, b5)
+    return SymplecticTableau((a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5))
 end
 
 # Broken
@@ -138,7 +103,7 @@ function McAte42ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloa
     b3 = 1 - 2b1 - 2b2
     b4 = b2
     b5 = b1
-    return Symplectic45ConstantCache{T, T2}(a1, a2, a3, a4, a5, b1, b2, b3, b4, b5)
+    return SymplecticTableau((a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5))
 end
 
 function McAte42ConstantCache(T::Type, T2::Type)
@@ -152,22 +117,7 @@ function McAte42ConstantCache(T::Type, T2::Type)
     b3 = 1 - 2b1 - 2b2
     b4 = b2
     b5 = b1
-    return Symplectic45ConstantCache{T, T2}(a1, a2, a3, a4, a5, b1, b2, b3, b4, b5)
-end
-
-struct Symplectic5ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    a6::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
-    b6::T
+    return SymplecticTableau((a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5))
 end
 
 function McAte5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -183,7 +133,7 @@ function McAte5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     b4 = convert(T, 0.401269502251353448)
     b5 = convert(T, 0.010705081848235984)
     b6 = convert(T, -0.0589796254980311632)
-    return Symplectic5ConstantCache{T, T2}(a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6)
+    return SymplecticTableau((a1, a2, a3, a4, a5, a6), (b1, b2, b3, b4, b5, b6))
 end
 
 function McAte5ConstantCache(T::Type, T2::Type)
@@ -199,26 +149,7 @@ function McAte5ConstantCache(T::Type, T2::Type)
     b4 = convert(T, big"0.4012695022513534480")
     b5 = convert(T, big"0.0107050818482359840")
     b6 = convert(T, big"-0.0589796254980311632")
-    return Symplectic5ConstantCache{T, T2}(a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6)
-end
-
-struct Symplectic6ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    a6::T
-    a7::T
-    a8::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
-    b6::T
-    b7::T
-    b8::T
+    return SymplecticTableau((a1, a2, a3, a4, a5, a6), (b1, b2, b3, b4, b5, b6))
 end
 
 function Yoshida6ConstantCache(T, T2)
@@ -238,33 +169,10 @@ function Yoshida6ConstantCache(T, T2)
     b6 = convert(T, b3)
     b7 = convert(T, b2)
     b8 = convert(T, b1)
-    return Symplectic6ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6,
-        b7, b8
+    return SymplecticTableau(
+        (a1, a2, a3, a4, a5, a6, a7, a8),
+        (b1, b2, b3, b4, b5, b6, b7, b8)
     )
-end
-
-struct Symplectic62ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    a6::T
-    a7::T
-    a8::T
-    a9::T
-    a10::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
-    b6::T
-    b7::T
-    b8::T
-    b9::T
-    b10::T
 end
 
 function KahanLi6ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -288,9 +196,9 @@ function KahanLi6ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     b8 = b3
     b9 = b2
     b10 = b1
-    return Symplectic62ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3,
-        b4, b5, b6, b7, b8, b9, b10
+    return SymplecticTableau(
+        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10),
+        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10)
     )
 end
 
@@ -315,45 +223,10 @@ function KahanLi6ConstantCache(T::Type, T2::Type)
     b8 = b3
     b9 = b2
     b10 = b1
-    return Symplectic62ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3,
-        b4, b5, b6, b7, b8, b9, b10
+    return SymplecticTableau(
+        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10),
+        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10)
     )
-end
-
-struct McAte8ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    a6::T
-    a7::T
-    a8::T
-    a9::T
-    a10::T
-    a11::T
-    a12::T
-    a13::T
-    a14::T
-    a15::T
-    a16::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
-    b6::T
-    b7::T
-    b8::T
-    b9::T
-    b10::T
-    b11::T
-    b12::T
-    b13::T
-    b14::T
-    b15::T
-    b16::T
 end
 
 function McAte8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -389,11 +262,9 @@ function McAte8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     b14 = b3
     b15 = b2
     b16 = b1
-    return McAte8ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-        a15, a16,
-        b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
-        b15, b16
+    return SymplecticTableau(
+        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16),
+        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
     )
 end
 
@@ -430,51 +301,10 @@ function McAte8ConstantCache(T::Type, T2::Type)
     b14 = b3
     b15 = b2
     b16 = b1
-    return McAte8ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-        a15, a16,
-        b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
-        b15, b16
+    return SymplecticTableau(
+        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16),
+        (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
     )
-end
-
-struct KahanLi8ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    a6::T
-    a7::T
-    a8::T
-    a9::T
-    a10::T
-    a11::T
-    a12::T
-    a13::T
-    a14::T
-    a15::T
-    a16::T
-    a17::T
-    a18::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
-    b6::T
-    b7::T
-    b8::T
-    b9::T
-    b10::T
-    b11::T
-    b12::T
-    b13::T
-    b14::T
-    b15::T
-    b16::T
-    b17::T
-    b18::T
 end
 
 function KahanLi8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -514,11 +344,15 @@ function KahanLi8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     b16 = b3
     b17 = b2
     b18 = b1
-    return KahanLi8ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-        a14, a15, a16, a17, a18,
-        b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
-        b14, b15, b16, b17, b18
+    return SymplecticTableau(
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+            a14, a15, a16, a17, a18,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            b14, b15, b16, b17, b18,
+        )
     )
 end
 
@@ -559,87 +393,16 @@ function KahanLi8ConstantCache(T::Type, T2::Type)
     b16 = b3
     b17 = b2
     b18 = b1
-    return KahanLi8ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-        a14, a15, a16, a17, a18,
-        b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
-        b14, b15, b16, b17, b18
+    return SymplecticTableau(
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+            a14, a15, a16, a17, a18,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            b14, b15, b16, b17, b18,
+        )
     )
-end
-
-struct SofSpa10ConstantCache{T, T2} <: HamiltonConstantCache
-    a1::T
-    a2::T
-    a3::T
-    a4::T
-    a5::T
-    a6::T
-    a7::T
-    a8::T
-    a9::T
-    a10::T
-    a11::T
-    a12::T
-    a13::T
-    a14::T
-    a15::T
-    a16::T
-    a17::T
-    a18::T
-    a19::T
-    a20::T
-    a21::T
-    a22::T
-    a23::T
-    a24::T
-    a25::T
-    a26::T
-    a27::T
-    a28::T
-    a29::T
-    a30::T
-    a31::T
-    a32::T
-    a33::T
-    a34::T
-    a35::T
-    a36::T
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-    b5::T
-    b6::T
-    b7::T
-    b8::T
-    b9::T
-    b10::T
-    b11::T
-    b12::T
-    b13::T
-    b14::T
-    b15::T
-    b16::T
-    b17::T
-    b18::T
-    b19::T
-    b20::T
-    b21::T
-    b22::T
-    b23::T
-    b24::T
-    b25::T
-    b26::T
-    b27::T
-    b28::T
-    b29::T
-    b30::T
-    b31::T
-    b32::T
-    b33::T
-    b34::T
-    b35::T
-    b36::T
 end
 
 function SofSpa10ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -715,17 +478,19 @@ function SofSpa10ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     b34 = b3
     b35 = b2
     b36 = b1
-    return SofSpa10ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-        a14, a15, a16, a17, a18,
-        a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,
-        a31, a32, a33, a34,
-        a35, a36,
-        b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
-        b14, b15, b16, b17, b18,
-        b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30,
-        b31, b32, b33, b34,
-        b35, b36
+    return SymplecticTableau(
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+            a14, a15, a16, a17, a18,
+            a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,
+            a31, a32, a33, a34, a35, a36,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            b14, b15, b16, b17, b18,
+            b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30,
+            b31, b32, b33, b34, b35, b36,
+        )
     )
 end
 
@@ -802,16 +567,18 @@ function SofSpa10ConstantCache(T::Type, T2::Type)
     b34 = b3
     b35 = b2
     b36 = b1
-    return SofSpa10ConstantCache{T, T2}(
-        a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-        a14, a15, a16, a17, a18,
-        a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,
-        a31, a32, a33, a34,
-        a35, a36,
-        b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
-        b14, b15, b16, b17, b18,
-        b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30,
-        b31, b32, b33, b34,
-        b35, b36
+    return SymplecticTableau(
+        (
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+            a14, a15, a16, a17, a18,
+            a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30,
+            a31, a32, a33, a34, a35, a36,
+        ),
+        (
+            b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13,
+            b14, b15, b16, b17, b18,
+            b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30,
+            b31, b32, b33, b34, b35, b36,
+        )
     )
 end

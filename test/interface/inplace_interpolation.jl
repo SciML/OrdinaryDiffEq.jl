@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqAdamsBashforthMoulton
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 vecarrzero(m::Integer, n) = map(t -> zeros(n), 1:m)

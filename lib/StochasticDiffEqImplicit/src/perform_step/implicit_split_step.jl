@@ -1,7 +1,8 @@
 @muladd function perform_step!(
         integrator, cache::Union{
             ISSEMConstantCache, ISSEulerHeunConstantCache,
-        }
+        },
+        repeat_step = false
     )
     (; t, dt, uprev, u, p, f) = integrator
     (; nlsolver) = cache
@@ -110,13 +111,13 @@
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(resids, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(resids, t))
     end
 
     integrator.u = u
 end
 
-@muladd function perform_step!(integrator, cache::Union{ISSEMCache, ISSEulerHeunCache})
+@muladd function perform_step!(integrator, cache::Union{ISSEMCache, ISSEulerHeunCache}, repeat_step = false)
     (; t, dt, uprev, u, p, f) = integrator
     (; gtmp, gtmp2, dW_cache, nlsolver, k, dz) = cache
     (; z, tmp) = nlsolver
@@ -131,7 +132,7 @@ end
 
     repeat_step = false
 
-    if integrator.success_iter > 0 && !integrator.u_modified &&
+    if integrator.success_iter > 0 && !integrator.derivative_discontinuity &&
             alg.extrapolant == :interpolant
         current_extrapolant!(u, t + dt, integrator)
     elseif alg.extrapolant == :linear
@@ -255,6 +256,6 @@ end
             integrator.opts.reltol, integrator.opts.delta,
             integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(tmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 end

@@ -17,13 +17,9 @@ Base.@kwdef struct Tsit5{StageLimiter, StepLimiter, Thread} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
+    thread::Thread = Serial()
 end
 @truncate_stacktrace Tsit5 3
-# for backwards compatibility
-function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
-    return Tsit5(stage_limiter!, step_limiter!, False())
-end
 
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Tsit5()` and `stiff_alg`.
