@@ -35,7 +35,7 @@ sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-6)
 sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
 #  46.500 μs (7129 allocations: 226.22 KiB)
 
-sol_disco_BS5= solve(prob, BS5(); callback = cb, reltol = 1e-6)
+sol_disco_BS5 = solve(prob, BS5(); callback = cb, reltol = 1e-6)
 sol_no_disco_BS5 = solve(prob, BS5(); callback = cb2, reltol = 1e-6)
 
 #TEST 2: TWO DISCONTINUITIES

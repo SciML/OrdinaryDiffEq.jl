@@ -694,11 +694,7 @@ Base.@constprop :aggressive function _ode_init(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
-        dtpropose, disco_dt_set, tdir, eigen_est, EEst,
-        # TODO vvv remove these
-        QT(qoldinit), q11,
-        erracc, dtacc,
-        # TODO ^^^ remove these
+        dtpropose, disco_dt_set, tdir, eigen_est,
         controller_cache,
         success_iter,
         iter, saveiter, saveiter_dense, cache,
