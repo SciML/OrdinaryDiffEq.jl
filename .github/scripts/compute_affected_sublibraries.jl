@@ -24,6 +24,14 @@
 #   runner      — string or array of labels (default: "ubuntu-latest")
 #   timeout     — integer, job timeout in minutes (default: 120)
 #   num_threads — integer, JULIA_NUM_THREADS (default: 1)
+#   local_only  — boolean (default: false). When true, the group is skipped
+#                 whenever this sublibrary is only being tested because an
+#                 upstream dependency changed (i.e. it landed in the matrix
+#                 transitively, not because its own files were touched). Use
+#                 this for groups so expensive that running them on every
+#                 dependency-graph rebuild is wasteful — e.g. weak-convergence
+#                 tests in the StochasticDiffEq sublibraries. The group still
+#                 runs whenever any file under lib/<this-pkg>/ is edited.
 #
 # If no test/test_groups.toml exists, the default is:
 #   Core on ["lts", "1.11", "1", "pre"]
@@ -118,6 +126,7 @@ struct TestGroupConfig
     runner::Any  # String or Vector{String}
     timeout::Int
     num_threads::Int
+    local_only::Bool
 end
 
 function load_test_groups(lib_dir::String, pkg::String)
@@ -131,12 +140,13 @@ function load_test_groups(lib_dir::String, pkg::String)
             runner = runner_raw isa Vector ? convert(Vector{String}, runner_raw) : runner_raw::String
             timeout = Int(get(config, "timeout", 120))
             num_threads = Int(get(config, "num_threads", 1))
-            groups[name] = TestGroupConfig(versions, runner, timeout, num_threads)
+            local_only = Bool(get(config, "local_only", false))
+            groups[name] = TestGroupConfig(versions, runner, timeout, num_threads, local_only)
         end
         return groups
     end
     return Dict{String, TestGroupConfig}(
-        k => TestGroupConfig(v, "ubuntu-latest", 120, 1) for (k, v) in DEFAULT_TEST_GROUPS
+        k => TestGroupConfig(v, "ubuntu-latest", 120, 1, false) for (k, v) in DEFAULT_TEST_GROUPS
     )
 end
 
@@ -194,6 +204,9 @@ function build_matrix(
         is_downstream = pkg in transitive
         for group_name in sort!(collect(keys(groups)))
             config = groups[group_name]
+            # local_only groups don't run when this package was only pulled
+            # in via the reverse-dependency graph.
+            is_downstream && config.local_only && continue
             ci_group = group_name == "Core" ? pkg : "$(pkg)_$(group_name)"
             # Downstream (transitive) deps only run on latest stable.
             versions = is_downstream ? [DOWNSTREAM_VERSION] : config.versions

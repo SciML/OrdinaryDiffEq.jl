@@ -17,10 +17,6 @@ does not have a `jac_reuse` field.
     end
 end
 
-# Strip ForwardDiff.Dual to plain value for heuristic storage in JacReuseState.
-# JacReuseState fields are Float64 (or similar) and don't need to carry AD derivatives.
-_jac_reuse_value(x) = ForwardDiff.value(x)
-
 """
     _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}
 
@@ -868,7 +864,7 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
             )
             jac_reuse.last_step_iter = integrator.iter
             if new_jac
-                jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+                jac_reuse.pending_dtgamma = dtgamma
                 jac_reuse.last_u_length = length(integrator.u)
             end
         else
@@ -919,7 +915,7 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
         jac_reuse.cached_J = calc_J(integrator, cache)
         jac_reuse.cached_dT = dT
         jac_reuse.cached_W = W
-        jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+        jac_reuse.pending_dtgamma = dtgamma
         jac_reuse.last_u_length = length(integrator.u)
 
         return dT, W

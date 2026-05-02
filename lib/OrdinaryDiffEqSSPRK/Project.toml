@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSSPRK"
 uuid = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "1.14.0"
+version = "2.0.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -46,7 +46,7 @@ julia = "1.10"
 RecursiveArrayTools = "4"
 ODEProblemLibrary = "1"
 DiffEqBase = "7"
-OrdinaryDiffEqLowStorageRK = "1.5.0"
+OrdinaryDiffEqLowStorageRK = "2, 3"
 Reexport = "1.2"
 SafeTestsets = "0.1.0"
 

@@ -8,6 +8,8 @@ println("There are $(nprocs()) processes")
     Pkg.develop(PackageSpec(path = joinpath(pwd(), "..")))
     Pkg.instantiate()
     using OrdinaryDiffEq
+    using SciMLBase: EnsembleProblem, EnsembleSerial, EnsembleThreads,
+        EnsembleDistributed, EnsembleSplitThreads
     prob = ODEProblem((u, p, t) -> 1.01u, 0.5, (0.0, 1.0))
     u0s = [rand() * prob.u0 for i in 1:2]
     function simple_prob_func(prob, ctx)
@@ -39,12 +41,12 @@ end
 ensemble_prob = EnsembleProblem(prob, prob_func = lorenz_prob_func, safetycopy = true)
 
 println("Running EnsembleSerial()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleSerial(), trajectories = 100)) == 100
+@test length(solve(ensemble_prob, Tsit5(), EnsembleSerial(), trajectories = 100).u) == 100
 println("Running EnsembleThreads()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleThreads(), trajectories = 100)) == 100
+@test length(solve(ensemble_prob, Tsit5(), EnsembleThreads(), trajectories = 100).u) == 100
 println("Running EnsembleDistributed()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleDistributed(), trajectories = 100)) ==
+@test length(solve(ensemble_prob, Tsit5(), EnsembleDistributed(), trajectories = 100).u) ==
     100
 println("Running EnsembleSplitThreads()")
-@test length(solve(ensemble_prob, Tsit5(), EnsembleSplitThreads(), trajectories = 100)) ==
+@test length(solve(ensemble_prob, Tsit5(), EnsembleSplitThreads(), trajectories = 100).u) ==
     100

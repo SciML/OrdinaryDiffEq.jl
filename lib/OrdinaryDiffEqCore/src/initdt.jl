@@ -56,7 +56,14 @@
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
-        if u0 isa Array && eltype(u0) isa Number
+        # When time is unitless, `f` writes `du` with `eltype(u0)` and the
+        # FunctionWrapper signature emitted by `promote_f` reflects that. Dividing
+        # by `oneunit_tType` is only meaningful for unit-aware time (e.g. Unitful);
+        # for plain numeric `t` it would spuriously promote (e.g. Float32 / Float64
+        # -> Float64) and produce a `du` whose eltype no longer matches the wrapper.
+        if recursive_unitless_eltype(u0) === eltype(u0)
+            f₀ = zero(u0)
+        elseif u0 isa Array && eltype(u0) isa Number
             T = eltype(first(u0) / oneunit_tType)
             f₀ = similar(u0, T)
             fill!(f₀, zero(T))

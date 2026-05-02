@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, RecursiveArrayTools, LinearAlgebra, Test
+using OrdinaryDiffEqLowOrderRK: BS3
+using OrdinaryDiffEqStabilizedRK: ROCK2
 
 # Define the constants for the PDE
 const α₂ = 1.0

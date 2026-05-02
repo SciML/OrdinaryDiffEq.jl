@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DataFrames, Test, SymbolicIndexingInterface
+using OrdinaryDiffEqLowOrderRK: Euler
 f_2dlinear = (du, u, p, t) -> du .= 1.01u;
 prob = ODEProblem(f_2dlinear, rand(2, 2), (0.0, 1.0));
 sol1 = solve(prob, Euler(); dt = 1 // 2^(4));

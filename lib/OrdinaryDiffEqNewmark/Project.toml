@@ -1,6 +1,6 @@
 name = "OrdinaryDiffEqNewmark"
 uuid = "d204908a-63b9-11ef-18f5-cfec7123a93b"
-version = "1.4.0"
+version = "2.0.0"
 authors = ["Dennis Ogiermann <termi-official@users.noreply.github.com>"]
 
 [deps]

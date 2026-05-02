@@ -385,10 +385,10 @@ function objfun(x, prob, data, solver, reltol, abstol)
     prob = remake(prob, p = x)
     sol = solve(prob, solver, reltol = reltol, abstol = abstol)
     ofv = 0.0
-    if any((s.retcode != ReturnCode.Success for s in sol))
+    if !SciMLBase.successful_retcode(sol)
         ofv = 1.0e12
     else
-        ofv = sum((sol .- data) .^ 2)
+        ofv = sum(sum((su .- du) .^ 2) for (su, du) in zip(sol.u, data.u))
     end
     return ofv
 end

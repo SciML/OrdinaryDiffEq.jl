@@ -11,6 +11,7 @@ function activate_modelingtoolkit_env()
             PackageSpec(path = dirname(dirname(dirname(@__DIR__)))),
             PackageSpec(path = dirname(@__DIR__)),
             PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqBDF")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqRosenbrock")),
             PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqSDIRK")),
         ]
     )

@@ -1,7 +1,7 @@
 name = "StochasticDiffEqROCK"
 uuid = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.1.0"
+version = "2.0.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -36,7 +36,7 @@ RecursiveArrayTools = "4"
 Reexport = "0.2, 1.0"
 SciMLBase = "3"
 StaticArrays = "1.9.14"
-StochasticDiffEqCore = "1"
+StochasticDiffEqCore = "2"
 DiffEqDevTools = "3"
 SDEProblemLibrary = "0.1, 1"
 Test = "<0.0.1, 1"

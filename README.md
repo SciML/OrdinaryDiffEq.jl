@@ -27,7 +27,7 @@ Pkg.add("OrdinaryDiffEq");
 
 ## v7 Breaking Changes
 
-OrdinaryDiffEq v7 bumps to **SciMLBase v3** and **RecursiveArrayTools v4** with breaking changes across all sublibraries. See [BREAKING_CHANGES_v7.md](BREAKING_CHANGES_v7.md) for the full migration guide.
+OrdinaryDiffEq v7 bumps to **SciMLBase v3** and **RecursiveArrayTools v4** with breaking changes across all sublibraries. See [NEWS.md](NEWS.md) for the full migration guide.
 
 ## API
 

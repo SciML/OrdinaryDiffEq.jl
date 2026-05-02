@@ -8,6 +8,14 @@ Lightweight mutable state for tracking Jacobian reuse in Rosenbrock-W methods.
 W-methods guarantee correctness with a stale Jacobian, so we can skip expensive
 Jacobian recomputations when conditions allow it.
 
+`T` is the element type of `dtgamma` at solve time — usually `Float64`, but
+`ForwardDiff.Dual` (including nested Duals under `ForwardDiff.hessian`) when
+the solve is being differentiated. Callers must construct this with a zero
+value of the right type (typically `zero(dt)`) so the same cache can hold
+Dual-valued dtgammas without any `ForwardDiff.value` unwrapping — unconditional
+unwrapping is unsafe under nested AD because it collapses a still-active
+inner derivative into a primal.
+
 Fields:
 - `last_dtgamma`: The dtgamma value from the last Jacobian computation
 - `pending_dtgamma`: The dtgamma from the current step (committed on accept)
@@ -304,16 +312,6 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     jac_reuse::JRType
 end
 
-function Rosenbrock23ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, max_jac_age::Int = 20
-    ) where {T}
-    tab = Rosenbrock23Tableau(T)
-    return Rosenbrock23ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        _make_jac_reuse_state(zero(T), max_jac_age)
-    )
-end
-
 function alg_cache(
         alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -325,9 +323,13 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
+    # Seed JacReuseState with `zero(dt)` rather than a `constvalue`-stripped
+    # type: under nested ForwardDiff (e.g. `hessian`), dt is a Dual-of-Dual and
+    # dtgamma inherits that full type; a Float64 field would reject the assign.
     return Rosenbrock23ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), alg.max_jac_age
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -344,16 +346,6 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     jac_reuse::JRType
 end
 
-function Rosenbrock32ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, max_jac_age::Int = 20
-    ) where {T}
-    tab = Rosenbrock32Tableau(T)
-    return Rosenbrock32ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        _make_jac_reuse_state(zero(T), max_jac_age)
-    )
-end
-
 function alg_cache(
         alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -365,9 +357,12 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
+    # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt)` here
+    # rather than a `constvalue`-stripped type.
     return Rosenbrock32ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), alg.max_jac_age
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 
@@ -457,11 +452,13 @@ function alg_cache(
     else
         interp_order = H_rows
     end
+    # Seed JacReuseState with `zero(dt)` so its dtgamma fields carry the full
+    # (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
-        _make_jac_reuse_state(zero(constvalue(uBottomEltypeNoUnits)), alg.max_jac_age)
+        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
     )
 end
 

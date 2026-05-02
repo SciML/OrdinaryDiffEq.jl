@@ -1,5 +1,6 @@
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 using CUDA
 using LinearAlgebra
 using Adapt
@@ -36,7 +37,7 @@ odef = ODEFunction(dae!, mass_matrix = mass_matrix, jac_prototype = jac_prototyp
 
 tspan = (0.0, 5.0)
 prob = ODEProblem(odef, u0, tspan, p)
-sol = solve(prob, Rodas5P())
+sol = solve(prob, Rodas5P(); initializealg = BrownFullBasicInit())
 
 # gpu version
 mass_matrix_d = adapt(CuArray, mass_matrix)
@@ -50,7 +51,7 @@ u0_d = adapt(CuArray, u0)
 p_d = adapt(CuArray, p)
 odef_d = ODEFunction(dae!, mass_matrix = mass_matrix_d, jac_prototype = jac_prototype_d)
 prob_d = ODEProblem(odef_d, u0_d, tspan, p_d)
-sol_d = solve(prob_d, Rodas5P())
+sol_d = solve(prob_d, Rodas5P(); initializealg = BrownFullBasicInit())
 
 @testset "Test constraints in GPU sol" begin
     for t in sol_d.t
