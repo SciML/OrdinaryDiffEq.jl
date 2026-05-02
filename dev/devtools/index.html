@@ -40,9 +40,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V74 80-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl/docs/Manifest.toml`
   [47edcb42] ADTypes v1.22.0
@@ -52,14 +52,19 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [79e6a3ab] Adapt v4.5.2
   [66dad0bd] AliasTables v1.1.3
   [4fba245c] ArrayInterface v7.24.0
+  [62783981] BitTwiddlingConvenienceFunctions v0.1.6
   [70df07ce] BracketingNonlinearSolve v1.12.1
+  [2a0fbf3d] CPUSummary v0.2.7
+  [fb6a15b2] CloseOpenIntervals v0.1.13
   [944b1d66] CodecZlib v0.7.8
   [38540f10] CommonSolve v0.2.6
   [bbf7d656] CommonSubexpressions v0.3.1
+  [f70d9fcc] CommonWorldInvalidations v1.0.0
   [34da2185] Compat v4.18.1
   [a33af91c] CompositionsBase v0.1.2
   [2569d6c7] ConcreteStructs v0.2.3
   [187b0558] ConstructionBase v1.6.0
+  [adafc99b] CpuId v0.3.1
   [9a962f9c] DataAPI v1.16.0
   [864edb3b] DataStructures v0.19.4
   [e2d170a0] DataValueInterfaces v1.0.0
@@ -74,7 +79,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [ffbed154] DocStringExtensions v0.9.5
   [e30172f5] Documenter v1.17.0
   [4e289a0a] EnumX v1.0.7
-  [f151be2c] EnzymeCore v0.8.19
+  [f151be2c] EnzymeCore v0.8.20
   [d4d017d3] ExponentialUtilities v1.30.0
   [e2ba6199] ExprTools v0.1.10
   [7034ab61] FastBroadcast v1.3.2
@@ -82,7 +87,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [442a2c76] FastGaussQuadrature v1.1.0
   [a4df4552] FastPower v1.3.1
   [1a297f60] FillArrays v1.16.0
-  [6a86dc24] FiniteDiff v2.30.0
+  [6a86dc24] FiniteDiff v2.31.0
   [1fa38f19] Format v1.3.7
   [f6369f11] ForwardDiff v1.3.3
   [069b7b12] FunctionWrappers v1.1.3
@@ -92,6 +97,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [d7ba0133] Git v1.5.0
   [34004b35] HypergeometricFunctions v0.3.28
   [b5f81e59] IOCapture v1.0.0
+  [615f187c] IfElse v0.1.1
   [3587e190] InverseFunctions v0.1.17
   [92d709cd] IrrationalConstants v0.2.6
   [82899510] IteratorInterfaceExtensions v1.0.0
@@ -100,13 +106,15 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [ba0b0d4f] Krylov v0.10.6
   [b964fa9f] LaTeXStrings v1.4.0
   [23fbe1c1] Latexify v0.16.10
+  [10f19ff3] LayoutPointers v0.1.17
   [0e77f7df] LazilyInitializedFields v1.3.0
-  [87fe0de2] LineSearch v0.1.8
+  [87fe0de2] LineSearch v0.1.9
 ⌃ [d3d80556] LineSearches v7.5.1
   [7ed4a6bd] LinearSolve v3.75.0
   [2ab3a3ac] LogExpFunctions v0.3.29
   [e6f89c97] LoggingExtras v1.2.0
   [1914dd2f] MacroTools v0.5.16
+  [d125e4d3] ManualMemory v0.1.8
   [d0879d2d] MarkdownAST v0.1.3
   [bb5d69b7] MaybeInplace v0.1.4
   [e1d29d7a] Missings v1.2.0
@@ -155,6 +163,8 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [90014a1f] PDMats v0.11.37
   [69de0a69] Parsers v2.8.4
   [e409e4f3] PoissonRandom v0.4.7
+  [f517fe37] Polyester v0.7.19
+  [1d0040c9] PolyesterWeave v0.2.2
   [d236fae5] PreallocationTools v1.2.0
   [aea7be01] PrecompileTools v1.3.3
   [21216c6a] Preferences v1.5.2
@@ -169,6 +179,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [79098fc4] Rmath v0.9.0
   [47965b36] RootedTrees v2.25.0
   [7e49a35a] RuntimeGeneratedFunctions v0.5.18
+  [94e857df] SIMDTypes v0.1.0
   [0bca4576] SciMLBase v3.7.1
   [19f34311] SciMLJacobianOperators v0.1.13
 ⌅ [a6db7da4] SciMLLogging v1.9.1
@@ -180,17 +191,21 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [a2af1166] SortingAlgorithms v1.2.2
   [0a514795] SparseMatrixColorings v0.4.27
   [276daf66] SpecialFunctions v2.7.2
+  [aedffcd0] Static v1.4.0
+  [0d7ed370] StaticArrayInterface v1.10.0
   [90137ffa] StaticArrays v1.9.18
   [1e83bf80] StaticArraysCore v1.4.4
   [10745b16] Statistics v1.11.1
   [82ae8749] StatsAPI v1.8.0
   [2913bbd2] StatsBase v0.34.10
   [4c63d2b9] StatsFuns v1.5.2
+  [7792a7ef] StrideArraysCore v0.5.9
   [09ab397b] StructArrays v0.7.3
   [ec057cc2] StructUtils v2.8.1
   [2efcf032] SymbolicIndexingInterface v0.3.46
   [3783bdb8] TableTraits v1.0.1
   [bd369af6] Tables v1.12.1
+  [8290d209] ThreadingUtilities v0.5.5
   [a759f4b9] TimerOutputs v0.5.29
   [3bb67fe8] TranscodingStreams v0.11.3
   [781d530d] TruncatedStacktraces v1.4.0
@@ -255,4 +270,4 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [3f19e933] p7zip_jll v17.7.0+0
 Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.0.0/assets/Manifest.toml&quot;</code></pre>">manifest</a> file and the
-<a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.0.0/assets/Project.toml&quot;</code></pre>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../misc/">« Miscellaneous Solvers</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 April 2026 18:26">Thursday 30 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.0.0/assets/Project.toml&quot;</code></pre>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../misc/">« Miscellaneous Solvers</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 2 May 2026 16:05">Saturday 2 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
