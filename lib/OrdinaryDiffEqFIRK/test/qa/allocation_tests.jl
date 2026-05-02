@@ -13,14 +13,18 @@ using Test
     # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise
     prob = ODEProblem{true, FullSpecialize}(simple_system!, [1.0, 1.0], (0.0, 1.0))
 
-    firk_solvers = [RadauIIA3(), RadauIIA5(), RadauIIA9(), AdaptiveRadau()]
+    firk_solvers = [
+        RadauIIA3(), RadauIIA5(), RadauIIA9(), AdaptiveRadau(),
+        GaussLegendre(num_stages = 2),
+    ]
 
     @testset "FIRK perform_step! Static Analysis" begin
         for solver in firk_solvers
             @testset "$(typeof(solver)) perform_step! allocation check" begin
                 integrator = init(
                     prob, solver, dt = 0.1, save_everystep = false,
-                    abstol = 1.0e-6, reltol = 1.0e-6
+                    abstol = 1.0e-6, reltol = 1.0e-6;
+                    adaptive = !(solver isa GaussLegendre),
                 )
                 step!(integrator)
 

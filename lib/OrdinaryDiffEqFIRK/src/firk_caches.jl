@@ -723,3 +723,142 @@ function alg_cache(
         Convergence, alg.step_limiter!, num_stages, 1, 0.0, index
     )
 end
+
+mutable struct GaussLegendreConstantCache{F, Tab, Tol, Dt, U, JType} <:
+    OrdinaryDiffEqConstantCache
+    uf::F
+    tab::Tab
+    κ::Tol
+    ηold::Tol
+    iter::Int
+    cont::Vector{U}
+    dtprev::Dt
+    W_γdt::Dt
+    status::NLStatus
+    J::JType
+    num_stages::Int
+end
+
+function alg_cache(
+        alg::GaussLegendre, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    uf = UDerivativeWrapper(f, t, p)
+    uToltype = constvalue(uBottomEltypeNoUnits)
+    num_stages = alg.num_stages
+    tab = GaussLegendreTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
+    κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
+    J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
+    cont = Vector{typeof(u)}(undef, num_stages)
+    for i in 1:num_stages
+        cont[i] = zero(u)
+    end
+    return GaussLegendreConstantCache(
+        uf, tab, κ, one(uToltype), 10000, cont, dt, dt,
+        Convergence, J, num_stages
+    )
+end
+
+
+mutable struct GaussLegendreCache{
+        uType, uNoUnitsType, rateType, JType, WType, Buff,
+        UF, JC, F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+    } <: FIRKMutableCache
+    u::uType
+    uprev::uType
+    z::Vector{uType}
+    z_last::Vector{uType}
+    w::Vector{uType}
+    dw::Vector{uType}
+    ubuff::Buff
+    u_full::uType
+    u_half::uType
+    du1::rateType
+    fsalfirst::rateType
+    k::rateType
+    ks::Vector{rateType}
+    fw::Vector{rateType}
+    J::JType
+    W::WType
+    uf::UF
+    tab::Tab
+    κ::Tol
+    ηold::Tol
+    iter::Int
+    tmp::uType
+    atmp::uNoUnitsType
+    jac_config::JC
+    linsolve::F1
+    rtol::rTol
+    atol::aTol
+    dtprev::Dt
+    W_γdt::Dt
+    status::NLStatus
+    step_limiter!::StepLimiter
+    num_stages::Int
+end
+
+function alg_cache(
+        alg::GaussLegendre, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    uf = UJacobianWrapper(f, t, p)
+    uToltype = constvalue(uBottomEltypeNoUnits)
+    num_stages = alg.num_stages
+    tab = GaussLegendreTableau(uToltype, constvalue(tTypeNoUnits), num_stages)
+    κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
+
+    z = [zero(u) for _ in 1:num_stages]
+    z_last = [zero(u) for _ in 1:num_stages]
+    w = [zero(u) for _ in 1:num_stages]
+    dw = [zero(u) for _ in 1:num_stages]
+    n = length(_vec(u))
+    ubuff = similar(_vec(u), num_stages * n)
+    recursivefill!(ubuff, false)
+    u_full = zero(u)
+    u_half = zero(u)
+
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    ks = [zero(rate_prototype) for _ in 1:num_stages]
+    fw = [zero(rate_prototype) for _ in 1:num_stages]
+    du1 = zero(rate_prototype)
+
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw[1])
+
+    J, _ = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    if J isa AbstractSciMLOperator
+        error("Non-concrete Jacobian not yet supported by GaussLegendre.")
+    end
+
+    W = similar(J, num_stages * n, num_stages * n)
+    recursivefill!(W, false)
+    linu0 = similar(_vec(ubuff))
+    recursivefill!(linu0, false)
+    linprob = LinearProblem(W, _vec(ubuff); u0 = linu0)
+    linsolve = init(
+        linprob, alg.linsolve,
+        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        assumptions = LinearSolve.OperatorAssumptions(true),
+        verbose = verbose.linear_verbosity
+    )
+
+    rtol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? reltol : zero(reltol)
+
+    return GaussLegendreCache(
+        u, uprev, z, z_last, w, dw, ubuff, u_full, u_half,
+        du1, fsalfirst, k, ks, fw,
+        J, W,
+        uf, tab, κ, one(uToltype), 10000,
+        tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
+        Convergence, alg.step_limiter!, num_stages
+    )
+end

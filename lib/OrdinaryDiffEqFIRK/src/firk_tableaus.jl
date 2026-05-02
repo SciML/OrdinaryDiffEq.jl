@@ -349,3 +349,82 @@ const RadauIIATableauCache = Dict{
     (Float64, Float64, 5) => generateRadauTableau(Float64, Float64, 5),
     (Float64, Float64, 7) => generateRadauTableau(Float64, Float64, 7)
 )
+
+
+struct GaussLegendreTableau{T1, T2}
+    A::Matrix{T1}
+    b::Vector{T1}
+    c::Vector{T2}
+    e::Vector{T1}
+end
+
+import FastGaussQuadrature: gausslegendre
+
+function GaussLegendreTableau(T1, T2, num_stages::Int)
+    tab = get(GaussLegendreTableauCache, (T1, T2, num_stages)) do
+        tab = generateGaussLegendreTableau(T1, T2, num_stages)
+        GaussLegendreTableauCache[(T1, T2, num_stages)] = tab
+        tab
+    end
+    return GaussLegendreTableau{T1, T2}(tab.A, tab.b, tab.c, tab.e)
+end
+
+# TODO: embedded error coefficients use s-1 GL rule interpolated to s nodes
+# a proper derivation following Hairer Vol I would improve adaptive performance
+
+# TODO: add the symplectic integrator stage decoupling from Antonan et al to increase efficiency
+
+function generateGaussLegendreTableau(T1, T2, num_stages::Int)
+    x, w = gausslegendre(num_stages)
+    c = T2.((x .+ 1) ./ 2)
+    b = T1.(w ./ 2)
+
+    A = Matrix{T1}(undef, num_stages, num_stages)
+    for i in 1:num_stages
+        for j in 1:num_stages
+            nodes, weights = gausslegendre(2 * num_stages)
+            nodes_ij = T1.((nodes .+ 1) ./ 2 .* c[i])
+            weights_ij = T1.(weights ./ 2 .* c[i])
+            Lj = ones(T1, length(nodes_ij))
+            for k in 1:num_stages
+                if k != j
+                    Lj .*= (nodes_ij .- c[k]) ./ (c[j] - c[k])
+                end
+            end
+            A[i, j] = dot(weights_ij, Lj)
+        end
+    end
+
+
+    # error estimate coefficients: embed using s-1 GL weights via interpolation
+    if num_stages > 1
+        x_low, w_low = gausslegendre(num_stages - 1)
+        c_low = T1.((x_low .+ 1) ./ 2)
+        b_low = zeros(T1, num_stages)
+        for i in 1:num_stages
+            for j in 1:(num_stages - 1)
+                Lj = one(T1)
+                for k in 1:(num_stages - 1)
+                    if k != j
+                        Lj *= (c[i] - c_low[k]) / (c_low[j] - c_low[k])
+                    end
+                end
+                b_low[i] += T1(w_low[j] / 2) * Lj
+            end
+        end
+        e = b .- b_low
+    else
+        e = b
+    end
+
+    return GaussLegendreTableau{T1, T2}(A, b, c, e)
+end
+
+const GaussLegendreTableauCache = Dict{
+    Tuple{Type, Type, Int}, GaussLegendreTableau{T1, T2} where {T1, T2},
+}(
+    (Float64, Float64, 2) => generateGaussLegendreTableau(Float64, Float64, 2),
+    (Float64, Float64, 3) => generateGaussLegendreTableau(Float64, Float64, 3),
+    (Float64, Float64, 4) => generateGaussLegendreTableau(Float64, Float64, 4),
+    (Float64, Float64, 5) => generateGaussLegendreTableau(Float64, Float64, 5),
+)
