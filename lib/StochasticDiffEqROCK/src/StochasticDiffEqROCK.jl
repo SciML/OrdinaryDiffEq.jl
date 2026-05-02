@@ -20,7 +20,6 @@ import MuladdMacro: @muladd
 import SciMLBase
 
 using LinearAlgebra
-using Random: rand!
 using StaticArrays
 using RecursiveArrayTools
 
