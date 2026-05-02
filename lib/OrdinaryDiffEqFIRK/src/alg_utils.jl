@@ -37,7 +37,7 @@ isfirk(alg::GaussLegendre) = true
 # Richardson step-doubling controller
 isadaptive(alg::GaussLegendre) = alg.num_stages >= 2
 alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages
-has_stiff_interpolation(::GaussLegendre) = true
+has_stiff_interpolation(::GaussLegendre) = false
 
 get_current_alg_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
 get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
