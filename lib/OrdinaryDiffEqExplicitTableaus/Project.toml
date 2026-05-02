@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExplicitTableaus"
 uuid = "3278f1b1-0f5c-4cde-98e0-ba5eb00db955"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.0.0"
+version = "2.0.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -26,7 +26,7 @@ OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 DiffEqBase = "7"
 DiffEqDevTools = "3"
 ODEProblemLibrary = "1"
-OrdinaryDiffEq = "6, 7"
+OrdinaryDiffEq = "7"
 Test = "<0.0.1, 1"
 julia = "1.10"
 

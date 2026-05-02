@@ -3,13 +3,14 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 IncompleteLU = "40713840-3770-5561-ab4c-a76e7d0d7895"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
@@ -17,16 +18,18 @@ ImplicitDiscreteSolve = {path = "../../../ImplicitDiscreteSolve"}
 OrdinaryDiffEq = {path = "../../../.."}
 OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
 OrdinaryDiffEqNonlinearSolve = {path = "../.."}
+OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
 [compat]
 DiffEqDevTools = "3"
-ImplicitDiscreteSolve = "1.11"
+ImplicitDiscreteSolve = "2"
 IncompleteLU = "0.2"
 LinearSolve = "3"
 ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
 OrdinaryDiffEq = "7"
-OrdinaryDiffEqBDF = "1"
-OrdinaryDiffEqNonlinearSolve = "1"
-OrdinaryDiffEqSDIRK = "1"
+OrdinaryDiffEqBDF = "2"
+OrdinaryDiffEqNonlinearSolve = "2"
+OrdinaryDiffEqRosenbrock = "2"
+OrdinaryDiffEqSDIRK = "2"

@@ -1,7 +1,7 @@
 name = "StochasticDiffEqHighOrder"
 uuid = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "1.1.0"
+version = "2.0.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -34,7 +34,7 @@ RecursiveArrayTools = "4"
 Reexport = "0.2, 1.0"
 SciMLBase = "3"
 StaticArrays = "1.9.14"
-StochasticDiffEqCore = "1"
+StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"
 SafeTestsets = "0.1.0"
 julia = "1.10"

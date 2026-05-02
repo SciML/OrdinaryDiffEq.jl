@@ -2,6 +2,10 @@ import OrdinaryDiffEqExplicitTableaus
 using DiffEqBase
 using DiffEqDevTools
 using Test
+using OrdinaryDiffEqExplicitRK: ExplicitRK
+using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqLowOrderRK: Heun, BS3, BS5, RKO65
+using OrdinaryDiffEq: OrdinaryDiffEq, Tsit5, Vern7, Vern8
 
 const ET = OrdinaryDiffEqExplicitTableaus
 
@@ -72,7 +76,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
     end
 
     @testset "High-order convergence tests" begin
-        using OrdinaryDiffEq, OrdinaryDiffEqExplicitRK, Random
+        using Random
         using ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
         setprecision(400)
@@ -107,8 +111,6 @@ const ET = OrdinaryDiffEqExplicitTableaus
     end
 
     @testset "Deduce Butcher tableau" begin
-        using OrdinaryDiffEq, OrdinaryDiffEqLowOrderRK
-
         function coefficients_as_in_tableau(A, b, c, tab)
             if size(A) == size(tab.A)
                 AA = A

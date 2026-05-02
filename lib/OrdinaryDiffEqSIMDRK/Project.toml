@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSIMDRK"
 uuid = "dc97f408-7a72-40e4-9b0d-228a53b292f8"
 authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Chris Elrod <elrodc@gmail.com>"]
-version = "1.6.0"
+version = "2.0.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"

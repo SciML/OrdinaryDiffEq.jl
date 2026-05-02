@@ -472,9 +472,10 @@ function SciMLBase.reinit!(
         # want to avoid. So we pass an empty array of pairs to make it think this is
         # a symbolic `remake` and it can modify `newp` inplace. The array of pairs is a
         # const global to avoid allocating every time this function is called.
+        root_indp = SciMLBase.get_root_indp(integrator.sol.prob)
         u0,
             newp = SciMLBase.late_binding_update_u0_p(
-            integrator.sol.prob, u0,
+            integrator.sol.prob, root_indp, u0,
             EMPTY_ARRAY_OF_PAIRS, t0, u0, integrator.p
         )
         if newp !== integrator.p
