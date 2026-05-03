@@ -37,9 +37,6 @@ function SDIRK_docstring(
     )
 end
 
-abstract type OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ} <:
-OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} end
-
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
@@ -1420,33 +1417,29 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ARS343{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveIMEXAlgorithm{CS, AD, FDT, ST, CJ}
+struct ARS343{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 function ARS343(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward}(),
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return ARS343{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!),
-    }(
-        linsolve, nlsolve, precs,
-        smooth_est, extrapolant, controller, step_limiter!, AD_choice
+    return ARS343(
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
     )
 end
