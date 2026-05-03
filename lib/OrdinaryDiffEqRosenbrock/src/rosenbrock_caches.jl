@@ -2,7 +2,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
 """
-    JacReuseState{T}
+    JacReuseState{T, J, D, W}
 
 Lightweight mutable state for tracking Jacobian reuse in Rosenbrock-W methods.
 W-methods guarantee correctness with a stale Jacobian, so we can skip expensive
@@ -16,44 +16,78 @@ Dual-valued dtgammas without any `ForwardDiff.value` unwrapping — unconditiona
 unwrapping is unsafe under nested AD because it collapses a still-active
 inner derivative into a primal.
 
+`J`, `D`, and `W` are the concrete types of the cached Jacobian, time
+derivative, and factorized W matrix respectively, propagated from the cache
+constructor. The slots themselves hold `Union{Nothing, J/D/W}` so the state
+can be allocated with `nothing` placeholders before the first Jacobian
+evaluation while still keeping the field types concrete enough for AD
+frameworks (Mooncake's `_copy_output` rejects mismatches between the
+inferred-`Any` field type and the runtime tangent — `NoTangent` for an
+`Any` slot is invariant-incompatible at the `NamedTuple` level).
+
 Fields:
 - `last_dtgamma`: The dtgamma value from the last Jacobian computation
 - `pending_dtgamma`: The dtgamma from the current step (committed on accept)
 - `last_naccept`: The naccept count at last Jacobian computation
 - `max_jac_age`: Maximum number of accepted steps between Jacobian updates
   (populated from `alg.max_jac_age`, default 20)
-- `cached_J`: Cached Jacobian for OOP reuse (type-erased for flexibility)
-- `cached_dT`: Cached time derivative for OOP reuse
-- `cached_W`: Cached factorized W for OOP reuse
+- `cached_J::Union{Nothing, J}`: Cached Jacobian for OOP reuse
+- `cached_dT::Union{Nothing, D}`: Cached time derivative for OOP reuse
+- `cached_W::Union{Nothing, W}`: Cached factorized W for OOP reuse
 - `last_step_iter`: The integrator.iter at the last Rosenbrock step
 - `last_u_length`: The length of u at the last Jacobian computation
 """
-mutable struct JacReuseState{T}
+mutable struct JacReuseState{T, J, D, W}
     last_dtgamma::T
     pending_dtgamma::T
     last_naccept::Int
     max_jac_age::Int
-    cached_J::Any
-    cached_dT::Any
-    cached_W::Any
+    cached_J::Union{Nothing, J}
+    cached_dT::Union{Nothing, D}
+    cached_W::Union{Nothing, W}
     last_step_iter::Int
     last_u_length::Int
 end
 
-function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
-    return JacReuseState{T}(
+function JacReuseState{T, J, D, W}(
+        dtgamma::T, max_jac_age::Int = 20
+    ) where {T, J, D, W}
+    return JacReuseState{T, J, D, W}(
         dtgamma, dtgamma, 0, max_jac_age, nothing, nothing, nothing, 0, 0
     )
 end
 
+# Backward-compatible constructor for callers that don't yet propagate the
+# J/D/W types. Defaults to `Any` for each, which preserves the previous
+# (pre-parameterized) runtime behavior. Internal call sites should use
+# `_make_jac_reuse_state` with explicit type parameters so AD frameworks see
+# concrete tangent types.
+function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
+    return JacReuseState{T, Any, Any, Any}(dtgamma, max_jac_age)
+end
+
 """
-    _make_jac_reuse_state(dtgamma, max_jac_age)
+    _make_jac_reuse_state(dtgamma, max_jac_age, ::Type{J}, ::Type{D}, ::Type{W})
 
 Always allocate a `JacReuseState` to keep cache types concrete and avoid
 Union-type instability that breaks `@inferred` tests. When `max_jac_age ≤ 1`
 the age check in `_rosenbrock_jac_reuse_decision` triggers every step anyway,
 so the overhead is negligible.
+
+`J`, `D`, `W` are propagated from the call site (`alg_cache`) so the cache
+fields stay concretely typed (`Union{Nothing, J/D/W}`) — required for AD
+frameworks such as Mooncake whose tangent inference rejects `Any` slots.
 """
+@inline function _make_jac_reuse_state(
+        dtgamma::T, max_jac_age::Int, ::Type{J}, ::Type{D}, ::Type{W}
+    ) where {T, J, D, W}
+    return JacReuseState{T, J, D, W}(dtgamma, max_jac_age)
+end
+
+# Backward-compatible single-arity form (no explicit J/D/W). Uses `Any` for
+# each cache slot — AD frameworks may not be able to differentiate through
+# such a state, but it preserves the previous runtime behavior for callers
+# that have not yet been migrated.
 @inline function _make_jac_reuse_state(dtgamma, max_jac_age::Int)
     return JacReuseState(dtgamma, max_jac_age)
 end
@@ -243,7 +277,9 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!, _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        alg.stage_limiter!, _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, typeof(J), typeof(rate_prototype), typeof(W)
+        )
     )
 end
 
@@ -295,7 +331,9 @@ function alg_cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, typeof(J), typeof(rate_prototype), typeof(W)
+        )
     )
 end
 
@@ -329,7 +367,9 @@ function alg_cache(
     # dtgamma inherits that full type; a Float64 field would reject the assign.
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, typeof(J), typeof(rate_prototype), typeof(W)
+        )
     )
 end
 
@@ -362,7 +402,9 @@ function alg_cache(
     # rather than a `constvalue`-stripped type.
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, typeof(J), typeof(rate_prototype), typeof(W)
+        )
     )
 end
 
@@ -458,7 +500,9 @@ function alg_cache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, typeof(J), typeof(rate_prototype), typeof(W)
+        )
     )
 end
 
@@ -531,7 +575,9 @@ function alg_cache(
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, typeof(J), typeof(rate_prototype), typeof(W)
+        )
     )
 end
 
