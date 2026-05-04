@@ -243,7 +243,7 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!, _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        alg.stage_limiter!, _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
     )
 end
 
@@ -295,7 +295,7 @@ function alg_cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
     )
 end
 
@@ -324,12 +324,15 @@ function alg_cache(
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
-    # Seed JacReuseState with `zero(dt)` rather than a `constvalue`-stripped
-    # type: under nested ForwardDiff (e.g. `hessian`), dt is a Dual-of-Dual and
-    # dtgamma inherits that full type; a Float64 field would reject the assign.
+    # Seed JacReuseState with `zero(tTypeNoUnits)` rather than `zero(dt)`:
+    # tTypeNoUnits comes from `oneunit(first(tspan))` so it always reflects the
+    # full integration time type (e.g. `Dual` under AD, `Dual{Dual}` under
+    # nested AD). `dt` may be passed as a `Float64` placeholder when the user
+    # didn't supply one (#3596). Using tTypeNoUnits guarantees the dtgamma
+    # field can hold whatever dtgamma = dt * gamma evaluates to at perform_step.
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
     )
 end
 
@@ -362,7 +365,7 @@ function alg_cache(
     # rather than a `constvalue`-stripped type.
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
     )
 end
 
@@ -452,13 +455,13 @@ function alg_cache(
     else
         interp_order = H_rows
     end
-    # Seed JacReuseState with `zero(dt)` so its dtgamma fields carry the full
-    # (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
+    # Seed JacReuseState with `zero(tTypeNoUnits)` so its dtgamma fields carry
+    # the full integration time type at solve time (Dual under AD). See #3596.
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
     )
 end
 
@@ -531,7 +534,7 @@ function alg_cache(
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
     )
 end
 
