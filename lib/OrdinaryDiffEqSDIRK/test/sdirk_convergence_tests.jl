@@ -81,7 +81,14 @@ testTol = 0.2
     sim16 = test_convergence(dts, prob, Kvaerno3())
     @test sim16.𝒪est[:final] ≈ 3 atol = testTol
 
-    sim162 = test_convergence(dts, prob, Kvaerno3(nlsolve = NLFunctional()))
+    # NLFunctional default κ=1//100 is too loose for order-3 measurement at the
+    # tested dt range; tighten κ + raise max_iter so the nonlinear residual is
+    # below truncation error. See SciML/OrdinaryDiffEq.jl#3595.
+    sim162 = test_convergence(
+        dts, prob,
+        Kvaerno3(nlsolve = NLFunctional(κ = 1 // 1000, max_iter = 100));
+        abstol = 1.0e-12, reltol = 1.0e-12
+    )
     @test sim162.𝒪est[:final] ≈ 3 atol = testTol
 
     sim17 = test_convergence(dts, prob, KenCarp3())
