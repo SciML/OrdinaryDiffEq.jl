@@ -263,7 +263,7 @@ end
                 if min_event_idx < 0
                     min_event_idx = i
                 end
-                simultaneous_events[i] = Int8(sign(ArrayInterface.allowed_getindex(bottom_sign, i)))
+                simultaneous_events[i] = Int8(-sign(ArrayInterface.allowed_getindex(bottom_sign, i)))
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -297,7 +297,7 @@ end
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
-                    simultaneous_events[idx] = Int8(sign(ArrayInterface.allowed_getindex(bottom_sign, idx)))
+                    simultaneous_events[idx] = Int8(-sign(ArrayInterface.allowed_getindex(bottom_sign, idx)))
                 end
             end
         end
@@ -500,8 +500,8 @@ For `VectorContinuousCallback`, `callback.affect!` is called once with the full
 Each element of `simultaneous_events` encodes both whether the event triggered and
 its crossing direction:
   - `0`: event did not trigger
-  - `-1`: event triggered via upcrossing (condition went from negative to positive)
-  - `+1`: event triggered via downcrossing (condition went from positive to negative)
+  - `+1`: event triggered via upcrossing (condition went from negative to positive)
+  - `-1`: event triggered via downcrossing (condition went from positive to negative)
 
 Multiple events may be nonzero simultaneously when they occur at the same time.
 The `affect_neg!` field is not called for `VectorContinuousCallback`; the user's
