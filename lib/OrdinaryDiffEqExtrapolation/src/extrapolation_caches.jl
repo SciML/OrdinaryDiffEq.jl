@@ -344,14 +344,14 @@ struct extrapolation_coefficients{T1, T2, T3}
 end
 
 function create_extrapolation_coefficients(
-        T,
+        ::Type{T},
         alg::Union{
             ExtrapolationMidpointDeuflhard,
             ExtrapolationMidpointHairerWanner,
             ImplicitDeuflhardExtrapolation,
             ImplicitHairerWannerExtrapolation,
         }
-    )
+    ) where {T}
     # Compute and return extrapolation_coefficients
 
     (; min_order, init_order, max_order, sequence) = alg
@@ -429,7 +429,9 @@ function create_extrapolation_coefficients(
     )
 end
 
-function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtrapolation)
+function create_extrapolation_coefficients(
+        ::Type{T}, alg::ImplicitEulerBarycentricExtrapolation
+    ) where {T}
     # Compute and return extrapolation_coefficients
 
     (; min_order, init_order, max_order, sequence) = alg
@@ -959,7 +961,7 @@ function create_extrapolation_coefficients(
     )
 end
 
-function generate_sequence(T, alg::ImplicitEulerExtrapolation)
+function generate_sequence(::Type{T}, alg::ImplicitEulerExtrapolation) where {T}
     # Compute and return extrapolation_coefficients
 
     (; min_order, init_order, max_order, sequence) = alg

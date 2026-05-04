@@ -39,7 +39,7 @@ end
 
 Constructs the tableau type for the SRIW1 method.
 """
-function constructSRIW1(T = Float64, T2 = Float64)
+function constructSRIW1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 3 // 4; 0; 0]
     c₁ = [0; 1 // 4; 1; 1 // 4]
     A₀ = [
@@ -87,7 +87,7 @@ end
 
 Constructs the tableau type for the SRIW1 method.
 """
-function constructSRIW2(T = Float64, T2 = Float64)
+function constructSRIW2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 1 // 2; 0]
     c₁ = [0; 1 // 4; 1; 1 // 4]
     A₀ = [
@@ -135,7 +135,7 @@ end
 
 Opti6-12-11-10-01-47
 """
-function constructSRIOpt1(T = Float64, T2 = Float64)
+function constructSRIOpt1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     A₀ = [
         0.0 0.0 0.0 0.0; -0.04199224421316468 0.0 0.0 0.0;
         2.842612915017106 -2.0527723684000727 0.0 0.0;
@@ -178,7 +178,7 @@ end
 
 Opti6-12-11-10-01-47
 """
-function constructSRIOpt2(T = Float64, T2 = Float64)
+function constructSRIOpt2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c0 = [0.0, 0.13804532298278663, 0.9999999999999992, 0.9999999999999994]
     c1 = [0.0, 0.45605532163856893, 0.999999999999996, 0.9999999999999962]
     A0 = [
@@ -228,7 +228,7 @@ end
 
 Constructs the taleau type for the SRA1 method.
 """
-function constructSRA1(T = Float64, T2 = Float64)
+function constructSRA1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     α = [1 // 3; 2 // 3]
     β₁ = [1; 0]
     β₂ = [-1; 1]
@@ -254,7 +254,7 @@ end
 
 Constructs the taleau type for the SRA2 method.
 """
-function constructSRA2(T = Float64, T2 = Float64)
+function constructSRA2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     α = [1 // 3; 2 // 3]
     β₁ = [0; 1]
     β₂ = [3 // 2; -3 // 2]
@@ -280,7 +280,7 @@ end
 
 Constructs the taleau type for the SRA3 method.
 """
-function constructSRA3(T = Float64, T2 = Float64)
+function constructSRA3(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     α = [1 // 6; 1 // 6; 2 // 3]
     β₁ = [1; 0; 0]
     β₂ = [-1; 1; 0]
@@ -308,7 +308,7 @@ end
 
 Constructs the taleau type for the SOSRA method.
 """
-function constructSOSRA(T = Float64, T2 = Float64)
+function constructSOSRA(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     a1 = 0.2889874966892885
     a2 = 0.6859880440839937
     a3 = 0.025024459226717772
@@ -357,7 +357,7 @@ end
 
 Constructs the taleau type for the SOSRA method.
 """
-function constructSOSRA2(T = Float64, T2 = Float64)
+function constructSOSRA2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     a1 = 0.4999999999999998
     a2 = -0.9683897375354181
     a3 = 1.4683897375354185
@@ -463,7 +463,7 @@ end
 
 Constructs the tableau type for the implicit SKenCarp method as a RosslerSRA tableau.
 """
-function constructSKenCarp(T = Float64, T2 = Float64)
+function constructSKenCarp(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     γ = convert(T, 0.435866521508459)
     a31 = convert(T, 0.2576482460664272)
     a32 = -convert(T, 0.09351476757488625)
@@ -518,7 +518,7 @@ end
 
 Constructs the tableau type for the explicit part of SKenCarp as a RosslerSRA tableau.
 """
-function constructExplicitSKenCarp(T = Float64, T2 = Float64)
+function constructExplicitSKenCarp(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     γ = convert(T, 0.435866521508459)
     a31 = convert(T, 0.2576482460664272)
     a32 = -convert(T, 0.09351476757488625)
