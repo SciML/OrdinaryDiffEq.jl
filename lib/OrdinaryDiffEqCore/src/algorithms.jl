@@ -34,7 +34,6 @@ abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm <:
 OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm <:
 OrdinaryDiffEqAdaptiveImplicitAlgorithm end
-abstract type OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm <:
 OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 

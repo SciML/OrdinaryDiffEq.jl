@@ -37,6 +37,8 @@ function SDIRK_docstring(
     )
 end
 
+abstract type OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
+
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
