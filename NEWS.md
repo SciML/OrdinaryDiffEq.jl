@@ -447,6 +447,8 @@ Each entry of `simultaneous_events` encodes both whether condition `i` triggered
 | `+1` | upcrossing (condition went from negative to positive) |
 | `-1` | downcrossing (condition went from positive to negative) |
 
+(Note: the first releases of the v7 incorrectly flipped this sign and it was immediately corrected)
+
 The vector's length is the callback's `len`; the entries are stable across steps. `affect_neg!` is no longer called for `VectorContinuousCallback` — your single `affect!` handles both crossing directions by inspecting the sign of each nonzero entry.
 
 **Migration:**
