@@ -176,3 +176,81 @@ SERK2(; eigen_est = nothing) = SERK2(eigen_est)
     """
 )
 function TSRKC3 end
+
+@doc generic_solver_docstring(
+    """First-order super-time-stepping method based on shifted Legendre polynomials.
+    Monotone and convex-monotone stable for parabolic operators. The stage count s
+    is chosen adaptively from the spectral radius so that the superstep scales as s²
+    times the explicit timestep.""",
+    "RKL1",
+    "Stabilized Explicit Method.",
+    """C. D. Meyer, D. S. Balsara, T. D. Aslam. A stabilized Runge-Kutta-Legendre method
+    for explicit super-time-stepping of parabolic and mixed equations.
+    Journal of Computational Physics, 257, pp 594-626, 2014.
+    doi: https://doi.org/10.1016/j.jcp.2013.08.021""",
+    """
+    - `min_stages`: Minimum number of stages s (must be odd, >= 3).
+    - `max_stages`: Maximum number of stages s.
+    - `eigen_est`: Optional function `(integrator) -> integrator.eigen_est = upper_bound`
+        providing an upper bound on the spectral radius. If not provided, estimated
+        by power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 200,
+    eigen_est = nothing,
+    """
+)
+struct RKL1{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKL1(; min_stages = 3, max_stages = 200, eigen_est = nothing)
+    min_s = max(3, min_stages)
+    min_s = isodd(min_s) ? min_s : min_s + 1
+    max_s = isodd(max_stages) ? max_stages : max_stages - 1
+    max_s = max(max_s, min_s)
+    if max_s < min_s
+        max_s = min_s
+    end
+    return RKL1(min_s, max_s, eigen_est)
+end
+
+@doc generic_solver_docstring(
+    """Second-order super-time-stepping method based on shifted Legendre polynomials.
+    Monotone and convex-monotone stable for parabolic operators with no spurious
+    staircasing. The stage count s is chosen adaptively from the spectral radius
+    so that the superstep scales as s² times the explicit timestep. Only odd values
+    of s are used to ensure adequate damping of shortest wavelength modes.""",
+    "RKL2",
+    "Stabilized Explicit Method.",
+    """C. D. Meyer, D. S. Balsara, T. D. Aslam. A stabilized Runge-Kutta-Legendre method
+    for explicit super-time-stepping of parabolic and mixed equations.
+    Journal of Computational Physics, 257, pp 594-626, 2014.
+    doi: https://doi.org/10.1016/j.jcp.2013.08.021""",
+    """
+    - `min_stages`: Minimum number of stages s (must be odd, >= 3).
+    - `max_stages`: Maximum number of stages s.
+    - `eigen_est`: Optional function `(integrator) -> integrator.eigen_est = upper_bound`
+        providing an upper bound on the spectral radius. If not provided, estimated
+        by power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 200,
+    eigen_est = nothing,
+    """
+)
+struct RKL2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKL2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
+    min_s = max(3, min_stages)
+    min_s = isodd(min_s) ? min_s : min_s + 1
+    max_s = isodd(max_stages) ? max_stages : max_stages - 1
+    max_s = max(max_s, min_s)
+    return RKL2(min_s, max_s, eigen_est)
+end

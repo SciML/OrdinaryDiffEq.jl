@@ -29,6 +29,6 @@ include("rkc_tableaus_rock2.jl")
 include("rkc_tableaus_eserk5.jl")
 include("rkc_tableaus_eserk4.jl")
 
-export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, TSRKC3
+export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, TSRKC3, RKL1, RKL2
 
 end
