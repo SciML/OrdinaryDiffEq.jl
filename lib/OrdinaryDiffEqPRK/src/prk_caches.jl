@@ -30,7 +30,7 @@ struct KuttaPRK2p5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c4::T2
     c5_6::Array{T2, 1}
 
-    function KuttaPRK2p5ConstantCache(T, T2)
+    function KuttaPRK2p5ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α21 = T(1 // 3)
         α31 = T(4 // 25)
         α32 = T(6 // 25)

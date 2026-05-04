@@ -24,7 +24,7 @@ struct LowStorageRK2NConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     c2end::NTuple{N, T2} # c1 is always zero
 end
 
-function ORK256ConstantCache(T, T2)
+function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -1.0)
     A3 = convert(T, -1.55798)
     A4 = convert(T, -1.0)
@@ -108,7 +108,7 @@ struct RK46NLConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c5::T2
     c6::T2
 
-    function RK46NLConstantCache(T, T2)
+    function RK46NLConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α2 = T(-0.737101392796)
         α3 = T(-1.634740794343)
         α4 = T(-0.74473900378)
@@ -158,7 +158,7 @@ end
     thread::Thread
 end
 
-function CarpenterKennedy2N54ConstantCache(T, T2)
+function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -567301805773 // 1357537059087)
     A3 = convert(T, -2404267990393 // 2016746695238)
     A4 = convert(T, -3550918686646 // 2091501179385)
@@ -232,7 +232,7 @@ mutable struct SHLDDRK_2NConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     step::Int
 end
 
-function SHLDDRK_2NConstantCache(T1, T2)
+function SHLDDRK_2NConstantCache(::Type{T1}, ::Type{T2}) where {T1, T2}
     α21 = T1(-0.6051226)
     α31 = T1(-2.0437564)
     α41 = T1(-0.7406999)
@@ -327,7 +327,7 @@ struct SHLDDRK52ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     c5::T2
 end
 
-function SHLDDRK52ConstantCache(T1, T2)
+function SHLDDRK52ConstantCache(::Type{T1}, ::Type{T2}) where {T1, T2}
     α2 = T1(-0.6913065)
     α3 = T1(-2.655155)
     α4 = T1(-0.8147688)
@@ -409,7 +409,7 @@ function alg_cache(
     )
 end
 
-function SHLDDRK64ConstantCache(T, T2)
+function SHLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     #TODO: Solve the order conditions with more accuracy
     A2 = convert(T, -0.4919575)
     A3 = convert(T, -0.8946264)
@@ -470,7 +470,7 @@ function alg_cache(
     return SHLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function DGLDDRK73_CConstantCache(T, T2)
+function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.808316387498383)
     A3 = convert(T, -1.503407858773331)
     A4 = convert(T, -1.053064525050744)
@@ -536,7 +536,7 @@ function alg_cache(
     return DGLDDRK73_CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function DGLDDRK84_CConstantCache(T, T2)
+function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.721296248227924)
     A3 = convert(T, -0.0107733657161298)
     A4 = convert(T, -0.516258469893097)
@@ -605,7 +605,7 @@ function alg_cache(
     return DGLDDRK84_CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function DGLDDRK84_FConstantCache(T, T2)
+function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.5534431294501569)
     A3 = convert(T, 0.0106598757020349)
     A4 = convert(T, -0.5515812888932)
@@ -674,7 +674,7 @@ function alg_cache(
     return DGLDDRK84_FConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function NDBLSRK124ConstantCache(T, T2)
+function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.0923311242368072)
     A3 = convert(T, -0.9441056581158819)
     A4 = convert(T, -4.3271273247576394)
@@ -755,7 +755,7 @@ function alg_cache(
     return NDBLSRK124ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function NDBLSRK134ConstantCache(T, T2)
+function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.6160178650170565)
     A3 = convert(T, -0.4449487060774118)
     A4 = convert(T, -1.0952033345276178)
@@ -839,7 +839,7 @@ function alg_cache(
     return NDBLSRK134ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function NDBLSRK144ConstantCache(T, T2)
+function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.718801210867241)
     A3 = convert(T, -0.778533117342157)
     A4 = convert(T, -0.0053282796654044)
@@ -949,7 +949,7 @@ struct LowStorageRK2CConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     c2end::NTuple{N, T2} # c1 is always zero
 end
 
-function CFRLDDRK64ConstantCache(T, T2)
+function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, 0.17985400977138)
     A3 = convert(T, 0.14081893152111)
     A4 = convert(T, 0.08255631629428)
@@ -1007,7 +1007,7 @@ function alg_cache(
     return CFRLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function TSLDDRK74ConstantCache(T, T2)
+function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, 0.241566650129646868)
     A3 = convert(T, 0.0423866513027719953)
     A4 = convert(T, 0.215602732678803776)
@@ -1092,7 +1092,7 @@ struct LowStorageRK3SConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     c2end::NTuple{N, T2} # c1 is always zero
 end
 
-function ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -1.2664395576322218e-1)
     γ103 = convert(T, 1.1426980685848858e+0)
     γ12end = (γ102, γ103)
@@ -1156,7 +1156,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.2397552118208004e-1)
     γ103 = convert(T, -2.3528852074619033e-1)
     γ104 = convert(T, 7.9598685017877846e-1)
@@ -1250,7 +1250,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S53ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 2.5876919610938998e-1)
     γ103 = convert(T, -1.3243708384977859e-1)
     γ104 = convert(T, 5.0556648948362981e-2)
@@ -1326,7 +1326,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S173ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 7.9377023961829174e-1)
     γ103 = convert(T, -8.3475116244241754e-2)
     γ104 = convert(T, -1.6706337980062214e-2)
@@ -1492,7 +1492,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S94ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -4.6556413837561301e+0)
     γ103 = convert(T, -7.7202649689034453e-1)
     γ104 = convert(T, -4.0244202720632174e+0)
@@ -1592,7 +1592,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 1.1750819811951678e+0)
     γ103 = convert(T, 3.0909017892654811e-1)
     γ104 = convert(T, 1.4409117788115862e+0)
@@ -1764,7 +1764,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S105ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.0436600785287713e-1)
     γ103 = convert(T, -8.5034274641295027e-1)
     γ104 = convert(T, -6.9508941671218478e+0)
@@ -1870,7 +1870,7 @@ function alg_cache(
     )
 end
 
-function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -1.168247970322938e+0)
     γ103 = convert(T, -2.5112155037089772e+0)
     γ104 = convert(T, -5.5259960154735988e-1)
@@ -2090,7 +2090,7 @@ struct LowStorageRK3SpConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     bhat2end::NTuple{N, T}
 end
 
-function RDPK3Sp35ConstantCache(T, T2)
+function RDPK3Sp35ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"2.587669070352079020144955303389306026e-01"),
         convert(T, big"-1.324366873994502973977035353758550057e-01"),
@@ -2210,7 +2210,7 @@ function alg_cache(
     return RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function RDPK3Sp49ConstantCache(T, T2)
+function RDPK3Sp49ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"-4.655641301259180308677051498071354582e+00"),
         convert(T, big"-7.720264924836063859141482018013692338e-01"),
@@ -2378,7 +2378,7 @@ function alg_cache(
     return RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function RDPK3Sp510ConstantCache(T, T2)
+function RDPK3Sp510ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"4.043660078504695837542588769963326988e-01"),
         convert(T, big"-8.503427464263185087039788184485627962e-01"),
@@ -2598,7 +2598,7 @@ struct LowStorageRK3SpFSALConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     bhatfsal::T
 end
 
-function RDPK3SpFSAL35ConstantCache(T, T2)
+function RDPK3SpFSAL35ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"2.587771979725733308135192812685323706e-01"),
         convert(T, big"-1.324380360140723382965420909764953437e-01"),
@@ -2722,7 +2722,7 @@ function alg_cache(
     return RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function RDPK3SpFSAL49ConstantCache(T, T2)
+function RDPK3SpFSAL49ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"-4.655641447335068552684422206224169103e+00"),
         convert(T, big"-7.720265099645871829248487209517314217e-01"),
@@ -2894,7 +2894,7 @@ function alg_cache(
     return RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function RDPK3SpFSAL510ConstantCache(T, T2)
+function RDPK3SpFSAL510ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"4.043660121685749695640462197806189975e-01"),
         convert(T, big"-8.503427289575839690883191973980814832e-01"),
@@ -3106,7 +3106,7 @@ struct LowStorageRK2RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK43_2ConstantCache(T, T2)
+function CKLLSRK43_2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, Int128(11847461282814) // Int128(36547543011857))
     A2 = convert(T, Int128(3943225443063) // Int128(7078155732230))
     A3 = convert(T, Int128(-346793006927) // Int128(4029903576067))
@@ -3172,7 +3172,7 @@ function alg_cache(
     return CKLLSRK43_2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK54_3CConstantCache(T, T2)
+function CKLLSRK54_3CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(970286171893) // BigInt(4311952581923))
     A2 = convert(T, BigInt(6584761158862) // BigInt(12103376702013))
     A3 = convert(T, BigInt(2251764453980) // BigInt(15575788980749))
@@ -3249,7 +3249,7 @@ function alg_cache(
     return CKLLSRK54_3CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK95_4SConstantCache(T, T2)
+function CKLLSRK95_4SConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(1107026461565) // BigInt(5417078080134))
     A2 = convert(T, BigInt(38141181049399) // BigInt(41724347789894))
     A3 = convert(T, BigInt(493273079041) // BigInt(11940823631197))
@@ -3358,7 +3358,7 @@ function alg_cache(
     return CKLLSRK95_4SConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK95_4CConstantCache(T, T2)
+function CKLLSRK95_4CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(2756167973529) // BigInt(16886029417639))
     A2 = convert(T, BigInt(11436141375279) // BigInt(13592993952163))
     A3 = convert(T, BigInt(88551658327) // BigInt(2352971381260))
@@ -3467,7 +3467,7 @@ function alg_cache(
     return CKLLSRK95_4CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK95_4MConstantCache(T, T2)
+function CKLLSRK95_4MConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(5573095071601) // BigInt(11304125995793))
     A2 = convert(T, BigInt(315581365608) // BigInt(4729744040249))
     A3 = convert(T, BigInt(8734064225157) // BigInt(30508564569118))
@@ -3608,7 +3608,7 @@ struct LowStorageRK3RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK54_3C_3RConstantCache(T, T2)
+function CKLLSRK54_3C_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(2365592473904) // BigInt(8146167614645))
     A₁2 = convert(T, BigInt(4278267785271) // BigInt(6823155464066))
     A₁3 = convert(T, BigInt(2789585899612) // BigInt(8986505720531))
@@ -3694,7 +3694,7 @@ function alg_cache(
     return CKLLSRK54_3C_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK54_3M_3RConstantCache(T, T2)
+function CKLLSRK54_3M_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(17396840518954) // BigInt(49788467287365))
     A₁2 = convert(T, BigInt(21253110367599) // BigInt(14558944785238))
     A₁3 = convert(T, BigInt(4293647616769) // BigInt(14519312872408))
@@ -3777,7 +3777,7 @@ function alg_cache(
     return CKLLSRK54_3M_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK54_3N_3RConstantCache(T, T2)
+function CKLLSRK54_3N_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(4745337637855) // BigInt(22386579876409))
     A₁2 = convert(T, BigInt(6808157035527) // BigInt(13197844641179))
     A₁3 = convert(T, BigInt(4367509502613) // BigInt(10454198590847))
@@ -3863,7 +3863,7 @@ function alg_cache(
     return CKLLSRK54_3N_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK85_4C_3RConstantCache(T, T2)
+function CKLLSRK85_4C_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(141236061735) // BigInt(3636543850841))
     A₁2 = convert(T, BigInt(7367658691349) // BigInt(25881828075080))
     A₁3 = convert(T, BigInt(6185269491390) // BigInt(13597512850793))
@@ -3976,7 +3976,7 @@ function alg_cache(
     return CKLLSRK85_4C_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK85_4M_3RConstantCache(T, T2)
+function CKLLSRK85_4M_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(967290102210) // BigInt(6283494269639))
     A₁2 = convert(T, BigInt(852959821520) // BigInt(5603806251467))
     A₁3 = convert(T, BigInt(8043261511347) // BigInt(8583649637008))
@@ -4089,7 +4089,7 @@ function alg_cache(
     return CKLLSRK85_4M_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK85_4P_3RConstantCache(T, T2)
+function CKLLSRK85_4P_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(1298271176151) // BigInt(60748409385661))
     A₁2 = convert(T, BigInt(14078610000243) // BigInt(41877490110127))
     A₁3 = convert(T, BigInt(553998884433) // BigInt(1150223130613))
@@ -4237,7 +4237,7 @@ struct LowStorageRK4RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK54_3N_4RConstantCache(T, T2)
+function CKLLSRK54_3N_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(9435338793489) // BigInt(32856462503258))
     A₁2 = convert(T, BigInt(6195609865473) // BigInt(14441396468602))
     A₁3 = convert(T, BigInt(7502925572378) // BigInt(28098850972003))
@@ -4331,7 +4331,7 @@ function alg_cache(
     return CKLLSRK54_3N_4RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK54_3M_4RConstantCache(T, T2)
+function CKLLSRK54_3M_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(7142524119) // BigInt(20567653057))
     A₁2 = convert(T, BigInt(20567653057) // BigInt(89550000000))
     A₁3 = convert(T, BigInt(7407775) // BigInt(2008982))
@@ -4414,7 +4414,7 @@ function alg_cache(
     return CKLLSRK54_3M_4RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK65_4M_4RConstantCache(T, T2)
+function CKLLSRK65_4M_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(1811061732419) // BigInt(6538712036350))
     A₁2 = convert(T, BigInt(936386506953) // BigInt(6510757757683))
     A₁3 = convert(T, BigInt(8253430823511) // BigInt(9903985211908))
@@ -4518,7 +4518,7 @@ function alg_cache(
     return CKLLSRK65_4M_4RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-function CKLLSRK85_4FM_4RConstantCache(T, T2)
+function CKLLSRK85_4FM_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(319960152914) // BigInt(39034091721739))
     A₁2 = convert(T, BigInt(16440040368765) // BigInt(7252463661539))
     A₁3 = convert(T, BigInt(1381950791880) // BigInt(6599155371617))
@@ -4683,7 +4683,7 @@ struct LowStorageRK5RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK75_4M_5RConstantCache(T, T2)
+function CKLLSRK75_4M_5RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(984894634849) // BigInt(6216792334776))
     A₁2 = convert(T, BigInt(984894634849) // BigInt(5526037630912))
     A₁3 = convert(T, BigInt(13256335809797) // BigInt(10977774807827))

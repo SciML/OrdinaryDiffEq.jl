@@ -15,7 +15,7 @@ struct RadauIIA3Tableau{T, T2}
     e2::T
 end
 
-function RadauIIA3Tableau(T, T2)
+function RadauIIA3Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     T11 = T(0.10540925533894596)
     T12 = T(-0.29814239699997197)
     T21 = T(0.9486832980505138)
@@ -70,7 +70,7 @@ end
 # inv(T) * inv(A) * T = [γ  0  0
 #                        0  α -β
 #                        0  β  α]
-function RadauIIA5Tableau(T, T2)
+function RadauIIA5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     T11 = convert(T, 9.1232394870892942792e-2)
     T12 = convert(T, -0.14125529502095420843e0)
     T13 = convert(T, -3.0029194105147424492e-2)
@@ -184,7 +184,7 @@ struct RadauIIA9Tableau{T, T2}
     e5::T
 end
 
-function RadauIIA9Tableau(T, T2)
+function RadauIIA9Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     T11 = convert(T, -1.251758622050104589014e-2)
     T12 = convert(T, -1.024204781790882707009e-2)
     T13 = convert(T, 4.767387729029572386318e-2)
@@ -285,7 +285,7 @@ function RadauIIATableau{T1, T2}(tab::RadauIIATableau{T1, T2}) where {T1, T2}
     return RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ, tab.α, tab.β, tab.e)
 end
 
-function RadauIIATableau(T1, T2, num_stages::Int)
+function RadauIIATableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
     tab = get(RadauIIATableauCache, (T1, T2, num_stages)) do
         tab = generateRadauTableau(T1, T2, num_stages)
         RadauIIATableauCache[T1, T2, num_stages] = tab
@@ -294,7 +294,7 @@ function RadauIIATableau(T1, T2, num_stages::Int)
     return RadauIIATableau{T1, T2}(tab)
 end
 
-function generateRadauTableau(T1, T2, num_stages::Int)
+function generateRadauTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
     c = reverse!(1 .- gaussradau(num_stages, T1)[1]) ./ 2
     if T1 == T2
         c2 = c
@@ -360,7 +360,7 @@ end
 
 import FastGaussQuadrature: gausslegendre
 
-function GaussLegendreTableau(T1, T2, num_stages::Int)
+function GaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
     tab = get(GaussLegendreTableauCache, (T1, T2, num_stages)) do
         tab = generateGaussLegendreTableau(T1, T2, num_stages)
         GaussLegendreTableauCache[(T1, T2, num_stages)] = tab
@@ -374,7 +374,7 @@ end
 
 # TODO: add the symplectic integrator stage decoupling from Antonan et al to increase efficiency
 
-function generateGaussLegendreTableau(T1, T2, num_stages::Int)
+function generateGaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
     x, w = gausslegendre(num_stages)
     c = T2.((x .+ 1) ./ 2)
     b = T1.(w ./ 2)

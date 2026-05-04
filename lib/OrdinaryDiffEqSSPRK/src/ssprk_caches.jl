@@ -113,7 +113,7 @@ struct KYKSSPRK42ConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
 end
 
-function KYKSSPRK42ConstantCache(T, T2)
+function KYKSSPRK42ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     α20 = T(0.394806441339829)
     α21 = T(0.605193558660171)
     α30 = T(0.00279730708739)
@@ -193,7 +193,7 @@ struct SSPRK53ConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
     c4::T2
 
-    function SSPRK53ConstantCache(T, T2)
+    function SSPRK53ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α30 = T(0.355909775063327)
         α32 = T(0.644090224936674)
         α40 = T(0.367933791638137)
@@ -274,7 +274,7 @@ struct SSPRK53_2N1ConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
     c4::T2
 
-    function SSPRK53_2N1ConstantCache(T, T2)
+    function SSPRK53_2N1ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α40 = T(0.571403511494104)
         α43 = T(0.428596488505896)
         β10 = T(0.443568244942995)
@@ -355,7 +355,7 @@ struct SSPRK53_2N2ConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
     c4::T2
 
-    function SSPRK53_2N2ConstantCache(T, T2)
+    function SSPRK53_2N2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α30 = T(0.682342861037239)
         α32 = T(0.317657138962761)
         α50 = T(0.0452309744824)
@@ -434,7 +434,7 @@ struct SSPRK53_HConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
     c4::T2
 
-    function SSPRK53_HConstantCache(T, T2)
+    function SSPRK53_HConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α30 = T(0.308684154602513)
         α32 = T(0.691315845397487)
         α40 = T(0.280514990468574)
@@ -515,7 +515,7 @@ struct SSPRK63ConstantCache{T, T2} <: SSPRKConstantCache
     c4::T2
     c5::T2
 
-    function SSPRK63ConstantCache(T, T2)
+    function SSPRK63ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α40 = T(0.476769811285196)
         α41 = T(0.098511733286064)
         α43 = T(0.42471845542874)
@@ -606,7 +606,7 @@ struct SSPRK73ConstantCache{T, T2} <: SSPRKConstantCache
     c5::T2
     c6::T2
 
-    function SSPRK73ConstantCache(T, T2)
+    function SSPRK73ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α40 = T(0.184962588071072)
         α43 = T(0.815037411928928)
         α50 = T(0.18071865657038)
@@ -705,7 +705,7 @@ struct SSPRK83ConstantCache{T, T2} <: SSPRKConstantCache
     c6::T2
     c7::T2
 
-    function SSPRK83ConstantCache(T, T2)
+    function SSPRK83ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α50 = T(0.421366967085359)
         α51 = T(0.005949401107575)
         α54 = T(0.572683631807067)
@@ -790,7 +790,7 @@ struct SSPRK43ConstantCache{T, T2} <: SSPRKConstantCache
     half_u::T
     half_t::T2
 
-    function SSPRK43ConstantCache(T, T2)
+    function SSPRK43ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         one_third_u = inv(T(3))
         two_thirds_u = 2 * one_third_u
         half_u = T(0.5)
@@ -1107,7 +1107,7 @@ struct SSPRK54ConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
     c4::T2
 
-    function SSPRK54ConstantCache(T, T2)
+    function SSPRK54ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         β10 = T(0.39175222657189)
         α20 = T(0.444370493651235)
         α21 = T(0.555629506348765)
@@ -1250,7 +1250,7 @@ struct KYK2014DGSSPRK_3S2_ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c_1::T
     c_2::T
 
-    function KYK2014DGSSPRK_3S2_ConstantCache(T, T2)
+    function KYK2014DGSSPRK_3S2_ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α_10 = T(1.0)
         α_20 = T(0.087353119859156)
         α_21 = T(0.912646880140844)
@@ -1319,7 +1319,7 @@ struct pRRK22ConstantCache{T, T2} <: SSPRKConstantCache
     α21::T
     β21::T
 
-    function pRRK22ConstantCache(T, T2, κ)
+    function pRRK22ConstantCache(::Type{T}, ::Type{T2}, κ) where {T, T2}
         α10 = T(1)
         β10 = T(1)
         α20 = T(1 // 2)
@@ -1383,7 +1383,7 @@ struct pRRK33ConstantCache{T, T2} <: SSPRKConstantCache
     α32::T
     β32::T
 
-    function pRRK33ConstantCache(T, T2, κ)
+    function pRRK33ConstantCache(::Type{T}, ::Type{T2}, κ) where {T, T2}
         α10 = T(1)
         β10 = T(1)
         α20 = T(3 // 4)
@@ -1457,7 +1457,7 @@ struct pRRK54ConstantCache{T, T2} <: SSPRKConstantCache
     c3::T2
     c4::T2
 
-    function pRRK54ConstantCache(T, T2, κ)
+    function pRRK54ConstantCache(::Type{T}, ::Type{T2}, κ) where {T, T2}
         β10 = T(0.39175222657189)
         α20 = T(0.444370493651235)
         α21 = T(0.555629506348765)
