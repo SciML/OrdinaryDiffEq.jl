@@ -113,6 +113,11 @@ end
 end
 
 @inline function step_reject_controller!(integrator, alg)
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
     step_reject_controller!(integrator, integrator.controller_cache, alg)
     cache = integrator.cache
     if hasfield(typeof(cache), :nlsolve)
