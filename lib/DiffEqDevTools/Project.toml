@@ -72,6 +72,7 @@ RecursiveArrayTools = "4"
 RootedTrees = "2"
 SDEProblemLibrary = "1"
 SciMLBase = "3"
+SciMLLogging = "1.9"
 Statistics = "1"
 StochasticDiffEq = "7"
 StochasticDiffEqCore = "2"
@@ -110,6 +111,7 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 StochasticDiffEqHighOrder = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
@@ -125,4 +127,4 @@ StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["BoundaryValueDiffEq", "BVProblemLibrary", "DelayDiffEq", "DDEProblemLibrary", "ImplicitDiscreteSolve", "NonlinearSolve", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "ParameterizedFunctions", "Pkg", "Plots", "Random", "SDEProblemLibrary", "StochasticDiffEq", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqIIF", "StochasticDiffEqImplicit", "StochasticDiffEqLeaping", "StochasticDiffEqLevyArea", "StochasticDiffEqLowOrder", "StochasticDiffEqMilstein", "StochasticDiffEqROCK", "StochasticDiffEqRODE", "StochasticDiffEqWeak", "Test"]
+test = ["BoundaryValueDiffEq", "BVProblemLibrary", "DelayDiffEq", "DDEProblemLibrary", "ImplicitDiscreteSolve", "NonlinearSolve", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "ParameterizedFunctions", "Pkg", "Plots", "Random", "SDEProblemLibrary", "SciMLLogging", "StochasticDiffEq", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqIIF", "StochasticDiffEqImplicit", "StochasticDiffEqLeaping", "StochasticDiffEqLevyArea", "StochasticDiffEqLowOrder", "StochasticDiffEqMilstein", "StochasticDiffEqROCK", "StochasticDiffEqRODE", "StochasticDiffEqWeak", "Test"]
