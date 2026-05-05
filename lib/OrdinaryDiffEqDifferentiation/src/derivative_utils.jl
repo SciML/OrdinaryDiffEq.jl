@@ -891,7 +891,6 @@ system matrix. Supports Jacobian reuse for W-methods via `jac_reuse` in the cach
 function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     jac_reuse = get_jac_reuse(cache)
 
-    # If no reuse support or repeat step, use standard path
     if repeat_step || jac_reuse === nothing
         dT = calc_tderivative(integrator, cache)
         W = calc_W(integrator, cache, dtgamma, repeat_step)
