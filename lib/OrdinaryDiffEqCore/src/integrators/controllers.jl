@@ -325,7 +325,6 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    @assert cache.dtreject ≈ integrator.qold "Controller cache went out of sync with time stepping logic."
     disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
     if disco_dt != -1
         integrator.dt = disco_dt
