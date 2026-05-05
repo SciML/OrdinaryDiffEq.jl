@@ -324,12 +324,6 @@ function alg_cache(
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
-    # Seed JacReuseState with `zero(tTypeNoUnits)` rather than `zero(dt)`:
-    # tTypeNoUnits comes from `oneunit(first(tspan))` so it always reflects the
-    # full integration time type (e.g. `Dual` under AD, `Dual{Dual}` under
-    # nested AD). `dt` may be passed as a `Float64` placeholder when the user
-    # didn't supply one (#3596). Using tTypeNoUnits guarantees the dtgamma
-    # field can hold whatever dtgamma = dt * gamma evaluates to at perform_step.
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
         _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
@@ -361,8 +355,6 @@ function alg_cache(
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
-    # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt)` here
-    # rather than a `constvalue`-stripped type.
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
         _make_jac_reuse_state(zero(tTypeNoUnits), alg.max_jac_age)
@@ -455,8 +447,6 @@ function alg_cache(
     else
         interp_order = H_rows
     end
-    # Seed JacReuseState with `zero(tTypeNoUnits)` so its dtgamma fields carry
-    # the full integration time type at solve time (Dual under AD). See #3596.
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,

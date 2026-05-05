@@ -891,10 +891,6 @@ system matrix. Supports Jacobian reuse for W-methods via `jac_reuse` in the cach
 function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     jac_reuse = get_jac_reuse(cache)
 
-    # Skip reuse if jac_reuse can't hold dtgamma: e.g. JacReuseState{Float64} when
-    # dtgamma is a ForwardDiff.Dual (AD differentiation w.r.t. t0). This mismatch
-    # arises when the cache was built with zero(dt) instead of zero(tTypeNoUnits)
-    # (older registered versions of rosenbrock_caches.jl, see #3596).
     if repeat_step || jac_reuse === nothing ||
             !(typeof(dtgamma) <: typeof(jac_reuse.pending_dtgamma))
         dT = calc_tderivative(integrator, cache)
