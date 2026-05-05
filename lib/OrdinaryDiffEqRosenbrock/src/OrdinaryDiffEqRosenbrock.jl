@@ -33,7 +33,8 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
     calc_W, calc_rosenbrock_differentiation!, build_J_W,
-    UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
+    UJacobianWrapper, dolinsolve, WOperator, resize_J_W!,
+    _widen_uf_p_for_jac
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 

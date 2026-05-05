@@ -82,22 +82,49 @@ function _make_fww(
     }(fwt, cs)
 end
 
+# Replace the eltype of a Vector with `D`, *bypassing* ForwardDiff's
+# tag-precedence `promote_type`. That precedence is a `@generated tagcount`
+# that bakes a first-compile literal, so `promote_type(Dual{NL}, Dual{OrdEq,
+# Dual{NL}, CS})` can invert the nesting (producing `Dual{NL, Dual{OrdEq,
+# …}, 2}` rather than `Dual{OrdEq, Dual{NL}, CS}`) depending on which package
+# precompiled which tag first. For the Jacobian-case FunctionWrapper slots we
+# need a deterministic nested-dual type that matches the seeded `D`, so we
+# force it here.
+function _dualify_eltype(::Type{T}, ::Type{D}) where {T, D}
+    T <: AbstractArray || return T
+    eltype(T) <: ForwardDiff.Dual && T <: Vector && return Vector{D}
+    return ArrayInterface.promote_eltype(T, D)
+end
+
+# When `p` carries a Dual (e.g. NonlinearSolve drives a Jacobian through an
+# ODE solve), the Jacobian-case FunctionWrapper signatures need to accept a
+# `p` already promoted to the inner nested Dual so that the downstream widen
+# step in `OrdinaryDiffEqDifferentiation.jacobian!` has a slot to dispatch to.
+# The compiled body then multiplies `u*p` within a single tag hierarchy.
+# Non-array `p` (NullParameters, scalars, tuples) stays as-is.
+function _promote_p_sig(::Type{T3}, ::Type{DualT}) where {T3, DualT}
+    T3 <: AbstractArray || return T3
+    SciMLBase.anyeltypedual(T3) <: ForwardDiff.Dual || return T3
+    return _dualify_eltype(T3, DualT)
+end
+
 function wrapfun_iip(
         ff,
         inputs::Tuple{T1, T2, T3, T4}
     ) where {T1, T2, T3, T4}
     T = eltype(T2)
     dualT = dualgen(T)
-    dualT1 = ArrayInterface.promote_eltype(T1, dualT)
-    dualT2 = ArrayInterface.promote_eltype(T2, dualT)
+    dualT1 = _dualify_eltype(T1, dualT)
+    dualT2 = _dualify_eltype(T2, dualT)
+    dualT3 = _promote_p_sig(T3, dualT)
     dualT4 = dualgen(promote_type(T, T4))
 
     return _make_fww(
         Void(ff),
         Tuple{T1, T2, T3, T4},
-        Tuple{dualT1, dualT2, T3, T4},
+        Tuple{dualT1, dualT2, dualT3, T4},
         Tuple{dualT1, T2, T3, dualT4},
-        Tuple{dualT1, dualT2, T3, dualT4}
+        Tuple{dualT1, dualT2, dualT3, dualT4}
     )
 end
 
@@ -113,20 +140,21 @@ function wrapfun_iip(
 
     # Jacobian (u-derivative) uses chunk=CS
     dualT_jac = dualgen(T, Val(CS))
-    dualT1_jac = ArrayInterface.promote_eltype(T1, dualT_jac)
-    dualT2_jac = ArrayInterface.promote_eltype(T2, dualT_jac)
+    dualT1_jac = _dualify_eltype(T1, dualT_jac)
+    dualT2_jac = _dualify_eltype(T2, dualT_jac)
+    dualT3_jac = _promote_p_sig(T3, dualT_jac)
 
     # Time derivative uses chunk=1 (scalar differentiation w.r.t. t)
     dualT_time = dualgen(T)
-    dualT1_time = ArrayInterface.promote_eltype(T1, dualT_time)
+    dualT1_time = _dualify_eltype(T1, dualT_time)
     dualT4_time = dualgen(promote_type(T, T4))
 
     return _make_fww(
         Void(ff),
         Tuple{T1, T2, T3, T4},
-        Tuple{dualT1_jac, dualT2_jac, T3, T4},
+        Tuple{dualT1_jac, dualT2_jac, dualT3_jac, T4},
         Tuple{dualT1_time, T2, T3, dualT4_time},
-        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time}
+        Tuple{dualT1_jac, dualT2_jac, dualT3_jac, dualT4_time}
     )
 end
 
