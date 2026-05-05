@@ -73,7 +73,7 @@ h2(z) = z^2 # but apply it only to u[1]
 
 prob = SDEProblem(f2!, g2!, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 
-numtraj = Int(1.0e5)
+numtraj = Int(1.0e6)
 seed = 100
 Random.seed!(seed)
 seeds = rand(UInt, numtraj)
