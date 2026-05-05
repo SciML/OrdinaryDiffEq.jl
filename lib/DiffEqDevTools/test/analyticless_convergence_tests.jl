@@ -73,7 +73,12 @@ h2(z) = z^2 # but apply it only to u[1]
 
 prob = SDEProblem(f2!, g2!, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 
-numtraj = Int(1.0e5)
+# 1e6 trajectories, not 1e5: at 1e5 the MC standard error σ/√N on the smallest
+# dt's mean is comparable to the order-2 bias C·dt² at dt=1/8, so the order
+# regression sits in the noise floor and the slope wobbles between roughly
+# 1.3 and 2.3 across master seeds. Bumping by 10× brings the order estimate
+# reliably to ≈2.0 ± 0.3.
+numtraj = Int(1.0e6)
 seed = 100
 Random.seed!(seed)
 seeds = rand(UInt, numtraj)
