@@ -1,6 +1,8 @@
-mutable struct ESDIRKIMEXConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
+mutable struct ESDIRKIMEXConstantCache{Tab, N, uType, kType} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::Tab
+    zs::Vector{uType}
+    ks::Vector{kType}
 end
 
 mutable struct ESDIRKIMEXCache{uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter} <:
@@ -37,7 +39,14 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    return ESDIRKIMEXConstantCache(nlsolver, tab)
+    s = tab.s
+    zs = [zero(u) for _ in 1:s]
+    ks = if f isa SplitFunction
+        [zero(u) for _ in 1:s]
+    else
+        Vector{Nothing}(nothing, s)
+    end
+    return ESDIRKIMEXConstantCache(nlsolver, tab, zs, ks)
 end
 
 function alg_cache(
@@ -100,11 +109,12 @@ end
     nlsolver = cache.nlsolver
     tab = cache.tab
     (; Ai, bi, Ae, be, c, btilde, ebtilde, α, s) = tab
+    z = cache.zs
+    k = cache.ks
     alg = unwrap_alg(integrator, true)
     γ = Ai[2, 2]
 
     f2 = nothing
-    k = Vector{typeof(u)}(undef, s)
     if integrator.f isa SplitFunction
         f_impl = integrator.f.f1
         f2 = integrator.f.f2
@@ -113,8 +123,6 @@ end
     end
 
     markfirststage!(nlsolver)
-
-    z = Vector{typeof(u)}(undef, s)
 
     if integrator.f isa SplitFunction
         z[1] = dt * f_impl(uprev, p, t)
