@@ -17,11 +17,11 @@ get_fsalfirstlast(cache::LowStorageRKMutableCache, u) = (cache.fsalfirst, cache.
     thread::Thread
 end
 
-struct LowStorageRK2NConstantCache{T, AType, CType} <: OrdinaryDiffEqConstantCache
-    A2end::AType # A1 is always zero
+struct LowStorageRK2NConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    A2end::NTuple{N, T} # A1 is always zero
     B1::T
-    B2end::AType
-    c2end::CType # c1 is always zero
+    B2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
 end
 
 function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -612,11 +612,11 @@ end
     thread::Thread
 end
 
-struct LowStorageRK2CConstantCache{T, AType, CType} <: OrdinaryDiffEqConstantCache
-    A2end::AType # A1 is always zero
+struct LowStorageRK2CConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    A2end::NTuple{N, T} # A1 is always zero
     B1::T
-    B2end::AType
-    c2end::CType # c1 is always zero
+    B2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
 end
 
 function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -690,15 +690,15 @@ end
     thread::Thread
 end
 
-struct LowStorageRK3SConstantCache{T, GammaType, CType} <: OrdinaryDiffEqConstantCache
-    γ12end::GammaType # γ11 is always zero
-    γ22end::GammaType # γ21 is always one
-    γ32end::GammaType # γ31 is always zero
+struct LowStorageRK3SConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    γ12end::NTuple{N, T} # γ11 is always zero
+    γ22end::NTuple{N, T} # γ21 is always one
+    γ32end::NTuple{N, T} # γ31 is always zero
     # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimisation?
-    δ2end::GammaType # δ1  is always one
+    δ2end::NTuple{N, T} # δ1  is always one
     β1::T
-    β2end::GammaType
-    c2end::CType # c1 is always zero
+    β2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
 end
 
 function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -1406,17 +1406,17 @@ end
     thread::Thread
 end
 
-struct LowStorageRK3SpConstantCache{T, GammaType, CType} <: OrdinaryDiffEqConstantCache
-    γ12end::GammaType # γ11 is always zero
-    γ22end::GammaType # γ21 is always one
-    γ32end::GammaType # γ31 is always zero
+struct LowStorageRK3SpConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    γ12end::NTuple{N, T} # γ11 is always zero
+    γ22end::NTuple{N, T} # γ21 is always one
+    γ32end::NTuple{N, T} # γ31 is always zero
     # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
-    δ2end::GammaType # δ1  is always one
+    δ2end::NTuple{N, T} # δ1  is always one
     β1::T
-    β2end::GammaType
-    c2end::CType # c1 is always zero
+    β2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
     bhat1::T
-    bhat2end::GammaType
+    bhat2end::NTuple{N, T}
 end
 
 function RDPK3Sp35ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -1802,17 +1802,17 @@ end
     thread::Thread
 end
 
-struct LowStorageRK3SpFSALConstantCache{T, GammaType, CType} <: OrdinaryDiffEqConstantCache
-    γ12end::GammaType # γ11 is always zero
-    γ22end::GammaType # γ21 is always one
-    γ32end::GammaType # γ31 is always zero
+struct LowStorageRK3SpFSALConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    γ12end::NTuple{N, T} # γ11 is always zero
+    γ22end::NTuple{N, T} # γ21 is always one
+    γ32end::NTuple{N, T} # γ31 is always zero
     # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
-    δ2end::GammaType # δ1  is always one
+    δ2end::NTuple{N, T} # δ1  is always one
     β1::T
-    β2end::GammaType
-    c2end::CType # c1 is always zero
+    β2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
     bhat1::T
-    bhat2end::GammaType
+    bhat2end::NTuple{N, T}
     bhatfsal::T
 end
 
@@ -2198,13 +2198,13 @@ end
     thread::Thread
 end
 
-struct LowStorageRK2RPConstantCache{T, AType, CType} <: OrdinaryDiffEqConstantCache
-    Aᵢ::AType
+struct LowStorageRK2RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    Aᵢ::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::AType
-    B̂ᵢ::AType
-    Cᵢ::CType
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK43_2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -2524,14 +2524,14 @@ end
     thread::Thread
 end
 
-struct LowStorageRK3RPConstantCache{T, AType, CType} <: OrdinaryDiffEqConstantCache
-    Aᵢ₁::AType
-    Aᵢ₂::AType
+struct LowStorageRK3RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    Aᵢ₁::NTuple{N, T}
+    Aᵢ₂::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::AType
-    B̂ᵢ::AType
-    Cᵢ::CType
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK54_3C_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -2924,15 +2924,15 @@ end
     thread::Thread
 end
 
-struct LowStorageRK4RPConstantCache{T, AType, CType} <: OrdinaryDiffEqConstantCache
-    Aᵢ₁::AType
-    Aᵢ₂::AType
-    Aᵢ₃::AType
+struct LowStorageRK4RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    Aᵢ₁::NTuple{N, T}
+    Aᵢ₂::NTuple{N, T}
+    Aᵢ₃::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::AType
-    B̂ᵢ::AType
-    Cᵢ::CType
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK54_3N_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -3206,16 +3206,16 @@ end
     thread::Thread
 end
 
-struct LowStorageRK5RPConstantCache{T, AType, CType} <: OrdinaryDiffEqConstantCache
-    Aᵢ₁::AType
-    Aᵢ₂::AType
-    Aᵢ₃::AType
-    Aᵢ₄::AType
+struct LowStorageRK5RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
+    Aᵢ₁::NTuple{N, T}
+    Aᵢ₂::NTuple{N, T}
+    Aᵢ₃::NTuple{N, T}
+    Aᵢ₄::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::AType
-    B̂ᵢ::AType
-    Cᵢ::CType
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK75_4M_5RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
