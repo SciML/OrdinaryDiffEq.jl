@@ -28,6 +28,8 @@ OrdinaryDiffEqFIRK = {path = "../OrdinaryDiffEqFIRK"}
 OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqSSPRK = {path = "../OrdinaryDiffEqSSPRK"}
 OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
 StochasticDiffEq = {path = "../StochasticDiffEq"}
@@ -64,6 +66,8 @@ OrdinaryDiffEqFIRK = "2"
 OrdinaryDiffEqLowOrderRK = "2"
 OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqRosenbrock = "2"
+OrdinaryDiffEqSDIRK = "2"
+OrdinaryDiffEqSSPRK = "2"
 OrdinaryDiffEqTsit5 = "2"
 OrdinaryDiffEqVerner = "2"
 ParameterizedFunctions = "5.24"
@@ -104,6 +108,8 @@ OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 ParameterizedFunctions = "65888b18-ceab-5e60-b2b9-181511a3b968"
@@ -127,4 +133,4 @@ StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["BoundaryValueDiffEq", "BVProblemLibrary", "DelayDiffEq", "DDEProblemLibrary", "ImplicitDiscreteSolve", "NonlinearSolve", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "ParameterizedFunctions", "Pkg", "Plots", "Random", "SDEProblemLibrary", "SciMLLogging", "StochasticDiffEq", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqIIF", "StochasticDiffEqImplicit", "StochasticDiffEqLeaping", "StochasticDiffEqLevyArea", "StochasticDiffEqLowOrder", "StochasticDiffEqMilstein", "StochasticDiffEqROCK", "StochasticDiffEqRODE", "StochasticDiffEqWeak", "Test"]
+test = ["BoundaryValueDiffEq", "BVProblemLibrary", "DelayDiffEq", "DDEProblemLibrary", "ImplicitDiscreteSolve", "NonlinearSolve", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "ParameterizedFunctions", "Pkg", "Plots", "Random", "SDEProblemLibrary", "SciMLLogging", "StochasticDiffEq", "StochasticDiffEqCore", "StochasticDiffEqHighOrder", "StochasticDiffEqIIF", "StochasticDiffEqImplicit", "StochasticDiffEqLeaping", "StochasticDiffEqLevyArea", "StochasticDiffEqLowOrder", "StochasticDiffEqMilstein", "StochasticDiffEqROCK", "StochasticDiffEqRODE", "StochasticDiffEqWeak", "Test"]
