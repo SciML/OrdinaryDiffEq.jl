@@ -1,7 +1,5 @@
 using DiffEqDevTools, Test
 using OrdinaryDiffEq
-# v7 OrdinaryDiffEq does not blanket-reexport every algorithm; pull in the
-# specific solvers this file uses from their sublibraries.
 using OrdinaryDiffEqLowOrderRK: RK4
 using OrdinaryDiffEqSDIRK: ImplicitEuler
 using OrdinaryDiffEqSSPRK: SSPRK33, SSPRK104
