@@ -263,7 +263,7 @@ end
                 if min_event_idx < 0
                     min_event_idx = i
                 end
-                simultaneous_events[i] = Int8(-sign(ArrayInterface.allowed_getindex(bottom_sign, i)))
+                simultaneous_events[i] = Int8(-sign(value(ArrayInterface.allowed_getindex(bottom_sign, i))))
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -297,7 +297,7 @@ end
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
-                    simultaneous_events[idx] = Int8(-sign(ArrayInterface.allowed_getindex(bottom_sign, idx)))
+                    simultaneous_events[idx] = Int8(-sign(value(ArrayInterface.allowed_getindex(bottom_sign, idx))))
                 end
             end
         end
