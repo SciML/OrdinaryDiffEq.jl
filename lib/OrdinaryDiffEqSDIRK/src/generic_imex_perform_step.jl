@@ -32,7 +32,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = ESDIRKIMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ = tab.Ai[2, 2]
-    c = tab.c[2]
+    c = tab.nlsolver_init_c
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
@@ -48,7 +48,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = ESDIRKIMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ = tab.Ai[2, 2]
-    c = tab.c[2]
+    c = tab.nlsolver_init_c
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
@@ -213,7 +213,7 @@ end
     (; zs, ks, atmp, nlsolver, step_limiter!) = cache
     (; tmp) = nlsolver
     tab = cache.tab
-    (; Ai, bi, Ae, be, c, btilde, ebtilde, α, s) = tab
+    (; Ai, bi, Ae, be, c, btilde, ebtilde, α, s, reuse_W_at_stage2, split_guess) = tab
     alg = unwrap_alg(integrator, true)
     γ = Ai[2, 2]
 
@@ -251,7 +251,7 @@ end
         end
 
         if integrator.f isa SplitFunction
-            copyto!(zs[i], zs[1])
+            copyto!(zs[i], zs[split_guess[i]])
         elseif α !== nothing && !iszero(α[i, 1])
             fill!(zs[i], zero(eltype(u)))
             for j in 1:(i - 1)
@@ -266,7 +266,7 @@ end
         nlsolver.γ = γ
         zs[i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if i > 2
+        if i == 2 && reuse_W_at_stage2
             isnewton(nlsolver) && set_new_W!(nlsolver, false)
         end
 
