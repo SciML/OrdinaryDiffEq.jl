@@ -1192,7 +1192,7 @@ function ESDIRK54I8L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1239,7 +1239,7 @@ function ESDIRK436L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1286,7 +1286,7 @@ function ESDIRK437L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1333,7 +1333,7 @@ function ESDIRK547L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1382,7 +1382,7 @@ function ESDIRK659L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
         controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)

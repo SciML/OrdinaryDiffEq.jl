@@ -787,8 +787,6 @@ function Kvaerno3ESDIRKIMEXTableau(T, T2)
     θ = c3 / c2
     α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * convert(T2, 0.4358665215))
     α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * convert(T2, 0.4358665215))
-    α41 = convert(T2, 0.0)
-    α42 = convert(T2, 0.0)
 
     s = 4
     Ai = zeros(T, s, s)
@@ -824,10 +822,12 @@ function Kvaerno3ESDIRKIMEXTableau(T, T2)
     btilde_vec[4] = btilde4
 
     α_mat = zeros(T2, s, s)
+    α_mat[2, 1] = one(T2)
     α_mat[3, 1] = α31
     α_mat[3, 2] = α32
-    α_mat[4, 1] = α41
-    α_mat[4, 2] = α42
+    α_mat[4, 1] = convert(T2, a31)
+    α_mat[4, 2] = convert(T2, a32)
+    α_mat[4, 3] = convert(T2, γ)
 
     return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
@@ -862,7 +862,6 @@ function Kvaerno4ESDIRKIMEXTableau(T, T2)
     c4 = convert(T2, 1)
     c2 = convert(T2, 2) * convert(T2, 0.4358665215)
 
-    α21 = convert(T2, 2)
     α31 = convert(T2, 0.462864521870446)
     α32 = convert(T2, 0.537135478129554)
     α41 = convert(T2, -0.14714018016178376)
@@ -910,11 +909,14 @@ function Kvaerno4ESDIRKIMEXTableau(T, T2)
     btilde_vec[5] = btilde5
 
     α_mat = zeros(T2, s, s)
-    α_mat[2, 1] = α21
     α_mat[3, 1] = α31
     α_mat[3, 2] = α32
     α_mat[4, 1] = α41
     α_mat[4, 2] = α42
+    α_mat[5, 1] = convert(T2, a41)
+    α_mat[5, 2] = convert(T2, a42)
+    α_mat[5, 3] = convert(T2, a43)
+    α_mat[5, 4] = convert(T2, γ)
 
     return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
@@ -961,7 +963,7 @@ function Kvaerno5ESDIRKIMEXTableau(T, T2)
     c6 = convert(T2, 1)
     c2 = convert(T2, 2) * convert(T2, 0.26)
 
-    α21 = convert(T2, 2)
+    α21 = one(T2)
     α31 = convert(T2, -1.366025403784441)
     α32 = convert(T2, 2.3660254037844357)
     α41 = convert(T2, -0.19650552613122207)
@@ -1043,6 +1045,11 @@ function Kvaerno5ESDIRKIMEXTableau(T, T2)
     α_mat[6, 1] = α61
     α_mat[6, 2] = α62
     α_mat[6, 3] = α63
+    α_mat[7, 1] = convert(T2, a61)
+    α_mat[7, 3] = convert(T2, a63)
+    α_mat[7, 4] = convert(T2, a64)
+    α_mat[7, 5] = convert(T2, a65)
+    α_mat[7, 6] = convert(T2, γ)
 
     return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
