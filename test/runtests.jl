@@ -5,27 +5,49 @@ const LONGER_TESTS = false
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 
+# On Julia 1.10 LTS the [sources] section in Project.toml is not honored by
+# `Pkg.develop`, so when these sub-environments (test/ad, test/odeinterface,
+# test/downstream, test/modelingtoolkit) activate they would otherwise resolve
+# transitive deps like OrdinaryDiffEqExtrapolation/BDF/Nordsieck/etc. from the
+# registry. That can pull in a registered `OrdinaryDiffEqCore` older than the
+# in-tree version this PR requires. This helper develops the umbrella plus
+# every `lib/<sublib>` directory explicitly so the in-tree code is exercised.
+function develop_umbrella_with_sublibs()
+    repo_root = dirname(@__DIR__)
+    specs = Pkg.PackageSpec[Pkg.PackageSpec(path = repo_root)]
+    lib_dir = joinpath(repo_root, "lib")
+    if isdir(lib_dir)
+        for entry in readdir(lib_dir)
+            sub_path = joinpath(lib_dir, entry)
+            isdir(sub_path) || continue
+            isfile(joinpath(sub_path, "Project.toml")) || continue
+            push!(specs, Pkg.PackageSpec(path = sub_path))
+        end
+    end
+    return Pkg.develop(specs)
+end
+
 function activate_downstream_env()
     Pkg.activate("downstream")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    develop_umbrella_with_sublibs()
     return Pkg.instantiate()
 end
 
 function activate_odeinterface_env()
     Pkg.activate("odeinterface")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    develop_umbrella_with_sublibs()
     return Pkg.instantiate()
 end
 
 function activate_ad_env()
     Pkg.activate("ad")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    develop_umbrella_with_sublibs()
     return Pkg.instantiate()
 end
 
 function activate_modelingtoolkit_env()
     Pkg.activate("modelingtoolkit")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    develop_umbrella_with_sublibs()
     return Pkg.instantiate()
 end
 
@@ -52,7 +74,8 @@ end
     base_group, test_group = _detect_sublibrary_group(GROUP, lib_dir)
 
     if isdir(joinpath(lib_dir, base_group))
-        Pkg.activate(joinpath(lib_dir, base_group))
+        active_project_dir = normpath(joinpath(lib_dir, base_group))
+        Pkg.activate(active_project_dir)
         # On Julia < 1.11, the [sources] section in Project.toml is not supported.
         # Manually Pkg.develop local path dependencies so CI tests the PR branch code.
         # We resolve transitively: each developed dependency's own [sources] are also
@@ -60,16 +83,13 @@ end
         # dependency of OrdinaryDiffEqRosenbrock) are correctly found even when testing
         # a higher-level sublibrary like OrdinaryDiffEqDefault.
         if VERSION < v"1.11.0-DEV.0"
-            developed = Set{String}()
-            # Never develop the active project: when sublibraries cyclically
-            # reference each other via [sources] (e.g. DiffEqDevTools points
-            # back at OrdinaryDiffEqCore), the transitive walk below would
-            # otherwise try to `Pkg.develop` the active project itself, which
-            # Pkg refuses with "package <X> has the same name or UUID as the
-            # active project".
-            push!(developed, normpath(joinpath(lib_dir, base_group)))
+            # Pre-seed `developed` with the active project so that any [sources]
+            # entry that points back to it (e.g. via the umbrella `OrdinaryDiffEq`'s
+            # transitive [sources]) is skipped — `Pkg.develop` cannot develop
+            # the active project itself.
+            developed = Set{String}([active_project_dir])
             specs = Pkg.PackageSpec[]
-            queue = [joinpath(lib_dir, base_group)]
+            queue = [active_project_dir]
             while !isempty(queue)
                 pkg_dir = popfirst!(queue)
                 toml_path = joinpath(pkg_dir, "Project.toml")

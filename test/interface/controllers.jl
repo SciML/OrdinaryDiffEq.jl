@@ -32,7 +32,7 @@ sol = solve(prob, RDPK3SpFSAL49())
 
     # Custom qmax_first_step via controller API
     ctrl = OrdinaryDiffEqCore.PIController(Tsit5(), qmax_first_step = 500)
-    @test ctrl.qmax_first_step == 500.0
+    @test ctrl.basic.qmax_first_step == 500.0
 
     # Verify that qmax_first_step=10000 still produces correct solutions
     for alg in (Tsit5(), Vern7(), RDPK3SpFSAL49())
@@ -66,8 +66,8 @@ sol = solve(prob, RDPK3SpFSAL49())
 
     # Test that all controllers have qmax_first_step field
     ctrl_i = OrdinaryDiffEqCore.IController(Tsit5(), qmax_first_step = 200)
-    @test ctrl_i.qmax_first_step == 200.0
+    @test ctrl_i.basic.qmax_first_step == 200.0
 
     ctrl_pred = OrdinaryDiffEqCore.PredictiveController(Tsit5(), qmax_first_step = 300)
-    @test ctrl_pred.qmax_first_step == 300.0
+    @test ctrl_pred.basic.qmax_first_step == 300.0
 end

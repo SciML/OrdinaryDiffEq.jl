@@ -68,7 +68,7 @@ function handle_step_rejection!(integrator)
         integrator.opts.verbose, :step_rejected
     )
     if integrator.isout
-        integrator.dt = integrator.dt * integrator.opts.qmin
+        integrator.dt = integrator.dt * get_qmin(integrator)
     elseif !integrator.force_stepfail
         step_reject_controller!(integrator, integrator.alg)
     end

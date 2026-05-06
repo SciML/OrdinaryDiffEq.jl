@@ -25,33 +25,48 @@ The baseline algorithm has been derived in Peter Deuflhard's book "Newton Method
 Nonlinear Problems" in Section 5.1.3 (Adaptive pathfollowing algorithms). Please note
 that some implementation details deviate from the original algorithm.
 """
-Base.@kwdef struct KantorovichTypeController{T} <: AbstractController
+struct KantorovichTypeController{B <: OrdinaryDiffEqCore.CommonControllerOptions, T} <: AbstractController
+    basic::B
     Θmin::T
     p::Int64
-    Θreject::T = 0.95
-    Θbar::T = 0.5
-    γ::T = 0.95
-    qmin::T = 1 / 5
-    qmax::T = 5.0
-    strict::Bool = true
+    Θreject::T
+    Θbar::T
+    γ::T
+    strict::Bool
+end
+
+function KantorovichTypeController(;
+        Θmin, p, Θreject = 0.95, Θbar = 0.5, γ = 0.95,
+        qmin = 1 // 5, qmax = 5, strict = true,
+        kwargs...,
+    )
+    T = promote_type(typeof(Θmin), typeof(Θreject), typeof(Θbar), typeof(γ))
+    basic = OrdinaryDiffEqCore.CommonControllerOptions(; qmin, qmax, kwargs...)
+    return KantorovichTypeController{typeof(basic), T}(
+        basic, T(Θmin), Int64(p), T(Θreject), T(Θbar), T(γ), strict,
+    )
 end
 
 mutable struct KantorovichTypeControllerCache{T, E} <: AbstractControllerCache
-    controller::KantorovichTypeController{T}
+    controller::KantorovichTypeController{OrdinaryDiffEqCore.CommonControllerOptions{T}, T}
     EEst::E
 end
 
 function OrdinaryDiffEqCore.default_controller(
         QT, alg::IDSolve,
     )
-    return KantorovichTypeController{QT}(; Θmin = QT(1 // 8), p = 1)
+    return KantorovichTypeController(; Θmin = QT(1 // 8), p = 1)
 end
 
-function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController{T}, ::Type{E}) where {T, E}
-    return KantorovichTypeControllerCache{T, E}(
-        controller,
-        oneunit(E),
+function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController, ::Type{E}) where {E}
+    QT = OrdinaryDiffEqCore._resolved_QT(controller.basic)
+    basic = OrdinaryDiffEqCore.resolve_basic(controller.basic, alg, QT)
+    resolved = KantorovichTypeController{typeof(basic), QT}(
+        basic, QT(controller.Θmin), controller.p,
+        QT(controller.Θreject), QT(controller.Θbar), QT(controller.γ), controller.strict,
     )
+    T = QT
+    return KantorovichTypeControllerCache{T, E}(resolved, oneunit(E))
 end
 
 function OrdinaryDiffEqCore.stepsize_controller!(
@@ -62,7 +77,8 @@ function OrdinaryDiffEqCore.stepsize_controller!(
 
     # Adapt dt with a priori estimate (Eq. 5.24)
     (; Θks) = integrator.cache
-    (; Θbar, γ, Θmin, qmin, qmax, p) = controller
+    (; Θbar, γ, Θmin, p) = controller
+    (; qmin, qmax) = controller.basic
 
     Θ₀ = length(Θks) > 0 ? max(first(Θks), Θmin) : Θmin
     q = clamp(γ * (g(Θbar) / (g(Θ₀)))^(1 / p), qmin, qmax)
@@ -84,7 +100,8 @@ function OrdinaryDiffEqCore.step_reject_controller!(
 
     # Shorten dt according to (Eq. 5.24)
     (; Θks) = integrator.cache
-    (; Θbar, Θreject, γ, Θmin, qmin, qmax, p) = controller
+    (; Θbar, Θreject, γ, Θmin, p) = controller
+    (; qmin, qmax) = controller.basic
     for Θk in Θks
         if Θk > Θreject
             q = clamp(γ * (g(Θbar) / g(Θk))^(1 / p), qmin, qmax)

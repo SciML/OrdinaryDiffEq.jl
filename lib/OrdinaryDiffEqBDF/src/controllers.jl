@@ -1,5 +1,72 @@
+"""
+    BDFController(; qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step,
+                  failfactor)
+
+Step-size controller for the variable-order BDF family (`QNDF`, `FBDF`,
+`DFBDF`). Composes the standard step-size knobs via [`CommonControllerOptions`](@ref);
+the adaptive logic is integrated into the algorithm itself, so the cache
+falls through to alg-level dispatch (the same way the legacy
+`DummyControllerCache` did) but exposes the knobs as a real, settable
+controller. Pass it explicitly with `solve(prob, alg; controller = BDFController(...))`,
+or rely on the default constructed by `default_controller(QT, alg)`.
+"""
+struct BDFController{B <: CommonControllerOptions} <: AbstractController
+    basic::B
+end
+
+BDFController(; kwargs...) = BDFController(CommonControllerOptions(; kwargs...))
+
+BDFController(alg; kwargs...) = BDFController(Float64, alg; kwargs...)
+BDFController(::Type{QT}, alg; kwargs...) where {QT} =
+    BDFController(resolve_basic(CommonControllerOptions(; kwargs...), alg, QT))
+
+mutable struct BDFControllerCache{T, E, C} <: AbstractControllerCache
+    controller::BDFController{CommonControllerOptions{T}}
+    cache::C
+    EEst::E
+end
+
+function setup_controller_cache(
+        alg::Union{QNDF, FBDF, DFBDF}, cache, controller::BDFController, ::Type{E},
+    ) where {E}
+    QT = _resolved_QT(controller.basic)
+    basic = resolve_basic(controller.basic, alg, QT)
+    resolved = BDFController(basic)
+    return BDFControllerCache{QT, E, typeof(cache)}(resolved, cache, oneunit(E))
+end
+
+# The BDF stepsize/accept/reject logic lives at the algorithm level — the
+# controller cache just delegates back, mirroring how DummyControllerCache did.
+@inline OrdinaryDiffEqCore.stepsize_controller!(integrator, ::BDFControllerCache, alg) =
+    stepsize_controller!(integrator, alg)
+@inline OrdinaryDiffEqCore.step_accept_controller!(integrator, ::BDFControllerCache, alg, q) =
+    step_accept_controller!(integrator, alg, q)
+@inline OrdinaryDiffEqCore.step_reject_controller!(integrator, ::BDFControllerCache, alg) =
+    step_reject_controller!(integrator, alg)
+@inline OrdinaryDiffEqCore.post_newton_controller!(integrator, ::BDFControllerCache, alg) =
+    post_newton_controller!(integrator, alg)
+@inline OrdinaryDiffEqCore.accept_step_controller(
+    integrator, cache::BDFControllerCache, alg,
+) = get_EEst(cache) <= 1
+
+# Per-algorithm defaults for `CommonControllerOptions` knobs that don't match the
+# generic IController defaults. These match the historical alg-struct kwargs
+# `QNDF(qmax=5//1, qsteady_min=9//10, qsteady_max=12//10)` etc. and the formerly
+# hard-coded `zₛ = 1.2` step-size safety factor in the BDF stepsize logic.
+qmax_default(::Union{QNDF, FBDF, DFBDF}) = 5 // 1
+qsteady_min_default(::Union{QNDF, QNDF1, QNDF2, FBDF, DFBDF}) = 9 // 10
+qsteady_max_default(::Union{QNDF, QNDF1, QNDF2, FBDF, DFBDF}) = 12 // 10
+gamma_default(::Union{QNDF, FBDF, DFBDF}) = 12 // 10
+
 function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
-    return DummyController()
+    # Thread the alg-level kwargs through to the CommonControllerOptions so that
+    # `QNDF(qmax = 20)` keeps working (qmax = 20 ends up on the controller).
+    return BDFController(
+        QT, alg;
+        qmax = alg.qmax,
+        qsteady_min = alg.qsteady_min,
+        qsteady_max = alg.qsteady_max,
+    )
 end
 
 # QNDF
@@ -18,7 +85,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
     cache.consfailcnt = 0
     cache.nconsteps += 1
     if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
-        return integrator.dt * get_current_qmax(integrator, alg.qmax)
+        return integrator.dt * get_current_qmax(integrator, get_qmax(integrator))
     else
         est = OrdinaryDiffEqCore.get_EEst(integrator)
         estₖ₋₁ = cache.EEst1
@@ -26,7 +93,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
         h = integrator.dt
         k = cache.order
         prefer_const_step = cache.nconsteps < cache.order + 2
-        zₛ = 1.2 # equivalent to integrator.opts.gamma
+        zₛ = get_gamma(integrator)
         zᵤ = 0.1
         Fᵤ = 10
         expo = 1 / (k + 1)
@@ -86,7 +153,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             return integrator.dt
         end
     end
-    if q <= alg.qsteady_max && q >= alg.qsteady_min
+    if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         return integrator.dt
     end
     return integrator.dt / q
@@ -100,7 +167,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     if cache.consfailcnt > 1
         h = h / 2
     end
-    zₛ = 1.2  # equivalent to integrator.opts.gamma
+    zₛ = get_gamma(integrator)
     expo = 1 / (k + 1)
     z = zₛ * ((OrdinaryDiffEqCore.get_EEst(integrator))^expo)
     F = inv(z)
@@ -154,7 +221,7 @@ function post_newton_controller!(integrator, cache::Union{FBDFCache, FBDFConstan
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
     end
-    integrator.dt = integrator.dt / integrator.opts.failfactor
+    integrator.dt = integrator.dt / get_failfactor(integrator)
     cache.consfailcnt += 1
     cache.nconsteps = 0
     return nothing
@@ -299,7 +366,7 @@ function stepsize_controller!(
     end
 
     if iszero(terk)
-        q = inv(get_current_qmax(integrator, alg.qmax))
+        q = inv(get_current_qmax(integrator, get_qmax(integrator)))
     else
         # CVODE-style step size formula: eta = 1 / (BIAS2 * dsm)^(1/(k+1))
         # where dsm = terk / (alpha0 * (k+1)) and alpha0 is the BDF leading coefficient.
@@ -320,7 +387,7 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
-    if q <= alg.qsteady_max && q >= alg.qsteady_min
+    if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
     cache.nconsteps += 1
@@ -348,7 +415,7 @@ function post_newton_controller!(integrator, cache::Union{DFBDFCache, DFBDFConst
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
     end
-    integrator.dt = integrator.dt / integrator.opts.failfactor
+    integrator.dt = integrator.dt / get_failfactor(integrator)
     cache.consfailcnt += 1
     cache.nconsteps = 0
     return nothing
@@ -465,7 +532,7 @@ function stepsize_controller!(
         cache.order = k
     end
     if iszero(terk)
-        q = inv(get_current_qmax(integrator, alg.qmax))
+        q = inv(get_current_qmax(integrator, get_qmax(integrator)))
     else
         # CVODE-style step size formula matching FBDF change
         alpha0 = cache.bdf_coeffs[k, 1]
@@ -483,7 +550,7 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
-    if q <= alg.qsteady_max && q >= alg.qsteady_min
+    if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
     cache.nconsteps += 1
