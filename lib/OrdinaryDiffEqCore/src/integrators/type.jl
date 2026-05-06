@@ -175,6 +175,8 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    #disco_prob::IntervalNonlinearProblem
+    disco_probs::Vector{IntervalNonlinearProblem} #should we change this?
     W::WType
     P::PType
     sqdt::SqdtType

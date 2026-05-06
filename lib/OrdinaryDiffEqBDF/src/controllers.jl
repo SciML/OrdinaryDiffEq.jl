@@ -95,6 +95,15 @@ end
 function bdf_step_reject_controller!(integrator, cache, EEst1)
     k = cache.order
     h = integrator.dt
+    integrator.cache.consfailcnt += 1
+    integrator.cache.nconsteps = 0
+
+    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+    if disco_dt != -1
+        integrator.dt = disco_dt
+        return integrator.dt
+    end
+
     cache.consfailcnt += 1
     cache.nconsteps = 0
     if cache.consfailcnt > 1
@@ -495,4 +504,4 @@ function step_accept_controller!(
         cache.qwait -= 1 # countdown
     end
     return integrator.dt / q
-end
+end 
