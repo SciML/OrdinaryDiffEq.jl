@@ -10,5 +10,10 @@ runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 240
 local_only = true
 
+[SROCK2NonDiagonalConvergence]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 240
+
 [QA]
 versions = ["1"]

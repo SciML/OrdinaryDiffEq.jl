@@ -1,7 +1,9 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
 function maxeig!(integrator, cache::StochasticDiffEqConstantCache)
-    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
+    isfirst = integrator.iter == 1 ||
+        (hasfield(typeof(integrator), :derivative_discontinuity) &&
+        integrator.derivative_discontinuity)
     (; t, dt, uprev, u, p) = integrator
     maxiter = 50
     safe = 1.2
@@ -72,7 +74,9 @@ function maxeig!(integrator, cache::StochasticDiffEqConstantCache)
 end
 
 function maxeig!(integrator, cache::StochasticDiffEqMutableCache)
-    isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
+    isfirst = integrator.iter == 1 ||
+        (hasfield(typeof(integrator), :derivative_discontinuity) &&
+        integrator.derivative_discontinuity)
     (; t, dt, uprev, u, p) = integrator
     fz, z, fsalfirst = cache.atmp, cache.tmp, cache.fsalfirst
     integrator.f(fsalfirst, uprev, p, t)
