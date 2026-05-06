@@ -143,7 +143,6 @@ mutable struct ODEIntegrator{
     dtcache::tType
     dtchangeable::Bool
     dtpropose::tType
-    disco_dt_set::Bool
     tdir::tdirType
     eigen_est::eigenType
     controller_cache::CC

@@ -17,8 +17,8 @@ function affect!(integrator)
     #println("fired callback at t=$(integrator.t), u=$(integrator.u[1])")
     integrator.u[1] += 10
 end
-cb = ContinuousCallback(condition, affect!; is_discontinuity = true)
-cb2 = ContinuousCallback(condition, affect!; is_discontinuity = false)
+cb = ContinuousCallback(condition, affect!; maybe_discontinuity = true)
+cb2 = ContinuousCallback(condition, affect!; maybe_discontinuity = false)
 
 sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
 #  294.458 μs (8082 allocations: 256.59 KiB)
@@ -59,15 +59,15 @@ condition1(u, t, integrator) = u[1] - 1
 function affect1!(integrator)
     #println("Callback 1 fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
-cb1 = ContinuousCallback(condition1, affect1!; is_discontinuity = true)
-cb1f = ContinuousCallback(condition1, affect1!; is_discontinuity = false)
+cb1 = ContinuousCallback(condition1, affect1!; maybe_discontinuity = true)
+cb1f = ContinuousCallback(condition1, affect1!; maybe_discontinuity = false)
 
 condition2(u, t, integrator) = u[1] - 2
 function affect2!(integrator)
     #println("Callback 2 fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
-cb2 = ContinuousCallback(condition2, affect2!; is_discontinuity = true)
-cb2f = ContinuousCallback(condition2, affect2!; is_discontinuity = false)
+cb2 = ContinuousCallback(condition2, affect2!; maybe_discontinuity = true)
+cb2f = ContinuousCallback(condition2, affect2!; maybe_discontinuity = false)
 cb = CallbackSet(cb1, cb2)
 cb2 = CallbackSet(cb1f, cb2f)
 
@@ -109,15 +109,15 @@ cond_multi_1(u, t, integrator) = u[1] - 0.3
 function affect_multi_1!(integrator)
     #println("Multi-exponential discontinuity 1 callback fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
-cb_multi_1 = ContinuousCallback(cond_multi_1, affect_multi_1!; is_discontinuity = true)
-cb_multi_1f = ContinuousCallback(cond_multi_1, affect_multi_1!; is_discontinuity = false)
+cb_multi_1 = ContinuousCallback(cond_multi_1, affect_multi_1!; maybe_discontinuity = true)
+cb_multi_1f = ContinuousCallback(cond_multi_1, affect_multi_1!; maybe_discontinuity = false)
 
 cond_multi_2(u, t, integrator) = u[1] - 0.8
 function affect_multi_2!(integrator)
     #println("Multi-exponential discontinuity 2 callback fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
-cb_multi_2 = ContinuousCallback(cond_multi_2, affect_multi_2!; is_discontinuity = true)
-cb_multi_2f = ContinuousCallback(cond_multi_2, affect_multi_2!; is_discontinuity = false)
+cb_multi_2 = ContinuousCallback(cond_multi_2, affect_multi_2!; maybe_discontinuity = true)
+cb_multi_2f = ContinuousCallback(cond_multi_2, affect_multi_2!; maybe_discontinuity = false)
 cb_multi = CallbackSet(cb_multi_1, cb_multi_2)
 cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 
@@ -164,8 +164,8 @@ cond_stiff(u, t, integrator) = u[1] - 0.5
 function affect_stiff!(integrator)
     #println("Stiff discontinuity callback fired at t=$(integrator.t), u=$(integrator.u[1])")
 end
-cb_stiff = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = true)
-cb_stiff_f = ContinuousCallback(cond_stiff, affect_stiff!; is_discontinuity = false)
+cb_stiff = ContinuousCallback(cond_stiff, affect_stiff!; maybe_discontinuity = true)
+cb_stiff_f = ContinuousCallback(cond_stiff, affect_stiff!; maybe_discontinuity = false)
 
 #disco solve
 sol_disco = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
@@ -215,8 +215,8 @@ cond_dae(u, t, integrator) = u[1] - 0.5
 function affect_dae!(integrator)
     #println("DAE discontinuity callback fired at t=$(integrator.t), u=$(integrator.u)")
 end
-cb_dae = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = true)
-cb_daef = ContinuousCallback(cond_dae, affect_dae!; is_discontinuity = false)
+cb_dae = ContinuousCallback(cond_dae, affect_dae!; maybe_discontinuity = true)
+cb_daef = ContinuousCallback(cond_dae, affect_dae!; maybe_discontinuity = false)
 
 radau_disco = solve(prob_dae, RadauIIA5(); callback=cb_dae, reltol=1e-8, abstol=1e-10)
 #  88.542 μs (870 allocations: 41.86 KiB)
@@ -255,8 +255,8 @@ function affect!(integrator, idx)
     end
 end
 
-cb = VectorContinuousCallback(condition!, affect!, 2; is_discontinuity = true)
-cb2 = VectorContinuousCallback(condition!, affect!, 2; is_discontinuity = false)  
+cb = VectorContinuousCallback(condition!, affect!, 2; maybe_discontinuity = true)
+cb2 = VectorContinuousCallback(condition!, affect!, 2; maybe_discontinuity = false)  
 
 sol_disco = solve(prob, RadauIIA5(); callback = cb)
 #   49.125 μs (664 allocations: 32.89 KiB)
@@ -291,8 +291,8 @@ prob = ODEProblem(f!, u, tspan)
 cond(u, t, integrator) = u[2]
 affect!(integrator) = nothing
 
-cb = ContinuousCallback(cond, affect!; is_discontinuity = true)
-cb2 = ContinuousCallback(cond, affect!; is_discontinuity = false)
+cb = ContinuousCallback(cond, affect!; maybe_discontinuity = true)
+cb2 = ContinuousCallback(cond, affect!; maybe_discontinuity = false)
 
 sol_disco = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-8, abstol = 1e-10)
 sol_no_disco = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-8, abstol = 1e-10)

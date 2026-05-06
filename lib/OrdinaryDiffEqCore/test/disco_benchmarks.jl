@@ -1,36 +1,32 @@
-using DiffEqDevTools, Test, LinearAlgebra
-using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqLowOrderRK
-using OrdinaryDiffEqRadau, OrdinaryDiffEqBS3
+using DiffEqDevTools, Test, LinearAlgebra, DelayDiffEq
+using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqFIRK, OrdinaryDiffEqBDF
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error)) 
 using BenchmarkTools
 
-
 #tests against Hairer's RADAR problems
-h(p, t) = 0.5
+h(p, t; idxs = nothing) = 0.5
 
 # state-dependent delay: τ(t) = y(t)
-function delay(p, t, u)
+function delay(u, p, t)
     return u[1]
 end
 
-# DDE: y'(t) = y(y(t))
 function f(du, u, h, p, t)
-    τ = u[1]
-    du[1] = h(p, τ)
+    τ = delay(u, p, t)
+    du[1] = h(p, t - τ; idxs = 1)
 end
 
-# initial condition at t = 0 (must match tspan start)
+# initial condition at t = 0
 u0 = [1.0]
-tspan = (1.0, 5.5)
-
-prob = DDEProblem(f, h, delay, u0, tspan)
-
+tspan = (0.0, 10.0)
+p = nothing
+prob = DDEProblem(f, u0, h, tspan, p; dependent_lags = (delay,))
 sol = solve(prob, MethodOfSteps(Tsit5()))
 
-
-# https://dieci.math.gatech.edu/preps/DieciLopez-Fili4.pdf
+# https://dieci.math.gatech.edu/preps/DieciLopez-Fili4.pdf   
 # vector fields
+# BELOW IS WRONG NEED TO FIX
 function f1!(du, u, p, t)
     x1, x2 = u
     du[1] = x2
@@ -68,7 +64,7 @@ cb2 = ContinuousCallback(condition, affect!, is_discontinuity = false;)
 u0 = [-0.4, -0.5]
 tspan = (0.0, 10.0)
 
-prob = ODEProblem(f!, u0, tspan)
+prob = ODEProblem(f!, u0, tspan, p)
 
 sol_disco_tsit5 = solve(prob, Tsit5(), callback=cb)
 sol_no_disco_tsit5 = solve(prob, Tsit5(), callback=cb2)

@@ -26,7 +26,7 @@ function find_discontinuity(u, uprev, integrator, cache)
     breakpointθ = -one(dt)
     idx = 1
     for i in cb.continuous_callbacks
-        if (!(i.is_discontinuity)) 
+        if (!(i.maybe_discontinuity)) 
             continue 
         end
         disco_prob = integrator.disco_probs[idx]

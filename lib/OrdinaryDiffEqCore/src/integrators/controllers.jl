@@ -113,10 +113,13 @@ end
 end
 
 @inline function step_reject_controller!(integrator, alg)
-    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
-    if disco_dt != -1
-        integrator.dt = disco_dt
-        return integrator.dt
+    disco_handling = integrator.controller_cache.controller.disco_handling
+    if disco_handling
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        if disco_dt != -1
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
     end
     step_reject_controller!(integrator, integrator.controller_cache, alg)
     cache = integrator.cache
@@ -194,10 +197,12 @@ on the algorithm cache continues to work.
 mutable struct DummyControllerCache{T, C} <: AbstractControllerCache
     EEst::T
     cache::C
+    disco_handling::Bool
 end
 
 function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}) where {E}
-    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache)
+    disco_handling = false
+    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache, disco_handling)
 end
 
 # Algorithms with integrated controllers (BDF, Nordsieck, …) only define their
@@ -255,9 +260,11 @@ struct IController{T} <: AbstractController
     gamma::T
     qsteady_min::T
     qsteady_max::T
+    disco_handling::Bool
 end
 
 function IController(; qmin = 1 // 5, qmax = 10 // 1, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
+    disco_handling = false
     return IController{typeof(qmin)}( # FIXME combined promoted type
         qmin,
         qmax,
@@ -265,6 +272,7 @@ function IController(; qmin = 1 // 5, qmax = 10 // 1, qmax_first_step = 10000 //
         gamma,
         qsteady_min,
         qsteady_max,
+        disco_handling
     )
 end
 
@@ -272,7 +280,7 @@ function IController(alg; kwargs...)
     return IController(Float64, alg; kwargs...)
 end
 
-function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, disco_handling = nothing)
     return IController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
@@ -280,6 +288,7 @@ function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = 
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
+        disco_handling === nothing ? false : disco_handling
     )
 end
 
@@ -325,10 +334,13 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
-    if disco_dt != -1
-        integrator.dt = disco_dt
-        return integrator.dt
+    disco_handling = integrator.controller_cache.controller.disco_handling
+    if disco_handling
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        if disco_dt != -1
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
     end
     return integrator.dt = cache.dtreject # TODO this does not look right.
 end
@@ -387,9 +399,11 @@ mutable struct PIController{T} <: AbstractController # TODO remove the mutable o
     qsteady_min::T
     qsteady_max::T
     qoldinit::T
+    disco_handling::Bool
 end
 
 function PIController(beta1::Real, beta2::Real; qmin = 1 // 5, qmax = 10 // 0, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5, qoldinit = 1 // 10^4)
+    disco_handling = false
     return PIController{typeof(beta1)}(
         beta1,
         beta2,
@@ -400,6 +414,7 @@ function PIController(beta1::Real, beta2::Real; qmin = 1 // 5, qmax = 10 // 0, q
         qsteady_min,
         qsteady_max,
         qoldinit,
+        disco_handling
     )
 end
 
@@ -407,7 +422,7 @@ function PIController(alg; kwargs...)
     return PIController(Float64, alg; kwargs...)
 end
 
-function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing, disco_handling = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
@@ -420,7 +435,8 @@ function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing,
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-        qoldinit,
+        qoldinit, 
+        disco_handling === nothing ? false : disco_handling
     )
 end
 
@@ -475,10 +491,15 @@ end
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma) = controller
-    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
-    if disco_dt != -1
-        integrator.dt = disco_dt
-        return integrator.dt
+    disco_handling = integrator.controller_cache.controller.disco_handling
+    #tsit comes here
+    if disco_handling
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        if disco_dt != -1
+            println("using disco set dt")
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
     end
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
@@ -567,18 +588,21 @@ struct PIDController{QT, Limiter} <: AbstractController
     limiter::Limiter    # limiter of the dt factor (before clipping)
     qsteady_min::QT
     qsteady_max::QT
+    disco_handling::Bool
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 function PIDController(beta1::Real, beta2::Real, beta3::Real = zero(beta1); accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
     beta = map(float, promote(beta1, beta2, beta3))
+    disco_handling = false
     return PIDController{typeof(beta1), typeof(limiter)}(
         beta,
         accept_safety,
         limiter,
         qsteady_min,
         qsteady_max,
+        disco_handling
     )
 end
 
@@ -601,6 +625,7 @@ function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = 
         limiter,
         QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
         QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
+        disco_handling === nothing ? false : disco_handling
     )
 end
 
@@ -698,10 +723,13 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
-    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
-    if disco_dt != -1
-        integrator.dt = disco_dt
-        return integrator.dt
+    disco_handling = integrator.controller_cache.controller.disco_handling
+    if disco_handling
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        if disco_dt != -1
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
     end
     return integrator.dt *= cache.dt_factor
 end
@@ -774,9 +802,11 @@ struct PredictiveController{T} <: AbstractController
     gamma::T
     qsteady_min::T
     qsteady_max::T
+    disco_handling::Bool
 end
 
 function PredictiveController(; qmin = float(1 // 5), qmax = 10 // 1, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
+    disco_handling = false
     return PredictiveController{typeof(qmin)}( # FIXME combined promoted type
         qmin,
         qmax,
@@ -784,6 +814,7 @@ function PredictiveController(; qmin = float(1 // 5), qmax = 10 // 1, qmax_first
         gamma,
         qsteady_min,
         qsteady_max,
+        disco_handling
     )
 end
 
@@ -791,7 +822,7 @@ function PredictiveController(alg; kwargs...)
     return PredictiveController(Float64, alg; kwargs...)
 end
 
-function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
+function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, disco_handling = nothing)
     return PredictiveController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
@@ -799,6 +830,7 @@ function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_firs
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
+        disco_handling === nothing ? false : disco_handling
     )
 end
 
@@ -888,10 +920,13 @@ end
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
-    if (integrator.disco_dt_set) 
-        println("using fixed dt from discontinuity handling")
-        integrator.disco_dt_set = false
-        return integrator.dt 
+    disco_handling = integrator.controller_cache.controller.disco_handling
+    if disco_handling
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        if disco_dt != -1
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
     end
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end

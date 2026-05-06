@@ -87,7 +87,6 @@ Base.@constprop :aggressive function _ode_init(
         save_everystep = isempty(saveat),
         save_on = true,
         save_discretes = true,
-        disco_dt_set = false,
         save_start = save_everystep || isempty(saveat) ||
             saveat isa Number || prob.tspan[1] in saveat,
         save_end = nothing,
@@ -660,14 +659,14 @@ Base.@constprop :aggressive function _ode_init(
 
     num_probs = 0
     for i in callbacks_internal.continuous_callbacks
-        if i.is_discontinuity
+        if i.maybe_discontinuity
             num_probs += 1
         end
     end
     disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
-        if i.is_discontinuity
+        if i.maybe_discontinuity
             u₁ = similar(u)
             out = i isa VectorContinuousCallback ? similar(u) : nothing
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, f, tprev, p)
@@ -694,7 +693,7 @@ Base.@constprop :aggressive function _ode_init(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
-        dtpropose, disco_dt_set, tdir, eigen_est,
+        dtpropose, tdir, eigen_est,
         controller_cache,
         success_iter,
         iter, saveiter, saveiter_dense, cache,
