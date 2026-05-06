@@ -473,15 +473,7 @@ function _sde_init(
     # ── dW/dZ extraction, verbose conversion, alg_cache ──────────────────
     dW, dZ = isnothing(W) ? (nothing, nothing) : (W.dW, W.dZ)
 
-    verbose_internal = if verbose isa Bool
-        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
-    elseif verbose isa AbstractVerbosityPreset
-        DEVerbosity(verbose)
-    elseif verbose isa DEVerbosity
-        verbose
-    else
-        throw(ArgumentError("verbose must be an AbstractVerbosityPreset or DEVerbosity"))
-    end
+    verbose_internal = _process_verbose_param(verbose)
 
     cache = alg_cache(
         alg, prob, u, dW, dZ, p, rate_prototype, noise_rate_prototype,

@@ -1,6 +1,6 @@
 @verbosity_specifier DEVerbosity begin
+    sub_specifiers = (:linear_verbosity, :nonlinear_verbosity)
     toggles = (
-        :linear_verbosity, :nonlinear_verbosity,
         :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
@@ -18,7 +18,6 @@
         :neutral_delay,
         :state_dependent_delay,
     )
-
     presets = (
         None = (
             linear_verbosity = None(),

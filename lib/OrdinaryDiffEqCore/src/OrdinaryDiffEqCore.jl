@@ -89,7 +89,7 @@ import Accessors: @reset
 
 using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    CustomLevel, AbstractMessageLevel
+    MessageLevel
 
 using SymbolicIndexingInterface: state_values, parameter_values
 
