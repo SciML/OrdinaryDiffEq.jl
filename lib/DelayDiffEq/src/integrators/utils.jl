@@ -286,7 +286,10 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
         for lag in constant_lags
             if integrator.tdir * lag < maxlag
                 # calculate discontinuity and add it to heap of discontinuities and time stops
-                d = Discontinuity(integrator.tdir * (t + lag), next_order)
+                tstop = snap_to_user_tstop(
+                    integrator.tdir * (t + lag), integrator.opts.tstops
+                )
+                d = Discontinuity(tstop, next_order)
                 push!(integrator.d_discontinuities_propagated, d)
                 push!(integrator.tstops_propagated, d.t)
             end
@@ -351,4 +354,25 @@ function _pop!(x, y)
             pop!(y)
         end
     end
+end
+
+function snap_to_user_tstop(t, tstops)
+    isempty(tstops) && return t
+
+    for tstop in tstops.valtree
+        if is_close_tstop(t, tstop)
+            return tstop
+        end
+    end
+
+    return t
+end
+
+function is_close_tstop(t, tstop)
+    if t isa AbstractFloat && tstop isa AbstractFloat && isfinite(t) && isfinite(tstop)
+        scale = max(abs(t), abs(tstop))
+        return abs(t - tstop) <= 100 * eps(scale)
+    end
+
+    return t == tstop
 end

@@ -584,6 +584,18 @@ function DiffEqBase.get_tstops_max(integrator::DDEIntegrator)
     return isempty(tstops_array) ? integrator.sol.prob.tspan[end] : maximum(tstops_array)
 end
 
+OrdinaryDiffEqCore._get_next_step_tstop(integrator::DDEIntegrator) = integrator.next_step_tstop
+function OrdinaryDiffEqCore._set_tstop_flag!(
+        integrator::DDEIntegrator, is_tstop::Bool, target = nothing
+    )
+    integrator.next_step_tstop = is_tstop
+    if is_tstop && target !== nothing
+        integrator.tstop_target = target
+    end
+    return nothing
+end
+OrdinaryDiffEqCore._get_tstop_target(integrator::DDEIntegrator) = integrator.tstop_target
+
 # update integrator when u is modified by callbacks
 function OrdinaryDiffEqCore.handle_callback_modifiers!(integrator::DDEIntegrator)
     integrator.reeval_fsal = true # recalculate fsalfirst after applying step

@@ -486,6 +486,8 @@ function SciMLBase.__init(
     u_modified = false
     EEst = QT(1)
     just_hit_tstop = false
+    next_step_tstop = false
+    tstop_target = zero(t0)
     do_error_check = true
     isout = false
     accept_step = false
@@ -555,6 +557,8 @@ function SciMLBase.__init(
         force_stepfail,
         last_stepfail,
         just_hit_tstop,
+        next_step_tstop,
+        tstop_target,
         do_error_check,
         event_last_time,
         vector_event_last_time,

@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary, DiffEqDevTools, DiffEqCallbacks
 using OrdinaryDiffEqTsit5
+using Statistics
 using Test
 
 const prob = prob_dde_constant_1delay_scalar
@@ -53,6 +54,50 @@ end
     cb = DiscreteCallback((u, t, integrator) -> t == 4, terminate!)
     sol = @test_logs solve(prob, alg; callback = cb, tstops = [4.0])
     @test sol.t[end] == 4
+end
+
+@testset "preset callback at constant-lag propagated tstop" begin
+    function lif2_Ndelay!(du, u, h, p, t)
+        u1, u2 = u
+        gL1, EL1, C1, _, I1, gL2, EL2, C2, _, I2, λ, T... = p
+
+        H = Float64[h(p, t - τ)[2] for τ in T]
+        append!(H, u2)
+
+        du[1] = (-gL1 * (u1 - EL1) + I1 - λ * (u1 - mean(H))) / C1
+        du[2] = (-gL2 * (u2 - EL2) + I2) / C2
+    end
+
+    fired = Float64[]
+    up_Iex2!(integrator) = (push!(fired, integrator.t); integrator.p[10] = 210.0)
+    down_Iex2!(integrator) = integrator.p[10] = 0.0
+
+    cb = CallbackSet(
+        ContinuousCallback(
+            (u, t, integrator) -> u[1] - integrator.p[4],
+            integrator -> (integrator.u[1] = integrator.p[2])
+        ),
+        ContinuousCallback(
+            (u, t, integrator) -> u[2] - integrator.p[9],
+            integrator -> (integrator.u[2] = integrator.p[7])
+        ),
+        PresetTimeCallback([2.0, 9.0], up_Iex2!),
+        PresetTimeCallback([3.0, 10.0], down_Iex2!)
+    )
+
+    u0 = [-75.0, -75.0]
+    tspan = (0.0, 12.0)
+    p1 = [10.0, -75.0, 5.0, -55.0, 100.0]
+    p2 = [10.0, -75.0, 5.0, -55.0, 0.0]
+    delays = [0.2, 4.0]
+    p = [p1; p2; [2.0]; delays]
+    h(p, t) = u0
+
+    prob = DDEProblem(lif2_Ndelay!, u0, h, tspan, p; callback = cb, constant_lags = delays)
+    sol = solve(prob, MethodOfSteps(Tsit5()))
+
+    @test sol.retcode == ReturnCode.Success
+    @test any(==(9.0), fired)
 end
 
 @testset "save discontinuity" begin
