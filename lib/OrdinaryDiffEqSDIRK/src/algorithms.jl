@@ -37,6 +37,8 @@ function SDIRK_docstring(
     )
 end
 
+abstract type OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
+
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
@@ -394,7 +396,7 @@ end
     """
 )
 struct Kvaerno3{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -439,7 +441,7 @@ end
     """
 )
 struct KenCarp3{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -894,7 +896,7 @@ end
     """
 )
 struct Kvaerno4{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -943,7 +945,7 @@ end
     """
 )
 struct Kvaerno5{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -988,7 +990,7 @@ end
     """
 )
 struct KenCarp4{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -1035,12 +1037,14 @@ end
     extrapolant = :linear,
     """
 )
-struct KenCarp47{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct KenCarp47{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1049,12 +1053,13 @@ function KenCarp47(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp47(
         linsolve, nlsolve, smooth_est, extrapolant,
-        autodiff,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1079,7 +1084,7 @@ end
     """
 )
 struct KenCarp5{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -1124,12 +1129,14 @@ end
     extrapolant = :linear,
     """
 )
-struct KenCarp58{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct KenCarp58{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1138,12 +1145,13 @@ function KenCarp58(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp58(
         linsolve, nlsolve, smooth_est, extrapolant,
-        autodiff,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1169,11 +1177,14 @@ but are still being fully evaluated in context.",
     extrapolant = :linear,
     """
 )
-struct ESDIRK54I8L2SA{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
+    smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1181,13 +1192,14 @@ function ESDIRK54I8L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK54I8L2SA(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1212,11 +1224,14 @@ but are still being fully evaluated in context.",
     extrapolant = :linear,
     """
 )
-struct ESDIRK436L2SA2{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
+    smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1224,13 +1239,14 @@ function ESDIRK436L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK436L2SA2(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1255,11 +1271,14 @@ but are still being fully evaluated in context.",
     extrapolant = :linear,
     """
 )
-struct ESDIRK437L2SA{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
+    smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1267,13 +1286,14 @@ function ESDIRK437L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK437L2SA(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1298,11 +1318,14 @@ but are still being fully evaluated in context.",
     extrapolant = :linear,
     """
 )
-struct ESDIRK547L2SA2{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
+    smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1310,13 +1333,14 @@ function ESDIRK547L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK547L2SA2(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1343,11 +1367,14 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     extrapolant = :linear,
     """
 )
-struct ESDIRK659L2SA{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
+    smooth_est::Bool
     extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1355,13 +1382,66 @@ function ESDIRK659L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK659L2SA(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3rd order L-stable IMEX ARK method. Uses a generic tableau-driven implementation that supports both split and non-split forms.",
+    "ARS343";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: TBD
+    - `extrapolant`: TBD
+    - `controller`: TBD
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS343{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS343(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, extrapolant = :linear,
+        controller = :PI, step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS343(
+        linsolve, nlsolve, smooth_est, extrapolant,
+        controller, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end

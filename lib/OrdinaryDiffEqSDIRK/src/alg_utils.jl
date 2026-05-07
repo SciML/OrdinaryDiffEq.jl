@@ -57,3 +57,6 @@ issplit(alg::KenCarp47) = true
 issplit(alg::KenCarp5) = true
 issplit(alg::KenCarp58) = true
 issplit(alg::CFNLIRK3) = true
+issplit(alg::ARS343) = true
+alg_order(alg::ARS343) = 3
+isesdirk(alg::ARS343) = true
