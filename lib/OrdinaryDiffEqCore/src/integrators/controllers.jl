@@ -113,8 +113,8 @@ end
 end
 
 @inline function step_reject_controller!(integrator, alg)
-    disco_handling = integrator.controller_cache.controller.disco_handling
-    if disco_handling
+    discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
+    if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
             integrator.dt = disco_dt
@@ -193,16 +193,20 @@ Controller cache used by algorithms that manage step-size selection themselves
 (BDF, Nordsieck, Leaping, …). Holds the scalar error estimate exposed through
 `get_EEst(integrator)` and a reference to the algorithm cache so existing dispatch
 on the algorithm cache continues to work.
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 """
 mutable struct DummyControllerCache{T, C} <: AbstractControllerCache
     EEst::T
     cache::C
-    disco_handling::Bool
+    discontinuity_detection::Bool
 end
 
 function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}) where {E}
-    disco_handling = false
-    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache, disco_handling)
+    discontinuity_detection = false
+    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache, discontinuity_detection)
 end
 
 # Algorithms with integrated controllers (BDF, Nordsieck, …) only define their
@@ -246,6 +250,10 @@ the interval `[qmin, qmax]`.
 A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 
 ## References
 
@@ -260,11 +268,11 @@ struct IController{T} <: AbstractController
     gamma::T
     qsteady_min::T
     qsteady_max::T
-    disco_handling::Bool
+    discontinuity_detection::Bool
 end
 
 function IController(; qmin = 1 // 5, qmax = 10 // 1, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    disco_handling = false
+    discontinuity_detection = false
     return IController{typeof(qmin)}( # FIXME combined promoted type
         qmin,
         qmax,
@@ -272,7 +280,7 @@ function IController(; qmin = 1 // 5, qmax = 10 // 1, qmax_first_step = 10000 //
         gamma,
         qsteady_min,
         qsteady_max,
-        disco_handling
+        discontinuity_detection
     )
 end
 
@@ -280,7 +288,7 @@ function IController(alg; kwargs...)
     return IController(Float64, alg; kwargs...)
 end
 
-function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, disco_handling = nothing)
+function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, discontinuity_detection = nothing)
     return IController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
@@ -288,7 +296,7 @@ function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = 
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-        disco_handling === nothing ? false : disco_handling
+        discontinuity_detection === nothing ? false : discontinuity_detection
     )
 end
 
@@ -334,8 +342,8 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    disco_handling = integrator.controller_cache.controller.disco_handling
-    if disco_handling
+    discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
+    if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
             integrator.dt = disco_dt
@@ -373,7 +381,10 @@ the interval `[qmin, qmax]`.
 A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
-
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 !!! note
 
     The coefficients `beta1, beta2` are not scaled by the order of the method,
@@ -399,11 +410,11 @@ mutable struct PIController{T} <: AbstractController # TODO remove the mutable o
     qsteady_min::T
     qsteady_max::T
     qoldinit::T
-    disco_handling::Bool
+    discontinuity_detection::Bool
 end
 
 function PIController(beta1::Real, beta2::Real; qmin = 1 // 5, qmax = 10 // 0, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5, qoldinit = 1 // 10^4)
-    disco_handling = false
+    discontinuity_detection = false
     return PIController{typeof(beta1)}(
         beta1,
         beta2,
@@ -414,7 +425,7 @@ function PIController(beta1::Real, beta2::Real; qmin = 1 // 5, qmax = 10 // 0, q
         qsteady_min,
         qsteady_max,
         qoldinit,
-        disco_handling
+        discontinuity_detection
     )
 end
 
@@ -422,7 +433,7 @@ function PIController(alg; kwargs...)
     return PIController(Float64, alg; kwargs...)
 end
 
-function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing, disco_handling = nothing)
+function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing, discontinuity_detection = nothing)
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
@@ -436,7 +447,7 @@ function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
         qoldinit, 
-        disco_handling === nothing ? false : disco_handling
+        discontinuity_detection === nothing ? false : discontinuity_detection
     )
 end
 
@@ -491,9 +502,9 @@ end
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma) = controller
-    disco_handling = integrator.controller_cache.controller.disco_handling
+    discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
     #tsit comes here
-    if disco_handling
+    if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
             println("using disco set dt")
@@ -553,6 +564,11 @@ Some standard controller parameters suggested in the literature are
 | H211PI     | `1//6`  | `1//6`  | `0`     |
 | H312PID    | `1//18` | `1//9`  | `1//18` |
 
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
+
 !!! note
 
     In contrast to the [`PIController`](@ref), the coefficients `beta1, beta2, beta3`
@@ -588,21 +604,21 @@ struct PIDController{QT, Limiter} <: AbstractController
     limiter::Limiter    # limiter of the dt factor (before clipping)
     qsteady_min::QT
     qsteady_max::QT
-    disco_handling::Bool
+    discontinuity_detection::Bool
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 function PIDController(beta1::Real, beta2::Real, beta3::Real = zero(beta1); accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
     beta = map(float, promote(beta1, beta2, beta3))
-    disco_handling = false
+    discontinuity_detection = false
     return PIDController{typeof(beta1), typeof(limiter)}(
         beta,
         accept_safety,
         limiter,
         qsteady_min,
         qsteady_max,
-        disco_handling
+        discontinuity_detection
     )
 end
 
@@ -625,7 +641,7 @@ function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = 
         limiter,
         QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
         QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
-        disco_handling === nothing ? false : disco_handling
+        discontinuity_detection === nothing ? false : discontinuity_detection
     )
 end
 
@@ -723,8 +739,8 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
-    disco_handling = integrator.controller_cache.controller.disco_handling
-    if disco_handling
+    discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
+    if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
             integrator.dt = disco_dt
@@ -786,7 +802,10 @@ integrator.dt / qacc
 ```
 
 When it rejects, it's the same as the [`IController`](@ref):
-
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 ```julia
 if integrator.success_iter == 0
     integrator.dt *= 0.1
@@ -802,11 +821,11 @@ struct PredictiveController{T} <: AbstractController
     gamma::T
     qsteady_min::T
     qsteady_max::T
-    disco_handling::Bool
+    discontinuity_detection::Bool
 end
 
 function PredictiveController(; qmin = float(1 // 5), qmax = 10 // 1, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    disco_handling = false
+    discontinuity_detection = false
     return PredictiveController{typeof(qmin)}( # FIXME combined promoted type
         qmin,
         qmax,
@@ -814,7 +833,7 @@ function PredictiveController(; qmin = float(1 // 5), qmax = 10 // 1, qmax_first
         gamma,
         qsteady_min,
         qsteady_max,
-        disco_handling
+        discontinuity_detection
     )
 end
 
@@ -822,7 +841,7 @@ function PredictiveController(alg; kwargs...)
     return PredictiveController(Float64, alg; kwargs...)
 end
 
-function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, disco_handling = nothing)
+function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, discontinuity_detection = nothing)
     return PredictiveController{QT}(
         qmin === nothing ? qmin_default(alg) : qmin,
         qmax === nothing ? qmax_default(alg) : qmax,
@@ -830,7 +849,7 @@ function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_firs
         gamma === nothing ? gamma_default(alg) : gamma,
         qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
         qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-        disco_handling === nothing ? false : disco_handling
+        discontinuity_detection === nothing ? false : discontinuity_detection
     )
 end
 
@@ -920,8 +939,8 @@ end
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
-    disco_handling = integrator.controller_cache.controller.disco_handling
-    if disco_handling
+    discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
+    if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
             integrator.dt = disco_dt
