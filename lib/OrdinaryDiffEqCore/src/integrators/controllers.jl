@@ -113,14 +113,6 @@ end
 end
 
 @inline function step_reject_controller!(integrator, alg)
-    discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
-    if discontinuity_detection
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
-        if disco_dt != -1
-            integrator.dt = disco_dt
-            return integrator.dt
-        end
-    end
     step_reject_controller!(integrator, integrator.controller_cache, alg)
     cache = integrator.cache
     if hasfield(typeof(cache), :nlsolve)
@@ -503,7 +495,6 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma) = controller
     discontinuity_detection = integrator.controller_cache.controller.discontinuity_detection
-    #tsit comes here
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
