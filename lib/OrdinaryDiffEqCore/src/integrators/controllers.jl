@@ -498,7 +498,6 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
-            println("using disco set dt")
             integrator.dt = disco_dt
             return integrator.dt
         end
