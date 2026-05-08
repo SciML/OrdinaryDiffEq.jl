@@ -95,9 +95,6 @@ end
 function bdf_step_reject_controller!(integrator, cache, EEst1)
     k = cache.order
     h = integrator.dt
-    integrator.cache.consfailcnt += 1
-    integrator.cache.nconsteps = 0
-
     cache.consfailcnt += 1
     cache.nconsteps = 0
 
