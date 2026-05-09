@@ -616,7 +616,7 @@ function PIDController(alg; kwargs...)
     return PIDController(Float64, alg; kwargs...)
 end
 
-function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
+function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing, discontinuity_detection = nothing)
     if beta === nothing
         beta2 = QT(beta2_default(alg))
         beta1 = QT(beta1_default(alg, beta2))

@@ -16,9 +16,9 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-mutable struct zero_func_struct{uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
+mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
     #integrator_ref::IntegratorType
-    u₁::uType
+    u₁::u1Type
     callback::callbackType
     dt::tType
     uprev::uType
@@ -667,13 +667,17 @@ Base.@constprop :aggressive function _ode_init(
     idx = 1
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity
-            u₁ = similar(u)
-            out = i isa VectorContinuousCallback ? similar(u) : nothing
+            u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
+            out = if i isa VectorContinuousCallback
+                (u isa AbstractArray) ? similar(u) : zero(u)
+            else
+                nothing
+            end
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, f, tprev, p)
             disco_probs[idx] = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
             idx += 1
         end
-    end 
+    end
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
