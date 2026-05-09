@@ -1,5 +1,5 @@
 using OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra
-using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqFIRK
+using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqFIRK
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error)) 
 using BenchmarkTools
