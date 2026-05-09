@@ -98,10 +98,13 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     cache.consfailcnt += 1
     cache.nconsteps = 0
 
-    disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
-    if disco_dt != -1
-        integrator.dt = disco_dt
-        return integrator.dt
+    discontinuity_detection = cache.controller.discontinuity_detection
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        if disco_dt != -1
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
     end
 
     if cache.consfailcnt > 1
