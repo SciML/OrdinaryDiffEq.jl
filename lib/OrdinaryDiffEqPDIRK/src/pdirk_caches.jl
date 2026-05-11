@@ -26,7 +26,7 @@ struct PDIRK44Tableau{T, T2}
     b4::T
 end
 
-function PDIRK44Tableau(T, T2)
+function PDIRK44Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ1 = convert(T2, 1 // 2)
     γ2 = convert(T2, 2 // 3)
     γs = (γ1, γ2)

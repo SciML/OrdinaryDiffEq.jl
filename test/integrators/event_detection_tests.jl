@@ -130,11 +130,11 @@ end
 
 function affect_combined!(integrator, events)
     for (idx, dir) in enumerate(events)
-        if dir == -1 # upcrossing — old affect! path
+        if dir == 1 # upcrossing — old affect! path
             z[] += 1
             @show integrator.u[1]
             @show integrator.u[3]
-        elseif dir == 1 # downcrossing — old affect_neg! path
+        elseif dir == -1 # downcrossing — old affect_neg! path
             if idx == 1
                 x[] += 1
                 integrator.u[2] = -0.9integrator.u[2]

@@ -106,6 +106,78 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
     @test sim.𝒪est[:L2] ≈ 3 atol = 0.25
 end
 
+# GL4 on the convergence tests
+for prob in [prob_ode_linear, prob_ode_2Dlinear]
+    dts = Float64.(1 ./ 2 .^ (5:-1:2))
+    sim = test_convergence(
+        dts,
+        prob,
+        GaussLegendre(num_stages = 2; maxiters = 100);
+        dense_errors = false,
+        abstol = 1.0e-12,
+        reltol = 1.0e-12,
+    )
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+end
+
+# GL6 on the 2D linear problem only due to scalar log–log slope being noisier at high order
+dts = Float64.(1 ./ 2 .^ (5:-1:2))
+sim_gl3 = test_convergence(
+    dts,
+    prob_ode_2Dlinear,
+    GaussLegendre(num_stages = 3; maxiters = 100);
+    dense_errors = false,
+    abstol = 1.0e-12,
+    reltol = 1.0e-12,
+)
+@test sim_gl3.𝒪est[:final] ≈ 6 atol = testTol
+
+# GaussLegendre: fixed-step accuracy at s = 4 (order 8)
+@testset "GaussLegendre fixed-dt accuracy (s = 4)" begin
+    s = 4
+    alg = GaussLegendre(num_stages = s; maxiters = 100)
+    sol = solve(
+        prob_ode_linear, alg; adaptive = false, dt = 1 // 256,
+        abstol = 1.0e-14, reltol = 1.0e-14
+    )
+    @test SciMLBase.successful_retcode(sol)
+    exact = prob_ode_linear.u0 * exp(1.01 * (sol.t[end] - sol.t[1]))
+    @test isapprox(sol.u[end], exact; rtol = 1.0e-9, atol = 1.0e-12)
+end
+
+# GaussLegendre: adaptive stepping hits requested tolerance on scalar linear prob
+@testset "GaussLegendre adaptive matches tolerance" begin
+    for s in 2:4
+        reltol = 1.0e-6
+        abstol = 1.0e-9
+        sol = solve(
+            prob_ode_linear, GaussLegendre(num_stages = s);
+            reltol = reltol, abstol = abstol
+        )
+        @test SciMLBase.successful_retcode(sol)
+        exact = prob_ode_linear.u0 * exp(1.01 * (sol.t[end] - sol.t[1]))
+        @test isapprox(sol.u[end], exact; rtol = 1.0e-3, atol = 1.0e-6)
+    end
+end
+
+@testset "GaussLegendre Richardson tightens step count when tol tightens" begin
+    s = 3
+    sol_loose = solve(
+        prob_ode_linear, GaussLegendre(num_stages = s);
+        reltol = 1.0e-3, abstol = 1.0e-6
+    )
+    sol_tight = solve(
+        prob_ode_linear, GaussLegendre(num_stages = s);
+        reltol = 1.0e-8, abstol = 1.0e-10
+    )
+    @test length(sol_tight.t) >= length(sol_loose.t)
+end
+
+sol_gl_2d = solve(
+    prob_ode_2Dlinear, GaussLegendre(num_stages = 3); reltol = 1.0e-5, abstol = 1.0e-8
+)
+@test SciMLBase.successful_retcode(sol_gl_2d)
+
 # test adaptivity
 for iip in (true, false)
     vanstiff = ODEProblem{iip}(vanderpol_firk, [sqrt(3), 0], (0.0, 1.0), [1.0e6])

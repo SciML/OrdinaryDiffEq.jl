@@ -1,7 +1,7 @@
 name = "StochasticDiffEqWeak"
 uuid = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.0"
+version = "2.1.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"

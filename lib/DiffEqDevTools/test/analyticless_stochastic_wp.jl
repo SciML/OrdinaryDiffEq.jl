@@ -1,6 +1,7 @@
 using Random
 using StochasticDiffEq, DiffEqDevTools, Test
 using SDEProblemLibrary: prob_sde_additivesystem
+using SciMLLogging: None
 
 prob = prob_sde_additivesystem
 prob = SDEProblem(prob.f, prob.g, prob.u0, (0.0, 0.1), prob.p)
@@ -115,7 +116,7 @@ appxsol_setup = Dict(:alg => EM(), :dt => test_dt)
 wp1 = @time WorkPrecisionSet(
     ensemble_prob, abstols, reltols, setups, test_dt;
     maxiters = 1.0e7,
-    verbose = false, save_everystep = false, save_start = false,
+    verbose = None(), save_everystep = false, save_start = false,
     appxsol_setup = appxsol_setup,
     trajectories = numtraj, error_estimate = :weak_final
 )
@@ -124,7 +125,7 @@ wp1 = @time WorkPrecisionSet(
 wp2 = @time WorkPrecisionSet(
     ensemble_prob, abstols, reltols, setups, test_dt;
     maxiters = 1.0e7,
-    verbose = false, save_everystep = false, save_start = false,
+    verbose = None(), save_everystep = false, save_start = false,
     appxsol_setup = appxsol_setup, expected_value = exp(-3.0),
     trajectories = numtraj, error_estimate = :weak_final
 )

@@ -444,8 +444,10 @@ Each entry of `simultaneous_events` encodes both whether condition `i` triggered
 | value | meaning |
 |---|---|
 | `0`  | condition did not trigger this step |
-| `-1` | upcrossing (condition went from negative to positive) |
-| `+1` | downcrossing (condition went from positive to negative) |
+| `+1` | upcrossing (condition went from negative to positive) |
+| `-1` | downcrossing (condition went from positive to negative) |
+
+(Note: the first releases of the v7 incorrectly flipped this sign and it was immediately corrected)
 
 The vector's length is the callback's `len`; the entries are stable across steps. `affect_neg!` is no longer called for `VectorContinuousCallback` — your single `affect!` handles both crossing directions by inspecting the sign of each nonzero entry.
 
@@ -468,7 +470,7 @@ function affect!(integrator, simultaneous_events)
         s = simultaneous_events[i]
         s == 0 && continue
         if i == 1
-            # ball 1 hit the ground; s == -1 upcrossing, s == +1 downcrossing
+            # ball 1 hit the ground; s == +1 upcrossing, s == -1 downcrossing
         elseif i == 2
             # ball 2 hit the ground
         end

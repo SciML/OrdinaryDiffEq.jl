@@ -15,7 +15,7 @@ struct RadauIIA3Tableau{T, T2}
     e2::T
 end
 
-function RadauIIA3Tableau(T, T2)
+function RadauIIA3Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     T11 = T(0.10540925533894596)
     T12 = T(-0.29814239699997197)
     T21 = T(0.9486832980505138)
@@ -70,7 +70,7 @@ end
 # inv(T) * inv(A) * T = [γ  0  0
 #                        0  α -β
 #                        0  β  α]
-function RadauIIA5Tableau(T, T2)
+function RadauIIA5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     T11 = convert(T, 9.1232394870892942792e-2)
     T12 = convert(T, -0.14125529502095420843e0)
     T13 = convert(T, -3.0029194105147424492e-2)
@@ -184,7 +184,7 @@ struct RadauIIA9Tableau{T, T2}
     e5::T
 end
 
-function RadauIIA9Tableau(T, T2)
+function RadauIIA9Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     T11 = convert(T, -1.251758622050104589014e-2)
     T12 = convert(T, -1.024204781790882707009e-2)
     T13 = convert(T, 4.767387729029572386318e-2)
@@ -285,7 +285,7 @@ function RadauIIATableau{T1, T2}(tab::RadauIIATableau{T1, T2}) where {T1, T2}
     return RadauIIATableau{T1, T2}(tab.T, tab.TI, tab.c, tab.γ, tab.α, tab.β, tab.e)
 end
 
-function RadauIIATableau(T1, T2, num_stages::Int)
+function RadauIIATableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
     tab = get(RadauIIATableauCache, (T1, T2, num_stages)) do
         tab = generateRadauTableau(T1, T2, num_stages)
         RadauIIATableauCache[T1, T2, num_stages] = tab
@@ -294,12 +294,12 @@ function RadauIIATableau(T1, T2, num_stages::Int)
     return RadauIIATableau{T1, T2}(tab)
 end
 
-function generateRadauTableau(T1, T2, num_stages::Int)
-    c = reverse!(1 .- gaussradau(num_stages, T1)[1]) ./ 2
+function generateRadauTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
+    c = reverse!(1 .- gaussradau(T1, num_stages)[1]) ./ 2
     if T1 == T2
         c2 = c
     else
-        c2 = reverse!(1 .- gaussradau(num_stages, T2)[1]) ./ 2
+        c2 = reverse!(1 .- gaussradau(T2, num_stages)[1]) ./ 2
     end
 
     c_powers = Matrix{T1}(undef, num_stages, num_stages)
@@ -348,4 +348,83 @@ const RadauIIATableauCache = Dict{
     (Float64, Float64, 3) => generateRadauTableau(Float64, Float64, 3),
     (Float64, Float64, 5) => generateRadauTableau(Float64, Float64, 5),
     (Float64, Float64, 7) => generateRadauTableau(Float64, Float64, 7)
+)
+
+
+struct GaussLegendreTableau{T1, T2}
+    A::Matrix{T1}
+    b::Vector{T1}
+    c::Vector{T2}
+    e::Vector{T1}
+end
+
+import FastGaussQuadrature: gausslegendre
+
+function GaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
+    tab = get(GaussLegendreTableauCache, (T1, T2, num_stages)) do
+        tab = generateGaussLegendreTableau(T1, T2, num_stages)
+        GaussLegendreTableauCache[(T1, T2, num_stages)] = tab
+        tab
+    end
+    return GaussLegendreTableau{T1, T2}(tab.A, tab.b, tab.c, tab.e)
+end
+
+# TODO: embedded error coefficients use s-1 GL rule interpolated to s nodes
+# a proper derivation following Hairer Vol I would improve adaptive performance
+
+# TODO: add the symplectic integrator stage decoupling from Antonan et al to increase efficiency
+
+function generateGaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
+    x, w = gausslegendre(promote_type(T1, T2), num_stages)
+    c = T2.((x .+ 1) ./ 2)
+    b = T1.(w ./ 2)
+
+    A = Matrix{T1}(undef, num_stages, num_stages)
+    for i in 1:num_stages
+        for j in 1:num_stages
+            nodes, weights = gausslegendre(2 * num_stages)
+            nodes_ij = T1.((nodes .+ 1) ./ 2 .* c[i])
+            weights_ij = T1.(weights ./ 2 .* c[i])
+            Lj = ones(T1, length(nodes_ij))
+            for k in 1:num_stages
+                if k != j
+                    Lj .*= (nodes_ij .- c[k]) ./ (c[j] - c[k])
+                end
+            end
+            A[i, j] = dot(weights_ij, Lj)
+        end
+    end
+
+
+    # error estimate coefficients: embed using s-1 GL weights via interpolation
+    if num_stages > 1
+        x_low, w_low = gausslegendre(T1, num_stages - 1)
+        c_low = T1.((x_low .+ 1) ./ 2)
+        b_low = zeros(T1, num_stages)
+        for i in 1:num_stages
+            for j in 1:(num_stages - 1)
+                Lj = one(T1)
+                for k in 1:(num_stages - 1)
+                    if k != j
+                        Lj *= (c[i] - c_low[k]) / (c_low[j] - c_low[k])
+                    end
+                end
+                b_low[i] += T1(w_low[j] / 2) * Lj
+            end
+        end
+        e = b .- b_low
+    else
+        e = b
+    end
+
+    return GaussLegendreTableau{T1, T2}(A, b, c, e)
+end
+
+const GaussLegendreTableauCache = Dict{
+    Tuple{Type, Type, Int}, GaussLegendreTableau{T1, T2} where {T1, T2},
+}(
+    (Float64, Float64, 2) => generateGaussLegendreTableau(Float64, Float64, 2),
+    (Float64, Float64, 3) => generateGaussLegendreTableau(Float64, Float64, 3),
+    (Float64, Float64, 4) => generateGaussLegendreTableau(Float64, Float64, 4),
+    (Float64, Float64, 5) => generateGaussLegendreTableau(Float64, Float64, 5),
 )

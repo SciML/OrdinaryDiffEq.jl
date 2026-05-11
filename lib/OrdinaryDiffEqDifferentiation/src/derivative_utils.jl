@@ -921,15 +921,11 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
         return dT, W
     end
 
-    # Reusing cached J — build W from it directly.
-    # Safety: if cached_J is nothing (e.g. first use after algorithm switch),
-    # fall back to standard path.
-    if jac_reuse.cached_J === nothing
-        dT = calc_tderivative(integrator, cache)
-        W = calc_W(integrator, cache, dtgamma, repeat_step)
-        return dT, W
-    end
-
+    # Reusing cached J — build W from it directly. The "first use" case is
+    # already handled upstream by `_rosenbrock_jac_reuse_decision`'s
+    # `iszero(last_dtgamma)` and CompositeAlgorithm guards (both return
+    # `(true, true)` so we go through the fresh-Jacobian branch above and
+    # never reach this point with un-seeded cache slots).
     J = jac_reuse.cached_J
     dT = jac_reuse.cached_dT
 

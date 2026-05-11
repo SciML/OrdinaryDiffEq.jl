@@ -4,7 +4,7 @@ using SciMLBase: FullSpecialize, DynamicalODEFunction
 using AllocCheck
 using Test
 
-@testset "Newmark Allocation Tests" begin
+@testset "Newmark & GeneralizedAlpha Allocation Tests" begin
     # Harmonic oscillator: dv/dt = -u, du/dt = v
     function f1!(dv, v, u, p, t)
         dv .= -u
@@ -40,6 +40,35 @@ using Test
             )
         else
             println("NewmarkBeta perform_step! appears allocation-free with AllocCheck")
+        end
+    end
+
+    @testset "GeneralizedAlpha perform_step! Static Analysis" begin
+        integrator = init(
+            prob,
+            GeneralizedAlpha(; rho_inf = 1.0),
+            dt = 0.1,
+            save_everystep = false,
+            adaptive = false,
+        )
+        step!(integrator)
+
+        cache = integrator.cache
+        allocs = check_allocs(
+            OrdinaryDiffEqCore.perform_step!,
+            (typeof(integrator), typeof(cache)),
+        )
+
+        @test length(allocs) == 0 broken = true
+
+        if length(allocs) > 0
+            println(
+                "AllocCheck found $(length(allocs)) allocation sites in GeneralizedAlpha perform_step!",
+            )
+        else
+            println(
+                "GeneralizedAlpha perform_step! appears allocation-free with AllocCheck",
+            )
         end
     end
 end

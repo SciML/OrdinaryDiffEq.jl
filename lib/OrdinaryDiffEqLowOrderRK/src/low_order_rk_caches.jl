@@ -699,7 +699,7 @@ struct RKO65ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     c5::T2
     c6::T2
 
-    function RKO65ConstantCache(T1, T2)
+    function RKO65ConstantCache(::Type{T1}, ::Type{T2}) where {T1, T2}
         # elements of Butcher Table
         α21 = T1(1 // 6)
         α31 = T1(-15 // 8)
@@ -898,7 +898,7 @@ struct FRK65ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     f10::T1
     f11::T1
 
-    function FRK65ConstantCache(T1, T2)
+    function FRK65ConstantCache(::Type{T1}, ::Type{T2}) where {T1, T2}
 
         # elements of Butcher Table
         α21 = T1(1 // 89)

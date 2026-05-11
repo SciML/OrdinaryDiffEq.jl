@@ -3,10 +3,12 @@
     f
     t
     p
-    # Newmark discretization params
+    # Discretization params (αm = αf = 0 recovers Newmark)
     dt
     β
     γ
+    αm
+    αf
     aₙ
     vₙ
     uₙ
@@ -26,49 +28,56 @@ end
 #   uₙ₊₁ = uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁]
 #   vₙ₊₁ = vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁]
 #
-# This allows us to reduce the implicit discretization to have only aₙ₊₁ as the unknown:
-#   Maₙ₊₁ = f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁)
-#         = f(vₙ + Δtₙ [(1-γ)aₙ + γaₙ₊₁], uₙ + Δtₙ vₙ + Δtₙ²/2 [(1-2β)aₙ + 2βaₙ₊₁], tₙ₊₁)
-# Such that we have to solve the nonlinear problem
-#   Maₙ₊₁ - f(vₙ₊₁(aₙ₊₁), uₙ₊₁(aₙ₊₁), tₙ₊₁)  = 0
-# for aₙ₊₁'' in each time step.
+# For Generalized-α the equations of motion are evaluated at interpolated states:
+#   M·aₙ₊αm = f(uₙ₊αf, vₙ₊αf, tₙ₊αf)
+# Setting αm = αf = 0 recovers Newmark exactly
+#
+# For the Newton method the effective Jacobian is:
+#   (1-αm)·M - (1-αf)·(Δtₙ²β ∂fᵤ + Δtₙγ ∂fᵥ) = 0
 
-# For the Newton method the linearization becomes
-#   M - (dₐuₙ₊₁ ∂fᵤ + dₐvₙ₊₁ ∂fᵥ) = 0
-#   M - (Δtₙ²β  ∂fᵤ +  Δtₙγ  ∂fᵥ) = 0
-
-# Inplace variant
-@muladd function newmark_discretized_residual!(
-        residual, aₙ₊₁, p_newmark::NewmarkDiscretizationCache
+# in place variant
+@muladd function discretized_residual!(
+        residual, aₙ₊₁, cache::NewmarkDiscretizationCache
     )
-    (; f, dt, t, p) = p_newmark
-    (; γ, β, aₙ, vₙ, uₙ) = p_newmark
+    (; f, dt, t, p) = cache
+    (; β, γ, αm, αf, aₙ, vₙ, uₙ) = cache
 
-    atmp = get_tmp(p_newmark.atmp, aₙ₊₁)
-    vₙ₊₁ = get_tmp(p_newmark.vₙ₊₁, aₙ₊₁)
-    uₙ₊₁ = get_tmp(p_newmark.uₙ₊₁, aₙ₊₁)
+    atmp = get_tmp(cache.atmp, aₙ₊₁)
+    vₙ₊₁ = get_tmp(cache.vₙ₊₁, aₙ₊₁)
+    uₙ₊₁ = get_tmp(cache.uₙ₊₁, aₙ₊₁)
 
+    # standard newmark update for full step quantities
     @.. uₙ₊₁ = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
     @.. vₙ₊₁ = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
-    # This temporary variable is also not compatible with AD.
-    f.f1(atmp, vₙ₊₁, uₙ₊₁, p, t)
+    # interpolates to αf for the state evaluation blending
+    @.. uₙ₊₁ = (1 - αf) * uₙ₊₁ + αf * uₙ
+    @.. vₙ₊₁ = (1 - αf) * vₙ₊₁ + αf * vₙ
+    tₙ₊αf = t + (1 - αf) * dt
+
+    f.f1(atmp, vₙ₊₁, uₙ₊₁, p, tₙ₊αf)
     M = f.mass_matrix
 
-    mul!(residual, M, aₙ₊₁)
+    mul!(residual, M, (1 - αm) * aₙ₊₁ + αm * aₙ)
     @.. residual = residual - atmp
 
     return nothing
 end
 
-# Out of place variant
-@muladd function newmark_discretized_residual(aₙ₊₁, p_newmark::NewmarkDiscretizationCache)
-    (; f, dt, t, p) = p_newmark
-    (; γ, β, aₙ, vₙ, uₙ) = p_newmark
+# out of-place variant
+@muladd function discretized_residual(aₙ₊₁, cache::NewmarkDiscretizationCache)
+    (; f, dt, t, p) = cache
+    (; β, γ, αm, αf, aₙ, vₙ, uₙ) = cache
 
     uₙ₊₁ = uₙ + dt * vₙ + dt^2 / 2 * ((1 - 2β) * aₙ + 2β * aₙ₊₁)
     vₙ₊₁ = vₙ + dt * ((1 - γ) * aₙ + γ * aₙ₊₁)
 
+    uₙ₊αf = (1 - αf) * uₙ₊₁ + αf * uₙ
+    vₙ₊αf = (1 - αf) * vₙ₊₁ + αf * vₙ
+    tₙ₊αf = t + (1 - αf) * dt
+
+    aₙ₊αm = (1 - αm) * aₙ₊₁ + αm * aₙ
+
     M = f.mass_matrix
-    return M * aₙ₊₁ - f.f1(vₙ₊₁, uₙ₊₁, p, t)
+    return M * aₙ₊αm - f.f1(vₙ₊αf, uₙ₊αf, p, tₙ₊αf)
 end

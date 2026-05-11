@@ -67,7 +67,7 @@ function Vern6ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     )
 end
 
-function Vern6ExtraStages(T, T2)
+function Vern6ExtraStages(::Type{T}, ::Type{T2}) where {T, T2}
     # Extra stages for Order 5
     c10 = convert(T2, 1 // 2)
     a1001 = convert(
@@ -314,7 +314,7 @@ function Vern6InterpolationCoefficients(T::Type{<:CompiledFloats})
     )
 end
 
-function Vern6InterpolationCoefficients(T)
+function Vern6InterpolationCoefficients(::Type{T}) where {T}
     r011 = convert(T, 1)
     r012 = convert(T, -940811006205413129 // 120948724610397495)
     r013 = convert(T, 88342864458754360181 // 3265615564480732365)
@@ -489,7 +489,7 @@ function Vern6Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     )
 end
 
-function Vern6Tableau(T, T2)
+function Vern6Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     c1 = convert(T2, 3 // 50)
     c2 = convert(T2, 1439 // 15000)
     c3 = convert(T2, 1439 // 10000)
@@ -1574,7 +1574,7 @@ function Vern8ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     )
 end
 
-function Vern8ExtraStages(T, T2)
+function Vern8ExtraStages(::Type{T}, ::Type{T2}) where {T, T2}
     c14 = convert(T2, 1)
     a1401 = convert(T, big" .4427989419007951074716746668098518862111e-1")
     a1406 = convert(T, big" .3541049391724448744815552028733568354121")
@@ -1932,7 +1932,7 @@ function Vern8InterpolationCoefficients(T::Type{<:CompiledFloats})
     )
 end
 
-function Vern8InterpolationCoefficients(T)
+function Vern8InterpolationCoefficients(::Type{T}) where {T}
     r011 = convert(T, big" 1")
     r012 = convert(T, big"-10.03915465055451898280745009553727015838")
     r013 = convert(T, big" 53.79210495862331394937504547285261606206")
@@ -2266,7 +2266,7 @@ function Vern8Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     )
 end
 
-function Vern8Tableau(T, T2)
+function Vern8Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     c2 = convert(T2, 1 // 20)
     c3 = convert(T2, 341 // 3200)
     c4 = convert(T2, 1023 // 6400)
@@ -3315,7 +3315,7 @@ end
     )
 end
 
-function Vern9InterpolationCoefficients(T)
+function Vern9InterpolationCoefficients(::Type{T}) where {T}
     r011 = convert(T, 1)
     r012 = convert(T, big"-28.33048870061739823290767301658881994700")
     r013 = convert(T, big" 257.6535452078577977252092979905248156497")
@@ -4383,7 +4383,7 @@ struct RKV76IIaTableau{T, T2}
     bh10::T
 end
 
-function RKV76IIaTableau(T, T2)
+function RKV76IIaTableau(::Type{T}, ::Type{T2}) where {T, T2}
     c1 = convert(T2, BigFloat("0"))
     c2 = convert(T2, BigFloat("0.069"))
     c3 = convert(T2, BigFloat("0.118"))

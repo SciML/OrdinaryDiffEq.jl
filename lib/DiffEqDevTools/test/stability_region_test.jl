@@ -1,5 +1,8 @@
 using DiffEqDevTools, Test
 using OrdinaryDiffEq
+using OrdinaryDiffEqLowOrderRK: RK4
+using OrdinaryDiffEqSDIRK: ImplicitEuler
+using OrdinaryDiffEqSSPRK: SSPRK33, SSPRK104
 
 # Test stability_region with algorithm-based interface
 @test @inferred(stability_region(Tsit5())) ≈ stability_region(Tsit5()) rtol = 1.0e-3

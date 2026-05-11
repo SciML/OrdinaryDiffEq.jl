@@ -16,7 +16,7 @@ import OrdinaryDiffEqCore: initialize!, perform_step!, unwrap_alg,
 import PreallocationTools: DiffCache, get_tmp
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: DynamicalODEFunction
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, lmul!, I
 import FastBroadcast: @..
 import MuladdMacro: @muladd
 import ADTypes: AutoForwardDiff
@@ -34,6 +34,5 @@ include("newmark_caches.jl")
 include("newmark_nlsolve.jl")
 include("newmark_perform_step.jl")
 
-export NewmarkBeta
-
+export NewmarkBeta, GeneralizedAlpha
 end

@@ -24,7 +24,7 @@ struct LowStorageRK2NConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     c2end::NTuple{N, T2} # c1 is always zero
 end
 
-function ORK256ConstantCache(T, T2)
+function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -1.0)
     A3 = convert(T, -1.55798)
     A4 = convert(T, -1.0)
@@ -44,41 +44,7 @@ function ORK256ConstantCache(T, T2)
     c5 = convert(T2, 0.8)
     c2end = (c2, c3, c4, c5)
 
-    return LowStorageRK2NConstantCache{4, T, T2}(A2end, B1, B2end, c2end)
-end
-
-function alg_cache(
-        alg::ORK256, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = ORK256ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ORK256, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ORK256ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
 function alg_cache(
@@ -108,7 +74,7 @@ struct RK46NLConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c5::T2
     c6::T2
 
-    function RK46NLConstantCache(T, T2)
+    function RK46NLConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         α2 = T(-0.737101392796)
         α3 = T(-1.634740794343)
         α4 = T(-0.74473900378)
@@ -158,7 +124,7 @@ end
     thread::Thread
 end
 
-function CarpenterKennedy2N54ConstantCache(T, T2)
+function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -567301805773 // 1357537059087)
     A3 = convert(T, -2404267990393 // 2016746695238)
     A4 = convert(T, -3550918686646 // 2091501179385)
@@ -178,7 +144,7 @@ function CarpenterKennedy2N54ConstantCache(T, T2)
     c5 = convert(T2, 2802321613138 // 2924317926251)
     c2end = (c2, c3, c4, c5)
 
-    return LowStorageRK2NConstantCache{4, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
 @cache mutable struct SHLDDRK_2NCache{
@@ -232,7 +198,7 @@ mutable struct SHLDDRK_2NConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     step::Int
 end
 
-function SHLDDRK_2NConstantCache(T1, T2)
+function SHLDDRK_2NConstantCache(::Type{T1}, ::Type{T2}) where {T1, T2}
     α21 = T1(-0.6051226)
     α31 = T1(-2.0437564)
     α41 = T1(-0.7406999)
@@ -327,7 +293,7 @@ struct SHLDDRK52ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     c5::T2
 end
 
-function SHLDDRK52ConstantCache(T1, T2)
+function SHLDDRK52ConstantCache(::Type{T1}, ::Type{T2}) where {T1, T2}
     α2 = T1(-0.6913065)
     α3 = T1(-2.655155)
     α4 = T1(-0.8147688)
@@ -369,47 +335,7 @@ function alg_cache(
     )
 end
 
-function alg_cache(
-        alg::CarpenterKennedy2N54, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = CarpenterKennedy2N54ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CarpenterKennedy2N54, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CarpenterKennedy2N54ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function SHLDDRK64ConstantCache(T, T2)
+function SHLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     #TODO: Solve the order conditions with more accuracy
     A2 = convert(T, -0.4919575)
     A3 = convert(T, -0.8946264)
@@ -433,44 +359,10 @@ function SHLDDRK64ConstantCache(T, T2)
     c6 = convert(T2, 0.9271047)
     c2end = (c2, c3, c4, c5, c6)
 
-    return LowStorageRK2NConstantCache{5, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::SHLDDRK64, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = SHLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::SHLDDRK64, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return SHLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function DGLDDRK73_CConstantCache(T, T2)
+function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.808316387498383)
     A3 = convert(T, -1.503407858773331)
     A4 = convert(T, -1.053064525050744)
@@ -496,47 +388,10 @@ function DGLDDRK73_CConstantCache(T, T2)
     c7 = convert(T2, 0.998046608462379)
     c2end = (c2, c3, c4, c5, c6, c7)
 
-    return LowStorageRK2NConstantCache{6, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::DGLDDRK73_C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = DGLDDRK73_CConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::DGLDDRK73_C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return DGLDDRK73_CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function DGLDDRK84_CConstantCache(T, T2)
+function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.721296248227924)
     A3 = convert(T, -0.0107733657161298)
     A4 = convert(T, -0.516258469893097)
@@ -565,47 +420,10 @@ function DGLDDRK84_CConstantCache(T, T2)
     c8 = convert(T2, 0.919902896453866)
     c2end = (c2, c3, c4, c5, c6, c7, c8)
 
-    return LowStorageRK2NConstantCache{7, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::DGLDDRK84_C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = DGLDDRK84_CConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::DGLDDRK84_C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return DGLDDRK84_CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function DGLDDRK84_FConstantCache(T, T2)
+function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.5534431294501569)
     A3 = convert(T, 0.0106598757020349)
     A4 = convert(T, -0.5515812888932)
@@ -634,47 +452,10 @@ function DGLDDRK84_FConstantCache(T, T2)
     c8 = convert(T2, 0.9484087623348481)
     c2end = (c2, c3, c4, c5, c6, c7, c8)
 
-    return LowStorageRK2NConstantCache{7, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::DGLDDRK84_F, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = DGLDDRK84_FConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::DGLDDRK84_F, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return DGLDDRK84_FConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function NDBLSRK124ConstantCache(T, T2)
+function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.0923311242368072)
     A3 = convert(T, -0.9441056581158819)
     A4 = convert(T, -4.3271273247576394)
@@ -715,47 +496,10 @@ function NDBLSRK124ConstantCache(T, T2)
     c12 = convert(T2, 0.9032588871651854)
     c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
 
-    return LowStorageRK2NConstantCache{11, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::NDBLSRK124, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = NDBLSRK124ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::NDBLSRK124, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return NDBLSRK124ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function NDBLSRK134ConstantCache(T, T2)
+function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.6160178650170565)
     A3 = convert(T, -0.4449487060774118)
     A4 = convert(T, -1.0952033345276178)
@@ -799,47 +543,10 @@ function NDBLSRK134ConstantCache(T, T2)
     c13 = convert(T2, 0.9126827615920843)
     c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13)
 
-    return LowStorageRK2NConstantCache{12, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::NDBLSRK134, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = NDBLSRK134ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::NDBLSRK134, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return NDBLSRK134ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function NDBLSRK144ConstantCache(T, T2)
+function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, -0.718801210867241)
     A3 = convert(T, -0.778533117342157)
     A4 = convert(T, -0.0053282796654044)
@@ -886,44 +593,7 @@ function NDBLSRK144ConstantCache(T, T2)
     c14 = convert(T2, 0.8734213127600976)
     c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14)
 
-    return LowStorageRK2NConstantCache{13, T, T2}(A2end, B1, B2end, c2end)
-end
-
-function alg_cache(
-        alg::NDBLSRK144, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = NDBLSRK144ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    tmp = zero(u)
-    williamson_condition = alg.williamson_condition
-    if calck
-        k = zero(rate_prototype)
-        williamson_condition = false
-    else
-        if williamson_condition
-            k = tmp
-        else
-            k = zero(rate_prototype)
-        end
-    end
-    return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::NDBLSRK144, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return NDBLSRK144ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
 # 2C low storage methods introduced by Calvo, Franco, Rández (2004)
@@ -949,7 +619,7 @@ struct LowStorageRK2CConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     c2end::NTuple{N, T2} # c1 is always zero
 end
 
-function CFRLDDRK64ConstantCache(T, T2)
+function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, 0.17985400977138)
     A3 = convert(T, 0.14081893152111)
     A4 = convert(T, 0.08255631629428)
@@ -972,42 +642,10 @@ function CFRLDDRK64ConstantCache(T, T2)
     c6 = convert(T2, 0.83050587987157)
     c2end = (c2, c3, c4, c5, c6)
 
-    return LowStorageRK2CConstantCache{5, T, T2}(A2end, B1, B2end, c2end)
+    return LowStorageRK2CConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::CFRLDDRK64, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CFRLDDRK64ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK2CCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CFRLDDRK64, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CFRLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function TSLDDRK74ConstantCache(T, T2)
+function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, 0.241566650129646868)
     A3 = convert(T, 0.0423866513027719953)
     A4 = convert(T, 0.215602732678803776)
@@ -1033,36 +671,7 @@ function TSLDDRK74ConstantCache(T, T2)
     c7 = convert(T2, 0.91124223849547205)
     c2end = (c2, c3, c4, c5, c6, c7)
 
-    return LowStorageRK2CConstantCache{6, T, T2}(A2end, B1, B2end, c2end)
-end
-
-function alg_cache(
-        alg::TSLDDRK74, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = TSLDDRK74ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return LowStorageRK2CCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::TSLDDRK74, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return TSLDDRK74ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK2CConstantCache(A2end, B1, B2end, c2end)
 end
 
 # 3S low storage methods introduced by Ketcheson
@@ -1092,7 +701,7 @@ struct LowStorageRK3SConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     c2end::NTuple{N, T2} # c1 is always zero
 end
 
-function ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -1.2664395576322218e-1)
     γ103 = convert(T, 1.1426980685848858e+0)
     γ12end = (γ102, γ103)
@@ -1118,45 +727,10 @@ function ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
     c03 = convert(T2, 5.9236433182015646e-1)
     c2end = (c02, c03)
 
-    return LowStorageRK3SConstantCache{2, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S32, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S32ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S32, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S32ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.2397552118208004e-1)
     γ103 = convert(T, -2.3528852074619033e-1)
     γ104 = convert(T, 7.9598685017877846e-1)
@@ -1212,45 +786,10 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     c08 = convert(T2, 2.1138242369563969e+0)
     c2end = (c02, c03, c04, c05, c06, c07, c08)
 
-    return LowStorageRK3SConstantCache{7, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S82, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S82ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S82, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S82ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S53ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 2.5876919610938998e-1)
     γ103 = convert(T, -1.3243708384977859e-1)
     γ104 = convert(T, 5.0556648948362981e-2)
@@ -1288,45 +827,10 @@ function ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
     c05 = convert(T2, 7.2351146275625733e-1)
     c2end = (c02, c03, c04, c05)
 
-    return LowStorageRK3SConstantCache{4, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S53, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S53ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S53, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S53ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S173ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 7.9377023961829174e-1)
     γ103 = convert(T, -8.3475116244241754e-2)
     γ104 = convert(T, -1.6706337980062214e-2)
@@ -1454,45 +958,10 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
         c16, c17,
     )
 
-    return LowStorageRK3SConstantCache{16, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S173, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S173ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S173, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S173ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S94ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -4.6556413837561301e+0)
     γ103 = convert(T, -7.7202649689034453e-1)
     γ104 = convert(T, -4.0244202720632174e+0)
@@ -1554,45 +1023,10 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     c09 = convert(T2, 9.0515694340066954e-1)
     c2end = (c02, c03, c04, c05, c06, c07, c08, c09)
 
-    return LowStorageRK3SConstantCache{8, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S94, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S94ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S94, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S94ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 1.1750819811951678e+0)
     γ103 = convert(T, 3.0909017892654811e-1)
     γ104 = convert(T, 1.4409117788115862e+0)
@@ -1726,45 +1160,10 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
         c16, c17, c18,
     )
 
-    return LowStorageRK3SConstantCache{17, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S184, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S184ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S184, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S184ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S105ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.0436600785287713e-1)
     γ103 = convert(T, -8.5034274641295027e-1)
     γ104 = convert(T, -6.9508941671218478e+0)
@@ -1832,45 +1231,10 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     c10 = convert(T2, 9.1522098071770008e-1)
     c2end = (c02, c03, c04, c05, c06, c07, c08, c09, c10)
 
-    return LowStorageRK3SConstantCache{9, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S105, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S105ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S105, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S105ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
+function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -1.168247970322938e+0)
     γ103 = convert(T, -2.5112155037089772e+0)
     γ104 = convert(T, -5.5259960154735988e-1)
@@ -2016,42 +1380,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
         c16, c17, c18, c19, c20,
     )
 
-    return LowStorageRK3SConstantCache{19, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S205, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = ParsaniKetchesonDeconinck3S205ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::ParsaniKetchesonDeconinck3S205, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ParsaniKetchesonDeconinck3S205ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
+    return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
 # 3S+ low storage methods: 3S methods adding another memory location for the embedded method (non-FSAL version)
@@ -2090,7 +1419,7 @@ struct LowStorageRK3SpConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     bhat2end::NTuple{N, T}
 end
 
-function RDPK3Sp35ConstantCache(T, T2)
+function RDPK3Sp35ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"2.587669070352079020144955303389306026e-01"),
         convert(T, big"-1.324366873994502973977035353758550057e-01"),
@@ -2168,49 +1497,13 @@ function RDPK3Sp35ConstantCache(T, T2)
         ),
     )
 
-    return LowStorageRK3SpConstantCache{4, T, T2}(
+    return LowStorageRK3SpConstantCache(
         γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end,
         bhat1, bhat2end
     )
 end
 
-function alg_cache(
-        alg::RDPK3Sp35, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    utilde = zero(u)
-    tmp = zero(u)
-    if eltype(u) === uEltypeNoUnits
-        atmp = utilde # alias the vectors to save memory
-    else
-        atmp = similar(u, uEltypeNoUnits)
-        recursivefill!(atmp, false)
-    end
-    tab = RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return LowStorageRK3SpCache(
-        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::RDPK3Sp35, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function RDPK3Sp49ConstantCache(T, T2)
+function RDPK3Sp49ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"-4.655641301259180308677051498071354582e+00"),
         convert(T, big"-7.720264924836063859141482018013692338e-01"),
@@ -2336,49 +1629,13 @@ function RDPK3Sp49ConstantCache(T, T2)
         ),
     )
 
-    return LowStorageRK3SpConstantCache{8, T, T2}(
+    return LowStorageRK3SpConstantCache(
         γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end,
         bhat1, bhat2end
     )
 end
 
-function alg_cache(
-        alg::RDPK3Sp49, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    utilde = zero(u)
-    tmp = zero(u)
-    if eltype(u) === uEltypeNoUnits
-        atmp = utilde # alias the vectors to save memory
-    else
-        atmp = similar(u, uEltypeNoUnits)
-        recursivefill!(atmp, false)
-    end
-    tab = RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return LowStorageRK3SpCache(
-        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::RDPK3Sp49, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function RDPK3Sp510ConstantCache(T, T2)
+function RDPK3Sp510ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"4.043660078504695837542588769963326988e-01"),
         convert(T, big"-8.503427464263185087039788184485627962e-01"),
@@ -2516,49 +1773,10 @@ function RDPK3Sp510ConstantCache(T, T2)
         ),
     )
 
-    return LowStorageRK3SpConstantCache{9, T, T2}(
+    return LowStorageRK3SpConstantCache(
         γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end,
         bhat1, bhat2end
     )
-end
-
-function alg_cache(
-        alg::RDPK3Sp510, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    utilde = zero(u)
-    tmp = zero(u)
-    if eltype(u) === uEltypeNoUnits
-        atmp = utilde # alias the vectors to save memory
-    else
-        atmp = similar(u, uEltypeNoUnits)
-        recursivefill!(atmp, false)
-    end
-    tab = RDPK3Sp510ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SpCache(
-        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::RDPK3Sp510, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RDPK3Sp510ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 # 3S+ FSAL low storage methods: 3S methods adding another memory location for the embedded method (FSAL version)
@@ -2598,7 +1816,7 @@ struct LowStorageRK3SpFSALConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     bhatfsal::T
 end
 
-function RDPK3SpFSAL35ConstantCache(T, T2)
+function RDPK3SpFSAL35ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"2.587771979725733308135192812685323706e-01"),
         convert(T, big"-1.324380360140723382965420909764953437e-01"),
@@ -2677,52 +1895,13 @@ function RDPK3SpFSAL35ConstantCache(T, T2)
     )
     bhatfsal = convert(T, big"1.020760551185952388626787099944507877e-01")
 
-    return LowStorageRK3SpFSALConstantCache{4, T, T2}(
+    return LowStorageRK3SpFSALConstantCache(
         γ12end, γ22end, γ32end, δ2end, β1, β2end,
         c2end, bhat1, bhat2end, bhatfsal
     )
 end
 
-function alg_cache(
-        alg::RDPK3SpFSAL35, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    utilde = zero(u)
-    tmp = zero(u)
-    if eltype(u) === uEltypeNoUnits
-        atmp = utilde # alias the vectors to save memory
-    else
-        atmp = similar(u, uEltypeNoUnits)
-        recursivefill!(atmp, false)
-    end
-    tab = RDPK3SpFSAL35ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SpFSALCache(
-        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::RDPK3SpFSAL35, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function RDPK3SpFSAL49ConstantCache(T, T2)
+function RDPK3SpFSAL49ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"-4.655641447335068552684422206224169103e+00"),
         convert(T, big"-7.720265099645871829248487209517314217e-01"),
@@ -2849,52 +2028,13 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
     )
     bhatfsal = convert(T, big"4.955424859358438183052504342394102722e-02")
 
-    return LowStorageRK3SpFSALConstantCache{8, T, T2}(
+    return LowStorageRK3SpFSALConstantCache(
         γ12end, γ22end, γ32end, δ2end, β1, β2end,
         c2end, bhat1, bhat2end, bhatfsal
     )
 end
 
-function alg_cache(
-        alg::RDPK3SpFSAL49, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    utilde = zero(u)
-    tmp = zero(u)
-    if eltype(u) === uEltypeNoUnits
-        atmp = utilde # alias the vectors to save memory
-    else
-        atmp = similar(u, uEltypeNoUnits)
-        recursivefill!(atmp, false)
-    end
-    tab = RDPK3SpFSAL49ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SpFSALCache(
-        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::RDPK3SpFSAL49, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function RDPK3SpFSAL510ConstantCache(T, T2)
+function RDPK3SpFSAL510ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ12end = (
         convert(T, big"4.043660121685749695640462197806189975e-01"),
         convert(T, big"-8.503427289575839690883191973980814832e-01"),
@@ -3033,49 +2173,10 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
     )
     bhatfsal = convert(T, big"4.529095628204896774513180907141004447e-02")
 
-    return LowStorageRK3SpFSALConstantCache{9, T, T2}(
+    return LowStorageRK3SpFSALConstantCache(
         γ12end, γ22end, γ32end, δ2end, β1, β2end,
         c2end, bhat1, bhat2end, bhatfsal
     )
-end
-
-function alg_cache(
-        alg::RDPK3SpFSAL510, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    utilde = zero(u)
-    tmp = zero(u)
-    if eltype(u) === uEltypeNoUnits
-        atmp = utilde # alias the vectors to save memory
-    else
-        atmp = similar(u, uEltypeNoUnits)
-        recursivefill!(atmp, false)
-    end
-    tab = RDPK3SpFSAL510ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SpFSALCache(
-        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::RDPK3SpFSAL510, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RDPK3SpFSAL510ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 # 2R+ low storage methods introduced by van der Houwen
@@ -3106,7 +2207,7 @@ struct LowStorageRK2RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK43_2ConstantCache(T, T2)
+function CKLLSRK43_2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, Int128(11847461282814) // Int128(36547543011857))
     A2 = convert(T, Int128(3943225443063) // Int128(7078155732230))
     A3 = convert(T, Int128(-346793006927) // Int128(4029903576067))
@@ -3134,45 +2235,10 @@ function CKLLSRK43_2ConstantCache(T, T2)
     )  # A3 + B1 + B2
     Cᵢ = (C1, C2, C3)
 
-    return LowStorageRK2RPConstantCache{3, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK2RPConstantCache(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK43_2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK43_2ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK2RPCache(
-        u, uprev, k, gprev, fsalfirst, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK43_2, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK43_2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK54_3CConstantCache(T, T2)
+function CKLLSRK54_3CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(970286171893) // BigInt(4311952581923))
     A2 = convert(T, BigInt(6584761158862) // BigInt(12103376702013))
     A3 = convert(T, BigInt(2251764453980) // BigInt(15575788980749))
@@ -3211,45 +2277,10 @@ function CKLLSRK54_3CConstantCache(T, T2)
     )   # A4 + B1 + B2 + B3
     Cᵢ = (C1, C2, C3, C4)
 
-    return LowStorageRK2RPConstantCache{4, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK2RPConstantCache(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK54_3C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK54_3CConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK2RPCache(
-        u, uprev, k, gprev, fsalfirst, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK54_3C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK54_3CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK95_4SConstantCache(T, T2)
+function CKLLSRK95_4SConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(1107026461565) // BigInt(5417078080134))
     A2 = convert(T, BigInt(38141181049399) // BigInt(41724347789894))
     A3 = convert(T, BigInt(493273079041) // BigInt(11940823631197))
@@ -3320,45 +2351,10 @@ function CKLLSRK95_4SConstantCache(T, T2)
     ) # A8 + B1 + B2 + B3 + B4 + B5 + B6 + B7
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7, C8)
 
-    return LowStorageRK2RPConstantCache{8, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK2RPConstantCache(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK95_4S, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK95_4SConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK2RPCache(
-        u, uprev, k, gprev, fsalfirst, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK95_4S, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK95_4SConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK95_4CConstantCache(T, T2)
+function CKLLSRK95_4CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(2756167973529) // BigInt(16886029417639))
     A2 = convert(T, BigInt(11436141375279) // BigInt(13592993952163))
     A3 = convert(T, BigInt(88551658327) // BigInt(2352971381260))
@@ -3429,45 +2425,10 @@ function CKLLSRK95_4CConstantCache(T, T2)
     ) # A8 + B1 + B2 + B3 + B4 + B5 + B6 + B7
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7, C8)
 
-    return LowStorageRK2RPConstantCache{8, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK2RPConstantCache(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK95_4C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK95_4CConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK2RPCache(
-        u, uprev, k, gprev, fsalfirst, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK95_4C, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK95_4CConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK95_4MConstantCache(T, T2)
+function CKLLSRK95_4MConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A1 = convert(T, BigInt(5573095071601) // BigInt(11304125995793))
     A2 = convert(T, BigInt(315581365608) // BigInt(4729744040249))
     A3 = convert(T, BigInt(8734064225157) // BigInt(30508564569118))
@@ -3538,42 +2499,7 @@ function CKLLSRK95_4MConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7, C8)
 
-    return LowStorageRK2RPConstantCache{8, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
-end
-
-function alg_cache(
-        alg::CKLLSRK95_4M, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK95_4MConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK2RPCache(
-        u, uprev, k, gprev, fsalfirst, tmp, atmp, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK95_4M, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK95_4MConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK2RPConstantCache(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
 # 3R+ low storage methods introduced by van der Houwen
@@ -3608,7 +2534,7 @@ struct LowStorageRK3RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK54_3C_3RConstantCache(T, T2)
+function CKLLSRK54_3C_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(2365592473904) // BigInt(8146167614645))
     A₁2 = convert(T, BigInt(4278267785271) // BigInt(6823155464066))
     A₁3 = convert(T, BigInt(2789585899612) // BigInt(8986505720531))
@@ -3653,48 +2579,10 @@ function CKLLSRK54_3C_3RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4)
 
-    return LowStorageRK3RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK3RPConstantCache(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK54_3C_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK54_3C_3RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK54_3C_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK54_3C_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK54_3M_3RConstantCache(T, T2)
+function CKLLSRK54_3M_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(17396840518954) // BigInt(49788467287365))
     A₁2 = convert(T, BigInt(21253110367599) // BigInt(14558944785238))
     A₁3 = convert(T, BigInt(4293647616769) // BigInt(14519312872408))
@@ -3736,48 +2624,10 @@ function CKLLSRK54_3M_3RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4)
 
-    return LowStorageRK3RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK3RPConstantCache(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK54_3M_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK54_3M_3RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK54_3M_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK54_3M_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK54_3N_3RConstantCache(T, T2)
+function CKLLSRK54_3N_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(4745337637855) // BigInt(22386579876409))
     A₁2 = convert(T, BigInt(6808157035527) // BigInt(13197844641179))
     A₁3 = convert(T, BigInt(4367509502613) // BigInt(10454198590847))
@@ -3822,48 +2672,10 @@ function CKLLSRK54_3N_3RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4)
 
-    return LowStorageRK3RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK3RPConstantCache(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK54_3N_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK54_3N_3RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK54_3N_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK54_3N_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK85_4C_3RConstantCache(T, T2)
+function CKLLSRK85_4C_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(141236061735) // BigInt(3636543850841))
     A₁2 = convert(T, BigInt(7367658691349) // BigInt(25881828075080))
     A₁3 = convert(T, BigInt(6185269491390) // BigInt(13597512850793))
@@ -3935,48 +2747,10 @@ function CKLLSRK85_4C_3RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
-    return LowStorageRK3RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK3RPConstantCache(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK85_4C_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK85_4C_3RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK85_4C_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK85_4C_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK85_4M_3RConstantCache(T, T2)
+function CKLLSRK85_4M_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(967290102210) // BigInt(6283494269639))
     A₁2 = convert(T, BigInt(852959821520) // BigInt(5603806251467))
     A₁3 = convert(T, BigInt(8043261511347) // BigInt(8583649637008))
@@ -4048,48 +2822,10 @@ function CKLLSRK85_4M_3RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
-    return LowStorageRK3RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK3RPConstantCache(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK85_4M_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK85_4M_3RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK85_4M_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK85_4M_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK85_4P_3RConstantCache(T, T2)
+function CKLLSRK85_4P_3RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(1298271176151) // BigInt(60748409385661))
     A₁2 = convert(T, BigInt(14078610000243) // BigInt(41877490110127))
     A₁3 = convert(T, BigInt(553998884433) // BigInt(1150223130613))
@@ -4161,45 +2897,7 @@ function CKLLSRK85_4P_3RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
-    return LowStorageRK3RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
-end
-
-function alg_cache(
-        alg::CKLLSRK85_4P_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK85_4P_3RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK85_4P_3R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK85_4P_3RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK3RPConstantCache(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
 # 4R+ low storage methods introduced by van der Houwen
@@ -4237,7 +2935,7 @@ struct LowStorageRK4RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK54_3N_4RConstantCache(T, T2)
+function CKLLSRK54_3N_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(9435338793489) // BigInt(32856462503258))
     A₁2 = convert(T, BigInt(6195609865473) // BigInt(14441396468602))
     A₁3 = convert(T, BigInt(7502925572378) // BigInt(28098850972003))
@@ -4288,50 +2986,10 @@ function CKLLSRK54_3N_4RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4)
 
-    return LowStorageRK4RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK4RPConstantCache(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK54_3N_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    uᵢ₋₃ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    fᵢ₋₃ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK54_3N_4RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK4RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, fᵢ₋₂, fᵢ₋₃, gprev, fsalfirst, tmp,
-        atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK54_3N_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK54_3N_4RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK54_3M_4RConstantCache(T, T2)
+function CKLLSRK54_3M_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(7142524119) // BigInt(20567653057))
     A₁2 = convert(T, BigInt(20567653057) // BigInt(89550000000))
     A₁3 = convert(T, BigInt(7407775) // BigInt(2008982))
@@ -4371,50 +3029,10 @@ function CKLLSRK54_3M_4RConstantCache(T, T2)
     C4 = convert(T2, BigInt(1) // BigInt(1))
     Cᵢ = (C1, C2, C3, C4)
 
-    return LowStorageRK4RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK4RPConstantCache(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK54_3M_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    uᵢ₋₃ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    fᵢ₋₃ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK54_3M_4RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK4RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, fᵢ₋₂, fᵢ₋₃, gprev, fsalfirst, tmp,
-        atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK54_3M_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK54_3M_4RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK65_4M_4RConstantCache(T, T2)
+function CKLLSRK65_4M_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(1811061732419) // BigInt(6538712036350))
     A₁2 = convert(T, BigInt(936386506953) // BigInt(6510757757683))
     A₁3 = convert(T, BigInt(8253430823511) // BigInt(9903985211908))
@@ -4475,50 +3093,10 @@ function CKLLSRK65_4M_4RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5)
 
-    return LowStorageRK4RPConstantCache{5, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK4RPConstantCache(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
-function alg_cache(
-        alg::CKLLSRK65_4M_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    uᵢ₋₃ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    fᵢ₋₃ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK65_4M_4RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK4RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, fᵢ₋₂, fᵢ₋₃, gprev, fsalfirst, tmp,
-        atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK65_4M_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK65_4M_4RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function CKLLSRK85_4FM_4RConstantCache(T, T2)
+function CKLLSRK85_4FM_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(319960152914) // BigInt(39034091721739))
     A₁2 = convert(T, BigInt(16440040368765) // BigInt(7252463661539))
     A₁3 = convert(T, BigInt(1381950791880) // BigInt(6599155371617))
@@ -4599,50 +3177,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
-    return LowStorageRK4RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
-end
-
-function alg_cache(
-        alg::CKLLSRK85_4FM_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    k = zero(rate_prototype)
-    uᵢ₋₁ = zero(u)
-    uᵢ₋₂ = zero(u)
-    uᵢ₋₃ = zero(u)
-    fᵢ₋₂ = zero(rate_prototype)
-    fᵢ₋₃ = zero(rate_prototype)
-    gprev = zero(u)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = CKLLSRK85_4FM_4RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK4RPCache(
-        u, uprev, k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, fᵢ₋₂, fᵢ₋₃, gprev, fsalfirst, tmp,
-        atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::CKLLSRK85_4FM_4R, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK85_4FM_4RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
+    return LowStorageRK4RPConstantCache(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
 
 # 5R+ low storage methods introduced by van der Houwen
@@ -4683,7 +3218,7 @@ struct LowStorageRK5RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
     Cᵢ::NTuple{N, T2}
 end
 
-function CKLLSRK75_4M_5RConstantCache(T, T2)
+function CKLLSRK75_4M_5RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁1 = convert(T, BigInt(984894634849) // BigInt(6216792334776))
     A₁2 = convert(T, BigInt(984894634849) // BigInt(5526037630912))
     A₁3 = convert(T, BigInt(13256335809797) // BigInt(10977774807827))
@@ -4762,11 +3297,373 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     )
     Cᵢ = (C1, C2, C3, C4, C5, C6)
 
-    return LowStorageRK5RPConstantCache{6, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+    return LowStorageRK5RPConstantCache(Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
+end
+
+# ===== Unified alg_cache methods for the 9 generic LowStorageRK cache classes =====
+
+# --- LowStorageRK2N ---
+const LowStorageRK2NAlgorithm = Union{
+    ORK256, CarpenterKennedy2N54, SHLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F,
+    NDBLSRK124, NDBLSRK134, NDBLSRK144,
+}
+
+_lowstorage_2n_tableau(::ORK256, ::Type{T}, ::Type{T2}) where {T, T2} = ORK256ConstantCache(T, T2)
+_lowstorage_2n_tableau(::CarpenterKennedy2N54, ::Type{T}, ::Type{T2}) where {T, T2} = CarpenterKennedy2N54ConstantCache(T, T2)
+_lowstorage_2n_tableau(::SHLDDRK64, ::Type{T}, ::Type{T2}) where {T, T2} = SHLDDRK64ConstantCache(T, T2)
+_lowstorage_2n_tableau(::DGLDDRK73_C, ::Type{T}, ::Type{T2}) where {T, T2} = DGLDDRK73_CConstantCache(T, T2)
+_lowstorage_2n_tableau(::DGLDDRK84_C, ::Type{T}, ::Type{T2}) where {T, T2} = DGLDDRK84_CConstantCache(T, T2)
+_lowstorage_2n_tableau(::DGLDDRK84_F, ::Type{T}, ::Type{T2}) where {T, T2} = DGLDDRK84_FConstantCache(T, T2)
+_lowstorage_2n_tableau(::NDBLSRK124, ::Type{T}, ::Type{T2}) where {T, T2} = NDBLSRK124ConstantCache(T, T2)
+_lowstorage_2n_tableau(::NDBLSRK134, ::Type{T}, ::Type{T2}) where {T, T2} = NDBLSRK134ConstantCache(T, T2)
+_lowstorage_2n_tableau(::NDBLSRK144, ::Type{T}, ::Type{T2}) where {T, T2} = NDBLSRK144ConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK2NAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = _lowstorage_2n_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tmp = zero(u)
+    williamson_condition = alg.williamson_condition
+    if calck
+        k = zero(rate_prototype)
+        williamson_condition = false
+    else
+        if williamson_condition
+            k = tmp
+        else
+            k = zero(rate_prototype)
+        end
+    end
+    return LowStorageRK2NCache(
+        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
 end
 
 function alg_cache(
-        alg::CKLLSRK75_4M_5R, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::LowStorageRK2NAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_2n_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK2C ---
+const LowStorageRK2CAlgorithm = Union{CFRLDDRK64, TSLDDRK74}
+
+_lowstorage_2c_tableau(::CFRLDDRK64, ::Type{T}, ::Type{T2}) where {T, T2} = CFRLDDRK64ConstantCache(T, T2)
+_lowstorage_2c_tableau(::TSLDDRK74, ::Type{T}, ::Type{T2}) where {T, T2} = TSLDDRK74ConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK2CAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    tab = _lowstorage_2c_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK2CCache(
+        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK2CAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_2c_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK3S ---
+const LowStorageRK3SAlgorithm = Union{
+    ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
+    ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
+    ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
+    ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+}
+
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S32, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S82, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S53, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S173, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S94, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S184, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S105, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
+_lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S205, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK3SAlgorithm, u, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    tab = _lowstorage_3s_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK3SCache(
+        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK3SAlgorithm, u, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_3s_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK3Sp ---
+const LowStorageRK3SpAlgorithm = Union{RDPK3Sp35, RDPK3Sp49, RDPK3Sp510}
+
+_lowstorage_3sp_tableau(::RDPK3Sp35, ::Type{T}, ::Type{T2}) where {T, T2} = RDPK3Sp35ConstantCache(T, T2)
+_lowstorage_3sp_tableau(::RDPK3Sp49, ::Type{T}, ::Type{T2}) where {T, T2} = RDPK3Sp49ConstantCache(T, T2)
+_lowstorage_3sp_tableau(::RDPK3Sp510, ::Type{T}, ::Type{T2}) where {T, T2} = RDPK3Sp510ConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK3SpAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    utilde = zero(u)
+    tmp = zero(u)
+    if eltype(u) === uEltypeNoUnits
+        atmp = utilde # alias the vectors to save memory
+    else
+        atmp = similar(u, uEltypeNoUnits)
+        recursivefill!(atmp, false)
+    end
+    tab = _lowstorage_3sp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK3SpCache(
+        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK3SpAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_3sp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK3SpFSAL ---
+const LowStorageRK3SpFSALAlgorithm = Union{RDPK3SpFSAL35, RDPK3SpFSAL49, RDPK3SpFSAL510}
+
+_lowstorage_3spfsal_tableau(::RDPK3SpFSAL35, ::Type{T}, ::Type{T2}) where {T, T2} = RDPK3SpFSAL35ConstantCache(T, T2)
+_lowstorage_3spfsal_tableau(::RDPK3SpFSAL49, ::Type{T}, ::Type{T2}) where {T, T2} = RDPK3SpFSAL49ConstantCache(T, T2)
+_lowstorage_3spfsal_tableau(::RDPK3SpFSAL510, ::Type{T}, ::Type{T2}) where {T, T2} = RDPK3SpFSAL510ConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK3SpFSALAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k = zero(rate_prototype)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    utilde = zero(u)
+    tmp = zero(u)
+    if eltype(u) === uEltypeNoUnits
+        atmp = utilde # alias the vectors to save memory
+    else
+        atmp = similar(u, uEltypeNoUnits)
+        recursivefill!(atmp, false)
+    end
+    tab = _lowstorage_3spfsal_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK3SpFSALCache(
+        u, uprev, fsalfirst, k, utilde, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK3SpFSALAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_3spfsal_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK2RP ---
+const LowStorageRK2RPAlgorithm = Union{
+    CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M,
+}
+
+_lowstorage_2rp_tableau(::CKLLSRK43_2, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK43_2ConstantCache(T, T2)
+_lowstorage_2rp_tableau(::CKLLSRK54_3C, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK54_3CConstantCache(T, T2)
+_lowstorage_2rp_tableau(::CKLLSRK95_4S, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK95_4SConstantCache(T, T2)
+_lowstorage_2rp_tableau(::CKLLSRK95_4C, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK95_4CConstantCache(T, T2)
+_lowstorage_2rp_tableau(::CKLLSRK95_4M, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK95_4MConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK2RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    k = zero(rate_prototype)
+    gprev = zero(u)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    tab = _lowstorage_2rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK2RPCache(
+        u, uprev, k, gprev, fsalfirst, tmp, atmp, tab, alg.stage_limiter!,
+        alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK2RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_2rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK3RP ---
+const LowStorageRK3RPAlgorithm = Union{
+    CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R,
+    CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
+}
+
+_lowstorage_3rp_tableau(::CKLLSRK54_3C_3R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK54_3C_3RConstantCache(T, T2)
+_lowstorage_3rp_tableau(::CKLLSRK54_3M_3R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK54_3M_3RConstantCache(T, T2)
+_lowstorage_3rp_tableau(::CKLLSRK54_3N_3R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK54_3N_3RConstantCache(T, T2)
+_lowstorage_3rp_tableau(::CKLLSRK85_4C_3R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK85_4C_3RConstantCache(T, T2)
+_lowstorage_3rp_tableau(::CKLLSRK85_4M_3R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK85_4M_3RConstantCache(T, T2)
+_lowstorage_3rp_tableau(::CKLLSRK85_4P_3R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK85_4P_3RConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK3RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    k = zero(rate_prototype)
+    uᵢ₋₁ = zero(u)
+    uᵢ₋₂ = zero(u)
+    fᵢ₋₂ = zero(rate_prototype)
+    gprev = zero(u)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    tab = _lowstorage_3rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK3RPCache(
+        u, uprev, k, uᵢ₋₁, uᵢ₋₂, fᵢ₋₂, gprev, fsalfirst, tmp, atmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK3RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_3rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK4RP ---
+const LowStorageRK4RPAlgorithm = Union{
+    CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R,
+}
+
+_lowstorage_4rp_tableau(::CKLLSRK54_3N_4R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK54_3N_4RConstantCache(T, T2)
+_lowstorage_4rp_tableau(::CKLLSRK54_3M_4R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK54_3M_4RConstantCache(T, T2)
+_lowstorage_4rp_tableau(::CKLLSRK65_4M_4R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK65_4M_4RConstantCache(T, T2)
+_lowstorage_4rp_tableau(::CKLLSRK85_4FM_4R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK85_4FM_4RConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK4RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    k = zero(rate_prototype)
+    uᵢ₋₁ = zero(u)
+    uᵢ₋₂ = zero(u)
+    uᵢ₋₃ = zero(u)
+    fᵢ₋₂ = zero(rate_prototype)
+    fᵢ₋₃ = zero(rate_prototype)
+    gprev = zero(u)
+    if calck
+        fsalfirst = zero(rate_prototype)
+    else
+        fsalfirst = k
+    end
+    tab = _lowstorage_4rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return LowStorageRK4RPCache(
+        u, uprev, k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, fᵢ₋₂, fᵢ₋₃, gprev, fsalfirst, tmp,
+        atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
+    )
+end
+
+function alg_cache(
+        alg::LowStorageRK4RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return _lowstorage_4rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+# --- LowStorageRK5RP ---
+const LowStorageRK5RPAlgorithm = Union{CKLLSRK75_4M_5R}
+
+_lowstorage_5rp_tableau(::CKLLSRK75_4M_5R, ::Type{T}, ::Type{T2}) where {T, T2} = CKLLSRK75_4M_5RConstantCache(T, T2)
+
+function alg_cache(
+        alg::LowStorageRK5RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}, verbose
@@ -4788,10 +3685,7 @@ function alg_cache(
     else
         fsalfirst = k
     end
-    tab = CKLLSRK75_4M_5RConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
+    tab = _lowstorage_5rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return LowStorageRK5RPCache(
         u, uprev, k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, fᵢ₋₂, fᵢ₋₃, fᵢ₋₄, gprev,
         fsalfirst, tmp, atmp, tab, alg.stage_limiter!, alg.step_limiter!,
@@ -4800,10 +3694,10 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::CKLLSRK75_4M_5R, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::LowStorageRK5RPAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return CKLLSRK75_4M_5RConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return _lowstorage_5rp_tableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end

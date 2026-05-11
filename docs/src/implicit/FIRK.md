@@ -17,8 +17,8 @@ FIRK methods provide:
   - **Highest-order implicit methods** (excluding extrapolation)
   - **Superior accuracy** for very low tolerance requirements (≤ 1e-9)
   - **A-stable and L-stable** behavior for stiff problems
-  - **Higher order per stage** than SDIRK methods (order 2s+1 for s stages)
-  - **Special geometric properties** (some methods are symplectic)
+  - **Higher order per stage** than SDIRK methods (order 2s or 2s-1 for s stages)
+  - **Geometric properties** can be displayed by some methods in certain cases
   - **Excellent for small to medium systems** with high accuracy requirements
 
 ## When to Use FIRK Methods
@@ -33,7 +33,9 @@ These methods are recommended for:
 
 ## Mathematical Background
 
-RadauIIA methods are based on Gaussian collocation and achieve order 2s+1 for s stages, making them among the highest-order implicit methods available. They represent the ODE analog of Gaussian quadrature. For more details on recent advances in FIRK methods, see our paper: [High-Order Adaptive Time Stepping for the Incompressible Navier-Stokes Equations](https://arxiv.org/abs/2412.14362).
+RadauIIA methods are based on Gaussian collocation and achieve order 2s-1 for s stages, making them among the highest-order implicit methods available. They represent the ODE analog of Gaussian quadrature with a fixed right node (Gauss-Radau). They are L-stable, meaning they are stiffly accurate and handle large negative eigenvalues/stiffness ratios. For more details on recent advances in FIRK methods, see our paper: [High-Order Adaptive Time Stepping for the Incompressible Navier-Stokes Equations](https://arxiv.org/abs/2412.14362).
+
+Gauss–Legendre methods use the roots of the Legendre polynomial directly as collocation points and achieve an order of 2s, the highest order IRK available. They are also A-stable, symmetric, and can be symplectic in certain usages. They conserve energy within the system but are not L-Stable like Radau, which means they preserve oscilations instead of damping. 
 
 ## Computational Considerations
 
@@ -56,6 +58,7 @@ RadauIIA methods are based on Gaussian collocation and achieve order 2s+1 for s 
   - **`RadauIIA5`**: 5th-order method, good balance of accuracy and efficiency
   - **`RadauIIA9`**: 9th-order method for extremely high accuracy requirements
   - **`RadauIIA3`**: 3rd-order method for moderate accuracy needs
+  - **`GaussLegendre`**: 2s order method for high accuracy in nonstiff or conservative problems
 
 ### System size considerations
 
@@ -81,4 +84,5 @@ RadauIIA3
 RadauIIA5
 RadauIIA9
 AdaptiveRadau
+GaussLegendre
 ```

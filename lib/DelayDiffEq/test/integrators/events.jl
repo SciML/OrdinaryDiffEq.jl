@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary, DiffEqDevTools, DiffEqCallbacks
 using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqVerner
 using Test
 
 const prob = prob_dde_constant_1delay_scalar
@@ -92,4 +93,29 @@ end
     @test sol.retcode == ReturnCode.Success
     # Should be triggered approximately 10 times (at t=1,2,3,...,10)
     @test counter[] >= 9
+end
+
+# Issue SciML/DifferentialEquations.jl#1124: PresetTimeCallback was skipped when
+# a propagated-discontinuity tstop drifted (by float roundoff from compounded
+# constant lags) to within 10*eps of the user tstop. The discontinuity-handling
+# cleanup eagerly popped *any* nearby tstop, swallowing the user's preset tstop
+# along with the propagated one. Vern9 is used because the order-7 path
+# `5*0.2 + 2*4 = 9.0` is below Vern9's order-tracking limit but above Tsit5's,
+# so propagation reaches the collision time on this trivial problem.
+@testset "preset time callback near propagated discontinuity (#1124)" begin
+    f(du, u, h, p, t) = (du .= 0)
+    h(p, t) = [0.0]
+
+    fired = Ref(0)
+    preset = PresetTimeCallback([9.0], integ -> (fired[] += 1))
+
+    prob = DDEProblem(
+        f, [0.0], h, (0.0, 12.0);
+        constant_lags = [0.2, 4.0], callback = preset
+    )
+
+    sol = solve(prob, MethodOfSteps(Vern9()))
+    @test sol.retcode == ReturnCode.Success
+    @test fired[] == 1
+    @test 9.0 in sol.t
 end

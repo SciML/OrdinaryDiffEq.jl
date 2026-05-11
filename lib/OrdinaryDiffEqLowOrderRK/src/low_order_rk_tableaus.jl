@@ -106,7 +106,7 @@ function OwrenZen3ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFl
     )
 end
 
-function OwrenZen3ConstantCache(T, T2)
+function OwrenZen3ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 12 // 23)
     a31 = convert(T, -68 // 375)
     a32 = convert(T, 368 // 375)
@@ -222,7 +222,7 @@ function OwrenZen4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFl
     )
 end
 
-function OwrenZen4ConstantCache(T, T2)
+function OwrenZen4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 1 // 6)
     a31 = convert(T, 44 // 1369)
     a32 = convert(T, 363 // 1369)
@@ -425,7 +425,7 @@ function OwrenZen5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFl
     )
 end
 
-function OwrenZen5ConstantCache(T, T2)
+function OwrenZen5ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 1 // 6)
     a31 = convert(T, 1 // 16)
     a32 = convert(T, 3 // 16)
@@ -1202,7 +1202,7 @@ end
 end
 
 #=
-function DP5_dense_bs(T)
+function DP5_dense_bs(::Type{T}) where {T}
   b1  = convert(T,5179//57600)
   b3  = convert(T,7571//16695)
   b4  = convert(T,393//640)
@@ -1278,7 +1278,7 @@ function Anas5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
     )
 end
 
-function Anas5ConstantCache(T, T2)
+function Anas5ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 1 // 10)
     a31 = convert(T, -2 // 9)
     a32 = convert(T, 5 // 9)
@@ -1839,7 +1839,7 @@ struct Alshina2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c2::T2
 end
 
-function Alshina2ConstantCache(T, T2)
+function Alshina2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 0.6666666666666666)
 
     b1 = convert(T, 0.25)
@@ -1865,7 +1865,7 @@ struct Alshina3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c3::T2
 end
 
-function Alshina3ConstantCache(T, T2)
+function Alshina3ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 0.5)
     # a31 = convert(T, 0.0)
     a32 = convert(T, 0.75)
@@ -1920,7 +1920,7 @@ struct Alshina6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c7::T2
 end
 
-function Alshina6ConstantCache(T, T2)
+function Alshina6ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 0.5714285714285714)
     a31 = convert(T, 1.0267857142857142)
     a32 = convert(T, -0.3125)
@@ -1980,7 +1980,7 @@ struct Ralston4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     b4::T
 end
 
-function Ralston4ConstantCache(T, T2)
+function Ralston4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     s5 = sqrt(convert(T, 5))
     b1 = (263 + 24 * s5) / 1812
     b4 = (30 - 4 * s5) / 123

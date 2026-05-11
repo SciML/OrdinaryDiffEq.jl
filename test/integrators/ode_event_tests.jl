@@ -121,7 +121,7 @@ end
 
 affect! = function (integrator, events)
     for (idx, dir) in enumerate(events)
-        if dir == 1 && idx == 1 # downcrossing
+        if dir == -1 && idx == 1 # downcrossing
             integrator.u[2] = -integrator.u[2]
         end
     end
@@ -172,7 +172,7 @@ end
 
 affect! = function (integrator, events)
     for (idx, dir) in enumerate(events)
-        if dir == 1 && idx == 1 # downcrossing
+        if dir == -1 && idx == 1 # downcrossing
             integrator.u[2] = -integrator.u[2]
         end
     end
@@ -324,7 +324,7 @@ end
 
 vaffect2! = function (integrator, events)
     for (idx, dir) in enumerate(events)
-        if dir == 1 && idx == 1 # downcrossing
+        if dir == -1 && idx == 1 # downcrossing
             if integrator.t >= 3.5
                 terminate!(integrator)
             else
@@ -658,4 +658,56 @@ end
     # region (t=0.00128 to t=0.00135) instead of going negative without a callback.
     @test abs(sol(0.00128)[1]) < 0.01
     @test abs(sol(0.00135)[1]) < 0.01
+end
+
+# Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/3594
+# `simultaneous_events[i]` must report +1 for upcrossings (negative→positive)
+# and -1 for downcrossings (positive→negative).
+@testset "VectorContinuousCallback crossing-direction sign (#3594)" begin
+    function rhs_3594!(du, u, p, t)
+        du[1] = -sin(t)
+        du[2] = -3sin(3t)
+        return
+    end
+    function cond_3594(out, u, t, integ)
+        out[1] = u[1]
+        out[2] = u[2]
+        return
+    end
+
+    # Roots of u[1] = cos(t) and u[2] = cos(3t) on (0, π):
+    #   u[1]: t = π/2  (1 → -1, downcrossing)
+    #   u[2]: t = π/6  (1 → -1, downcrossing)
+    #         t = π/2  (-1 → 1, upcrossing)
+    #         t = 5π/6 (1 → -1, downcrossing)
+    crossings = Tuple{Int, Int, Float64}[]  # (idx, dir, t)
+    function aff_3594!(integ, evts)
+        for (idx, dir) in enumerate(evts)
+            iszero(dir) && continue
+            push!(crossings, (idx, Int(dir), integ.t))
+        end
+        return
+    end
+
+    prob = ODEProblem(rhs_3594!, ones(2), (0.0, Float64(π)))
+    cb = VectorContinuousCallback(cond_3594, aff_3594!, 2)
+    solve(prob, Tsit5(); callback = cb)
+
+    # Find each expected crossing and check its reported direction.
+    # u[2] downcrossing near t = π/6
+    e1 = findfirst(((idx, _, t),) -> idx == 2 && abs(t - π / 6) < 1.0e-2, crossings)
+    @test e1 !== nothing
+    @test crossings[e1][2] == -1
+    # u[2] upcrossing near t = π/2
+    e2 = findfirst(((idx, _, t),) -> idx == 2 && abs(t - π / 2) < 1.0e-2, crossings)
+    @test e2 !== nothing
+    @test crossings[e2][2] == +1
+    # u[1] downcrossing near t = π/2
+    e3 = findfirst(((idx, _, t),) -> idx == 1 && abs(t - π / 2) < 1.0e-2, crossings)
+    @test e3 !== nothing
+    @test crossings[e3][2] == -1
+    # u[2] downcrossing near t = 5π/6
+    e4 = findfirst(((idx, _, t),) -> idx == 2 && abs(t - 5π / 6) < 1.0e-2, crossings)
+    @test e4 !== nothing
+    @test crossings[e4][2] == -1
 end

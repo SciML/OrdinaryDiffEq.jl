@@ -3,7 +3,7 @@ struct SymplecticTableau{aType, bType} <: HamiltonConstantCache
     b::bType
 end
 
-function PseudoVerletLeapfrogConstantCache(T, T2)
+function PseudoVerletLeapfrogConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a1 = convert(T, 1)
     a2 = convert(T, 0)
     b1 = convert(T, 1 // 2)
@@ -11,7 +11,7 @@ function PseudoVerletLeapfrogConstantCache(T, T2)
     return SymplecticTableau((a1, a2), (b1, b2))
 end
 
-function McAte2ConstantCache(T, T2)
+function McAte2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a2 = convert(T, 1 - (1 / 2) * sqrt(convert(T, 2)))
     a1 = convert(T, 1 - a2)
     b2 = convert(T, 1 / (2 * (1 - a2)))
@@ -19,7 +19,7 @@ function McAte2ConstantCache(T, T2)
     return SymplecticTableau((a1, a2), (b1, b2))
 end
 
-function Ruth3ConstantCache(T, T2)
+function Ruth3ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a1 = convert(T, 2 // 3)
     a2 = convert(T, -2 // 3)
     a3 = convert(T, 1)
@@ -29,7 +29,7 @@ function Ruth3ConstantCache(T, T2)
     return SymplecticTableau((a1, a2, a3), (b1, b2, b3))
 end
 
-function McAte3ConstantCache(T, T2)
+function McAte3ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a1 = convert(T, 0.9196615230173999)
     a2 = convert(T, 0.25 / a1 - a1 / 2)
     a3 = convert(T, 1 - a1 - a2)
@@ -39,7 +39,7 @@ function McAte3ConstantCache(T, T2)
     return SymplecticTableau((a1, a2, a3), (b1, b2, b3))
 end
 
-function CandyRoz4ConstantCache(T, T2)
+function CandyRoz4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a1 = convert(T, (2 + T(2)^(1 // 3) + convert(T, 2)^(-1 // 3)) / 6)
     a2 = convert(T, (1 - T(2)^(1 // 3) - convert(T, 2)^(-1 // 3)) / 6)
     a3 = convert(T, a2)
@@ -75,7 +75,7 @@ function McAte4ConstantCache(T::Type, T2::Type)
     return SymplecticTableau((a1, a2, a3, a4), (b1, b2, b3, b4))
 end
 
-function CalvoSanz4ConstantCache(T, T2)
+function CalvoSanz4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a1 = convert(T, 0.20517766154229)
     a2 = convert(T, 0.40302128160421)
     a3 = -convert(T, 0.12092087633891)
@@ -152,7 +152,7 @@ function McAte5ConstantCache(T::Type, T2::Type)
     return SymplecticTableau((a1, a2, a3, a4, a5, a6), (b1, b2, b3, b4, b5, b6))
 end
 
-function Yoshida6ConstantCache(T, T2)
+function Yoshida6ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a1 = convert(T, 0.78451361047756)
     a2 = convert(T, 0.23557321335936)
     a3 = convert(T, -1.1776799841789)

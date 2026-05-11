@@ -22,7 +22,7 @@ struct RoesslerRI{T, T2} <: Tableau
     quantile::T
 end
 
-function constructDRI1(T = Float64, T2 = Float64)
+function constructDRI1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1 // 2; 1]
     c₁ = [0; 342 // 491; 342 // 491]
     c₂ = [0; 0; 0]
@@ -72,7 +72,7 @@ function constructDRI1(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI1(T = Float64, T2 = Float64)
+function constructRI1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 2 // 3; 2 // 3]
     c₁ = [0; 1; 1]
     c₂ = [0; 0; 0]
@@ -122,7 +122,7 @@ function constructRI1(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI3(T = Float64, T2 = Float64)
+function constructRI3(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 1 // 2]
     c₁ = [0; 1; 1]
     c₂ = [0; 0; 0]
@@ -172,7 +172,7 @@ function constructRI3(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI5(T = Float64, T2 = Float64)
+function constructRI5(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 5 // 12]
     c₁ = [0; 1 // 4; 1 // 4]
     c₂ = [0; 0; 0]
@@ -222,7 +222,7 @@ function constructRI5(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI6(T = Float64, T2 = Float64)
+function constructRI6(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 0]
     c₁ = [0; 1; 1]
     c₂ = [0; 0; 0]
@@ -272,7 +272,7 @@ function constructRI6(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI1WM(T = Float64, T2 = Float64)
+function constructRDI1WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 2 // 3]
     c₁ = [0; 0]
     c₂ = [0; 0]
@@ -316,7 +316,7 @@ function constructRDI1WM(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI2WM(T = Float64, T2 = Float64)
+function constructRDI2WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 0]
     c₁ = [0; 2 // 3; 2 // 3]
     c₂ = [0; 0; 0]
@@ -366,7 +366,7 @@ function constructRDI2WM(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI3WM(T = Float64, T2 = Float64)
+function constructRDI3WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1 // 2; 3 // 4]
     c₁ = [0; 2 // 3; 2 // 3]
     c₂ = [0; 0; 0]
@@ -416,7 +416,7 @@ function constructRDI3WM(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI4WM(T = Float64, T2 = Float64)
+function constructRDI4WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1 // 2; 1]
     c₁ = [0; 2 // 3; 2 // 3]
     c₂ = [0; 0; 0]
@@ -566,7 +566,7 @@ struct RoesslerRS{T, T2} <: Tableau
     quantile::T
 end
 
-function constructRS1(T = Float64, T2 = Float64)
+function constructRS1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 0; 1; 0]
     c₁ = [0; 0; 1; 1]
     c₂ = [0; 0; 0; 0]
@@ -626,7 +626,7 @@ function constructRS1(T = Float64, T2 = Float64)
     )
 end
 
-function constructRS2(T = Float64, T2 = Float64)
+function constructRS2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 2 // 3; 2 // 3; 0]
     c₁ = [0; 0; 1; 1]
     c₂ = [0; 0; 0; 0]
@@ -783,7 +783,7 @@ struct KomoriNON{T} <: Tableau
     quantile::T
 end
 
-function constructNON(T = Float64)
+function constructNON(::Type{T} = Float64) where {T}
     c0 = [1 // 6; 1 // 3; 1 // 3; 1 // 6]
     cj = [1 // 8; 3 // 8; 3 // 8; 1 // 8]
     cjl = [0; 1 // 2; -1 // 2; 0]
@@ -934,7 +934,7 @@ struct KomoriNON2{T} <: Tableau
     quantile::T
 end
 
-function constructNON2(T = Float64)
+function constructNON2(::Type{T} = Float64) where {T}
     # gamma is a free parameter
     γ = 1
     c0 = [1 // 6; 1 // 3; 1 // 3; 1 // 6]
