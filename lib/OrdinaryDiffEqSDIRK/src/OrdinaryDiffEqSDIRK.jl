@@ -38,6 +38,7 @@ include("kencarp_kvaerno_perform_step.jl")
 include("sdirk_tableaus.jl")
 include("imex_tableaus.jl")
 include("generic_imex_perform_step.jl")
+include("generic_sdirk_perform_step.jl")
 
 export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
     Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
