@@ -79,6 +79,11 @@ function SDIRK_docstring(
     )
 end
 
+abstract type OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ} <:
+    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ} end
+abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ} end
+
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
@@ -697,7 +702,7 @@ end
     """
 )
 struct SFSDIRK4{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -746,7 +751,7 @@ end
     """
 )
 struct SFSDIRK5{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -796,7 +801,7 @@ end
     """
 )
 struct SFSDIRK6{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -846,7 +851,7 @@ end
     """
 )
 struct SFSDIRK7{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -896,7 +901,7 @@ end
     """
 )
 struct SFSDIRK8{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -944,7 +949,7 @@ end
     """
 )
 struct Hairer4{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
@@ -990,7 +995,7 @@ end
     """
 )
 struct Hairer42{CS, AD, F, F2, P, FDT, ST, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
