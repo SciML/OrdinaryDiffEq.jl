@@ -98,7 +98,17 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     cache.consfailcnt += 1
     cache.nconsteps = 0
 
-    discontinuity_detection = integrator.controller_cache.discontinuity_detection
+    controller_cache = integrator.controller_cache
+    discontinuity_detection = false
+    if controller_cache isa OrdinaryDiffEqCore.DummyControllerCache
+        discontinuity_detection = controller_cache.discontinuity_detection
+    elseif controller_cache isa OrdinaryDiffEqCore.CompositeControllerCache
+        current_idx = integrator.cache.current
+        discontinuity_detection = controller_cache.caches[current_idx].controller.discontinuity_detection
+    else
+        discontinuity_detection = controller_cache.controller.discontinuity_detection
+    end
+
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
         if disco_dt != -1
