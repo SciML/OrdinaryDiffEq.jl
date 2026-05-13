@@ -43,8 +43,8 @@ function find_discontinuity(u, uprev, integrator, cache)
         disco_zero.p = p
         if (i isa VectorContinuousCallback)
             len_cb = i.len
-            out_prev = similar(u)
-            out_curr = similar(u)
+            out_prev = similar(u, len_cb)
+            out_curr = similar(u, len_cb)
             i.condition(out_prev, uprev, t, integrator)
             i.condition(out_curr, u, t + dt, integrator)
             for j in 1:len_cb
