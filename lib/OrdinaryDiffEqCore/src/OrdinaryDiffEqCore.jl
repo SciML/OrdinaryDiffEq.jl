@@ -91,7 +91,8 @@ using SciMLLogging: SciMLLogging, @SciMLMessage, AbstractVerbositySpecifier, Abs
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
     CustomLevel, AbstractMessageLevel
 
-using SymbolicIndexingInterface: state_values, parameter_values
+using SymbolicIndexingInterface: state_values
+import SymbolicIndexingInterface: parameter_values
 
 using ConcreteStructs: @concrete
 

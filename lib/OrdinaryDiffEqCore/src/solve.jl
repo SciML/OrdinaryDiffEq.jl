@@ -34,6 +34,8 @@ mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType
     p::ParameterType
 end
 
+parameter_values(z::zero_func_struct) = z.p
+
 function (z::zero_func_struct)(θ, p)
     _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
@@ -669,7 +671,7 @@ Base.@constprop :aggressive function _ode_init(
         if i.maybe_discontinuity
             u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
             out = if i isa VectorContinuousCallback
-                (u isa AbstractArray) ? similar(u) : zero(u)
+                (u isa AbstractArray) ? similar(u, i.len) : zero(u)
             else
                 nothing
             end

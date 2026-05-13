@@ -208,9 +208,10 @@ radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abs
 function f!(du, u, p, t)
     du[1] = -u[1]
     du[2] =  0.2*u[1] - 0.1*u[2]
+    du[3] = 0.1*u[2] - 0.1*u[3]
 end
 
-u0    = [3.0, 0.0]
+u0    = [3.0, 0.0, -2.0]
 tspan = (0.0, 10.0)
 prob  = ODEProblem(f!, u0, tspan)
 
