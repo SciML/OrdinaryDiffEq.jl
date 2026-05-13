@@ -870,7 +870,7 @@ function Hairer4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     btilde2 = convert(T, 27 // 32) # bhat2-a52
     btilde3 = convert(T, -25 // 32) # bhat3-a53
     btilde4 = convert(T, 0) # bhat4-a54
-    btilde5 = -γ
+    btilde5 = convert(T, -γ)
 
     #=
     d11 = convert(T,61//27)
@@ -1016,7 +1016,7 @@ function Hairer42Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     btilde2 = convert(T, 9740224 // 15662025) # bhat2-a52
     btilde3 = convert(T, -46144 // 4704885) # bhat3-a53
     btilde4 = convert(T, -13169581145812 // 11648570881965) # bhat4-a54
-    btilde5 = -γ
+    btilde5 = convert(T, -γ)
 
     #=
     d11 = convert(T,24.74416644927758)
@@ -1136,7 +1136,7 @@ function Kvaerno4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     btilde2 = convert(T, -0.494208893625092) # a42 - a52
     btilde3 = convert(T, 0.221934499759553) # a43 - a53
     btilde4 = convert(T, 0.762766412610444) # γ - a54
-    btilde5 = -γ
+    btilde5 = convert(T, -γ)
     c3 = convert(T2, 0.468238744853136)
     c4 = convert(T2, 1)
     α21 = convert(T2, 2) # c2/γ
