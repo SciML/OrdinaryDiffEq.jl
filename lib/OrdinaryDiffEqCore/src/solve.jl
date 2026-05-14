@@ -676,7 +676,8 @@ Base.@constprop :aggressive function _ode_init(
                 nothing
             end
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, f, tprev, p)
-            disco_probs[idx] = IntervalNonlinearProblem(zero_func, [zero(tType), one(tType)], p)
+            zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, Any}}(zero_func)
+            disco_probs[idx] = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
             idx += 1
         end
     end

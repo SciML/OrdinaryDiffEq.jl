@@ -30,7 +30,7 @@ function find_discontinuity(u, uprev, integrator, cache)
             continue 
         end
         disco_prob = integrator.disco_probs[idx]
-        disco_zero = disco_prob.f.f
+        disco_zero = disco_prob.f.f.obj.x
         disco_zero.dt = dt
         disco_zero.uprev = uprev
         disco_zero.u = u

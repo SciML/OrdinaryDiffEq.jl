@@ -68,6 +68,8 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., Serial, Threaded
 
+using FunctionWrappers: FunctionWrapper
+
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
 
