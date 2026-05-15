@@ -15,16 +15,23 @@ struct ESDIRKIMEXTableau{T, T2}
     explicit_first_stage::Bool  # true = Ai[1,1]=0, ESDIRK structure, z[1]=dt*fsalfirst; false = stage 1 needs nlsolve
     fsal::Bool                  # true = last stage of step n equals first stage of step n+1 (step-to-step reuse)
     stiffly_accurate::Bool      # true = b == Ai[s,:] so u = tmp+γ*z[s]; false = compute u = uprev + sum(bi*zi)
+    explicit_fsallast::Bool     # true = call f(u,p,t+fsallast_c*dt) for fsallast; false = use z[s]/dt
+    fsallast_c::T2              # coefficient for fsallast time: 0 = t, 1 = t+dt (only when explicit_fsallast=true)
+    const_stage_guess::Vector{T2}  # per-stage constant fill for initial z guess; 0 = use α mechanism
+    stage1_extrapolation::Bool  # true = use alg.extrapolant for stage 1 initial guess; false = always zero
 end
 
 # Outer constructor with defaults so existing call sites need no change (all IMEX/ESDIRK have both flags true)
 function ESDIRKIMEXTableau(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
-        nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true
+        nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true,
+        explicit_fsallast = false, fsallast_c = one(eltype(c)),
+        const_stage_guess = zeros(eltype(c), s), stage1_extrapolation = true
     )
     return ESDIRKIMEXTableau{eltype(bi), eltype(c)}(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
-        nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate
+        nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate, explicit_fsallast,
+        fsallast_c, const_stage_guess, stage1_extrapolation
     )
 end
 
@@ -2057,7 +2064,8 @@ function SDIRK2ESDIRKIMEXTableau(T, T2)
     c = T2[one(T2), zero(T2)]
     return ESDIRKIMEXTableau(
         Ai, bi, zeros(T, s, s), zeros(T, s), c, btilde, T[], Vector{T2}[],
-        2, s, true, zeros(Int, s), one(T2); explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        2, s, true, zeros(Int, s), one(T2); explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = zero(T2)
     )
 end
 
@@ -2103,7 +2111,8 @@ function Cash4ESDIRKIMEXTableau(alg::Cash4, T, T2)
     α[5][4] = convert(T2, tab.b4hat2)
     return ESDIRKIMEXTableau(
         Ai, bi, zeros(T, s, s), zeros(T, s), c, btilde, T[], α,
-        4, s, true, zeros(Int, s), tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = true
+        4, s, true, zeros(Int, s), tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = true,
+        stage1_extrapolation = false
     )
 end
 
@@ -2138,7 +2147,8 @@ function ImplicitMidpointESDIRKIMEXTableau(T, T2)
     c = T2[γ]
     return ESDIRKIMEXTableau(
         Ai, bi, zeros(T, s, s), zeros(T, s), c, T[], T[], Vector{T2}[],
-        2, s, false, zeros(Int, s), γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        2, s, false, zeros(Int, s), γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2)
     )
 end
 
@@ -2152,8 +2162,11 @@ function SSPSDIRK2ESDIRKIMEXTableau(T, T2)
     Ai[2, 2] = γT
     bi = T[convert(T, 1 // 2), convert(T, 1 // 2)]
     c = T2[one(T2), one(T2)]
+    c2 = convert(T2, 3 // 4)
     return ESDIRKIMEXTableau(
         Ai, bi, zeros(T, s, s), zeros(T, s), c, T[], T[], Vector{T2}[],
-        2, s, true, zeros(Int, s), γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        2, s, true, zeros(Int, s), γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = zero(T2),
+        const_stage_guess = T2[zero(T2), c2 / γ]
     )
 end

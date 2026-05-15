@@ -58,7 +58,8 @@ end
                 alg.extrapolant == :interpolant
             current_extrapolant!(u, t + dt, integrator)
             z[1] = u - uprev
-        elseif alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
+        elseif tab.stage1_extrapolation &&
+                alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
                 alg.extrapolant == :linear
             z[1] = dt * integrator.fsalfirst
         else
@@ -86,6 +87,8 @@ end
 
         if integrator.f isa SplitFunction
             z_guess = z[1]
+        elseif !iszero(tab.const_stage_guess[i])
+            z_guess = tab.const_stage_guess[i]
         elseif !isempty(α) && !iszero(α[i])
             z_guess = zero(u)
             for j in 1:(i - 1)
@@ -154,6 +157,11 @@ end
         integrator.k[1] = integrator.fsalfirst
         integrator.fsallast = integrator.f(u, p, t + dt)
         integrator.k[2] = integrator.fsallast
+    elseif tab.explicit_fsallast
+        integrator.fsallast = integrator.f(u, p, t + tab.fsallast_c * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
     else
         integrator.fsallast = z[s] ./ dt
         integrator.k[1] = integrator.fsalfirst
@@ -207,6 +215,8 @@ end
 
             if integrator.f isa SplitFunction && split_guess[i] > 0
                 copyto!(zs[i], zs[split_guess[i]])
+            elseif !iszero(tab.const_stage_guess[i])
+                fill!(zs[i], tab.const_stage_guess[i])
             elseif !isempty(α) && !iszero(α[i])
                 fill!(zs[i], zero(eltype(u)))
                 for j in 1:(i - 1)
@@ -239,7 +249,8 @@ end
                 alg.extrapolant == :interpolant
             current_extrapolant!(u, t + dt, integrator)
             @.. broadcast = false zs[1] = u - uprev
-        elseif alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
+        elseif tab.stage1_extrapolation &&
+                alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
                 alg.extrapolant == :linear
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
@@ -260,7 +271,9 @@ end
                 @..tmp = tmp + Ai[i, j] * zs[j]
             end
 
-            if !isempty(α) && !iszero(α[i])
+            if !iszero(tab.const_stage_guess[i])
+                fill!(zs[i], tab.const_stage_guess[i])
+            elseif !isempty(α) && !iszero(α[i])
                 fill!(zs[i], zero(eltype(u)))
                 for j in 1:(i - 1)
                     @..zs[i] = zs[i] + α[i][j] * zs[j]
@@ -271,7 +284,6 @@ end
 
             nlsolver.z = zs[i]
             nlsolver.c = c[i]
-            nlsolver.γ = γ
             zs[i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
             nlsolvefail(nlsolver) && return
         end
@@ -327,6 +339,9 @@ end
 
     if integrator.f isa SplitFunction
         integrator.f(integrator.fsallast, u, p, t + dt)
+    elseif tab.explicit_fsallast
+        integrator.f(integrator.fsallast, u, p, t + tab.fsallast_c * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     else
         @..integrator.fsallast = zs[s] / dt
     end
