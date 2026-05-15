@@ -1,4 +1,19 @@
-# Extrapolation methods
+"""
+    ExtrapolationController(; qmin, qmax, gamma, qsteady_min, qsteady_max,
+                            qmax_first_step, failfactor)
+    ExtrapolationController(::Type{QT}, alg; kwargs...)
+
+Step-size controller for the extrapolation family
+(`ExtrapolationMidpointDeuflhard`, `ExtrapolationMidpointHairerWanner`,
+`ImplicitDeuflhardExtrapolation`, `ImplicitHairerWannerExtrapolation`,
+`ImplicitEulerExtrapolation`, `ImplicitEulerBarycentricExtrapolation`).
+Composes the standard step-size knobs via `CommonControllerOptions`; the
+per-step order-and-stepsize selection (Deuflhard / Hairer–Wanner style
+"work per step" minimization) lives in the algorithm-specific
+`stepsize_controller_internal!` / `step_accept_controller!` /
+`step_reject_controller!` methods, so the controller-cache dispatch falls
+through to alg-level logic.
+"""
 struct ExtrapolationController{B <: Union{NamedTuple, OrdinaryDiffEqCore.CommonControllerOptions}} <: AbstractController
     basic::B
 end

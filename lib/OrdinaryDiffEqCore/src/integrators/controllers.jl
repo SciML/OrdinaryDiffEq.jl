@@ -1,3 +1,24 @@
+"""
+    AbstractController
+
+Supertype of every step-size controller. A concrete subtype is a small
+holder for the controller's tuning knobs — typically just a `basic` field
+holding a [`CommonControllerOptions`](@ref) (resolved) or a `NamedTuple`
+of user-supplied overrides (unresolved, awaiting [`resolve_basic`](@ref))
+plus any controller-specific scalars (like `PIController`'s `beta1` /
+`beta2`).
+
+Per-solve mutable state (`q11`, `qold`, `dtacc`, `erracc`, the scalar
+error estimate, …) lives on the cache subtype, not on the controller
+itself. See [`AbstractControllerCache`](@ref).
+
+Required methods to implement when adding a new controller:
+[`setup_controller_cache`](@ref), [`stepsize_controller!`](@ref),
+[`step_accept_controller!`](@ref), [`step_reject_controller!`](@ref).
+Optional methods: [`accept_step_controller`](@ref),
+[`post_newton_controller!`](@ref), [`reinit_controller!`](@ref),
+[`sync_controllers!`](@ref), [`reset_alg_dependent_opts!`](@ref).
+"""
 abstract type AbstractController end
 
 """
@@ -272,8 +293,8 @@ friends dispatch). The transitional `DummyControllerCache` also
 provides overrides for the BDF/Nordsieck cases that haven't been
 migrated yet.
 
-These accessors are what the integrator-level paths (e.g.
-[`handle_step_rejection!`](@ref) for `qmin`,
+These accessors are what the integrator-level paths (e.g. the
+`isoutofdomain` rejection path for `qmin`,
 [`post_newton_controller!`](@ref) for `failfactor`) call instead of
 reading `integrator.opts.X` — the v7 controller refactor moved these
 knobs off `DEOptions` and onto the controller object.
@@ -318,15 +339,50 @@ function get_qmin end
 @inline get_failfactor(integrator, cache::AbstractControllerCache) =
     cache.controller.basic.failfactor
 
+"""
+    reset_alg_dependent_opts!(cache::AbstractControllerCache, alg_old, alg_new)
+
+Hook called when a `CompositeAlgorithm` switches branches: gives
+the controller cache a chance to re-derive any algorithm-specific cached
+values (e.g. order-scaled `beta1` / `beta2`). Default is a no-op.
+"""
 reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
+"""
+    reinit_controller!(integrator, cache::AbstractControllerCache)
+
+Hook called from `reinit!(integrator)` so the controller can reset its
+per-solve state (`q11`, `qold`, `dtacc`, `erracc`, error history, …) to
+the same values it would have at `init`. Default is a no-op.
+"""
 reinit_controller!(integrator::SciMLBase.DEIntegrator, controller::AbstractControllerCache) = nothing
+
+"""
+    sync_controllers!(cache_dst::AbstractControllerCache, cache_src::AbstractControllerCache)
+
+Copy per-solve state from `cache_src` to `cache_dst`. Used by
+[`CompositeController`](@ref) when the active branch changes so the new
+branch's controller starts from the previous branch's state (e.g.
+copying `qold` and `q11` from a `PIController` to a fresh
+`IController`). Default is a no-op; override when your controller
+carries scratch state worth preserving across switches.
+"""
 sync_controllers!(::AbstractControllerCache, ::AbstractControllerCache) = nothing
 
 # Remember: Caches can also hold the control algorithm (see e.g. BDF and Nordsieck methods).
 reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::OrdinaryDiffEqCache) = nothing
 sync_controllers!(::OrdinaryDiffEqCache, ::OrdinaryDiffEqCache) = nothing
 
+"""
+    post_newton_controller!(integrator, alg)
+    post_newton_controller!(integrator, cache::AbstractControllerCache, alg)
+
+Hook called by implicit-solver perform-step routines after a Newton
+iteration fails to converge. The default behavior is to shrink
+`integrator.dt` by [`get_failfactor`](@ref)`(integrator)` so the step is
+retried with a smaller dt. BDF / Nordsieck controllers override this to
+also reduce the working order on repeated Newton failures.
+"""
 function post_newton_controller!(integrator, alg)
     return post_newton_controller!(integrator, integrator.controller_cache, alg)
 end
@@ -335,7 +391,23 @@ function post_newton_controller!(integrator, controller, alg)
     return nothing
 end
 
-# This is a helper struct for algorithms with integrated controllers like Nordsieck and BDF methods.
+"""
+    DummyController()
+
+Placeholder controller for algorithms that manage step-size selection
+themselves (BDF, Nordsieck, Leaping, …). Selecting it makes
+[`setup_controller_cache`](@ref) hand back a [`DummyControllerCache`](@ref)
+whose dispatch methods fall through to the algorithm-level
+`stepsize_controller!` / `step_accept_controller!` / `step_reject_controller!`
+methods that own the actual logic. The per-knob accessors
+([`get_qmin`](@ref) etc.) fall back to fields on `integrator.alg` for
+SDE algorithms still using this transitional path.
+
+New code should prefer dedicated controllers like
+[`OrdinaryDiffEqBDF.BDFController`](@ref) or
+[`OrdinaryDiffEqNordsieck.JVODEController`](@ref), which expose the
+knobs as real, settable controller fields.
+"""
 struct DummyController <: AbstractController
 end
 
@@ -1006,7 +1078,16 @@ function step_reject_controller!(integrator, cache::PredictiveControllerCache, a
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 
-# For a composite algorithm the default strategy is to switch forth and back between the controllers of the individual algorithms
+"""
+    CompositeController(controllers::Tuple)
+
+Controller used by `CompositeAlgorithm` — the per-step dispatch walks
+`controllers[integrator.cache.current]` so each branch of the composite
+algorithm keeps its own controller and per-step state. The default
+policy is to construct one of these from the per-branch
+[`default_controller`](@ref) entries, but a user can supply any tuple
+of [`AbstractController`](@ref)s of matching length.
+"""
 struct CompositeController{T} <: AbstractController
     controllers::T
 end

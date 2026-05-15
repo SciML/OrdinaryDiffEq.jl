@@ -229,6 +229,17 @@ only_diagonal_mass_matrix(alg) = false
 isdp8(alg) = false
 isdefaultalg(alg) = false
 
+"""
+    qmin_default(alg)
+    qmax_default(alg)
+
+Algorithm-specific default for the lower / upper bound on the per-step
+shrink/grow factor. Used by `resolve_basic` to fill in
+[`CommonControllerOptions`](@ref) when the user didn't override.
+Override these for a new algorithm type to change its defaults.
+The generic fallbacks are `qmin = 1 // 5`, `qmax = 10` for adaptive
+algorithms (`qmin = 0` for non-adaptive).
+"""
 function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 1 // 5 : 0
 end
@@ -236,6 +247,7 @@ qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 qmin_default(alg) = 1 // 5
 
+@doc (@doc qmin_default) qmax_default
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
@@ -419,6 +431,16 @@ alg_adaptive_order(alg) = alg_order(alg) - 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
+"""
+    default_controller(::Type{QT}, alg)
+
+Return the step-size controller used by `alg` when the user does not pass
+one explicitly via `solve(prob, alg; controller = ...)`. `QT` is the
+scalar type used internally for `q`, `dt`, and the step-size factors —
+usually `Float64`. The generic fallback is `PIController(QT, alg)`;
+override for new algorithm types whose default should differ
+(e.g. BDF uses `BDFController`, JVODE uses `JVODEController`).
+"""
 function default_controller(QT, alg)
     return PIController(QT, alg)
 end
@@ -442,15 +464,32 @@ function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     return convert(QT, beta1)::QT, convert(QT, beta2)::QT
 end
 
-# other special cases in controllers.jl
+"""
+    beta1_default(alg, beta2)
+    beta2_default(alg)
+
+Algorithm-specific defaults for the proportional / integral gains of the
+[`PIController`](@ref). Defaults are scaled by the algorithm's order
+(`beta2 = 2 // (5 alg_order(alg))`, `beta1 = 7 // (10 alg_order(alg))`)
+for adaptive algorithms and `0` otherwise. `beta1` is computed from
+`beta2`, so override `beta2_default` first if you want both to change.
+"""
 function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
 
+@doc (@doc beta2_default) beta1_default
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
     return isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
 end
 
+"""
+    gamma_default(alg)
+
+Algorithm-specific default for the safety factor on the controller's
+predicted dt change. The generic fallback is `9 // 10` for adaptive
+algorithms and `0` otherwise.
+"""
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 9 // 10 : 0
 end
@@ -458,9 +497,22 @@ gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 gamma_default(alg) = isadaptive(alg) ? 9 // 10 : 0
 
+# Whether `PredictiveController.stepsize_controller!` should use the
+# plain `gamma` factor without the Newton-iter correction (used by FIRK).
 fac_default_gamma(alg) = false
 
+"""
+    qsteady_min_default(alg)
+    qsteady_max_default(alg)
+
+Algorithm-specific defaults for the deadband interval — if the proposed
+step-size factor lies inside `[qsteady_min, qsteady_max]`, the controller
+holds `dt` constant. Generic fallback is `1` for both (no deadband).
+Adaptive implicit algorithms widen `qsteady_max` to `6 // 5` to reduce
+Jacobian recomputation; BDF widens both (`9 // 10`, `12 // 10`).
+"""
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
+@doc (@doc qsteady_min_default) qsteady_max_default
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 # Generic fallbacks for non-ODE algorithms (SDE, RODE) calling __init
 qsteady_min_default(alg) = 1
@@ -469,14 +521,24 @@ qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
 
-# qmax_first_step is the upper bound on dt growth on the very first accepted
-# step — see https://github.com/SciML/DifferentialEquations.jl/issues/299.
-# 10000 mirrors the historical Sundials CVODE behavior.
+"""
+    qmax_first_step_default(alg)
+
+Algorithm-specific default for the looser `qmax` applied to the very
+first accepted step (mirrors Sundials CVODE — the initial dt from the
+automatic step-size selection is approximate, so a much larger growth
+is allowed once). Generic fallback is `10000`.
+See https://github.com/SciML/DifferentialEquations.jl/issues/299.
+"""
 qmax_first_step_default(alg) = 10000
 
-# failfactor is the post-Newton-failure dt shrink factor used by
-# `post_newton_controller!`.  Default of 2 matches the historical
-# `integrator.opts.failfactor` default.
+"""
+    failfactor_default(alg)
+
+Algorithm-specific default for the post-Newton-failure dt shrink factor
+used by [`post_newton_controller!`](@ref). Generic fallback is `2`
+(halve `dt` on each failed Newton solve).
+"""
 failfactor_default(alg) = 2
 #TODO
 #SciMLBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2

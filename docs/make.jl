@@ -1,4 +1,6 @@
 using Documenter, OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEqCore
+using ImplicitDiscreteSolve
 using OrdinaryDiffEqAMF
 using OrdinaryDiffEqAdamsBashforthMoulton
 using OrdinaryDiffEqBDF
@@ -40,6 +42,7 @@ makedocs(
     doctest = false,
     modules = [
         OrdinaryDiffEq,
+        OrdinaryDiffEqCore,
         OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEqBDF,
         OrdinaryDiffEqDefault,
@@ -67,6 +70,7 @@ makedocs(
         OrdinaryDiffEqTsit5,
         OrdinaryDiffEqVerner,
         OrdinaryDiffEqAMF,
+        ImplicitDiscreteSolve,
         DiffEqDevTools,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],
