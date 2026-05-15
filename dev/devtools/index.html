@@ -15,7 +15,7 @@ __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</co
   [9286f039] OrdinaryDiffEqExplicitRK v2.0.0 `../lib/OrdinaryDiffEqExplicitRK`
   [e0540318] OrdinaryDiffEqExponentialRK v2.0.0 `../lib/OrdinaryDiffEqExponentialRK`
   [becaefa8] OrdinaryDiffEqExtrapolation v2.1.0 `../lib/OrdinaryDiffEqExtrapolation`
-  [5960d6e9] OrdinaryDiffEqFIRK v2.1.0 `../lib/OrdinaryDiffEqFIRK`
+  [5960d6e9] OrdinaryDiffEqFIRK v2.2.0 `../lib/OrdinaryDiffEqFIRK`
   [101fe9f7] OrdinaryDiffEqFeagin v2.0.0 `../lib/OrdinaryDiffEqFeagin`
   [d28bc4f8] OrdinaryDiffEqHighOrderRK v2.0.0 `../lib/OrdinaryDiffEqHighOrderRK`
   [9f002381] OrdinaryDiffEqIMEXMultistep v2.0.0 `../lib/OrdinaryDiffEqIMEXMultistep`
@@ -27,11 +27,11 @@ __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</co
   [5b33eab2] OrdinaryDiffEqPRK v2.1.0 `../lib/OrdinaryDiffEqPRK`
   [04162be5] OrdinaryDiffEqQPRK v2.0.0 `../lib/OrdinaryDiffEqQPRK`
   [af6ede74] OrdinaryDiffEqRKN v2.0.0 `../lib/OrdinaryDiffEqRKN`
-  [43230ef6] OrdinaryDiffEqRosenbrock v2.1.0 `../lib/OrdinaryDiffEqRosenbrock`
+  [43230ef6] OrdinaryDiffEqRosenbrock v2.2.0 `../lib/OrdinaryDiffEqRosenbrock`
   [2d112036] OrdinaryDiffEqSDIRK v2.2.0 `../lib/OrdinaryDiffEqSDIRK`
   [669c94d9] OrdinaryDiffEqSSPRK v2.1.0 `../lib/OrdinaryDiffEqSSPRK`
   [e3e12d00] OrdinaryDiffEqStabilizedIRK v2.0.0 `../lib/OrdinaryDiffEqStabilizedIRK`
-  [358294b1] OrdinaryDiffEqStabilizedRK v2.1.0 `../lib/OrdinaryDiffEqStabilizedRK`
+  [358294b1] OrdinaryDiffEqStabilizedRK v2.2.0 `../lib/OrdinaryDiffEqStabilizedRK`
   [fa646aed] OrdinaryDiffEqSymplecticRK v2.1.0 `../lib/OrdinaryDiffEqSymplecticRK`
   [b1df2697] OrdinaryDiffEqTsit5 v2.0.0 `../lib/OrdinaryDiffEqTsit5`
   [79d7bb75] OrdinaryDiffEqVerner v2.1.0 `../lib/OrdinaryDiffEqVerner`</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.6
@@ -40,16 +40,16 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V74 80-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl/docs/Manifest.toml`
   [47edcb42] ADTypes v1.22.0
   [a4c015fc] ANSIColoredPrinters v0.0.1
   [1520ce14] AbstractTrees v0.4.5
   [7d9f7c33] Accessors v0.1.44
-  [79e6a3ab] Adapt v4.5.2
+  [79e6a3ab] Adapt v4.6.0
   [66dad0bd] AliasTables v1.1.3
   [4fba245c] ArrayInterface v7.25.0
   [62783981] BitTwiddlingConvenienceFunctions v0.1.6
@@ -102,7 +102,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [92d709cd] IrrationalConstants v0.2.6
   [82899510] IteratorInterfaceExtensions v1.0.0
   [692b3bcd] JLLWrappers v1.8.0
-  [682c06a0] JSON v1.5.2
+  [682c06a0] JSON v1.6.0
   [ba0b0d4f] Krylov v0.10.6
   [b964fa9f] LaTeXStrings v1.4.0
   [23fbe1c1] Latexify v0.16.10
@@ -110,7 +110,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [0e77f7df] LazilyInitializedFields v1.3.0
   [87fe0de2] LineSearch v0.1.9
 ⌃ [d3d80556] LineSearches v7.5.1
-  [7ed4a6bd] LinearSolve v3.78.0
+  [7ed4a6bd] LinearSolve v3.79.0
   [2ab3a3ac] LogExpFunctions v0.3.29
   [e6f89c97] LoggingExtras v1.2.0
   [1914dd2f] MacroTools v0.5.16
@@ -134,11 +134,11 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [6ad6398a] OrdinaryDiffEqBDF v2.0.0 `../lib/OrdinaryDiffEqBDF`
   [bbf590c4] OrdinaryDiffEqCore v4.1.0 `../lib/OrdinaryDiffEqCore`
   [50262376] OrdinaryDiffEqDefault v2.2.0 `../lib/OrdinaryDiffEqDefault`
-  [4302a76b] OrdinaryDiffEqDifferentiation v3.1.0 `../lib/OrdinaryDiffEqDifferentiation`
+  [4302a76b] OrdinaryDiffEqDifferentiation v3.1.1 `../lib/OrdinaryDiffEqDifferentiation`
   [9286f039] OrdinaryDiffEqExplicitRK v2.0.0 `../lib/OrdinaryDiffEqExplicitRK`
   [e0540318] OrdinaryDiffEqExponentialRK v2.0.0 `../lib/OrdinaryDiffEqExponentialRK`
   [becaefa8] OrdinaryDiffEqExtrapolation v2.1.0 `../lib/OrdinaryDiffEqExtrapolation`
-  [5960d6e9] OrdinaryDiffEqFIRK v2.1.0 `../lib/OrdinaryDiffEqFIRK`
+  [5960d6e9] OrdinaryDiffEqFIRK v2.2.0 `../lib/OrdinaryDiffEqFIRK`
   [101fe9f7] OrdinaryDiffEqFeagin v2.0.0 `../lib/OrdinaryDiffEqFeagin`
   [d28bc4f8] OrdinaryDiffEqHighOrderRK v2.0.0 `../lib/OrdinaryDiffEqHighOrderRK`
   [9f002381] OrdinaryDiffEqIMEXMultistep v2.0.0 `../lib/OrdinaryDiffEqIMEXMultistep`
@@ -151,12 +151,12 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [5b33eab2] OrdinaryDiffEqPRK v2.1.0 `../lib/OrdinaryDiffEqPRK`
   [04162be5] OrdinaryDiffEqQPRK v2.0.0 `../lib/OrdinaryDiffEqQPRK`
   [af6ede74] OrdinaryDiffEqRKN v2.0.0 `../lib/OrdinaryDiffEqRKN`
-  [43230ef6] OrdinaryDiffEqRosenbrock v2.1.0 `../lib/OrdinaryDiffEqRosenbrock`
+  [43230ef6] OrdinaryDiffEqRosenbrock v2.2.0 `../lib/OrdinaryDiffEqRosenbrock`
   [b4bd8bb3] OrdinaryDiffEqRosenbrockTableaus v2.0.0 `../lib/OrdinaryDiffEqRosenbrockTableaus`
   [2d112036] OrdinaryDiffEqSDIRK v2.2.0 `../lib/OrdinaryDiffEqSDIRK`
   [669c94d9] OrdinaryDiffEqSSPRK v2.1.0 `../lib/OrdinaryDiffEqSSPRK`
   [e3e12d00] OrdinaryDiffEqStabilizedIRK v2.0.0 `../lib/OrdinaryDiffEqStabilizedIRK`
-  [358294b1] OrdinaryDiffEqStabilizedRK v2.1.0 `../lib/OrdinaryDiffEqStabilizedRK`
+  [358294b1] OrdinaryDiffEqStabilizedRK v2.2.0 `../lib/OrdinaryDiffEqStabilizedRK`
   [fa646aed] OrdinaryDiffEqSymplecticRK v2.1.0 `../lib/OrdinaryDiffEqSymplecticRK`
   [b1df2697] OrdinaryDiffEqTsit5 v2.0.0 `../lib/OrdinaryDiffEqTsit5`
   [79d7bb75] OrdinaryDiffEqVerner v2.1.0 `../lib/OrdinaryDiffEqVerner`
@@ -212,7 +212,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [781d530d] TruncatedStacktraces v1.4.0
   [2e619515] Expat_jll v2.8.0+0
   [61579ee1] Ghostscript_jll v9.55.1+0
-  [020c3dae] Git_LFS_jll v3.7.0+0
+  [020c3dae] Git_LFS_jll v3.7.1+0
   [f8c6e375] Git_jll v2.54.0+0
   [1d5cc7b8] IntelOpenMP_jll v2025.2.0+0
   [aacddb02] JpegTurbo_jll v3.1.5+0
@@ -271,4 +271,4 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   [3f19e933] p7zip_jll v17.7.0+0
 Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.0.0/assets/Manifest.toml&quot;</code></pre>">manifest</a> file and the
-<a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.0.0/assets/Project.toml&quot;</code></pre>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../misc/">« Miscellaneous Solvers</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 14 May 2026 10:29">Thursday 14 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.0.0/assets/Project.toml&quot;</code></pre>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../misc/">« Miscellaneous Solvers</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 15 May 2026 13:31">Friday 15 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
