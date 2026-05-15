@@ -1,6 +1,114 @@
 abstract type AbstractController end
 
 """
+    CommonControllerOptions{T}
+
+Type-stable, fully-resolved bundle of the standard step-size knobs every
+adaptive controller uses. All seven fields have concrete element type `T`
+(no `Union{Nothing, T}`), so reads in the hot path
+(`stepsize_controller!`, accessors like [`get_qmin`](@ref)) are inferable.
+
+The fields are:
+
+- `qmin` / `qmax`: lower / upper bounds on the per-step shrink/grow factor.
+- `qmax_first_step`: looser `qmax` applied to the very first accepted step
+  (mirrors Sundials CVODE — the initial dt from automatic step-size
+  selection is approximate, so a much larger growth is allowed once).
+- `gamma`: safety factor applied to the controller's predicted dt change
+  (used by `IController`, `PIController`, `PredictiveController`, and the
+  algorithm-specific BDF/JVODE controllers; `PIDController` ignores `gamma`
+  and limits dt via its `limiter` / `accept_safety` instead).
+- `qsteady_min` / `qsteady_max`: deadband — if the proposed factor lies
+  inside this interval, dt is held constant.
+- `failfactor`: post-Newton-failure shrink factor used by
+  [`post_newton_controller!`](@ref).
+
+User-supplied overrides flow through controllers as a `NamedTuple` of
+keyword arguments (whatever subset the user passed). At
+`setup_controller_cache` time, [`resolve_basic`](@ref) constructs a fresh
+`CommonControllerOptions{QT}` by filling in unset entries from the
+algorithm-specific defaults (`qmin_default(alg)`, `qmax_default(alg)`, …).
+So a user-constructed `BDFController()` picks up BDF-tuned defaults
+(`qmax = 5`, `qsteady_min = 9//10`, `qsteady_max = 12//10`, …) while a
+user-constructed `IController()` falls back to the generic defaults
+(`qmin = 1//5`, `qmax = 10`, …). This matches the historical behavior of
+the per-algorithm step-size knobs that used to live on the
+`OrdinaryDiffEq` algorithm structs themselves.
+"""
+struct CommonControllerOptions{T}
+    qmin::T
+    qmax::T
+    qmax_first_step::T
+    gamma::T
+    qsteady_min::T
+    qsteady_max::T
+    failfactor::T
+end
+
+# Step-size knobs need to hold rational defaults like `1//5`, so an integer
+# (when the user passed a plain `Int` like `qmax = 3`) is promoted to a
+# float type before resolving.
+@inline _floatify_QT(::Type{T}) where {T <: Integer} = float(T)
+@inline _floatify_QT(::Type{T}) where {T} = T
+
+"""
+    resolve_basic(overrides::NamedTuple, alg, ::Type{QT})
+    resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT})
+
+Return a fully-resolved `CommonControllerOptions{QT}` by combining the
+user-supplied `overrides` (a NamedTuple containing whatever subset of
+`qmin`, `qmax`, `qmax_first_step`, `gamma`, `qsteady_min`, `qsteady_max`,
+`failfactor` the user passed) with the algorithm-specific defaults
+(`qmin_default(alg)`, `qmax_default(alg)`, …). Each entry is converted to
+`QT`. Called from each controller's `setup_controller_cache` method so
+that user-constructed controllers (e.g. `BDFController(qmax = 20)`) get
+sensible per-algorithm defaults for the knobs they didn't set.
+
+The `CommonControllerOptions`-input form lets already-resolved controllers
+be re-resolved against a (possibly new) element type `QT` without going
+through the override mechanism — useful when a composite algorithm
+re-keys controller caches to a different scalar type.
+"""
+function resolve_basic(overrides::NamedTuple, alg, ::Type{QT}) where {QT}
+    return CommonControllerOptions{QT}(
+        QT(_override_or_default(overrides, Val(:qmin), qmin_default(alg))),
+        QT(_override_or_default(overrides, Val(:qmax), qmax_default(alg))),
+        QT(_override_or_default(overrides, Val(:qmax_first_step), qmax_first_step_default(alg))),
+        QT(_override_or_default(overrides, Val(:gamma), gamma_default(alg))),
+        QT(_override_or_default(overrides, Val(:qsteady_min), qsteady_min_default(alg))),
+        QT(_override_or_default(overrides, Val(:qsteady_max), qsteady_max_default(alg))),
+        QT(_override_or_default(overrides, Val(:failfactor), failfactor_default(alg))),
+    )
+end
+
+# Constant-folds away: `haskey` and the field lookup are both compile-time
+# resolvable for a NamedTuple with statically known field names.
+@inline function _override_or_default(overrides::NamedTuple, ::Val{key}, default) where {key}
+    haskey(overrides, key) || return default
+    v = getfield(overrides, key)
+    return v === nothing ? default : v
+end
+
+function resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT}) where {QT}
+    return CommonControllerOptions{QT}(
+        QT(opts.qmin), QT(opts.qmax), QT(opts.qmax_first_step),
+        QT(opts.gamma), QT(opts.qsteady_min), QT(opts.qsteady_max),
+        QT(opts.failfactor),
+    )
+end
+
+# Pick a sensible QT (element type) for resolving a controller whose
+# `basic` field hasn't been resolved against an algorithm yet. The
+# `CommonControllerOptions` branch is hit when a user passed an
+# already-resolved options struct directly; the `NamedTuple` branch is
+# hit for the keyword-form controllers (e.g. `IController(qmax = 20)`)
+# whose overrides are still raw kwargs until `setup_controller_cache`.
+@inline _resolved_QT(opts::CommonControllerOptions{T}) where {T} = _floatify_QT(T)
+@inline _resolved_QT(::NamedTuple{(), Tuple{}}) = Float64
+@inline _resolved_QT(overrides::NamedTuple) =
+    _floatify_QT(promote_type(map(typeof, values(overrides))...))
+
+"""
     AbstractControllerCache
 
 Each controller cache is expected to own the scalar error estimate used by the
@@ -138,24 +246,77 @@ See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 """
 @inline function get_current_qmax(integrator, qmax)
     if integrator.success_iter == 0
-        ctrl = integrator.controller_cache
-        # Look through a DummyController wrapper at the embedded alg cache.
-        if ctrl isa DummyControllerCache
-            inner = ctrl.cache
-            if hasfield(typeof(inner), :qmax_first_step)
-                return inner.qmax_first_step
-            end
-        end
-        if hasfield(typeof(ctrl), :controller) &&
-                hasfield(typeof(ctrl.controller), :qmax_first_step)
-            return ctrl.controller.qmax_first_step
-        elseif hasfield(typeof(ctrl), :qmax_first_step) # Case: Cache is the algorithms cache.
-            return ctrl.qmax_first_step
-        end
-        return typeof(qmax)(10000)
+        return get_qmax_first_step(integrator)
     end
     return qmax
 end
+
+"""
+    get_qmin(integrator)
+    get_qmax(integrator)
+    get_qmax_first_step(integrator)
+    get_gamma(integrator)
+    get_qsteady_min(integrator)
+    get_qsteady_max(integrator)
+    get_failfactor(integrator)
+
+Read a step-size knob from the integrator's controller. Default
+dispatch reads `integrator.controller_cache.controller.basic.X` —
+i.e. it goes through the `CommonControllerOptions` embedded on every concrete
+controller (`IController`/`PIController`/`PIDController`/
+`PredictiveController`/`BDFController`/`JVODEController`).
+
+`CompositeControllerCache` overrides each accessor to delegate to the
+currently active sub-cache (mirroring how `stepsize_controller!` and
+friends dispatch). The transitional `DummyControllerCache` also
+provides overrides for the BDF/Nordsieck cases that haven't been
+migrated yet.
+
+These accessors are what the integrator-level paths (e.g.
+[`handle_step_rejection!`](@ref) for `qmin`,
+[`post_newton_controller!`](@ref) for `failfactor`) call instead of
+reading `integrator.opts.X` — the v7 controller refactor moved these
+knobs off `DEOptions` and onto the controller object.
+"""
+function get_qmin end
+
+@doc (@doc get_qmin) function get_qmax end
+@doc (@doc get_qmin) function get_qmax_first_step end
+@doc (@doc get_qmin) function get_gamma end
+@doc (@doc get_qmin) function get_qsteady_min end
+@doc (@doc get_qmin) function get_qsteady_max end
+@doc (@doc get_qmin) function get_failfactor end
+
+@inline get_qmin(integrator::SciMLBase.DEIntegrator) =
+    get_qmin(integrator, integrator.controller_cache)
+@inline get_qmax(integrator::SciMLBase.DEIntegrator) =
+    get_qmax(integrator, integrator.controller_cache)
+@inline get_qmax_first_step(integrator::SciMLBase.DEIntegrator) =
+    get_qmax_first_step(integrator, integrator.controller_cache)
+@inline get_gamma(integrator::SciMLBase.DEIntegrator) =
+    get_gamma(integrator, integrator.controller_cache)
+@inline get_qsteady_min(integrator::SciMLBase.DEIntegrator) =
+    get_qsteady_min(integrator, integrator.controller_cache)
+@inline get_qsteady_max(integrator::SciMLBase.DEIntegrator) =
+    get_qsteady_max(integrator, integrator.controller_cache)
+@inline get_failfactor(integrator::SciMLBase.DEIntegrator) =
+    get_failfactor(integrator, integrator.controller_cache)
+
+# Default dispatch: reach through the controller's CommonControllerOptions.
+@inline get_qmin(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.qmin
+@inline get_qmax(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.qmax
+@inline get_qmax_first_step(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.qmax_first_step
+@inline get_gamma(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.gamma
+@inline get_qsteady_min(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.qsteady_min
+@inline get_qsteady_max(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.qsteady_max
+@inline get_failfactor(integrator, cache::AbstractControllerCache) =
+    cache.controller.basic.failfactor
 
 reset_alg_dependent_opts!(controller::AbstractControllerCache, alg1, alg2) = nothing
 
@@ -170,7 +331,7 @@ function post_newton_controller!(integrator, alg)
     return post_newton_controller!(integrator, integrator.controller_cache, alg)
 end
 function post_newton_controller!(integrator, controller, alg)
-    integrator.dt = integrator.dt / integrator.opts.failfactor
+    integrator.dt = integrator.dt / get_failfactor(integrator)
     return nothing
 end
 
@@ -210,6 +371,27 @@ end
     post_newton_controller!(integrator, alg)
 @inline accept_step_controller(integrator, cache::DummyControllerCache, alg) =
     get_EEst(cache) <= 1
+# DummyControllerCache is used by some SDE algorithms (e.g.
+# StochasticDiffEqLeaping) that haven't been migrated to a proper
+# CommonControllerOptions-based controller yet. They keep the step-size knobs as
+# fields on the algorithm itself, so accessors fall back to those fields
+# when present.
+for (accessor, default) in (
+        (:get_qmin, :(qmin_default(integrator.alg))),
+        (:get_qmax, :(qmax_default(integrator.alg))),
+        (:get_qmax_first_step, :(qmax_first_step_default(integrator.alg))),
+        (:get_gamma, :(gamma_default(integrator.alg))),
+        (:get_qsteady_min, :(qsteady_min_default(integrator.alg))),
+        (:get_qsteady_max, :(qsteady_max_default(integrator.alg))),
+        (:get_failfactor, :(failfactor_default(integrator.alg))),
+    )
+    field = Symbol(string(accessor)[5:end]) # strip leading "get_"
+    @eval @inline function $accessor(integrator, ::DummyControllerCache)
+        alg = integrator.alg
+        return hasfield(typeof(alg), $(QuoteNode(field))) ?
+            getfield(alg, $(QuoteNode(field))) : $default
+    end
+end
 
 
 # Standard integral (I) step size controller
@@ -243,57 +425,35 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-struct IController{T} <: AbstractController
-    qmin::T
-    qmax::T
-    qmax_first_step::T
-    gamma::T
-    qsteady_min::T
-    qsteady_max::T
+struct IController{B <: Union{NamedTuple, CommonControllerOptions}} <: AbstractController
+    basic::B
 end
 
-function IController(; qmin = 1 // 5, qmax = 10 // 1, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    return IController{typeof(qmin)}( # FIXME combined promoted type
-        qmin,
-        qmax,
-        qmax_first_step,
-        gamma,
-        qsteady_min,
-        qsteady_max,
-    )
-end
+# Keyword form: the user-supplied overrides ride along as a `NamedTuple`
+# until `setup_controller_cache` resolves them against the algorithm into
+# a fully-typed `CommonControllerOptions`.
+IController(; kwargs...) = IController(NamedTuple(kwargs))
 
-function IController(alg; kwargs...)
-    return IController(Float64, alg; kwargs...)
-end
-
-function IController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return IController{QT}(
-        qmin === nothing ? qmin_default(alg) : qmin,
-        qmax === nothing ? qmax_default(alg) : qmax,
-        qmax_first_step === nothing ? QT(10000) : QT(qmax_first_step),
-        gamma === nothing ? gamma_default(alg) : gamma,
-        qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
-        qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-    )
-end
+# alg-aware forms: resolve immediately to a fully-typed controller.
+IController(alg; kwargs...) = IController(Float64, alg; kwargs...)
+IController(::Type{QT}, alg; kwargs...) where {QT} =
+    IController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
 mutable struct IControllerCache{T, E} <: AbstractControllerCache
-    controller::IController{T}
+    controller::IController{CommonControllerOptions{T}}
     dtreject::T
     EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::IController{T}, ::Type{E}) where {T, E}
-    return IControllerCache{T, E}(
-        controller,
-        T(1 // 10^4),
-        oneunit(E),
-    )
+function setup_controller_cache(alg, cache, controller::IController, ::Type{E}) where {E}
+    QT = _resolved_QT(controller.basic)
+    resolved = IController(resolve_basic(controller.basic, alg, QT))
+    T = QT
+    return IControllerCache{T, E}(resolved, T(1 // 10^4), oneunit(E))
 end
 
 @inline function stepsize_controller!(integrator, cache::IControllerCache, alg)
-    (; qmin, qmax, gamma) = cache.controller
+    (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
     EEst = DiffEqBase.value(get_EEst(integrator))
 
@@ -311,7 +471,7 @@ end
 
 # TODO change signature to remove the q input
 function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
-    (; qsteady_min, qsteady_max) = cache.controller
+    (; qsteady_min, qsteady_max) = cache.controller.basic
 
     if qsteady_min <= q <= qsteady_max
         q = one(q)
@@ -367,55 +527,41 @@ the predicted step size.
     Solving Ordinary Differential Equations I Nonstiff Problems
     [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-mutable struct PIController{T} <: AbstractController # TODO remove the mutable once AitkenNeville is fixed
+mutable struct PIController{B <: Union{NamedTuple, CommonControllerOptions}, T} <: AbstractController # TODO remove the mutable once AitkenNeville is fixed
+    basic::B
     beta1::T
     beta2::T
-    qmin::T
-    qmax::T
-    qmax_first_step::T
-    gamma::T
-    qsteady_min::T
-    qsteady_max::T
     qoldinit::T
 end
 
-function PIController(beta1::Real, beta2::Real; qmin = 1 // 5, qmax = 10 // 0, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5, qoldinit = 1 // 10^4)
-    return PIController{typeof(beta1)}(
-        beta1,
-        beta2,
-        qmin,
-        qmax,
-        qmax_first_step,
-        gamma,
-        qsteady_min,
-        qsteady_max,
-        qoldinit,
-    )
+# Two-positional-arg form (beta1, beta2 explicit). Keyword-only knobs ride
+# along as a `NamedTuple` of overrides until `setup_controller_cache`
+# resolves them against the algorithm into a `CommonControllerOptions`.
+function PIController(beta1::Real, beta2::Real; qoldinit = 1 // 10^4, kwargs...)
+    T = typeof(beta1)
+    basic = NamedTuple(kwargs)
+    return PIController{typeof(basic), T}(basic, T(beta1), T(beta2), T(qoldinit))
 end
 
+# alg-aware forms: resolve immediately, default beta1/beta2/qoldinit.
 function PIController(alg; kwargs...)
     return PIController(Float64, alg; kwargs...)
 end
 
-function PIController(QT, alg; beta1 = nothing, beta2 = nothing, qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing, qoldinit = nothing)
+function PIController(
+        ::Type{QT}, alg;
+        beta1 = nothing, beta2 = nothing, qoldinit = nothing,
+        kwargs...
+    ) where {QT}
     beta2 = beta2 === nothing ? beta2_default(alg) : beta2
     beta1 = beta1 === nothing ? beta1_default(alg, beta2) : beta1
     qoldinit = qoldinit === nothing ? 1 // 10^4 : qoldinit
-    return PIController{QT}(
-        beta1,
-        beta2,
-        qmin === nothing ? qmin_default(alg) : qmin,
-        qmax === nothing ? qmax_default(alg) : qmax,
-        qmax_first_step === nothing ? QT(10000) : QT(qmax_first_step),
-        gamma === nothing ? gamma_default(alg) : gamma,
-        qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
-        qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-        qoldinit,
-    )
+    basic = resolve_basic(NamedTuple(kwargs), alg, QT)
+    return PIController{typeof(basic), QT}(basic, QT(beta1), QT(beta2), QT(qoldinit))
 end
 
 mutable struct PIControllerCache{T, E} <: AbstractControllerCache
-    controller::PIController{T}
+    controller::PIController{CommonControllerOptions{T}, T}
     # Cached εₙ₊₁^β₁
     q11::T
     # Previous EEst
@@ -423,18 +569,21 @@ mutable struct PIControllerCache{T, E} <: AbstractControllerCache
     EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::PIController{T}, ::Type{E}) where {T, E}
+function setup_controller_cache(alg, cache, controller::PIController, ::Type{E}) where {E}
+    QT = _resolved_QT(controller.basic)
+    basic = resolve_basic(controller.basic, alg, QT)
+    resolved = PIController{typeof(basic), QT}(
+        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit),
+    )
+    T = QT
     return PIControllerCache{T, E}(
-        controller,
-        one(T),
-        T(controller.qoldinit),
-        oneunit(E),
+        resolved, one(T), T(resolved.qoldinit), oneunit(E),
     )
 end
 
 @inline function stepsize_controller!(integrator, cache::PIControllerCache, alg)
     (; errold, controller) = cache
-    (; qmin, qmax, gamma) = controller
+    (; qmin, qmax, gamma) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
     (; beta1, beta2) = controller
     EEst = DiffEqBase.value(get_EEst(integrator))
@@ -452,7 +601,8 @@ end
 
 function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     (; controller) = cache
-    (; qsteady_min, qsteady_max, qoldinit) = controller
+    (; qsteady_min, qsteady_max) = controller.basic
+    qoldinit = controller.qoldinit
     EEst = DiffEqBase.value(get_EEst(integrator))
 
     if qsteady_min <= q <= qsteady_max
@@ -464,7 +614,7 @@ end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
-    (; qmin, gamma) = controller
+    (; qmin, gamma) = controller.basic
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -545,25 +695,27 @@ Some standard controller parameters suggested in the literature are
     Compressible Computational Fluid Dynamics
     [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)    # limiter of the dt factor (before clipping)
 """
-struct PIDController{QT, Limiter} <: AbstractController
+struct PIDController{B <: Union{NamedTuple, CommonControllerOptions}, QT, Limiter} <: AbstractController
+    basic::B
     beta::NTuple{3, QT} # controller coefficients
     accept_safety::QT   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
-    qsteady_min::QT
-    qsteady_max::QT
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
-function PIDController(beta1::Real, beta2::Real, beta3::Real = zero(beta1); accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
+# Two/three-positional form: betas explicit, common-controller-knobs ride
+# along as a `NamedTuple` of overrides until `setup_controller_cache`.
+function PIDController(
+        beta1::Real, beta2::Real, beta3::Real = zero(beta1);
+        accept_safety = 0.81, limiter = default_dt_factor_limiter, kwargs...
+    )
     beta = map(float, promote(beta1, beta2, beta3))
-    return PIDController{typeof(beta1), typeof(limiter)}(
-        beta,
-        accept_safety,
-        limiter,
-        qsteady_min,
-        qsteady_max,
+    QT = typeof(beta[1])
+    basic = NamedTuple(kwargs)
+    return PIDController{typeof(basic), QT, typeof(limiter)}(
+        basic, beta, QT(accept_safety), limiter,
     )
 end
 
@@ -571,7 +723,12 @@ function PIDController(alg; kwargs...)
     return PIDController(Float64, alg; kwargs...)
 end
 
-function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = default_dt_factor_limiter, qsteady_min = nothing, qsteady_max = nothing)
+function PIDController(
+        ::Type{QT}, alg;
+        beta = nothing, accept_safety = 0.81,
+        limiter = default_dt_factor_limiter,
+        kwargs...
+    ) where {QT}
     if beta === nothing
         beta2 = QT(beta2_default(alg))
         beta1 = QT(beta1_default(alg, beta2))
@@ -580,12 +737,9 @@ function PIDController(QT, alg; beta = nothing, accept_safety = 0.81, limiter = 
         beta1, beta2, beta3 = beta
     end
     beta = map(float, promote(beta1, beta2, beta3))
-    return PIDController{QT, typeof(limiter)}(
-        beta,
-        QT(accept_safety),
-        limiter,
-        QT(qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min),
-        QT(qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max),
+    basic = resolve_basic(NamedTuple(kwargs), alg, QT)
+    return PIDController{typeof(basic), QT, typeof(limiter)}(
+        basic, beta, QT(accept_safety), limiter,
     )
 end
 
@@ -599,7 +753,7 @@ function Base.show(io::IO, controller::PIDController)
 end
 
 mutable struct PIDControllerCache{T, Limiter, E} <: AbstractControllerCache
-    controller::PIDController{T, Limiter}
+    controller::PIDController{CommonControllerOptions{T}, T, Limiter}
     err::Vector{T} # history of the error estimates
     dt_factor::T
     EEst::E
@@ -611,13 +765,15 @@ function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDContro
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PIDController{QT}, ::Type{E}) where {QT, E}
+function setup_controller_cache(alg, cache, controller::PIDController, ::Type{E}) where {E}
+    QT = _resolved_QT(controller.basic)
+    basic = resolve_basic(controller.basic, alg, QT)
+    resolved = PIDController{typeof(basic), QT, typeof(controller.limiter)}(
+        basic, map(QT, controller.beta), QT(controller.accept_safety), controller.limiter,
+    )
     err = ones(QT, 3)
     return PIDControllerCache{QT, typeof(controller.limiter), E}(
-        controller,
-        err,
-        one(QT),
-        oneunit(E),
+        resolved, err, one(QT), oneunit(E),
     )
 end
 
@@ -670,7 +826,7 @@ end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
     (; controller) = cache
-    (; qsteady_min, qsteady_max) = controller
+    (; qsteady_min, qsteady_max) = controller.basic
 
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
@@ -702,38 +858,42 @@ well-suited for stiff solvers where this can be expected, and is the default
 for algorithms like the (E)SDIRK methods.
 
 ```julia
-gamma = integrator.opts.gamma
-niters = integrator.cache.newton_iters
+(; qmin, qmax, gamma) = controller
+qmax = get_current_qmax(integrator, qmax)
+niters = integrator.cache.nlsolver.iter
 fac = min(gamma,
-    (1 + 2 * integrator.alg.max_newton_iter) * gamma /
-    (niters + 2 * integrator.alg.max_newton_iter))
-expo = 1 / (alg_order(integrator.alg) + 1)
-qtmp = (get_EEst(integrator)^expo) / fac
-@fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
-if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
-end
-integrator.controller_cache.qold = q
+    (1 + 2 * integrator.cache.nlsolver.maxiters) * gamma /
+    (niters + 2 * integrator.cache.nlsolver.maxiters))
+expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
+qtmp = fastpower(get_EEst(integrator), expo) / fac
+@fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
+cache.qold = q
 q
 ```
 
-In this case, `niters` is the number of Newton iterations which was required
-in the most recent step of the algorithm. Note that these values are used
-differently depending on acceptance and rejectance. When the step is accepted,
-the following logic is applied:
+where `controller` and `cache` are the controller and its cache stored in
+`integrator.controller_cache`. `niters` is the number of Newton iterations
+which was required in the most recent step of the algorithm. Note that
+these values are used differently depending on acceptance and rejectance.
+When the step is accepted, the following logic is applied:
 
 ```julia
+(; dtacc, erracc) = cache
+(; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
+qmax = get_current_qmax(integrator, qmax)
 if integrator.success_iter > 0
-    expo = 1 / (alg_adaptive_order(integrator.alg) + 1)
-    qgus = (integrator.dtacc / integrator.dt) * (((get_EEst(integrator)^2) / integrator.erracc)^expo)
-    qgus = max(inv(integrator.opts.qmax),
-        min(inv(integrator.opts.qmin), qgus / integrator.opts.gamma))
+    expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
+    qgus = (dtacc / integrator.dt) * fastpower((get_EEst(integrator)^2) / erracc, expo)
+    qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
     qacc = max(q, qgus)
 else
     qacc = q
 end
-integrator.dtacc = integrator.dt
-integrator.erracc = max(1e-2, get_EEst(integrator))
+if qsteady_min <= qacc <= qsteady_max
+    qacc = one(qacc)
+end
+cache.dtacc = integrator.dt
+cache.erracc = max(1e-2, get_EEst(integrator))
 integrator.dt / qacc
 ```
 
@@ -743,47 +903,22 @@ When it rejects, it's the same as the [`IController`](@ref):
 if integrator.success_iter == 0
     integrator.dt *= 0.1
 else
-    integrator.dt = integrator.dt / integrator.controller_cache.qold
+    integrator.dt = integrator.dt / cache.qold
 end
 ```
 """
-struct PredictiveController{T} <: AbstractController
-    qmin::T
-    qmax::T
-    qmax_first_step::T
-    gamma::T
-    qsteady_min::T
-    qsteady_max::T
+struct PredictiveController{B <: Union{NamedTuple, CommonControllerOptions}} <: AbstractController
+    basic::B
 end
 
-function PredictiveController(; qmin = float(1 // 5), qmax = 10 // 1, qmax_first_step = 10000 // 1, gamma = 9 // 10, qsteady_min = 1 // 1, qsteady_max = 6 // 5)
-    return PredictiveController{typeof(qmin)}( # FIXME combined promoted type
-        qmin,
-        qmax,
-        qmax_first_step,
-        gamma,
-        qsteady_min,
-        qsteady_max,
-    )
-end
+PredictiveController(; kwargs...) = PredictiveController(NamedTuple(kwargs))
 
-function PredictiveController(alg; kwargs...)
-    return PredictiveController(Float64, alg; kwargs...)
-end
-
-function PredictiveController(QT, alg; qmin = nothing, qmax = nothing, qmax_first_step = nothing, gamma = nothing, qsteady_min = nothing, qsteady_max = nothing)
-    return PredictiveController{QT}(
-        qmin === nothing ? qmin_default(alg) : qmin,
-        qmax === nothing ? qmax_default(alg) : qmax,
-        qmax_first_step === nothing ? QT(10000) : QT(qmax_first_step),
-        gamma === nothing ? gamma_default(alg) : gamma,
-        qsteady_min === nothing ? qsteady_min_default(alg) : qsteady_min,
-        qsteady_max === nothing ? qsteady_max_default(alg) : qsteady_max,
-    )
-end
+PredictiveController(alg; kwargs...) = PredictiveController(Float64, alg; kwargs...)
+PredictiveController(::Type{QT}, alg; kwargs...) where {QT} =
+    PredictiveController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
 mutable struct PredictiveControllerCache{T, E} <: AbstractControllerCache
-    controller::PredictiveController{T}
+    controller::PredictiveController{CommonControllerOptions{T}}
     dtacc::T
     erracc::T
     qold::T
@@ -804,18 +939,18 @@ function sync_controllers!(cache1::PredictiveControllerCache, cache2::Predictive
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PredictiveController{T}, ::Type{E}) where {T, E}
+function setup_controller_cache(alg, cache, controller::PredictiveController, ::Type{E}) where {E}
+    QT = _resolved_QT(controller.basic)
+    basic = resolve_basic(controller.basic, alg, QT)
+    resolved = PredictiveController(basic)
+    T = QT
     return PredictiveControllerCache{T, E}(
-        controller,
-        one(T),
-        one(T),
-        one(T),
-        oneunit(E),
+        resolved, one(T), one(T), one(T), oneunit(E),
     )
 end
 
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
-    (; qmin, qmax, gamma) = cache.controller
+    (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
     EEst = DiffEqBase.value(get_EEst(integrator))
     if iszero(EEst)
@@ -842,7 +977,7 @@ end
 
 function step_accept_controller!(integrator, cache::PredictiveControllerCache, alg, q)
     (; dtacc, erracc, controller) = cache
-    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
+    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
 
     EEst = DiffEqBase.value(get_EEst(integrator))
@@ -929,6 +1064,17 @@ end
 @inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
     current_idx = integrator.cache.current
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
+end
+
+for accessor in (
+        :get_qmin, :get_qmax, :get_qmax_first_step,
+        :get_gamma, :get_qsteady_min, :get_qsteady_max,
+        :get_failfactor,
+    )
+    @eval @inline function $accessor(integrator, cache::CompositeControllerCache)
+        current_idx = integrator.cache.current
+        return $accessor(integrator, @inbounds(cache.caches[current_idx]))
+    end
 end
 
 function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController, ::Type{E}) where {E}
