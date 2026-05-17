@@ -812,6 +812,7 @@ function promote_f(
             (
             (
                 specialize === SciMLBase.AutoSpecialize && eltype(u0) !== Any &&
+                    !SciMLBase.isdualtype(eltype(u0)) &&
                     RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
                     one(t) === oneunit(t) &&
                     hasdualpromote(u0, t)
@@ -890,6 +891,7 @@ function promote_f(
             (
             (
                 specialize === SciMLBase.AutoSpecialize && eltype(u0) !== Any &&
+                    !SciMLBase.isdualtype(eltype(u0)) &&
                     RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
                     one(t) === oneunit(t)
             ) ||
