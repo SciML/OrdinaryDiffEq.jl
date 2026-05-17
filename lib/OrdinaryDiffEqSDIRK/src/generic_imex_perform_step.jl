@@ -54,12 +54,12 @@ end
     else
         # Implicit first stage: Ai[1,1] ≠ 0, requires an nlsolve
         if integrator.success_iter > 0 && !integrator.reeval_fsal &&
-                alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
+                alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
                 alg.extrapolant == :interpolant
             current_extrapolant!(u, t + dt, integrator)
             z[1] = u - uprev
         elseif tab.stage1_extrapolation &&
-                alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
+                alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
                 alg.extrapolant == :linear
             z[1] = dt * integrator.fsalfirst
         else
@@ -87,7 +87,7 @@ end
 
         if integrator.f isa SplitFunction
             z_guess = z[1]
-        elseif !iszero(tab.const_stage_guess[i])
+        elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[i])
             z_guess = tab.const_stage_guess[i]
         elseif !isempty(α) && !iszero(α[i])
             z_guess = zero(u)
@@ -215,7 +215,7 @@ end
 
             if integrator.f isa SplitFunction && split_guess[i] > 0
                 copyto!(zs[i], zs[split_guess[i]])
-            elseif !iszero(tab.const_stage_guess[i])
+            elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[i])
                 fill!(zs[i], tab.const_stage_guess[i])
             elseif !isempty(α) && !iszero(α[i])
                 fill!(zs[i], zero(eltype(u)))
@@ -227,8 +227,8 @@ end
             end
 
             nlsolver.z = zs[i]
+            nlsolver.tmp = tmp
             nlsolver.c = c[i]
-            nlsolver.γ = γ
             zs[i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
             nlsolvefail(nlsolver) && return
             if i == 2 && reuse_W_at_stage2
@@ -245,21 +245,19 @@ end
     else
         # Implicit first stage: Ai[1,1] ≠ 0, requires an nlsolve
         if integrator.success_iter > 0 && !integrator.reeval_fsal &&
-                alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
+                alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
                 alg.extrapolant == :interpolant
             current_extrapolant!(u, t + dt, integrator)
             @.. broadcast = false zs[1] = u - uprev
         elseif tab.stage1_extrapolation &&
-                alg isa OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm &&
+                alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
                 alg.extrapolant == :linear
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
             zs[1] .= zero(eltype(zs[1]))
         end
         nlsolver.z = zs[1]
-        copyto!(tmp, uprev)
-        nlsolver.c = c[1]
-        nlsolver.γ = γ
+        nlsolver.tmp = uprev
         zs[1] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         # All stages share the same W (constant diagonal γ); reuse from stage 1
@@ -271,7 +269,7 @@ end
                 @..tmp = tmp + Ai[i, j] * zs[j]
             end
 
-            if !iszero(tab.const_stage_guess[i])
+            if !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[i])
                 fill!(zs[i], tab.const_stage_guess[i])
             elseif !isempty(α) && !iszero(α[i])
                 fill!(zs[i], zero(eltype(u)))
@@ -283,6 +281,7 @@ end
             end
 
             nlsolver.z = zs[i]
+            nlsolver.tmp = tmp
             nlsolver.c = c[i]
             zs[i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
             nlsolvefail(nlsolver) && return
