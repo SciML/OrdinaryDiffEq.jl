@@ -209,7 +209,7 @@ function alg_cache(
     if f isa SplitFunction
         ks = [zero(u) for _ in 1:s]
     else
-        ks = Vector{Nothing}(nothing, s)
+        ks = Vector{Nothing}()
     end
 
     zs = [zero(u) for _ in 1:(s - 1)]
@@ -253,7 +253,7 @@ function alg_cache(
     )
     fsalfirst = zero(rate_prototype)
     s = tab.s
-    ks = Vector{Nothing}(nothing, s)
+    ks = Vector{Nothing}()
     zs = [zero(u) for _ in 1:(s - 1)]
     push!(zs, nlsolver.z)
     atmp = similar(u, uEltypeNoUnits)
