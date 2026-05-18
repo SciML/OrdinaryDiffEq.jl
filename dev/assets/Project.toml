@@ -1,10 +1,12 @@
 [deps]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqAMF = "08082164-f6a1-4363-b3df-3aa6fcf571ad"
 OrdinaryDiffEqAdamsBashforthMoulton = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 OrdinaryDiffEqExponentialRK = "e0540318-69ee-4070-8777-9e2de6de23de"
@@ -32,9 +34,11 @@ OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 
 [sources]
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
+ImplicitDiscreteSolve = {path = "../lib/ImplicitDiscreteSolve"}
 OrdinaryDiffEqAMF = {path = "../lib/OrdinaryDiffEqAMF"}
 OrdinaryDiffEqAdamsBashforthMoulton = {path = "../lib/OrdinaryDiffEqAdamsBashforthMoulton"}
 OrdinaryDiffEqBDF = {path = "../lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
@@ -63,10 +67,12 @@ OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
 [compat]
 DiffEqDevTools = "3, 4.0"
 Documenter = "0.27, 1"
+ImplicitDiscreteSolve = "2"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqAMF = "2"
 OrdinaryDiffEqAdamsBashforthMoulton = "2.0.0"
 OrdinaryDiffEqBDF = "2.0.0"
+OrdinaryDiffEqCore = "4.1"
 OrdinaryDiffEqDefault = "2.0.0"
 OrdinaryDiffEqExplicitRK = "2.0.0"
 OrdinaryDiffEqExponentialRK = "2.0.0"
