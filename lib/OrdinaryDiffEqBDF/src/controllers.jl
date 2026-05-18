@@ -207,6 +207,18 @@ function step_reject_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
     return bdf_step_reject_controller!(integrator, cache, cache.EEst1)
 end
 
+# Without this method, falling through to the generic 2-arg
+# `post_newton_controller!(integrator, alg)` in OrdinaryDiffEqCore recurses
+# back into the `BDFControllerCache` 3-arg dispatch above, which calls the
+# 2-arg again — a StackOverflowError on the first Newton failure.
+function post_newton_controller!(integrator, alg::QNDF)
+    return post_newton_controller!(integrator, integrator.cache, alg)
+end
+function post_newton_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, ::QNDF)
+    integrator.dt = integrator.dt / get_failfactor(integrator)
+    return nothing
+end
+
 function step_reject_controller!(integrator, alg::FBDF)
     return step_reject_controller!(integrator, integrator.cache, alg)
 end
