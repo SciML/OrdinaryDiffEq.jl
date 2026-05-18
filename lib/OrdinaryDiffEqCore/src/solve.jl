@@ -29,6 +29,8 @@ mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType
     differential_vars::varsType
     ind::Int
     out::outType
+    out_low::outType
+    out_high::outType
     f::FunctionType
     tprev::tType2
     p::ParameterType
@@ -670,12 +672,13 @@ Base.@constprop :aggressive function _ode_init(
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity
             u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
-            out = if i isa VectorContinuousCallback
-                (u isa AbstractArray) ? similar(u, i.len) : zero(u)
+            out, out_low, out_high = if i isa VectorContinuousCallback
+                arr = (u isa AbstractArray) ? similar(u, i.len) : zero(u)
+                arr, similar(arr), similar(arr)
             else
-                nothing
+                nothing, nothing, nothing
             end
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, f, tprev, p)
+            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
             zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, Any}}(zero_func)
             disco_probs[idx] = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
             idx += 1

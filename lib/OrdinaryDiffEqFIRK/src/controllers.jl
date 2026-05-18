@@ -63,7 +63,7 @@ function step_reject_controller!(
     min_stages = (alg.min_order - 1) ÷ 4 * 2 + 1
 
     if (discontinuity_detection)
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
         if disco_dt != -1
             integrator.dt = disco_dt
         end

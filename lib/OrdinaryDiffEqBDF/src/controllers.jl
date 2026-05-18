@@ -110,7 +110,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     end
 
     if discontinuity_detection
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator, integrator.cache)
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
         if disco_dt != -1
             integrator.dt = disco_dt
             return integrator.dt
