@@ -673,7 +673,7 @@ Base.@constprop :aggressive function _ode_init(
         if i.maybe_discontinuity
             u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
             out, out_low, out_high = if i isa VectorContinuousCallback
-                arr = (u isa AbstractArray) ? similar(u, i.len) : zero(u)
+                arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
                 arr, similar(arr), similar(arr)
             else
                 nothing, nothing, nothing
