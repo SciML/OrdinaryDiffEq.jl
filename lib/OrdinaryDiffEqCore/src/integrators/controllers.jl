@@ -100,7 +100,7 @@ function resolve_basic(overrides::NamedTuple, alg, ::Type{QT}) where {QT}
         QT(_override_or_default(overrides, Val(:qsteady_min), qsteady_min_default(alg))),
         QT(_override_or_default(overrides, Val(:qsteady_max), qsteady_max_default(alg))),
         QT(_override_or_default(overrides, Val(:failfactor), failfactor_default(alg))),
-        false
+        Bool(_override_or_default(overrides, Val(:discontinuity_detection), false))
     )
 end
 
@@ -116,7 +116,7 @@ function resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT}) where {QT
     return CommonControllerOptions{QT}(
         QT(opts.qmin), QT(opts.qmax), QT(opts.qmax_first_step),
         QT(opts.gamma), QT(opts.qsteady_min), QT(opts.qsteady_max),
-        QT(opts.failfactor), false
+        QT(opts.failfactor), opts.discontinuity_detection
     )
 end
 
@@ -564,7 +564,7 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    discontinuity_detection = cache.controller.discontinuity_detection
+    discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
         if disco_dt != -1
@@ -627,7 +627,6 @@ mutable struct PIController{B <: Union{NamedTuple, CommonControllerOptions}, T} 
     beta1::T
     beta2::T
     qoldinit::T
-    discontinuity_detection::Bool
 end
 
 # Two-positional-arg form (beta1, beta2 explicit). Keyword-only knobs ride
@@ -669,8 +668,7 @@ function setup_controller_cache(alg, cache, controller::PIController, ::Type{E})
     QT = _resolved_QT(controller.basic)
     basic = resolve_basic(controller.basic, alg, QT)
     resolved = PIController{typeof(basic), QT}(
-        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit),
-    )
+        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit))
     T = QT
     return PIControllerCache{T, E}(
         resolved, one(T), T(resolved.qoldinit), oneunit(E),
@@ -710,7 +708,14 @@ end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
-    (; qmin, gamma) = controller.basic
+    (; qmin, gamma, discontinuity_detection) = controller.basic
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if disco_dt != -1
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
+    end
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -940,7 +945,7 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
-    discontinuity_detection = cache.controller.discontinuity_detection
+    discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
         if disco_dt != -1
@@ -1115,7 +1120,7 @@ end
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
-    discontinuity_detection = cache.controller.discontinuity_detection
+    discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
         if disco_dt != -1
