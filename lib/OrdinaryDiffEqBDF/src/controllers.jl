@@ -171,9 +171,9 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
         discontinuity_detection = controller_cache.discontinuity_detection
     elseif controller_cache isa OrdinaryDiffEqCore.CompositeControllerCache
         current_idx = integrator.cache.current
-        discontinuity_detection = controller_cache.caches[current_idx].controller.discontinuity_detection
+        discontinuity_detection = controller_cache.caches[current_idx].controller.basic.discontinuity_detection
     else
-        discontinuity_detection = controller_cache.controller.discontinuity_detection
+        discontinuity_detection = controller_cache.controller.basic.discontinuity_detection
     end
 
     if discontinuity_detection
