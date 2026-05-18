@@ -152,12 +152,22 @@ function _build_output(S::Int)
     end
 end
 
-function _build_adaptive(S::Int)
+@generated function calculate_error_estimate!(
+        integrator, cache::ESDIRKIMEXCache,
+        tab::ESDIRKIMEXTableau{S, T, T2}, t
+    ) where {S, T, T2}
     btilde_terms = [:(btilde[$i] * zs[$i]) for i in 1:S]
     btilde_rhs = Expr(:call, :+, btilde_terms...)
     ebtilde_terms = [:(ebtilde[$i] * ks[$i]) for i in 1:S]
     ebtilde_rhs = Expr(:call, :+, ebtilde_terms...)
     return quote
+        (; zs, ks, atmp, nlsolver) = cache
+        (; tmp) = nlsolver
+        btilde = tab.btilde
+        ebtilde = tab.ebtilde
+        alg = unwrap_alg(integrator, true)
+        uprev = integrator.uprev
+        u = integrator.u
         if integrator.opts.adaptive && !isempty(btilde)
             @.. broadcast = false tmp = $btilde_rhs
             if integrator.f isa SplitFunction && !isempty(ebtilde)
@@ -181,6 +191,8 @@ function _build_adaptive(S::Int)
         end
     end
 end
+
+_build_adaptive(::Int) = :(calculate_error_estimate!(integrator, cache, tab, t))
 
 @generated function _perform_step_iip!(
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2}
@@ -366,12 +378,22 @@ function _build_oop_output_named(S::Int)
     end
 end
 
-function _build_oop_adaptive_named(S::Int)
-    btilde_terms = [:(btilde[$i] * $(_zsym(i))) for i in 1:S]
+@generated function calculate_error_estimate!(
+        integrator, cache::ESDIRKIMEXConstantCache,
+        tab::ESDIRKIMEXTableau{S, T, T2}, t,
+        zs::NTuple{S}, ks::NTuple{S}
+    ) where {S, T, T2}
+    btilde_terms = [:(btilde[$i] * zs[$i]) for i in 1:S]
     btilde_rhs = Expr(:call, :+, btilde_terms...)
-    ebtilde_terms = [:(ebtilde[$i] * $(_ksym(i))) for i in 1:S]
+    ebtilde_terms = [:(ebtilde[$i] * ks[$i]) for i in 1:S]
     ebtilde_rhs = Expr(:call, :+, ebtilde_terms...)
     return quote
+        nlsolver = cache.nlsolver
+        btilde = tab.btilde
+        ebtilde = tab.ebtilde
+        alg = unwrap_alg(integrator, true)
+        uprev = integrator.uprev
+        u = integrator.u
         if integrator.opts.adaptive && !isempty(btilde)
             tmp = $btilde_rhs
             if integrator.f isa SplitFunction && !isempty(ebtilde)
@@ -390,6 +412,12 @@ function _build_oop_adaptive_named(S::Int)
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
+end
+
+function _build_oop_adaptive_named(S::Int)
+    zs_tuple = Expr(:tuple, (_zsym(i) for i in 1:S)...)
+    ks_tuple = Expr(:tuple, (_ksym(i) for i in 1:S)...)
+    return :(calculate_error_estimate!(integrator, cache, tab, t, $zs_tuple, $ks_tuple))
 end
 
 @generated function _perform_step_oop!(
