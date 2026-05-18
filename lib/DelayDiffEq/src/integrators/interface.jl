@@ -49,7 +49,19 @@ function DiffEqBase.savevalues!(
     # OrdinaryDiffEqCore.get_EEst(integrator) has unitless type of integrator.t
     if OrdinaryDiffEqCore.get_EEst(integrator) isa AbstractFloat
         if ode_integrator.t != integrator.t
-            abs(integrator.t - ode_integrator.t) < 100eps(integrator.t) ||
+            # Tolerance must match the `tstop_tol = 100 * eps(...)` that
+            # modify_dt_for_tstops! uses when deciding to set
+            # next_step_tstop / tstop_target: when `dt + tstop_tol` already
+            # reaches the next tstop, dt is left at `min(original_dt,
+            # distance_to_tstop)` but the step is then snapped to the tstop
+            # in fixed_t_for_tstop_error!. That can leave `ode_integrator.t`
+            # = `tprev + dt` behind by up to `tstop_tol` from
+            # `integrator.t = tstop_target`. Match that bound on the largest
+            # of the two times so the check tracks the snap-back budget
+            # rather than just the integer-1-ULP gap of the previous
+            # (no-snap) regime.
+            tol = 100 * eps(max(abs(integrator.t), abs(ode_integrator.t)))
+            abs(integrator.t - ode_integrator.t) <= tol ||
                 error("unexpected time discrepancy detected")
 
             ode_integrator.t = integrator.t
@@ -579,6 +591,24 @@ end
 function DiffEqBase.get_tstops_max(integrator::DDEIntegrator)
     tstops_array = DiffEqBase.get_tstops_array(integrator)
     return isempty(tstops_array) ? integrator.sol.prob.tspan[end] : maximum(tstops_array)
+end
+
+# tstop-target tracking: with these methods modify_dt_for_tstops! records the
+# exact next tstop, and fixed_t_for_tstop_error! snaps integrator.t back onto
+# it after the step so that floating-point rounding in `tprev + dt` can't
+# overshoot the tstop by an ULP (which would otherwise trip the "stepped past
+# tstops but algorithm was dtchangeable" error in handle_tstop!). See SciML/
+# OrdinaryDiffEq.jl#3636.
+OrdinaryDiffEqCore._get_next_step_tstop(integrator::DDEIntegrator) = integrator.next_step_tstop
+OrdinaryDiffEqCore._get_tstop_target(integrator::DDEIntegrator) = integrator.tstop_target
+function OrdinaryDiffEqCore._set_tstop_flag!(
+        integrator::DDEIntegrator, is_tstop::Bool, target = nothing
+    )
+    integrator.next_step_tstop = is_tstop
+    if is_tstop && target !== nothing
+        integrator.tstop_target = target
+    end
+    return nothing
 end
 
 # update integrator when u is modified by callbacks

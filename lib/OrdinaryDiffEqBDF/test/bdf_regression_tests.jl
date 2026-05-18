@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
-using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -176,4 +176,23 @@ if VERSION >= v"1.12"
         allocs = @allocated step!(integrator)
         @test allocs == 0
     end
+end
+
+# Regression test for issue #3645: Newton failure with QNDF used to recurse
+# through `post_newton_controller!(integrator, alg::QNDF)` →
+# generic 2-arg in core → `BDFControllerCache` 3-arg → 2-arg again …,
+# producing a `StackOverflowError` on the first failed Newton step.
+@testset "QNDF Newton failure does not StackOverflow (#3645)" begin
+    f_qndf!(du, u, p, t) = (du[1] = -1.0e6 * (u[1] - cos(t)); nothing)
+    prob_qndf = ODEProblem(f_qndf!, [0.0], (0.0, 1.0))
+    # Cripple the Newton solver so it can never converge.
+    alg = QNDF(; nlsolve = NLNewton(; max_iter = 1, κ = 1.0e-30))
+    sol = solve(
+        prob_qndf, alg; dt = 0.5, reltol = 1.0e-12, abstol = 1.0e-12,
+        verbose = DEVerbosity(SciMLLogging.None())
+    )
+    # With the fix, repeated Newton failures shrink dt until dtmin and
+    # the solver gives up cleanly (Unstable) instead of overflowing the stack.
+    @test sol.retcode != ReturnCode.Success
+    @test sol.retcode != ReturnCode.Default
 end

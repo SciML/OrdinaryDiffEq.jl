@@ -415,10 +415,7 @@ function check_event_occurrence_upto(integrator, callback::VectorContinuousCallb
     @. top_sign = sign(top_condition)
 
     # Determine event occurrence
-    event_occurred = findall_events!(
-        top_condition, callback.affect!, callback.affect_neg!,
-        bottom_sign
-    )
+    event_occurred = findall_events!(top_condition, bottom_sign)
     return event_occurred, event_idx, top_sign
 end
 
@@ -444,30 +441,32 @@ function find_root(f, tup, rootfind::SciMLBase.RootfindOpt)
 end
 
 """
-findall_events!(next_sign,affect!,affect_neg!,prev_sign)
+findall_events!(next_sign, prev_sign)
 
 Modifies `next_sign` to be an array of booleans for if there is a sign change
 in the interval between prev_sign and next_sign.
 Return `true` if any event occurred.
 """
 function findall_events!(
-        next_sign::Union{Array, SubArray}, affect!::F1, affect_neg!::F2,
+        next_sign::Union{Array, SubArray},
         prev_sign::Union{Array, SubArray}
-    ) where {F1, F2}
-    # VectorContinuousCallback path: the single affect! handles both
-    # crossing directions via the simultaneous_events mask, so detection
-    # fires on any sign change.
+    )
+    # `VectorContinuousCallback` only has `affect!` (no `affect_neg!`) and
+    # `apply_callback!` invokes it with the `simultaneous_events` mask, so
+    # detection only needs to fire on any sign change away from a non-zero
+    # `prev_sign`.
+    #
+    # The `prev_sign[i] != 0` guard is load-bearing: state-machine
+    # callbacks (conditions of the form `(state == X) * (expr)`) snap
+    # other-state condition values to exactly 0 the instant the affect
+    # changes state. Without the guard, `prev_sign[i] * next_sign[i] <= 0`
+    # would fire on every subsequent step (0 * ±1 = 0 ≤ 0) and the
+    # rootfinder would re-fire the just-handled callback indefinitely —
+    # the scalar `is_event_occurrence` already excludes `prev_sign == 0`
+    # implicitly via its direction checks.
     @inbounds for i in 1:length(prev_sign)
-        next_sign[i] = prev_sign[i] * next_sign[i] <= 0
+        next_sign[i] = prev_sign[i] != 0 && prev_sign[i] * next_sign[i] <= 0
     end
-    return any(isone, next_sign)
-end
-
-function findall_events!(next_sign, affect!::F1, affect_neg!::F2, prev_sign) where {F1, F2}
-    hasaffect::Bool = affect! !== nothing
-    hasaffectneg::Bool = affect_neg! !== nothing
-    f = (n, p) -> ((p < 0 && hasaffect) || (p > 0 && hasaffectneg)) && p * n <= 0
-    A = map!(f, next_sign, next_sign, prev_sign)
     return any(isone, next_sign)
 end
 

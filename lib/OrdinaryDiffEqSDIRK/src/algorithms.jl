@@ -38,6 +38,8 @@ function SDIRK_docstring(
 end
 
 abstract type OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAlgorithm end
+abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
 
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
@@ -102,7 +104,7 @@ end
     """
 )
 struct ImplicitMidpoint{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
@@ -195,7 +197,7 @@ end
     """
 )
 struct TRBDF2{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -247,7 +249,7 @@ end
     """
 )
 struct SDIRK2{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -348,7 +350,7 @@ end
     """
 )
 struct SSPSDIRK2{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm # Not adaptive
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm # Not adaptive
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -535,7 +537,7 @@ end
     """
 )
 struct Cash4{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -585,7 +587,7 @@ end
     """
 )
 struct SFSDIRK4{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
@@ -630,7 +632,7 @@ end
     """
 )
 struct SFSDIRK5{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
@@ -676,7 +678,7 @@ end
     """
 )
 struct SFSDIRK6{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
@@ -722,7 +724,7 @@ end
     """
 )
 struct SFSDIRK7{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
@@ -768,7 +770,7 @@ end
     """
 )
 struct SFSDIRK8{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     extrapolant::Symbol
@@ -810,7 +812,7 @@ end
     """
 )
 struct Hairer4{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -849,7 +851,7 @@ end
     """
 )
 struct Hairer42{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool

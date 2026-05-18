@@ -40,7 +40,7 @@ using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    CustomLevel, AbstractMessageLevel, @verbosity_specifier, verbosity_to_bool
+    MessageLevel, @verbosity_specifier, verbosity_to_bool
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 

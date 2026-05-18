@@ -163,3 +163,23 @@ testTol = 0.2
     sim122 = test_convergence(dts, prob, ESDIRK659L2SA())
     @test sim122.𝒪est[:final] ≈ 6 atol = testTol
 end
+
+@testset "ARS343 SplitODEProblem" begin
+    dts = 1 .// 2 .^ (8:-1:4)
+
+    # OOP: regression test for #3623 (BoundsError at index [0]) + order check
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    sim_oop = test_convergence(dts, prob_oop, ARS343())
+    @test sim_oop.𝒪est[:l∞] ≈ 3 atol = testTol
+
+    # IIP: same problem, in-place
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    sim_iip = test_convergence(dts, prob_iip, ARS343())
+    @test sim_iip.𝒪est[:l∞] ≈ 3 atol = testTol
+end

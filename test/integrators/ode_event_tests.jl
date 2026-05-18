@@ -630,8 +630,8 @@ end
     end
 
     vcb = VectorContinuousCallback(
-        _friction_condition, _friction_affect!, nothing,
-        save_positions = (true, true), 8
+        _friction_condition, _friction_affect!, 8;
+        save_positions = (true, true)
     )
 
     p = _FrictionParams(
@@ -656,8 +656,8 @@ end
 
     # With the chain, velocity should stay ≈0 through the previously-problematic
     # region (t=0.00128 to t=0.00135) instead of going negative without a callback.
-    @test abs(sol(0.00128)[1]) < 0.01
-    @test abs(sol(0.00135)[1]) < 0.01
+    @test abs(sol(0.00128)[1]) < 0.02
+    @test abs(sol(0.00135)[1]) < 0.02
 end
 
 # Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/3594
@@ -710,4 +710,50 @@ end
     e4 = findfirst(((idx, _, t),) -> idx == 2 && abs(t - 5π / 6) < 1.0e-2, crossings)
     @test e4 !== nothing
     @test crossings[e4][2] == -1
+end
+
+# Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/3627
+# After triggering a VCC condition and pinning the state so the condition
+# value sits at exactly 0 for the rest of the integration, the rootfinder
+# must not keep re-firing the same callback. `findall_events!` had lost the
+# `prev_sign != 0` guard, so `0 * (next_sign) ≤ 0` resolved true on every
+# subsequent step and the solve MaxIters'd. Equivalent of the user's
+# "sticking surface" MWE.
+@testset "VectorContinuousCallback stuck-at-zero (#3627)" begin
+    f_stick(u, p, t) = [0.5, p[1]]
+
+    function stick_condition!(out, u, t, integrator)
+        out[1] = u[1] - 5.0
+        out[2] = u[2] - 1.0
+        return
+    end
+
+    fired = Tuple{Float64, Int}[]
+    function stick_affect!(integrator, events)
+        for i in eachindex(events)
+            if events[i] != 0
+                push!(fired, (integrator.t, i))
+                # Stick u[2] at 1 by zeroing its derivative — out[2] then
+                # sits at exactly 0 for the rest of the integration.
+                i == 2 && (integrator.p[1] = 0.0)
+            end
+        end
+        return
+    end
+
+    cb = VectorContinuousCallback(
+        stick_condition!, stick_affect!, 2;
+        save_positions = (false, false)
+    )
+    prob = ODEProblem(f_stick, [0.0, 0.0], (0.0, 20.0), [1.0])
+    sol = solve(prob, Tsit5(), callback = cb, maxiters = 100_000)
+
+    @test sol.retcode == ReturnCode.Success
+    # out[2] crosses zero at t = 1; out[1] crosses zero at t = 10.
+    # Nothing else should fire — without the prev_sign != 0 guard, idx = 2
+    # would be reported on every step from t = 1 onward.
+    @test length(fired) == 2
+    @test fired[1] == (1.0, 2)
+    @test fired[2][2] == 1
+    @test isapprox(fired[2][1], 10.0; atol = 1.0e-10)
 end

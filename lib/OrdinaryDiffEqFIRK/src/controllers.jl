@@ -2,7 +2,7 @@ function step_accept_controller!(
         integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau, q
     )
     (; controller) = ccache
-    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller
+    (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
     (; cache) = integrator
     (; num_stages, step, iter, hist_iter, index) = cache

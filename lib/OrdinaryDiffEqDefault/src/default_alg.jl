@@ -48,6 +48,7 @@ function isdefaultalg(
 end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractODEProblem, ::Nothing) = true
+SciMLBase.supports_solve_rng(::SciMLBase.AbstractDAEProblem, ::Nothing) = true
 
 function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     return SciMLBase.__init(
@@ -58,6 +59,19 @@ end
 function SciMLBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
     return SciMLBase.__solve(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...
+    )
+end
+
+function SciMLBase.__init(prob::DAEProblem, ::Nothing, args...; kwargs...)
+    return SciMLBase.__init(
+        prob, DFBDF(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...
+    )
+end
+function SciMLBase.__solve(prob::DAEProblem, ::Nothing, args...; kwargs...)
+    return SciMLBase.__solve(
+        prob, DFBDF(autodiff = AutoFiniteDiff()),
         args...; wrap = Val(false), kwargs...
     )
 end

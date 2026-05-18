@@ -388,3 +388,44 @@ end
         end
     end
 end
+
+@testset "Issue #3631: DAE dense output for Rosenbrock methods with empty H" begin
+    # Methods without a stiff-aware dense output (empty H matrix, e.g. ROS34PW2,
+    # ROS34PW3, Rodas3) stored f(uprev) and f(u) and reused the standard Hermite
+    # cubic. For DAE problems those values are residuals on algebraic variables,
+    # not derivatives, so Hermite was producing wildly wrong off-knot values.
+    # See https://github.com/SciML/OrdinaryDiffEq.jl/issues/3631.
+    function f!(du, u, p, t)
+        du[1] = 20 * ((t - 1)^(p - 1) + t * (p - 1) * (t - 1)^(p - 2))
+        du[2] = u[1] - u[2]
+        return nothing
+    end
+    anasol(t, p) = 10 .* t .* (t .- 1) .^ (p - 1)
+
+    p = 3
+    u0 = [0.0, 0.0]
+    tspan = (0.0, 1.5)
+    M = zeros(2, 2)
+    M[1, 1] = 1
+    M[1, 2] = 1
+    prob = ODEProblem(ODEFunction(f!, mass_matrix = M), u0, tspan, p)
+
+    tt = collect(0:0.01:tspan[2])
+
+    # Methods with their own dense output should match the analytical solution
+    # almost exactly; methods that fall back to the generic Hermite path must
+    # at least be bounded by O(dt) — Hermite-on-residuals previously produced
+    # interpolation errors orders of magnitude larger than the knot errors.
+    for (method, expected_interp) in (
+            (Rodas4P, 1.0e-10), (ROS34PW2, 5.0e-2),
+            (ROS34PW3, 5.0e-2), (Rodas3, 5.0e-2),
+        )
+        sol = solve(prob, method(); dense = true, reltol = 1.0e-4, abstol = 1.0e-4)
+        err_knot = maximum(abs.(sol[1, :] .- anasol(sol.t, p)))
+        err_interp = maximum(abs.(sol(tt; idxs = 1) .- anasol(tt, p)))
+        @test err_knot < 1.0e-6
+        @test err_interp < expected_interp
+        # interp error should not be wildly larger than knot error
+        @test err_interp < 100 * max(err_knot, 1.0e-4)
+    end
+end

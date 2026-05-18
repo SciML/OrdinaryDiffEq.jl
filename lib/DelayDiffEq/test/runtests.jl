@@ -111,6 +111,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     @time @safetestset "Waltman Problem Tests" begin
         include("regression/waltman.jl")
     end
+    @time @safetestset "Issue #3636: DDE tstop overshoot" begin
+        include("regression/issue_3636_dde_tstop_overshoot.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "SDDE"

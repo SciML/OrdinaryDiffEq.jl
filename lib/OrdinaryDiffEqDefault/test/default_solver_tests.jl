@@ -181,3 +181,21 @@ cb = DiscreteCallback(
 prob = ODEProblem((u, p, t) -> [0.0], [0.0], (0.0, 1.0))
 sol = solve(prob, callback = cb)
 @test counter[] == 1
+
+# DAEProblem default solver should be DFBDF (residual-form fully implicit DAE)
+function dae_rober!(out, du, u, p, t)
+    out[1] = -0.04u[1] + 1.0e4 * u[2] * u[3] - du[1]
+    out[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3] - du[2]
+    out[3] = u[1] + u[2] + u[3] - 1.0
+    return nothing
+end
+u0_dae = [1.0, 0.0, 0.0]
+du0_dae = [-0.04, 0.04, 0.0]
+prob_dae = DAEProblem(
+    dae_rober!, du0_dae, u0_dae, (0.0, 1.0e3); differential_vars = [true, true, false]
+)
+sol_dae_default = solve(prob_dae)
+sol_dae_dfbdf = solve(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
+@test sol_dae_default.retcode == ReturnCode.Success
+@test sol_dae_default.t == sol_dae_dfbdf.t
+@test sol_dae_default.u == sol_dae_dfbdf.u
