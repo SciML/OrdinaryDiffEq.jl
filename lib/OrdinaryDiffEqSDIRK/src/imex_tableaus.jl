@@ -1,4 +1,4 @@
-struct ESDIRKIMEXTableau{S, T, T2, E}
+struct ESDIRKIMEXTableau{S, T, T2}
     Ai::Matrix{T}
     bi::Vector{T}
     Ae::Matrix{T}
@@ -25,23 +25,11 @@ end
 function ESDIRKIMEXTableau(
         ::Val{S},
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
-        nlsolver_init_c; kwargs...
-    ) where {S}
-    return ESDIRKIMEXTableau(
-        Val(S), Val(:standard),
-        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
-        nlsolver_init_c; kwargs...
-    )
-end
-
-function ESDIRKIMEXTableau(
-        ::Val{S}, ::Val{E},
-        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true,
         explicit_fsallast = false, fsallast_c = one(eltype(c)),
         const_stage_guess = eltype(c)[], stage1_extrapolation = true
-    ) where {S, E}
-    return ESDIRKIMEXTableau{S, eltype(bi), eltype(c), E}(
+    ) where {S}
+    return ESDIRKIMEXTableau{S, eltype(bi), eltype(c)}(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate, explicit_fsallast,
         fsallast_c, const_stage_guess, stage1_extrapolation
@@ -1862,8 +1850,6 @@ ESDIRKIMEXTableau(::SDIRK2, T, T2) = SDIRK2ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(alg::Cash4, T, T2) = Cash4ESDIRKIMEXTableau(alg, T, T2)
 ESDIRKIMEXTableau(::TRBDF2, T, T2) = TRBDF2ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::ImplicitMidpoint, T, T2) = ImplicitMidpointESDIRKIMEXTableau(T, T2)
-ESDIRKIMEXTableau(::ImplicitEuler, T, T2) = ImplicitEulerESDIRKIMEXTableau(T, T2)
-ESDIRKIMEXTableau(::Trapezoid, T, T2) = TrapezoidESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::SSPSDIRK2, T, T2) = SSPSDIRK2ESDIRKIMEXTableau(T, T2)
 
 function SFSDIRK4ESDIRKIMEXTableau(T, T2)
@@ -2192,36 +2178,6 @@ function ImplicitMidpointESDIRKIMEXTableau(T, T2)
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
         2, s, false, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
         explicit_fsallast = true, fsallast_c = one(T2)
-    )
-end
-
-function ImplicitEulerESDIRKIMEXTableau(T, T2)
-    s = 1
-    Ai = fill(one(T), 1, 1)
-    bi = T[one(T)]
-    c = T2[one(T2)]
-    return ESDIRKIMEXTableau(
-        Val(s), Val(:ie_dd2),
-        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
-        1, s, false, Int[], one(T2); explicit_first_stage = false, fsal = true,
-        stiffly_accurate = false, explicit_fsallast = true, fsallast_c = one(T2)
-    )
-end
-
-function TrapezoidESDIRKIMEXTableau(T, T2)
-    s = 2
-    γ = convert(T2, 1 // 2)
-    γT = convert(T, 1 // 2)
-    Ai = zeros(T, 2, 2)
-    Ai[2, 1] = γT
-    Ai[2, 2] = γT
-    bi = T[γT, γT]
-    c = T2[zero(T2), one(T2)]
-    return ESDIRKIMEXTableau(
-        Val(s), Val(:trap_dd3),
-        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
-        2, s, false, Int[], one(T2); explicit_first_stage = true, fsal = true,
-        stiffly_accurate = true, explicit_fsallast = true, fsallast_c = one(T2)
     )
 end
 
