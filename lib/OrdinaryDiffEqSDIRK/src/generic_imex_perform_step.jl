@@ -246,7 +246,7 @@ function calculate_error_estimate!(
     end
 end
 
-@muladd function calculate_error_estimate!(
+function calculate_error_estimate!(
         integrator, cache::ESDIRKIMEXCache,
         tab::ESDIRKIMEXTableau{2, T, T2, :trap_dd3}, t
     ) where {T, T2}
@@ -296,7 +296,7 @@ end
     end
 end
 
-@muladd function calculate_error_estimate!(
+function calculate_error_estimate!(
         integrator, cache::ESDIRKIMEXConstantCache,
         tab::ESDIRKIMEXTableau{2, T, T2, :trap_dd3}, t
     ) where {T, T2}
@@ -337,7 +337,7 @@ end
 end
 
 function _build_trap_iip_body(::Int)
-    return :(@muladd begin
+    return quote
         (; t, dt, uprev, u, p) = integrator
         (; atmp, nlsolver, step_limiter!) = cache
         (; z, tmp) = nlsolver
@@ -369,11 +369,11 @@ function _build_trap_iip_body(::Int)
 
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         f(integrator.fsallast, u, p, t + dt)
-    end)
+    end
 end
 
 function _build_trap_oop_body(::Int)
-    return :(@muladd begin
+    return quote
         (; t, dt, uprev, u, p) = integrator
         nlsolver = cache.nlsolver
         f = integrator.f
@@ -400,7 +400,7 @@ function _build_trap_oop_body(::Int)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.k[1] = integrator.fsalfirst
         integrator.k[2] = integrator.fsallast
-    end)
+    end
 end
 
 @generated function _perform_step_iip!(

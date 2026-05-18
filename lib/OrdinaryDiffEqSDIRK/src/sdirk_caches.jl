@@ -122,10 +122,6 @@ function alg_cache(
     )
 end
 
-_nlsolver_γc(alg, tab) = (tab.Ai[tab.s, tab.s], tab.nlsolver_init_c)
-_nlsolver_γc(::Trapezoid, tab) = (1 // 2, 1)
-_nlsolver_γc(::ImplicitEuler, tab) = (1, 1)
-
 function alg_cache(
         alg::_PureSDIRKAlg, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -133,7 +129,8 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = ESDIRKIMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = _nlsolver_γc(alg, tab)
+    γ = tab.Ai[tab.s, tab.s]
+    c = tab.nlsolver_init_c
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
@@ -150,7 +147,8 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = ESDIRKIMEXTableau(alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = _nlsolver_γc(alg, tab)
+    γ = tab.Ai[tab.s, tab.s]
+    c = tab.nlsolver_init_c
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
