@@ -154,7 +154,7 @@ end
 
 @generated function calculate_error_estimate!(
         integrator, cache::ESDIRKIMEXCache,
-        tab::ESDIRKIMEXTableau{S, T, T2}, t
+        tab::ESDIRKIMEXTableau{S, T, T2, :standard}, t
     ) where {S, T, T2}
     btilde_terms = [:(btilde[$i] * zs[$i]) for i in 1:S]
     btilde_rhs = Expr(:call, :+, btilde_terms...)
@@ -194,9 +194,221 @@ end
 
 _build_adaptive(::Int) = :(calculate_error_estimate!(integrator, cache, tab, t))
 
+function calculate_error_estimate!(
+        integrator, cache::ESDIRKIMEXCache,
+        tab::ESDIRKIMEXTableau{1, T, T2, :ie_dd2}, t
+    ) where {T, T2}
+    (; uprev, u, dt) = integrator
+    (; atmp, zs) = cache
+    if integrator.opts.adaptive && integrator.success_iter > 0
+        uprev2 = integrator.uprev2
+        tprev = integrator.tprev
+        dt1 = dt * (t + dt - tprev)
+        dt2 = (t - tprev) * (t + dt - tprev)
+        c = 7 / 12
+        r = c * dt^2
+        scratch = zs[1]
+        @.. broadcast = false scratch = r * integrator.opts.internalnorm(
+            (u - uprev) / dt1 - (uprev - uprev2) / dt2, t
+        )
+        calculate_residuals!(
+            atmp, scratch, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    else
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+    end
+end
+
+function calculate_error_estimate!(
+        integrator, cache::ESDIRKIMEXConstantCache,
+        tab::ESDIRKIMEXTableau{1, T, T2, :ie_dd2}, t,
+        zs::NTuple{1}, ks::NTuple{1}
+    ) where {T, T2}
+    (; uprev, u, dt) = integrator
+    if integrator.opts.adaptive && integrator.success_iter > 0
+        uprev2 = integrator.uprev2
+        tprev = integrator.tprev
+        dt1 = dt * (t + dt - tprev)
+        dt2 = (t - tprev) * (t + dt - tprev)
+        c = 7 / 12
+        r = c * dt^2
+        tmp = r *
+            integrator.opts.internalnorm.((u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    else
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+    end
+end
+
+function calculate_error_estimate!(
+        integrator, cache::ESDIRKIMEXCache,
+        tab::ESDIRKIMEXTableau{2, T, T2, :trap_dd3}, t
+    ) where {T, T2}
+    (; uprev, u, dt) = integrator
+    (; atmp, nlsolver) = cache
+    (; tmp) = nlsolver
+    if integrator.opts.adaptive
+        if integrator.iter > 2
+            uprev2 = integrator.uprev2
+            tprev = integrator.tprev
+            uprev3 = cache.uprev3
+            tprev2 = cache.tprev2
+            dt1 = dt * (t + dt - tprev)
+            dt2 = (t - tprev) * (t + dt - tprev)
+            dt3 = (t - tprev) * (t - tprev2)
+            dt4 = (tprev - tprev2) * (t - tprev2)
+            dt5 = t + dt - tprev2
+            c = 7 / 12
+            r = c * dt^3 / 2
+            @.. broadcast = false tmp = r * integrator.opts.internalnorm(
+                (
+                    (
+                        (u - uprev) / dt1 - (uprev - uprev2) / dt2
+                    )
+                    - (
+                        (uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4
+                    )
+                ) / dt5,
+                t
+            )
+            calculate_residuals!(
+                atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
+                copyto!(cache.uprev3, uprev2)
+                cache.tprev2 = tprev
+            end
+        elseif integrator.success_iter > 0
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+            copyto!(cache.uprev3, integrator.uprev2)
+            cache.tprev2 = integrator.tprev
+        else
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+        end
+    end
+end
+
+function calculate_error_estimate!(
+        integrator, cache::ESDIRKIMEXConstantCache,
+        tab::ESDIRKIMEXTableau{2, T, T2, :trap_dd3}, t
+    ) where {T, T2}
+    (; uprev, u, dt) = integrator
+    if integrator.opts.adaptive
+        if integrator.iter > 2
+            uprev2 = integrator.uprev2
+            tprev = integrator.tprev
+            uprev3 = cache.uprev3
+            tprev2 = cache.tprev2
+            dt1 = dt * (t + dt - tprev)
+            dt2 = (t - tprev) * (t + dt - tprev)
+            dt3 = (t - tprev) * (t - tprev2)
+            dt4 = (tprev - tprev2) * (t - tprev2)
+            dt5 = t + dt - tprev2
+            c = 7 / 12
+            r = c * dt^3 / 2
+            DD31 = (u - uprev) / dt1 - (uprev - uprev2) / dt2
+            DD30 = (uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4
+            tmp = r * integrator.opts.internalnorm((DD31 - DD30) / dt5, t)
+            atmp = calculate_residuals(
+                tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+            if OrdinaryDiffEqCore.get_EEst(integrator) <= 1
+                cache.uprev3 = uprev2
+                cache.tprev2 = tprev
+            end
+        elseif integrator.success_iter > 0
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+            cache.uprev3 = integrator.uprev2
+            cache.tprev2 = integrator.tprev
+        else
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+        end
+    end
+end
+
+function _build_trap_iip_body(::Int)
+    return quote
+        (; t, dt, uprev, u, p) = integrator
+        (; atmp, nlsolver, step_limiter!) = cache
+        (; z, tmp) = nlsolver
+        f = integrator.f
+        mass_matrix = f.mass_matrix
+
+        γ = 1 // 2
+        γdt = γ * dt
+        markfirststage!(nlsolver)
+
+        @.. broadcast = false z = uprev
+        invγdt = inv(γdt)
+        if mass_matrix === I
+            @.. broadcast = false tmp = uprev * invγdt + integrator.fsalfirst
+        else
+            mul!(u, mass_matrix, uprev)
+            @.. broadcast = false tmp = u * invγdt + integrator.fsalfirst
+        end
+        nlsolver.α = 1
+        nlsolver.γ = γ
+        nlsolver.method = COEFFICIENT_MULTISTEP
+        z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
+        @.. broadcast = false u = z
+
+        step_limiter!(u, integrator, p, t + dt)
+
+        calculate_error_estimate!(integrator, cache, tab, t)
+
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        f(integrator.fsallast, u, p, t + dt)
+    end
+end
+
+function _build_trap_oop_body(::Int)
+    return quote
+        (; t, dt, uprev, u, p) = integrator
+        nlsolver = cache.nlsolver
+        f = integrator.f
+        γ = 1 // 2
+        γdt = γ * dt
+        markfirststage!(nlsolver)
+
+        nlsolver.z = uprev
+        if f.mass_matrix === I
+            nlsolver.tmp = @.. broadcast = false uprev * inv(γdt) + integrator.fsalfirst
+        else
+            nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
+        end
+        nlsolver.α = 1
+        nlsolver.γ = γ
+        nlsolver.method = COEFFICIENT_MULTISTEP
+        u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(nlsolver) && return
+        integrator.u = u
+
+        calculate_error_estimate!(integrator, cache, tab, t)
+
+        integrator.fsallast = f(u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end
+end
+
 @generated function _perform_step_iip!(
-        integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2}
-    ) where {S, T, T2}
+        integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2, E}
+    ) where {S, T, T2, E}
+    if E === :trap_dd3
+        return _build_trap_iip_body(S)
+    end
     setup = quote
         (; t, dt, uprev, u, p) = integrator
         (; zs, ks, atmp, nlsolver, step_limiter!) = cache
@@ -245,12 +457,12 @@ _build_adaptive(::Int) = :(calculate_error_estimate!(integrator, cache, tab, t))
             $stages_efs_true
         else
             if integrator.success_iter > 0 && !integrator.reeval_fsal &&
-                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
+                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
                     alg.extrapolant == :interpolant
                 current_extrapolant!(u, t + dt, integrator)
                 @.. broadcast = false zs[1] = u - uprev
             elseif tab.stage1_extrapolation &&
-                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
+                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
                     alg.extrapolant == :linear
                 @.. broadcast = false zs[1] = dt * integrator.fsalfirst
             else
@@ -278,6 +490,14 @@ _build_adaptive(::Int) = :(calculate_error_estimate!(integrator, cache, tab, t))
         else
             @.. broadcast = false integrator.fsallast = zs[$S] / dt
         end
+
+        $(E === :ie_dd2 ? quote
+            if integrator.opts.adaptive && integrator.differential_vars !== nothing
+                @.. broadcast = false atmp = ifelse(cache.algebraic_vars, integrator.fsallast, false) /
+                    integrator.opts.abstol
+                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
+            end
+        end : nothing)
     end
 end
 
@@ -380,7 +600,7 @@ end
 
 @generated function calculate_error_estimate!(
         integrator, cache::ESDIRKIMEXConstantCache,
-        tab::ESDIRKIMEXTableau{S, T, T2}, t,
+        tab::ESDIRKIMEXTableau{S, T, T2, :standard}, t,
         zs::NTuple{S}, ks::NTuple{S}
     ) where {S, T, T2}
     btilde_terms = [:(btilde[$i] * zs[$i]) for i in 1:S]
@@ -421,8 +641,11 @@ function _build_oop_adaptive_named(S::Int)
 end
 
 @generated function _perform_step_oop!(
-        integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2}
-    ) where {S, T, T2}
+        integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2, E}
+    ) where {S, T, T2, E}
+    if E === :trap_dd3
+        return _build_trap_oop_body(S)
+    end
     z1 = _zsym(1); k1 = _ksym(1); zS = _zsym(S)
 
     decls = quote end
@@ -478,12 +701,12 @@ end
             $stages_efs_true
         else
             if integrator.success_iter > 0 && !integrator.reeval_fsal &&
-                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
+                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
                     alg.extrapolant == :interpolant
                 current_extrapolant!(u, t + dt, integrator)
                 $z1 = u - uprev
             elseif tab.stage1_extrapolation &&
-                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm} &&
+                    alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
                     alg.extrapolant == :linear
                 $z1 = dt * integrator.fsalfirst
             else
@@ -515,6 +738,13 @@ end
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
         end
+        $(E === :ie_dd2 ? quote
+            if integrator.opts.adaptive && integrator.differential_vars !== nothing
+                atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
+                    integrator.opts.abstol
+                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
+            end
+        end : nothing)
         integrator.u = u
     end
 end
