@@ -1609,17 +1609,16 @@ end
 # (no explicit tableau, no extrapolation guess)
 #
 function _pure_esdirk_to_imex_tableau(
-        Ai_mat::Matrix{T}, c_vec::Vector{T2},
+        ::Val{S}, Ai_mat::Matrix{T}, c_vec::Vector{T2},
         btilde_vec::Vector{T}, order::Int
-    ) where {T, T2}
-    s = size(Ai_mat, 1)
-    bi_vec = Ai_mat[s, :]
-    Ae = zeros(T, s, s)
-    be_vec = zeros(T, s)
+    ) where {S, T, T2}
+    bi_vec = Ai_mat[S, :]
+    Ae = zeros(T, S, S)
+    be_vec = zeros(T, S)
     return ESDIRKIMEXTableau(
-        Val(s),
+        Val(S),
         Ai_mat, bi_vec, Ae, be_vec, c_vec,
-        btilde_vec, T[], Vector{T2}[], order, s, false, zeros(Int, s), c_vec[3]
+        btilde_vec, T[], Vector{T2}[], order, S, false, zeros(Int, S), c_vec[3]
     )
 end
 
@@ -1678,7 +1677,7 @@ function ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
         tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 5)
 end
 
 #
@@ -1721,7 +1720,7 @@ function ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
         tab.btilde4, tab.btilde5, tab.btilde6,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 4)
 end
 
 #
@@ -1771,7 +1770,7 @@ function ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
         tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 4)
 end
 
 #
@@ -1821,7 +1820,7 @@ function ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
         tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 5)
 end
 
 #
@@ -1887,7 +1886,7 @@ function ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
         tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, tab.btilde9,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 6)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 6)
 end
 
 # ============================================================
