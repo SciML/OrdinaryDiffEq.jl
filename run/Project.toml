@@ -1,8 +1,0 @@
-[deps]
-OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
-OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
-OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
-OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
-RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
-SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
