@@ -60,7 +60,7 @@ import RecursiveArrayTools: chain
 using Logging, SparseArrays
 
 using SciMLLogging: AbstractVerbositySpecifier, AbstractVerbosityPreset,
-    AbstractMessageLevel, None, Minimal, Standard, Detailed, All,
+    None, Minimal, Standard, Detailed, All,
     Silent, DebugLevel, InfoLevel, WarnLevel, ErrorLevel, @SciMLMessage
 
 using OrdinaryDiffEqCore: DEVerbosity
