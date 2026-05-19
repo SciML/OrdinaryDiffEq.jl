@@ -722,6 +722,8 @@ end
 
         $output
 
+        integrator.u = u
+
         $adaptive
 
         if integrator.f isa SplitFunction
@@ -745,6 +747,5 @@ end
                 OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
             end
         end : nothing)
-        integrator.u = u
     end
 end
