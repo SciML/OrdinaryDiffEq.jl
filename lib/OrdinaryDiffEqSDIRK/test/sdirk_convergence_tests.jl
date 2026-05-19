@@ -183,3 +183,27 @@ end
     sim_iip = test_convergence(dts, prob_iip, ARS343())
     @test sim_iip.𝒪est[:l∞] ≈ 3 atol = testTol
 end
+
+# Regression test: Kvaerno3/4/5 with SplitODEProblem must integrate the full RHS (f1+f2),
+# not just f1. These are non-IMEX (issplit=false) methods, so f.f2 must flow through
+# fsalfirst rather than being split off into the explicit ks arrays (which have Ae=be=0).
+# f = f1 + f2 = -u + 2u = u  =>  exact solution u(t) = exp(t) * u0
+@testset "Kvaerno SplitODEProblem" begin
+    dts = 1 .// 2 .^ (8:-1:4)
+
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+
+    sim_oop = test_convergence(dts, prob_oop, Kvaerno4())
+    @test sim_oop.𝒪est[:l∞] ≈ 4 atol = testTol
+
+    sim_iip = test_convergence(dts, prob_iip, Kvaerno4())
+    @test sim_iip.𝒪est[:l∞] ≈ 4 atol = testTol
+end
