@@ -27,7 +27,7 @@ end
 const _PureSDIRKAlg = Union{
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
     OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-    ImplicitEuler, Trapezoid,
+    ImplicitEuler, Trapezoid, CFNLIRK3,
 }
 
 # step_limiter! accessor — only some pure SDIRK algorithms have the field
@@ -183,7 +183,7 @@ function alg_cache(
     )
     fsalfirst = zero(rate_prototype)
     s = tab.s
-    ks = Vector{Nothing}()
+    ks = f isa SplitFunction ? [zero(u) for _ in 1:s] : Vector{Nothing}()
     zs = [zero(u) for _ in 1:(s - 1)]
     push!(zs, nlsolver.z)
     atmp = similar(u, uEltypeNoUnits)

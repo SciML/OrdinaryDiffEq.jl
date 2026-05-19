@@ -51,6 +51,7 @@ end
 
 # Dispatch: each algorithm type maps to its tableau constructor
 ESDIRKIMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+ESDIRKIMEXTableau(::CFNLIRK3, T, T2) = CFNLIRK3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp3, T, T2) = KenCarp3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::Kvaerno3, T, T2) = Kvaerno3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::Kvaerno4, T, T2) = Kvaerno4ESDIRKIMEXTableau(T, T2)
@@ -804,6 +805,58 @@ function ARS343Tableau(T, T2)
         Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         T[], T[], Vector{T2}[], 3, s, false, zeros(Int, s), convert(T2, c3)
+    )
+end
+
+function CFNLIRK3ESDIRKIMEXTableau(T, T2)
+    s = 4
+    γ = convert(T2, 0.43586652150846)
+    γT = convert(T, γ)
+    a32 = convert(T, (1 - γ) / 2)
+    a42 = convert(T, 1.20849664917601276)
+    a43 = -convert(T, 0.64436317068447276)
+    c2 = γ
+    c3 = (one(T2) + γ) / 2
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γT
+    Ai[3, 2] = a32
+    Ai[3, 3] = γT
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γT
+
+    bi_vec = T[zero(T), a42, a43, γT]
+
+    ea21 = convert(T, γ)
+    ea31 = convert(T, (1.7 + γ) / 2)
+    ea32 = convert(T, -0.35)
+    ea42 = convert(T, 1.989175724679859)
+    ea43 = convert(T, -0.989175724679859)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+
+    eb2 = convert(T, 1.20849664917601276)
+    eb3 = -convert(T, 0.64436317068447276)
+    eb4 = convert(T, γ)
+    be_vec = T[zero(T), eb2, eb3, eb4]
+
+    c_vec = T2[zero(T2), c2, c3, one(T2)]
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][2] = one(T2)
+    α_vecs[4][2] = one(T2)
+
+    return ESDIRKIMEXTableau(
+        Val(s),
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        T[], T[], α_vecs, 3, s, false, [0, 1, 2, 2], γ
     )
 end
 
