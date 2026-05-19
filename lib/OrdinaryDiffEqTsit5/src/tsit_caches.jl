@@ -1,22 +1,21 @@
-@cache struct Tsit5Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
-    } <: OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    k1::rateType
-    k2::rateType
-    k3::rateType
-    k4::rateType
-    k5::rateType
-    k6::rateType
-    k7::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
+using ConcreteStructs
+
+@concrete struct Tsit5Cache <: OrdinaryDiffEqMutableCache
+    u
+    uprev
+    k1
+    k2
+    k3
+    k4
+    k5
+    k6
+    k7
+    utilde
+    tmp
+    atmp
+    stage_limiter!
+    step_limiter!
+    thread
 end
 
 function alg_cache(
