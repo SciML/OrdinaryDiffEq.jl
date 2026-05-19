@@ -52,7 +52,7 @@ function ESDIRKIMEXConstantCache(nlsolver, tab)
 end
 
 mutable struct ESDIRKIMEXCache{
-        uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter, AV, U3, T2,
+        uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter, U2, AV, U3, T2,
     } <: SDIRKMutableCache
     u::uType
     uprev::uType
@@ -63,6 +63,7 @@ mutable struct ESDIRKIMEXCache{
     nlsolver::N
     tab::Tab
     step_limiter!::StepLimiter
+    uprev2::U2
     algebraic_vars::AV
     uprev3::U3
     tprev2::T2
@@ -71,14 +72,20 @@ end
 function ESDIRKIMEXCache(u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, step_limiter!)
     return ESDIRKIMEXCache(
         u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, step_limiter!,
-        nothing, nothing, nothing
+        nothing, nothing, nothing, nothing
     )
 end
 
 function full_cache(c::ESDIRKIMEXCache)
     base = (c.u, c.uprev, c.fsalfirst, c.zs..., c.atmp)
     if eltype(c.ks) !== Nothing
-        return tuple(base..., c.ks...)
+        base = tuple(base..., c.ks...)
+    end
+    if c.uprev2 !== nothing
+        base = tuple(base..., c.uprev2)
+    end
+    if c.uprev3 !== nothing
+        base = tuple(base..., c.uprev3)
     end
     return base
 end
@@ -89,7 +96,7 @@ function OrdinaryDiffEqCore.strip_cache(cache::ESDIRKIMEXCache)
         nothing, nothing, nothing,
         Vector{Nothing}(undef, s),
         Vector{Nothing}(undef, s),
-        nothing, nothing, nothing, nothing, nothing, nothing, nothing
+        nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing
     )
 end
 
@@ -188,8 +195,9 @@ function alg_cache(
     end
     uprev3 = (alg isa Trapezoid) ? zero(u) : nothing
     tprev2 = (alg isa Trapezoid) ? t : nothing
+    uprev2_field = alg_extrapolates(alg) ? uprev2 : nothing
     return ESDIRKIMEXCache(
         u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, _esdirk_step_limiter!(alg),
-        algebraic_vars, uprev3, tprev2
+        uprev2_field, algebraic_vars, uprev3, tprev2
     )
 end
