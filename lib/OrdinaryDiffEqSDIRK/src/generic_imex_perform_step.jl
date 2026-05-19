@@ -445,13 +445,13 @@ end
     return quote
         $setup
         if tab.explicit_first_stage
-            if integrator.f isa SplitFunction && tab.fsal && !repeat_step && !integrator.last_stepfail
+            if integrator.f isa SplitFunction && issplit(alg) && tab.fsal && !repeat_step && !integrator.last_stepfail
                 f_impl(zs[1], integrator.uprev, p, integrator.t)
                 zs[1] .*= dt
             else
                 @.. broadcast = false zs[1] = dt * integrator.fsalfirst
             end
-            if integrator.f isa SplitFunction
+            if integrator.f isa SplitFunction && issplit(alg)
                 @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
             end
             $stages_efs_true
@@ -482,7 +482,7 @@ end
 
         $adaptive
 
-        if integrator.f isa SplitFunction
+        if integrator.f isa SplitFunction && issplit(alg)
             integrator.f(integrator.fsallast, u, p, t + dt)
         elseif tab.explicit_fsallast
             integrator.f(integrator.fsallast, u, p, t + tab.fsallast_c * dt)
@@ -690,12 +690,12 @@ end
     return quote
         $setup
         if tab.explicit_first_stage
-            if integrator.f isa SplitFunction
+            if integrator.f isa SplitFunction && issplit(alg)
                 $z1 = dt * f_impl(uprev, p, t)
             else
                 $z1 = dt * integrator.fsalfirst
             end
-            if integrator.f isa SplitFunction
+            if integrator.f isa SplitFunction && issplit(alg)
                 $k1 = dt * integrator.fsalfirst - $z1
             end
             $stages_efs_true
@@ -726,7 +726,7 @@ end
 
         $adaptive
 
-        if integrator.f isa SplitFunction
+        if integrator.f isa SplitFunction && issplit(alg)
             integrator.k[1] = integrator.fsalfirst
             integrator.fsallast = integrator.f(u, p, t + dt)
             integrator.k[2] = integrator.fsallast
