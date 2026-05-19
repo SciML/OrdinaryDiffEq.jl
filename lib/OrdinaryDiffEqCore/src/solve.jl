@@ -16,8 +16,12 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
+struct DiscoProblem{ZF, NLP}
+    zero_func::ZF
+    nlp::NLP
+end
+
 mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
-    #integrator_ref::IntegratorType
     u₁::u1Type
     callback::callbackType
     dt::tType
@@ -38,7 +42,7 @@ end
 
 parameter_values(z::zero_func_struct) = z.p
 
-function (z::zero_func_struct)(θ, p)
+function (z::zero_func_struct)(θ, p)::Float64
     _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
     return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)
@@ -667,7 +671,7 @@ Base.@constprop :aggressive function _ode_init(
             num_probs += 1
         end
     end
-    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
+    disco_probs = Vector{DiscoProblem}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity
@@ -679,8 +683,8 @@ Base.@constprop :aggressive function _ode_init(
                 nothing, nothing, nothing
             end
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
-            zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, Any}}(zero_func)
-            disco_probs[idx] = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
+            disco_prob = IntervalNonlinearProblem{false}(zero_func, [zero(tType), one(tType)], p)
+            disco_probs[idx] = DiscoProblem(zero_func, disco_prob)
             idx += 1
         end
     end
@@ -698,7 +702,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants)
+        typeof(noise), typeof(c), typeof(rate_constants), eltype(disco_probs)
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,

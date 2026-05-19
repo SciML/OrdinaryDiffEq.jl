@@ -23,8 +23,9 @@ function find_discontinuity(u, uprev, integrator)
         if (!(i.maybe_discontinuity)) 
             continue 
         end
-        disco_prob = integrator.disco_probs[idx]
-        disco_zero = disco_prob.f.f.obj.x
+        DP = integrator.disco_probs[idx]
+        disco_prob = DP.nlp
+        disco_zero = DP.zero_func
         disco_zero.dt = dt
         disco_zero.uprev = uprev
         disco_zero.u = u

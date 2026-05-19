@@ -124,7 +124,7 @@ mutable struct ODEIntegrator{
         uType, duType, tType, pType, eigenType, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
-        NoiseType, CType, RCType,
+        NoiseType, CType, RCType, DPType
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -175,8 +175,7 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
-    #disco_prob::IntervalNonlinearProblem
-    disco_probs::Vector{IntervalNonlinearProblem} #should we change this?
+    disco_probs::Vector{DPType}
     W::WType
     P::PType
     sqdt::SqdtType
