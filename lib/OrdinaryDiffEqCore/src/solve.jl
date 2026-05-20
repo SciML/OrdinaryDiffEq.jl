@@ -16,11 +16,6 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-struct DiscoProblem{ZF, NLP}
-    zero_func::ZF
-    nlp::NLP
-end
-
 mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
     u₁::u1Type
     callback::callbackType
@@ -671,7 +666,7 @@ Base.@constprop :aggressive function _ode_init(
             num_probs += 1
         end
     end
-    disco_probs = Vector{DiscoProblem}(undef, num_probs)
+    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity
@@ -683,11 +678,17 @@ Base.@constprop :aggressive function _ode_init(
                 nothing, nothing, nothing
             end
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
-            disco_prob = IntervalNonlinearProblem{false}(zero_func, [zero(tType), one(tType)], p)
-            disco_probs[idx] = DiscoProblem(zero_func, disco_prob)
+            zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, typeof(p)}}(zero_func)
+            disco_prob = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
+            disco_probs[idx] = disco_prob
             idx += 1
         end
     end
+
+    if num_probs > 0
+        disco_probs = convert(Vector{typeof(disco_probs[1])}, disco_probs)
+    end
+
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)

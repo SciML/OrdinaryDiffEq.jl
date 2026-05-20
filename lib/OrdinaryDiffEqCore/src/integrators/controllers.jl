@@ -567,7 +567,7 @@ function step_reject_controller!(integrator, cache::IControllerCache, alg)
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
         end
@@ -711,7 +711,7 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; qmin, gamma, discontinuity_detection) = controller.basic
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
         end
@@ -948,7 +948,7 @@ function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
         end
@@ -1123,7 +1123,7 @@ function step_reject_controller!(integrator, cache::PredictiveControllerCache, a
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
         end
