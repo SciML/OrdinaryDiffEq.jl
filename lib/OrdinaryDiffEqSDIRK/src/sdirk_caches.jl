@@ -4,25 +4,6 @@ function get_fsalfirstlast(cache::SDIRKMutableCache, u)
     return (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 end
 
-# Legacy ImplicitEuler caches kept for OrdinaryDiffEqBDF cross-package import.
-# IE itself routes through ESDIRKIMEXCache via the _PureSDIRKAlg alg_cache below.
-@cache mutable struct ImplicitEulerCache{
-        uType, rateType, uNoUnitsType, N, AV, StepLimiter,
-    } <: SDIRKMutableCache
-    u::uType
-    uprev::uType
-    uprev2::uType
-    fsalfirst::rateType
-    atmp::uNoUnitsType
-    nlsolver::N
-    algebraic_vars::AV
-    step_limiter!::StepLimiter
-end
-
-mutable struct ImplicitEulerConstantCache{N} <: SDIRKConstantCache
-    nlsolver::N
-end
-
 # Pure SDIRK types (non-IMEX) unified into ESDIRKIMEXCache
 const _PureSDIRKAlg = Union{
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
