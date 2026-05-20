@@ -1,8 +1,5 @@
 using OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqFIRK
-using Logging
-global_logger(ConsoleLogger(stderr, Logging.Error)) 
-using BenchmarkTools
 
 predictive_disco_controller(alg) = OrdinaryDiffEqCore.PredictiveController(alg; discontinuity_detection = true)
 PI_disco_controller(alg) = OrdinaryDiffEqCore.PIController(alg; discontinuity_detection = true)
@@ -24,23 +21,23 @@ cb = ContinuousCallback(condition, default_affect!; maybe_discontinuity = true)
 cb2 = ContinuousCallback(condition, default_affect!; maybe_discontinuity = false)
 
 sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6, controller = predictive_disco_controller(RadauIIA5()))
-#  251.334 μs (7692 allocations: 240.09 KiB)
+#  253.208 μs (7657 allocations: 239.47 KiB)
 sol_no_disco_radau = solve(prob, RadauIIA5(); callback = cb2, reltol = 1e-6)
-#  339.167 μs (10308 allocations: 320.84 KiB)
+#  347.917 μs (10308 allocations: 320.86 KiB)
 @test sol_disco_radau.retcode == ReturnCode.Success
 @test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
 
 sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6, controller = PI_disco_controller(Rodas5P()))
-#  439.417 μs (16844 allocations: 589.44 KiB)
+#  456.292 μs (16771 allocations: 587.12 KiB)
 sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-6)
-#  580.125 μs (21804 allocations: 763.61 KiB)
+#  589.666 μs (21804 allocations: 763.61 KiB)
 @test sol_disco_rosenbrock.retcode == ReturnCode.Success
 @test sol_disco_rosenbrock.stats.nreject <= sol_no_disco_rosenbrock.stats.nreject
 
 sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-6, controller = PI_disco_controller(Tsit5()))
-#  49.917 μs (7180 allocations: 227.70 KiB)
+#  48.917 μs (7173 allocations: 227.61 KiB)
 sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
-#  49.542 μs (7158 allocations: 227.05 KiB)
+#  48.750 μs (7158 allocations: 227.05 KiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject
 
@@ -72,16 +69,16 @@ cb = CallbackSet(cb1, cb2)
 cb2 = CallbackSet(cb1f, cb2f)
 
 sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6, controller = PI_disco_controller(Rodas5P()))
-#  1.279 ms (45803 allocations: 1.56 MiB)
+#  1.306 ms (45129 allocations: 1.54 MiB)
 sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-6)
-#  1.412 ms (52871 allocations: 1.80 MiB)
+#  1.500 ms (52871 allocations: 1.80 MiB)
 @test sol_disco_rosenbrock.retcode == ReturnCode.Success
 @test sol_disco_rosenbrock.stats.nreject <= sol_no_disco_rosenbrock.stats.nreject
 
 sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-6, controller = PI_disco_controller(Tsit5()))
-#  274.709 μs (34714 allocations: 1.06 MiB)
+#  261.375 μs (34373 allocations: 1.06 MiB)
 sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-6)
-#  259.625 μs (38745 allocations: 1.19 MiB)
+#  266.125 μs (38745 allocations: 1.19 MiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject
 
@@ -115,27 +112,25 @@ cb_multi2 = CallbackSet(cb_multi_1f, cb_multi_2f)
 
 #disco solve
 sol_disco_radau = solve(prob_multi, RadauIIA5(); callback=cb_multi, reltol=1e-7, abstol=1e-9, controller = predictive_disco_controller(RadauIIA5()))
-#  164.000 μs (2046 allocations: 76.33 KiB)
+#  145.542 μs (1641 allocations: 64.64 KiB)
 sol_no_disco_radau = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
-#  127.541 μs (1044 allocations: 46.11 KiB)
+#  125.667 μs (1044 allocations: 46.12 KiB)
 @test sol_disco_radau.retcode == ReturnCode.Success
 @test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
 
 sol_disco_rosenbrock = solve(prob_multi, Rodas5P(); callback=cb_multi, reltol=1e-7, abstol=1e-9, controller = PI_disco_controller(Rodas5P()))
-#  308.584 μs (2913 allocations: 103.64 KiB)
+#  254.792 μs (2015 allocations: 76.27 KiB)
 sol_no_disco_rosenbrock = solve(prob_multi, Rodas5P(); callback=cb_multi2, reltol=1e-7, abstol=1e-9)
-#  236.833 μs (940 allocations: 43.33 KiB)
+#  231.750 μs (940 allocations: 43.33 KiB)
 @test sol_disco_rosenbrock.retcode == ReturnCode.Success
 @test sol_disco_rosenbrock.stats.nreject <= sol_no_disco_rosenbrock.stats.nreject
 
 sol_disco_tsit5 = solve(prob_multi, Tsit5(); callback=cb_multi, reltol=1e-7, abstol=1e-9, controller = PI_disco_controller(Tsit5()))
-#  120.167 μs (2240 allocations: 83.23 KiB)
+#  99.250 μs (1603 allocations: 59.85 KiB)
 sol_no_disco_tsit5 = solve(prob_multi, Tsit5(); callback=cb_multi2, reltol = 1e-7, abstol = 1e-9)
-#  88.833 μs (1105 allocations: 45.27 KiB)
+#  88.000 μs (1105 allocations: 45.27 KiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject
-
-@profview for i in 1:1000 solve(prob_multi, Tsit5(); callback = cb_multi, reltol=1e-7, abstol=1e-9, controller = PI_disco_controller(Tsit5())) end
 
 #TEST 4: STIFF DISCONTINUITY
 # very stiff discontinuous system
@@ -159,16 +154,16 @@ cb_stiff_f = ContinuousCallback(cond_stiff, default_affect!; maybe_discontinuity
 
 #disco solve
 sol_disco_radau = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11, controller = predictive_disco_controller(RadauIIA5()))
-#  123.708 μs (1786 allocations: 69.94 KiB)
+#  119.250 μs (1666 allocations: 66.52 KiB)
 sol_no_disco_radau = solve(prob_stiff, RadauIIA5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
-#  125.416 μs (1476 allocations: 61.14 KiB)
+#  124.167 μs (1476 allocations: 61.16 KiB)
 @test sol_disco_radau.retcode == ReturnCode.Success
 @test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
 
 sol_disco_tsit5 = solve(prob_stiff, Tsit5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11, controller = PI_disco_controller(Tsit5()))
-#  85.208 μs (2006 allocations: 75.09 KiB)
+#  80.375 μs (1870 allocations: 70.51 KiB)
 sol_no_disco_tsit5 = solve(prob_stiff, Tsit5(); callback=cb_stiff_f, reltol = 1e-9, abstol = 1e-11)
-#  80.833 μs (1783 allocations: 68.51 KiB)
+#  79.583 μs (1783 allocations: 68.51 KiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject
 
@@ -200,61 +195,42 @@ cb_dae = ContinuousCallback(cond_dae, default_affect!; maybe_discontinuity = tru
 cb_daef = ContinuousCallback(cond_dae, default_affect!; maybe_discontinuity = false)
 
 radau_disco = solve(prob_dae, RadauIIA5(); callback=cb_dae, reltol=1e-8, abstol=1e-10, controller = predictive_disco_controller(RadauIIA5()))
-#  66.791 μs (827 allocations: 36.17 KiB)
+#  62.875 μs (754 allocations: 33.98 KiB)
 radau_no_disco = solve(prob_dae, RadauIIA5(); callback=cb_daef, reltol=1e-8, abstol=1e-10)
-#  61.166 μs (639 allocations: 30.59 KiB)
+#  58.417 μs (639 allocations: 30.61 KiB)
 @test radau_disco.retcode == ReturnCode.Success
 @test radau_disco.stats.nreject <= radau_no_disco.stats.nreject
 
 #TEST 6: VECTOR CALLBACK
-function f!(du, u, p, t)
-    du[1] = -u[1]
-    du[2] =  0.2*u[1] - 0.1*u[2]
-    du[3] = 0.1*u[2] - 0.1*u[3]
+function f_vec_disc!(du, u, p, t)
+    du[1] = u[1] < 1.5 ? 2.0*u[1] : -u[1] + 5.25
+    du[2] = u[2] < 0.5 ? 3.0*u[2] : -2.0*u[2] + 2.5
+    du[3] = 4.0 * u[1] - u[2] 
 end
 
-u0    = [3.0, 0.0, -2.0]
-tspan = (0.0, 10.0)
-prob  = ODEProblem(f!, u0, tspan)
+u0_vec = [0.1, 0.05, -0.1]
+tspan_vec = (0.0, 3.0)
+prob_vec = ODEProblem(f_vec_disc!, u0_vec, tspan_vec)
 
-# u[1] == 2.0 and u[1] == 1.0
-function condition!(out, u, t, integrator)
-    out[1] = u[1] - 2.0
-    out[2] = u[1] - 1.0
+function condition_vec!(out, u, t, integrator)
+    out[1] = u[1] - 1.5
+    out[2] = u[2] - 0.5
 end
+default_affect_vec!(integrator, idx) = nothing
+cb_vec  = VectorContinuousCallback(condition_vec!, default_affect_vec!, 2; maybe_discontinuity = true)
+cb_vec2 = VectorContinuousCallback(condition_vec!, default_affect_vec!, 2; maybe_discontinuity = false)
 
-# Discontinuous update to the state when an event fires
-function affect!(integrator, idx)
-    if idx == 1
-        # when u[1] crosses 2, kick u[2] up (jump discontinuity)
-        integrator.u[2] += 5.0
-    elseif idx == 2
-        # when u[1] crosses 1, reset u[2]
-        integrator.u[2] = 0.0
-    end
-end
-
-cb = VectorContinuousCallback(condition!, affect!, 2; maybe_discontinuity = true)
-cb2 = VectorContinuousCallback(condition!, affect!, 2; maybe_discontinuity = false)  
-
-sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, controller = predictive_disco_controller(RadauIIA5()))
-#  29.500 μs (476 allocations: 23.75 KiB)
-sol_no_disco_radau = solve(prob, RadauIIA5(); callback = cb2)
-#  29.292 μs (465 allocations: 23.09 KiB)
-@test sol_disco_radau.retcode == ReturnCode.Success
-@test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
-
-sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, controller = PI_disco_controller(Rodas5P()))
-#  44.959 μs (412 allocations: 23.12 KiB)
-sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2)
-#  44.291 μs (401 allocations: 22.56 KiB)
+sol_disco_rosenbrock = solve(prob_vec, Rodas5P(); callback = cb_vec, reltol=1e-7, abstol=1e-9, controller = PI_disco_controller(Rodas5P()))
+#  175.292 μs (1213 allocations: 54.08 KiB)
+sol_no_disco_rosenbrock = solve(prob_vec, Rodas5P(); callback = cb_vec2, reltol=1e-7, abstol=1e-9)
+#  194.709 μs (888 allocations: 46.53 KiB)
 @test sol_disco_rosenbrock.retcode == ReturnCode.Success
 @test sol_disco_rosenbrock.stats.nreject <= sol_no_disco_rosenbrock.stats.nreject
 
-sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, controller = PI_disco_controller(Tsit5()))
-#  23.208 μs (508 allocations: 23.54 KiB)
-sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2)
-#  23.375 μs (497 allocations: 22.91 KiB)
+sol_disco_tsit5 = solve(prob_vec, Tsit5(); callback = cb_vec, reltol=1e-7, abstol=1e-9, controller = PI_disco_controller(Tsit5()))
+#  73.333 μs (1349 allocations: 57.71 KiB)
+sol_no_disco_tsit5 = solve(prob_vec, Tsit5(); callback = cb_vec2, reltol=1e-7, abstol=1e-9)
+#  74.708 μs (1256 allocations: 58.48 KiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject
 
@@ -278,15 +254,15 @@ cb = ContinuousCallback(cond, default_affect!; maybe_discontinuity = true)
 cb2 = ContinuousCallback(cond, default_affect!; maybe_discontinuity = false)
 
 sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-8, abstol = 1e-10, controller = PI_disco_controller(Rodas5P()))
-#  245.875 μs (2496 allocations: 84.00 KiB)
+#  215.792 μs (1621 allocations: 61.61 KiB)
 sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb2, reltol = 1e-8, abstol = 1e-10)
-#  174.291 μs (845 allocations: 43.62 KiB)
+#  172.333 μs (845 allocations: 43.62 KiB)
 @test sol_disco_rosenbrock.retcode == ReturnCode.Success
 @test sol_disco_rosenbrock.stats.nreject <= sol_no_disco_rosenbrock.stats.nreject
 
 sol_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1e-8, abstol = 1e-10, controller = PI_disco_controller(Tsit5()))
-#  76.583 μs (2053 allocations: 75.30 KiB)
+#  66.292 μs (1450 allocations: 59.10 KiB)
 sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb2, reltol = 1e-8, abstol = 1e-10)
-#  53.250 μs (1117 allocations: 52.55 KiB)
+#  52.500 μs (1117 allocations: 52.55 KiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject

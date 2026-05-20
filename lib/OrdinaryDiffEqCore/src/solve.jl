@@ -42,7 +42,7 @@ end
 
 parameter_values(z::zero_func_struct) = z.p
 
-function (z::zero_func_struct)(θ, p)::Float64
+function (z::zero_func_struct)(θ, p)
     _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
     return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)

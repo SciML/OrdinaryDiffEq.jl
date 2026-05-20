@@ -2,7 +2,7 @@ function set_discontinuity(u, uprev, integrator)
     breakpointθ = find_discontinuity(u, uprev, integrator) 
     dt = integrator.dt
     t = integrator.t
-    if 1e-6 < breakpointθ < 1.0
+    if 1e-10 < breakpointθ < 1.0
         #println("Discontinuity detected at t = ", t + breakpointθ * dt)
         return breakpointθ * dt
     end
