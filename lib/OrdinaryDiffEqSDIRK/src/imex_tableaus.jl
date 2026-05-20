@@ -1,4 +1,4 @@
-struct ESDIRKIMEXTableau{T, T2}
+struct ESDIRKIMEXTableau{S, T, T2, E}
     Ai::Matrix{T}
     bi::Vector{T}
     Ae::Matrix{T}
@@ -23,12 +23,25 @@ end
 
 # Outer constructor with defaults so existing call sites need no change (all IMEX/ESDIRK have both flags true)
 function ESDIRKIMEXTableau(
+        ::Val{S},
+        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
+        nlsolver_init_c; kwargs...
+    ) where {S}
+    return ESDIRKIMEXTableau(
+        Val(S), Val(:standard),
+        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
+        nlsolver_init_c; kwargs...
+    )
+end
+
+function ESDIRKIMEXTableau(
+        ::Val{S}, ::Val{E},
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true,
         explicit_fsallast = false, fsallast_c = one(eltype(c)),
         const_stage_guess = eltype(c)[], stage1_extrapolation = true
-    )
-    return ESDIRKIMEXTableau{eltype(bi), eltype(c)}(
+    ) where {S, E}
+    return ESDIRKIMEXTableau{S, eltype(bi), eltype(c), E}(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate, explicit_fsallast,
         fsallast_c, const_stage_guess, stage1_extrapolation
@@ -38,6 +51,7 @@ end
 
 # Dispatch: each algorithm type maps to its tableau constructor
 ESDIRKIMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+ESDIRKIMEXTableau(::CFNLIRK3, T, T2) = CFNLIRK3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp3, T, T2) = KenCarp3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::Kvaerno3, T, T2) = Kvaerno3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::Kvaerno4, T, T2) = Kvaerno4ESDIRKIMEXTableau(T, T2)
@@ -152,6 +166,7 @@ function KenCarp3ESDIRKIMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:Compile
     α_vecs[4][2] = α42
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_vecs, 3, s, true, [0, 1, 2, 2], c3
     )
@@ -285,6 +300,7 @@ function KenCarp3ESDIRKIMEXTableau(T, T2)
     α_vecs[4][2] = α42
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_vecs, 3, s, true, [0, 1, 2, 2], c3
     )
@@ -338,6 +354,7 @@ function ARS343Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     c_vec = T2[zero(T2), c2, c3, c4]
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         T[], T[], Vector{T2}[], 3, s, false, zeros(Int, s), c3
     )
@@ -509,6 +526,7 @@ function KenCarp4ESDIRKIMEXTableau(T, T2)
     α_vecs[6][5] = α65
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_vecs, 4, s, true, [0, 1, 2, 2, 4, 5], c3
     )
@@ -734,6 +752,7 @@ function KenCarp5ESDIRKIMEXTableau(T, T2)
     α_vecs[8][5] = α85
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_vecs, 5, s, true, [0, 1, 2, 3, 2, 3, 2, 5], c3
     )
@@ -783,8 +802,61 @@ function ARS343Tableau(T, T2)
     c_vec = T2[zero(T2), convert(T2, c2), convert(T2, c3), convert(T2, c4)]
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         T[], T[], Vector{T2}[], 3, s, false, zeros(Int, s), convert(T2, c3)
+    )
+end
+
+function CFNLIRK3ESDIRKIMEXTableau(T, T2)
+    s = 4
+    γ = convert(T2, 0.43586652150846)
+    γT = convert(T, γ)
+    a32 = convert(T, (1 - γ) / 2)
+    a42 = convert(T, 1.20849664917601276)
+    a43 = -convert(T, 0.64436317068447276)
+    c2 = γ
+    c3 = (one(T2) + γ) / 2
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γT
+    Ai[3, 2] = a32
+    Ai[3, 3] = γT
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γT
+
+    bi_vec = T[zero(T), a42, a43, γT]
+
+    ea21 = convert(T, γ)
+    ea31 = convert(T, (1.7 + γ) / 2)
+    ea32 = convert(T, -0.35)
+    ea42 = convert(T, 1.989175724679859)
+    ea43 = convert(T, -0.989175724679859)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+
+    eb2 = convert(T, 1.20849664917601276)
+    eb3 = -convert(T, 0.64436317068447276)
+    eb4 = convert(T, γ)
+    be_vec = T[zero(T), eb2, eb3, eb4]
+
+    c_vec = T2[zero(T2), c2, c3, one(T2)]
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][2] = one(T2)
+    α_vecs[4][2] = one(T2)
+
+    return ESDIRKIMEXTableau(
+        Val(s),
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        T[], T[], α_vecs, 3, s, false, [0, 1, 2, 2], γ
     )
 end
 
@@ -854,6 +926,7 @@ function Kvaerno3ESDIRKIMEXTableau(T, T2)
     α_vecs[4][3] = convert(T2, γ)
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, T[], α_vecs, 3, s, true, zeros(Int, s),
         convert(T2, 2) * convert(T2, 0.4358665215)
@@ -943,6 +1016,7 @@ function Kvaerno4ESDIRKIMEXTableau(T, T2)
     α_vecs[5][4] = convert(T2, γ)
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, T[], α_vecs, 4, s, true, zeros(Int, s), c3
     )
@@ -1075,6 +1149,7 @@ function Kvaerno5ESDIRKIMEXTableau(T, T2)
     α_vecs[7][6] = convert(T2, γ)
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, T[], α_vecs, 5, s, true, zeros(Int, s), c3
     )
@@ -1277,6 +1352,7 @@ function KenCarp47ESDIRKIMEXTableau(T, T2)
     α_vecs[7][6] = α76
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_vecs, 4, s, true, [0, 1, 2, 3, 1, 3, 6], c3
     )
@@ -1522,6 +1598,7 @@ function KenCarp58ESDIRKIMEXTableau(T, T2)
     α_vecs[8][7] = α87
 
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi_vec, Ae, be_vec, c_vec,
         btilde_vec, ebtilde_vec, α_vecs, 5, s, true, [0, 1, 2, 1, 2, 3, 3, 7], c3
     )
@@ -1532,16 +1609,16 @@ end
 # (no explicit tableau, no extrapolation guess)
 #
 function _pure_esdirk_to_imex_tableau(
-        Ai_mat::Matrix{T}, c_vec::Vector{T2},
+        ::Val{S}, Ai_mat::Matrix{T}, c_vec::Vector{T2},
         btilde_vec::Vector{T}, order::Int
-    ) where {T, T2}
-    s = size(Ai_mat, 1)
-    bi_vec = Ai_mat[s, :]
-    Ae = zeros(T, s, s)
-    be_vec = zeros(T, s)
+    ) where {S, T, T2}
+    bi_vec = Ai_mat[S, :]
+    Ae = zeros(T, S, S)
+    be_vec = zeros(T, S)
     return ESDIRKIMEXTableau(
+        Val(S),
         Ai_mat, bi_vec, Ae, be_vec, c_vec,
-        btilde_vec, T[], Vector{T2}[], order, s, false, zeros(Int, s), c_vec[3]
+        btilde_vec, T[], Vector{T2}[], order, S, false, zeros(Int, S), c_vec[3]
     )
 end
 
@@ -1600,7 +1677,7 @@ function ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
         tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 5)
 end
 
 #
@@ -1643,7 +1720,7 @@ function ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
         tab.btilde4, tab.btilde5, tab.btilde6,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 4)
 end
 
 #
@@ -1693,7 +1770,7 @@ function ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
         tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 4)
 end
 
 #
@@ -1743,7 +1820,7 @@ function ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
         tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 5)
 end
 
 #
@@ -1809,7 +1886,7 @@ function ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
         tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, tab.btilde9,
     ]
 
-    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 6)
+    return _pure_esdirk_to_imex_tableau(Val(s), Ai, c_vec, btilde_vec, 6)
 end
 
 # ============================================================
@@ -1837,6 +1914,8 @@ ESDIRKIMEXTableau(::SDIRK2, T, T2) = SDIRK2ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(alg::Cash4, T, T2) = Cash4ESDIRKIMEXTableau(alg, T, T2)
 ESDIRKIMEXTableau(::TRBDF2, T, T2) = TRBDF2ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::ImplicitMidpoint, T, T2) = ImplicitMidpointESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ImplicitEuler, T, T2) = ImplicitEulerESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Trapezoid, T, T2) = TrapezoidESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::SSPSDIRK2, T, T2) = SSPSDIRK2ESDIRKIMEXTableau(T, T2)
 
 function SFSDIRK4ESDIRKIMEXTableau(T, T2)
@@ -1857,8 +1936,10 @@ function SFSDIRK4ESDIRKIMEXTableau(T, T2)
     bi = T[tab.a51, tab.a52, tab.a53, tab.a54]
     c = T2[tab.γ, tab.c2, tab.c3, tab.c4]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
-        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
     )
 end
 
@@ -1885,8 +1966,10 @@ function SFSDIRK5ESDIRKIMEXTableau(T, T2)
     bi = T[tab.a61, tab.a62, tab.a63, tab.a64, tab.a65]
     c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
-        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
     )
 end
 
@@ -1919,8 +2002,10 @@ function SFSDIRK6ESDIRKIMEXTableau(T, T2)
     bi = T[tab.a71, tab.a72, tab.a73, tab.a74, tab.a75, tab.a76]
     c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
-        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
     )
 end
 
@@ -1960,8 +2045,10 @@ function SFSDIRK7ESDIRKIMEXTableau(T, T2)
     bi = T[tab.a81, tab.a82, tab.a83, tab.a84, tab.a85, tab.a86, tab.a87]
     c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
-        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
     )
 end
 
@@ -2009,8 +2096,10 @@ function SFSDIRK8ESDIRKIMEXTableau(T, T2)
     bi = T[tab.a91, tab.a92, tab.a93, tab.a94, tab.a95, tab.a96, tab.a97, tab.a98]
     c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
-        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
     )
 end
 
@@ -2048,6 +2137,7 @@ function Hairer4ESDIRKIMEXTableau(alg::Union{Hairer4, Hairer42}, T, T2)
     α[5][3] = convert(T2, tab.bhat3)
     α[5][4] = convert(T2, tab.bhat4)
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
         4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = true
     )
@@ -2064,6 +2154,7 @@ function SDIRK2ESDIRKIMEXTableau(T, T2)
     btilde = T[one(T) / 2, -one(T) / 2]
     c = T2[one(T2), zero(T2)]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], Vector{T2}[],
         2, s, true, Int[], one(T2); explicit_first_stage = false, fsal = false, stiffly_accurate = false,
         explicit_fsallast = true, fsallast_c = zero(T2)
@@ -2111,6 +2202,7 @@ function Cash4ESDIRKIMEXTableau(alg::Cash4, T, T2)
     α[5][3] = convert(T2, tab.b3hat2)
     α[5][4] = convert(T2, tab.b4hat2)
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
         4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = true,
         stage1_extrapolation = false
@@ -2135,6 +2227,7 @@ function TRBDF2ESDIRKIMEXTableau(T, T2)
     α[3][1] = convert(T2, tab.α1)
     α[3][2] = convert(T2, tab.α2)
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
         2, s, true, Int[], tab.γ; explicit_first_stage = true, fsal = true, stiffly_accurate = true
     )
@@ -2147,9 +2240,40 @@ function ImplicitMidpointESDIRKIMEXTableau(T, T2)
     bi = T[one(T)]  # u = uprev + 1*z, not uprev + (1/2)*z → not stiffly accurate
     c = T2[γ]
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
         2, s, false, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
         explicit_fsallast = true, fsallast_c = one(T2)
+    )
+end
+
+function ImplicitEulerESDIRKIMEXTableau(T, T2)
+    s = 1
+    Ai = fill(one(T), 1, 1)
+    bi = T[one(T)]
+    c = T2[one(T2)]
+    return ESDIRKIMEXTableau(
+        Val(s), Val(:ie_dd2),
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
+        1, s, false, Int[], one(T2); explicit_first_stage = false, fsal = true,
+        stiffly_accurate = false, explicit_fsallast = true, fsallast_c = one(T2)
+    )
+end
+
+function TrapezoidESDIRKIMEXTableau(T, T2)
+    s = 2
+    γ = convert(T2, 1 // 2)
+    γT = convert(T, 1 // 2)
+    Ai = zeros(T, 2, 2)
+    Ai[2, 1] = γT
+    Ai[2, 2] = γT
+    bi = T[γT, γT]
+    c = T2[zero(T2), one(T2)]
+    return ESDIRKIMEXTableau(
+        Val(s), Val(:trap_dd3),
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
+        2, s, false, Int[], one(T2); explicit_first_stage = true, fsal = true,
+        stiffly_accurate = true, explicit_fsallast = true, fsallast_c = one(T2)
     )
 end
 
@@ -2165,6 +2289,7 @@ function SSPSDIRK2ESDIRKIMEXTableau(T, T2)
     c = T2[one(T2), one(T2)]
     c2 = convert(T2, 3 // 4)
     return ESDIRKIMEXTableau(
+        Val(s),
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
         2, s, true, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
         explicit_fsallast = true, fsallast_c = zero(T2),
