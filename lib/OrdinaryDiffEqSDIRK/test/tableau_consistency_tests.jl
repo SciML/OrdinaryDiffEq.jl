@@ -18,11 +18,7 @@ all_algs = [
         @testset "$(nameof(typeof(alg)))" begin
             @test isapprox(sum(tab.bi), 1; atol = 1e-9)
             isempty(tab.btilde) && continue
-            if alg isa ESDIRK659L2SA
-                @test_broken isapprox(sum(tab.btilde), 0; atol = 1e-9)  # #3659
-            else
-                @test isapprox(sum(tab.btilde), 0; atol = 1e-9)
-            end
+            @test isapprox(sum(tab.btilde), 0; atol = 1e-9)
         end
     end
 end
