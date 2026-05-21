@@ -3,6 +3,7 @@ module DiffEqBaseTrackerExt
 using DiffEqBase
 import DiffEqBase: value
 import Tracker
+import RecursiveArrayTools
 
 # Support adaptive with non-tracked time
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::Tracker.TrackedArray, t)
@@ -107,6 +108,18 @@ Tracker.@grad function DiffEqBase.solve_up(
         SciMLBase.TrackerOriginator(), args...; kwargs...
     )
 
+    # `AbstractVectorOfArray` (parent of `ODESolution`) became
+    # `<: AbstractArray` in RecursiveArrayTools v4. The generic
+    # `sol isa AbstractArray` branch below then returns the nested
+    # `Vector{Vector{Float64}}` in `sol.u` directly, which Tracker tracks
+    # as a `TrackedVector{Vector{Float64}, …}`. `sum` on that reduces the
+    # outer vector element-wise and yields a `Vector{Float64}` instead of
+    # a scalar, breaking `Tracker.gradient(loss, p)` callers with
+    # "Function output is not scalar". Stack into a real matrix so
+    # downstream Tracker reductions behave the same as on RAT v3.
+    if sol isa RecursiveArrayTools.AbstractVectorOfArray
+        return Array(sol), pb_f
+    end
     if sol isa AbstractArray
         !hasfield(typeof(sol), :u) && return sol, pb_f # being safe here
         return sol.u, pb_f # AbstractNoTimeSolution isa AbstractArray
