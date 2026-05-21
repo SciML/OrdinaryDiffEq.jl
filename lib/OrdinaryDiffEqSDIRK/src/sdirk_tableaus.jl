@@ -2190,11 +2190,11 @@ function ESDIRK659L2SATableau(::Type{T}, ::Type{T2}) where {T, T2}
     btilde1 = convert(T, 204006714482445 // 253120897457864)
     btilde2 = convert(T, 0)
     btilde3 = convert(T, 818062434310719 // 743038324242217)
-    btilde4 = convert(T, -4352947315360352 // 1695885076290837)
-    btilde5 = convert(T, 4343240072384756 // 4531602892210441)
-    btilde6 = convert(T, 3512964806614449 // 5680260981303268)
-    btilde7 = convert(T, -8547437843719087 // 4555265955453704)
-    btilde8 = convert(T, -6600542869175559 // 6801491069014681)
+    btilde4 = a94 - convert(T, 1376520686137389 // 1064235527052079)
+    btilde5 = a95 - convert(T, -574817982095666 // 1374329821545869)
+    btilde6 = a96 - convert(T, -507643245828272 // 1001056758847831)
+    btilde7 = a97 - convert(T, 2013538191006793 // 972919262949000)
+    btilde8 = a98 - convert(T, 352681731710820 // 726444701718347)
     btilde9 = convert(T, 1602386750057009 // 6720377925948840)
     return ESDIRK659L2SATableau(
         γ,
