@@ -3,20 +3,21 @@ using Test
 
 const SDIRK = OrdinaryDiffEqSDIRK
 
-# A valid embedded pair has sum(bi) = sum(b̂i) = 1, hence sum(btilde) = 0.
-adaptive_algs = [
-    KenCarp3(), KenCarp4(), KenCarp5(), KenCarp47(), KenCarp58(),
-    Kvaerno3(), Kvaerno4(), Kvaerno5(),
-    ESDIRK54I8L2SA(), ESDIRK436L2SA2(), ESDIRK437L2SA(), ESDIRK547L2SA2(),
-    ESDIRK659L2SA(),
-    Hairer4(), Hairer42(), SDIRK2(), Cash4(), TRBDF2(),
+all_algs = [
+    ImplicitEuler(), ImplicitMidpoint(), Trapezoid(), TRBDF2(), SDIRK2(),
+    Kvaerno3(), KenCarp3(), Cash4(), Hairer4(), Hairer42(), SSPSDIRK2(),
+    Kvaerno4(), Kvaerno5(), KenCarp4(), KenCarp47(), KenCarp5(), KenCarp58(),
+    ESDIRK54I8L2SA(), SFSDIRK4(), SFSDIRK5(), SFSDIRK6(), SFSDIRK7(), SFSDIRK8(),
+    ESDIRK436L2SA2(), ESDIRK437L2SA(), ESDIRK547L2SA2(), ESDIRK659L2SA(),
+    CFNLIRK3(), ARS343(),
 ]
 
 @testset "Tableau embedded-pair consistency" begin
-    for alg in adaptive_algs
+    for alg in all_algs
         tab = SDIRK.ESDIRKIMEXTableau(alg, Float64, Float64)
         @testset "$(nameof(typeof(alg)))" begin
             @test isapprox(sum(tab.bi), 1; atol = 1e-9)
+            isempty(tab.btilde) && continue
             if alg isa ESDIRK659L2SA
                 @test_broken isapprox(sum(tab.btilde), 0; atol = 1e-9)  # #3659
             else
