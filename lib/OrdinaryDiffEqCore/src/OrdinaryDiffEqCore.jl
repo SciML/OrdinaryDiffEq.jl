@@ -68,6 +68,8 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., Serial, Threaded
 
+using FunctionWrappers: FunctionWrapper
+
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
 
@@ -90,7 +92,8 @@ import Accessors: @reset
 using SciMLLogging: SciMLLogging, @SciMLMessage, MessageLevel,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel
 
-using SymbolicIndexingInterface: state_values, parameter_values
+using SymbolicIndexingInterface: state_values
+import SymbolicIndexingInterface: parameter_values
 
 using ConcreteStructs: @concrete
 
@@ -151,6 +154,7 @@ include("cache_utils.jl")
 include("initialize_dae.jl")
 
 include("perform_step/composite_perform_step.jl")
+include("disco.jl")
 
 include("dense/generic_dense.jl")
 

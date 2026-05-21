@@ -64,6 +64,7 @@ struct CommonControllerOptions{T}
     qsteady_min::T
     qsteady_max::T
     failfactor::T
+    discontinuity_detection::Bool
 end
 
 # Step-size knobs need to hold rational defaults like `1//5`, so an integer
@@ -99,6 +100,7 @@ function resolve_basic(overrides::NamedTuple, alg, ::Type{QT}) where {QT}
         QT(_override_or_default(overrides, Val(:qsteady_min), qsteady_min_default(alg))),
         QT(_override_or_default(overrides, Val(:qsteady_max), qsteady_max_default(alg))),
         QT(_override_or_default(overrides, Val(:failfactor), failfactor_default(alg))),
+        Bool(_override_or_default(overrides, Val(:discontinuity_detection), false))
     )
 end
 
@@ -114,7 +116,7 @@ function resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT}) where {QT
     return CommonControllerOptions{QT}(
         QT(opts.qmin), QT(opts.qmax), QT(opts.qmax_first_step),
         QT(opts.gamma), QT(opts.qsteady_min), QT(opts.qsteady_max),
-        QT(opts.failfactor),
+        QT(opts.failfactor), opts.discontinuity_detection
     )
 end
 
@@ -418,14 +420,20 @@ Controller cache used by algorithms that manage step-size selection themselves
 (BDF, Nordsieck, Leaping, …). Holds the scalar error estimate exposed through
 `get_EEst(integrator)` and a reference to the algorithm cache so existing dispatch
 on the algorithm cache continues to work.
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 """
 mutable struct DummyControllerCache{T, C} <: AbstractControllerCache
     EEst::T
     cache::C
+    discontinuity_detection::Bool
 end
 
 function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}) where {E}
-    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache)
+    discontinuity_detection = false
+    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache, discontinuity_detection)
 end
 
 # Algorithms with integrated controllers (BDF, Nordsieck, …) only define their
@@ -490,6 +498,10 @@ the interval `[qmin, qmax]`.
 A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 
 ## References
 
@@ -552,7 +564,15 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    return integrator.dt = cache.dtreject
+    discontinuity_detection = cache.controller.basic.discontinuity_detection
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if disco_dt > zero(disco_dt)
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
+    end
+    return integrator.dt = cache.dtreject # TODO this does not look right.
 end
 
 reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::IControllerCache) = nothing
@@ -583,7 +603,10 @@ the interval `[qmin, qmax]`.
 A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
-
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 !!! note
 
     The coefficients `beta1, beta2` are not scaled by the order of the method,
@@ -645,8 +668,7 @@ function setup_controller_cache(alg, cache, controller::PIController, ::Type{E})
     QT = _resolved_QT(controller.basic)
     basic = resolve_basic(controller.basic, alg, QT)
     resolved = PIController{typeof(basic), QT}(
-        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit),
-    )
+        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit))
     T = QT
     return PIControllerCache{T, E}(
         resolved, one(T), T(resolved.qoldinit), oneunit(E),
@@ -686,7 +708,14 @@ end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
-    (; qmin, gamma) = controller.basic
+    (; qmin, gamma, discontinuity_detection) = controller.basic
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if disco_dt > zero(disco_dt)
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
+    end
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -738,6 +767,11 @@ Some standard controller parameters suggested in the literature are
 | PI34       | `0.70`  | `-0.40` | `0`     |
 | H211PI     | `1//6`  | `1//6`  | `0`     |
 | H312PID    | `1//18` | `1//9`  | `1//18` |
+
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 
 !!! note
 
@@ -911,6 +945,14 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
+    discontinuity_detection = cache.controller.basic.discontinuity_detection
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if disco_dt > zero(disco_dt)
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
+    end
     return integrator.dt *= cache.dt_factor
 end
 
@@ -970,7 +1012,10 @@ integrator.dt / qacc
 ```
 
 When it rejects, it's the same as the [`IController`](@ref):
-
+If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+discontinuity detection to predict the best next timestep after step rejection. 
+Otherwise, it follows the default step rejection algorithm. This feature is currently
+defaulted off. 
 ```julia
 if integrator.success_iter == 0
     integrator.dt *= 0.1
@@ -1075,6 +1120,14 @@ end
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
+    discontinuity_detection = cache.controller.basic.discontinuity_detection
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if disco_dt > zero(disco_dt)
+            integrator.dt = disco_dt
+            return integrator.dt
+        end
+    end
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 

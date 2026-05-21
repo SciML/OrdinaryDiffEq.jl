@@ -16,6 +16,39 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
+mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
+    u₁::u1Type
+    callback::callbackType
+    dt::tType
+    uprev::uType
+    u::uType
+    k::kType
+    cache::CacheType
+    idxs::idxsType
+    differential_vars::varsType
+    ind::Int
+    out::outType
+    out_low::outType
+    out_high::outType
+    f::FunctionType
+    tprev::tType2
+    p::ParameterType
+end
+
+parameter_values(z::zero_func_struct) = z.p
+
+function (z::zero_func_struct)(θ, p)
+    _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
+    ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
+    return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)
+end
+
+@inline zero_condition(cb::ContinuousCallback, out::Nothing, u, t, z, ind) = cb.condition(u, t, z)
+@inline function zero_condition(cb::VectorContinuousCallback, out, u, t, z, ind)
+    cb.condition(out, u, t, z)
+    return out[ind]
+end
+
 Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
@@ -99,6 +132,7 @@ Base.@constprop :aggressive function _ode_init(
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         rng = nothing,
+        disco_probs = nothing,
         # SDE/RODE fields: accepted here so that SDE packages can delegate to
         # _ode_init and construct an ODEIntegrator with noise populated.
         save_noise = false,
@@ -626,6 +660,35 @@ Base.@constprop :aggressive function _ode_init(
 
     _rng = rng === nothing ? Random.default_rng() : rng
 
+    num_probs = 0
+    for i in callbacks_internal.continuous_callbacks
+        if i.maybe_discontinuity
+            num_probs += 1
+        end
+    end
+    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
+    idx = 1
+    for i in callbacks_internal.continuous_callbacks
+        if i.maybe_discontinuity
+            u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
+            out, out_low, out_high = if i isa VectorContinuousCallback
+                arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
+                arr, similar(arr), similar(arr)
+            else
+                nothing, nothing, nothing
+            end
+            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
+            zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, typeof(p)}}(zero_func)
+            disco_prob = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
+            disco_probs[idx] = disco_prob
+            idx += 1
+        end
+    end
+
+    if num_probs > 0
+        disco_probs = convert(Vector{typeof(disco_probs[1])}, disco_probs)
+    end
+
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
@@ -640,7 +703,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants),
+        typeof(noise), typeof(c), typeof(rate_constants), eltype(disco_probs)
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -659,7 +722,7 @@ Base.@constprop :aggressive function _ode_init(
         isout, reeval_fsal,
         derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng,
+        fsalfirst, fsallast, _rng, disco_probs,
         W, P, sqdt,
         noise, c, rate_constants
     )

@@ -124,7 +124,7 @@ mutable struct ODEIntegrator{
         uType, duType, tType, pType, eigenType, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
-        NoiseType, CType, RCType,
+        NoiseType, CType, RCType, NLPType
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -175,6 +175,7 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    disco_probs::Vector{NLPType}
     W::WType
     P::PType
     sqdt::SqdtType
