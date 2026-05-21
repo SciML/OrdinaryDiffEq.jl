@@ -108,21 +108,11 @@ Tracker.@grad function DiffEqBase.solve_up(
         SciMLBase.TrackerOriginator(), args...; kwargs...
     )
 
-    # In RecursiveArrayTools v4 `AbstractVectorOfArray <: AbstractArray`,
-    # so the `sol isa AbstractArray` branch below now matches ODESolution and
-    # returns the nested `Vector{Vector{Float64}}` in `sol.u`. Downstream
-    # `sum(solve(...))` then reduces the outer vector element-wise and Tracker
-    # errors with "Function output is not scalar". Return the wrapper itself
-    # so the caller's reduction goes through the RAT v4 AbstractArray
-    # interface and produces a scalar as before.
-    if sol isa RecursiveArrayTools.AbstractVectorOfArray
-        return sol, pb_f
-    end
     if sol isa AbstractArray
         !hasfield(typeof(sol), :u) && return sol, pb_f # being safe here
         return sol.u, pb_f # AbstractNoTimeSolution isa AbstractArray
     end
-    return convert(AbstractArray, sol), pb_f
+    return sol, pb_f
 end
 
 end
