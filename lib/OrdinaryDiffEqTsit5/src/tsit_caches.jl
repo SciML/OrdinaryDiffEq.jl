@@ -1,7 +1,4 @@
-@cache struct Tsit5Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
-    } <: OrdinaryDiffEqMutableCache
+@cache mutable struct Tsit5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -51,4 +48,12 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Tsit5ConstantCache()
+end
+
+function Base.show(io::IO, cache::Tsit5Cache)
+    print(io, "Tsit5Cache{$(typeof(cache.u))}")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", cache::Tsit5Cache)
+    print(io, "Tsit5Cache{$(typeof(cache.u))}")
 end

@@ -7,11 +7,9 @@ OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../../"
+[sources]
+OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
+OrdinaryDiffEqTsit5 = {path = "../.."}
 
 [compat]
 AllocCheck = "0.2"
