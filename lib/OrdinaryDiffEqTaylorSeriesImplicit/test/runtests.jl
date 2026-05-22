@@ -43,13 +43,13 @@ testTol = 0.2
 
     prob_stiff = ODEProblemLibrary.prob_ode_hires
     dts = 2. .^ (-8:-5)
-    ref_setup = Dict(:alg => Rodas5P(), :reltol => 1e-14, :abstol => 1e-14)
+    ref_setup = Dict(:alg => Rodas5P(), :reltol => 1e-16, :abstol => 1e-16)
 
     # Taylor-Gauss
     sim1v1 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(1)), ref_setup)
     @test sim1v1.𝒪est[:final]≈2 atol=testTol
 
-    sim2v2 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(2), order_q = Val(2)), ref_setup)
+    sim2v2 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(2), order_q = Val(2)), ref_setup);
     @test sim2v2.𝒪est[:final]≈4 atol=testTol
 
     # Taylor-Radau
@@ -57,6 +57,6 @@ testTol = 0.2
     @test sim1v2.𝒪est[:final]≈3 atol=testTol
 
     # Taylor-Lobatto
-    sim1v3 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(3)), ref_setup)
+    sim1v3 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(3)), ref_setup);
     @test sim1v3.𝒪est[:final]≈4 atol=testTol
 end
