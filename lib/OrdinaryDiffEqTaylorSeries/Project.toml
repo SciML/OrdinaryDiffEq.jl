@@ -3,6 +3,11 @@ uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 authors = ["Songchen Tan <i@tansongchen.com>"]
 version = "2.1.0"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -31,10 +36,6 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-DiffEqBase = {path = "../DiffEqBase"}
-DiffEqDevTools = {path = "../DiffEqDevTools"}
-
 [compat]
 SciMLTesting = "2.1"
 DiffEqBase = "7"
@@ -60,9 +61,6 @@ TaylorDiff = "0.3.5"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4"
 julia = "1.10"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "OrderedCollections", "Pkg", "SciMLTesting"]
