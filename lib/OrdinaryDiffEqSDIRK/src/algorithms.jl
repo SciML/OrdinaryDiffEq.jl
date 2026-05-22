@@ -1172,9 +1172,13 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
+        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
+        (previous-step interpolant), or `:tableau` (tableau-derived α).
         """,
     extra_keyword_default = """
     extrapolant = :linear,
+    predictor = :trivial,
     """
 )
 struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ} <:
@@ -1183,6 +1187,7 @@ struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    predictor::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1192,13 +1197,14 @@ function ESDIRK54I8L2SA(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
+        predictor = :trivial,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK54I8L2SA(
         linsolve, nlsolve, smooth_est, extrapolant,
-        step_limiter!, autodiff,
+        predictor, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1218,9 +1224,13 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
+        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
+        (previous-step interpolant), or `:tableau` (tableau-derived α).
         """,
     extra_keyword_default = """
     extrapolant = :linear,
+    predictor = :trivial,
     """
 )
 struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ} <:
@@ -1229,6 +1239,7 @@ struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    predictor::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1238,13 +1249,14 @@ function ESDIRK436L2SA2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
+        predictor = :trivial,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK436L2SA2(
         linsolve, nlsolve, smooth_est, extrapolant,
-        step_limiter!, autodiff,
+        predictor, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1264,9 +1276,13 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
+        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
+        (previous-step interpolant), or `:tableau` (tableau-derived α).
         """,
     extra_keyword_default = """
     extrapolant = :linear,
+    predictor = :trivial,
     """
 )
 struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ} <:
@@ -1275,6 +1291,7 @@ struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    predictor::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1284,13 +1301,14 @@ function ESDIRK437L2SA(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
+        predictor = :trivial,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK437L2SA(
         linsolve, nlsolve, smooth_est, extrapolant,
-        step_limiter!, autodiff,
+        predictor, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1310,9 +1328,13 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
+        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
+        (previous-step interpolant), or `:tableau` (tableau-derived α).
         """,
     extra_keyword_default = """
     extrapolant = :linear,
+    predictor = :trivial,
     """
 )
 struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ} <:
@@ -1321,6 +1343,7 @@ struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    predictor::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1330,13 +1353,14 @@ function ESDIRK547L2SA2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
+        predictor = :trivial,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK547L2SA2(
         linsolve, nlsolve, smooth_est, extrapolant,
-        step_limiter!, autodiff,
+        predictor, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1358,9 +1382,13 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     }""",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
+        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
+        (previous-step interpolant), or `:tableau` (tableau-derived α).
         """,
     extra_keyword_default = """
     extrapolant = :linear,
+    predictor = :trivial,
     """
 )
 struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ} <:
@@ -1369,6 +1397,7 @@ struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     smooth_est::Bool
     extrapolant::Symbol
+    predictor::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1378,13 +1407,14 @@ function ESDIRK659L2SA(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
+        predictor = :trivial,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK659L2SA(
         linsolve, nlsolve, smooth_est, extrapolant,
-        step_limiter!, autodiff,
+        predictor, step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end

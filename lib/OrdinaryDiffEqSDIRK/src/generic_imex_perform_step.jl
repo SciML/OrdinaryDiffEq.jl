@@ -47,10 +47,58 @@ function _build_alpha_guess(i::Int)
     return :(@.. broadcast = false zs[$i] = $rhs)
 end
 
-function _build_initial_guess_efs_false(i::Int)
-    αfused = _build_alpha_guess(i)
+# Interpolant predictor: stage value U_i maps to the z-form guess via z_i = (U_i - tmp)/γ.
+function _build_interp_guess(i::Int, mode::Symbol)
+    full = :(current_extrapolant!(zs[$i], t + c[$i] * dt, integrator))
+    lin = :(
+        @.. broadcast = false zs[$i] = (1 - Θ_pred) * integrator.uprev2 +
+            Θ_pred * integrator.uprev
+    )
+    select = if mode === :max_order
+        full
+    elseif mode === :cutoff_order
+        :(
+            if c[$i] <= 1 // 2
+                $full
+            else
+                $lin
+            end
+        )
+    else # :variable_order
+        :(
+            if Θ_pred <= 2
+                $full
+            else
+                $lin
+            end
+        )
+    end
     return quote
-        if !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
+        Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
+        $select
+        @.. broadcast = false zs[$i] = (zs[$i] - tmp) * inv(γ)
+    end
+end
+
+function _build_predictor_guess(i::Int, αfused)
+    maxorder = _build_interp_guess(i, :max_order)
+    varorder = _build_interp_guess(i, :variable_order)
+    cutoff = _build_interp_guess(i, :cutoff_order)
+    return quote
+        if predictor === :trivial
+            fill!(zs[$i], zero(eltype(u)))
+        elseif predictor === :copy_prev && $i > 1
+            copyto!(zs[$i], zs[$i - 1])
+        elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
+                (integrator.success_iter == 0 || integrator.reeval_fsal)
+            fill!(zs[$i], zero(eltype(u)))
+        elseif predictor === :max_order
+            $maxorder
+        elseif predictor === :variable_order
+            $varorder
+        elseif predictor === :cutoff_order
+            $cutoff
+        elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
             fill!(zs[$i], tab.const_stage_guess[$i])
         elseif !isempty(α) && !iszero(α[$i])
             $αfused
@@ -60,17 +108,19 @@ function _build_initial_guess_efs_false(i::Int)
     end
 end
 
+function _build_initial_guess_efs_false(i::Int)
+    αfused = _build_alpha_guess(i)
+    return _build_predictor_guess(i, αfused)
+end
+
 function _build_initial_guess_efs_true(i::Int)
     αfused = _build_alpha_guess(i)
+    predbody = _build_predictor_guess(i, αfused)
     return quote
         if integrator.f isa SplitFunction && split_guess[$i] > 0
             copyto!(zs[$i], zs[split_guess[$i]])
-        elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
-            fill!(zs[$i], tab.const_stage_guess[$i])
-        elseif !isempty(α) && !iszero(α[$i])
-            $αfused
         else
-            fill!(zs[$i], zero(eltype(u)))
+            $predbody
         end
     end
 end
@@ -98,15 +148,23 @@ function _build_stages_efs_true(S::Int)
             nlsolver.c = c[$i]
             zs[$i] = nlsolve!(nlsolver, integrator, cache, repeat_step)
             nlsolvefail(nlsolver) && return
-            $(i == 2 ? :(if reuse_W_at_stage2; isnewton(nlsolver) && set_new_W!(nlsolver, false); end) : nothing)
-            $(i < S ? quote
-                if integrator.f isa SplitFunction
-                    @.. broadcast = false u = tmp + γ * zs[$i]
-                    f2(ks[$i], u, p, t + c[$i] * dt)
-                    ks[$i] .*= dt
-                    integrator.stats.nf2 += 1
-                end
-            end : nothing)
+            $(
+                i == 2 ? :(
+                        if reuse_W_at_stage2
+                            isnewton(nlsolver) && set_new_W!(nlsolver, false)
+                    end
+                    ) : nothing
+            )
+            $(
+                i < S ? quote
+                        if integrator.f isa SplitFunction
+                            @.. broadcast = false u = tmp + γ * zs[$i]
+                            f2(ks[$i], u, p, t + c[$i] * dt)
+                            ks[$i] .*= dt
+                            integrator.stats.nf2 += 1
+                    end
+                    end : nothing
+            )
         end
         append!(body.args, stage.args)
     end
@@ -200,7 +258,7 @@ function calculate_error_estimate!(
     ) where {T, T2}
     (; uprev, u, dt) = integrator
     (; atmp, zs) = cache
-    if integrator.opts.adaptive && integrator.success_iter > 0
+    return if integrator.opts.adaptive && integrator.success_iter > 0
         uprev2 = integrator.uprev2
         tprev = integrator.tprev
         dt1 = dt * (t + dt - tprev)
@@ -227,7 +285,7 @@ function calculate_error_estimate!(
         zs::NTuple{1}, ks::NTuple{1}
     ) where {T, T2}
     (; uprev, u, dt) = integrator
-    if integrator.opts.adaptive && integrator.success_iter > 0
+    return if integrator.opts.adaptive && integrator.success_iter > 0
         uprev2 = integrator.uprev2
         tprev = integrator.tprev
         dt1 = dt * (t + dt - tprev)
@@ -271,7 +329,7 @@ end
                     (
                         (u - uprev) / dt1 - (uprev - uprev2) / dt2
                     )
-                    - (
+                        - (
                         (uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4
                     )
                 ) / dt5,
@@ -337,70 +395,74 @@ end
 end
 
 function _build_trap_iip_body(::Int)
-    return :(@muladd begin
-        (; t, dt, uprev, u, p) = integrator
-        (; atmp, nlsolver, step_limiter!) = cache
-        (; z, tmp) = nlsolver
-        f = integrator.f
-        mass_matrix = f.mass_matrix
+    return :(
+        @muladd begin
+            (; t, dt, uprev, u, p) = integrator
+            (; atmp, nlsolver, step_limiter!) = cache
+            (; z, tmp) = nlsolver
+            f = integrator.f
+            mass_matrix = f.mass_matrix
 
-        γ = 1 // 2
-        γdt = γ * dt
-        markfirststage!(nlsolver)
+            γ = 1 // 2
+            γdt = γ * dt
+            markfirststage!(nlsolver)
 
-        @.. broadcast = false z = uprev
-        invγdt = inv(γdt)
-        if mass_matrix === I
-            @.. broadcast = false tmp = uprev * invγdt + integrator.fsalfirst
-        else
-            mul!(u, mass_matrix, uprev)
-            @.. broadcast = false tmp = u * invγdt + integrator.fsalfirst
+            @.. broadcast = false z = uprev
+            invγdt = inv(γdt)
+            if mass_matrix === I
+                @.. broadcast = false tmp = uprev * invγdt + integrator.fsalfirst
+            else
+                mul!(u, mass_matrix, uprev)
+                @.. broadcast = false tmp = u * invγdt + integrator.fsalfirst
+            end
+            nlsolver.α = 1
+            nlsolver.γ = γ
+            nlsolver.method = COEFFICIENT_MULTISTEP
+            z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+            @.. broadcast = false u = z
+
+            step_limiter!(u, integrator, p, t + dt)
+
+            calculate_error_estimate!(integrator, cache, tab, t)
+
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            f(integrator.fsallast, u, p, t + dt)
         end
-        nlsolver.α = 1
-        nlsolver.γ = γ
-        nlsolver.method = COEFFICIENT_MULTISTEP
-        z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
-        @.. broadcast = false u = z
-
-        step_limiter!(u, integrator, p, t + dt)
-
-        calculate_error_estimate!(integrator, cache, tab, t)
-
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        f(integrator.fsallast, u, p, t + dt)
-    end)
+    )
 end
 
 function _build_trap_oop_body(::Int)
-    return :(@muladd begin
-        (; t, dt, uprev, u, p) = integrator
-        nlsolver = cache.nlsolver
-        f = integrator.f
-        γ = 1 // 2
-        γdt = γ * dt
-        markfirststage!(nlsolver)
+    return :(
+        @muladd begin
+            (; t, dt, uprev, u, p) = integrator
+            nlsolver = cache.nlsolver
+            f = integrator.f
+            γ = 1 // 2
+            γdt = γ * dt
+            markfirststage!(nlsolver)
 
-        nlsolver.z = uprev
-        if f.mass_matrix === I
-            nlsolver.tmp = @.. broadcast = false uprev * inv(γdt) + integrator.fsalfirst
-        else
-            nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
+            nlsolver.z = uprev
+            if f.mass_matrix === I
+                nlsolver.tmp = @.. broadcast = false uprev * inv(γdt) + integrator.fsalfirst
+            else
+                nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
+            end
+            nlsolver.α = 1
+            nlsolver.γ = γ
+            nlsolver.method = COEFFICIENT_MULTISTEP
+            u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+            integrator.u = u
+
+            calculate_error_estimate!(integrator, cache, tab, t)
+
+            integrator.fsallast = f(u, p, t + dt)
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            integrator.k[1] = integrator.fsalfirst
+            integrator.k[2] = integrator.fsallast
         end
-        nlsolver.α = 1
-        nlsolver.γ = γ
-        nlsolver.method = COEFFICIENT_MULTISTEP
-        u = nlsolve!(nlsolver, integrator, cache, repeat_step)
-        nlsolvefail(nlsolver) && return
-        integrator.u = u
-
-        calculate_error_estimate!(integrator, cache, tab, t)
-
-        integrator.fsallast = f(u, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        integrator.k[1] = integrator.fsalfirst
-        integrator.k[2] = integrator.fsallast
-    end)
+    )
 end
 
 @generated function _perform_step_iip!(
@@ -424,6 +486,7 @@ end
         reuse_W_at_stage2 = tab.reuse_W_at_stage2
         split_guess = tab.split_guess
         alg = unwrap_alg(integrator, true)
+        predictor = _predictor(alg)
         γ = Ai[$S, $S]
 
         f2 = nothing
@@ -491,13 +554,15 @@ end
             @.. broadcast = false integrator.fsallast = zs[$S] / dt
         end
 
-        $(E === :ie_dd2 ? quote
-            if integrator.opts.adaptive && integrator.differential_vars !== nothing
-                @.. broadcast = false atmp = ifelse(cache.algebraic_vars, integrator.fsallast, false) /
-                    integrator.opts.abstol
-                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
-            end
-        end : nothing)
+        $(
+            E === :ie_dd2 ? quote
+                    if integrator.opts.adaptive && integrator.differential_vars !== nothing
+                        @.. broadcast = false atmp = ifelse(cache.algebraic_vars, integrator.fsallast, false) /
+                        integrator.opts.abstol
+                        OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
+                end
+                end : nothing
+        )
     end
 end
 
@@ -520,6 +585,35 @@ function _build_oop_alpha_guess_named(i::Int)
     return length(terms) == 1 ? terms[1] : Expr(:call, :+, terms...)
 end
 
+function _build_oop_predictor_menu(i::Int, α_rhs)
+    z_prev = _zsym(i - 1)
+    full = :(ode_extrapolant(Θ_pred, integrator, nothing, Val{0}))
+    lin = :((1 - Θ_pred) * integrator.uprev2 + Θ_pred * integrator.uprev)
+    return quote
+        Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
+        if predictor === :trivial
+            z_guess = zero(u)
+        elseif predictor === :copy_prev
+            z_guess = $z_prev
+        elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
+                (integrator.success_iter == 0 || integrator.reeval_fsal)
+            z_guess = zero(u)
+        elseif predictor === :max_order
+            z_guess = ($full - tmp) * inv(γ)
+        elseif predictor === :variable_order
+            z_guess = ((Θ_pred <= 2 ? ($full) : ($lin)) - tmp) * inv(γ)
+        elseif predictor === :cutoff_order
+            z_guess = ((c[$i] <= 1 // 2 ? ($full) : ($lin)) - tmp) * inv(γ)
+        elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
+            z_guess = tab.const_stage_guess[$i]
+        elseif !isempty(α) && !iszero(α[$i])
+            z_guess = $α_rhs
+        else
+            z_guess = zero(u)
+        end
+    end
+end
+
 function _build_oop_stages_named(S::Int; efs_true::Bool)
     body = quote end
     for i in 2:S
@@ -529,29 +623,18 @@ function _build_oop_stages_named(S::Int; efs_true::Bool)
         tmp_rhs = _build_oop_accum_named(:uprev, :Ai, _zsym, i, 1:(i - 1))
         ks_rhs = _build_oop_accum_named(:tmp, :Ae, _ksym, i, 1:(i - 1))
         α_rhs = _build_oop_alpha_guess_named(i)
+        menu = _build_oop_predictor_menu(i, α_rhs)
 
         guess_block = if efs_true
             quote
                 if integrator.f isa SplitFunction
                     z_guess = $z1
-                elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
-                    z_guess = tab.const_stage_guess[$i]
-                elseif !isempty(α) && !iszero(α[$i])
-                    z_guess = $α_rhs
                 else
-                    z_guess = zero(u)
+                    $menu
                 end
             end
         else
-            quote
-                if !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
-                    z_guess = tab.const_stage_guess[$i]
-                elseif !isempty(α) && !iszero(α[$i])
-                    z_guess = $α_rhs
-                else
-                    z_guess = zero(u)
-                end
-            end
+            menu
         end
 
         stage = quote
@@ -565,13 +648,15 @@ function _build_oop_stages_named(S::Int; efs_true::Bool)
             nlsolver.c = c[$i]
             $zi = nlsolve!(nlsolver, integrator, cache, repeat_step)
             nlsolvefail(nlsolver) && return
-            $(i < S ? quote
-                if integrator.f isa SplitFunction
-                    u_stage = tmp + γ * $zi
-                    $ki = dt * f2(u_stage, p, t + c[$i] * dt)
-                    integrator.stats.nf2 += 1
-                end
-            end : nothing)
+            $(
+                i < S ? quote
+                        if integrator.f isa SplitFunction
+                            u_stage = tmp + γ * $zi
+                            $ki = dt * f2(u_stage, p, t + c[$i] * dt)
+                            integrator.stats.nf2 += 1
+                    end
+                    end : nothing
+            )
         end
         append!(body.args, stage.args)
     end
@@ -668,6 +753,7 @@ end
         ebtilde = tab.ebtilde
         α = tab.α
         alg = unwrap_alg(integrator, true)
+        predictor = _predictor(alg)
         γ = Ai[$S, $S]
 
         f2 = nothing
@@ -740,12 +826,14 @@ end
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
         end
-        $(E === :ie_dd2 ? quote
-            if integrator.opts.adaptive && integrator.differential_vars !== nothing
-                atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                    integrator.opts.abstol
-                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
-            end
-        end : nothing)
+        $(
+            E === :ie_dd2 ? quote
+                    if integrator.opts.adaptive && integrator.differential_vars !== nothing
+                        atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
+                        integrator.opts.abstol
+                        OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
+                end
+                end : nothing
+        )
     end
 end

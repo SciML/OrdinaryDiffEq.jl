@@ -60,3 +60,13 @@ issplit(alg::CFNLIRK3) = true
 issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
+
+# Predictor selection: algs without a `predictor` field use the tableau-derived path.
+_predictor(alg) = :tableau
+function _predictor(
+        alg::Union{
+            ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA,
+        }
+    )
+    return alg.predictor
+end
