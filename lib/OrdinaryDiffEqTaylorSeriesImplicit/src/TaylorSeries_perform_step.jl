@@ -62,9 +62,9 @@ end
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -72,7 +72,7 @@ end
     if integrator.opts.adaptive && integrator.differential_vars !== nothing
         atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
             integrator.opts.abstol
-        integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + integrator.opts.internalnorm(atmp, t))
     end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -112,8 +112,7 @@ end
     end
     local ndw
     # reusing η is causing problems, temporarily initialize it to Inf
-    # η = max(ηold, eps(eltype(integrator.opts.reltol)))
-    η = Inf
+    η = max(ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     fail_convergence = true
     iter = 0
     dw = linsolve.u
@@ -152,7 +151,7 @@ end
         end
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = Convergence
             fail_convergence = false
@@ -179,11 +178,11 @@ end
     else
         u .= uintermediate
     end
-    # step_limiter!(u, integrator, p, t + dt)
+    #OrdinaryDiffEqCore.step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         if is_mu_taylor(alg) # haven't implemented
-            integrator.EEst = 1
+            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
         else
             polynomial_A1(utilde, uprev, t, dt)
             polynomial_B1(tmp, u, t + dt, dt)
@@ -194,11 +193,11 @@ end
                 atmp, tmp, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
             #println("norm(tmp) = $(internalnorm(tmp, t)), norm(u) = $(internalnorm(u, t)), EEst = $(integrator.EEst)")
         end
     else
-        integrator.EEst = 1
+        OrdinaryDiffEqCore.set_EEst!(integrator, 1)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     f(integrator.fsallast, u, p, t + dt)
