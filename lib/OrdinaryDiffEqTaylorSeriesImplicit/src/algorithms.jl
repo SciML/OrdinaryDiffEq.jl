@@ -22,14 +22,13 @@
     step_limiter! = trivial_limiter!,
     """ # keyword_default
 )
-struct ImplicitTaylor{P, Q, T, F, Prec, Tol, StepLimiter} <:
+struct ImplicitTaylor{P, Q, T, F, Tol, StepLimiter} <:
     OrdinaryDiffEqAdaptiveAlgorithm
     order::Val{P}
     order_q::Val{Q}
     μ::T
     real_function::Bool
     linsolve::F
-    precs::Prec
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
@@ -41,17 +40,17 @@ end
 # When order_q = Val(0), it's a μ-Taylor method; otherwise, it's a Taylor-Padé method.
 function ImplicitTaylor(;
         order = Val(1), order_q = Val(0), μ = 1.0, real_function = true,
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing,
         extrapolant = :constant,
         controller = :PI, step_limiter! = trivial_limiter!, κ = nothing, maxiters = 10
     )
 
     return ImplicitTaylor{
         _unwrap_val(order), _unwrap_val(order_q), typeof(μ), typeof(linsolve),
-        typeof(precs), typeof(κ), typeof(step_limiter!),
+        typeof(κ), typeof(step_limiter!),
     }(
         order, order_q, μ, real_function, linsolve,
-        precs, extrapolant, controller, step_limiter!, κ, maxiters
+        extrapolant, controller, step_limiter!, κ, maxiters
     )
 end
 

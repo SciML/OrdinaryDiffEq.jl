@@ -89,7 +89,7 @@ function alg_cache(
     linsolve_u0 = copy(tmp_vec)
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = ArrayInterface.zeromatrix(tmp_vec)
-    linprob = LinearProblem(J, tmp_vec; u0 = linsolve_u0)
+    linprob = LinearProblem(J, tmp_vec, (nothing, u, p, t); u0 = linsolve_u0)
     linsolve = init(
         linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
         assumptions = LinearSolve.OperatorAssumptions(true)
