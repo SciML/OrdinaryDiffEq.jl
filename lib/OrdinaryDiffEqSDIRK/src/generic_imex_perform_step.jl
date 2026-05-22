@@ -47,35 +47,37 @@ function _build_alpha_guess(i::Int)
     return :(@.. broadcast = false zs[$i] = $rhs)
 end
 
-# Interpolant predictor: stage value U_i maps to the z-form guess via z_i = (U_i - tmp)/γ.
+# Order-limited Hermite extrapolation (power form, truncated to order q) of the previous
+# step, mapped to the z-form guess z_i = (U_i - tmp)/γ. q=3 is the full Hermite.
 function _build_interp_guess(i::Int, mode::Symbol)
-    full = :(current_extrapolant!(zs[$i], t + c[$i] * dt, integrator))
-    lin = :(
-        @.. broadcast = false zs[$i] = (1 - Θ_pred) * integrator.uprev2 +
-            Θ_pred * integrator.uprev
-    )
-    select = if mode === :max_order
-        full
+    qsel = if mode === :max_order
+        :(q_pred = 3)
     elseif mode === :cutoff_order
-        :(
-            if c[$i] <= 1 // 2
-                $full
-            else
-                $lin
-            end
-        )
+        :(q_pred = c[$i] <= 1 // 2 ? 3 : 1)
     else # :variable_order
-        :(
-            if Θ_pred <= 2
-                $full
-            else
-                $lin
-            end
-        )
+        :(q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
     end
     return quote
+        OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
         Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
-        $select
+        dtp_pred = integrator.t - integrator.tprev
+        $qsel
+        @.. broadcast = false zs[$i] = integrator.uprev2 +
+            Θ_pred * dtp_pred * integrator.k[1]
+        if q_pred >= 2
+            @.. broadcast = false zs[$i] = zs[$i] +
+                Θ_pred^2 * (
+                3 * (integrator.uprev - integrator.uprev2) -
+                    2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+            )
+        end
+        if q_pred >= 3
+            @.. broadcast = false zs[$i] = zs[$i] +
+                Θ_pred^3 * (
+                -2 * (integrator.uprev - integrator.uprev2) +
+                    dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+            )
+        end
         @.. broadcast = false zs[$i] = (zs[$i] - tmp) * inv(γ)
     end
 end
@@ -592,15 +594,29 @@ end
 
 function _build_oop_predictor_menu(i::Int, α_rhs)
     z_prev = _zsym(i - 1)
-    full = :(ode_extrapolant(Θ_pred, integrator, nothing, Val{0}))
-    lin = :((1 - Θ_pred) * integrator.uprev2 + Θ_pred * integrator.uprev)
+    upred = :(
+        integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
+            (
+            q_pred >= 2 ?
+                Θ_pred^2 * (
+                    3 * (integrator.uprev - integrator.uprev2) -
+                    2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                ) : zero(u)
+        ) +
+            (
+            q_pred >= 3 ?
+                Θ_pred^3 * (
+                    -2 * (integrator.uprev - integrator.uprev2) +
+                    dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                ) : zero(u)
+        )
+    )
     stage_extrap = i > 2 ?
         :(
             $z_prev + ($z_prev - $(_zsym(i - 2))) *
             ((c[$i] - c[$i - 1]) / (c[$i - 1] - c[$i - 2]))
         ) : z_prev
     return quote
-        Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
         if predictor === :trivial
             z_guess = zero(u)
         elseif predictor === :copy_prev
@@ -610,12 +626,14 @@ function _build_oop_predictor_menu(i::Int, α_rhs)
         elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
                 (integrator.success_iter == 0 || integrator.reeval_fsal)
             z_guess = zero(u)
-        elseif predictor === :max_order
-            z_guess = ($full - tmp) * inv(γ)
-        elseif predictor === :variable_order
-            z_guess = ((Θ_pred <= 2 ? ($full) : ($lin)) - tmp) * inv(γ)
-        elseif predictor === :cutoff_order
-            z_guess = ((c[$i] <= 1 // 2 ? ($full) : ($lin)) - tmp) * inv(γ)
+        elseif predictor in (:max_order, :variable_order, :cutoff_order)
+            OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+            Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
+            dtp_pred = integrator.t - integrator.tprev
+            q_pred = predictor === :max_order ? 3 :
+                predictor === :cutoff_order ? (c[$i] <= 1 // 2 ? 3 : 1) :
+                (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
+            z_guess = ($upred - tmp) * inv(γ)
         elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
             z_guess = tab.const_stage_guess[$i]
         elseif !isempty(α) && !iszero(α[$i])

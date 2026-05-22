@@ -1178,7 +1178,7 @@ but are still being fully evaluated in context.",
         """,
     extra_keyword_default = """
     extrapolant = :linear,
-    predictor = :trivial,
+    predictor = :stage_extrap,
     """
 )
 struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ} <:
@@ -1197,7 +1197,7 @@ function ESDIRK54I8L2SA(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
-        predictor = :trivial,
+        predictor = :stage_extrap,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1230,7 +1230,7 @@ but are still being fully evaluated in context.",
         """,
     extra_keyword_default = """
     extrapolant = :linear,
-    predictor = :trivial,
+    predictor = :stage_extrap,
     """
 )
 struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ} <:
@@ -1249,7 +1249,7 @@ function ESDIRK436L2SA2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
-        predictor = :trivial,
+        predictor = :stage_extrap,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1282,7 +1282,7 @@ but are still being fully evaluated in context.",
         """,
     extra_keyword_default = """
     extrapolant = :linear,
-    predictor = :trivial,
+    predictor = :stage_extrap,
     """
 )
 struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ} <:
@@ -1301,7 +1301,7 @@ function ESDIRK437L2SA(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
-        predictor = :trivial,
+        predictor = :stage_extrap,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1334,7 +1334,7 @@ but are still being fully evaluated in context.",
         """,
     extra_keyword_default = """
     extrapolant = :linear,
-    predictor = :trivial,
+    predictor = :stage_extrap,
     """
 )
 struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ} <:
@@ -1353,7 +1353,7 @@ function ESDIRK547L2SA2(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
-        predictor = :trivial,
+        predictor = :stage_extrap,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -1388,7 +1388,7 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
         """,
     extra_keyword_default = """
     extrapolant = :linear,
-    predictor = :trivial,
+    predictor = :stage_extrap,
     """
 )
 struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ} <:
@@ -1407,7 +1407,7 @@ function ESDIRK659L2SA(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         smooth_est = false, extrapolant = :linear,
-        predictor = :trivial,
+        predictor = :stage_extrap,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
