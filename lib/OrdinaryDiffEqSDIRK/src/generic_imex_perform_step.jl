@@ -89,6 +89,11 @@ function _build_predictor_guess(i::Int, αfused)
             fill!(zs[$i], zero(eltype(u)))
         elseif predictor === :copy_prev && $i > 1
             copyto!(zs[$i], zs[$i - 1])
+        elseif predictor === :stage_extrap && $i > 2
+            @.. broadcast = false zs[$i] = zs[$i - 1] +
+                (zs[$i - 1] - zs[$i - 2]) * ((c[$i] - c[$i - 1]) / (c[$i - 1] - c[$i - 2]))
+        elseif predictor === :stage_extrap && $i > 1
+            copyto!(zs[$i], zs[$i - 1])
         elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
                 (integrator.success_iter == 0 || integrator.reeval_fsal)
             fill!(zs[$i], zero(eltype(u)))
@@ -589,12 +594,19 @@ function _build_oop_predictor_menu(i::Int, α_rhs)
     z_prev = _zsym(i - 1)
     full = :(ode_extrapolant(Θ_pred, integrator, nothing, Val{0}))
     lin = :((1 - Θ_pred) * integrator.uprev2 + Θ_pred * integrator.uprev)
+    stage_extrap = i > 2 ?
+        :(
+            $z_prev + ($z_prev - $(_zsym(i - 2))) *
+            ((c[$i] - c[$i - 1]) / (c[$i - 1] - c[$i - 2]))
+        ) : z_prev
     return quote
         Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
         if predictor === :trivial
             z_guess = zero(u)
         elseif predictor === :copy_prev
             z_guess = $z_prev
+        elseif predictor === :stage_extrap
+            z_guess = $stage_extrap
         elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
                 (integrator.success_iter == 0 || integrator.reeval_fsal)
             z_guess = zero(u)

@@ -1173,8 +1173,8 @@ but are still being fully evaluated in context.",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
-        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
-        (previous-step interpolant), or `:tableau` (tableau-derived α).
+        (reuse previous stage), `:stage_extrap` (extrapolate recent stages), `:max_order`
+        / `:variable_order` / `:cutoff_order` (previous-step interpolant), or `:tableau`.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1225,8 +1225,8 @@ but are still being fully evaluated in context.",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
-        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
-        (previous-step interpolant), or `:tableau` (tableau-derived α).
+        (reuse previous stage), `:stage_extrap` (extrapolate recent stages), `:max_order`
+        / `:variable_order` / `:cutoff_order` (previous-step interpolant), or `:tableau`.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1277,8 +1277,8 @@ but are still being fully evaluated in context.",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
-        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
-        (previous-step interpolant), or `:tableau` (tableau-derived α).
+        (reuse previous stage), `:stage_extrap` (extrapolate recent stages), `:max_order`
+        / `:variable_order` / `:cutoff_order` (previous-step interpolant), or `:tableau`.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1329,8 +1329,8 @@ but are still being fully evaluated in context.",
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
-        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
-        (previous-step interpolant), or `:tableau` (tableau-derived α).
+        (reuse previous stage), `:stage_extrap` (extrapolate recent stages), `:max_order`
+        / `:variable_order` / `:cutoff_order` (previous-step interpolant), or `:tableau`.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
@@ -1383,8 +1383,8 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     extra_keyword_description = """
     - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
     - `predictor`: per-stage Newton initial guess. One of `:trivial` (z=0), `:copy_prev`
-        (reuse previous stage), `:max_order` / `:variable_order` / `:cutoff_order`
-        (previous-step interpolant), or `:tableau` (tableau-derived α).
+        (reuse previous stage), `:stage_extrap` (extrapolate recent stages), `:max_order`
+        / `:variable_order` / `:cutoff_order` (previous-step interpolant), or `:tableau`.
         """,
     extra_keyword_default = """
     extrapolant = :linear,
