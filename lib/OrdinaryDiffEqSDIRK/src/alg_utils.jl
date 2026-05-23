@@ -61,12 +61,24 @@ issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
 
-# Predictor selection: algs without a `predictor` field use the tableau-derived path.
-_predictor(alg) = :tableau
-function _predictor(
-        alg::Union{
-            ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA,
-        }
+_predictor(alg) = alg.predictor
+
+# The order-limited interpolant predictors use the Hermite power form, valid for the
+# default Hermite dense output (all current SDIRK/ESDIRK). A method with a custom
+# interpolant should override this to false so the predictor falls back to the
+# interpolant-agnostic full extrapolant.
+_uses_hermite_interp(alg) = true
+
+# Deprecated `extrapolant` Symbol -> `Predictor` enum mapping.
+function _resolve_predictor(predictor::Predictor.T, extrapolant)
+    extrapolant === nothing && return predictor
+    Base.depwarn(
+        "The `extrapolant` keyword is deprecated; use `predictor` (a `Predictor` enum value).",
+        :extrapolant
     )
-    return alg.predictor
+    extrapolant isa Predictor.T && return extrapolant
+    extrapolant === :constant && return Predictor.Trivial
+    extrapolant === :linear && return Predictor.Linear
+    extrapolant === :interpolant && return Predictor.MaxOrder
+    return predictor
 end

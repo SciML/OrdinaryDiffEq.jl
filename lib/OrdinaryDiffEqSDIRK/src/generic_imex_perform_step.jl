@@ -59,24 +59,29 @@ function _build_interp_guess(i::Int, mode::Symbol)
     end
     return quote
         OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
-        Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
-        dtp_pred = integrator.t - integrator.tprev
-        $qsel
-        @.. broadcast = false zs[$i] = integrator.uprev2 +
-            Θ_pred * dtp_pred * integrator.k[1]
-        if q_pred >= 2
-            @.. broadcast = false zs[$i] = zs[$i] +
-                Θ_pred^2 * (
-                3 * (integrator.uprev - integrator.uprev2) -
-                    2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
-            )
-        end
-        if q_pred >= 3
-            @.. broadcast = false zs[$i] = zs[$i] +
-                Θ_pred^3 * (
-                -2 * (integrator.uprev - integrator.uprev2) +
-                    dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
-            )
+        if _uses_hermite_interp(alg)
+            Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
+            dtp_pred = integrator.t - integrator.tprev
+            $qsel
+            @.. broadcast = false zs[$i] = integrator.uprev2 +
+                Θ_pred * dtp_pred * integrator.k[1]
+            if q_pred >= 2
+                @.. broadcast = false zs[$i] = zs[$i] +
+                    Θ_pred^2 * (
+                    3 * (integrator.uprev - integrator.uprev2) -
+                        2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                )
+            end
+            if q_pred >= 3
+                @.. broadcast = false zs[$i] = zs[$i] +
+                    Θ_pred^3 * (
+                    -2 * (integrator.uprev - integrator.uprev2) +
+                        dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                )
+            end
+        else
+            # Non-Hermite interpolant: use the full dense extrapolant (no order limiting).
+            current_extrapolant!(zs[$i], t + c[$i] * dt, integrator)
         end
         @.. broadcast = false zs[$i] = (zs[$i] - tmp) * inv(γ)
     end
@@ -87,23 +92,24 @@ function _build_predictor_guess(i::Int, αfused)
     varorder = _build_interp_guess(i, :variable_order)
     cutoff = _build_interp_guess(i, :cutoff_order)
     return quote
-        if predictor === :trivial
+        if predictor == Predictor.Trivial
             fill!(zs[$i], zero(eltype(u)))
-        elseif predictor === :copy_prev && $i > 1
+        elseif predictor == Predictor.CopyPrev && $i > 1
             copyto!(zs[$i], zs[$i - 1])
-        elseif predictor === :stage_extrap && $i > 2
+        elseif predictor == Predictor.StageExtrap && $i > 2
             @.. broadcast = false zs[$i] = zs[$i - 1] +
                 (zs[$i - 1] - zs[$i - 2]) * ((c[$i] - c[$i - 1]) / (c[$i - 1] - c[$i - 2]))
-        elseif predictor === :stage_extrap && $i > 1
+        elseif predictor == Predictor.StageExtrap && $i > 1
             copyto!(zs[$i], zs[$i - 1])
-        elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
+        elseif predictor in
+                (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) &&
                 (integrator.success_iter == 0 || integrator.reeval_fsal)
             fill!(zs[$i], zero(eltype(u)))
-        elseif predictor === :max_order
+        elseif predictor == Predictor.MaxOrder
             $maxorder
-        elseif predictor === :variable_order
+        elseif predictor == Predictor.VariableOrder
             $varorder
-        elseif predictor === :cutoff_order
+        elseif predictor == Predictor.CutoffOrder
             $cutoff
         elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
             fill!(zs[$i], tab.const_stage_guess[$i])
@@ -528,12 +534,12 @@ end
         else
             if integrator.success_iter > 0 && !integrator.reeval_fsal &&
                     alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
-                    alg.extrapolant == :interpolant
+                    predictor == Predictor.MaxOrder
                 current_extrapolant!(u, t + dt, integrator)
                 @.. broadcast = false zs[1] = u - uprev
             elseif tab.stage1_extrapolation &&
                     alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
-                    alg.extrapolant == :linear
+                    predictor == Predictor.Linear
                 @.. broadcast = false zs[1] = dt * integrator.fsalfirst
             else
                 zs[1] .= zero(eltype(zs[1]))
@@ -617,23 +623,25 @@ function _build_oop_predictor_menu(i::Int, α_rhs)
             ((c[$i] - c[$i - 1]) / (c[$i - 1] - c[$i - 2]))
         ) : z_prev
     return quote
-        if predictor === :trivial
+        if predictor == Predictor.Trivial
             z_guess = zero(u)
-        elseif predictor === :copy_prev
+        elseif predictor == Predictor.CopyPrev
             z_guess = $z_prev
-        elseif predictor === :stage_extrap
+        elseif predictor == Predictor.StageExtrap
             z_guess = $stage_extrap
-        elseif predictor in (:max_order, :variable_order, :cutoff_order) &&
+        elseif predictor in
+                (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) &&
                 (integrator.success_iter == 0 || integrator.reeval_fsal)
             z_guess = zero(u)
-        elseif predictor in (:max_order, :variable_order, :cutoff_order)
+        elseif predictor in
+                (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
             OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
             Θ_pred = (t + c[$i] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
             dtp_pred = integrator.t - integrator.tprev
-            q_pred = predictor === :max_order ? 3 :
-                predictor === :cutoff_order ? (c[$i] <= 1 // 2 ? 3 : 1) :
+            q_pred = predictor == Predictor.MaxOrder ? 3 :
+                predictor == Predictor.CutoffOrder ? (c[$i] <= 1 // 2 ? 3 : 1) :
                 (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
-            z_guess = ($upred - tmp) * inv(γ)
+            z_guess = _uses_hermite_interp(alg) ? ($upred - tmp) * inv(γ) : zero(u)
         elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[$i])
             z_guess = tab.const_stage_guess[$i]
         elseif !isempty(α) && !iszero(α[$i])
@@ -818,12 +826,12 @@ end
         else
             if integrator.success_iter > 0 && !integrator.reeval_fsal &&
                     alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
-                    alg.extrapolant == :interpolant
+                    predictor == Predictor.MaxOrder
                 current_extrapolant!(u, t + dt, integrator)
                 $z1 = u - uprev
             elseif tab.stage1_extrapolation &&
                     alg isa Union{OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm, ImplicitEuler, Trapezoid} &&
-                    alg.extrapolant == :linear
+                    predictor == Predictor.Linear
                 $z1 = dt * integrator.fsalfirst
             else
                 $z1 = zero(u)
