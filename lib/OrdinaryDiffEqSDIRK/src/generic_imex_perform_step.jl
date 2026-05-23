@@ -407,83 +407,78 @@ end
     end
 end
 
-function _build_trap_iip_body(::Int)
-    return :(
-        @muladd begin
-            (; t, dt, uprev, u, p) = integrator
-            (; atmp, nlsolver, step_limiter!) = cache
-            (; z, tmp) = nlsolver
-            f = integrator.f
-            mass_matrix = f.mass_matrix
+# Trapezoid has a fixed structure, so its step is a plain method (not @generated).
+@muladd function _perform_step_iip!(
+        integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2, :trap_dd3}
+    ) where {S, T, T2}
+    (; t, dt, uprev, u, p) = integrator
+    (; atmp, nlsolver, step_limiter!) = cache
+    (; z, tmp) = nlsolver
+    f = integrator.f
+    mass_matrix = f.mass_matrix
 
-            γ = 1 // 2
-            γdt = γ * dt
-            markfirststage!(nlsolver)
+    γ = 1 // 2
+    γdt = γ * dt
+    markfirststage!(nlsolver)
 
-            @.. broadcast = false z = uprev
-            invγdt = inv(γdt)
-            if mass_matrix === I
-                @.. broadcast = false tmp = uprev * invγdt + integrator.fsalfirst
-            else
-                mul!(u, mass_matrix, uprev)
-                @.. broadcast = false tmp = u * invγdt + integrator.fsalfirst
-            end
-            nlsolver.α = 1
-            nlsolver.γ = γ
-            nlsolver.method = COEFFICIENT_MULTISTEP
-            z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-            nlsolvefail(nlsolver) && return
-            @.. broadcast = false u = z
+    @.. broadcast = false z = uprev
+    invγdt = inv(γdt)
+    if mass_matrix === I
+        @.. broadcast = false tmp = uprev * invγdt + integrator.fsalfirst
+    else
+        mul!(u, mass_matrix, uprev)
+        @.. broadcast = false tmp = u * invγdt + integrator.fsalfirst
+    end
+    nlsolver.α = 1
+    nlsolver.γ = γ
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    @.. broadcast = false u = z
 
-            step_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
 
-            calculate_error_estimate!(integrator, cache, tab, t)
+    calculate_error_estimate!(integrator, cache, tab, t)
 
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            f(integrator.fsallast, u, p, t + dt)
-        end
-    )
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return f(integrator.fsallast, u, p, t + dt)
 end
 
-function _build_trap_oop_body(::Int)
-    return :(
-        @muladd begin
-            (; t, dt, uprev, u, p) = integrator
-            nlsolver = cache.nlsolver
-            f = integrator.f
-            γ = 1 // 2
-            γdt = γ * dt
-            markfirststage!(nlsolver)
+@muladd function _perform_step_oop!(
+        integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2, :trap_dd3}
+    ) where {S, T, T2}
+    (; t, dt, uprev, u, p) = integrator
+    nlsolver = cache.nlsolver
+    f = integrator.f
+    γ = 1 // 2
+    γdt = γ * dt
+    markfirststage!(nlsolver)
 
-            nlsolver.z = uprev
-            if f.mass_matrix === I
-                nlsolver.tmp = @.. broadcast = false uprev * inv(γdt) + integrator.fsalfirst
-            else
-                nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
-            end
-            nlsolver.α = 1
-            nlsolver.γ = γ
-            nlsolver.method = COEFFICIENT_MULTISTEP
-            u = nlsolve!(nlsolver, integrator, cache, repeat_step)
-            nlsolvefail(nlsolver) && return
-            integrator.u = u
+    nlsolver.z = uprev
+    if f.mass_matrix === I
+        nlsolver.tmp = @.. broadcast = false uprev * inv(γdt) + integrator.fsalfirst
+    else
+        nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
+    end
+    nlsolver.α = 1
+    nlsolver.γ = γ
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    integrator.u = u
 
-            calculate_error_estimate!(integrator, cache, tab, t)
+    calculate_error_estimate!(integrator, cache, tab, t)
 
-            integrator.fsallast = f(u, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            integrator.k[1] = integrator.fsalfirst
-            integrator.k[2] = integrator.fsallast
-        end
-    )
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return integrator.k[2]
 end
 
 @generated function _perform_step_iip!(
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2, E}
     ) where {S, T, T2, E}
-    if E === :trap_dd3
-        return _build_trap_iip_body(S)
-    end
     setup = quote
         (; t, dt, uprev, u, p) = integrator
         (; zs, ks, atmp, nlsolver, step_limiter!) = cache
@@ -766,9 +761,6 @@ end
 @generated function _perform_step_oop!(
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{S, T, T2, E}
     ) where {S, T, T2, E}
-    if E === :trap_dd3
-        return _build_trap_oop_body(S)
-    end
     z1 = _zsym(1); k1 = _ksym(1); zS = _zsym(S)
 
     decls = quote end

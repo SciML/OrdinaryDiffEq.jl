@@ -99,8 +99,6 @@ using EnumX: @enumx
 import EnzymeCore
 
 # Per-stage Newton initial-guess ("predictor") strategies for implicit RK methods.
-# Supersedes the old `extrapolant` Symbol option (:constant->Trivial, :linear->Linear,
-# :interpolant->MaxOrder).
 @enumx Predictor begin
     Trivial        # zero increment (z = 0)
     Linear         # linear extrapolation (z = dt * fsalfirst)

@@ -63,10 +63,8 @@ isesdirk(alg::ARS343) = true
 
 _predictor(alg) = alg.predictor
 
-# The order-limited interpolant predictors use the Hermite power form, valid for the
-# default Hermite dense output (all current SDIRK/ESDIRK). A method with a custom
-# interpolant should override this to false so the predictor falls back to the
-# interpolant-agnostic full extrapolant.
+# The interpolant predictors use the Hermite power form; a method with a custom
+# interpolant should override this to false to fall back to the full extrapolant.
 _uses_hermite_interp(alg) = true
 
 # Deprecated `extrapolant` Symbol -> `Predictor` enum mapping.
