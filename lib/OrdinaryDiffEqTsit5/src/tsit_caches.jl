@@ -16,6 +16,8 @@
     thread::Thread
 end
 
+@truncate_stacktrace Tsit5Cache 1
+
 function alg_cache(
         alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -48,12 +50,4 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return Tsit5ConstantCache()
-end
-
-function Base.show(io::IO, cache::Tsit5Cache)
-    print(io, "Tsit5Cache{$(typeof(cache.u))}")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", cache::Tsit5Cache)
-    print(io, "Tsit5Cache{$(typeof(cache.u))}")
 end
