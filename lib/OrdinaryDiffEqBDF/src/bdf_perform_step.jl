@@ -20,6 +20,8 @@ end
     if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         cache.eulercache.nlsolver.method = DIRK
+        cache.eulercache.nlsolver.γ = 1
+        cache.eulercache.nlsolver.α = 1
         perform_step!(integrator, cache.eulercache, repeat_step)
         cache.fsalfirstprev = integrator.fsalfirst
         return
@@ -109,6 +111,8 @@ end
     if integrator.iter == 1 && !integrator.derivative_discontinuity
         cache.dtₙ₋₁ = dtₙ
         cache.eulercache.nlsolver.method = DIRK
+        cache.eulercache.nlsolver.γ = 1
+        cache.eulercache.nlsolver.α = 1
         perform_step!(integrator, cache.eulercache, repeat_step)
         cache.fsalfirstprev .= integrator.fsalfirst
         nlsolver.tmp = tmp

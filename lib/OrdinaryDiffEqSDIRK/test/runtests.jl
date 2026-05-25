@@ -15,5 +15,6 @@ if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     activate_qa_env()
 end
 
+@time @safetestset "Tableau consistency" include("tableau_consistency_tests.jl")
 @time @safetestset "Convergence" include("sdirk_convergence_tests.jl")
 @time @safetestset "DAE tests" include("dae_esdirk_test.jl")

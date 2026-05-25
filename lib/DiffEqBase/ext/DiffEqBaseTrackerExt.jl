@@ -3,6 +3,7 @@ module DiffEqBaseTrackerExt
 using DiffEqBase
 import DiffEqBase: value
 import Tracker
+import RecursiveArrayTools
 
 # Support adaptive with non-tracked time
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::Tracker.TrackedArray, t)
@@ -111,7 +112,7 @@ Tracker.@grad function DiffEqBase.solve_up(
         !hasfield(typeof(sol), :u) && return sol, pb_f # being safe here
         return sol.u, pb_f # AbstractNoTimeSolution isa AbstractArray
     end
-    return convert(AbstractArray, sol), pb_f
+    return sol, pb_f
 end
 
 end
