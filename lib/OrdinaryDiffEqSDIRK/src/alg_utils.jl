@@ -61,7 +61,14 @@ issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
 
-_predictor(alg) = alg.predictor
+# Per-stage Newton-seed strategy. Every SDIRK/ESDIRK algorithm in this module
+# carries a `predictor::Predictor.T` field, so the `alg.predictor` access is
+# usually direct. The `hasproperty` fallback is for downstream algorithms that
+# reuse `ESDIRKIMEXCache` (e.g. OrdinaryDiffEqBDF's `ABDF2`, which uses the
+# Implicit Euler tableau as a starter step via `cache.eulercache`) without
+# carrying a `predictor` field of their own — `Predictor.Trivial` matches the
+# zero-seed branch they already take through the `alg isa Union{...}` gates.
+_predictor(alg) = hasproperty(alg, :predictor) ? alg.predictor : Predictor.Trivial
 
 # The interpolant predictors use the Hermite power form; a method with a custom
 # interpolant should override this to false to fall back to the full extrapolant.
