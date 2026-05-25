@@ -87,30 +87,30 @@ end
             f_impl(zs[1], integrator.uprev, p, integrator.t)
             zs[1] .*= dt
         else
-            @.. broadcast=false zs[1] = dt * integrator.fsalfirst
+            @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         end
         if integrator.f isa SplitFunction && issplit(alg)
-            @.. broadcast=false ks[1] = dt * integrator.fsalfirst - zs[1]
+            @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
         end
     else
         # Implicit first stage requires nlsolve.
         if integrator.success_iter > 0 && !integrator.reeval_fsal &&
                 alg isa Union{
-                    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                    ImplicitEuler, Trapezoid,
-                } &&
+                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
+                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
+                ImplicitEuler, Trapezoid,
+            } &&
                 predictor == Predictor.MaxOrder
             current_extrapolant!(u, t + dt, integrator)
-            @.. broadcast=false zs[1] = u - uprev
+            @.. broadcast = false zs[1] = u - uprev
         elseif tab.stage1_extrapolation &&
                 alg isa Union{
-                    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                    ImplicitEuler, Trapezoid,
-                } &&
+                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
+                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
+                ImplicitEuler, Trapezoid,
+            } &&
                 predictor == Predictor.Linear
-            @.. broadcast=false zs[1] = dt * integrator.fsalfirst
+            @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
             zs[1] .= zero(eltype(zs[1]))
         end
@@ -125,9 +125,9 @@ end
     # ---------------- Stages 2..s (inlined) ----------------
 
     if s >= 2
-        @.. broadcast=false tmp = uprev + Ai[2, 1] * zs[1]
+        @.. broadcast = false tmp = uprev + Ai[2, 1] * zs[1]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[2, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[2, 1] * ks[1]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[2] > 0
             copyto!(zs[2], zs[split_guess[2]])
@@ -146,55 +146,55 @@ end
                     Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[2] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[2] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[2] = zs[2] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[2] = zs[2] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[2] = zs[2] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[2] = zs[2] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[2], t + c[2] * dt, integrator)
                 end
-                @.. broadcast=false zs[2] = (zs[2] - tmp) * inv(γ)
+                @.. broadcast = false zs[2] = (zs[2] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[2] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[2] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[2] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[2] = zs[2] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[2] = zs[2] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[2] = zs[2] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[2] = zs[2] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[2], t + c[2] * dt, integrator)
                 end
-                @.. broadcast=false zs[2] = (zs[2] - tmp) * inv(γ)
+                @.. broadcast = false zs[2] = (zs[2] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[2] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[2] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[2] = zs[2] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[2] = zs[2] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[2] = zs[2] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[2] = zs[2] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[2], t + c[2] * dt, integrator)
                 end
-                @.. broadcast=false zs[2] = (zs[2] - tmp) * inv(γ)
+                @.. broadcast = false zs[2] = (zs[2] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[2])
                 fill!(zs[2], tab.const_stage_guess[2])
             elseif !isempty(α) && !iszero(α[2])
-                @.. broadcast=false zs[2] = α[2][1] * zs[1]
+                @.. broadcast = false zs[2] = α[2][1] * zs[1]
             else
                 fill!(zs[2], zero(eltype(u)))
             end
@@ -208,7 +208,7 @@ end
             isnewton(nlsolver) && set_new_W!(nlsolver, false)
         end
         if s > 2 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[2]
+            @.. broadcast = false u = tmp + γ * zs[2]
             f2(ks[2], u, p, t + c[2] * dt)
             ks[2] .*= dt
             integrator.stats.nf2 += 1
@@ -216,10 +216,10 @@ end
     end
 
     if s >= 3
-        @.. broadcast=false tmp = uprev + Ai[3, 1] * zs[1] + Ai[3, 2] * zs[2]
+        @.. broadcast = false tmp = uprev + Ai[3, 1] * zs[1] + Ai[3, 2] * zs[2]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[3, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[3, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[3, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[3, 2] * ks[2]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[3] > 0
             copyto!(zs[3], zs[split_guess[3]])
@@ -229,7 +229,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[3], zs[2])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[3] = zs[2] + (zs[2] - zs[1]) * ((c[3] - c[2]) / (c[2] - c[1]))
+                @.. broadcast = false zs[3] = zs[2] + (zs[2] - zs[1]) * ((c[3] - c[2]) / (c[2] - c[1]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[3], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -238,55 +238,55 @@ end
                     Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[3] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[3] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[3] = zs[3] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[3] = zs[3] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[3] = zs[3] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[3] = zs[3] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[3], t + c[3] * dt, integrator)
                 end
-                @.. broadcast=false zs[3] = (zs[3] - tmp) * inv(γ)
+                @.. broadcast = false zs[3] = (zs[3] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[3] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[3] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[3] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[3] = zs[3] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[3] = zs[3] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[3] = zs[3] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[3] = zs[3] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[3], t + c[3] * dt, integrator)
                 end
-                @.. broadcast=false zs[3] = (zs[3] - tmp) * inv(γ)
+                @.. broadcast = false zs[3] = (zs[3] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[3] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[3] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[3] = zs[3] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[3] = zs[3] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[3] = zs[3] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[3] = zs[3] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[3], t + c[3] * dt, integrator)
                 end
-                @.. broadcast=false zs[3] = (zs[3] - tmp) * inv(γ)
+                @.. broadcast = false zs[3] = (zs[3] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[3])
                 fill!(zs[3], tab.const_stage_guess[3])
             elseif !isempty(α) && !iszero(α[3])
-                @.. broadcast=false zs[3] = α[3][1] * zs[1] + α[3][2] * zs[2]
+                @.. broadcast = false zs[3] = α[3][1] * zs[1] + α[3][2] * zs[2]
             else
                 fill!(zs[3], zero(eltype(u)))
             end
@@ -297,7 +297,7 @@ end
         zs[3] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 3 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[3]
+            @.. broadcast = false u = tmp + γ * zs[3]
             f2(ks[3], u, p, t + c[3] * dt)
             ks[3] .*= dt
             integrator.stats.nf2 += 1
@@ -305,11 +305,11 @@ end
     end
 
     if s >= 4
-        @.. broadcast=false tmp = uprev + Ai[4, 1] * zs[1] + Ai[4, 2] * zs[2] + Ai[4, 3] * zs[3]
+        @.. broadcast = false tmp = uprev + Ai[4, 1] * zs[1] + Ai[4, 2] * zs[2] + Ai[4, 3] * zs[3]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[4, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[4, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[4, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[4, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[4, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[4, 3] * ks[3]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[4] > 0
             copyto!(zs[4], zs[split_guess[4]])
@@ -319,7 +319,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[4], zs[3])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[4] = zs[3] + (zs[3] - zs[2]) * ((c[4] - c[3]) / (c[3] - c[2]))
+                @.. broadcast = false zs[4] = zs[3] + (zs[3] - zs[2]) * ((c[4] - c[3]) / (c[3] - c[2]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[4], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -328,55 +328,55 @@ end
                     Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[4] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[4] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[4] = zs[4] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[4] = zs[4] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[4] = zs[4] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[4] = zs[4] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[4], t + c[4] * dt, integrator)
                 end
-                @.. broadcast=false zs[4] = (zs[4] - tmp) * inv(γ)
+                @.. broadcast = false zs[4] = (zs[4] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[4] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[4] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[4] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[4] = zs[4] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[4] = zs[4] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[4] = zs[4] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[4] = zs[4] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[4], t + c[4] * dt, integrator)
                 end
-                @.. broadcast=false zs[4] = (zs[4] - tmp) * inv(γ)
+                @.. broadcast = false zs[4] = (zs[4] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[4] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[4] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[4] = zs[4] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[4] = zs[4] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[4] = zs[4] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[4] = zs[4] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[4], t + c[4] * dt, integrator)
                 end
-                @.. broadcast=false zs[4] = (zs[4] - tmp) * inv(γ)
+                @.. broadcast = false zs[4] = (zs[4] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[4])
                 fill!(zs[4], tab.const_stage_guess[4])
             elseif !isempty(α) && !iszero(α[4])
-                @.. broadcast=false zs[4] = α[4][1] * zs[1] + α[4][2] * zs[2] + α[4][3] * zs[3]
+                @.. broadcast = false zs[4] = α[4][1] * zs[1] + α[4][2] * zs[2] + α[4][3] * zs[3]
             else
                 fill!(zs[4], zero(eltype(u)))
             end
@@ -387,7 +387,7 @@ end
         zs[4] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 4 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[4]
+            @.. broadcast = false u = tmp + γ * zs[4]
             f2(ks[4], u, p, t + c[4] * dt)
             ks[4] .*= dt
             integrator.stats.nf2 += 1
@@ -395,12 +395,12 @@ end
     end
 
     if s >= 5
-        @.. broadcast=false tmp = uprev + Ai[5, 1] * zs[1] + Ai[5, 2] * zs[2] + Ai[5, 3] * zs[3] + Ai[5, 4] * zs[4]
+        @.. broadcast = false tmp = uprev + Ai[5, 1] * zs[1] + Ai[5, 2] * zs[2] + Ai[5, 3] * zs[3] + Ai[5, 4] * zs[4]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[5, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[5, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[5, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[5, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[5, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[5, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[5, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[5, 4] * ks[4]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[5] > 0
             copyto!(zs[5], zs[split_guess[5]])
@@ -410,7 +410,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[5], zs[4])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[5] = zs[4] + (zs[4] - zs[3]) * ((c[5] - c[4]) / (c[4] - c[3]))
+                @.. broadcast = false zs[5] = zs[4] + (zs[4] - zs[3]) * ((c[5] - c[4]) / (c[4] - c[3]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[5], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -419,55 +419,55 @@ end
                     Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[5] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[5] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[5] = zs[5] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[5] = zs[5] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[5] = zs[5] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[5] = zs[5] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[5], t + c[5] * dt, integrator)
                 end
-                @.. broadcast=false zs[5] = (zs[5] - tmp) * inv(γ)
+                @.. broadcast = false zs[5] = (zs[5] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[5] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[5] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[5] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[5] = zs[5] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[5] = zs[5] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[5] = zs[5] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[5] = zs[5] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[5], t + c[5] * dt, integrator)
                 end
-                @.. broadcast=false zs[5] = (zs[5] - tmp) * inv(γ)
+                @.. broadcast = false zs[5] = (zs[5] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[5] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[5] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[5] = zs[5] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[5] = zs[5] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[5] = zs[5] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[5] = zs[5] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[5], t + c[5] * dt, integrator)
                 end
-                @.. broadcast=false zs[5] = (zs[5] - tmp) * inv(γ)
+                @.. broadcast = false zs[5] = (zs[5] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[5])
                 fill!(zs[5], tab.const_stage_guess[5])
             elseif !isempty(α) && !iszero(α[5])
-                @.. broadcast=false zs[5] = α[5][1] * zs[1] + α[5][2] * zs[2] + α[5][3] * zs[3] + α[5][4] * zs[4]
+                @.. broadcast = false zs[5] = α[5][1] * zs[1] + α[5][2] * zs[2] + α[5][3] * zs[3] + α[5][4] * zs[4]
             else
                 fill!(zs[5], zero(eltype(u)))
             end
@@ -478,7 +478,7 @@ end
         zs[5] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 5 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[5]
+            @.. broadcast = false u = tmp + γ * zs[5]
             f2(ks[5], u, p, t + c[5] * dt)
             ks[5] .*= dt
             integrator.stats.nf2 += 1
@@ -486,13 +486,13 @@ end
     end
 
     if s >= 6
-        @.. broadcast=false tmp = uprev + Ai[6, 1] * zs[1] + Ai[6, 2] * zs[2] + Ai[6, 3] * zs[3] + Ai[6, 4] * zs[4] + Ai[6, 5] * zs[5]
+        @.. broadcast = false tmp = uprev + Ai[6, 1] * zs[1] + Ai[6, 2] * zs[2] + Ai[6, 3] * zs[3] + Ai[6, 4] * zs[4] + Ai[6, 5] * zs[5]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[6, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[6, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[6, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[6, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[6, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[6, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[6, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[6, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[6, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[6, 5] * ks[5]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[6] > 0
             copyto!(zs[6], zs[split_guess[6]])
@@ -502,7 +502,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[6], zs[5])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[6] = zs[5] + (zs[5] - zs[4]) * ((c[6] - c[5]) / (c[5] - c[4]))
+                @.. broadcast = false zs[6] = zs[5] + (zs[5] - zs[4]) * ((c[6] - c[5]) / (c[5] - c[4]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[6], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -511,55 +511,55 @@ end
                     Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[6] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[6] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[6] = zs[6] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[6] = zs[6] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[6] = zs[6] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[6] = zs[6] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[6], t + c[6] * dt, integrator)
                 end
-                @.. broadcast=false zs[6] = (zs[6] - tmp) * inv(γ)
+                @.. broadcast = false zs[6] = (zs[6] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[6] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[6] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[6] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[6] = zs[6] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[6] = zs[6] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[6] = zs[6] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[6] = zs[6] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[6], t + c[6] * dt, integrator)
                 end
-                @.. broadcast=false zs[6] = (zs[6] - tmp) * inv(γ)
+                @.. broadcast = false zs[6] = (zs[6] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[6] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[6] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[6] = zs[6] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[6] = zs[6] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[6] = zs[6] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[6] = zs[6] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[6], t + c[6] * dt, integrator)
                 end
-                @.. broadcast=false zs[6] = (zs[6] - tmp) * inv(γ)
+                @.. broadcast = false zs[6] = (zs[6] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[6])
                 fill!(zs[6], tab.const_stage_guess[6])
             elseif !isempty(α) && !iszero(α[6])
-                @.. broadcast=false zs[6] = α[6][1] * zs[1] + α[6][2] * zs[2] + α[6][3] * zs[3] + α[6][4] * zs[4] + α[6][5] * zs[5]
+                @.. broadcast = false zs[6] = α[6][1] * zs[1] + α[6][2] * zs[2] + α[6][3] * zs[3] + α[6][4] * zs[4] + α[6][5] * zs[5]
             else
                 fill!(zs[6], zero(eltype(u)))
             end
@@ -570,7 +570,7 @@ end
         zs[6] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 6 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[6]
+            @.. broadcast = false u = tmp + γ * zs[6]
             f2(ks[6], u, p, t + c[6] * dt)
             ks[6] .*= dt
             integrator.stats.nf2 += 1
@@ -578,14 +578,14 @@ end
     end
 
     if s >= 7
-        @.. broadcast=false tmp = uprev + Ai[7, 1] * zs[1] + Ai[7, 2] * zs[2] + Ai[7, 3] * zs[3] + Ai[7, 4] * zs[4] + Ai[7, 5] * zs[5] + Ai[7, 6] * zs[6]
+        @.. broadcast = false tmp = uprev + Ai[7, 1] * zs[1] + Ai[7, 2] * zs[2] + Ai[7, 3] * zs[3] + Ai[7, 4] * zs[4] + Ai[7, 5] * zs[5] + Ai[7, 6] * zs[6]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[7, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[7, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[7, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[7, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[7, 5] * ks[5]
-            @.. broadcast=false tmp = tmp + Ae[7, 6] * ks[6]
+            @.. broadcast = false tmp = tmp + Ae[7, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[7, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[7, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[7, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[7, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[7, 6] * ks[6]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[7] > 0
             copyto!(zs[7], zs[split_guess[7]])
@@ -595,7 +595,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[7], zs[6])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[7] = zs[6] + (zs[6] - zs[5]) * ((c[7] - c[6]) / (c[6] - c[5]))
+                @.. broadcast = false zs[7] = zs[6] + (zs[6] - zs[5]) * ((c[7] - c[6]) / (c[6] - c[5]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[7], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -604,55 +604,55 @@ end
                     Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[7] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[7] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[7] = zs[7] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[7] = zs[7] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[7] = zs[7] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[7] = zs[7] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[7], t + c[7] * dt, integrator)
                 end
-                @.. broadcast=false zs[7] = (zs[7] - tmp) * inv(γ)
+                @.. broadcast = false zs[7] = (zs[7] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[7] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[7] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[7] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[7] = zs[7] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[7] = zs[7] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[7] = zs[7] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[7] = zs[7] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[7], t + c[7] * dt, integrator)
                 end
-                @.. broadcast=false zs[7] = (zs[7] - tmp) * inv(γ)
+                @.. broadcast = false zs[7] = (zs[7] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[7] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[7] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[7] = zs[7] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[7] = zs[7] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[7] = zs[7] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[7] = zs[7] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[7], t + c[7] * dt, integrator)
                 end
-                @.. broadcast=false zs[7] = (zs[7] - tmp) * inv(γ)
+                @.. broadcast = false zs[7] = (zs[7] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[7])
                 fill!(zs[7], tab.const_stage_guess[7])
             elseif !isempty(α) && !iszero(α[7])
-                @.. broadcast=false zs[7] = α[7][1] * zs[1] + α[7][2] * zs[2] + α[7][3] * zs[3] + α[7][4] * zs[4] + α[7][5] * zs[5] + α[7][6] * zs[6]
+                @.. broadcast = false zs[7] = α[7][1] * zs[1] + α[7][2] * zs[2] + α[7][3] * zs[3] + α[7][4] * zs[4] + α[7][5] * zs[5] + α[7][6] * zs[6]
             else
                 fill!(zs[7], zero(eltype(u)))
             end
@@ -663,7 +663,7 @@ end
         zs[7] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 7 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[7]
+            @.. broadcast = false u = tmp + γ * zs[7]
             f2(ks[7], u, p, t + c[7] * dt)
             ks[7] .*= dt
             integrator.stats.nf2 += 1
@@ -671,15 +671,15 @@ end
     end
 
     if s >= 8
-        @.. broadcast=false tmp = uprev + Ai[8, 1] * zs[1] + Ai[8, 2] * zs[2] + Ai[8, 3] * zs[3] + Ai[8, 4] * zs[4] + Ai[8, 5] * zs[5] + Ai[8, 6] * zs[6] + Ai[8, 7] * zs[7]
+        @.. broadcast = false tmp = uprev + Ai[8, 1] * zs[1] + Ai[8, 2] * zs[2] + Ai[8, 3] * zs[3] + Ai[8, 4] * zs[4] + Ai[8, 5] * zs[5] + Ai[8, 6] * zs[6] + Ai[8, 7] * zs[7]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[8, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[8, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[8, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[8, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[8, 5] * ks[5]
-            @.. broadcast=false tmp = tmp + Ae[8, 6] * ks[6]
-            @.. broadcast=false tmp = tmp + Ae[8, 7] * ks[7]
+            @.. broadcast = false tmp = tmp + Ae[8, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[8, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[8, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[8, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[8, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[8, 6] * ks[6]
+            @.. broadcast = false tmp = tmp + Ae[8, 7] * ks[7]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[8] > 0
             copyto!(zs[8], zs[split_guess[8]])
@@ -689,7 +689,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[8], zs[7])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[8] = zs[7] + (zs[7] - zs[6]) * ((c[8] - c[7]) / (c[7] - c[6]))
+                @.. broadcast = false zs[8] = zs[7] + (zs[7] - zs[6]) * ((c[8] - c[7]) / (c[7] - c[6]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[8], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -698,55 +698,55 @@ end
                     Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[8] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[8] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[8] = zs[8] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[8] = zs[8] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[8] = zs[8] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[8] = zs[8] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[8], t + c[8] * dt, integrator)
                 end
-                @.. broadcast=false zs[8] = (zs[8] - tmp) * inv(γ)
+                @.. broadcast = false zs[8] = (zs[8] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[8] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[8] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[8] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[8] = zs[8] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[8] = zs[8] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[8] = zs[8] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[8] = zs[8] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[8], t + c[8] * dt, integrator)
                 end
-                @.. broadcast=false zs[8] = (zs[8] - tmp) * inv(γ)
+                @.. broadcast = false zs[8] = (zs[8] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[8] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[8] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[8] = zs[8] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[8] = zs[8] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[8] = zs[8] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[8] = zs[8] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[8], t + c[8] * dt, integrator)
                 end
-                @.. broadcast=false zs[8] = (zs[8] - tmp) * inv(γ)
+                @.. broadcast = false zs[8] = (zs[8] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[8])
                 fill!(zs[8], tab.const_stage_guess[8])
             elseif !isempty(α) && !iszero(α[8])
-                @.. broadcast=false zs[8] = α[8][1] * zs[1] + α[8][2] * zs[2] + α[8][3] * zs[3] + α[8][4] * zs[4] + α[8][5] * zs[5] + α[8][6] * zs[6] + α[8][7] * zs[7]
+                @.. broadcast = false zs[8] = α[8][1] * zs[1] + α[8][2] * zs[2] + α[8][3] * zs[3] + α[8][4] * zs[4] + α[8][5] * zs[5] + α[8][6] * zs[6] + α[8][7] * zs[7]
             else
                 fill!(zs[8], zero(eltype(u)))
             end
@@ -757,7 +757,7 @@ end
         zs[8] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 8 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[8]
+            @.. broadcast = false u = tmp + γ * zs[8]
             f2(ks[8], u, p, t + c[8] * dt)
             ks[8] .*= dt
             integrator.stats.nf2 += 1
@@ -765,16 +765,16 @@ end
     end
 
     if s >= 9
-        @.. broadcast=false tmp = uprev + Ai[9, 1] * zs[1] + Ai[9, 2] * zs[2] + Ai[9, 3] * zs[3] + Ai[9, 4] * zs[4] + Ai[9, 5] * zs[5] + Ai[9, 6] * zs[6] + Ai[9, 7] * zs[7] + Ai[9, 8] * zs[8]
+        @.. broadcast = false tmp = uprev + Ai[9, 1] * zs[1] + Ai[9, 2] * zs[2] + Ai[9, 3] * zs[3] + Ai[9, 4] * zs[4] + Ai[9, 5] * zs[5] + Ai[9, 6] * zs[6] + Ai[9, 7] * zs[7] + Ai[9, 8] * zs[8]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[9, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[9, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[9, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[9, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[9, 5] * ks[5]
-            @.. broadcast=false tmp = tmp + Ae[9, 6] * ks[6]
-            @.. broadcast=false tmp = tmp + Ae[9, 7] * ks[7]
-            @.. broadcast=false tmp = tmp + Ae[9, 8] * ks[8]
+            @.. broadcast = false tmp = tmp + Ae[9, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[9, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[9, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[9, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[9, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[9, 6] * ks[6]
+            @.. broadcast = false tmp = tmp + Ae[9, 7] * ks[7]
+            @.. broadcast = false tmp = tmp + Ae[9, 8] * ks[8]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[9] > 0
             copyto!(zs[9], zs[split_guess[9]])
@@ -784,7 +784,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[9], zs[8])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[9] = zs[8] + (zs[8] - zs[7]) * ((c[9] - c[8]) / (c[8] - c[7]))
+                @.. broadcast = false zs[9] = zs[8] + (zs[8] - zs[7]) * ((c[9] - c[8]) / (c[8] - c[7]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[9], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -793,55 +793,55 @@ end
                     Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[9] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[9] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[9] = zs[9] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[9] = zs[9] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[9] = zs[9] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[9] = zs[9] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[9], t + c[9] * dt, integrator)
                 end
-                @.. broadcast=false zs[9] = (zs[9] - tmp) * inv(γ)
+                @.. broadcast = false zs[9] = (zs[9] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[9] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[9] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[9] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[9] = zs[9] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[9] = zs[9] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[9] = zs[9] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[9] = zs[9] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[9], t + c[9] * dt, integrator)
                 end
-                @.. broadcast=false zs[9] = (zs[9] - tmp) * inv(γ)
+                @.. broadcast = false zs[9] = (zs[9] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[9] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[9] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[9] = zs[9] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[9] = zs[9] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[9] = zs[9] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[9] = zs[9] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[9], t + c[9] * dt, integrator)
                 end
-                @.. broadcast=false zs[9] = (zs[9] - tmp) * inv(γ)
+                @.. broadcast = false zs[9] = (zs[9] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[9])
                 fill!(zs[9], tab.const_stage_guess[9])
             elseif !isempty(α) && !iszero(α[9])
-                @.. broadcast=false zs[9] = α[9][1] * zs[1] + α[9][2] * zs[2] + α[9][3] * zs[3] + α[9][4] * zs[4] + α[9][5] * zs[5] + α[9][6] * zs[6] + α[9][7] * zs[7] + α[9][8] * zs[8]
+                @.. broadcast = false zs[9] = α[9][1] * zs[1] + α[9][2] * zs[2] + α[9][3] * zs[3] + α[9][4] * zs[4] + α[9][5] * zs[5] + α[9][6] * zs[6] + α[9][7] * zs[7] + α[9][8] * zs[8]
             else
                 fill!(zs[9], zero(eltype(u)))
             end
@@ -852,7 +852,7 @@ end
         zs[9] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 9 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[9]
+            @.. broadcast = false u = tmp + γ * zs[9]
             f2(ks[9], u, p, t + c[9] * dt)
             ks[9] .*= dt
             integrator.stats.nf2 += 1
@@ -860,17 +860,17 @@ end
     end
 
     if s >= 10
-        @.. broadcast=false tmp = uprev + Ai[10, 1] * zs[1] + Ai[10, 2] * zs[2] + Ai[10, 3] * zs[3] + Ai[10, 4] * zs[4] + Ai[10, 5] * zs[5] + Ai[10, 6] * zs[6] + Ai[10, 7] * zs[7] + Ai[10, 8] * zs[8] + Ai[10, 9] * zs[9]
+        @.. broadcast = false tmp = uprev + Ai[10, 1] * zs[1] + Ai[10, 2] * zs[2] + Ai[10, 3] * zs[3] + Ai[10, 4] * zs[4] + Ai[10, 5] * zs[5] + Ai[10, 6] * zs[6] + Ai[10, 7] * zs[7] + Ai[10, 8] * zs[8] + Ai[10, 9] * zs[9]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[10, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[10, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[10, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[10, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[10, 5] * ks[5]
-            @.. broadcast=false tmp = tmp + Ae[10, 6] * ks[6]
-            @.. broadcast=false tmp = tmp + Ae[10, 7] * ks[7]
-            @.. broadcast=false tmp = tmp + Ae[10, 8] * ks[8]
-            @.. broadcast=false tmp = tmp + Ae[10, 9] * ks[9]
+            @.. broadcast = false tmp = tmp + Ae[10, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[10, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[10, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[10, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[10, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[10, 6] * ks[6]
+            @.. broadcast = false tmp = tmp + Ae[10, 7] * ks[7]
+            @.. broadcast = false tmp = tmp + Ae[10, 8] * ks[8]
+            @.. broadcast = false tmp = tmp + Ae[10, 9] * ks[9]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[10] > 0
             copyto!(zs[10], zs[split_guess[10]])
@@ -880,7 +880,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[10], zs[9])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[10] = zs[9] + (zs[9] - zs[8]) * ((c[10] - c[9]) / (c[9] - c[8]))
+                @.. broadcast = false zs[10] = zs[9] + (zs[9] - zs[8]) * ((c[10] - c[9]) / (c[9] - c[8]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[10], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -889,55 +889,55 @@ end
                     Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[10] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[10] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[10] = zs[10] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[10] = zs[10] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[10] = zs[10] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[10] = zs[10] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[10], t + c[10] * dt, integrator)
                 end
-                @.. broadcast=false zs[10] = (zs[10] - tmp) * inv(γ)
+                @.. broadcast = false zs[10] = (zs[10] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[10] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[10] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[10] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[10] = zs[10] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[10] = zs[10] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[10] = zs[10] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[10] = zs[10] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[10], t + c[10] * dt, integrator)
                 end
-                @.. broadcast=false zs[10] = (zs[10] - tmp) * inv(γ)
+                @.. broadcast = false zs[10] = (zs[10] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[10] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[10] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[10] = zs[10] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[10] = zs[10] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[10] = zs[10] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[10] = zs[10] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[10], t + c[10] * dt, integrator)
                 end
-                @.. broadcast=false zs[10] = (zs[10] - tmp) * inv(γ)
+                @.. broadcast = false zs[10] = (zs[10] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[10])
                 fill!(zs[10], tab.const_stage_guess[10])
             elseif !isempty(α) && !iszero(α[10])
-                @.. broadcast=false zs[10] = α[10][1] * zs[1] + α[10][2] * zs[2] + α[10][3] * zs[3] + α[10][4] * zs[4] + α[10][5] * zs[5] + α[10][6] * zs[6] + α[10][7] * zs[7] + α[10][8] * zs[8] + α[10][9] * zs[9]
+                @.. broadcast = false zs[10] = α[10][1] * zs[1] + α[10][2] * zs[2] + α[10][3] * zs[3] + α[10][4] * zs[4] + α[10][5] * zs[5] + α[10][6] * zs[6] + α[10][7] * zs[7] + α[10][8] * zs[8] + α[10][9] * zs[9]
             else
                 fill!(zs[10], zero(eltype(u)))
             end
@@ -948,7 +948,7 @@ end
         zs[10] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 10 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[10]
+            @.. broadcast = false u = tmp + γ * zs[10]
             f2(ks[10], u, p, t + c[10] * dt)
             ks[10] .*= dt
             integrator.stats.nf2 += 1
@@ -956,18 +956,18 @@ end
     end
 
     if s >= 11
-        @.. broadcast=false tmp = uprev + Ai[11, 1] * zs[1] + Ai[11, 2] * zs[2] + Ai[11, 3] * zs[3] + Ai[11, 4] * zs[4] + Ai[11, 5] * zs[5] + Ai[11, 6] * zs[6] + Ai[11, 7] * zs[7] + Ai[11, 8] * zs[8] + Ai[11, 9] * zs[9] + Ai[11, 10] * zs[10]
+        @.. broadcast = false tmp = uprev + Ai[11, 1] * zs[1] + Ai[11, 2] * zs[2] + Ai[11, 3] * zs[3] + Ai[11, 4] * zs[4] + Ai[11, 5] * zs[5] + Ai[11, 6] * zs[6] + Ai[11, 7] * zs[7] + Ai[11, 8] * zs[8] + Ai[11, 9] * zs[9] + Ai[11, 10] * zs[10]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[11, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[11, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[11, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[11, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[11, 5] * ks[5]
-            @.. broadcast=false tmp = tmp + Ae[11, 6] * ks[6]
-            @.. broadcast=false tmp = tmp + Ae[11, 7] * ks[7]
-            @.. broadcast=false tmp = tmp + Ae[11, 8] * ks[8]
-            @.. broadcast=false tmp = tmp + Ae[11, 9] * ks[9]
-            @.. broadcast=false tmp = tmp + Ae[11, 10] * ks[10]
+            @.. broadcast = false tmp = tmp + Ae[11, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[11, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[11, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[11, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[11, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[11, 6] * ks[6]
+            @.. broadcast = false tmp = tmp + Ae[11, 7] * ks[7]
+            @.. broadcast = false tmp = tmp + Ae[11, 8] * ks[8]
+            @.. broadcast = false tmp = tmp + Ae[11, 9] * ks[9]
+            @.. broadcast = false tmp = tmp + Ae[11, 10] * ks[10]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[11] > 0
             copyto!(zs[11], zs[split_guess[11]])
@@ -977,7 +977,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[11], zs[10])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[11] = zs[10] + (zs[10] - zs[9]) * ((c[11] - c[10]) / (c[10] - c[9]))
+                @.. broadcast = false zs[11] = zs[10] + (zs[10] - zs[9]) * ((c[11] - c[10]) / (c[10] - c[9]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[11], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -986,55 +986,55 @@ end
                     Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[11] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[11] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[11] = zs[11] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[11] = zs[11] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[11] = zs[11] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[11] = zs[11] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[11], t + c[11] * dt, integrator)
                 end
-                @.. broadcast=false zs[11] = (zs[11] - tmp) * inv(γ)
+                @.. broadcast = false zs[11] = (zs[11] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[11] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[11] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[11] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[11] = zs[11] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[11] = zs[11] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[11] = zs[11] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[11] = zs[11] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[11], t + c[11] * dt, integrator)
                 end
-                @.. broadcast=false zs[11] = (zs[11] - tmp) * inv(γ)
+                @.. broadcast = false zs[11] = (zs[11] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[11] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[11] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[11] = zs[11] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[11] = zs[11] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[11] = zs[11] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[11] = zs[11] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[11], t + c[11] * dt, integrator)
                 end
-                @.. broadcast=false zs[11] = (zs[11] - tmp) * inv(γ)
+                @.. broadcast = false zs[11] = (zs[11] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[11])
                 fill!(zs[11], tab.const_stage_guess[11])
             elseif !isempty(α) && !iszero(α[11])
-                @.. broadcast=false zs[11] = α[11][1] * zs[1] + α[11][2] * zs[2] + α[11][3] * zs[3] + α[11][4] * zs[4] + α[11][5] * zs[5] + α[11][6] * zs[6] + α[11][7] * zs[7] + α[11][8] * zs[8] + α[11][9] * zs[9] + α[11][10] * zs[10]
+                @.. broadcast = false zs[11] = α[11][1] * zs[1] + α[11][2] * zs[2] + α[11][3] * zs[3] + α[11][4] * zs[4] + α[11][5] * zs[5] + α[11][6] * zs[6] + α[11][7] * zs[7] + α[11][8] * zs[8] + α[11][9] * zs[9] + α[11][10] * zs[10]
             else
                 fill!(zs[11], zero(eltype(u)))
             end
@@ -1045,7 +1045,7 @@ end
         zs[11] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 11 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[11]
+            @.. broadcast = false u = tmp + γ * zs[11]
             f2(ks[11], u, p, t + c[11] * dt)
             ks[11] .*= dt
             integrator.stats.nf2 += 1
@@ -1053,19 +1053,19 @@ end
     end
 
     if s >= 12
-        @.. broadcast=false tmp = uprev + Ai[12, 1] * zs[1] + Ai[12, 2] * zs[2] + Ai[12, 3] * zs[3] + Ai[12, 4] * zs[4] + Ai[12, 5] * zs[5] + Ai[12, 6] * zs[6] + Ai[12, 7] * zs[7] + Ai[12, 8] * zs[8] + Ai[12, 9] * zs[9] + Ai[12, 10] * zs[10] + Ai[12, 11] * zs[11]
+        @.. broadcast = false tmp = uprev + Ai[12, 1] * zs[1] + Ai[12, 2] * zs[2] + Ai[12, 3] * zs[3] + Ai[12, 4] * zs[4] + Ai[12, 5] * zs[5] + Ai[12, 6] * zs[6] + Ai[12, 7] * zs[7] + Ai[12, 8] * zs[8] + Ai[12, 9] * zs[9] + Ai[12, 10] * zs[10] + Ai[12, 11] * zs[11]
         if integrator.f isa SplitFunction
-            @.. broadcast=false tmp = tmp + Ae[12, 1] * ks[1]
-            @.. broadcast=false tmp = tmp + Ae[12, 2] * ks[2]
-            @.. broadcast=false tmp = tmp + Ae[12, 3] * ks[3]
-            @.. broadcast=false tmp = tmp + Ae[12, 4] * ks[4]
-            @.. broadcast=false tmp = tmp + Ae[12, 5] * ks[5]
-            @.. broadcast=false tmp = tmp + Ae[12, 6] * ks[6]
-            @.. broadcast=false tmp = tmp + Ae[12, 7] * ks[7]
-            @.. broadcast=false tmp = tmp + Ae[12, 8] * ks[8]
-            @.. broadcast=false tmp = tmp + Ae[12, 9] * ks[9]
-            @.. broadcast=false tmp = tmp + Ae[12, 10] * ks[10]
-            @.. broadcast=false tmp = tmp + Ae[12, 11] * ks[11]
+            @.. broadcast = false tmp = tmp + Ae[12, 1] * ks[1]
+            @.. broadcast = false tmp = tmp + Ae[12, 2] * ks[2]
+            @.. broadcast = false tmp = tmp + Ae[12, 3] * ks[3]
+            @.. broadcast = false tmp = tmp + Ae[12, 4] * ks[4]
+            @.. broadcast = false tmp = tmp + Ae[12, 5] * ks[5]
+            @.. broadcast = false tmp = tmp + Ae[12, 6] * ks[6]
+            @.. broadcast = false tmp = tmp + Ae[12, 7] * ks[7]
+            @.. broadcast = false tmp = tmp + Ae[12, 8] * ks[8]
+            @.. broadcast = false tmp = tmp + Ae[12, 9] * ks[9]
+            @.. broadcast = false tmp = tmp + Ae[12, 10] * ks[10]
+            @.. broadcast = false tmp = tmp + Ae[12, 11] * ks[11]
         end
         if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[12] > 0
             copyto!(zs[12], zs[split_guess[12]])
@@ -1075,7 +1075,7 @@ end
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[12], zs[11])
             elseif predictor == Predictor.StageExtrap
-                @.. broadcast=false zs[12] = zs[11] + (zs[11] - zs[10]) * ((c[12] - c[11]) / (c[11] - c[10]))
+                @.. broadcast = false zs[12] = zs[11] + (zs[11] - zs[10]) * ((c[12] - c[11]) / (c[11] - c[10]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[12], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
@@ -1084,55 +1084,55 @@ end
                     Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = 3
-                    @.. broadcast=false zs[12] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[12] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[12] = zs[12] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[12] = zs[12] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[12] = zs[12] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[12] = zs[12] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[12], t + c[12] * dt, integrator)
                 end
-                @.. broadcast=false zs[12] = (zs[12] - tmp) * inv(γ)
+                @.. broadcast = false zs[12] = (zs[12] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = c[12] <= 1 // 2 ? 3 : 1
-                    @.. broadcast=false zs[12] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[12] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[12] = zs[12] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[12] = zs[12] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[12] = zs[12] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[12] = zs[12] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[12], t + c[12] * dt, integrator)
                 end
-                @.. broadcast=false zs[12] = (zs[12] - tmp) * inv(γ)
+                @.. broadcast = false zs[12] = (zs[12] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
                 OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
                     q_pred = Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1)
-                    @.. broadcast=false zs[12] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
+                    @.. broadcast = false zs[12] = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1]
                     if q_pred >= 2
-                        @.. broadcast=false zs[12] = zs[12] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[12] = zs[12] + Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) - 2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2])
                     end
                     if q_pred >= 3
-                        @.. broadcast=false zs[12] = zs[12] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
+                        @.. broadcast = false zs[12] = zs[12] + Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) + dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2])
                     end
                 else
                     current_extrapolant!(zs[12], t + c[12] * dt, integrator)
                 end
-                @.. broadcast=false zs[12] = (zs[12] - tmp) * inv(γ)
+                @.. broadcast = false zs[12] = (zs[12] - tmp) * inv(γ)
             elseif !isempty(tab.const_stage_guess) && !iszero(tab.const_stage_guess[12])
                 fill!(zs[12], tab.const_stage_guess[12])
             elseif !isempty(α) && !iszero(α[12])
-                @.. broadcast=false zs[12] = α[12][1] * zs[1] + α[12][2] * zs[2] + α[12][3] * zs[3] + α[12][4] * zs[4] + α[12][5] * zs[5] + α[12][6] * zs[6] + α[12][7] * zs[7] + α[12][8] * zs[8] + α[12][9] * zs[9] + α[12][10] * zs[10] + α[12][11] * zs[11]
+                @.. broadcast = false zs[12] = α[12][1] * zs[1] + α[12][2] * zs[2] + α[12][3] * zs[3] + α[12][4] * zs[4] + α[12][5] * zs[5] + α[12][6] * zs[6] + α[12][7] * zs[7] + α[12][8] * zs[8] + α[12][9] * zs[9] + α[12][10] * zs[10] + α[12][11] * zs[11]
             else
                 fill!(zs[12], zero(eltype(u)))
             end
@@ -1143,7 +1143,7 @@ end
         zs[12] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         if s > 12 && integrator.f isa SplitFunction
-            @.. broadcast=false u = tmp + γ * zs[12]
+            @.. broadcast = false u = tmp + γ * zs[12]
             f2(ks[12], u, p, t + c[12] * dt)
             ks[12] .*= dt
             integrator.stats.nf2 += 1
@@ -1153,62 +1153,62 @@ end
 
     # ---------------- Output u ----------------
     if integrator.f isa SplitFunction
-        @.. broadcast=false u = tmp + γ * zs[s]
+        @.. broadcast = false u = tmp + γ * zs[s]
         f2(ks[s], u, p, t + dt)
         ks[s] .*= dt
         integrator.stats.nf2 += 1
         if s == 1
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + be[1]*ks[1]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + be[1] * ks[1]
         elseif s == 2
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + be[1]*ks[1] + be[2]*ks[2]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + be[1] * ks[1] + be[2] * ks[2]
         elseif s == 3
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3]
         elseif s == 4
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4]
         elseif s == 5
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5]
         elseif s == 6
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6]
         elseif s == 7
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6] + be[7]*ks[7]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6] + be[7] * ks[7]
         elseif s == 8
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6] + be[7]*ks[7] + be[8]*ks[8]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6] + be[7] * ks[7] + be[8] * ks[8]
         elseif s == 9
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6] + be[7]*ks[7] + be[8]*ks[8] + be[9]*ks[9]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6] + be[7] * ks[7] + be[8] * ks[8] + be[9] * ks[9]
         elseif s == 10
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + bi[10]*zs[10] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6] + be[7]*ks[7] + be[8]*ks[8] + be[9]*ks[9] + be[10]*ks[10]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + bi[10] * zs[10] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6] + be[7] * ks[7] + be[8] * ks[8] + be[9] * ks[9] + be[10] * ks[10]
         elseif s == 11
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + bi[10]*zs[10] + bi[11]*zs[11] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6] + be[7]*ks[7] + be[8]*ks[8] + be[9]*ks[9] + be[10]*ks[10] + be[11]*ks[11]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + bi[10] * zs[10] + bi[11] * zs[11] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6] + be[7] * ks[7] + be[8] * ks[8] + be[9] * ks[9] + be[10] * ks[10] + be[11] * ks[11]
         elseif s == 12
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + bi[10]*zs[10] + bi[11]*zs[11] + bi[12]*zs[12] + be[1]*ks[1] + be[2]*ks[2] + be[3]*ks[3] + be[4]*ks[4] + be[5]*ks[5] + be[6]*ks[6] + be[7]*ks[7] + be[8]*ks[8] + be[9]*ks[9] + be[10]*ks[10] + be[11]*ks[11] + be[12]*ks[12]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + bi[10] * zs[10] + bi[11] * zs[11] + bi[12] * zs[12] + be[1] * ks[1] + be[2] * ks[2] + be[3] * ks[3] + be[4] * ks[4] + be[5] * ks[5] + be[6] * ks[6] + be[7] * ks[7] + be[8] * ks[8] + be[9] * ks[9] + be[10] * ks[10] + be[11] * ks[11] + be[12] * ks[12]
         end
     elseif tab.stiffly_accurate
-        @.. broadcast=false u = tmp + γ * zs[s]
+        @.. broadcast = false u = tmp + γ * zs[s]
     else
         if s == 1
-            @.. broadcast=false u = uprev + bi[1]*zs[1]
+            @.. broadcast = false u = uprev + bi[1] * zs[1]
         elseif s == 2
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2]
         elseif s == 3
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3]
         elseif s == 4
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4]
         elseif s == 5
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5]
         elseif s == 6
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6]
         elseif s == 7
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7]
         elseif s == 8
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8]
         elseif s == 9
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9]
         elseif s == 10
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + bi[10]*zs[10]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + bi[10] * zs[10]
         elseif s == 11
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + bi[10]*zs[10] + bi[11]*zs[11]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + bi[10] * zs[10] + bi[11] * zs[11]
         elseif s == 12
-            @.. broadcast=false u = uprev + bi[1]*zs[1] + bi[2]*zs[2] + bi[3]*zs[3] + bi[4]*zs[4] + bi[5]*zs[5] + bi[6]*zs[6] + bi[7]*zs[7] + bi[8]*zs[8] + bi[9]*zs[9] + bi[10]*zs[10] + bi[11]*zs[11] + bi[12]*zs[12]
+            @.. broadcast = false u = uprev + bi[1] * zs[1] + bi[2] * zs[2] + bi[3] * zs[3] + bi[4] * zs[4] + bi[5] * zs[5] + bi[6] * zs[6] + bi[7] * zs[7] + bi[8] * zs[8] + bi[9] * zs[9] + bi[10] * zs[10] + bi[11] * zs[11] + bi[12] * zs[12]
         end
     end
 
@@ -1217,34 +1217,34 @@ end
     # ---------------- Error estimate ----------------
     if E === :standard
         if integrator.opts.adaptive && !isempty(btilde)
-    if s == 1
-        @.. broadcast=false tmp = btilde[1]*zs[1]
-    elseif s == 2
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2]
-    elseif s == 3
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3]
-    elseif s == 4
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4]
-    elseif s == 5
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5]
-    elseif s == 6
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6]
-    elseif s == 7
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6] + btilde[7]*zs[7]
-    elseif s == 8
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6] + btilde[7]*zs[7] + btilde[8]*zs[8]
-    elseif s == 9
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6] + btilde[7]*zs[7] + btilde[8]*zs[8] + btilde[9]*zs[9]
-    elseif s == 10
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6] + btilde[7]*zs[7] + btilde[8]*zs[8] + btilde[9]*zs[9] + btilde[10]*zs[10]
-    elseif s == 11
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6] + btilde[7]*zs[7] + btilde[8]*zs[8] + btilde[9]*zs[9] + btilde[10]*zs[10] + btilde[11]*zs[11]
-    elseif s == 12
-        @.. broadcast=false tmp = btilde[1]*zs[1] + btilde[2]*zs[2] + btilde[3]*zs[3] + btilde[4]*zs[4] + btilde[5]*zs[5] + btilde[6]*zs[6] + btilde[7]*zs[7] + btilde[8]*zs[8] + btilde[9]*zs[9] + btilde[10]*zs[10] + btilde[11]*zs[11] + btilde[12]*zs[12]
-    end
+            if s == 1
+                @.. broadcast = false tmp = btilde[1] * zs[1]
+            elseif s == 2
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2]
+            elseif s == 3
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3]
+            elseif s == 4
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4]
+            elseif s == 5
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5]
+            elseif s == 6
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6]
+            elseif s == 7
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7]
+            elseif s == 8
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7] + btilde[8] * zs[8]
+            elseif s == 9
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7] + btilde[8] * zs[8] + btilde[9] * zs[9]
+            elseif s == 10
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7] + btilde[8] * zs[8] + btilde[9] * zs[9] + btilde[10] * zs[10]
+            elseif s == 11
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7] + btilde[8] * zs[8] + btilde[9] * zs[9] + btilde[10] * zs[10] + btilde[11] * zs[11]
+            elseif s == 12
+                @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7] + btilde[8] * zs[8] + btilde[9] * zs[9] + btilde[10] * zs[10] + btilde[11] * zs[11] + btilde[12] * zs[12]
+            end
             if integrator.f isa SplitFunction && !isempty(ebtilde)
                 for j in 1:s
-                    @.. broadcast=false tmp = tmp + ebtilde[j] * ks[j]
+                    @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
             end
             if isnewton(nlsolver) && _esdirk_smooth_est(alg)
@@ -1273,7 +1273,7 @@ end
             cc = 7 / 12
             r = cc * dt^2
             scratch = zs[1]
-            @.. broadcast=false scratch = r * integrator.opts.internalnorm(
+            @.. broadcast = false scratch = r * integrator.opts.internalnorm(
                 (u - uprev) / dt1 - (uprev - uprev2) / dt2, t
             )
             calculate_residuals!(
@@ -1293,19 +1293,19 @@ end
         integrator.f(integrator.fsallast, u, p, t + tab.fsallast_c * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     else
-        @.. broadcast=false integrator.fsallast = zs[s] / dt
+        @.. broadcast = false integrator.fsallast = zs[s] / dt
     end
 
     # ---------------- :ie_dd2-specific DAE EEst tail ----------------
     if E === :ie_dd2
         if integrator.opts.adaptive && integrator.differential_vars !== nothing
-            @.. broadcast=false atmp =
+            @.. broadcast = false atmp =
                 ifelse(cache.algebraic_vars, integrator.fsallast, false) /
-                    integrator.opts.abstol
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(
                 integrator,
                 OrdinaryDiffEqCore.get_EEst(integrator) +
-                integrator.opts.internalnorm(atmp, t)
+                    integrator.opts.internalnorm(atmp, t)
             )
         end
     end
@@ -1376,19 +1376,19 @@ end
     else
         if integrator.success_iter > 0 && !integrator.reeval_fsal &&
                 alg isa Union{
-                    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                    ImplicitEuler, Trapezoid,
-                } &&
+                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
+                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
+                ImplicitEuler, Trapezoid,
+            } &&
                 predictor == Predictor.MaxOrder
             current_extrapolant!(u, t + dt, integrator)
             z1 = u - uprev
         elseif tab.stage1_extrapolation &&
                 alg isa Union{
-                    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                    ImplicitEuler, Trapezoid,
-                } &&
+                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
+                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
+                ImplicitEuler, Trapezoid,
+            } &&
                 predictor == Predictor.Linear
             z1 = dt * integrator.fsalfirst
         else
@@ -1428,14 +1428,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1488,14 +1496,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1545,14 +1561,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1602,14 +1626,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1659,14 +1691,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1716,14 +1756,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1773,14 +1821,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1830,14 +1886,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1887,14 +1951,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -1944,14 +2016,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -2001,14 +2081,22 @@ end
                     (Θ_pred <= 3 // 2 ? 3 : (Θ_pred <= 5 // 2 ? 2 : 1))
                 if _uses_hermite_interp(alg)
                     u_pred = integrator.uprev2 + Θ_pred * dtp_pred * integrator.k[1] +
-                        (q_pred >= 2 ?
-                            Θ_pred^2 * (3 * (integrator.uprev - integrator.uprev2) -
-                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]) :
-                            zero(u)) +
-                        (q_pred >= 3 ?
-                            Θ_pred^3 * (-2 * (integrator.uprev - integrator.uprev2) +
-                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]) :
-                            zero(u))
+                        (
+                        q_pred >= 2 ?
+                            Θ_pred^2 * (
+                                3 * (integrator.uprev - integrator.uprev2) -
+                                2 * dtp_pred * integrator.k[1] - dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    ) +
+                        (
+                        q_pred >= 3 ?
+                            Θ_pred^3 * (
+                                -2 * (integrator.uprev - integrator.uprev2) +
+                                dtp_pred * integrator.k[1] + dtp_pred * integrator.k[2]
+                            ) :
+                            zero(u)
+                    )
                     z_guess = (u_pred - tmp) * inv(γ)
                 else
                     z_guess = zero(u)
@@ -2040,62 +2128,62 @@ end
             u_last = tmp + γ * z1
             k1 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + be[1]*k1
+            u = uprev + bi[1] * z1 + be[1] * k1
         elseif s == 2
             u_last = tmp + γ * z2
             k2 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + be[1]*k1 + be[2]*k2
+            u = uprev + bi[1] * z1 + bi[2] * z2 + be[1] * k1 + be[2] * k2
         elseif s == 3
             u_last = tmp + γ * z3
             k3 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + be[1]*k1 + be[2]*k2 + be[3]*k3
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + be[1] * k1 + be[2] * k2 + be[3] * k3
         elseif s == 4
             u_last = tmp + γ * z4
             k4 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4
         elseif s == 5
             u_last = tmp + γ * z5
             k5 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5
         elseif s == 6
             u_last = tmp + γ * z6
             k6 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6
         elseif s == 7
             u_last = tmp + γ * z7
             k7 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6 + be[7]*k7
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7
         elseif s == 8
             u_last = tmp + γ * z8
             k8 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6 + be[7]*k7 + be[8]*k8
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8
         elseif s == 9
             u_last = tmp + γ * z9
             k9 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6 + be[7]*k7 + be[8]*k8 + be[9]*k9
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9
         elseif s == 10
             u_last = tmp + γ * z10
             k10 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + bi[10]*z10 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6 + be[7]*k7 + be[8]*k8 + be[9]*k9 + be[10]*k10
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10
         elseif s == 11
             u_last = tmp + γ * z11
             k11 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + bi[10]*z10 + bi[11]*z11 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6 + be[7]*k7 + be[8]*k8 + be[9]*k9 + be[10]*k10 + be[11]*k11
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10 + be[11] * k11
         elseif s == 12
             u_last = tmp + γ * z12
             k12 = dt * f2(u_last, p, t + dt)
             integrator.stats.nf2 += 1
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + bi[10]*z10 + bi[11]*z11 + bi[12]*z12 + be[1]*k1 + be[2]*k2 + be[3]*k3 + be[4]*k4 + be[5]*k5 + be[6]*k6 + be[7]*k7 + be[8]*k8 + be[9]*k9 + be[10]*k10 + be[11]*k11 + be[12]*k12
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + bi[12] * z12 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10 + be[11] * k11 + be[12] * k12
         end
     elseif tab.stiffly_accurate
         if s == 1
@@ -2125,29 +2213,29 @@ end
         end
     else
         if s == 1
-            u = uprev + bi[1]*z1
+            u = uprev + bi[1] * z1
         elseif s == 2
-            u = uprev + bi[1]*z1 + bi[2]*z2
+            u = uprev + bi[1] * z1 + bi[2] * z2
         elseif s == 3
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3
         elseif s == 4
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4
         elseif s == 5
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5
         elseif s == 6
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6
         elseif s == 7
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7
         elseif s == 8
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8
         elseif s == 9
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9
         elseif s == 10
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + bi[10]*z10
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10
         elseif s == 11
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + bi[10]*z10 + bi[11]*z11
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11
         elseif s == 12
-            u = uprev + bi[1]*z1 + bi[2]*z2 + bi[3]*z3 + bi[4]*z4 + bi[5]*z5 + bi[6]*z6 + bi[7]*z7 + bi[8]*z8 + bi[9]*z9 + bi[10]*z10 + bi[11]*z11 + bi[12]*z12
+            u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + bi[12] * z12
         end
     end
 
@@ -2157,57 +2245,57 @@ end
     if E === :standard
         if integrator.opts.adaptive && !isempty(btilde)
             local tmp_est
-    if s == 1
-        tmp_est = btilde[1]*z1
-    elseif s == 2
-        tmp_est = btilde[1]*z1 + btilde[2]*z2
-    elseif s == 3
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3
-    elseif s == 4
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4
-    elseif s == 5
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5
-    elseif s == 6
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6
-    elseif s == 7
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6 + btilde[7]*z7
-    elseif s == 8
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6 + btilde[7]*z7 + btilde[8]*z8
-    elseif s == 9
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6 + btilde[7]*z7 + btilde[8]*z8 + btilde[9]*z9
-    elseif s == 10
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6 + btilde[7]*z7 + btilde[8]*z8 + btilde[9]*z9 + btilde[10]*z10
-    elseif s == 11
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6 + btilde[7]*z7 + btilde[8]*z8 + btilde[9]*z9 + btilde[10]*z10 + btilde[11]*z11
-    elseif s == 12
-        tmp_est = btilde[1]*z1 + btilde[2]*z2 + btilde[3]*z3 + btilde[4]*z4 + btilde[5]*z5 + btilde[6]*z6 + btilde[7]*z7 + btilde[8]*z8 + btilde[9]*z9 + btilde[10]*z10 + btilde[11]*z11 + btilde[12]*z12
-    end
+            if s == 1
+                tmp_est = btilde[1] * z1
+            elseif s == 2
+                tmp_est = btilde[1] * z1 + btilde[2] * z2
+            elseif s == 3
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3
+            elseif s == 4
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4
+            elseif s == 5
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5
+            elseif s == 6
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6
+            elseif s == 7
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7
+            elseif s == 8
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7 + btilde[8] * z8
+            elseif s == 9
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7 + btilde[8] * z8 + btilde[9] * z9
+            elseif s == 10
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7 + btilde[8] * z8 + btilde[9] * z9 + btilde[10] * z10
+            elseif s == 11
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7 + btilde[8] * z8 + btilde[9] * z9 + btilde[10] * z10 + btilde[11] * z11
+            elseif s == 12
+                tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7 + btilde[8] * z8 + btilde[9] * z9 + btilde[10] * z10 + btilde[11] * z11 + btilde[12] * z12
+            end
             if integrator.f isa SplitFunction && !isempty(ebtilde)
-    if s == 1
-        tmp_est = tmp_est + ebtilde[1]*k1
-    elseif s == 2
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2
-    elseif s == 3
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3
-    elseif s == 4
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4
-    elseif s == 5
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5
-    elseif s == 6
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6
-    elseif s == 7
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6 + ebtilde[7]*k7
-    elseif s == 8
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6 + ebtilde[7]*k7 + ebtilde[8]*k8
-    elseif s == 9
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6 + ebtilde[7]*k7 + ebtilde[8]*k8 + ebtilde[9]*k9
-    elseif s == 10
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6 + ebtilde[7]*k7 + ebtilde[8]*k8 + ebtilde[9]*k9 + ebtilde[10]*k10
-    elseif s == 11
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6 + ebtilde[7]*k7 + ebtilde[8]*k8 + ebtilde[9]*k9 + ebtilde[10]*k10 + ebtilde[11]*k11
-    elseif s == 12
-        tmp_est = tmp_est + ebtilde[1]*k1 + ebtilde[2]*k2 + ebtilde[3]*k3 + ebtilde[4]*k4 + ebtilde[5]*k5 + ebtilde[6]*k6 + ebtilde[7]*k7 + ebtilde[8]*k8 + ebtilde[9]*k9 + ebtilde[10]*k10 + ebtilde[11]*k11 + ebtilde[12]*k12
-    end
+                if s == 1
+                    tmp_est = tmp_est + ebtilde[1] * k1
+                elseif s == 2
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2
+                elseif s == 3
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3
+                elseif s == 4
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4
+                elseif s == 5
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5
+                elseif s == 6
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6
+                elseif s == 7
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7
+                elseif s == 8
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8
+                elseif s == 9
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9
+                elseif s == 10
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10
+                elseif s == 11
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11
+                elseif s == 12
+                    tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11 + ebtilde[12] * k12
+                end
             end
             if isnewton(nlsolver) && _esdirk_smooth_est(alg)
                 integrator.stats.nsolve += 1
@@ -2291,7 +2379,7 @@ end
             OrdinaryDiffEqCore.set_EEst!(
                 integrator,
                 OrdinaryDiffEqCore.get_EEst(integrator) +
-                integrator.opts.internalnorm(atmp, t)
+                    integrator.opts.internalnorm(atmp, t)
             )
         end
     end
@@ -2333,7 +2421,7 @@ end
             dt5 = t + dt - tprev2
             c = 7 / 12
             r = c * dt^3 / 2
-            @.. broadcast=false tmp = r * integrator.opts.internalnorm(
+            @.. broadcast = false tmp = r * integrator.opts.internalnorm(
                 (
                     (
                         (u - uprev) / dt1 - (uprev - uprev2) / dt2
@@ -2416,20 +2504,20 @@ end
     γdt = γ * dt
     markfirststage!(nlsolver)
 
-    @.. broadcast=false z = uprev
+    @.. broadcast = false z = uprev
     invγdt = inv(γdt)
     if mass_matrix === I
-        @.. broadcast=false tmp = uprev * invγdt + integrator.fsalfirst
+        @.. broadcast = false tmp = uprev * invγdt + integrator.fsalfirst
     else
         mul!(u, mass_matrix, uprev)
-        @.. broadcast=false tmp = u * invγdt + integrator.fsalfirst
+        @.. broadcast = false tmp = u * invγdt + integrator.fsalfirst
     end
     nlsolver.α = 1
     nlsolver.γ = γ
     nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast=false u = z
+    @.. broadcast = false u = z
 
     step_limiter!(u, integrator, p, t + dt)
 
@@ -2451,7 +2539,7 @@ end
 
     nlsolver.z = uprev
     if f.mass_matrix === I
-        nlsolver.tmp = @.. broadcast=false uprev * inv(γdt) + integrator.fsalfirst
+        nlsolver.tmp = @.. broadcast = false uprev * inv(γdt) + integrator.fsalfirst
     else
         nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
     end
