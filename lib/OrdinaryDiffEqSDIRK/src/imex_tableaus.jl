@@ -47,9 +47,12 @@ function ESDIRKIMEXTableau(
         explicit_fsallast = false, fsallast_c = one(eltype(c)),
         const_stage_guess = eltype(c)[], stage1_extrapolation = true
     ) where {E}
-    s > MAX_ESDIRKIMEX_STAGES && throw(ArgumentError(
-        "ESDIRKIMEXTableau: stage count s=$s exceeds MAX_ESDIRKIMEX_STAGES=$MAX_ESDIRKIMEX_STAGES; \
-         extend the per-stage ladder in generic_imex_perform_step.jl to support more stages."))
+    s > MAX_ESDIRKIMEX_STAGES && throw(
+        ArgumentError(
+            "ESDIRKIMEXTableau: stage count s=$s exceeds MAX_ESDIRKIMEX_STAGES=$MAX_ESDIRKIMEX_STAGES; \
+         extend the per-stage ladder in generic_imex_perform_step.jl to support more stages."
+        )
+    )
     return ESDIRKIMEXTableau{eltype(bi), eltype(c), E}(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate, explicit_fsallast,
