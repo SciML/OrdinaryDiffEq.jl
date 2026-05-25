@@ -61,7 +61,7 @@ issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
 
-_predictor(alg) = alg.predictor
+_predictor(alg) = hasproperty(alg, :predictor) ? alg.predictor : Predictor.Trivial
 
 # The interpolant predictors use the Hermite power form; a method with a custom
 # interpolant should override this to false to fall back to the full extrapolant.
