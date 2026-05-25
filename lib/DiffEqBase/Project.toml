@@ -1,7 +1,7 @@
 name = "DiffEqBase"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "7.5.1"
+version = "7.5.2"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -155,4 +155,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["DiffEqCallbacks", "Distributed", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "RecursiveArrayToolsRaggedArrays","ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "Aqua"]
+test = ["ChainRulesCore", "DiffEqCallbacks", "Distributed", "Enzyme", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "RecursiveArrayToolsRaggedArrays","ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "Aqua"]

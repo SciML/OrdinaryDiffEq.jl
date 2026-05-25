@@ -47,6 +47,10 @@ end
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
+        if isempty(VERSION.prerelease)
+            @time @safetestset "EnzymeExt _accum_tangent! caches accumulation (NS#936)" include("enzyme_accum_tangent.jl")
+            @time @safetestset "EnzymeExt _make_solution_zero preserves prob.p/u0 aliasing (NS#937)" include("enzyme_make_solution_zero.jl")
+        end
     end
 
     # QA tests — Aqua quality checks
