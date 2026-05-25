@@ -1342,14 +1342,12 @@ end
 
     markfirststage!(nlsolver)
 
-    # Named locals z1..z<MAX>, k1..k<MAX>. Slots beyond `s` stay at zero(u) and
-    # are never referenced (gated by `if s >= i` ladders below).
-    z1 = zero(u); z2 = zero(u); z3 = zero(u); z4 = zero(u)
-    z5 = zero(u); z6 = zero(u); z7 = zero(u); z8 = zero(u)
-    z9 = zero(u); z10 = zero(u); z11 = zero(u); z12 = zero(u)
-    k1 = zero(u); k2 = zero(u); k3 = zero(u); k4 = zero(u)
-    k5 = zero(u); k6 = zero(u); k7 = zero(u); k8 = zero(u)
-    k9 = zero(u); k10 = zero(u); k11 = zero(u); k12 = zero(u)
+    # Named locals z1..z<MAX>, k1..k<MAX>. Declared but not allocated — each is
+    # filled by the matching `if s >= i` block, and only referenced inside the
+    # matching `if s == k` output ladder. Slots beyond runtime `s` are never
+    # touched, so no allocation cost for unused stages.
+    local z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12
+    local k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
