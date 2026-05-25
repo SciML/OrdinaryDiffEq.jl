@@ -97,7 +97,22 @@ import SymbolicIndexingInterface: parameter_values
 
 using ConcreteStructs: @concrete
 
+using EnumX: @enumx
+
 import EnzymeCore
+
+# Per-stage Newton initial-guess ("predictor") strategies for implicit RK methods.
+@enumx Predictor begin
+    Trivial        # zero increment (z = 0)
+    Linear         # linear extrapolation (z = dt * fsalfirst)
+    MaxOrder       # full previous-step interpolant
+    VariableOrder  # interpolant, order reduced as the stage extrapolates further
+    CutoffOrder    # interpolant, full order below a cutoff abscissa else order 1
+    CopyPrev       # reuse the previous stage's derivative
+    StageExtrap    # extrapolate recent stage derivatives
+    Tableau        # tableau-derived predictor (α / const_stage_guess)
+end
+export Predictor
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
