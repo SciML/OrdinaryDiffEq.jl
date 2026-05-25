@@ -64,7 +64,7 @@ function step_reject_controller!(
 
     if (discontinuity_detection)
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        if disco_dt > zero(dt)
             integrator.dt = disco_dt
         end
     end
