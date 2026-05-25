@@ -2,15 +2,6 @@ alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
 
-# ABDF2 reuses SDIRK's ImplicitEuler perform_step for its first step (via
-# `cache.eulercache`), which calls `_predictor(alg)` to pick the per-stage
-# Newton seed. ABDF2 doesn't carry a `predictor` field — and the SDIRK
-# Newton-seed branches all gate on `alg isa Union{...SDIRK..., ImplicitEuler,
-# Trapezoid}`, so for ABDF2 the menu falls through to the zero-seed branch
-# regardless of what `_predictor` returns. `Predictor.Trivial` matches that
-# behavior explicitly.
-OrdinaryDiffEqSDIRK._predictor(::ABDF2) = OrdinaryDiffEqCore.Predictor.Trivial
-
 alg_order(alg::ABDF2) = 2
 alg_order(alg::SBDF) = alg.order
 alg_order(alg::QNDF1) = 1

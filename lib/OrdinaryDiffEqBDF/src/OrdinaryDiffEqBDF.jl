@@ -30,7 +30,6 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     _ode_addsteps!, DerivativeOrderNotPossibleError
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
-import OrdinaryDiffEqSDIRK
 
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
