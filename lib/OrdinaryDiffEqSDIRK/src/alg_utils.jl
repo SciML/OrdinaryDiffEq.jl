@@ -61,6 +61,28 @@ issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
 
+issplit(alg::ARS222) = true
+issplit(alg::ARS232) = true
+issplit(alg::ARS443) = true
+issplit(alg::BHR553) = true
+issplit(alg::IMEXSSP222) = true
+issplit(alg::IMEXSSP2322) = true
+issplit(alg::IMEXSSP3332) = true
+issplit(alg::IMEXSSP3433) = true
+
+alg_order(alg::ARS222) = 2
+alg_order(alg::ARS232) = 2
+alg_order(alg::ARS443) = 3
+alg_order(alg::BHR553) = 3
+alg_order(alg::IMEXSSP222) = 2
+alg_order(alg::IMEXSSP2322) = 2
+alg_order(alg::IMEXSSP3332) = 2
+alg_order(alg::IMEXSSP3433) = 3
+
+isesdirk(alg::ARS222) = true
+isesdirk(alg::ARS232) = true
+isesdirk(alg::ARS443) = true
+
 # Per-stage Newton-seed strategy. Every SDIRK/ESDIRK algorithm in this module
 # carries a `predictor::Predictor.T` field, so the `alg.predictor` access is
 # usually direct. The `hasproperty` fallback is for downstream algorithms that

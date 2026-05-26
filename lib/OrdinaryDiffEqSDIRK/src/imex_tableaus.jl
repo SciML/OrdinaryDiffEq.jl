@@ -11,6 +11,7 @@ struct ESDIRKIMEXTableau{T, T2, E}
     Ae::Matrix{T}
     be::Vector{T}
     c::Vector{T2}
+    ce::Vector{T2}
     btilde::Vector{T}
     ebtilde::Vector{T}
     α::Vector{Vector{T2}}
@@ -31,12 +32,12 @@ end
 # Default-flavor ctor: errors-as-`:standard`. Equivalent to the explicit ::Val(:standard).
 function ESDIRKIMEXTableau(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
-        nlsolver_init_c; kwargs...
+        nlsolver_init_c; ce = nothing, kwargs...
     )
     return ESDIRKIMEXTableau(
         Val(:standard),
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
-        nlsolver_init_c; kwargs...
+        nlsolver_init_c; ce, kwargs...
     )
 end
 
@@ -45,7 +46,8 @@ function ESDIRKIMEXTableau(
         Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true,
         explicit_fsallast = false, fsallast_c = one(eltype(c)),
-        const_stage_guess = eltype(c)[], stage1_extrapolation = true
+        const_stage_guess = eltype(c)[], stage1_extrapolation = true,
+        ce = nothing
     ) where {E}
     s > MAX_ESDIRKIMEX_STAGES && throw(
         ArgumentError(
@@ -53,8 +55,9 @@ function ESDIRKIMEXTableau(
          extend the per-stage ladder in generic_imex_perform_step.jl to support more stages."
         )
     )
+    ce_vec = isnothing(ce) ? copy(c) : ce
     return ESDIRKIMEXTableau{eltype(bi), eltype(c), E}(
-        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
+        Ai, bi, Ae, be, c, ce_vec, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
         nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate, explicit_fsallast,
         fsallast_c, const_stage_guess, stage1_extrapolation
     )
@@ -63,6 +66,14 @@ end
 
 # Dispatch: each algorithm type maps to its tableau constructor
 ESDIRKIMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS222, T, T2) = ARS222ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ARS232, T, T2) = ARS232ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ARS443, T, T2) = ARS443ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::BHR553, T, T2) = BHR553ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP222, T, T2) = IMEXSSP222ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP2322, T, T2) = IMEXSSP2322ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP3332, T, T2) = IMEXSSP3332ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP3433, T, T2) = IMEXSSP3433ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::CFNLIRK3, T, T2) = CFNLIRK3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp3, T, T2) = KenCarp3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::Kvaerno3, T, T2) = Kvaerno3ESDIRKIMEXTableau(T, T2)
@@ -2283,5 +2294,419 @@ function SSPSDIRK2ESDIRKIMEXTableau(T, T2)
         2, s, true, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
         explicit_fsallast = true, fsallast_c = zero(T2),
         const_stage_guess = T2[zero(T2), c2 / γ]
+    )
+end
+
+# ===========================================================================
+# ARS IMEX Tableaus — Ascher, Ruuth & Spiteri (1997)
+# ===========================================================================
+
+#
+# ARS(2,2,2) — Table II, 3-stage 2nd-order ESDIRK IMEX, L-stable
+# γ = 1 - 1/√2, δ = 1 - 1/(2γ)
+# Explicit first stage (ESDIRK structure)
+#
+function ARS222ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    δ = convert(T, 1 - 1 / (2 * (1 - 1 / sqrt(T(2)))))
+
+    s = 3
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = 1 - γ
+    Ai[3, 3] = γ
+
+    bi = zeros(T, s)
+    bi[2] = 1 - γ
+    bi[3] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = γ
+    Ae[3, 1] = δ
+    Ae[3, 2] = 1 - δ
+
+    be = zeros(T, s)
+    be[1] = δ
+    be[2] = 1 - δ
+
+    c = T2[zero(T2), convert(T2, γ), one(T2)]
+
+    γ2 = convert(T2, γ)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    # stage 3: linear extrapolation from stages 1 and 2
+    c2 = γ2
+    θ = one(T2) / c2
+    α[3][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+    α[3][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 1, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+#
+# ARS(2,3,2) — 3-stage 2nd-order ESDIRK IMEX
+# Same implicit tableau as ARS222, different explicit tableau
+# δ = -2√2/3
+#
+function ARS232ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    δ = convert(T, -2 * sqrt(T(2)) / 3)
+
+    s = 3
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = 1 - γ
+    Ai[3, 3] = γ
+
+    bi = zeros(T, s)
+    bi[2] = 1 - γ
+    bi[3] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = γ
+    Ae[3, 1] = δ
+    Ae[3, 2] = 1 - δ
+
+    be = zeros(T, s)
+    be[2] = 1 - γ
+    be[3] = γ
+
+    c = T2[zero(T2), convert(T2, γ), one(T2)]
+
+    γ2 = convert(T2, γ)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    θ = one(T2) / c2
+    α[3][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+    α[3][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 1, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+#
+# ARS(4,4,3) — Table IV, 5-stage 3rd-order ESDIRK IMEX, γ = 1/2
+#
+function ARS443ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1 // 2)
+
+    s = 5
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = convert(T, 1 // 6)
+    Ai[3, 3] = γ
+    Ai[4, 2] = convert(T, -1 // 2)
+    Ai[4, 3] = convert(T, 1 // 2)
+    Ai[4, 4] = γ
+    Ai[5, 2] = convert(T, 3 // 2)
+    Ai[5, 3] = convert(T, -3 // 2)
+    Ai[5, 4] = convert(T, 1 // 2)
+    Ai[5, 5] = γ
+
+    bi = zeros(T, s)
+    bi[2] = convert(T, 3 // 2)
+    bi[3] = convert(T, -3 // 2)
+    bi[4] = convert(T, 1 // 2)
+    bi[5] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = convert(T, 1 // 2)
+    Ae[3, 1] = convert(T, 11 // 18)
+    Ae[3, 2] = convert(T, 1 // 18)
+    Ae[4, 1] = convert(T, 5 // 6)
+    Ae[4, 2] = convert(T, -5 // 6)
+    Ae[4, 3] = convert(T, 1 // 2)
+    Ae[5, 1] = convert(T, 1 // 4)
+    Ae[5, 2] = convert(T, 7 // 4)
+    Ae[5, 3] = convert(T, 3 // 4)
+    Ae[5, 4] = convert(T, -7 // 4)
+
+    be = zeros(T, s)
+    be[2] = convert(T, 3 // 2)
+    be[3] = convert(T, -3 // 2)
+    be[4] = convert(T, 1 // 2)
+    be[5] = γ
+
+    c = T2[zero(T2), convert(T2, 1 // 2), convert(T2, 2 // 3), convert(T2, 1 // 2), one(T2)]
+
+    γ2 = convert(T2, 1 // 2)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    for i in 3:s
+        ci = c[i]
+        θ = ci / c2
+        α[i][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+        α[i][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+    end
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, true, [0, 1, 2, 2, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+# ===========================================================================
+# BHR(5,5,3)* — Boscarino & Russo (2009)
+# 5-stage 3rd-order IMEX SDIRK, L-stable, stiffly accurate
+# Non-ESDIRK: first stage is implicit (γ appears in Ai[1,1])
+# ===========================================================================
+
+function BHR553ESDIRKIMEXTableau(T, T2)
+    γv = 0.435866521508460
+    γ = convert(T, γv)
+    γ2 = convert(T2, γv)
+
+    b3 = convert(T, 0.362863385578740)
+    b4 = convert(T, -0.168124349878957)
+    c4val = convert(T2, 3 // 2)
+
+    a41val = 3 * c4val / 2 - c4val^2 / (4 * γ2) - γ2
+    a43val = c4val^2 / (4 * γ2) - c4val / 2
+    a51val = 1 - b3 - b4 - γ2
+
+    ã53 = convert(T, 1.195970114894582)
+    ã54 = convert(T, -0.150831109536248)
+    ea41val = c4val - c4val^2 / (4 * γ2)
+    ea43val = c4val^2 / (4 * γ2)
+    ea51val = 1 + b3 - ã53 - ã54
+
+    s = 5
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = γ
+    Ai[3, 3] = γ
+    Ai[4, 1] = convert(T, a41val)
+    Ai[4, 3] = convert(T, a43val)
+    Ai[4, 4] = γ
+    Ai[5, 1] = convert(T, a51val)
+    Ai[5, 3] = b3
+    Ai[5, 4] = b4
+    Ai[5, 5] = γ
+
+    bi = zeros(T, s)
+    bi[1] = convert(T, a51val)
+    bi[3] = b3
+    bi[4] = b4
+    bi[5] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = 2 * γ
+    Ae[3, 1] = γ
+    Ae[3, 2] = γ
+    Ae[4, 1] = convert(T, ea41val)
+    Ae[4, 3] = convert(T, ea43val)
+    Ae[5, 1] = convert(T, ea51val)
+    Ae[5, 2] = -b3
+    Ae[5, 3] = ã53
+    Ae[5, 4] = ã54
+
+    # be = bi: BHR553 uses same weights for implicit and explicit quadrature
+    be = copy(bi)
+
+    # c[1] = γ (implicit abscissa for stage 1 = Ai[1,1] = γ; explicit abscissa = 0)
+    c = T2[γ2, 2 * γ2, 2 * γ2, c4val, one(T2)]
+
+    # No closed-form predictor α for non-ESDIRK structure; use trivial predictor
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, false, [0, 0, 0, 0, 0], γ2;
+        explicit_first_stage = false, fsal = false, stiffly_accurate = true,
+        stage1_extrapolation = false
+    )
+end
+
+# ===========================================================================
+# SSP IMEX Tableaus — Pareschi & Russo (2005)
+# ===========================================================================
+
+#
+# IMEX-SSP(2,2,2) — Table 2, 2-stage 2nd-order L-stable
+# Non-ESDIRK: first stage is implicit
+# γ = 1 - 1/√2, a21 = √2-1, c = [γ, 1-γ], be = [1/2, 1/2]
+#
+function IMEXSSP222ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    a21 = convert(T, sqrt(T(2)) - 1)   # = 1 - 2γ
+    c2 = convert(T2, 1 / sqrt(T2(2)))  # = 1 - γ
+
+    s = 2
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+
+    bi = T[convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = one(T)
+
+    be = T[convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    c = T2[convert(T2, γ), c2]
+    # Explicit abscissas: ce[1]=0, ce[2]=Ae[2,1]=1
+    ce = T2[zero(T2), one(T2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 0], convert(T2, γ);
+        explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2),
+        stage1_extrapolation = false, ce
+    )
+end
+
+#
+# IMEX-SSP2(3,2,2) — Table 3, 3-stage 2nd-order stiffly accurate
+# Non-ESDIRK: first stage is implicit, γ = 1/2
+# Implicit: c = [1/2, 0, 1]
+#
+function IMEXSSP2322ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1 // 2)
+    a21 = convert(T, -1 // 2)
+
+    s = 3
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+    Ai[3, 2] = γ
+    Ai[3, 3] = γ
+
+    bi = T[zero(T), convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    Ae = zeros(T, s, s)
+    Ae[3, 2] = one(T)
+
+    be = T[zero(T), convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    c = T2[convert(T2, 1 // 2), zero(T2), one(T2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, false, [0, 0, 0], convert(T2, γ);
+        explicit_first_stage = false, fsal = false, stiffly_accurate = true,
+        stage1_extrapolation = false
+    )
+end
+
+#
+# IMEX-SSP3(3,3,2) — Table 6, 3-stage 2nd-order L-stable
+# Non-ESDIRK: first stage is implicit, γ = 1 - 1/√2
+# b = [1/6, 1/6, 2/3]
+#
+function IMEXSSP3332ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    a21 = convert(T, sqrt(T(2)) - 1)           # = 1 - 2γ
+    a31 = convert(T, 1 / sqrt(T(2)) - 1 // 2)  # = 1/2 - γ
+    c2 = convert(T2, 1 / sqrt(T2(2)))           # = 1 - γ
+
+    s = 3
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 3] = γ
+
+    bi = T[convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = one(T)
+    Ae[3, 1] = convert(T, 1 // 4)
+    Ae[3, 2] = convert(T, 1 // 4)
+
+    be = T[convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    c = T2[convert(T2, γ), c2, convert(T2, 1 // 2)]
+    # Explicit abscissas: ce[i] = sum(Ae[i,:])
+    # ce[1]=0, ce[2]=Ae[2,1]=1, ce[3]=Ae[3,1]+Ae[3,2]=1/4+1/4=1/2
+    ce = T2[zero(T2), one(T2), convert(T2, 1 // 2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, false, [0, 0, 0], convert(T2, γ);
+        explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2),
+        stage1_extrapolation = false, ce
+    )
+end
+
+#
+# IMEX-SSP3(4,3,3) — Table 7, 4-stage 3rd-order L-stable SSP
+# Non-ESDIRK: first stage is implicit
+# α = 0.24169426078821, β = 0.06042356519705, η = 0.12915286960590, γ = α
+# b = [0, 1/6, 1/6, 2/3]
+#
+function IMEXSSP3433ESDIRKIMEXTableau(T, T2)
+    α_coef = 0.24169426078821
+    β = 0.06042356519705
+    η = 0.12915286960590
+    γ = convert(T, α_coef)
+    γ2 = convert(T2, α_coef)
+
+    a21 = convert(T, -α_coef)
+    a32 = convert(T, 1 - α_coef)
+    a41 = convert(T, β)
+    a42 = convert(T, η)
+    a43 = convert(T, 1 // 2 - β - η - α_coef)
+    c3 = one(T2)
+    c4 = convert(T2, 1 // 2)
+
+    s = 4
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+
+    bi = T[zero(T), convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    Ae = zeros(T, s, s)
+    Ae[3, 2] = one(T)
+    Ae[4, 2] = convert(T, 1 // 4)
+    Ae[4, 3] = convert(T, 1 // 4)
+
+    be = T[zero(T), convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    # c[1] = γ (implicit abscissa for stage 1 = Ai[1,1] = α; explicit abscissa = 0)
+    # c[2] = 0 (row sum of Ai[2,:] = [-α, α] = 0)
+    c = T2[γ2, zero(T2), c3, c4]
+    # Explicit abscissas: ce[i] = sum(Ae[i,:])
+    # ce[1]=0, ce[2]=0, ce[3]=Ae[3,2]=1, ce[4]=Ae[4,2]+Ae[4,3]=1/4+1/4=1/2
+    ce = T2[zero(T2), zero(T2), one(T2), convert(T2, 1 // 2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, false, [0, 0, 0, 0], γ2;
+        explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2),
+        stage1_extrapolation = false, ce
     )
 end

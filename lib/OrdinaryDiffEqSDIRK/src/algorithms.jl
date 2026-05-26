@@ -1467,3 +1467,327 @@ function ARS343(;
         _unwrap_val(concrete_jac)
     )
 end
+
+const _ARS_REFERENCE = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}"
+
+const _PARESCHI_RUSSO_REFERENCE = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    number={1},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}"
+
+@doc SDIRK_docstring(
+    "3-stage 2nd-order IMEX ESDIRK method (ARS(2,2,2)) for split ODEs. From Ascher, Ruuth & Spiteri (1997), Table II. L-stable implicit part.",
+    "ARS222";
+    references = _ARS_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS222{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS222(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return ARS222(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3-stage 2nd-order IMEX ESDIRK method (ARS(2,3,2)) for split ODEs. From Ascher, Ruuth & Spiteri (1997). Same implicit tableau as ARS222 with a different explicit tableau.",
+    "ARS232";
+    references = _ARS_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS232{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS232(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return ARS232(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "5-stage 3rd-order IMEX ESDIRK method (ARS(4,4,3)) for split ODEs. From Ascher, Ruuth & Spiteri (1997), Table IV. L-stable implicit part with γ = 1/2.",
+    "ARS443";
+    references = _ARS_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS443{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS443(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return ARS443(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "5-stage 3rd-order IMEX SDIRK method (BHR(5,5,3)*) for split ODEs. From Boscarino & Russo (2009). L-stable, stiffly accurate.",
+    "BHR553";
+    references = "@article{boscarino2009error,
+    title={Error analysis of IMEX Runge-Kutta methods derived from differential-algebraic systems},
+    author={Boscarino, Sebastiano and Russo, Giovanni},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={49},
+    number={4},
+    pages={1600--1624},
+    year={2009},
+    publisher={SIAM}}",
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct BHR553{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function BHR553(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return BHR553(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "2-stage 2nd-order L-stable SSP IMEX-SDIRK method for split ODEs. From Pareschi & Russo (2005), Table 2.",
+    "IMEXSSP222";
+    references = _PARESCHI_RUSSO_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Trivial,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP222{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function IMEXSSP222(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Trivial, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return IMEXSSP222(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3-stage 2nd-order stiffly-accurate SSP IMEX-SDIRK method for split ODEs. From Pareschi & Russo (2005), Table 3.",
+    "IMEXSSP2322";
+    references = _PARESCHI_RUSSO_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Trivial,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP2322{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function IMEXSSP2322(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Trivial, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return IMEXSSP2322(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3-stage 2nd-order L-stable SSP IMEX-SDIRK method for split ODEs. From Pareschi & Russo (2005), Table 6.",
+    "IMEXSSP3332";
+    references = _PARESCHI_RUSSO_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Trivial,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP3332{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function IMEXSSP3332(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Trivial, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return IMEXSSP3332(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "4-stage 3rd-order L-stable SSP IMEX-SDIRK method for split ODEs. From Pareschi & Russo (2005), Table 7.",
+    "IMEXSSP3433";
+    references = _PARESCHI_RUSSO_REFERENCE,
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    predictor = Predictor.Trivial,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct IMEXSSP3433{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function IMEXSSP3433(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        predictor = Predictor.Trivial, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return IMEXSSP3433(
+        linsolve, nlsolve, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end
