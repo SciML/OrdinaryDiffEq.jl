@@ -29,14 +29,24 @@ module DiffEqBaseEnzymeExt
 
     Enzyme.EnzymeRules.has_easy_rule(::typeof(DiffEqBase.solve_up), prob, sensalg::Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}, u0, p, args...; kwargs...) = nothing
 
+    # `sensealg` is semantically inactive (a configuration token, not a value
+    # whose tangent has meaning), but Enzyme's `set_runtime_activity(Reverse)`
+    # can still promote module-level `const _MTK_SENSEALG = GaussAdjoint(...)`
+    # references — or any sensealg captured in an `ODEProblem` field — to
+    # `Duplicated{<:AbstractSensitivityAlgorithm}` before this rule is matched.
+    # Accept any `Enzyme.Annotation` (Const / Duplicated / MixedDuplicated /
+    # Active) here and read only `sensealg.val`; the shadow has no meaning.
     function Enzyme.EnzymeRules.augmented_primal(
             config::Enzyme.EnzymeRules.RevConfigWidth{1},
             func::Const{typeof(DiffEqBase.solve_up)}, RTA::Union{Type{Duplicated{RT}}, Type{MixedDuplicated{RT}}}, prob,
-            sensealg::Union{
-                Const{Nothing}, Const{<:DiffEqBase.AbstractSensitivityAlgorithm},
-            },
+            sensealg::Enzyme.Annotation,
             u0, p, args...; kwargs...
         ) where {RT}
+        sensealg.val isa Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm} ||
+            throw(ArgumentError(
+            "DiffEqBaseEnzymeExt: `sensealg` must be `nothing` or " *
+                "`<:AbstractSensitivityAlgorithm`, got $(typeof(sensealg.val))",
+        ))
 
         res = DiffEqBase._solve_adjoint(
             copy_or_reuse(config, prob.val, 2), copy_or_reuse(config, sensealg.val, 3),
@@ -67,9 +77,7 @@ module DiffEqBaseEnzymeExt
     function Enzyme.EnzymeRules.reverse(
             config::Enzyme.EnzymeRules.RevConfigWidth{1},
             func::Const{typeof(DiffEqBase.solve_up)}, ::Union{Type{Duplicated{RT}}, Type{MixedDuplicated{RT}}}, tape, prob,
-            sensealg::Union{
-                Const{Nothing}, Const{<:DiffEqBase.AbstractSensitivityAlgorithm},
-            },
+            sensealg::Enzyme.Annotation,
             u0, p, args...; kwargs...
         ) where {RT}
 
@@ -77,8 +85,14 @@ module DiffEqBaseEnzymeExt
             dres, clos = tape
             dres = dres::RT
             dargs = clos(dres)
+            # `sensealg` is inactive (see augmented_primal note); skip its slot
+            # whether it arrived as Const or as a runtime-activity-promoted
+            # Duplicated/MixedDuplicated/Active.
             for (darg, ptr) in zip(dargs, (func, prob, sensealg, u0, p, args...))
                 if ptr isa Enzyme.Const
+                    continue
+                end
+                if ptr === sensealg
                     continue
                 end
                 if darg == ChainRulesCore.NoTangent()
