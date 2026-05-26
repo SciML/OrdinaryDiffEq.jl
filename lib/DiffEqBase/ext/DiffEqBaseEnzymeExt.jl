@@ -34,19 +34,18 @@ module DiffEqBaseEnzymeExt
     # can still promote module-level `const _MTK_SENSEALG = GaussAdjoint(...)`
     # references — or any sensealg captured in an `ODEProblem` field — to
     # `Duplicated{<:AbstractSensitivityAlgorithm}` before this rule is matched.
-    # Accept any `Enzyme.Annotation` (Const / Duplicated / MixedDuplicated /
-    # Active) here and read only `sensealg.val`; the shadow has no meaning.
+    # Accept any `Enzyme.Annotation` wrapping a sensealg value (Const /
+    # Duplicated / MixedDuplicated / Active) and read only `sensealg.val`;
+    # the shadow has no meaning. The inner-type constraint keeps
+    # `SensitivityADPassThrough` (which is `<:AbstractDEAlgorithm`, not
+    # `<:AbstractSensitivityAlgorithm`) off this rule so that case still
+    # falls through to direct AD of `solve_up`.
     function Enzyme.EnzymeRules.augmented_primal(
             config::Enzyme.EnzymeRules.RevConfigWidth{1},
             func::Const{typeof(DiffEqBase.solve_up)}, RTA::Union{Type{Duplicated{RT}}, Type{MixedDuplicated{RT}}}, prob,
-            sensealg::Enzyme.Annotation,
+            sensealg::Enzyme.Annotation{<:Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}},
             u0, p, args...; kwargs...
         ) where {RT}
-        sensealg.val isa Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm} ||
-            throw(ArgumentError(
-            "DiffEqBaseEnzymeExt: `sensealg` must be `nothing` or " *
-                "`<:AbstractSensitivityAlgorithm`, got $(typeof(sensealg.val))",
-        ))
 
         res = DiffEqBase._solve_adjoint(
             copy_or_reuse(config, prob.val, 2), copy_or_reuse(config, sensealg.val, 3),
@@ -77,7 +76,7 @@ module DiffEqBaseEnzymeExt
     function Enzyme.EnzymeRules.reverse(
             config::Enzyme.EnzymeRules.RevConfigWidth{1},
             func::Const{typeof(DiffEqBase.solve_up)}, ::Union{Type{Duplicated{RT}}, Type{MixedDuplicated{RT}}}, tape, prob,
-            sensealg::Enzyme.Annotation,
+            sensealg::Enzyme.Annotation{<:Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}},
             u0, p, args...; kwargs...
         ) where {RT}
 
