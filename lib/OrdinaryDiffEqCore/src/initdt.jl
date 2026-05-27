@@ -414,12 +414,17 @@
             yddnrm = internalnorm(tmp, t) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
+            # `value ∘ stripunits` strips DynamicQuantities/Unitful first, then
+            # any AD/Measurement wrappers, so the formula reduces to a plain
+            # numeric scalar before the `_tType` convert (otherwise a
+            # Quantity{Measurement} `yddnrm` propagates through and
+            # convert(Quantity{Float64}, Quantity{Measurement}) errors).
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
-                    oneunit_tType * DiffEqBase.value(
+                    oneunit_tType * DiffEqBase.value(DiffEqBase.stripunits(
                         (2 / yddnrm)^(1 / (p_order + 1))
-                    )
+                    ))
                 )
                 hnew = min(hnew, hub)
             else
@@ -670,12 +675,17 @@ end
             ) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
+            # `value ∘ stripunits` strips DynamicQuantities/Unitful first, then
+            # any AD/Measurement wrappers, so the formula reduces to a plain
+            # numeric scalar before the `_tType` convert (otherwise a
+            # Quantity{Measurement} `yddnrm` propagates through and
+            # convert(Quantity{Float64}, Quantity{Measurement}) errors).
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
-                    oneunit_tType * DiffEqBase.value(
+                    oneunit_tType * DiffEqBase.value(DiffEqBase.stripunits(
                         (2 / yddnrm)^(1 / (p_order + 1))
-                    )
+                    ))
                 )
                 hnew = min(hnew, hub)
             else
