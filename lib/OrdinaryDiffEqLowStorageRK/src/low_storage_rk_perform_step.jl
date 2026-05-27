@@ -26,71 +26,29 @@ function perform_step!(integrator, cache::LowStorageRK2NCache, repeat_step = fal
     return _perform_step_iip!(integrator, cache, cache.tab)
 end
 
-# 2C low storage methods
-function initialize!(integrator, cache::LowStorageRK2CConstantCache)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+function initialize!(integrator, cache::LowStorageRKTableau{:two_c})
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     return integrator.k[1] = integrator.fsalfirst
 end
 
-@muladd function perform_step!(
-        integrator, cache::LowStorageRK2CConstantCache,
-        repeat_step = false
-    )
-    (; t, dt, u, f, p) = integrator
-    (; A2end, B1, B2end, c2end) = cache
-
-    # u1
-    k = integrator.fsalfirst = f(u, p, t)
-    integrator.k[1] = integrator.fsalfirst
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    u = u + B1 * dt * k
-
-    # other stages
-    for i in eachindex(A2end)
-        tmp = u + A2end[i] * dt * k
-        k = f(tmp, p, t + c2end[i] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        u = u + B2end[i] * dt * k
-    end
-
-    integrator.u = u
+function perform_step!(integrator, cache::LowStorageRKTableau{:two_c}, repeat_step = false)
+    return _perform_step_oop!(integrator, cache)
 end
 
 function initialize!(integrator, cache::LowStorageRK2CCache)
-    (; k, fsalfirst) = cache
-
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
-@muladd function perform_step!(integrator, cache::LowStorageRK2CCache, repeat_step = false)
-    (; t, dt, u, f, p) = integrator
-    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
-    (; A2end, B1, B2end, c2end) = cache.tab
-
-    # u1
-    @.. broadcast = false thread = thread k = integrator.fsalfirst
-    @.. broadcast = false thread = thread u = u + B1 * dt * k
-
-    # other stages
-    for i in eachindex(A2end)
-        @.. broadcast = false thread = thread tmp = u + A2end[i] * dt * k
-        f(k, tmp, p, t + c2end[i] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false thread = thread u = u + B2end[i] * dt * k
-    end
-    step_limiter!(u, integrator, p, t + dt)
-    f(k, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+function perform_step!(integrator, cache::LowStorageRK2CCache, repeat_step = false)
+    return _perform_step_iip!(integrator, cache, cache.tab)
 end
 
 # 3S low storage methods

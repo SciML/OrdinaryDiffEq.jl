@@ -605,13 +605,6 @@ end
     thread::Thread
 end
 
-struct LowStorageRK2CConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    A2end::NTuple{N, T} # A1 is always zero
-    B1::T
-    B2end::NTuple{N, T}
-    c2end::NTuple{N, T2} # c1 is always zero
-end
-
 function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A2 = convert(T, 0.17985400977138)
     A3 = convert(T, 0.14081893152111)
@@ -635,7 +628,7 @@ function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c6 = convert(T2, 0.83050587987157)
     c2end = (c2, c3, c4, c5, c6)
 
-    return LowStorageRK2CConstantCache(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{:two_c}(A2end, B1, B2end, c2end)
 end
 
 function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -664,7 +657,7 @@ function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c7 = convert(T2, 0.91124223849547205)
     c2end = (c2, c3, c4, c5, c6, c7)
 
-    return LowStorageRK2CConstantCache(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{:two_c}(A2end, B1, B2end, c2end)
 end
 
 # 3S low storage methods introduced by Ketcheson
