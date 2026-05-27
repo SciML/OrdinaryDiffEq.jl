@@ -125,7 +125,8 @@ function nlsolve!(
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergence = (
             iter > 1 ||
-                (isnewton(nlsolver) && isadaptive(integrator.alg))
+                (isadaptive(integrator.alg) &&
+                    (isnewton(nlsolver) || nlsolver.alg isa NonlinearSolveAlg))
         )
         if (iter == 1 && ndz < 1.0e-5) ||
                 (check_η_convergence && η >= zero(η) && η * ndz < κ)

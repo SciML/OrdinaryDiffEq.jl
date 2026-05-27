@@ -92,7 +92,17 @@ function initialize!(
     else
         if cache.W !== nothing
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
-            _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep)
+            W_γdt = cache.W_γdt
+            first_call = iszero(W_γdt)
+            should_update = first_call || alg.always_new ||
+                nlsolver.status === Divergence ||
+                abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
+            if should_update
+                _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep)
+                cache.new_W = true
+            else
+                cache.new_W = false
+            end
         end
         if f isa DAEFunction
             nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
@@ -104,21 +114,25 @@ function initialize!(
     return nothing
 end
 
-function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep)
+function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac::Bool = true)
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if SciMLBase.has_jac(f)
-        f.jac(J, uprev, p, tstep)
-    elseif uf !== nothing
-        uf.f = nlsolve_f(f, alg)
-        uf.t = tstep
-        if !(p isa SciMLBase.NullParameters)
-            uf.p = p
+    if new_jac
+        if SciMLBase.has_jac(f)
+            f.jac(J, uprev, p, tstep)
+        elseif uf !== nothing
+            uf.f = nlsolve_f(f, alg)
+            uf.t = tstep
+            if !(p isa SciMLBase.NullParameters)
+                uf.p = p
+            end
+            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
+        nlcache.J_t = integrator.t
     end
     jacobian2W!(W, mass_matrix, dtgamma, J)
+    nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing
 end
@@ -131,16 +145,15 @@ end
     (; tstep, invγdt) = cache
 
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    step!(nlcache; recompute_jacobian = nlsolver.iter == 1 && cache.new_W)
     nlsolver.ztmp = nlcache.u
 
     ustep = compute_ustep(tmp, γ, z, method)
     atmp = calculate_residuals(
-        nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
+        z .- nlcache.u, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
     )
     ndz = opts.internalnorm(atmp, t)
-    #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
     if has_special_newton_error(integrator.alg)
@@ -156,7 +169,7 @@ end
 
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
-    step!(nlcache)
+    step!(nlcache; recompute_jacobian = nlsolver.iter == 1 && cache.new_W)
 
     if nlstep_data !== nothing
         nlstepsol = SciMLBase.build_solution(
@@ -181,16 +194,14 @@ end
     else
         @.. broadcast = false ztmp = nlcache.u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        @.. broadcast = false atmp = z - ztmp
         calculate_residuals!(
-            atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
+            atmp, atmp, uprev, ustep, opts.abstol, opts.reltol,
             opts.internalnorm, t
         )
         ndz = opts.internalnorm(atmp, t)
     end
 
-    #ndz = opts.internalnorm(nlcache.fu, t)
-    # NDF and BDF are special because the truncation error is directly
-    # proportional to the total displacement.
     if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end

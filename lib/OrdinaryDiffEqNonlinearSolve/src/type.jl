@@ -240,4 +240,7 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     uf::ufType
     jac_config::jcType
     du1::du1Type
+    W_γdt::tType
+    new_W::Bool
+    J_t::tType
 end

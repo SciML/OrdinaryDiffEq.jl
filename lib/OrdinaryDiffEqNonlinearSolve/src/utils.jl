@@ -40,6 +40,7 @@ set_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, val::Bool)::Boo
 get_new_W!(nlsolver::AbstractNLSolver)::Bool = get_new_W!(nlsolver.cache)
 get_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache})::Bool = nlcache.new_W
 get_new_W!(::AbstractNLSolverCache)::Bool = true
+get_new_W!(nlcache::NonlinearSolveCache)::Bool = nlcache.new_W
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
@@ -368,7 +369,8 @@ function build_nlsolver(
                 use_w_reuse ? W : nothing,
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
-                (use_w_reuse && uf !== nothing) ? du1 : nothing
+                (use_w_reuse && uf !== nothing) ? du1 : nothing,
+                zero(tstep), true, zero(tstep)
             )
         else
             # Build separated DAE Jacobian cache if applicable
@@ -500,7 +502,8 @@ function build_nlsolver(
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing
+                nothing, nothing, nothing, nothing, nothing,
+                zero(tstep), true, zero(tstep)
             )
         else
             # Build separated DAE Jacobian cache if applicable
