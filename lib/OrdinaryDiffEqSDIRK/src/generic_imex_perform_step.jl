@@ -93,23 +93,18 @@ end
             @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
         end
     else
-        # Implicit first stage requires nlsolve.
-        if integrator.success_iter > 0 && !integrator.reeval_fsal &&
-                alg isa Union{
-                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                ImplicitEuler, Trapezoid,
-            } &&
-                predictor == Predictor.MaxOrder
-            current_extrapolant!(u, t + dt, integrator)
-            @.. broadcast = false zs[1] = u - uprev
-        elseif tab.stage1_extrapolation &&
-                alg isa Union{
-                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                ImplicitEuler, Trapezoid,
-            } &&
-                predictor == Predictor.Linear
+        # Implicit first stage requires nlsolve. The IE tableau (E === :ie_dd2)
+        # is the only configuration that reaches this branch (Trapezoid and
+        # the other Newton-SDIRKs all have `explicit_first_stage = true` and
+        # take the `if` arm above), and for IE the linear extrapolant
+        # z = dt·f(uprev) is always the right nlsolve initial guess. Gating
+        # on the tableau (not the calling alg) also covers BDF callers that
+        # reuse the ImplicitEuler ESDIRKIMEXCache as a first-step bootstrap
+        # (e.g. ABDF2 via `cache.eulercache`) — which otherwise would have
+        # fallen through to `zs[1] = 0` and lost their second-order
+        # convergence under the loose NonlinearSolveAlg `iter==1 && ndz<1e-5`
+        # early-exit at small dt.
+        if E === :ie_dd2
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
             zs[1] .= zero(eltype(zs[1]))
@@ -1375,22 +1370,8 @@ end
             z1 = dt * integrator.fsalfirst
         end
     else
-        if integrator.success_iter > 0 && !integrator.reeval_fsal &&
-                alg isa Union{
-                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                ImplicitEuler, Trapezoid,
-            } &&
-                predictor == Predictor.MaxOrder
-            current_extrapolant!(u, t + dt, integrator)
-            z1 = u - uprev
-        elseif tab.stage1_extrapolation &&
-                alg isa Union{
-                OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm,
-                OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm,
-                ImplicitEuler, Trapezoid,
-            } &&
-                predictor == Predictor.Linear
+        # See matching branch in `_perform_step_iip!` above.
+        if E === :ie_dd2
             z1 = dt * integrator.fsalfirst
         else
             z1 = zero(u)
