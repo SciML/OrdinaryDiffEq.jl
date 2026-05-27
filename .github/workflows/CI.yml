@@ -21,6 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     continue-on-error: ${{ matrix.group == 'Downstream' }}
+    env:
+      # Pin the depot path so the "Refresh General registry" step and the
+      # subsequent julia-actions/julia-{buildpkg,runtest} steps all read
+      # and write the same depot on self-hosted runners (where the runner
+      # may otherwise inject ~/github-runners/<name>/.julia for some steps
+      # but not others, causing "expected package X to be registered"
+      # failures when General is refreshed into ~/.julia but resolve
+      # happens against the per-runner depot). Matches benchmark.yml.
+      JULIA_DEPOT_PATH: ~/.julia
     strategy:
       fail-fast: false
       matrix:
