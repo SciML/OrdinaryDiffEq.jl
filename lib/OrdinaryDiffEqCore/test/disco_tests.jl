@@ -119,9 +119,9 @@ sol_no_disco_radau = solve(prob_multi, RadauIIA5(); callback=cb_multi2, reltol =
 @test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
 
 sol_disco_rosenbrock = solve(prob_multi, Rodas5P(); callback=cb_multi, reltol=1e-7, abstol=1e-9, controller = PI_disco_controller(Rodas5P()))
-#  254.792 μs (2015 allocations: 76.27 KiB)
+#  253.291 μs (1758 allocations: 75.62 KiB)
 sol_no_disco_rosenbrock = solve(prob_multi, Rodas5P(); callback=cb_multi2, reltol=1e-7, abstol=1e-9)
-#  231.750 μs (940 allocations: 43.33 KiB)
+#  239.292 μs (947 allocations: 43.89 KiB)
 @test sol_disco_rosenbrock.retcode == ReturnCode.Success
 @test sol_disco_rosenbrock.stats.nreject <= sol_no_disco_rosenbrock.stats.nreject
 
