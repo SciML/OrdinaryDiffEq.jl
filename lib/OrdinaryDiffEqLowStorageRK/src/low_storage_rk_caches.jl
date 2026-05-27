@@ -37,7 +37,7 @@ function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c5 = convert(T2, 0.8)
     c2end = (c2, c3, c4, c5)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function alg_cache(
@@ -137,7 +137,7 @@ function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c5 = convert(T2, 2802321613138 // 2924317926251)
     c2end = (c2, c3, c4, c5)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 @cache mutable struct SHLDDRK_2NCache{
@@ -352,7 +352,7 @@ function SHLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c6 = convert(T2, 0.9271047)
     c2end = (c2, c3, c4, c5, c6)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -381,7 +381,7 @@ function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c7 = convert(T2, 0.998046608462379)
     c2end = (c2, c3, c4, c5, c6, c7)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -413,7 +413,7 @@ function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c8 = convert(T2, 0.919902896453866)
     c2end = (c2, c3, c4, c5, c6, c7, c8)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -445,7 +445,7 @@ function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c8 = convert(T2, 0.9484087623348481)
     c2end = (c2, c3, c4, c5, c6, c7, c8)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -489,7 +489,7 @@ function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c12 = convert(T2, 0.9032588871651854)
     c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -536,7 +536,7 @@ function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c13 = convert(T2, 0.9126827615920843)
     c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -586,7 +586,7 @@ function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c14 = convert(T2, 0.8734213127600976)
     c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14)
 
-    return LowStorageRKTableau{:two_n}(A2end, B1, B2end, c2end)
+    return LowStorageRKTableau{TwoN}(A2end, B1, B2end, c2end)
 end
 
 # 2C low storage methods introduced by Calvo, Franco, Rández (2004)

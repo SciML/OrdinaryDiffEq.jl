@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::LowStorageRKTableau{:two_n})
+function initialize!(integrator, cache::LowStorageRKTableau{TwoN})
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 1
@@ -7,7 +7,7 @@ function initialize!(integrator, cache::LowStorageRKTableau{:two_n})
     return integrator.k[1] = integrator.fsalfirst
 end
 
-function perform_step!(integrator, cache::LowStorageRKTableau{:two_n}, repeat_step = false)
+function perform_step!(integrator, cache::LowStorageRKTableau{TwoN}, repeat_step = false)
     return _perform_step_oop!(integrator, cache)
 end
 

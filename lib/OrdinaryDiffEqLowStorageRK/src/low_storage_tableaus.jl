@@ -1,3 +1,5 @@
+@enum LowStorageRKForm TwoN TwoC
+
 struct LowStorageRKTableau{form, N, T, T2} <: OrdinaryDiffEqConstantCache
     A2end::NTuple{N, T}
     B1::T
