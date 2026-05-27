@@ -643,3 +643,229 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return nothing
 end
+
+@muladd function _perform_step_oop!(integrator, tab::RK46NLConstantCache)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6) = tab
+
+    tmp = dt * integrator.fsalfirst
+    u = uprev + β1 * tmp
+    tmp = α2 * tmp + dt * f(u, p, t + c2 * dt)
+    u = u + β2 * tmp
+    tmp = α3 * tmp + dt * f(u, p, t + c3 * dt)
+    u = u + β3 * tmp
+    tmp = α4 * tmp + dt * f(u, p, t + c4 * dt)
+    u = u + β4 * tmp
+    tmp = α5 * tmp + dt * f(u, p, t + c5 * dt)
+    u = u + β5 * tmp
+    tmp = α6 * tmp + dt * f(u, p, t + c6 * dt)
+    u = u + β6 * tmp
+
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::RK46NLConstantCache)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6) = tab
+
+    @.. broadcast = false thread = thread tmp = dt * fsalfirst
+    @.. broadcast = false thread = thread u = uprev + β1 * tmp
+    stage_limiter!(u, integrator, p, t + c2 * dt)
+    f(k, u, p, t + c2 * dt)
+    @.. broadcast = false thread = thread tmp = α2 * tmp + dt * k
+    @.. broadcast = false thread = thread u = u + β2 * tmp
+    stage_limiter!(u, integrator, p, t + c3 * dt)
+    f(k, u, p, t + c3 * dt)
+    @.. broadcast = false thread = thread tmp = α3 * tmp + dt * k
+    @.. broadcast = false thread = thread u = u + β3 * tmp
+    stage_limiter!(u, integrator, p, t + c4 * dt)
+    f(k, u, p, t + c4 * dt)
+    @.. broadcast = false thread = thread tmp = α4 * tmp + dt * k
+    @.. broadcast = false thread = thread u = u + β4 * tmp
+    stage_limiter!(u, integrator, p, t + c5 * dt)
+    f(k, u, p, t + c5 * dt)
+    @.. broadcast = false thread = thread tmp = α5 * tmp + dt * k
+    @.. broadcast = false thread = thread u = u + β5 * tmp
+    stage_limiter!(u, integrator, p, t + c6 * dt)
+    f(k, u, p, t + c6 * dt)
+    @.. broadcast = false thread = thread tmp = α6 * tmp + dt * k
+    @.. broadcast = false thread = thread u = u + β6 * tmp
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    return nothing
+end
+
+@muladd function _perform_step_oop!(integrator, tab::SHLDDRK52ConstantCache)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5) = tab
+
+    tmp = dt * integrator.fsalfirst
+    u = uprev + β1 * tmp
+    tmp = α2 * tmp + dt * f(u, p, t + c2 * dt)
+    u = u + β2 * tmp
+    tmp = α3 * tmp + dt * f(u, p, t + c3 * dt)
+    u = u + β3 * tmp
+    tmp = α4 * tmp + dt * f(u, p, t + c4 * dt)
+    u = u + β4 * tmp
+    tmp = α5 * tmp + dt * f(u, p, t + c5 * dt)
+    u = u + β5 * tmp
+
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::SHLDDRK52ConstantCache)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5) = tab
+
+    @.. thread = thread tmp = dt * fsalfirst
+    @.. thread = thread u = uprev + β1 * tmp
+    stage_limiter!(u, integrator, p, t + c2 * dt)
+    f(k, u, p, t + c2 * dt)
+    @.. thread = thread tmp = α2 * tmp + dt * k
+    @.. thread = thread u = u + β2 * tmp
+    stage_limiter!(u, integrator, p, t + c3 * dt)
+    f(k, u, p, t + c3 * dt)
+    @.. thread = thread tmp = α3 * tmp + dt * k
+    @.. thread = thread u = u + β3 * tmp
+    stage_limiter!(u, integrator, p, t + c4 * dt)
+    f(k, u, p, t + c4 * dt)
+    @.. thread = thread tmp = α4 * tmp + dt * k
+    @.. thread = thread u = u + β4 * tmp
+    stage_limiter!(u, integrator, p, t + c5 * dt)
+    f(k, u, p, t + c5 * dt)
+    @.. thread = thread tmp = α5 * tmp + dt * k
+    @.. thread = thread u = u + β5 * tmp
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
+    return nothing
+end
+
+@muladd function _perform_step_oop!(integrator, tab::SHLDDRK_2NConstantCache)
+    (; t, dt, uprev, u, f, p) = integrator
+    (;
+        α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51,
+        α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62,
+    ) = tab
+
+    if integrator.derivative_discontinuity
+        tab.step = 1
+    end
+
+    if tab.step % 2 == 1
+        tab.step += 1
+        tmp = dt * integrator.fsalfirst
+        u = uprev + β11 * tmp
+        tmp = α21 * tmp + dt * f(u, p, t + c21 * dt)
+        u = u + β21 * tmp
+        tmp = α31 * tmp + dt * f(u, p, t + c31 * dt)
+        u = u + β31 * tmp
+        tmp = α41 * tmp + dt * f(u, p, t + c41 * dt)
+        u = u + β41 * tmp
+        tmp = α51 * tmp + dt * f(u, p, t + c51 * dt)
+        u = u + β51 * tmp
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
+    else
+        tab.step += 1
+        tmp = dt * integrator.fsalfirst
+        u = uprev + β12 * tmp
+        tmp = α22 * tmp + dt * f(u, p, t + c22 * dt)
+        u = u + β22 * tmp
+        tmp = α32 * tmp + dt * f(u, p, t + c32 * dt)
+        u = u + β32 * tmp
+        tmp = α42 * tmp + dt * f(u, p, t + c42 * dt)
+        u = u + β42 * tmp
+        tmp = α52 * tmp + dt * f(u, p, t + c52 * dt)
+        u = u + β52 * tmp
+        tmp = α62 * tmp + dt * f(u, p, t + c62 * dt)
+        u = u + β62 * tmp
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
+    end
+
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::SHLDDRK_2NConstantCache)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (;
+        α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51,
+        α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62,
+    ) = tab
+
+    if integrator.derivative_discontinuity
+        cache.step = 1
+    end
+
+    if cache.step % 2 == 1
+        @.. thread = thread tmp = dt * fsalfirst
+        @.. thread = thread u = uprev + β11 * tmp
+        stage_limiter!(u, integrator, p, t + c21 * dt)
+        f(k, u, p, t + c21 * dt)
+        @.. thread = thread tmp = α21 * tmp + dt * k
+        @.. thread = thread u = u + β21 * tmp
+        stage_limiter!(u, integrator, p, t + c31 * dt)
+        f(k, u, p, t + c31 * dt)
+        @.. thread = thread tmp = α31 * tmp + dt * k
+        @.. thread = thread u = u + β31 * tmp
+        stage_limiter!(u, integrator, p, t + c41 * dt)
+        f(k, u, p, t + c41 * dt)
+        @.. thread = thread tmp = α41 * tmp + dt * k
+        @.. thread = thread u = u + β41 * tmp
+        stage_limiter!(u, integrator, p, t + c51 * dt)
+        f(k, u, p, t + c51 * dt)
+        @.. thread = thread tmp = α51 * tmp + dt * k
+        @.. thread = thread u = u + β51 * tmp
+        stage_limiter!(u, integrator, p, t + dt)
+        step_limiter!(u, integrator, p, t + dt)
+        f(k, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
+    else
+        @.. thread = thread tmp = dt * fsalfirst
+        @.. thread = thread u = uprev + β12 * tmp
+        stage_limiter!(u, integrator, p, t + c22 * dt)
+        f(k, u, p, t + c22 * dt)
+        @.. thread = thread tmp = α22 * tmp + dt * k
+        @.. thread = thread u = u + β22 * tmp
+        stage_limiter!(u, integrator, p, t + c32 * dt)
+        f(k, u, p, t + c32 * dt)
+        @.. thread = thread tmp = α32 * tmp + dt * k
+        @.. thread = thread u = u + β32 * tmp
+        stage_limiter!(u, integrator, p, t + c42 * dt)
+        f(k, u, p, t + c42 * dt)
+        @.. thread = thread tmp = α42 * tmp + dt * k
+        @.. thread = thread u = u + β42 * tmp
+        stage_limiter!(u, integrator, p, t + c52 * dt)
+        f(k, u, p, t + c52 * dt)
+        @.. thread = thread tmp = α52 * tmp + dt * k
+        @.. thread = thread u = u + β52 * tmp
+        stage_limiter!(u, integrator, p, t + c62 * dt)
+        f(k, u, p, t + c62 * dt)
+        @.. thread = thread tmp = α62 * tmp + dt * k
+        @.. thread = thread u = u + β62 * tmp
+        stage_limiter!(u, integrator, p, t + dt)
+        step_limiter!(u, integrator, p, t + dt)
+        f(k, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    end
+    return nothing
+end

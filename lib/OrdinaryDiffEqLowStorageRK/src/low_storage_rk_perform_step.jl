@@ -230,3 +230,82 @@ end
 function perform_step!(integrator, cache::LowStorageRK5RPCache, repeat_step = false)
     return _perform_step_iip!(integrator, cache, cache.tab)
 end
+
+function initialize!(integrator, cache::RK46NLConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    return integrator.k[1] = integrator.fsalfirst
+end
+
+function perform_step!(integrator, cache::RK46NLConstantCache, repeat_step = false)
+    return _perform_step_oop!(integrator, cache)
+end
+
+function initialize!(integrator, cache::RK46NLCache)
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+function perform_step!(integrator, cache::RK46NLCache, repeat_step = false)
+    return _perform_step_iip!(integrator, cache, cache.tab)
+end
+
+function initialize!(integrator, cache::SHLDDRK52ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::SHLDDRK52ConstantCache, repeat_step = false)
+    return _perform_step_oop!(integrator, cache)
+end
+
+function initialize!(integrator, cache::SHLDDRK52Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+function perform_step!(integrator, cache::SHLDDRK52Cache, repeat_step = false)
+    return _perform_step_iip!(integrator, cache, cache.tab)
+end
+
+function initialize!(integrator, cache::SHLDDRK_2NConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::SHLDDRK_2NConstantCache, repeat_step = false)
+    return _perform_step_oop!(integrator, cache)
+end
+
+function initialize!(integrator, cache::SHLDDRK_2NCache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+function perform_step!(integrator, cache::SHLDDRK_2NCache, repeat_step = false)
+    return _perform_step_iip!(integrator, cache, cache.tab)
+end
