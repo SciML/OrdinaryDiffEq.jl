@@ -922,81 +922,21 @@ end
 @muladd function perform_step!(integrator, cache::RK46NLCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
-    (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6) = cache.tab
+    (; A2end, B1, B2end, c2end) = cache.tab
 
-    # u1
     @.. broadcast = false thread = thread tmp = dt * fsalfirst
-    @.. broadcast = false thread = thread u = uprev + β1 * tmp
-    stage_limiter!(u, integrator, p, t + c2 * dt)
-    # u2
-    f(k, u, p, t + c2 * dt)
-    @.. broadcast = false thread = thread tmp = α2 * tmp + dt * k
-    @.. broadcast = false thread = thread u = u + β2 * tmp
-    stage_limiter!(u, integrator, p, t + c3 * dt)
-    # u3
-    f(k, u, p, t + c3 * dt)
-    @.. broadcast = false thread = thread tmp = α3 * tmp + dt * k
-    @.. broadcast = false thread = thread u = u + β3 * tmp
-    stage_limiter!(u, integrator, p, t + c4 * dt)
-    # u4
-    f(k, u, p, t + c4 * dt)
-    @.. broadcast = false thread = thread tmp = α4 * tmp + dt * k
-    @.. broadcast = false thread = thread u = u + β4 * tmp
-    stage_limiter!(u, integrator, p, t + c5 * dt)
-    # u5 = u
-    f(k, u, p, t + c5 * dt)
-    @.. broadcast = false thread = thread tmp = α5 * tmp + dt * k
-    @.. broadcast = false thread = thread u = u + β5 * tmp
-    stage_limiter!(u, integrator, p, t + c6 * dt)
-
-    f(k, u, p, t + c6 * dt)
-    @.. broadcast = false thread = thread tmp = α6 * tmp + dt * k
-    @.. broadcast = false thread = thread u = u + β6 * tmp
+    @.. broadcast = false thread = thread u = uprev + B1 * tmp
+    for i in eachindex(A2end)
+        stage_limiter!(u, integrator, p, t + c2end[i] * dt)
+        f(k, u, p, t + c2end[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        @.. broadcast = false thread = thread tmp = A2end[i] * tmp + dt * k
+        @.. broadcast = false thread = thread u = u + B2end[i] * tmp
+    end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
-
     f(k, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
-end
-
-function initialize!(integrator, cache::RK46NLConstantCache)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.kshortsize = 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = zero(integrator.fsalfirst)
-    return integrator.k[1] = integrator.fsalfirst
-end
-
-@muladd function perform_step!(integrator, cache::RK46NLConstantCache, repeat_step = false)
-    (; t, dt, uprev, u, f, p) = integrator
-    (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6) = cache
-
-    # u1
-    tmp = dt * integrator.fsalfirst
-    u = uprev + β1 * tmp
-    # u2
-    tmp = α2 * tmp + dt * f(u, p, t + c2 * dt)
-    u = u + β2 * tmp
-    # u3
-    tmp = α3 * tmp + dt * f(u, p, t + c3 * dt)
-    u = u + β3 * tmp
-    # u4
-    tmp = α4 * tmp + dt * f(u, p, t + c4 * dt)
-    u = u + β4 * tmp
-    # u5 = u
-    tmp = α5 * tmp + dt * f(u, p, t + c5 * dt)
-    u = u + β5 * tmp
-    # u6
-    tmp = α6 * tmp + dt * f(u, p, t + c6 * dt)
-    u = u + β6 * tmp
-
-    integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.u = u
 end
 
 function initialize!(integrator, cache::SHLDDRK52ConstantCache)
