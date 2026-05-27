@@ -5,9 +5,10 @@ using DiffEqBase.ArrayInterface
 using DiffEqBase: Void, FunctionWrappersWrappers, OrdinaryDiffEqTag,
     AbstractTimeseriesSolution,
     RecursiveArrayTools, _promote_tspan, has_continuous_callback
-import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, prob2dtmin,
-    promote_tspan, ODE_DEFAULT_NORM
+import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, wrapfun_iip_opaque,
+    OpaqueVoid, prob2dtmin, promote_tspan, ODE_DEFAULT_NORM
 import SciMLBase: isdualtype, DualEltypeChecker, sse, __sum
+import RespecializeParams
 
 const dualT = ForwardDiff.Dual{ForwardDiff.Tag{OrdinaryDiffEqTag, Float64}, Float64, 1}
 dualgen(::Type{T}) where {T} = ForwardDiff.Dual{ForwardDiff.Tag{OrdinaryDiffEqTag, T}, T, 1}
@@ -129,6 +130,40 @@ function wrapfun_iip(
         Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time}
     )
 end
+
+# Opaque-p variant of the 3-arg wrapfun_iip: same matrix of (du, u, p, t)
+# variants as the regular FD wrapper, but with `OpaqueParams` substituted in
+# place of `T3` (the parameter slot). The user's `ff` is wrapped in
+# `OpaqueVoid(P, ff)` so the unpack-to-`P` happens before `ff` is invoked.
+function wrapfun_iip_opaque(
+        ff,
+        ::Type{P},
+        inputs::Tuple{T1, T2, T3, T4},
+        ::Val{CS},
+    ) where {P, T1, T2, T3, T4, CS}
+    T = eltype(T2)
+
+    dualT_jac = dualgen(T, Val(CS))
+    dualT1_jac = ArrayInterface.promote_eltype(T1, dualT_jac)
+    dualT2_jac = ArrayInterface.promote_eltype(T2, dualT_jac)
+
+    dualT_time = dualgen(T)
+    dualT1_time = ArrayInterface.promote_eltype(T1, dualT_time)
+    dualT4_time = dualgen(promote_type(T, T4))
+
+    O = RespecializeParams.OpaqueParams
+    return _make_fww(
+        OpaqueVoid(P, ff),
+        Tuple{T1, T2, O, T4},
+        Tuple{dualT1_jac, dualT2_jac, O, T4},
+        Tuple{dualT1_time, T2, O, dualT4_time},
+        Tuple{dualT1_jac, dualT2_jac, O, dualT4_time}
+    )
+end
+
+# 3-arg fallback (no chunk size): delegate to the chunk=Val(1) variant.
+wrapfun_iip_opaque(ff, ::Type{P}, inputs::Tuple) where {P} =
+    wrapfun_iip_opaque(ff, P, inputs, Val(1))
 
 
 function promote_tspan(u0::AbstractArray{<:ForwardDiff.Dual}, p, tspan, prob, kwargs)

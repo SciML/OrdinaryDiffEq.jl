@@ -139,6 +139,10 @@ abstract type DECostFunction end
 
 import SciMLBase: Void, unwrapped_f
 
+import RespecializeParams
+
+include("opaque_void.jl")
+
 include("utils.jl")
 include("stats.jl")
 include("calculate_residuals.jl")
