@@ -116,6 +116,7 @@ end
         end
         nlsolver.z = zs[1]
         nlsolver.tmp = uprev
+        nlsolver.c = c[1]
         zs[1] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
         # All implicit stages share γ on the diagonal; reuse the W from stage 1.
