@@ -53,73 +53,28 @@ end
 
 # 3S low storage methods
 function initialize!(integrator, cache::LowStorageRK3SConstantCache)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     return integrator.k[1] = integrator.fsalfirst
 end
 
-@muladd function perform_step!(
-        integrator, cache::LowStorageRK3SConstantCache,
-        repeat_step = false
-    )
-    (; t, dt, uprev, u, f, p) = integrator
-    (; γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end) = cache
-
-    # u1
-    tmp = u
-    u = tmp + β1 * dt * integrator.fsalfirst
-
-    # other stages
-    for i in eachindex(γ12end)
-        k = f(u, p, t + c2end[i] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        tmp = tmp + δ2end[i] * u
-        u = γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev + β2end[i] * dt * k
-    end
-
-    integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.u = u
+function perform_step!(integrator, cache::LowStorageRK3SConstantCache, repeat_step = false)
+    return _perform_step_oop!(integrator, cache)
 end
 
 function initialize!(integrator, cache::LowStorageRK3SCache)
-    (; k, fsalfirst) = cache
-
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
-@muladd function perform_step!(integrator, cache::LowStorageRK3SCache, repeat_step = false)
-    (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
-    (; γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end) = cache.tab
-
-    # u1
-    @.. broadcast = false thread = thread tmp = u
-    @.. broadcast = false thread = thread u = tmp + β1 * dt * integrator.fsalfirst
-
-    # other stages
-    for i in eachindex(γ12end)
-        f(k, u, p, t + c2end[i] * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false thread = thread tmp = tmp + δ2end[i] * u
-        @.. broadcast = false thread = thread u = γ12end[i] * u + γ22end[i] * tmp +
-            γ32end[i] * uprev +
-            β2end[i] * dt * k
-    end
-
-    step_limiter!(u, integrator, p, t + dt)
-    f(k, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+function perform_step!(integrator, cache::LowStorageRK3SCache, repeat_step = false)
+    return _perform_step_iip!(integrator, cache, cache.tab)
 end
 
 # 3S+ low storage methods: 3S methods adding another memory location for the embedded method (non-FSAL version)
