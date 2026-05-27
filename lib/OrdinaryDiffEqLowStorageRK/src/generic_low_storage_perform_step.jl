@@ -292,3 +292,354 @@ end
     end
     return nothing
 end
+
+@muladd function _perform_step_oop!(integrator, tab::LowStorageRK2RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    k = fsalfirst
+    tmp = uprev
+    integrator.opts.adaptive && (tmp = zero(uprev))
+
+    for i in eachindex(Aᵢ)
+        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        gprev = u + Aᵢ[i] * dt * k
+        u = u + Bᵢ[i] * dt * k
+        k = f(gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    u = u + Bₗ * dt * k
+
+    if integrator.opts.adaptive
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::LowStorageRK2RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; k, gprev, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    @.. broadcast = false thread = thread k = fsalfirst
+    integrator.opts.adaptive && (@.. broadcast = false tmp = zero(uprev))
+
+    for i in eachindex(Aᵢ)
+        integrator.opts.adaptive &&
+            (@.. broadcast = false thread = thread tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast = false thread = thread gprev = u + Aᵢ[i] * dt * k
+        @.. broadcast = false thread = thread u = u + Bᵢ[i] * dt * k
+        f(k, gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive &&
+        (@.. broadcast = false thread = thread tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast = false thread = thread u = u + Bₗ * dt * k
+
+    if integrator.opts.adaptive
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    step_limiter!(u, integrator, p, t + dt)
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
+end
+
+@muladd function _perform_step_oop!(integrator, tab::LowStorageRK3RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    fᵢ₋₂ = zero(fsalfirst)
+    k = fsalfirst
+    uᵢ₋₁ = uprev
+    uᵢ₋₂ = uprev
+    tmp = uprev
+    integrator.opts.adaptive && (tmp = zero(uprev))
+
+    for i in eachindex(Aᵢ₁)
+        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        gprev = uᵢ₋₂ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂) * dt
+        u = u + Bᵢ[i] * dt * k
+        fᵢ₋₂ = k
+        uᵢ₋₂ = uᵢ₋₁
+        uᵢ₋₁ = u
+        k = f(gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    u = u + Bₗ * dt * k
+
+    if integrator.opts.adaptive
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::LowStorageRK3RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; k, uᵢ₋₁, uᵢ₋₂, gprev, fᵢ₋₂, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    @.. broadcast = false thread = thread fᵢ₋₂ = zero(fsalfirst)
+    @.. broadcast = false thread = thread k = fsalfirst
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread tmp = zero(uprev))
+    @.. broadcast = false thread = thread uᵢ₋₁ = uprev
+    @.. broadcast = false thread = thread uᵢ₋₂ = uprev
+
+    for i in eachindex(Aᵢ₁)
+        integrator.opts.adaptive &&
+            (@.. broadcast = false thread = thread tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast = false thread = thread gprev = uᵢ₋₂ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂) * dt
+        @.. broadcast = false thread = thread u = u + Bᵢ[i] * dt * k
+        @.. broadcast = false thread = thread fᵢ₋₂ = k
+        @.. broadcast = false thread = thread uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false thread = thread uᵢ₋₁ = u
+        f(k, gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive &&
+        (@.. broadcast = false thread = thread tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast = false thread = thread u = u + Bₗ * dt * k
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.opts.adaptive
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
+end
+
+@muladd function _perform_step_oop!(integrator, tab::LowStorageRK4RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    fᵢ₋₂ = zero(fsalfirst)
+    fᵢ₋₃ = zero(fsalfirst)
+    k = fsalfirst
+    uᵢ₋₁ = uprev
+    uᵢ₋₂ = uprev
+    uᵢ₋₃ = uprev
+    tmp = uprev
+    integrator.opts.adaptive && (tmp = zero(uprev))
+
+    for i in eachindex(Aᵢ₁)
+        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        gprev = uᵢ₋₃ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) * dt
+        u = u + Bᵢ[i] * dt * k
+        fᵢ₋₃ = fᵢ₋₂
+        fᵢ₋₂ = k
+        uᵢ₋₃ = uᵢ₋₂
+        uᵢ₋₂ = uᵢ₋₁
+        uᵢ₋₁ = u
+        k = f(gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    u = u + Bₗ * dt * k
+
+    if integrator.opts.adaptive
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::LowStorageRK4RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (;
+        k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, gprev, fᵢ₋₂, fᵢ₋₃, tmp, atmp,
+        stage_limiter!, step_limiter!, thread,
+    ) = cache
+    (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    @.. broadcast = false thread = thread fᵢ₋₂ = zero(fsalfirst)
+    @.. broadcast = false thread = thread fᵢ₋₃ = zero(fsalfirst)
+    @.. broadcast = false thread = thread k = fsalfirst
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread tmp = zero(uprev))
+    @.. broadcast = false thread = thread uᵢ₋₁ = uprev
+    @.. broadcast = false thread = thread uᵢ₋₂ = uprev
+    @.. broadcast = false thread = thread uᵢ₋₃ = uprev
+
+    for i in eachindex(Aᵢ₁)
+        integrator.opts.adaptive &&
+            (@.. broadcast = false thread = thread tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast = false thread = thread gprev = uᵢ₋₃ +
+            (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) * dt
+        @.. broadcast = false thread = thread u = u + Bᵢ[i] * dt * k
+        @.. broadcast = false thread = thread fᵢ₋₃ = fᵢ₋₂
+        @.. broadcast = false thread = thread fᵢ₋₂ = k
+        @.. broadcast = false thread = thread uᵢ₋₃ = uᵢ₋₂
+        @.. broadcast = false thread = thread uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false thread = thread uᵢ₋₁ = u
+        f(k, gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive &&
+        (@.. broadcast = false thread = thread tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast = false thread = thread u = u + Bₗ * dt * k
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.opts.adaptive
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
+end
+
+@muladd function _perform_step_oop!(integrator, tab::LowStorageRK5RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    fᵢ₋₂ = zero(fsalfirst)
+    fᵢ₋₃ = zero(fsalfirst)
+    fᵢ₋₄ = zero(fsalfirst)
+    k = fsalfirst
+    uᵢ₋₁ = uprev
+    uᵢ₋₂ = uprev
+    uᵢ₋₃ = uprev
+    uᵢ₋₄ = uprev
+    tmp = uprev
+    integrator.opts.adaptive && (tmp = zero(uprev))
+
+    for i in eachindex(Aᵢ₁)
+        integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        gprev = uᵢ₋₄ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃ + Aᵢ₄[i] * fᵢ₋₄) * dt
+        u = u + Bᵢ[i] * dt * k
+        fᵢ₋₄ = fᵢ₋₃
+        fᵢ₋₃ = fᵢ₋₂
+        fᵢ₋₂ = k
+        uᵢ₋₄ = uᵢ₋₃
+        uᵢ₋₃ = uᵢ₋₂
+        uᵢ₋₂ = uᵢ₋₁
+        uᵢ₋₁ = u
+        k = f(gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    u = u + Bₗ * dt * k
+
+    if integrator.opts.adaptive
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.u = u
+    return nothing
+end
+
+@muladd function _perform_step_iip!(integrator, cache, tab::LowStorageRK5RPConstantCache)
+    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (;
+        k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, gprev, fᵢ₋₂, fᵢ₋₃, fᵢ₋₄, tmp,
+        atmp, stage_limiter!, step_limiter!, thread,
+    ) = cache
+    (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = tab
+
+    @.. broadcast = false thread = thread fᵢ₋₂ = zero(fsalfirst)
+    @.. broadcast = false thread = thread fᵢ₋₃ = zero(fsalfirst)
+    @.. broadcast = false thread = thread fᵢ₋₄ = zero(fsalfirst)
+    @.. broadcast = false thread = thread k = fsalfirst
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread tmp = zero(uprev))
+    @.. broadcast = false thread = thread uᵢ₋₁ = uprev
+    @.. broadcast = false thread = thread uᵢ₋₂ = uprev
+    @.. broadcast = false thread = thread uᵢ₋₃ = uprev
+    @.. broadcast = false thread = thread uᵢ₋₄ = uprev
+
+    for i in eachindex(Aᵢ₁)
+        integrator.opts.adaptive &&
+            (@.. broadcast = false thread = thread tmp = tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast = false thread = thread gprev = uᵢ₋₄ +
+            (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃ + Aᵢ₄[i] * fᵢ₋₄) * dt
+        @.. broadcast = false thread = thread u = u + Bᵢ[i] * dt * k
+        @.. broadcast = false thread = thread fᵢ₋₄ = fᵢ₋₃
+        @.. broadcast = false thread = thread fᵢ₋₃ = fᵢ₋₂
+        @.. broadcast = false thread = thread fᵢ₋₂ = k
+        @.. broadcast = false thread = thread uᵢ₋₄ = uᵢ₋₃
+        @.. broadcast = false thread = thread uᵢ₋₃ = uᵢ₋₂
+        @.. broadcast = false thread = thread uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false thread = thread uᵢ₋₁ = u
+        f(k, gprev, p, t + Cᵢ[i] * dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    integrator.opts.adaptive &&
+        (@.. broadcast = false thread = thread tmp = tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast = false thread = thread u = u + Bₗ * dt * k
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    if integrator.opts.adaptive
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+
+    f(k, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
+end
