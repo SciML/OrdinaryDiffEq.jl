@@ -51,7 +51,7 @@ end
 end
 
 @muladd function _perform_step_iip!(
-        integrator, cache, tab::LowStorageRKTableau{:two_c}
+        integrator, cache, tab::LowStorageRKTableau{TwoC}
     )
     (; t, dt, u, f, p) = integrator
     (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
@@ -73,7 +73,7 @@ end
 end
 
 @muladd function _perform_step_oop!(
-        integrator, tab::LowStorageRKTableau{:two_c}
+        integrator, tab::LowStorageRKTableau{TwoC}
     )
     (; t, dt, u, f, p) = integrator
     (; A2end, B1, B2end, c2end) = tab

@@ -26,7 +26,7 @@ function perform_step!(integrator, cache::LowStorageRK2NCache, repeat_step = fal
     return _perform_step_iip!(integrator, cache, cache.tab)
 end
 
-function initialize!(integrator, cache::LowStorageRKTableau{:two_c})
+function initialize!(integrator, cache::LowStorageRKTableau{TwoC})
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.kshortsize = 1
@@ -35,7 +35,7 @@ function initialize!(integrator, cache::LowStorageRKTableau{:two_c})
     return integrator.k[1] = integrator.fsalfirst
 end
 
-function perform_step!(integrator, cache::LowStorageRKTableau{:two_c}, repeat_step = false)
+function perform_step!(integrator, cache::LowStorageRKTableau{TwoC}, repeat_step = false)
     return _perform_step_oop!(integrator, cache)
 end
 
