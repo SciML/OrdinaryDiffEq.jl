@@ -622,7 +622,7 @@ Base.@constprop :aggressive function solve_up(
         kwargs...
     )
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
-    return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
+    sol = if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
             prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
             p = p, kwargs...
@@ -646,6 +646,33 @@ Base.@constprop :aggressive function solve_up(
             solve_call(_prob, _alg; kwargs...)
         end
     end
+    # If the AutoSpecialize wrapping packed `p` into an OpaqueParams for compile
+    # sharing across parameter struct types, restore the user-facing `sol.prob`
+    # so external code that reads `sol.prob.p` sees the original payload. The
+    # integrator internally still used the opaque `p`; only the final sol is
+    # re-wrapped.
+    return _restore_user_facing_prob(sol, prob, p, u0)
+end
+
+# Default — non-opaque path or non-sol return type: leave it alone.
+@inline _restore_user_facing_prob(sol, prob, p, u0) = sol
+
+# When the concretized prob.p ended up as an OpaqueParams (and the user did not
+# explicitly pass one in), swap the user's original problem back into sol.prob.
+@inline function _restore_user_facing_prob(
+        sol::SciMLBase.AbstractSciMLSolution, prob, p, u0,
+    )
+    sol_prob_p = sol.prob.p
+    if !(sol_prob_p isa RespecializeParams.OpaqueParams) ||
+            p isa RespecializeParams.OpaqueParams
+        return sol
+    end
+    user_prob = if p === prob.p && u0 === prob.u0
+        prob
+    else
+        remake(prob; u0 = u0, p = p)
+    end
+    return @set sol.prob = user_prob
 end
 
 function solve(prob::AbstractNoiseProblem, args...; kwargs...)
