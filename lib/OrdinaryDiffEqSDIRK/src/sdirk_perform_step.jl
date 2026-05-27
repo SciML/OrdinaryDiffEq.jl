@@ -18,4 +18,3 @@ function initialize!(integrator, cache::SDIRKMutableCache)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
-
