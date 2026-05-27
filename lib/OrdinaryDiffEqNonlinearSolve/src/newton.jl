@@ -90,6 +90,10 @@ function initialize!(
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
         SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlstep_data.nlprob.p)
     else
+        if cache.W !== nothing
+            dtgamma = method === DIRK ? γ * dt : γ * dt / α
+            _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep)
+        end
         if f isa DAEFunction
             nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
         else
@@ -97,6 +101,25 @@ function initialize!(
         end
         SciMLBase.reinit!(cache.cache, z, p = nlp_params)
     end
+    return nothing
+end
+
+function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep)
+    (; J, W, uf, jac_config, du1) = nlcache
+    (; f, p, uprev, alg) = integrator
+    mass_matrix = f.mass_matrix
+    if SciMLBase.has_jac(f)
+        f.jac(J, uprev, p, tstep)
+    elseif uf !== nothing
+        uf.f = nlsolve_f(f, alg)
+        uf.t = tstep
+        if !(p isa SciMLBase.NullParameters)
+            uf.p = p
+        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
+    end
+    jacobian2W!(W, mass_matrix, dtgamma, J)
+    integrator.stats.nw += 1
     return nothing
 end
 
