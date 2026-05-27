@@ -331,7 +331,12 @@
 
         hub = convert(_fType, 0.1) * tdist
         if hub * hub_inv > oneunit_tType
-            hub = oneunit_tType / hub_inv
+            # hub_inv-derived bound, but don't let it crush hub below 1% of
+            # tdist — otherwise problems where a single component has u0≈0 with
+            # tight abstol (e.g. Waltman's component-5 abstol=1e-9 with f₀≈1)
+            # pin hub to that component's per-step accuracy ceiling and leave
+            # the integrator unable to recover.
+            hub = max(oneunit_tType / hub_inv, convert(_fType, 0.01) * tdist)
         end
         hub = min(hub, abs(dtmax_tdir))
 
@@ -409,11 +414,6 @@
             yddnrm = internalnorm(tmp, t) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
-            # Do NOT clamp to hub inside the loop — let iteration converge
-            # naturally. The hub is a heuristic upper bound that can be tiny
-            # for problems with tight per-component abstols on zero/near-zero
-            # states, which crushes the step before the formula's smoothness
-            # estimate can grow it back. Final hub clamp moved to outside.
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
@@ -421,6 +421,7 @@
                         (2 / yddnrm)^(1 / (p_order + 1))
                     )
                 )
+                hnew = min(hnew, hub)
             else
                 hnew = hub
             end
@@ -438,12 +439,8 @@
         end
 
         # CVHin Step 3: Apply 0.5 safety factor and bounds
-        # Clamp by hub only at the end — and only when hub is not pathologically
-        # small relative to the formula's choice (allow up to 100x overshoot of
-        # the per-component bound when smoothness justifies it).
         h0 = convert(_fType, 0.5) * hnew
-        hub_relaxed = max(hub, convert(_fType, 0.01) * abs(dtmax_tdir))
-        h0 = clamp(h0, hlb, hub_relaxed)
+        h0 = clamp(h0, hlb, hub)
 
         return tdir * max(dtmin, min(h0, abs(dtmax_tdir)))
     end
@@ -673,7 +670,6 @@ end
             ) / hg * oneunit_tType
 
             # Order-dependent step proposal: h ~ (2/yddnrm)^(1/(p+1))
-            # See IIP path for rationale on not clamping inside the loop.
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
@@ -681,6 +677,7 @@ end
                         (2 / yddnrm)^(1 / (p_order + 1))
                     )
                 )
+                hnew = min(hnew, hub)
             else
                 hnew = hub
             end
@@ -697,11 +694,9 @@ end
             hg = hnew
         end
 
-        # CVHin Step 3: Apply 0.5 safety factor and bounds.
-        # See IIP path for rationale on relaxing the hub clamp.
+        # CVHin Step 3: Apply 0.5 safety factor and bounds
         h0 = convert(_fType, 0.5) * hnew
-        hub_relaxed = max(hub, convert(_fType, 0.01) * abs(dtmax_tdir))
-        h0 = clamp(h0, hlb, hub_relaxed)
+        h0 = clamp(h0, hlb, hub)
 
         return tdir * max(dtmin, min(h0, abs(dtmax_tdir)))
     end
