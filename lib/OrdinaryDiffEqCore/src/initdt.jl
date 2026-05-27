@@ -282,8 +282,9 @@
             return tdir * max(smalldt, dtmin)
         end
 
-        # Dimensionless float type for scalar constants (handles Unitful)
-        _fType = typeof(real(one(_tType)))
+        # Dimensionless float type for scalar constants (handles Unitful and
+        # DynamicQuantities by stripping units; eps() is undefined for Quantity)
+        _fType = typeof(DiffEqBase.stripunits(real(one(_tType))))
 
         # NaN check via d₁ = norm(f₀/sk)
         if u0 isa Array
@@ -587,8 +588,9 @@ end
             return tdir * max(smalldt, dtmin)
         end
 
-        # Dimensionless float type for scalar constants (handles Unitful)
-        _fType = typeof(real(one(_tType)))
+        # Dimensionless float type for scalar constants (handles Unitful and
+        # DynamicQuantities by stripping units; eps() is undefined for Quantity)
+        _fType = typeof(DiffEqBase.stripunits(real(one(_tType))))
 
         # NaN check via d₁ = norm(f₀/sk)
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
