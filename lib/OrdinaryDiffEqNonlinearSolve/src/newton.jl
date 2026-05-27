@@ -114,22 +114,19 @@ function initialize!(
     return nothing
 end
 
-function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac::Bool = true)
+function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep)
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if new_jac
-        if SciMLBase.has_jac(f)
-            f.jac(J, uprev, p, tstep)
-        elseif uf !== nothing
-            uf.f = nlsolve_f(f, alg)
-            uf.t = tstep
-            if !(p isa SciMLBase.NullParameters)
-                uf.p = p
-            end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
+    if SciMLBase.has_jac(f)
+        f.jac(J, uprev, p, tstep)
+    elseif uf !== nothing
+        uf.f = nlsolve_f(f, alg)
+        uf.t = tstep
+        if !(p isa SciMLBase.NullParameters)
+            uf.p = p
         end
-        nlcache.J_t = integrator.t
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
     jacobian2W!(W, mass_matrix, dtgamma, J)
     nlcache.W_γdt = dtgamma

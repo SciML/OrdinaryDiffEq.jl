@@ -370,7 +370,7 @@ function build_nlsolver(
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
-                zero(tstep), true, zero(tstep)
+                zero(tstep), true
             )
         else
             # Build separated DAE Jacobian cache if applicable
@@ -503,7 +503,7 @@ function build_nlsolver(
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
                 nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, zero(tstep)
+                zero(tstep), true
             )
         else
             # Build separated DAE Jacobian cache if applicable
