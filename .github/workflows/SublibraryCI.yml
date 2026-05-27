@@ -65,6 +65,15 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    env:
+      # Pin the depot path so the "Refresh General registry" step below and
+      # the subsequent julia-actions/julia-{buildpkg,runtest} steps all read
+      # and write the same depot on self-hosted runners (where the runner
+      # may otherwise inject ~/github-runners/<name>/.julia for some steps
+      # but not others, leaving the freshly-added General registry invisible
+      # to later resolve calls and producing "expected package X to be
+      # registered" failures). Matches benchmark.yml.
+      JULIA_DEPOT_PATH: ~/.julia
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
