@@ -422,9 +422,11 @@
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
-                    oneunit_tType * DiffEqBase.value(DiffEqBase.stripunits(
-                        (2 / yddnrm)^(1 / (p_order + 1))
-                    ))
+                    oneunit_tType * DiffEqBase.value(
+                        DiffEqBase.stripunits(
+                            (2 / yddnrm)^(1 / (p_order + 1))
+                        )
+                    )
                 )
                 hnew = min(hnew, hub)
             else
@@ -683,9 +685,11 @@ end
             if DiffEqBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
-                    oneunit_tType * DiffEqBase.value(DiffEqBase.stripunits(
-                        (2 / yddnrm)^(1 / (p_order + 1))
-                    ))
+                    oneunit_tType * DiffEqBase.value(
+                        DiffEqBase.stripunits(
+                            (2 / yddnrm)^(1 / (p_order + 1))
+                        )
+                    )
                 )
                 hnew = min(hnew, hub)
             else
