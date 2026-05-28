@@ -1,13 +1,23 @@
 ################################################################################
 # Rosenbrock23 / Rosenbrock32 (Shampine, 3-stage)
 #
-# Original Shampine formulation uses scaled stages k̃ᵢ with J*k coupling.
-# Converted to Rodas form (C/dt coupling, no explicit J*k) via the identity
-#   J = W + M/(γdt)
-# which absorbs the Jacobian coupling into the LHS operator.
+# Original Shampine formulation uses scaled stages k_S with J*k coupling.
+# Stages 1 and 2 map to standard Rodas form via:
+#   ks[1] = -W⁻¹(f₀ + γ·dt·dT)            k1_S = ks[1]/(γdt)
+#   ks[2] = -W⁻¹(f₁ - M·k1_S)              k2_S = (ks[1]+ks[2])/(γdt)
 #
-# Stage variable relationship:  k̃ᵢ_old = Σⱼ L[i,j]*ks[j]/(dt*γ)
-# where L = [1 0 0; 1 1 0; 2 c₃₂ 1].
+# Stage 3 does NOT fit the standard Rodas pattern — it includes additional
+# function-evaluation terms c₃₂·f_stage2 + 2·f_stage1 that have no Rodas
+# analogue. perform_step! detects interp_order==2 and applies the Shampine
+# formula directly for stage 3.
+#
+# With the Shampine-correct ks[3]:
+#   k3_S = ks[3]/(γdt)
+#   Rosenbrock23 solution: uprev + (ks[1]+ks[2])/γ  (b = [1/γ, 1/γ, 0])
+#   Rosenbrock32 solution: uprev + (5·ks[1]+4·ks[2]+ks[3])/(6γ)
+#                          (b = [5/6γ, 4/6γ, 1/6γ])
+#   Error estimate (both):  (−ks[1] − 2·ks[2] + ks[3]) / (6γ)
+#                          (btilde = [-1/6γ, -2/6γ, 1/6γ])
 ################################################################################
 
 function Rosenbrock23RodasTableau(T, T2)
@@ -17,24 +27,24 @@ function Rosenbrock23RodasTableau(T, T2)
 
     A = zeros(T, 3, 3)
     A[2, 1] = convert(T, igamma / 2)          # 1/(2γ)
-    A[3, 1] = convert(T, igamma)               # 1/γ
+    A[3, 1] = convert(T, igamma)               # 1/γ  (stage-3 eval at y₁ endpoint)
     A[3, 2] = convert(T, igamma)               # 1/γ
 
     C = zeros(T, 3, 3)
     C[2, 1] = convert(T, -igamma)              # -1/γ
-    C[3, 1] = convert(T, -2 * igamma)          # -2/γ
+    C[3, 1] = convert(T, -2 * igamma)          # -2/γ  (used in Shampine stage-3 RHS)
     C[3, 2] = convert(T, -c32_old * igamma)    # -c₃₂/γ
 
     c = T2[zero(T2), convert(T2, 1 // 2), one(T2)]
-    d = T[convert(T, gamma), zero(T), convert(T, 1 - 2 * gamma)]
+    d = T[convert(T, gamma), zero(T), one(T)]  # d[3]=1: stage-3 dT coeff is dt (Shampine)
 
     # Rosenbrock23: order-2 solution uses stages 1,2 only
     b = T[convert(T, igamma), convert(T, igamma), zero(T)]
 
-    # Error estimate: dt/6*(k̃₁ - 2k̃₂ + k̃₃) in new stage variables
+    # Error estimate: (−k1_S − 2·k2_S + k3_S)·dt/6 = (−ks[1]−2·ks[2]+ks[3])/(6γ)
     btilde = T[
-        convert(T, igamma / 6),
-        convert(T, (c32_old - 2) * igamma / 6),
+        convert(T, -igamma / 6),
+        convert(T, -2 * igamma / 6),
         convert(T, igamma / 6),
     ]
 
@@ -42,9 +52,6 @@ function Rosenbrock23RodasTableau(T, T2)
     # (interp_order=2) so the standard Rodas 2-vector formula applies:
     #   p(Θ) = (1-Θ)y₀ + Θ(y₁ + (1-Θ)(K[1] + Θ·K[2]))
     # K[1] = -ks[2]/(γ(1-2γ)),  K[2] = 0
-    # Algebraically equals the MATLAB ODE Suite c1·k̃₁ + c2·k̃₂ dense output
-    # with c1=Θ(1-Θ)/(1-2γ), c2=Θ(Θ-2γ)/(1-2γ); K[2]=0 because the Θ² term
-    # from c2 is already absorbed into K[1] via the y₁ endpoint.
     H = T[
         zero(T) convert(T, -1 / (gamma * (1 - 2 * gamma))) zero(T)
         zero(T) zero(T)                              zero(T)
@@ -69,19 +76,20 @@ function Rosenbrock32RodasTableau(T, T2)
     C[3, 2] = convert(T, -c32_old * igamma)    # -c₃₂/γ
 
     c = T2[zero(T2), convert(T2, 1 // 2), one(T2)]
-    d = T[convert(T, gamma), zero(T), convert(T, 1 - 2 * gamma)]
+    d = T[convert(T, gamma), zero(T), one(T)]  # d[3]=1: stage-3 dT coeff is dt (Shampine)
 
-    # Rosenbrock32: order-3 solution dt/6*(k̃₁ + 4k̃₂ + k̃₃) in new stages
+    # Rosenbrock32: order-3 solution (k1_S + 4·k2_S + k3_S)·dt/6
+    # In Rodas ks: (5·ks[1] + 4·ks[2] + ks[3]) / (6γ)
     b = T[
-        convert(T, 7 * igamma / 6),
-        convert(T, (4 + c32_old) * igamma / 6),
+        convert(T, 5 * igamma / 6),
+        convert(T, 4 * igamma / 6),
         convert(T, igamma / 6),
     ]
 
-    # Error estimate (same as Rosenbrock23)
+    # Error estimate: same as Rosenbrock23 (both use dt/6*(k1_S - 2*k2_S + k3_S))
     btilde = T[
-        convert(T, igamma / 6),
-        convert(T, (c32_old - 2) * igamma / 6),
+        convert(T, -igamma / 6),
+        convert(T, -2 * igamma / 6),
         convert(T, igamma / 6),
     ]
 
