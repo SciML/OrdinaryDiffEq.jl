@@ -1,57 +1,30 @@
-################################################################################
-# Rosenbrock23 / Rosenbrock32 (Shampine, 3-stage)
-#
-# Original Shampine formulation uses scaled stages k_S with J*k coupling.
-# Stages 1 and 2 map to standard Rodas form via:
-#   ks[1] = -W⁻¹(f₀ + γ·dt·dT)            k1_S = ks[1]/(γdt)
-#   ks[2] = -W⁻¹(f₁ - M·k1_S)              k2_S = (ks[1]+ks[2])/(γdt)
-#
-# Stage 3 does NOT fit the standard Rodas pattern — it includes additional
-# function-evaluation terms c₃₂·f_stage2 + 2·f_stage1 that have no Rodas
-# analogue. perform_step! detects interp_order==2 and applies the Shampine
-# formula directly for stage 3.
-#
-# With the Shampine-correct ks[3]:
-#   k3_S = ks[3]/(γdt)
-#   Rosenbrock23 solution: uprev + (ks[1]+ks[2])/γ  (b = [1/γ, 1/γ, 0])
-#   Rosenbrock32 solution: uprev + (5·ks[1]+4·ks[2]+ks[3])/(6γ)
-#                          (b = [5/6γ, 4/6γ, 1/6γ])
-#   Error estimate (both):  (−ks[1] − 2·ks[2] + ks[3]) / (6γ)
-#                          (btilde = [-1/6γ, -2/6γ, 1/6γ])
-################################################################################
-
 function Rosenbrock23RodasTableau(T, T2)
     gamma = convert(T2, 1 / (2 + sqrt(2)))
     igamma = inv(gamma)
     c32_old = convert(T, 6 + sqrt(2))
 
     A = zeros(T, 3, 3)
-    A[2, 1] = convert(T, igamma / 2)          # 1/(2γ)
-    A[3, 1] = convert(T, igamma)               # 1/γ  (stage-3 eval at y₁ endpoint)
-    A[3, 2] = convert(T, igamma)               # 1/γ
+    A[2, 1] = convert(T, igamma / 2)
+    A[3, 1] = convert(T, igamma)
+    A[3, 2] = convert(T, igamma)
 
     C = zeros(T, 3, 3)
-    C[2, 1] = convert(T, -igamma)              # -1/γ
-    C[3, 1] = convert(T, -2 * igamma)          # -2/γ  (used in Shampine stage-3 RHS)
-    C[3, 2] = convert(T, -c32_old * igamma)    # -c₃₂/γ
+    C[2, 1] = convert(T, -igamma)
+    C[3, 1] = convert(T, -2 * igamma)
+    C[3, 2] = convert(T, -c32_old * igamma)
 
     c = T2[zero(T2), convert(T2, 1 // 2), one(T2)]
-    d = T[convert(T, gamma), zero(T), one(T)]  # d[3]=1: stage-3 dT coeff is dt (Shampine)
+    # d[3]=1 so that stage-3 uses dt·dT rather than the standard dtd[stage]·dT (Shampine)
+    d = T[convert(T, gamma), zero(T), one(T)]
 
-    # Rosenbrock23: order-2 solution uses stages 1,2 only
     b = T[convert(T, igamma), convert(T, igamma), zero(T)]
 
-    # Error estimate: (−k1_S − 2·k2_S + k3_S)·dt/6 = (−ks[1]−2·ks[2]+ks[3])/(6γ)
     btilde = T[
         convert(T, -igamma / 6),
         convert(T, -2 * igamma / 6),
         convert(T, igamma / 6),
     ]
 
-    # Shampine 2nd-order "free" stiff interpolation encoded as a 2-row H matrix
-    # (interp_order=2) so the standard Rodas 2-vector formula applies:
-    #   p(Θ) = (1-Θ)y₀ + Θ(y₁ + (1-Θ)(K[1] + Θ·K[2]))
-    # K[1] = -ks[2]/(γ(1-2γ)),  K[2] = 0
     H = T[
         zero(T) convert(T, -1 / (gamma * (1 - 2 * gamma))) zero(T)
         zero(T) zero(T)                              zero(T)
@@ -66,34 +39,31 @@ function Rosenbrock32RodasTableau(T, T2)
     c32_old = convert(T, 6 + sqrt(2))
 
     A = zeros(T, 3, 3)
-    A[2, 1] = convert(T, igamma / 2)          # 1/(2γ)
-    A[3, 1] = convert(T, igamma)               # 1/γ
-    A[3, 2] = convert(T, igamma)               # 1/γ
+    A[2, 1] = convert(T, igamma / 2)
+    A[3, 1] = convert(T, igamma)
+    A[3, 2] = convert(T, igamma)
 
     C = zeros(T, 3, 3)
-    C[2, 1] = convert(T, -igamma)              # -1/γ
-    C[3, 1] = convert(T, -2 * igamma)          # -2/γ
-    C[3, 2] = convert(T, -c32_old * igamma)    # -c₃₂/γ
+    C[2, 1] = convert(T, -igamma)
+    C[3, 1] = convert(T, -2 * igamma)
+    C[3, 2] = convert(T, -c32_old * igamma)
 
     c = T2[zero(T2), convert(T2, 1 // 2), one(T2)]
-    d = T[convert(T, gamma), zero(T), one(T)]  # d[3]=1: stage-3 dT coeff is dt (Shampine)
+    # d[3]=1 so that stage-3 uses dt·dT rather than the standard dtd[stage]·dT (Shampine)
+    d = T[convert(T, gamma), zero(T), one(T)]
 
-    # Rosenbrock32: order-3 solution (k1_S + 4·k2_S + k3_S)·dt/6
-    # In Rodas ks: (5·ks[1] + 4·ks[2] + ks[3]) / (6γ)
     b = T[
         convert(T, 5 * igamma / 6),
         convert(T, 4 * igamma / 6),
         convert(T, igamma / 6),
     ]
 
-    # Error estimate: same as Rosenbrock23 (both use dt/6*(k1_S - 2*k2_S + k3_S))
     btilde = T[
         convert(T, -igamma / 6),
         convert(T, -2 * igamma / 6),
         convert(T, igamma / 6),
     ]
 
-    # Same Shampine interpolation as Rosenbrock23 (identical γ, same stencil)
     H = T[
         zero(T) convert(T, -1 / (gamma * (1 - 2 * gamma))) zero(T)
         zero(T) zero(T)                              zero(T)

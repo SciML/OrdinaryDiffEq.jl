@@ -25,55 +25,46 @@ end
 
     mass_matrix = integrator.f.mass_matrix
 
-    # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         OrdinaryDiffEqCore.set_EEst!(integrator, 2)
         return nothing
     end
 
-    # Initialize ks
     num_stages = size(A, 1)
     du = f(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
+    fsalfirst_cache = du
     linsolve_tmp = @.. du + dtd[1] * dT
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    # constant number for type stability make sure this is greater than num_stages
+    # Val(20): fixed size for type stability; must exceed max num_stages across all methods
     ks = ntuple(Returns(k1), Val(20))
 
-    # Rosenbrock23/32: H has 2 rows and method has exactly 3 stages → Shampine stage-3
+    # Rosenbrock23/32: stage 3 uses the Shampine formula, not the standard Rodas pattern
     is_shampine = (size(H, 1) == 2 && num_stages == 3)
-    f_stage2 = du  # will be overwritten; set up for Shampine path
+    f_stage2 = du
 
-    # Loop for stages
     for stage in 2:num_stages
         u = uprev
         for i in 1:(stage - 1)
             u = @.. u + A[stage, i] * ks[i]
         end
 
-        # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
-        # (Rosenbrock4 methods: stage 4 reuses du from stage 3)
+        # Some Rodas4 methods have c[stage]==c[stage-1] and identical A rows → reuse du
         if stage > 2 && c[stage] == c[stage - 1] &&
                 all(j -> A[stage, j] == A[stage - 1, j], 1:(stage - 1))
-            # du is already correct from previous stage
         else
             du = f(u, p, t + c[stage] * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
 
-        # Save stage-2 f evaluation for Shampine stage-3 RHS
         if is_shampine && stage == 2
             f_stage2 = du
         end
 
         if is_shampine && stage == 3
-            # Shampine stage-3 RHS (with c₃₂ = -C[3,2]*γ, 2 = -C[3,1]*γ):
-            #   W·ks[3] = f_stage3 + c₃₂·f_stage2 + 2·fsalfirst + dt·dT
-            #             + M·(dtC[3,1]·ks[1] + dtC[3,2]·(ks[1]+ks[2]))
             c32 = -C[3, 2] * gamma
-            two = -C[3, 1] * gamma   # = 2
+            two = -C[3, 1] * gamma
             coupling = zero(du)
             if mass_matrix === I
                 coupling = @.. dtC[3, 1] * ks[1] + dtC[3, 2] * (ks[1] + ks[2])
@@ -82,9 +73,8 @@ end
                 coupling = mass_matrix * tmp_coupling
             end
             linsolve_tmp = @.. du + c32 * f_stage2 + two * fsalfirst_cache +
-                               dt * dT + coupling
+                dt * dT + coupling
         else
-            # Compute linsolve_tmp for current stage
             linsolve_tmp = zero(du)
             if mass_matrix === I
                 for i in 1:(stage - 1)
@@ -102,10 +92,8 @@ end
         ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
         integrator.stats.nsolve += 1
     end
-    # Solution update using explicit b weights
     tab = cache.tab
-    # For Shampine DAE path: du currently holds f(u_stage3); save before it gets shadowed.
-    f_stage3 = du
+    f_stage3 = du  # save f(u_stage3) before du is reused for error estimate below
     u = copy(uprev)
     for i in 1:num_stages
         if !iszero(tab.b[i])
@@ -124,8 +112,8 @@ end
         if is_shampine && mass_matrix !== I &&
                 integrator.differential_vars isa AbstractArray &&
                 iszero(tab.b[end])
-            # Rosenbrock23 (b[last]=0): stage 3 only affects error estimate, not solution.
-            # Zero algebraic components to avoid spurious rejections.
+            # Rosenbrock23: b[3]=0 so ks[3] only appears in btilde. Zero algebraic
+            # components to prevent the poorly-conditioned algebraic row from inflating EEst.
             dv = integrator.differential_vars
             du = @.. ifelse(dv, du, false)
         end
@@ -136,7 +124,7 @@ end
         EEst = integrator.opts.internalnorm(atmp, t)
         if is_shampine && mass_matrix !== I &&
                 integrator.differential_vars isa AbstractArray
-            # Add algebraic residual: f(u_stage3)[alg_var] measures constraint violation
+            # Algebraic residual: f(u_stage3)[alg] scaled by inv(abstol) measures constraint drift
             dv = integrator.differential_vars
             invatol = inv(integrator.opts.abstol)
             atmp = @.. ifelse(dv, false, f_stage3) * invatol
@@ -175,12 +163,10 @@ end
                 OrdinaryDiffEqCore.set_EEst!(integrator, max(EEst, OrdinaryDiffEqCore.get_EEst(integrator)))
             end
         else
-            # No H matrix: store raw derivatives f₀, f₁ for standard Hermite interpolation.
-            # _ode_interpolant(interp_order=-1) expects k[1]=f₀, k[2]=f₁.
             f1 = f(u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            integrator.k[1] = fsalfirst_cache  # f₀ = f(uprev, p, t)
-            integrator.k[2] = f1               # f₁ = f(u, p, t+dt)
+            integrator.k[1] = fsalfirst_cache
+            integrator.k[2] = f1
         end
     end
 
@@ -234,9 +220,8 @@ end
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
-    # Rosenbrock23/32: stage 3 uses the Shampine formula (not standard Rodas).
-    # interp_order==2 flags these methods; fsallast is free until calck and
-    # is temporarily reused to save the stage-2 function evaluation.
+    # Rosenbrock23/32: stage 3 uses the Shampine formula, not the standard Rodas pattern;
+    # fsallast temporarily stores the stage-2 function evaluation until calck.
     is_shampine = (cache.interp_order == 2 && length(ks) == 3)
 
     for stage in 2:length(ks)
@@ -246,27 +231,21 @@ end
         end
 
         stage_limiter!(u, integrator, p, t + c[stage] * dt)
-        # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
-        # (Rosenbrock4 methods: stage 4 reuses du from stage 3)
+        # Some Rodas4 methods have c[stage]==c[stage-1] and identical A rows → reuse du
         if stage > 2 && c[stage] == c[stage - 1] &&
                 all(j -> A[stage, j] == A[stage - 1, j], 1:(stage - 1))
-            # du is already correct from previous stage
         else
             f(du, u, p, t + c[stage] * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
 
-        # Save stage-2 f evaluation for Shampine stage-3 RHS
         if is_shampine && stage == 2
             copyto!(cache.fsallast, du)
         end
 
         if is_shampine && stage == 3
-            # Shampine stage-3 RHS (with c₃₂ = -C[3,2]*γ, 2 = -C[3,1]*γ):
-            #   W·ks[3] = f_stage3 + c₃₂·f_stage2 + 2·fsalfirst + dt·dT
-            #             + M·(dtC[3,1]·ks[1] + dtC[3,2]·(ks[1]+ks[2]))
-            c32 = -C[3, 2] * gamma    # scalar
-            two = -C[3, 1] * gamma    # = 2
+            c32 = -C[3, 2] * gamma
+            two = -C[3, 1] * gamma
             du1 .= 0
             if mass_matrix === I
                 @.. du1 = dtC[3, 1] * ks[1] + dtC[3, 2] * (ks[1] + ks[2])
@@ -275,7 +254,7 @@ end
                 mul!(_vec(du1), mass_matrix, _vec(du2))
             end
             @.. linsolve_tmp = du + c32 * cache.fsallast + two * cache.fsalfirst +
-                               dt * dT + du1
+                dt * dT + du1
         else
             du1 .= 0
             if mass_matrix === I
@@ -297,11 +276,8 @@ end
         integrator.stats.nsolve += 1
     end
 
-    # Solution update using explicit b weights
     tab = cache.tab
-    # For Shampine DAE path: save f(u_stage3) before du gets zeroed in error estimate.
-    # fsallast was holding f_stage2 (used in stage-3 RHS); now overwrite with f_stage3
-    # so it can serve as the algebraic-constraint residual for the error estimate.
+    # fsallast was holding f_stage2; overwrite with f_stage3 for DAE error estimate below
     if is_shampine && mass_matrix !== I
         copyto!(cache.fsallast, du)
     end
@@ -325,9 +301,8 @@ end
         if is_shampine && mass_matrix !== I &&
                 integrator.differential_vars isa AbstractArray &&
                 iszero(tab.b[end])
-            # Rosenbrock23 (b[last]=0): stage 3 only affects error estimate, not solution.
-            # Zero algebraic components to avoid spurious rejections from a poorly-conditioned
-            # algebraic row in the stage-3 k-vector.
+            # Rosenbrock23: b[3]=0 so ks[3] only appears in btilde. Zero algebraic
+            # components to prevent the poorly-conditioned algebraic row from inflating EEst.
             dv = integrator.differential_vars
             @.. du = ifelse(dv, du, false)
         end
@@ -338,7 +313,7 @@ end
         EEst = integrator.opts.internalnorm(atmp, t)
         if is_shampine && mass_matrix !== I &&
                 integrator.differential_vars isa AbstractArray
-            # Add algebraic residual: f(u_stage3)[alg_var] measures constraint violation
+            # Algebraic residual: f(u_stage3)[alg] scaled by inv(abstol) measures constraint drift
             dv = integrator.differential_vars
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(dv, false, cache.fsallast) * invatol
@@ -381,12 +356,10 @@ end
                 OrdinaryDiffEqCore.set_EEst!(integrator, max(EEst, OrdinaryDiffEqCore.get_EEst(integrator)))
             end
         else
-            # No H matrix: store raw derivatives f₀, f₁ for standard Hermite interpolation.
-            # _ode_interpolant(interp_order=-1) expects k[1]=f₀, k[2]=f₁.
             f(du, u, p, t + dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            @.. integrator.k[1] = cache.fsalfirst  # f₀ = f(uprev, p, t)
-            @.. integrator.k[2] = du               # f₁ = f(u, p, t+dt)
+            @.. integrator.k[1] = cache.fsalfirst
+            @.. integrator.k[2] = du
         end
     end
     cache.linsolve = linres.cache
