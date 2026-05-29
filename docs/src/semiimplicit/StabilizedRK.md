@@ -96,6 +96,7 @@ first_steps("OrdinaryDiffEqStabilizedRK", "ROCK4")
 ROCK2 
 ROCK4 
 RKC
+RKMC2
 TSRKC3
 SERK2
 ESERK4
