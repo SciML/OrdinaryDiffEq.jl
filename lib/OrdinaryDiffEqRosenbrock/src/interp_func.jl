@@ -1,18 +1,33 @@
+# Rosenbrock23/32 (Shampine order-2/3 pair) — identified by their tableau type
 function SciMLBase.interp_summary(
         ::Type{cacheType},
         dense::Bool
     ) where {
         cacheType <:
         Union{
-            RosenbrockCombinedConstantCache,
-            RosenbrockCache,
-            HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
+            RosenbrockCombinedConstantCache{<:Any, <:Any, <:ShampineRosenbrockTableau},
+            RosenbrockCache{
+                <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ShampineRosenbrockTableau,
+            },
         },
+    }
+    return dense ? "specialized 2nd order \"free\" stiffness-aware interpolation" :
+        "1st order linear"
+end
+
+# Tsit5DA hybrid explicit/linear-implicit DAE method
+function SciMLBase.interp_summary(
+        ::Type{cacheType},
+        dense::Bool
+    ) where {
+        cacheType <:
+        Union{HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache},
     }
     return dense ? "specialized 3rd order \"free\" stiffness-aware interpolation" :
         "1st order linear"
 end
 
+# Rodas4/5/6 family (combined cache, non-Shampine tableaux)
 function SciMLBase.interp_summary(
         ::Type{cacheType},
         dense::Bool

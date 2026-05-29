@@ -1,3 +1,17 @@
+# Rosenbrock23/32 use Shampine's order-2/3 pair, whose stage-3 RHS and DAE error
+# estimate differ from the standard Rodas pattern. A distinct tableau type lets
+# `perform_step!` dispatch on it.
+struct ShampineRosenbrockTableau{T, T2, btType}
+    A::Matrix{T}
+    C::Matrix{T}
+    gamma::T2
+    c::Vector{T2}
+    d::Vector{T}
+    H::Matrix{T}
+    b::Vector{T}
+    btilde::btType
+end
+
 function Rosenbrock23RodasTableau(T, T2)
     gamma = convert(T2, 1 / (2 + sqrt(2)))
     igamma = inv(gamma)
@@ -30,7 +44,7 @@ function Rosenbrock23RodasTableau(T, T2)
         zero(T) zero(T)                              zero(T)
     ]
 
-    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+    return ShampineRosenbrockTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
 function Rosenbrock32RodasTableau(T, T2)
@@ -69,7 +83,7 @@ function Rosenbrock32RodasTableau(T, T2)
         zero(T) zero(T)                              zero(T)
     ]
 
-    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+    return ShampineRosenbrockTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
 const RODAS5PA = [
