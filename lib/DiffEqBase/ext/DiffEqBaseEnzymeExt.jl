@@ -61,7 +61,12 @@ module DiffEqBaseEnzymeExt
         end
 
         shadow = if Enzyme.EnzymeRules.needs_shadow(config)
-            Enzyme.make_zero(res[1])::RT
+            mz = Enzyme.make_zero(res[1])
+            if Base.isabstracttype(RT) && (Enzyme.guess_activity(Core.Typeof(res[1]), Enzyme.Reverse) <: Enzyme.MixedDuplicated)
+                Ref(mz)::RT
+            else
+                mz::RT
+            end
         else
             nothing
         end
@@ -71,6 +76,24 @@ module DiffEqBaseEnzymeExt
             nothing
         end
         return Enzyme.EnzymeRules.augmented_rule_return_type(config, RTA)(primal, shadow, tup)
+    end
+
+    # Accumulate a reverse-pass cotangent `darg` into the Enzyme shadow `dval`.
+    # Ordinary array shadows take a broadcasted add. An `MTKParameters` shadow
+    # cannot be broadcast against its structural `NamedTuple` tangent, so its
+    # differentiable buffers (`tunable`, `caches`) are accumulated directly.
+    @inline _accumulate_tangent!(dval, darg) = (dval .+= darg; nothing)
+    @inline _accumulate_tangent!(dval, ::Nothing) = nothing
+    @inline function _accumulate_tangent!(dval, darg::NamedTuple)
+        if hasproperty(darg, :tunable) && darg.tunable !== nothing
+            dval.tunable .+= darg.tunable
+        end
+        if hasproperty(darg, :caches) && darg.caches !== nothing
+            for (c, dc) in zip(dval.caches, darg.caches)
+                dc === nothing || (c .+= dc)
+            end
+        end
+        nothing
     end
 
     function Enzyme.EnzymeRules.reverse(
@@ -83,7 +106,11 @@ module DiffEqBaseEnzymeExt
         if Enzyme.EnzymeRules.needs_shadow(config)
             dres, clos = tape
             dres = dres::RT
-            dargs = clos(dres)
+            # augmented_primal returns a Ref-wrapped shadow for the abstract
+            # MixedDuplicated case; unwrap before handing the cotangent to the
+            # ChainRules pullback (which expects the bare ODESolution tangent).
+            dval = dres isa Base.RefValue ? dres[] : dres
+            dargs = clos(dval)
             # `sensealg` is inactive (see augmented_primal note); skip its slot
             # whether it arrived as Const or as a runtime-activity-promoted
             # Duplicated/MixedDuplicated/Active.
@@ -98,12 +125,12 @@ module DiffEqBaseEnzymeExt
                     continue
                 end
                 if ptr isa MixedDuplicated
-                    ptr.dval[] .+= darg
+                    _accumulate_tangent!(ptr.dval[], darg)
                 else
-                    ptr.dval .+= darg
+                    _accumulate_tangent!(ptr.dval, darg)
                 end
             end
-            Enzyme.make_zero!(dres.u)
+            Enzyme.make_zero!(dval.u)
         end
 
         return ntuple(Returns(nothing), Val(length(args) + 4))
