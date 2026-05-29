@@ -62,7 +62,7 @@ module DiffEqBaseEnzymeExt
 
         shadow = if Enzyme.EnzymeRules.needs_shadow(config)
             mz = Enzyme.make_zero(res[1])
-            if Enzyme.guess_activity(Core.Typeof(res[1])) <: Enzyme.MixedDuplicated
+            if Base.isabstracttype(RT) && (Enzyme.guess_activity(Core.Typeof(res[1])) <: Enzyme.MixedDuplicated)
                 Ref(mz)::RT
             else
                 mz::RT
