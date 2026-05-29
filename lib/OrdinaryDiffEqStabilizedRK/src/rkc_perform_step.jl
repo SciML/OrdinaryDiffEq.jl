@@ -1866,3 +1866,198 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[2] = integrator.fsallast
 end
+
+function initialize!(integrator, cache::RKMC2ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator, cache::RKMC2Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+@muladd function perform_step!(integrator, cache::RKMC2ConstantCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    alg = unwrap_alg(integrator, true)
+    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+
+    # selects stage count from eigenvalue estimate 
+    mdeg = max(3, ceil(Int, -0.8306782178712795 + 1.8547887825836553 * (abs(dt) * integrator.eigen_est)^0.533871357807877))
+    mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
+
+    # solves the equaton for w0, the parameter used to shift the Chebyshev polynomial to be monotone, using bisection on α = acosh(w0)
+    if mdeg != cache.mdeg
+        cache.mdeg = mdeg
+        s = mdeg
+        sign_s = iseven(s) ? 1 : -1
+        αlo, αhi = 1e-10, 2.0
+        for _ in 1:50
+            α = (αlo + αhi) / 2
+            Ts    = cosh(s * α)
+            Tsm1  = cosh((s - 1) * α)
+            Tsm2  = cosh((s - 2) * α)
+            dTsm1 = (s - 1) * sinh((s - 1) * α) / sinh(α)
+            fval  = 1 + sign_s / (s * (s - 2)) + cosh(α) + Ts / (2s) -
+                Tsm2 / (2 * (s - 2)) - (1 + Tsm1)^2 / dTsm1
+            fval > 0 ? (αlo = α) : (αhi = α)
+        end
+        α     = (αlo + αhi) / 2
+        Tsm1  = cosh((s - 1) * α)
+        dTsm1 = (s - 1) * sinh((s - 1) * α) / sinh(α)
+        cache.w0 = cosh(α)
+        cache.w1 = (1 + Tsm1) / dTsm1
+    end
+    w0, w1 = cache.w0, cache.w1
+
+    # initializes the b value tracking: bⱼ = 1/(1+Tⱼ(w0)) via Chebyshev recurrence on Tⱼ(w0)
+    Tj₋₂ = one(w0)        
+    Tj₋₁ = w0              
+    bj₋₂ = 1 / (1 + Tj₋₂) 
+    bj₋₁ = 1 / (1 + Tj₋₁) 
+
+    # stage 1: Y₁ = y₀ + h·b₁·w₁·F₀
+    gprev2 = copy(uprev)
+    μs = bj₋₁ * w1
+    gprev = uprev + dt * μs * fsalfirst
+    th2 = zero(eltype(u))
+    th1 = μs
+    bs = bj₋₁
+
+    # stages 2 to s using the shifted Chebyshev reccurance
+    for j in 2:mdeg
+        Tj = 2 * w0 * Tj₋₁ - Tj₋₂
+        bj = 1 / (1 + Tj)
+        bs = bj
+        μ  = 2 * w0 * bj / bj₋₁
+        ν  = -bj / bj₋₂
+        μ̃  = 2 * w1 * bj / bj₋₁
+        u  = f(gprev, p, t + dt * th1)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        u  = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μ̃ * (u - bj₋₁ * fsalfirst)
+        th = μ * th1 + ν * th2 + μ̃ * (1 - bj₋₁)
+        if j < mdeg
+            gprev2 = gprev
+            gprev  = u
+            th2    = th1
+            th1    = th
+            Tj₋₂   = Tj₋₁
+            Tj₋₁   = Tj
+            bj₋₂   = bj₋₁
+            bj₋₁   = bj
+        end
+    end
+
+    # final solution combination of the stages 
+    γs = bj₋₁ / (2 * mdeg * w1)
+    δs = -bj₋₁ / (2 * (mdeg - 2) * w1)
+    u = (1 - γs / bs - δs / bj₋₂) * uprev + (γs / bs) * u + (δs / bj₋₂) * gprev2 + dt * bj₋₁ * fsalfirst
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    # error estimate according to the paper is (1/10)*(y₀ - y₁ + dt*f(t+h,y₁))
+    if integrator.opts.adaptive
+        tmp = (uprev - u + dt * integrator.fsallast) / 10
+        atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::RKMC2Cache, repeat_step = false)
+    (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    (; k, tmp, gprev, gprev2, atmp) = cache
+    ccache = cache.constantcache
+    alg = unwrap_alg(integrator, true)
+    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+
+    mdeg = max(3, ceil(Int, -0.8306782178712795 + 1.8547887825836553 * (abs(dt) * integrator.eigen_est)^0.533871357807877))
+    mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
+
+    if mdeg != ccache.mdeg
+        ccache.mdeg = mdeg
+        s = mdeg
+        sign_s = iseven(s) ? 1 : -1
+        αlo, αhi = 1e-10, 2.0
+        for _ in 1:50
+            α = (αlo + αhi) / 2
+            Ts    = cosh(s * α)
+            Tsm1  = cosh((s - 1) * α)
+            Tsm2  = cosh((s - 2) * α)
+            dTsm1 = (s - 1) * sinh((s - 1) * α) / sinh(α)
+            fval  = 1 + sign_s / (s * (s - 2)) + cosh(α) + Ts / (2s) - Tsm2 / (2 * (s - 2)) - (1 + Tsm1)^2 / dTsm1
+            fval > 0 ? (αlo = α) : (αhi = α)
+        end
+        α     = (αlo + αhi) / 2
+        Tsm1  = cosh((s - 1) * α)
+        dTsm1 = (s - 1) * sinh((s - 1) * α) / sinh(α)
+        ccache.w0 = cosh(α)
+        ccache.w1 = (1 + Tsm1) / dTsm1
+    end
+    w0, w1 = ccache.w0, ccache.w1
+
+    Tj₋₂ = one(w0)
+    Tj₋₁ = w0
+    bj₋₂ = 1 / (1 + Tj₋₂)
+    bj₋₁ = 1 / (1 + Tj₋₁)
+
+    @.. broadcast = false gprev2 = uprev
+    μs = bj₋₁ * w1
+    @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
+    th2 = zero(eltype(u))
+    th1 = μs
+    bs = bj₋₁
+
+    for j in 2:mdeg
+        Tj = 2 * w0 * Tj₋₁ - Tj₋₂
+        bj = 1 / (1 + Tj)
+        bs = bj
+        μ  = 2 * w0 * bj / bj₋₁
+        ν  = -bj / bj₋₂
+        μ̃  = 2 * w1 * bj / bj₋₁
+        f(k, gprev, p, t + dt * th1)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        @.. broadcast = false u = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μ̃ * (k - bj₋₁ * fsalfirst)
+        th = μ * th1 + ν * th2 + μ̃ * (1 - bj₋₁)
+        if j < mdeg
+            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false gprev  = u
+            th2  = th1
+            th1  = th
+            Tj₋₂ = Tj₋₁
+            Tj₋₁ = Tj
+            bj₋₂ = bj₋₁
+            bj₋₁ = bj
+        end
+    end
+
+    # final solution combination of the stages
+    γs = bj₋₁ / (2 * mdeg * w1)
+    δs = -bj₋₁ / (2 * (mdeg - 2) * w1)
+    @.. broadcast = false u = (1 - γs / bs - δs / bj₋₂) * uprev + (γs / bs) * u + (δs / bj₋₂) * gprev2 + dt * bj₋₁ * fsalfirst
+
+    f(integrator.fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    if integrator.opts.adaptive
+        @.. broadcast = false tmp = (uprev - u + dt * integrator.fsallast) / 10
+        calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
