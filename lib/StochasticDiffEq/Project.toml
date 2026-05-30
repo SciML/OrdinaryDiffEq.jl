@@ -45,14 +45,14 @@ StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 
 [compat]
-ADTypes = "1.21.0"
+ADTypes = "1.22.0"
 DiffEqBase = "7"
-DiffEqNoiseProcess = "5.13"
+DiffEqNoiseProcess = "5.30.0"
 LinearAlgebra = "1.6"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqNonlinearSolve = "2"
-Reexport = "0.2, 1.0"
-SciMLBase = "3"
+Reexport = "1.2.2"
+SciMLBase = "3.1.0"
 StochasticDiffEqCore = "2"
 StochasticDiffEqHighOrder = "2"
 StochasticDiffEqIIF = "2"
