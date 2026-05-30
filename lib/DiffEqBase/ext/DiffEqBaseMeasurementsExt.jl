@@ -4,6 +4,12 @@ using DiffEqBase
 import DiffEqBase: value
 using Measurements
 
+# Strip the ± uncertainty when DiffEqBase.value is called on a Measurement.
+# Required so generic algorithms (e.g. CVHin initdt) can convert intermediate
+# Measurement-valued quantities back to plain `_tType` step sizes.
+value(x::Measurements.Measurement) = Measurements.value(x)
+value(::Type{Measurements.Measurement{T}}) where {T} = T
+
 # Support adaptive steps should be errorless
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::AbstractArray{

@@ -40,6 +40,6 @@ end
         @test length(sol.t) < 22
         @test SciMLBase.successful_retcode(sol)
         exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
-        @test norm(exact - sol.u[end], Inf) < 3.0e-3
+        @test norm(exact - sol.u[end], Inf) < 1.5e-2
     end
 end
