@@ -14,6 +14,8 @@ plot(sol, linewidth = 5, title = "Solution to the linear ODE with a thick line",
     xaxis = "Time (t)", yaxis = "u(t) (in μm)", label = "My Thick Line!") # legend=false
 plot!(sol.t, t -> 0.5 * exp(1.01 * t), lw = 3, ls = :dash, label = "True Solution!")
 ```
+`Tsit5()` is a good default choice for many non-stiff ODEs. For stiff problems,
+consider using an implicit method such as `Rodas5P()` or `TRBDF2()`.
 
 That example uses the out-of-place syntax `f(u,p,t)`, while the in-place syntax (more efficient for systems of equations) is shown in the Lorenz example:
 
