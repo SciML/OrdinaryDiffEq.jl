@@ -141,7 +141,7 @@ end
     (; tstep, invγdt) = cache
 
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = cache.W === nothing || (nlsolver.iter == 1 && cache.new_W)
+    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
     step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
@@ -166,7 +166,7 @@ end
 
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = cache.W === nothing || (nlsolver.iter == 1 && cache.new_W)
+    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
