@@ -9,7 +9,7 @@ all_algs = [
     Kvaerno4(), Kvaerno5(), KenCarp4(), KenCarp47(), KenCarp5(), KenCarp58(),
     ESDIRK54I8L2SA(), SFSDIRK4(), SFSDIRK5(), SFSDIRK6(), SFSDIRK7(), SFSDIRK8(),
     ESDIRK436L2SA2(), ESDIRK437L2SA(), ESDIRK547L2SA2(), ESDIRK659L2SA(),
-    CFNLIRK3(), ARS343(),
+    CFNLIRK3(), ARS343(), ARS222(), ARS232(), ARS443(),
 ]
 
 @testset "Tableau embedded-pair consistency" begin

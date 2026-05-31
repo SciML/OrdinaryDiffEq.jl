@@ -63,6 +63,9 @@ end
 
 # Dispatch: each algorithm type maps to its tableau constructor
 ESDIRKIMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS222, T, T2) = ARS222Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS232, T, T2) = ARS232Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS443, T, T2) = ARS443Tableau(T, T2)
 ESDIRKIMEXTableau(::CFNLIRK3, T, T2) = CFNLIRK3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::KenCarp3, T, T2) = KenCarp3ESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::Kvaerno3, T, T2) = Kvaerno3ESDIRKIMEXTableau(T, T2)
@@ -811,6 +814,152 @@ function ARS343Tableau(T, T2)
     return ESDIRKIMEXTableau(
         Ai, bi_vec, Ae, be_vec, c_vec,
         T[], T[], Vector{T2}[], 3, s, false, zeros(Int, s), convert(T2, c3)
+    )
+end
+
+# ARS(2,2,2) — Ascher-Ruuth-Spiteri 1997 §2.6 (Table V).
+# γ = (2-√2)/2; explicit δ = 1 - 1/(2γ) for L-stable explicit part.
+function ARS222Tableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    δ = convert(T, 1 - 1 / (2 * (1 - 1 / sqrt(T(2)))))
+    s = 3
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = 1 - γ
+    Ai[3, 3] = γ
+
+    bi = zeros(T, s)
+    bi[2] = 1 - γ
+    bi[3] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = γ
+    Ae[3, 1] = δ
+    Ae[3, 2] = 1 - δ
+
+    be = zeros(T, s)
+    be[1] = δ
+    be[2] = 1 - δ
+
+    c = T2[zero(T2), convert(T2, γ), one(T2)]
+
+    γ2 = convert(T2, γ)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    θ = one(T2) / c2
+    α[3][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+    α[3][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 1, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+# ARS(2,3,2) — Ascher-Ruuth-Spiteri 1997 §2.6 (Table VI).
+# Same implicit tableau as ARS222 (γ = (2-√2)/2); explicit δ = -2√2/3.
+function ARS232Tableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    δ = convert(T, -2 * sqrt(T(2)) / 3)
+    s = 3
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = 1 - γ
+    Ai[3, 3] = γ
+
+    bi = zeros(T, s)
+    bi[2] = 1 - γ
+    bi[3] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = γ
+    Ae[3, 1] = δ
+    Ae[3, 2] = 1 - δ
+
+    be = zeros(T, s)
+    be[2] = 1 - γ
+    be[3] = γ
+
+    c = T2[zero(T2), convert(T2, γ), one(T2)]
+
+    γ2 = convert(T2, γ)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    θ = one(T2) / c2
+    α[3][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+    α[3][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 1, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+# ARS(4,4,3) — Ascher-Ruuth-Spiteri 1997 §2.8 (Table VII).
+# 5-stage 3rd-order ESDIRK IMEX with γ = 1/2.
+function ARS443Tableau(T, T2)
+    γ = convert(T, 1 // 2)
+    s = 5
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = convert(T, 1 // 6)
+    Ai[3, 3] = γ
+    Ai[4, 2] = convert(T, -1 // 2)
+    Ai[4, 3] = convert(T, 1 // 2)
+    Ai[4, 4] = γ
+    Ai[5, 2] = convert(T, 3 // 2)
+    Ai[5, 3] = convert(T, -3 // 2)
+    Ai[5, 4] = convert(T, 1 // 2)
+    Ai[5, 5] = γ
+
+    bi = zeros(T, s)
+    bi[2] = convert(T, 3 // 2)
+    bi[3] = convert(T, -3 // 2)
+    bi[4] = convert(T, 1 // 2)
+    bi[5] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = convert(T, 1 // 2)
+    Ae[3, 1] = convert(T, 11 // 18)
+    Ae[3, 2] = convert(T, 1 // 18)
+    Ae[4, 1] = convert(T, 5 // 6)
+    Ae[4, 2] = convert(T, -5 // 6)
+    Ae[4, 3] = convert(T, 1 // 2)
+    Ae[5, 1] = convert(T, 1 // 4)
+    Ae[5, 2] = convert(T, 7 // 4)
+    Ae[5, 3] = convert(T, 3 // 4)
+    Ae[5, 4] = convert(T, -7 // 4)
+
+    be = zeros(T, s)
+    be[2] = convert(T, 3 // 2)
+    be[3] = convert(T, -3 // 2)
+    be[4] = convert(T, 1 // 2)
+    be[5] = γ
+
+    c = T2[zero(T2), convert(T2, 1 // 2), convert(T2, 2 // 3), convert(T2, 1 // 2), one(T2)]
+
+    γ2 = convert(T2, 1 // 2)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    for i in 3:s
+        ci = c[i]
+        θ = ci / c2
+        α[i][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+        α[i][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+    end
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, true, [0, 1, 2, 2, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
     )
 end
 

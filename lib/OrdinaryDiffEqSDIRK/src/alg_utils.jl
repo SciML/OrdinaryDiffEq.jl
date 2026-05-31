@@ -60,6 +60,15 @@ issplit(alg::CFNLIRK3) = true
 issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
+issplit(alg::ARS222) = true
+alg_order(alg::ARS222) = 2
+isesdirk(alg::ARS222) = true
+issplit(alg::ARS232) = true
+alg_order(alg::ARS232) = 2
+isesdirk(alg::ARS232) = true
+issplit(alg::ARS443) = true
+alg_order(alg::ARS443) = 3
+isesdirk(alg::ARS443) = true
 
 # Per-stage Newton-seed strategy. Every SDIRK/ESDIRK algorithm in this module
 # carries a `predictor::Predictor.T` field, so the `alg.predictor` access is
