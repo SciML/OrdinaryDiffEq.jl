@@ -3,7 +3,7 @@ alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::SDIRK22) = true
 
 alg_order(alg::Trapezoid) = 2
-alg_order(alg::ImplicitEuler) = 1
+alg_order(alg::ImplicitEuler) = alg.time_filter ? 2 : 1
 alg_order(alg::ImplicitMidpoint) = 2
 alg_order(alg::TRBDF2) = 2
 alg_order(alg::SSPSDIRK2) = 2
@@ -45,7 +45,7 @@ end
 
 alg_adaptive_order(alg::Trapezoid) = 1
 alg_adaptive_order(alg::ImplicitMidpoint) = 1
-alg_adaptive_order(alg::ImplicitEuler) = 0
+alg_adaptive_order(alg::ImplicitEuler) = alg.time_filter ? 1 : 0
 
 ssp_coefficient(alg::SSPSDIRK2) = 4
 

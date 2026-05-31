@@ -116,6 +116,49 @@ end
 
     #FBDF
     @test_nowarn solve(prob, FBDF())
+
+    # MOOSE234 — VSVO method, test_convergence with fixed dt is not applicable
+    @test_nowarn solve(prob, MOOSE234())
+
+    sol = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
+    @test sol.retcode == ReturnCode.Success
+end
+
+@testset "MOOSE234 accuracy (scalar exponential)" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    exact = exp(-1.0)
+
+    sol_mod = solve(prob, MOOSE234(), abstol = 1e-6, reltol = 1e-6)
+    @test isapprox(sol_mod[end], exact, rtol = 1e-4)
+
+    sol_tight = solve(prob, MOOSE234(), abstol = 1e-10, reltol = 1e-10)
+    @test isapprox(sol_tight[end], exact, rtol = 1e-6)
+
+    @test abs(sol_tight[end] - exact) < abs(sol_mod[end] - exact)
+end
+
+@testset "MOOSE234 accuracy (in-place 2D)" begin
+    fiip = (du, u, p, t) -> du .= p .* u
+    u0 = [1.0, 2.0]
+    prob = ODEProblem(fiip, u0, (0.0, 1.0), -1.0)
+
+    sol = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
+    @test sol.retcode == ReturnCode.Success
+    @test isapprox(sol.u[end], exp(-1.0) .* u0, rtol = 1e-2)
+end
+
+@testset "MOOSE234 vs FBDF accuracy" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    exact = exp(-1.0)
+
+    sol_moose = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
+    sol_fbdf = solve(prob, FBDF(), abstol = 1e-8, reltol = 1e-8)
+
+    err_moose = abs(sol_moose[end] - exact)
+    err_fbdf = abs(sol_fbdf[end] - exact)
+
+    @test err_moose < 1e-6
+    @test err_fbdf < 1e-6
 end
 
 @testset "Static Array (SVector) Tests" begin
@@ -123,7 +166,7 @@ end
     u0_sv = SVector(1.0, 2.0)
     prob_sv = ODEProblem(f_oop, u0_sv, (0.0, 1.0))
 
-    for alg in (QNDF(), QNDF1(), QNDF2(), FBDF())
+    for alg in (QNDF(), QNDF1(), QNDF2(), FBDF(), MOOSE234())
         name = nameof(typeof(alg))
         @testset "$name" begin
             sol = solve(prob_sv, alg, abstol = 1.0e-8, reltol = 1.0e-8)
@@ -134,7 +177,7 @@ end
 
     # Scalar
     prob_scalar = ODEProblem(f_oop, 1.0, (0.0, 1.0))
-    for alg in (QNDF(), FBDF())
+    for alg in (QNDF(), FBDF(), MOOSE234())
         name = nameof(typeof(alg))
         @testset "$name scalar" begin
             sol = solve(prob_scalar, alg, abstol = 1.0e-8, reltol = 1.0e-8)

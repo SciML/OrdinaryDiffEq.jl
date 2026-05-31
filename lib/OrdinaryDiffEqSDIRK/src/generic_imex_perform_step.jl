@@ -1210,6 +1210,11 @@ end
 
     step_limiter!(u, integrator, p, t + dt)
 
+    if E === :ie_dd2 && alg isa ImplicitEuler && alg.time_filter && integrator.success_iter > 0
+        uprev2 = integrator.uprev2
+        @.. broadcast = false u = u - (1 // 3) * (u - 2 * uprev + uprev2)
+    end
+
     # ---------------- Error estimate ----------------
     if E === :standard
         if integrator.opts.adaptive && !isempty(btilde)
@@ -2219,6 +2224,11 @@ end
         elseif s == 12
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + bi[12] * z12
         end
+    end
+
+    if E === :ie_dd2 && alg isa ImplicitEuler && alg.time_filter && integrator.success_iter > 0
+        uprev2 = integrator.uprev2
+        u = u - (1 // 3) * (u - 2 * uprev + uprev2)
     end
 
     integrator.u = u

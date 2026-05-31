@@ -7,6 +7,7 @@ function SciMLBase.interp_summary(
             QNDFConstantCache, QNDFCache,
             FBDFConstantCache, FBDFCache,
             DFBDFConstantCache, DFBDFCache,
+            MOOSE234ConstantCache, MOOSE234Cache,
         },
     }
     return dense ? "specialized backward-difference stiffness-aware interpolation" :

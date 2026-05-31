@@ -13,10 +13,10 @@ function SDIRK_docstring(
         """ * extra_keyword_default
 
     keyword_default_description = """
-        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/) 
+        - `autodiff`: Uses [ADTypes.jl](https://sciml.github.io/ADTypes.jl/stable/)
             to specify whether to use automatic differentiation via
             [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) or finite
-            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl). 
+            differencing via [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl).
             Defaults to `AutoForwardDiff()` for automatic differentiation, which by default uses
             `chunksize = 0`, and thus uses the internal ForwardDiff.jl algorithm for the choice.
             To use `FiniteDiff.jl`, the `AutoFiniteDiff()` ADType can be used, which has a keyword argument
@@ -42,7 +42,7 @@ abstract type OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNew
 abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
 
 @doc SDIRK_docstring(
-    "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
+    "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations. When `time_filter=true`, a 2nd-order time-filter correction is applied after each step, raising the effective order from 1 to 2.",
     "ImplicitEuler";
     references = "@book{wanner1996solving,
     title={Solving ordinary differential equations II},
@@ -54,10 +54,12 @@ abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewton
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `time_filter`: when `true`, apply a 2nd-order time-filter correction after each backward Euler step
     """,
     extra_keyword_default = """
     predictor = Predictor.Trivial,
     step_limiter! = trivial_limiter!,
+    time_filter = false,
     """
 )
 struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
@@ -66,6 +68,7 @@ struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
     nlsolve::F2
     predictor::Predictor.T
     step_limiter!::StepLimiter
+    time_filter::Bool
     autodiff::AD
     concrete_jac::CJ
 end
@@ -75,14 +78,15 @@ function ImplicitEuler(;
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
         predictor = Predictor.Trivial, extrapolant = nothing,
-        step_limiter! = trivial_limiter!
+        step_limiter! = trivial_limiter!,
+        time_filter = false
     )
     autodiff = _fixup_ad(autodiff)
 
     return ImplicitEuler(
         linsolve,
-        nlsolve, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
-        _unwrap_val(concrete_jac)
+        nlsolve, _resolve_predictor(predictor, extrapolant), step_limiter!, time_filter,
+        autodiff, _unwrap_val(concrete_jac)
     )
 end
 
