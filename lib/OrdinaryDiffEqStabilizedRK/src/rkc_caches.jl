@@ -158,6 +158,54 @@ function alg_cache(
     return RKCConstantCache(u)
 end
 
+mutable struct RKMC2ConstantCache{zType} <: OrdinaryDiffEqConstantCache
+    zprev::zType
+    mdeg::Int
+    min_stage::Int
+    max_stage::Int
+    w0::Float64
+    w1::Float64
+end
+
+@cache struct RKMC2Cache{uType, rateType, uNoUnitsType, C <: RKMC2ConstantCache} <:
+    StabilizedRKMutableCache
+    u::uType
+    uprev::uType
+    gprev::uType
+    gprev2::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    fsalfirst::rateType
+    k::rateType
+    constantcache::C
+end
+
+function alg_cache(
+        alg::RKMC2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    constantcache = RKMC2ConstantCache(zero(u), 0, alg.min_stages, alg.max_stages, 0.0, 0.0)
+    gprev = zero(u)
+    gprev2 = zero(u)
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    return RKMC2Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, constantcache)
+end
+
+function alg_cache(
+        alg::RKMC2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return RKMC2ConstantCache(zero(u), 0, alg.min_stages, alg.max_stages, 0.0, 0.0)
+end
+
 mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
     ms::NTuple{46, Int}
     Cᵤ::NTuple{4, Int}

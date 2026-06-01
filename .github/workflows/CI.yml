@@ -22,10 +22,14 @@ jobs:
     timeout-minutes: 120
     continue-on-error: ${{ matrix.group == 'Downstream' }}
     env:
-      # Bypass Julia's Pkg server for registry; it lags behind JuliaRegistries/General
-      # by up to hours and caches on a TTL. Resolve against git directly so newly
-      # registered package versions are seen immediately by CI.
-      JULIA_PKG_SERVER: ""
+      # Pin the depot path so the "Refresh General registry" step and the
+      # subsequent julia-actions/julia-{buildpkg,runtest} steps all read
+      # and write the same depot on self-hosted runners (where the runner
+      # may otherwise inject ~/github-runners/<name>/.julia for some steps
+      # but not others, causing "expected package X to be registered"
+      # failures when General is refreshed into ~/.julia but resolve
+      # happens against the per-runner depot). Matches benchmark.yml.
+      JULIA_DEPOT_PATH: ~/.julia
     strategy:
       fail-fast: false
       matrix:
@@ -98,21 +102,6 @@ jobs:
           key: julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};run_id=${{ github.run_id }};run_attempt=${{ github.run_attempt }}
           restore-keys: |
             julia-cache;workflow=${{ github.workflow }};job=${{ github.job }};os=${{ runner.os }};group=${{ matrix.group }};version=${{ matrix.version }};
-      - name: Refresh General registry directly from git
-        shell: julia --color=yes --project=. {0}
-        run: |
-          using Pkg
-          # Force a fresh git clone of General to dodge pkg server lag.
-          # Must run BEFORE the Pkg.develop step below: that step's resolve
-          # needs current versions of registered deps (e.g. SciMLBase v3,
-          # CoverageTools), and the cached pkg-server registry is often
-          # several days stale, so develop's resolve fails with "expected
-          # package <X> to be registered".
-          try
-              Pkg.Registry.rm("General")
-          catch
-          end
-          Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))
       - name: Develop local path deps (Julia < 1.11)
         shell: julia --color=yes --project=. {0}
         run: |

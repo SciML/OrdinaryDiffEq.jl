@@ -396,8 +396,8 @@ _get_step_limiter(alg) = trivial_limiter!
 _get_stage_limiter(alg) = trivial_limiter!
 for Alg in (
         :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas23W, :Rodas3P,
-        :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5, :Rodas5P,
-        :Rodas5Pe, :Rodas5Pr, :Rodas6P,
+        :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas4PW, :Rodas5,
+        :Rodas5P, :Rodas5Pe, :Rodas5Pr, :Rodas6P,
     )
     @eval _get_step_limiter(alg::$Alg) = alg.step_limiter!
     @eval _get_stage_limiter(alg::$Alg) = alg.stage_limiter!
@@ -408,6 +408,7 @@ tabtype(::Rodas4) = Rodas4Tableau
 tabtype(::Rodas42) = Rodas42Tableau
 tabtype(::Rodas4P) = Rodas4PTableau
 tabtype(::Rodas4P2) = Rodas4P2Tableau
+tabtype(::Rodas4PW) = Rodas4PWTableau
 tabtype(::Rodas5) = Rodas5Tableau
 tabtype(::Rodas5P) = Rodas5PTableau
 tabtype(::Rodas5Pr) = Rodas5PTableau
@@ -443,8 +444,8 @@ tabtype(::RosenbrockW6S4OS) = RosenbrockW6S4OSRodasTableau
 
 # Union of all algorithms using RodasTableau-based RosenbrockCache
 const RodasTableauAlgorithms = Union{
-    Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5,
-    Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
+    Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas4PW,
+    Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
     ROS3P, Rodas3, Rodas3P, Rodas23W,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
     ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3,

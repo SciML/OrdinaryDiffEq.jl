@@ -60,6 +60,12 @@ for (Alg, desc, refs, is_W) in [
             :Rodas4P2,
             "A 4th order L-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order\non linear parabolic problems and 3rd order accurate on nonlinear parabolic problems. It is an improvement\nof Rodas4P and in case of inexact Jacobians a second order W method.",
             "- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) \n  Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.",
+            false,
+        ),
+        (
+            :Rodas4PW,
+            "An adaptation of Rodas4P 4th order L-stable Rosenbrock method into a W-method.",
+            "- Steinebach G., in preparation, 2026.",
             true,
         ),
         (
@@ -72,25 +78,25 @@ for (Alg, desc, refs, is_W) in [
             :Rodas5P,
             "A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.\nHas improved stability in the adaptive time stepping embedding.",
             "- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks\n  within the Julia Differential Equations package.\n  In: BIT Numerical Mathematics, 63(2), 2023. doi:10.1007/s10543-023-00967-x",
-            true,
+            false,
         ),
         (
             :Rodas5Pe,
             "Variant of Rodas5P with modified embedded scheme.",
             "- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
-            true,
+            false,
         ),
         (
             :Rodas5Pr,
             "Variant of Rodas5P with additional residual control.",
             "- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
-            true,
+            false,
         ),
         (
             :Rodas6P,
             "A 6th order A-stable stiffly stable Rosenbrock method with a stiff-aware 5th order interpolant.",
             "- Steinebach G. Construction of Rosenbrock–Wanner method Rodas6P.\n  to prepare, 2025",
-            true,
+            false,
         ),
     ]
     # Rosenbrock23/32 are low-order methods typically used on small/warm-up
@@ -98,8 +104,8 @@ for (Alg, desc, refs, is_W) in [
     # Default them to max_jac_age = 1 which effectively disables reuse (the
     # age check in _rosenbrock_jac_reuse_decision triggers every step).
     # Users can still opt into reuse with an explicit max_jac_age kwarg.
-    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4P2, Rodas5P/Pe/Pr,
-    # Rodas6P) keep the full reuse default which wins on PDE workloads.
+    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4PW)
+    # keep the full reuse default which wins on PDE workloads.
     default_max_jac_age = (Alg === :Rosenbrock23 || Alg === :Rosenbrock32) ? 1 : 20
     @eval begin
         @doc $(

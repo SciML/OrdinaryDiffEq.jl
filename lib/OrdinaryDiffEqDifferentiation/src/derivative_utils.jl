@@ -91,8 +91,14 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # Mass matrix (DAE) problems always recompute.
     # Stale Jacobians cause order reduction for DAEs because the algebraic
     # constraint derivatives must remain accurate. See Steinebach (2024).
+    naccept = integrator.stats.naccept
     if integrator.f.mass_matrix !== I
-        return (true, true)
+        if naccept > jac_reuse.last_naccept 
+           jac_reuse.last_naccept = naccept
+            return (true, true)
+        else
+            return (false, true)
+        end
     end
 
     # CompositeAlgorithm always recomputes.
@@ -103,10 +109,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Commit pending_dtgamma from previous step if it was accepted.
     # This ensures rejected steps don't pollute last_dtgamma.
-    naccept = integrator.stats.naccept
     if naccept > jac_reuse.last_naccept
         jac_reuse.last_dtgamma = jac_reuse.pending_dtgamma
-        jac_reuse.last_naccept = naccept
     end
 
     # Fresh cache (e.g., algorithm switch where iter > 1 but the Rosenbrock
@@ -155,6 +159,7 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Age check: recompute J after max_jac_age accepted steps.
     if (naccept - jac_reuse.last_naccept) >= jac_reuse.max_jac_age
+        jac_reuse.last_naccept = naccept
         return (true, true)
     end
 

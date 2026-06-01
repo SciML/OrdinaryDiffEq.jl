@@ -29,6 +29,7 @@ alg_order(alg::Rodas4) = 4
 alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
 alg_order(alg::Rodas4P2) = 4
+alg_order(alg::Rodas4PW) = 4
 alg_order(alg::Rodas5) = 5
 alg_order(alg::Rodas5P) = 5
 alg_order(alg::Rodas5Pr) = 5
@@ -50,6 +51,7 @@ isWmethod(alg::ROS34PW3) = true
 isWmethod(alg::ROS34PRw) = true
 isWmethod(alg::ROK4a) = true
 isWmethod(alg::RosenbrockW6S4OS) = true
+isWmethod(alg::Rodas4PW) = true
 
 isfsal(alg::Rodas3P) = false
 isfsal(alg::Rodas23W) = false
@@ -61,14 +63,15 @@ isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
+isfsal(alg::Rodas4PW) = false
 isfsal(alg::Rodas6P) = false
 isfsal(alg::HybridExplicitImplicitRK) = false
 
 function has_stiff_interpolation(
         ::Union{
             Rosenbrock23, Rosenbrock32, Rodas23W,
-            Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5,
-            Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
+            Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas4PW,
+            Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
             HybridExplicitImplicitRK,
         }
     )
