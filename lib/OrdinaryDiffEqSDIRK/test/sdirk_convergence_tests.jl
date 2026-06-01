@@ -185,7 +185,7 @@ end
 end
 
 @testset "IMEX-SSP family SplitODEProblem" begin
-    dts = 1 .// 2 .^ (8:-1:4)
+    dts = 1 .// 2 .^ (10:-1:6)
     f1_oop = (u, p, t) -> -u
     f2_oop = (u, p, t) -> 2u
     ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
@@ -194,17 +194,14 @@ end
     f2_iip! = (du, u, p, t) -> (du .= 2u)
     ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
     prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
-    # IMEX-SSP methods have noisy pre-asymptotic convergence on the standard dt
-    # range — loosen atol slightly. IMEXSSP3332 sits at ~2.2 here; at finer dt it
-    # cleans up to ~2.02.
     for (alg, expected) in (
             (IMEXSSP222(), 2), (IMEXSSP2322(), 2),
             (IMEXSSP3332(), 2), (IMEXSSP3433(), 3),
         )
         sim_oop = test_convergence(dts, prob_oop, alg)
-        @test sim_oop.𝒪est[:l∞] ≈ expected atol = 0.3
+        @test sim_oop.𝒪est[:l∞] ≈ expected atol = testTol
         sim_iip = test_convergence(dts, prob_iip, alg)
-        @test sim_iip.𝒪est[:l∞] ≈ expected atol = 0.3
+        @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
     end
 end
 
