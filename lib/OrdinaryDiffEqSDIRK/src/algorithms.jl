@@ -1617,3 +1617,78 @@ function ARS443(;
         _unwrap_val(concrete_jac)
     )
 end
+
+# IMEX-SSP family — Pareschi & Russo 2005, "Implicit-explicit Runge-Kutta schemes
+# and applications to hyperbolic systems with relaxation", J. Sci. Comput. 25, 129-155.
+# These are non-ESDIRK schemes (first stage is implicit) routed through the unified
+# `ESDIRKIMEXTableau` framework via `explicit_first_stage=false` and a distinct `ce`.
+
+const _PARESCHI_RUSSO_REF = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}"
+
+for (name, desc) in (
+        (
+            :IMEXSSP222,
+            "2-stage 2nd-order L-stable IMEX-SSP method (Pareschi-Russo Table 2).",
+        ),
+        (
+            :IMEXSSP2322,
+            "3-stage 2nd-order stiffly-accurate IMEX-SSP method (Pareschi-Russo Table 3).",
+        ),
+        (
+            :IMEXSSP3332,
+            "3-stage 2nd-order L-stable IMEX-SSP method (Pareschi-Russo Table 5).",
+        ),
+        (
+            :IMEXSSP3433,
+            "4-stage 3rd-order L-stable IMEX-SSP method (Pareschi-Russo Table 6).",
+        ),
+    )
+    @eval begin
+        @doc SDIRK_docstring(
+            $desc, $(string(name));
+            references = _PARESCHI_RUSSO_REF,
+            extra_keyword_description = """
+            - `smooth_est`: whether to use a smoothed estimate for error control.
+            - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+                (`extrapolant` is deprecated).
+            - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+            """,
+            extra_keyword_default = """
+            smooth_est = true,
+            predictor = Predictor.Linear,
+            step_limiter! = trivial_limiter!,
+            """
+        )
+        struct $name{AD, F, F2, StepLimiter, CJ} <:
+            OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+            linsolve::F
+            nlsolve::F2
+            smooth_est::Bool
+            predictor::Predictor.T
+            step_limiter!::StepLimiter
+            autodiff::AD
+            concrete_jac::CJ
+        end
+        function $name(;
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing, nlsolve = NLNewton(),
+                smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+                step_limiter! = trivial_limiter!
+            )
+            autodiff = _fixup_ad(autodiff)
+            return $name(
+                linsolve, nlsolve, smooth_est,
+                _resolve_predictor(predictor, extrapolant),
+                step_limiter!, autodiff, _unwrap_val(concrete_jac)
+            )
+        end
+    end
+end
