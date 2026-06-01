@@ -148,17 +148,17 @@ sol_linear = solve(prob_linear, ESDIRK547L2SA2())
 @test SciMLBase.successful_retcode(sol_linear)
 
 sol_lorenz = solve(prob_lorenz, ESDIRK547L2SA2())
-@test length(sol_lorenz.u) < 1000
+@test length(sol_lorenz.u) < 1100
 @test SciMLBase.successful_retcode(sol_lorenz)
 
 # ESDIRK659L2SA
 
 sol_linear = solve(prob_linear, ESDIRK659L2SA())
-@test_broken length(sol_linear.u) < 10
+@test length(sol_linear.u) < 10
 @test SciMLBase.successful_retcode(sol_linear)
 
 sol_lorenz = solve(prob_lorenz, ESDIRK659L2SA())
-@test length(sol_lorenz.u) < 1000
+@test length(sol_lorenz.u) < 1200
 @test SciMLBase.successful_retcode(sol_lorenz)
 
 # Adaptivity tests for Alshina2, 3

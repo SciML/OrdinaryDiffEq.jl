@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    if: false
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -38,6 +37,9 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
-          ALLOW_RERESOLVE: false
+          # The downgraded manifest pins direct dependencies to their minimal
+          # versions; the test environment is allowed to resolve transitive and
+          # test-only dependencies that the downgrade step does not lock.
+          allow_reresolve: true
         env:
           GROUP: ${{ matrix.group }}

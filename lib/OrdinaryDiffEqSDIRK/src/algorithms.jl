@@ -1467,3 +1467,276 @@ function ARS343(;
         _unwrap_val(concrete_jac)
     )
 end
+
+@doc SDIRK_docstring(
+    "2nd order L-stable IMEX ARK method (Ascher-Ruuth-Spiteri ARS(2,2,2)). 3-stage scheme with implicit γ=(2-√2)/2.",
+    "ARS222";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS222{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS222(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS222(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "2nd order IMEX ARK method (Ascher-Ruuth-Spiteri ARS(2,3,2)). Shares the implicit tableau of ARS222 (γ=(2-√2)/2) with a different explicit δ=-2√2/3.",
+    "ARS232";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS232{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS232(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS232(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3rd order L-stable IMEX ARK method (Ascher-Ruuth-Spiteri ARS(4,4,3)). 5-stage scheme with γ=1/2.",
+    "ARS443";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS443{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS443(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS443(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+# IMEX-SSP family — Pareschi & Russo 2005, "Implicit-explicit Runge-Kutta schemes
+# and applications to hyperbolic systems with relaxation", J. Sci. Comput. 25, 129-155.
+# These are non-ESDIRK schemes (first stage is implicit) routed through the unified
+# `ESDIRKIMEXTableau` framework via `explicit_first_stage=false` and a distinct `ce`.
+
+const _PARESCHI_RUSSO_REF = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}"
+
+for (name, desc) in (
+        (
+            :IMEXSSP222,
+            "2-stage 2nd-order L-stable IMEX-SSP method (Pareschi-Russo Table 2).",
+        ),
+        (
+            :IMEXSSP2322,
+            "3-stage 2nd-order stiffly-accurate IMEX-SSP method (Pareschi-Russo Table 3).",
+        ),
+        (
+            :IMEXSSP3332,
+            "3-stage 2nd-order L-stable IMEX-SSP method (Pareschi-Russo Table 5).",
+        ),
+        (
+            :IMEXSSP3433,
+            "4-stage 3rd-order L-stable IMEX-SSP method (Pareschi-Russo Table 6).",
+        ),
+    )
+    @eval begin
+        @doc SDIRK_docstring(
+            $desc, $(string(name));
+            references = _PARESCHI_RUSSO_REF,
+            extra_keyword_description = """
+            - `smooth_est`: whether to use a smoothed estimate for error control.
+            - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+                (`extrapolant` is deprecated).
+            - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+            """,
+            extra_keyword_default = """
+            smooth_est = true,
+            predictor = Predictor.Linear,
+            step_limiter! = trivial_limiter!,
+            """
+        )
+        struct $name{AD, F, F2, StepLimiter, CJ} <:
+            OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+            linsolve::F
+            nlsolve::F2
+            smooth_est::Bool
+            predictor::Predictor.T
+            step_limiter!::StepLimiter
+            autodiff::AD
+            concrete_jac::CJ
+        end
+        function $name(;
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing, nlsolve = NLNewton(),
+                smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+                step_limiter! = trivial_limiter!
+            )
+            autodiff = _fixup_ad(autodiff)
+            return $name(
+                linsolve, nlsolve, smooth_est,
+                _resolve_predictor(predictor, extrapolant),
+                step_limiter!, autodiff, _unwrap_val(concrete_jac)
+            )
+        end
+    end
+end
+
+@doc SDIRK_docstring(
+    "5-stage 3rd-order L-stable IMEX Runge-Kutta method (BHR(5,5,3)*) for split ODEs. From Boscarino & Russo (2009).",
+    "BHR553";
+    references = "@article{boscarino2009class,
+    title={On a class of uniformly accurate IMEX Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Boscarino, Sebastiano and Russo, Giovanni},
+    journal={SIAM Journal on Scientific Computing},
+    volume={31},
+    number={3},
+    pages={1926--1945},
+    year={2009},
+    publisher={SIAM}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct BHR553{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function BHR553(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return BHR553(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end

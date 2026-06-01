@@ -9,16 +9,17 @@ all_algs = [
     Kvaerno4(), Kvaerno5(), KenCarp4(), KenCarp47(), KenCarp5(), KenCarp58(),
     ESDIRK54I8L2SA(), SFSDIRK4(), SFSDIRK5(), SFSDIRK6(), SFSDIRK7(), SFSDIRK8(),
     ESDIRK436L2SA2(), ESDIRK437L2SA(), ESDIRK547L2SA2(), ESDIRK659L2SA(),
-    CFNLIRK3(), ARS343(),
+    CFNLIRK3(), ARS343(), ARS222(), ARS232(), ARS443(),
+    IMEXSSP222(), IMEXSSP2322(), IMEXSSP3332(), IMEXSSP3433(), BHR553(),
 ]
 
 @testset "Tableau embedded-pair consistency" begin
     for alg in all_algs
         tab = SDIRK.ESDIRKIMEXTableau(alg, Float64, Float64)
         @testset "$(nameof(typeof(alg)))" begin
-            @test isapprox(sum(tab.bi), 1; atol = 1e-9)
+            @test isapprox(sum(tab.bi), 1; atol = 1.0e-9)
             isempty(tab.btilde) && continue
-            @test isapprox(sum(tab.btilde), 0; atol = 1e-9)
+            @test isapprox(sum(tab.btilde), 0; atol = 1.0e-9)
         end
     end
 end

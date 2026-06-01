@@ -396,7 +396,7 @@ _get_step_limiter(alg) = trivial_limiter!
 _get_stage_limiter(alg) = trivial_limiter!
 for Alg in (
         :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas23W, :Rodas3P,
-        :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas4PW, :Rodas5, 
+        :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas4PW, :Rodas5,
         :Rodas5P, :Rodas5Pe, :Rodas5Pr, :Rodas6P,
     )
     @eval _get_step_limiter(alg::$Alg) = alg.step_limiter!
