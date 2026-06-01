@@ -1692,3 +1692,51 @@ for (name, desc) in (
         end
     end
 end
+
+@doc SDIRK_docstring(
+    "5-stage 3rd-order L-stable IMEX Runge-Kutta method (BHR(5,5,3)*) for split ODEs. From Boscarino & Russo (2009).",
+    "BHR553";
+    references = "@article{boscarino2009class,
+    title={On a class of uniformly accurate IMEX Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Boscarino, Sebastiano and Russo, Giovanni},
+    journal={SIAM Journal on Scientific Computing},
+    volume={31},
+    number={3},
+    pages={1926--1945},
+    year={2009},
+    publisher={SIAM}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct BHR553{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function BHR553(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return BHR553(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
+    )
+end

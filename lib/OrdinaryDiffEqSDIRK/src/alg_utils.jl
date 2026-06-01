@@ -81,6 +81,9 @@ isesdirk(alg::IMEXSSP3332) = true
 issplit(alg::IMEXSSP3433) = true
 alg_order(alg::IMEXSSP3433) = 3
 isesdirk(alg::IMEXSSP3433) = true
+issplit(alg::BHR553) = true
+alg_order(alg::BHR553) = 3
+isesdirk(alg::BHR553) = true
 
 # Per-stage Newton-seed strategy. Every SDIRK/ESDIRK algorithm in this module
 # carries a `predictor::Predictor.T` field, so the `alg.predictor` access is

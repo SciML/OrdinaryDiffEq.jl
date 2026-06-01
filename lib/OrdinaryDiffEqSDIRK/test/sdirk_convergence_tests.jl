@@ -208,6 +208,24 @@ end
     end
 end
 
+@testset "BHR553 SplitODEProblem" begin
+    # BHR(5,5,3)* — Boscarino-Russo 2009. Uses a coarser dt range than the
+    # IMEX-SSP family because BHR's pre-asymptotic regime extends to ~1/16.
+    dts = 1 .// 2 .^ (6:-1:2)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    sim_oop = test_convergence(dts, prob_oop, BHR553())
+    @test sim_oop.𝒪est[:l∞] ≈ 3 atol = 0.3
+    sim_iip = test_convergence(dts, prob_iip, BHR553())
+    @test sim_iip.𝒪est[:l∞] ≈ 3 atol = 0.3
+end
+
 @testset "ARS222/ARS232/ARS443 SplitODEProblem" begin
     dts = 1 .// 2 .^ (8:-1:4)
     f1_oop = (u, p, t) -> -u
