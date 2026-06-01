@@ -60,6 +60,7 @@ end
     Ae = tab.Ae
     be = tab.be
     c = tab.c
+    ce = tab.ce
     btilde = tab.btilde
     ebtilde = tab.ebtilde
     α = tab.α
@@ -116,6 +117,14 @@ end
         nlsolvefail(nlsolver) && return
         # All implicit stages share γ on the diagonal; reuse the W from stage 1.
         isnewton(nlsolver) && set_new_W!(nlsolver, false)
+        # Non-ESDIRK IMEX (e.g. IMEX-SSP, BHR): evaluate f2 at the solved stage-1
+        # value uprev + γ·zs[1]. Stage 1's explicit abscissa is t (Ae[1,:] = 0).
+        if integrator.f isa SplitFunction && issplit(alg) && !isempty(ks)
+            @.. broadcast = false u = uprev + γ * zs[1]
+            f2(ks[1], u, p, t)
+            ks[1] .*= dt
+            integrator.stats.nf2 += 1
+        end
     end
 
     # ---------------- Stages 2..s (inlined) ----------------
@@ -205,7 +214,7 @@ end
         end
         if s > 2 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[2]
-            f2(ks[2], u, p, t + c[2] * dt)
+            f2(ks[2], u, p, t + ce[2] * dt)
             ks[2] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -294,7 +303,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 3 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[3]
-            f2(ks[3], u, p, t + c[3] * dt)
+            f2(ks[3], u, p, t + ce[3] * dt)
             ks[3] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -384,7 +393,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 4 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[4]
-            f2(ks[4], u, p, t + c[4] * dt)
+            f2(ks[4], u, p, t + ce[4] * dt)
             ks[4] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -475,7 +484,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 5 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[5]
-            f2(ks[5], u, p, t + c[5] * dt)
+            f2(ks[5], u, p, t + ce[5] * dt)
             ks[5] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -567,7 +576,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 6 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[6]
-            f2(ks[6], u, p, t + c[6] * dt)
+            f2(ks[6], u, p, t + ce[6] * dt)
             ks[6] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -660,7 +669,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 7 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[7]
-            f2(ks[7], u, p, t + c[7] * dt)
+            f2(ks[7], u, p, t + ce[7] * dt)
             ks[7] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -754,7 +763,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 8 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[8]
-            f2(ks[8], u, p, t + c[8] * dt)
+            f2(ks[8], u, p, t + ce[8] * dt)
             ks[8] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -849,7 +858,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 9 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[9]
-            f2(ks[9], u, p, t + c[9] * dt)
+            f2(ks[9], u, p, t + ce[9] * dt)
             ks[9] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -945,7 +954,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 10 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[10]
-            f2(ks[10], u, p, t + c[10] * dt)
+            f2(ks[10], u, p, t + ce[10] * dt)
             ks[10] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -1042,7 +1051,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 11 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[11]
-            f2(ks[11], u, p, t + c[11] * dt)
+            f2(ks[11], u, p, t + ce[11] * dt)
             ks[11] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -1140,7 +1149,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 12 && integrator.f isa SplitFunction
             @.. broadcast = false u = tmp + γ * zs[12]
-            f2(ks[12], u, p, t + c[12] * dt)
+            f2(ks[12], u, p, t + ce[12] * dt)
             ks[12] .*= dt
             integrator.stats.nf2 += 1
         end
@@ -1319,6 +1328,7 @@ end
     Ae = tab.Ae
     be = tab.be
     c = tab.c
+    ce = tab.ce
     btilde = tab.btilde
     ebtilde = tab.ebtilde
     α = tab.α
@@ -1381,6 +1391,13 @@ end
         nlsolver.c = c[1]
         z1 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
+        # Non-ESDIRK IMEX (e.g. IMEX-SSP, BHR): evaluate f2 at the solved stage-1
+        # value uprev + γ·z1. Stage 1's explicit abscissa is t (Ae[1,:] = 0).
+        if integrator.f isa SplitFunction && issplit(alg)
+            u_stage1 = uprev + γ * z1
+            k1 = dt * f2(u_stage1, p, t)
+            integrator.stats.nf2 += 1
+        end
     end
 
     # ---------------- Stages 2..s (inlined) ----------------
@@ -1448,7 +1465,7 @@ end
         end
         if s > 2 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z2
-            k2 = dt * f2(u_stage, p, t + c[2] * dt)
+            k2 = dt * f2(u_stage, p, t + ce[2] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1513,7 +1530,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 3 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z3
-            k3 = dt * f2(u_stage, p, t + c[3] * dt)
+            k3 = dt * f2(u_stage, p, t + ce[3] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1578,7 +1595,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 4 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z4
-            k4 = dt * f2(u_stage, p, t + c[4] * dt)
+            k4 = dt * f2(u_stage, p, t + ce[4] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1643,7 +1660,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 5 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z5
-            k5 = dt * f2(u_stage, p, t + c[5] * dt)
+            k5 = dt * f2(u_stage, p, t + ce[5] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1708,7 +1725,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 6 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z6
-            k6 = dt * f2(u_stage, p, t + c[6] * dt)
+            k6 = dt * f2(u_stage, p, t + ce[6] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1773,7 +1790,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 7 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z7
-            k7 = dt * f2(u_stage, p, t + c[7] * dt)
+            k7 = dt * f2(u_stage, p, t + ce[7] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1838,7 +1855,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 8 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z8
-            k8 = dt * f2(u_stage, p, t + c[8] * dt)
+            k8 = dt * f2(u_stage, p, t + ce[8] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1903,7 +1920,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 9 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z9
-            k9 = dt * f2(u_stage, p, t + c[9] * dt)
+            k9 = dt * f2(u_stage, p, t + ce[9] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -1968,7 +1985,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 10 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z10
-            k10 = dt * f2(u_stage, p, t + c[10] * dt)
+            k10 = dt * f2(u_stage, p, t + ce[10] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -2033,7 +2050,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 11 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z11
-            k11 = dt * f2(u_stage, p, t + c[11] * dt)
+            k11 = dt * f2(u_stage, p, t + ce[11] * dt)
             integrator.stats.nf2 += 1
         end
     end
@@ -2098,7 +2115,7 @@ end
         nlsolvefail(nlsolver) && return
         if s > 12 && integrator.f isa SplitFunction
             u_stage = tmp + γ * z12
-            k12 = dt * f2(u_stage, p, t + c[12] * dt)
+            k12 = dt * f2(u_stage, p, t + ce[12] * dt)
             integrator.stats.nf2 += 1
         end
     end
