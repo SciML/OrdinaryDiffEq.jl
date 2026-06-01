@@ -1732,9 +1732,11 @@ function perform_step!(
 
     u = z
 
-    # BDF3-Stab filter: when order is 2 and stab_filter is enabled,
-    # apply the BDF3-Stab correction from DeCaria et al. (arXiv:1810.06670v1)
-    if k == 2 && integrator.alg.stab_filter && cache.iters_from_event >= 3
+    # BDF3-Stab filter: when order is 3 and stab_filter is enabled,
+    # apply the BDF3-Stab correction to produce stabilized order 2 output
+    stab_applied = false
+    stab_correction = zero(u)
+    if k == 3 && integrator.alg.stab_filter && cache.iters_from_event >= 3
         n_dd = 4
         ts_asc = Vector{typeof(t)}(undef, n_dd)
         for i in 1:3
@@ -1748,14 +1750,17 @@ function perform_step!(
             for i in 1:3
                 δ3 += c_dd[4, i] * u_history[4 - i]
             end
-            u = u + w_stab * δ3
+            stab_correction = w_stab * δ3
+            u = u + stab_correction
         else
             δ3 = @.. c_dd[4, 4] * u
             for i in 1:3
                 δ3 = @.. δ3 + c_dd[4, i] * u_history[4 - i]
             end
-            u = @.. u + w_stab * δ3
+            stab_correction = @.. w_stab * δ3
+            u = @.. u + stab_correction
         end
+        stab_applied = true
     end
 
     for j in 2:k
@@ -1835,6 +1840,17 @@ function perform_step!(
             cache.terkp1 = integrator.opts.internalnorm(atmp, t)
         else
             cache.terkp1 = zero(cache.terk)
+        end
+
+        # Override error estimate when stab filter was applied:
+        # use the embedded difference (y² - y³) as order 2 error estimate
+        # but do NOT change cache.order — FBDF's order controls the next solve
+        if stab_applied
+            atmp = calculate_residuals(
+                stab_correction, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
 
@@ -1947,9 +1963,10 @@ function perform_step!(
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = z
 
-    # BDF3-Stab filter: when order is 2 and stab_filter is enabled,
-    # apply the BDF3-Stab correction from DeCaria et al. (arXiv:1810.06670v1)
-    if k == 2 && integrator.alg.stab_filter && cache.iters_from_event >= 3
+    # BDF3-Stab filter: when order is 3 and stab_filter is enabled,
+    # apply the BDF3-Stab correction to produce stabilized order 2 output
+    stab_applied = false
+    if k == 3 && integrator.alg.stab_filter && cache.iters_from_event >= 3
         n_dd = 4
         for i in 1:3
             ts_tmp[i] = ts[4 - i]
@@ -1962,7 +1979,10 @@ function perform_step!(
         for i in 1:3
             @.. broadcast = false tmp += c_dd[4, i] * u_history[4 - i]
         end
-        @.. broadcast = false u = u + w_stab * tmp
+        # Save stab correction in u₀ for error estimation later
+        @.. broadcast = false u₀ = w_stab * tmp
+        @.. broadcast = false u = u + u₀
+        stab_applied = true
     end
 
     step_limiter!(u, integrator, p, t + dt)
@@ -2031,6 +2051,17 @@ function perform_step!(
             cache.terkp1 = integrator.opts.internalnorm(atmp, t)
         else
             cache.terkp1 = zero(cache.terkp1)
+        end
+
+        # Override error estimate when stab filter was applied:
+        # use the embedded difference (y² - y³) as order 2 error estimate
+        # but do NOT change cache.order — FBDF's order controls the next solve
+        if stab_applied
+            calculate_residuals!(
+                atmp, u₀, uprev, u, abstol, reltol,
+                internalnorm, t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
     end
 
