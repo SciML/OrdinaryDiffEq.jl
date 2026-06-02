@@ -21,7 +21,8 @@ function find_discontinuity(u, uprev, integrator)
     k = integrator.k
     breakpointθ = -one(dt)
     disco_probs = get_disco_probs(integrator.controller_cache)
-    for (idx, i) in enumerate(cb.continuous_callbacks)
+    idx = 1
+    for i in cb.continuous_callbacks
         if (!(i.maybe_discontinuity))
             continue
         end
@@ -58,6 +59,7 @@ function find_discontinuity(u, uprev, integrator)
                 end
             end
         end
+        idx += 1
     end
     breakpointθ
 end
