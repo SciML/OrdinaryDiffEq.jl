@@ -721,7 +721,7 @@ Base.@constprop :aggressive function _ode_init(
         isout, reeval_fsal,
         derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng
+        fsalfirst, fsallast, _rng,
         W, P, sqdt,
         noise, c, rate_constants
     )
