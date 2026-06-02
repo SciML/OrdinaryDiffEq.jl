@@ -20,7 +20,9 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("mreef_caches.jl")
 include("mreef_perform_step.jl")
+include("mrab_caches.jl")
+include("mrab_perform_step.jl")
 
-export MREEF
+export MREEF, MRAB
 
 end

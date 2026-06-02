@@ -1,0 +1,185 @@
+# ── MRAB: Adams–Bashforth coefficients ────────────────────────────────────────
+#
+# Standard explicit AB-k weights `β` ordered so that
+#   u_{n+1} = u_n + h * Σ_{i=1}^k β[i] * F_{n+1-i}
+# (β[1] applies to the most recent rate sample).
+
+@inline function _ab_betas(k::Int)
+    if k == 1
+        return (1.0,)
+    elseif k == 2
+        return (3 / 2, -1 / 2)
+    elseif k == 3
+        return (23 / 12, -16 / 12, 5 / 12)
+    elseif k == 4
+        return (55 / 24, -59 / 24, 37 / 24, -9 / 24)
+    elseif k == 5
+        return (1901 / 720, -2774 / 720, 2616 / 720, -1274 / 720, 251 / 720)
+    else
+        throw(ArgumentError("MRAB: unsupported Adams order k=$k (supported: 1..5)"))
+    end
+end
+
+# ── MRAB initialize! ──────────────────────────────────────────────────────────
+
+function initialize!(integrator, cache::MRABCache)
+    integrator.kshortsize = 2
+    (; fsalfirst, k) = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)  # f1
+    integrator.stats.nf2 += 1  # f2
+    return integrator.fsalfirst .+= cache.tmp
+end
+
+function initialize!(integrator, cache::MRABConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
+        integrator.f.f2(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+# ── MRAB perform_step! (in-place, MutableCache) ───────────────────────────────
+#
+# One macro step from t to t+dt with m fast substeps of length h = dt/m.
+# Slow rate f2 is evaluated once per macro step and held frozen across the m
+# fast substeps. The combined effective rate F = f1(u, t_fast) + f2_frozen is
+# advanced with explicit AB-k. Within-step history bootstrap: substep ℓ uses
+# AB-min(ℓ, k) (i.e., Euler on substep 1, AB2 on substep 2, …).
+
+function perform_step!(integrator, cache::MRABCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, atmp, k_slow, k_fast, F_history) = cache
+    alg = unwrap_alg(integrator, false)
+    k = alg.k
+    m = alg.m
+    h = dt / m
+    βs = _ab_betas(k)
+
+    @.. broadcast = false u = uprev
+    f.f2(k_slow, u, p, t)
+    integrator.stats.nf2 += 1
+
+    n_hist = 0
+    for ℓ in 1:m
+        t_fast = t + (ℓ - 1) * h
+        f.f1(k_fast, u, p, t_fast)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        # Push F = f1 + f2_frozen onto history ring (newest at index 1).
+        @.. broadcast = false F_history[min(n_hist + 1, k)] = k_fast + k_slow
+        # Rotate older entries down (so index 1 stays newest after we grow).
+        for j in min(n_hist + 1, k):-1:2
+            F_history[j], F_history[j - 1] = F_history[j - 1], F_history[j]
+        end
+        n_hist = min(n_hist + 1, k)
+
+        ks = min(ℓ, k)
+        βs_use = _ab_betas(ks)
+        # u <- u + h * Σ_{i=1}^ks βs_use[i] * F_history[i]
+        for i in 1:ks
+            β = βs_use[i]
+            Fi = F_history[i]
+            @.. broadcast = false u = u + h * β * Fi
+        end
+    end
+
+    # Embedded error estimate: last-substep AB-k vs AB-(k-1).
+    return if integrator.opts.adaptive && k >= 2
+        # Reconstruct the AB-(k-1) update for the last substep using current history.
+        βs_low = _ab_betas(k - 1)
+        @.. broadcast = false tmp = zero(tmp)
+        for i in 1:(k - 1)
+            β = βs_low[i]
+            Fi = F_history[i]
+            @.. broadcast = false tmp = tmp + h * β * Fi
+        end
+        # Difference: (AB-k contribution) - (AB-(k-1) contribution) on last substep.
+        @.. broadcast = false k_fast = zero(k_fast)
+        for i in 1:k
+            β = βs[i]
+            Fi = F_history[i]
+            @.. broadcast = false k_fast = k_fast + h * β * Fi
+        end
+        @.. broadcast = false tmp = k_fast - tmp
+        calculate_residuals!(
+            atmp, tmp, uprev, u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+end
+
+# ── MRAB perform_step! (out-of-place, ConstantCache) ──────────────────────────
+
+@muladd function perform_step!(integrator, cache::MRABConstantCache, repeat_step = false)
+    (; t, dt, uprev, f, p) = integrator
+    alg = unwrap_alg(integrator, false)
+    k = alg.k
+    m = alg.m
+    h = dt / m
+    βs = _ab_betas(k)
+
+    u_cur = uprev
+    k_slow = f.f2(u_cur, p, t)
+    integrator.stats.nf2 += 1
+
+    # History as a Vector of rate samples, newest at index 1.
+    F_history = Vector{typeof(k_slow)}(undef, k)
+    n_hist = 0
+
+    for ℓ in 1:m
+        t_fast = t + (ℓ - 1) * h
+        k_fast = f.f1(u_cur, p, t_fast)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+        F = k_fast + k_slow
+        # Insert at front, shift older down.
+        n_hist = min(n_hist + 1, k)
+        for j in n_hist:-1:2
+            F_history[j] = F_history[j - 1]
+        end
+        F_history[1] = F
+
+        ks = min(ℓ, k)
+        βs_use = _ab_betas(ks)
+        Δu = zero(u_cur)
+        for i in 1:ks
+            Δu = @.. broadcast = false Δu + h * βs_use[i] * F_history[i]
+        end
+        u_cur = @.. broadcast = false u_cur + Δu
+    end
+
+    integrator.u = u_cur
+
+    if integrator.opts.adaptive && k >= 2
+        # Embedded estimate: last-substep AB-k vs AB-(k-1).
+        βs_low = _ab_betas(k - 1)
+        Δu_hi = zero(u_cur)
+        for i in 1:k
+            Δu_hi = @.. broadcast = false Δu_hi + h * βs[i] * F_history[i]
+        end
+        Δu_lo = zero(u_cur)
+        for i in 1:(k - 1)
+            Δu_lo = @.. broadcast = false Δu_lo + h * βs_low[i] * F_history[i]
+        end
+        utilde = @.. broadcast = false Δu_hi - Δu_lo
+        atmp = calculate_residuals(
+            utilde, uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+end
