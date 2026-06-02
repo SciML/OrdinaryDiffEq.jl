@@ -21,6 +21,10 @@ struct NystromVITableau{T, T2}
     bptilde::Vector{T}
     c::Vector{T2}
     pos_only_error::Bool
+    # Length of integrator.k slot used by the dense-output interpolant.
+    # 2 for Hermite (standard); methods with custom continuous output (e.g. DPRKN6)
+    # use 3 to cache the extra stage derivatives.
+    kshortsize::Int
 end
 
 function DPRKN4Tableau(T::Type, T2::Type)
@@ -39,7 +43,7 @@ function DPRKN4Tableau(T::Type, T2::Type)
         convert(T, 250 // 567 - 275 // 189), convert(T, 5 // 54 + 1 // 3),
     ]
     c = T2[convert(T2, 1 // 4), convert(T2, 7 // 10), one(T2)]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function DPRKN5Tableau(T::Type, T2::Type)
@@ -71,7 +75,7 @@ function DPRKN5Tableau(T::Type, T2::Type)
         convert(T2, 1 // 8), convert(T2, 1 // 4), convert(T2, 1 // 2),
         convert(T2, 3 // 4), one(T2),
     ]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function DPRKN6FMTableau(T::Type, T2::Type)
@@ -105,7 +109,7 @@ function DPRKN6FMTableau(T::Type, T2::Type)
         convert(T2, 1 // 10), convert(T2, 3 // 10), convert(T2, 7 // 10),
         convert(T2, 17 // 25), one(T2),
     ]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function DPRKN8Tableau(T::Type, T2::Type)
@@ -156,7 +160,7 @@ function DPRKN8Tableau(T::Type, T2::Type)
         convert(T2, 1 // 20), convert(T2, 1 // 10), convert(T2, 3 // 10), convert(T2, 1 // 2),
         convert(T2, 7 // 10), convert(T2, 9 // 10), one(T2), one(T2),
     ]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function DPRKN12Tableau(T::Type, T2::Type)
@@ -545,7 +549,7 @@ function DPRKN12Tableau(T::Type, T2::Type)
         convert(T2, 1 // 2), convert(T2, 5 // 9), convert(T2, 3 // 4),
         convert(T2, 6 // 7), convert(T2, 8437 // 8926), one(T2), one(T2),
     ]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function ERKN4Tableau(T::Type, T2::Type)
@@ -564,7 +568,7 @@ function ERKN4Tableau(T::Type, T2::Type)
         convert(T, 250 // 567 - 925 // 2079), convert(T, 5 // 54 - 1 // 11),
     ]
     c = T2[convert(T2, 1 // 4), convert(T2, 7 // 10), one(T2)]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function ERKN5Tableau(T::Type, T2::Type)
@@ -590,7 +594,7 @@ function ERKN5Tableau(T::Type, T2::Type)
     ]
     bptilde = T[]
     c = T2[convert(T2, 1 // 2), convert(T2, 19 // 70), convert(T2, 44 // 51)]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, true)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, true, 2)
 end
 
 function ERKN7Tableau(T::Type, T2::Type)
@@ -637,7 +641,7 @@ function ERKN7Tableau(T::Type, T2::Type)
         convert(T2, 151401202 // 200292705), convert(T2, 682035803 // 631524599),
         convert(T2, 493263404 // 781610081), one(T2),
     ]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function Nystrom5VelocityIndependentTableau(T::Type, T2::Type)
@@ -650,7 +654,7 @@ function Nystrom5VelocityIndependentTableau(T::Type, T2::Type)
     btilde = T[]
     bptilde = T[]
     c = T2[convert(T2, 1 // 5), convert(T2, 2 // 3), one(T2)]
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 """
@@ -693,7 +697,7 @@ function Nystrom4VelocityIndependentTableau(T::Type, T2::Type)
     btilde = T[]  # non-adaptive
     bptilde = T[]
     c = [convert(T2, 1 // 2), one(T2)]  # c for stages 2,3
-    return NystromVITableau(a, b, bp, btilde, bptilde, c, false)
+    return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
 function RKN4Tableau(T::Type, T2::Type)
@@ -925,6 +929,9 @@ struct DPRKN6Tableau{T, T2}
     # of bᵢ(Θ) (resp. bpᵢ(Θ)). Row 2 is unused (k₂ does not enter the interpolant).
     R::Matrix{T}
     Rp::Matrix{T}
+    # See NystromVITableau.kshortsize. DPRKN6 uses 3 to cache stage derivatives for
+    # its specialized 6th-order interpolant.
+    kshortsize::Int
 end
 
 function DPRKN6Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -1175,5 +1182,5 @@ function _assemble_dprkn6_tableau(
         z    rp51 rp52 rp53 rp54
         z    rp61 rp62 rp63 rp64
     ]
-    return DPRKN6Tableau(a, b, bp, btilde, bptilde, c, false, R, Rp)
+    return DPRKN6Tableau(a, b, bp, btilde, bptilde, c, false, R, Rp, 3)
 end

@@ -253,9 +253,8 @@ end
 
 # Dense-output bookkeeping for velocity-independent methods. Standard methods use
 # 2-point Hermite (fsalfirst/fsallast); DPRKN6 stores its six stage derivatives for
-# its specialized "free" 6th-order interpolant (see interpolants.jl).
-_rkn_kshortsize(::Any) = 2
-_rkn_kshortsize(::DPRKN6Tableau) = 3
+# its specialized "free" 6th-order interpolant (see interpolants.jl). The required
+# `integrator.k` length lives on the tableau as `kshortsize`.
 
 # Constant cache: pack the just-computed stages `ks` (ks[1]=k1 … ks[6]=k6) into integrator.k.
 function _store_vi_k!(integrator, ::Any, ks)
@@ -272,16 +271,16 @@ end
 
 # Mutable cache: point integrator.k at the persistent stage buffers so the interpolant
 # sees the current stages without re-storing each step.
-function _init_vi_k_mut!(integrator, cache, ::Any)
-    integrator.kshortsize = 2
-    resize!(integrator.k, 2)
+function _init_vi_k_mut!(integrator, cache, tab::Any)
+    integrator.kshortsize = tab.kshortsize
+    resize!(integrator.k, tab.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     return
 end
-function _init_vi_k_mut!(integrator, cache, ::DPRKN6Tableau)
-    integrator.kshortsize = 3
-    resize!(integrator.k, 3)
+function _init_vi_k_mut!(integrator, cache, tab::DPRKN6Tableau)
+    integrator.kshortsize = tab.kshortsize
+    resize!(integrator.k, tab.kshortsize)
     integrator.k[1] = ArrayPartition(integrator.fsalfirst.x[1], cache.ks[1])
     integrator.k[2] = ArrayPartition(cache.ks[2], cache.ks[3])
     integrator.k[3] = ArrayPartition(cache.ks[4], cache.ks[5])
@@ -289,7 +288,7 @@ function _init_vi_k_mut!(integrator, cache, ::DPRKN6Tableau)
 end
 
 function initialize!(integrator, cache::NystromVIConstantCache)
-    integrator.kshortsize = _rkn_kshortsize(cache.tab)
+    integrator.kshortsize = cache.tab.kshortsize
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     duprev, uprev = integrator.uprev.x
     kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
