@@ -56,7 +56,7 @@ user-constructed `IController()` falls back to the generic defaults
 the per-algorithm step-size knobs that used to live on the
 `OrdinaryDiffEq` algorithm structs themselves.
 """
-struct CommonControllerOptions{T}
+struct CommonControllerOptions{T, NLPType}
     qmin::T
     qmax::T
     qmax_first_step::T
@@ -65,7 +65,9 @@ struct CommonControllerOptions{T}
     qsteady_max::T
     failfactor::T
     discontinuity_detection::Bool
+    disco_probs::Vector{NLPType}
 end
+
 
 # Step-size knobs need to hold rational defaults like `1//5`, so an integer
 # (when the user passed a plain `Int` like `qmax = 3`) is promoted to a
@@ -91,8 +93,9 @@ be re-resolved against a (possibly new) element type `QT` without going
 through the override mechanism — useful when a composite algorithm
 re-keys controller caches to a different scalar type.
 """
-function resolve_basic(overrides::NamedTuple, alg, ::Type{QT}) where {QT}
-    return CommonControllerOptions{QT}(
+function resolve_basic(overrides::NamedTuple, alg, ::Type{QT};
+        disco_probs = IntervalNonlinearProblem[]) where {QT}
+    return CommonControllerOptions{QT, eltype(disco_probs)}(
         QT(_override_or_default(overrides, Val(:qmin), qmin_default(alg))),
         QT(_override_or_default(overrides, Val(:qmax), qmax_default(alg))),
         QT(_override_or_default(overrides, Val(:qmax_first_step), qmax_first_step_default(alg))),
@@ -100,7 +103,8 @@ function resolve_basic(overrides::NamedTuple, alg, ::Type{QT}) where {QT}
         QT(_override_or_default(overrides, Val(:qsteady_min), qsteady_min_default(alg))),
         QT(_override_or_default(overrides, Val(:qsteady_max), qsteady_max_default(alg))),
         QT(_override_or_default(overrides, Val(:failfactor), failfactor_default(alg))),
-        Bool(_override_or_default(overrides, Val(:discontinuity_detection), false))
+        Bool(_override_or_default(overrides, Val(:discontinuity_detection), false)),
+        disco_probs
     )
 end
 
@@ -112,11 +116,12 @@ end
     return v === nothing ? default : v
 end
 
-function resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT}) where {QT}
-    return CommonControllerOptions{QT}(
+function resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT};
+        disco_probs = opts.disco_probs) where {QT}
+    return CommonControllerOptions{QT, eltype(disco_probs)}(
         QT(opts.qmin), QT(opts.qmax), QT(opts.qmax_first_step),
         QT(opts.gamma), QT(opts.qsteady_min), QT(opts.qsteady_max),
-        QT(opts.failfactor), opts.discontinuity_detection
+        QT(opts.failfactor), opts.discontinuity_detection, disco_probs
     )
 end
 
@@ -180,10 +185,12 @@ the returned cache (matches what used to live on `get_EEst(integrator)`).
 """
 setup_controller_cache
 
-# Back-compat dispatch for any 3-arg implementation still in the ecosystem.
-# New code should pass the `EEstT` type parameter explicitly.
+# Back-compat dispatch for any 3-arg or 4-arg implementation still in the ecosystem.
+# New code should pass the `EEstT` type parameter and `disco_probs` explicitly.
 setup_controller_cache(alg, cache, controller::AbstractController) =
-    setup_controller_cache(alg, cache, controller, Float64)
+    setup_controller_cache(alg, cache, controller, Float64, IntervalNonlinearProblem[])
+setup_controller_cache(alg, cache, controller::AbstractController, ::Type{E}) where {E} =
+    setup_controller_cache(alg, cache, controller, E, IntervalNonlinearProblem[])
 
 """
     accept_step_controller(integrator, alg)::Bool
@@ -425,15 +432,16 @@ discontinuity detection to predict the best next timestep after step rejection.
 Otherwise, it follows the default step rejection algorithm. This feature is currently
 defaulted off. 
 """
-mutable struct DummyControllerCache{T, C} <: AbstractControllerCache
+mutable struct DummyControllerCache{T, C, NLPType} <: AbstractControllerCache
     EEst::T
     cache::C
     discontinuity_detection::Bool
+    disco_probs::Vector{NLPType}
 end
 
-function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}) where {E}
+function setup_controller_cache(alg, cache, controller::DummyController, ::Type{E}, disco_probs) where {E}
     discontinuity_detection = false
-    return DummyControllerCache{E, typeof(cache)}(oneunit(E), cache, discontinuity_detection)
+    return DummyControllerCache{E, typeof(cache), eltype(disco_probs)}(oneunit(E), cache, discontinuity_detection, disco_probs)
 end
 
 # Algorithms with integrated controllers (BDF, Nordsieck, …) only define their
@@ -523,17 +531,17 @@ IController(alg; kwargs...) = IController(Float64, alg; kwargs...)
 IController(::Type{QT}, alg; kwargs...) where {QT} =
     IController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct IControllerCache{T, E} <: AbstractControllerCache
-    controller::IController{CommonControllerOptions{T}}
+mutable struct IControllerCache{T, E, NLPType} <: AbstractControllerCache
+    controller::IController{CommonControllerOptions{T, NLPType}}
     dtreject::T
     EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::IController, ::Type{E}) where {E}
+function setup_controller_cache(alg, cache, controller::IController, ::Type{E}, disco_probs) where {E}
     QT = _resolved_QT(controller.basic)
-    resolved = IController(resolve_basic(controller.basic, alg, QT))
+    resolved = IController(resolve_basic(controller.basic, alg, QT; disco_probs))
     T = QT
-    return IControllerCache{T, E}(resolved, T(1 // 10^4), oneunit(E))
+    return IControllerCache{T, E, eltype(disco_probs)}(resolved, T(1 // 10^4), oneunit(E))
 end
 
 @inline function stepsize_controller!(integrator, cache::IControllerCache, alg)
@@ -655,8 +663,8 @@ function PIController(
     return PIController{typeof(basic), QT}(basic, QT(beta1), QT(beta2), QT(qoldinit))
 end
 
-mutable struct PIControllerCache{T, E} <: AbstractControllerCache
-    controller::PIController{CommonControllerOptions{T}, T}
+mutable struct PIControllerCache{T, E, NLPType} <: AbstractControllerCache
+    controller::PIController{CommonControllerOptions{T, NLPType}, T}
     # Cached εₙ₊₁^β₁
     q11::T
     # Previous EEst
@@ -664,13 +672,13 @@ mutable struct PIControllerCache{T, E} <: AbstractControllerCache
     EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::PIController, ::Type{E}) where {E}
+function setup_controller_cache(alg, cache, controller::PIController, ::Type{E}, disco_probs) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIController{typeof(basic), QT}(
         basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit))
     T = QT
-    return PIControllerCache{T, E}(
+    return PIControllerCache{T, E, eltype(disco_probs)}(
         resolved, one(T), T(resolved.qoldinit), oneunit(E),
     )
 end
@@ -858,8 +866,8 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
-mutable struct PIDControllerCache{T, Limiter, E} <: AbstractControllerCache
-    controller::PIDController{CommonControllerOptions{T}, T, Limiter}
+mutable struct PIDControllerCache{T, Limiter, E, NLPType} <: AbstractControllerCache
+    controller::PIDController{CommonControllerOptions{T, NLPType}, T, Limiter}
     err::Vector{T} # history of the error estimates
     dt_factor::T
     EEst::E
@@ -871,14 +879,14 @@ function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDContro
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PIDController, ::Type{E}) where {E}
+function setup_controller_cache(alg, cache, controller::PIDController, ::Type{E}, disco_probs) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIDController{typeof(basic), QT, typeof(controller.limiter)}(
         basic, map(QT, controller.beta), QT(controller.accept_safety), controller.limiter,
     )
     err = ones(QT, 3)
-    return PIDControllerCache{QT, typeof(controller.limiter), E}(
+    return PIDControllerCache{QT, typeof(controller.limiter), E, eltype(disco_probs)}(
         resolved, err, one(QT), oneunit(E),
     )
 end
@@ -1034,8 +1042,8 @@ PredictiveController(alg; kwargs...) = PredictiveController(Float64, alg; kwargs
 PredictiveController(::Type{QT}, alg; kwargs...) where {QT} =
     PredictiveController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct PredictiveControllerCache{T, E} <: AbstractControllerCache
-    controller::PredictiveController{CommonControllerOptions{T}}
+mutable struct PredictiveControllerCache{T, E, NLPType} <: AbstractControllerCache
+    controller::PredictiveController{CommonControllerOptions{T, NLPType}}
     dtacc::T
     erracc::T
     qold::T
@@ -1056,12 +1064,12 @@ function sync_controllers!(cache1::PredictiveControllerCache, cache2::Predictive
     return nothing
 end
 
-function setup_controller_cache(alg, cache, controller::PredictiveController, ::Type{E}) where {E}
+function setup_controller_cache(alg, cache, controller::PredictiveController, ::Type{E}, disco_probs) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PredictiveController(basic)
     T = QT
-    return PredictiveControllerCache{T, E}(
+    return PredictiveControllerCache{T, E, eltype(disco_probs)}(
         resolved, one(T), one(T), one(T), oneunit(E),
     )
 end
@@ -1150,8 +1158,8 @@ mutable struct CompositeControllerCache{T, E} <: AbstractControllerCache
     EEst::E
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController, ::Type{E}) where {E}
-    sub = map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller, E), alg.algs, caches.caches, cc.controllers)
+function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache, cc::CompositeController, ::Type{E}, disco_probs) where {E}
+    sub = map((alg, cache, controller) -> setup_controller_cache(alg, cache, controller, E, disco_probs), alg.algs, caches.caches, cc.controllers)
     return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
@@ -1211,14 +1219,14 @@ for accessor in (
     end
 end
 
-function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController, ::Type{E}) where {E}
+function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, controller::CompositeController, ::Type{E}, disco_probs) where {E}
     sub = (
-        setup_controller_cache(alg.algs[1], caches, controller.controllers[1], E),
-        setup_controller_cache(alg.algs[2], caches, controller.controllers[2], E),
-        setup_controller_cache(alg.algs[3], caches, controller.controllers[3], E),
-        setup_controller_cache(alg.algs[4], caches, controller.controllers[4], E),
-        setup_controller_cache(alg.algs[5], caches, controller.controllers[5], E),
-        setup_controller_cache(alg.algs[6], caches, controller.controllers[6], E),
+        setup_controller_cache(alg.algs[1], caches, controller.controllers[1], E, disco_probs),
+        setup_controller_cache(alg.algs[2], caches, controller.controllers[2], E, disco_probs),
+        setup_controller_cache(alg.algs[3], caches, controller.controllers[3], E, disco_probs),
+        setup_controller_cache(alg.algs[4], caches, controller.controllers[4], E, disco_probs),
+        setup_controller_cache(alg.algs[5], caches, controller.controllers[5], E, disco_probs),
+        setup_controller_cache(alg.algs[6], caches, controller.controllers[6], E, disco_probs),
     )
     return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end

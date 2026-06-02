@@ -132,7 +132,6 @@ Base.@constprop :aggressive function _ode_init(
         alias = ODEAliasSpecifier(),
         initializealg = DefaultInit(),
         rng = nothing,
-        disco_probs = nothing,
         # SDE/RODE fields: accepted here so that SDE packages can delegate to
         # _ode_init and construct an ODEIntegrator with noise populated.
         save_noise = false,
@@ -535,8 +534,6 @@ Base.@constprop :aggressive function _ode_init(
         typeof(internalnorm(u, t))
     end
 
-    controller_cache = setup_controller_cache(_alg, cache, controller, EEstT)
-
     save_end_user = save_end
     save_end = save_end === nothing ?
         save_everystep || isempty(saveat) || saveat isa Number ||
@@ -689,6 +686,8 @@ Base.@constprop :aggressive function _ode_init(
         disco_probs = convert(Vector{typeof(disco_probs[1])}, disco_probs)
     end
 
+    controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
+
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
@@ -703,7 +702,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants), eltype(disco_probs)
+        typeof(noise), typeof(c), typeof(rate_constants)
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,
@@ -722,7 +721,6 @@ Base.@constprop :aggressive function _ode_init(
         isout, reeval_fsal,
         derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng, disco_probs,
         W, P, sqdt,
         noise, c, rate_constants
     )

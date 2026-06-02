@@ -7,6 +7,10 @@ function set_discontinuity(u, uprev, integrator)
     return -one(dt)
 end
 
+get_disco_probs(cache::AbstractControllerCache) = cache.controller.basic.disco_probs
+get_disco_probs(cache::DummyControllerCache) = cache.disco_probs
+get_disco_probs(cache::CompositeControllerCache) = get_disco_probs(first(cache.caches))
+
 function find_discontinuity(u, uprev, integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
@@ -16,12 +20,12 @@ function find_discontinuity(u, uprev, integrator)
     t = integrator.t
     k = integrator.k
     breakpointθ = -one(dt)
-    idx = 1
-    for i in cb.continuous_callbacks
+    disco_probs = get_disco_probs(integrator.controller_cache)
+    for (idx, i) in enumerate(cb.continuous_callbacks)
         if (!(i.maybe_discontinuity))
             continue
         end
-        disco_prob = integrator.disco_probs[idx]
+        disco_prob = disco_probs[idx]
         disco_zero = disco_prob.f.f.obj.x
         disco_zero.dt = dt
         disco_zero.uprev = uprev
@@ -54,7 +58,6 @@ function find_discontinuity(u, uprev, integrator)
                 end
             end
         end
-        idx += 1
     end
     breakpointθ
 end

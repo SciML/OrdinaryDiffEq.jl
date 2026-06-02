@@ -20,19 +20,19 @@ BDFController(alg; kwargs...) = BDFController(Float64, alg; kwargs...)
 BDFController(::Type{QT}, alg; kwargs...) where {QT} =
     BDFController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct BDFControllerCache{T, E, C} <: AbstractControllerCache
-    controller::BDFController{CommonControllerOptions{T}}
+mutable struct BDFControllerCache{T, E, C, NLPType} <: AbstractControllerCache
+    controller::BDFController{CommonControllerOptions{T, NLPType}}
     cache::C
     EEst::E
 end
 
 function setup_controller_cache(
-        alg::Union{QNDF, FBDF, DFBDF}, cache, controller::BDFController, ::Type{E},
+        alg::Union{QNDF, FBDF, DFBDF}, cache, controller::BDFController, ::Type{E}, disco_probs
     ) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = BDFController(basic)
-    return BDFControllerCache{QT, E, typeof(cache)}(resolved, cache, oneunit(E))
+    return BDFControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(resolved, cache, oneunit(E))
 end
 
 # The BDF stepsize/accept/reject logic lives at the algorithm level — the
@@ -166,14 +166,11 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     cache.nconsteps = 0
 
     controller_cache = integrator.controller_cache
-    discontinuity_detection = false
-    if controller_cache isa OrdinaryDiffEqCore.DummyControllerCache
-        discontinuity_detection = controller_cache.discontinuity_detection
-    elseif controller_cache isa OrdinaryDiffEqCore.CompositeControllerCache
+    discontinuity_detection = if controller_cache isa OrdinaryDiffEqCore.CompositeControllerCache
         current_idx = integrator.cache.current
-        discontinuity_detection = controller_cache.caches[current_idx].controller.basic.discontinuity_detection
+        controller_cache.caches[current_idx].controller.basic.discontinuity_detection
     else
-        discontinuity_detection = controller_cache.controller.basic.discontinuity_detection
+        controller_cache.controller.basic.discontinuity_detection
     end
 
     if discontinuity_detection
