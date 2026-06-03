@@ -161,3 +161,49 @@ end
     prob = ODEProblem(simple!, u0, tspan; invalid_kwarg = "should error")
     @test_throws SciMLBase.CommonKwargError sol = solve(prob, Tsit5())
 end
+
+@testset "derivative_discontinuity! sticky-on-true across callbacks" begin
+    # When several callbacks fire on the same step, a derivative discontinuity
+    # flagged by *any* callback must survive, regardless of evaluation order and
+    # regardless of other callbacks declaring no discontinuity. The integrator
+    # field is sticky-on-true within a step; an explicit `false` only sticks when
+    # no callback flagged `true`. If no callback calls the setter at all, the
+    # safe default (treat as discontinuity) is preserved.
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+
+    flag_true = DiscreteCallback(
+        (u, t, integ) -> true,
+        integ -> derivative_discontinuity!(integ, true)
+    )
+    flag_false = DiscreteCallback(
+        (u, t, integ) -> true,
+        integ -> derivative_discontinuity!(integ, false)
+    )
+    silent = DiscreteCallback((u, t, integ) -> true, integ -> nothing)
+
+    # Helper: step once and read the post-callback step-level state.
+    function step_flags(cbset)
+        integ = init(prob, Tsit5(); callback = cbset)
+        step!(integ)
+        return integ.derivative_discontinuity, integ.user_set_discontinuity
+    end
+
+    # true wins regardless of order
+    @test step_flags(CallbackSet(flag_true, flag_false)) == (true, true)
+    @test step_flags(CallbackSet(flag_false, flag_true)) == (true, true)
+
+    # all-false: explicit false sticks, no recomputation flagged
+    @test step_flags(CallbackSet(flag_false, flag_false)) == (false, true)
+
+    # no setter call at all: safe default keeps discontinuity, marked unset
+    @test step_flags(CallbackSet(silent)) == (true, false)
+
+    # a silent callback does not suppress another callback's explicit false
+    @test step_flags(CallbackSet(silent, flag_false)) == (true, true)
+
+    # full solves complete in both orders
+    @test solve(prob, Tsit5(); callback = CallbackSet(flag_true, flag_false)).retcode ==
+        ReturnCode.Success
+    @test solve(prob, Tsit5(); callback = CallbackSet(flag_false, flag_true)).retcode ==
+        ReturnCode.Success
+end
