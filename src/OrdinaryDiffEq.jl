@@ -25,6 +25,8 @@ using SciMLBase: SciMLBase,
     remake, successful_retcode, reinit!,
     derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 
+using SciMLLogging: SciMLLogging
+
 # Import ADTypes for autodiff specification
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
