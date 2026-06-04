@@ -94,24 +94,17 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
         end
     end
 
-    # Embedded error estimate: last-substep AB-k vs AB-(k-1).
+    # Embedded error estimate: last-substep AB-k vs AB-(k-1). Both share the same
+    # F_history, so the difference collapses into a single linear combination:
+    #   utilde = h * Σᵢ (βs[i] - βs_low[i]) * F[i]   for i in 1:(k-1)
+    #          + h * βs[k] * F[k]                    (extra term in AB-k)
     return if integrator.opts.adaptive && k >= 2
-        # Reconstruct the AB-(k-1) update for the last substep using current history.
         βs_low = _ab_betas(k - 1)
-        @.. broadcast = false tmp = zero(tmp)
-        for i in 1:(k - 1)
-            β = βs_low[i]
-            Fi = F_history[i]
-            @.. broadcast = false tmp = tmp + h * β * Fi
+        @.. broadcast = false tmp = h * (βs[1] - βs_low[1]) * F_history[1]
+        for i in 2:(k - 1)
+            @.. broadcast = false tmp = tmp + h * (βs[i] - βs_low[i]) * F_history[i]
         end
-        # Difference: (AB-k contribution) - (AB-(k-1) contribution) on last substep.
-        @.. broadcast = false k_fast = zero(k_fast)
-        for i in 1:k
-            β = βs[i]
-            Fi = F_history[i]
-            @.. broadcast = false k_fast = k_fast + h * β * Fi
-        end
-        @.. broadcast = false tmp = k_fast - tmp
+        @.. broadcast = false tmp = tmp + h * βs[k] * F_history[k]
         calculate_residuals!(
             atmp, tmp, uprev, u,
             integrator.opts.abstol, integrator.opts.reltol,
@@ -164,17 +157,13 @@ end
     integrator.u = u_cur
 
     if integrator.opts.adaptive && k >= 2
-        # Embedded estimate: last-substep AB-k vs AB-(k-1).
+        # See IIP path: utilde = h * Σᵢ (βs - βs_low) * F + h * βs[k] * F[k].
         βs_low = _ab_betas(k - 1)
-        Δu_hi = zero(u_cur)
-        for i in 1:k
-            Δu_hi = @.. broadcast = false Δu_hi + h * βs[i] * F_history[i]
+        utilde = @.. broadcast = false h * (βs[1] - βs_low[1]) * F_history[1]
+        for i in 2:(k - 1)
+            utilde = @.. broadcast = false utilde + h * (βs[i] - βs_low[i]) * F_history[i]
         end
-        Δu_lo = zero(u_cur)
-        for i in 1:(k - 1)
-            Δu_lo = @.. broadcast = false Δu_lo + h * βs_low[i] * F_history[i]
-        end
-        utilde = @.. broadcast = false Δu_hi - Δu_lo
+        utilde = @.. broadcast = false utilde + h * βs[k] * F_history[k]
         atmp = calculate_residuals(
             utilde, uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,
