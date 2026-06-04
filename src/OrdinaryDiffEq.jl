@@ -19,7 +19,7 @@ using SciMLBase: SciMLBase,
     ODEProblem, ODEFunction, ODESolution,
     SplitODEProblem, SplitFunction,
     SecondOrderODEProblem, DynamicalODEProblem,
-    DAEProblem, DAEFunction, DAESolution, EnsembleProblem
+    DAEProblem, DAEFunction, DAESolution, EnsembleProblem,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
     remake, successful_retcode, reinit!,
