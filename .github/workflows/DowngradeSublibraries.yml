@@ -25,14 +25,8 @@ jobs:
       group-env-name: "ODEDIFFEQ_TEST_GROUP"
       group-env-value: "Core"
       allow-reresolve: true
-      projects: >-
-        lib/ImplicitDiscreteSolve lib/OrdinaryDiffEqAdamsBashforthMoulton lib/OrdinaryDiffEqBDF
-        lib/OrdinaryDiffEqCore lib/OrdinaryDiffEqDefault lib/OrdinaryDiffEqDifferentiation
-        lib/OrdinaryDiffEqExplicitRK lib/OrdinaryDiffEqExponentialRK lib/OrdinaryDiffEqExtrapolation
-        lib/OrdinaryDiffEqFIRK lib/OrdinaryDiffEqFeagin lib/OrdinaryDiffEqFunctionMap
-        lib/OrdinaryDiffEqHighOrderRK lib/OrdinaryDiffEqIMEXMultistep lib/OrdinaryDiffEqLinear
-        lib/OrdinaryDiffEqLowOrderRK lib/OrdinaryDiffEqNonlinearSolve lib/OrdinaryDiffEqNordsieck
-        lib/OrdinaryDiffEqPDIRK lib/OrdinaryDiffEqPRK lib/OrdinaryDiffEqQPRK
-        lib/OrdinaryDiffEqRosenbrock lib/OrdinaryDiffEqSDIRK lib/OrdinaryDiffEqStabilizedIRK
-        lib/OrdinaryDiffEqStabilizedRK lib/OrdinaryDiffEqSymplecticRK lib/OrdinaryDiffEqTaylorSeries
-        lib/OrdinaryDiffEqTsit5 lib/OrdinaryDiffEqVerner lib/SimpleImplicitDiscreteSolve
+      # All lib/* sublibraries are downgrade-tested (projects auto-discovered).
+      # Only these stay excluded: their test failures are documented as
+      # unrelated to downgrade bounds (VectorOfArray/StructArray incompat and
+      # FineRKN4/DPRKN4 convergence-order), so they'd be false reds here.
+      exclude: "OrdinaryDiffEqLowStorageRK OrdinaryDiffEqRKN OrdinaryDiffEqSSPRK"
