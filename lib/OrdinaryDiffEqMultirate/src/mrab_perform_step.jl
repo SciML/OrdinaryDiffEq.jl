@@ -50,12 +50,7 @@ function initialize!(integrator, cache::MRABConstantCache)
 end
 
 # ── MRAB perform_step! (in-place, MutableCache) ───────────────────────────────
-#
-# One macro step from t to t+dt with m fast substeps of length h = dt/m.
-# Slow rate f2 is evaluated once per macro step and held frozen across the m
-# fast substeps. The combined effective rate F = f1(u, t_fast) + f2_frozen is
-# advanced with explicit AB-k. Within-step history bootstrap: substep ℓ uses
-# AB-min(ℓ, k) (i.e., Euler on substep 1, AB2 on substep 2, …).
+# Substep ℓ bootstraps with AB-min(ℓ, k) before the history reaches k samples.
 
 function perform_step!(integrator, cache::MRABCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
@@ -76,9 +71,7 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
         f.f1(k_fast, u, p, t_fast)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-        # Push F = f1 + f2_frozen onto history ring (newest at index 1).
         @.. broadcast = false F_history[min(n_hist + 1, k)] = k_fast + k_slow
-        # Rotate older entries down (so index 1 stays newest after we grow).
         for j in min(n_hist + 1, k):-1:2
             F_history[j], F_history[j - 1] = F_history[j - 1], F_history[j]
         end
@@ -86,7 +79,6 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
 
         ks = min(ℓ, k)
         βs_use = _ab_betas(ks)
-        # u <- u + h * Σ_{i=1}^ks βs_use[i] * F_history[i]
         for i in 1:ks
             β = βs_use[i]
             Fi = F_history[i]
@@ -94,10 +86,7 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
         end
     end
 
-    # Embedded error estimate: last-substep AB-k vs AB-(k-1). Both share the same
-    # F_history, so the difference collapses into a single linear combination:
-    #   utilde = h * Σᵢ (βs[i] - βs_low[i]) * F[i]   for i in 1:(k-1)
-    #          + h * βs[k] * F[k]                    (extra term in AB-k)
+    # Error estimate (AB-k − AB-(k-1)) folds into one linear combination over F_history.
     return if integrator.opts.adaptive && k >= 2
         βs_low = _ab_betas(k - 1)
         @.. broadcast = false tmp = h * (βs[1] - βs_low[1]) * F_history[1]
@@ -128,7 +117,6 @@ end
     k_slow = f.f2(u_cur, p, t)
     integrator.stats.nf2 += 1
 
-    # History as a Vector of rate samples, newest at index 1.
     F_history = Vector{typeof(k_slow)}(undef, k)
     n_hist = 0
 
@@ -138,7 +126,6 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         F = k_fast + k_slow
-        # Insert at front, shift older down.
         n_hist = min(n_hist + 1, k)
         for j in n_hist:-1:2
             F_history[j] = F_history[j - 1]
@@ -157,7 +144,6 @@ end
     integrator.u = u_cur
 
     if integrator.opts.adaptive && k >= 2
-        # See IIP path: utilde = h * Σᵢ (βs - βs_low) * F + h * βs[k] * F[k].
         βs_low = _ab_betas(k - 1)
         utilde = @.. broadcast = false h * (βs[1] - βs_low[1]) * F_history[1]
         for i in 2:(k - 1)
