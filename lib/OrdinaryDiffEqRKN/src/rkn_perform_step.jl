@@ -451,67 +451,67 @@ end
 
     # ---------------- Stages 2..nstages (explicit ladder; ks[i-1] holds the i-th stage) ----------------
     if nstages >= 2
-        @.. broadcast=false ku = uprev + dt * (c[1] * duprev + dt * (a[2, 1] * k1))
+        @.. broadcast = false ku = uprev + dt * (c[1] * duprev + dt * (a[2, 1] * k1))
         f.f1(ks[1], duprev, ku, p, t + dt * c[1])
     end
     if nstages >= 3
-        @.. broadcast=false ku = uprev + dt * (c[2] * duprev + dt * (a[3, 1] * k1 + a[3, 2] * ks[1]))
+        @.. broadcast = false ku = uprev + dt * (c[2] * duprev + dt * (a[3, 1] * k1 + a[3, 2] * ks[1]))
         f.f1(ks[2], duprev, ku, p, t + dt * c[2])
     end
     if nstages >= 4
-        @.. broadcast=false ku = uprev + dt * (c[3] * duprev + dt * (a[4, 1] * k1 + a[4, 2] * ks[1] + a[4, 3] * ks[2]))
+        @.. broadcast = false ku = uprev + dt * (c[3] * duprev + dt * (a[4, 1] * k1 + a[4, 2] * ks[1] + a[4, 3] * ks[2]))
         f.f1(ks[3], duprev, ku, p, t + dt * c[3])
     end
     if nstages >= 5
-        @.. broadcast=false ku = uprev + dt * (c[4] * duprev + dt * (a[5, 1] * k1 + a[5, 2] * ks[1] + a[5, 3] * ks[2] + a[5, 4] * ks[3]))
+        @.. broadcast = false ku = uprev + dt * (c[4] * duprev + dt * (a[5, 1] * k1 + a[5, 2] * ks[1] + a[5, 3] * ks[2] + a[5, 4] * ks[3]))
         f.f1(ks[4], duprev, ku, p, t + dt * c[4])
     end
     if nstages >= 6
-        @.. broadcast=false ku = uprev + dt * (c[5] * duprev + dt * (a[6, 1] * k1 + a[6, 2] * ks[1] + a[6, 3] * ks[2] + a[6, 4] * ks[3] + a[6, 5] * ks[4]))
+        @.. broadcast = false ku = uprev + dt * (c[5] * duprev + dt * (a[6, 1] * k1 + a[6, 2] * ks[1] + a[6, 3] * ks[2] + a[6, 4] * ks[3] + a[6, 5] * ks[4]))
         f.f1(ks[5], duprev, ku, p, t + dt * c[5])
     end
     if nstages >= 7
-        @.. broadcast=false ku = uprev + dt * (c[6] * duprev + dt * (a[7, 1] * k1 + a[7, 2] * ks[1] + a[7, 3] * ks[2] + a[7, 4] * ks[3] + a[7, 5] * ks[4] + a[7, 6] * ks[5]))
+        @.. broadcast = false ku = uprev + dt * (c[6] * duprev + dt * (a[7, 1] * k1 + a[7, 2] * ks[1] + a[7, 3] * ks[2] + a[7, 4] * ks[3] + a[7, 5] * ks[4] + a[7, 6] * ks[5]))
         f.f1(ks[6], duprev, ku, p, t + dt * c[6])
     end
     if nstages >= 8
-        @.. broadcast=false ku = uprev + dt * (c[7] * duprev + dt * (a[8, 1] * k1 + a[8, 2] * ks[1] + a[8, 3] * ks[2] + a[8, 4] * ks[3] + a[8, 5] * ks[4] + a[8, 6] * ks[5] + a[8, 7] * ks[6]))
+        @.. broadcast = false ku = uprev + dt * (c[7] * duprev + dt * (a[8, 1] * k1 + a[8, 2] * ks[1] + a[8, 3] * ks[2] + a[8, 4] * ks[3] + a[8, 5] * ks[4] + a[8, 6] * ks[5] + a[8, 7] * ks[6]))
         f.f1(ks[7], duprev, ku, p, t + dt * c[7])
     end
     if nstages >= 9
-        @.. broadcast=false ku = uprev + dt * (c[8] * duprev + dt * (a[9, 1] * k1 + a[9, 2] * ks[1] + a[9, 3] * ks[2] + a[9, 4] * ks[3] + a[9, 5] * ks[4] + a[9, 6] * ks[5] + a[9, 7] * ks[6] + a[9, 8] * ks[7]))
+        @.. broadcast = false ku = uprev + dt * (c[8] * duprev + dt * (a[9, 1] * k1 + a[9, 2] * ks[1] + a[9, 3] * ks[2] + a[9, 4] * ks[3] + a[9, 5] * ks[4] + a[9, 6] * ks[5] + a[9, 7] * ks[6] + a[9, 8] * ks[7]))
         f.f1(ks[8], duprev, ku, p, t + dt * c[8])
     end
     if nstages >= 10
-        @.. broadcast=false ku = uprev + dt * (c[9] * duprev + dt * (a[10, 1] * k1 + a[10, 2] * ks[1] + a[10, 3] * ks[2] + a[10, 4] * ks[3] + a[10, 5] * ks[4] + a[10, 6] * ks[5] + a[10, 7] * ks[6] + a[10, 8] * ks[7] + a[10, 9] * ks[8]))
+        @.. broadcast = false ku = uprev + dt * (c[9] * duprev + dt * (a[10, 1] * k1 + a[10, 2] * ks[1] + a[10, 3] * ks[2] + a[10, 4] * ks[3] + a[10, 5] * ks[4] + a[10, 6] * ks[5] + a[10, 7] * ks[6] + a[10, 8] * ks[7] + a[10, 9] * ks[8]))
         f.f1(ks[9], duprev, ku, p, t + dt * c[9])
     end
     if nstages >= 11
-        @.. broadcast=false ku = uprev + dt * (c[10] * duprev + dt * (a[11, 1] * k1 + a[11, 2] * ks[1] + a[11, 3] * ks[2] + a[11, 4] * ks[3] + a[11, 5] * ks[4] + a[11, 6] * ks[5] + a[11, 7] * ks[6] + a[11, 8] * ks[7] + a[11, 9] * ks[8] + a[11, 10] * ks[9]))
+        @.. broadcast = false ku = uprev + dt * (c[10] * duprev + dt * (a[11, 1] * k1 + a[11, 2] * ks[1] + a[11, 3] * ks[2] + a[11, 4] * ks[3] + a[11, 5] * ks[4] + a[11, 6] * ks[5] + a[11, 7] * ks[6] + a[11, 8] * ks[7] + a[11, 9] * ks[8] + a[11, 10] * ks[9]))
         f.f1(ks[10], duprev, ku, p, t + dt * c[10])
     end
     if nstages >= 12
-        @.. broadcast=false ku = uprev + dt * (c[11] * duprev + dt * (a[12, 1] * k1 + a[12, 2] * ks[1] + a[12, 3] * ks[2] + a[12, 4] * ks[3] + a[12, 5] * ks[4] + a[12, 6] * ks[5] + a[12, 7] * ks[6] + a[12, 8] * ks[7] + a[12, 9] * ks[8] + a[12, 10] * ks[9] + a[12, 11] * ks[10]))
+        @.. broadcast = false ku = uprev + dt * (c[11] * duprev + dt * (a[12, 1] * k1 + a[12, 2] * ks[1] + a[12, 3] * ks[2] + a[12, 4] * ks[3] + a[12, 5] * ks[4] + a[12, 6] * ks[5] + a[12, 7] * ks[6] + a[12, 8] * ks[7] + a[12, 9] * ks[8] + a[12, 10] * ks[9] + a[12, 11] * ks[10]))
         f.f1(ks[11], duprev, ku, p, t + dt * c[11])
     end
     if nstages >= 13
-        @.. broadcast=false ku = uprev + dt * (c[12] * duprev + dt * (a[13, 1] * k1 + a[13, 2] * ks[1] + a[13, 3] * ks[2] + a[13, 4] * ks[3] + a[13, 5] * ks[4] + a[13, 6] * ks[5] + a[13, 7] * ks[6] + a[13, 8] * ks[7] + a[13, 9] * ks[8] + a[13, 10] * ks[9] + a[13, 11] * ks[10] + a[13, 12] * ks[11]))
+        @.. broadcast = false ku = uprev + dt * (c[12] * duprev + dt * (a[13, 1] * k1 + a[13, 2] * ks[1] + a[13, 3] * ks[2] + a[13, 4] * ks[3] + a[13, 5] * ks[4] + a[13, 6] * ks[5] + a[13, 7] * ks[6] + a[13, 8] * ks[7] + a[13, 9] * ks[8] + a[13, 10] * ks[9] + a[13, 11] * ks[10] + a[13, 12] * ks[11]))
         f.f1(ks[12], duprev, ku, p, t + dt * c[12])
     end
     if nstages >= 14
-        @.. broadcast=false ku = uprev + dt * (c[13] * duprev + dt * (a[14, 1] * k1 + a[14, 2] * ks[1] + a[14, 3] * ks[2] + a[14, 4] * ks[3] + a[14, 5] * ks[4] + a[14, 6] * ks[5] + a[14, 7] * ks[6] + a[14, 8] * ks[7] + a[14, 9] * ks[8] + a[14, 10] * ks[9] + a[14, 11] * ks[10] + a[14, 12] * ks[11] + a[14, 13] * ks[12]))
+        @.. broadcast = false ku = uprev + dt * (c[13] * duprev + dt * (a[14, 1] * k1 + a[14, 2] * ks[1] + a[14, 3] * ks[2] + a[14, 4] * ks[3] + a[14, 5] * ks[4] + a[14, 6] * ks[5] + a[14, 7] * ks[6] + a[14, 8] * ks[7] + a[14, 9] * ks[8] + a[14, 10] * ks[9] + a[14, 11] * ks[10] + a[14, 12] * ks[11] + a[14, 13] * ks[12]))
         f.f1(ks[13], duprev, ku, p, t + dt * c[13])
     end
     if nstages >= 15
-        @.. broadcast=false ku = uprev + dt * (c[14] * duprev + dt * (a[15, 1] * k1 + a[15, 2] * ks[1] + a[15, 3] * ks[2] + a[15, 4] * ks[3] + a[15, 5] * ks[4] + a[15, 6] * ks[5] + a[15, 7] * ks[6] + a[15, 8] * ks[7] + a[15, 9] * ks[8] + a[15, 10] * ks[9] + a[15, 11] * ks[10] + a[15, 12] * ks[11] + a[15, 13] * ks[12] + a[15, 14] * ks[13]))
+        @.. broadcast = false ku = uprev + dt * (c[14] * duprev + dt * (a[15, 1] * k1 + a[15, 2] * ks[1] + a[15, 3] * ks[2] + a[15, 4] * ks[3] + a[15, 5] * ks[4] + a[15, 6] * ks[5] + a[15, 7] * ks[6] + a[15, 8] * ks[7] + a[15, 9] * ks[8] + a[15, 10] * ks[9] + a[15, 11] * ks[10] + a[15, 12] * ks[11] + a[15, 13] * ks[12] + a[15, 14] * ks[13]))
         f.f1(ks[14], duprev, ku, p, t + dt * c[14])
     end
     if nstages >= 16
-        @.. broadcast=false ku = uprev + dt * (c[15] * duprev + dt * (a[16, 1] * k1 + a[16, 2] * ks[1] + a[16, 3] * ks[2] + a[16, 4] * ks[3] + a[16, 5] * ks[4] + a[16, 6] * ks[5] + a[16, 7] * ks[6] + a[16, 8] * ks[7] + a[16, 9] * ks[8] + a[16, 10] * ks[9] + a[16, 11] * ks[10] + a[16, 12] * ks[11] + a[16, 13] * ks[12] + a[16, 14] * ks[13] + a[16, 15] * ks[14]))
+        @.. broadcast = false ku = uprev + dt * (c[15] * duprev + dt * (a[16, 1] * k1 + a[16, 2] * ks[1] + a[16, 3] * ks[2] + a[16, 4] * ks[3] + a[16, 5] * ks[4] + a[16, 6] * ks[5] + a[16, 7] * ks[6] + a[16, 8] * ks[7] + a[16, 9] * ks[8] + a[16, 10] * ks[9] + a[16, 11] * ks[10] + a[16, 12] * ks[11] + a[16, 13] * ks[12] + a[16, 14] * ks[13] + a[16, 15] * ks[14]))
         f.f1(ks[15], duprev, ku, p, t + dt * c[15])
     end
     if nstages >= 17
-        @.. broadcast=false ku = uprev + dt * (c[16] * duprev + dt * (a[17, 1] * k1 + a[17, 2] * ks[1] + a[17, 3] * ks[2] + a[17, 4] * ks[3] + a[17, 5] * ks[4] + a[17, 6] * ks[5] + a[17, 7] * ks[6] + a[17, 8] * ks[7] + a[17, 9] * ks[8] + a[17, 10] * ks[9] + a[17, 11] * ks[10] + a[17, 12] * ks[11] + a[17, 13] * ks[12] + a[17, 14] * ks[13] + a[17, 15] * ks[14] + a[17, 16] * ks[15]))
+        @.. broadcast = false ku = uprev + dt * (c[16] * duprev + dt * (a[17, 1] * k1 + a[17, 2] * ks[1] + a[17, 3] * ks[2] + a[17, 4] * ks[3] + a[17, 5] * ks[4] + a[17, 6] * ks[5] + a[17, 7] * ks[6] + a[17, 8] * ks[7] + a[17, 9] * ks[8] + a[17, 10] * ks[9] + a[17, 11] * ks[10] + a[17, 12] * ks[11] + a[17, 13] * ks[12] + a[17, 14] * ks[13] + a[17, 15] * ks[14] + a[17, 16] * ks[15]))
         f.f1(ks[16], duprev, ku, p, t + dt * c[16])
     end
 
@@ -624,120 +624,146 @@ end
     if nstages >= 4
         ku = uprev + dt * (c[3] * duprev + dt * (a[4, 1] * ks[1] + a[4, 2] * ks[2] + a[4, 3] * ks[3]))
         kdu = duprev +
-              dt * (abar[4, 1] * ks[1] + abar[4, 2] * ks[2] + abar[4, 3] * ks[3])
+            dt * (abar[4, 1] * ks[1] + abar[4, 2] * ks[2] + abar[4, 3] * ks[3])
         ks[4] = f.f1(kdu, ku, p, t + dt * c[3])
     end
     if nstages >= 5
         ku = uprev + dt * (c[4] * duprev + dt * (a[5, 1] * ks[1] + a[5, 2] * ks[2] + a[5, 3] * ks[3] + a[5, 4] * ks[4]))
         kdu = duprev +
-              dt * (abar[5, 1] * ks[1] + abar[5, 2] * ks[2] +
-                    abar[5, 3] * ks[3] + abar[5, 4] * ks[4])
+            dt * (
+            abar[5, 1] * ks[1] + abar[5, 2] * ks[2] +
+                abar[5, 3] * ks[3] + abar[5, 4] * ks[4]
+        )
         ks[5] = f.f1(kdu, ku, p, t + dt * c[4])
     end
     if nstages >= 6
         ku = uprev + dt * (c[5] * duprev + dt * (a[6, 1] * ks[1] + a[6, 2] * ks[2] + a[6, 3] * ks[3] + a[6, 4] * ks[4] + a[6, 5] * ks[5]))
         kdu = duprev +
-              dt * (abar[6, 1] * ks[1] + abar[6, 2] * ks[2] + abar[6, 3] * ks[3] +
-                    abar[6, 4] * ks[4] + abar[6, 5] * ks[5])
+            dt * (
+            abar[6, 1] * ks[1] + abar[6, 2] * ks[2] + abar[6, 3] * ks[3] +
+                abar[6, 4] * ks[4] + abar[6, 5] * ks[5]
+        )
         ks[6] = f.f1(kdu, ku, p, t + dt * c[5])
     end
     if nstages >= 7
         ku = uprev + dt * (c[6] * duprev + dt * (a[7, 1] * ks[1] + a[7, 2] * ks[2] + a[7, 3] * ks[3] + a[7, 4] * ks[4] + a[7, 5] * ks[5] + a[7, 6] * ks[6]))
         kdu = duprev +
-              dt * (abar[7, 1] * ks[1] + abar[7, 2] * ks[2] + abar[7, 3] * ks[3] +
-                    abar[7, 4] * ks[4] + abar[7, 5] * ks[5] + abar[7, 6] * ks[6])
+            dt * (
+            abar[7, 1] * ks[1] + abar[7, 2] * ks[2] + abar[7, 3] * ks[3] +
+                abar[7, 4] * ks[4] + abar[7, 5] * ks[5] + abar[7, 6] * ks[6]
+        )
         ks[7] = f.f1(kdu, ku, p, t + dt * c[6])
     end
     if nstages >= 8
         ku = uprev + dt * (c[7] * duprev + dt * (a[8, 1] * ks[1] + a[8, 2] * ks[2] + a[8, 3] * ks[3] + a[8, 4] * ks[4] + a[8, 5] * ks[5] + a[8, 6] * ks[6] + a[8, 7] * ks[7]))
         kdu = duprev +
-              dt * (abar[8, 1] * ks[1] + abar[8, 2] * ks[2] + abar[8, 3] * ks[3] +
-                    abar[8, 4] * ks[4] + abar[8, 5] * ks[5] + abar[8, 6] * ks[6] +
-                    abar[8, 7] * ks[7])
+            dt * (
+            abar[8, 1] * ks[1] + abar[8, 2] * ks[2] + abar[8, 3] * ks[3] +
+                abar[8, 4] * ks[4] + abar[8, 5] * ks[5] + abar[8, 6] * ks[6] +
+                abar[8, 7] * ks[7]
+        )
         ks[8] = f.f1(kdu, ku, p, t + dt * c[7])
     end
     if nstages >= 9
         ku = uprev + dt * (c[8] * duprev + dt * (a[9, 1] * ks[1] + a[9, 2] * ks[2] + a[9, 3] * ks[3] + a[9, 4] * ks[4] + a[9, 5] * ks[5] + a[9, 6] * ks[6] + a[9, 7] * ks[7] + a[9, 8] * ks[8]))
         kdu = duprev +
-              dt * (abar[9, 1] * ks[1] + abar[9, 2] * ks[2] + abar[9, 3] * ks[3] +
-                    abar[9, 4] * ks[4] + abar[9, 5] * ks[5] + abar[9, 6] * ks[6] +
-                    abar[9, 7] * ks[7] + abar[9, 8] * ks[8])
+            dt * (
+            abar[9, 1] * ks[1] + abar[9, 2] * ks[2] + abar[9, 3] * ks[3] +
+                abar[9, 4] * ks[4] + abar[9, 5] * ks[5] + abar[9, 6] * ks[6] +
+                abar[9, 7] * ks[7] + abar[9, 8] * ks[8]
+        )
         ks[9] = f.f1(kdu, ku, p, t + dt * c[8])
     end
     if nstages >= 10
         ku = uprev + dt * (c[9] * duprev + dt * (a[10, 1] * ks[1] + a[10, 2] * ks[2] + a[10, 3] * ks[3] + a[10, 4] * ks[4] + a[10, 5] * ks[5] + a[10, 6] * ks[6] + a[10, 7] * ks[7] + a[10, 8] * ks[8] + a[10, 9] * ks[9]))
         kdu = duprev +
-              dt * (abar[10, 1] * ks[1] + abar[10, 2] * ks[2] + abar[10, 3] * ks[3] +
-                    abar[10, 4] * ks[4] + abar[10, 5] * ks[5] + abar[10, 6] * ks[6] +
-                    abar[10, 7] * ks[7] + abar[10, 8] * ks[8] + abar[10, 9] * ks[9])
+            dt * (
+            abar[10, 1] * ks[1] + abar[10, 2] * ks[2] + abar[10, 3] * ks[3] +
+                abar[10, 4] * ks[4] + abar[10, 5] * ks[5] + abar[10, 6] * ks[6] +
+                abar[10, 7] * ks[7] + abar[10, 8] * ks[8] + abar[10, 9] * ks[9]
+        )
         ks[10] = f.f1(kdu, ku, p, t + dt * c[9])
     end
     if nstages >= 11
         ku = uprev + dt * (c[10] * duprev + dt * (a[11, 1] * ks[1] + a[11, 2] * ks[2] + a[11, 3] * ks[3] + a[11, 4] * ks[4] + a[11, 5] * ks[5] + a[11, 6] * ks[6] + a[11, 7] * ks[7] + a[11, 8] * ks[8] + a[11, 9] * ks[9] + a[11, 10] * ks[10]))
         kdu = duprev +
-              dt * (abar[11, 1] * ks[1] + abar[11, 2] * ks[2] + abar[11, 3] * ks[3] +
-                    abar[11, 4] * ks[4] + abar[11, 5] * ks[5] + abar[11, 6] * ks[6] +
-                    abar[11, 7] * ks[7] + abar[11, 8] * ks[8] + abar[11, 9] * ks[9] +
-                    abar[11, 10] * ks[10])
+            dt * (
+            abar[11, 1] * ks[1] + abar[11, 2] * ks[2] + abar[11, 3] * ks[3] +
+                abar[11, 4] * ks[4] + abar[11, 5] * ks[5] + abar[11, 6] * ks[6] +
+                abar[11, 7] * ks[7] + abar[11, 8] * ks[8] + abar[11, 9] * ks[9] +
+                abar[11, 10] * ks[10]
+        )
         ks[11] = f.f1(kdu, ku, p, t + dt * c[10])
     end
     if nstages >= 12
         ku = uprev + dt * (c[11] * duprev + dt * (a[12, 1] * ks[1] + a[12, 2] * ks[2] + a[12, 3] * ks[3] + a[12, 4] * ks[4] + a[12, 5] * ks[5] + a[12, 6] * ks[6] + a[12, 7] * ks[7] + a[12, 8] * ks[8] + a[12, 9] * ks[9] + a[12, 10] * ks[10] + a[12, 11] * ks[11]))
         kdu = duprev +
-              dt * (abar[12, 1] * ks[1] + abar[12, 2] * ks[2] + abar[12, 3] * ks[3] +
-                    abar[12, 4] * ks[4] + abar[12, 5] * ks[5] + abar[12, 6] * ks[6] +
-                    abar[12, 7] * ks[7] + abar[12, 8] * ks[8] + abar[12, 9] * ks[9] +
-                    abar[12, 10] * ks[10] + abar[12, 11] * ks[11])
+            dt * (
+            abar[12, 1] * ks[1] + abar[12, 2] * ks[2] + abar[12, 3] * ks[3] +
+                abar[12, 4] * ks[4] + abar[12, 5] * ks[5] + abar[12, 6] * ks[6] +
+                abar[12, 7] * ks[7] + abar[12, 8] * ks[8] + abar[12, 9] * ks[9] +
+                abar[12, 10] * ks[10] + abar[12, 11] * ks[11]
+        )
         ks[12] = f.f1(kdu, ku, p, t + dt * c[11])
     end
     if nstages >= 13
         ku = uprev + dt * (c[12] * duprev + dt * (a[13, 1] * ks[1] + a[13, 2] * ks[2] + a[13, 3] * ks[3] + a[13, 4] * ks[4] + a[13, 5] * ks[5] + a[13, 6] * ks[6] + a[13, 7] * ks[7] + a[13, 8] * ks[8] + a[13, 9] * ks[9] + a[13, 10] * ks[10] + a[13, 11] * ks[11] + a[13, 12] * ks[12]))
         kdu = duprev +
-              dt * (abar[13, 1] * ks[1] + abar[13, 2] * ks[2] + abar[13, 3] * ks[3] +
-                    abar[13, 4] * ks[4] + abar[13, 5] * ks[5] + abar[13, 6] * ks[6] +
-                    abar[13, 7] * ks[7] + abar[13, 8] * ks[8] + abar[13, 9] * ks[9] +
-                    abar[13, 10] * ks[10] + abar[13, 11] * ks[11] + abar[13, 12] * ks[12])
+            dt * (
+            abar[13, 1] * ks[1] + abar[13, 2] * ks[2] + abar[13, 3] * ks[3] +
+                abar[13, 4] * ks[4] + abar[13, 5] * ks[5] + abar[13, 6] * ks[6] +
+                abar[13, 7] * ks[7] + abar[13, 8] * ks[8] + abar[13, 9] * ks[9] +
+                abar[13, 10] * ks[10] + abar[13, 11] * ks[11] + abar[13, 12] * ks[12]
+        )
         ks[13] = f.f1(kdu, ku, p, t + dt * c[12])
     end
     if nstages >= 14
         ku = uprev + dt * (c[13] * duprev + dt * (a[14, 1] * ks[1] + a[14, 2] * ks[2] + a[14, 3] * ks[3] + a[14, 4] * ks[4] + a[14, 5] * ks[5] + a[14, 6] * ks[6] + a[14, 7] * ks[7] + a[14, 8] * ks[8] + a[14, 9] * ks[9] + a[14, 10] * ks[10] + a[14, 11] * ks[11] + a[14, 12] * ks[12] + a[14, 13] * ks[13]))
         kdu = duprev +
-              dt * (abar[14, 1] * ks[1] + abar[14, 2] * ks[2] + abar[14, 3] * ks[3] +
-                    abar[14, 4] * ks[4] + abar[14, 5] * ks[5] + abar[14, 6] * ks[6] +
-                    abar[14, 7] * ks[7] + abar[14, 8] * ks[8] + abar[14, 9] * ks[9] +
-                    abar[14, 10] * ks[10] + abar[14, 11] * ks[11] + abar[14, 12] * ks[12] +
-                    abar[14, 13] * ks[13])
+            dt * (
+            abar[14, 1] * ks[1] + abar[14, 2] * ks[2] + abar[14, 3] * ks[3] +
+                abar[14, 4] * ks[4] + abar[14, 5] * ks[5] + abar[14, 6] * ks[6] +
+                abar[14, 7] * ks[7] + abar[14, 8] * ks[8] + abar[14, 9] * ks[9] +
+                abar[14, 10] * ks[10] + abar[14, 11] * ks[11] + abar[14, 12] * ks[12] +
+                abar[14, 13] * ks[13]
+        )
         ks[14] = f.f1(kdu, ku, p, t + dt * c[13])
     end
     if nstages >= 15
         ku = uprev + dt * (c[14] * duprev + dt * (a[15, 1] * ks[1] + a[15, 2] * ks[2] + a[15, 3] * ks[3] + a[15, 4] * ks[4] + a[15, 5] * ks[5] + a[15, 6] * ks[6] + a[15, 7] * ks[7] + a[15, 8] * ks[8] + a[15, 9] * ks[9] + a[15, 10] * ks[10] + a[15, 11] * ks[11] + a[15, 12] * ks[12] + a[15, 13] * ks[13] + a[15, 14] * ks[14]))
         kdu = duprev +
-              dt * (abar[15, 1] * ks[1] + abar[15, 2] * ks[2] + abar[15, 3] * ks[3] +
-                    abar[15, 4] * ks[4] + abar[15, 5] * ks[5] + abar[15, 6] * ks[6] +
-                    abar[15, 7] * ks[7] + abar[15, 8] * ks[8] + abar[15, 9] * ks[9] +
-                    abar[15, 10] * ks[10] + abar[15, 11] * ks[11] + abar[15, 12] * ks[12] +
-                    abar[15, 13] * ks[13] + abar[15, 14] * ks[14])
+            dt * (
+            abar[15, 1] * ks[1] + abar[15, 2] * ks[2] + abar[15, 3] * ks[3] +
+                abar[15, 4] * ks[4] + abar[15, 5] * ks[5] + abar[15, 6] * ks[6] +
+                abar[15, 7] * ks[7] + abar[15, 8] * ks[8] + abar[15, 9] * ks[9] +
+                abar[15, 10] * ks[10] + abar[15, 11] * ks[11] + abar[15, 12] * ks[12] +
+                abar[15, 13] * ks[13] + abar[15, 14] * ks[14]
+        )
         ks[15] = f.f1(kdu, ku, p, t + dt * c[14])
     end
     if nstages >= 16
         ku = uprev + dt * (c[15] * duprev + dt * (a[16, 1] * ks[1] + a[16, 2] * ks[2] + a[16, 3] * ks[3] + a[16, 4] * ks[4] + a[16, 5] * ks[5] + a[16, 6] * ks[6] + a[16, 7] * ks[7] + a[16, 8] * ks[8] + a[16, 9] * ks[9] + a[16, 10] * ks[10] + a[16, 11] * ks[11] + a[16, 12] * ks[12] + a[16, 13] * ks[13] + a[16, 14] * ks[14] + a[16, 15] * ks[15]))
         kdu = duprev +
-              dt * (abar[16, 1] * ks[1] + abar[16, 2] * ks[2] + abar[16, 3] * ks[3] +
-                    abar[16, 4] * ks[4] + abar[16, 5] * ks[5] + abar[16, 6] * ks[6] +
-                    abar[16, 7] * ks[7] + abar[16, 8] * ks[8] + abar[16, 9] * ks[9] +
-                    abar[16, 10] * ks[10] + abar[16, 11] * ks[11] + abar[16, 12] * ks[12] +
-                    abar[16, 13] * ks[13] + abar[16, 14] * ks[14] + abar[16, 15] * ks[15])
+            dt * (
+            abar[16, 1] * ks[1] + abar[16, 2] * ks[2] + abar[16, 3] * ks[3] +
+                abar[16, 4] * ks[4] + abar[16, 5] * ks[5] + abar[16, 6] * ks[6] +
+                abar[16, 7] * ks[7] + abar[16, 8] * ks[8] + abar[16, 9] * ks[9] +
+                abar[16, 10] * ks[10] + abar[16, 11] * ks[11] + abar[16, 12] * ks[12] +
+                abar[16, 13] * ks[13] + abar[16, 14] * ks[14] + abar[16, 15] * ks[15]
+        )
         ks[16] = f.f1(kdu, ku, p, t + dt * c[15])
     end
     if nstages >= 17
         ku = uprev + dt * (c[16] * duprev + dt * (a[17, 1] * ks[1] + a[17, 2] * ks[2] + a[17, 3] * ks[3] + a[17, 4] * ks[4] + a[17, 5] * ks[5] + a[17, 6] * ks[6] + a[17, 7] * ks[7] + a[17, 8] * ks[8] + a[17, 9] * ks[9] + a[17, 10] * ks[10] + a[17, 11] * ks[11] + a[17, 12] * ks[12] + a[17, 13] * ks[13] + a[17, 14] * ks[14] + a[17, 15] * ks[15] + a[17, 16] * ks[16]))
         kdu = duprev +
-              dt * (abar[17, 1] * ks[1] + abar[17, 2] * ks[2] + abar[17, 3] * ks[3] +
-                    abar[17, 4] * ks[4] + abar[17, 5] * ks[5] + abar[17, 6] * ks[6] +
-                    abar[17, 7] * ks[7] + abar[17, 8] * ks[8] + abar[17, 9] * ks[9] +
-                    abar[17, 10] * ks[10] + abar[17, 11] * ks[11] + abar[17, 12] * ks[12] +
-                    abar[17, 13] * ks[13] + abar[17, 14] * ks[14] + abar[17, 15] * ks[15] +
-                    abar[17, 16] * ks[16])
+            dt * (
+            abar[17, 1] * ks[1] + abar[17, 2] * ks[2] + abar[17, 3] * ks[3] +
+                abar[17, 4] * ks[4] + abar[17, 5] * ks[5] + abar[17, 6] * ks[6] +
+                abar[17, 7] * ks[7] + abar[17, 8] * ks[8] + abar[17, 9] * ks[9] +
+                abar[17, 10] * ks[10] + abar[17, 11] * ks[11] + abar[17, 12] * ks[12] +
+                abar[17, 13] * ks[13] + abar[17, 14] * ks[14] + abar[17, 15] * ks[15] +
+                abar[17, 16] * ks[16]
+        )
         ks[17] = f.f1(kdu, ku, p, t + dt * c[16])
     end
 
@@ -793,152 +819,152 @@ end
 
     # ---------------- Stages 2..nstages (explicit ladder; ks[i-1] holds the i-th stage) ----------------
     if nstages >= 2
-        @.. broadcast=false ku = uprev + dt * (c[1] * duprev + dt * (a[2, 1] * k1))
-        @.. broadcast=false kdu = duprev + dt * abar[2, 1] * k1
+        @.. broadcast = false ku = uprev + dt * (c[1] * duprev + dt * (a[2, 1] * k1))
+        @.. broadcast = false kdu = duprev + dt * abar[2, 1] * k1
         f.f1(ks[1], kdu, ku, p, t + dt * c[1])
     end
     if nstages >= 3
-        @.. broadcast=false ku = uprev + dt * (c[2] * duprev + dt * (a[3, 1] * k1 + a[3, 2] * ks[1]))
-        @.. broadcast=false kdu = duprev + dt * abar[3, 1] * k1 + dt * abar[3, 2] * ks[1]
+        @.. broadcast = false ku = uprev + dt * (c[2] * duprev + dt * (a[3, 1] * k1 + a[3, 2] * ks[1]))
+        @.. broadcast = false kdu = duprev + dt * abar[3, 1] * k1 + dt * abar[3, 2] * ks[1]
         f.f1(ks[2], kdu, ku, p, t + dt * c[2])
     end
     if nstages >= 4
-        @.. broadcast=false ku = uprev + dt * (c[3] * duprev + dt * (a[4, 1] * k1 + a[4, 2] * ks[1] + a[4, 3] * ks[2]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[4, 1] * k1 + dt * abar[4, 2] * ks[1] + dt * abar[4, 3] * ks[2]
+        @.. broadcast = false ku = uprev + dt * (c[3] * duprev + dt * (a[4, 1] * k1 + a[4, 2] * ks[1] + a[4, 3] * ks[2]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[4, 1] * k1 + dt * abar[4, 2] * ks[1] + dt * abar[4, 3] * ks[2]
         f.f1(ks[3], kdu, ku, p, t + dt * c[3])
     end
     if nstages >= 5
-        @.. broadcast=false ku = uprev + dt * (c[4] * duprev + dt * (a[5, 1] * k1 + a[5, 2] * ks[1] + a[5, 3] * ks[2] + a[5, 4] * ks[3]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[5, 1] * k1 + dt * abar[5, 2] * ks[1] +
-             dt * abar[5, 3] * ks[2] + dt * abar[5, 4] * ks[3]
+        @.. broadcast = false ku = uprev + dt * (c[4] * duprev + dt * (a[5, 1] * k1 + a[5, 2] * ks[1] + a[5, 3] * ks[2] + a[5, 4] * ks[3]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[5, 1] * k1 + dt * abar[5, 2] * ks[1] +
+            dt * abar[5, 3] * ks[2] + dt * abar[5, 4] * ks[3]
         f.f1(ks[4], kdu, ku, p, t + dt * c[4])
     end
     if nstages >= 6
-        @.. broadcast=false ku = uprev + dt * (c[5] * duprev + dt * (a[6, 1] * k1 + a[6, 2] * ks[1] + a[6, 3] * ks[2] + a[6, 4] * ks[3] + a[6, 5] * ks[4]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[6, 1] * k1 + dt * abar[6, 2] * ks[1] +
-             dt * abar[6, 3] * ks[2] + dt * abar[6, 4] * ks[3] +
-             dt * abar[6, 5] * ks[4]
+        @.. broadcast = false ku = uprev + dt * (c[5] * duprev + dt * (a[6, 1] * k1 + a[6, 2] * ks[1] + a[6, 3] * ks[2] + a[6, 4] * ks[3] + a[6, 5] * ks[4]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[6, 1] * k1 + dt * abar[6, 2] * ks[1] +
+            dt * abar[6, 3] * ks[2] + dt * abar[6, 4] * ks[3] +
+            dt * abar[6, 5] * ks[4]
         f.f1(ks[5], kdu, ku, p, t + dt * c[5])
     end
     if nstages >= 7
-        @.. broadcast=false ku = uprev + dt * (c[6] * duprev + dt * (a[7, 1] * k1 + a[7, 2] * ks[1] + a[7, 3] * ks[2] + a[7, 4] * ks[3] + a[7, 5] * ks[4] + a[7, 6] * ks[5]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[7, 1] * k1 + dt * abar[7, 2] * ks[1] +
-             dt * abar[7, 3] * ks[2] + dt * abar[7, 4] * ks[3] +
-             dt * abar[7, 5] * ks[4] + dt * abar[7, 6] * ks[5]
+        @.. broadcast = false ku = uprev + dt * (c[6] * duprev + dt * (a[7, 1] * k1 + a[7, 2] * ks[1] + a[7, 3] * ks[2] + a[7, 4] * ks[3] + a[7, 5] * ks[4] + a[7, 6] * ks[5]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[7, 1] * k1 + dt * abar[7, 2] * ks[1] +
+            dt * abar[7, 3] * ks[2] + dt * abar[7, 4] * ks[3] +
+            dt * abar[7, 5] * ks[4] + dt * abar[7, 6] * ks[5]
         f.f1(ks[6], kdu, ku, p, t + dt * c[6])
     end
     if nstages >= 8
-        @.. broadcast=false ku = uprev + dt * (c[7] * duprev + dt * (a[8, 1] * k1 + a[8, 2] * ks[1] + a[8, 3] * ks[2] + a[8, 4] * ks[3] + a[8, 5] * ks[4] + a[8, 6] * ks[5] + a[8, 7] * ks[6]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[8, 1] * k1 + dt * abar[8, 2] * ks[1] +
-             dt * abar[8, 3] * ks[2] + dt * abar[8, 4] * ks[3] +
-             dt * abar[8, 5] * ks[4] + dt * abar[8, 6] * ks[5] +
-             dt * abar[8, 7] * ks[6]
+        @.. broadcast = false ku = uprev + dt * (c[7] * duprev + dt * (a[8, 1] * k1 + a[8, 2] * ks[1] + a[8, 3] * ks[2] + a[8, 4] * ks[3] + a[8, 5] * ks[4] + a[8, 6] * ks[5] + a[8, 7] * ks[6]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[8, 1] * k1 + dt * abar[8, 2] * ks[1] +
+            dt * abar[8, 3] * ks[2] + dt * abar[8, 4] * ks[3] +
+            dt * abar[8, 5] * ks[4] + dt * abar[8, 6] * ks[5] +
+            dt * abar[8, 7] * ks[6]
         f.f1(ks[7], kdu, ku, p, t + dt * c[7])
     end
     if nstages >= 9
-        @.. broadcast=false ku = uprev + dt * (c[8] * duprev + dt * (a[9, 1] * k1 + a[9, 2] * ks[1] + a[9, 3] * ks[2] + a[9, 4] * ks[3] + a[9, 5] * ks[4] + a[9, 6] * ks[5] + a[9, 7] * ks[6] + a[9, 8] * ks[7]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[9, 1] * k1 + dt * abar[9, 2] * ks[1] +
-             dt * abar[9, 3] * ks[2] + dt * abar[9, 4] * ks[3] +
-             dt * abar[9, 5] * ks[4] + dt * abar[9, 6] * ks[5] +
-             dt * abar[9, 7] * ks[6] + dt * abar[9, 8] * ks[7]
+        @.. broadcast = false ku = uprev + dt * (c[8] * duprev + dt * (a[9, 1] * k1 + a[9, 2] * ks[1] + a[9, 3] * ks[2] + a[9, 4] * ks[3] + a[9, 5] * ks[4] + a[9, 6] * ks[5] + a[9, 7] * ks[6] + a[9, 8] * ks[7]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[9, 1] * k1 + dt * abar[9, 2] * ks[1] +
+            dt * abar[9, 3] * ks[2] + dt * abar[9, 4] * ks[3] +
+            dt * abar[9, 5] * ks[4] + dt * abar[9, 6] * ks[5] +
+            dt * abar[9, 7] * ks[6] + dt * abar[9, 8] * ks[7]
         f.f1(ks[8], kdu, ku, p, t + dt * c[8])
     end
     if nstages >= 10
-        @.. broadcast=false ku = uprev + dt * (c[9] * duprev + dt * (a[10, 1] * k1 + a[10, 2] * ks[1] + a[10, 3] * ks[2] + a[10, 4] * ks[3] + a[10, 5] * ks[4] + a[10, 6] * ks[5] + a[10, 7] * ks[6] + a[10, 8] * ks[7] + a[10, 9] * ks[8]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[10, 1] * k1 + dt * abar[10, 2] * ks[1] +
-             dt * abar[10, 3] * ks[2] + dt * abar[10, 4] * ks[3] +
-             dt * abar[10, 5] * ks[4] + dt * abar[10, 6] * ks[5] +
-             dt * abar[10, 7] * ks[6] + dt * abar[10, 8] * ks[7] +
-             dt * abar[10, 9] * ks[8]
+        @.. broadcast = false ku = uprev + dt * (c[9] * duprev + dt * (a[10, 1] * k1 + a[10, 2] * ks[1] + a[10, 3] * ks[2] + a[10, 4] * ks[3] + a[10, 5] * ks[4] + a[10, 6] * ks[5] + a[10, 7] * ks[6] + a[10, 8] * ks[7] + a[10, 9] * ks[8]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[10, 1] * k1 + dt * abar[10, 2] * ks[1] +
+            dt * abar[10, 3] * ks[2] + dt * abar[10, 4] * ks[3] +
+            dt * abar[10, 5] * ks[4] + dt * abar[10, 6] * ks[5] +
+            dt * abar[10, 7] * ks[6] + dt * abar[10, 8] * ks[7] +
+            dt * abar[10, 9] * ks[8]
         f.f1(ks[9], kdu, ku, p, t + dt * c[9])
     end
     if nstages >= 11
-        @.. broadcast=false ku = uprev + dt * (c[10] * duprev + dt * (a[11, 1] * k1 + a[11, 2] * ks[1] + a[11, 3] * ks[2] + a[11, 4] * ks[3] + a[11, 5] * ks[4] + a[11, 6] * ks[5] + a[11, 7] * ks[6] + a[11, 8] * ks[7] + a[11, 9] * ks[8] + a[11, 10] * ks[9]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[11, 1] * k1 + dt * abar[11, 2] * ks[1] +
-             dt * abar[11, 3] * ks[2] + dt * abar[11, 4] * ks[3] +
-             dt * abar[11, 5] * ks[4] + dt * abar[11, 6] * ks[5] +
-             dt * abar[11, 7] * ks[6] + dt * abar[11, 8] * ks[7] +
-             dt * abar[11, 9] * ks[8] + dt * abar[11, 10] * ks[9]
+        @.. broadcast = false ku = uprev + dt * (c[10] * duprev + dt * (a[11, 1] * k1 + a[11, 2] * ks[1] + a[11, 3] * ks[2] + a[11, 4] * ks[3] + a[11, 5] * ks[4] + a[11, 6] * ks[5] + a[11, 7] * ks[6] + a[11, 8] * ks[7] + a[11, 9] * ks[8] + a[11, 10] * ks[9]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[11, 1] * k1 + dt * abar[11, 2] * ks[1] +
+            dt * abar[11, 3] * ks[2] + dt * abar[11, 4] * ks[3] +
+            dt * abar[11, 5] * ks[4] + dt * abar[11, 6] * ks[5] +
+            dt * abar[11, 7] * ks[6] + dt * abar[11, 8] * ks[7] +
+            dt * abar[11, 9] * ks[8] + dt * abar[11, 10] * ks[9]
         f.f1(ks[10], kdu, ku, p, t + dt * c[10])
     end
     if nstages >= 12
-        @.. broadcast=false ku = uprev + dt * (c[11] * duprev + dt * (a[12, 1] * k1 + a[12, 2] * ks[1] + a[12, 3] * ks[2] + a[12, 4] * ks[3] + a[12, 5] * ks[4] + a[12, 6] * ks[5] + a[12, 7] * ks[6] + a[12, 8] * ks[7] + a[12, 9] * ks[8] + a[12, 10] * ks[9] + a[12, 11] * ks[10]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[12, 1] * k1 + dt * abar[12, 2] * ks[1] +
-             dt * abar[12, 3] * ks[2] + dt * abar[12, 4] * ks[3] +
-             dt * abar[12, 5] * ks[4] + dt * abar[12, 6] * ks[5] +
-             dt * abar[12, 7] * ks[6] + dt * abar[12, 8] * ks[7] +
-             dt * abar[12, 9] * ks[8] + dt * abar[12, 10] * ks[9] +
-             dt * abar[12, 11] * ks[10]
+        @.. broadcast = false ku = uprev + dt * (c[11] * duprev + dt * (a[12, 1] * k1 + a[12, 2] * ks[1] + a[12, 3] * ks[2] + a[12, 4] * ks[3] + a[12, 5] * ks[4] + a[12, 6] * ks[5] + a[12, 7] * ks[6] + a[12, 8] * ks[7] + a[12, 9] * ks[8] + a[12, 10] * ks[9] + a[12, 11] * ks[10]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[12, 1] * k1 + dt * abar[12, 2] * ks[1] +
+            dt * abar[12, 3] * ks[2] + dt * abar[12, 4] * ks[3] +
+            dt * abar[12, 5] * ks[4] + dt * abar[12, 6] * ks[5] +
+            dt * abar[12, 7] * ks[6] + dt * abar[12, 8] * ks[7] +
+            dt * abar[12, 9] * ks[8] + dt * abar[12, 10] * ks[9] +
+            dt * abar[12, 11] * ks[10]
         f.f1(ks[11], kdu, ku, p, t + dt * c[11])
     end
     if nstages >= 13
-        @.. broadcast=false ku = uprev + dt * (c[12] * duprev + dt * (a[13, 1] * k1 + a[13, 2] * ks[1] + a[13, 3] * ks[2] + a[13, 4] * ks[3] + a[13, 5] * ks[4] + a[13, 6] * ks[5] + a[13, 7] * ks[6] + a[13, 8] * ks[7] + a[13, 9] * ks[8] + a[13, 10] * ks[9] + a[13, 11] * ks[10] + a[13, 12] * ks[11]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[13, 1] * k1 + dt * abar[13, 2] * ks[1] +
-             dt * abar[13, 3] * ks[2] + dt * abar[13, 4] * ks[3] +
-             dt * abar[13, 5] * ks[4] + dt * abar[13, 6] * ks[5] +
-             dt * abar[13, 7] * ks[6] + dt * abar[13, 8] * ks[7] +
-             dt * abar[13, 9] * ks[8] + dt * abar[13, 10] * ks[9] +
-             dt * abar[13, 11] * ks[10] + dt * abar[13, 12] * ks[11]
+        @.. broadcast = false ku = uprev + dt * (c[12] * duprev + dt * (a[13, 1] * k1 + a[13, 2] * ks[1] + a[13, 3] * ks[2] + a[13, 4] * ks[3] + a[13, 5] * ks[4] + a[13, 6] * ks[5] + a[13, 7] * ks[6] + a[13, 8] * ks[7] + a[13, 9] * ks[8] + a[13, 10] * ks[9] + a[13, 11] * ks[10] + a[13, 12] * ks[11]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[13, 1] * k1 + dt * abar[13, 2] * ks[1] +
+            dt * abar[13, 3] * ks[2] + dt * abar[13, 4] * ks[3] +
+            dt * abar[13, 5] * ks[4] + dt * abar[13, 6] * ks[5] +
+            dt * abar[13, 7] * ks[6] + dt * abar[13, 8] * ks[7] +
+            dt * abar[13, 9] * ks[8] + dt * abar[13, 10] * ks[9] +
+            dt * abar[13, 11] * ks[10] + dt * abar[13, 12] * ks[11]
         f.f1(ks[12], kdu, ku, p, t + dt * c[12])
     end
     if nstages >= 14
-        @.. broadcast=false ku = uprev + dt * (c[13] * duprev + dt * (a[14, 1] * k1 + a[14, 2] * ks[1] + a[14, 3] * ks[2] + a[14, 4] * ks[3] + a[14, 5] * ks[4] + a[14, 6] * ks[5] + a[14, 7] * ks[6] + a[14, 8] * ks[7] + a[14, 9] * ks[8] + a[14, 10] * ks[9] + a[14, 11] * ks[10] + a[14, 12] * ks[11] + a[14, 13] * ks[12]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[14, 1] * k1 + dt * abar[14, 2] * ks[1] +
-             dt * abar[14, 3] * ks[2] + dt * abar[14, 4] * ks[3] +
-             dt * abar[14, 5] * ks[4] + dt * abar[14, 6] * ks[5] +
-             dt * abar[14, 7] * ks[6] + dt * abar[14, 8] * ks[7] +
-             dt * abar[14, 9] * ks[8] + dt * abar[14, 10] * ks[9] +
-             dt * abar[14, 11] * ks[10] + dt * abar[14, 12] * ks[11] +
-             dt * abar[14, 13] * ks[12]
+        @.. broadcast = false ku = uprev + dt * (c[13] * duprev + dt * (a[14, 1] * k1 + a[14, 2] * ks[1] + a[14, 3] * ks[2] + a[14, 4] * ks[3] + a[14, 5] * ks[4] + a[14, 6] * ks[5] + a[14, 7] * ks[6] + a[14, 8] * ks[7] + a[14, 9] * ks[8] + a[14, 10] * ks[9] + a[14, 11] * ks[10] + a[14, 12] * ks[11] + a[14, 13] * ks[12]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[14, 1] * k1 + dt * abar[14, 2] * ks[1] +
+            dt * abar[14, 3] * ks[2] + dt * abar[14, 4] * ks[3] +
+            dt * abar[14, 5] * ks[4] + dt * abar[14, 6] * ks[5] +
+            dt * abar[14, 7] * ks[6] + dt * abar[14, 8] * ks[7] +
+            dt * abar[14, 9] * ks[8] + dt * abar[14, 10] * ks[9] +
+            dt * abar[14, 11] * ks[10] + dt * abar[14, 12] * ks[11] +
+            dt * abar[14, 13] * ks[12]
         f.f1(ks[13], kdu, ku, p, t + dt * c[13])
     end
     if nstages >= 15
-        @.. broadcast=false ku = uprev + dt * (c[14] * duprev + dt * (a[15, 1] * k1 + a[15, 2] * ks[1] + a[15, 3] * ks[2] + a[15, 4] * ks[3] + a[15, 5] * ks[4] + a[15, 6] * ks[5] + a[15, 7] * ks[6] + a[15, 8] * ks[7] + a[15, 9] * ks[8] + a[15, 10] * ks[9] + a[15, 11] * ks[10] + a[15, 12] * ks[11] + a[15, 13] * ks[12] + a[15, 14] * ks[13]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[15, 1] * k1 + dt * abar[15, 2] * ks[1] +
-             dt * abar[15, 3] * ks[2] + dt * abar[15, 4] * ks[3] +
-             dt * abar[15, 5] * ks[4] + dt * abar[15, 6] * ks[5] +
-             dt * abar[15, 7] * ks[6] + dt * abar[15, 8] * ks[7] +
-             dt * abar[15, 9] * ks[8] + dt * abar[15, 10] * ks[9] +
-             dt * abar[15, 11] * ks[10] + dt * abar[15, 12] * ks[11] +
-             dt * abar[15, 13] * ks[12] + dt * abar[15, 14] * ks[13]
+        @.. broadcast = false ku = uprev + dt * (c[14] * duprev + dt * (a[15, 1] * k1 + a[15, 2] * ks[1] + a[15, 3] * ks[2] + a[15, 4] * ks[3] + a[15, 5] * ks[4] + a[15, 6] * ks[5] + a[15, 7] * ks[6] + a[15, 8] * ks[7] + a[15, 9] * ks[8] + a[15, 10] * ks[9] + a[15, 11] * ks[10] + a[15, 12] * ks[11] + a[15, 13] * ks[12] + a[15, 14] * ks[13]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[15, 1] * k1 + dt * abar[15, 2] * ks[1] +
+            dt * abar[15, 3] * ks[2] + dt * abar[15, 4] * ks[3] +
+            dt * abar[15, 5] * ks[4] + dt * abar[15, 6] * ks[5] +
+            dt * abar[15, 7] * ks[6] + dt * abar[15, 8] * ks[7] +
+            dt * abar[15, 9] * ks[8] + dt * abar[15, 10] * ks[9] +
+            dt * abar[15, 11] * ks[10] + dt * abar[15, 12] * ks[11] +
+            dt * abar[15, 13] * ks[12] + dt * abar[15, 14] * ks[13]
         f.f1(ks[14], kdu, ku, p, t + dt * c[14])
     end
     if nstages >= 16
-        @.. broadcast=false ku = uprev + dt * (c[15] * duprev + dt * (a[16, 1] * k1 + a[16, 2] * ks[1] + a[16, 3] * ks[2] + a[16, 4] * ks[3] + a[16, 5] * ks[4] + a[16, 6] * ks[5] + a[16, 7] * ks[6] + a[16, 8] * ks[7] + a[16, 9] * ks[8] + a[16, 10] * ks[9] + a[16, 11] * ks[10] + a[16, 12] * ks[11] + a[16, 13] * ks[12] + a[16, 14] * ks[13] + a[16, 15] * ks[14]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[16, 1] * k1 + dt * abar[16, 2] * ks[1] +
-             dt * abar[16, 3] * ks[2] + dt * abar[16, 4] * ks[3] +
-             dt * abar[16, 5] * ks[4] + dt * abar[16, 6] * ks[5] +
-             dt * abar[16, 7] * ks[6] + dt * abar[16, 8] * ks[7] +
-             dt * abar[16, 9] * ks[8] + dt * abar[16, 10] * ks[9] +
-             dt * abar[16, 11] * ks[10] + dt * abar[16, 12] * ks[11] +
-             dt * abar[16, 13] * ks[12] + dt * abar[16, 14] * ks[13] +
-             dt * abar[16, 15] * ks[14]
+        @.. broadcast = false ku = uprev + dt * (c[15] * duprev + dt * (a[16, 1] * k1 + a[16, 2] * ks[1] + a[16, 3] * ks[2] + a[16, 4] * ks[3] + a[16, 5] * ks[4] + a[16, 6] * ks[5] + a[16, 7] * ks[6] + a[16, 8] * ks[7] + a[16, 9] * ks[8] + a[16, 10] * ks[9] + a[16, 11] * ks[10] + a[16, 12] * ks[11] + a[16, 13] * ks[12] + a[16, 14] * ks[13] + a[16, 15] * ks[14]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[16, 1] * k1 + dt * abar[16, 2] * ks[1] +
+            dt * abar[16, 3] * ks[2] + dt * abar[16, 4] * ks[3] +
+            dt * abar[16, 5] * ks[4] + dt * abar[16, 6] * ks[5] +
+            dt * abar[16, 7] * ks[6] + dt * abar[16, 8] * ks[7] +
+            dt * abar[16, 9] * ks[8] + dt * abar[16, 10] * ks[9] +
+            dt * abar[16, 11] * ks[10] + dt * abar[16, 12] * ks[11] +
+            dt * abar[16, 13] * ks[12] + dt * abar[16, 14] * ks[13] +
+            dt * abar[16, 15] * ks[14]
         f.f1(ks[15], kdu, ku, p, t + dt * c[15])
     end
     if nstages >= 17
-        @.. broadcast=false ku = uprev + dt * (c[16] * duprev + dt * (a[17, 1] * k1 + a[17, 2] * ks[1] + a[17, 3] * ks[2] + a[17, 4] * ks[3] + a[17, 5] * ks[4] + a[17, 6] * ks[5] + a[17, 7] * ks[6] + a[17, 8] * ks[7] + a[17, 9] * ks[8] + a[17, 10] * ks[9] + a[17, 11] * ks[10] + a[17, 12] * ks[11] + a[17, 13] * ks[12] + a[17, 14] * ks[13] + a[17, 15] * ks[14] + a[17, 16] * ks[15]))
-        @.. broadcast=false kdu = duprev +
-             dt * abar[17, 1] * k1 + dt * abar[17, 2] * ks[1] +
-             dt * abar[17, 3] * ks[2] + dt * abar[17, 4] * ks[3] +
-             dt * abar[17, 5] * ks[4] + dt * abar[17, 6] * ks[5] +
-             dt * abar[17, 7] * ks[6] + dt * abar[17, 8] * ks[7] +
-             dt * abar[17, 9] * ks[8] + dt * abar[17, 10] * ks[9] +
-             dt * abar[17, 11] * ks[10] + dt * abar[17, 12] * ks[11] +
-             dt * abar[17, 13] * ks[12] + dt * abar[17, 14] * ks[13] +
-             dt * abar[17, 15] * ks[14] + dt * abar[17, 16] * ks[15]
+        @.. broadcast = false ku = uprev + dt * (c[16] * duprev + dt * (a[17, 1] * k1 + a[17, 2] * ks[1] + a[17, 3] * ks[2] + a[17, 4] * ks[3] + a[17, 5] * ks[4] + a[17, 6] * ks[5] + a[17, 7] * ks[6] + a[17, 8] * ks[7] + a[17, 9] * ks[8] + a[17, 10] * ks[9] + a[17, 11] * ks[10] + a[17, 12] * ks[11] + a[17, 13] * ks[12] + a[17, 14] * ks[13] + a[17, 15] * ks[14] + a[17, 16] * ks[15]))
+        @.. broadcast = false kdu = duprev +
+            dt * abar[17, 1] * k1 + dt * abar[17, 2] * ks[1] +
+            dt * abar[17, 3] * ks[2] + dt * abar[17, 4] * ks[3] +
+            dt * abar[17, 5] * ks[4] + dt * abar[17, 6] * ks[5] +
+            dt * abar[17, 7] * ks[6] + dt * abar[17, 8] * ks[7] +
+            dt * abar[17, 9] * ks[8] + dt * abar[17, 10] * ks[9] +
+            dt * abar[17, 11] * ks[10] + dt * abar[17, 12] * ks[11] +
+            dt * abar[17, 13] * ks[12] + dt * abar[17, 14] * ks[13] +
+            dt * abar[17, 15] * ks[14] + dt * abar[17, 16] * ks[15]
         f.f1(ks[16], kdu, ku, p, t + dt * c[16])
     end
 
