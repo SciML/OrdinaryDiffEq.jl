@@ -25,8 +25,4 @@ jobs:
       group-env-name: "ODEDIFFEQ_TEST_GROUP"
       group-env-value: "Core"
       allow-reresolve: true
-      # All lib/* sublibraries are downgrade-tested (projects auto-discovered).
-      # Only these stay excluded: their test failures are documented as
-      # unrelated to downgrade bounds (VectorOfArray/StructArray incompat and
-      # FineRKN4/DPRKN4 convergence-order), so they'd be false reds here.
-      exclude: "OrdinaryDiffEqLowStorageRK OrdinaryDiffEqRKN OrdinaryDiffEqSSPRK"
+      # Every lib/* sublibrary is downgrade-tested (projects auto-discovered, no exclusions).
