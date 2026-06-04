@@ -27,7 +27,7 @@ struct NystromVITableau{T, T2}
     kshortsize::Int
 end
 
-function DPRKN4Tableau(T::Type, T2::Type)
+function DPRKN4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 4, 4)
     a[2, 1] = convert(T, 1 // 32)
     a[3, 1] = convert(T, 7 // 1000); a[3, 2] = convert(T, 119 // 500)
@@ -46,7 +46,7 @@ function DPRKN4Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function DPRKN5Tableau(T::Type, T2::Type)
+function DPRKN5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 6, 6)
     a[2, 1] = convert(T, 1 // 128)
     a[3, 1] = convert(T, 1 // 96); a[3, 2] = convert(T, 1 // 48)
@@ -78,7 +78,7 @@ function DPRKN5Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function DPRKN6FMTableau(T::Type, T2::Type)
+function DPRKN6FMTableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 6, 6)
     a[2, 1] = convert(T, 1 // 200)
     a[3, 1] = convert(T, -1 // 2200); a[3, 2] = convert(T, 1 // 22)
@@ -112,7 +112,7 @@ function DPRKN6FMTableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function DPRKN8Tableau(T::Type, T2::Type)
+function DPRKN8Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 9, 9)
     a[2, 1] = convert(T, 1 // 800)
     a[3, 1] = convert(T, 1 // 600); a[3, 2] = convert(T, 1 // 300)
@@ -163,7 +163,7 @@ function DPRKN8Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function DPRKN12Tableau(T::Type, T2::Type)
+function DPRKN12Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 17, 17)
     a[2, 1] = convert(T, 1 // 5000)
     a[3, 1] = convert(T, 1 // 3750); a[3, 2] = convert(T, 1 // 1875)
@@ -552,7 +552,7 @@ function DPRKN12Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function ERKN4Tableau(T::Type, T2::Type)
+function ERKN4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 4, 4)
     a[2, 1] = convert(T, 1 // 32)
     a[3, 1] = convert(T, 19 // 600); a[3, 2] = convert(T, 16 // 75)
@@ -571,7 +571,7 @@ function ERKN4Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function ERKN5Tableau(T::Type, T2::Type)
+function ERKN5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 4, 4)
     a[2, 1] = convert(T, 1 // 8)
     a[3, 1] = convert(T, 2907 // 343000); a[3, 2] = convert(T, 1216 // 42875)
@@ -597,7 +597,7 @@ function ERKN5Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, true, 2)
 end
 
-function ERKN7Tableau(T::Type, T2::Type)
+function ERKN7Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 7, 7)
     a[2, 1] = convert(T, 5107771 // 767472028)
     a[3, 1] = convert(T, 5107771 // 575604021); a[3, 2] = convert(T, 16661485 // 938806552)
@@ -644,7 +644,7 @@ function ERKN7Tableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function Nystrom5VelocityIndependentTableau(T::Type, T2::Type)
+function Nystrom5VelocityIndependentTableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 4, 4)
     a[2, 1] = convert(T, 1 // 50)
     a[3, 1] = convert(T, -1 // 27); a[3, 2] = convert(T, 7 // 27)
@@ -683,7 +683,7 @@ struct NystromVDTableau{T, T2}
     nf_per_step::Int
 end
 
-function Nystrom4VelocityIndependentTableau(T::Type, T2::Type)
+function Nystrom4VelocityIndependentTableau(::Type{T}, ::Type{T2}) where {T, T2}
     # 3 stages, velocity-independent: kᵢ = f1(duprev, kuᵢ, p, t+cᵢ*dt)
     # Coefficients from perform_step!:
     #   c = [1/2, 1]; a[2,1]=1/8, a[3,2]=1/2
@@ -700,7 +700,7 @@ function Nystrom4VelocityIndependentTableau(T::Type, T2::Type)
     return NystromVITableau(a, b, bp, btilde, bptilde, c, false, 2)
 end
 
-function RKN4Tableau(T::Type, T2::Type)
+function RKN4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     # 3 stages, velocity-dependent
     # k2 at c[1]=1/2: ku = uprev + dt*(1/2)*duprev + dt²*(1/8)*k1
     #                 kdu = duprev + dt*(1/2)*k1
@@ -724,7 +724,7 @@ function RKN4Tableau(T::Type, T2::Type)
     return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, nstages - 1)
 end
 
-function Nystrom4Tableau(T::Type, T2::Type)
+function Nystrom4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     # 4 stages, velocity-dependent
     # From perform_step! Nystrom4ConstantCache:
     # k2 at c[1]=1/2: ku = uprev + dt*(1/2)*duprev + dt²*(1/8)*k1
@@ -752,7 +752,7 @@ function Nystrom4Tableau(T::Type, T2::Type)
     return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, nstages)
 end
 
-function FineRKN4Tableau(T::Type, T2::Type)
+function FineRKN4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 5, 5)
     a[2, 1] = convert(T, 2 // 81)
     a[3, 1] = convert(T, 1 // 36); a[3, 2] = convert(T, 1 // 36)
@@ -779,7 +779,7 @@ function FineRKN4Tableau(T::Type, T2::Type)
     return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, 5)
 end
 
-function FineRKN5Tableau(T::Type, T2::Type)
+function FineRKN5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a = zeros(T, 7, 7)
     a[2, 1] = convert(T, 32 // 1521)
     a[3, 1] = convert(T, 4 // 169); a[3, 2] = convert(T, 4 // 169)
@@ -1029,7 +1029,7 @@ function DPRKN6Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     )
 end
 
-function DPRKN6Tableau(T::Type, T2::Type)
+function DPRKN6Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     R = sqrt(big(8581))
     c1 = convert(T2, (209 - R) / 900)
     c2 = convert(T2, (209 - R) / 450)
