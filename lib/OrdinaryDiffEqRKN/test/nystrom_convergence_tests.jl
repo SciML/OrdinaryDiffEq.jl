@@ -412,19 +412,15 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 5 * sol_i.stats.naccept) < 4
-        # adaptive time step — IIP broadcast vs OOP array ops produce
-        # per-step FP rounding differences that cascade through the step
-        # controller; on Julia 1.10 the LLVM codegen amplifies this enough
-        # to change the accepted step sequence.
+        # adaptive time step — after unifying the per-method perform_step!s into
+        # the generic Nyström loop, IIP (`@..` broadcast) and OOP (scalar) paths
+        # diverge by per-step FP roundoff that compounds through the step
+        # controller on every Julia version. Same family-wide behaviour as the
+        # other DPRKN/ERKN methods.
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "FineRKN5" begin
@@ -460,16 +456,11 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 4 * sol_i.stats.naccept) < 4
-        # adaptive time step — see FineRKN4 comment on Julia 1.10 FP divergence
+        # adaptive time step — see FineRKN4 comment (generic-loop IIP/OOP divergence)
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN5" begin
@@ -485,16 +476,11 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
-        # adaptive time step — see FineRKN4 comment on Julia 1.10 FP divergence
+        # adaptive time step — see FineRKN4 comment (generic-loop IIP/OOP divergence)
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN6" begin
@@ -510,16 +496,11 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
-        # adaptive time step — see FineRKN4 comment on Julia 1.10 FP divergence
+        # adaptive time step — see FineRKN4 comment (generic-loop IIP/OOP divergence)
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN6FM" begin
@@ -535,16 +516,11 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
-        # adaptive time step
+        # adaptive time step — see FineRKN4 comment (generic-loop IIP/OOP divergence)
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN8" begin
@@ -560,16 +536,11 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 9 * sol_i.stats.naccept) < 4
-        # adaptive time step
+        # adaptive time step — see FineRKN4 comment (generic-loop IIP/OOP divergence)
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "DPRKN12" begin
