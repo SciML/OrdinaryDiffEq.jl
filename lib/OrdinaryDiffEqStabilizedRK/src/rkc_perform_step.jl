@@ -454,12 +454,14 @@ end
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
 
-    w0 = 1 + 2 / (13 * (mdeg^2))
-    temp1 = w0^2 - 1
+    T = typeof(t)
+
+    w0 = one(T) + T(2) / (13 * (mdeg^2))
+    temp1 = w0^2 - one(T)
     temp2 = sqrt(temp1)
     arg = mdeg * log(w0 + temp2)
     w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
-    b1 = 1 / ((2 * w0)^2)
+    b1 = one(T) / ((T(2) * w0)^2)
     b2 = b1
 
     # stage-1
@@ -538,12 +540,14 @@ end
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)) + 1
 
-    w0 = 1 + 2 / (13 * (mdeg^2))
-    temp1 = w0^2 - 1
+    T = typeof(t)
+
+    w0 = one(T) + T(2) / (13 * (mdeg^2))
+    temp1 = w0^2 - one(T)
     temp2 = sqrt(temp1)
     arg = mdeg * log(w0 + temp2)
     w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
-    b1 = 1 / ((2 * w0)^2)
+    b1 = one(T) / ((T(2) * w0)^2)
     b2 = b1
 
     # stage-1
