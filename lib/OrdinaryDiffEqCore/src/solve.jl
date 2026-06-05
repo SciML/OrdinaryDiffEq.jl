@@ -38,7 +38,6 @@ end
 parameter_values(z::zero_func_struct) = z.p
 
 function (z::zero_func_struct)(θ, p)
-    _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
     return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)
 end
@@ -689,6 +688,8 @@ Base.@constprop :aggressive function _ode_init(
 
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
 
+    curr_discontinuity = -1
+    disco_checkpoint = zero(tType)
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
@@ -722,7 +723,7 @@ Base.@constprop :aggressive function _ode_init(
         isout, reeval_fsal,
         derivative_discontinuity, user_set_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng,
+        fsalfirst, fsallast, _rng, curr_discontinuity, disco_checkpoint,
         W, P, sqdt,
         noise, c, rate_constants
     )

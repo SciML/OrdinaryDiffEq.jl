@@ -38,13 +38,17 @@ function find_discontinuity(u, uprev, integrator)
             len_cb = i.len
             i.condition(disco_zero.out_low, uprev, t, integrator)
             i.condition(disco_zero.out_high, u, t + dt, integrator)
+            _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
+                disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
             for j in 1:len_cb
                 if (disco_zero.out_low[j] * disco_zero.out_high[j] < zero(disco_zero.out_low[j]))
                     disco_zero.ind = j
-                    sol = solve(disco_prob)
+                    sol = solve(disco_prob, tspan = (0.0, breakpointθ == -one(dt) ? 1.0 : breakpointθ); save_everystep = false)
                     tmp = sol[]
                     if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
                         breakpointθ = tmp
+                        integrator.curr_discontinuity = idx
+                        integrator.disco_checkpoint = integrator.t + tmp * dt
                     end
                 end
             end
@@ -52,10 +56,14 @@ function find_discontinuity(u, uprev, integrator)
             out_prev = i.condition(uprev, t, integrator)
             out_curr = i.condition(u, t + dt, integrator)
             if (out_prev * out_curr < zero(out_prev))
-                sol = solve(disco_prob)
+                _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
+                            disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
+                sol = solve(disco_prob, tspan = (0.0, breakpointθ == -one(dt) ? 1.0 : breakpointθ); save_everystep = false)
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
                     breakpointθ = tmp
+                    integrator.curr_discontinuity = idx
+                    integrator.disco_checkpoint = integrator.t + tmp * dt
                 end
             end
         end

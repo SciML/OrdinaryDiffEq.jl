@@ -112,6 +112,7 @@ import EnzymeCore
     Tableau        # tableau-derived predictor (α / const_stage_guess)
 end
 export Predictor
+export set_discontinuity
 
 const CompiledFloats = Union{Float32, Float64}
 import Preferences

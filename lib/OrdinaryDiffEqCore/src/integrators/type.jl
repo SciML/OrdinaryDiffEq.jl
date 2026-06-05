@@ -176,6 +176,8 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    curr_discontinuity::Int
+    disco_checkpoint::tType
     W::WType
     P::PType
     sqdt::SqdtType

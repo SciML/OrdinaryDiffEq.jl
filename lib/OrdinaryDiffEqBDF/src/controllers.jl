@@ -83,6 +83,11 @@ end
 function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, alg::QNDF{max_order}, q) where {max_order}
     #step is accepted, reset count of consecutive failed steps
     cache.consfailcnt = 0
+    if integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
+        cache.nconsteps = 0
+    end
     cache.nconsteps += 1
     if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
         return integrator.dt * get_current_qmax(integrator, get_qmax(integrator))
@@ -174,8 +179,12 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     end
 
     if discontinuity_detection
+        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        if no_prior_discontinuity && disco_dt > zero(disco_dt)
+            add_tstop!(integrator, integrator.disco_checkpoint)
+        end
+        if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
         end
@@ -416,6 +425,11 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    if integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
+        cache.nconsteps = 0
+    end
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
@@ -579,6 +593,11 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    if integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
+        cache.nconsteps = 0
+    end
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end

@@ -43,6 +43,13 @@ The fields are:
   inside this interval, dt is held constant.
 - `failfactor`: post-Newton-failure shrink factor used by
   [`post_newton_controller!`](@ref).
+- 'discontinuity_detection': If `discontinuity_detection` is set to true, the algorithm will run the autonomous
+    discontinuity detection to predict the best next timestep after step rejection. 
+    Otherwise, it follows the default step rejection algorithm. This feature is currently
+    defaulted off. 
+- `disco_probs`: If `discontinuity_detection` is set to true, this field holds the vector of 
+`IntervalNonlinearProblem`s used for discontinuity detection. Otherwise, it can be left empty.
+
 
 User-supplied overrides flow through controllers as a `NamedTuple` of
 keyword arguments (whatever subset the user passed). At
@@ -510,10 +517,6 @@ the interval `[qmin, qmax]`.
 A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
-If `discontinuity_detection` is set to true, the algorithm will run the autonomous
-discontinuity detection to predict the best next timestep after step rejection. 
-Otherwise, it follows the default step rejection algorithm. This feature is currently
-defaulted off. 
 
 ## References
 
@@ -567,10 +570,14 @@ end
 
 # TODO change signature to remove the q input
 function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
-    (; qsteady_min, qsteady_max) = cache.controller.basic
+    (; qsteady_min, qsteady_max, discontinuity_detection) = cache.controller.basic
 
     if qsteady_min <= q <= qsteady_max
         q = one(q)
+    end
+    if discontinuity_detection && integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
     end
     return integrator.dt / q # new dt
 end
@@ -578,7 +585,11 @@ end
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
+        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if no_prior_discontinuity && disco_dt > zero(disco_dt)
+            add_tstop!(integrator, integrator.disco_checkpoint)
+        end
         if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
@@ -615,10 +626,7 @@ the interval `[qmin, qmax]`.
 A step will be accepted whenever the estimated error `get_EEst(integrator)` is
 less than or equal to unity. Otherwise, the step is rejected and re-tried with
 the predicted step size.
-If `discontinuity_detection` is set to true, the algorithm will run the autonomous
-discontinuity detection to predict the best next timestep after step rejection. 
-Otherwise, it follows the default step rejection algorithm. This feature is currently
-defaulted off. 
+
 !!! note
 
     The coefficients `beta1, beta2` are not scaled by the order of the method,
@@ -708,14 +716,21 @@ end
 
 function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     (; controller) = cache
-    (; qsteady_min, qsteady_max) = controller.basic
+    (; qsteady_min, qsteady_max, discontinuity_detection) = controller.basic
     qoldinit = controller.qoldinit
     EEst = DiffEqBase.value(get_EEst(integrator))
 
     if qsteady_min <= q <= qsteady_max
         q = one(q)
     end
-    cache.errold = max(EEst, qoldinit)
+
+    if discontinuity_detection && integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
+        cache.errold = qoldinit
+    else
+        cache.errold = max(EEst, qoldinit)
+    end
     return integrator.dt / q # new dt
 end
 
@@ -723,10 +738,13 @@ function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma, discontinuity_detection) = controller.basic
     if discontinuity_detection
+        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if no_prior_discontinuity && disco_dt > zero(disco_dt) #found a discontinuity
+            add_tstop!(integrator, integrator.disco_checkpoint)
+        end
         if disco_dt > zero(disco_dt)
-            integrator.dt = disco_dt
-            return integrator.dt
+            return integrator.dt = disco_dt
         end
     end
     return integrator.dt /= min(inv(qmin), q11 / gamma)
@@ -780,11 +798,6 @@ Some standard controller parameters suggested in the literature are
 | PI34       | `0.70`  | `-0.40` | `0`     |
 | H211PI     | `1//6`  | `1//6`  | `0`     |
 | H312PID    | `1//18` | `1//9`  | `1//18` |
-
-If `discontinuity_detection` is set to true, the algorithm will run the autonomous
-discontinuity detection to predict the best next timestep after step rejection. 
-Otherwise, it follows the default step rejection algorithm. This feature is currently
-defaulted off. 
 
 !!! note
 
@@ -945,14 +958,23 @@ end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
     (; controller) = cache
-    (; qsteady_min, qsteady_max) = controller.basic
+    (; qsteady_min, qsteady_max, discontinuity_detection) = controller.basic
 
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
     end
-    @inbounds begin
-        cache.err[3] = cache.err[2]
-        cache.err[2] = cache.err[1]
+    if discontinuity_detection && integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
+        @inbounds begin
+            cache.err[3] = one(eltype(cache.err))
+            cache.err[2] = cache.err[1]
+        end
+    else
+        @inbounds begin
+            cache.err[3] = cache.err[2]
+            cache.err[2] = cache.err[1]
+        end
     end
     return integrator.dt * dt_factor # new dt
 end
@@ -960,7 +982,11 @@ end
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
+        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if no_prior_discontinuity && disco_dt > zero(disco_dt)
+            add_tstop!(integrator, integrator.disco_checkpoint)
+        end
         if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
@@ -1025,10 +1051,6 @@ integrator.dt / qacc
 ```
 
 When it rejects, it's the same as the [`IController`](@ref):
-If `discontinuity_detection` is set to true, the algorithm will run the autonomous
-discontinuity detection to predict the best next timestep after step rejection. 
-Otherwise, it follows the default step rejection algorithm. This feature is currently
-defaulted off. 
 ```julia
 if integrator.success_iter == 0
     integrator.dt *= 0.1
@@ -1124,8 +1146,15 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     if qsteady_min <= qacc <= qsteady_max
         qacc = one(qacc)
     end
-    cache.dtacc = DiffEqBase.value(integrator.dt)
-    cache.erracc = max(1.0e-2, EEst)
+    if cache.controller.basic.discontinuity_detection && integrator.curr_discontinuity != -1 &&
+            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
+        integrator.curr_discontinuity = -1
+        cache.dtacc = DiffEqBase.value(integrator.dt)
+        cache.erracc = one(EEst)
+    else
+        cache.dtacc = DiffEqBase.value(integrator.dt)
+        cache.erracc = max(1.0e-2, EEst)
+    end
 
     return integrator.dt / qacc
 end
@@ -1135,7 +1164,11 @@ function step_reject_controller!(integrator, cache::PredictiveControllerCache, a
     (; qold) = cache
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
+        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
         disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if no_prior_discontinuity && disco_dt > zero(disco_dt)
+            add_tstop!(integrator, integrator.disco_checkpoint)
+        end
         if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
