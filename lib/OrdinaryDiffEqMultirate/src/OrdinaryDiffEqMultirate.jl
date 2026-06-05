@@ -12,6 +12,7 @@ import FastBroadcast: @..
 import MuladdMacro: @muladd
 import RecursiveArrayTools: recursivefill!
 import DiffEqBase: prepare_alg
+import LinearAlgebra
 
 using Reexport
 @reexport using SciMLBase
@@ -25,7 +26,9 @@ include("mrab_perform_step.jl")
 include("mri_gark_tableaus.jl")
 include("mri_gark_caches.jl")
 include("mri_gark_perform_step.jl")
+include("mis2_caches.jl")
+include("mis2_perform_step.jl")
 
-export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b
+export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b, MIS2
 
 end

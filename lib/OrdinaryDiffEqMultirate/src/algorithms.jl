@@ -121,3 +121,38 @@ the full macro interval. 2nd-order; embedded error estimate uses `v_2(dt) − Y_
 Base.@kwdef struct MRIGARKERK22b <: OrdinaryDiffEqAdaptiveAlgorithm
     m::Int
 end
+
+@doc generic_solver_docstring(
+    "Multirate Infinitesimal Step (MIS2) — 2nd-order, 4-stage scheme.
+
+Solves a split ODE of the form `du/dt = f1(u,t) + f2(u,t)` where `f1` is the
+fast component and `f2` is the slow component (SciML convention). One MIS
+step advances through `s = 4` outer stages; each stage solves a small modified
+fast ODE on `τ ∈ [0, d_i · dt]` whose right-hand side is the original fast
+rate `f1` plus a constant offset built from prior stages' slow tendencies and
+α/γ corrections. The inner ODE is approximated with `m · d_i` explicit
+midpoint (RK2) micro-steps so that the overall scheme retains second-order
+accuracy. Embedded error estimate is `Y_s − Y_{s-1}`.
+
+Tableau is the MIS2(4,2) scheme of Wensch–Knoth–Galant (BIT 2009).",
+    "MIS2",
+    "Multirate infinitesimal step method.",
+    """@article{wensch2009multirate,
+    title={Multirate infinitesimal step methods for atmospheric flow simulation},
+    author={Wensch, J{\\\"o}rg and Knoth, Oswald and Galant, A},
+    journal={BIT Numerical Mathematics},
+    volume={49},
+    number={2},
+    pages={449--473},
+    year={2009}}""",
+    """
+    - `m`: nominal number of inner midpoint micro-steps per `dt`; each stage takes
+        `max(1, ceil(m · d_i))` micro-steps. Default is `10`.
+    """,
+    """
+    m::Int = 10,
+    """
+)
+Base.@kwdef struct MIS2 <: OrdinaryDiffEqAdaptiveAlgorithm
+    m::Int = 10
+end

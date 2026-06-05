@@ -23,3 +23,11 @@ function prepare_alg(
     alg.m >= 1 || throw(ArgumentError("$(nameof(typeof(alg))): `m` must be ≥ 1"))
     return alg
 end
+
+alg_order(::MIS2) = 2
+isfsal(::MIS2) = false
+
+function prepare_alg(alg::MIS2, u0::AbstractArray, p, prob)
+    alg.m >= 1 || throw(ArgumentError("MIS2: `m` must be ≥ 1"))
+    return alg
+end
