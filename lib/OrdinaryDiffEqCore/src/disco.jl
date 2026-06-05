@@ -22,6 +22,7 @@ function find_discontinuity(u, uprev, integrator)
     breakpointθ = -one(dt)
     disco_probs = get_disco_probs(integrator.controller_cache)
     idx = 1
+    addsteps_called = false
     for i in cb.continuous_callbacks
         if (!(i.maybe_discontinuity))
             continue
@@ -38,10 +39,13 @@ function find_discontinuity(u, uprev, integrator)
             len_cb = i.len
             i.condition(disco_zero.out_low, uprev, t, integrator)
             i.condition(disco_zero.out_high, u, t + dt, integrator)
-            _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
-                disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
             for j in 1:len_cb
                 if (disco_zero.out_low[j] * disco_zero.out_high[j] < zero(disco_zero.out_low[j]))
+                    if (!addsteps_called)
+                        addsteps_called = true
+                        _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
+                                    disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
+                    end
                     disco_zero.ind = j
                     sol = solve(disco_prob, tspan = (0.0, breakpointθ == -one(dt) ? 1.0 : breakpointθ); save_everystep = false)
                     tmp = sol[]
@@ -56,8 +60,11 @@ function find_discontinuity(u, uprev, integrator)
             out_prev = i.condition(uprev, t, integrator)
             out_curr = i.condition(u, t + dt, integrator)
             if (out_prev * out_curr < zero(out_prev))
-                _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
-                            disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
+                if (!addsteps_called)
+                    addsteps_called = true
+                    _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
+                                disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
+                end
                 sol = solve(disco_prob, tspan = (0.0, breakpointθ == -one(dt) ? 1.0 : breakpointθ); save_everystep = false)
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
