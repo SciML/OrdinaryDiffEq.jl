@@ -8,26 +8,28 @@ alg_order(alg::SERK2) = 2
 alg_order(alg::RKC) = 2
 alg_order(alg::RKMC2) = 2
 
+alg_order(alg::TSRKC2) = 2
 alg_order(alg::TSRKC3) = 3
 
-alg_extrapolates(alg::TSRKC3) = true
+alg_extrapolates(alg::Union{TSRKC2, TSRKC3}) = true
 
 default_controller(QT, alg::SERK2) = PredictiveController(QT, alg)
-default_controller(QT, alg::Union{RKC, TSRKC3, RKMC2}) = PredictiveController(QT, alg)
+default_controller(QT, alg::Union{RKC, TSRKC2, TSRKC3, RKMC2}) = PredictiveController(QT, alg)
 default_controller(QT, alg::Union{RKL1, RKL2}) = PredictiveController(QT, alg)
 default_controller(QT, alg::Union{RKG1, RKG2}) = PredictiveController(QT, alg)
 
 alg_adaptive_order(alg::RKL1) = 1
 alg_adaptive_order(alg::RKL2) = 2
+alg_adaptive_order(alg::TSRKC2) = 1
 alg_adaptive_order(alg::Union{RKC, TSRKC3, RKMC2}) = 2
 alg_adaptive_order(alg::RKG1) = 1
 alg_adaptive_order(alg::RKG2) = 2
 
-gamma_default(alg::Union{RKC, TSRKC3, RKMC2}) = 8 // 10
+gamma_default(alg::Union{RKC, TSRKC2, TSRKC3, RKMC2}) = 8 // 10
 gamma_default(alg::Union{RKL1, RKL2}) = 8 // 10
 qmax_default(alg::TSRKC3) = 2
 
-fac_default_gamma(alg::Union{RKC, SERK2, TSRKC3, RKMC2}) = true
+fac_default_gamma(alg::Union{RKC, SERK2, TSRKC2, TSRKC3, RKMC2}) = true
 fac_default_gamma(alg::Union{RKL1, RKL2}) = true
 has_dtnew_modification(alg::Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5, RKMC2}) = true
 

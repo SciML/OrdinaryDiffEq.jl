@@ -53,6 +53,7 @@ If not provided, the methods include automatic estimation procedures.
 
   - **`RKC`**: Second-order one-step stabilized method for low accuracy requirements
   - **`TSRKC3`**: Third-order two-step stabilized method for moderate accuracy requirements
+  - **`ROCK4`**: Fourth-order stabilized method for higher accuracy requirements
   - **`RKL2`**: Second-order, monotone stable, super-time-stepping method for parabolic PDEs
 
 ## Performance Guidelines
@@ -97,6 +98,7 @@ ROCK2
 ROCK4 
 RKC
 RKMC2
+TSRKC2
 TSRKC3
 SERK2
 ESERK4

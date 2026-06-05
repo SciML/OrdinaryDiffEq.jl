@@ -119,6 +119,16 @@ end
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
         sim = test_convergence(dts, prob, RKMC2(eigen_est = eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        println("TSRKC2")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, TSRKC2(eigen_est = eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, TSRKC2(eigen_est = eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
+        sim = test_convergence(dts, prob, TSRKC2(eigen_est = eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         println("TSRKC3")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
         sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
@@ -208,6 +218,7 @@ end
             ROCK4(), ROCK4(eigen_est = eigen_est),
             RKC(), RKC(eigen_est = eigen_est),
             RKMC2(), RKMC2(eigen_est = eigen_est),
+            TSRKC2(), TSRKC2(eigen_est = eigen_est),
             TSRKC3(), TSRKC3(eigen_est = eigen_est),
             SERK2(), SERK2(eigen_est = eigen_est),
             ESERK4(), ESERK4(eigen_est = eigen_est),
@@ -239,6 +250,7 @@ end
         ROCK4(), ROCK4(eigen_est = eigen_est),
         RKC(), RKC(eigen_est = eigen_est),
         RKMC2(), RKMC2(eigen_est = eigen_est),
+        TSRKC2(), TSRKC2(eigen_est = eigen_est),
         TSRKC3(), TSRKC3(eigen_est = eigen_est),
         SERK2(), SERK2(eigen_est = eigen_est),
         ESERK4(), ESERK4(eigen_est = eigen_est),
