@@ -38,15 +38,6 @@ function initialize!(integrator, cache::MRIGARKERK22aConstantCache)
     return integrator.k[2] = integrator.fsallast
 end
 
-# Inner midpoint micro-step: advance v over interval of length h_inner with rate
-# F(v, t) = scale_f1 * f1(v, t) + offset, where offset is constant in τ.
-@inline function _mri_midpoint_step_iip!(v, f, p, t_a, h_inner, scale_f1, offset, k_buf, tmp)
-    f.f1(k_buf, v, p, t_a)
-    @.. broadcast = false tmp = v + (h_inner / 2) * (scale_f1 * k_buf + offset)
-    f.f1(k_buf, tmp, p, t_a + h_inner / 2)
-    return @.. broadcast = false v = v + h_inner * (scale_f1 * k_buf + offset)
-end
-
 function perform_step!(integrator, cache::MRIGARKERK22aCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, v, f1eval, fS_yn, fS_Y2, Y2) = cache
@@ -56,10 +47,9 @@ function perform_step!(integrator, cache::MRIGARKERK22aCache, repeat_step = fals
     f.f2(fS_yn, uprev, p, t)
     integrator.stats.nf2 += 1
 
-    # Stage 1: integrate dv/dτ = (1/2)*f1(v) + (1/2)*f2(uprev) over [0, dt]
     @.. broadcast = false v = uprev
     h_inner = dt / m
-    offset1 = fS_yn  # constant
+    offset1 = fS_yn
     for k_step in 1:m
         t_a = t + (k_step - 1) * h_inner
         f.f1(f1eval, v, p, t_a)
@@ -73,7 +63,6 @@ function perform_step!(integrator, cache::MRIGARKERK22aCache, repeat_step = fals
     f.f2(fS_Y2, Y2, p, t + dt)
     integrator.stats.nf2 += 1
 
-    # Stage 2: integrate dv/dτ = (1/2)*f1(v) - (1/2)*f2(uprev) + f2(Y2) over [0, dt]
     @.. broadcast = false v = Y2
     for k_step in 1:m
         t_a = t + (k_step - 1) * h_inner
@@ -108,7 +97,6 @@ end
 
     h_inner = dt / m
 
-    # Stage 1
     v = uprev
     for k_step in 1:m
         t_a = t + (k_step - 1) * h_inner
@@ -123,7 +111,6 @@ end
     fS_Y2 = f.f2(Y2, p, t + dt)
     integrator.stats.nf2 += 1
 
-    # Stage 2
     v = Y2
     for k_step in 1:m
         t_a = t + (k_step - 1) * h_inner
