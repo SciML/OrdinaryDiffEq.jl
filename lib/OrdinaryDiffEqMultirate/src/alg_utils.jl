@@ -13,3 +13,11 @@ function prepare_alg(alg::MRAB, u0::AbstractArray, p, prob)
     alg.m >= 1 || throw(ArgumentError("MRAB: `m` must be ≥ 1"))
     return alg
 end
+
+alg_order(::MRIGARKERK22a) = 2
+isfsal(::MRIGARKERK22a) = false
+
+function prepare_alg(alg::MRIGARKERK22a, u0::AbstractArray, p, prob)
+    alg.m >= 1 || throw(ArgumentError("MRIGARKERK22a: `m` must be ≥ 1"))
+    return alg
+end
