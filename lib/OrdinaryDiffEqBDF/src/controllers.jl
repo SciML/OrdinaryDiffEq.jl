@@ -591,4 +591,4 @@ function step_accept_controller!(
         cache.qwait -= 1 # countdown
     end
     return integrator.dt / q
-end 
+end

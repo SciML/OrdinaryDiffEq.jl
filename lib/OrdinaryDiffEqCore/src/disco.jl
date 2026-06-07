@@ -1,7 +1,7 @@
 function set_discontinuity(u, uprev, integrator)
     breakpointθ = find_discontinuity(u, uprev, integrator)
     dt = integrator.dt
-    if 1e-10 < breakpointθ < 1.0
+    if 1.0e-10 < breakpointθ < 1.0
         return breakpointθ * dt
     end
     return -one(dt)
@@ -61,5 +61,5 @@ function find_discontinuity(u, uprev, integrator)
         end
         idx += 1
     end
-    breakpointθ
+    return breakpointθ
 end
