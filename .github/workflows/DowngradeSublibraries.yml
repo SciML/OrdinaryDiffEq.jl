@@ -24,5 +24,4 @@ jobs:
       skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation"
       group-env-name: "ODEDIFFEQ_TEST_GROUP"
       group-env-value: "Core"
-      allow-reresolve: true
       # Every lib/* sublibrary is downgrade-tested (projects auto-discovered, no exclusions).
