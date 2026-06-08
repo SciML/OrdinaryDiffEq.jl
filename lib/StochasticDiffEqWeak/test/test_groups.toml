@@ -1,5 +1,5 @@
 [Core]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 # Weak-convergence groups are extremely expensive (Monte-Carlo trajectory
 # studies) and only exercise StochasticDiffEqWeak's own solvers, so they are
@@ -58,4 +58,4 @@ versions = ["1"]
 local_only = true
 
 [QA]
-versions = ["1"]
+versions = ["lts", "1"]
