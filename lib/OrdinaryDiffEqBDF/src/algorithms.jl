@@ -579,8 +579,8 @@ a single implicit solve per step.",
     step_limiter! = trivial_limiter!,
     """
 )
-struct MOOSE234{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct MOOSE234{AD, F, F2, P, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
     precs::P
@@ -588,23 +588,19 @@ struct MOOSE234{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
     controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
+    concrete_jac::CJ
 end
 
 function MOOSE234(;
-        chunk_size = Val{0}(), autodiff = AutoForwardDiff(), standardtag = Val{true}(),
-        concrete_jac = nothing, diff_type = Val{:forward}(),
+        autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
     )
-    AD_choice, chunk_size, diff_type = _process_AD_choice(autodiff, chunk_size, diff_type)
+    autodiff = _fixup_ad(autodiff)
 
-    return MOOSE234{
-        _unwrap_val(chunk_size), typeof(AD_choice), typeof(linsolve),
-        typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!),
-    }(
+    return MOOSE234(
         linsolve, nlsolve, precs, extrapolant,
-        controller, step_limiter!, AD_choice
+        controller, step_limiter!, autodiff, _unwrap_val(concrete_jac),
     )
 end
 
