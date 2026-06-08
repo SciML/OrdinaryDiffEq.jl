@@ -995,7 +995,7 @@ function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = f
 
         atmp = calculate_residuals(lte, uprev, y3, abstol, reltol, internalnorm, t)
         cache.terk = internalnorm(atmp, t)
-        integrator.EEst = cache.terk
+        OrdinaryDiffEqCore.set_EEst!(integrator, cache.terk)
     end
 
     # === Set output based on current order ===
@@ -1221,7 +1221,7 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
 
         calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
         cache.terk = internalnorm(atmp, t)
-        integrator.EEst = cache.terk
+        OrdinaryDiffEqCore.set_EEst!(integrator, cache.terk)
     end
 
     # === Set output based on current order ===

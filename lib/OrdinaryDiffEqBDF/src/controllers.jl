@@ -707,7 +707,6 @@ function stepsize_controller!(
     else
         q = (terk / 0.9)^(1 / (kₙ + 1))
     end
-    integrator.qold = q
     return q
 end
 
@@ -756,7 +755,7 @@ function step_reject_controller!(integrator, ::MOOSE234)
 
     # Candidate step at current order
     expo = 1 / (k + 1)
-    z = 1.2 * integrator.EEst^expo
+    z = 1.2 * OrdinaryDiffEqCore.get_EEst(integrator)^expo
     hₖ = z <= 10 ? h / z : 0.1 * h
 
     hₙ = hₖ
