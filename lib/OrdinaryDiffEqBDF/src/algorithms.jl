@@ -579,11 +579,10 @@ a single implicit solve per step.",
     step_limiter! = trivial_limiter!,
     """
 )
-struct MOOSE234{AD, F, F2, P, StepLimiter, CJ} <:
+struct MOOSE234{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    precs::P
     extrapolant::Symbol
     controller::Symbol
     step_limiter!::StepLimiter
@@ -593,13 +592,13 @@ end
 
 function MOOSE234(;
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(),
         extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return MOOSE234(
-        linsolve, nlsolve, precs, extrapolant,
+        linsolve, nlsolve, extrapolant,
         controller, step_limiter!, autodiff, _unwrap_val(concrete_jac),
     )
 end
