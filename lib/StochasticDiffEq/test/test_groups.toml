@@ -1,11 +1,11 @@
 [Interface1]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Interface2]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Interface3]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [AlgConvergence]
 versions = ["1"]
@@ -62,4 +62,4 @@ versions = ["1"]
 versions = ["1"]
 
 [QA]
-versions = ["1"]
+versions = ["lts", "1"]

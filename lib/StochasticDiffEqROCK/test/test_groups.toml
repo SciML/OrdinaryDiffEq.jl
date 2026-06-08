@@ -1,5 +1,5 @@
 [Core]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 # Weak-convergence Monte-Carlo studies — too expensive to run on every
 # upstream-dependency change, so marked local_only. See
@@ -11,4 +11,4 @@ timeout = 240
 local_only = true
 
 [QA]
-versions = ["1"]
+versions = ["lts", "1"]

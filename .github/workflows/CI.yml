@@ -53,13 +53,15 @@ jobs:
           - AD
         version:
           - 'lts'
-          - '1.11'
           - '1'
           - 'pre'
         exclude:
           - group: AD
             version: '1'
           - group: AD
+            version: 'pre'
+          # QA runs only on lts and 1 per the SciML version-matrix convention.
+          - group: QA
             version: 'pre'
           # Skip ODEInterfaceRegression until ODEInterface.jl is fixed upstream
           # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/2987
