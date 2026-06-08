@@ -794,10 +794,10 @@ function initialize!(integrator, cache::MOOSE234ConstantCache)
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitMOOSE!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = false)
@@ -1042,10 +1042,10 @@ function initialize!(integrator, cache::MOOSE234Cache)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    u_modified = integrator.u_modified
-    integrator.u_modified = true
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
     reinitMOOSE!(integrator, cache)
-    return integrator.u_modified = u_modified
+    return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
 function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)

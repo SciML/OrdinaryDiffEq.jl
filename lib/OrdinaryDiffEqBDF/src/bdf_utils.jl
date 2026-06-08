@@ -520,7 +520,7 @@ function reinitMOOSE!(integrator, cache)
     ) = cache
     (; t, dt, uprev) = integrator
 
-    if integrator.u_modified
+    if integrator.derivative_discontinuity
         order = cache.order = 2
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         cache.qwait = 4 # order + 2

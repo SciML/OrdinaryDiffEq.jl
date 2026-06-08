@@ -779,7 +779,7 @@ function step_reject_controller!(integrator, ::MOOSE234)
 
     # Restart from order 2 (clear history) when stuck at minimum order
     if kₙ == 2 && integrator.cache.consfailcnt > 3
-        u_modified!(integrator, true)
+        integrator.derivative_discontinuity = true
     end
 
     integrator.dt = hₙ
