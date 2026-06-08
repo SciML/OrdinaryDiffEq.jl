@@ -1,8 +1,5 @@
 using OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqFIRK
-using Logging
-global_logger(SimpleLogger(stderr, Logging.Error))
-using BenchmarkTools
 
 predictive_disco_controller(alg) = OrdinaryDiffEqCore.PredictiveController(alg; discontinuity_detection = true)
 PI_disco_controller(alg) = OrdinaryDiffEqCore.PIController(alg; discontinuity_detection = true)
