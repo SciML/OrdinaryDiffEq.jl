@@ -1851,8 +1851,9 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
     return integrator.derivative_discontinuity = derivative_discontinuity
 end
 
-# BDF coefficients shared by FBDF and MOOSE234 for the nonlinear solve
-const _BDF_COEFFS = SA[
+# BDF coefficients for MOOSE234's nonlinear solve (plain Matrix; this sublib
+# no longer depends on StaticArrays, and it's a const lookup table indexed by order)
+const _BDF_COEFFS = [
     1 -1 0 0 0 0;
     Int64(3) // 2 -2 Int64(1) // 2 0 0 0;
     Int64(11) // 6 -3 Int64(3) // 2 -Int64(1) // 3 0 0;
