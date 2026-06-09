@@ -22,9 +22,10 @@ include("mreef_caches.jl")
 include("mreef_perform_step.jl")
 include("mrab_caches.jl")
 include("mrab_perform_step.jl")
+include("mri_gark_tableaus.jl")
 include("mri_gark_caches.jl")
 include("mri_gark_perform_step.jl")
 
-export MREEF, MRAB, MRIGARKERK22a
+export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b
 
 end
