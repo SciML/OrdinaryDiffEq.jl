@@ -2,7 +2,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
 
 @testset "MIS2" begin
     @testset "Construction" begin
-        @test MIS2() == MIS2(10)
+        @test MIS2(m = 10) == MIS2(10)
         @test MIS2(m = 20) == MIS2(20)
     end
 

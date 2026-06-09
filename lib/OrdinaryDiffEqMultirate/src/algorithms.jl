@@ -147,12 +147,12 @@ Tableau is the MIS2(4,2) scheme of Wensch–Knoth–Galant (BIT 2009).",
     year={2009}}""",
     """
     - `m`: nominal number of inner midpoint micro-steps per `dt`; each stage takes
-        `max(1, ceil(m · d_i))` micro-steps. Default is `10`.
+        `max(1, ceil(m · d_i))` micro-steps.
     """,
     """
-    m::Int = 10,
+    m::Int,
     """
 )
 Base.@kwdef struct MIS2 <: OrdinaryDiffEqAdaptiveAlgorithm
-    m::Int = 10
+    m::Int
 end
