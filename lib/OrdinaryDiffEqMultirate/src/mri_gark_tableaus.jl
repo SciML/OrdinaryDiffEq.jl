@@ -1,9 +1,9 @@
 struct MRIGARKExplicit22Tableau{T}
-    Γ11::T  # fast rate, stage 1
-    Γ22::T  # fast rate, stage 2 (0 when c₂ = 1)
-    γ11::T  # f2(u_n) coupling, stage 1
-    γ21::T  # f2(u_n) coupling, stage 2
-    γ22::T  # f2(Y₂) coupling, stage 2
+    Γ11::T
+    Γ22::T  # 0 for ERK22b (c₂=1); no inner fast loop in stage 2
+    γ11::T
+    γ21::T
+    γ22::T
 end
 
 function MRIGARKERK22aTableau(::Type{T}) where {T}
