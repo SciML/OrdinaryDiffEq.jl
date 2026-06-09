@@ -259,7 +259,7 @@ If `integrator.f` has a custom Jacobian update function, then it will be called.
 either automatic or finite differencing will be used depending on the `uf` object of the
 cache. If `next_step`, then it will evaluate the Jacobian at the next step.
 """
-function calc_J(integrator, cache, next_step::Bool = false)
+function SciMLBase.calc_J(integrator, cache::OrdinaryDiffEqCache, next_step::Bool = false)
     (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
