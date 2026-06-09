@@ -21,7 +21,7 @@ import StaticArraysCore: StaticArray, StaticMatrix
 # SciMLBase (OrdinaryDiffEqCore/DiffEqBase only re-export them), so import them
 # from the owner to satisfy `all_explicit_imports_via_owners`.
 using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
-import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
+import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant, calc_J
 import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
