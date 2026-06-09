@@ -83,14 +83,14 @@ globally; embedded error estimate uses `v_2(dt) − Y_2`.",
     pages={2300--2327},
     year={2019}}""",
     """
-    - `m`: number of inner midpoint micro-steps per stage. Default is `10`.
+    - `m`: number of inner midpoint micro-steps per stage.
     """,
     """
-    m::Int = 10,
+    m::Int,
     """
 )
 Base.@kwdef struct MRIGARKERK22a <: OrdinaryDiffEqAdaptiveAlgorithm
-    m::Int = 10
+    m::Int
 end
 
 @doc generic_solver_docstring(
@@ -112,12 +112,12 @@ the full macro interval. 2nd-order; embedded error estimate uses `v_2(dt) − Y_
     pages={2300--2327},
     year={2019}}""",
     """
-    - `m`: number of inner midpoint micro-steps per stage. Default is `10`.
+    - `m`: number of inner midpoint micro-steps per stage.
     """,
     """
-    m::Int = 10,
+    m::Int,
     """
 )
 Base.@kwdef struct MRIGARKERK22b <: OrdinaryDiffEqAdaptiveAlgorithm
-    m::Int = 10
+    m::Int
 end

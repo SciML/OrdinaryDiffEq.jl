@@ -3,7 +3,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
 @testset "MRI-GARK ERK22 family" begin
     @testset "MRIGARKERK22a" begin
         @testset "Construction" begin
-            @test MRIGARKERK22a() == MRIGARKERK22a(10)
+            @test MRIGARKERK22a(m = 10) == MRIGARKERK22a(10)
             @test MRIGARKERK22a(m = 20) == MRIGARKERK22a(20)
         end
 
@@ -47,7 +47,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
 
     @testset "MRIGARKERK22b" begin
         @testset "Construction" begin
-            @test MRIGARKERK22b() == MRIGARKERK22b(10)
+            @test MRIGARKERK22b(m = 10) == MRIGARKERK22b(10)
             @test MRIGARKERK22b(m = 20) == MRIGARKERK22b(20)
         end
 
