@@ -158,13 +158,13 @@ function alg_cache(
     return RKCConstantCache(u)
 end
 
-mutable struct RKMC2ConstantCache{zType} <: OrdinaryDiffEqConstantCache
+mutable struct RKMC2ConstantCache{zType, T} <: OrdinaryDiffEqConstantCache
     zprev::zType
     mdeg::Int
     min_stage::Int
     max_stage::Int
-    w0::Float64
-    w1::Float64
+    w0::T
+    w1::T
 end
 
 @cache struct RKMC2Cache{uType, rateType, uNoUnitsType, C <: RKMC2ConstantCache} <:
@@ -186,7 +186,8 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = RKMC2ConstantCache(zero(u), 0, alg.min_stages, alg.max_stages, 0.0, 0.0)
+    w = zero(tTypeNoUnits)
+    constantcache = RKMC2ConstantCache(zero(u), 0, alg.min_stages, alg.max_stages, w, w)
     gprev = zero(u)
     gprev2 = zero(u)
     tmp = zero(u)
@@ -203,7 +204,8 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RKMC2ConstantCache(zero(u), 0, alg.min_stages, alg.max_stages, 0.0, 0.0)
+    w = zero(tTypeNoUnits)
+    return RKMC2ConstantCache(zero(u), 0, alg.min_stages, alg.max_stages, w, w)
 end
 
 mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
@@ -238,7 +240,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ESERK4ConstantCache(u)
+    constantcache = ESERK4ConstantCache(constvalue(uBottomEltypeNoUnits), u)
     uᵢ = zero(u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -257,7 +259,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ESERK4ConstantCache(u)
+    return ESERK4ConstantCache(constvalue(uBottomEltypeNoUnits), u)
 end
 
 mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
@@ -292,7 +294,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ESERK5ConstantCache(u)
+    constantcache = ESERK5ConstantCache(constvalue(uBottomEltypeNoUnits), u)
     uᵢ = zero(u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -311,7 +313,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return ESERK5ConstantCache(u)
+    return ESERK5ConstantCache(constvalue(uBottomEltypeNoUnits), u)
 end
 
 mutable struct SERK2ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
@@ -343,7 +345,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = SERK2ConstantCache(u)
+    constantcache = SERK2ConstantCache(constvalue(uBottomEltypeNoUnits), u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
     Sᵢ = zero(u)
@@ -361,7 +363,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return SERK2ConstantCache(u)
+    return SERK2ConstantCache(constvalue(uBottomEltypeNoUnits), u)
 end
 
 mutable struct TSRKC2ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstantCache
