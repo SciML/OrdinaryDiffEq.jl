@@ -1099,18 +1099,15 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = floor(Int, sqrt(T(1) + T(0.7599433602453284) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.5975344573950566)))))) + 1
-    mdeg2 = mdeg^2
-    
-    w0m1 = (T(1) / 10) / mdeg2
+    mdeg = floor(Int, sqrt(T(1) + T(0.759782816506459) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.598626091572911)))))) + 1
+    tsw0 = cache.tsw0
+    acoshtsw0 = cache.acoshtsw0
+    w0m1 = T(2) * (sinh(acoshtsw0 / (T(2) * mdeg))^2)
     w0 = T(1) + w0m1
     w0sqm1 = w0m1 * (w0m1 + T(2))
-    temp = sqrt(w0sqm1)
-    arg = mdeg * log(w0 + temp)
-    tsw0 = cosh(arg)
-    dtsw0 = mdeg * sinh(arg) / temp
-    d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
-    w1 = (onemq * dtsw0 + sqrt(onemq * onemq * dtsw0 * dtsw0 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
+    dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+    d2tsw0 = ((mdeg^2) * tsw0 - w0 * dtsw0) / w0sqm1
+    w1 = (onemq * dtsw0 + sqrt((onemq * dtsw0)^2 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
 
     # stage-1
     gprev2 = uprev
@@ -1185,18 +1182,15 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
-    mdeg = floor(Int, sqrt(T(1) + T(0.7599433602453284) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.5975344573950566)))))) + 1
-    mdeg2 = mdeg^2
-
-    w0m1 = (T(1) / 10) / mdeg2
+    mdeg = floor(Int, sqrt(T(1) + T(0.759782816506459) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.598626091572911)))))) + 1
+    tsw0 = constantcache.tsw0
+    acoshtsw0 = constantcache.acoshtsw0
+    w0m1 = T(2) * (sinh(acoshtsw0 / (T(2) * mdeg))^2)
     w0 = T(1) + w0m1
     w0sqm1 = w0m1 * (w0m1 + T(2))
-    temp = sqrt(w0sqm1)
-    arg = mdeg * log(w0 + temp)
-    tsw0 = cosh(arg)
-    dtsw0 = mdeg * sinh(arg) / temp
-    d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
-    w1 = (onemq * dtsw0 + sqrt(onemq * onemq * dtsw0 * dtsw0 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
+    dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+    d2tsw0 = ((mdeg^2) * tsw0 - w0 * dtsw0) / w0sqm1
+    w1 = (onemq * dtsw0 + sqrt((onemq * dtsw0)^2 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
 
     # stage-1
     @.. broadcast = false gprev2 = uprev
@@ -1292,23 +1286,21 @@ end
         b = b1
         b2 = b1
     else
-        mdeg = floor(Int, sqrt(T(4) + T(1.2677172340429275) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (T(0.4442378370550416) + q))))) + 1
+        mdeg = floor(Int, sqrt(T(4) + T(1.267029788142009) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (T(0.44256220745562963) + q))))) + 1
         mdeg2 = mdeg^2
-
-        w0m1 = (T(1) / 4) / mdeg2
+        tsw0 = cache.tsw0
+        acoshtsw0 = cache.acoshtsw0
+        acoshtsw0dm = acoshtsw0 / mdeg
+        w0m1 = T(2) * (sinh(acoshtsw0dm / T(2))^2)
         w0 = T(1) + w0m1
         w0sq = w0^2
         w0sqm1 = w0m1 * (w0m1 + T(2))
-        temp = sqrt(w0sqm1)
-        arg1 = log(w0 + temp)
-        arg2 = mdeg * arg1
-        tsw0 = cosh(arg2)
-        dtsw0 = mdeg * sinh(arg2) / temp
+        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
         d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
         d3tsw0 = ((T(1) + T(2) * w0sq + mdeg2 * w0sqm1) * dtsw0 - T(3) * mdeg2 * w0 * tsw0) / (w0sqm1^2)
         w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + T(4) * q * dtsw0 * d3tsw0)) / (T(2) * d3tsw0)
 
-        b1 = sinh((mdeg - 2) * arg1) / (T(4) * sinh((mdeg - 1) * arg1))
+        b1 = sinh((mdeg - 2) * acoshtsw0dm) / (T(4) * sinh((mdeg - 1) * acoshtsw0dm))
         b = T(15) / ((T(8) * w0)^2)
         b2 = b1
     end
@@ -1431,23 +1423,21 @@ end
         b = b1
         b2 = b1
     else
-        mdeg = floor(Int, sqrt(T(4) + T(1.2677172340429275) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (T(0.4442378370550416) + q))))) + 1
+        mdeg = floor(Int, sqrt(T(4) + T(1.267029788142009) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (T(0.44256220745562963) + q))))) + 1
         mdeg2 = mdeg^2
-
-        w0m1 = (T(1) / 4) / mdeg2
+        tsw0 = constantcache.tsw0
+        acoshtsw0 = constantcache.acoshtsw0
+        acoshtsw0dm = acoshtsw0 / mdeg
+        w0m1 = T(2) * (sinh(acoshtsw0dm / T(2))^2)
         w0 = T(1) + w0m1
         w0sq = w0^2
         w0sqm1 = w0m1 * (w0m1 + T(2))
-        temp = sqrt(w0sqm1)
-        arg1 = log(w0 + temp)
-        arg2 = mdeg * arg1
-        tsw0 = cosh(arg2)
-        dtsw0 = mdeg * sinh(arg2) / temp
+        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
         d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
         d3tsw0 = ((T(1) + T(2) * w0sq + mdeg2 * w0sqm1) * dtsw0 - T(3) * mdeg2 * w0 * tsw0) / (w0sqm1^2)
         w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + T(4) * q * dtsw0 * d3tsw0)) / (T(2) * d3tsw0)
 
-        b1 = sinh((mdeg - 2) * arg1) / (T(4) * sinh((mdeg - 1) * arg1))
+        b1 = sinh((mdeg - 2) * acoshtsw0dm) / (T(4) * sinh((mdeg - 1) * acoshtsw0dm))
         b = T(15) / ((T(8) * w0)^2)
         b2 = b1
     end

@@ -366,9 +366,11 @@ function alg_cache(
     return SERK2ConstantCache(constvalue(uBottomEltypeNoUnits), u)
 end
 
-mutable struct TSRKC2ConstantCache{zType} <: OrdinaryDiffEqConstantCache
+mutable struct TSRKC2ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstantCache
     #to match the types to call maxeig!
     zprev::zType
+    tsw0::tTypeNoUnits
+    acoshtsw0::tTypeNoUnits
 end
 @cache struct TSRKC2Cache{uType, rateType, uNoUnitsType, C <: TSRKC2ConstantCache} <:
     StabilizedRKMutableCache
@@ -389,7 +391,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = TSRKC2ConstantCache(u)
+    tsw0 = tTypeNoUnits(1.1)
+    acoshtsw0 = tTypeNoUnits(acosh(1.1))
+    constantcache = TSRKC2ConstantCache(u, tsw0, acoshtsw0)
     gprev = zero(u)
     gprev2 = zero(u)
     tmp = zero(u)
@@ -406,12 +410,16 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return TSRKC2ConstantCache(u)
+    tsw0 = tTypeNoUnits(1.1)
+    acoshtsw0 = tTypeNoUnits(acosh(1.1))
+    return TSRKC2ConstantCache(u, tsw0, acoshtsw0)
 end
 
-mutable struct TSRKC3ConstantCache{zType} <: OrdinaryDiffEqConstantCache
+mutable struct TSRKC3ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstantCache
     #to match the types to call maxeig!
     zprev::zType
+    tsw0::tTypeNoUnits
+    acoshtsw0::tTypeNoUnits
 end
 @cache struct TSRKC3Cache{uType, rateType, uNoUnitsType, C <: TSRKC3ConstantCache} <:
     StabilizedRKMutableCache
@@ -432,7 +440,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = TSRKC3ConstantCache(u)
+    tsw0 = tTypeNoUnits(1.25)
+    acoshtsw0 = tTypeNoUnits(acosh(1.25))
+    constantcache = TSRKC3ConstantCache(u, tsw0, acoshtsw0)
     gprev = zero(u)
     gprev2 = zero(u)
     tmp = zero(u)
@@ -449,7 +459,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return TSRKC3ConstantCache(u)
+    tsw0 = tTypeNoUnits(1.25)
+    acoshtsw0 = tTypeNoUnits(acosh(1.25))
+    return TSRKC3ConstantCache(u, tsw0, acoshtsw0)
 end
 
 mutable struct RKL1ConstantCache{zType} <: OrdinaryDiffEqConstantCache
