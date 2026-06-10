@@ -17,7 +17,7 @@ SafeTestsets = "0.1.0"
 LinearSolve = "3.75.0"
 OrdinaryDiffEqCore = "4"
 Reexport = "1.2.2"
-SciMLBase = "3"
+SciMLBase = "3.10.0"
 SciMLOperators = "1.15.0"
 julia = "1.10"
 
