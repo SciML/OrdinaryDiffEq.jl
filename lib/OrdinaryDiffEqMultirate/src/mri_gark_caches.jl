@@ -21,12 +21,12 @@ end
 get_fsalfirstlast(cache::MRIGARKCache, u) = (cache.fsalfirst, cache.k)
 
 function alg_cache(
-        alg::MRIGARKERK22a, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
+        alg::Union{MRIGARKERK22a, MRIGARKERK22b}, u, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = MRIGARKERK22aTableau(eltype(u))
+    tab = mri_gark_tableau(alg, eltype(u))
     s = length(tab.Γ)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -42,40 +42,10 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::MRIGARKERK22a, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
+        alg::Union{MRIGARKERK22a, MRIGARKERK22b}, u, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return MRIGARKConstantCache(MRIGARKERK22aTableau(eltype(u)))
-end
-
-function alg_cache(
-        alg::MRIGARKERK22b, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = MRIGARKERK22bTableau(eltype(u))
-    s = length(tab.Γ)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    v = zero(u)
-    f1eval = zero(rate_prototype)
-    slow_f = zero(rate_prototype)
-    Y = [zero(u) for _ in 1:s]
-    fS = [zero(rate_prototype) for _ in 1:s]
-    fsalfirst = zero(rate_prototype)
-    k = zero(rate_prototype)
-    return MRIGARKCache(u, uprev, tmp, atmp, v, f1eval, slow_f, Y, fS, fsalfirst, k, tab)
-end
-
-function alg_cache(
-        alg::MRIGARKERK22b, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return MRIGARKConstantCache(MRIGARKERK22bTableau(eltype(u)))
+    return MRIGARKConstantCache(mri_gark_tableau(alg, eltype(u)))
 end

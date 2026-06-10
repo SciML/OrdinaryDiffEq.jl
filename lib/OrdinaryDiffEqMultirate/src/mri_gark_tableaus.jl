@@ -17,3 +17,6 @@ function MRIGARKERK22bTableau(::Type{T}) where {T}
     c = T[0, 1]
     return MRIGARKExplicitTableau{T}(Γ, γ, c)
 end
+
+mri_gark_tableau(::MRIGARKERK22a, ::Type{T}) where {T} = MRIGARKERK22aTableau(T)
+mri_gark_tableau(::MRIGARKERK22b, ::Type{T}) where {T} = MRIGARKERK22bTableau(T)
