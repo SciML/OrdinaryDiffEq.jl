@@ -60,3 +60,54 @@ issplit(alg::CFNLIRK3) = true
 issplit(alg::ARS343) = true
 alg_order(alg::ARS343) = 3
 isesdirk(alg::ARS343) = true
+issplit(alg::ARS222) = true
+alg_order(alg::ARS222) = 2
+isesdirk(alg::ARS222) = true
+issplit(alg::ARS232) = true
+alg_order(alg::ARS232) = 2
+isesdirk(alg::ARS232) = true
+issplit(alg::ARS443) = true
+alg_order(alg::ARS443) = 3
+isesdirk(alg::ARS443) = true
+issplit(alg::IMEXSSP222) = true
+alg_order(alg::IMEXSSP222) = 2
+isesdirk(alg::IMEXSSP222) = true
+issplit(alg::IMEXSSP2322) = true
+alg_order(alg::IMEXSSP2322) = 2
+isesdirk(alg::IMEXSSP2322) = true
+issplit(alg::IMEXSSP3332) = true
+alg_order(alg::IMEXSSP3332) = 2
+isesdirk(alg::IMEXSSP3332) = true
+issplit(alg::IMEXSSP3433) = true
+alg_order(alg::IMEXSSP3433) = 3
+isesdirk(alg::IMEXSSP3433) = true
+issplit(alg::BHR553) = true
+alg_order(alg::BHR553) = 3
+isesdirk(alg::BHR553) = true
+
+# Per-stage Newton-seed strategy. Every SDIRK/ESDIRK algorithm in this module
+# carries a `predictor::Predictor.T` field, so the `alg.predictor` access is
+# usually direct. The `hasproperty` fallback is for downstream algorithms that
+# reuse `ESDIRKIMEXCache` (e.g. OrdinaryDiffEqBDF's `ABDF2`, which uses the
+# Implicit Euler tableau as a starter step via `cache.eulercache`) without
+# carrying a `predictor` field of their own — `Predictor.Trivial` matches the
+# zero-seed branch they already take through the `alg isa Union{...}` gates.
+_predictor(alg) = hasproperty(alg, :predictor) ? alg.predictor : Predictor.Trivial
+
+# The interpolant predictors use the Hermite power form; a method with a custom
+# interpolant should override this to false to fall back to the full extrapolant.
+_uses_hermite_interp(alg) = true
+
+# Deprecated `extrapolant` Symbol -> `Predictor` enum mapping.
+function _resolve_predictor(predictor::Predictor.T, extrapolant)
+    extrapolant === nothing && return predictor
+    Base.depwarn(
+        "The `extrapolant` keyword is deprecated; use `predictor` (a `Predictor` enum value).",
+        :extrapolant
+    )
+    extrapolant isa Predictor.T && return extrapolant
+    extrapolant === :constant && return Predictor.Trivial
+    extrapolant === :linear && return Predictor.Linear
+    extrapolant === :interpolant && return Predictor.MaxOrder
+    return predictor
+end

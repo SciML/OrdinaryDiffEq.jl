@@ -53,14 +53,22 @@ function step_reject_controller!(
         integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau
     )
     (; controller) = ccache
-    (; cache) = controller
-    (; dt, success_iter) = integrator
+    (; discontinuity_detection) = controller.basic
+    (; dt, success_iter, cache) = integrator
     (; num_stages, step, iter, hist_iter) = cache
     integrator.dt = success_iter == 0 ? 0.1 * dt : dt / ccache.qold
     cache.step = step + 1
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
     min_stages = (alg.min_order - 1) ÷ 4 * 2 + 1
+
+    if (discontinuity_detection)
+        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        if disco_dt > zero(dt)
+            integrator.dt = disco_dt
+        end
+    end
+
     return if (step > 10)
         if (
                 (

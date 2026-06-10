@@ -14,11 +14,11 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 [compat]
 LinearAlgebra = "1.10"
 SafeTestsets = "0.1.0"
-LinearSolve = "3.46"
+LinearSolve = "3.75.0"
 OrdinaryDiffEqCore = "4"
-Reexport = "1.2"
+Reexport = "1.2.2"
 SciMLBase = "3"
-SciMLOperators = "1.4"
+SciMLOperators = "1.15.0"
 julia = "1.10"
 
 [sources.OrdinaryDiffEqCore]

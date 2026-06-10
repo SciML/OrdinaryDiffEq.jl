@@ -13,7 +13,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     trivial_limiter!, _ode_interpolant!,
     isesdirk, issplit,
     ssp_coefficient, get_fsalfirstlast, generic_solver_docstring,
-    _ad_chunksize_int, _ad_fdtype, _fixup_ad, current_extrapolant!
+    _ad_chunksize_int, _ad_fdtype, _fixup_ad, current_extrapolant!, Predictor
+export Predictor
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
@@ -45,7 +46,8 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
     SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
     SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
     SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA,
-    ARS343
+    ARS343, ARS222, ARS232, ARS443,
+    IMEXSSP222, IMEXSSP2322, IMEXSSP3332, IMEXSSP3433, BHR553
 
 import PrecompileTools
 import Preferences

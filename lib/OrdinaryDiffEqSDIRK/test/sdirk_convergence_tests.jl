@@ -184,6 +184,63 @@ end
     @test sim_iip.𝒪est[:l∞] ≈ 3 atol = testTol
 end
 
+@testset "IMEX-SSP family SplitODEProblem" begin
+    dts = 1 .// 2 .^ (10:-1:6)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, expected) in (
+            (IMEXSSP222(), 2), (IMEXSSP2322(), 2),
+            (IMEXSSP3332(), 2), (IMEXSSP3433(), 3),
+        )
+        sim_oop = test_convergence(dts, prob_oop, alg)
+        @test sim_oop.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_iip = test_convergence(dts, prob_iip, alg)
+        @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
+    end
+end
+
+@testset "BHR553 SplitODEProblem" begin
+    # BHR(5,5,3)* — Boscarino-Russo 2009. Uses a coarser dt range than the
+    # IMEX-SSP family because BHR's pre-asymptotic regime extends to ~1/16.
+    dts = 1 .// 2 .^ (6:-1:2)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    sim_oop = test_convergence(dts, prob_oop, BHR553())
+    @test sim_oop.𝒪est[:l∞] ≈ 3 atol = 0.3
+    sim_iip = test_convergence(dts, prob_iip, BHR553())
+    @test sim_iip.𝒪est[:l∞] ≈ 3 atol = 0.3
+end
+
+@testset "ARS222/ARS232/ARS443 SplitODEProblem" begin
+    dts = 1 .// 2 .^ (8:-1:4)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, expected) in ((ARS222(), 2), (ARS232(), 2), (ARS443(), 3))
+        sim_oop = test_convergence(dts, prob_oop, alg)
+        @test sim_oop.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_iip = test_convergence(dts, prob_iip, alg)
+        @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
+    end
+end
+
 # Regression test: Kvaerno3/4/5 with SplitODEProblem must integrate the full RHS (f1+f2),
 # not just f1. These are non-IMEX (issplit=false) methods, so f.f2 must flow through
 # fsalfirst rather than being split off into the explicit ks arrays (which have Ae=be=0).

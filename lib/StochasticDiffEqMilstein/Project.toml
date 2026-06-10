@@ -26,15 +26,15 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 DiffEqBase = "7"
-DiffEqNoiseProcess = "5.13"
+DiffEqNoiseProcess = "5.30.0"
 StochasticDiffEqLevyArea = "2"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "4"
 Pkg = "1"
 RecursiveArrayTools = "4"
-Reexport = "0.2, 1.0"
-SciMLBase = "3"
+Reexport = "1.2.2"
+SciMLBase = "3.1.0"
 StaticArrays = "1.9.14"
 StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"

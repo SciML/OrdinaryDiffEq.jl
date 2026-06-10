@@ -40,6 +40,7 @@ set_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, val::Bool)::Boo
 get_new_W!(nlsolver::AbstractNLSolver)::Bool = get_new_W!(nlsolver.cache)
 get_new_W!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache})::Bool = nlcache.new_W
 get_new_W!(::AbstractNLSolverCache)::Bool = true
+get_new_W!(nlcache::NonlinearSolveCache)::Bool = nlcache.new_W
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
@@ -218,6 +219,15 @@ struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
     uf_du::ufduType
 end
 
+function _nlalg_with_linsolve(inner_alg, linsolve)
+    linsolve === nothing && return inner_alg
+    !hasfield(typeof(inner_alg), :descent) && return inner_alg
+    descent = inner_alg.descent
+    !hasfield(typeof(descent), :linsolve) && return inner_alg
+    descent.linsolve !== nothing && return inner_alg
+    return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
+end
+
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
@@ -324,8 +334,10 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
+            use_w_reuse = !isdae && f.nlstep_data === nothing && W isa AbstractMatrix &&
+                !(W isa AbstractSciMLOperator)
             prob = if f.nlstep_data !== nothing
-                prob = f.nlstep_data.nlprob
+                f.nlstep_data.nlprob
             else
                 nlf = isdae ? daenlf : odenlf
                 nlp_params = if isdae
@@ -333,20 +345,35 @@ function build_nlsolver(
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                # Use FullSpecialize so SciMLBase does not wrap `nlf` in a
-                # FunctionWrappersWrapper with a fixed set of Dual tag branches.
-                # The wrapper otherwise throws "No matching function wrapper was
-                # found!" when the ODE solver is itself nested inside an outer
-                # ForwardDiff.Dual layer (e.g. SciMLSensitivity, nested AD), since
-                # the inner NonlinearProblem is then called with a Dual tagged by
-                # `DiffEqBase.OrdinaryDiffEqTag` that no pre-built wrapper matches.
-                NonlinearProblem(
-                    NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf),
-                    ztmp, nlp_params
-                )
+                if use_w_reuse
+                    nlf_jac! = let W = W
+                        (J_out, z, p) -> (copyto!(J_out, W); J_out)
+                    end
+                    NonlinearProblem(
+                        NonlinearFunction{true, SciMLBase.FullSpecialize}(
+                            nlf;
+                            jac = nlf_jac!
+                        ),
+                        ztmp, nlp_params
+                    )
+                else
+                    NonlinearProblem(
+                        NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf),
+                        ztmp, nlp_params
+                    )
+                end
             end
-            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
-            nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
+            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
+            cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
+            nlcache = NonlinearSolveCache(
+                ustep, tstep, k, atmp, invγdt, prob, cache,
+                use_w_reuse ? J : nothing,
+                use_w_reuse ? W : nothing,
+                use_w_reuse ? uf : nothing,
+                use_w_reuse ? jac_config : nothing,
+                (use_w_reuse && uf !== nothing) ? du1 : nothing,
+                zero(tstep), true
+            )
         else
             # Build separated DAE Jacobian cache if applicable
             if isdae
@@ -469,16 +496,16 @@ function build_nlsolver(
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            # See comment on the in-place branch above: FullSpecialize avoids
-            # the FunctionWrappersWrapper dispatch hole when the ODE solver is
-            # called inside an outer ForwardDiff layer.
             prob = NonlinearProblem(
                 NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
                 copy(ztmp), nlp_params
             )
-            cache = init(prob, nlalg.alg, verbose = verbose.nonlinear_verbosity)
+            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
+            cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
-                nothing, tstep, nothing, nothing, invγdt, prob, cache
+                nothing, tstep, nothing, nothing, invγdt, prob, cache,
+                nothing, nothing, nothing, nothing, nothing,
+                zero(tstep), true
             )
         else
             # Build separated DAE Jacobian cache if applicable

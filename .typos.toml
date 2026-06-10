@@ -22,6 +22,9 @@ vectorized = "vectorized"
 extrapolant = "extrapolant"
 # Person names in citations - these are correct spellings
 Sigal = "Sigal"  # Sigal Gottlieb is a real person/author
+lamba = "lamba"  # Lamba's adaptive Euler-Maruyama method (LambaEM, LambaEulerHeun)
+Lamba = "Lamba"
+Strang = "Strang"  # Strang splitting (Gilbert Strang)
 Steinebach = "Steinebach"
 Protopapa = "Protopapa"
 Hairer = "Hairer"

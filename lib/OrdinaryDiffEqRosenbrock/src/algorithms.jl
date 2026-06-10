@@ -104,7 +104,7 @@ for (Alg, desc, refs, is_W) in [
     # Default them to max_jac_age = 1 which effectively disables reuse (the
     # age check in _rosenbrock_jac_reuse_decision triggers every step).
     # Users can still opt into reuse with an explicit max_jac_age kwarg.
-    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4PW) 
+    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4PW)
     # keep the full reuse default which wins on PDE workloads.
     default_max_jac_age = (Alg === :Rosenbrock23 || Alg === :Rosenbrock32) ? 1 : 20
     @eval begin

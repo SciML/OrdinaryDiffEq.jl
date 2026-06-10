@@ -61,7 +61,7 @@ end
 
 # SERK methods
 
-for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC3]
+for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC2, :TSRKC3]
     @eval begin
         struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
             eigen_est::E
@@ -159,6 +159,25 @@ end
 SERK2(; eigen_est = nothing) = SERK2(eigen_est)
 
 @doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues.""",
+    "TSRKC2",
+    "Two-step Stabilized Explicit Method.",
+    """A. V. Moisa. A family of two-step second order Runge-Kutta-Chebyshev methods,
+    Journal of Computational and Applied Mathematics, 446, pp 115868, 2024. doi:
+    https://doi.org/10.1016/j.cam.2024.115868""",
+    """
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    eigen_est = nothing,
+    """
+)
+function TSRKC2 end
+
+@doc generic_solver_docstring(
     """Third order method. Exhibits high stability for real eigenvalues.""",
     "TSRKC3",
     "Two-step Stabilized Explicit Method.",
@@ -176,6 +195,37 @@ SERK2(; eigen_est = nothing) = SERK2(eigen_est)
     """
 )
 function TSRKC3 end
+
+@doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues with a monotonically
+    increasing and positive stability function, giving smaller error constants than RKC.""",
+    "RKMC2",
+    "Stabilized Explicit Method.",
+    """Boris Faleichik, Andrew Moisa. Explicit Runge-Kutta-Chebyshev methods of second order
+    with monotonic stability polynomial. Journal of Computational and Applied Mathematics,
+    476, pp 117061, 2026. doi: https://doi.org/10.1016/j.cam.2025.117061""",
+    """
+    - `min_stages`: The minimum degree of the Chebyshev polynomial (>= 3).
+    - `max_stages`: The maximum degree of the Chebyshev polynomial.
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 1000,
+    eigen_est = nothing,
+    """
+)
+struct RKMC2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKMC2(; min_stages = 3, max_stages = 1000, eigen_est = nothing)
+    return RKMC2(max(3, min_stages), max_stages, eigen_est)
+end
 
 @doc generic_solver_docstring(
     """First-order super-time-stepping method based on shifted Legendre polynomials.

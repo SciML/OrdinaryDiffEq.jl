@@ -21,19 +21,19 @@ JVODEController(alg; kwargs...) = JVODEController(Float64, alg; kwargs...)
 JVODEController(::Type{QT}, alg; kwargs...) where {QT} =
     JVODEController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct JVODEControllerCache{T, E, C} <: AbstractControllerCache
-    controller::JVODEController{CommonControllerOptions{T}}
+mutable struct JVODEControllerCache{T, E, C, NLPType} <: AbstractControllerCache
+    controller::JVODEController{CommonControllerOptions{T, NLPType}}
     cache::C
     EEst::E
 end
 
 function setup_controller_cache(
-        alg::JVODE, cache, controller::JVODEController, ::Type{E},
+        alg::JVODE, cache, controller::JVODEController, ::Type{E}, disco_probs,
     ) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = JVODEController(basic)
-    return JVODEControllerCache{QT, E, typeof(cache)}(resolved, cache, oneunit(E))
+    return JVODEControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(resolved, cache, oneunit(E))
 end
 
 # Algorithm owns the stepsize logic; controller cache delegates back to
