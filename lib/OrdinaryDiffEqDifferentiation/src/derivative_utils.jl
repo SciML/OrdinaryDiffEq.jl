@@ -937,12 +937,17 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
     mass_matrix = integrator.f.mass_matrix
     update_coefficients!(mass_matrix, integrator.uprev, integrator.p, integrator.t)
 
-    # Rebuild W from cached J and current dtgamma.
+    # Rebuild W from cached J and current dtgamma, mirroring calc_W's branches
+    # so W (and hence the cached_W slot) keeps the same concrete type.
     # The Jacobian evaluation is the expensive part; W = J − M/(dt·γ) and
     # its factorization are comparatively cheap and keep step control accurate.
-    W = J - mass_matrix * inv(dtgamma)
-    if !isa(W, Number)
-        W = DiffEqBase.default_factorize(W)
+    if cache.W isa StaticWOperator
+        W = StaticWOperator(J - mass_matrix * inv(dtgamma))
+    else
+        W = J - mass_matrix * inv(dtgamma)
+        if !isa(W, Number)
+            W = DiffEqBase.default_factorize(W)
+        end
     end
     integrator.stats.nw += 1
     jac_reuse.cached_W = W
@@ -1182,6 +1187,40 @@ function build_J_W(
         end
     end
     return J, W
+end
+
+"""
+    build_jac_reuse_W_seed(W, J, u, mass_matrix, dtgamma)
+
+Build the seed value for `JacReuseState`'s `cached_W` slot in OOP caches.
+
+The seed's *type* must match what `calc_W` produces at solve time, which
+promotes the W eltype with `typeof(dtgamma)` and `eltype(mass_matrix)` — e.g.
+a `Float32` state solved over a `Float64` time span yields a `Float64`-eltype
+W. Seeding with `build_J_W`'s state-eltype `W` would make the
+`jac_reuse.cached_W = W` assignment in `calc_rosenbrock_differentiation` throw
+for wrapper types without an eltype-converting `convert` (`StaticWOperator`).
+
+`dtgamma` must be a prototype carrying the solve-time `dt * gamma` type; only
+its type is used, so the seed's values are garbage. That is safe because the
+"first use" guard in `_rosenbrock_jac_reuse_decision` guarantees the seed is
+overwritten before it is ever read.
+"""
+function build_jac_reuse_W_seed(W, J, u, mass_matrix, dtgamma)
+    invdtgamma′ = inv(oneunit(dtgamma))
+    if W isa StaticWOperator
+        # callinv = false skips inverting the garbage-valued seed while still
+        # producing the same concrete type as calc_W's
+        # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
+        return StaticWOperator(J - mass_matrix * invdtgamma′, false)
+    elseif W isa WOperator
+        return WOperator{false}(mass_matrix, dtgamma, J, u, W.jacvec)
+    elseif W isa AbstractSciMLOperator
+        return W
+    else
+        _W = J - mass_matrix * invdtgamma′
+        return _W isa Number ? _W : ArrayInterface.lu_instance(_W)
+    end
 end
 
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)

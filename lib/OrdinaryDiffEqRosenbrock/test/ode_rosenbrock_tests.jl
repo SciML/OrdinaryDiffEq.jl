@@ -429,3 +429,73 @@ end
         @test err_interp < 100 * max(err_knot, 1.0e-4)
     end
 end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/3721
+# OOP static-array mass-matrix solves were failing in two ways:
+# 1. With a Float32 state and a Float64 time type (e.g. `dt = 0.1` promoting
+#    tspan), calc_W produces a Float64-eltype StaticWOperator that cannot be
+#    assigned into JacReuseState's Float32-seeded `cached_W` slot.
+# 2. On rejected-step retries the OOP reuse branch rebuilt W via
+#    `default_factorize`, producing a `StaticArrays.LU` instead of the
+#    `StaticWOperator` type of the `cached_W` slot.
+using StaticArrays
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
+
+@testset "Static-array mass-matrix OOP JacReuseState (#3721)" begin
+    function rober_static(u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        return @SVector [
+            -k₁ * y₁ + k₃ * y₂ * y₃,
+            k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃,
+            y₁ + y₂ + y₃ - 1,
+        ]
+    end
+
+    # Float64 reference
+    M64 = @SMatrix [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 0.0]
+    prob64 = ODEProblem(
+        ODEFunction(rober_static, mass_matrix = M64),
+        @SVector([1.0, 0.0, 0.0]), (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4)
+    )
+    ref = solve(
+        prob64, Rosenbrock23(), abstol = 1.0e-10, reltol = 1.0e-10,
+        initializealg = BrownFullBasicInit()
+    )
+
+    # Failure mode 1: Float32 state with Float64 dt (promotes the time type).
+    M32 = @SMatrix [1.0f0 0.0f0 0.0f0; 0.0f0 1.0f0 0.0f0; 0.0f0 0.0f0 0.0f0]
+    prob32 = ODEProblem(
+        ODEFunction(rober_static, mass_matrix = M32),
+        @SVector([1.0f0, 0.0f0, 0.0f0]), (0.0f0, 1.0f5), (0.04f0, 3.0f7, 1.0f4)
+    )
+    sol32 = solve(
+        prob32, Rosenbrock23(), dt = 0.1, abstol = 1.0f-5, reltol = 1.0f-5,
+        initializealg = BrownFullBasicInit()
+    )
+    @test SciMLBase.successful_retcode(sol32)
+    @test norm(sol32.u[end] - ref.u[end]) < 1.0e-4
+
+    # Failure mode 2: homogeneous Float64 at a tolerance that produces step
+    # rejections, whose retries take the cached-J reuse branch. nreject > 0 is
+    # asserted so this keeps covering that branch if step control changes.
+    sol64 = solve(
+        prob64, Rosenbrock23(), abstol = 1.0e-5, reltol = 1.0e-5,
+        initializealg = BrownFullBasicInit()
+    )
+    @test SciMLBase.successful_retcode(sol64)
+    @test sol64.stats.nreject > 0
+    @test norm(sol64.u[end] - ref.u[end]) < 1.0e-4
+
+    # The Rodas-family OOP constant cache goes through the same cached_W
+    # seeding path; Rodas23W and ROS34PW2 are W-methods so they additionally
+    # exercise the Jacobian-reuse decision logic on the static path.
+    for alg in (Rodas4(), Rodas23W(), ROS34PW2())
+        sol_rodas = solve(
+            prob32, alg, dt = 0.1, abstol = 1.0f-5, reltol = 1.0f-5,
+            initializealg = BrownFullBasicInit()
+        )
+        @test SciMLBase.successful_retcode(sol_rodas)
+        @test norm(sol_rodas.u[end] - ref.u[end]) < 1.0e-4
+    end
+end
