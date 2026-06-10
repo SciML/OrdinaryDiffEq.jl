@@ -25,5 +25,4 @@ jobs:
       julia-version: "1.11"
       group: "InterfaceI"
       skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils"
-      allow-reresolve: true
     secrets: "inherit"

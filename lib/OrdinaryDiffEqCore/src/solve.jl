@@ -16,7 +16,7 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(DiffEqBase.value(internalnorm(u, ts[1]))), typeof(DiffEqBase.value(internalnorm(u, ts[2]))), eltype(float.(DiffEqBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(DiffEqBase.value(ts[1]))), typeof(float(DiffEqBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType} 
+mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType}
     u₁::u1Type
     callback::callbackType
     dt::tType
@@ -702,7 +702,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants)
+        typeof(noise), typeof(c), typeof(rate_constants),
     }(
         sol, u, du, k, t, tType(_dt), f, p,
         uprev, uprev2, duprev, tprev,

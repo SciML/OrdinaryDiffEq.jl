@@ -335,7 +335,7 @@ function build_nlsolver(
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
             use_w_reuse = !isdae && f.nlstep_data === nothing && W isa AbstractMatrix &&
-                          !(W isa AbstractSciMLOperator)
+                !(W isa AbstractSciMLOperator)
             prob = if f.nlstep_data !== nothing
                 f.nlstep_data.nlprob
             else
@@ -350,8 +350,10 @@ function build_nlsolver(
                         (J_out, z, p) -> (copyto!(J_out, W); J_out)
                     end
                     NonlinearProblem(
-                        NonlinearFunction{true, SciMLBase.FullSpecialize}(nlf;
-                            jac = nlf_jac!),
+                        NonlinearFunction{true, SciMLBase.FullSpecialize}(
+                            nlf;
+                            jac = nlf_jac!
+                        ),
                         ztmp, nlp_params
                     )
                 else

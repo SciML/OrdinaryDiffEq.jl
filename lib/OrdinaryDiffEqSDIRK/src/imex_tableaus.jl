@@ -2624,7 +2624,7 @@ end
 # is the middle root of 6γ³ - 18γ² + 9γ - 1. Explicit-first-stage convention:
 # Ai[1,:] = Ae[1,:] = 0, c[1] = 0.
 function BHR553Tableau(T, T2)
-    γv = 0.435866521508460
+    γv = 0.43586652150846
     γ = convert(T, γv)
     γ2 = convert(T2, γv)
 
@@ -2633,7 +2633,7 @@ function BHR553Tableau(T, T2)
     a41 = convert(T, 0.523600775834581)
     a43 = convert(T, 0.540532702656959)
     a51 = convert(T, 0.369394442791758)
-    b3 = convert(T, 0.362863385578740)
+    b3 = convert(T, 0.36286338557874)
     b4 = convert(T, -0.168124349878957)
 
     ea41 = convert(T, 0.209467297343041)

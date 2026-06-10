@@ -93,8 +93,10 @@ be re-resolved against a (possibly new) element type `QT` without going
 through the override mechanism — useful when a composite algorithm
 re-keys controller caches to a different scalar type.
 """
-function resolve_basic(overrides::NamedTuple, alg, ::Type{QT};
-        disco_probs = IntervalNonlinearProblem[]) where {QT}
+function resolve_basic(
+        overrides::NamedTuple, alg, ::Type{QT};
+        disco_probs = IntervalNonlinearProblem[]
+    ) where {QT}
     return CommonControllerOptions{QT, eltype(disco_probs)}(
         QT(_override_or_default(overrides, Val(:qmin), qmin_default(alg))),
         QT(_override_or_default(overrides, Val(:qmax), qmax_default(alg))),
@@ -116,8 +118,10 @@ end
     return v === nothing ? default : v
 end
 
-function resolve_basic(opts::CommonControllerOptions, alg, ::Type{QT};
-        disco_probs = opts.disco_probs) where {QT}
+function resolve_basic(
+        opts::CommonControllerOptions, alg, ::Type{QT};
+        disco_probs = opts.disco_probs
+    ) where {QT}
     return CommonControllerOptions{QT, eltype(disco_probs)}(
         QT(opts.qmin), QT(opts.qmax), QT(opts.qmax_first_step),
         QT(opts.gamma), QT(opts.qsteady_min), QT(opts.qsteady_max),
@@ -676,7 +680,8 @@ function setup_controller_cache(alg, cache, controller::PIController, ::Type{E},
     QT = _resolved_QT(controller.basic)
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIController{typeof(basic), QT}(
-        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit))
+        basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit)
+    )
     T = QT
     return PIControllerCache{T, E, eltype(disco_probs)}(
         resolved, one(T), T(resolved.qoldinit), oneunit(E),

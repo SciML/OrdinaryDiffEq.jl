@@ -7,7 +7,8 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     maxiter = (integrator.alg isa Union{ESERK4, ESERK5, SERK2}) ? 100 : 50
 
-    safe = (integrator.alg isa RKCAlgs) ? 1.0 : 1.2
+    T = typeof(integrator.eigen_est)
+    safe = (integrator.alg isa RKCAlgs) ? one(T) : T(1.2)
     # Initial guess for eigenvector `z`
     if isfirst
         if integrator.alg isa RKCAlgs
@@ -41,7 +42,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         z *= quot
     else
         dz_u = pert
-        z = dz_u * ones(z)
+        z = dz_u * one.(z)
     end # endif
     # Start power iteration
     integrator.eigen_est = 0
@@ -56,15 +57,15 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         if integrator.alg isa RKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
-                integrator.eigen_est *= 1.2
+                    max(integrator.eigen_est, inv(integrator.opts.dtmax)) * T(0.01)
+                integrator.eigen_est *= T(1.2)
                 # Store the eigenvector
                 cache.zprev = z - uprev
                 return true
             end
         else
             if iter >= 2 &&
-                    abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
+                    abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * T(0.05)
                 # Store the eigenvector
                 cache.zprev = z - uprev
                 return true
@@ -96,7 +97,8 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     fz, z, atmp = cache.k, cache.tmp, cache.atmp
     ccache = cache.constantcache
     maxiter = (integrator.alg isa Union{ESERK4, ESERK5, SERK2}) ? 100 : 50
-    safe = (integrator.alg isa RKCAlgs) ? 1.0 : 1.2
+    T = typeof(integrator.eigen_est)
+    safe = (integrator.alg isa RKCAlgs) ? one(T) : T(1.2)
     # Initial guess for eigenvector `z`
     if isfirst
         if integrator.alg isa RKCAlgs
@@ -145,15 +147,15 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         if integrator.alg isa RKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
-                integrator.eigen_est *= 1.2
+                    max(integrator.eigen_est, inv(integrator.opts.dtmax)) * T(0.01)
+                integrator.eigen_est *= T(1.2)
                 # Store the eigenvector
                 @..  ccache.zprev = z - uprev
                 return true
             end
         else
             if iter >= 2 &&
-                    abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * 0.05
+                    abs(eig_prev - integrator.eigen_est) < integrator.eigen_est * T(0.05)
                 # Store the eigenvector
                 @..  ccache.zprev = z - uprev
                 return true
@@ -247,7 +249,7 @@ function choosedeg_SERK!(integrator, cache::T) where {T}
     end
 
     if integrator.alg isa SERK2
-        cache.internal_deg = cache.mdeg / 10
+        cache.internal_deg = cache.mdeg ÷ 10
     end
     return nothing
 end
