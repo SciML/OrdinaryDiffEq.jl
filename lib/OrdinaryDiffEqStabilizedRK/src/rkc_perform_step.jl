@@ -457,44 +457,45 @@ end
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
-    mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + 1)) + 1
+    mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + T(1))) + 1
 
-    w0 = one(T) + T(2) / (13 * (mdeg^2))
-    temp1 = w0^2 - one(T)
-    temp2 = sqrt(temp1)
-    arg = mdeg * log(w0 + temp2)
-    w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
-    b1 = one(T) / ((T(2) * w0)^2)
+    w0m1 = (T(2) / 13) / (mdeg^2)
+    w0 = T(1) + w0m1
+    w0sqm1 = w0m1 * (w0m1 + T(2))
+    temp = sqrt(w0sqm1)
+    arg = mdeg * log(w0 + temp)
+    w1 = (sinh(arg) * w0sqm1) / (cosh(arg) * mdeg * temp - w0 * sinh(arg))
+    b1 = T(1) / ((T(2) * w0)^2)
     b2 = b1
 
     # stage-1
     gprev2 = copy(uprev)
     μs = w1 * b1
     gprev = uprev + dt * μs * fsalfirst
-    th2 = zero(eltype(u))
+    th2 = zero(T)
     th1 = μs
     z1 = w0
-    z2 = one(eltype(u))
-    dz1 = one(eltype(u))
-    dz2 = zero(eltype(u))
-    d2z1 = zero(eltype(u))
-    d2z2 = zero(eltype(u))
+    z2 = one(T)
+    dz1 = one(T)
+    dz2 = zero(T)
+    d2z1 = zero(T)
+    d2z2 = zero(T)
 
     # stage 2 - mdeg
     for iter in 2:mdeg
-        z = 2 * w0 * z1 - z2
-        dz = 2 * w0 * dz1 - dz2 + 2 * z1
-        d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+        z = T(2) * w0 * z1 - z2
+        dz = T(2) * w0 * dz1 - dz2 + T(2) * z1
+        d2z = T(2) * w0 * d2z1 - d2z2 + T(4) * dz1
         b = d2z / (dz^2)
-        νs = 1 - z1 * b1
-        μ = (2 * w0 * b) / b1
+        νs = T(1) - z1 * b1
+        μ = T(2) * w0 * b / b1
         ν = -b / b2
         μs = μ * w1 / w0
         #using u as temporary storage
         u = f(gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev + dt * μs * (u - νs * fsalfirst)
-        th = μ * th1 + ν * th2 + μs * (1 - νs)
+        u = μ * gprev + ν * gprev2 + (T(1) - μ - ν) * uprev + dt * μs * (u - νs * fsalfirst)
+        th = μ * th1 + ν * th2 + μs * (T(1) - νs)
         if (iter < mdeg)
             gprev2 = gprev
             gprev = u
@@ -514,7 +515,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        tmp = T(0.8) * (uprev - u) + T(0.4) * dt * (fsalfirst + integrator.fsallast)
+        tmp = (T(4) * (uprev - u) + T(2) * dt * (fsalfirst + integrator.fsallast)) / T(5)
         atmp = calculate_residuals(
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -542,44 +543,45 @@ end
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
-    mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + 1)) + 1
+    mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + T(1))) + 1
 
-    w0 = one(T) + T(2) / (13 * (mdeg^2))
-    temp1 = w0^2 - one(T)
-    temp2 = sqrt(temp1)
-    arg = mdeg * log(w0 + temp2)
-    w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
-    b1 = one(T) / ((T(2) * w0)^2)
+    w0m1 = (T(2) / 13) / (mdeg^2)
+    w0 = T(1) + w0m1
+    w0sqm1 = w0m1 * (w0m1 + T(2))
+    temp = sqrt(w0sqm1)
+    arg = mdeg * log(w0 + temp)
+    w1 = (sinh(arg) * w0sqm1) / (cosh(arg) * mdeg * temp - w0 * sinh(arg))
+    b1 = T(1) / ((T(2) * w0)^2)
     b2 = b1
 
     # stage-1
     @.. broadcast = false gprev2 = uprev
     μs = w1 * b1
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
-    th2 = zero(eltype(u))
+    th2 = zero(T)
     th1 = μs
     z1 = w0
-    z2 = one(eltype(u))
-    dz1 = one(eltype(u))
-    dz2 = zero(eltype(u))
-    d2z1 = zero(eltype(u))
-    d2z2 = zero(eltype(u))
+    z2 = one(T)
+    dz1 = one(T)
+    dz2 = zero(T)
+    d2z1 = zero(T)
+    d2z2 = zero(T)
 
     # stage 2 - mdeg
     for iter in 2:mdeg
-        z = 2 * w0 * z1 - z2
-        dz = 2 * w0 * dz1 - dz2 + 2 * z1
-        d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+        z = T(2) * w0 * z1 - z2
+        dz = T(2) * w0 * dz1 - dz2 + 2 * z1
+        d2z = T(2) * w0 * d2z1 - d2z2 + 4 * dz1
         b = d2z / (dz^2)
-        νs = 1 - z1 * b1
-        μ = (2 * w0 * b) / b1
+        νs = T(1) - z1 * b1
+        μ = T(2) * w0 * b / b1
         ν = -b / b2
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev +
+        @.. broadcast = false u = μ * gprev + ν * gprev2 + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
-        th = μ * th1 + ν * th2 + μs * (1 - νs)
+        th = μ * th1 + ν * th2 + μs * (T(1) - νs)
         if (iter < mdeg)
             @.. broadcast = false gprev2 = gprev
             @.. broadcast = false gprev = u
@@ -599,7 +601,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = T(0.8) * (uprev - u) + T(0.4) * dt * (fsalfirst + integrator.fsallast)
+        @.. broadcast = false tmp = (T(4) * (uprev - u) + T(2) * dt * (fsalfirst + integrator.fsallast)) / T(5)
         calculate_residuals!(
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -967,7 +969,7 @@ end
     mdeg = cache.mdeg
     start = cache.start
     internal_deg = cache.internal_deg
-    α = one(T) / (T(0.4) * mdeg^2)
+    α = (T(5) / 2) / mdeg^2
 
     uᵢ₋₁ = uprev
     uᵢ₋₂ = uprev
@@ -1033,7 +1035,7 @@ end
     mdeg = ccache.mdeg
     start = ccache.start
     internal_deg = ccache.internal_deg
-    α = one(T) / (T(0.4) * mdeg^2)
+    α = (T(5) / 2) / mdeg^2
 
     @.. broadcast = false uᵢ₋₁ = uprev
     @.. broadcast = false uᵢ₋₂ = uprev
@@ -1089,38 +1091,40 @@ end
 @muladd function perform_step!(integrator, cache::TSRKC2ConstantCache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
 
+    T = typeof(one(t))
+
     q = (t - tprev) / dt
-    onemq = 1 - q
+    onemq = T(1) - q
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    T = typeof(one(t))
-    dtsw0 = zero(typeof(cache.tsw0))
-    d2tsw0 = zero(typeof(cache.tsw0))
 
-    mdeg = floor(Int, sqrt(1 + T(0.759782816506459) * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (q - T(0.598626091572911)))))) + 1
-    tsw0 = cache.tsw0
-    acoshtsw0 = cache.acoshtsw0
-    acoshtsw0dm = acoshtsw0 / mdeg
-    w0 = cosh(acoshtsw0dm)
-    w0sqm1 = w0 * w0 - 1
-    dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
-    d2tsw0 = (mdeg * mdeg * tsw0 - w0 * dtsw0) / w0sqm1
-    w1 = (onemq * dtsw0 + sqrt(onemq * onemq * dtsw0 * dtsw0 + 4 * q * tsw0 * d2tsw0)) / (2 * d2tsw0)
+    mdeg = floor(Int, sqrt(T(1) + T(0.7599433602453284) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.5975344573950566)))))) + 1
+    mdeg2 = mdeg^2
+    
+    w0m1 = (T(1) / 10) / mdeg2
+    w0 = T(1) + w0m1
+    w0sqm1 = w0m1 * (w0m1 + T(2))
+    temp = sqrt(w0sqm1)
+    arg = mdeg * log(w0 + temp)
+    tsw0 = cosh(arg)
+    dtsw0 = mdeg * sinh(arg) / temp
+    d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
+    w1 = (onemq * dtsw0 + sqrt(onemq * onemq * dtsw0 * dtsw0 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
 
     # stage-1
     gprev2 = uprev
     μs = w1 / w0
     gprev = uprev + dt * μs * fsalfirst
-    th2 = zero(eltype(u))
+    th2 = zero(T)
     th1 = μs
     z1 = w0
-    z2 = one(eltype(u))
-    z = 2 * w0 * z1 - z2
+    z2 = one(T)
+    z = T(2) * w0 * z1 - z2
 
     # stage 2 - mdeg
     for iter in 2:mdeg
-        μ = 2 * w0 * z1 / z
+        μ = T(2) * w0 * z1 / z
         ν = -z2 / z
         μs = μ * w1 / w0
         #using u as temporary storage
@@ -1135,12 +1139,12 @@ end
             th1 = th
             z2 = z1
             z1 = z
-            z = 2 * w0 * z1 - z2
+            z = T(2) * w0 * z1 - z2
         end
     end
 
-    g = (1 + q) * tsw0 / (q * tsw0 + w1 * dtsw0)
-    μ = 1 - g
+    g = (T(1) + q) * tsw0 / (q * tsw0 + w1 * dtsw0)
+    μ = T(1) - g
     u = μ * uprev2 + g * u
 
     integrator.fsallast = f(u, p, t + dt)
@@ -1148,7 +1152,7 @@ end
 
     # error estimate
     if integrator.opts.adaptive
-        tmp = T(0.3333333333333333) * (uprev - u + dt * integrator.fsallast)
+        tmp = (uprev - u + dt * integrator.fsallast) / T(3)
         atmp = calculate_residuals(
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -1173,38 +1177,40 @@ end
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
     (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
 
+    T = typeof(one(t))
+
     q = (t - tprev) / dt
-    onemq = 1 - q
+    onemq = T(1) - q
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    T = typeof(one(t))
-    dtsw0 = zero(typeof(constantcache.tsw0))
-    d2tsw0 = zero(typeof(constantcache.tsw0))
 
-    mdeg = floor(Int, sqrt(1 + T(0.759782816506459) * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (q - T(0.598626091572911)))))) + 1
-    tsw0 = constantcache.tsw0
-    acoshtsw0 = constantcache.acoshtsw0
-    acoshtsw0dm = acoshtsw0 / mdeg
-    w0 = cosh(acoshtsw0dm)
-    w0sqm1 = w0 * w0 - 1
-    dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
-    d2tsw0 = (mdeg * mdeg * tsw0 - w0 * dtsw0) / w0sqm1
-    w1 = (onemq * dtsw0 + sqrt(onemq * onemq * dtsw0 * dtsw0 + 4 * q * tsw0 * d2tsw0)) / (2 * d2tsw0)
+    mdeg = floor(Int, sqrt(T(1) + T(0.7599433602453284) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.5975344573950566)))))) + 1
+    mdeg2 = mdeg^2
+
+    w0m1 = (T(1) / 10) / mdeg2
+    w0 = T(1) + w0m1
+    w0sqm1 = w0m1 * (w0m1 + T(2))
+    temp = sqrt(w0sqm1)
+    arg = mdeg * log(w0 + temp)
+    tsw0 = cosh(arg)
+    dtsw0 = mdeg * sinh(arg) / temp
+    d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
+    w1 = (onemq * dtsw0 + sqrt(onemq * onemq * dtsw0 * dtsw0 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
 
     # stage-1
     @.. broadcast = false gprev2 = uprev
     μs = w1 / w0
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
-    th2 = zero(eltype(u))
+    th2 = zero(T)
     th1 = μs
     z1 = w0
-    z2 = one(eltype(u))
-    z = 2 * w0 * z1 - z2
+    z2 = one(T)
+    z = T(2) * w0 * z1 - z2
 
     # stage 2 - mdeg
     for iter in 2:mdeg
-        μ = 2 * w0 * z1 / z
+        μ = T(2) * w0 * z1 / z
         ν = -z2 / z
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
@@ -1218,12 +1224,12 @@ end
             th1 = th
             z2 = z1
             z1 = z
-            z = 2 * w0 * z1 - z2
+            z = T(2) * w0 * z1 - z2
         end
     end
 
-    g = (1 + q) * tsw0 / (q * tsw0 + w1 * dtsw0)
-    μ = 1 - g
+    g = (T(1) + q) * tsw0 / (q * tsw0 + w1 * dtsw0)
+    μ = T(1) - g
     @.. broadcast = false u = μ * uprev2 + g * u
 
     f(integrator.fsallast, u, p, t + dt)
@@ -1231,7 +1237,7 @@ end
 
     # error estimate
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = T(0.3333333333333333) * (uprev - u + dt * integrator.fsallast)
+        @.. broadcast = false tmp = (uprev - u + dt * integrator.fsallast) / T(3)
         calculate_residuals!(
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -1259,45 +1265,51 @@ end
 @muladd function perform_step!(integrator, cache::TSRKC3ConstantCache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
 
+    T = typeof(one(t))
+
     q = (t - tprev) / dt
-    onemq = 1 - q
-    onepq = 1 + q
+    onemq = T(1) - q
+    onepq = T(1) + q
     onepq2 = onepq * onepq
 
     # The first and possibly second steps are calculated via the one-step RKC method.
-    rkcstep = q < 0.49
+    rkcstep = q < T(0.49)
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    T = typeof(one(t))
-    dtsw0 = zero(typeof(cache.tsw0))
-    d2tsw0 = zero(typeof(cache.tsw0))
+
+    dtsw0 = zero(T)
+    d2tsw0 = zero(T)
     if (rkcstep)
-        mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + 1)) + 1
-        w0 = 1 + T(2) / (13 * (mdeg^2))
-        temp1 = w0^2 - 1
-        temp2 = sqrt(temp1)
-        arg = mdeg * log(w0 + temp2)
-        w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
-        b1 = 1 / ((2 * w0)^2)
+        mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + T(1))) + 1
+        w0m1 = (T(2) / 13) / (mdeg^2)
+        w0 = one(T) + w0m1
+        w0sqm1 = w0m1 * (w0m1 + T(2))
+        temp = sqrt(w0sqm1)
+        arg = mdeg * log(w0 + temp)
+        w1 = (sinh(arg) * w0sqm1) / (cosh(arg) * mdeg * temp - w0 * sinh(arg))
+        b1 = T(1) / ((T(2) * w0)^2)
         b = b1
         b2 = b1
     else
-        mdeg = floor(Int, sqrt(4 + T(1.267029788142009) * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (T(0.44256220745562963) + q))))) + 1
+        mdeg = floor(Int, sqrt(T(4) + T(1.2677172340429275) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (T(0.4442378370550416) + q))))) + 1
         mdeg2 = mdeg^2
-        tsw0 = cache.tsw0
-        acoshtsw0 = cache.acoshtsw0
-        acoshtsw0dm = acoshtsw0 / mdeg
-        w0 = cosh(acoshtsw0dm)
-        w0sq = w0^2
-        w0sqm1 = w0sq - 1
-        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
-        d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
-        d3tsw0 = ((1 + 2 * w0sq + mdeg2 * w0sqm1) * dtsw0 - 3 * mdeg2 * w0 * tsw0) / (w0sqm1^2)
-        w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + 4 * q * dtsw0 * d3tsw0)) / (2 * d3tsw0)
 
-        b1 = T(0.25) * sinh((mdeg - 2) * acoshtsw0dm) / sinh((mdeg - 1) * acoshtsw0dm)
-        b = 15 / ((8 * w0)^2)
+        w0m1 = (T(1) / 4) / mdeg2
+        w0 = T(1) + w0m1
+        w0sq = w0^2
+        w0sqm1 = w0m1 * (w0m1 + T(2))
+        temp = sqrt(w0sqm1)
+        arg1 = log(w0 + temp)
+        arg2 = mdeg * arg1
+        tsw0 = cosh(arg2)
+        dtsw0 = mdeg * sinh(arg2) / temp
+        d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
+        d3tsw0 = ((T(1) + T(2) * w0sq + mdeg2 * w0sqm1) * dtsw0 - T(3) * mdeg2 * w0 * tsw0) / (w0sqm1^2)
+        w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + T(4) * q * dtsw0 * d3tsw0)) / (T(2) * d3tsw0)
+
+        b1 = sinh((mdeg - 2) * arg1) / (T(4) * sinh((mdeg - 1) * arg1))
+        b = T(15) / ((T(8) * w0)^2)
         b2 = b1
     end
 
@@ -1305,32 +1317,32 @@ end
     gprev2 = uprev
     μs = w1 * b1
     gprev = uprev + dt * μs * fsalfirst
-    th2 = zero(eltype(u))
+    th2 = zero(T)
     th1 = μs
     z1 = w0
-    z2 = one(eltype(u))
-    dz1 = one(eltype(u))
-    dz2 = zero(eltype(u))
-    d2z1 = zero(eltype(u))
-    d2z2 = zero(eltype(u))
-    z = 2 * w0 * z1 - z2
-    dz = 2 * w0 * dz1 - dz2 + 2 * z1
-    d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+    z2 = one(T)
+    dz1 = one(T)
+    dz2 = zero(T)
+    d2z1 = zero(T)
+    d2z2 = zero(T)
+    z = T(2) * w0 * z1 - z2
+    dz = T(2) * w0 * dz1 - dz2 + T(2) * z1
+    d2z = T(2) * w0 * d2z1 - d2z2 + T(4) * dz1
 
     # stage 2 - mdeg
     for iter in 2:mdeg
-        νs = 1 - z1 * b1
-        μ = (2 * w0 * b) / b1
+        νs = T(1) - z1 * b1
+        μ = T(2) * w0 * b / b1
         ν = -b / b2
         μs = μ * w1 / w0
         #using u as temporary storage
         u = f(gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev + dt * μs * (u - νs * fsalfirst)
+        u = μ * gprev + ν * gprev2 + (T(1) - μ - ν) * uprev + dt * μs * (u - νs * fsalfirst)
         if (iter < mdeg)
             gprev2 = gprev
             gprev = u
-            th = μ * th1 + ν * th2 + μs * (1 - νs)
+            th = μ * th1 + ν * th2 + μs * (T(1) - νs)
             th2 = th1
             th1 = th
             b2 = b1
@@ -1342,9 +1354,9 @@ end
             d2z2 = d2z1
             d2z1 = d2z
 
-            z = 2 * w0 * z1 - z2
-            dz = 2 * w0 * dz1 - dz2 + 2 * z1
-            d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+            z = T(2) * w0 * z1 - z2
+            dz = T(2) * w0 * dz1 - dz2 + T(2) * z1
+            d2z = T(2) * w0 * d2z1 - d2z2 + T(4) * dz1
 
             b = d2z / (dz^2)
         end
@@ -1352,9 +1364,9 @@ end
 
     if (!rkcstep)
         a = onepq / (q * dtsw0 + w1 * d2tsw0)
-        g = (a * dtsw0 - 1) / q
+        g = (a * dtsw0 - T(1)) / q
         b = a / (b * w1)
-        μ = 1 - g - b
+        μ = T(1) - g - b
         u = μ * uprev + g * uprev2 + b * u
     end
 
@@ -1364,9 +1376,9 @@ end
     # error estimate
     if integrator.opts.adaptive
         if (rkcstep)
-            tmp = T(1.2) * (uprev - u) + T(0.6) * dt * (fsalfirst + integrator.fsallast)
+            tmp = (T(3) / 5) * (T(2) * (uprev - u) + dt * (fsalfirst + integrator.fsallast))
         else
-            tmp = T(0.6) * (uprev / q - uprev2 / (q * onepq2) - u * (2 + q) / onepq2 + dt * integrator.fsallast / onepq)
+            tmp = (T(3) / 5) * (uprev / q - uprev2 / (q * onepq2) - u * (T(2) + q) / onepq2 + dt * integrator.fsallast / onepq)
         end
         atmp = calculate_residuals(
             tmp, uprev, u, integrator.opts.abstol,
@@ -1392,45 +1404,51 @@ end
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
     (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
 
+    T = typeof(one(t))
+
     q = (t - tprev) / dt
-    onemq = 1 - q
-    onepq = 1 + q
+    onemq = T(1) - q
+    onepq = T(1) + q
     onepq2 = onepq * onepq
 
     # The first and possibly second steps are calculated via the one-step RKC method.
-    rkcstep = q < 0.49
+    rkcstep = q < T(0.49)
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    T = typeof(one(t))
-    dtsw0 = zero(typeof(constantcache.tsw0))
-    d2tsw0 = zero(typeof(constantcache.tsw0))
+
+    dtsw0 = zero(T)
+    d2tsw0 = zero(T)
     if (rkcstep)
-        mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + 1)) + 1
-        w0 = 1 + T(2) / (13 * (mdeg^2))
-        temp1 = w0^2 - 1
-        temp2 = sqrt(temp1)
-        arg = mdeg * log(w0 + temp2)
-        w1 = (sinh(arg) * temp1) / (cosh(arg) * mdeg * temp2 - w0 * sinh(arg))
-        b1 = 1 / ((2 * w0)^2)
+        mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + T(1))) + 1
+        w0m1 = (T(2) / 13) / (mdeg^2)
+        w0 = one(T) + w0m1
+        w0sqm1 = w0m1 * (w0m1 + T(2))
+        temp = sqrt(w0sqm1)
+        arg = mdeg * log(w0 + temp)
+        w1 = (sinh(arg) * w0sqm1) / (cosh(arg) * mdeg * temp - w0 * sinh(arg))
+        b1 = one(T) / ((T(2) * w0)^2)
         b = b1
         b2 = b1
     else
-        mdeg = floor(Int, sqrt(4 + T(1.267029788142009) * abs(dt) * integrator.eigen_est * (onemq + sqrt(1 + q * (T(0.44256220745562963) + q))))) + 1
+        mdeg = floor(Int, sqrt(T(4) + T(1.2677172340429275) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (T(0.4442378370550416) + q))))) + 1
         mdeg2 = mdeg^2
-        tsw0 = constantcache.tsw0
-        acoshtsw0 = constantcache.acoshtsw0
-        acoshtsw0dm = acoshtsw0 / mdeg
-        w0 = cosh(acoshtsw0dm)
-        w0sq = w0^2
-        w0sqm1 = w0sq - 1
-        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
-        d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
-        d3tsw0 = ((1 + 2 * w0sq + mdeg2 * w0sqm1) * dtsw0 - 3 * mdeg2 * w0 * tsw0) / (w0sqm1^2)
-        w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + 4 * q * dtsw0 * d3tsw0)) / (2 * d3tsw0)
 
-        b1 = T(0.25) * sinh((mdeg - 2) * acoshtsw0dm) / sinh((mdeg - 1) * acoshtsw0dm)
-        b = 15 / ((8 * w0)^2)
+        w0m1 = (T(1) / 4) / mdeg2
+        w0 = T(1) + w0m1
+        w0sq = w0^2
+        w0sqm1 = w0m1 * (w0m1 + T(2))
+        temp = sqrt(w0sqm1)
+        arg1 = log(w0 + temp)
+        arg2 = mdeg * arg1
+        tsw0 = cosh(arg2)
+        dtsw0 = mdeg * sinh(arg2) / temp
+        d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
+        d3tsw0 = ((T(1) + T(2) * w0sq + mdeg2 * w0sqm1) * dtsw0 - T(3) * mdeg2 * w0 * tsw0) / (w0sqm1^2)
+        w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + T(4) * q * dtsw0 * d3tsw0)) / (T(2) * d3tsw0)
+
+        b1 = sinh((mdeg - 2) * arg1) / (T(4) * sinh((mdeg - 1) * arg1))
+        b = T(15) / ((T(8) * w0)^2)
         b2 = b1
     end
 
@@ -1438,32 +1456,32 @@ end
     @.. broadcast = false gprev2 = uprev
     μs = w1 * b1
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
-    th2 = zero(eltype(u))
+    th2 = zero(T)
     th1 = μs
     z1 = w0
-    z2 = one(eltype(u))
-    dz1 = one(eltype(u))
-    dz2 = zero(eltype(u))
-    d2z1 = zero(eltype(u))
-    d2z2 = zero(eltype(u))
-    z = 2 * w0 * z1 - z2
-    dz = 2 * w0 * dz1 - dz2 + 2 * z1
-    d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+    z2 = one(T)
+    dz1 = one(T)
+    dz2 = zero(T)
+    d2z1 = zero(T)
+    d2z2 = zero(T)
+    z = T(2) * w0 * z1 - z2
+    dz = T(2) * w0 * dz1 - dz2 + T(2) * z1
+    d2z = T(2) * w0 * d2z1 - d2z2 + T(4) * dz1
 
     # stage 2 - mdeg
     for iter in 2:mdeg
-        νs = 1 - z1 * b1
-        μ = (2 * w0 * b) / b1
+        νs = T(1) - z1 * b1
+        μ = T(2) * w0 * b / b1
         ν = -b / b2
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * gprev2 + (1 - μ - ν) * uprev +
+        @.. broadcast = false u = μ * gprev + ν * gprev2 + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
         if (iter < mdeg)
             @.. broadcast = false gprev2 = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs * (1 - νs)
+            th = μ * th1 + ν * th2 + μs * (T(1) - νs)
             th2 = th1
             th1 = th
             b2 = b1
@@ -1475,9 +1493,9 @@ end
             d2z2 = d2z1
             d2z1 = d2z
 
-            z = 2 * w0 * z1 - z2
-            dz = 2 * w0 * dz1 - dz2 + 2 * z1
-            d2z = 2 * w0 * d2z1 - d2z2 + 4 * dz1
+            z = T(2) * w0 * z1 - z2
+            dz = T(2) * w0 * dz1 - dz2 + T(2) * z1
+            d2z = T(2) * w0 * d2z1 - d2z2 + T(4) * dz1
 
             b = d2z / (dz^2)
         end
@@ -1485,9 +1503,9 @@ end
 
     if (!rkcstep)
         a = onepq / (q * dtsw0 + w1 * d2tsw0)
-        g = (a * dtsw0 - 1) / q
+        g = (a * dtsw0 - T(1)) / q
         b = a / (b * w1)
-        μ = 1 - g - b
+        μ = T(1) - g - b
         @.. broadcast = false u = μ * uprev + g * uprev2 + b * u
     end
 
@@ -1497,9 +1515,9 @@ end
     # error estimate
     if integrator.opts.adaptive
         if (rkcstep)
-            @.. broadcast = false tmp = T(1.2) * (uprev - u) + T(0.6) * dt * (fsalfirst + integrator.fsallast)
+            @.. broadcast = false tmp = (T(3) / 5) * (T(2) * (uprev - u) + dt * (fsalfirst + integrator.fsallast))
         else
-            @.. broadcast = false tmp = T(0.6) * (uprev / q - uprev2 / (q * onepq2) - u * (2 + q) / onepq2 + dt * integrator.fsallast / onepq)
+            @.. broadcast = false tmp = (T(3) / 5) * (uprev / q - uprev2 / (q * onepq2) - u * (T(2) + q) / onepq2 + dt * integrator.fsallast / onepq)
         end
         calculate_residuals!(
             atmp, tmp, uprev, u, integrator.opts.abstol,
