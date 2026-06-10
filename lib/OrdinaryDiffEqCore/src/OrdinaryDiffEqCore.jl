@@ -84,7 +84,7 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier, log_instability
 
 import SciMLBase: islinear
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for

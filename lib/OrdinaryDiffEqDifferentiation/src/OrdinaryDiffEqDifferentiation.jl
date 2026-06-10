@@ -40,7 +40,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     TryAgain,
     Divergence, constvalue, @SciMLMessage
 
-import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff
+import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff, get_fresh_jacobian
 
 import ConstructionBase
 

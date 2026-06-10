@@ -601,6 +601,7 @@ function increment_reject!(stats)
     return stats.nreject += 1
 end
 
+
 function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, tspan)
     t1, t2 = tspan
     return @logmsg(
@@ -609,6 +610,90 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
         message = progress_message(dt, u, p, t),
         progress = (t - t1) / (t2 - t1)
     )
+end
+
+# overrides this with a method that calls calc_J to get a fresh Jacobian.
+get_fresh_jacobian(integrator, cache) = cache.J
+
+function SciMLBase.log_instability(integrator::ODEIntegrator)
+    W = _get_W(integrator)
+    u = integrator.u
+    u0 = integrator.sol.prob.u0
+
+    # state analysis: NaN/Inf components, and components that have blown up
+    nan_inf_idxs = findall(!isfinite, u)
+    blown_idxs = Int[]
+    if length(u) == length(u0)
+        for i in eachindex(u)
+            ref = max(abs(u0[i]), oneunit(eltype(u)))
+            abs(u[i]) > 1.0e6 * ref && push!(blown_idxs, i)
+        end
+    end
+
+    # jacobian analysis over rows and columns for large values
+    jac = if W !== nothing && hasproperty(W, :J)
+        #rosenbrock
+        W.J
+    elseif hasproperty(integrator.cache, :J)
+        #radau
+        get_fresh_jacobian(integrator, integrator.cache)
+    elseif hasproperty(integrator.cache, :nlsolver) &&
+            hasproperty(integrator.cache.nlsolver.cache, :J)
+        #BDF
+        integrator.cache.nlsolver.cache.J
+    else
+        nothing
+    end
+
+    large_jac_rows = nothing
+    large_jac_cols = nothing
+    if jac !== nothing
+        rows = Set{Int}()
+        cols = Set{Int}()
+        for i in axes(jac, 1), j in axes(jac, 2)
+            if !isfinite(jac[i, j]) || abs(jac[i, j]) > 1e6
+                push!(rows, i)
+                push!(cols, j)
+            end
+        end
+        large_jac_rows = sort!(collect(rows))
+        large_jac_cols = sort!(collect(cols))
+    end
+
+    # diagnostic message construction
+    diagnostic = String[]
+    if !isempty(nan_inf_idxs)
+        if u isa AbstractArray
+            for i in nan_inf_idxs
+                push!(diagnostic, "u[$i] = $(round(u[i], sigdigits=4)) is non-finite (NaN/Inf)")
+            end
+        else
+            push!(diagnostic, "u = $(round(u, sigdigits=4)) is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
+        end
+    elseif !isempty(blown_idxs)
+        if u isa AbstractArray
+            for i in blown_idxs
+                push!(diagnostic, "u[$i] = $(round(u[i], sigdigits=4)) has grown >1e6× its initial value")
+            end
+        else
+            push!(diagnostic, "u = $(round(u, sigdigits=4)) has grown >1e6× its initial value")
+        end
+    end
+    if large_jac_rows !== nothing && !isempty(large_jac_rows)
+        top = first([(i, j, jac[i, j]) for i in large_jac_rows for j in axes(jac, 2)
+                        if !isfinite(jac[i, j]) || abs(jac[i, j]) > 1.0e6], 5)
+        top_str = join(["J[$i,$j] = $(round(v, sigdigits=4))" for (i, j, v) in top], ", ")
+        push!(diagnostic,
+            "Jacobian rows $large_jac_rows have large/non-finite entries (e.g. $top_str), " *
+            "suggesting a singularity in those equations")
+    end
+    if large_jac_cols !== nothing && !isempty(large_jac_cols)
+        push!(diagnostic,
+            "Jacobian columns $large_jac_cols have large/non-finite entries, " *
+            "suggesting state components $large_jac_cols are diverging")
+    end
+    diagnostic = isempty(diagnostic) ? "" : "\nDiagnostics:\n" * join(diagnostic, "\n") * "."
+    return diagnostic
 end
 
 function fixed_t_for_tstop_error!(integrator, ttmp)
