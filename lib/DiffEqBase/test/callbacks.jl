@@ -58,6 +58,8 @@ mutable struct EmptyIntegrator
     u::Vector{Float64}
     tdir::Int
     last_event_error::Float64
+    callback_cache::DiffEqBase.CallbackCache{Vector{Float64}, Vector{Float64}}
+    event_last_time::Int
 end
 function DiffEqBase.find_callback_time(
         integrator::EmptyIntegrator,
@@ -71,7 +73,11 @@ function DiffEqBase.find_callback_time(
     )
     return 1.0 + counter, 0.9 + counter, true, counter, 0.0
 end
-find_first_integrator = EmptyIntegrator([1.0, 2.0], 1, 0.0)
+find_first_integrator = EmptyIntegrator(
+    [1.0, 2.0], 1, 0.0,
+    DiffEqBase.CallbackCache(2, Float64, Float64),
+    0,
+)
 vector_affect! = function (integrator, events)
     for (idx, dir) in enumerate(events)
         iszero(dir) && continue
