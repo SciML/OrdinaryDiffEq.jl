@@ -1,19 +1,19 @@
-struct MRIGARKExplicit22Tableau{T}
-    Γ11::T
-    Γ22::T  # 0 for ERK22b (c₂=1); no inner fast loop in stage 2
-    γ11::T
-    γ21::T
-    γ22::T
+struct MRIGARKExplicitTableau{T}
+    Γ::Vector{T}  # diagonal fast rates, length s
+    γ::Matrix{T}  # lower-triangular slow couplings, s×s
+    c::Vector{T}  # slow abscissae for fS evaluations, length s
 end
 
 function MRIGARKERK22aTableau(::Type{T}) where {T}
-    return MRIGARKExplicit22Tableau{T}(
-        T(1 // 2), T(1 // 2), T(1 // 2), T(-1 // 2), T(1)
-    )
+    Γ = T[1 // 2, 1 // 2]
+    γ = T[1 // 2 0; -1 // 2 1]
+    c = T[0, 1]
+    return MRIGARKExplicitTableau{T}(Γ, γ, c)
 end
 
 function MRIGARKERK22bTableau(::Type{T}) where {T}
-    return MRIGARKExplicit22Tableau{T}(
-        T(1), T(0), T(1), T(-1 // 2), T(1 // 2)
-    )
+    Γ = T[1, 0]
+    γ = T[1 0; -1 // 2 1 // 2]
+    c = T[0, 1]
+    return MRIGARKExplicitTableau{T}(Γ, γ, c)
 end
