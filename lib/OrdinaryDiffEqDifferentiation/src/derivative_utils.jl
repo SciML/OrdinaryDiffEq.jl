@@ -1072,6 +1072,21 @@ function update_W!(
     return nothing
 end
 
+"""
+    _dtgamma_prototype(t, dt, uEltypeNoUnits)
+
+A value carrying the type `dtgamma = dt * γ` has at solve time: `dt`'s full
+(possibly Dual) time type promoted with the tableau eltype
+(`constvalue(uEltypeNoUnits)`, which `constvalue` strips of Duals the same way
+tableau constructors do). Non-`Number` eltypes (e.g. array-of-array states)
+have no tableau-eltype contribution to promote with, so `dt`'s type is used
+as-is.
+"""
+@inline function _dtgamma_prototype(t, dt, ::Type{T}) where {T <: Number}
+    return promote(t, dt)[2] * one(constvalue(T))
+end
+@inline _dtgamma_prototype(t, dt, ::Type{T}) where {T} = promote(t, dt)[2]
+
 function build_J_W(
         alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}
@@ -1079,6 +1094,16 @@ function build_J_W(
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
+    #
+    # W must already carry the type `calc_W` produces at solve time: there
+    # W = J - mass_matrix * inv(dtgamma) promotes the eltype past the state
+    # eltype (e.g. a Float32 state over a Float64 tspan gives a Float64 W),
+    # and WOperator's gamma slot holds dtgamma itself. OOP caches store W
+    # concretely (e.g. JacReuseState.cached_W, Newton caches), so a
+    # state-eltype W here would reject calc_W's result on the first
+    # assignment.
+    dtgamma_prototype = _dtgamma_prototype(t, dt, uEltypeNoUnits)
+    invdtgamma_prototype = inv(oneunit(dtgamma_prototype))
     islin, isode = islinearfunction(f, alg)
     if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
         # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
@@ -1093,10 +1118,10 @@ function build_J_W(
             @assert SciMLBase.has_jac(f) "f needs to have an associated jacobian"
             J = MatrixOperator(J; update_func! = f.jac)
         end
-        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u))
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-        W = WOperator{IIP}(f.mass_matrix, dt, J, _vec(u))
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
             (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
 
@@ -1114,7 +1139,7 @@ function build_J_W(
         jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
         J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u), jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
             concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
@@ -1141,11 +1166,14 @@ function build_J_W(
             deepcopy(f.jac_prototype)
         end
         W = if J isa StaticMatrix
-            StaticWOperator(J, false)
+            # callinv = false skips inverting the seed-valued matrix while
+            # producing the same concrete type as calc_W's
+            # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
+            StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
         else
             jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
-            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
+            WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u), jacvec)
         end
     else
         J = if !IIP && SciMLBase.has_jac(f)
@@ -1171,6 +1199,8 @@ function build_J_W(
             deepcopy(f.jac_prototype)
         end
         W = if alg isa DAEAlgorithm
+            # DAE W is not built from J - M/(dt·γ) (calc_W returns J or a
+            # cj-scaled combination), so no dtgamma promotion applies.
             if IIP
                 similar(J)
             elseif J isa StaticMatrix
@@ -1181,46 +1211,12 @@ function build_J_W(
         elseif IIP
             similar(J)
         elseif J isa StaticMatrix
-            StaticWOperator(J, false)
+            StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
         else
-            ArrayInterface.lu_instance(J)
+            ArrayInterface.lu_instance(J - f.mass_matrix * invdtgamma_prototype)
         end
     end
     return J, W
-end
-
-"""
-    build_jac_reuse_W_seed(W, J, u, mass_matrix, dtgamma)
-
-Build the seed value for `JacReuseState`'s `cached_W` slot in OOP caches.
-
-The seed's *type* must match what `calc_W` produces at solve time, which
-promotes the W eltype with `typeof(dtgamma)` and `eltype(mass_matrix)` — e.g.
-a `Float32` state solved over a `Float64` time span yields a `Float64`-eltype
-W. Seeding with `build_J_W`'s state-eltype `W` would make the
-`jac_reuse.cached_W = W` assignment in `calc_rosenbrock_differentiation` throw
-for wrapper types without an eltype-converting `convert` (`StaticWOperator`).
-
-`dtgamma` must be a prototype carrying the solve-time `dt * gamma` type; only
-its type is used, so the seed's values are garbage. That is safe because the
-"first use" guard in `_rosenbrock_jac_reuse_decision` guarantees the seed is
-overwritten before it is ever read.
-"""
-function build_jac_reuse_W_seed(W, J, u, mass_matrix, dtgamma)
-    invdtgamma′ = inv(oneunit(dtgamma))
-    if W isa StaticWOperator
-        # callinv = false skips inverting the garbage-valued seed while still
-        # producing the same concrete type as calc_W's
-        # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
-        return StaticWOperator(J - mass_matrix * invdtgamma′, false)
-    elseif W isa WOperator
-        return WOperator{false}(mass_matrix, dtgamma, J, u, W.jacvec)
-    elseif W isa AbstractSciMLOperator
-        return W
-    else
-        _W = J - mass_matrix * invdtgamma′
-        return _W isa Number ? _W : ArrayInterface.lu_instance(_W)
-    end
 end
 
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)

@@ -350,8 +350,7 @@ function alg_cache(
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
         _make_jac_reuse_state(
-            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype),
-            build_jac_reuse_W_seed(W, J, u, f.mass_matrix, dtgamma_seed)
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
         )
     )
 end
@@ -387,8 +386,7 @@ function alg_cache(
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
         _make_jac_reuse_state(
-            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype),
-            build_jac_reuse_W_seed(W, J, u, f.mass_matrix, dtgamma_seed)
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
         )
     )
 end
@@ -488,8 +486,7 @@ function alg_cache(
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
         _make_jac_reuse_state(
-            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype),
-            build_jac_reuse_W_seed(W, J, u, f.mass_matrix, dtgamma_seed)
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
         )
     )
 end
