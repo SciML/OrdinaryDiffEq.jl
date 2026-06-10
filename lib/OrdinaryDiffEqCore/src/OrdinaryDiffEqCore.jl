@@ -72,7 +72,7 @@ using FunctionWrappers: FunctionWrapper
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier, log_instability
 
 import SciMLBase: unwrap_cache,
     islinear

@@ -21,7 +21,7 @@ import StaticArraysCore: StaticArray, StaticMatrix
 using DiffEqBase: TimeGradientWrapper,
     UJacobianWrapper, TimeDerivativeWrapper,
     UDerivativeWrapper
-import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant, calc_J
+import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant
 using SciMLBase: @set, @reset
 import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator, ScalarOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
@@ -46,7 +46,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
-    _get_fwd_tag
+    _get_fwd_tag, get_fresh_jacobian
 
 import ConstructionBase
 using ConstructionBase: constructorof
