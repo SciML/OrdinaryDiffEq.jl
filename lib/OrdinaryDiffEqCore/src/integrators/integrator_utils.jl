@@ -650,12 +650,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
     if jac !== nothing
         rows = Set{Int}()
         cols = Set{Int}()
-        for i in axes(jac, 1), j in axes(jac, 2)
-            if !isfinite(jac[i, j]) || abs(jac[i, j]) > 1e6
-                push!(rows, i)
-                push!(cols, j)
-            end
-        end
+        _find_large_jac_entries!(rows, cols, jac)
         large_jac_rows = sort!(collect(rows))
         large_jac_cols = sort!(collect(cols))
     end

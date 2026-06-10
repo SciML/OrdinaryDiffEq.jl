@@ -1,7 +1,7 @@
 module OrdinaryDiffEqCoreSparseArraysExt
 
 using SparseArrays: SparseMatrixCSC
-import OrdinaryDiffEqCore: _isdiag
+import OrdinaryDiffEqCore: _isdiag, _find_large_jac_entries!
 
 # Efficient O(nnz) isdiag check for sparse matrices.
 # Standard isdiag is O(n²) which is prohibitively slow for large sparse matrices.
@@ -20,6 +20,19 @@ function _isdiag(A::SparseMatrixCSC)
         end
     end
     return true
+end
+
+# only look at nonzero vals
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, jac::SparseMatrixCSC)
+    @inbounds for j in axes(jac, 2)
+        for k in jac.colptr[j]:(jac.colptr[j + 1] - 1)
+            val = jac.nzval[k]
+            if !isfinite(val) || abs(val) > 1e6
+                push!(rows, jac.rowval[k])
+                push!(cols, j)
+            end
+        end
+    end
 end
 
 end
