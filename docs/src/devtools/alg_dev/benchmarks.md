@@ -54,7 +54,7 @@ on each of these values.
 
 ### WorkPrecision
 
-A WorkPrecision calculates the necessary componnets of a work-precision plot. This
+A WorkPrecision calculates the necessary components of a work-precision plot. This
 shows how time scales with the user chosen tolerances on a given problem. To make
 a WorkPrecision, you give it a vector of absolute and relative tolerances:
 
