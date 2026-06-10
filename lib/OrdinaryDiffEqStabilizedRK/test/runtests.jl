@@ -30,6 +30,7 @@ end
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     activate_qa_env()
     @time @safetestset "Allocation Tests" include("qa/allocation_tests.jl")
+    @time @safetestset "Type Agnosticism Tests" include("qa/type_agnosticism.jl")
     @time @safetestset "JET Tests" include("qa/jet.jl")
     @time @safetestset "Aqua" include("qa/qa.jl")
 end
