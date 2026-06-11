@@ -1,27 +1,3 @@
-# ── MRAB: Adams–Bashforth coefficients ────────────────────────────────────────
-#
-# Standard explicit AB-k weights `β` ordered so that
-#   u_{n+1} = u_n + h * Σ_{i=1}^k β[i] * F_{n+1-i}
-# (β[1] applies to the most recent rate sample).
-
-@inline function _ab_betas(k::Int)
-    if k == 1
-        return (1.0,)
-    elseif k == 2
-        return (3 / 2, -1 / 2)
-    elseif k == 3
-        return (23 / 12, -16 / 12, 5 / 12)
-    elseif k == 4
-        return (55 / 24, -59 / 24, 37 / 24, -9 / 24)
-    elseif k == 5
-        return (1901 / 720, -2774 / 720, 2616 / 720, -1274 / 720, 251 / 720)
-    else
-        throw(ArgumentError("MRAB: unsupported Adams order k=$k (supported: 1..5)"))
-    end
-end
-
-# ── MRAB initialize! ──────────────────────────────────────────────────────────
-
 function initialize!(integrator, cache::MRABCache)
     integrator.kshortsize = 2
     (; fsalfirst, k) = cache
@@ -54,12 +30,13 @@ end
 
 function perform_step!(integrator, cache::MRABCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, atmp, k_slow, k_fast, F_history) = cache
+    (; tmp, atmp, k_slow, k_fast, F_history, tab) = cache
+    β = tab.β
     alg = unwrap_alg(integrator, false)
     k = alg.k
     m = alg.m
     h = dt / m
-    βs = _ab_betas(k)
+    βs = β[k]
 
     @.. broadcast = false u = uprev
     f.f2(k_slow, u, p, t)
@@ -78,17 +55,17 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
         n_hist = min(n_hist + 1, k)
 
         ks = min(ℓ, k)
-        βs_use = _ab_betas(ks)
+        βs_use = β[ks]
         for i in 1:ks
-            β = βs_use[i]
+            βi = βs_use[i]
             Fi = F_history[i]
-            @.. broadcast = false u = u + h * β * Fi
+            @.. broadcast = false u = u + h * βi * Fi
         end
     end
 
     # Error estimate (AB-k − AB-(k-1)) folds into one linear combination over F_history.
     return if integrator.opts.adaptive && k >= 2
-        βs_low = _ab_betas(k - 1)
+        βs_low = β[k - 1]
         @.. broadcast = false tmp = h * (βs[1] - βs_low[1]) * F_history[1]
         for i in 2:(k - 1)
             @.. broadcast = false tmp = tmp + h * (βs[i] - βs_low[i]) * F_history[i]
@@ -107,11 +84,12 @@ end
 
 @muladd function perform_step!(integrator, cache::MRABConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
+    β = cache.tab.β
     alg = unwrap_alg(integrator, false)
     k = alg.k
     m = alg.m
     h = dt / m
-    βs = _ab_betas(k)
+    βs = β[k]
 
     u_cur = uprev
     k_slow = f.f2(u_cur, p, t)
@@ -133,7 +111,7 @@ end
         F_history[1] = F
 
         ks = min(ℓ, k)
-        βs_use = _ab_betas(ks)
+        βs_use = β[ks]
         Δu = zero(u_cur)
         for i in 1:ks
             Δu = @.. broadcast = false Δu + h * βs_use[i] * F_history[i]
@@ -144,7 +122,7 @@ end
     integrator.u = u_cur
 
     if integrator.opts.adaptive && k >= 2
-        βs_low = _ab_betas(k - 1)
+        βs_low = β[k - 1]
         utilde = @.. broadcast = false h * (βs[1] - βs_low[1]) * F_history[1]
         for i in 2:(k - 1)
             utilde = @.. broadcast = false utilde + h * (βs[i] - βs_low[i]) * F_history[i]

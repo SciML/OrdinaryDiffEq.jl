@@ -1,6 +1,9 @@
-struct MRABConstantCache <: OrdinaryDiffEqConstantCache end
+struct MRABConstantCache{TabType} <: OrdinaryDiffEqConstantCache
+    tab::TabType
+end
 
-@cache mutable struct MRABCache{uType, rateType, uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct MRABCache{uType, rateType, uNoUnitsType, TabType} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -10,6 +13,7 @@ struct MRABConstantCache <: OrdinaryDiffEqConstantCache end
     F_history::Vector{rateType}
     fsalfirst::rateType
     k::rateType
+    tab::TabType
 end
 
 get_fsalfirstlast(cache::MRABCache, u) = (cache.fsalfirst, cache.k)
@@ -28,7 +32,8 @@ function alg_cache(
     F_history = [zero(rate_prototype) for _ in 1:(alg.k)]
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return MRABCache(u, uprev, tmp, atmp, k_slow, k_fast, F_history, fsalfirst, k)
+    tab = MRABTableau(alg.k, eltype(u))
+    return MRABCache(u, uprev, tmp, atmp, k_slow, k_fast, F_history, fsalfirst, k, tab)
 end
 
 function alg_cache(
@@ -37,5 +42,5 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return MRABConstantCache()
+    return MRABConstantCache(MRABTableau(alg.k, eltype(u)))
 end
