@@ -554,7 +554,7 @@ end
     EEst = DiffEqBase.value(get_EEst(integrator))
 
     if iszero(EEst)
-        gamma = qmax
+        dt_factor = qmax
     else
         expo = inv(get_current_adaptive_order(alg, integrator.cache) + 1)
         dt_factor = gamma / fastpower(EEst, expo)
@@ -562,14 +562,14 @@ end
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
         cache.dtreject = DiffEqBase.value(integrator.dt) * dt_factor
     end
-    return q
+    return dt_factor
 end
 
 # TODO change signature to remove the dt_factor input
 function step_accept_controller!(integrator, cache::IControllerCache, alg, dt_factor)
     (; qsteady_min, qsteady_max) = cache.controller.basic
 
-    if qsteady_min <= dt_factor <= qsteady_max
+    if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
     end
     return integrator.dt * dt_factor # new dt
@@ -699,21 +699,21 @@ end
         dt_factor = qmax
     else
         q11 = fastpower(EEst, beta1)
-        q = q11/ fastpower(errold, beta2)
+        q = q11 / fastpower(errold, beta2)
         cache.q11 = q11
         @fastmath dt_factor = clamp(gamma / q, qmin, qmax)
     end
     return dt_factor
 end
 
-function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
+function step_accept_controller!(integrator, cache::PIControllerCache, alg, dt_factor)
     (; controller) = cache
     (; qsteady_min, qsteady_max) = controller.basic
     qoldinit = controller.qoldinit
     EEst = DiffEqBase.value(get_EEst(integrator))
 
-    if qsteady_min <= q <= qsteady_max
-        dt_factor = one(q)
+    if qsteady_min <= inv(dt_factor) <= qsteady_max
+        dt_factor = one(dt_factor)
     end
     cache.errold = max(EEst, qoldinit)
     return integrator.dt * dt_factor # new dt
@@ -924,7 +924,7 @@ end
     err1, err2, err3 = cache.err
 
     k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
-    dt_factor = fastpow(err1, beta1 / k)) * fastpow(err2, beta2 / k) * fastpow(err3, beta3 / k)
+    dt_factor = fastpower(err1, beta1 / k) * fastpower(err2, beta2 / k) * fastpower(err3, beta3 / k)
     if isnan(dt_factor)
         @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
     end
@@ -993,7 +993,7 @@ fac = min(gamma,
     (niters + 2 * integrator.cache.nlsolver.maxiters))
 expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
 qtmp = fac / fastpower(get_EEst(integrator), expo)
-@fastmath q = clamp(qtmp, qmin, qmax))
+@fastmath q = clamp(qtmp, qmin, qmax)
 cache.qold = q
 q
 ```
@@ -1010,13 +1010,13 @@ When the step is accepted, the following logic is applied:
 qmax = get_current_qmax(integrator, qmax)
 if integrator.success_iter > 0
     expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-    qgus = (integrator.dt / dtacc) * fastpower((get_EEst(integrator)^2) / erracc, expo)
+    qgus = (dtacc / integrator.dt) * fastpower((get_EEst(integrator)^2) / erracc, expo)
     qgus = clamp(gamma / qgus, qmin, qmax)
     qacc = min(q, qgus)
 else
     qacc = q
 end
-if qsteady_min <= qacc <= qsteady_max
+if qsteady_min <= inv(qacc) <= qsteady_max
     qacc = one(qacc)
 end
 cache.dtacc = integrator.dt
@@ -1098,11 +1098,11 @@ end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = fastpower(EEst, expo) / fac
+        dt_factor = fac / fastpower(EEst, expo)
         @fastmath dt_factor = DiffEqBase.value(clamp(dt_factor, qmin, qmax))
         cache.qold = dt_factor
     end
-    return q
+    return dt_factor
 end
 
 function step_accept_controller!(integrator, cache::PredictiveControllerCache, alg, q)
@@ -1120,7 +1120,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     else
         qacc = q
     end
-    if qsteady_min <= qacc <= qsteady_max
+    if qsteady_min <= inv(qacc) <= qsteady_max
         qacc = one(qacc)
     end
     cache.dtacc = DiffEqBase.value(integrator.dt)
