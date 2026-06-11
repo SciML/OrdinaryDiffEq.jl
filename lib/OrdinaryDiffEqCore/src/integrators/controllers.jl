@@ -980,9 +980,9 @@ end
     PredictiveController()
 
 The Gustafsson acceleration algorithm accelerates changes so that way algorithms
-can more swiftly change to handle quick transients. This algorithm is thus
-well-suited for stiff solvers where this can be expected, and is the default
-for algorithms like the (E)SDIRK methods.
+can more swiftly change to handle quick transients.
+This algorithm is gennerally less efficient than a PI controller, but is used in adaptive order methods
+(e.g. AdaptiveRadau) where a simpler stepsize controller makes an order controller eaiser.
 
 ```julia
 (; qmin, qmax, gamma) = controller
