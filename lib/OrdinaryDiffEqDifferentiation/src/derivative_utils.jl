@@ -133,8 +133,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Resize detection: if u changed length since last J computation,
     # the cached LU factorization has wrong dimensions.
-    # (derivative_discontinuity is already cleared by reeval_internals_due_to_modification!
-    #  before perform_step! runs, so we need this explicit check.)
+    # (a resize need not flag derivative_discontinuity, so that check above can be
+    #  false here; we need this explicit length check to catch a pure resize.)
     if length(integrator.u) != jac_reuse.last_u_length && jac_reuse.last_u_length != 0
         return (true, true)
     end

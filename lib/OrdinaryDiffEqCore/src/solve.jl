@@ -631,6 +631,7 @@ Base.@constprop :aggressive function _ode_init(
     kshortsize = 0
     reeval_fsal = false
     derivative_discontinuity = false
+    user_set_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     next_step_tstop = false
@@ -719,7 +720,7 @@ Base.@constprop :aggressive function _ode_init(
         vector_event_last_time,
         last_event_error, accept_step,
         isout, reeval_fsal,
-        derivative_discontinuity, reinitialize, isdae,
+        derivative_discontinuity, user_set_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
         fsalfirst, fsallast, _rng,
         W, P, sqdt,
@@ -1061,6 +1062,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
 
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.derivative_discontinuity = false
+    integrator.user_set_discontinuity = false
 
     return if initialize_save
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
