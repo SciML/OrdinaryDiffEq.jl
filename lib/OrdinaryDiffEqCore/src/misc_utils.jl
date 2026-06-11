@@ -28,13 +28,13 @@ macro cache(expr)
         elseif x.args[2] == :DiffCacheType
             push!(cache_vars, :(c.$(x.args[1]).du))
             push!(cache_vars, :(c.$(x.args[1]).dual_du))
-        elseif x.args[2] == :TmpCacheType ||
-                (x.args[2] isa Expr && x.args[2].head == :curly &&
-                    x.args[2].args[1] == :TmpCache)
-            # A `field::TmpCache{...}` expands into its sub-buffers so they show
-            # up in `full_cache` (used by resize!, etc.) just like inline scratch
-            # fields used to. The `atmp` slot may be `nothing` (opted out); that
-            # is harmless here as `full_cache` consumers already skip `nothing`.
+        elseif x.args[1] == :tmp_cache
+            # The unified scratch field is detected by name (`tmp_cache`) rather
+            # than by type, so the cache may declare it as a concrete
+            # `TmpCache{...}` or via a type parameter (to allow opted-out slots).
+            # It expands into its sub-buffers so they show up in `full_cache`
+            # (used by resize!, etc.) just like inline scratch fields used to.
+            # Opted-out slots are `nothing`; `full_cache` consumers skip those.
             push!(cache_vars, :(c.$(x.args[1]).tmp))
             push!(cache_vars, :(c.$(x.args[1]).tmp2))
             push!(cache_vars, :(c.$(x.args[1]).atmp))

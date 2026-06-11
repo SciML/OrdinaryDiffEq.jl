@@ -18,6 +18,10 @@ Base.@kwdef struct Tsit5{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true (default), the cache preallocates the scratch buffers the
+    # initial-dt estimator needs, so `init`/`solve` compute the starting `dt`
+    # without allocating. Set false for a leaner cache; `initdt` then allocates.
+    precompute_initdt_cache::Bool = true
 end
 @truncate_stacktrace Tsit5 3
 
