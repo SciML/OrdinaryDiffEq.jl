@@ -83,6 +83,10 @@ end
         @time @safetestset "SubArray Support" include("downstream/subarray_support.jl")
         @time @safetestset "Unitful" include("downstream/unitful.jl")
         @time @safetestset "FlexUnits" include("downstream/flexunits.jl")
+        # DiffEqBaseEnzymeExt is disabled on prerelease Julia
+        if isempty(VERSION.prerelease)
+            @time @safetestset "Enzyme solve_up rule" include("downstream/enzyme_solve_up_rule.jl")
+        end
     end
 
     # Downstream2 tests — additional OrdinaryDiffEq integration tests
