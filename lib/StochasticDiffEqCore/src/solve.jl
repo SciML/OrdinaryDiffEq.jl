@@ -418,8 +418,8 @@ function _sde_init(
         end
 
         if W.reset
-            if !_rng_provided && W isa Union{NoiseProcess, NoiseTransport} && W.reseed
-                Random.seed!(W.rng, _seed)
+            if W isa Union{NoiseProcess, NoiseTransport} && W.reseed
+                Random.seed!(W.rng, rand(_rng, UInt64))
             end
             if W.curt != t
                 reinit!(W, t, t0 = t)
