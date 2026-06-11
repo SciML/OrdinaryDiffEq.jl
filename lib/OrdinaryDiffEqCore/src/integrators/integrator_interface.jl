@@ -204,7 +204,17 @@ end
         integrator, alg::OrdinaryDiffEqAlgorithm,
         cache::OrdinaryDiffEqMutableCache
     )
-    return (cache.tmp,)
+    # Caches migrated to the unified `TmpCache` expose their scratch through a
+    # `tmp_cache` field; the rest still carry an inline `tmp`. `hasfield` on the
+    # concrete cache type is a compile-time constant, so this branch folds away
+    # and adds no runtime cost to either path. The returned NamedTuple keeps
+    # `first(...)`/`[1]` pointing at the primary state scratch (historical
+    # contract) while also surfacing the full `tmp_cache` for buffer reuse.
+    if hasfield(typeof(cache), :tmp_cache)
+        return (tmp = cache.tmp_cache.tmp, tmp_cache = cache.tmp_cache)
+    else
+        return (cache.tmp,)
+    end
 end
 @inline function SciMLBase.get_tmp_cache(
         integrator,
@@ -358,7 +368,9 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     (; cache) = integrator
 
     for c in full_cache(cache)
-        resize!(c, i)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && resize!(c, i)
     end
     !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
     !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)

@@ -82,8 +82,12 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
+    # Wrap the existing scratch in a TmpCache so the inner Tsit5 starter cache
+    # shares these exact buffers (preserving the previous aliasing behavior).
+    # Tsit5 opts out of the rate slots, so they are `nothing` here too.
+    tmp_cache = OrdinaryDiffEqCore.TmpCache(tmp, utilde, atmp, nothing, nothing)
     tsit5cache = Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         trivial_limiter!, trivial_limiter!, Serial()
     )
     #################################################
@@ -245,8 +249,12 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
+    # Wrap the existing scratch in a TmpCache so the inner Tsit5 starter cache
+    # shares these exact buffers (preserving the previous aliasing behavior).
+    # Tsit5 opts out of the rate slots, so they are `nothing` here too.
+    tmp_cache = OrdinaryDiffEqCore.TmpCache(tmp, utilde, atmp, nothing, nothing)
     tsit5cache = Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         trivial_limiter!, trivial_limiter!, Serial()
     )
     #################################################

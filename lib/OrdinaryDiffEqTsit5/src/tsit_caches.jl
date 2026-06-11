@@ -8,9 +8,9 @@
     k5::rateType
     k6::rateType
     k7::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Tsit5 is explicit: it never needs rate-typed scratch, so the rate slots are
+    # opted out (`Nothing`) and not allocated.
+    tmp_cache::TmpCache{uType, Nothing, uNoUnitsType}
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -43,12 +43,12 @@ function alg_cache(
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    # Tsit5 needs `tmp` (stage scratch), `tmp2` (embedded solution, was `utilde`)
+    # and `atmp` (error-norm scaling). It needs no rate scratch, so `Val(false)`
+    # opts the rate buffers out of allocation.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits, Val(false))
     return Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end

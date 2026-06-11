@@ -28,6 +28,18 @@ macro cache(expr)
         elseif x.args[2] == :DiffCacheType
             push!(cache_vars, :(c.$(x.args[1]).du))
             push!(cache_vars, :(c.$(x.args[1]).dual_du))
+        elseif x.args[2] == :TmpCacheType ||
+                (x.args[2] isa Expr && x.args[2].head == :curly &&
+                    x.args[2].args[1] == :TmpCache)
+            # A `field::TmpCache{...}` expands into its sub-buffers so they show
+            # up in `full_cache` (used by resize!, etc.) just like inline scratch
+            # fields used to. The `atmp` slot may be `nothing` (opted out); that
+            # is harmless here as `full_cache` consumers already skip `nothing`.
+            push!(cache_vars, :(c.$(x.args[1]).tmp))
+            push!(cache_vars, :(c.$(x.args[1]).tmp2))
+            push!(cache_vars, :(c.$(x.args[1]).atmp))
+            push!(cache_vars, :(c.$(x.args[1]).rate_tmp))
+            push!(cache_vars, :(c.$(x.args[1]).rate_tmp2))
         end
     end
     return quote
