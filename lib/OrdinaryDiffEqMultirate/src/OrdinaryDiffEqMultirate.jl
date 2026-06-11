@@ -19,17 +19,9 @@ using Reexport
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("mreef_caches.jl")
-include("mreef_perform_step.jl")
-include("mrab_tableaus.jl")
-include("mrab_caches.jl")
-include("mrab_perform_step.jl")
-include("mri_gark_tableaus.jl")
-include("mri_gark_caches.jl")
-include("mri_gark_perform_step.jl")
-include("mis_tableaus.jl")
-include("mis2_caches.jl")
-include("mis2_perform_step.jl")
+include("multirate_tableaus.jl")
+include("multirate_caches.jl")
+include("multirate_perform_step.jl")
 
 export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b, MIS2
 
