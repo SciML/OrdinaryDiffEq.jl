@@ -26,20 +26,20 @@ function ExtrapolationController(::Type{QT}, alg; kwargs...) where {QT}
     )
 end
 
-mutable struct ExtrapolationControllerCache{QT, E} <: AbstractControllerCache
-    controller::ExtrapolationController{OrdinaryDiffEqCore.CommonControllerOptions{QT}}
+mutable struct ExtrapolationControllerCache{QT, E, NLPType} <: AbstractControllerCache
+    controller::ExtrapolationController{OrdinaryDiffEqCore.CommonControllerOptions{QT, NLPType}}
     beta1::QT
     gamma::QT
     qold::QT
     EEst::E
 end
 
-function setup_controller_cache(alg, cache, controller::ExtrapolationController, ::Type{E}) where {E}
+function setup_controller_cache(alg, cache, controller::ExtrapolationController, ::Type{E}, disco_probs) where {E}
     QT = OrdinaryDiffEqCore._resolved_QT(controller.basic)
-    basic = OrdinaryDiffEqCore.resolve_basic(controller.basic, alg, QT)
+    basic = OrdinaryDiffEqCore.resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = ExtrapolationController(basic)
     T = QT
-    return ExtrapolationControllerCache{T, E}(
+    return ExtrapolationControllerCache{T, E, eltype(disco_probs)}(
         resolved, T(1), T(1), T(1 // 10^4), oneunit(E),
     )
 end

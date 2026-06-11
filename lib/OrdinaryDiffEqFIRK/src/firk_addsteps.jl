@@ -497,11 +497,11 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
             integrator.k[3] +
                 (c1′ - c2m1) * (integrator.k[4] + (c1′ - c1m1) * integrator.k[5])
         )
-        @.. z1 = c2′ * (
+        @.. z2 = c2′ * (
             integrator.k[3] +
                 (c2′ - c2m1) * (integrator.k[4] + (c2′ - c1m1) * integrator.k[5])
         )
-        @.. z1 = c3′ * (
+        @.. z3 = c3′ * (
             integrator.k[3] +
                 (c3′ - c2m1) * (integrator.k[4] + (c3′ - c1m1) * integrator.k[5])
         )

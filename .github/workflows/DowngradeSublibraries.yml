@@ -13,71 +13,15 @@ on:
     paths-ignore:
       - 'docs/**'
 concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        downgrade_mode: ['alldeps']
-        julia-version: ['1.11']
-        project:
-          - 'lib/ImplicitDiscreteSolve'
-          - 'lib/OrdinaryDiffEqAdamsBashforthMoulton'
-          - 'lib/OrdinaryDiffEqBDF'
-          - 'lib/OrdinaryDiffEqCore'
-          - 'lib/OrdinaryDiffEqDefault'
-          - 'lib/OrdinaryDiffEqDifferentiation'
-          - 'lib/OrdinaryDiffEqExplicitRK'
-          - 'lib/OrdinaryDiffEqExponentialRK'
-          - 'lib/OrdinaryDiffEqExtrapolation'
-          - 'lib/OrdinaryDiffEqFIRK'
-          - 'lib/OrdinaryDiffEqFeagin'
-          - 'lib/OrdinaryDiffEqFunctionMap'
-          - 'lib/OrdinaryDiffEqHighOrderRK'
-          - 'lib/OrdinaryDiffEqIMEXMultistep'
-          - 'lib/OrdinaryDiffEqLinear'
-          - 'lib/OrdinaryDiffEqLowOrderRK'
-          # - 'lib/OrdinaryDiffEqLowStorageRK'  # disabled: VectorOfArray/StructArray test incompatibility (RecursiveArrayTools/StructArrays), not a downgrade-bound issue
-          - 'lib/OrdinaryDiffEqNonlinearSolve'
-          - 'lib/OrdinaryDiffEqNordsieck'
-          - 'lib/OrdinaryDiffEqPDIRK'
-          - 'lib/OrdinaryDiffEqPRK'
-          - 'lib/OrdinaryDiffEqQPRK'
-          # - 'lib/OrdinaryDiffEqRKN'  # disabled: FineRKN4/DPRKN4 convergence-order test failures, not a downgrade-bound issue
-          - 'lib/OrdinaryDiffEqRosenbrock'
-          - 'lib/OrdinaryDiffEqSDIRK'
-          # - 'lib/OrdinaryDiffEqSSPRK'  # disabled: VectorOfArray/StructArray test incompatibility (RecursiveArrayTools/StructArrays), not a downgrade-bound issue
-          - 'lib/OrdinaryDiffEqStabilizedIRK'
-          - 'lib/OrdinaryDiffEqStabilizedRK'
-          - 'lib/OrdinaryDiffEqSymplecticRK'
-          - 'lib/OrdinaryDiffEqTaylorSeries'
-          - 'lib/OrdinaryDiffEqTsit5'
-          - 'lib/OrdinaryDiffEqVerner'
-          - 'lib/SimpleImplicitDiscreteSolve'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: ${{ matrix.julia-version }}
-      - uses: julia-actions/julia-downgrade-compat@v2
-        with:
-          projects: ${{ matrix.project }}
-          skip: Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation
-          julia_version: ${{ matrix.julia-version }}
-      - uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: ${{ matrix.project }}
-      - uses: julia-actions/julia-runtest@v1
-        with:
-          project: ${{ matrix.project }}
-          # The downgraded manifest pins direct dependencies to their minimal
-          # versions; the test environment is allowed to resolve transitive and
-          # test-only dependencies that the downgrade step does not lock.
-          allow_reresolve: true
-        env:
-          ODEDIFFEQ_TEST_GROUP: Core
+  downgrade-sublibraries:
+    uses: "SciML/.github/.github/workflows/sublibrary-downgrade.yml@v1"
+    secrets: "inherit"
+    with:
+      julia-version: "1.11"
+      skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation"
+      group-env-name: "ODEDIFFEQ_TEST_GROUP"
+      group-env-value: "Core"
+      # Every lib/* sublibrary is downgrade-tested (projects auto-discovered, no exclusions).

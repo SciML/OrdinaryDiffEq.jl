@@ -52,8 +52,7 @@ function initialize!(
         nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, f)
     end
 
-    new_prob = remake(cache.prob, p = nlp_params, u0 = z)
-    cache.cache = init(new_prob, alg.alg; verbose = nlsolver.cache.cache.verbose)
+    SciMLBase.reinit!(cache.cache, z, p = nlp_params)
     return nothing
 end
 
@@ -142,7 +141,7 @@ end
     (; tstep, invγdt) = cache
 
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = cache.W === nothing || (nlsolver.iter == 1 && cache.new_W)
+    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
     step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
@@ -167,7 +166,7 @@ end
 
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = cache.W === nothing || (nlsolver.iter == 1 && cache.new_W)
+    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing

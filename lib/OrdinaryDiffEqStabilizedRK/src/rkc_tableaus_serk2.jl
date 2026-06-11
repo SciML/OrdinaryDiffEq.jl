@@ -1,4 +1,4 @@
-function SERK2ConstantCache(zprev)
+function SERK2ConstantCache(::Type{T}, zprev) where {T}
     ms = [10, 20, 30, 40, 50, 60, 80, 100, 150, 200, 250]
     Bᵢ = [
         -0.96362760400868230359,
@@ -1004,5 +1004,5 @@ function SERK2ConstantCache(zprev)
         5.11169642004104218813,
     ]
 
-    return SERK2ConstantCache{eltype(Bᵢ), typeof(zprev)}(Tuple(ms), zprev, Bᵢ, 1, 0, 0)
+    return SERK2ConstantCache{T, typeof(zprev)}(Tuple(ms), zprev, T.(Bᵢ), 1, 0, 0)
 end

@@ -41,7 +41,21 @@ This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes
 Most of the breaking changes fall into a small set of recurring themes. Keep these in mind while reading the migration table — they explain why an individual change exists and often suggest the right migration direction:
 
 - **Time to first solve (TTFS) reduction.** Direct deps on `Static.jl`, `StaticArrayInterface.jl`, `Polyester.jl`, and `StaticArrays.jl` were dropped; `using OrdinaryDiffEq` now loads only the default solver set; `ODEFunction` switched to `AutoSpecialize`. All of this means less code loaded and more precompilation caching on first `solve`.
-- **Type stability everywhere.** All `Bool` solver/`solve` keyword arguments (`autodiff`, `verbose`, `alias`, `lazy`, …) were replaced by typed objects. Passing a `Bool` no longer changes dispatch in ways the compiler cannot specialize on, and the reverse is no longer allowed to silently fall back through slow generic paths.
+- **Type stability everywhere.** All `Bool` solver/`solve` keyword arguments (`autodiff`, `verbose`, `alias`, `lazy`, …) were replaced by typed objects. Passing a `Bool` no longer changes dispatch in ways the compiler cannot specialize on, and the reverse is no longer allowed to silently fall back through slow generic paths. For example:
+
+  ```julia
+  # v6 — a Bool
+  Rosenbrock23(autodiff = true)
+  solve(prob, alg; verbose = false, alias = true)
+
+  # v7 — a typed object
+  Rosenbrock23(autodiff = AutoForwardDiff())
+  solve(prob, alg;
+      verbose = ODEVerbosity(SciMLLogging.None()),
+      alias = ODEAliasSpecifier(alias_u0 = true))
+  ```
+
+  The `Bool` form chose between code paths (e.g. ForwardDiff vs. FiniteDiff for `autodiff`) at runtime, so the choice was invisible to the compiler; the typed object carries that choice in its type, so the solver specializes on it at compile time. The same swap applies to `lazy` (now `Val{true}()` / `Val{false}()`). See the per-keyword before/after sections below ([`autodiff`](#autodiff-bool-no-longer-accepted), [`verbose`](#verbose-bool-no-longer-accepted), [`alias`](#alias-bool-no-longer-accepted), [`lazy`](#lazy-keyword-bool-no-longer-accepted)) for the full migration of each.
 - **Generality beyond ForwardDiff.** `chunk_size`, `diff_type`, `standardtag`, etc. encoded ForwardDiff-specific or FiniteDiff-specific knobs on every solver. They are replaced by the `ADTypes` interface (`AutoForwardDiff`, `AutoFiniteDiff`, `AutoEnzyme`, `AutoZygote`, …) so every solver automatically generalizes to any AD backend.
 - **Controller is now an object, not a pile of `solve` kwargs.** `gamma`, `beta1`, `beta2`, `qmin`, `qmax`, `qsteady_min`, `qsteady_max`, `qoldinit` were moved onto concrete `PIController` / `PIDController` / `IController` / `PredictiveController` structs, and `EEst` moved to the controller cache. This is prep work for pluggable controllers and removes a large amount of dead state from the integrator struct.
 - **Cleanup of old re-exports / deprecations.** Functions like `has_destats` (now `has_stats`), `sol.destats` (now `sol.stats`), `DEAlgorithm`/`DEProblem`/`DESolution` abstract types, `tuples()`/`intervals()`, `QuadratureProblem`, `fastpow`, `concrete_solve`, etc. were on a deprecation path for one or more minor releases. v7 removes them.
