@@ -28,9 +28,29 @@
         return result_dt
     end
 
+    # Pull the unified scratch struct (if present) off the integrator's cache so
+    # the initial-dt estimator can reuse preallocated buffers instead of
+    # allocating. A cache without it (not migrated, or `precompute_initdt_cache`
+    # disabled) yields `nothing`, and every reuse below falls back to allocation.
+    _tmp_cache_tup = get_tmp_cache(integrator)
+    init_tmp_cache = (_tmp_cache_tup !== nothing && hasproperty(_tmp_cache_tup, :tmp_cache)) ?
+        _tmp_cache_tup.tmp_cache : nothing
+
+    # Use the unit-less scratch (`atmp`) for the scale buffer when it's present and
+    # type-compatible. That frees both state slots (`tmp`, `tmp2`) for the `tmp`
+    # and `u₁` temporaries below — which is what makes a fully allocation-free
+    # initdt possible.
+    sk_buf = nothing
+    if init_tmp_cache !== nothing && u0 isa Array && abstol isa Number &&
+            reltol isa Number && length(u0) > 0 &&
+            init_tmp_cache.atmp isa AbstractArray &&
+            eltype(init_tmp_cache.atmp) === typeof(internalnorm(first(u0), t) * reltol)
+        sk_buf = init_tmp_cache.atmp
+    end
+    sk_uses_atmp = sk_buf !== nothing
+
     if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
-        cache = get_tmp_cache(integrator)
-        sk = first(cache)
+        sk = sk_uses_atmp ? sk_buf : first(_tmp_cache_tup)
         if u0 isa Array && abstol isa Number && reltol isa Number
             @inbounds @simd ivdep for i in eachindex(u0)
                 sk[i] = abstol + internalnorm(u0[i], t) * reltol
@@ -73,29 +93,34 @@
         f(f₀, u0, p, t)
     end
 
-    # Reuse a preallocated scratch buffer when the integrator's cache exposes a
-    # unified `TmpCache` (resolves the long-standing "use more caches" TODO).
-    # Caches not yet migrated return a plain tuple / `nothing` here, so we fall
-    # back to allocating. Only `Tsit5Cache` carries a `tmp_cache` in this demo.
-    _tmp_cache_tup = get_tmp_cache(integrator)
-    init_tmp_cache = (_tmp_cache_tup !== nothing && hasproperty(_tmp_cache_tup, :tmp_cache)) ?
-        _tmp_cache_tup.tmp_cache : nothing
-
+    # `#tmp = cache[2]` (resolved): reuse a preallocated state buffer for the
+    # `d₀`/`d₁`/`d₂` temporary. State reuse is all-or-nothing to avoid aliasing
+    # two temporaries to one slot: it needs `sk` to have taken the unit-less slot
+    # (so `tmp` is free) and both state slots to be type-compatible, which then
+    # leaves `tmp2` free for `u₁` below. Otherwise fall back to `tmp2` (when
+    # compatible) or a fresh allocation.
     if u0 isa Array
         if length(u0) > 0
             T = typeof(u0[1] / sk[1])
         else
             T = promote_type(eltype(u0), eltype(sk))
         end
-        # Reuse the cache's secondary state scratch (`tmp2`) when its eltype
-        # matches `T`; otherwise allocate (e.g. unit-aware solves where the
-        # scaled type differs from the state type).
-        tmp = (init_tmp_cache !== nothing && init_tmp_cache.tmp2 isa AbstractArray &&
-            eltype(init_tmp_cache.tmp2) === T) ? init_tmp_cache.tmp2 : similar(u0, T)
+        reuse_state = sk_uses_atmp &&
+            eltype(init_tmp_cache.tmp) === T &&
+            eltype(init_tmp_cache.tmp2) === eltype(u0)
+        tmp = if reuse_state
+            init_tmp_cache.tmp
+        elseif init_tmp_cache !== nothing && init_tmp_cache.tmp2 isa AbstractArray &&
+                eltype(init_tmp_cache.tmp2) === T
+            init_tmp_cache.tmp2
+        else
+            similar(u0, T)
+        end
         @inbounds @simd ivdep for i in eachindex(u0)
             tmp[i] = u0[i] / sk[i]
         end
     else
+        reuse_state = false
         tmp = @.. broadcast = false u0 / sk
     end
 
@@ -137,7 +162,9 @@
             !(prob.f isa DynamicalODEFunction) ||
                 any(mm != I for mm in prob.f.mass_matrix)
         )
-        ftmp = zero(f₀)
+        ftmp = (init_tmp_cache !== nothing && init_tmp_cache.rate_tmp2 isa AbstractArray &&
+            eltype(init_tmp_cache.rate_tmp2) === eltype(f₀)) ?
+            fill!(init_tmp_cache.rate_tmp2, zero(eltype(f₀))) : zero(f₀)
         try
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
             copyto!(f₀, ftmp)
@@ -218,7 +245,10 @@
 
     dt₀_tdir = tdir * dt₀
 
-    u₁ = zero(u0) # required by DEDataArray
+    # `u₁` reuses the now-free secondary state slot when state reuse is active
+    # (DEDataArray needs a zero'd buffer, so `fill!` rather than `similar`);
+    # otherwise `zero(u0)`.
+    u₁ = reuse_state ? fill!(init_tmp_cache.tmp2, zero(eltype(u0))) : zero(u0)
 
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
@@ -227,7 +257,11 @@
     else
         @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
     end
-    f₁ = zero(f₀)
+    # `f₁` reuses the primary rate slot when present and type-compatible (this is
+    # the buffer `precompute_initdt_cache` exists to provide); else `zero(f₀)`.
+    f₁ = (init_tmp_cache !== nothing && init_tmp_cache.rate_tmp isa AbstractArray &&
+        eltype(init_tmp_cache.rate_tmp) === eltype(f₀)) ?
+        fill!(init_tmp_cache.rate_tmp, zero(eltype(f₀))) : zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 
     if prob.f.mass_matrix != I && (
