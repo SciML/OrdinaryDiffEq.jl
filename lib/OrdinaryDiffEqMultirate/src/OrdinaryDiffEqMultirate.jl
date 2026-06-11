@@ -23,6 +23,6 @@ include("multirate_tableaus.jl")
 include("multirate_caches.jl")
 include("multirate_perform_step.jl")
 
-export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b, MIS2
+export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b, MIS
 
 end

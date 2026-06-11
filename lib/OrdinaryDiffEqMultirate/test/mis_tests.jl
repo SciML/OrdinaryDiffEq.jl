@@ -1,19 +1,19 @@
 using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
 
-@testset "MIS2" begin
+@testset "MIS" begin
     @testset "Construction" begin
-        @test MIS2(m = 10) == MIS2(10)
-        @test MIS2(m = 20) == MIS2(20)
+        @test MIS(m = 10) == MIS(10)
+        @test MIS(m = 20) == MIS(20)
     end
 
     @testset "Scalar out-of-place" begin
         prob = SplitODEProblem(
             (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u, 1.0, (0.0, 1.0)
         )
-        sol = solve(prob, MIS2(m = 10), dt = 0.05, adaptive = false)
+        sol = solve(prob, MIS(m = 10), dt = 0.05, adaptive = false)
         @test abs(sol.u[end] - exp(-1.0)) < 1.0e-3
 
-        sol_a = solve(prob, MIS2(m = 10), reltol = 1.0e-6, abstol = 1.0e-6)
+        sol_a = solve(prob, MIS(m = 10), reltol = 1.0e-6, abstol = 1.0e-6)
         @test abs(sol_a.u[end] - exp(-1.0)) < 1.0e-3
     end
 
@@ -23,10 +23,10 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
         u0 = [1.0, 2.0, 3.0]
         prob = SplitODEProblem(f1!, f2!, u0, (0.0, 1.0))
 
-        sol = solve(prob, MIS2(m = 10), dt = 0.05, adaptive = false)
+        sol = solve(prob, MIS(m = 10), dt = 0.05, adaptive = false)
         @test norm(sol.u[end] - u0 .* exp(-1.0)) < 1.0e-2
 
-        sol_a = solve(prob, MIS2(m = 10), reltol = 1.0e-6, abstol = 1.0e-6)
+        sol_a = solve(prob, MIS(m = 10), reltol = 1.0e-6, abstol = 1.0e-6)
         @test norm(sol_a.u[end] - u0 .* exp(-1.0)) < 1.0e-3
     end
 
@@ -39,7 +39,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
             1.0, (0.0, 1.0)
         )
         dts = 1 ./ 2 .^ (6:-1:2)
-        sim = test_convergence(dts, prob, MIS2(m = 4))
+        sim = test_convergence(dts, prob, MIS(m = 4))
         @test sim.𝒪est[:l∞] ≈ 2 atol = 0.3
     end
 end

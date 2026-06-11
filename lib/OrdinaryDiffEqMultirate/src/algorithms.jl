@@ -123,19 +123,19 @@ Base.@kwdef struct MRIGARKERK22b <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 
 @doc generic_solver_docstring(
-    "Multirate Infinitesimal Step (MIS2) — 2nd-order, 4-stage scheme.
+    "Multirate Infinitesimal Step (MIS).
 
 Solves a split ODE of the form `du/dt = f1(u,t) + f2(u,t)` where `f1` is the
 fast component and `f2` is the slow component (SciML convention). One MIS
-step advances through `s = 4` outer stages; each stage solves a small modified
-fast ODE on `τ ∈ [0, d_i · dt]` whose right-hand side is the original fast
-rate `f1` plus a constant offset built from prior stages' slow tendencies and
-α/γ corrections. The inner ODE is approximated with `m · d_i` explicit
-midpoint (RK2) micro-steps so that the overall scheme retains second-order
-accuracy. Embedded error estimate is `Y_s − Y_{s-1}`.
+step advances through the tableau's outer stages; each stage solves a small
+modified fast ODE on `τ ∈ [0, d_i · dt]` whose right-hand side is the original
+fast rate `f1` plus a constant offset built from prior stages' slow tendencies
+and α/γ corrections. The inner ODE is approximated with `m · d_i` explicit
+midpoint (RK2) micro-steps. Embedded error estimate is `Y_s − Y_{s-1}`.
 
-Tableau is the MIS2(4,2) scheme of Wensch–Knoth–Galant (BIT 2009).",
-    "MIS2",
+Currently provides the 2nd-order, 4-stage MIS2(4,2) tableau of
+Wensch–Knoth–Galant (BIT 2009).",
+    "MIS",
     "Multirate infinitesimal step method.",
     """@article{wensch2009multirate,
     title={Multirate infinitesimal step methods for atmospheric flow simulation},
@@ -153,6 +153,6 @@ Tableau is the MIS2(4,2) scheme of Wensch–Knoth–Galant (BIT 2009).",
     m::Int,
     """
 )
-Base.@kwdef struct MIS2 <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct MIS <: OrdinaryDiffEqAdaptiveAlgorithm
     m::Int
 end

@@ -24,10 +24,10 @@ function prepare_alg(
     return alg
 end
 
-alg_order(::MIS2) = 2
-isfsal(::MIS2) = false
+alg_order(::MIS) = 2
+isfsal(::MIS) = false
 
-function prepare_alg(alg::MIS2, u0::AbstractArray, p, prob)
-    alg.m >= 1 || throw(ArgumentError("MIS2: `m` must be ≥ 1"))
+function prepare_alg(alg::MIS, u0::AbstractArray, p, prob)
+    alg.m >= 1 || throw(ArgumentError("MIS: `m` must be ≥ 1"))
     return alg
 end

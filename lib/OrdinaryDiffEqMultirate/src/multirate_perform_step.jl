@@ -445,7 +445,7 @@ end
 
 # Stage 1 is identity (Y_1 = u_n); inner ODE active only for i ≥ 2.
 
-function initialize!(integrator, cache::MIS2Cache)
+function initialize!(integrator, cache::MISCache)
     integrator.kshortsize = 2
     (; fsalfirst, k) = cache
     integrator.fsalfirst = fsalfirst
@@ -460,7 +460,7 @@ function initialize!(integrator, cache::MIS2Cache)
     return integrator.fsalfirst .+= cache.tmp
 end
 
-function initialize!(integrator, cache::MIS2ConstantCache)
+function initialize!(integrator, cache::MISConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
@@ -472,7 +472,7 @@ function initialize!(integrator, cache::MIS2ConstantCache)
     return integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator, cache::MIS2Cache, repeat_step = false)
+function perform_step!(integrator, cache::MISCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, v, offset, k_fast, Y, fS, tab) = cache
     (; α, β, γ, d, c, ctilde) = tab
@@ -537,7 +537,7 @@ function perform_step!(integrator, cache::MIS2Cache, repeat_step = false)
     end
 end
 
-@muladd function perform_step!(integrator, cache::MIS2ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::MISConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
     (; α, β, γ, d, c, ctilde) = cache.tab
     alg = unwrap_alg(integrator, false)
