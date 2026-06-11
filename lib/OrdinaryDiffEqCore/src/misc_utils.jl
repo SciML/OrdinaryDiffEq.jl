@@ -34,12 +34,13 @@ macro cache(expr)
             # `TmpCache{...}` or via a type parameter (to allow opted-out slots).
             # It expands into its sub-buffers so they show up in `full_cache`
             # (used by resize!, etc.) just like inline scratch fields used to.
-            # Opted-out slots are `nothing`; `full_cache` consumers skip those.
-            push!(cache_vars, :(c.$(x.args[1]).tmp))
-            push!(cache_vars, :(c.$(x.args[1]).tmp2))
-            push!(cache_vars, :(c.$(x.args[1]).atmp))
-            push!(cache_vars, :(c.$(x.args[1]).rate_tmp))
-            push!(cache_vars, :(c.$(x.args[1]).rate_tmp2))
+            # The slot list lives in `tmp_cache_buffers` next to the struct
+            # definition (single source of truth — adding a slot to `TmpCache`
+            # never requires touching this macro). Opted-out slots are
+            # `nothing`; `full_cache` consumers skip those. The unescaped
+            # `tmp_cache_buffers` resolves to OrdinaryDiffEqCore's binding via
+            # macro hygiene, so this works in downstream sublibraries.
+            push!(cache_vars, :(tmp_cache_buffers(c.$(x.args[1]))...))
         end
     end
     return quote
