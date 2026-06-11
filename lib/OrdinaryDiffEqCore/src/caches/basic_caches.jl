@@ -7,6 +7,68 @@ struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 ismutablecache(cache::OrdinaryDiffEqMutableCache) = true
 ismutablecache(cache::OrdinaryDiffEqConstantCache) = false
 
+# =============================================================================
+# Unified scratch buffers for mutable caches.
+#
+# Historically every mutable cache declared its own ad-hoc scratch fields
+# (`tmp`, `utilde`, `atmp`, `linsolve_tmp`, ...) with inconsistent names. That
+# made it impossible for shared code (e.g. the initial-dt estimator) to reuse a
+# cache's scratch generically. `TmpCache` consolidates the common buffers under
+# one struct with stable names, so any cache that carries a `tmp_cache` field
+# exposes the same scratch surface.
+#
+# Parameterized only on the three buffer-array types every cache already has
+# (`uType`, `rateType`, `uNoUnitsType`), so adopting it adds no new cache type
+# parameter. Fields are concrete (no `Union{T,Nothing}`). Any slot can be opted
+# out by parameterizing that slot's type as `Nothing`, which makes the field the
+# `nothing` singleton — no array allocated, and `=== nothing` checks fold away
+# at compile time:
+#   * `TmpCache{uType, rateType, Nothing}` — no unit-less error scratch (`atmp`)
+#   * `TmpCache{uType, Nothing, uNoUnitsType}` — no rate scratch, e.g. an
+#     explicit method like Tsit5 that never forms a rate-typed linsolve RHS.
+#
+# NOTE (demo): this is the hand-written core of the larger TmpCache change. Only
+# `Tsit5Cache` is wired to it here as a proof of concept; the full migration of
+# every cache is intentionally omitted to keep the diff reviewable.
+struct TmpCache{uType, rateType, uNoUnitsType}
+    tmp::uType          # primary state scratch
+    tmp2::uType         # secondary state scratch (e.g. embedded solution / `utilde`)
+    atmp::uNoUnitsType  # unit-less state scratch (error norms); `Nothing` if unused
+    rate_tmp::rateType  # primary rate scratch (e.g. linsolve RHS / `linsolve_tmp`); `Nothing` if unused
+    rate_tmp2::rateType # secondary rate scratch; `Nothing` if unused
+end
+
+"""
+    build_tmp_cache(u, rate_prototype, uEltypeNoUnits, need_rates::Val = Val(true))
+
+Construct a [`TmpCache`](@ref). The state scratch (`tmp`, `tmp2`) is always
+allocated. Two slots are opt-out, controlled at the type level so the result
+stays type-stable:
+
+  * pass `Nothing` for `uEltypeNoUnits` to skip the unit-less `atmp` buffer;
+  * pass `Val(false)` for `need_rates` to skip both rate buffers (`rate_tmp`,
+    `rate_tmp2`) — appropriate for explicit methods that never form a
+    rate-typed linsolve RHS.
+
+A skipped slot holds the `nothing` singleton and allocates no array.
+"""
+function build_tmp_cache(u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Val{need_rates} = Val(true)) where {uEltypeNoUnits, need_rates}
+    tmp = zero(u)
+    tmp2 = zero(u)
+    # `need_rates` is a type parameter, so these ternaries fold at compile time
+    # and each specialization returns one concrete `TmpCache` type.
+    rate_tmp = need_rates ? zero(rate_prototype) : nothing
+    rate_tmp2 = need_rates ? zero(rate_prototype) : nothing
+    if uEltypeNoUnits === Nothing
+        return TmpCache(tmp, tmp2, nothing, rate_tmp, rate_tmp2)
+    else
+        atmp = similar(u, uEltypeNoUnits)
+        recursivefill!(atmp, false)
+        return TmpCache(tmp, tmp2, atmp, rate_tmp, rate_tmp2)
+    end
+end
+
 # Don't worry about the potential alloc on a constant cache
 get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
 

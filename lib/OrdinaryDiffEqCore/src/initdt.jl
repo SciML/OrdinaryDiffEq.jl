@@ -73,8 +73,13 @@
         f(f₀, u0, p, t)
     end
 
-    # TODO: use more caches
-    #tmp = cache[2]
+    # Reuse a preallocated scratch buffer when the integrator's cache exposes a
+    # unified `TmpCache` (resolves the long-standing "use more caches" TODO).
+    # Caches not yet migrated return a plain tuple / `nothing` here, so we fall
+    # back to allocating. Only `Tsit5Cache` carries a `tmp_cache` in this demo.
+    _tmp_cache_tup = get_tmp_cache(integrator)
+    init_tmp_cache = (_tmp_cache_tup !== nothing && hasproperty(_tmp_cache_tup, :tmp_cache)) ?
+        _tmp_cache_tup.tmp_cache : nothing
 
     if u0 isa Array
         if length(u0) > 0
@@ -82,7 +87,11 @@
         else
             T = promote_type(eltype(u0), eltype(sk))
         end
-        tmp = similar(u0, T)
+        # Reuse the cache's secondary state scratch (`tmp2`) when its eltype
+        # matches `T`; otherwise allocate (e.g. unit-aware solves where the
+        # scaled type differs from the state type).
+        tmp = (init_tmp_cache !== nothing && init_tmp_cache.tmp2 isa AbstractArray &&
+            eltype(init_tmp_cache.tmp2) === T) ? init_tmp_cache.tmp2 : similar(u0, T)
         @inbounds @simd ivdep for i in eachindex(u0)
             tmp[i] = u0[i] / sk[i]
         end

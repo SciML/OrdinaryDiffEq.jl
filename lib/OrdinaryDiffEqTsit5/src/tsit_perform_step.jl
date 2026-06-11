@@ -7,7 +7,8 @@
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-        (; k1, k2, k3, k4, k5, k6, k7, tmp) = cache
+        (; k1, k2, k3, k4, k5, k6, k7) = cache
+        tmp = cache.tmp_cache.tmp
         @.. broadcast = false tmp = uprev + dt * (a21 * k1)
         f(k2, tmp, p, t + c1 * dt)
         @.. broadcast = false tmp = uprev + dt * (a31 * k1 + a32 * k2)
@@ -204,7 +205,10 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-    (; k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
     stage_limiter!(tmp, f, p, t + c1 * dt)
