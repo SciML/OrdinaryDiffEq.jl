@@ -63,3 +63,61 @@ Base.@kwdef struct MRAB <: OrdinaryDiffEqAdaptiveAlgorithm
     k::Int = 2
     m::Int = 4
 end
+
+@doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — explicit midpoint (MRI-GARK-ERK22a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). The slow integrator is the
+explicit midpoint rule; between slow stages a modified fast ODE is integrated
+with `m` explicit-midpoint micro-steps over the full macro interval. 2nd-order
+globally; embedded error estimate uses `v_2(dt) − Y_2`.",
+    "MRIGARKERK22a",
+    "Multirate infinitesimal GARK explicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner midpoint micro-steps per stage.
+    """,
+    """
+    m::Int,
+    """
+)
+Base.@kwdef struct MRIGARKERK22a <: OrdinaryDiffEqAdaptiveAlgorithm
+    m::Int
+end
+
+@doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — explicit trapezoidal (MRI-GARK-ERK22b).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). The slow integrator is the
+explicit trapezoidal rule (`c₂ = 1` member of the MRI-GARK-ERK22 family from
+Sandu 2019); inner fast micro-ODE uses `m` explicit-midpoint micro-steps over
+the full macro interval. 2nd-order; embedded error estimate uses `v_2(dt) − Y_2`.",
+    "MRIGARKERK22b",
+    "Multirate infinitesimal GARK explicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner midpoint micro-steps per stage.
+    """,
+    """
+    m::Int,
+    """
+)
+Base.@kwdef struct MRIGARKERK22b <: OrdinaryDiffEqAdaptiveAlgorithm
+    m::Int
+end
