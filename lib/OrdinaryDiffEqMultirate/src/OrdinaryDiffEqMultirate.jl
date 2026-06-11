@@ -26,6 +26,7 @@ include("mrab_perform_step.jl")
 include("mri_gark_tableaus.jl")
 include("mri_gark_caches.jl")
 include("mri_gark_perform_step.jl")
+include("mis_tableaus.jl")
 include("mis2_caches.jl")
 include("mis2_perform_step.jl")
 

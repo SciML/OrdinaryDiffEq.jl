@@ -1,30 +1,4 @@
-# MIS2(4,2) tableau — Wensch–Knoth–Galant (BIT 2009).
-# α, β, γ are strictly lower-triangular; d = row sum of β; c = (I−α−γ)⁻¹ d; c̃ = α c.
 # Stage 1 is identity (Y_1 = u_n); inner ODE active only for i ≥ 2.
-
-const _MIS2_α = [
-    0.0 0.0 0.0 0.0;
-    0.0 0.0 0.0 0.0;
-    0.0 0.53694656671 0.0 0.0;
-    0.0 0.480892968551 0.500561163566 0.0
-]
-const _MIS2_β = [
-    0.0 0.0 0.0 0.0;
-    0.126848494553 0.0 0.0 0.0;
-    -0.784838278826 1.37442675268 0.0 0.0;
-    -0.0456727081749 -0.0087508227119 0.524775788629 0.0
-]
-const _MIS2_γ = [
-    0.0 0.0 0.0 0.0;
-    0.0 0.0 0.0 0.0;
-    0.0 0.652465126004 0.0 0.0;
-    0.0 -0.0732769849457 0.14490243042 0.0
-]
-const _MIS2_d = [sum(_MIS2_β[i, :]) for i in 1:4]
-const _MIS2_c = (LinearAlgebra.I(4) - _MIS2_α - _MIS2_γ) \ _MIS2_d
-const _MIS2_ctilde = _MIS2_α * _MIS2_c
-
-# ── MIS2 initialize! ──────────────────────────────────────────────────────────
 
 function initialize!(integrator, cache::MIS2Cache)
     integrator.kshortsize = 2
@@ -53,15 +27,13 @@ function initialize!(integrator, cache::MIS2ConstantCache)
     return integrator.k[2] = integrator.fsallast
 end
 
-# ── MIS2 perform_step! (in-place) ─────────────────────────────────────────────
-
 function perform_step!(integrator, cache::MIS2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, atmp, v, offset, k_fast, Y, fS) = cache
+    (; tmp, atmp, v, offset, k_fast, Y, fS, tab) = cache
+    (; α, β, γ, d, c, ctilde) = tab
     alg = unwrap_alg(integrator, false)
     m = alg.m
-    α, β, γ, d, c, ctilde = _MIS2_α, _MIS2_β, _MIS2_γ, _MIS2_d, _MIS2_c, _MIS2_ctilde
-    s = 4
+    s = length(d)
 
     @.. broadcast = false Y[1] = uprev
     f.f2(fS[1], uprev, p, t)
@@ -126,14 +98,12 @@ function perform_step!(integrator, cache::MIS2Cache, repeat_step = false)
     end
 end
 
-# ── MIS2 perform_step! (out-of-place) ─────────────────────────────────────────
-
 @muladd function perform_step!(integrator, cache::MIS2ConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
+    (; α, β, γ, d, c, ctilde) = cache.tab
     alg = unwrap_alg(integrator, false)
     m = alg.m
-    α, β, γ, d, c, ctilde = _MIS2_α, _MIS2_β, _MIS2_γ, _MIS2_d, _MIS2_c, _MIS2_ctilde
-    s = 4
+    s = length(d)
 
     Y = Vector{typeof(uprev)}(undef, s)
     fS = Vector{typeof(f.f2(uprev, p, t))}(undef, s)
