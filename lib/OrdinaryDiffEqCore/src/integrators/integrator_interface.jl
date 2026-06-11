@@ -208,11 +208,12 @@ end
     # Caches migrated to the unified `TmpCache` expose their scratch through a
     # `tmp_cache` field; the rest still carry an inline `tmp`. `hasfield` on the
     # concrete cache type is a compile-time constant, so this branch folds away
-    # and adds no runtime cost to either path. The returned NamedTuple keeps
-    # `first(...)`/`[1]` pointing at the primary state scratch (historical
-    # contract) while also surfacing the full `tmp_cache` for buffer reuse.
+    # and adds no runtime cost to either path. Either way the historical
+    # positional contract holds: a plain tuple whose `first(...)`/`[1]` is the
+    # primary state scratch. Shared code that wants the full unified scratch
+    # goes through `initdt_tmp_cache(cache)` instead.
     if hasfield(typeof(cache), :tmp_cache)
-        return (tmp = cache.tmp_cache.tmp, tmp_cache = cache.tmp_cache)
+        return (cache.tmp_cache.tmp,)
     else
         return (cache.tmp,)
     end

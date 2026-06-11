@@ -29,12 +29,11 @@
     end
 
     # Pull the unified scratch struct (if present) off the integrator's cache so
-    # the initial-dt estimator can reuse preallocated buffers instead of
-    # allocating. A cache without it (not migrated, or `precompute_initdt_cache`
-    # disabled) yields `nothing`, and every reuse below falls back to allocation.
-    _tmp_cache_tup = get_tmp_cache(integrator)
-    init_tmp_cache = (_tmp_cache_tup !== nothing && hasproperty(_tmp_cache_tup, :tmp_cache)) ?
-        _tmp_cache_tup.tmp_cache : nothing
+    # the initial-dt estimator can reuse the cache's (aliased or preallocated)
+    # buffers instead of allocating. A cache without one (not yet migrated, or a
+    # constant cache) yields `nothing`, and every reuse below falls back to
+    # allocation. Composite/default caches forward to the current method's cache.
+    init_tmp_cache = initdt_tmp_cache(integrator.cache)
 
     # Use the unit-less scratch (`atmp`) for the scale buffer when it's present and
     # type-compatible. That frees both state slots (`tmp`, `tmp2`) for the `tmp`
@@ -49,8 +48,16 @@
     end
     sk_uses_atmp = sk_buf !== nothing
 
-    if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
-        sk = sk_uses_atmp ? sk_buf : first(_tmp_cache_tup)
+    if sk_uses_atmp
+        sk = sk_buf
+        @inbounds @simd ivdep for i in eachindex(u0)
+            sk[i] = abstol + internalnorm(u0[i], t) * reltol
+        end
+    elseif eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
+        # Historical behavior (master parity): borrow the cache's primary state
+        # scratch for the scale buffer. `sk` then occupies the `tmp` slot, so the
+        # state-reuse choreography below only ever borrows `tmp2`.
+        sk = first(get_tmp_cache(integrator))
         if u0 isa Array && abstol isa Number && reltol isa Number
             @inbounds @simd ivdep for i in eachindex(u0)
                 sk[i] = abstol + internalnorm(u0[i], t) * reltol
@@ -258,7 +265,7 @@
         @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
     end
     # `f₁` reuses the primary rate slot when present and type-compatible (this is
-    # the buffer `precompute_initdt_cache` exists to provide); else `zero(f₀)`.
+    # the buffer `preallocate_initdt_buffers` exists to provide); else `zero(f₀)`.
     f₁ = (init_tmp_cache !== nothing && init_tmp_cache.rate_tmp isa AbstractArray &&
         eltype(init_tmp_cache.rate_tmp) === eltype(f₀)) ?
         fill!(init_tmp_cache.rate_tmp, zero(eltype(f₀))) : zero(f₀)
