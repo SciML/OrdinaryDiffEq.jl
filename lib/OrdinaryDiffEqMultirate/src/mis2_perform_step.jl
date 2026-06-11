@@ -50,17 +50,11 @@ function perform_step!(integrator, cache::MIS2Cache, repeat_step = false)
             end
         end
 
-        if !iszero(γ[i, 2])
-            @.. broadcast = false offset = (γ[i, 2] * inv_di / dt) * (Y[2] - uprev)
-        else
-            @.. broadcast = false offset = zero(offset)
-        end
-        for j in 3:(i - 1)
+        @.. broadcast = false offset = zero(offset)
+        for j in 1:(i - 1)
             if !iszero(γ[i, j])
                 @.. broadcast = false offset = offset + (γ[i, j] * inv_di / dt) * (Y[j] - uprev)
             end
-        end
-        for j in 1:(i - 1)
             if !iszero(β[i, j])
                 @.. broadcast = false offset = offset + (β[i, j] * inv_di) * fS[j]
             end
