@@ -227,7 +227,7 @@ end
     sol = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 1e5
-    @test isapprox(sum(sol[end]), 1.0, atol = 1e-6)
+    @test isapprox(sum(sol.u[end]), 1.0, atol = 1e-6)
 end
 
 if VERSION >= v"1.12"
