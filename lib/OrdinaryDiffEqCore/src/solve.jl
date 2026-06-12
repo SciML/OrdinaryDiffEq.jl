@@ -688,7 +688,7 @@ Base.@constprop :aggressive function _ode_init(
 
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
 
-    curr_discontinuity = -1
+    is_disco_step = false
     disco_checkpoint = zero(tType)
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
@@ -723,7 +723,7 @@ Base.@constprop :aggressive function _ode_init(
         isout, reeval_fsal,
         derivative_discontinuity, user_set_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng, curr_discontinuity, disco_checkpoint,
+        fsalfirst, fsallast, _rng, is_disco_step, disco_checkpoint,
         W, P, sqdt,
         noise, c, rate_constants
     )

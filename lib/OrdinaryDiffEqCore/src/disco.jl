@@ -1,5 +1,5 @@
-function set_discontinuity(u, uprev, integrator)
-    breakpointθ = find_discontinuity(u, uprev, integrator)
+function set_discontinuity(integrator)
+    breakpointθ = find_discontinuity(integrator)
     dt = integrator.dt
     if 1.0e-10 < breakpointθ < 1.0
         return breakpointθ * dt
@@ -11,9 +11,11 @@ get_disco_probs(cache::AbstractControllerCache) = cache.controller.basic.disco_p
 get_disco_probs(cache::DummyControllerCache) = cache.disco_probs
 get_disco_probs(cache::CompositeControllerCache) = get_disco_probs(first(cache.caches))
 
-function find_discontinuity(u, uprev, integrator)
+function find_discontinuity(integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
+    u = integrator.u
+    uprev = integrator.uprev
     cb === nothing && return -one(dt)
     isempty(cb.continuous_callbacks) && return -one(dt)
     p = integrator.p
@@ -51,8 +53,8 @@ function find_discontinuity(u, uprev, integrator)
                     tmp = sol[]
                     if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
                         breakpointθ = tmp
-                        integrator.curr_discontinuity = idx
-                        integrator.disco_checkpoint = integrator.t + tmp * dt
+                        integrator.is_disco_step = true
+                        integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step too far past this
                     end
                 end
             end
@@ -69,8 +71,8 @@ function find_discontinuity(u, uprev, integrator)
                 tmp = sol[]
                 if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
                     breakpointθ = tmp
-                    integrator.curr_discontinuity = idx
-                    integrator.disco_checkpoint = integrator.t + tmp * dt
+                    integrator.is_disco_step = true
+                    integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step past this
                 end
             end
         end

@@ -572,24 +572,22 @@ end
 function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
     (; qsteady_min, qsteady_max, discontinuity_detection) = cache.controller.basic
 
+    t = integrator.t
+    dt = integrator.dt
     if qsteady_min <= q <= qsteady_max
         q = one(q)
     end
-    if discontinuity_detection && integrator.curr_discontinuity != -1 &&
-            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
-        integrator.curr_discontinuity = -1
+    if discontinuity_detection && integrator.is_disco_step
+        integrator.is_disco_step = false
+        return min((integrator.disco_checkpoint - t) / 4, dt / q)
     end
-    return integrator.dt / q # new dt
+    return dt / q # new dt
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
-        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if no_prior_discontinuity && disco_dt > zero(disco_dt)
-            add_tstop!(integrator, integrator.disco_checkpoint)
-        end
+        disco_dt = set_discontinuity(integrator)
         if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
@@ -720,29 +718,25 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     qoldinit = controller.qoldinit
     EEst = DiffEqBase.value(get_EEst(integrator))
 
+    t = integrator.t
+    dt = integrator.dt
     if qsteady_min <= q <= qsteady_max
         q = one(q)
     end
-
-    if discontinuity_detection && integrator.curr_discontinuity != -1 &&
-            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
-        integrator.curr_discontinuity = -1
-        cache.errold = qoldinit
-    else
-        cache.errold = max(EEst, qoldinit)
+    cache.errold = max(EEst, qoldinit)
+    if discontinuity_detection && integrator.is_disco_step
+        integrator.is_disco_step = false
+        return min((integrator.disco_checkpoint - t) / 4, dt / q) # new dt
     end
-    return integrator.dt / q # new dt
+
+    return dt / q # new dt
 end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
     (; qmin, gamma, discontinuity_detection) = controller.basic
     if discontinuity_detection
-        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if no_prior_discontinuity && disco_dt > zero(disco_dt) #found a discontinuity
-            add_tstop!(integrator, integrator.disco_checkpoint)
-        end
+        disco_dt = set_discontinuity(integrator)
         if disco_dt > zero(disco_dt)
             return integrator.dt = disco_dt
         end
@@ -960,33 +954,26 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
     (; controller) = cache
     (; qsteady_min, qsteady_max, discontinuity_detection) = controller.basic
 
+    t = integrator.t
+    dt = integrator.dt
     if qsteady_min <= inv(dt_factor) <= qsteady_max
         dt_factor = one(dt_factor)
     end
-    if discontinuity_detection && integrator.curr_discontinuity != -1 &&
-            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
-        integrator.curr_discontinuity = -1
-        @inbounds begin
-            cache.err[3] = one(eltype(cache.err))
-            cache.err[2] = cache.err[1]
-        end
-    else
-        @inbounds begin
-            cache.err[3] = cache.err[2]
-            cache.err[2] = cache.err[1]
-        end
+    @inbounds begin
+        cache.err[3] = cache.err[2]
+        cache.err[2] = cache.err[1]
     end
-    return integrator.dt * dt_factor # new dt
+    if discontinuity_detection && integrator.is_disco_step
+        integrator.is_disco_step = false
+        return min((integrator.disco_checkpoint - t) / 4, dt * dt_factor)
+    end
+    return dt * dt_factor # new dt
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
-        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if no_prior_discontinuity && disco_dt > zero(disco_dt)
-            add_tstop!(integrator, integrator.disco_checkpoint)
-        end
+        disco_dt = set_discontinuity(integrator)
         if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
@@ -1146,14 +1133,13 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     if qsteady_min <= qacc <= qsteady_max
         qacc = one(qacc)
     end
-    if cache.controller.basic.discontinuity_detection && integrator.curr_discontinuity != -1 &&
-            integrator.tdir * integrator.t >= integrator.tdir * integrator.disco_checkpoint
-        integrator.curr_discontinuity = -1
-        cache.dtacc = DiffEqBase.value(integrator.dt)
-        cache.erracc = one(EEst)
-    else
-        cache.dtacc = DiffEqBase.value(integrator.dt)
-        cache.erracc = max(1.0e-2, EEst)
+
+    cache.dtacc = DiffEqBase.value(integrator.dt)
+    cache.erracc = max(1.0e-2, EEst)
+
+    if cache.controller.basic.discontinuity_detection && integrator.is_disco_step
+        integrator.is_disco_step = false
+        return min((integrator.disco_checkpoint - integrator.t) / 4, integrator.dt / qacc)
     end
 
     return integrator.dt / qacc
@@ -1164,11 +1150,7 @@ function step_reject_controller!(integrator, cache::PredictiveControllerCache, a
     (; qold) = cache
     discontinuity_detection = cache.controller.basic.discontinuity_detection
     if discontinuity_detection
-        no_prior_discontinuity = (integrator.curr_discontinuity == -1)
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if no_prior_discontinuity && disco_dt > zero(disco_dt)
-            add_tstop!(integrator, integrator.disco_checkpoint)
-        end
+        disco_dt = set_discontinuity(integrator)
         if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt

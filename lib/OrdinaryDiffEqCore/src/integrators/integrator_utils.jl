@@ -621,6 +621,18 @@ function fixed_t_for_tstop_error!(integrator, ttmp)
     end
 end
 
+# Type-stable check: did the callback that fired have maybe_discontinuity = true?
+@generated function _fired_cb_maybe_discontinuity(
+        cb_idx,
+        callbacks::NTuple{N, Union{ContinuousCallback, VectorContinuousCallback}}
+    ) where {N}
+    ex = :(false)
+    for i in N:-1:1
+        ex = :(cb_idx == $i ? callbacks[$i].maybe_discontinuity : $ex)
+    end
+    return ex
+end
+
 # Use a generated function to call apply_callback! in a type-stable way
 @generated function apply_ith_callback!(
         integrator,
@@ -682,6 +694,9 @@ function handle_callbacks!(integrator)
                 idx,
                 continuous_callbacks
             )
+            if _fired_cb_maybe_discontinuity(idx, continuous_callbacks)
+                reinit_controller!(integrator, integrator.controller_cache)
+            end
         else
             integrator.event_last_time = 0
             integrator.vector_event_last_time = 1
