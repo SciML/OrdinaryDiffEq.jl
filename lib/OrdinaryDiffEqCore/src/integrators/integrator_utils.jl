@@ -679,13 +679,13 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
                         if !isfinite(jac[i, j]) || abs(jac[i, j]) > 1.0e6], 5)
         top_str = join(["J[$i,$j] = $(round(v, sigdigits=4))" for (i, j, v) in top], ", ")
         push!(diagnostic,
-            "Jacobian rows $large_jac_rows have large/non-finite entries (e.g. $top_str), " *
-            "suggesting a singularity in those equations")
+            "Jacobian row(s) $large_jac_rows have large/non-finite entries (e.g. $top_str), " *
+            "suggesting a singularity in those equation(s)")
     end
     if large_jac_cols !== nothing && !isempty(large_jac_cols)
         push!(diagnostic,
-            "Jacobian columns $large_jac_cols have large/non-finite entries, " *
-            "suggesting state components $large_jac_cols are diverging")
+            "Jacobian column(s) $large_jac_cols have large/non-finite entries, " *
+            "suggesting state component(s) $large_jac_cols are diverging")
     end
     diagnostic = isempty(diagnostic) ? "" : "\nDiagnostics:\n" * join(diagnostic, "\n") * "."
     return diagnostic
