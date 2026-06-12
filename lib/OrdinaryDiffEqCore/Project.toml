@@ -57,12 +57,13 @@ ConcreteStructs = "0.2.3"
 DataStructures = "0.19"
 DiffEqBase = "7"
 DiffEqDevTools = "3"
+DifferentiationInterface = "0.7.18"
 DocStringExtensions = "0.9.5"
-EnumX = "1.0"
+EnumX = "1.0.4"
 EnzymeCore = "0.8.16"
 FastBroadcast = "1.3"
 FastClosures = "0.3.2"
-FastPower = "1.1"
+FastPower = "1.1.2"
 FunctionWrappers = "1.1.3"
 FunctionWrappersWrappers = "1"
 InteractiveUtils = "1.10"
@@ -71,15 +72,18 @@ Logging = "1.10"
 MacroTools = "0.5.6"
 Mooncake = "0.4, 0.5"
 MuladdMacro = "0.2.1"
+OrdinaryDiffEqFIRK = "2"
+OrdinaryDiffEqRosenbrock = "2"
+OrdinaryDiffEqTsit5 = "2"
 Pkg = "1"
 Polyester = "0.7"
 PrecompileTools = "1.2.1, 1.3"
 Preferences = "1.5.0"
 Random = "<0.0.1, 1"
-RecursiveArrayTools = "4"
+RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
-SciMLBase = "3.1.0"
+SciMLBase = "3.10.0"
 SciMLLogging = "1.10.1, 2"
 SciMLOperators = "1.15.0"
 SciMLStructures = "1.7"
@@ -91,9 +95,22 @@ julia = "1.10"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
+OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg"]
+test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface"]
+
+[sources.OrdinaryDiffEqFIRK]
+path = "../OrdinaryDiffEqFIRK"
+
+[sources.OrdinaryDiffEqRosenbrock]
+path = "../OrdinaryDiffEqRosenbrock"
+
+[sources.OrdinaryDiffEqTsit5]
+path = "../OrdinaryDiffEqTsit5"

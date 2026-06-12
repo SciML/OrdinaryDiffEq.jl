@@ -13,3 +13,21 @@ function prepare_alg(alg::MRAB, u0::AbstractArray, p, prob)
     alg.m >= 1 || throw(ArgumentError("MRAB: `m` must be ≥ 1"))
     return alg
 end
+
+alg_order(::Union{MRIGARKERK22a, MRIGARKERK22b}) = 2
+isfsal(::Union{MRIGARKERK22a, MRIGARKERK22b}) = false
+
+function prepare_alg(
+        alg::Union{MRIGARKERK22a, MRIGARKERK22b}, u0::AbstractArray, p, prob
+    )
+    alg.m >= 1 || throw(ArgumentError("$(nameof(typeof(alg))): `m` must be ≥ 1"))
+    return alg
+end
+
+alg_order(::MIS) = 2
+isfsal(::MIS) = false
+
+function prepare_alg(alg::MIS, u0::AbstractArray, p, prob)
+    alg.m >= 1 || throw(ArgumentError("MIS: `m` must be ≥ 1"))
+    return alg
+end

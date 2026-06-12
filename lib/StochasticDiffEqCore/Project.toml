@@ -1,7 +1,7 @@
 name = "StochasticDiffEqCore"
 uuid = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
-authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 version = "2.0.1"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -13,7 +13,6 @@ FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
-StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -27,14 +26,12 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-
-[extras]
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+StochasticDiffEqLevyArea = {path = "../StochasticDiffEqLevyArea"}
 
 [compat]
 ADTypes = "1.22.0"
@@ -42,34 +39,33 @@ Adapt = "4.3.0"
 ArrayInterface = "7.19.0"
 DiffEqBase = "7"
 DiffEqNoiseProcess = "5.30.0"
-FastPower = "1.1.0"
+FastPower = "1.1.2"
 FiniteDiff = "2.27.0"
 ForwardDiff = "0.10.39, 1"
 JumpProcesses = "9.26.0"
-StochasticDiffEqLevyArea = "2"
 LinearAlgebra = "1.10"
 Logging = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "4"
 Pkg = "1"
 Random = "<0.0.1, 1"
-RecursiveArrayTools = "4"
+RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.1.0"
+SafeTestsets = "0.1.0"
+SciMLBase = "3.10.0"
 SciMLLogging = "1.10.1, 2"
 SciMLOperators = "1.15"
 SimpleNonlinearSolve = "2.11.1"
 SparseArrays = "1.10"
 StaticArrays = "1.9.14"
+StochasticDiffEqLevyArea = "2"
 Test = "<0.0.1, 1"
-SafeTestsets = "0.1.0"
 julia = "1.10"
+
+[extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "Pkg", "SafeTestsets"]
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
-
-[sources.StochasticDiffEqLevyArea]
-path = "../StochasticDiffEqLevyArea"

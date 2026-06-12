@@ -11,6 +11,8 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "MREEF Tests" include("mreef_tests.jl")
     @time @safetestset "MRAB Tests" include("mrab_tests.jl")
+    @time @safetestset "MRI-GARK Tests" include("mri_gark_tests.jl")
+    @time @safetestset "MIS Tests" include("mis_tests.jl")
 end
 
 # Run QA tests (AllocCheck) - skip on pre-release Julia

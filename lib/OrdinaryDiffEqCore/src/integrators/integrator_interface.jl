@@ -74,7 +74,6 @@ function SciMLBase.reeval_internals_due_to_modification!(
         end
     end
 
-    integrator.derivative_discontinuity = false
     return integrator.reeval_fsal = true
 end
 
@@ -144,7 +143,35 @@ end
     end
 end
 
+"""
+    derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
+
+Flag whether the current callback introduced a derivative discontinuity (a change to
+`u`, `p`, `t`, or `f` that makes `f(u, p, t)` discontinuous). A `true` triggers extra
+work at the start of the next step (FSAL re-evaluation, Jacobian recomputation,
+extrapolant reset); a `false` lets the integrator skip it. The default when a callback
+fires but does not call this is `true`, the conservative choice.
+
+When several callbacks run on the same step (multiple `DiscreteCallback`s, or
+simultaneous events in a `VectorContinuousCallback`), the outcome is **order
+independent and any-`true`-wins**:
+
+  - if any callback flags `true`, the step is treated as discontinuous, even if other
+    callbacks flag `false` and even if a `false` callback runs last;
+  - only if every callback that spoke flagged `false` (and none flagged `true`) is the
+    recomputation skipped;
+  - if no callback calls this at all, the conservative default (`true`) is kept.
+
+A callback may therefore safely call `derivative_discontinuity!(integrator, false)`
+without having to account for what sibling callbacks did. Within a single callback the
+last call wins.
+"""
 function SciMLBase.derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
+    # Record the user's request and mark that a callback spoke this step.
+    # Cross-callback any-true-wins merging is handled in apply_callback! /
+    # apply_discrete_callback!, so this setter is a plain assignment: a callback
+    # may freely set false (e.g. callback initialization clears the flag).
+    integrator.user_set_discontinuity = true
     return integrator.derivative_discontinuity = bool
 end
 
@@ -547,6 +574,7 @@ function SciMLBase.reinit!(
     integrator.iter = 0
     integrator.success_iter = 0
     integrator.derivative_discontinuity = false
+    integrator.user_set_discontinuity = false
 
     # full re-initialize the controller in timestepping
     reinit_controller!(integrator, integrator.controller_cache)

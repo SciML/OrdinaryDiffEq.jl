@@ -12,17 +12,17 @@ import FastBroadcast: @..
 import MuladdMacro: @muladd
 import RecursiveArrayTools: recursivefill!
 import DiffEqBase: prepare_alg
+import LinearAlgebra
 
 using Reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("mreef_caches.jl")
-include("mreef_perform_step.jl")
-include("mrab_caches.jl")
-include("mrab_perform_step.jl")
+include("multirate_tableaus.jl")
+include("multirate_caches.jl")
+include("multirate_perform_step.jl")
 
-export MREEF, MRAB
+export MREEF, MRAB, MRIGARKERK22a, MRIGARKERK22b, MIS
 
 end
