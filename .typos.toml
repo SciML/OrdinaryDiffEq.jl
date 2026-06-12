@@ -130,6 +130,7 @@ iif = "iif"
 currate = "currate"  # current rate variable in tau-leaping
 SIE = "SIE"  # SIEA/SIEB algorithm name prefix
 SME = "SME"  # SME algorithm name (Stochastic Modified Euler)
+MIS = "MIS"  # Multirate Infinitesimal Step methods (MIS2, MIS3a, ...)
 resetted = "resetted"  # variable name in stepsize control
 strat = "strat"  # Stratonovich abbreviation
 
