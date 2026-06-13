@@ -114,7 +114,7 @@ end
 
 get_fsalfirstlast(cache::MRIGARKCache, u) = (cache.fsalfirst, cache.k)
 
-const MRIGARKAlg = Union{MRIGARKERK22a, MRIGARKERK22b, MRIGARKERK33a}
+const MRIGARKAlg = Union{MRIGARKERK22a, MRIGARKERK22b, MRIGARKERK33a, MRIGARKERK45a}
 
 function alg_cache(
         alg::MRIGARKAlg, u, rate_prototype,

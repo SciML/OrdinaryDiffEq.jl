@@ -366,10 +366,16 @@ function _mrigark_substage!(
         _mrigark_rate!(kk[2], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
         if q == 2
             @.. broadcast = false v = v + h * kk[2]
-        else
+        elseif q == 3
             @.. broadcast = false vtmp = v - h * kk[1] + 2 * h * kk[2]
             _mrigark_rate!(kk[3], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
             @.. broadcast = false v = v + (h / 6) * (kk[1] + 4 * kk[2] + kk[3])
+        else
+            @.. broadcast = false vtmp = v + (h / 2) * kk[2]
+            _mrigark_rate!(kk[3], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
+            @.. broadcast = false vtmp = v + h * kk[3]
+            _mrigark_rate!(kk[4], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
+            @.. broadcast = false v = v + (h / 6) * (kk[1] + 2 * kk[2] + 2 * kk[3] + kk[4])
         end
         OrdinaryDiffEqCore.increment_nf!(stats, q)
     end
@@ -380,7 +386,7 @@ end
 function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, z, fS, zemb, tab) = cache
-    (; Δc, W0, W1, Wemb, q) = tab
+    (; Δc, W0, W1, Wemb0, Wemb1, q) = tab
     alg = unwrap_alg(integrator, false)
     m = alg.m
     s = length(Δc)
@@ -400,12 +406,13 @@ function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
     @.. broadcast = false u = z[s + 1]
 
     return if integrator.opts.adaptive
-        if isempty(Wemb)
+        if isempty(Wemb0)
             @.. broadcast = false tmp = u - z[s]
         else
+            w1emb = isempty(Wemb1) ? nothing : Wemb1
             _mrigark_substage!(
                 zemb, z[s], cache, f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
-                Wemb, nothing, fS, s, stats
+                Wemb0, w1emb, fS, s, stats
             )
             @.. broadcast = false tmp = u - zemb
         end
@@ -450,10 +457,16 @@ function _mrigark_substage(vstart, f, p, t, dt, Δci, cprev, m, q, w0, w1, fS, u
         k2 = _mrigark_rate(f, vmid, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
         if q == 2
             v = @.. broadcast = false v + h * k2
-        else
+        elseif q == 3
             vmid2 = @.. broadcast = false v - h * k1 + 2 * h * k2
             k3 = _mrigark_rate(f, vmid2, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
             v = @.. broadcast = false v + (h / 6) * (k1 + 4 * k2 + k3)
+        else
+            vmid2 = @.. broadcast = false v + (h / 2) * k2
+            k3 = _mrigark_rate(f, vmid2, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
+            vmid3 = @.. broadcast = false v + h * k3
+            k4 = _mrigark_rate(f, vmid3, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
+            v = @.. broadcast = false v + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
         end
         OrdinaryDiffEqCore.increment_nf!(stats, q)
     end
@@ -464,7 +477,7 @@ end
         integrator, cache::MRIGARKConstantCache, repeat_step = false
     )
     (; t, dt, uprev, f, p) = integrator
-    (; Δc, W0, W1, Wemb, q) = cache.tab
+    (; Δc, W0, W1, Wemb0, Wemb1, q) = cache.tab
     alg = unwrap_alg(integrator, false)
     m = alg.m
     s = length(Δc)
@@ -486,12 +499,13 @@ end
     integrator.u = z[s + 1]
 
     if integrator.opts.adaptive
-        utilde = if isempty(Wemb)
+        utilde = if isempty(Wemb0)
             @.. broadcast = false integrator.u - z[s]
         else
+            w1emb = isempty(Wemb1) ? nothing : Wemb1
             zemb = _mrigark_substage(
                 z[s], f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
-                Wemb, nothing, fS, s, stats
+                Wemb0, w1emb, fS, s, stats
             )
             @.. broadcast = false integrator.u - zemb
         end

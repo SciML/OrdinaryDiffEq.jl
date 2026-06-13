@@ -152,6 +152,35 @@ Base.@kwdef struct MRIGARKERK33a <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 
 @doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — 4th-order explicit (MRI-GARK-ERK45a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). 5-stage, 4th-order explicit
+MRI-GARK method of Sandu 2019; each stage integrates the fast component over a
+sub-interval with a τ-dependent slow-coupling, using `m` explicit-RK4 inner
+micro-steps. Embedded 3rd-order error estimate.",
+    "MRIGARKERK45a",
+    "Multirate infinitesimal GARK explicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner RK4 micro-steps per stage.
+    """,
+    """
+    m::Int,
+    """
+)
+Base.@kwdef struct MRIGARKERK45a <: OrdinaryDiffEqAdaptiveAlgorithm
+    m::Int
+end
+
+@doc generic_solver_docstring(
     "Multirate Infinitesimal Step (MIS).
 
 Solves a split ODE of the form `du/dt = f1(u,t) + f2(u,t)` where `f1` is the
