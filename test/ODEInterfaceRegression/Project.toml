@@ -6,6 +6,9 @@ OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 ODEInterface = "0.5"
@@ -15,6 +18,8 @@ OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqExplicitRK = "2"
 OrdinaryDiffEqHighOrderRK = "2"
 OrdinaryDiffEqLowOrderRK = "2"
+SafeTestsets = "0.1, 1"
+SciMLTesting = "1"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}
