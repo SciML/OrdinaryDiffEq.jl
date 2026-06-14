@@ -456,8 +456,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = T[i + 1, i + 1]
             @.. broadcast = false cache.utilde = T[i + 1, i]
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -536,8 +537,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = T[n_curr + 1, n_curr + 1]
                 @.. broadcast = false cache.utilde = T[n_curr + 1, n_curr]
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -695,7 +697,7 @@ function perform_step!(
             utilde = T[i + 1, i]
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -755,7 +757,7 @@ function perform_step!(
                 utilde = T[n_curr + 1, n_curr]
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -928,8 +930,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -983,8 +986,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -1147,7 +1151,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -1211,7 +1215,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -1600,8 +1604,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -1679,8 +1684,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -1928,7 +1934,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -2004,7 +2010,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2190,8 +2196,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -2249,8 +2256,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2413,7 +2421,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -2481,7 +2489,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2751,7 +2759,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -2833,7 +2841,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -3215,8 +3223,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -3313,8 +3322,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -3569,7 +3579,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -3649,7 +3659,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -4051,8 +4061,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -4147,8 +4158,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
