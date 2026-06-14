@@ -13,7 +13,8 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
-    @testset "ExplicitTaylor2 Convergence Tests" begin
+    @safetestset "ExplicitTaylor2 Convergence Tests" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         # Test convergence
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
@@ -23,7 +24,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
     end
 
-    @testset "ExplicitTaylorN Convergence Tests" begin
+    @safetestset "ExplicitTaylorN Convergence Tests" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         # Test convergence
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
@@ -36,7 +38,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         end
     end
 
-    @testset "ExplicitTaylorAdaptiveOrder Tests" begin
+    @safetestset "ExplicitTaylorAdaptiveOrder Tests" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         sol = solve(prob_ode_linear, ExplicitTaylorAdaptiveOrder(min_order = Val(6), max_order = Val(10)))
         @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
@@ -44,7 +47,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
 
     # Test AutoSpecialize (default ODEProblem wraps in FunctionWrappers)
     # and FullSpecialize paths for IIP problems
-    @testset "AutoSpecialize / FullSpecialize IIP" begin
+    @safetestset "AutoSpecialize / FullSpecialize IIP" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         # IIP array problem
         function f_iip!(du, u, p, t)
             du[1] = -u[2]
@@ -85,7 +89,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
 
     # Test OOP (out-of-place) with array state
-    @testset "OOP Array Problems" begin
+    @safetestset "OOP Array Problems" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         function f_oop(u, p, t)
             return [-u[2], u[1]]
         end
@@ -111,7 +116,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
 
     # Dense output interpolation tests
-    @testset "Taylor2 Dense Output" begin
+    @safetestset "Taylor2 Dense Output" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         # Scalar OOP: u' = -u, u(0)=1 => u(t) = exp(-t)
         prob_scalar = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
         sol = solve(prob_scalar, ExplicitTaylor2(), dt = 0.01, dense = true)
@@ -148,7 +154,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sol_iip(t_mid)[2] ≈ sin(t_mid) atol = 1.0e-3
     end
 
-    @testset "Taylor2 Dense Convergence" begin
+    @safetestset "Taylor2 Dense Convergence" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         dts = 2.0 .^ (-8:-4)
         testTol = 0.2
         sim = test_convergence(
@@ -161,7 +168,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:L2] ≈ 2 atol = testTol
     end
 
-    @testset "TaylorN Dense Output" begin
+    @safetestset "TaylorN Dense Output" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         # Scalar OOP: u' = -u, u(0)=1 => u(t) = exp(-t)
         prob_scalar = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
 
@@ -211,7 +219,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sol_iip(t_mid, idxs = 2) ≈ sin(t_mid) atol = 1.0e-10
     end
 
-    @testset "TaylorN Dense Convergence" begin
+    @safetestset "TaylorN Dense Convergence" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         dts = 2.0 .^ (-8:-4)
         testTol = 0.3
         for N in 3:4
@@ -228,7 +237,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
 
     # Test IIP with a nonlinear system (Henon-Heiles-style)
-    @testset "Nonlinear IIP System" begin
+    @safetestset "Nonlinear IIP System" begin
+        using OrdinaryDiffEqTaylorSeries, ODEProblemLibrary, DiffEqDevTools, SciMLBase, Test
         function henon_heiles!(du, u, p, t)
             du[1] = -u[3] * (1 + 2u[4])
             du[2] = -u[4] - (u[3]^2 - u[4]^2)

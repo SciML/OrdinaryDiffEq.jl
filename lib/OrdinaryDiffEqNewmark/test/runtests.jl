@@ -13,7 +13,9 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     # Newmark methods with harmonic oscillator
-    @testset "Newmark Harmonic Oscillator" begin
+    @safetestset "Newmark Harmonic Oscillator" begin
+        using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
+        using LinearAlgebra: norm
         u0 = fill(0.0, 2)
         v0 = ones(2)
         function f1_harmonic!(dv, v, u, p, t)
@@ -60,7 +62,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
 
     # Newmark methods with damped oscillator
-    @testset "Newmark Damped Oscillator" begin
+    @safetestset "Newmark Damped Oscillator" begin
+        using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
+        using LinearAlgebra: norm
         function damped_oscillator!(a, v, u, p, t)
             @. a = -u - 0.5 * v
             return nothing
@@ -112,7 +116,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
     end
 
-    @testset "GeneralizedAlpha Harmonic Oscillator" begin
+    @safetestset "GeneralizedAlpha Harmonic Oscillator" begin
+        using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
+        using LinearAlgebra: norm
         # Convergence uses saved-step errors (`dense_errors=false`): dense Hermite output is not tailored to GA.
         u0 = fill(0.0, 2)
         v0 = ones(2)
@@ -155,7 +161,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
     end
 
-    @testset "GeneralizedAlpha Damped Oscillator" begin
+    @safetestset "GeneralizedAlpha Damped Oscillator" begin
+        using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
+        using LinearAlgebra: norm
         function damped_oscillator!(a, v, u, p, t)
             @. a = -u - 0.5 * v
         end
@@ -186,7 +194,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
     end
 
-    @testset "GeneralizedAlpha Algorithmic Damping" begin
+    @safetestset "GeneralizedAlpha Algorithmic Damping" begin
+        using OrdinaryDiffEqNewmark, Test, RecursiveArrayTools, DiffEqDevTools
+        using LinearAlgebra: norm
         # High frequency problem — solution is a fast oscillation on top of a slow one.
         # rho_inf = 0 should damp the high frequency content, rho_inf = 1 should not.
         function f1_highfreq!(dv, v, u, p, t)
@@ -206,7 +216,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test norm(sol_damped.u[end]) < norm(sol_undamped.u[end])
     end
 
-    @testset "GeneralizedAlpha Constructor Validation" begin
+    @safetestset "GeneralizedAlpha Constructor Validation" begin
+        using OrdinaryDiffEqNewmark, Test
         # rho_inf out of range
         @test_throws AssertionError GeneralizedAlpha(rho_inf = 1.1)
         @test_throws AssertionError GeneralizedAlpha(rho_inf = -0.1)

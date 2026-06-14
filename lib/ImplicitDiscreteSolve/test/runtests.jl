@@ -17,7 +17,8 @@ end
 # Run functional tests
 if TEST_GROUP != "QA"
     # Test implicit Euler using ImplicitDiscreteProblem
-    @testset "Implicit Euler" begin
+    @safetestset "Implicit Euler" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function lotkavolterra(u, p, t)
             [1.5 * u[1] - u[1] * u[2], -3.0 * u[2] + u[1] * u[2]]
         end
@@ -63,7 +64,8 @@ if TEST_GROUP != "QA"
         @test isapprox(idsol.u[end], osol.u[end], atol = 0.1)
     end
 
-    @testset "Solver initializes" begin
+    @safetestset "Solver initializes" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function periodic!(resid, u_next, u, p, t)
             resid[1] = u_next[1] - u[1] - sin(t * π / 4)
             resid[2] = 16 - u_next[2]^2 - u_next[1]^2
@@ -81,7 +83,8 @@ if TEST_GROUP != "QA"
         end
     end
 
-    @testset "Hard problem" begin
+    @safetestset "Hard problem" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function hard!(resid, u, u_prev, p, t)
             resid[1] = tanh((u[1] - 10t)^2) / 2
         end
@@ -93,7 +96,8 @@ if TEST_GROUP != "QA"
         @test idsol.retcode == ReturnCode.Success
     end
 
-    @testset "Handle nothing in u0" begin
+    @safetestset "Handle nothing in u0" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         emptyiip(residual, u_next, u, p, t) = nothing
         emptyoop(u_next, u, p, t) = nothing
 
@@ -109,7 +113,8 @@ if TEST_GROUP != "QA"
         @test sol2.retcode == ReturnCode.Success
     end
 
-    @testset "Create NonlinearLeastSquaresProblem" begin
+    @safetestset "Create NonlinearLeastSquaresProblem" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function over(u_next, u, p, t)
             [u_next[1] - 1, u_next[2] - 1, u_next[1] - u_next[2]]
         end
@@ -141,7 +146,8 @@ if TEST_GROUP != "QA"
         @test integ.cache.nlcache.prob isa NonlinearProblem
     end
 
-    @testset "Null u0 bypasses NonlinearSolve" begin
+    @safetestset "Null u0 bypasses NonlinearSolve" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         # IDSolve overrides allows_null_u0 so `nothing` reaches alg_cache unchanged
         # and the `::Nothing` dispatch returns a cache with nlcache=nothing. Without
         # the opt-in, u0 is coerced to Float64[] and NonlinearSolve fails building
@@ -157,7 +163,8 @@ if TEST_GROUP != "QA"
         @test SciMLBase.successful_retcode(sol)
     end
 
-    @testset "InitialFailure thrown" begin
+    @safetestset "InitialFailure thrown" begin
+        using ImplicitDiscreteSolve, OrdinaryDiffEqCore, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function bad(u_next, u, p, t)
             [u_next[1] - u_next[2], u_next[1] - 3, u_next[2] - 4]
         end

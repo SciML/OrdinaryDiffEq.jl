@@ -14,7 +14,8 @@ end
 # Run functional tests
 if TEST_GROUP != "QA"
     # Test implicit Euler using ImplicitDiscreteProblem
-    @testset "Implicit Euler" begin
+    @safetestset "Implicit Euler" begin
+        using SimpleImplicitDiscreteSolve, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function lotkavolterra(u, p, t)
             [1.5 * u[1] - u[1] * u[2], -3.0 * u[2] + u[1] * u[2]]
         end
@@ -60,7 +61,8 @@ if TEST_GROUP != "QA"
         @test isapprox(idsol.u[end - 1], osol.u[end], atol = 0.1)
     end
 
-    @testset "Solver initializes" begin
+    @safetestset "Solver initializes" begin
+        using SimpleImplicitDiscreteSolve, OrdinaryDiffEqSDIRK, SciMLBase, Test
         function periodic!(resid, u_next, u, p, t)
             resid[1] = u_next[1] - u[1] - sin(t * π / 4)
             resid[2] = 16 - u_next[2]^2 - u_next[1]^2

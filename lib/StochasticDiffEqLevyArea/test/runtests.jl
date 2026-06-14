@@ -1,13 +1,16 @@
-using StochasticDiffEqLevyArea
+using SafeTestsets
 using Test
-using Random
-using StableRNGs: StableRNG
-using LinearAlgebra: diag, norm
-using Statistics: var
 
-Random.seed!(638278)
+@safetestset "StochasticDiffEqLevyArea" begin
+    using StochasticDiffEqLevyArea
+    using Test
+    using Random
+    using StableRNGs: StableRNG
+    using LinearAlgebra: diag, norm
+    using Statistics: var
 
-@testset "StochasticDiffEqLevyArea" begin
+    Random.seed!(638278)
+
     @testset "Scalar case (m=1)" begin
         for h in rand(5)
             W = √h * randn()
