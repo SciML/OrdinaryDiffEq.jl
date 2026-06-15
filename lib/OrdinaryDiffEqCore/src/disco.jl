@@ -1,8 +1,8 @@
 function set_discontinuity(integrator)
     breakpointθ = find_discontinuity(integrator)
     dt = integrator.dt
-    if 1.0e-10 < breakpointθ < 1.0
-        return breakpointθ * dt
+    if breakpointθ < one(breakpointθ)
+        return (0.5 + 0.4 * sin(π * (breakpointθ - 0.5))) * dt
     end
     return -one(dt)
 end
@@ -16,12 +16,12 @@ function find_discontinuity(integrator)
     dt = integrator.dt
     u = integrator.u
     uprev = integrator.uprev
-    cb === nothing && return -one(dt)
-    isempty(cb.continuous_callbacks) && return -one(dt)
+    cb === nothing && return one(dt)
+    isempty(cb.continuous_callbacks) && return one(dt)
     p = integrator.p
     t = integrator.t
     k = integrator.k
-    breakpointθ = -one(dt)
+    breakpointθ = one(dt)
     disco_probs = get_disco_probs(integrator.controller_cache)
     idx = 1
     addsteps_called = false
@@ -49,9 +49,9 @@ function find_discontinuity(integrator)
                                     disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
                     end
                     disco_zero.ind = j
-                    sol = solve(disco_prob, tspan = (0.0, breakpointθ == -one(dt) ? 1.0 : breakpointθ); save_everystep = false)
+                    sol = solve(disco_prob, tspan = (0.0, breakpointθ); save_everystep = false)
                     tmp = sol[]
-                    if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
+                    if (!isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
                         integrator.is_disco_step = true
                         integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step too far past this
@@ -67,9 +67,9 @@ function find_discontinuity(integrator)
                     _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
                                 disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
                 end
-                sol = solve(disco_prob, tspan = (0.0, breakpointθ == -one(dt) ? 1.0 : breakpointθ); save_everystep = false)
+                sol = solve(disco_prob, tspan = (0.0, breakpointθ); save_everystep = false)
                 tmp = sol[]
-                if (!isnan(tmp) && (breakpointθ < zero(breakpointθ) || tmp < breakpointθ))
+                if (!isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp
                     integrator.is_disco_step = true
                     integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step past this
