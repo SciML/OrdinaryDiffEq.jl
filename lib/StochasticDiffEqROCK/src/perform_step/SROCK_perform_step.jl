@@ -194,10 +194,12 @@ end
     (; recf, recf2, mα, mσ, mτ) = cache
 
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
-            (length(W.dW) == 1)
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
-    gen_prob && (vec_χ = 2 .* floor.(false .* W.dW .+ 1 // 2 .+ oftype(W.dW, rand(W.rng, length(W.dW)))) .- true)
+    if gen_prob
+        vec_χ = similar(W.dW)
+        init_χ!(vec_χ, W)
+    end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -265,7 +267,7 @@ end
     # Now uᵢ₋₂ = uₛ₋₂, uᵢ₋₁ = uₛ₋₁, uᵢ = uₛ
     # Similarly tᵢ₋₂ = tₛ₋₂, tᵢ₋₁ = tₛ₋₁, tᵢ = tₛ
 
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ .* W.dW
         Gₛ = integrator.f.g(uᵢ, p, tᵢ)
@@ -300,7 +302,9 @@ end
         for i in 1:length(W.dW)
             WikJ = W.dW[i]
             WikJ2 = vec_χ[i]
-            WikRange = 1 // 2 .* (W.dW .* WikJ .- (1:length(W.dW) .== i) .* abs(dt)) #.- (1:length(W.dW) .> i) .* dt .* vec_χ .+ (1:length(W.dW) .< i) .* dt .* WikJ2)
+            WikRange = 1 // 2 .* (W.dW .* WikJ .- (1:length(W.dW) .== i) .* abs(dt) .-
+                (1:length(W.dW) .> i) .* abs(dt) .* vec_χ .+
+                (1:length(W.dW) .< i) .* abs(dt) .* WikJ2)
             uₓ = Gₛ * WikRange
             WikRange = 1 // 2 .* (1:length(W.dW) .== i)
             uᵢ₋₂ = uᵢ + uₓ
@@ -332,8 +336,7 @@ end
     (; recf, recf2, mα, mσ, mτ) = cache.constantcache
     ccache = cache.constantcache
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
-            (length(W.dW) == 1)
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
 
     alg = unwrap_alg(integrator, true)
@@ -362,8 +365,7 @@ end
 
     sqrt_dt = sqrt(abs(dt))
     if gen_prob
-        vec_χ .= 1 // 2 .+ oftype(W.dW, rand(W.rng, length(W.dW)))
-        @.. vec_χ = 2 * floor(vec_χ) - 1
+        init_χ!(vec_χ, W)
     end
 
     μ = recf[start]  # here κ = 0
@@ -418,7 +420,7 @@ end
     # Now uᵢ₋₂ = uₛ₋₂, uᵢ₋₁ = uₛ₋₁, uᵢ = uₛ
     # Similarly tᵢ₋₂ = tₛ₋₂, tᵢ₋₁ = tₛ₋₁, tᵢ = tₛ
 
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += Gₛ * W.dW
         integrator.f.g(Gₛ, uᵢ, p, tᵢ)
@@ -458,7 +460,10 @@ end
             WikJ2 = vec_χ[i]
             dwrange = 1:length(W.dW)
             abs_dt = abs(dt)
-            @.. WikRange = 1 // 2 * (W.dW * WikJ - (dwrange == i) * abs_dt) #+ (dwrange < i) * dt * WikJ2 - (dwrange > i) * dt * vec_χ)
+            @.. WikRange = 1 // 2 *
+                (W.dW * WikJ - (dwrange == i) * abs_dt -
+                (dwrange > i) * abs_dt * vec_χ +
+                (dwrange < i) * abs_dt * WikJ2)
             mul!(uₓ, Gₛ, WikRange)
             @.. uᵢ₋₂ = uᵢ + uₓ
             @.. WikRange = 1 // 2 * (dwrange == i)
@@ -542,14 +547,14 @@ end
     end
 
     Gₛ = integrator.f.g(u, p, tᵢ)
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         u += Gₛ .* W.dW
     else
         u += Gₛ * W.dW
     end
 
     if integrator.alg.strong_order_1
-        if (W.dW isa Number) || (length(W.dW) == 1) ||
+        if (W.dW isa Number) ||
                 (is_diagonal_noise(integrator.sol.prob))
             uᵢ₋₂ = @. 1 // 2 * Gₛ * (W.dW^2 - abs(dt))
             tmp = @. u + uᵢ₋₂
@@ -633,7 +638,7 @@ end
     end
 
     integrator.f.g(Gₛ, u, p, tᵢ)
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         @.. u += Gₛ * W.dW
     else
         mul!(uᵢ₋₁, Gₛ, W.dW)
@@ -641,7 +646,7 @@ end
     end
 
     if integrator.alg.strong_order_1
-        if (W.dW isa Number) || (length(W.dW) == 1) ||
+        if (W.dW isa Number) ||
                 (is_diagonal_noise(integrator.sol.prob))
             @.. uᵢ₋₂ = 1 // 2 * Gₛ * (W.dW^2 - abs(dt))
             @.. tmp = u + uᵢ₋₂
@@ -982,7 +987,7 @@ end
         end
     end
 
-    if (W.dW isa Number) || (length(W.dW) == 1)
+    if (W.dW isa Number)
         Gₛ = integrator.f.g(Û₁, p, t̂₁)
         uₓ += Gₛ * W.dW
 
@@ -1168,7 +1173,7 @@ end
         end
     end
 
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         integrator.f.g(Gₛ, Û₁, p, t̂₁)
         @.. uₓ += Gₛ * W.dW
 
@@ -1227,8 +1232,7 @@ end
     (; recf, mσ, mτ, mδ) = cache
 
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
-            (length(W.dW) == 1)
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
 
     alg = unwrap_alg(integrator, true)
@@ -1245,7 +1249,10 @@ end
     τ = mτ[deg_index]
 
     sqrt_dt = sqrt(abs(dt))
-    (gen_prob) && (vec_χ = 2 .* floor.(1 // 2 .+ false .* W.dW .+ rand(length(W.dW))) .- 1)
+    if gen_prob
+        vec_χ = similar(W.dW)
+        init_χ!(vec_χ, W)
+    end
 
     tᵢ₋₂ = t
     uᵢ₋₂ = uprev
@@ -1289,7 +1296,7 @@ end
     tᵢ₋₁ += θₛ₋₃ * (tᵢ₋₁ - tᵢ₋₂)
     tᵢ₋₂ = ttmp
 
-    if W.dW isa Number || length(W.dW) == 1 || is_diagonal_noise(integrator.sol.prob)
+    if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
         # stage s-3
         yₛ₋₃ = integrator.f(uᵢ₋₁, p, tᵢ₋₁)
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
@@ -1424,15 +1431,14 @@ end
 @muladd function perform_step!(integrator, cache::KomBurSROCK2Cache)
     (;
         utmp, uᵢ₋₁, uᵢ₋₂, k, yₛ₋₁, yₛ₋₂, yₛ₋₃, SXₛ₋₁, SXₛ₋₂,
-        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ,
+        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ, WikRange,
     ) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     (; recf, mσ, mτ, mδ) = cache.constantcache
 
     ccache = cache.constantcache
     gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
-            (length(W.dW) == 1)
+        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number)
     )
 
     alg = unwrap_alg(integrator, true)
@@ -1459,7 +1465,9 @@ end
     τ = mτ[deg_index]
 
     sqrt_dt = sqrt(abs(dt))
-    (gen_prob) && (vec_χ .= 2 .* floor.(1 // 2 .+ false .* vec_χ .+ rand(length(vec_χ))) .- 1)
+    if gen_prob
+        init_χ!(vec_χ, W)
+    end
 
     tᵢ₋₂ = t
     @.. uᵢ₋₂ = uprev
@@ -1502,7 +1510,7 @@ end
     tᵢ₋₁ += θₛ₋₃ * (tᵢ₋₁ - tᵢ₋₂)
     tᵢ₋₂ = ttmp
 
-    if W.dW isa Number || length(W.dW) == 1 || is_diagonal_noise(integrator.sol.prob)
+    if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
         # stage s-3
         integrator.f(yₛ₋₃, uᵢ₋₁, p, tᵢ₋₁)
         @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
@@ -1563,8 +1571,7 @@ end
             ttmp = tᵢ₋₂ + C₁
             integrator.f.g(Gₛ, utmp, p, ttmp)
             WikRange .= 1 .* (1:length(W.dW) .== i)
-            # @.. @view(Xₛ₋₂[:,i]) =  @view(Gₛ[:,i])
-            @.. Xₛ₋₂ = Gₛ * W.dW
+            @view(Xₛ₋₂[:, i]) .= @view(Gₛ[:, i])
         end
         mul!(SXₛ₋₂, Xₛ₋₂, W.dW)
         @.. u += μₛ₋₂ * yₛ₋₂ + 3 // 8 * SXₛ₋₂
@@ -1578,14 +1585,13 @@ end
             # @.. utmp = uᵢ₋₁ + μₛ₋₃*yₛ₋₃ + δ₁*yₛ₋₂ - 1//6*W.dW[i]*@view(Xₛ₋₃[:,i]) - 1//2*W.dW[i]*@view(Xₛ₋₂[:,i]) + 1//4*SXₛ₋₃ + 3//4*SXₛ₋₂
             @.. utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃ + δ₁ * yₛ₋₂ + 1 // 4 * SXₛ₋₃ + 3 // 4 * SXₛ₋₂
             mul!(SXₛ₋₁, Xₛ₋₃, WikRange)
-            @.. utmp += 1 // 6 * SXₛ₋₁
+            @.. utmp -= 1 // 6 * SXₛ₋₁
             mul!(SXₛ₋₁, Xₛ₋₂, WikRange)
-            @.. utmp += 1 // 2 * SXₛ₋₁
+            @.. utmp -= 1 // 2 * SXₛ₋₁
             ttmp = tᵢ₋₁ + μₛ₋₃ + δ₁
             integrator.f.g(Gₛ, utmp, p, ttmp)
             WikRange .= 1 .* (1:length(W.dW) .== i)
-            # @.. @view(Xₛ₋₁[:,i]) = @view(Gₛ[:,i])
-            @.. Xₛ₋₁ = Gₛ * WikRange
+            @view(Xₛ₋₁[:, i]) .= @view(Gₛ[:, i])
         end
         mul!(SXₛ₋₁, Xₛ₋₁, W.dW)
         @.. u += (σ - τ) * dt * yₛ₋₁ + 3 // 8 * SXₛ₋₁
@@ -1713,7 +1719,7 @@ end
     uᵢ₋₂ = integrator.f(uᵢ₋₂, p, tᵢ₋₂)
     u += dt * (σ + τ) * uᵢ₋₂
 
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ .* W.dW
 
@@ -1808,7 +1814,7 @@ end
     integrator.f(k, uᵢ₋₂, p, tᵢ₋₂)
     @.. u += dt * (σ + τ) * k
 
-    if (W.dW isa Number) || (length(W.dW) == 1) || is_diagonal_noise(integrator.sol.prob)
+    if (W.dW isa Number) || is_diagonal_noise(integrator.sol.prob)
         integrator.f.g(Gₛ, uᵢ₋₁, p, tᵢ₋₁)
         @.. u += Gₛ * W.dW
 
@@ -1842,3 +1848,12 @@ end
 
     integrator.u = u
 end
+
+function init_χ!(vec_χ, W)
+    r = rng(W)
+    for i in eachindex(vec_χ)
+        vec_χ[i] = 2 * (rand(r) < 0.5) - 1
+    end
+end
+
+rng(W) = hasfield(typeof(W), :rng) ? W.rng : W.source.rng
