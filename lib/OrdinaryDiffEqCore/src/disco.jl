@@ -49,7 +49,7 @@ function find_discontinuity(integrator)
                                     disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
                     end
                     disco_zero.ind = j
-                    sol = solve(disco_prob, tspan = (0.0, breakpointθ); save_everystep = false)
+                    sol = solve(disco_prob, tspan = (0.0, breakpointθ))
                     tmp = sol[]
                     if (!isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
@@ -67,7 +67,7 @@ function find_discontinuity(integrator)
                     _ode_addsteps!(disco_zero.k, disco_zero.tprev, disco_zero.uprev, disco_zero.u,
                                 disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false)
                 end
-                sol = solve(disco_prob, tspan = (0.0, breakpointθ); save_everystep = false)
+                sol = solve(disco_prob, tspan = (0.0, breakpointθ))
                 tmp = sol[]
                 if (!isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp
