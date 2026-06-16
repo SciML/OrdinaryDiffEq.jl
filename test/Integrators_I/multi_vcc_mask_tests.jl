@@ -49,13 +49,13 @@ using OrdinaryDiffEq, Test
         @test all(length(m) == 1 for (_, m) in fired2)
 
         # cb1's first firing is at u=3 (idx 1), second at u=5 (idx 2)
-        @test fired1[1][1] ≈ 3.0 atol=1e-10
+        @test fired1[1][1] ≈ 3.0 atol = 1.0e-10
         @test fired1[1][2] == Int8[1, 0]
-        @test fired1[2][1] ≈ 5.0 atol=1e-10
+        @test fired1[2][1] ≈ 5.0 atol = 1.0e-10
         @test fired1[2][2] == Int8[0, 1]
 
         # cb2 fires at u=8 (idx 1)
-        @test fired2[1][1] ≈ 8.0 atol=1e-10
+        @test fired2[1][1] ≈ 8.0 atol = 1.0e-10
         @test fired2[1][2] == Int8[1]
     end
 
@@ -69,15 +69,15 @@ using OrdinaryDiffEq, Test
         @test all(length(m) == 2 for (_, m) in fired1)
         @test all(length(m) == 3 for (_, m) in fired3)
 
-        @test fired1[1][1] ≈ 3.0 atol=1e-10
+        @test fired1[1][1] ≈ 3.0 atol = 1.0e-10
         @test fired1[1][2] == Int8[1, 0]
-        @test fired1[2][1] ≈ 5.0 atol=1e-10
+        @test fired1[2][1] ≈ 5.0 atol = 1.0e-10
         @test fired1[2][2] == Int8[0, 1]
 
         # cb3's idx 1 fires at u=4, idx 2 at u=6, idx 3 at u=8
-        idx4 = findfirst(((t, _),) -> isapprox(t, 4.0; atol=1e-10), fired3)
-        idx6 = findfirst(((t, _),) -> isapprox(t, 6.0; atol=1e-10), fired3)
-        idx8 = findfirst(((t, _),) -> isapprox(t, 8.0; atol=1e-10), fired3)
+        idx4 = findfirst(((t, _),) -> isapprox(t, 4.0; atol = 1.0e-10), fired3)
+        idx6 = findfirst(((t, _),) -> isapprox(t, 6.0; atol = 1.0e-10), fired3)
+        idx8 = findfirst(((t, _),) -> isapprox(t, 8.0; atol = 1.0e-10), fired3)
         @test idx4 !== nothing
         @test idx6 !== nothing
         @test idx8 !== nothing
