@@ -492,6 +492,22 @@ for (accessor, default) in (
     end
 end
 
+# Discontinuity-detection helpers 
+# Shared logic in every step_accept/reject_controller! below.
+
+function handle_disco_accept!(integrator, controller_basic, t, nominal_new_dt)
+    controller_basic.discontinuity_detection && integrator.is_disco_step || return nominal_new_dt
+    integrator.is_disco_step = false
+    return min((integrator.disco_checkpoint - t) / 4, nominal_new_dt)
+end
+
+function handle_disco_reject!(integrator, controller_basic)
+    controller_basic.discontinuity_detection || return false
+    disco_dt = set_discontinuity(integrator)
+    disco_dt > zero(disco_dt) || return false
+    integrator.dt = disco_dt
+    return true
+end
 
 # Standard integral (I) step size controller
 """
@@ -570,29 +586,18 @@ end
 
 # TODO change signature to remove the q input
 function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
-    (; qsteady_min, qsteady_max, discontinuity_detection) = cache.controller.basic
+    (; qsteady_min, qsteady_max) = cache.controller.basic
 
     t = integrator.t
     dt = integrator.dt
     if qsteady_min <= q <= qsteady_max
         q = one(q)
     end
-    if discontinuity_detection && integrator.is_disco_step
-        integrator.is_disco_step = false
-        return min((integrator.disco_checkpoint - t) / 4, dt / q)
-    end
-    return dt / q # new dt
+    return handle_disco_accept!(integrator, cache.controller.basic, t, dt / q)
 end
 
 function step_reject_controller!(integrator, cache::IControllerCache, alg)
-    discontinuity_detection = cache.controller.basic.discontinuity_detection
-    if discontinuity_detection
-        disco_dt = set_discontinuity(integrator)
-        if disco_dt > zero(disco_dt)
-            integrator.dt = disco_dt
-            return integrator.dt
-        end
-    end
+    handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
     return integrator.dt = cache.dtreject # TODO this does not look right.
 end
 
@@ -714,7 +719,7 @@ end
 
 function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     (; controller) = cache
-    (; qsteady_min, qsteady_max, discontinuity_detection) = controller.basic
+    (; qsteady_min, qsteady_max) = controller.basic
     qoldinit = controller.qoldinit
     EEst = DiffEqBase.value(get_EEst(integrator))
 
@@ -724,23 +729,13 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
         q = one(q)
     end
     cache.errold = max(EEst, qoldinit)
-    if discontinuity_detection && integrator.is_disco_step
-        integrator.is_disco_step = false
-        return min((integrator.disco_checkpoint - t) / 4, dt / q) # new dt
-    end
-
-    return dt / q # new dt
+    return handle_disco_accept!(integrator, controller.basic, t, dt / q)
 end
 
 function step_reject_controller!(integrator, cache::PIControllerCache, alg)
     (; controller, q11) = cache
-    (; qmin, gamma, discontinuity_detection) = controller.basic
-    if discontinuity_detection
-        disco_dt = set_discontinuity(integrator)
-        if disco_dt > zero(disco_dt)
-            return integrator.dt = disco_dt
-        end
-    end
+    (; qmin, gamma) = controller.basic
+    handle_disco_reject!(integrator, controller.basic) && return integrator.dt
     return integrator.dt /= min(inv(qmin), q11 / gamma)
 end
 
@@ -952,7 +947,7 @@ end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
     (; controller) = cache
-    (; qsteady_min, qsteady_max, discontinuity_detection) = controller.basic
+    (; qsteady_min, qsteady_max) = controller.basic
 
     t = integrator.t
     dt = integrator.dt
@@ -963,22 +958,11 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
         cache.err[3] = cache.err[2]
         cache.err[2] = cache.err[1]
     end
-    if discontinuity_detection && integrator.is_disco_step
-        integrator.is_disco_step = false
-        return min((integrator.disco_checkpoint - t) / 4, dt * dt_factor)
-    end
-    return dt * dt_factor # new dt
+    return handle_disco_accept!(integrator, controller.basic, t, dt * dt_factor)
 end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
-    discontinuity_detection = cache.controller.basic.discontinuity_detection
-    if discontinuity_detection
-        disco_dt = set_discontinuity(integrator)
-        if disco_dt > zero(disco_dt)
-            integrator.dt = disco_dt
-            return integrator.dt
-        end
-    end
+    handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
     return integrator.dt *= cache.dt_factor
 end
 
@@ -1137,25 +1121,13 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     cache.dtacc = DiffEqBase.value(integrator.dt)
     cache.erracc = max(1.0e-2, EEst)
 
-    if cache.controller.basic.discontinuity_detection && integrator.is_disco_step
-        integrator.is_disco_step = false
-        return min((integrator.disco_checkpoint - integrator.t) / 4, integrator.dt / qacc)
-    end
-
-    return integrator.dt / qacc
+    return handle_disco_accept!(integrator, cache.controller.basic, integrator.t, integrator.dt / qacc)
 end
 
 function step_reject_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; dt, success_iter) = integrator
     (; qold) = cache
-    discontinuity_detection = cache.controller.basic.discontinuity_detection
-    if discontinuity_detection
-        disco_dt = set_discontinuity(integrator)
-        if disco_dt > zero(disco_dt)
-            integrator.dt = disco_dt
-            return integrator.dt
-        end
-    end
+    handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
     return integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
 end
 

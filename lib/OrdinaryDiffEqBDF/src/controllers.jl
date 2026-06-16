@@ -153,7 +153,7 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
         cache.order = kₙ
         q = integrator.dt / hₙ
 
-        if prefer_const_step && q < 1.2 && q > 0.6
+        if prefer_const_step && 0.6 < q < 1.2
             h
         elseif q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
             h

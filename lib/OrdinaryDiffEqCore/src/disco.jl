@@ -3,6 +3,7 @@ function set_discontinuity(integrator)
     dt = integrator.dt
     if breakpointθ < one(breakpointθ)
         return (0.5 + 0.4 * sin(π * (breakpointθ - 0.5))) * dt
+        return (0.5 + 1.2372 * (breakpointθ - 0.5) - 1.7487 * (breakpointθ - 0.5)^3) * dt
     end
     return -one(dt)
 end
