@@ -51,7 +51,7 @@ Most of the breaking changes fall into a small set of recurring themes. Keep the
   # v7 — a typed object
   Rosenbrock23(autodiff = AutoForwardDiff())
   solve(prob, alg;
-      verbose = ODEVerbosity(SciMLLogging.None()),
+      verbose = DEVerbosity(SciMLLogging.None()),
       alias = ODEAliasSpecifier(alias_u0 = true))
   ```
 
@@ -64,7 +64,7 @@ Most of the breaking changes fall into a small set of recurring themes. Keep the
 
 The cleanest path is **not** to jump straight from an old environment onto v7. Most renamed APIs (e.g. `DEAlgorithm` → `AbstractDEAlgorithm`, `u_modified!` → `derivative_discontinuity!`, `has_destats` → `has_stats`, `sol.destats` → `sol.stats`, the `construct*` tableau functions, `alias_u0`/`alias_du0`, `beta1`/`beta2`, PID kwargs) already exist under their new names in **SciMLBase v2** / **OrdinaryDiffEq v6** with deprecation warnings. The recommended sequence is:
 
-1. **Stay on SciMLBase v2 / OrdinaryDiffEq v6.** Update your code to the new names (`has_stats`, `sol.stats`, `AbstractDEAlgorithm`, `derivative_discontinuity!`, `ODEAliasSpecifier`, `ODEVerbosity`, `ADTypes`-based `autodiff`, explicit `controller = …` objects, new tableau names) while the deprecation shims still exist.
+1. **Stay on SciMLBase v2 / OrdinaryDiffEq v6.** Update your code to the new names (`has_stats`, `sol.stats`, `AbstractDEAlgorithm`, `derivative_discontinuity!`, `ODEAliasSpecifier`, `DEVerbosity`, `ADTypes`-based `autodiff`, explicit `controller = …` objects, new tableau names) while the deprecation shims still exist.
 2. **Verify your tests pass on v6 with no deprecation warnings.**
 3. **Then bump to v7.** At this point your code should compile and run against v7 without further changes aside from the genuinely new breakage (RAT v4 array semantics, ensemble `prob_func`/`output_func` signature, struct type parameter removals, kwargs that truly no longer exist, default changes like `CheckInit` and `williamson_condition=false`).
 
@@ -310,11 +310,11 @@ Rosenbrock23(autodiff=AutoFiniteDiff())
 # v6
 solve(prob, alg, verbose=false)
 
-# v7 — must use ODEVerbosity
-solve(prob, alg, verbose=ODEVerbosity(SciMLLogging.None()))
+# v7 — must use DEVerbosity
+solve(prob, alg, verbose=DEVerbosity(SciMLLogging.None()))
 ```
 
-**Why:** same type-stability reason, plus `ODEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
+**Why:** same type-stability reason, plus `DEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
 
 ### alias: Bool no longer accepted
 
