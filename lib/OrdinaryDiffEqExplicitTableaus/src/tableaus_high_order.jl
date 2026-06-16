@@ -6476,6 +6476,7 @@ function MSRK10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     c[15] = convert(T_time, big"1.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
     αEEst = α .- btilde
     return DiffEqBase.ExplicitRKTableau(
-        A, c, α, 10; αEEst = αEEst, adaptiveorder = 8, fsal = false
+        A, c, α, 10; αEEst = αEEst, adaptiveorder = 8, fsal = false,
+        stability_size = 4.429318010987123
     )
 end
