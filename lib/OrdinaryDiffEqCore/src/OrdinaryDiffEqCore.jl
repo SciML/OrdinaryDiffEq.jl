@@ -42,6 +42,7 @@ import SciMLOperators: MatrixOperator, FunctionOperator,
     isconstant
 
 import Random
+import Printf: @sprintf
 
 import RecursiveArrayTools: recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
 

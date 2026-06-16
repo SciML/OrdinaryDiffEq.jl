@@ -658,20 +658,20 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
     # diagnostic message construction
     diagnostic = String[]
     if !isempty(nan_inf_idxs) #inf/nan vals in u
-        if u isa AbstractArray 
-            for i in nan_inf_idxs 
-                push!(diagnostic, "u[$i] = $(round(u[i], sigdigits=4)) is non-finite (NaN/Inf)")
+        if u isa AbstractArray
+            for i in nan_inf_idxs
+                push!(diagnostic, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
             end
         else
-            push!(diagnostic, "u = $(round(u, sigdigits=4)) is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
+            push!(diagnostic, "u = $u is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
         end
     elseif !isempty(blown_idxs) #blown u values
         if u isa AbstractArray
             for i in blown_idxs
-                push!(diagnostic, "u[$i] = $(round(u[i], sigdigits=4)) has grown >1e6× its initial value")
+                push!(diagnostic, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
             end
         else
-            push!(diagnostic, "u = $(round(u, sigdigits=4)) has grown >1e6× its initial value")
+            push!(diagnostic, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
         end
     end
     if large_jac_rows !== nothing && !isempty(large_jac_rows) #jacobian analysis
@@ -682,7 +682,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
                 push!(bad_entries, (i, j, v))
             end
         end
-        str = join(("J[$i,$j] = $(round(v, sigdigits=4))" for (i, j, v) in first(bad_entries, 5)), ", ")
+        str = join(("J[$i,$j] = $(@sprintf("%.4g", v))" for (i, j, v) in first(bad_entries, 5)), ", ")
         push!(diagnostic, "Jacobian row(s) $large_jac_rows have large/non-finite entries (e.g. $str), suggesting a singularity in those equation(s)")
     end
     if large_jac_cols !== nothing && !isempty(large_jac_cols)
