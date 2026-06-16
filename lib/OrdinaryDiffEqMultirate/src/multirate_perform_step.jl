@@ -343,9 +343,19 @@ function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
         f.f2(fS[i], Y[i], p, t + c[i] * dt)
         integrator.stats.nf2 += 1
 
-        @.. broadcast = false slow_f = γ[i, 1] * fS[1]
-        for j in 2:i
-            if !iszero(γ[i, j])
+        if i == 1
+            @.. broadcast = false slow_f = γ[i, 1] * fS[1]
+        elseif i == 2
+            @.. broadcast = false slow_f = γ[i, 1] * fS[1] + γ[i, 2] * fS[2]
+        elseif i == 3
+            @.. broadcast = false slow_f = γ[i, 1] * fS[1] + γ[i, 2] * fS[2] +
+                γ[i, 3] * fS[3]
+        elseif i == 4
+            @.. broadcast = false slow_f = γ[i, 1] * fS[1] + γ[i, 2] * fS[2] +
+                γ[i, 3] * fS[3] + γ[i, 4] * fS[4]
+        else
+            @.. broadcast = false slow_f = γ[i, 1] * fS[1]
+            for j in 2:i
                 @.. broadcast = false slow_f = slow_f + γ[i, j] * fS[j]
             end
         end
@@ -403,11 +413,21 @@ end
         fS[i] = f.f2(Y[i], p, t + c[i] * dt)
         integrator.stats.nf2 += 1
 
-        slow_f = γ[i, 1] * fS[1]
-        for j in 2:i
-            if !iszero(γ[i, j])
-                slow_f = @.. broadcast = false slow_f + γ[i, j] * fS[j]
+        slow_f = if i == 1
+            @.. broadcast = false γ[i, 1] * fS[1]
+        elseif i == 2
+            @.. broadcast = false γ[i, 1] * fS[1] + γ[i, 2] * fS[2]
+        elseif i == 3
+            @.. broadcast = false γ[i, 1] * fS[1] + γ[i, 2] * fS[2] + γ[i, 3] * fS[3]
+        elseif i == 4
+            @.. broadcast = false γ[i, 1] * fS[1] + γ[i, 2] * fS[2] +
+                γ[i, 3] * fS[3] + γ[i, 4] * fS[4]
+        else
+            acc = @.. broadcast = false γ[i, 1] * fS[1]
+            for j in 2:i
+                acc = @.. broadcast = false acc + γ[i, j] * fS[j]
             end
+            acc
         end
 
         if iszero(Γ[i])
