@@ -357,6 +357,10 @@ function _sde_init(
                 rand_prototype = adapt(
                     DiffEqBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))
                 )
+            elseif issparse(noise_rate_prototype)
+                # Wiener increments must always be a dense vector regardless of whether
+                # the noise matrix g is sparse; sparse dW has no defined mul! with sparse g.
+                rand_prototype = zeros(randElType, size(noise_rate_prototype, 2))
             else
                 rand_prototype = false .* noise_rate_prototype[1, :]
             end
