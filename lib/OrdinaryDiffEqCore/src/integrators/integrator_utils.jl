@@ -657,15 +657,15 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
 
     # diagnostic message construction
     diagnostic = String[]
-    if !isempty(nan_inf_idxs)
-        if u isa AbstractArray
-            for i in nan_inf_idxs
+    if !isempty(nan_inf_idxs) #inf/nan vals in u
+        if u isa AbstractArray 
+            for i in nan_inf_idxs 
                 push!(diagnostic, "u[$i] = $(round(u[i], sigdigits=4)) is non-finite (NaN/Inf)")
             end
         else
             push!(diagnostic, "u = $(round(u, sigdigits=4)) is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
         end
-    elseif !isempty(blown_idxs)
+    elseif !isempty(blown_idxs) #blown u values
         if u isa AbstractArray
             for i in blown_idxs
                 push!(diagnostic, "u[$i] = $(round(u[i], sigdigits=4)) has grown >1e6× its initial value")
@@ -674,18 +674,19 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
             push!(diagnostic, "u = $(round(u, sigdigits=4)) has grown >1e6× its initial value")
         end
     end
-    if large_jac_rows !== nothing && !isempty(large_jac_rows)
-        top = first([(i, j, jac[i, j]) for i in large_jac_rows for j in axes(jac, 2)
-                        if !isfinite(jac[i, j]) || abs(jac[i, j]) > 1.0e6], 5)
-        top_str = join(["J[$i,$j] = $(round(v, sigdigits=4))" for (i, j, v) in top], ", ")
-        push!(diagnostic,
-            "Jacobian row(s) $large_jac_rows have large/non-finite entries (e.g. $top_str), " *
-            "suggesting a singularity in those equation(s)")
+    if large_jac_rows !== nothing && !isempty(large_jac_rows) #jacobian analysis
+        bad_entries = Tuple{Int, Int, eltype(jac)}[]
+        for i in large_jac_rows, j in axes(jac, 2)
+            v = jac[i, j]
+            if !isfinite(v) || abs(v) > 1.0e6
+                push!(bad_entries, (i, j, v))
+            end
+        end
+        str = join(("J[$i,$j] = $(round(v, sigdigits=4))" for (i, j, v) in first(bad_entries, 5)), ", ")
+        push!(diagnostic, "Jacobian row(s) $large_jac_rows have large/non-finite entries (e.g. $str), suggesting a singularity in those equation(s)")
     end
     if large_jac_cols !== nothing && !isempty(large_jac_cols)
-        push!(diagnostic,
-            "Jacobian column(s) $large_jac_cols have large/non-finite entries, " *
-            "suggesting state component(s) $large_jac_cols are diverging")
+        push!(diagnostic, "Jacobian column(s) $large_jac_cols have large/non-finite entries, suggesting state component(s) $large_jac_cols are diverging")
     end
     diagnostic = isempty(diagnostic) ? "" : "\nDiagnostics:\n" * join(diagnostic, "\n") * "."
     return diagnostic
