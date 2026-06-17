@@ -91,7 +91,7 @@ function alg_cache(
     constantcache = ROCK4ConstantCache(
         constvalue(uBottomEltypeNoUnits),
         constvalue(tTypeNoUnits),
-        similar(u)
+        copy(u)
     )
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -135,7 +135,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = RKCConstantCache(similar(u))
+    constantcache = RKCConstantCache(copy(u))
     gprev = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -234,7 +234,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ESERK4ConstantCache(constvalue(uBottomEltypeNoUnits), similar(u))
+    constantcache = ESERK4ConstantCache(constvalue(uBottomEltypeNoUnits), copy(u))
     uᵢ = zero(u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -288,7 +288,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ESERK5ConstantCache(constvalue(uBottomEltypeNoUnits), similar(u))
+    constantcache = ESERK5ConstantCache(constvalue(uBottomEltypeNoUnits), copy(u))
     uᵢ = zero(u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -338,7 +338,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = SERK2ConstantCache(constvalue(uBottomEltypeNoUnits), similar(u))
+    constantcache = SERK2ConstantCache(constvalue(uBottomEltypeNoUnits), copy(u))
     uᵢ₋₁ = zero(u)
     Sᵢ = zero(u)
     tmp = zero(u)
@@ -386,7 +386,7 @@ function alg_cache(
     tsw0 = tTypeNoUnits(1.1)
     acoshtsw0 = tTypeNoUnits(acosh(tsw0))
     sinhacoshtsw0 = tTypeNoUnits(sinh(acoshtsw0))
-    constantcache = TSRKC2ConstantCache(similar(u), tsw0, acoshtsw0, sinhacoshtsw0)
+    constantcache = TSRKC2ConstantCache(copy(u), tsw0, acoshtsw0, sinhacoshtsw0)
     gprev = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -436,7 +436,7 @@ function alg_cache(
     tsw0 = tTypeNoUnits(1.25)
     acoshtsw0 = tTypeNoUnits(acosh(tsw0))
     sinhacoshtsw0 = tTypeNoUnits(sinh(acoshtsw0))
-    constantcache = TSRKC3ConstantCache(similar(u), tsw0, acoshtsw0, sinhacoshtsw0)
+    constantcache = TSRKC3ConstantCache(copy(u), tsw0, acoshtsw0, sinhacoshtsw0)
     gprev = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -487,7 +487,7 @@ function alg_cache(
         dt, reltol, p, calck, ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     min_stage, max_stage = _rkl_clamp_odd_stages(alg.min_stages, alg.max_stages)
-    constantcache = RKL1ConstantCache(similar(u), min_stage, max_stage)
+    constantcache = RKL1ConstantCache(copy(u), min_stage, max_stage)
     uᵢ₋₁ = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -535,7 +535,7 @@ function alg_cache(
         dt, reltol, p, calck, ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     min_stage, max_stage = _rkl_clamp_odd_stages(alg.min_stages, alg.max_stages)
-    constantcache = RKL2ConstantCache(similar(u), min_stage, max_stage)
+    constantcache = RKL2ConstantCache(copy(u), min_stage, max_stage)
     uᵢ₋₁ = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -584,7 +584,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     min_stage = max(2, alg.min_stages)
     max_stage = max(alg.max_stages, min_stage)
-    constantcache = RKG1ConstantCache(similar(u), min_stage, max_stage)
+    constantcache = RKG1ConstantCache(copy(u), min_stage, max_stage)
     uᵢ₋₁ = zero(u); tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype); k = zero(rate_prototype)
@@ -631,7 +631,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     min_stage = max(3, alg.min_stages)
     max_stage = max(alg.max_stages, min_stage)
-    constantcache = RKG2ConstantCache(similar(u), min_stage, max_stage)
+    constantcache = RKG2ConstantCache(copy(u), min_stage, max_stage)
     uᵢ₋₁ = zero(u); tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype); k = zero(rate_prototype)
