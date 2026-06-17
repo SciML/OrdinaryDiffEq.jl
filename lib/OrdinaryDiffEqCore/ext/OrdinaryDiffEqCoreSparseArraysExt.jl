@@ -23,13 +23,15 @@ function _isdiag(A::SparseMatrixCSC)
 end
 
 # only look at nonzero vals
-function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, jac::SparseMatrixCSC)
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::SparseMatrixCSC)
     @inbounds for j in axes(jac, 2)
         for k in jac.colptr[j]:(jac.colptr[j + 1] - 1)
             val = jac.nzval[k]
             if !isfinite(val) || abs(val) > 1e6
-                push!(rows, jac.rowval[k])
+                i = jac.rowval[k]
+                push!(rows, i)
                 push!(cols, j)
+                push!(entries, (i, j, val))
             end
         end
     end

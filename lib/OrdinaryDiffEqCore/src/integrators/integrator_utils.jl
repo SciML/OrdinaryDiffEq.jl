@@ -645,27 +645,59 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         nothing
     end
 
-    large_jac_rows = nothing
-    large_jac_cols = nothing
+    bad_entries = nothing
+    singularity_rows = nothing
+    singularity_cols = nothing
     if jac !== nothing
         rows = Set{Int}()
         cols = Set{Int}()
-        _find_large_jac_entries!(rows, cols, jac)
-        large_jac_rows = sort!(collect(rows))
-        large_jac_cols = sort!(collect(cols))
+        entries = Tuple{Int, Int, eltype(jac)}[]
+        _find_large_jac_entries!(rows, cols, entries, jac)
+
+        # keep only entries within 10 orders of magnitude of the largest finite entry,
+        # plus any non-finite entries. filters out large-but-normal model parameters 
+        max_finite = 0.0
+        for (_, _, v) in entries
+            if isfinite(v)
+                max_finite = max(max_finite, abs(v))
+            end
+        end
+        cutoff = max_finite * 1e-10
+        filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
+        sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
+
+        # derive rows and columns implicated by the surviving entries
+        row_set = Set{Int}()
+        col_set = Set{Int}()
+        for (i, j, _) in entries
+            push!(row_set, i)
+            push!(col_set, j)
+        end
+        bad_entries = entries
+        singularity_rows = sort!(collect(row_set))
+        singularity_cols = sort!(collect(col_set))
     end
 
     # diagnostic message construction
     diagnostic = String[]
     if !isempty(nan_inf_idxs) #inf/nan vals in u
         if u isa AbstractArray
-            for i in nan_inf_idxs
-                push!(diagnostic, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
+            n_nan = length(nan_inf_idxs)
+            n_total = length(u)
+            if n_nan == n_total
+                push!(diagnostic, "All $n_total state variables are non-finite (NaN/Inf)")
+            elseif n_nan > 3
+                push!(diagnostic, "$n_nan of $n_total state variables are non-finite (NaN/Inf): indices $nan_inf_idxs")
+            else
+                for i in nan_inf_idxs
+                    push!(diagnostic, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
+                end
             end
+            push!(diagnostic, "(Note: reflects the solver's internal state at abort, not sol.u[end] which is the last saved step)")
         else
             push!(diagnostic, "u = $u is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
         end
-    elseif !isempty(blown_idxs) #blown u values
+    elseif !isempty(blown_idxs) #big u values
         if u isa AbstractArray
             for i in blown_idxs
                 push!(diagnostic, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
@@ -674,19 +706,31 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
             push!(diagnostic, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
         end
     end
-    if large_jac_rows !== nothing && !isempty(large_jac_rows) #jacobian analysis
-        bad_entries = Tuple{Int, Int, eltype(jac)}[]
-        for i in large_jac_rows, j in axes(jac, 2)
-            v = jac[i, j]
-            if !isfinite(v) || abs(v) > 1.0e6
-                push!(bad_entries, (i, j, v))
+    if bad_entries !== nothing && !isempty(bad_entries) #jacobian analysis
+        has_nonfinite = false
+        has_large = false
+        for (_, _, v) in bad_entries
+            if isfinite(v)
+                has_large = true
+            else
+                has_nonfinite = true
             end
         end
-        str = join(("J[$i,$j] = $(@sprintf("%.4g", v))" for (i, j, v) in first(bad_entries, 5)), ", ")
-        push!(diagnostic, "Jacobian row(s) $large_jac_rows have large/non-finite entries (e.g. $str), suggesting a singularity in those equation(s)")
-    end
-    if large_jac_cols !== nothing && !isempty(large_jac_cols)
-        push!(diagnostic, "Jacobian column(s) $large_jac_cols have large/non-finite entries, suggesting state component(s) $large_jac_cols are diverging")
+        entry_desc = if has_nonfinite && has_large
+            "non-finite and large"
+        elseif has_nonfinite
+            "non-finite"
+        else
+            "unusually large"
+        end
+        example_strs = String[]
+        for (i, j, v) in first(bad_entries, 5)
+            push!(example_strs, "J[$i,$j] = $(@sprintf("%.4g", v))")
+        end
+        push!(diagnostic, "Jacobian row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
+        if !isempty(singularity_cols)
+            push!(diagnostic, "Jacobian column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
+        end
     end
     diagnostic = isempty(diagnostic) ? "" : "\nDiagnostics:\n" * join(diagnostic, "\n") * "."
     return diagnostic
