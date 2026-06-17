@@ -34,7 +34,7 @@ function alg_cache(
     constantcache = ROCK2ConstantCache(
         constvalue(uBottomEltypeNoUnits),
         constvalue(tTypeNoUnits),
-        similar(u)
+        copy(u)
     )
     uᵢ₋₁ = zero(u)
     tmp = zero(u)
