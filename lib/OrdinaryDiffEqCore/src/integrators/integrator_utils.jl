@@ -666,7 +666,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
         sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
 
-        # derive rows and columns implicated by the surviving entries
+        # derive rows and columns from remaining entries
         row_set = Set{Int}()
         col_set = Set{Int}()
         for (i, j, _) in entries
@@ -678,9 +678,15 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         singularity_cols = sort!(collect(col_set))
     end
 
+    # trace diagnostics to symbolic system if present
+    f = integrator.sol.prob.f
+    sys = (hasproperty(f, :sys) && f.sys !== nothing) ? f.sys : nothing
+    sym_eqs = (sys !== nothing && hasfield(typeof(sys), :eqs)) ? getfield(sys, :eqs) : nothing
+    sym_vars = (sys !== nothing && hasfield(typeof(sys), :unknowns)) ? getfield(sys, :unknowns) : nothing
+
     # diagnostic message construction
     diagnostic = String[]
-    if !isempty(nan_inf_idxs) #inf/nan vals in u
+    if !isempty(nan_inf_idxs) #state vars
         if u isa AbstractArray
             n_nan = length(nan_inf_idxs)
             n_total = length(u)
@@ -693,11 +699,10 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
                     push!(diagnostic, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
                 end
             end
-            push!(diagnostic, "(Note: reflects the solver's internal state at abort, not sol.u[end] which is the last saved step)")
         else
             push!(diagnostic, "u = $u is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
         end
-    elseif !isempty(blown_idxs) #big u values
+    elseif !isempty(blown_idxs)
         if u isa AbstractArray
             for i in blown_idxs
                 push!(diagnostic, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
@@ -706,15 +711,12 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
             push!(diagnostic, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
         end
     end
-    if bad_entries !== nothing && !isempty(bad_entries) #jacobian analysis
+
+    if bad_entries !== nothing && !isempty(bad_entries) #Jacobian analysis
         has_nonfinite = false
         has_large = false
         for (_, _, v) in bad_entries
-            if isfinite(v)
-                has_large = true
-            else
-                has_nonfinite = true
-            end
+            isfinite(v) ? (has_large = true) : (has_nonfinite = true)
         end
         entry_desc = if has_nonfinite && has_large
             "non-finite and large"
@@ -723,13 +725,29 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         else
             "unusually large"
         end
+
         example_strs = String[]
         for (i, j, v) in first(bad_entries, 5)
             push!(example_strs, "J[$i,$j] = $(@sprintf("%.4g", v))")
         end
         push!(diagnostic, "Jacobian row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
+        if sym_eqs !== nothing
+            for row in singularity_rows
+                if row <= length(sym_eqs)
+                    push!(diagnostic, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
+                end
+            end
+        end
+        # jac cols
         if !isempty(singularity_cols)
             push!(diagnostic, "Jacobian column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
+            if sym_vars !== nothing
+                for col in singularity_cols
+                    if col <= length(sym_vars)
+                        push!(diagnostic, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
+                    end
+                end
+            end
         end
     end
     diagnostic = isempty(diagnostic) ? "" : "\nDiagnostics:\n" * join(diagnostic, "\n") * "."
