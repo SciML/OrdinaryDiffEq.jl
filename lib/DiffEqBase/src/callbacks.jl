@@ -149,15 +149,17 @@ end
     any_vcc = any(is_vcc)
 
     snapshot_winner(i) = is_vcc[i] ? quote
-        copyto!(integrator.callback_cache.winning_simultaneous_events,
-            integrator.callback_cache.simultaneous_events)
-    end : :()
+            copyto!(
+                integrator.callback_cache.winning_simultaneous_events,
+                integrator.callback_cache.simultaneous_events
+            )
+        end : :()
 
     setup = any_vcc ? quote
-        cache = integrator.callback_cache
-        @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
-        fill!(cache.winning_simultaneous_events, Int8(0))
-    end : :()
+            cache = integrator.callback_cache
+            @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
+            fill!(cache.winning_simultaneous_events, Int8(0))
+        end : :()
 
     ex = quote
         $setup
@@ -192,11 +194,13 @@ end
         end
     end
     finalize = any_vcc ? quote
-        if event_occurred
-            copyto!(integrator.callback_cache.simultaneous_events,
-                integrator.callback_cache.winning_simultaneous_events)
+            if event_occurred
+                copyto!(
+                    integrator.callback_cache.simultaneous_events,
+                    integrator.callback_cache.winning_simultaneous_events
+                )
         end
-    end : :()
+        end : :()
     ex = quote
         $ex
         $finalize
