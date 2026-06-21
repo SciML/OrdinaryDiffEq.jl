@@ -54,7 +54,7 @@ export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallba
 
 # Utilities
 export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
-export SciMLBase, remake, successful_retcode, reinit!, set_proposed_dt!
+export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!
 
 # ADTypes
 export AutoForwardDiff, AutoFiniteDiff, AutoSparse
