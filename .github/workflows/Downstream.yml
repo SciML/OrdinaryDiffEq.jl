@@ -35,13 +35,13 @@ jobs:
           - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
       - name: Clone Downstream
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
           path: downstream
