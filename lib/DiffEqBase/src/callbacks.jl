@@ -558,15 +558,11 @@ function apply_callback!(
         savedexactly || savevalues!(integrator, true)
     end
 
-    # Save step-level state and isolate this callback so we can detect what
-    # *this* affect! said, independent of siblings. After affect! we OR-merge
-    # back so step-level sticky-on-true semantics are preserved across callbacks.
-    prev_dd = integrator.derivative_discontinuity
-    prev_user_set = integrator.user_set_discontinuity
-    integrator.derivative_discontinuity = false
-    integrator.user_set_discontinuity = false
+    # Assume the affect! introduces a derivative discontinuity unless it says
+    # otherwise via derivative_discontinuity!(integrator, false). A `nothing`
+    # affect! makes no modification.
+    integrator.derivative_discontinuity = true
 
-    affect_ran = false
     if callback isa VectorContinuousCallback
         if callback.affect! === nothing
             integrator.derivative_discontinuity = false
@@ -575,40 +571,28 @@ function apply_callback!(
                 integrator,
                 @view(integrator.callback_cache.simultaneous_events[1:(callback.len)])
             )
-            affect_ran = true
         end
     else
         if prev_sign < 0
-            if callback.affect! !== nothing
+            if callback.affect! === nothing
+                integrator.derivative_discontinuity = false
+            else
                 callback.affect!(integrator)
-                affect_ran = true
             end
         elseif prev_sign > 0
-            if callback.affect_neg! !== nothing
+            if callback.affect_neg! === nothing
+                integrator.derivative_discontinuity = false
+            else
                 callback.affect_neg!(integrator)
-                affect_ran = true
             end
         end
     end
 
-    cb_dd = integrator.derivative_discontinuity
-    cb_spoke = integrator.user_set_discontinuity
-    # Default-on if a user affect! ran but did not call derivative_discontinuity!.
-    # If no affect! ran (nothing branch), there is no modification to handle.
-    did_modify = affect_ran && (!cb_spoke || cb_dd)
-
-    if did_modify
+    if integrator.derivative_discontinuity
         reeval_internals_due_to_modification!(
             integrator, callback_initializealg = callback.initializealg
         )
-    end
 
-    # OR-merge step-level state with this callback's contribution. This is what
-    # makes a `true` from any callback survive a sibling's later `false`.
-    integrator.derivative_discontinuity = prev_dd || cb_dd
-    integrator.user_set_discontinuity = prev_user_set || cb_spoke
-
-    if did_modify
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
@@ -638,27 +622,20 @@ end
             savedexactly || savevalues!(integrator, true)
         end
 
-        # See apply_callback! for the rationale of the save / isolate / merge dance.
-        prev_dd = integrator.derivative_discontinuity
-        prev_user_set = integrator.user_set_discontinuity
-        integrator.derivative_discontinuity = false
-        integrator.user_set_discontinuity = false
-
+        # Assume a derivative discontinuity unless the affect! clears it.
+        integrator.derivative_discontinuity = true
         callback.affect!(integrator)
-
-        cb_dd = integrator.derivative_discontinuity
-        cb_spoke = integrator.user_set_discontinuity
-        # Default-on if affect! did not call derivative_discontinuity!.
-        did_modify = !cb_spoke || cb_dd
-
+        # Capture this callback's verdict BEFORE reeval_internals_due_to_modification!
+        # resets derivative_discontinuity to false. Returning the captured value (rather
+        # than re-reading the field) is what makes the OR-fold across simultaneous
+        # callbacks order independent: a true-flagging callback that triggers a reeval
+        # still reports true to the fold in handle_callbacks!.
+        did_modify = integrator.derivative_discontinuity
         if did_modify
             reeval_internals_due_to_modification!(
                 integrator, false, callback_initializealg = callback.initializealg
             )
         end
-
-        integrator.derivative_discontinuity = prev_dd || cb_dd
-        integrator.user_set_discontinuity = prev_user_set || cb_spoke
 
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)

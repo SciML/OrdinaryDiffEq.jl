@@ -429,7 +429,6 @@ function SciMLBase.__init(
     kshortsize = 0
     reeval_fsal = false
     derivative_discontinuity = false
-    user_set_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
     next_step_tstop = false
@@ -509,7 +508,6 @@ function SciMLBase.__init(
         isout,
         reeval_fsal,
         derivative_discontinuity,
-        user_set_discontinuity,
         isdae,
         opts,
         stats,
@@ -641,9 +639,7 @@ function OrdinaryDiffEqCore.initialize_callbacks!(
     end
 
     # reset this as it is now handled so the integrators should proceed as normal
-    integrator.derivative_discontinuity = false
-    integrator.user_set_discontinuity = false
-    return integrator.derivative_discontinuity
+    return integrator.derivative_discontinuity = false
 end
 
 function initialize_tstops_d_discontinuities_propagated(

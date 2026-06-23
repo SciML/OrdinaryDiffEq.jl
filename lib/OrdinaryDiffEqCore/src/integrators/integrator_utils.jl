@@ -586,8 +586,7 @@ function loopfooter_reset!(integrator)
     # This is set to true if derivative_discontinuity requires callback FSAL reset
     # But not set to false when reset so algorithms can check if reset occurred
     integrator.reeval_fsal = false
-    integrator.derivative_discontinuity = false
-    return integrator.user_set_discontinuity = false
+    return integrator.derivative_discontinuity = false
 end
 
 # Handle force_stepfail in adaptive mode: reduce dt after Newton failure.
