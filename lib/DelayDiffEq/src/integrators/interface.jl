@@ -214,8 +214,8 @@ identically to the `ODEIntegrator` method, including the order-independent,
 any-`true`-wins merge across simultaneous callbacks; see that method for details.
 """
 function SciMLBase.derivative_discontinuity!(integrator::DDEIntegrator, bool::Bool)
-    # See ODEIntegrator counterpart: plain assignment, merging lives in apply_callback!.
-    integrator.user_set_discontinuity = true
+    # See ODEIntegrator counterpart: plain assignment; the order-independent merge
+    # lives in apply_callback! / apply_discrete_callback!.
     return integrator.derivative_discontinuity = bool
 end
 
@@ -510,7 +510,6 @@ function DiffEqBase.reinit!(
     integrator.iter = 0
     integrator.success_iter = 0
     integrator.derivative_discontinuity = false
-    integrator.user_set_discontinuity = false
 
     # full re-initialize the controller in timestepping
     OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
@@ -668,7 +667,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
         ode_integrator.u = integrator.u
     end
 
-    return nothing
+    return integrator.derivative_discontinuity = false
 end
 
 # perform one step

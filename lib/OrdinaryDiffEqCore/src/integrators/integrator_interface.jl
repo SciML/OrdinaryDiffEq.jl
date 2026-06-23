@@ -74,6 +74,7 @@ function SciMLBase.reeval_internals_due_to_modification!(
         end
     end
 
+    integrator.derivative_discontinuity = false
     return integrator.reeval_fsal = true
 end
 
@@ -167,11 +168,9 @@ without having to account for what sibling callbacks did. Within a single callba
 last call wins.
 """
 function SciMLBase.derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
-    # Record the user's request and mark that a callback spoke this step.
-    # Cross-callback any-true-wins merging is handled in apply_callback! /
-    # apply_discrete_callback!, so this setter is a plain assignment: a callback
-    # may freely set false (e.g. callback initialization clears the flag).
-    integrator.user_set_discontinuity = true
+    # A plain assignment: a callback may freely set false. The order-independent
+    # any-true-wins merge across simultaneous callbacks is handled by the per-callback
+    # verdict folding in apply_callback! / apply_discrete_callback!.
     return integrator.derivative_discontinuity = bool
 end
 
@@ -574,7 +573,6 @@ function SciMLBase.reinit!(
     integrator.iter = 0
     integrator.success_iter = 0
     integrator.derivative_discontinuity = false
-    integrator.user_set_discontinuity = false
 
     # full re-initialize the controller in timestepping
     reinit_controller!(integrator, integrator.controller_cache)
