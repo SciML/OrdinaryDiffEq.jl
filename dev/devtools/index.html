@@ -50,7 +50,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)
 Environment:
   JULIA_CPU_THREADS = 4
   JULIA_NUM_PRECOMPILE_TASKS = 4</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl/docs/Manifest.toml`
-  <span class="sgr90">[47edcb42] </span>ADTypes v1.22.0
+  <span class="sgr90">[47edcb42] </span>ADTypes v1.22.1
   <span class="sgr90">[14f7f29c] </span>AMD v0.5.3
   <span class="sgr90">[a4c015fc] </span>ANSIColoredPrinters v0.0.1
   <span class="sgr90">[1520ce14] </span>AbstractTrees v0.4.5
@@ -77,7 +77,7 @@ Environment:
   <span class="sgr90">[e2d170a0] </span>DataValueInterfaces v1.0.0
   <span class="sgr90">[2b5f629d] </span>DiffEqBase v7.5.6 `../lib/DiffEqBase`
   <span class="sgr90">[f3b72e0c] </span>DiffEqDevTools v3.1.1 `../lib/DiffEqDevTools`
-  <span class="sgr90">[77a26b50] </span>DiffEqNoiseProcess v5.32.0
+  <span class="sgr90">[77a26b50] </span>DiffEqNoiseProcess v5.32.2
   <span class="sgr90">[163ba53b] </span>DiffResults v1.1.0
   <span class="sgr90">[b552c78f] </span>DiffRules v1.16.0
   <span class="sgr90">[a0c0ee7d] </span>DifferentiationInterface v0.7.18
@@ -89,10 +89,10 @@ Environment:
   <span class="sgr90">[f151be2c] </span>EnzymeCore v0.8.20
   <span class="sgr90">[d4d017d3] </span>ExponentialUtilities v1.30.1
   <span class="sgr90">[e2ba6199] </span>ExprTools v0.1.10
-  <span class="sgr90">[7034ab61] </span>FastBroadcast v1.3.2
+  <span class="sgr90">[7034ab61] </span>FastBroadcast v1.3.3
   <span class="sgr90">[9aa1b823] </span>FastClosures v0.3.2
   <span class="sgr90">[442a2c76] </span>FastGaussQuadrature v1.3.0
-  <span class="sgr90">[a4df4552] </span>FastPower v1.3.1
+  <span class="sgr90">[a4df4552] </span>FastPower v1.3.2
   <span class="sgr90">[1a297f60] </span>FillArrays v1.16.0
   <span class="sgr90">[6a86dc24] </span>FiniteDiff v2.31.0
   <span class="sgr90">[1fa38f19] </span>Format v1.3.7
@@ -116,7 +116,7 @@ Environment:
   <span class="sgr90">[23fbe1c1] </span>Latexify v0.16.10
   <span class="sgr90">[10f19ff3] </span>LayoutPointers v0.1.17
   <span class="sgr90">[0e77f7df] </span>LazilyInitializedFields v1.3.0
-  <span class="sgr90">[87fe0de2] </span>LineSearch v0.1.9
+  <span class="sgr90">[87fe0de2] </span>LineSearch v0.1.10
 <span class="sgr32">⌃</span> <span class="sgr90">[d3d80556] </span>LineSearches v7.5.1
   <span class="sgr90">[7ed4a6bd] </span>LinearSolve v3.86.1
   <span class="sgr90">[2ab3a3ac] </span>LogExpFunctions v1.0.1
@@ -124,7 +124,7 @@ Environment:
   <span class="sgr90">[1914dd2f] </span>MacroTools v0.5.16
   <span class="sgr90">[d125e4d3] </span>ManualMemory v0.1.8
   <span class="sgr90">[d0879d2d] </span>MarkdownAST v0.1.3
-  <span class="sgr90">[bb5d69b7] </span>MaybeInplace v0.1.4
+  <span class="sgr90">[bb5d69b7] </span>MaybeInplace v0.1.5
   <span class="sgr90">[e1d29d7a] </span>Missings v1.2.0
   <span class="sgr90">[46d2c3a1] </span>MuladdMacro v0.2.4
 <span class="sgr33">⌅</span> <span class="sgr90">[d41bc354] </span>NLSolversBase v7.10.0
@@ -191,8 +191,8 @@ Environment:
   <span class="sgr90">[94e857df] </span>SIMDTypes v0.1.0
   <span class="sgr90">[0bca4576] </span>SciMLBase v3.22.0
   <span class="sgr90">[19f34311] </span>SciMLJacobianOperators v0.1.13
-  <span class="sgr90">[a6db7da4] </span>SciMLLogging v2.0.0
-  <span class="sgr90">[c0aeaf25] </span>SciMLOperators v1.22.0
+  <span class="sgr90">[a6db7da4] </span>SciMLLogging v2.0.1
+  <span class="sgr90">[c0aeaf25] </span>SciMLOperators v1.22.1
   <span class="sgr90">[431bcebd] </span>SciMLPublic v1.0.1
   <span class="sgr90">[53ae85a6] </span>SciMLStructures v1.10.0
   <span class="sgr90">[efcf1570] </span>Setfield v1.1.2
@@ -201,7 +201,7 @@ Environment:
   <span class="sgr90">[a57abbd0] </span>SparseColumnPivotedQR v2.1.1
   <span class="sgr90">[0a514795] </span>SparseMatrixColorings v0.4.27
   <span class="sgr90">[276daf66] </span>SpecialFunctions v2.8.0
-  <span class="sgr90">[aedffcd0] </span>Static v1.4.0
+  <span class="sgr90">[aedffcd0] </span>Static v1.4.1
   <span class="sgr90">[0d7ed370] </span>StaticArrayInterface v1.10.0
   <span class="sgr90">[90137ffa] </span>StaticArrays v1.9.18
   <span class="sgr90">[1e83bf80] </span>StaticArraysCore v1.4.4
@@ -280,4 +280,4 @@ Environment:
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
 <span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.1.0/assets/Manifest.toml&quot;</code></pre>">manifest</a> file and the
-<a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.1.0/assets/Project.toml&quot;</code></pre>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 23 June 2026 02:02">Tuesday 23 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="<pre><code class="nohighlight hljs">&quot;https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.1.0/assets/Project.toml&quot;</code></pre>">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 23 June 2026 02:52">Tuesday 23 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
