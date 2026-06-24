@@ -16,7 +16,7 @@ u0_init = [2.0, 3.0]
 p_init = [0.5, 0.7]
 prob = ODEProblem(f_oop, copy(u0_init), (0.0, 1.0), copy(p_init))
 
-solve_kwargs = (; saveat = 0.25, abstol = 1e-8, reltol = 1e-8)
+solve_kwargs = (; saveat = 0.25, abstol = 1.0e-8, reltol = 1.0e-8)
 
 @testset "runtime-activity aliased u0 is not corrupted" begin
     # u0 is the Const problem's own array reused via remake — the
@@ -32,10 +32,10 @@ solve_kwargs = (; saveat = 0.25, abstol = 1e-8, reltol = 1e-8)
     g_ref = ForwardDiff.gradient(p -> loss_aliased(p, q), p_init)
 
     g1 = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_aliased, copy(p_init), Const(q))[1]
-    @test g1 ≈ g_ref rtol = 1e-5
+    @test g1 ≈ g_ref rtol = 1.0e-5
     @test prob.u0 == u0_init     # primal problem must NOT have been mutated
     g2 = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_aliased, copy(p_init), Const(q))[1]
-    @test g2 ≈ g_ref rtol = 1e-5 # second call sees uncorrupted state
+    @test g2 ≈ g_ref rtol = 1.0e-5 # second call sees uncorrupted state
 end
 
 @testset "genuinely active u0 still accumulates" begin
@@ -53,5 +53,5 @@ end
     @test maximum(abs, g_ref[1:2]) > 0  # sanity: u0 gradient is nonzero
 
     g = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_active, copy(x0), Const(q))[1]
-    @test g ≈ g_ref rtol = 1e-5
+    @test g ≈ g_ref rtol = 1.0e-5
 end
