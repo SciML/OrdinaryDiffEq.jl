@@ -7,6 +7,78 @@ struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 ismutablecache(cache::OrdinaryDiffEqMutableCache) = true
 ismutablecache(cache::OrdinaryDiffEqConstantCache) = false
 
+# =============================================================================
+# Unified scratch buffers for mutable caches.
+#
+# Historically every mutable cache declared its own ad-hoc scratch fields
+# (`tmp`, `utilde`, `atmp`, `linsolve_tmp`, ...) with inconsistent names. That
+# made it impossible for shared code (e.g. the initial-dt estimator) to reuse a
+# cache's scratch generically. `TmpCache` consolidates the common buffers under
+# one struct with stable names, so any cache that carries a `tmp_cache` field
+# exposes the same scratch surface.
+#
+# Parameterized only on the three buffer-array types every cache already has
+# (`uType`, `rateType`, `uNoUnitsType`), so adopting it adds no new cache type
+# parameter. Fields are concrete (no `Union{T,Nothing}`).
+#
+# The five buffers are deliberately sized to cover the initial-dt estimator's
+# scratch needs (see `_ode_initdt_iip`): a unit-less scale buffer, two state
+# temporaries, and two rate temporaries. By preallocating them on the cache,
+# `initdt` runs allocation-free even for explicit methods that don't otherwise
+# touch rate-typed scratch.
+#
+# A slot is opted out by parameterizing its type as `Nothing`: the field becomes
+# the `nothing` singleton, no array is allocated, and `=== nothing` checks fold
+# away at compile time.
+#   * `TmpCache{uType, rateType, Nothing}` — no unit-less error scratch (`atmp`),
+#     used by non-adaptive caches.
+#   * `TmpCache{uType, Nothing, uNoUnitsType}` — no rate scratch. The rate
+#     buffers exist only so `initdt` can run allocation-free; a cache may skip
+#     them and let `initdt` fall back to allocating (see `precompute_initdt_cache`
+#     on the algorithm). `initdt` reuses whatever buffers are present.
+#
+# NOTE (demo): this is the hand-written core of the larger TmpCache change. Only
+# `Tsit5Cache` is wired to it here as a proof of concept; the full migration of
+# every cache is intentionally omitted to keep the diff reviewable.
+struct TmpCache{uType, rateType, uNoUnitsType}
+    tmp::uType          # primary state scratch
+    tmp2::uType         # secondary state scratch (e.g. embedded solution / `utilde`)
+    atmp::uNoUnitsType  # unit-less state scratch (error norms); `Nothing` if unused
+    rate_tmp::rateType  # primary rate scratch (initdt `f₁`); `Nothing` if unused
+    rate_tmp2::rateType # secondary rate scratch (initdt mass-matrix `ftmp`); `Nothing` if unused
+end
+
+"""
+    build_tmp_cache(u, rate_prototype, uEltypeNoUnits, need_rates::Val = Val(true))
+
+Construct a [`TmpCache`](@ref). The state scratch (`tmp`, `tmp2`) is always
+allocated. Two slots are opt-out, controlled at the type level so the result is
+type-stable:
+
+  * pass `Nothing` for `uEltypeNoUnits` to skip the unit-less `atmp` buffer;
+  * pass `Val(false)` for `need_rates` to skip the rate buffers (`rate_tmp`,
+    `rate_tmp2`). These are needed only to make `initdt` allocation-free, so a
+    cache that doesn't want to hold them can opt out and let `initdt` allocate.
+
+A skipped slot holds the `nothing` singleton and allocates no array.
+"""
+function build_tmp_cache(u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Val{need_rates} = Val(true)) where {uEltypeNoUnits, need_rates}
+    tmp = zero(u)
+    tmp2 = zero(u)
+    # `need_rates` is a type parameter, so these ternaries fold at compile time
+    # and each specialization returns a single concrete `TmpCache` type.
+    rate_tmp = need_rates ? zero(rate_prototype) : nothing
+    rate_tmp2 = need_rates ? zero(rate_prototype) : nothing
+    if uEltypeNoUnits === Nothing
+        return TmpCache(tmp, tmp2, nothing, rate_tmp, rate_tmp2)
+    else
+        atmp = similar(u, uEltypeNoUnits)
+        recursivefill!(atmp, false)
+        return TmpCache(tmp, tmp2, atmp, rate_tmp, rate_tmp2)
+    end
+end
+
 # Don't worry about the potential alloc on a constant cache
 get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
 

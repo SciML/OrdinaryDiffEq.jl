@@ -1,4 +1,4 @@
-@cache mutable struct Tsit5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+@cache mutable struct Tsit5Cache{uType, rateType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -8,9 +8,10 @@
     k5::rateType
     k6::rateType
     k7::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Parameterized so the rate slots can be opted out (`precompute_initdt_cache`):
+    # `TmpCache{uType, rateType, uNoUnitsType}` (rates held) or
+    # `TmpCache{uType, Nothing, uNoUnitsType}` (rates skipped).
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -31,12 +32,15 @@ function alg_cache(
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    # Tsit5 itself uses `tmp` (stage scratch), `tmp2` (embedded solution, was
+    # `utilde`) and `atmp` (error-norm scaling). It needs no rate scratch of its
+    # own — the rate buffers exist only so the initial-dt estimator can run
+    # allocation-free. `precompute_initdt_cache` (default false) lets the user
+    # opt into holding them; when false they are skipped and `initdt` allocates.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
+        alg.precompute_initdt_cache ? Val(true) : Val(false))
     return Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
