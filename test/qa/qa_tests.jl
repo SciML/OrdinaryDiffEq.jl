@@ -1,12 +1,18 @@
-using ExplicitImports, OrdinaryDiffEq, SciMLBase
+using SciMLTesting, OrdinaryDiffEq, SciMLBase
 using Test
 
-@testset "ExplicitImports" begin
-    @test check_no_implicit_imports(
-        OrdinaryDiffEq; skip = (Base, Core, SciMLBase)
-    ) === nothing
-
-    @test check_no_stale_explicit_imports(OrdinaryDiffEq) === nothing
-
-    @test check_all_qualified_accesses_via_owners(OrdinaryDiffEq) === nothing
-end
+# The umbrella package's QA lane historically ran only the ExplicitImports checks
+# (no Aqua/JET), so keep `aqua = false` to preserve that scope.
+run_qa(
+    OrdinaryDiffEq;
+    aqua = false,
+    explicit_imports = true,
+    ei_kwargs = (;
+        no_implicit_imports = (; skip = (Base, Core, SciMLBase)),
+        # init/solve/solve!/step! (CommonSolve) and successful_retcode (SciMLBase)
+        # are not declared public by their owners; OrdinaryDiffEq re-exports them.
+        all_explicit_imports_are_public = (;
+            ignore = (:init, :solve, :solve!, :step!, :successful_retcode),
+        ),
+    ),
+)
