@@ -7,6 +7,7 @@ OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEqCore]
@@ -29,4 +30,5 @@ OrdinaryDiffEqBDF = "2"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqRosenbrock = "2"
+SciMLTesting = "1.6"
 julia = "1.10"
