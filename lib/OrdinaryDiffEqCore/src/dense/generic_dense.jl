@@ -1308,12 +1308,18 @@ function ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCache, idxs,
         T::Type{Val{TI}}, differential_vars
     ) where {TI}
+    # Empty (zero-dimensional) continuous state: there is nothing to interpolate,
+    # and the branches below would index into the empty state (`first(y₁)`). Bail
+    # out with an empty result. https://github.com/SciML/OrdinaryDiffEq.jl/issues/3778
+    if y₁ isa AbstractArray && isempty(y₁) && !(idxs isa Number)
+        return idxs === nothing ? copy(y₁) : y₁[idxs]
+    end
     return if idxs isa Number || !ArrayInterface.ismutable(y₀)
         # typeof(y₀) can be these if saveidxs gives a single value
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
     elseif idxs isa Nothing
         if y₁ isa Array{<:Number}
-            out = similar(y₁, typeof(oneunit(eltype(y₁)) * oneunit(Θ)))
+            out = similar(y₁, eltype(first(y₁) * oneunit(Θ)))
             copyto!(out, y₁)
         else
             out = oneunit(Θ) .* y₁
@@ -1321,7 +1327,7 @@ function ode_interpolant(
         _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
     else
         if y₁ isa Array{<:Number}
-            out = similar(y₁, typeof(oneunit(eltype(y₁)) * oneunit(Θ)), axes(idxs))
+            out = similar(y₁, eltype(first(y₁) * oneunit(Θ)), axes(idxs))
             for i in eachindex(idxs)
                 out[i] = y₁[idxs[i]]
             end

@@ -97,5 +97,10 @@ using OrdinaryDiffEqFunctionMap, OrdinaryDiffEqTsit5, OrdinaryDiffEqLowOrderRK,
         @test sol(0.5, Val{1}) == Float64[]  # derivative path
         # vector of times
         @test all(==(Float64[]), sol([0.25, 0.5, 0.75]).u)
+
+        # in-step interpolation through the integrator hits the same path
+        integrator = init(prob, Tsit5())
+        step!(integrator)
+        @test integrator(integrator.t - 1.0e-3) == Float64[]
     end
 end
