@@ -83,4 +83,24 @@ using OrdinaryDiffEqFunctionMap, OrdinaryDiffEqTsit5, OrdinaryDiffEqLowOrderRK,
         @test sol.t[1] == 0.0
         @test sol.t[end] == 1.0
     end
+
+    # https://github.com/SciML/OrdinaryDiffEq.jl/issues/3778
+    @testset "Interpolating null u0" begin
+        f!(du, u, p, t) = nothing
+        prob = ODEProblem(f!, Float64[], (0.0, 1.0))
+        sol = solve(prob, Tsit5())
+
+        @test sol.retcode == ReturnCode.Success
+        @test sol(0.5; idxs = Int[]) == Float64[]
+        @test sol(0.5) == Float64[]
+        @test sol(0.5) isa Vector{Float64}
+        @test sol(0.5, Val{1}) == Float64[]  # derivative path
+        # vector of times
+        @test all(==(Float64[]), sol([0.25, 0.5, 0.75]).u)
+
+        # in-step interpolation through the integrator hits the same path
+        integrator = init(prob, Tsit5())
+        step!(integrator)
+        @test integrator(integrator.t - 1.0e-3) == Float64[]
+    end
 end
