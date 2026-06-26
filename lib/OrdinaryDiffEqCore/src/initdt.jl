@@ -30,7 +30,7 @@
 
     # With zero continuous states there is nothing to estimate from (and indexing
     # into the empty state would throw), so fall back to a finite default dt.
-    if length(u0) == 0
+    if isempty(u0)
         result_dt = tdir * max(smalldt, dtmin)
         @SciMLMessage(
             lazy"Empty initial state, using default small timestep: dt = $(result_dt)",
@@ -344,7 +344,7 @@ end
 
     # With zero continuous states there is nothing to estimate from, so fall back
     # to a finite default dt rather than indexing into the empty state.
-    if length(u0) == 0
+    if isempty(u0)
         return tdir * max(smalldt, dtmin)
     end
 
