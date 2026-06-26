@@ -1313,7 +1313,7 @@ function ode_interpolant(
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
     elseif idxs isa Nothing
         if y₁ isa Array{<:Number}
-            out = similar(y₁, eltype(first(y₁) * oneunit(Θ)))
+            out = similar(y₁, typeof(oneunit(eltype(y₁)) * oneunit(Θ)))
             copyto!(out, y₁)
         else
             out = oneunit(Θ) .* y₁
@@ -1321,7 +1321,7 @@ function ode_interpolant(
         _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
     else
         if y₁ isa Array{<:Number}
-            out = similar(y₁, eltype(first(y₁) * oneunit(Θ)), axes(idxs))
+            out = similar(y₁, typeof(oneunit(eltype(y₁)) * oneunit(Θ)), axes(idxs))
             for i in eachindex(idxs)
                 out[i] = y₁[idxs[i]]
             end
