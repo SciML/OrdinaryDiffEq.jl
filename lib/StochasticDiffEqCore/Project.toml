@@ -1,6 +1,6 @@
 name = "StochasticDiffEqCore"
 uuid = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
-version = "2.0.1"
+version = "2.0.2"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
