@@ -9,10 +9,5 @@ run_qa(
     explicit_imports = true,
     ei_kwargs = (;
         no_implicit_imports = (; skip = (Base, Core, SciMLBase)),
-        # init/solve/solve!/step! (CommonSolve) and successful_retcode (SciMLBase)
-        # are not declared public by their owners; OrdinaryDiffEq re-exports them.
-        all_explicit_imports_are_public = (;
-            ignore = (:init, :solve, :solve!, :step!, :successful_retcode),
-        ),
     ),
 )
