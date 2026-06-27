@@ -50,6 +50,16 @@ function recursive_length(
     return prod(Size(eltype(u))) * length(u)
 end
 
+"""
+    ODE_DEFAULT_NORM(u, t)
+    ODE_DEFAULT_NORM(f, u, t)
+
+The default internal norm used by the integrators for error estimation and step-size
+control. It is the (optionally `f`-weighted) RMS norm: roughly `sqrt(sum(abs2, u) / length(u))`,
+which scales with the magnitude of the state but not its dimensionality, with specialized
+methods for scalars, `Array`s, static arrays, and nested array types. Pass a custom callable
+via the `internalnorm` solver keyword to override it.
+"""
 ODE_DEFAULT_NORM(u::Union{AbstractFloat, Complex}, t) = @fastmath abs(u)
 
 function ODE_DEFAULT_NORM(f::F, u::Union{AbstractFloat, Complex}, t) where {F}
@@ -121,7 +131,23 @@ end
 ODE_DEFAULT_NORM(u, t) = norm(u)
 ODE_DEFAULT_NORM(f::F, u, t) where {F} = norm(f.(u))
 
+"""
+    ODE_DEFAULT_ISOUTOFDOMAIN(u, p, t)
+
+The default `isoutofdomain` predicate used by the integrators. It always returns `false`,
+i.e. no state is considered out of the problem's domain. Pass a custom predicate via the
+`isoutofdomain` solver keyword to reject steps whose proposed state leaves a valid domain.
+"""
 ODE_DEFAULT_ISOUTOFDOMAIN(u, p, t) = false
+
+"""
+    ODE_DEFAULT_PROG_MESSAGE(dt, u, p, t)
+
+The default progress-bar message builder used by the integrators when `progress = true`.
+It returns a short multi-line string reporting the current `dt`, `t`, and the largest-magnitude
+component of the state `u`. Pass a custom callable via the `progress_message` solver keyword
+to override it.
+"""
 function ODE_DEFAULT_PROG_MESSAGE(dt, u::Array, p, t)
     tmp = u[1]
     for i in eachindex(u)

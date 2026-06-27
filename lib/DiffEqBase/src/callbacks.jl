@@ -80,6 +80,14 @@ function get_tmp(integrator::DEIntegrator, callback)
     return tmp
 end
 
+"""
+    get_condition(integrator, callback, abst)
+
+Evaluate a continuous `callback`'s condition function for `integrator` at the absolute time
+`abst`, interpolating the state when `abst != integrator.t` and respecting the callback's
+`idxs`/cache so the evaluation is allocation-free where possible. Used by the rootfinding
+that locates continuous-callback event times.
+"""
 function get_condition(integrator::DEIntegrator, callback, abst)
     tmp = get_tmp(integrator, callback)
     ismutable = !(tmp === nothing)
@@ -128,6 +136,14 @@ function get_condition(integrator::DEIntegrator, callback, abst)
     end
 end
 
+"""
+    find_first_continuous_callback(integrator, callbacks...)
+
+Scan the given continuous `callbacks` and return the bookkeeping for the one whose event
+fires earliest in the current step: the event time, crossing sign, whether an event occurred,
+the (vector-callback) event index, the identified callback index, and the number of callbacks.
+A generated method keeps the result type-stable for an arbitrary number of callbacks.
+"""
 # Use a generated function for type stability even when many callbacks are given
 @inline function find_first_continuous_callback(
         integrator,
@@ -212,6 +228,14 @@ end
     return ex
 end
 
+"""
+    find_callback_time(integrator, callback, callback_idx)
+
+Locate, within the current step, the time at which a single continuous `callback`'s event
+occurs. Returns the event time together with the crossing sign, whether an event occurred,
+and the relevant event indices; for a `VectorContinuousCallback` it also records the
+per-component event mask. The event time is found by rootfinding on the callback condition.
+"""
 @inline function find_callback_time(
         integrator, callback::VectorContinuousCallback,
         callback_idx
@@ -609,6 +633,14 @@ function apply_callback!(
     return false, saved_in_cb
 end
 
+"""
+    apply_discrete_callback!(integrator, callback...)
+
+Apply discrete `callback`(s) to `integrator`: for each `DiscreteCallback` whose condition is
+true at the current `(u, t)`, run its `affect!` and handle any `saveat`/save bookkeeping.
+Returns whether the discrete-callback set modified the integrator and whether a save was
+performed inside a callback, recursing over multiple callbacks while staying type-stable.
+"""
 #Base Case: Just one
 @inline function apply_discrete_callback!(integrator, callback::DiscreteCallback)
     saved_in_cb = false
@@ -697,6 +729,13 @@ function max_vector_callback_length_int(continuous_callbacks...)
     return maxlen
 end
 
+"""
+    max_vector_callback_length(cs::CallbackSet)
+
+Return the `VectorContinuousCallback` in the callback set `cs` with the largest `len`, or
+`nothing` if the set contains none. Integrators use this to size the per-step
+[`CallbackCache`](@ref) buffers large enough for every vector callback.
+"""
 function max_vector_callback_length(cs::CallbackSet)
     continuous_callbacks = cs.continuous_callbacks
     maxlen_cb = nothing
@@ -712,6 +751,12 @@ end
 
 """
 $(TYPEDEF)
+
+Preallocated scratch buffers used by the continuous-callback machinery. It holds the
+condition values and crossing signs evaluated during a step plus the per-component event
+masks for vector callbacks, so that locating and applying continuous-callback events is
+allocation-free. Integrators construct one (sized via [`max_vector_callback_length`](@ref))
+when a problem has continuous callbacks.
 """
 mutable struct CallbackCache{conditionType, signType}
     tmp_condition::conditionType

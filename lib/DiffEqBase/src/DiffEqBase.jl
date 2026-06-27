@@ -188,7 +188,13 @@ export SensitivityADPassThrough
         Expr(
             :public,
             :get_tstops, :get_tstops_array, :get_tstops_max,
-            :ExplicitRKTableau, :DECostFunction, :merge_problem_kwargs
+            :ExplicitRKTableau, :DECostFunction, :merge_problem_kwargs,
+            # Callback API (DiffEqBase-owned shared functionality used by downstream solvers)
+            :apply_callback!, :apply_discrete_callback!, :CallbackCache,
+            :find_first_continuous_callback, :find_callback_time,
+            :max_vector_callback_length, :get_condition,
+            # Default-callback API (integrator defaults overridable via solver keywords)
+            :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE
         )
     )
 end
