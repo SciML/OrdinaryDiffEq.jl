@@ -150,6 +150,20 @@ isdiscretecache(cache) = false
 
 unitfulvalue(x) = DiffEqBase.unitfulvalue(x)
 
+# Declare the documented custom-stepsize-controller author interface `public` so downstream
+# packages can drop their `OrdinaryDiffEqCore.X` non-public ExplicitImports ignores. These
+# are the documented "Required methods" of the controller API (docs/src/api/controllers.md).
+# The `public` keyword only parses on Julia >= 1.11.0-DEV.469, so it is gated to keep the
+# 1.10 floor parsing.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(
+        Expr(
+            :public,
+            :stepsize_controller!, :step_accept_controller!, :step_reject_controller!
+        )
+    )
+end
+
 include("doc_utils.jl")
 include("misc_utils.jl")
 
