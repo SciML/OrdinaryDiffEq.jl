@@ -178,6 +178,21 @@ export initialize!, finalize!
 
 export SensitivityADPassThrough
 
+# Declare DiffEqBase-owned, documented API names `public` so downstream packages can
+# drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is
+# only parseable on Julia >= 1.11.0-DEV.469, so it is gated to keep the 1.10 floor parsing.
+# Only names DiffEqBase itself owns are listed here; names re-exported from SciMLBase (and
+# other upstreams) are handled by migrating callers to the owning package.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(
+        Expr(
+            :public,
+            :get_tstops, :get_tstops_array, :get_tstops_max,
+            :ExplicitRKTableau, :DECostFunction, :merge_problem_kwargs
+        )
+    )
+end
+
 include("precompilation.jl")
 
 end # module
