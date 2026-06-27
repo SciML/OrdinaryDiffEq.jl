@@ -1,12 +1,9 @@
-using StochasticDiffEqIIF
-using Aqua
+using SciMLTesting, StochasticDiffEqIIF, Test
 using JET
-using Test
 
-@testset "Aqua" begin
-    Aqua.test_all(StochasticDiffEqIIF)
-end
-
-@testset "JET" begin
-    JET.test_package(StochasticDiffEqIIF; target_defined_modules = true)
-end
+run_qa(
+    StochasticDiffEqIIF;
+    jet_kwargs = (; target_defined_modules = true),
+    explicit_imports = true,
+    ei_broken = (:no_implicit_imports, :all_explicit_imports_via_owners, :all_qualified_accesses_via_owners, :all_explicit_imports_are_public),  # known-broken; see SciML/OrdinaryDiffEq.jl#3776
+)

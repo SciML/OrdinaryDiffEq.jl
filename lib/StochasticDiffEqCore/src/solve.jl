@@ -327,7 +327,7 @@ function _sde_init(
     elseif is_diagonal_noise(prob)
         noise_rate_prototype = rate_prototype
     elseif prob isa DiffEqBase.AbstractRODEProblem
-        if prob isa DiffEqBase.AbstractSDEProblem
+        if prob isa SciMLBase.AbstractSDEProblem
             noise_rate_prototype = copy(prob.noise_rate_prototype)
         else
             noise_rate_prototype = copy(prob.rand_prototype)
@@ -352,7 +352,7 @@ function _sde_init(
             else
                 rand_prototype = (u .- u) ./ sqrt(oneunit(t))
             end
-        elseif prob isa DiffEqBase.AbstractSDEProblem
+        elseif prob isa SciMLBase.AbstractSDEProblem
             if issparse(u)
                 rand_prototype = adapt(
                     DiffEqBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))

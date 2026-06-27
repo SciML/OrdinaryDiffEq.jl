@@ -20,15 +20,15 @@ end
 SciMLBase.alg_interpretation(alg::RKMilCommute) = alg.interpretation
 
 supports_regular_jumps(::EM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::EM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::LambaEM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::EulerHeun) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::LambaEulerHeun) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SplitEM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::PCEuler) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SimplifiedEM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RKMil) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RKMilCommute) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::EM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::LambaEM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::EulerHeun) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::LambaEulerHeun) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SplitEM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::PCEuler) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SimplifiedEM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RKMil) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RKMilCommute) = true
 
 is_split_step(::EM{split}) where {split} = split
 is_split_step(::LambaEM{split}) where {split} = split

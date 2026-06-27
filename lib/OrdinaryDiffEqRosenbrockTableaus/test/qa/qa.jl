@@ -1,12 +1,8 @@
-using OrdinaryDiffEqRosenbrockTableaus
-using Aqua
+using SciMLTesting, OrdinaryDiffEqRosenbrockTableaus, Test
 using JET
-using Test
 
-@testset "Aqua" begin
-    Aqua.test_all(OrdinaryDiffEqRosenbrockTableaus)
-end
-
-@testset "JET" begin
-    JET.test_package(OrdinaryDiffEqRosenbrockTableaus; target_defined_modules = true)
-end
+run_qa(
+    OrdinaryDiffEqRosenbrockTableaus;
+    jet_kwargs = (; target_defined_modules = true),
+    explicit_imports = true,
+)

@@ -1,38 +1,34 @@
-using DelayDiffEq, Test
+using SciMLTesting, DelayDiffEq, Test
 import SciMLBase
+using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, StochasticDiffEqAlgorithm,
+    StochasticDiffEqRODEAlgorithm,
+    StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
 
-@testset "Aqua Tests" begin
-    using Aqua
-
-    Aqua.test_all(
-        DelayDiffEq; ambiguities = false, piracies = false,
-        stale_deps = false, deps_compat = false
-    )
-    Aqua.test_ambiguities(DelayDiffEq; recursive = false)
-    Aqua.test_stale_deps(DelayDiffEq)
-    Aqua.test_deps_compat(DelayDiffEq)
-    # Allow piracy for the default solver methods and SDE integration
-    using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, StochasticDiffEqAlgorithm,
-        StochasticDiffEqRODEAlgorithm,
-        StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
-    Aqua.test_piracies(
-        DelayDiffEq;
-        treat_as_own = [
-            SciMLBase.DDEProblem,
-            OrdinaryDiffEqAlgorithm,
-            StochasticDiffEqAlgorithm,
-            StochasticDiffEqRODEAlgorithm,
-            StochasticDiffEqConstantCache,
-            StochasticDiffEqMutableCache,
-        ]
-    )
-end
-
-@testset "Explicit Imports Tests" begin
-    using ExplicitImports
-
-    @test check_no_implicit_imports(DelayDiffEq; skip = (Base, Core), ignore = (Symbol("@reexport"),)) ===
-        nothing
-    @test check_no_stale_explicit_imports(DelayDiffEq, ignore = (:AbstractVerbositySpecifier, :Standard)) === nothing
-    @test check_all_qualified_accesses_via_owners(DelayDiffEq) === nothing
-end
+run_qa(
+    DelayDiffEq;
+    aqua_kwargs = (;
+        ambiguities = (; recursive = false),
+        # piracy is allowed for the default solver methods and SDE integration
+        piracies = (;
+            treat_as_own = [
+                SciMLBase.DDEProblem,
+                OrdinaryDiffEqAlgorithm,
+                StochasticDiffEqAlgorithm,
+                StochasticDiffEqRODEAlgorithm,
+                StochasticDiffEqConstantCache,
+                StochasticDiffEqMutableCache,
+            ],
+        ),
+    ),
+    explicit_imports = true,
+    ei_kwargs = (;
+        no_implicit_imports = (; skip = (Base, Core), ignore = (Symbol("@reexport"),)),
+        no_stale_explicit_imports = (; ignore = (:AbstractVerbositySpecifier, :Standard)),
+    ),
+    # known-broken; see SciML/OrdinaryDiffEq.jl#3776
+    ei_broken = (
+        :all_explicit_imports_via_owners,
+        :all_qualified_accesses_are_public,
+        :all_explicit_imports_are_public,
+    ),
+)

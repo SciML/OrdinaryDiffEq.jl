@@ -1,12 +1,9 @@
-using StochasticDiffEqHighOrder
-using Aqua
+using SciMLTesting, StochasticDiffEqHighOrder, Test
 using JET
-using Test
 
-@testset "Aqua" begin
-    Aqua.test_all(StochasticDiffEqHighOrder)
-end
-
-@testset "JET" begin
-    JET.test_package(StochasticDiffEqHighOrder; target_defined_modules = true)
-end
+run_qa(
+    StochasticDiffEqHighOrder;
+    jet_kwargs = (; target_defined_modules = true),
+    explicit_imports = true,
+    ei_broken = (:no_implicit_imports, :all_explicit_imports_via_owners, :all_qualified_accesses_are_public, :all_explicit_imports_are_public),  # known-broken; see SciML/OrdinaryDiffEq.jl#3776
+)
