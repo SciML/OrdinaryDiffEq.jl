@@ -8,13 +8,13 @@ alg_order(alg::WangLi3SMil_F) = 1 // 1
 
 SciMLBase.alg_interpretation(alg::RKMilGeneral) = alg.interpretation
 
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RKMilGeneral) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_A) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_B) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_C) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_D) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_E) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::WangLi3SMil_F) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RKMilGeneral) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::WangLi3SMil_A) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::WangLi3SMil_B) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::WangLi3SMil_C) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::WangLi3SMil_D) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::WangLi3SMil_E) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::WangLi3SMil_F) = true
 
 alg_needs_extra_process(alg::RKMilGeneral) = true
 

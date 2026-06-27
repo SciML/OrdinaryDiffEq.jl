@@ -42,29 +42,29 @@ SciMLBase.alg_interpretation(alg::NON2) = SciMLBase.AlgorithmInterpretation.Stra
 
 ## alg_compatible
 
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::DRI1) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::DRI1NM) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RI1) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RI3) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RI5) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RI6) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RDI1WM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RDI2WM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RDI3WM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RDI4WM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::W2Ito1) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RS1) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::RS2) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::PL1WM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::PL1WMA) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::NON) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::COM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::NON2) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SIEA) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SMEA) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SIEB) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SMEB) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::IRI1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::DRI1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::DRI1NM) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RI1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RI3) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RI5) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RI6) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RDI1WM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RDI2WM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RDI3WM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RDI4WM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::W2Ito1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RS1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RS2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::PL1WM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::PL1WMA) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::NON) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::COM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::NON2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SIEA) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SMEA) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SIEB) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SMEB) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::IRI1) = true
 
 ## alg_needs_extra_process
 

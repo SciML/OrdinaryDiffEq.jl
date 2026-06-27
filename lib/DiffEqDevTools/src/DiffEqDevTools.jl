@@ -2,6 +2,7 @@ module DiffEqDevTools
 
 using DiffEqBase: AbstractODEAlgorithm
 using DiffEqBase, RecipesBase, RecursiveArrayTools, DiffEqNoiseProcess, StructArrays
+import SciMLBase
 using SimpleNonlinearSolve, LinearAlgebra, RootedTrees
 
 using LinearAlgebra, Distributed

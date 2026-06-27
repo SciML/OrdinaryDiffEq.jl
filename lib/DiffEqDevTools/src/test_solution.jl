@@ -105,7 +105,7 @@ function appxtrue(sol::AbstractODESolution, sol2::TestSolution)
             )
         end
     end
-    return DiffEqBase.build_solution(sol, timeseries_analytic, errors)
+    return SciMLBase.build_solution(sol, timeseries_analytic, errors)
 end
 
 """
@@ -168,7 +168,7 @@ function appxtrue(
             )
         end
     end
-    return DiffEqBase.build_solution(sol, timeseries_analytic, errors)
+    return SciMLBase.build_solution(sol, timeseries_analytic, errors)
 end
 
 function appxtrue(sim::EnsembleSolution, appx_setup; kwargs...)

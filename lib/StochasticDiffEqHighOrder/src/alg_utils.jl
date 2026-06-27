@@ -15,17 +15,17 @@ alg_order(alg::SOSRA2) = 2 // 1
 delta_default(alg::SRIW1) = 1 // 6
 
 ## alg_compatible
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRI) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRIW1) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRIW2) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SOSRI) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SOSRI2) = is_diagonal_noise(prob)
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRA) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRA1) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRA2) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SRA3) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SOSRA) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SOSRA2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRI) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRIW1) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRIW2) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SOSRI) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SOSRI2) = is_diagonal_noise(prob)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRA) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRA1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRA2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SRA3) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SOSRA) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SOSRA2) = true
 
 ## alg_needs_extra_process
 alg_needs_extra_process(alg::SRI) = true
