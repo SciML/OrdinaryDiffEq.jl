@@ -22,10 +22,10 @@ function SciMLBase.alg_interpretation(
     return interpretation
 end
 
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SROCK1) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SROCK2) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::KomBurSROCK2) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SROCKC2) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SROCKEM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SKSROCK) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::TangXiaoSROCK2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SROCK1) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SROCK2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::KomBurSROCK2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SROCKC2) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SROCKEM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SKSROCK) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::TangXiaoSROCK2) = true

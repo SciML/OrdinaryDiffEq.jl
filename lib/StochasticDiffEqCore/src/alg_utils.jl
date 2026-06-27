@@ -198,7 +198,7 @@ end
 alg_compatible(prob, alg::StochasticDiffEqAlgorithm) = false
 
 function alg_compatible(
-        prob::DiffEqBase.AbstractSDEProblem,
+        prob::SciMLBase.AbstractSDEProblem,
         alg::Union{
             StochasticDiffEqCompositeAlgorithm, StochasticDiffEqRODECompositeAlgorithm,
         }
@@ -214,7 +214,7 @@ supports_regular_jumps(alg) = false
 function alg_compatible(prob::JumpProblem, alg::StochasticDiffEqAlgorithm)
     return alg_compatible(prob.prob, alg) &&
         (supports_regular_jumps(alg) || prob.regular_jump === nothing) &&
-        prob.prob isa DiffEqBase.AbstractSDEProblem
+        prob.prob isa SciMLBase.AbstractSDEProblem
 end
 
 function alg_compatible(
