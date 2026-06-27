@@ -397,6 +397,10 @@ for i in 1:2 # 1 = num, 2 = ExplicitRK
     sim = test_convergence(dts, bigprob, tabalg)
     @test abs(sim.𝒪est[:l∞] - 10) < testTol
 
+    tabalg = ExplicitRK(tableau = ET.MSRK10())
+    sim = test_convergence(dts, bigprob, tabalg)
+    @test abs(sim.𝒪est[:l∞] - 10) < testTol
+
     dts = 1 .// 2 .^ (5:-1:1)
     tabalg = ExplicitRK(tableau = ET.Feagin10(BigFloat))
     sim = test_convergence(dts, bigprob, tabalg)

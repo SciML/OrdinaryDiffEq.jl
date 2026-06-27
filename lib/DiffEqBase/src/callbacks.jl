@@ -80,6 +80,14 @@ function get_tmp(integrator::DEIntegrator, callback)
     return tmp
 end
 
+"""
+    get_condition(integrator, callback, abst)
+
+Evaluate a continuous `callback`'s condition function for `integrator` at the absolute time
+`abst`, interpolating the state when `abst != integrator.t` and respecting the callback's
+`idxs`/cache so the evaluation is allocation-free where possible. Used by the rootfinding
+that locates continuous-callback event times.
+"""
 function get_condition(integrator::DEIntegrator, callback, abst)
     tmp = get_tmp(integrator, callback)
     ismutable = !(tmp === nothing)
@@ -128,6 +136,14 @@ function get_condition(integrator::DEIntegrator, callback, abst)
     end
 end
 
+"""
+    find_first_continuous_callback(integrator, callbacks...)
+
+Scan the given continuous `callbacks` and return the bookkeeping for the one whose event
+fires earliest in the current step: the event time, crossing sign, whether an event occurred,
+the (vector-callback) event index, the identified callback index, and the number of callbacks.
+A generated method keeps the result type-stable for an arbitrary number of callbacks.
+"""
 # Use a generated function for type stability even when many callbacks are given
 @inline function find_first_continuous_callback(
         integrator,
@@ -149,15 +165,17 @@ end
     any_vcc = any(is_vcc)
 
     snapshot_winner(i) = is_vcc[i] ? quote
-        copyto!(integrator.callback_cache.winning_simultaneous_events,
-            integrator.callback_cache.simultaneous_events)
-    end : :()
+            copyto!(
+                integrator.callback_cache.winning_simultaneous_events,
+                integrator.callback_cache.simultaneous_events
+            )
+        end : :()
 
     setup = any_vcc ? quote
-        cache = integrator.callback_cache
-        @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
-        fill!(cache.winning_simultaneous_events, Int8(0))
-    end : :()
+            cache = integrator.callback_cache
+            @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
+            fill!(cache.winning_simultaneous_events, Int8(0))
+        end : :()
 
     ex = quote
         $setup
@@ -192,11 +210,13 @@ end
         end
     end
     finalize = any_vcc ? quote
-        if event_occurred
-            copyto!(integrator.callback_cache.simultaneous_events,
-                integrator.callback_cache.winning_simultaneous_events)
+            if event_occurred
+                copyto!(
+                    integrator.callback_cache.simultaneous_events,
+                    integrator.callback_cache.winning_simultaneous_events
+                )
         end
-    end : :()
+        end : :()
     ex = quote
         $ex
         $finalize
@@ -208,6 +228,14 @@ end
     return ex
 end
 
+"""
+    find_callback_time(integrator, callback, callback_idx)
+
+Locate, within the current step, the time at which a single continuous `callback`'s event
+occurs. Returns the event time together with the crossing sign, whether an event occurred,
+and the relevant event indices; for a `VectorContinuousCallback` it also records the
+per-component event mask. The event time is found by rootfinding on the callback condition.
+"""
 @inline function find_callback_time(
         integrator, callback::VectorContinuousCallback,
         callback_idx
@@ -554,15 +582,11 @@ function apply_callback!(
         savedexactly || savevalues!(integrator, true)
     end
 
-    # Save step-level state and isolate this callback so we can detect what
-    # *this* affect! said, independent of siblings. After affect! we OR-merge
-    # back so step-level sticky-on-true semantics are preserved across callbacks.
-    prev_dd = integrator.derivative_discontinuity
-    prev_user_set = integrator.user_set_discontinuity
-    integrator.derivative_discontinuity = false
-    integrator.user_set_discontinuity = false
+    # Assume the affect! introduces a derivative discontinuity unless it says
+    # otherwise via derivative_discontinuity!(integrator, false). A `nothing`
+    # affect! makes no modification.
+    integrator.derivative_discontinuity = true
 
-    affect_ran = false
     if callback isa VectorContinuousCallback
         if callback.affect! === nothing
             integrator.derivative_discontinuity = false
@@ -571,40 +595,28 @@ function apply_callback!(
                 integrator,
                 @view(integrator.callback_cache.simultaneous_events[1:(callback.len)])
             )
-            affect_ran = true
         end
     else
         if prev_sign < 0
-            if callback.affect! !== nothing
+            if callback.affect! === nothing
+                integrator.derivative_discontinuity = false
+            else
                 callback.affect!(integrator)
-                affect_ran = true
             end
         elseif prev_sign > 0
-            if callback.affect_neg! !== nothing
+            if callback.affect_neg! === nothing
+                integrator.derivative_discontinuity = false
+            else
                 callback.affect_neg!(integrator)
-                affect_ran = true
             end
         end
     end
 
-    cb_dd = integrator.derivative_discontinuity
-    cb_spoke = integrator.user_set_discontinuity
-    # Default-on if a user affect! ran but did not call derivative_discontinuity!.
-    # If no affect! ran (nothing branch), there is no modification to handle.
-    did_modify = affect_ran && (!cb_spoke || cb_dd)
-
-    if did_modify
+    if integrator.derivative_discontinuity
         reeval_internals_due_to_modification!(
             integrator, callback_initializealg = callback.initializealg
         )
-    end
 
-    # OR-merge step-level state with this callback's contribution. This is what
-    # makes a `true` from any callback survive a sibling's later `false`.
-    integrator.derivative_discontinuity = prev_dd || cb_dd
-    integrator.user_set_discontinuity = prev_user_set || cb_spoke
-
-    if did_modify
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
@@ -621,6 +633,14 @@ function apply_callback!(
     return false, saved_in_cb
 end
 
+"""
+    apply_discrete_callback!(integrator, callback...)
+
+Apply discrete `callback`(s) to `integrator`: for each `DiscreteCallback` whose condition is
+true at the current `(u, t)`, run its `affect!` and handle any `saveat`/save bookkeeping.
+Returns whether the discrete-callback set modified the integrator and whether a save was
+performed inside a callback, recursing over multiple callbacks while staying type-stable.
+"""
 #Base Case: Just one
 @inline function apply_discrete_callback!(integrator, callback::DiscreteCallback)
     saved_in_cb = false
@@ -634,27 +654,20 @@ end
             savedexactly || savevalues!(integrator, true)
         end
 
-        # See apply_callback! for the rationale of the save / isolate / merge dance.
-        prev_dd = integrator.derivative_discontinuity
-        prev_user_set = integrator.user_set_discontinuity
-        integrator.derivative_discontinuity = false
-        integrator.user_set_discontinuity = false
-
+        # Assume a derivative discontinuity unless the affect! clears it.
+        integrator.derivative_discontinuity = true
         callback.affect!(integrator)
-
-        cb_dd = integrator.derivative_discontinuity
-        cb_spoke = integrator.user_set_discontinuity
-        # Default-on if affect! did not call derivative_discontinuity!.
-        did_modify = !cb_spoke || cb_dd
-
+        # Capture this callback's verdict BEFORE reeval_internals_due_to_modification!
+        # resets derivative_discontinuity to false. Returning the captured value (rather
+        # than re-reading the field) is what makes the OR-fold across simultaneous
+        # callbacks order independent: a true-flagging callback that triggers a reeval
+        # still reports true to the fold in handle_callbacks!.
+        did_modify = integrator.derivative_discontinuity
         if did_modify
             reeval_internals_due_to_modification!(
                 integrator, false, callback_initializealg = callback.initializealg
             )
         end
-
-        integrator.derivative_discontinuity = prev_dd || cb_dd
-        integrator.user_set_discontinuity = prev_user_set || cb_spoke
 
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)
@@ -716,6 +729,13 @@ function max_vector_callback_length_int(continuous_callbacks...)
     return maxlen
 end
 
+"""
+    max_vector_callback_length(cs::CallbackSet)
+
+Return the `VectorContinuousCallback` in the callback set `cs` with the largest `len`, or
+`nothing` if the set contains none. Integrators use this to size the per-step
+[`CallbackCache`](@ref) buffers large enough for every vector callback.
+"""
 function max_vector_callback_length(cs::CallbackSet)
     continuous_callbacks = cs.continuous_callbacks
     maxlen_cb = nothing
@@ -731,6 +751,12 @@ end
 
 """
 $(TYPEDEF)
+
+Preallocated scratch buffers used by the continuous-callback machinery. It holds the
+condition values and crossing signs evaluated during a step plus the per-component event
+masks for vector callbacks, so that locating and applying continuous-callback events is
+allocation-free. Integrators construct one (sized via [`max_vector_callback_length`](@ref))
+when a problem has continuous callbacks.
 """
 mutable struct CallbackCache{conditionType, signType}
     tmp_condition::conditionType

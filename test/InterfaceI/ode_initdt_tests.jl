@@ -72,3 +72,19 @@ integ = init(ODEProblem(((u, p, t) -> u), 0.0f0, (20.0f0, 0.0f0)), Tsit5())
 @test abs(integ.dt) > eps(integ.t)
 integ = init(ODEProblem(((du, u, p, t) -> du .= u), [0.0f0], (20.0f0, 0.0f0)), Tsit5())
 @test abs(integ.dt) > eps(integ.t)
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/3779
+# Automatic dt selection must not index into an empty state vector (zero
+# continuous unknowns), which arises e.g. for purely-discrete/clocked models.
+let
+    empty_iip = ODEProblem((du, u, p, t) -> nothing, Float64[], (0.0, 0.5))
+    empty_oop = ODEProblem((u, p, t) -> u, Float64[], (0.0, 0.5))
+    for prob in (empty_iip, empty_oop)
+        # in-place and out-of-place init-dt paths
+        integ = init(prob, Tsit5())
+        @test isfinite(integ.dt) && integ.dt > 0
+        @test SciMLBase.successful_retcode(solve(prob, Tsit5()))
+        # the default algorithm is a CompositeAlgorithm and used to BoundsError here
+        @test SciMLBase.successful_retcode(solve(prob, DefaultODEAlgorithm()))
+    end
+end
