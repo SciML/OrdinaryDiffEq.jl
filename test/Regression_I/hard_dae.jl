@@ -2,7 +2,7 @@ using OrdinaryDiffEq
 using DiffEqBase: BrownFullBasicInit
 using SciMLBase: FullSpecialize
 using LinearAlgebra
-using NLsolve
+using NonlinearSolve
 using Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqNonlinearSolve: NLNewton
@@ -217,8 +217,8 @@ u0 = [
     1.0,
     0.0,
 ]
-init_f! = (dx, x) -> vsm(dx, x, p_inv, 0)
-res = nlsolve(init_f!, u0)
+init_f! = (dx, x, p) -> vsm(dx, x, p_inv, 0)
+res = solve(NonlinearProblem(init_f!, u0), reltol = 1.0e-12, abstol = 1.0e-12)
 
 M = diagm(ones(21))
 #Last 2 equations are algebraic
@@ -230,7 +230,7 @@ condition(u, t, integrator) = t == 1.0
 affect!(integrator) = integrator.p[28] += 0.2
 cb = DiscreteCallback(condition, affect!)
 
-prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
+prob = ODEProblem(f, deepcopy(res.u), (0, 20.0), deepcopy(p_inv))
 # v7 default is CheckInit which rejects nlsolve residuals at tight tolerances;
 # use BrownFullBasicInit to initialize algebraic variables as before v7.
 refsol = solve(
@@ -240,7 +240,7 @@ refsol = solve(
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF)
     @show solver
-    prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
+    prob = ODEProblem(f, deepcopy(res.u), (0, 20.0), deepcopy(p_inv))
     sol = solve(
         prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1.0e-14,
         abstol = 1.0e-14, initializealg = BrownFullBasicInit()
