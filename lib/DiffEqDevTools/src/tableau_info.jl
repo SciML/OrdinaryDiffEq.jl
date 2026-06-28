@@ -69,11 +69,10 @@ function stability_region(
         tab_or_alg::Union{ODERKTableau, AbstractODEAlgorithm};
         initial_guess = -3.0, kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(x[1], tab_or_alg)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(x, tab_or_alg)) - 1
+    prob = NonlinearProblem{false}(f, initial_guess)
+    sol = solve(prob, SimpleTrustRegion(autodiff = AutoFiniteDiff()); kw...)
+    return sol.u
 end
 
 """
@@ -89,11 +88,10 @@ function imaginary_stability_interval(
         initial_guess = length(tab) - one(eltype(tab.A)),
         kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(im * x[1], tab)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(im * x, tab)) - 1
+    prob = NonlinearProblem{false}(f, initial_guess)
+    sol = solve(prob, SimpleTrustRegion(autodiff = AutoFiniteDiff()); kw...)
+    return sol.u
 end
 
 """
@@ -109,11 +107,10 @@ function imaginary_stability_interval(
         initial_guess = 20.0,
         kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(im * x[1], alg)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(im * x, alg)) - 1
+    prob = NonlinearProblem{false}(f, initial_guess)
+    sol = solve(prob, SimpleTrustRegion(autodiff = AutoFiniteDiff()); kw...)
+    return sol.u
 end
 
 function RootedTrees.residual_order_condition(
