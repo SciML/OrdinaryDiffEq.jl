@@ -193,7 +193,4 @@ export TauLeapingDrift
 # General functions
 export solve, init, solve!, step!
 
-# Export misc tools (check functions)
-export checkSRIOrder, checkSRAOrder
-
 end # module
