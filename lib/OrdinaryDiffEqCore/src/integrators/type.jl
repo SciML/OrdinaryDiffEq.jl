@@ -175,6 +175,8 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    is_disco_step::Bool
+    disco_checkpoint::tType
     W::WType
     P::PType
     sqdt::SqdtType

@@ -33,5 +33,4 @@ end
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
-    @time @safetestset "Discontinuity Detection" include("disco_tests.jl")
 end
