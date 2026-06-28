@@ -143,7 +143,7 @@ end
 # Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
 if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
     @testset "Enzyme callback limitation (gradient)" begin
-        @test_broken (
+        @test (
             g = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), p);
             g ≈ findiff[2, 1:2]
         )
