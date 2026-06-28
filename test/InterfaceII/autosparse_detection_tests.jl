@@ -15,7 +15,10 @@ prob = prob_ode_2Dlinear
 
 @test_nowarn solve(prob, FBDF(autodiff = ad))
 
-# Test that no dense matrices are made sparse
-diag_prob = ODEProblem((du, u, p, t) -> du .= -1.0 .* u, rand(Int(1.0e7)), (0, 1.0))
+# Test that no dense matrices are made sparse. The dimension must stay large
+# enough that materializing an N×N Jacobian would be catastrophic (1e6 ⇒ ~8 TB
+# dense), but small enough not to exhaust CI runners on the legitimate
+# matrix-free path (1e7 peaked at ~9 GB and was OOMing self-hosted runners).
+diag_prob = ODEProblem((du, u, p, t) -> du .= -1.0 .* u, rand(Int(1.0e6)), (0, 1.0))
 
 @test_nowarn solve(diag_prob, Rodas5P(autodiff = ad, linsolve = LinearSolve.KrylovJL_GMRES()))
