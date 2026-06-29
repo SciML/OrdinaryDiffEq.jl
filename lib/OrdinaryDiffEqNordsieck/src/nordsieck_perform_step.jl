@@ -2,7 +2,7 @@ function initialize!(integrator, cache::AN5ConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -44,7 +44,7 @@ end
         perform_predict!(cache)
         cache.Δ = integrator.u - integrator.uprev
         update_nordsieck_vector!(cache)
-        if integrator.opts.adaptive && OrdinaryDiffEqCore.get_EEst(integrator) >= one(OrdinaryDiffEqCore.get_EEst(integrator))
+        if integrator.opts.adaptive && get_EEst(integrator) >= one(get_EEst(integrator))
             cache.order = 1
         end
     else
@@ -75,8 +75,8 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
+            set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+            if get_EEst(integrator) > one(get_EEst(integrator))
                 for i in 1:5
                     dts[i] = dts[i + 1]
                 end
@@ -107,7 +107,7 @@ function initialize!(integrator, cache::AN5Cache)
     integrator.k[6] = cache.tsit5cache.k6
     integrator.k[7] = cache.tsit5cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step = false)
@@ -145,7 +145,7 @@ end
         perform_predict!(cache)
         @.. broadcast = false cache.Δ = integrator.u - integrator.uprev
         update_nordsieck_vector!(cache)
-        if integrator.opts.adaptive && OrdinaryDiffEqCore.get_EEst(integrator) >= one(OrdinaryDiffEqCore.get_EEst(integrator))
+        if integrator.opts.adaptive && get_EEst(integrator) >= one(get_EEst(integrator))
             cache.order = 1
         end
     else
@@ -176,8 +176,8 @@ end
                 atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-            if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
+            set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+            if get_EEst(integrator) > one(get_EEst(integrator))
                 for i in 1:5
                     dts[i] = dts[i + 1]
                 end
@@ -200,7 +200,7 @@ function initialize!(integrator, cache::JVODEConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -219,7 +219,7 @@ end
         cache.order = 1
         z[1] = integrator.uprev
         z[2] = f(uprev, p, t) * dt
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        increment_nf!(integrator.stats, 1)
         dts[1] = dt
     end
     # Reset time
@@ -247,8 +247,8 @@ end
             cache.Δ, uprev, integrator.u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-        if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
+        set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+        if get_EEst(integrator) > one(get_EEst(integrator))
             for i in 1:12
                 dts[i] = dts[i + 1]
             end
@@ -275,7 +275,7 @@ function initialize!(integrator, cache::JVODECache)
     integrator.k[6] = cache.tsit5cache.k6
     integrator.k[7] = cache.tsit5cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return increment_nf!(integrator.stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::JVODECache, repeat_step = false)
@@ -286,7 +286,7 @@ end
         cache.order = 1
         @.. broadcast = false z[1] = integrator.uprev
         f(z[2], uprev, p, t)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        increment_nf!(integrator.stats, 1)
         @.. broadcast = false z[2] = z[2] * dt
         dts[1] = dt
     end
@@ -318,8 +318,8 @@ end
             atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-        if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
+        set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
+        if get_EEst(integrator) > one(get_EEst(integrator))
             for i in 1:12
                 dts[i] = dts[i + 1]
             end

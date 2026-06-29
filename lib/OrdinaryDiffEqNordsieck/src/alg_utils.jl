@@ -13,7 +13,7 @@ qsteady_max_default(::JVODE) = 3 // 2
 
 get_current_alg_order(alg::JVODE, cache) = get_current_adaptive_order(alg, cache)
 
-function OrdinaryDiffEqCore.default_controller(QT, alg::JVODE)
+function default_controller(QT, alg::JVODE)
     # Thread the alg-struct kwargs through to the controller so that
     # `JVODE(qmax = 20)` keeps working.
     return JVODEController(
