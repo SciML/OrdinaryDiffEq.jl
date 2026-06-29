@@ -192,9 +192,19 @@ export SensitivityADPassThrough
             # Callback API (DiffEqBase-owned shared functionality used by downstream solvers)
             :apply_callback!, :apply_discrete_callback!, :CallbackCache,
             :find_first_continuous_callback, :find_callback_time,
-            :max_vector_callback_length, :get_condition,
+            :max_vector_callback_length, :max_vector_callback_length_int, :get_condition,
             # Default-callback API (integrator defaults overridable via solver keywords)
-            :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE
+            :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE,
+            :ODE_DEFAULT_UNSTABLE_CHECK,
+            # Tableau extension supertypes downstream tableau packages subtype
+            :Tableau, :ODERKTableau,
+            # Error-estimate residual hooks solvers call/extend
+            :calculate_residuals, :calculate_residuals!,
+            # Algorithm/dt setup hooks solvers specialize
+            :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
+            :default_factorize, :stripunits,
+            # Solver-author wrapper/tag types and convergence-testing entry type
+            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
         )
     )
 end
