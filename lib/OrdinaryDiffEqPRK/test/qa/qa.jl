@@ -3,5 +3,27 @@ using SciMLTesting, OrdinaryDiffEqPRK, Test
 run_qa(
     OrdinaryDiffEqPRK;
     explicit_imports = true,
-    ei_broken = (:no_implicit_imports, :all_explicit_imports_via_owners, :all_explicit_imports_are_public),  # known-broken; see SciML/OrdinaryDiffEq.jl#3776
+    ei_kwargs = (;
+        # OrdinaryDiffEqCore solver-interface names imported from their owner
+        # module (OrdinaryDiffEqCore) but not yet declared `public`. These are
+        # the OrdinaryDiffEq internal extension/dispatch API; no public
+        # alternative exists on the registered releases. Tracked for
+        # make-public in SciML/OrdinaryDiffEq.jl#3776.
+        all_explicit_imports_are_public = (;
+            ignore = (
+                Symbol("@cache"),
+                Symbol("@threaded"),
+                :alg_cache,
+                :constvalue,
+                :generic_solver_docstring,
+                :get_fsalfirstlast,
+                :isthreaded,
+                :OrdinaryDiffEqAlgorithm,
+                :OrdinaryDiffEqConstantCache,
+                :OrdinaryDiffEqMutableCache,
+                :perform_step!,
+                :unwrap_alg,
+            ),
+        ),
+    ),
 )
