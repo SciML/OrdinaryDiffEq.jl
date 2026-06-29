@@ -191,4 +191,44 @@ include("enzyme_rules.jl")
 
 include("precompilation_setup.jl")
 
+# Solver-author extension API. These names are the documented/intended interface
+# that downstream OrdinaryDiffEq.jl / StochasticDiffEq.jl solver packages subtype,
+# extend, or call. They are made public (not exported) so that ExplicitImports'
+# public-API checks recognize them as the supported extension surface. Genuine
+# codegen/perf internals (@fold/@threaded/@OnDemandTableauExtract/@swap!) and
+# precompile-workload helpers are deliberately NOT included here.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(
+        :public,
+        :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
+        :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
+        :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
+        :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
+        :CompositeCache, :CompositeController, :CompositeControllerCache, :constvalue, :Convergence, :current_extrapolant,
+        :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
+        :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
+        :DummyControllerCache, :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
+        :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
+        :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
+        :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController, :IControllerCache,
+        :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
+        :is_composite_algorithm, :is_composite_cache, :is_constant_cache, :isdefaultalg, :isdtchangeable, :isfirstcall,
+        :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
+        :issplit, :isthreaded, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
+        :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
+        :OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqAdaptiveExponentialAlgorithm, :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm, :OrdinaryDiffEqAdaptivePartitionedAlgorithm,
+        :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqCache, :OrdinaryDiffEqCompositeAlgorithm, :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqExponentialAlgorithm, :OrdinaryDiffEqImplicitAlgorithm,
+        :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
+        :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
+        :PIControllerCache, :PIDController, :PIDControllerCache, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
+        :PredictiveControllerCache, :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
+        :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
+        :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
+        :StochasticDiffEqCache, :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqConstantCache, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+        :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqMutableCache, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
+        :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :strip_cache, :sync_controllers!, :TryAgain,
+        :unwrap_alg, :uses_uprev, :VerySlowConvergence,
+    ))
+end
+
 end
