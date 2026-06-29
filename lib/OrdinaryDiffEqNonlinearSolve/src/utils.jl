@@ -318,14 +318,6 @@ function build_nlsolver(
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-        du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
-        linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
-        linsolve = init(
-            linprob, wrapprecs(alg.linsolve, W, weight),
-            alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-            assumptions = LinearSolve.OperatorAssumptions(true),
-            verbose = verbose.linear_verbosity
-        )
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
@@ -382,6 +374,15 @@ function build_nlsolver(
                 zero(tstep), true
             )
         else
+            du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
+            linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
+            linsolve = init(
+                linprob, wrapprecs(alg.linsolve, W, weight),
+                alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+                assumptions = LinearSolve.OperatorAssumptions(true),
+                verbose = verbose.linear_verbosity
+            )
+
             # Build separated DAE Jacobian cache if applicable
             if isdae
                 if islinear(f) || SciMLBase.has_jac(f) ||
