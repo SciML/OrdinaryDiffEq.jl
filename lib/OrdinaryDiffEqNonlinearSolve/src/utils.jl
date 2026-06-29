@@ -507,8 +507,14 @@ function build_nlsolver(
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
             prob = if use_w_reuse
-                nlf_jac = let W = W
-                    (z, p) -> convert(AbstractMatrix, W)
+                nlf_jac = if W isa StaticWOperator
+                    let Ws = W
+                        (z, p) -> Ws.W
+                    end
+                else
+                    let Ww = W
+                        (z, p) -> convert(AbstractMatrix, Ww)
+                    end
                 end
                 NonlinearProblem(
                     NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf; jac = nlf_jac),
