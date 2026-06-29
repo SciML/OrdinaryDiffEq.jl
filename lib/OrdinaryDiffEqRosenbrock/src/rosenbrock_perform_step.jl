@@ -62,10 +62,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -177,10 +178,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -600,10 +602,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
