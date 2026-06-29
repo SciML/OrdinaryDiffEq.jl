@@ -45,6 +45,24 @@ function initialize!(
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.njacs += cache.cache.stats.njacs
     end
+
+    if cache.W !== nothing
+        dtgamma = method === DIRK ? γ * dt : γ * dt / α
+        W_γdt = cache.W_γdt
+        first_call = iszero(W_γdt)
+        should_update = first_call || alg.always_new ||
+            nlsolver.status === Divergence ||
+            abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
+        if should_update
+            update_coefficients!(cache.W, uprev, p, tstep; gamma = dtgamma)
+            cache.W_γdt = dtgamma
+            integrator.stats.nw += 1
+            cache.new_W = true
+        else
+            cache.new_W = false
+        end
+    end
+
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
     else
