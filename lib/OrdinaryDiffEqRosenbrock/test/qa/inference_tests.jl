@@ -10,12 +10,10 @@ using Test
 # keyword argument, `A = (repeat_step || !new_W) ? nothing : W`. That makes `A`
 # inferred as `Union{Nothing, typeof(W)}`, which turns the `dolinsolve` keyword
 # call into a runtime-dispatched call inside the otherwise type-stable
-# `perform_step!`. JET surfaces it as a `runtime dispatch detected` report on the
-# `dolinsolve` `kwcall` whose `A` field is a `Union`.
-#
-# The reports are filtered to `dolinsolve` on purpose: some Rosenbrock caches have
-# an unrelated, pre-existing dispatch (`reshape(nothing, ...)`) that is out of
-# scope here, and the `dolinsolve` dispatch is the one this fix removes.
+# `perform_step!`. A related dead branch (`reshape(cache.algebraic_vars, ...)`
+# guarded on `mass_matrix !== I` instead of `algebraic_vars !== nothing`) added a
+# second dispatch. Both are now fixed, so `perform_step!` is free of runtime
+# dispatch within OrdinaryDiffEqRosenbrock.
 @testset "Rosenbrock perform_step! Inference Tests" begin
     function simple_system!(du, u, p, t)
         du .= t .* u
@@ -32,7 +30,7 @@ using Test
     ]
 
     for solver in rosenbrock_solvers
-        @testset "$(typeof(solver).name.name) perform_step! linear solve inference" begin
+        @testset "$(typeof(solver).name.name) perform_step! inference" begin
             integrator = init(
                 prob, solver, dt = 0.1, save_everystep = false,
                 abstol = 1.0e-10, reltol = 1.0e-10
@@ -40,12 +38,9 @@ using Test
             step!(integrator)
             cache = integrator.cache
 
-            report = JET.report_opt(
-                OrdinaryDiffEqCore.perform_step!,
-                (typeof(integrator), typeof(cache));
-                target_modules = (OrdinaryDiffEqRosenbrock,)
+            JET.@test_opt target_modules = (OrdinaryDiffEqRosenbrock,) OrdinaryDiffEqCore.perform_step!(
+                integrator, cache
             )
-            @test !occursin("dolinsolve", sprint(show, report))
         end
     end
 end

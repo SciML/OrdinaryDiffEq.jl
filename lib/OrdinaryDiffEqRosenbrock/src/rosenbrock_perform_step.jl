@@ -137,7 +137,9 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        # Guard on the field rather than `mass_matrix !== I` so inference can drop
+        # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
+        if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(algvar, fsallast, false) * invatol
@@ -243,7 +245,7 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        if cache.algebraic_vars !== nothing
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
