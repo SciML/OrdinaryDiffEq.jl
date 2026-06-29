@@ -1,24 +1,23 @@
 module OrdinaryDiffEqSSPRK
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, ssp_coefficient,
+import OrdinaryDiffEqCore: perform_step!, ssp_coefficient,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-    OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-    constvalue, _unwrap_val,
+    OrdinaryDiffEqAdaptiveAlgorithm,
+    alg_cache, @cache, isfsal, full_cache,
+    constvalue,
     explicit_rk_docstring, trivial_limiter!,
     _ode_interpolant, _ode_interpolant!,
-    _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
-using FastBroadcast, MuladdMacro, RecursiveArrayTools
-using DiffEqBase: @def
-using FastBroadcast: Serial
+    _ode_addsteps!, get_fsalfirstlast
 import OrdinaryDiffEqCore
+import SciMLBase: alg_order
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
+using RecursiveArrayTools: RecursiveArrayTools, copyat_or_push!, recursivefill!
+using FastBroadcast: FastBroadcast, @.., Serial
+using MuladdMacro: MuladdMacro, @muladd
+using SciMLBase: SciMLBase, @def, ODEProblem, solve
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")
