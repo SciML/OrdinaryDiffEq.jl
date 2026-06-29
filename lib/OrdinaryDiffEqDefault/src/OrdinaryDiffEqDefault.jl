@@ -1,22 +1,21 @@
 module OrdinaryDiffEqDefault
 
 using OrdinaryDiffEqCore: alg_stability_size, beta2_default, beta1_default, AutoSwitchCache,
-    ODEIntegrator, trivial_limiter!, PIController,
-    CompositeAlgorithm, OrdinaryDiffEqAlgorithm,
-    OrdinaryDiffEqMutableCache, AutoAlgSwitch
-using OrdinaryDiffEqVerner: Vern7, Vern8, Vern9, Vern6
+    CompositeAlgorithm, AutoAlgSwitch
+using OrdinaryDiffEqVerner: Vern7
 using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
 using OrdinaryDiffEqBDF: FBDF, DFBDF
 import OrdinaryDiffEqCore
 
 import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
-import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType
+import ADTypes: AutoFiniteDiff
 import LinearSolve
-using LinearAlgebra: I, isdiag
-using EnumX
+using LinearAlgebra: I
+using EnumX: EnumX
 
-using Reexport
+using Reexport: Reexport, @reexport
+using SciMLBase: SciMLBase, ODEProblem, DAEProblem, solve
 @reexport using SciMLBase
 
 include("default_alg.jl")
