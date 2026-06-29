@@ -46,7 +46,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
-    _get_fwd_tag
+    _get_fwd_tag, get_fresh_jacobian
 
 import ConstructionBase
 using ConstructionBase: constructorof

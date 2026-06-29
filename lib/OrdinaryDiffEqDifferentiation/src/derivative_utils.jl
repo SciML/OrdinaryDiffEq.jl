@@ -312,6 +312,8 @@ function calc_J(integrator, cache, next_step::Bool = false)
     return J
 end
 
+get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache) = calc_J(integrator, cache)
+
 """
     calc_J!(J, integrator, cache, next_step::Bool = false) -> J
 

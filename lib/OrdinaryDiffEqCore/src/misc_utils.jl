@@ -156,6 +156,19 @@ end
 # Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
 _isdiag(A::AbstractMatrix) = isdiag(A)
 
+# Dense fallback to find large Jacobian entries. 
+# Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::AbstractMatrix)
+    for i in axes(jac, 1), j in axes(jac, 2)
+        val = jac[i, j]
+        if !isfinite(val) || abs(val) > 1e6
+            push!(rows, i)
+            push!(cols, j)
+            push!(entries, (i, j, val))
+        end
+    end
+end
+
 isnewton(::Any) = false
 
 # Extract the chunk size integer from an ADType for use as a type parameter.
