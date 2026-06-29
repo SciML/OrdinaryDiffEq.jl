@@ -84,6 +84,16 @@ sol = solve(
     callback = callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
+sol = solve(
+    prob, KenCarp4(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
+    callback = callback, dt = 1 / 2
+)
+@test length(sol.u[end]) > 1
+sol = solve(
+    prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
+    callback = callback, dt = 1 / 2
+)
+@test length(sol.u[end]) > 1
 
 for alg in CACHE_TEST_ALGS
     @show alg
