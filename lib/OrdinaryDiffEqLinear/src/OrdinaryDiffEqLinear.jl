@@ -1,24 +1,28 @@
 module OrdinaryDiffEqLinear
 
-import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required,
+import OrdinaryDiffEqCore: alg_extrapolates, dt_required,
     OrdinaryDiffEqLinearExponentialAlgorithm,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAlgorithm,
-    OrdinaryDiffEqExponentialAlgorithm,
     OrdinaryDiffEqMutableCache, @cache, alg_cache,
     OrdinaryDiffEqConstantCache,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals!, get_fsalfirstlast,
-    _vec, isdtchangeable, full_cache,
+    perform_step!, unwrap_alg,
+    get_fsalfirstlast,
+    isdtchangeable, full_cache,
     generic_solver_docstring
 using LinearAlgebra: mul!, I
-using SciMLOperators: AbstractSciMLOperator
-using ExponentialUtilities
-using RecursiveArrayTools
+using SciMLOperators: AbstractSciMLOperator, update_coefficients, update_coefficients!
+using ExponentialUtilities: ExponentialUtilities, ExpMethodGeneric, ExpvCache,
+    KrylovSubspace, PhivCache, arnoldi!, exponential!,
+    expv, expv!, expv_timestep, expv_timestep!
+using RecursiveArrayTools: recursivefill!
 import OrdinaryDiffEqCore
 import DiffEqBase
+import DiffEqBase: calculate_residuals!, initialize!
+import SciMLBase: alg_order, _vec
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, SciMLOperators, SplitFunction
 
 include("algorithms.jl")
 include("alg_utils.jl")
