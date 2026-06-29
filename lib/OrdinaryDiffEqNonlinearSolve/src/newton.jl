@@ -59,11 +59,19 @@ function initialize!(
         nlsolver::NLSolver{<:NonlinearSolveAlg, true},
         integrator::SciMLBase.DEIntegrator
     )
-    (; uprev, t, p, dt, opts, f) = integrator
+    (; u, uprev, t, p, dt, opts, f) = integrator
     (; z, tmp, ztmp, γ, α, iter, cache, method, alg) = nlsolver
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
+
+    if cache.weight !== nothing
+        weight = cache.weight
+        calculate_residuals!(
+            weight, fill!(weight, one(eltype(u))), uprev, u,
+            opts.abstol, opts.reltol, opts.internalnorm, t
+        )
+    end
 
     (; ustep, atmp, tstep, k, invγdt) = cache
 
