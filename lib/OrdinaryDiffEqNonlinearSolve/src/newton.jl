@@ -676,6 +676,8 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.du1 === nothing || resize!(nlcache.du1, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
     nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    nlcache.W_γdt = zero(nlcache.W_γdt)
+    nlcache.new_W = true
     if nlcache.ustep isa AbstractArray
         new_prob = SciMLBase.remake(nlcache.prob; u0 = zero(nlcache.ustep))
         nlcache.prob = new_prob
