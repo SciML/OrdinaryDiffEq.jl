@@ -139,7 +139,7 @@ end
     else
         @.. broadcast = false u = -δt₂ * k
     end
-    c = DiffEqBase.value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
+    c = value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
     tᵢ₋₁ += c
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -249,7 +249,7 @@ end
 
     # Stage-2
     c₂ = a₂₁
-    _c₂ = DiffEqBase.value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
+    _c₂ = value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₂
     uᵢ₋₁ = f(uᵢ₋₁, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -262,7 +262,7 @@ end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
-    _c₃ = DiffEqBase.value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
+    _c₃ = value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₃
     uᵢ₋₂ = f(uᵢ₋₂, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -274,7 +274,7 @@ end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
-    _c₄ = DiffEqBase.value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
+    _c₄ = value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₄
     uᵢ₋₃ = f(uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -400,7 +400,7 @@ end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
-    _c₃ = DiffEqBase.value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
+    _c₃ = value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₃
     f(k, uᵢ₋₂, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -412,7 +412,7 @@ end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
-    _c₄ = DiffEqBase.value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
+    _c₄ = value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₄
     f(k, uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
