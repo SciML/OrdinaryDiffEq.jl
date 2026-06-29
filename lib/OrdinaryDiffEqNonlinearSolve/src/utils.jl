@@ -98,7 +98,7 @@ mutable struct DAEResidualJacobianWrapper{
     end
 end
 
-function SciMLBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
+function ConstructionBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
     for key in keys(patch)
         setproperty!(wrap, key, patch[key])
     end
