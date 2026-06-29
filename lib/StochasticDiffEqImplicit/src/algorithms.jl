@@ -1,5 +1,5 @@
 using ADTypes: AutoForwardDiff
-using OrdinaryDiffEqCore: _fixup_ad, _unwrap_val
+using OrdinaryDiffEqCore: _fixup_ad
 
 struct ImplicitEM{AD, F, F2, T2, T3, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm

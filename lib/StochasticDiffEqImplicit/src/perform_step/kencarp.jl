@@ -124,8 +124,8 @@
                 tmp = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + chi2 * (g1 - g4)
             end
             if alg.smooth_est # From Shampine
-                E₁ = DiffEqBase._reshape(
-                    get_W(nlsolver) \ DiffEqBase._vec(tmp),
+                E₁ = _reshape(
+                    get_W(nlsolver) \ _vec(tmp),
                     axes(tmp)
                 )
             else
@@ -316,8 +316,8 @@ end
             if alg.smooth_est # From Shampine
                 linres = dolinsolve(
                     integrator, nlsolver.cache.linsolve;
-                    b = DiffEqBase._vec(g1),
-                    linu = DiffEqBase._vec(E₁)
+                    b = _vec(g1),
+                    linu = _vec(E₁)
                 )
             else
                 E₁ .= dz
