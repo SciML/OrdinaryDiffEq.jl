@@ -4,6 +4,7 @@ authors = ["vyudu <vincent.duyuan@gmail.com>"]
 version = "2.1.2"
 
 [deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
 NonlinearSolveFirstOrder = "5959db7a-ea39-4486-b5fe-2dd0bf03d60d"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
@@ -23,6 +24,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
+CommonSolve = "0.2.4"
 Pkg = "1"
 Test = "1.10.0"
 NonlinearSolveBase = "2.23.0"
