@@ -106,7 +106,13 @@ function initialize!(
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+        if length(cache.cache.u) != length(z)
+            new_prob = SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            cache.prob = new_prob
+            cache.cache = init(new_prob, cache.cache.alg)
+        else
+            SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+        end
     end
     return nothing
 end
@@ -678,10 +684,5 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
     nlcache.W_γdt = zero(nlcache.W_γdt)
     nlcache.new_W = true
-    if nlcache.ustep isa AbstractArray
-        new_prob = SciMLBase.remake(nlcache.prob; u0 = zero(nlcache.ustep))
-        nlcache.prob = new_prob
-        nlcache.cache = init(new_prob, nlcache.cache.alg)
-    end
     return nothing
 end
