@@ -7,5 +7,21 @@ run_qa(
         deps_compat = (; check_extras = false),
     ),
     explicit_imports = true,
-    ei_broken = (:no_implicit_imports, :no_stale_explicit_imports, :all_explicit_imports_via_owners, :all_qualified_accesses_via_owners, :all_qualified_accesses_are_public, :all_explicit_imports_are_public),  # known-broken; see SciML/OrdinaryDiffEq.jl#3776
+    ei_kwargs = (;
+        # SciMLBase-owned solver-interface predicates that are accessed via SciMLBase
+        # (their owner) but not yet declared `public` there.
+        all_qualified_accesses_are_public = (;
+            ignore = (:allowedkeywords, :calculate_ensemble_errors),
+        ),
+        # Abstract problem/solution/algorithm types + `@def` are owned by SciMLBase but
+        # not yet `public` there; `ConvergenceSetup`/`ODERKTableau` live only in DiffEqBase
+        # (not re-exported by SciMLBase) and are likewise not `public`.
+        all_explicit_imports_are_public = (;
+            ignore = (
+                :AbstractDDEAlgorithm, :AbstractODESolution, :AbstractRODEProblem,
+                :AbstractSDDEProblem, :AbstractBVProblem, Symbol("@def"),
+                :ConvergenceSetup, :ODERKTableau,
+            ),
+        ),
+    ),
 )
