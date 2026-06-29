@@ -16,7 +16,7 @@
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -194,7 +194,7 @@
             (d₁ < 1 // 10^(5)), smalldt,
         convert(
             _tType,
-            oneunit_tType * DiffEqBase.value(
+            oneunit_tType * SciMLBase.value(
                 (d₀ / d₁) /
                     100
             )
@@ -278,7 +278,7 @@
         dt₁ = convert(
             _tType,
             oneunit_tType *
-                DiffEqBase.value(
+                SciMLBase.value(
                 10.0^(-(2 + log10(max_d₁d₂)) / order)
             )
         )
@@ -335,7 +335,7 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -386,7 +386,7 @@ end
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
-        dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
+        dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
     end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
@@ -417,7 +417,7 @@ end
     else
         dt₁ = _tType(
             oneunit_tType *
-                DiffEqBase.value(
+                SciMLBase.value(
                 10^(-(2 + log10(max_d₁d₂)) / order)
             )
         )
