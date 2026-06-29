@@ -68,4 +68,28 @@ include("initialize_dae.jl")
 
 export BrownFullBasicInit, ShampineCollocationInit
 
+# Declare the documented solver-author extension API `public` so downstream solver
+# packages (the OrdinaryDiffEq solver sublibs, DelayDiffEq's fixed-point solver, etc.)
+# can drop their `OrdinaryDiffEqNonlinearSolve.X` non-public ExplicitImports ignores.
+# These are the nonlinear-solver algorithm types and the stepping/build hooks that
+# downstream packages legitimately construct and extend. The `public` keyword is only
+# parseable on Julia >= 1.11.0-DEV.469, so it is gated to keep the 1.10 floor parsing.
+# Pure internal codegen/perf helpers are intentionally left non-public.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(
+        Expr(
+            :public,
+            # Nonlinear-solver algorithm types
+            :NLNewton, :NLFunctional, :NLAnderson,
+            # Solver construction
+            :build_nlsolver,
+            # Stepping / status hooks extended and called by downstream solvers
+            :nlsolve!, :nlsolvefail, :compute_step!, :initial_η,
+            :markfirststage!, :du_alias_or_new,
+            # Anderson-acceleration kernels (DelayDiffEq fixed-point solver reuses these)
+            :anderson, :anderson!
+        )
+    )
+end
+
 end
