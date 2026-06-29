@@ -254,8 +254,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     if W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
-        update_coefficients!(W, ustep, p, tstep; gamma = γW, transform = true)
-        W = convert(AbstractMatrix, W)
+        error("Out-of-place NLNewton does not support non-concrete W of type $(typeof(W)). " *
+              "Use the in-place form (define f!(du, u, p, t)) or supply a concrete jac_prototype.")
     end
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
