@@ -1,5 +1,7 @@
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, Test, Random,
     LinearAlgebra, LinearSolve, ADTypes
+using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
+using NonlinearSolve: NewtonRaphson
 Random.seed!(123)
 
 A = 0.01 * rand(3, 3)
@@ -162,3 +164,23 @@ sol = @test_nowarn solve(
     )
 );
 @test length(sol.t) < 20
+
+sol = @test_nowarn solve(
+    prob,
+    TRBDF2(
+        autodiff = AutoFiniteDiff(),
+        nlsolve = NonlinearSolveAlg(NewtonRaphson())
+    )
+);
+@test length(sol.t) < 20
+let integ = init(
+        prob,
+        TRBDF2(
+            autodiff = AutoFiniteDiff(),
+            nlsolve = NonlinearSolveAlg(NewtonRaphson())
+        )
+    )
+    @test integ.cache.nlsolver.cache.weight !== nothing
+    step!(integ)
+    @test !iszero(integ.cache.nlsolver.cache.weight)
+end
