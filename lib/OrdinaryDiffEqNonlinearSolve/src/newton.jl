@@ -254,7 +254,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     if W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by out-of-place Newton solve.")
+        update_coefficients!(W, ustep, p, tstep; gamma = γW, transform = true)
+        W = convert(AbstractMatrix, W)
     end
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
