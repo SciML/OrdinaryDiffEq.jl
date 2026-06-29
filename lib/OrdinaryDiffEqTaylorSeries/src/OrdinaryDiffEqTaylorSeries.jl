@@ -1,31 +1,30 @@
 module OrdinaryDiffEqTaylorSeries
 
-import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
     alg_cache,
-    OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
-    constvalue, perform_step!, calculate_residuals, @cache,
-    calculate_residuals!, _ode_interpolant, _ode_interpolant!,
-    CompiledFloats, @OnDemandTableauExtract, initialize!,
-    perform_step!, OrdinaryDiffEqAlgorithm,
-    CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
-    AutoAlgSwitch, get_fsalfirstlast,
-    full_cache, DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
+    OrdinaryDiffEqConstantCache, trivial_limiter!,
+    perform_step!, @cache,
+    _ode_interpolant, _ode_interpolant!,
+    OrdinaryDiffEqAlgorithm,
+    _ode_addsteps!,
+    get_fsalfirstlast,
+    DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
     stepsize_controller!, get_current_adaptive_order, get_current_alg_order
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..
-import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
-import LinearAlgebra: norm
+import RecursiveArrayTools: recursivefill!
 using TruncatedStacktraces: @truncate_stacktrace
-using TaylorDiff, Symbolics
-using TaylorDiff: make_seed, get_coefficient, append_coefficient, flatten
-import SciMLBase: @def, unwrapped_f
+using TaylorDiff: TaylorDiff, TaylorArray, TaylorScalar
+using Symbolics: Symbolics, @variables, build_function
+using SymbolicUtils: SymbolicUtils
+import SciMLBase: SciMLBase, unwrapped_f, alg_order, ODEFunction, ODEProblem, solve
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore
-using FunctionWrappers
 import FunctionWrappers: FunctionWrapper
 
-using Reexport
+using Reexport: @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")

@@ -1,5 +1,3 @@
-using TaylorDiff: TaylorDiff, extract_derivative, extract_derivative!
-
 # Extract the first-order derivative from TaylorScalar results.
 # For scalars, access .partials[1]; for arrays, map over elements.
 @inline _extract_taylor2_deriv(x::TaylorScalar) = x.partials[1]
@@ -7,9 +5,9 @@ using TaylorDiff: TaylorDiff, extract_derivative, extract_derivative!
 
 # Extract the i-th coefficient from a TaylorScalar or array of TaylorScalars.
 # For scalar problems, returns a scalar. For array problems, returns a vector.
-@inline _taylor_get_coefficient(ts::TaylorScalar, i::Int) = get_coefficient(ts, i)
+@inline _taylor_get_coefficient(ts::TaylorScalar, i::Int) = TaylorDiff.get_coefficient(ts, i)
 @inline function _taylor_get_coefficient(arr::AbstractArray{<:TaylorScalar}, i::Int)
-    return map(ts -> get_coefficient(ts, i), arr)
+    return map(ts -> TaylorDiff.get_coefficient(ts, i), arr)
 end
 
 @inline make_taylor(all::Vararg{X, P}) where {P, X <: AbstractArray} = TaylorArray(
@@ -101,7 +99,7 @@ function initialize!(integrator, cache::ExplicitTaylorCache{P}) where {P}
     resize!(integrator.k, P)
     # Setup k pointers
     for i in 1:P
-        integrator.k[i] = get_coefficient(cache.utaylor, i)
+        integrator.k[i] = TaylorDiff.get_coefficient(cache.utaylor, i)
     end
     return nothing
 end
@@ -129,7 +127,7 @@ end
     # Copy Taylor coefficients into k for dense output interpolation.
     # Use map! to avoid the intermediate allocation from get_coefficient.
     for i in 1:P
-        map!(ts -> get_coefficient(ts, i), integrator.k[i], utaylor)
+        map!(ts -> TaylorDiff.get_coefficient(ts, i), integrator.k[i], utaylor)
     end
     return nothing
 end

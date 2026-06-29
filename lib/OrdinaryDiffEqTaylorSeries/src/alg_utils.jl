@@ -74,8 +74,8 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
         else
             fu = f(u, p, t)
         end
-        d = get_coefficient(fu, index - 1) / index
-        u = append_coefficient(u, d)
+        d = TaylorDiff.get_coefficient(fu, index - 1) / index
+        u = TaylorDiff.append_coefficient(u, d)
     end
 
     # Flatten TaylorScalar coefficients for build_function (it doesn't handle custom structs)
@@ -126,7 +126,7 @@ end
     for i in P:-1:1
         ex = :(v[$i] + z * $ex)
     end
-    return :($(Expr(:meta, :inline)); v = flatten(t); $ex)
+    return :($(Expr(:meta, :inline)); v = TaylorDiff.flatten(t); $ex)
 end
 
 # Evaluate polynomial for scalar TaylorScalar (returns scalar)
