@@ -226,7 +226,7 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
     droptol::Union{Nothing, tType}
 end
 
-mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type} <:
+mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -240,6 +240,7 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     uf::ufType
     jac_config::jcType
     du1::du1Type
+    weight::weightType
     W_γdt::tType
     new_W::Bool
 end
