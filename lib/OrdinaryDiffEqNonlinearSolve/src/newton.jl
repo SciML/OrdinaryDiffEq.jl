@@ -688,6 +688,7 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.k === nothing || resize!(nlcache.k, i)
     nlcache.atmp === nothing || resize!(nlcache.atmp, i)
     nlcache.du1 === nothing || resize!(nlcache.du1, i)
+    nlcache.weight === nothing || resize!(nlcache.weight, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
     nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
     nlcache.W_γdt = zero(nlcache.W_γdt)
