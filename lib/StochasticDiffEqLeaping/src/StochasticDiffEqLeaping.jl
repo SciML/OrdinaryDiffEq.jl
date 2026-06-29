@@ -1,11 +1,12 @@
 module StochasticDiffEqLeaping
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit,
-    stepsize_controller!, accept_step_controller, step_accept_controller!,
+import OrdinaryDiffEqCore: perform_step!, issplit,
+    stepsize_controller!, step_accept_controller!,
     step_reject_controller!, DummyController
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
@@ -17,19 +18,16 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     TauLeapingDrift,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
+import DiffEqBase
+# `@..` is the SciML fused-broadcast macro; its owner is FastBroadcast (not a
+# direct dependency here), so it is re-exported through DiffEqBase.
+import DiffEqBase: @..
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
 
 import MuladdMacro: @muladd
 import SciMLBase
 
-using OrdinaryDiffEqCore: _vec, _reshape
-using OrdinaryDiffEqNonlinearSolve: NLSolver, NLFunctional, NLAnderson, NLNewton,
-    nlsolvefail, isnewton
-
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
+using OrdinaryDiffEqNonlinearSolve: NLFunctional
 
 import JumpProcesses
 
