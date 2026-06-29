@@ -13,7 +13,7 @@ variable, then the system is not Index 1!
 
 ## Expansion
 
-function DiffEqBase.initialize_dae!(
+function SciMLBase.initialize_dae!(
         integrator::ODEIntegrator,
         initializealg = integrator.initializealg
     )

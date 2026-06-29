@@ -91,7 +91,7 @@ post_step_reject!(integrator) = nothing
 # For SDE: isdae=false skips DAE re-init; isfsal=false makes update_fsal! a no-op.
 function on_derivative_discontinuity_at_init!(integrator)
     if integrator.isdae
-        DiffEqBase.initialize_dae!(integrator)
+        SciMLBase.initialize_dae!(integrator)
     end
     update_uprev!(integrator)
     return update_fsal!(integrator)
@@ -531,7 +531,7 @@ function _loopfooter!(integrator)
             end
             integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
 
-            dtnew = DiffEqBase.value(
+            dtnew = SciMLBase.value(
                 step_accept_controller!(
                     integrator,
                     integrator.alg,
@@ -564,7 +564,7 @@ function _loopfooter!(integrator)
     # Take value because if t is dual then maxeig can be dual
     if is_composite_cache(integrator.cache)
         cur_eigen_est = integrator.opts.internalnorm(
-            DiffEqBase.value(integrator.eigen_est),
+            SciMLBase.value(integrator.eigen_est),
             integrator.t
         )
         cur_eigen_est > integrator.stats.maxeig &&

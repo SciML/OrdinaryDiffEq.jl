@@ -15,7 +15,7 @@ import Logging: @logmsg, LogLevel
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm, I, UniformScaling, diag, rank, isdiag
+using LinearAlgebra: opnorm, I, UniformScaling, diag, isdiag
 
 import PrecompileTools
 
@@ -26,75 +26,85 @@ import FastPower: fastpower
 import SciMLBase: solve!, step!, isadaptive
 import DiffEqBase: initialize!
 
-# DAE Initialization algorithms
+# DAE Initialization algorithms.
+# `ShampineCollocationInit`/`BrownFullBasicInit` are unused here but re-exported
+# for dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
-# Internal utils
+# Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
     ODE_DEFAULT_UNSTABLE_CHECK,
-    DEVerbosity, DEFAULT_VERBOSE, _process_verbose_param
+    DEVerbosity, _process_verbose_param
 
-import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
-    MatrixOperator, FunctionOperator,
-    update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
+import SciMLOperators: MatrixOperator, FunctionOperator,
+    update_coefficients, update_coefficients!,
     isconstant
-
-using DiffEqBase: DEIntegrator
 
 import Random
 
-import RecursiveArrayTools: chain, recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray, recursivefill!
+import RecursiveArrayTools: recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
 
 import RecursiveArrayTools
 using BinaryHeaps: BinaryHeap, FasterForward
-using ArrayInterface: ArrayInterface, issingular
+using ArrayInterface: ArrayInterface
 
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 # Integrator Interface
-import SciMLBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+import Base: resize!
+import SciMLBase: deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
     terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
     savevalues!,
     add_tstop!, has_tstop, first_tstop, pop_tstop!,
     add_saveat!, set_reltol!,
-    set_abstol!, postamble!, last_step_failed,
-    isautodifferentiable
-import DiffEqBase: get_tstops, get_tstops_array, get_tstops_max
+    set_abstol!, postamble!, last_step_failed
+import DiffEqBase: get_tstops, get_tstops_array
 
-using DiffEqBase: check_error!, @def, _vec, _reshape
+# `check_error!` is owned by (and public in) SciMLBase, re-exported through DiffEqBase.
+# `_vec`/`_reshape`/`unwrap_cache` are owned by SciMLBase and re-exported here for
+# dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
+using SciMLBase: check_error!, _vec, _reshape, unwrap_cache
 
-using FastBroadcast: @.., Serial, Threaded
+using FastBroadcast: @..
 
 using FunctionWrappers: FunctionWrapper
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
 
+# Names previously relied on implicitly through `@reexport using SciMLBase`.
+using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
+    DAESolution, DiscreteProblem, DynamicalODEFunction,
+    IntervalNonlinearProblem, NonlinearLeastSquaresProblem,
+    ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
+    VectorContinuousCallback, auto_dt_reset!, derivative_discontinuity!,
+    get_tmp_cache, isinplace, reinit!
+using SciMLOperators: SciMLOperators
+using CommonSolve: solve
+
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
-import SciMLBase: unwrap_cache,
-    islinear
-import DiffEqBase: calculate_residuals,
-    calculate_residuals!, @tight_loop_macros,
-    timedepentdtmin
+import SciMLBase: islinear
+# `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
+# dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
+import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
 
 # MacroTools and Adapt imported but not directly used in OrdinaryDiffEqCore
 # using MacroTools, Adapt
-import ADTypes: AutoFiniteDiff, AutoForwardDiff, AbstractADType, AutoSparse, dense_ad
+import ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse, dense_ad
 import Accessors: @reset
 
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-using SciMLLogging: SciMLLogging, @SciMLMessage, MessageLevel,
-    None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel
+# `Minimal` is unused here but re-exported for dependent OrdinaryDiffEq.jl
+# sublibraries that import it from this package.
+using SciMLLogging: SciMLLogging, @SciMLMessage, Standard, Minimal
 
 using SymbolicIndexingInterface: state_values
 import SymbolicIndexingInterface: parameter_values
-
-using ConcreteStructs: @concrete
 
 using EnumX: @enumx
 
@@ -148,7 +158,7 @@ const TryAgain = SlowConvergence
 
 isdiscretecache(cache) = false
 
-unitfulvalue(x) = DiffEqBase.unitfulvalue(x)
+unitfulvalue(x) = SciMLBase.unitfulvalue(x)
 
 # Declare the documented custom-stepsize-controller author interface `public` so downstream
 # packages can drop their `OrdinaryDiffEqCore.X` non-public ExplicitImports ignores. These
