@@ -22,8 +22,8 @@ ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 PreallocationTools = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -62,7 +62,7 @@ OrdinaryDiffEqFIRK = "2"
 OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqSDIRK = "2"
 Statistics = "1.10.0"
-SciMLBase = "3.10.0"
+SciMLBase = "3.30"
 OrdinaryDiffEqCore = "4"
 SimpleNonlinearSolve = "2.11.1"
 FastClosures = "0.3.2"
@@ -78,7 +78,7 @@ PreallocationTools = "1.1.2"
 DiffEqBase = "7"
 SafeTestsets = "0.1.0"
 SciMLOperators = "1.15"
-SciMLStructures = "1.7"
+ConstructionBase = "1"
 
 [targets]
 test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "StaticArrays", "Statistics", "Test", "Pkg"]
