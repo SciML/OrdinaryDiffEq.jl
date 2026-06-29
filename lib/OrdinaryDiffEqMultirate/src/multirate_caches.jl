@@ -101,10 +101,12 @@ end
     tmp::uType
     atmp::uNoUnitsType
     v::uType
+    vtmp::uType
     f1eval::rateType
-    slow_f::rateType
-    Y::Vector{uType}
+    kk::Vector{uType}
+    z::Vector{uType}
     fS::Vector{rateType}
+    zemb::uType
     fsalfirst::rateType
     k::rateType
     tab::TabType
@@ -112,29 +114,36 @@ end
 
 get_fsalfirstlast(cache::MRIGARKCache, u) = (cache.fsalfirst, cache.k)
 
+const MRIGARKAlg = Union{MRIGARKERK22a, MRIGARKERK22b, MRIGARKERK33a, MRIGARKERK45a}
+
 function alg_cache(
-        alg::Union{MRIGARKERK22a, MRIGARKERK22b}, u, rate_prototype,
+        alg::MRIGARKAlg, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = mri_gark_tableau(alg, eltype(u))
-    s = length(tab.Γ)
+    s = length(tab.Δc)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     v = zero(u)
+    vtmp = zero(u)
     f1eval = zero(rate_prototype)
-    slow_f = zero(rate_prototype)
-    Y = [zero(u) for _ in 1:s]
+    kk = [zero(u) for _ in 1:(tab.q)]
+    z = [zero(u) for _ in 1:(s + 1)]
     fS = [zero(rate_prototype) for _ in 1:s]
+    zemb = zero(u)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return MRIGARKCache(u, uprev, tmp, atmp, v, f1eval, slow_f, Y, fS, fsalfirst, k, tab)
+    return MRIGARKCache(
+        u, uprev, tmp, atmp, v, vtmp, f1eval, kk, z, fS, zemb,
+        fsalfirst, k, tab
+    )
 end
 
 function alg_cache(
-        alg::Union{MRIGARKERK22a, MRIGARKERK22b}, u, rate_prototype,
+        alg::MRIGARKAlg, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
