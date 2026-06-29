@@ -1,23 +1,39 @@
 module DiffEqDevTools
 
-using DiffEqBase: AbstractODEAlgorithm
-using DiffEqBase, RecipesBase, RecursiveArrayTools, DiffEqNoiseProcess, StructArrays
+import DiffEqBase
+using DiffEqBase: ExplicitRKTableau, ImplicitRKTableau
+import RecipesBase
+using RecipesBase: @recipe, @series
+import RecursiveArrayTools
+using RecursiveArrayTools: recursive_mean, vecvecapply
+using DiffEqNoiseProcess: NoiseGrid, NoiseWrapper
+import StructArrays
+using StructArrays: StructArray
 import SciMLBase
-using SimpleNonlinearSolve, LinearAlgebra, RootedTrees
-
-using LinearAlgebra, Distributed
-
-using Statistics
+using SciMLBase: AbstractODEAlgorithm, AbstractODEProblem,
+    AbstractSDEProblem, AbstractEnsembleProblem, AbstractDAEProblem,
+    AbstractDEAlgorithm, AbstractTimeseriesSolution,
+    DAEProblem, EnsembleProblem, EnsembleSolution, EnsembleThreads,
+    NonlinearProblem, ODEProblem, ReturnCode, SDDEProblem, SDEProblem, remake
+using CommonSolve: init, solve, step!
+import SimpleNonlinearSolve
+using SimpleNonlinearSolve: SimpleTrustRegion, AutoFiniteDiff
+import LinearAlgebra
+import RootedTrees
+using RootedTrees: RootedTreeIterator, RungeKuttaMethod, residual_order_condition
+import Distributed
+import Statistics
+using Statistics: mean, std
 
 import Base: length
 
-import DiffEqBase: AbstractODEProblem, AbstractDDEProblem, AbstractDDEAlgorithm,
-    AbstractODESolution, AbstractRODEProblem, AbstractSDEProblem,
-    AbstractSDDEProblem, AbstractEnsembleProblem,
-    AbstractDAEProblem, AbstractBVProblem, @def, ConvergenceSetup,
-    AbstractDEAlgorithm,
-    ODERKTableau, AbstractTimeseriesSolution, ExplicitRKTableau,
-    ImplicitRKTableau
+# These problem/solution/algorithm abstracts and `@def` are owned by SciMLBase but
+# not yet declared `public` there; accessed via SciMLBase (their owner).
+using SciMLBase: AbstractDDEAlgorithm, AbstractODESolution, AbstractRODEProblem,
+    AbstractSDDEProblem, AbstractBVProblem, @def
+# `ConvergenceSetup` and `ODERKTableau` are defined and owned only in DiffEqBase
+# (not re-exported by SciMLBase) and are not declared `public` there.
+using DiffEqBase: ConvergenceSetup, ODERKTableau
 
 import LinearAlgebra: norm, I
 
