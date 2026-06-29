@@ -716,7 +716,7 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
     nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve, i)
 
     # make it reset everything since the caches changed size!
-    nlsolver.cache.firstcall = true
+    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
 
     return nothing
 end

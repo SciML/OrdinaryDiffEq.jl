@@ -670,3 +670,18 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     return nothing
 end
+
+function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrator, i::Int)
+    nlcache.ustep === nothing || resize!(nlcache.ustep, i)
+    nlcache.k === nothing || resize!(nlcache.k, i)
+    nlcache.atmp === nothing || resize!(nlcache.atmp, i)
+    nlcache.du1 === nothing || resize!(nlcache.du1, i)
+    nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
+    nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    if nlcache.ustep isa AbstractArray
+        new_prob = SciMLBase.remake(nlcache.prob; u0 = zero(nlcache.ustep))
+        nlcache.prob = new_prob
+        nlcache.cache = init(new_prob, nlcache.cache.alg)
+    end
+    return nothing
+end
