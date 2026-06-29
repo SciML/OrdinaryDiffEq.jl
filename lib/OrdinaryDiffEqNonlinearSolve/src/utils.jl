@@ -334,8 +334,15 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            use_w_reuse = !isdae && f.nlstep_data === nothing && W isa AbstractMatrix &&
-                !(W isa AbstractSciMLOperator)
+            W_for_reuse = if W isa WOperator && W.J !== nothing &&
+                    !(W.J isa AbstractSciMLOperator)
+                W._concrete_form
+            else
+                W
+            end
+            use_w_reuse = !isdae && f.nlstep_data === nothing &&
+                W_for_reuse isa AbstractMatrix &&
+                !(W_for_reuse isa AbstractSciMLOperator)
             prob = if f.nlstep_data !== nothing
                 f.nlstep_data.nlprob
             else
@@ -346,7 +353,7 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    nlf_jac! = let W = W
+                    nlf_jac! = let W = W_for_reuse
                         (J_out, z, p) -> (copyto!(J_out, W); J_out)
                     end
                     NonlinearProblem(
@@ -368,7 +375,7 @@ function build_nlsolver(
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
                 use_w_reuse ? J : nothing,
-                use_w_reuse ? W : nothing,
+                use_w_reuse ? W_for_reuse : nothing,
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
