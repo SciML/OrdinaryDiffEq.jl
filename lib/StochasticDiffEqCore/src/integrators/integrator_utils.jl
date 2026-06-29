@@ -64,22 +64,22 @@ OrdinaryDiffEqCore.is_composite_cache(cache::StochasticCompositeCache) = true
 # is_noise_saveable interface that ODE's unified loop functions call.
 # ============================================================================
 
-function OrdinaryDiffEqCore.accept_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt, u, p, setup)
+function OrdinaryDiffEqCore.accept_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p, setup)
     return DiffEqNoiseProcess.accept_step!(W, dt, u, p, setup)
 end
 
-function OrdinaryDiffEqCore.reject_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt, u, p)
+function OrdinaryDiffEqCore.reject_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p)
     return DiffEqNoiseProcess.reject_step!(W, dt, u, p)
 end
 
-function OrdinaryDiffEqCore.save_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess)
+function OrdinaryDiffEqCore.save_noise!(W::SciMLBase.AbstractNoiseProcess)
     return DiffEqNoiseProcess.save_noise!(W)
 end
 
-OrdinaryDiffEqCore.noise_curt(W::DiffEqNoiseProcess.AbstractNoiseProcess) = W.curt
+OrdinaryDiffEqCore.noise_curt(W::SciMLBase.AbstractNoiseProcess) = W.curt
 
 OrdinaryDiffEqCore.is_noise_saveable(W::NoiseProcess) = true
-OrdinaryDiffEqCore.is_noise_saveable(W::DiffEqNoiseProcess.AbstractNoiseProcess) = false
+OrdinaryDiffEqCore.is_noise_saveable(W::SciMLBase.AbstractNoiseProcess) = false
 
 # ============================================================================
 # is_constant_cache for SDE cache types (needed by ODE's change_t_via_interpolation!)
@@ -106,8 +106,8 @@ OrdinaryDiffEqCore.get_fsalfirstlast(::StochasticDiffEqMutableCache, u) =
 # reinit_noise!: reinitialize noise process (called from ODE's reinit!)
 # ============================================================================
 
-function OrdinaryDiffEqCore.reinit_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt)
-    return DiffEqNoiseProcess.reinit!(W, dt)
+function OrdinaryDiffEqCore.reinit_noise!(W::SciMLBase.AbstractNoiseProcess, dt)
+    return SciMLBase.reinit!(W, dt)
 end
 
 # _determine_initdt: SDE extension (called from ODE's auto_dt_reset!)
