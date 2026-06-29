@@ -11,19 +11,18 @@ import FunctionWrappersWrappers
 import DiffEqBase
 
 import LinearAlgebra
-import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm, lu
-import LinearAlgebra: LowerTriangular, UpperTriangular
+import LinearAlgebra: Diagonal, I, UniformScaling, diagind, opnorm
+import LinearAlgebra: LowerTriangular
 import ArrayInterface
-import ArrayInterface: fast_scalar_indexing, zeromatrix, lu_instance
 
 import StaticArraysCore: StaticArray, StaticMatrix
 
-using DiffEqBase: TimeGradientWrapper,
-    UJacobianWrapper, TimeDerivativeWrapper,
-    UDerivativeWrapper
-import SciMLBase: SciMLBase, constructorof, @set, isinplace, has_jvp, unwrapped_f, DEIntegrator, ODEFunction, SplitFunction, DynamicalODEFunction, DAEFunction, islinear, remake, solve!, isconstant
-using SciMLBase: @set, @reset
-import SciMLOperators: SciMLOperators, IdentityOperator, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator, ScalarOperator
+# `_vec`, `_unwrap_val`, `UDerivativeWrapper`, `UJacobianWrapper` are owned by
+# SciMLBase (OrdinaryDiffEqCore/DiffEqBase only re-export them), so import them
+# from the owner to satisfy `all_explicit_imports_via_owners`.
+using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
+import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
+import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
@@ -32,24 +31,18 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm,
     OrdinaryDiffEqExponentialAlgorithm,
     OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-    StochasticDiffEqNewtonAlgorithm, StochasticDiffEqNewtonAdaptiveAlgorithm,
-    StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
-    StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
     AbstractNLSolver, nlsolve_f, issplit,
-    concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag,
-    isnewton, _unwrap_val,
-    set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir,
+    concrete_jac, unwrap_alg, OrdinaryDiffEqCache,
+    isnewton,
+    set_new_W!, set_W_γdt!, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
     get_new_W_γdt_cutoff, isWmethod,
-    TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
-    FastConvergence, Convergence, SlowConvergence,
-    VerySlowConvergence, Divergence, NLStatus, MethodType, constvalue, @SciMLMessage
+    TryAgain,
+    Divergence, constvalue, @SciMLMessage
 
-import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, resize_nlsolver!, alg_autodiff,
-    _get_fwd_tag
+import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff
 
 import ConstructionBase
-using ConstructionBase: constructorof
 
 import DifferentiationInterface as DI
 
