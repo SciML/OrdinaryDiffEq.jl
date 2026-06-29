@@ -8,14 +8,14 @@ function _get_alias_noise_from_kwargs(; alias_noise = nothing, alias = nothing, 
     end
 end
 
-function DiffEqBase.__solve(
-        prob::DiffEqBase.AbstractRODEProblem,
+function SciMLBase.__solve(
+        prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         kwargs...
     )
-    integrator = DiffEqBase.__init(prob, alg; kwargs...)
+    integrator = SciMLBase.__init(prob, alg; kwargs...)
     solve!(integrator)
-    if prob isa DiffEqBase.AbstractRODEProblem &&
+    if prob isa SciMLBase.AbstractRODEProblem &&
             typeof(prob.noise) == typeof(integrator.sol.W) &&
             _get_alias_noise_from_kwargs(; kwargs...)
         copy!(prob.noise, integrator.sol.W)
@@ -24,15 +24,15 @@ function DiffEqBase.__solve(
 end
 
 # More specific method for JumpProblem to win over JumpProcesses.jl's ambiguity fix dispatch
-function DiffEqBase.__solve(
+function SciMLBase.__solve(
         prob::JumpProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         merge_callbacks = true, kwargs...
     )
     kwargs = DiffEqBase.merge_problem_kwargs(prob; merge_callbacks, kwargs...)
-    integrator = DiffEqBase.__init(prob, alg; kwargs...)
+    integrator = SciMLBase.__init(prob, alg; kwargs...)
     solve!(integrator)
-    if concrete_prob(prob) isa DiffEqBase.AbstractRODEProblem &&
+    if concrete_prob(prob) isa SciMLBase.AbstractRODEProblem &&
             typeof(concrete_prob(prob).noise) == typeof(integrator.sol.W) &&
             _get_alias_noise_from_kwargs(; kwargs...)
         copy!(concrete_prob(prob).noise, integrator.sol.W)
@@ -67,7 +67,7 @@ function _resolve_rng(rng, seed, prob)
             # `remake(prob, seed=s)` inside an ensemble is actually reproducible.
             if !iszero(seed)
                 return Random.Xoshiro(seed), seed, false
-            elseif prob isa DiffEqBase.AbstractRODEProblem && !iszero(prob.seed)
+            elseif prob isa SciMLBase.AbstractRODEProblem && !iszero(prob.seed)
                 return Random.Xoshiro(prob.seed), prob.seed, false
             end
             _seed = rand(rng, UInt64)
@@ -76,7 +76,7 @@ function _resolve_rng(rng, seed, prob)
         return rng, UInt64(0), true
     end
     _seed = if iszero(seed)
-        if (!(prob isa DiffEqBase.AbstractRODEProblem) || iszero(prob.seed))
+        if (!(prob isa SciMLBase.AbstractRODEProblem) || iszero(prob.seed))
             seed_multiplier() * rand(UInt64)
         else
             prob.seed
@@ -99,8 +99,8 @@ function _z_prototype(alg, rand_prototype, iip::Bool)
     return rand_prototype
 end
 
-function DiffEqBase.__init(
-        _prob::Union{DiffEqBase.AbstractRODEProblem, JumpProblem},
+function SciMLBase.__init(
+        _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         kwargs...
     )
@@ -108,7 +108,7 @@ function DiffEqBase.__init(
 end
 
 function _sde_init(
-        _prob::Union{DiffEqBase.AbstractRODEProblem, JumpProblem},
+        _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         saveat = (),
         tstops = (),
@@ -117,8 +117,8 @@ function _sde_init(
         save_everystep = isempty(saveat),
         save_noise = save_everystep && (
             typeof(concrete_prob(_prob).f) <: Tuple ?
-                DiffEqBase.has_analytic(concrete_prob(_prob).f[1]) :
-                DiffEqBase.has_analytic(concrete_prob(_prob).f)
+                SciMLBase.has_analytic(concrete_prob(_prob).f[1]) :
+                SciMLBase.has_analytic(concrete_prob(_prob).f)
         ),
         save_on = true,
         save_start = save_everystep || isempty(saveat) || saveat isa Number ? true :
@@ -162,7 +162,7 @@ function _sde_init(
         seed = UInt64(0),
         rng = nothing,
         alias = nothing,
-        initializealg = OrdinaryDiffEqCore.DefaultInit(),
+        initializealg = DiffEqBase.DefaultInit(),
         kwargs...
     )
     # NOTE: JumpProblem kwargs merge is already done by init_call / __solve
@@ -206,12 +206,12 @@ function _sde_init(
         if any(mm != I for mm in prob.f.mass_matrix)
             error("This solver is not able to use mass matrices.")
         end
-    elseif prob isa DiffEqBase.AbstractRODEProblem && prob.f.mass_matrix != I &&
+    elseif prob isa SciMLBase.AbstractRODEProblem && prob.f.mass_matrix != I &&
             !alg_mass_matrix_compatible(alg)
         error("This solver is not able to use mass matrices.")
     end
 
-    if prob isa DiffEqBase.AbstractRODEProblem && typeof(prob.noise) <: NoiseProcess &&
+    if prob isa SciMLBase.AbstractRODEProblem && typeof(prob.noise) <: NoiseProcess &&
             prob.noise.bridge === nothing && adaptive
         error("Bridge function must be given for adaptivity. Either declare this function in noise process or set adaptive=false")
     end
@@ -275,7 +275,7 @@ function _sde_init(
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
-    noise = prob isa DiffEqBase.AbstractRODEProblem ? prob.noise : nothing
+    noise = prob isa SciMLBase.AbstractRODEProblem ? prob.noise : nothing
     tspan = prob.tspan
     t = tspan[1]
 
@@ -326,7 +326,7 @@ function _sde_init(
         noise_rate_prototype = rate_prototype.x[1]
     elseif is_diagonal_noise(prob)
         noise_rate_prototype = rate_prototype
-    elseif prob isa DiffEqBase.AbstractRODEProblem
+    elseif prob isa SciMLBase.AbstractRODEProblem
         if prob isa SciMLBase.AbstractSDEProblem
             noise_rate_prototype = copy(prob.noise_rate_prototype)
         else
@@ -355,12 +355,12 @@ function _sde_init(
         elseif prob isa SciMLBase.AbstractSDEProblem
             if issparse(u)
                 rand_prototype = adapt(
-                    DiffEqBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))
+                    SciMLBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))
                 )
             else
                 rand_prototype = false .* noise_rate_prototype[1, :]
             end
-        elseif prob isa DiffEqBase.AbstractRODEProblem
+        elseif prob isa SciMLBase.AbstractRODEProblem
             rand_prototype = copy(prob.rand_prototype)
         else
             rand_prototype = nothing
@@ -372,7 +372,7 @@ function _sde_init(
         CallbackSet(callback, _prob.jump_callback) : callback
 
     # ── Noise creation (WienerProcess / user noise handling) ─────────────
-    if prob isa DiffEqBase.AbstractRODEProblem && prob.noise === nothing
+    if prob isa SciMLBase.AbstractRODEProblem && prob.noise === nothing
         rswm = isadaptive(alg) ? RSWM(adaptivealg = :RSwM3) : RSWM(adaptivealg = :RSwM1)
         if isinplace(prob)
             if alg_needs_extra_process(alg)
@@ -405,7 +405,7 @@ function _sde_init(
                 )
             end
         end
-    elseif prob isa DiffEqBase.AbstractRODEProblem
+    elseif prob isa SciMLBase.AbstractRODEProblem
         _alias_noise = if hasproperty(aliases, :alias_noise) && aliases.alias_noise !== nothing
             aliases.alias_noise
         else
