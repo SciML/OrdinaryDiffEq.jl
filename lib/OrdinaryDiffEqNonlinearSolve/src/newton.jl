@@ -43,7 +43,6 @@ function initialize!(
     (; ustep, tstep, k, invγdt) = cache
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
     end
     if f isa DAEFunction
@@ -70,7 +69,6 @@ function initialize!(
 
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
     end
 
