@@ -500,7 +500,7 @@ function build_nlsolver(
             dt = tTypeNoUnits(dt)
             use_w_reuse = !isdae && f.nlstep_data === nothing && (
                 W isa StaticWOperator ||
-                (W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator))
+                    (W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator))
             )
             nlf = isdae ? oopdaenlf : oopodenlf
             nlp_params = if isdae
