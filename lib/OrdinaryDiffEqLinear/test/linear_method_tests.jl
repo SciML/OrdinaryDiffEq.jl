@@ -75,6 +75,62 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, LieRK4(), test_setup)
 @test sim.𝒪est[:l2] ≈ 5 atol = 0.2
 
+@testset "Commutator-free Lie group methods" begin
+    function state_dependent!(A, u, p, t)
+        A[1, 1] = 0
+        A[2, 1] = sin(u[1])
+        A[1, 2] = -1
+        A[2, 2] = 0
+        return
+    end
+
+    # Non-commuting A(t) isolates the stage-time regression from state dependence.
+    function time_dependent!(A, u, p, t)
+        A[1, 1] = 0
+        A[2, 1] = sin(t)
+        A[1, 2] = -1 - 0.1 * cos(t)
+        A[2, 2] = 0
+        return
+    end
+
+    function time_state_dependent!(A, u, p, t)
+        A[1, 1] = 0
+        A[2, 1] = sin(u[1] + t)
+        A[1, 2] = -1 - 0.1 * cos(t)
+        A[2, 2] = 0
+        return
+    end
+
+    # Measure convergence before the fourth-order errors reach roundoff.
+    dts = 1 ./ 2 .^ (8:-1:3)
+    test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
+    @testset "$name" for (name, update!) in (
+            ("A(u)", state_dependent!),
+            ("A(t)", time_dependent!),
+            ("A(u,t)", time_state_dependent!),
+        )
+        A = MatrixOperator(ones(2, 2); update_func! = update!)
+        prob = ODEProblem(A, ones(2), (0.0, 4.0))
+
+        @testset "$Alg" for (Alg, order) in ((LieRK4, 4), (CFLie4, 4), (CFLie3, 3))
+            sim = analyticless_test_convergence(dts, prob, Alg(), test_setup)
+            @test sim.𝒪est[:l2] ≈ order atol = 0.15
+
+            dense = solve(prob, Alg(); dt = 1 / 8)
+            krylov = solve(prob, Alg(krylov = true); dt = 1 / 8)
+            @test dense.t == krylov.t
+            @test isapprox(dense.u, krylov.u; rtol = 1.0e-12, atol = 1.0e-12)
+        end
+
+        @testset "LieRK4/CFLie4 equivalence, krylov=$krylov" for krylov in (false, true)
+            lie = solve(prob, LieRK4(; krylov); dt = 1 / 8)
+            cf = solve(prob, CFLie4(; krylov); dt = 1 / 8)
+            @test lie.t == cf.t
+            @test lie.u == cf.u
+        end
+    end
+end
+
 A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
 sol1 = solve(prob, Vern9(), dt = 1 / 4)
