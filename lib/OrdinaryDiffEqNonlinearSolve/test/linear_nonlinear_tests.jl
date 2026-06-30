@@ -184,3 +184,27 @@ let integ = init(
     step!(integ)
     @test !iszero(integ.cache.nlsolver.cache.weight)
 end
+
+sol = @test_nowarn solve(
+    prob,
+    TRBDF2(
+        autodiff = AutoFiniteDiff(),
+        linsolve = KrylovJL_GMRES(),
+        nlsolve = NonlinearSolveAlg(NewtonRaphson()),
+        concrete_jac = true
+    )
+);
+@test length(sol.t) < 20
+let integ = init(
+        prob,
+        TRBDF2(
+            autodiff = AutoFiniteDiff(),
+            linsolve = KrylovJL_GMRES(),
+            nlsolve = NonlinearSolveAlg(NewtonRaphson()),
+            concrete_jac = true
+        )
+    )
+    @test integ.cache.nlsolver.cache.weight !== nothing
+    step!(integ)
+    @test !iszero(integ.cache.nlsolver.cache.weight)
+end
