@@ -498,8 +498,10 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            use_w_reuse = !isdae && f.nlstep_data === nothing &&
-                W isa Union{WOperator, StaticWOperator}
+            use_w_reuse = !isdae && f.nlstep_data === nothing && (
+                W isa StaticWOperator ||
+                (W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator))
+            )
             nlf = isdae ? oopdaenlf : oopodenlf
             nlp_params = if isdae
                 (tmp, α, tstep, invγdt, p, dt, uprev, f)
@@ -513,7 +515,7 @@ function build_nlsolver(
                     end
                 else
                     let Ww = W
-                        (z, p) -> convert(AbstractMatrix, Ww)
+                        (z, p) -> Ww._concrete_form
                     end
                 end
                 NonlinearProblem(
