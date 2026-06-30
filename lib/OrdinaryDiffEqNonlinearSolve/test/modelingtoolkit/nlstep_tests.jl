@@ -57,9 +57,6 @@ sim = analyticless_test_convergence(dts, testprob, QNDF2(autodiff = AutoFiniteDi
 
 dts = 2.0 .^ (-15:-1:-18)
 sim = analyticless_test_convergence(dts, testprob, FBDF(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
-# Adaptive-order FBDF starts at Euler and ramps order based on past steps; with
-# the W-reuse paths now active for OOP/IIP, the effective order over this dt
-# window measures ~1.385 instead of ~1.0. Tolerance widened to absorb.
 @test abs(sim.𝒪est[:l∞] - 1) < 0.5
 
 eqs_nonaut = [
@@ -116,5 +113,4 @@ sim = analyticless_test_convergence(dts, testprob, QNDF2(autodiff = AutoFiniteDi
 
 dts = 2.0 .^ (-15:-1:-18)
 sim = analyticless_test_convergence(dts, testprob, FBDF(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
-# Adaptive-order FBDF; see comment on the autonomous variant above.
 @test abs(sim.𝒪est[:l∞] - 1) < 0.5
