@@ -28,6 +28,6 @@ include("linear_perform_step.jl")
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
     MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
-    MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
+    MagnusAdapt4, RKMK2, RKMK4, LieRK4, CFLie3, CFLie4, CG2, CG3, CG4a
 
 end
