@@ -515,7 +515,7 @@ function build_nlsolver(
                     end
                 else
                     let Ww = W
-                        (z, p) -> Ww._concrete_form
+                        (z, p) -> Ww
                     end
                 end
                 NonlinearProblem(
