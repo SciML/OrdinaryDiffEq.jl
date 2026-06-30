@@ -190,7 +190,7 @@ sol = @test_nowarn solve(
     TRBDF2(
         autodiff = AutoFiniteDiff(),
         linsolve = KrylovJL_GMRES(),
-        nlsolve = NonlinearSolveAlg(NewtonRaphson()),
+        nlsolve = NonlinearSolveAlg(NewtonRaphson(autodiff = AutoFiniteDiff())),
         concrete_jac = true
     )
 );
@@ -200,7 +200,7 @@ let integ = init(
         TRBDF2(
             autodiff = AutoFiniteDiff(),
             linsolve = KrylovJL_GMRES(),
-            nlsolve = NonlinearSolveAlg(NewtonRaphson()),
+            nlsolve = NonlinearSolveAlg(NewtonRaphson(autodiff = AutoFiniteDiff())),
             concrete_jac = true
         )
     )
