@@ -460,6 +460,8 @@ end
         gammaType, uType, uNoUnitsType, StepLimiter,
     } <:
     BDFMutableCache
+    u::uType
+    uprev::uType
     fsalfirst::rateType
     dd::uType
     utilde::uType
@@ -540,8 +542,8 @@ function alg_cache(
     dense = [zero(u) for _ in 1:max_order]
 
     return QNDFCache(
-        fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU, D, Dtmp,
-        tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
+        u, uprev, fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU,
+        D, Dtmp, tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
         atmpm1, atmpp1, dense, alg.step_limiter!
     )
 end
