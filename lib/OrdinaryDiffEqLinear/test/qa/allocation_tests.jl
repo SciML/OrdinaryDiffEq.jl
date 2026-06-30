@@ -11,7 +11,8 @@ using Test
     # CayleyEuler excluded: requires matrix-valued state + SplitODEProblem
     linear_solvers = [
         MagnusMidpoint(), LieEuler(), RKMK2(), RKMK4(), LieRK4(),
-        CG2(), CG3(), CG4a(), LinearExponential(krylov = :off), MagnusAdapt4(),
+        CFLie3(), CFLie4(), CG2(), CG3(), CG4a(), LinearExponential(krylov = :off),
+        MagnusAdapt4(),
     ]
 
     @testset "Linear perform_step! Static Analysis" begin

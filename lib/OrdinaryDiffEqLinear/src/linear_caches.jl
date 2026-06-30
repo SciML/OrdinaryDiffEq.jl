@@ -110,6 +110,64 @@ function alg_cache(
     return LieRK4ConstantCache()
 end
 
+@cache struct CFLie3Cache{uType, rateType, WType, expType} <: LinearMutableCache
+    u::uType
+    uprev::uType
+    uprev2::uType
+    tmp::uType
+    fsalfirst::rateType
+    W::WType
+    k::rateType
+    exp_cache::expType
+end
+
+function alg_cache(
+        alg::CFLie3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
+    return CFLie3Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+end
+
+struct CFLie3ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(
+        alg::CFLie3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return CFLie3ConstantCache()
+end
+
+function alg_cache(
+        alg::CFLie4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
+    return LieRK4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+end
+
+function alg_cache(
+        alg::CFLie4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return LieRK4ConstantCache()
+end
+
 @cache struct CG3Cache{uType, rateType, WType, expType} <: LinearMutableCache
     u::uType
     uprev::uType
