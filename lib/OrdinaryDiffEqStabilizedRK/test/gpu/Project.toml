@@ -17,7 +17,7 @@ path = "../../../OrdinaryDiffEqLowOrderRK"
 path = "../.."
 
 [compat]
-CUDA = "4, 5"
+CUDA = "6"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqLowOrderRK = "2"
 OrdinaryDiffEqStabilizedRK = "2"
