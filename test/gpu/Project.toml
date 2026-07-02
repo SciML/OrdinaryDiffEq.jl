@@ -12,28 +12,43 @@ KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqExplicitTableaus = "3278f1b1-0f5c-4cde-98e0-ba5eb00db955"
 OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRKIP = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqRosenbrockTableaus = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [sources]
+DiffEqBase = {path = "../../lib/DiffEqBase"}
+OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
+OrdinaryDiffEqDefault = {path = "../../lib/OrdinaryDiffEqDefault"}
+OrdinaryDiffEqDifferentiation = {path = "../../lib/OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqExplicitTableaus = {path = "../../lib/OrdinaryDiffEqExplicitTableaus"}
 OrdinaryDiffEqFIRK = {path = "../../lib/OrdinaryDiffEqFIRK"}
 OrdinaryDiffEqNonlinearSolve = {path = "../../lib/OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRKIP = {path = "../../lib/OrdinaryDiffEqRKIP"}
 OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqRosenbrockTableaus = {path = "../../lib/OrdinaryDiffEqRosenbrockTableaus"}
 OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
+OrdinaryDiffEqTsit5 = {path = "../../lib/OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "../../lib/OrdinaryDiffEqVerner"}
 
 [compat]
 Adapt = "4"
 CUDA = "6"
-CUDSS = "0.6.7"
+CUDSS = "0.7, 0.8"
 ComponentArrays = "0.15"
 DiffEqBase = "7"
 FFTW = "1.8"
