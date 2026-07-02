@@ -47,6 +47,23 @@ function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
+function RK46NLConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
+    A2end = (
+        T(-0.737101392796), T(-1.634740794343), T(-0.74473900378),
+        T(-1.469897351522), T(-2.813971388035),
+    )
+    B1 = T(0.032918605146)
+    B2end = (
+        T(0.8232569982), T(0.3815309489), T(0.200092213184),
+        T(1.718581042715), T(0.27),
+    )
+    c2end = (
+        T2(0.032918605146), T2(0.249351723343), T2(0.466911705055),
+        T2(0.582030414044), T2(0.847252983783),
+    )
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
+end
+
 function alg_cache(
         alg::RK46NL, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -54,45 +71,6 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-struct RK46NLConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
-    α2::T
-    α3::T
-    α4::T
-    α5::T
-    α6::T
-    β1::T
-    β2::T
-    β3::T
-    β4::T
-    β5::T
-    β6::T
-    c2::T2
-    c3::T2
-    c4::T2
-    c5::T2
-    c6::T2
-
-    function RK46NLConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
-        α2 = T(-0.737101392796)
-        α3 = T(-1.634740794343)
-        α4 = T(-0.74473900378)
-        α5 = T(-1.469897351522)
-        α6 = T(-2.813971388035)
-        β1 = T(0.032918605146)
-        β2 = T(0.8232569982)
-        β3 = T(0.3815309489)
-        β4 = T(0.200092213184)
-        β5 = T(1.718581042715)
-        β6 = T(0.27)
-        c2 = T2(0.032918605146)
-        c3 = T2(0.249351723343)
-        c4 = T2(0.466911705055)
-        c5 = T2(0.582030414044)
-        c6 = T2(0.847252983783)
-        return new{T, T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6)
-    end
 end
 
 function alg_cache(

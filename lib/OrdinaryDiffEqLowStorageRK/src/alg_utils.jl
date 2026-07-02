@@ -43,6 +43,7 @@ alg_order(alg::CKLLSRK65_4M_4R) = 5
 alg_order(alg::SHLDDRK_2N) = 4
 alg_order(alg::SHLDDRK52) = 2
 
+isfsal(alg::RK46NL) = false
 isfsal(alg::ORK256) = false
 isfsal(alg::CarpenterKennedy2N54) = false
 isfsal(alg::DGLDDRK84_F) = false
