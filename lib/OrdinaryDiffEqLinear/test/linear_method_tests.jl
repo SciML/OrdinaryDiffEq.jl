@@ -53,6 +53,40 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, LieRK4(), test_setup)
 @test sim.𝒪est[:l2] ≈ 5 atol = 0.2
 
+function update_func_time_state!(A, u, p, t)
+    A[1, 1] = 0
+    A[2, 1] = sin(u[1] + t)
+    A[1, 2] = -1 - 0.1 * cos(t)
+    return A[2, 2] = 0
+end
+
+A = MatrixOperator(ones(2, 2), update_func! = update_func_time_state!)
+prob = ODEProblem(A, ones(2), (0.0, 4.0))
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, LieRK4(), dt = 1 / 4)
+dts = 1 ./ 2 .^ (8:-1:3)
+test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
+sim = analyticless_test_convergence(dts, prob, LieRK4(), test_setup)
+@test sim.𝒪est[:l2] ≈ 4 atol = 0.35
+
+A = MatrixOperator(ones(2, 2), update_func! = update_func_time_state!)
+prob = ODEProblem(A, ones(2), (0.0, 4.0))
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, CFLie4(), dt = 1 / 4)
+dts = 1 ./ 2 .^ (8:-1:3)
+test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
+sim = analyticless_test_convergence(dts, prob, CFLie4(), test_setup)
+@test sim.𝒪est[:l2] ≈ 4 atol = 0.35
+
+A = MatrixOperator(ones(2, 2), update_func! = update_func_time_state!)
+prob = ODEProblem(A, ones(2), (0.0, 4.0))
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, CFLie3(), dt = 1 / 4)
+dts = 1 ./ 2 .^ (8:-1:3)
+test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
+sim = analyticless_test_convergence(dts, prob, CFLie3(), test_setup)
+@test sim.𝒪est[:l2] ≈ 3 atol = 0.3
+
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
 sol1 = solve(prob, Vern9(), dt = 1 / 4)
