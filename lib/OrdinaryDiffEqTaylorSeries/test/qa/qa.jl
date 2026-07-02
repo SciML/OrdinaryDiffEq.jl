@@ -16,10 +16,9 @@ run_qa(
         # Explicit imports of names that are not `public` in their owner.
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore internals deliberately kept non-public
-                # (not part of the solver-author extension API surface).
-                :DerivativeOrderNotPossibleError, :_ode_interpolant!,
-                :get_current_alg_order, :trivial_limiter!,
+                # OrdinaryDiffEqCore limiter default, deliberately kept
+                # non-public (codegen/perf helper, not extension API).
+                :trivial_limiter!,
                 # other-package internals with no public alias
                 Symbol("@truncate_stacktrace"), :FunctionWrapper,
             ),
