@@ -498,21 +498,43 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
+            use_w_reuse = !isdae && f.nlstep_data === nothing && (
+                W isa StaticWOperator ||
+                    (W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator))
+            )
             nlf = isdae ? oopdaenlf : oopodenlf
             nlp_params = if isdae
                 (tmp, α, tstep, invγdt, p, dt, uprev, f)
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(
-                NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
-                copy(ztmp), nlp_params
-            )
+            prob = if use_w_reuse
+                nlf_jac = if W isa StaticWOperator
+                    let Ws = W
+                        (z, p) -> Ws.W
+                    end
+                else
+                    let Ww = W
+                        (z, p) -> Ww
+                    end
+                end
+                NonlinearProblem(
+                    NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf; jac = nlf_jac),
+                    copy(ztmp), nlp_params
+                )
+            else
+                NonlinearProblem(
+                    NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
+                    copy(ztmp), nlp_params
+                )
+            end
             inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing,
+                use_w_reuse ? J : nothing,
+                use_w_reuse ? W : nothing,
+                nothing, nothing, nothing,
                 zero(tstep), true
             )
         else
