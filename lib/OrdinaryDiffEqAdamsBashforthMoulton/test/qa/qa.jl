@@ -6,10 +6,8 @@ run_qa(
     ei_kwargs = (
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqLowOrderRK starter-cache types (owner-internal;
-                # kept non-public — used only as the multistep bootstrap cache).
-                :BS3Cache, :BS3ConstantCache, :RK4Cache, :RK4ConstantCache,
-                # OrdinaryDiffEqCore internal limiter hook (owner-internal).
+                # OrdinaryDiffEqCore internal limiter hook (owner-internal;
+                # deliberately not declared public, like the @fold/@threaded codegen macros).
                 :trivial_limiter!,
             )),
     ),
