@@ -181,6 +181,49 @@ Base.@kwdef struct MRIGARKERK45a <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 
 @doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — 2nd-order solve-decoupled implicit (MRI-GARK-IRK21a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). 2nd-order solve-decoupled
+implicit MRI-GARK method of Sandu 2019: the fast component is integrated over the
+step with `m` explicit-midpoint inner micro-steps and a frozen slow forcing, then
+a final `Δc = 0` stage applies an implicit trapezoidal correction that requires a
+nonlinear solve in the slow rate `f2`. Suited to problems whose slow component is
+itself stiff — the case explicit MRI-GARK cannot handle.",
+    "MRIGARKIRK21a",
+    "Multirate infinitesimal GARK solve-decoupled implicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner midpoint micro-steps for the fast stage.
+    """,
+    """
+    m::Int,
+    """
+)
+struct MRIGARKIRK21a{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    m::Int
+    linsolve::F
+    nlsolve::F2
+    autodiff::AD
+    concrete_jac::CJ
+end
+
+function MRIGARKIRK21a(;
+        m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton()
+    )
+    autodiff = _fixup_ad(autodiff)
+    return MRIGARKIRK21a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
+end
+
+@doc generic_solver_docstring(
     "Multirate Infinitesimal Step (MIS).
 
 Solves a split ODE of the form `du/dt = f1(u,t) + f2(u,t)` where `f1` is the

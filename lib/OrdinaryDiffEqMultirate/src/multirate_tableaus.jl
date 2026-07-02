@@ -29,6 +29,7 @@ struct MRIGARKTableau{T}
     W1::Matrix{T}     # linear-in-τ coupling, s×s lower-triangular
     Wemb0::Vector{T}  # embedded last-stage constant coupling (length s) or empty
     Wemb1::Vector{T}  # embedded last-stage linear-in-τ coupling, or empty (constant)
+    γ0::Vector{T}     # implicit endpoint coupling per stage (0 ⇒ explicit stage), length s
     q::Int            # inner RK order
 end
 
@@ -36,14 +37,14 @@ function MRIGARKERK22aTableau(::Type{T}) where {T}
     Δc = T[1 // 2, 1 // 2]
     W0 = T[1 // 2 0; -1 // 2 1]
     W1 = zeros(T, 2, 2)
-    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], 2)
+    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], zeros(T, 2), 2)
 end
 
 function MRIGARKERK22bTableau(::Type{T}) where {T}
     Δc = T[1, 0]
     W0 = T[1 0; -1 // 2 1 // 2]
     W1 = zeros(T, 2, 2)
-    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], 2)
+    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], zeros(T, 2), 2)
 end
 
 function MRIGARKERK33aTableau(::Type{T}) where {T}
@@ -51,7 +52,7 @@ function MRIGARKERK33aTableau(::Type{T}) where {T}
     W0 = T[1 // 3 0 0; -1 // 3 2 // 3 0; 0 -2 // 3 1]
     W1 = T[0 0 0; 0 0 0; 1 // 2 0 -1 // 2]
     Wemb0 = T[1 // 12, -1 // 3, 7 // 12]
-    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, T[], 3)
+    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, T[], zeros(T, 3), 3)
 end
 
 function MRIGARKERK45aTableau(::Type{T}) where {T}
@@ -78,13 +79,22 @@ function MRIGARKERK45aTableau(::Type{T}) where {T}
         -31967827 // 340217490, 129673 // 286680,
     ]
     Wemb1 = T[6213 // 1880, -6213 // 1880, 0, 0, 0]
-    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, Wemb1, 4)
+    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, Wemb1, zeros(T, 5), 4)
+end
+
+function MRIGARKIRK21aTableau(::Type{T}) where {T}
+    Δc = T[1, 0]
+    W0 = T[1 0; -1 // 2 0]
+    W1 = zeros(T, 2, 2)
+    γ0 = T[0, 1 // 2]
+    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], γ0, 2)
 end
 
 mri_gark_tableau(::MRIGARKERK22a, ::Type{T}) where {T} = MRIGARKERK22aTableau(T)
 mri_gark_tableau(::MRIGARKERK22b, ::Type{T}) where {T} = MRIGARKERK22bTableau(T)
 mri_gark_tableau(::MRIGARKERK33a, ::Type{T}) where {T} = MRIGARKERK33aTableau(T)
 mri_gark_tableau(::MRIGARKERK45a, ::Type{T}) where {T} = MRIGARKERK45aTableau(T)
+mri_gark_tableau(::MRIGARKIRK21a, ::Type{T}) where {T} = MRIGARKIRK21aTableau(T)
 
 # ── MIS: multirate infinitesimal step ─────────────────────────────────────────
 
