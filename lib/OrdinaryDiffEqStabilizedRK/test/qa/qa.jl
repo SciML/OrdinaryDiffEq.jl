@@ -8,8 +8,6 @@ run_qa(
             ignore = (
                 # SciMLBase-owned helpers not yet declared public (pending release).
                 :_vec, :value,
-                # OrdinaryDiffEqCore owner-internal hooks kept non-public.
-                :fac_default_gamma, :has_dtnew_modification,
             ),
         ),
     ),
