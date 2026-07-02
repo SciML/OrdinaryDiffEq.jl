@@ -357,6 +357,8 @@ function _sde_init(
                 rand_prototype = adapt(
                     DiffEqBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))
                 )
+            elseif issparse(noise_rate_prototype)
+                rand_prototype = zeros(randElType, size(noise_rate_prototype, 2))
             else
                 rand_prototype = false .* noise_rate_prototype[1, :]
             end
