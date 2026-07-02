@@ -32,23 +32,20 @@ run_qa(
             ignore = (
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
-                # ConstructionBase via SciMLBase
+                # ConstructionBase (owned there, accessed via SciMLBase)
                 :constructorof,
                 # SciMLOperators internal
                 :AbstractSciMLOperator,
-                # SciMLBase internals
-                :AbstractRODEProblem, :DECache, :FunctionWrapperSpecialize,
-                :NoSpecialize, :enable_interpolation_sensitivitymode,
+                # EnzymeCore / EnzymeCore.EnzymeRules internals
+                :EnzymeRules, :inactive_noinl,
+                # SciMLBase internals with no public replacement yet
+                :DECache, :enable_interpolation_sensitivitymode,
                 :forwarddiff_chunksize, :get_root_indp,
                 :get_save_idxs_and_saved_subsystem, :has_initializeprob,
                 :has_lazy_interpolation, :late_binding_update_u0_p, :remaker_of,
                 :save_discretes_if_enabled!, :save_final_discretes!,
                 :strip_interpolation, :struct_as_namedtuple, :unitfulvalue,
                 :unwrap_cache, :value,
-                # DiffEqBase internals
-                :max_vector_callback_length_int, :prepare_alg, :stripunits,
-                # EnzymeCore internals
-                :EnzymeRules, :inactive_noinl,
             ),
         ),
         # Internal (non-`public`) names imported from upstream packages.
@@ -63,13 +60,11 @@ run_qa(
                 # SciMLBase internals
                 :SENSITIVITY_INTERP_MESSAGE, :_unwrap_val, :last_step_failed,
                 :postamble!,
-                # DiffEqBase internals
-                :ODE_DEFAULT_UNSTABLE_CHECK, :_process_verbose_param,
-                :timedepentdtmin,
+                # DiffEqBase internal
+                :_process_verbose_param,
                 # Non-public names re-exported for dependent sublibraries
                 # (see `no_stale_explicit_imports` above).
                 :_vec, :_reshape, :unwrap_cache,
-                :calculate_residuals, :calculate_residuals!,
             ),
         ),
     ),
