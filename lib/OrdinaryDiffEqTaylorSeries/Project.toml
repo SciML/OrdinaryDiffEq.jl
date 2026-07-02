@@ -3,6 +3,11 @@ uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 authors = ["Songchen Tan <i@tansongchen.com>"]
 version = "2.0.1"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -28,10 +33,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-DiffEqBase = {path = "../DiffEqBase"}
-DiffEqDevTools = {path = "../DiffEqDevTools"}
-
 [compat]
 DiffEqBase = "7"
 DiffEqDevTools = "3"
@@ -55,9 +56,6 @@ TaylorDiff = "0.3.5"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4"
 julia = "1.10"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
 
 [targets]
 test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]
