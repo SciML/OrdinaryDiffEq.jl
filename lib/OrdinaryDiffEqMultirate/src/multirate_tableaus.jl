@@ -90,11 +90,31 @@ function MRIGARKIRK21aTableau(::Type{T}) where {T}
     return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], γ0, 2)
 end
 
+function MRIGARKESDIRK34aTableau(::Type{T}) where {T}
+    β = T(0.4358665215084589994160194511935568425)
+    Δc = T[1//3, 0, 1//3, 0, 1//3, 0]
+    W0 = zeros(T, 6, 6)
+    W0[1, 1] = 1 // 3
+    W0[2, 1] = -β
+    W0[3, 1] = -0.3045790611944504970424837655380884888
+    W0[3, 3] = 0.6379123945277838303758170988714218222
+    W0[4, 1] = 0.2116913105640266601676536489364004869
+    W0[4, 3] = -0.6475578320724856595836731001299573294
+    W0[5, 1] = 0.4454209388055495029575162344619115112
+    W0[5, 3] = 0.8813784805616198280398949036456491923
+    W0[5, 5] = -0.9934660860338359976640778047742273701
+    W0[6, 1] = -β
+    W1 = zeros(T, 6, 6)
+    γ0 = T[0, β, 0, β, 0, β]
+    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], γ0, 3)
+end
+
 mri_gark_tableau(::MRIGARKERK22a, ::Type{T}) where {T} = MRIGARKERK22aTableau(T)
 mri_gark_tableau(::MRIGARKERK22b, ::Type{T}) where {T} = MRIGARKERK22bTableau(T)
 mri_gark_tableau(::MRIGARKERK33a, ::Type{T}) where {T} = MRIGARKERK33aTableau(T)
 mri_gark_tableau(::MRIGARKERK45a, ::Type{T}) where {T} = MRIGARKERK45aTableau(T)
 mri_gark_tableau(::MRIGARKIRK21a, ::Type{T}) where {T} = MRIGARKIRK21aTableau(T)
+mri_gark_tableau(::MRIGARKESDIRK34a, ::Type{T}) where {T} = MRIGARKESDIRK34aTableau(T)
 
 # ── MIS: multirate infinitesimal step ─────────────────────────────────────────
 
