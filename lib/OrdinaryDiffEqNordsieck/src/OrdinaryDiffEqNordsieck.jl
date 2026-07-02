@@ -15,7 +15,8 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order,
     calculate_residuals, calculate_residuals!,
     get_current_adaptive_order, get_fsalfirstlast,
     ode_interpolant, ode_interpolant!, trivial_limiter!,
-    generic_solver_docstring, default_controller
+    generic_solver_docstring, default_controller,
+    TmpCache, build_tmp_cache, tmp_cache_buffers
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!
 using FastBroadcast: Serial

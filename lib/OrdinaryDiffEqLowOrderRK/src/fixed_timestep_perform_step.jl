@@ -119,7 +119,8 @@ end
         repeat_step = false
     )
     (; t, dt, uprev, u, f, p) = integrator
-    (; fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; fsalfirst, k, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
 
     # precalculations
     if cache isa HeunCache
@@ -216,7 +217,8 @@ end
 
 @muladd function perform_step!(integrator, cache::MidpointCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, k, fsalfirst, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
     halfdt = dt / 2
     @.. broadcast = false thread = thread tmp = uprev + halfdt * fsalfirst
     stage_limiter!(k, tmp, p, t + halfdt)
@@ -318,7 +320,7 @@ end
 
 get_fsalfirstlast(cache::RK4Cache, u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::RK4Cache)
-    (; tmp, fsalfirst, k₂, k₃, k₄, k) = cache
+    (; fsalfirst, k₂, k₃, k₄, k) = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     integrator.kshortsize = 2
@@ -331,7 +333,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RK4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k₂, k₃, k₄, k, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; fsalfirst, k₂, k₃, k₄, k, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
     k₁ = fsalfirst
     halfdt = dt / 2
     ttmp = t + halfdt

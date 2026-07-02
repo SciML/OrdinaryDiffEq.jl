@@ -262,7 +262,8 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
+    (; ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
+    (; atmp) = cache.tmp_cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && cache.qwait == 0 &&
@@ -456,7 +457,8 @@ function choose_order!(
         ::Val{max_order}
     ) where {max_order}
     (; t, dt, u, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
+    (; ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
+    (; atmp) = cache.tmp_cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && cache.qwait == 0 &&

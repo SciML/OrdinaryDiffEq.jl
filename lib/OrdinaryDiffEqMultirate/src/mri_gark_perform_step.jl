@@ -6,11 +6,12 @@ function initialize!(integrator, cache::MRIGARKCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    (; tmp) = cache.tmp_cache
     integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t)
+    integrator.f.f2(tmp, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
-    return integrator.fsalfirst .+= cache.tmp
+    return integrator.fsalfirst .+= tmp
 end
 
 function initialize!(integrator, cache::MRIGARKConstantCache)
@@ -27,7 +28,8 @@ end
 
 function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, atmp, v, f1eval, slow_f, Y, fS, tab) = cache
+    (; v, f1eval, slow_f, Y, fS, tab) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; Γ, γ, c) = tab
     alg = unwrap_alg(integrator, false)
     m = alg.m

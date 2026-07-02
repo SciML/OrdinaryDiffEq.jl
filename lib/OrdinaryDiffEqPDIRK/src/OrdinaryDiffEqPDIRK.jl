@@ -6,7 +6,8 @@ import OrdinaryDiffEqCore: isfsal, alg_order, _unwrap_val,
     uses_uprev, unwrap_alg, @cache,
     @threaded, initialize!, perform_step!, isthreaded,
     full_cache, get_fsalfirstlast, differentiation_rk_docstring,
-    _ad_chunksize_int, _ad_fdtype, _fixup_ad
+    _ad_chunksize_int, _ad_fdtype, _fixup_ad,
+    TmpCache, build_tmp_cache
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 

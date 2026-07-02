@@ -36,18 +36,18 @@ function initialize!(integrator, cache::SplitEulerCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.f.f2(cache.tmp_cache.tmp, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
-    return integrator.fsalfirst .+= cache.tmp
+    return integrator.fsalfirst .+= cache.tmp_cache.tmp
 end
 
 @muladd function perform_step!(integrator, cache::SplitEulerCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     @.. broadcast = false u = uprev + dt * integrator.fsalfirst
     f.f1(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    f.f2(cache.tmp, u, p, t + dt) # For the interpolation, needs k at the updated point
+    f.f2(cache.tmp_cache.tmp, u, p, t + dt) # For the interpolation, needs k at the updated point
     integrator.stats.nf2 += 1
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.fsallast .+= cache.tmp
+    integrator.fsallast .+= cache.tmp_cache.tmp
 end

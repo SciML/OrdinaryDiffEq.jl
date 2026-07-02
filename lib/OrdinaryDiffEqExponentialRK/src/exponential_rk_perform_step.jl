@@ -68,7 +68,8 @@ end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, G, J, exphA, KsCache) = cache
+    (; rtmp, G, J, exphA, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
     alg = unwrap_alg(integrator, true)
 
@@ -191,7 +192,8 @@ end
 
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, F2, J, KsCache) = cache
+    (; rtmp, F2, J, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
     alg = unwrap_alg(integrator, true)
 
@@ -309,7 +311,8 @@ end
 
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, Au, F2, F3, J, KsCache) = cache
+    (; rtmp, Au, F2, F3, J, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
     alg = unwrap_alg(integrator, true)
 
@@ -449,7 +452,8 @@ end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, Au, F2, F3, F4, J, KsCache) = cache
+    (; rtmp, Au, F2, F3, F4, J, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
     alg = unwrap_alg(integrator, true)
 
@@ -626,7 +630,8 @@ end
 
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, Au, F2, F3, F4, F5, J, KsCache) = cache
+    (; rtmp, rtmp2, Au, F2, F3, F4, F5, J, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
     alg = unwrap_alg(integrator, true)
 
@@ -801,7 +806,8 @@ end
 
 function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -892,7 +898,8 @@ end
 
 function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -972,7 +979,8 @@ end
 
 function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -1065,7 +1073,8 @@ end
 
 function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, k, rtmp, rtmp2, J, B, KsCache) = cache
+    (; k, rtmp, rtmp2, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -1161,7 +1170,8 @@ end
 
 function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -1268,7 +1278,8 @@ end
 
 function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; rtmp, rtmp2, K, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -1384,7 +1395,8 @@ end
 
 function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, rtmp, rtmp2, dR, K, J, B, KsCache) = cache
+    (; rtmp, rtmp2, dR, K, J, B, KsCache) = cache
+    (; tmp) = cache.tmp_cache
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
     f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -1488,7 +1500,9 @@ end
 
 function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; utilde, tmp, rtmp, F2, J, KsCache) = cache
+    (; rtmp, F2, J, KsCache) = cache
+    (; tmp) = cache.tmp_cache
+    utilde = cache.tmp_cache.tmp2
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
 
@@ -1582,7 +1596,9 @@ end
 
 function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; utilde, tmp, rtmp, Au, F2, F3, J, KsCache) = cache
+    (; rtmp, Au, F2, F3, J, KsCache) = cache
+    (; tmp) = cache.tmp_cache
+    utilde = cache.tmp_cache.tmp2
     calc_J!(J, integrator, cache)
     alg = unwrap_alg(integrator, true)
 

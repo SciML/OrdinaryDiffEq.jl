@@ -44,18 +44,24 @@ ismutablecache(cache::OrdinaryDiffEqConstantCache) = false
 # A slot is opted out by parameterizing its type as `Nothing`: the field becomes
 # the `nothing` singleton, no array is allocated, and `=== nothing` checks fold
 # away at compile time.
-#   * `TmpCache{uType, rateType, Nothing, Nothing}` — no unit-less scratch
-#     (`atmp`/`weight`), used by non-adaptive caches.
-#   * `TmpCache{uType, Nothing, uNoUnitsType, Nothing}` — no rate scratch. The
-#     rate buffers exist only so `initdt` can run allocation-free; a cache may
-#     skip them and let `initdt` fall back to allocating (see the
+#   * `TmpCache{uType, Nothing, rateType, Nothing, Nothing}` — no secondary
+#     state (`tmp2`) and no unit-less scratch (`atmp`/`weight`); e.g. nlsolver
+#     caches that only need a `tmp` and an `atmp`.
+#   * `TmpCache{uType, uType, Nothing, uNoUnitsType, Nothing}` — no rate scratch.
+#     The rate buffers exist only so `initdt` can run allocation-free; a cache
+#     may skip them and let `initdt` fall back to allocating (see the
 #     `preallocate_initdt_buffers` algorithm option). `initdt` reuses whatever
 #     buffers are present.
 #   * `weight` is a second unit-less slot (e.g. Rosenbrock's linear-solve
 #     weighting); most caches opt out.
-struct TmpCache{uType, rateType, uNoUnitsType, weightType}
+#
+# `tmp` and `tmp2` carry SEPARATE type parameters (`uType`, `uType2`) even
+# though both are state-typed: a cache that has a `tmp` but no `utilde`-style
+# secondary buffer sets `tmp2 = nothing`, which a shared parameter would forbid
+# (the diagonal rule rejects `TmpCache(array, nothing, ...)`).
+struct TmpCache{uType, uType2, rateType, uNoUnitsType, weightType}
     tmp::uType          # primary state scratch
-    tmp2::uType         # secondary state scratch (e.g. embedded solution / `utilde`)
+    tmp2::uType2        # secondary state scratch (e.g. embedded solution / `utilde`); `Nothing` if unused
     atmp::uNoUnitsType  # unit-less state scratch (error norms); `Nothing` if unused
     weight::weightType  # secondary unit-less scratch (e.g. linsolve weights); `Nothing` if unused
     rate_tmp::rateType  # primary rate scratch (initdt `f₁`); `Nothing` if unused

@@ -144,9 +144,12 @@ function _ode_addsteps!(
     )
     if length(k) < 2 || always_calc_begin
         (;
-            du, du1, du2, tmp, ks, dT, J, W, uf, tf,
-            linsolve_tmp, jac_config, fsalfirst, weight,
+            du, du1, du2, ks, dT, J, W, uf, tf,
+            jac_config, fsalfirst,
         ) = cache
+        (; rate_tmp, rate_tmp2) = cache.tmp_cache
+        tmp = rate_tmp
+        linsolve_tmp = rate_tmp2
         (; A, C, gamma, c, d, H) = cache.tab
 
         # Assignments
@@ -264,7 +267,8 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     if length(k) < size(cache.tab.H, 1) || always_calc_begin
-        (; du, du1, du2, tmp, ks, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
+        (; du, du1, du2, ks, dT, J, W, uf, tf, jac_config, fsalfirst) = cache
+        tmp = cache.tmp_cache.rate_tmp
         (; A, C, gamma, b, c, d, H) = cache.tab
 
         num_stages = size(A, 1)

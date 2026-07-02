@@ -9,8 +9,8 @@
     k6::rateType
     k7::rateType
     # Parameterized so the rate slots can be opted in (`preallocate_initdt_buffers`):
-    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}` (default, rates skipped) or
-    # `TmpCache{uType, rateType, uNoUnitsType, Nothing}` (rates held).
+    # `TmpCache{uType, uType, Nothing, uNoUnitsType, Nothing}` (default, rates skipped) or
+    # `TmpCache{uType, uType, rateType, uNoUnitsType, Nothing}` (rates held).
     tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter

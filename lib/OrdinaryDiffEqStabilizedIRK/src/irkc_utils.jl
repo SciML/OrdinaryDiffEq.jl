@@ -104,9 +104,9 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     if cache isa IRKCCache
-        fz, z, atmp = integrator.fsallast, cache.nlsolver.tmp, cache.atmp
+        fz, z, atmp = integrator.fsallast, cache.nlsolver.tmp, cache.tmp_cache.atmp
     else
-        fz, z, atmp = cache.k, cache.tmp, cache.atmp
+        fz, z, atmp = cache.k, cache.tmp_cache.tmp, cache.tmp_cache.atmp
     end
     ccache = cache.constantcache
     maxiter = 50

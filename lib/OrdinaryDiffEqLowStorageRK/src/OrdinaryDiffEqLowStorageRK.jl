@@ -11,7 +11,8 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
     constvalue, _unwrap_val,
     trivial_limiter!, perform_step!, initialize!,
-    explicit_rk_docstring, get_fsalfirstlast
+    explicit_rk_docstring, get_fsalfirstlast,
+    TmpCache, build_tmp_cache, preallocate_initdt_buffers
 using FastBroadcast, MuladdMacro, RecursiveArrayTools, Adapt
 using FastBroadcast: Serial
 import RecursiveArrayTools: recursive_unitless_bottom_eltype

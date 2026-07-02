@@ -12,7 +12,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     constvalue, _unwrap_val,
     explicit_rk_docstring, trivial_limiter!,
     _ode_interpolant!, _ode_addsteps!, get_fsalfirstlast,
-    generic_solver_docstring, default_linear_interpolation
+    generic_solver_docstring, default_linear_interpolation,
+    TmpCache, build_tmp_cache
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import OrdinaryDiffEqCore
 

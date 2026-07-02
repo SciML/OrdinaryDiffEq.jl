@@ -59,7 +59,8 @@ end
 
 @muladd function perform_step!(integrator, cache::KYKSSPRK42Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, tmp, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    tmp = cache.tmp_cache.tmp
     (; α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3) = cache.tab
 
     δ = fsalfirst
@@ -221,7 +222,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK53Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    tmp = cache.tmp_cache.tmp
     (; α30, α32, α40, α43, α52, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4) = cache.tab
 
     # u1
@@ -449,7 +451,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK53_HCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, stage_limiter!, step_limiter!, thread) = cache
+    tmp = cache.tmp_cache.tmp
     (; α30, α32, α40, α41, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4) = cache.tab
     #stores in u for all intermediate stages
     # u1
@@ -525,7 +528,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK63Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, u₂, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, u₂, stage_limiter!, step_limiter!, thread) = cache
+    tmp = cache.tmp_cache.tmp
     (;
         α40, α41, α43, α62, α65, β10, β21, β32, β43,
         β54, β65, c1, c2, c3, c4, c5,
@@ -614,7 +618,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK73Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, u₁, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, u₁, stage_limiter!, step_limiter!, thread) = cache
+    tmp = cache.tmp_cache.tmp
     (;
         α40, α43, α50, α51, α54, α73, α76, β10, β21, β32, β43,
         β54, β65, β76, c1, c2, c3, c4, c5, c6,
@@ -710,7 +715,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK83Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, u₂, u₃, stage_limiter!, step_limiter!, thread) = cache
+    (; k, fsalfirst, u₂, u₃, stage_limiter!, step_limiter!, thread) = cache
+    tmp = cache.tmp_cache.tmp
     (;
         α50, α51, α54, α61, α65, α72, α73, α76, β10, β21, β32, β43,
         β54, β65, β76, β87, c1, c2, c3, c4, c5, c6, c7,

@@ -78,8 +78,9 @@ end
     (; t, dt, f, p) = integrator
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    (; tmp, fsalfirst, k₂, k₃, k) = cache
-    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+    (; fsalfirst, k₂, k₃, k) = cache
+    (; tmp) = cache.tmp_cache
+    kdu, ku = tmp.x[1], tmp.x[2]
     k₁ = integrator.fsalfirst.x[1]
     halfdt = dt / 2
     dtsq = dt^2
@@ -145,9 +146,10 @@ end
     duprev, uprev = integrator.uprev.x
     duprev2, uprev2 = integrator.uprev2.x
     uidx = eachindex(integrator.uprev.x[1])
-    (; tmp, fsalfirst, k₂, k) = cache
+    (; fsalfirst, k₂, k) = cache
     (; bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2) = cache.tab
-    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+    (; tmp) = cache.tmp_cache
+    kdu, ku = tmp.x[1], tmp.x[2]
     k1cache = cache.tmp2
     k₁ = fsalfirst
     # if there's a discontinuity or the solver is in the first step
@@ -189,10 +191,11 @@ end
     duprev, uprev = integrator.uprev.x
     duprev2, uprev2 = integrator.uprev2.x
     uidx = eachindex(integrator.uprev.x[1])
-    (; tmp, tmp2, fsalfirst, k₂, k₃, k) = cache
+    (; tmp2, fsalfirst, k₂, k₃, k) = cache
     (; bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3) = cache.tab
-    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
-    k1cache = integrator.cache.tmp2
+    (; tmp) = cache.tmp_cache
+    kdu, ku = tmp.x[1], tmp.x[2]
+    k1cache = tmp2
     k₁ = fsalfirst
     # if there's a discontinuity or the solver is in the first step
     if integrator.iter < 2 && !integrator.derivative_discontinuity
@@ -442,7 +445,9 @@ end
     (; t, dt, f, p) = integrator
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    (; ks, k, utilde, tmp, atmp, tab) = cache
+    (; ks, k, tab) = cache
+    (; tmp, tmp2, atmp) = cache.tmp_cache
+    utilde = tmp2 # embedded solution (was the inline `utilde` field)
     (; a, b, bp, btilde, bptilde, c, pos_only_error) = tab
     ku = tmp.x[2]
     k1 = integrator.fsalfirst.x[1]
@@ -809,7 +814,9 @@ end
     (; t, dt, f, p) = integrator
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    (; ks, k, utilde, tmp, atmp, tab) = cache
+    (; ks, k, tab) = cache
+    (; tmp, tmp2, atmp) = cache.tmp_cache
+    utilde = tmp2 # embedded solution (was the inline `utilde` field)
     (; a, abar, b, bp, btilde, bptilde, c) = tab
     ku = tmp.x[2]
     kdu = tmp.x[1]

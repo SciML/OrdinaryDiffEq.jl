@@ -11,7 +11,8 @@ end
 function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -44,7 +45,8 @@ end
 function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -100,7 +102,8 @@ end
 function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -149,7 +152,8 @@ end
 function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -183,7 +187,8 @@ end
 
 function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -220,7 +225,8 @@ end
 
 function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -250,7 +256,8 @@ end
 
 function perform_step!(integrator, cache::CG4aCache, repeat_step = false)
     (; t, dt, uprev, u, p, alg) = integrator
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -299,7 +306,9 @@ end
 
 function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
-    (; W, k, tmp, utilde, atmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    utilde = cache.tmp_cache.tmp2
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -370,7 +379,8 @@ end
 function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -453,7 +463,8 @@ end
 function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -490,7 +501,8 @@ end
 function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -565,7 +577,8 @@ end
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -616,7 +629,8 @@ end
 function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -663,7 +677,8 @@ end
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -703,7 +718,8 @@ end
 function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
@@ -739,7 +755,8 @@ function perform_step!(
     )
     (; t, dt, uprev, uprev2, u, p, iter) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; W, k, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
     # println("iter   : $iter")
@@ -837,7 +854,8 @@ end
 
 function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, KsCache, exp_cache) = cache
+    (; KsCache, exp_cache) = cache
+    (; tmp) = cache.tmp_cache
     alg = unwrap_alg(integrator, nothing)
     exp_method = ExpMethodGeneric()
     A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator
@@ -920,7 +938,8 @@ end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
     (; t, dt, uprev, u, p, f) = integrator
-    (; k, V, tmp) = cache
+    (; k, V) = cache
+    (; tmp) = cache.tmp_cache
     mass_matrix = integrator.f.mass_matrix
 
     if f isa SplitFunction

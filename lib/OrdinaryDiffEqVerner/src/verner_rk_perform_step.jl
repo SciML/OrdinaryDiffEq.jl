@@ -138,7 +138,10 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     uidx = eachindex(integrator.uprev)
     (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9) = cache.tab
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, rtmp, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
     stage_limiter!(tmp, integrator, p, t + c1 * dt)
@@ -210,7 +213,7 @@ end
         )
         k = integrator.k
         (; c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab.extra
-        (; tmp) = cache
+        (; tmp) = cache.tmp_cache
         @.. broadcast = false thread = thread tmp = uprev +
             dt *
             (
@@ -414,7 +417,10 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern7Tableau T T2
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, rtmp, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     f(k1, uprev, p, t)
     a = dt * a021
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -506,7 +512,7 @@ end
                 accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
         )
         k = integrator.k
-        (; tmp) = cache
+        (; tmp) = cache.tmp_cache
         @OnDemandTableauExtract Vern7ExtraStages T T2
         @.. broadcast = false thread = thread tmp = uprev +
             dt *
@@ -795,7 +801,10 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     uidx = eachindex(integrator.uprev)
     (; c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13) = cache.tab
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, rtmp, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     f(k1, uprev, p, t)
     a = dt * a0201
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -913,7 +922,7 @@ end
         )
         k = integrator.k
         (; c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117) = cache.tab.extra
-        (; tmp) = cache
+        (; tmp) = cache.tmp_cache
         @.. broadcast = false thread = thread tmp = uprev +
             dt *
             (
@@ -1275,7 +1284,10 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern9Tableau T T2
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, rtmp, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     f(k1, uprev, p, t)
     a = dt * a0201
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -1415,7 +1427,7 @@ end
                 accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
         )
         k = integrator.k
-        (; tmp) = cache
+        (; tmp) = cache.tmp_cache
         @OnDemandTableauExtract Vern9ExtraStages T T2
         @.. broadcast = false thread = thread tmp = uprev +
             dt *
@@ -1637,8 +1649,11 @@ end
         b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
         bh1, bh2, bh3, bh4, bh5, bh6, bh7, bh8, bh9, bh10,
     ) = cache.tab
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, atmp) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10) = cache
     (; thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
 
     f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * a21 * k1

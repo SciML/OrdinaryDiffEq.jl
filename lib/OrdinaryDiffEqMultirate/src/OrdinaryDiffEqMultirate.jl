@@ -6,7 +6,8 @@ import OrdinaryDiffEqCore: alg_order, isfsal,
     unwrap_alg, initialize!, perform_step!,
     calculate_residuals, calculate_residuals!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    @cache, alg_cache, full_cache, get_fsalfirstlast
+    @cache, alg_cache, full_cache, get_fsalfirstlast,
+    TmpCache, build_tmp_cache
 import OrdinaryDiffEqCore
 import FastBroadcast: @..
 import MuladdMacro: @muladd

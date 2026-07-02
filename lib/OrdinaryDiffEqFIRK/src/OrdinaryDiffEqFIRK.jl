@@ -20,7 +20,9 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     get_current_alg_order,
     isfirk, generic_solver_docstring,
     _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, set_discontinuity
+    LinearAliasSpecifier, set_discontinuity,
+    TmpCache, build_tmp_cache, tmp_cache_buffers,
+    preallocate_initdt_buffers, initdt_tmp_cache
 using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu, dot, eigvals

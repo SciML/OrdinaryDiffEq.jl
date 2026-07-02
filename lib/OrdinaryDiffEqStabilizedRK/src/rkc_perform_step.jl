@@ -94,7 +94,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; k, tmp, uᵢ₋₂, uᵢ₋₁, atmp) = cache
+    (; k, uᵢ₋₂, uᵢ₋₁) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; ms, fp1, fp2, recf) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
@@ -318,7 +319,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k) = cache
+    (; uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; ms, fpa, fpb, fpbe, recf) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
@@ -537,7 +539,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; k, tmp, gprev2, gprev, atmp) = cache
+    (; k, gprev2, gprev) = cache
+    (; tmp, atmp) = cache.tmp_cache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
@@ -705,7 +708,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ESERK4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; ms, Cᵤ, Cₑ) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
@@ -870,7 +874,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ESERK5Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; ms, Cᵤ, Cₑ, Bᵢ) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
@@ -1019,7 +1024,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SERK2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    (; uᵢ₋₁, uᵢ₋₂, Sᵢ, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; ms, Bᵢ) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
@@ -1171,7 +1177,8 @@ end
 
 @muladd function perform_step!(integrator, cache::TSRKC2Cache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
-    (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
+    (; k, gprev2, gprev, constantcache) = cache
+    (; tmp, atmp) = cache.tmp_cache
 
     q = (t - tprev) / dt
     onemq = 1 - q
@@ -1390,7 +1397,8 @@ end
 
 @muladd function perform_step!(integrator, cache::TSRKC3Cache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
-    (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
+    (; k, gprev2, gprev, constantcache) = cache
+    (; tmp, atmp) = cache.tmp_cache
 
     q = (t - tprev) / dt
     onemq = 1 - q
@@ -1581,7 +1589,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKL1Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, uᵢ₋₂, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1719,7 +1728,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKL2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, uᵢ₋₂, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1859,7 +1869,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKG1Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, uᵢ₋₂, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -2000,7 +2011,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKG2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, uᵢ₋₂, k) = cache
+    (; tmp, atmp) = cache.tmp_cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -2174,7 +2186,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKMC2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; k, tmp, gprev, gprev2, atmp) = cache
+    (; k, gprev, gprev2) = cache
+    (; tmp, atmp) = cache.tmp_cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)

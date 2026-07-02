@@ -135,8 +135,9 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
         dw12, cubuff,
         k, k2, fw1, fw2,
         J, W1,
-        tmp, atmp, jac_config, rtol, atol, step_limiter!,
+        jac_config, rtol, atol, step_limiter!,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -455,8 +456,9 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
         dw1, ubuff, dw23, cubuff,
         k, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
+        jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -946,9 +948,10 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     (; k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
     (;
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
+        tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1499,7 +1502,8 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, k, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg

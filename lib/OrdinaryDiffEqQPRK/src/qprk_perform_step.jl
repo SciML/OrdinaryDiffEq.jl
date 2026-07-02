@@ -122,8 +122,11 @@ end
     @OnDemandTableauExtract QPRK98Tableau T T2
     (;
         fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16,
-        utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread,
+        k, stage_limiter!, step_limiter!, thread,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     k1 = fsalfirst
     f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * b21 * k1

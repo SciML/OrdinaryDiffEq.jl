@@ -16,7 +16,9 @@ end
 function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; k, fsalfirst, T, utilde, atmp, dtpropose, cur_order, A) = cache
+    (; k, fsalfirst, T, dtpropose, cur_order, A) = cache
+    (; tmp2, atmp) = cache.tmp_cache
+    utilde = tmp2
     (; u_tmps, k_tmps) = cache
 
     max_order = min(size(T, 1), cur_order + 1)
@@ -280,7 +282,9 @@ function perform_step!(
     )
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    (; T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2) = cache
+    (; T, dtpropose, n_curr, A, stage_number, diff1, diff2) = cache
+    (; tmp2, atmp) = cache.tmp_cache
+    utilde = tmp2
     (; J, W, uf, tf, jac_config) = cache
     (; u_tmps, k_tmps, linsolve_tmps, u_tmps2) = cache
 
@@ -454,14 +458,14 @@ function perform_step!(
         # Compute all information relating to an extrapolation order ≦ win_min
         for i in (win_min - 1):win_min
             @.. broadcast = false integrator.u = T[i + 1, i + 1]
-            @.. broadcast = false cache.utilde = T[i + 1, i]
+            @.. broadcast = false cache.tmp_cache.tmp2 = T[i + 1, i]
 
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -534,14 +538,14 @@ function perform_step!(
                 end
 
                 @.. broadcast = false integrator.u = T[n_curr + 1, n_curr + 1]
-                @.. broadcast = false cache.utilde = T[n_curr + 1, n_curr]
+                @.. broadcast = false cache.tmp_cache.tmp2 = T[n_curr + 1, n_curr]
 
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -797,7 +801,8 @@ function perform_step!(
     # Unpack all information needed
     (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; n_curr, u_temp1, u_temp2, utilde, T, fsalfirst, k) = cache
+    (; n_curr, u_temp1, u_temp2, T, fsalfirst, k) = cache
+    utilde = cache.tmp_cache.tmp2
     (; u_temp3, u_temp4, k_tmps) = cache
 
     # Coefficients for obtaining u
@@ -915,7 +920,7 @@ function perform_step!(
         for i in (alg.min_order):n_curr
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
-            #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+            #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
 
             u_temp1 .= false
             u_temp2 .= false
@@ -926,14 +931,14 @@ function perform_step!(
                 @.. broadcast = false u_temp2 += cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -968,7 +973,7 @@ function perform_step!(
 
                 # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
-                #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+                #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
                 u_temp1 .= false
                 u_temp2 .= false
@@ -981,14 +986,14 @@ function perform_step!(
                         extrapolation_weights_2[j - 1, n_curr]
                 end
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -1262,7 +1267,8 @@ function perform_step!(
     # Unpack all information needed
     (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    (; n_curr, u_temp1, u_temp2, utilde, T, fsalfirst, k, diff1, diff2) = cache
+    (; n_curr, u_temp1, u_temp2, T, fsalfirst, k, diff1, diff2) = cache
+    utilde = cache.tmp_cache.tmp2
     (; u_temp3, u_temp4, k_tmps) = cache
 
     # Coefficients for obtaining u
@@ -1587,7 +1593,7 @@ function perform_step!(
         for i in (alg.min_order):n_curr
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
-            #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+            #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
 
             u_temp1 .= false
             u_temp2 .= false
@@ -1598,21 +1604,21 @@ function perform_step!(
                 @.. broadcast = false u_temp2 += cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
         # Check if an approximation of some order in the order window can be accepted
         while n_curr <= win_max
-            tol = integrator.opts.internalnorm(cache.utilde - integrator.u, t) /
+            tol = integrator.opts.internalnorm(cache.tmp_cache.tmp2 - integrator.u, t) /
                 OrdinaryDiffEqCore.get_EEst(integrator) # Used by the convergence monitor
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
@@ -1664,7 +1670,7 @@ function perform_step!(
 
                 # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
-                #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+                #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
                 u_temp1 .= false
                 u_temp2 .= false
@@ -1677,14 +1683,14 @@ function perform_step!(
                         extrapolation_weights_2[j - 1, n_curr]
                 end
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -2056,7 +2062,8 @@ function perform_step!(
     # Unpack all information needed
     (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; n_curr, u_temp1, u_temp2, utilde, T, fsalfirst, k) = cache
+    (; n_curr, u_temp1, u_temp2, T, fsalfirst, k) = cache
+    utilde = cache.tmp_cache.tmp2
     (; u_temp3, u_temp4, k_tmps) = cache
     # Coefficients for obtaining u
     (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
@@ -2177,7 +2184,7 @@ function perform_step!(
         for i in (win_min - 1):win_min
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
-            #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+            #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
 
             u_temp1 .= false
             u_temp2 .= false
@@ -2188,14 +2195,14 @@ function perform_step!(
                 @.. broadcast = false u_temp2 += cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -2234,7 +2241,7 @@ function perform_step!(
 
                 # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
-                #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+                #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
                 u_temp1 .= false
                 u_temp2 .= false
@@ -2247,14 +2254,14 @@ function perform_step!(
                         extrapolation_weights_2[j - 1, n_curr]
                 end
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -2884,7 +2891,8 @@ function perform_step!(
     # Unpack all information needed
     (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    (; n_curr, u_temp1, u_temp2, utilde, T, fsalfirst, k, diff1, diff2) = cache
+    (; n_curr, u_temp1, u_temp2, T, fsalfirst, k, diff1, diff2) = cache
+    utilde = cache.tmp_cache.tmp2
     (; u_temp3, u_temp4, k_tmps) = cache
     # Coefficients for obtaining u
     (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
@@ -3202,7 +3210,7 @@ function perform_step!(
         for i in (win_min - 1):win_min
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
-            #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+            #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
 
             u_temp1 .= false
             u_temp2 .= false
@@ -3213,14 +3221,14 @@ function perform_step!(
                 @.. broadcast = false u_temp2 += cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -3298,7 +3306,7 @@ function perform_step!(
 
                 # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
-                #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+                #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
                 u_temp1 .= false
                 u_temp2 .= false
@@ -3311,14 +3319,14 @@ function perform_step!(
                         extrapolation_weights_2[j - 1, n_curr]
                 end
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor
@@ -3700,7 +3708,8 @@ function perform_step!(
     # Unpack all information needed
     (; t, uprev, dt, f, p) = integrator
     alg = unwrap_alg(integrator, true)
-    (; n_curr, u_temp1, u_temp2, utilde, T, fsalfirst, k, diff1, diff2) = cache
+    (; n_curr, u_temp1, u_temp2, T, fsalfirst, k, diff1, diff2) = cache
+    utilde = cache.tmp_cache.tmp2
     (; u_temp3, u_temp4, k_tmps) = cache
     # Coefficients for obtaining u
     (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
@@ -4038,7 +4047,7 @@ function perform_step!(
         for i in (win_min - 1):win_min
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
-            #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+            #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
 
             u_temp1 .= false
             u_temp2 .= false
@@ -4049,14 +4058,14 @@ function perform_step!(
                 @.. broadcast = false u_temp2 += cache.T[j] * extrapolation_weights_2[j - 1, i]
             end
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
-            @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
+            @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
@@ -4070,7 +4079,7 @@ function perform_step!(
             end
             EEst1 *= EEst1
 
-            #@show integrator.opts.internalnorm(integrator.u - cache.utilde,t)
+            #@show integrator.opts.internalnorm(integrator.u - cache.tmp_cache.tmp2,t)
             if accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
                 # Accept current approximation u of order n_curr
                 break
@@ -4132,7 +4141,7 @@ function perform_step!(
 
                 # Update u, OrdinaryDiffEqCore.get_EEst(integrator) and cache.Q
                 #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
-                #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+                #cache.tmp_cache.tmp2 .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
 
                 u_temp1 .= false
                 u_temp2 .= false
@@ -4145,14 +4154,14 @@ function perform_step!(
                         extrapolation_weights_2[j - 1, n_curr]
                 end
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
-                @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
+                @.. broadcast = false cache.tmp_cache.tmp2 = extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.tmp_cache.atmp, integrator.u, cache.tmp_cache.tmp2,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
-                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.atmp, t))
+                OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(cache.tmp_cache.atmp, t))
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
                 # Reject the current approximation and not pass convergence monitor

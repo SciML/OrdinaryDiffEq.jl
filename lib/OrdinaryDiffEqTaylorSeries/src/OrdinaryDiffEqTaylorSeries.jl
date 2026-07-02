@@ -11,7 +11,8 @@ import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
     CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
     AutoAlgSwitch, get_fsalfirstlast,
     full_cache, DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
-    stepsize_controller!, get_current_adaptive_order, get_current_alg_order
+    stepsize_controller!, get_current_adaptive_order, get_current_alg_order,
+    TmpCache, build_tmp_cache
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..

@@ -2,6 +2,33 @@ abstract type SSPRKMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type SSPRKConstantCache <: OrdinaryDiffEqConstantCache end
 get_fsalfirstlast(cache::SSPRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
+# The SSPRK mutable caches migrate their existing scratch into the unified
+# `TmpCache` via the raw constructor: many of these methods are deliberately
+# low-register (Shu-Osher low-storage forms), so NO new arrays are ever
+# allocated by default — each slot is either a migrated field (`tmp`,
+# `utilde` -> `tmp2`, `atmp`) or `nothing`. The `fsalfirst`/`k` buffers are
+# exposed through `integrator.k`/FSAL (dense output), so they are not legal
+# rate donors; the initdt rate slots are freshly allocated only when the user
+# opts in via the algorithm's `preallocate_initdt_buffers` option (default
+# false), otherwise they are `nothing` and `initdt` allocates its rate
+# temporaries at call time. (`KYK2014DGSSPRK_3S2_Cache` is the exception: its
+# Shu-Osher temporaries `u_1`/`u_2`/`kk_1`/`kk_2` are dead between steps and
+# never read by dense output, so they are donor-aliased into the slots
+# directly — see its `alg_cache`.)
+function ssprk_tmp_cache(alg, tmp, tmp2, atmp, rate_prototype)
+    return _ssprk_tmp_cache(
+        tmp, tmp2, atmp, rate_prototype, Val(preallocate_initdt_buffers(alg))
+    )
+end
+function _ssprk_tmp_cache(
+        tmp, tmp2, atmp, rate_prototype, ::Val{need_rates}
+    ) where {need_rates}
+    # `need_rates` is a type parameter, so these ternaries fold at compile time.
+    rate_tmp = need_rates ? zero(rate_prototype) : nothing
+    rate_tmp2 = need_rates ? zero(rate_prototype) : nothing
+    return TmpCache(tmp, tmp2, atmp, nothing, rate_tmp, rate_tmp2)
+end
+
 @cache struct SSPRK22Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
     SSPRKMutableCache
     u::uType
@@ -83,11 +110,14 @@ end
         StageLimiter,
         StepLimiter,
         Thread,
+        TmpC <: TmpCache,
     } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
-    tmp::uType
+    # The single state scratch lives in `tmp_cache.tmp` (was the inline `tmp`);
+    # there is no `utilde`/`atmp`, so those slots are opted out (`nothing`).
+    tmp_cache::TmpC
     fsalfirst::rateType
     tab::TabType
     stage_limiter!::StageLimiter
@@ -148,8 +178,9 @@ function alg_cache(
         constvalue(uBottomEltypeNoUnits),
         constvalue(tTypeNoUnits)
     )
+    tmp_cache = ssprk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return KYKSSPRK42Cache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
+        u, uprev, k, tmp_cache, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
 end
@@ -163,13 +194,15 @@ function alg_cache(
     return KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK53Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-    SSPRKMutableCache
+@cache struct SSPRK53Cache{
+        uType, rateType, TabType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
     fsalfirst::rateType
-    tmp::uType
+    # The single state scratch lives in `tmp_cache.tmp` (was the inline `tmp`).
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -228,8 +261,9 @@ function alg_cache(
         fsalfirst = k
     end
     tab = SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tmp_cache = ssprk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return SSPRK53Cache(
-        u, uprev, k, fsalfirst, tmp, tab, alg.stage_limiter!, alg.step_limiter!,
+        u, uprev, k, fsalfirst, tmp_cache, tab, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
 end
@@ -405,13 +439,15 @@ function alg_cache(
     return SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK53_HCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-    SSPRKMutableCache
+@cache struct SSPRK53_HCache{
+        uType, rateType, TabType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
     fsalfirst::rateType
-    tmp::uType
+    # The single state scratch lives in `tmp_cache.tmp` (was the inline `tmp`).
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -468,8 +504,9 @@ function alg_cache(
         fsalfirst = k
     end
     tab = SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tmp_cache = ssprk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return SSPRK53_HCache(
-        u, uprev, k, fsalfirst, tmp, tab, alg.stage_limiter!, alg.step_limiter!,
+        u, uprev, k, fsalfirst, tmp_cache, tab, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
 end
@@ -483,13 +520,16 @@ function alg_cache(
     return SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK63Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-    SSPRKMutableCache
+@cache struct SSPRK63Cache{
+        uType, rateType, TabType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
     fsalfirst::rateType
-    tmp::uType
+    # The primary state scratch lives in `tmp_cache.tmp` (was the inline `tmp`);
+    # `u₂` stays inline as a named Shu-Osher stage register.
+    tmp_cache::TmpC
     u₂::uType
     tab::TabType
     stage_limiter!::StageLimiter
@@ -555,8 +595,9 @@ function alg_cache(
         fsalfirst = k
     end
     tab = SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tmp_cache = ssprk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return SSPRK63Cache(
-        u, uprev, k, fsalfirst, tmp, u₂, tab, alg.stage_limiter!,
+        u, uprev, k, fsalfirst, tmp_cache, u₂, tab, alg.stage_limiter!,
         alg.step_limiter!, alg.thread
     )
 end
@@ -570,13 +611,16 @@ function alg_cache(
     return SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK73Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-    SSPRKMutableCache
+@cache struct SSPRK73Cache{
+        uType, rateType, TabType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
     fsalfirst::rateType
-    tmp::uType
+    # The primary state scratch lives in `tmp_cache.tmp` (was the inline `tmp`);
+    # `u₁` stays inline as a named Shu-Osher stage register.
+    tmp_cache::TmpC
     u₁::uType
     tab::TabType
     stage_limiter!::StageLimiter
@@ -650,8 +694,9 @@ function alg_cache(
         fsalfirst = k
     end
     tab = SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tmp_cache = ssprk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return SSPRK73Cache(
-        u, uprev, k, fsalfirst, tmp, u₁, tab, alg.stage_limiter!,
+        u, uprev, k, fsalfirst, tmp_cache, u₁, tab, alg.stage_limiter!,
         alg.step_limiter!, alg.thread
     )
 end
@@ -665,13 +710,16 @@ function alg_cache(
     return SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK83Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-    SSPRKMutableCache
+@cache struct SSPRK83Cache{
+        uType, rateType, TabType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache,
+    } <: SSPRKMutableCache
     u::uType
     uprev::uType
     k::rateType
     fsalfirst::rateType
-    tmp::uType
+    # The primary state scratch lives in `tmp_cache.tmp` (was the inline `tmp`);
+    # `u₂`/`u₃` stay inline as named Shu-Osher stage registers.
+    tmp_cache::TmpC
     u₂::uType
     u₃::uType
     tab::TabType
@@ -753,8 +801,9 @@ function alg_cache(
         fsalfirst = k
     end
     tab = SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    tmp_cache = ssprk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return SSPRK83Cache(
-        u, uprev, k, fsalfirst, tmp, u₂, u₃, tab, alg.stage_limiter!,
+        u, uprev, k, fsalfirst, tmp_cache, u₂, u₃, tab, alg.stage_limiter!,
         alg.step_limiter!, alg.thread
     )
 end

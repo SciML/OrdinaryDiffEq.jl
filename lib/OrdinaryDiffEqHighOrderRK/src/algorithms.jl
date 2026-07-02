@@ -10,6 +10,12 @@ Base.@kwdef struct TanYam7{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -29,6 +35,12 @@ Base.@kwdef struct TsitPap8{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -42,6 +54,12 @@ Base.@kwdef struct DP8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -65,4 +83,10 @@ Base.@kwdef struct PFRK87{StageLimiter, StepLimiter, Thread, T} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     omega::T = 0.0
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end

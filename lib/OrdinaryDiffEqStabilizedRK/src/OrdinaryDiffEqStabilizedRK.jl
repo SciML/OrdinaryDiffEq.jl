@@ -10,7 +10,8 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
     OrdinaryDiffEqAdaptiveAlgorithm, calc_dt_propose!,
     alg_cache, _vec, _reshape, @cache,
     constvalue, _unwrap_val, full_cache, get_fsalfirstlast,
-    generic_solver_docstring
+    generic_solver_docstring,
+    TmpCache, build_tmp_cache, preallocate_initdt_buffers
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import OrdinaryDiffEqCore
 using DiffEqBase: DiffEqBase, value

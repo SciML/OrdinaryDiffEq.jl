@@ -1,15 +1,43 @@
 abstract type LowStorageRKMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::LowStorageRKMutableCache, u) = (cache.fsalfirst, cache.k)
 
+# All LowStorageRK mutable caches migrate their existing scratch registers into
+# the unified `TmpCache` via the raw constructor: the published register count
+# (2N/2C/3S/3S*/xR+) is these methods' contract, so NO new arrays are ever
+# allocated by default — each slot is either a migrated register (`tmp`,
+# `utilde` -> `tmp2`, `atmp`) or `nothing`. The `k`/`fsalfirst` buffers are
+# exposed through `integrator.k[1]` (interpolation/FSAL), so there are no legal
+# rate donors; the initdt rate slots are freshly allocated only when the user
+# opts in via the algorithm's `preallocate_initdt_buffers` option (default
+# false), otherwise they are `nothing` and `initdt` allocates its rate
+# temporaries at call time.
+function lowstoragerk_tmp_cache(alg, tmp, tmp2, atmp, rate_prototype)
+    return _lowstoragerk_tmp_cache(
+        tmp, tmp2, atmp, rate_prototype, Val(preallocate_initdt_buffers(alg))
+    )
+end
+function _lowstoragerk_tmp_cache(
+        tmp, tmp2, atmp, rate_prototype, ::Val{need_rates}
+    ) where {need_rates}
+    # `need_rates` is a type parameter, so these ternaries fold at compile time.
+    rate_tmp = need_rates ? zero(rate_prototype) : nothing
+    rate_tmp2 = need_rates ? zero(rate_prototype) : nothing
+    return TmpCache(tmp, tmp2, atmp, nothing, rate_tmp, rate_tmp2)
+end
+
 # 2N low storage methods introduced by Williamson
 @cache struct LowStorageRK2NCache{
         uType, rateType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        Thread, TmpC <: TmpCache,
     } <: LowStorageRKMutableCache
     u::uType
     uprev::uType
     k::rateType
-    tmp::uType # tmp acts as second register and fsal both
+    # The single 2N scratch register lives in `tmp_cache.tmp` (it acts as second
+    # register and fsal both — under the Williamson condition `k` aliases it);
+    # every other slot is opted out (`nothing`) by default to keep the published
+    # register count.
+    tmp_cache::TmpC
     tab::TabType
     williamson_condition::Bool
     stage_limiter!::StageLimiter
@@ -3337,8 +3365,12 @@ function alg_cache(
             k = zero(rate_prototype)
         end
     end
+    # The single 2N register migrates into `tmp_cache.tmp` (under the Williamson
+    # condition `k` aliases it, exactly as before); every other slot is
+    # `nothing` — zero new arrays, the published register count is preserved.
+    tmp_cache = lowstoragerk_tmp_cache(alg, tmp, nothing, nothing, rate_prototype)
     return LowStorageRK2NCache(
-        u, uprev, k, tmp, tab, williamson_condition, alg.stage_limiter!,
+        u, uprev, k, tmp_cache, tab, williamson_condition, alg.stage_limiter!,
         alg.step_limiter!, alg.thread
     )
 end

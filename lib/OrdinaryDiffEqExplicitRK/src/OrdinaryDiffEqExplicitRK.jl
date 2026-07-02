@@ -9,7 +9,8 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size,
     full_cache, get_fsalfirstlast,
     _ode_interpolant, _ode_interpolant!,
     _ode_addsteps!, copyat_or_push!,
-    DerivativeOrderNotPossibleError
+    DerivativeOrderNotPossibleError,
+    TmpCache, build_tmp_cache
 using TruncatedStacktraces: @truncate_stacktrace
 using RecursiveArrayTools, FastBroadcast, MuladdMacro, DiffEqBase
 import LinearAlgebra: norm

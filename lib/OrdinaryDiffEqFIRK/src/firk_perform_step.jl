@@ -323,8 +323,9 @@ end
         dw12, cubuff,
         k, k2, fw1, fw2,
         J, W1,
-        tmp, atmp, jac_config, rtol, atol, step_limiter!,
+        jac_config, rtol, atol, step_limiter!,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -699,8 +700,9 @@ end
         dw1, ubuff, dw23, cubuff,
         k, k1, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
+        jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1274,9 +1276,10 @@ end
     (; k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
     (;
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
+        tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1916,7 +1919,8 @@ end
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -2491,9 +2495,10 @@ end
         cache::GaussLegendreCache, integrator, alg
     )
     (;
-        tab, κ, z, dw, ks, W, ubuff, tmp, atmp, linsolve,
+        tab, κ, z, dw, ks, W, ubuff, linsolve,
         rtol, atol, num_stages,
     ) = cache
+    (; tmp, atmp) = cache.tmp_cache
     (; A, b, c) = tab
     (; internalnorm) = integrator.opts
     (; maxiters) = alg
@@ -2595,9 +2600,10 @@ end
 @muladd function perform_step!(integrator, cache::GaussLegendreCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsallast) = integrator
     (;
-        atmp, J, z, z_last, u_full, u_half, rtol, atol,
+        J, z, z_last, u_full, u_half, rtol, atol,
         step_limiter!, num_stages,
     ) = cache
+    (; atmp) = cache.tmp_cache
     (; internalnorm, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
 

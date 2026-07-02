@@ -1,15 +1,18 @@
-@cache struct EulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache struct EulerCache{uType, rateType, TmpC <: TmpCache} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    # The former inline `tmp` lives in `tmp_cache.tmp`. `Euler`/`SplitEuler` are
+    # not `@kwdef` algorithms, so they have no `preallocate_initdt_buffers`
+    # knob: the unused slots are always `nothing` (footprint unchanged).
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
 end
 
-@cache struct SplitEulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache struct SplitEulerCache{uType, rateType, TmpC <: TmpCache} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
 end
@@ -20,7 +23,8 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return SplitEulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return SplitEulerCache(u, uprev, tmp_cache, zero(rate_prototype), zero(rate_prototype))
 end
 
 struct SplitEulerConstantCache <: OrdinaryDiffEqConstantCache end
@@ -40,7 +44,8 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return EulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return EulerCache(u, uprev, tmp_cache, zero(rate_prototype), zero(rate_prototype))
 end
 
 struct EulerConstantCache <: OrdinaryDiffEqConstantCache end
@@ -54,12 +59,14 @@ function alg_cache(
     return EulerConstantCache()
 end
 
-@cache struct HeunCache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
+@cache struct HeunCache{uType, rateType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`atmp` live in `tmp_cache` (no `utilde` existed, so
+    # `tmp2` is `nothing`). Rate slots are allocated only when the user opts in
+    # via `preallocate_initdt_buffers` (default false: footprint unchanged).
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
     stage_limiter!::StageLimiter
@@ -70,15 +77,14 @@ end
 @cache struct RalstonCache{
         uType,
         rateType,
-        uNoUnitsType,
         StageLimiter,
         StepLimiter,
         Thread,
+        TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
     stage_limiter!::StageLimiter
@@ -94,8 +100,11 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(zero(u), nothing, atmp, nothing, rate_tmp, rate_tmp2)
     return HeunCache(
-        u, uprev, zero(u), atmp, zero(rate_prototype),
+        u, uprev, tmp_cache, zero(rate_prototype),
         zero(rate_prototype), alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -108,8 +117,11 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(zero(u), nothing, atmp, nothing, rate_tmp, rate_tmp2)
     return RalstonCache(
-        u, uprev, zero(u), atmp, zero(rate_prototype),
+        u, uprev, tmp_cache, zero(rate_prototype),
         zero(rate_prototype), alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -139,16 +151,16 @@ end
 @cache struct MidpointCache{
         uType,
         rateType,
-        uNoUnitsType,
         StageLimiter,
         StepLimiter,
         Thread,
+        TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`atmp` (no `utilde` existed, so `tmp2` is `nothing`).
+    tmp_cache::TmpC
     fsalfirst::rateType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -168,8 +180,11 @@ function alg_cache(
     recursivefill!(atmp, false)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
     return MidpointCache(
-        u, uprev, k, tmp, atmp, fsalfirst, alg.stage_limiter!, alg.step_limiter!,
+        u, uprev, k, tmp_cache, fsalfirst, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
 end
@@ -183,7 +198,7 @@ function alg_cache(
     return MidpointConstantCache()
 end
 
-@cache struct RK4Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <:
+@cache struct RK4Cache{uType, rateType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -192,8 +207,8 @@ end
     k₃::rateType
     k₄::rateType
     k::rateType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`atmp` (no `utilde` existed, so `tmp2` is `nothing`).
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -215,8 +230,11 @@ function alg_cache(
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
     return RK4Cache(
-        u, uprev, k₁, k₂, k₃, k₄, k, tmp, atmp, alg.stage_limiter!, alg.step_limiter!,
+        u, uprev, k₁, k₂, k₃, k₄, k, tmp_cache, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
 end
@@ -231,8 +249,8 @@ function alg_cache(
 end
 
 @cache struct BS3Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -240,9 +258,11 @@ end
     k2::rateType
     k3::rateType
     k4::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp` (stage scratch), `utilde` (embedded solution, now
+    # `tmp2`) and `atmp` (error norms). The stage `k`s feed the interpolant, so
+    # there are no safe rate donors: the rate slots are allocated only when the
+    # user opts in via `preallocate_initdt_buffers` (default false).
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -260,12 +280,12 @@ function alg_cache(
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        preallocate_initdt_buffers(alg) ? Val(true) : Val(false)
+    )
     return BS3Cache(
-        u, uprev, k1, k2, k3, k4, utilde, tmp, atmp, tab, alg.stage_limiter!,
+        u, uprev, k1, k2, k3, k4, tmp_cache, tab, alg.stage_limiter!,
         alg.step_limiter!, alg.thread
     )
 end
@@ -280,8 +300,8 @@ function alg_cache(
 end
 
 @cache struct OwrenZen3Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter,
-        StepLimiter, Thread,
+        uType, rateType, TabType, StageLimiter,
+        StepLimiter, Thread, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -290,9 +310,10 @@ end
     k2::rateType
     k3::rateType
     k4::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`utilde` (now `tmp2`)/`atmp`. No safe rate donors
+    # (the stage `k`s feed the interpolant): rate slots are opt-in via
+    # `preallocate_initdt_buffers`.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -310,12 +331,12 @@ function alg_cache(
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        preallocate_initdt_buffers(alg) ? Val(true) : Val(false)
+    )
     return OwrenZen3Cache(
-        u, uprev, k1, k2, k3, k4, utilde, tmp, atmp, tab, alg.stage_limiter!,
+        u, uprev, k1, k2, k3, k4, tmp_cache, tab, alg.stage_limiter!,
         alg.step_limiter!, alg.thread
     )
 end
@@ -330,8 +351,8 @@ function alg_cache(
 end
 
 @cache struct OwrenZen4Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter,
-        StepLimiter, Thread,
+        uType, rateType, TabType, StageLimiter,
+        StepLimiter, Thread, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -342,9 +363,8 @@ end
     k4::rateType
     k5::rateType
     k6::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`utilde` (now `tmp2`)/`atmp`; rate slots opt-in.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -364,12 +384,12 @@ function alg_cache(
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        preallocate_initdt_buffers(alg) ? Val(true) : Val(false)
+    )
     return OwrenZen4Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, utilde, tmp, atmp, tab,
+        u, uprev, k1, k2, k3, k4, k5, k6, tmp_cache, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -384,8 +404,8 @@ function alg_cache(
 end
 
 @cache struct OwrenZen5Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter,
-        StepLimiter, Thread,
+        uType, rateType, TabType, StageLimiter,
+        StepLimiter, Thread, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -398,9 +418,10 @@ end
     k6::rateType
     k7::rateType
     k8::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`utilde` (now `tmp2`)/`atmp`. No safe rate donors
+    # (the stage `k`s feed the interpolant): rate slots are opt-in via
+    # `preallocate_initdt_buffers`.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -422,12 +443,12 @@ function alg_cache(
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
     k8 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        preallocate_initdt_buffers(alg) ? Val(true) : Val(false)
+    )
     return OwrenZen5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, tmp_cache, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -442,8 +463,8 @@ function alg_cache(
 end
 
 @cache struct BS5Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -455,9 +476,10 @@ end
     k6::rateType
     k7::rateType
     k8::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`utilde` (now `tmp2`)/`atmp`. No safe rate donors
+    # (the stage `k`s feed the interpolant): rate slots are opt-in via
+    # `preallocate_initdt_buffers`.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -479,12 +501,12 @@ function alg_cache(
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
     k8 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        preallocate_initdt_buffers(alg) ? Val(true) : Val(false)
+    )
     return BS5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, tmp_cache, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -499,8 +521,8 @@ function alg_cache(
 end
 
 @cache struct DP5Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        uType, rateType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -515,9 +537,13 @@ end
     dense_tmp4::rateType
     update::rateType
     bspl::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Former inline `tmp`/`utilde`/`atmp`. Historically `utilde` ALIASED `tmp`
+    # (one array), so `tmp_cache.tmp2 === tmp_cache.tmp` here — preserved
+    # exactly so the array count matches master. `atmp` keeps its historical
+    # conditional aliasing of `k3` (only when `calck == false`, i.e. no dense
+    # output reads it). No safe rate donors otherwise: rate slots opt-in via
+    # `preallocate_initdt_buffers`.
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -541,7 +567,6 @@ function alg_cache(
     bspl = k3
 
     tmp = zero(u) # has to be separate for FSAL
-    utilde = tmp
 
     if eltype(u) != uEltypeNoUnits || calck
         update = zero(rate_prototype)
@@ -552,9 +577,13 @@ function alg_cache(
         atmp = k3
     end
 
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    # `utilde` historically aliased `tmp`; keep that identity in `tmp2`.
+    tmp_cache = TmpCache(tmp, tmp, atmp, nothing, rate_tmp, rate_tmp2)
     cache = DP5Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update,
-        bspl, utilde, tmp, atmp, alg.stage_limiter!, alg.step_limiter!,
+        bspl, tmp_cache, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
     return cache

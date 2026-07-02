@@ -13,7 +13,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     _ode_interpolant!, _ode_addsteps!, @fold,
     @OnDemandTableauExtract, AutoAlgSwitch,
     DerivativeOrderNotPossibleError,
-    get_fsalfirstlast, copyat_or_push!
+    get_fsalfirstlast, copyat_or_push!,
+    TmpCache, build_tmp_cache
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using FastBroadcast: Serial

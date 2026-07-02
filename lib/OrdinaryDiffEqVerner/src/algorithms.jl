@@ -21,6 +21,12 @@ Base.@kwdef struct Vern6{StageLimiter, StepLimiter, Thread, L} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     lazy::L = Val{true}()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 @truncate_stacktrace Vern6 3
 
@@ -47,6 +53,12 @@ Base.@kwdef struct Vern7{StageLimiter, StepLimiter, Thread, L} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     lazy::L = Val{true}()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 @truncate_stacktrace Vern7 3
 
@@ -73,6 +85,12 @@ Base.@kwdef struct Vern8{StageLimiter, StepLimiter, Thread, L} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     lazy::L = Val{true}()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 @truncate_stacktrace Vern8 3
 
@@ -98,6 +116,12 @@ Base.@kwdef struct Vern9{StageLimiter, StepLimiter, Thread, L} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     lazy::L = Val{true}()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 @truncate_stacktrace Vern9 3
 
@@ -162,5 +186,11 @@ Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread, L} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     lazy::L = Val{true}()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 @truncate_stacktrace RKV76IIa 3

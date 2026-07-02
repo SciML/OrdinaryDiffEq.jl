@@ -33,14 +33,20 @@ function ESDIRKIMEXConstantCache(nlsolver, tab)
 end
 
 mutable struct ESDIRKIMEXCache{
-        uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter, U2, AV, U3, T2,
+        uType, rateType, N, Tab, kType, StepLimiter, U2, AV, U3, T2, TmpC <: TmpCache,
     } <: SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     zs::Vector{uType}
     ks::Vector{kType}
-    atmp::uNoUnitsType
+    # Unified scratch: only the cache-level `atmp` migrated here (Newton caches
+    # carry no cache-level state scratch — the Newton buffers live on the
+    # nlsolver and are off limits), so `tmp`/`tmp2`/`weight` are `nothing`.
+    # The rate slots can be opted in via `preallocate_initdt_buffers`:
+    # `TmpCache{Nothing, Nothing, uNoUnitsType, Nothing}` (default) or
+    # `TmpCache{Nothing, rateType, uNoUnitsType, Nothing}` (rates held).
+    tmp_cache::TmpC
     nlsolver::N
     tab::Tab
     step_limiter!::StepLimiter
@@ -50,15 +56,35 @@ mutable struct ESDIRKIMEXCache{
     tprev2::T2
 end
 
-function ESDIRKIMEXCache(u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, step_limiter!)
+# Compatibility shim: external constructors (OrdinaryDiffEqBDF's ABDF2
+# first-step bootstrap builds this cache positionally) still pass a bare
+# `atmp` array in the slot that now holds the unified scratch struct. Wrap it
+# so the same array keeps serving as the error-norm scratch.
+function ESDIRKIMEXCache(
+        u, uprev, fsalfirst, zs, ks, atmp::AbstractArray, nlsolver, tab,
+        step_limiter!, uprev2, algebraic_vars, uprev3, tprev2
+    )
+    tmp_cache = TmpCache(nothing, nothing, atmp, nothing, nothing, nothing)
     return ESDIRKIMEXCache(
-        u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, step_limiter!,
+        u, uprev, fsalfirst, zs, ks, tmp_cache, nlsolver, tab, step_limiter!,
+        uprev2, algebraic_vars, uprev3, tprev2
+    )
+end
+
+function ESDIRKIMEXCache(u, uprev, fsalfirst, zs, ks, tmp_cache, nlsolver, tab, step_limiter!)
+    return ESDIRKIMEXCache(
+        u, uprev, fsalfirst, zs, ks, tmp_cache, nlsolver, tab, step_limiter!,
         nothing, nothing, nothing, nothing
     )
 end
 
 function full_cache(c::ESDIRKIMEXCache)
-    base = (c.u, c.uprev, c.fsalfirst, c.zs..., c.atmp)
+    # Opted-out TmpCache slots appear as `nothing`; full_cache consumers
+    # (resize! & friends) skip those.
+    base = (
+        c.u, c.uprev, c.fsalfirst, c.zs...,
+        OrdinaryDiffEqCore.tmp_cache_buffers(c.tmp_cache)...,
+    )
     if eltype(c.ks) !== Nothing
         base = tuple(base..., c.ks...)
     end
@@ -77,8 +103,31 @@ function OrdinaryDiffEqCore.strip_cache(cache::ESDIRKIMEXCache)
         nothing, nothing, nothing,
         Vector{Nothing}(undef, s),
         Vector{Nothing}(undef, s),
-        nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing
+        TmpCache(nothing, nothing, nothing, nothing, nothing, nothing),
+        nothing, nothing, nothing, nothing, nothing, nothing, nothing
     )
+end
+
+# Rate-scratch buffers for the initial-dt estimator, gated at the type level on
+# the algorithm's `preallocate_initdt_buffers` trait (always `false` for the
+# current SDIRK algorithms, which have no such field — the slots stay
+# `nothing` and `initdt` allocates its rate temporaries at call time). There is
+# no safe rate donor to alias: `fsalfirst` feeds the Hermite interpolant.
+_initdt_rate_buffers(rate_prototype, ::Val{true}) =
+    (zero(rate_prototype), zero(rate_prototype))
+_initdt_rate_buffers(rate_prototype, ::Val{false}) = (nothing, nothing)
+
+# `atmp` is the only cache-level scratch this cache ever had, so it is the only
+# migrated slot — `tmp`/`tmp2` stay `nothing` rather than allocating state
+# scratch the historical cache didn't have (the Newton state on the nlsolver is
+# deliberately not aliased here). Net array count is unchanged from master.
+function _esdirk_tmp_cache(alg, u, rate_prototype, ::Type{uEltypeNoUnits}) where {uEltypeNoUnits}
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    rate_tmp, rate_tmp2 = _initdt_rate_buffers(
+        rate_prototype, Val(OrdinaryDiffEqCore.preallocate_initdt_buffers(alg))
+    )
+    return TmpCache(nothing, nothing, atmp, nothing, rate_tmp, rate_tmp2)
 end
 
 function alg_cache(
@@ -121,11 +170,10 @@ function alg_cache(
 
     zs = [zero(u) for _ in 1:(s - 1)]
     push!(zs, nlsolver.z)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    tmp_cache = _esdirk_tmp_cache(alg, u, rate_prototype, uEltypeNoUnits)
 
     return ESDIRKIMEXCache(
-        u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, alg.step_limiter!
+        u, uprev, fsalfirst, zs, ks, tmp_cache, nlsolver, tab, alg.step_limiter!
     )
 end
 
@@ -167,8 +215,7 @@ function alg_cache(
     ks = f isa SplitFunction ? [zero(u) for _ in 1:s] : Vector{Nothing}()
     zs = [zero(u) for _ in 1:(s - 1)]
     push!(zs, nlsolver.z)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    tmp_cache = _esdirk_tmp_cache(alg, u, rate_prototype, uEltypeNoUnits)
     algebraic_vars = if (alg isa ImplicitEuler) && f.mass_matrix !== I
         [all(iszero, x) for x in eachcol(f.mass_matrix)]
     else
@@ -178,7 +225,7 @@ function alg_cache(
     tprev2 = (alg isa Trapezoid) ? t : nothing
     uprev2_field = alg_extrapolates(alg) ? uprev2 : nothing
     return ESDIRKIMEXCache(
-        u, uprev, fsalfirst, zs, ks, atmp, nlsolver, tab, _esdirk_step_limiter!(alg),
+        u, uprev, fsalfirst, zs, ks, tmp_cache, nlsolver, tab, _esdirk_step_limiter!(alg),
         uprev2_field, algebraic_vars, uprev3, tprev2
     )
 end

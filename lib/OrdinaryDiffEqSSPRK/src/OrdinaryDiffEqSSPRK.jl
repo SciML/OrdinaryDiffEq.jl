@@ -12,7 +12,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
     constvalue, _unwrap_val,
     explicit_rk_docstring, trivial_limiter!,
     _ode_interpolant, _ode_interpolant!,
-    _ode_addsteps!, get_fsalfirstlast, copyat_or_push!
+    _ode_addsteps!, get_fsalfirstlast, copyat_or_push!,
+    TmpCache, build_tmp_cache, preallocate_initdt_buffers
 using FastBroadcast, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 using FastBroadcast: Serial

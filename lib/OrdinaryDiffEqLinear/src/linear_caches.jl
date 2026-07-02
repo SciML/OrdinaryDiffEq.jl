@@ -1,12 +1,12 @@
 abstract type LinearMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::LinearMutableCache, u) = (cache.fsalfirst, cache.k)
 
-@cache struct MagnusMidpointCache{uType, rateType, WType, expType} <:
+@cache struct MagnusMidpointCache{uType, rateType, WType, expType, TmpC <: TmpCache} <:
     LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -23,7 +23,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusMidpointCache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusMidpointCache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusMidpointConstantCache <: OrdinaryDiffEqConstantCache
@@ -38,11 +39,11 @@ function alg_cache(
     return MagnusMidpointConstantCache()
 end
 
-@cache struct RKMK2Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct RKMK2Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -59,7 +60,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return RKMK2Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return RKMK2Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct RKMK2ConstantCache <: OrdinaryDiffEqConstantCache
@@ -74,11 +76,11 @@ function alg_cache(
     return RKMK2ConstantCache()
 end
 
-@cache struct LieRK4Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct LieRK4Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -95,7 +97,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return LieRK4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return LieRK4Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct LieRK4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -110,11 +113,11 @@ function alg_cache(
     return LieRK4ConstantCache()
 end
 
-@cache struct CG3Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct CG3Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -131,7 +134,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return CG3Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return CG3Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct CG3ConstantCache <: OrdinaryDiffEqConstantCache
@@ -146,11 +150,11 @@ function alg_cache(
     return CG3ConstantCache()
 end
 
-@cache struct CG2Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct CG2Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -167,7 +171,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return CG2Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return CG2Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct CG2ConstantCache <: OrdinaryDiffEqConstantCache
@@ -182,11 +187,11 @@ function alg_cache(
     return CG2ConstantCache()
 end
 
-@cache struct CG4aCache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct CG4aCache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -201,7 +206,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return CG4aCache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return CG4aCache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct CG4aConstantCache <: OrdinaryDiffEqConstantCache
@@ -214,11 +220,11 @@ function alg_cache(
     return CG4aConstantCache()
 end
 
-@cache struct RKMK4Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct RKMK4Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -235,7 +241,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return RKMK4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return RKMK4Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct RKMK4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -250,17 +257,15 @@ function alg_cache(
     return RKMK4ConstantCache()
 end
 
-@cache struct MagnusAdapt4Cache{uType, rateType, WType, uNoUnitsType, expType} <:
+@cache struct MagnusAdapt4Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <:
     LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
-    utilde::uType
-    atmp::uNoUnitsType
     exp_cache::expType
 end
 
@@ -273,12 +278,10 @@ function alg_cache(
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusAdapt4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, utilde, atmp, exp_cache)
+    # tmp -> tmp, utilde -> tmp2, atmp -> atmp (net-zero: 3 u-sized arrays)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return MagnusAdapt4Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusAdapt4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -293,11 +296,11 @@ function alg_cache(
     return MagnusAdapt4ConstantCache()
 end
 
-@cache struct MagnusNC8Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct MagnusNC8Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -314,7 +317,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusNC8Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusNC8Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusNC8ConstantCache <: OrdinaryDiffEqConstantCache
@@ -329,11 +333,11 @@ function alg_cache(
     return MagnusNC8ConstantCache()
 end
 
-@cache struct MagnusGL4Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct MagnusGL4Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -350,7 +354,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusGL4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusGL4Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusGL4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -365,11 +370,11 @@ function alg_cache(
     return MagnusGL4ConstantCache()
 end
 
-@cache struct MagnusGL8Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct MagnusGL8Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -386,7 +391,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusGL8Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusGL8Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusGL8ConstantCache <: OrdinaryDiffEqConstantCache
@@ -401,11 +407,11 @@ function alg_cache(
     return MagnusGL8ConstantCache()
 end
 
-@cache struct MagnusNC6Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct MagnusNC6Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -422,7 +428,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusNC6Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusNC6Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusNC6ConstantCache <: OrdinaryDiffEqConstantCache
@@ -437,11 +444,11 @@ function alg_cache(
     return MagnusNC6ConstantCache()
 end
 
-@cache struct MagnusGL6Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct MagnusGL6Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -458,7 +465,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusGL6Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusGL6Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusGL6ConstantCache <: OrdinaryDiffEqConstantCache
@@ -472,12 +480,12 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return MagnusGL6ConstantCache()
 end
-@cache struct MagnusGauss4Cache{uType, rateType, WType, expType} <:
+@cache struct MagnusGauss4Cache{uType, rateType, WType, expType, TmpC <: TmpCache} <:
     LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -494,7 +502,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusGauss4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusGauss4Cache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusGauss4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -509,11 +518,11 @@ function alg_cache(
     return MagnusGauss4ConstantCache()
 end
 
-@cache struct LieEulerCache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct LieEulerCache{uType, rateType, WType, expType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -530,7 +539,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return LieEulerCache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return LieEulerCache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct LieEulerConstantCache <: OrdinaryDiffEqConstantCache
@@ -545,10 +555,10 @@ function alg_cache(
     return LieEulerConstantCache()
 end
 
-@cache struct CayleyEulerCache{uType, rateType} <: LinearMutableCache
+@cache struct CayleyEulerCache{uType, rateType, TmpC <: TmpCache} <: LinearMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp_cache::TmpC
     V::uType
     fsalfirst::rateType
     k::rateType
@@ -562,7 +572,8 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    return CayleyEulerCache(u, uprev, zero(u), zero(u), fsalfirst, k)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return CayleyEulerCache(u, uprev, tmp_cache, zero(u), fsalfirst, k)
 end
 
 struct CayleyEulerConstantCache <: OrdinaryDiffEqConstantCache
@@ -577,12 +588,12 @@ function alg_cache(
     return CayleyEulerConstantCache()
 end
 
-@cache struct MagnusLeapfrogCache{uType, rateType, WType, expType} <:
+@cache struct MagnusLeapfrogCache{uType, rateType, WType, expType, TmpC <: TmpCache} <:
     LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    tmp::uType
+    tmp_cache::TmpC
     fsalfirst::rateType
     W::WType
     k::rateType
@@ -599,7 +610,8 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusLeapfrogCache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return MagnusLeapfrogCache(u, uprev, uprev2, tmp_cache, fsalfirst, W, k, exp_cache)
 end
 
 struct MagnusLeapfrogConstantCache <: OrdinaryDiffEqConstantCache
@@ -625,11 +637,11 @@ function alg_cache(
     return LinearExponentialConstantCache()
 end
 
-@cache struct LinearExponentialCache{uType, rateType, KsType, expType} <:
+@cache struct LinearExponentialCache{uType, rateType, KsType, expType, TmpC <: TmpCache} <:
     LinearMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp_cache::TmpC
     rtmp::rateType
     KsCache::KsType # different depending on alg.krylov
     exp_cache::expType
@@ -674,5 +686,6 @@ function alg_cache(
         throw(ArgumentError("Unknown krylov setting $(alg.krylov). Can be :off, :simple or :adaptive."))
     end
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return LinearExponentialCache(u, uprev, tmp, rtmp, KsCache, exp_cache)
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, nothing, nothing)
+    return LinearExponentialCache(u, uprev, tmp_cache, rtmp, KsCache, exp_cache)
 end

@@ -1,7 +1,7 @@
 struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
 
 @cache struct QPRK98Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread,
+        uType, rateType, StageLimiter, StepLimiter, Thread, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -22,10 +22,11 @@ struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
     k14::rateType
     k15::rateType
     k16::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
     k::rateType
+    # Parameterized so the rate slots can be opted in (`preallocate_initdt_buffers`):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}` (default, rates skipped) or
+    # `TmpCache{uType, rateType, uNoUnitsType, Nothing}` (rates held).
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -55,14 +56,20 @@ function alg_cache(
     k14 = zero(rate_prototype)
     k15 = zero(rate_prototype)
     k16 = zero(rate_prototype)
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
     k = zero(rate_prototype)
-    recursivefill!(atmp, false)
+    # QPRK98 previously allocated `tmp` (stage scratch), `utilde` (embedded
+    # solution, now `tmp2`) and `atmp` (error-norm scaling) inline — migrated
+    # fields, so the array count matches the historical cache exactly. There
+    # are no safe rate donors (`k1..k16` are live across the whole step and
+    # `fsalfirst`/`k` are FSAL state), so the initdt rate buffers are allocated
+    # only when the user opts in via `preallocate_initdt_buffers` (default
+    # false); otherwise those slots are `nothing` and `initdt` allocates its
+    # rate temporaries at call time.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
     return QPRK98Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
-        k16, utilde, tmp, atmp, k, alg.stage_limiter!, alg.step_limiter!,
+        k16, k, tmp_cache, alg.stage_limiter!, alg.step_limiter!,
         alg.thread
     )
 end

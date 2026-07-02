@@ -125,8 +125,11 @@ function alg_cache(
         alg::RKIP, u::uType, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, iip, verbose
     ) where {uType}
-    tmp = zero(u)
-    utilde = zero(u)
+    # `tmp` (primary state scratch) and `utilde` (embedded-solution scratch)
+    # migrate into the unified TmpCache slots `tmp`/`tmp2`; no unit-less or rate
+    # scratch is needed (residuals are written into `tmp`). Net-zero: two arrays,
+    # exactly as before.
+    tmp_cache = TmpCache(zero(u), zero(u), nothing, nothing, nothing, nothing)
     kk = [zero(u) for _ in 1:(alg.tableau.stages)]
 
     Â = isa(f, SplitFunction) ? f.f1.f :
@@ -162,12 +165,13 @@ function alg_cache(
             expCacheType = ExpCache{expOpType}
         end
 
-        alg.cache = RKIPCache{expOpType, expCacheType, tTypeNoUnits, opType, uType, iip}(
+        alg.cache = RKIPCache{
+            expOpType, expCacheType, tTypeNoUnits, opType, uType, iip, typeof(tmp_cache),
+        }(
             exp_cache,
             zero(tTypeNoUnits),
             is_cached,
-            tmp,
-            utilde,
+            tmp_cache,
             kk,
             c_unique,
             c_index
@@ -175,12 +179,12 @@ function alg_cache(
     else # cache recycling
         alg.cache = RKIPCache{
             expOpType, typeof(alg.cache.exp_cache), tTypeNoUnits, opType, uType, iip,
+            typeof(tmp_cache),
         }(
             alg.cache.exp_cache,
             alg.cache.last_step,
             alg.cache.cached,
-            tmp,
-            utilde,
+            tmp_cache,
             kk,
             alg.cache.c_unique,
             alg.cache.c_mapping

@@ -18,7 +18,8 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_or
     _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
     _reshape, _vec, get_fsalfirstlast, generic_solver_docstring,
     differentiation_rk_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, @SciMLMessage, Minimal
+    LinearAliasSpecifier, @SciMLMessage, Minimal,
+    TmpCache, build_tmp_cache
 
 using FastBroadcast, MuladdMacro, RecursiveArrayTools, LinearSolve
 import OrdinaryDiffEqCore
@@ -46,7 +47,7 @@ include("extrapolation_perform_step.jl")
         alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
         cache::OrdinaryDiffEqMutableCache
     )
-    return (cache.tmp, cache.utilde)
+    return (cache.tmp_cache.tmp, cache.tmp_cache.tmp2)
 end
 
 export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,

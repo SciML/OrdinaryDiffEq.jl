@@ -1,6 +1,6 @@
 @cache struct Vern6Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread, L,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, L, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -14,10 +14,12 @@
     k7::rateType
     k8::rateType
     k9::rateType
-    utilde::uType
-    tmp::uType
     rtmp::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` (stage scratch), `tmp2` (embedded solution, was
+    # `utilde`) and `atmp` (error-norm scaling) — migrated fields, footprint
+    # identical to the historical layout. Parameterized so the rate slots can be
+    # opted in via `preallocate_initdt_buffers`.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -43,13 +45,21 @@ function alg_cache(
     k7 = zero(rate_prototype)
     k8 = k3
     k9 = zero(rate_prototype)
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
+    # `tmp`/`utilde`/`atmp` all moved into the TmpCache slots, so
+    # `build_tmp_cache` is net-zero in array count. The stage `k`s feed the
+    # interpolant, so there are no safe rate donors: the initdt rate buffers
+    # are allocated only when the user opts in via `preallocate_initdt_buffers`
+    # (default false).
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
+    # `rtmp` historically aliased `utilde` when the eltypes match (it is only
+    # used as intra-step eigen-estimate scratch); preserve that aliasing
+    # against the migrated `tmp2` slot to keep the footprint unchanged.
+    rtmp = uEltypeNoUnits === eltype(u) ? tmp_cache.tmp2 : zero(rate_prototype)
     return Vern6Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, tab,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, rtmp, tmp_cache, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
     )
 end
@@ -70,8 +80,8 @@ function alg_cache(
 end
 
 @cache struct Vern7Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread, L,
+        uType, rateType, StageLimiter, StepLimiter,
+        Thread, L, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -86,10 +96,10 @@ end
     k8::rateType
     k9::rateType
     k10::rateType
-    utilde::uType
-    tmp::uType
     rtmp::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp`, `tmp2` (was `utilde`) and `atmp` — migrated
+    # fields, footprint identical to the historical layout.
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -115,13 +125,18 @@ function alg_cache(
     k8 = zero(rate_prototype)
     k9 = zero(rate_prototype)
     k10 = k2
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
+    # `tmp`/`utilde`/`atmp` all moved into the TmpCache slots (net-zero array
+    # count); no safe rate donors exist (the `k`s feed the interpolant), so the
+    # rate buffers are opt-in via `preallocate_initdt_buffers`.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
+    # `rtmp` historically aliased `utilde` when the eltypes match (intra-step
+    # eigen-estimate scratch only); preserve against the migrated `tmp2` slot.
+    rtmp = uEltypeNoUnits === eltype(u) ? tmp_cache.tmp2 : zero(rate_prototype)
     return Vern7Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, rtmp, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
     )
 end
@@ -140,8 +155,8 @@ function alg_cache(
 end
 
 @cache struct Vern8Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread, L,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, L, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -159,10 +174,10 @@ end
     k11::rateType
     k12::rateType
     k13::rateType
-    utilde::uType
-    tmp::uType
     rtmp::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp`, `tmp2` (was `utilde`) and `atmp` — migrated
+    # fields, footprint identical to the historical layout.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -188,19 +203,24 @@ function alg_cache(
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
     k8 = zero(rate_prototype)
-    tmp = zero(u)
     k9 = zero(rate_prototype)
     k10 = zero(rate_prototype)
     k11 = zero(rate_prototype)
     k12 = zero(rate_prototype)
     k13 = k4
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
+    # `tmp`/`utilde`/`atmp` all moved into the TmpCache slots (net-zero array
+    # count); no safe rate donors exist (the `k`s feed the interpolant), so the
+    # rate buffers are opt-in via `preallocate_initdt_buffers`.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
+    # `rtmp` historically aliased `utilde` when the eltypes match (intra-step
+    # eigen-estimate scratch only); preserve against the migrated `tmp2` slot.
+    rtmp = uEltypeNoUnits === eltype(u) ? tmp_cache.tmp2 : zero(rate_prototype)
     return Vern8Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde,
-        tmp, rtmp, atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13,
+        rtmp, tmp_cache, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
     )
 end
 
@@ -220,8 +240,8 @@ function alg_cache(
 end
 
 @cache struct Vern9Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread, L,
+        uType, rateType, StageLimiter, StepLimiter,
+        Thread, L, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -242,10 +262,10 @@ end
     k14::rateType
     k15::rateType
     k16::rateType
-    utilde::uType
-    tmp::uType
     rtmp::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp`, `tmp2` (was `utilde`) and `atmp` — migrated
+    # fields, footprint identical to the historical layout.
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -277,14 +297,19 @@ function alg_cache(
     k14 = zero(rate_prototype)
     k15 = zero(rate_prototype)
     k16 = k6
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
+    # `tmp`/`utilde`/`atmp` all moved into the TmpCache slots (net-zero array
+    # count); no safe rate donors exist (the `k`s feed the interpolant), so the
+    # rate buffers are opt-in via `preallocate_initdt_buffers`.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
+    # `rtmp` historically aliased `utilde` when the eltypes match (intra-step
+    # eigen-estimate scratch only); preserve against the migrated `tmp2` slot.
+    rtmp = uEltypeNoUnits === eltype(u) ? tmp_cache.tmp2 : zero(rate_prototype)
     return Vern9Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
-        k16, utilde, tmp, rtmp, atmp, alg.stage_limiter!, alg.step_limiter!,
+        k16, rtmp, tmp_cache, alg.stage_limiter!, alg.step_limiter!,
         alg.thread, alg.lazy
     )
 end
@@ -303,8 +328,8 @@ function alg_cache(
 end
 
 @cache struct RKV76IIaCache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread, L,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, L, TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     u::uType
@@ -319,10 +344,10 @@ end
     k8::rateType
     k9::rateType
     k10::rateType
-    utilde::uType
-    tmp::uType
     rtmp::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp`, `tmp2` (was `utilde`) and `atmp` — migrated
+    # fields, footprint identical to the historical layout.
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -350,13 +375,19 @@ function alg_cache(
     k8 = k3
     k9 = zero(rate_prototype)
     k10 = k4
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
+    # `tmp`/`utilde`/`atmp` all moved into the TmpCache slots (net-zero array
+    # count); no safe rate donors exist (the `k`s feed the interpolant), so the
+    # rate buffers are opt-in via `preallocate_initdt_buffers`.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
+    # `rtmp` historically aliased `utilde` when the eltypes match (it is unused
+    # by this method's perform_step but kept for layout parity); preserve the
+    # aliasing against the migrated `tmp2` slot.
+    rtmp = uEltypeNoUnits === eltype(u) ? tmp_cache.tmp2 : zero(rate_prototype)
     return RKV76IIaCache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, tab,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, rtmp, tmp_cache, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
     )
 end

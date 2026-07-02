@@ -9,9 +9,10 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, ismultistep,
     OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
     ExponentialAlgorithm, fsal_typeof, isdtchangeable,
     calculate_residuals, calculate_residuals!,
-    full_cache, get_fsalfirstlast,
+    full_cache, get_fsalfirstlast, TmpCache,
     generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad
 import OrdinaryDiffEqCore
+import SciMLBase
 using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!

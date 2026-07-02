@@ -121,34 +121,39 @@ end
     end
 end
 
+# `utilde` is the state-typed scratch (`tmp_cache.tmp2`), so `dt` is folded
+# into each term to keep the accumulation in state units (the former inline
+# `utilde` was rate-typed).
 function accumulate_EEst!(out, αEEst, utilde, kk, dt, stages)
-    @.. broadcast = false utilde = αEEst[1] * kk[1]
+    @.. broadcast = false utilde = dt * (αEEst[1] * kk[1])
     for i in 2:stages
-        @.. broadcast = false utilde = utilde + αEEst[i] * kk[i]
+        @.. broadcast = false utilde = utilde + dt * (αEEst[i] * kk[i])
     end
-    return @.. broadcast = false out = dt * utilde
+    return @.. broadcast = false out = utilde
 end
 
 @muladd function compute_stages!(
         f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
         stages::Integer
     ) where {F}
+    # `utilde` is the state-typed scratch (`tmp_cache.tmp2`); accumulate the
+    # dt-scaled stage combination so the buffer carries state units.
     # Middle
     for i in 2:(stages - 1)
-        @.. broadcast = false utilde = zero(kk[1][1])
-        for j in 1:(i - 1)
-            @.. broadcast = false utilde = utilde + A[j, i] * kk[j]
+        @.. broadcast = false utilde = dt * (A[1, i] * kk[1])
+        for j in 2:(i - 1)
+            @.. broadcast = false utilde = utilde + dt * (A[j, i] * kk[j])
         end
-        @.. broadcast = false tmp = uprev + dt * utilde
+        @.. broadcast = false tmp = uprev + utilde
         f(kk[i], tmp, p, t + c[i] * dt)
     end
 
     #Last
-    @.. broadcast = false utilde = zero(kk[1][1])
-    for j in 1:(stages - 1)
-        @.. broadcast = false utilde = utilde + A[j, end] * kk[j]
+    @.. broadcast = false utilde = dt * (A[1, end] * kk[1])
+    for j in 2:(stages - 1)
+        @.. broadcast = false utilde = utilde + dt * (A[j, end] * kk[j])
     end
-    @.. broadcast = false u = uprev + dt * utilde
+    @.. broadcast = false u = uprev + utilde
     f(kk[end], u, p, t + c[end] * dt) #fsallast is tmp even if not fsal
     return nothing
 end
@@ -196,11 +201,13 @@ function runtime_split_stages!(
 end
 
 function accumulate_fsal!(u, α, utilde, uprev, kk, dt, stages)
-    @.. broadcast = false utilde = α[1] * kk[1]
+    # `utilde` is the state-typed scratch (`tmp_cache.tmp2`); fold `dt` into
+    # each term so the accumulation carries state units.
+    @.. broadcast = false utilde = dt * (α[1] * kk[1])
     for i in 2:stages
-        @.. broadcast = false utilde = utilde + α[i] * kk[i]
+        @.. broadcast = false utilde = utilde + dt * (α[i] * kk[i])
     end
-    return @.. broadcast = false u = uprev + dt * utilde
+    return @.. broadcast = false u = uprev + utilde
 end
 
 function runtime_split_fsal!(out, A, utilde, uprev, kk, dt, stages)
@@ -240,7 +247,12 @@ end
     alg = unwrap_alg(integrator, false)
     # αEEst is `α - αEEst`
     (; A, c, α, αEEst, stages) = cache.tab
-    (; kk, utilde, tmp, atmp) = cache
+    (; kk) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the stage-accumulation scratch (was the inline rate-typed
+    # `utilde` field; now state-typed, with `dt` folded into the fallback
+    # accumulators).
+    utilde = cache.tmp_cache.tmp2
 
     runtime_split_stages!(f, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages)
     integrator.stats.nf += stages - 1
