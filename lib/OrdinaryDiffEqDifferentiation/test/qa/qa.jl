@@ -1,10 +1,11 @@
 using SciMLTesting, OrdinaryDiffEqDifferentiation, Test
 
-# Residual ExplicitImports ignores: every name below is a genuinely non-public
-# (or non-owner re-exported) symbol of another package that this differentiation
-# sublibrary legitimately relies on. The OrdinaryDiffEqCore / SciMLBase / DiffEqBase
-# entries are the internal solver/W-matrix/Jacobian-interface API that the sublib is
-# built against and are make-public candidates upstream (tracked in SciML/OrdinaryDiffEq.jl#3776).
+# Residual ExplicitImports ignores. After the solver-author extension API of
+# OrdinaryDiffEqCore / OrdinaryDiffEqDifferentiation / DiffEqBase was declared
+# `public` (Julia 1.11+ `public`), the only names left are genuine non-public
+# externals, this sublib's own internal sparse-handling API, and a small set of
+# OrdinaryDiffEqCore names not yet in that public block (make-public follow-ups,
+# tracked in SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqDifferentiation;
     aqua_kwargs = (; piracies = false, ambiguities = false),
@@ -16,30 +17,20 @@ run_qa(
         all_qualified_accesses_via_owners = (; ignore = (Symbol("@set"),)),
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore internal solver API (make-public candidates)
-                :AbstractNLSolver, :alg_autodiff, :CompositeAlgorithm, :concrete_jac,
-                :constvalue, :DAEAlgorithm, :diffdir, :Divergence, :get_chunksize,
-                :get_new_W_γdt_cutoff, :get_W, :isfirstcall, :isfirststage, :isJcurrent,
-                :isnewton, :issplit, :isWmethod, :nlsolve_f,
-                :OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-                :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAlgorithm,
-                :OrdinaryDiffEqCache, :OrdinaryDiffEqExponentialAlgorithm,
-                :OrdinaryDiffEqImplicitAlgorithm, :resize_J_W!, :set_new_W!,
-                Symbol("set_W_γdt!"), :TryAgain, :unwrap_alg,
-                # SciMLBase internal wrappers / helpers (make-public candidates)
-                :UDerivativeWrapper, :UJacobianWrapper, :_unwrap_val, :_vec,
-                # other framework internals
-                :AbstractSciMLOperator,  # SciMLOperators
-                :OrdinaryDiffEqTag,      # DiffEqBase
-                :StaticArray, :StaticMatrix,  # StaticArraysCore
                 # Accessors `@set` / SciMLLogging `@SciMLMessage` re-exported by
                 # SciMLBase / OrdinaryDiffEqCore (owners are not direct deps)
                 Symbol("@set"), Symbol("@SciMLMessage"),
+                # SciMLBase internal helpers (make-public candidates)
+                :_unwrap_val, :_vec,
+                # OrdinaryDiffEqCore internals not yet in its public block
+                :concrete_jac, :diffdir, :get_chunksize, :isnewton,
+                # other framework internals
+                :AbstractSciMLOperator,       # SciMLOperators
+                :StaticArray, :StaticMatrix,  # StaticArraysCore
             ),
         ),
         all_qualified_accesses_are_public = (;
             ignore = (
-                # Base / framework internals accessed by qualification
                 Symbol("@pure"),         # Base
                 Symbol("@set"),          # Accessors macro re-exported by SciMLBase
                 :AbstractSciMLOperator,  # SciMLOperators
@@ -48,10 +39,8 @@ run_qa(
                 :init_cacheval, :needs_concrete_A,
                 # ForwardDiff internals
                 :JacobianConfig, :Tag, :pickchunksize,
-                # OrdinaryDiffEqCore internal solver API (make-public candidates)
-                :_get_fwd_chunksize_int, :get_EEst, Symbol("increment_nf!"), :unwrap_alg,
-                # DiffEqBase internals
-                :default_factorize, :prepare_alg,
+                # OrdinaryDiffEqCore internal not yet in its public block
+                :_get_fwd_chunksize_int,
                 # SciMLBase Jacobian-interface predicates (make-public candidates)
                 :has_Wfact_t, :has_colorvec, :has_jac_du, :has_jac_u,
                 # DifferentiationInterface internals
