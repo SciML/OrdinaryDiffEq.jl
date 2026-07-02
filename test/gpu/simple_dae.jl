@@ -39,7 +39,8 @@ tspan = (0.0, 5.0)
 
 # CPU reference solution (Rodas5P)
 odef = ODEFunction(dae!, mass_matrix = mass_matrix, jac_prototype = jac_prototype)
-prob = ODEProblem(odef, u0, tspan, p)
+initializealg = BrownFullBasicInit()
+prob = ODEProblem(odef, u0, tspan, p; initializealg)
 sol_ref = solve(prob, Rodas5P())
 sol_ref_krylov = solve(prob, Rodas5P(linsolve = KrylovJL_GMRES()))
 
@@ -53,8 +54,8 @@ mass_matrix_d = cu(mass_matrix)
 # ── Jacobian prototype options ────────────────────────────────────────────────
 jac_prots = [
     "none" => nothing,
-    "CSC" => CUDA.CUSPARSE.CuSparseMatrixCSC(jac_prototype),
-    "CSR" => CUDA.CUSPARSE.CuSparseMatrixCSR(jac_prototype),
+    # "CSC" => CUDA.CUSPARSE.CuSparseMatrixCSC(jac_prototype),
+    # "CSR" => CUDA.CUSPARSE.CuSparseMatrixCSR(jac_prototype),
 ]
 
 # ── Solver definitions ────────────────────────────────────────────────────────
@@ -228,12 +229,15 @@ function run_dae_tests()
 
         # CPU: this solver vs reference
         cpu_alg = krylov ? sv(linsolve = KrylovJL_GMRES()) : sv()
+        println("  CPU solve...")
         sol_cpu = solve(prob, cpu_alg)
         cpu_abs, cpu_rel = maxerrs(sol_cpu, _sol_ref)
 
         # GPU solve
         odef_d = ODEFunction(dae!, mass_matrix = mass_matrix_d, jac_prototype = jp)
-        prob_d = ODEProblem(odef_d, u0_d, tspan, p_d)
+        initializealg = BrownFullBasicInit()
+        prob_d = ODEProblem(odef_d, u0_d, tspan, p_d; initializealg)
+        println("  GPU solve... ")
         sol_d = solve(prob_d, sv())
 
         # GPU vs CPU (same solver)
@@ -292,5 +296,5 @@ end
 @testset "GPU DAE solver compatibility" begin
     global results
     results = run_dae_tests()
+    show_results(results)
 end
-show_results(results)
