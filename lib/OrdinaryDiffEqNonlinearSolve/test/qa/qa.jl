@@ -18,18 +18,16 @@ run_qa(
         # name `public`/exports it. Tracked in SciML/OrdinaryDiffEq.jl#3776.
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore internals not part of the solver-author public API.
-                :apply_step!, :error_constant, :has_special_newton_error,
-                :_initialize_dae!, :isnewton, Symbol("@SciMLMessage"),
+                # `@SciMLMessage` reached through OrdinaryDiffEqCore (owner SciMLLogging).
+                Symbol("@SciMLMessage"),
                 # SciMLBase internals (owner of these names but not public).
-                :_vec, :_reshape, :postamble!, :value, :anyeltypedual,
-                :forwarddiff_chunksize, :has_Wfact, :has_Wfact_t, :has_jac_u, :has_jac_du,
+                :_vec, :_reshape, :postamble!,
                 # SciMLOperators abstract type (not public).
                 :AbstractSciMLOperator,
                 # OrdinaryDiffEqDifferentiation W-operator types (attributed to SciMLOperators).
                 :WOperator, :StaticWOperator,
                 # ForwardDiff / StaticArraysCore internals.
-                :Dual, :Tag, :pickchunksize, :StaticArray,
+                :Dual, :StaticArray,
             ),
         ),
         # Qualified `Module.name` accesses to non-public names with no public alternative.
