@@ -168,4 +168,13 @@ export solve, init, solve!, step!
 # Export misc tools (check functions)
 export checkSRIOrder, checkSRAOrder
 
+# `@cache` is the cache-definition extension macro that downstream StochasticDiffEq
+# solver subpackages import to define their `alg_cache` structs plus the associated
+# `full_cache`/`rand_cache`/`ratenoise_cache` accessors (mirrors the public `@cache`
+# in OrdinaryDiffEqCore). It is made public (not exported) so ExplicitImports'
+# public-API checks recognize it as the supported solver-author surface.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, Symbol("@cache")))
+end
+
 end # module
