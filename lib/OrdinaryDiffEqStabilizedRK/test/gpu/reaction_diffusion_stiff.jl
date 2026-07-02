@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, RecursiveArrayTools, LinearAlgebra, Test
+using OrdinaryDiffEqLowOrderRK: BS3
+using OrdinaryDiffEqStabilizedRK: RKC, ROCK2, TSRKC2
 
 # Define the constants for the PDE
 const α₂ = 1.0
@@ -53,15 +55,18 @@ end
 prob = ODEProblem(f, u0, (0.0, 100.0))
 sol = solve(prob, BS3(), progress = true, save_everystep = false, save_start = false)
 sol = solve(prob, ROCK2(), progress = true, save_everystep = false, save_start = false)
+sol = solve(prob, RKC(), progress = true, save_everystep = false, save_start = false)
+sol = solve(prob, TSRKC2(), progress = true, save_everystep = false, save_start = false)
 
 println("CPU Times")
 println("BS3")
 @time sol = solve(prob, BS3(), progress = true, save_everystep = false, save_start = false)
 println("ROCK2")
-@time sol = solve(
-    prob, ROCK2(), progress = true, save_everystep = false,
-    save_start = false
-)
+@time sol = solve(prob, ROCK2(), progress = true, save_everystep = false, save_start = false)
+println("RKC")
+@time sol = solve(prob, RKC(), progress = true, save_everystep = false, save_start = false)
+println("TSRKC2")
+@time sol = solve(prob, TSRKC2(), progress = true, save_everystep = false, save_start = false)
 
 using CUDA
 gu0 = CuArray(Float32.(u0))
@@ -92,13 +97,16 @@ prob2 = ODEProblem(gf, gu0, (0.0f0, 100.0f0))
 CUDA.allowscalar(false)
 sol = solve(prob2, BS3(), save_everystep = false, save_start = false)
 sol = solve(prob2, ROCK2(), save_everystep = false, save_start = false)
+sol = solve(prob2, RKC(), save_everystep = false, save_start = false)
+sol = solve(prob2, TSRKC2(), save_everystep = false, save_start = false)
 @test sol.t[end] == 100.0
 
 println("GPU Times")
 println("BS3")
 @time sol = solve(prob2, BS3(), progress = true, save_everystep = false, save_start = false)
 println("ROCK2")
-@time sol = solve(
-    prob2, ROCK2(), progress = true, save_everystep = false,
-    save_start = false
-)
+@time sol = solve(prob2, ROCK2(), progress = true, save_everystep = false, save_start = false)
+println("RKC")
+@time sol = solve(prob2, RKC(), progress = true, save_everystep = false, save_start = false)
+println("TSRKC2")
+@time sol = solve(prob2, TSRKC2(), progress = true, save_everystep = false, save_start = false)

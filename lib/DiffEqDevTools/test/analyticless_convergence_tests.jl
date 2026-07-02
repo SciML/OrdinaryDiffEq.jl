@@ -73,7 +73,7 @@ h2(z) = z^2 # but apply it only to u[1]
 
 prob = SDEProblem(f2!, g2!, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 
-numtraj = Int(1.0e5)
+numtraj = Int(1.0e6)
 seed = 100
 Random.seed!(seed)
 seeds = rand(UInt, numtraj)
@@ -115,7 +115,7 @@ prob = SDDEProblem(
 dts = (1 / 2) .^ (7:-1:3)
 test_dt = 1 / 2^8
 sim2 = analyticless_test_convergence(
-    dts, prob, MethodOfSteps(RKMil()), test_dt, trajectories = 100,
+    dts, prob, MethodOfSteps(RKMil()), test_dt, trajectories = 1000,
     use_noise_grid = false
 )
 @test abs(sim2.𝒪est[:final] - 1.0) < 0.3

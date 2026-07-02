@@ -11,6 +11,6 @@ export RodasTableau, Rodas5Tableau,
     ROS3RodasTableau, ROS3PRRodasTableau, Scholz4_7RodasTableau,
     ROS34PW1aRodasTableau, ROS34PW1bRodasTableau, ROS34PW2RodasTableau,
     ROS34PRwRodasTableau, ROS3PRLRodasTableau, ROS3PRL2RodasTableau,
-    RosenbrockW6S4OSRodasTableau
+    RosenbrockW6S4OSRodasTableau, Rodas4PWTableau
 
 end

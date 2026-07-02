@@ -1,15 +1,106 @@
 name: TagBot
+
 on:
   issue_comment:
     types:
       - created
   workflow_dispatch:
+    inputs:
+      lookback:
+        default: "3"
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  deployments: read
+  issues: read
+  discussions: read
+  packages: read
+  pages: read
+  pull-requests: read
+  repository-projects: read
+  security-events: read
+  statuses: read
+
 jobs:
-  TagBot:
+  TagBot-OrdinaryDiffEq:
     if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
     runs-on: ubuntu-latest
     steps:
-      - uses: JuliaRegistries/TagBot@v1
+      - name: Tag OrdinaryDiffEq
+        uses: JuliaRegistries/TagBot@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ssh: ${{ secrets.DOCUMENTER_KEY }}
+
+  TagBot-Subpackages:
+    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - DelayDiffEq
+          - DiffEqBase
+          - DiffEqDevTools
+          - ImplicitDiscreteSolve
+          - OrdinaryDiffEqAMF
+          - OrdinaryDiffEqAdamsBashforthMoulton
+          - OrdinaryDiffEqBDF
+          - OrdinaryDiffEqCore
+          - OrdinaryDiffEqDefault
+          - OrdinaryDiffEqDifferentiation
+          - OrdinaryDiffEqExplicitRK
+          - OrdinaryDiffEqExplicitTableaus
+          - OrdinaryDiffEqExponentialRK
+          - OrdinaryDiffEqExtrapolation
+          - OrdinaryDiffEqFIRK
+          - OrdinaryDiffEqFeagin
+          - OrdinaryDiffEqFunctionMap
+          - OrdinaryDiffEqHighOrderRK
+          - OrdinaryDiffEqIMEXMultistep
+          - OrdinaryDiffEqImplicitTableaus
+          - OrdinaryDiffEqLinear
+          - OrdinaryDiffEqLowOrderRK
+          - OrdinaryDiffEqLowStorageRK
+          - OrdinaryDiffEqMultirate
+          - OrdinaryDiffEqNewmark
+          - OrdinaryDiffEqNonlinearSolve
+          - OrdinaryDiffEqNordsieck
+          - OrdinaryDiffEqPDIRK
+          - OrdinaryDiffEqPRK
+          - OrdinaryDiffEqQPRK
+          - OrdinaryDiffEqRKIP
+          - OrdinaryDiffEqRKN
+          - OrdinaryDiffEqRosenbrock
+          - OrdinaryDiffEqRosenbrockTableaus
+          - OrdinaryDiffEqSDIRK
+          - OrdinaryDiffEqSIMDRK
+          - OrdinaryDiffEqSSPRK
+          - OrdinaryDiffEqStabilizedIRK
+          - OrdinaryDiffEqStabilizedRK
+          - OrdinaryDiffEqSymplecticRK
+          - OrdinaryDiffEqTaylorSeries
+          - OrdinaryDiffEqTsit5
+          - OrdinaryDiffEqVerner
+          - SimpleImplicitDiscreteSolve
+          - StochasticDiffEq
+          - StochasticDiffEqCore
+          - StochasticDiffEqHighOrder
+          - StochasticDiffEqIIF
+          - StochasticDiffEqImplicit
+          - StochasticDiffEqLeaping
+          - StochasticDiffEqLevyArea
+          - StochasticDiffEqLowOrder
+          - StochasticDiffEqMilstein
+          - StochasticDiffEqROCK
+          - StochasticDiffEqRODE
+          - StochasticDiffEqWeak
+    steps:
+      - name: Tag ${{ matrix.package }}
+        uses: JuliaRegistries/TagBot@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ssh: ${{ secrets.DOCUMENTER_KEY }}
+          subdir: "lib/${{ matrix.package }}"

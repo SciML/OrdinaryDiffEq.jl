@@ -1,4 +1,5 @@
 using OrdinaryDiffEq
+using SciMLBase: EnsembleProblem, EnsembleThreads, EnsembleDistributed, EnsembleAnalysis
 function f(du, u, p, t)
     return du[1] = 1.01 * u[1]
 end

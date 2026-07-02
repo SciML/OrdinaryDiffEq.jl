@@ -1,11 +1,11 @@
 [Interface1]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Interface2]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Interface3]
-versions = ["1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [AlgConvergence]
 versions = ["1"]
@@ -21,18 +21,27 @@ versions = ["1"]
 [AlgConvergence3]
 versions = ["1"]
 
+# Weak-convergence groups are extremely expensive (Monte-Carlo trajectory
+# studies) and only exercise StochasticDiffEq's own weak solvers, so they are
+# marked local_only: they run when this package's source/tests are edited but
+# are skipped when this package is only pulled into the matrix because an
+# upstream dependency changed. See compute_affected_sublibraries.jl.
+
 [WeakConvergence1]
 versions = ["1"]
+local_only = true
 
 [OOPWeakConvergence]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
+local_only = true
 
 [IIPWeakConvergence]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
+local_only = true
 
 [Multithreaded]
 versions = ["1"]
@@ -44,6 +53,7 @@ timeout = 240
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "gpu"]
 timeout = 240
+local_only = true
 
 [Allocations]
 versions = ["1"]
@@ -52,4 +62,4 @@ versions = ["1"]
 versions = ["1"]
 
 [QA]
-versions = ["1"]
+versions = ["lts", "1"]

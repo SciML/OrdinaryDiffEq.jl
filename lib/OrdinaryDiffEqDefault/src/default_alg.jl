@@ -48,6 +48,7 @@ function isdefaultalg(
 end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractODEProblem, ::Nothing) = true
+SciMLBase.supports_solve_rng(::SciMLBase.AbstractDAEProblem, ::Nothing) = true
 
 function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     return SciMLBase.__init(
@@ -62,6 +63,19 @@ function SciMLBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
     )
 end
 
+function SciMLBase.__init(prob::DAEProblem, ::Nothing, args...; kwargs...)
+    return SciMLBase.__init(
+        prob, DFBDF(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...
+    )
+end
+function SciMLBase.__solve(prob::DAEProblem, ::Nothing, args...; kwargs...)
+    return SciMLBase.__solve(
+        prob, DFBDF(autodiff = AutoFiniteDiff()),
+        args...; wrap = Val(false), kwargs...
+    )
+end
+
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
     eigen_est, dt = integrator.eigen_est, integrator.dt
     stiffness = abs(
@@ -70,7 +84,13 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
     ) # `abs` here is just for safety
     tol = is_stiffalg ? stol : ntol
     os = oneunit(stiffness)
-    bool = stiffness > os * tol
+    # NaN-safe form: a NaN spectral-radius estimate (e.g. 0/0 from a
+    # non-smooth RHS that collapses adjacent stage states to the same value)
+    # means the explicit Hairer-style estimator is degenerate. Treat that as
+    # "stiff" so AutoSwitch falls back to an implicit method instead of
+    # getting stuck on the explicit branch. Matches the form used by
+    # `OrdinaryDiffEqCore.is_stiff`.
+    bool = !(stiffness <= os * tol)
 
     if !bool
         integrator.alg.choice_function.successive_switches += 1

@@ -2,11 +2,29 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
 """
-    JacReuseState{T}
+    JacReuseState{T, J, D, W}
 
 Lightweight mutable state for tracking Jacobian reuse in Rosenbrock-W methods.
 W-methods guarantee correctness with a stale Jacobian, so we can skip expensive
 Jacobian recomputations when conditions allow it.
+
+`T` is the element type of `dtgamma` at solve time — usually `Float64`, but
+`ForwardDiff.Dual` (including nested Duals under `ForwardDiff.hessian`) when
+the solve is being differentiated. Callers must construct this with a zero
+value of the right type (typically `zero(dt * gamma)`) so the same cache can hold
+Dual-valued dtgammas without any `ForwardDiff.value` unwrapping — unconditional
+unwrapping is unsafe under nested AD because it collapses a still-active
+inner derivative into a primal.
+
+`J`, `D`, and `W` are the concrete types of the cached Jacobian, time
+derivative, and factorized W matrix respectively. They are seeded with the
+matching real values built in `alg_cache` (rather than `nothing`
+placeholders) so the field types are concrete — required for AD frameworks
+such as Mooncake whose `_copy_output` does an invariant `typeassert` against
+the inferred field types and rejects `Any` slots. The "first use" guard
+inside `_rosenbrock_jac_reuse_decision` (`iszero(last_dtgamma)` →
+`(true, true)`) ensures these initial seed values are never *read* during
+solve: step 1 always recomputes fresh and overwrites them.
 
 Fields:
 - `last_dtgamma`: The dtgamma value from the last Jacobian computation
@@ -14,40 +32,44 @@ Fields:
 - `last_naccept`: The naccept count at last Jacobian computation
 - `max_jac_age`: Maximum number of accepted steps between Jacobian updates
   (populated from `alg.max_jac_age`, default 20)
-- `cached_J`: Cached Jacobian for OOP reuse (type-erased for flexibility)
-- `cached_dT`: Cached time derivative for OOP reuse
-- `cached_W`: Cached factorized W for OOP reuse
+- `cached_J::J`: Cached Jacobian for OOP reuse
+- `cached_dT::D`: Cached time derivative for OOP reuse
+- `cached_W::W`: Cached factorized W for OOP reuse
 - `last_step_iter`: The integrator.iter at the last Rosenbrock step
 - `last_u_length`: The length of u at the last Jacobian computation
 """
-mutable struct JacReuseState{T}
+mutable struct JacReuseState{T, J, D, W}
     last_dtgamma::T
     pending_dtgamma::T
     last_naccept::Int
     max_jac_age::Int
-    cached_J::Any
-    cached_dT::Any
-    cached_W::Any
+    cached_J::J
+    cached_dT::D
+    cached_W::W
     last_step_iter::Int
     last_u_length::Int
 end
 
-function JacReuseState(dtgamma::T, max_jac_age::Int = 20) where {T}
-    return JacReuseState{T}(
-        dtgamma, dtgamma, 0, max_jac_age, nothing, nothing, nothing, 0, 0
+"""
+    _make_jac_reuse_state(dtgamma, max_jac_age, J, dT, W)
+
+Allocate a `JacReuseState` seeded with the real `J`, `dT`, `W` values from
+`alg_cache`. Always allocates so cache types stay concrete and `@inferred`
+tests pass; when `max_jac_age ≤ 1` the age check in
+`_rosenbrock_jac_reuse_decision` triggers every step anyway, so the overhead
+is negligible.
+
+`J`, `dT`, `W` are forwarded from the call site so each `cached_*` slot is
+concretely typed (no `Union{Nothing, ...}` placeholders). AD frameworks such
+as Mooncake require this — `Any` or wrapper-typed slots break `_copy_output`'s
+invariant typeassert.
+"""
+@inline function _make_jac_reuse_state(
+        dtgamma::T, max_jac_age::Int, J::JT, dT::DT, W::WT
+    ) where {T, JT, DT, WT}
+    return JacReuseState{T, JT, DT, WT}(
+        dtgamma, dtgamma, 0, max_jac_age, J, dT, W, 0, 0
     )
-end
-
-"""
-    _make_jac_reuse_state(dtgamma, max_jac_age)
-
-Always allocate a `JacReuseState` to keep cache types concrete and avoid
-Union-type instability that breaks `@inferred` tests. When `max_jac_age ≤ 1`
-the age check in `_rosenbrock_jac_reuse_decision` triggers every step anyway,
-so the overhead is negligible.
-"""
-@inline function _make_jac_reuse_state(dtgamma, max_jac_age::Int)
-    return JacReuseState(dtgamma, max_jac_age)
 end
 
 # Fake values since non-FSAL
@@ -235,7 +257,9 @@ function alg_cache(
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
-        alg.stage_limiter!, _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        alg.stage_limiter!, _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, J, zero(rate_prototype), W
+        )
     )
 end
 
@@ -287,7 +311,9 @@ function alg_cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, J, zero(rate_prototype), W
+        )
     )
 end
 
@@ -304,16 +330,6 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     jac_reuse::JRType
 end
 
-function Rosenbrock23ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, max_jac_age::Int = 20
-    ) where {T}
-    tab = Rosenbrock23Tableau(T)
-    return Rosenbrock23ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        _make_jac_reuse_state(zero(T), max_jac_age)
-    )
-end
-
 function alg_cache(
         alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -325,9 +341,17 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
+    # Seed JacReuseState with `zero(dt * tab.d)` rather than a
+    # `constvalue`-stripped type: this carries the exact type dtgamma has at
+    # solve time, including Dual-of-Dual under nested ForwardDiff
+    # (e.g. `hessian`), where a Float64 field would reject the assign.
+    dtgamma_seed = zero(dt * tab.d)
     return Rosenbrock23ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), alg.max_jac_age
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
+        )
     )
 end
 
@@ -344,16 +368,6 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD, JRType} <:
     jac_reuse::JRType
 end
 
-function Rosenbrock32ConstantCache(
-        ::Type{T}, tf, uf, J, W, linsolve, autodiff, max_jac_age::Int = 20
-    ) where {T}
-    tab = Rosenbrock32Tableau(T)
-    return Rosenbrock32ConstantCache(
-        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff,
-        _make_jac_reuse_state(zero(T), max_jac_age)
-    )
-end
-
 function alg_cache(
         alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -365,9 +379,15 @@ function alg_cache(
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
+    # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt * tab.d)`
+    # here rather than a `constvalue`-stripped type.
+    dtgamma_seed = zero(dt * tab.d)
     return Rosenbrock32ConstantCache(
-        constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
-        alg_autodiff(alg), alg.max_jac_age
+        tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
+        _make_jac_reuse_state(
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
+        )
     )
 end
 
@@ -379,8 +399,8 @@ _get_step_limiter(alg) = trivial_limiter!
 _get_stage_limiter(alg) = trivial_limiter!
 for Alg in (
         :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas23W, :Rodas3P,
-        :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5, :Rodas5P,
-        :Rodas5Pe, :Rodas5Pr, :Rodas6P,
+        :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas4PW, :Rodas5,
+        :Rodas5P, :Rodas5Pe, :Rodas5Pr, :Rodas6P,
     )
     @eval _get_step_limiter(alg::$Alg) = alg.step_limiter!
     @eval _get_stage_limiter(alg::$Alg) = alg.stage_limiter!
@@ -391,6 +411,7 @@ tabtype(::Rodas4) = Rodas4Tableau
 tabtype(::Rodas42) = Rodas42Tableau
 tabtype(::Rodas4P) = Rodas4PTableau
 tabtype(::Rodas4P2) = Rodas4P2Tableau
+tabtype(::Rodas4PW) = Rodas4PWTableau
 tabtype(::Rodas5) = Rodas5Tableau
 tabtype(::Rodas5P) = Rodas5PTableau
 tabtype(::Rodas5Pr) = Rodas5PTableau
@@ -426,8 +447,8 @@ tabtype(::RosenbrockW6S4OS) = RosenbrockW6S4OSRodasTableau
 
 # Union of all algorithms using RodasTableau-based RosenbrockCache
 const RodasTableauAlgorithms = Union{
-    Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5,
-    Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
+    Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas4PW,
+    Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
     ROS3P, Rodas3, Rodas3P, Rodas23W,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
     ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3,
@@ -457,11 +478,16 @@ function alg_cache(
     else
         interp_order = H_rows
     end
+    # Seed JacReuseState with `zero(dt * tab.gamma)` so its dtgamma fields carry
+    # the full (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
+    dtgamma_seed = zero(dt * tab.gamma)
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
-        _make_jac_reuse_state(zero(constvalue(uBottomEltypeNoUnits)), alg.max_jac_age)
+        _make_jac_reuse_state(
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
+        )
     )
 end
 
@@ -534,7 +560,9 @@ function alg_cache(
         dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg,
         _get_step_limiter(alg), _get_stage_limiter(alg), interp_order,
-        _make_jac_reuse_state(zero(dt), alg.max_jac_age)
+        _make_jac_reuse_state(
+            zero(dt), alg.max_jac_age, J, zero(rate_prototype), W
+        )
     )
 end
 

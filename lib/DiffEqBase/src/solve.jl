@@ -851,7 +851,14 @@ function promote_f(
                     (Nothing, Nothing)
                 )
             else
-                sig = Tuple{Matrix{uElType}, typeof(u0), typeof(p), typeof(t)}
+                # No `jac_prototype` and no non-dense sparsity pattern. The integrator
+                # builds J via `ArrayInterface.zeromatrix(u)` (see
+                # `OrdinaryDiffEqDifferentiation/src/derivative_utils.jl`), so derive
+                # the wrapper signature from `u0` rather than hardcoding `Matrix`,
+                # which would break GPU arrays (e.g. `CuArray`) and other
+                # non-`Array` storage types.
+                J_T = Base.promote_op(ArrayInterface.zeromatrix, typeof(u0))
+                sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
                 f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
                     Void(f.jac), (sig,), (Nothing,)
                 )

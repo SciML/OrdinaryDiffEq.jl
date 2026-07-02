@@ -17,10 +17,6 @@ does not have a `jac_reuse` field.
     end
 end
 
-# Strip ForwardDiff.Dual to plain value for heuristic storage in JacReuseState.
-# JacReuseState fields are Float64 (or similar) and don't need to carry AD derivatives.
-_jac_reuse_value(x) = ForwardDiff.value(x)
-
 """
     _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}
 
@@ -95,8 +91,14 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # Mass matrix (DAE) problems always recompute.
     # Stale Jacobians cause order reduction for DAEs because the algebraic
     # constraint derivatives must remain accurate. See Steinebach (2024).
+    naccept = integrator.stats.naccept
     if integrator.f.mass_matrix !== I
-        return (true, true)
+        if naccept > jac_reuse.last_naccept 
+           jac_reuse.last_naccept = naccept
+            return (true, true)
+        else
+            return (false, true)
+        end
     end
 
     # CompositeAlgorithm always recomputes.
@@ -107,10 +109,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Commit pending_dtgamma from previous step if it was accepted.
     # This ensures rejected steps don't pollute last_dtgamma.
-    naccept = integrator.stats.naccept
     if naccept > jac_reuse.last_naccept
         jac_reuse.last_dtgamma = jac_reuse.pending_dtgamma
-        jac_reuse.last_naccept = naccept
     end
 
     # Fresh cache (e.g., algorithm switch where iter > 1 but the Rosenbrock
@@ -133,8 +133,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Resize detection: if u changed length since last J computation,
     # the cached LU factorization has wrong dimensions.
-    # (derivative_discontinuity is already cleared by reeval_internals_due_to_modification!
-    #  before perform_step! runs, so we need this explicit check.)
+    # (a resize need not flag derivative_discontinuity, so that check above can be
+    #  false here; we need this explicit length check to catch a pure resize.)
     if length(integrator.u) != jac_reuse.last_u_length && jac_reuse.last_u_length != 0
         return (true, true)
     end
@@ -159,6 +159,7 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
 
     # Age check: recompute J after max_jac_age accepted steps.
     if (naccept - jac_reuse.last_naccept) >= jac_reuse.max_jac_age
+        jac_reuse.last_naccept = naccept
         return (true, true)
     end
 
@@ -874,7 +875,7 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
             )
             jac_reuse.last_step_iter = integrator.iter
             if new_jac
-                jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+                jac_reuse.pending_dtgamma = dtgamma
                 jac_reuse.last_u_length = length(integrator.u)
             end
         else
@@ -925,33 +926,34 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
         jac_reuse.cached_J = calc_J(integrator, cache)
         jac_reuse.cached_dT = dT
         jac_reuse.cached_W = W
-        jac_reuse.pending_dtgamma = _jac_reuse_value(dtgamma)
+        jac_reuse.pending_dtgamma = dtgamma
         jac_reuse.last_u_length = length(integrator.u)
 
         return dT, W
     end
 
-    # Reusing cached J — build W from it directly.
-    # Safety: if cached_J is nothing (e.g. first use after algorithm switch),
-    # fall back to standard path.
-    if jac_reuse.cached_J === nothing
-        dT = calc_tderivative(integrator, cache)
-        W = calc_W(integrator, cache, dtgamma, repeat_step)
-        return dT, W
-    end
-
+    # Reusing cached J — build W from it directly. The "first use" case is
+    # already handled upstream by `_rosenbrock_jac_reuse_decision`'s
+    # `iszero(last_dtgamma)` and CompositeAlgorithm guards (both return
+    # `(true, true)` so we go through the fresh-Jacobian branch above and
+    # never reach this point with un-seeded cache slots).
     J = jac_reuse.cached_J
     dT = jac_reuse.cached_dT
 
     mass_matrix = integrator.f.mass_matrix
     update_coefficients!(mass_matrix, integrator.uprev, integrator.p, integrator.t)
 
-    # Rebuild W from cached J and current dtgamma.
+    # Rebuild W from cached J and current dtgamma, mirroring calc_W's branches
+    # so W (and hence the cached_W slot) keeps the same concrete type.
     # The Jacobian evaluation is the expensive part; W = J − M/(dt·γ) and
     # its factorization are comparatively cheap and keep step control accurate.
-    W = J - mass_matrix * inv(dtgamma)
-    if !isa(W, Number)
-        W = DiffEqBase.default_factorize(W)
+    if cache.W isa StaticWOperator
+        W = StaticWOperator(J - mass_matrix * inv(dtgamma))
+    else
+        W = J - mass_matrix * inv(dtgamma)
+        if !isa(W, Number)
+            W = DiffEqBase.default_factorize(W)
+        end
     end
     integrator.stats.nw += 1
     jac_reuse.cached_W = W
@@ -1076,6 +1078,21 @@ function update_W!(
     return nothing
 end
 
+"""
+    _dtgamma_prototype(t, dt, uEltypeNoUnits)
+
+A value carrying the type `dtgamma = dt * γ` has at solve time: `dt`'s full
+(possibly Dual) time type promoted with the tableau eltype
+(`constvalue(uEltypeNoUnits)`, which `constvalue` strips of Duals the same way
+tableau constructors do). Non-`Number` eltypes (e.g. array-of-array states)
+have no tableau-eltype contribution to promote with, so `dt`'s type is used
+as-is.
+"""
+@inline function _dtgamma_prototype(t, dt, ::Type{T}) where {T <: Number}
+    return promote(t, dt)[2] * one(constvalue(T))
+end
+@inline _dtgamma_prototype(t, dt, ::Type{T}) where {T} = promote(t, dt)[2]
+
 function build_J_W(
         alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}
@@ -1083,6 +1100,16 @@ function build_J_W(
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
+    #
+    # W must already carry the type `calc_W` produces at solve time: there
+    # W = J - mass_matrix * inv(dtgamma) promotes the eltype past the state
+    # eltype (e.g. a Float32 state over a Float64 tspan gives a Float64 W),
+    # and WOperator's gamma slot holds dtgamma itself. OOP caches store W
+    # concretely (e.g. JacReuseState.cached_W, Newton caches), so a
+    # state-eltype W here would reject calc_W's result on the first
+    # assignment.
+    dtgamma_prototype = _dtgamma_prototype(t, dt, uEltypeNoUnits)
+    invdtgamma_prototype = inv(oneunit(dtgamma_prototype))
     islin, isode = islinearfunction(f, alg)
     if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
         # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
@@ -1097,10 +1124,10 @@ function build_J_W(
             @assert SciMLBase.has_jac(f) "f needs to have an associated jacobian"
             J = MatrixOperator(J; update_func! = f.jac)
         end
-        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u))
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-        W = WOperator{IIP}(f.mass_matrix, dt, J, _vec(u))
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
             (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
 
@@ -1118,7 +1145,7 @@ function build_J_W(
         jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
         J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u), jacvec)
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
             concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has
@@ -1145,11 +1172,14 @@ function build_J_W(
             deepcopy(f.jac_prototype)
         end
         W = if J isa StaticMatrix
-            StaticWOperator(J, false)
+            # callinv = false skips inverting the seed-valued matrix while
+            # producing the same concrete type as calc_W's
+            # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
+            StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
         else
             jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
-            WOperator{IIP}(f.mass_matrix, promote(t, dt)[2], J, _vec(u), jacvec)
+            WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u), jacvec)
         end
     else
         J = if !IIP && SciMLBase.has_jac(f)
@@ -1175,6 +1205,8 @@ function build_J_W(
             deepcopy(f.jac_prototype)
         end
         W = if alg isa DAEAlgorithm
+            # DAE W is not built from J - M/(dt·γ) (calc_W returns J or a
+            # cj-scaled combination), so no dtgamma promotion applies.
             if IIP
                 similar(J)
             elseif J isa StaticMatrix
@@ -1185,9 +1217,9 @@ function build_J_W(
         elseif IIP
             similar(J)
         elseif J isa StaticMatrix
-            StaticWOperator(J, false)
+            StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
         else
-            ArrayInterface.lu_instance(J)
+            ArrayInterface.lu_instance(J - f.mass_matrix * invdtgamma_prototype)
         end
     end
     return J, W

@@ -1,3 +1,37 @@
+# OrdinaryDiffEq.jl v7 / DifferentialEquations.jl v8 Breaking Changes
+
+This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes breaking changes across **DiffEqBase**, **OrdinaryDiffEqCore**, and all solver sublibraries. It also coincides with the **DifferentialEquations.jl v8** umbrella release, which is itself a breaking change to the user-facing meta-package.
+
+## DifferentialEquations.jl v8: scope reduction
+
+**`DifferentialEquations.jl` v8 no longer re-exports the full SciML solver suite.** Previously, `using DifferentialEquations` pulled in `OrdinaryDiffEq`, `StochasticDiffEq`, `DelayDiffEq`, `BoundaryValueDiffEq`, `Sundials`, `JumpProcesses`, `SteadyStateDiffEq`, `LinearSolve`, `NonlinearSolve`, `Optimization`, etc. — a large default surface that drove up `using` time and made it unclear which package any given solver actually came from.
+
+In v8, `using DifferentialEquations` only loads `OrdinaryDiffEq`. **All other solver families have been removed from the umbrella.** If your code relied on `DifferentialEquations` for SDEs, DDEs, BVPs, jumps, steady states, or any non-ODE solver, you will need to add the topic-specific package to your project explicitly.
+
+### Migration
+
+Find the topic you need a solver for and add the corresponding sublib(s) directly. The [DiffEqDocs](https://docs.sciml.ai/DiffEqDocs/stable/) tutorials and solver pages now specify, per algorithm, which package it ships from. Common cases:
+
+| Topic | Old (DiffEq v7 umbrella) | New (DiffEq v8) |
+|---|---|---|
+| ODEs | `using DifferentialEquations` | `using OrdinaryDiffEq` (or `using OrdinaryDiffEqTsit5`, `OrdinaryDiffEqRosenbrock`, … for individual solver families) |
+| Stochastic ODEs | `using DifferentialEquations` | `using StochasticDiffEq` |
+| Delay ODEs | `using DifferentialEquations` | `using DelayDiffEq` |
+| Boundary value problems | `using DifferentialEquations` | `using BoundaryValueDiffEq` (or one of `BoundaryValueDiffEqMIRK`, `BoundaryValueDiffEqFIRK`, `BoundaryValueDiffEqShooting`, …) |
+| Jump processes | `using DifferentialEquations` | `using JumpProcesses` |
+| Steady state | `using DifferentialEquations` | `using SteadyStateDiffEq` |
+| DAEs (mass matrix or implicit) | `using DifferentialEquations` | `using OrdinaryDiffEq` (mass matrix), `using Sundials` (`IDA`), or topic sublib |
+| Sundials wrappers (CVODE, IDA, ARKODE) | `using DifferentialEquations` | `using Sundials` |
+| Linear / nonlinear / optimization | `using DifferentialEquations` | `using LinearSolve` / `using NonlinearSolve` / `using Optimization` |
+
+For ODE work specifically, prefer importing only the sublib you need (e.g. `using OrdinaryDiffEqTsit5: Tsit5`) rather than the umbrella `using OrdinaryDiffEq` — the v7 ecosystem split lets you trim `using` time substantially. The DiffEqDocs tutorials and solver index annotate every algorithm with its host sublib.
+
+### Why
+
+Removing the meta-package's broad re-exports lets each topic's package version cycle independently, eliminates the long `using DifferentialEquations` precompile chain for users who only need ODEs, and makes the dependency graph for any given script honest about what's actually being loaded.
+
+This change is independent of the `OrdinaryDiffEq` v7 changes below — `OrdinaryDiffEq` v7 ships with `DifferentialEquations` v8, but you can also use `OrdinaryDiffEq` v7 directly without the umbrella package at all.
+
 # OrdinaryDiffEq.jl v7 Breaking Changes
 
 This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes breaking changes across **DiffEqBase**, **OrdinaryDiffEqCore**, and all solver sublibraries.
@@ -7,7 +41,21 @@ This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes
 Most of the breaking changes fall into a small set of recurring themes. Keep these in mind while reading the migration table — they explain why an individual change exists and often suggest the right migration direction:
 
 - **Time to first solve (TTFS) reduction.** Direct deps on `Static.jl`, `StaticArrayInterface.jl`, `Polyester.jl`, and `StaticArrays.jl` were dropped; `using OrdinaryDiffEq` now loads only the default solver set; `ODEFunction` switched to `AutoSpecialize`. All of this means less code loaded and more precompilation caching on first `solve`.
-- **Type stability everywhere.** All `Bool` solver/`solve` keyword arguments (`autodiff`, `verbose`, `alias`, `lazy`, …) were replaced by typed objects. Passing a `Bool` no longer changes dispatch in ways the compiler cannot specialize on, and the reverse is no longer allowed to silently fall back through slow generic paths.
+- **Type stability everywhere.** All `Bool` solver/`solve` keyword arguments (`autodiff`, `verbose`, `alias`, `lazy`, …) were replaced by typed objects. Passing a `Bool` no longer changes dispatch in ways the compiler cannot specialize on, and the reverse is no longer allowed to silently fall back through slow generic paths. For example:
+
+  ```julia
+  # v6 — a Bool
+  Rosenbrock23(autodiff = true)
+  solve(prob, alg; verbose = false, alias = true)
+
+  # v7 — a typed object
+  Rosenbrock23(autodiff = AutoForwardDiff())
+  solve(prob, alg;
+      verbose = DEVerbosity(SciMLLogging.None()),
+      alias = ODEAliasSpecifier(alias_u0 = true))
+  ```
+
+  The `Bool` form chose between code paths (e.g. ForwardDiff vs. FiniteDiff for `autodiff`) at runtime, so the choice was invisible to the compiler; the typed object carries that choice in its type, so the solver specializes on it at compile time. The same swap applies to `lazy` (now `Val{true}()` / `Val{false}()`). See the per-keyword before/after sections below ([`autodiff`](#autodiff-bool-no-longer-accepted), [`verbose`](#verbose-bool-no-longer-accepted), [`alias`](#alias-bool-no-longer-accepted), [`lazy`](#lazy-keyword-bool-no-longer-accepted)) for the full migration of each.
 - **Generality beyond ForwardDiff.** `chunk_size`, `diff_type`, `standardtag`, etc. encoded ForwardDiff-specific or FiniteDiff-specific knobs on every solver. They are replaced by the `ADTypes` interface (`AutoForwardDiff`, `AutoFiniteDiff`, `AutoEnzyme`, `AutoZygote`, …) so every solver automatically generalizes to any AD backend.
 - **Controller is now an object, not a pile of `solve` kwargs.** `gamma`, `beta1`, `beta2`, `qmin`, `qmax`, `qsteady_min`, `qsteady_max`, `qoldinit` were moved onto concrete `PIController` / `PIDController` / `IController` / `PredictiveController` structs, and `EEst` moved to the controller cache. This is prep work for pluggable controllers and removes a large amount of dead state from the integrator struct.
 - **Cleanup of old re-exports / deprecations.** Functions like `has_destats` (now `has_stats`), `sol.destats` (now `sol.stats`), `DEAlgorithm`/`DEProblem`/`DESolution` abstract types, `tuples()`/`intervals()`, `QuadratureProblem`, `fastpow`, `concrete_solve`, etc. were on a deprecation path for one or more minor releases. v7 removes them.
@@ -16,7 +64,7 @@ Most of the breaking changes fall into a small set of recurring themes. Keep the
 
 The cleanest path is **not** to jump straight from an old environment onto v7. Most renamed APIs (e.g. `DEAlgorithm` → `AbstractDEAlgorithm`, `u_modified!` → `derivative_discontinuity!`, `has_destats` → `has_stats`, `sol.destats` → `sol.stats`, the `construct*` tableau functions, `alias_u0`/`alias_du0`, `beta1`/`beta2`, PID kwargs) already exist under their new names in **SciMLBase v2** / **OrdinaryDiffEq v6** with deprecation warnings. The recommended sequence is:
 
-1. **Stay on SciMLBase v2 / OrdinaryDiffEq v6.** Update your code to the new names (`has_stats`, `sol.stats`, `AbstractDEAlgorithm`, `derivative_discontinuity!`, `ODEAliasSpecifier`, `ODEVerbosity`, `ADTypes`-based `autodiff`, explicit `controller = …` objects, new tableau names) while the deprecation shims still exist.
+1. **Stay on SciMLBase v2 / OrdinaryDiffEq v6.** Update your code to the new names (`has_stats`, `sol.stats`, `AbstractDEAlgorithm`, `derivative_discontinuity!`, `ODEAliasSpecifier`, `DEVerbosity`, `ADTypes`-based `autodiff`, explicit `controller = …` objects, new tableau names) while the deprecation shims still exist.
 2. **Verify your tests pass on v6 with no deprecation warnings.**
 3. **Then bump to v7.** At this point your code should compile and run against v7 without further changes aside from the genuinely new breakage (RAT v4 array semantics, ensemble `prob_func`/`output_func` signature, struct type parameter removals, kwargs that truly no longer exist, default changes like `CheckInit` and `williamson_condition=false`).
 
@@ -106,7 +154,7 @@ The new names already exist under SciMLBase v2 with deprecation warnings. Update
 All of these printed a deprecation warning under SciMLBase v2. They are gone in v3:
 
 - `has_destats` function → use `has_stats`
-- `symbol_to_ReturnCode` and Symbol-to-ReturnCode conversion → construct `ReturnCode.*` directly
+- `symbol_to_ReturnCode` and Symbol-to-ReturnCode conversion → use `ReturnCode.*` directly (see next section)
 - `syms`/`paramsyms`/`indepsym` kwargs on all `SciMLFunction` constructors → use the problem's `sys` / MTK symbolic interface
 - `sol.x` on `AbstractOptimizationSolution` → use `sol.u`
 - `prob.lb`/`prob.ub` on `IntegralProblem` → use `prob.domain`
@@ -117,6 +165,37 @@ All of these printed a deprecation warning under SciMLBase v2. They are gone in 
 - `EnsembleProblem` vector-of-problems constructor → use a `prob_func`
 - `IntegralProblem` `nout`/`batch` kwargs → set on the integrand function directly
 - `SciMLBaseMLStyleExt` extension (`MLStyle` dependency removed)
+- Moshi-backed clock ADT support removed from SciMLBase's common runtime surface. Solver interpolation only needs the `AbstractClock` / `IndexedClock` API; richer clock ADTs now belong in ModelingToolkit.
+
+### `sol.retcode` is a `ReturnCode.T`, not a `Symbol`
+
+Comparing a solution's retcode against a `Symbol` no longer works:
+
+```julia
+# Worked on v1/v2, BROKEN on v3
+sol.retcode == :Success
+```
+
+The `Symbol` return codes were deprecated years ago in favor of the
+`ReturnCode.T` enum, with a deprecation warning printed on every use across
+the entire v2 series. The deprecation shim has now been removed.
+
+**Migration:** prefer `SciMLBase.successful_retcode(sol)` over equality
+against a specific `ReturnCode.*` value. `successful_retcode` correctly
+accepts every success-ish return code (`Success`, `StalledSuccess`,
+`ExactSolutionLeft`, `ExactSolutionRight`, `FloatingPointLimit`, …), not
+just `Success` — so a solver that terminated at an exact solution or hit
+a floating-point limit isn't misclassified as a failure.
+
+| Old | New (v3) |
+|-----|----------|
+| `sol.retcode == :Success` | `SciMLBase.successful_retcode(sol)` |
+| `sol.retcode == :Failure` | `!SciMLBase.successful_retcode(sol)` (or match the specific `ReturnCode.Failure` if you really need that exact code) |
+| `sol.retcode == :MaxIters` | `sol.retcode == ReturnCode.MaxIters` |
+| `sol.retcode == :Default` | `sol.retcode == ReturnCode.Default` |
+
+The full enum is defined in `SciMLBase/src/retcodes.jl` and documented at
+<https://docs.sciml.ai/SciMLBase/stable/interfaces/Solutions/#retcodes>.
 
 ### Changed defaults
 
@@ -172,6 +251,15 @@ solve(prob, KenCarp4())
 
 **Migration:** add `using OrdinaryDiffEq<Family>` for any non-default solver you use. The sublibrary name is predictable — `KenCarp*`/`TRBDF2` → `OrdinaryDiffEqSDIRK`, `Rosenbrock*`/`Rodas*` except `Rosenbrock23`/`Rodas5P` → `OrdinaryDiffEqRosenbrock`, `RadauIIA*` → `OrdinaryDiffEqFIRK`, etc. Every family has its own `lib/OrdinaryDiffEq<X>` directory in the repo.
 
+**Note** If you are still manually choosing `Rodas5`, we highly recommend changing to `Rodas5P` because it has a very similar performance profile while being much more robust in terms
+of accuracy.
+
+### Rosenbrock tableau data split
+
+Non-essential Rosenbrock/Rodas tableau coefficient data moved into the new `OrdinaryDiffEqRosenbrockTableaus` sublibrary ([#3361](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3361)). `OrdinaryDiffEqRosenbrock` still owns the solver algorithms, caches, and perform-step code, and keeps the essential tableaus for `Rosenbrock23`/`Rosenbrock32`, `Rodas5P`/`Rodas5Pe`, `Rodas6P`, `Rodas23W`, and `Tsit5DA` directly available.
+
+The extracted package contains the shared `RodasTableau` definition plus research and less commonly used tableau data such as the `Rodas4*`, `ROS2*`, `ROS3*`, `ROS34*`, `GRK4*`, `RosShamp4`, `Veldd4`, `Velds4`, `Ros4LStab`, `ROK4a`, and `RosenbrockW6S4OS` families. Normal solver use through `OrdinaryDiffEqRosenbrock` is unchanged. Code that imported internal tableau constructors directly should import them from `OrdinaryDiffEqRosenbrockTableaus`.
+
 ### Algorithm struct type parameters removed
 
 All `{CS, AD, FDT, ST, CJ}` type parameters removed from algorithm abstract and concrete types. Over 100 structs affected across BDF, SDIRK, Rosenbrock, FIRK, Extrapolation, ExponentialRK, IMEXMultistep, PDIRK, Newmark, StabilizedIRK, and StochasticDiffEqImplicit.
@@ -222,11 +310,11 @@ Rosenbrock23(autodiff=AutoFiniteDiff())
 # v6
 solve(prob, alg, verbose=false)
 
-# v7 — must use ODEVerbosity
-solve(prob, alg, verbose=ODEVerbosity(SciMLLogging.None()))
+# v7 — must use DEVerbosity
+solve(prob, alg, verbose=DEVerbosity(SciMLLogging.None()))
 ```
 
-**Why:** same type-stability reason, plus `ODEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
+**Why:** same type-stability reason, plus `DEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
 
 ### alias: Bool no longer accepted
 
@@ -294,6 +382,12 @@ Fields `EEst`, `qold`, `q11`, `erracc`, `dtacc` removed from `ODEIntegrator` str
 
 All 2N low-storage RK methods: default changed from `williamson_condition=true` to `williamson_condition=false`. **Why:** this optimization only works for mutable `Array`-style state. Having it on by default silently made the method wrong (or errored) for `StaticArrays`, GPU arrays, `ComponentArrays`, etc. Off-by-default is the safe choice; opt in with `williamson_condition=true` when you know your state is a plain `Array`.
 
+### d_discontinuities shifted past the discontinuity
+
+`d_discontinuities` now has an explicit right-discontinuity convention ([#3394](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3394)). When the integrator lands on a discontinuity time `t_d`, it advances `t` by one ULP in the integration direction and re-evaluates FSAL data on the post-discontinuity side. This makes user code written as `if t > t_d; new_regime; else; old_regime; end` behave as intended instead of taking the first post-discontinuity step with stale pre-discontinuity derivative data.
+
+Starting-time derivative discontinuities are now handled too: a `d_discontinuities` entry equal to `tspan[1]` is no longer silently skipped by the strict `tstops` bounds. For non-`AbstractFloat` time types the one-ULP shift is a no-op, preserving the old behavior. This clarification also distinguishes `d_discontinuities` from plain `tstops`: `tstops` only forces the solver to step at a time, while `d_discontinuities` marks a vector-field derivative discontinuity and refreshes FSAL state on the correct side of that discontinuity.
+
 ### Threading interface changed
 
 | Old (v6) | New (v7) |
@@ -332,6 +426,76 @@ DiffEqBase is now a sublibrary under `lib/DiffEqBase` (migrated from standalone 
 - `FunctionWrappersWrapper` wrapping updated for new LinearSolve precs interface
 
 **Why migrate DiffEqBase into the monorepo:** it's tightly coupled to OrdinaryDiffEq's internals and most features were only available through OrdinaryDiffEq; keeping them in lockstep releases eliminates a compatibility-bound class of bugs.
+
+---
+
+## Callback changes
+
+### `VectorContinuousCallback` now fires every simultaneous event
+
+Previously, when several conditions of a single `VectorContinuousCallback` crossed zero on the same step, only the first crossing's affect was applied. Other simultaneous events were silently dropped, even though their root was within the step's resolution. Bouncing-balls, multi-contact mechanics, and any callback used as a friction/threshold state machine were all affected.
+
+In v7, `VectorContinuousCallback` resolves all simultaneous events on the same step and dispatches them in one call to the user's `affect!`. See [SciML/OrdinaryDiffEq.jl#3230](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3230) (rolled into the v7 merge [#3242](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3242)) and the follow-up fix [#3549](https://github.com/SciML/OrdinaryDiffEq.jl/pull/3549).
+
+### Breaking: `VectorContinuousCallback` `affect!` signature changed
+
+The `affect!` callback for `VectorContinuousCallback` used to be invoked once per triggering condition, with the index of that single event:
+
+```julia
+# v6
+affect!(integrator, event_index::Int)
+```
+
+In v7 it is invoked **once per step** with a `Vector{Int8}` mask describing every condition's status:
+
+```julia
+# v7
+affect!(integrator, simultaneous_events::Vector{Int8})
+```
+
+Each entry of `simultaneous_events` encodes both whether condition `i` triggered and which way it crossed:
+
+| value | meaning |
+|---|---|
+| `0`  | condition did not trigger this step |
+| `+1` | upcrossing (condition went from negative to positive) |
+| `-1` | downcrossing (condition went from positive to negative) |
+
+(Note: the first releases of the v7 incorrectly flipped this sign and it was immediately corrected)
+
+The vector's length is the callback's `len`; the entries are stable across steps. `affect_neg!` is no longer called for `VectorContinuousCallback` — your single `affect!` handles both crossing directions by inspecting the sign of each nonzero entry.
+
+**Migration:**
+
+```julia
+# v6: branch on the event index, optionally a separate affect_neg!
+function affect!(integrator, event_index)
+    if event_index == 1
+        # ball 1 hit the ground
+    elseif event_index == 2
+        # ball 2 hit the ground
+    end
+end
+cb = VectorContinuousCallback(condition, affect!, affect_neg!, 2)
+
+# v7: branch on which entries fired, sign tells you the direction
+function affect!(integrator, simultaneous_events)
+    for i in eachindex(simultaneous_events)
+        s = simultaneous_events[i]
+        s == 0 && continue
+        if i == 1
+            # ball 1 hit the ground; s == +1 upcrossing, s == -1 downcrossing
+        elseif i == 2
+            # ball 2 hit the ground
+        end
+    end
+end
+cb = VectorContinuousCallback(condition, affect!, 2)
+```
+
+The previous "call `affect!` once per event index" behavior was load-bearing for very few users, since the pre-v7 implementation already only invoked it for the *first* simultaneous event anyway. The new shape makes the simultaneous case representable without additional API surface.
+
+**Why a `Vector{Int8}` rather than `Vector{Bool}`:** the sign carries the crossing direction, which previously required a separate `affect_neg!` callback. Folding both into the mask removes the `affect!` / `affect_neg!` split for `VectorContinuousCallback`, so users no longer have to maintain two parallel functions to get up- and down-crossing handling. (The `ContinuousCallback` `affect!` / `affect_neg!` split is unchanged.)
 
 ---
 

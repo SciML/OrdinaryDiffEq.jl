@@ -3,10 +3,10 @@ function get_fsalfirstlast(cache::BDFMutableCache, u)
     return (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 end
 
-@cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype} <:
+@cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype, EC} <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
-    eulercache::ImplicitEulerConstantCache
+    eulercache::EC
     dtₙ₋₁::dtType
     fsalfirstprev::rate_prototype
 end
@@ -22,7 +22,10 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    eulercache = ImplicitEulerConstantCache(nlsolver)
+    ie_tab = ImplicitEulerESDIRKIMEXTableau(
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
+    )
+    eulercache = ESDIRKIMEXConstantCache(nlsolver, ie_tab)
 
     dtₙ₋₁ = one(dt)
     fsalfirstprev = rate_prototype
@@ -30,8 +33,9 @@ function alg_cache(
     return ABDF2ConstantCache(nlsolver, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-@cache mutable struct ABDF2Cache{uType, rateType, uNoUnitsType, N, dtType, StepLimiter} <:
-    BDFMutableCache
+@cache mutable struct ABDF2Cache{
+        uType, rateType, uNoUnitsType, N, dtType, StepLimiter, EC,
+    } <: BDFMutableCache
     uₙ::uType
     uₙ₋₁::uType
     uₙ₋₂::uType
@@ -40,7 +44,7 @@ end
     zₙ₋₁::uType
     atmp::uNoUnitsType
     nlsolver::N
-    eulercache::ImplicitEulerCache
+    eulercache::EC
     dtₙ₋₁::dtType
     step_limiter!::StepLimiter
 end
@@ -64,8 +68,14 @@ function alg_cache(
     algebraic_vars = f.mass_matrix === I ? nothing :
         find_algebraic_vars_eqs(f.mass_matrix)[1]
 
-    eulercache = ImplicitEulerCache(
-        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!
+    ie_tab = ImplicitEulerESDIRKIMEXTableau(
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
+    )
+    zs = [nlsolver.z]
+    ks = Vector{Nothing}()
+    eulercache = ESDIRKIMEXCache(
+        u, uprev, fsalfirst, zs, ks, atmp, nlsolver, ie_tab, alg.step_limiter!,
+        uprev2, algebraic_vars, nothing, nothing
     )
 
     dtₙ₋₁ = one(dt)
@@ -450,6 +460,8 @@ end
         gammaType, uType, uNoUnitsType, StepLimiter,
     } <:
     BDFMutableCache
+    u::uType
+    uprev::uType
     fsalfirst::rateType
     dd::uType
     utilde::uType
@@ -530,8 +542,8 @@ function alg_cache(
     dense = [zero(u) for _ in 1:max_order]
 
     return QNDFCache(
-        fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU, D, Dtmp,
-        tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
+        u, uprev, fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU,
+        D, Dtmp, tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
         atmpm1, atmpp1, dense, alg.step_limiter!
     )
 end

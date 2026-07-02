@@ -6,22 +6,32 @@ alg_order(alg::ESERK5) = 5
 alg_order(alg::SERK2) = 2
 
 alg_order(alg::RKC) = 2
+alg_order(alg::RKMC2) = 2
 
+alg_order(alg::TSRKC2) = 2
 alg_order(alg::TSRKC3) = 3
 
-alg_extrapolates(alg::TSRKC3) = true
+alg_extrapolates(alg::Union{TSRKC2, TSRKC3}) = true
 
 default_controller(QT, alg::SERK2) = PredictiveController(QT, alg)
-default_controller(QT, alg::Union{RKC, TSRKC3}) = PredictiveController(QT, alg)
+default_controller(QT, alg::Union{RKC, TSRKC2, TSRKC3, RKMC2}) = PredictiveController(QT, alg)
+default_controller(QT, alg::Union{RKL1, RKL2}) = PredictiveController(QT, alg)
+default_controller(QT, alg::Union{RKG1, RKG2}) = PredictiveController(QT, alg)
 
-alg_adaptive_order(alg::Union{RKC, TSRKC3}) = 2
+alg_adaptive_order(alg::RKL1) = 1
+alg_adaptive_order(alg::RKL2) = 2
+alg_adaptive_order(alg::TSRKC2) = 1
+alg_adaptive_order(alg::Union{RKC, TSRKC3, RKMC2}) = 2
+alg_adaptive_order(alg::RKG1) = 1
+alg_adaptive_order(alg::RKG2) = 2
 
-gamma_default(alg::Union{RKC, TSRKC3}) = 8 // 10
-
+gamma_default(alg::Union{RKC, TSRKC2, TSRKC3, RKMC2}) = 8 // 10
+gamma_default(alg::Union{RKL1, RKL2}) = 8 // 10
 qmax_default(alg::TSRKC3) = 2
 
-fac_default_gamma(alg::Union{RKC, SERK2, TSRKC3}) = true
-has_dtnew_modification(alg::Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5}) = true
+fac_default_gamma(alg::Union{RKC, SERK2, TSRKC2, TSRKC3, RKMC2}) = true
+fac_default_gamma(alg::Union{RKL1, RKL2}) = true
+has_dtnew_modification(alg::Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5, RKMC2}) = true
 
 function dtnew_modification(integrator, alg::ROCK2, dtnew)
     return min(
@@ -58,4 +68,56 @@ function dtnew_modification(integrator, alg::ESERK4, dtnew)
 end
 function dtnew_modification(integrator, alg::ESERK5, dtnew)
     return min(dtnew, typeof(dtnew)((0.98 * 2000 * 2000 / integrator.eigen_est)))
+end
+function dtnew_modification(integrator, alg::RKMC2, dtnew)
+    s = min(alg.max_stages, 1000)
+    rho_max = 0.31 * (s + 0.83)^1.87
+    return min(dtnew, typeof(dtnew)(rho_max / integrator.eigen_est))
+end
+
+
+alg_order(alg::RKL1) = 1
+alg_order(alg::RKL2) = 2
+
+# clamp stage counts to odd ints that are plausible
+@inline function _rkl_clamp_odd_stages(min_stages::Int, max_stages::Int)
+    min_stage = max(3, min_stages)
+    min_stage = isodd(min_stage) ? min_stage : min_stage + 1
+    max_stage = max(max_stages, min_stage)
+    max_stage = isodd(max_stage) ? max_stage : max_stage - 1
+    if max_stage < min_stage
+        max_stage = min_stage
+    end
+    return min_stage, max_stage
+end
+
+# cap dt so that even at max stage count the stability bound is not exceeded
+has_dtnew_modification(alg::Union{RKL1, RKL2}) = true
+
+function dtnew_modification(integrator, alg::RKL1, dtnew)
+    _, s = _rkl_clamp_odd_stages(alg.min_stages, alg.max_stages)
+    return min(dtnew, typeof(dtnew)((s^2 + s) / integrator.eigen_est))
+end
+
+function dtnew_modification(integrator, alg::RKL2, dtnew)
+    _, s = _rkl_clamp_odd_stages(alg.min_stages, alg.max_stages)
+    return min(dtnew, typeof(dtnew)((s^2 + s - 2) / (2 * integrator.eigen_est)))
+end
+
+alg_order(alg::RKG1) = 1
+alg_order(alg::RKG2) = 2
+
+gamma_default(alg::Union{RKG1, RKG2}) = 8 // 10
+fac_default_gamma(alg::Union{RKG1, RKG2}) = true
+
+has_dtnew_modification(alg::Union{RKG1, RKG2}) = true
+
+function dtnew_modification(integrator, alg::RKG1, dtnew)
+    s = alg.max_stages
+    return min(dtnew, typeof(dtnew)(s * (s + 3) / (2 * integrator.eigen_est)))
+end
+
+function dtnew_modification(integrator, alg::RKG2, dtnew)
+    s = alg.max_stages
+    return min(dtnew, typeof(dtnew)((s + 4) * (s - 1) / (3 * integrator.eigen_est)))
 end

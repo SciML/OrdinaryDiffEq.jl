@@ -7,7 +7,7 @@ using OrdinaryDiffEqCore: alg_stability_size, beta2_default, beta1_default, Auto
 using OrdinaryDiffEqVerner: Vern7, Vern8, Vern9, Vern6
 using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
-using OrdinaryDiffEqBDF: FBDF
+using OrdinaryDiffEqBDF: FBDF, DFBDF
 import OrdinaryDiffEqCore
 
 import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg

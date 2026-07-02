@@ -13,7 +13,7 @@ path = "../../../OrdinaryDiffEqCore"
 
 [compat]
 Aqua = "0.8.11"
-ImplicitDiscreteSolve = "1"
+ImplicitDiscreteSolve = "2"
 JET = "0.9, 0.11"
 OrdinaryDiffEqCore = "4"
 julia = "1.10"

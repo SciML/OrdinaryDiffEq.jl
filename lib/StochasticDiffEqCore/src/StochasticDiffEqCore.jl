@@ -42,7 +42,7 @@ import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
     initialize_callbacks!,
     current_extrapolant, current_extrapolant!
 
-using RecursiveArrayTools, DataStructures
+using RecursiveArrayTools
 using DiffEqNoiseProcess, Random, ArrayInterface
 using SimpleNonlinearSolve, ForwardDiff, StaticArrays, MuladdMacro, FiniteDiff, Base.Threads
 using Adapt
@@ -60,7 +60,7 @@ import RecursiveArrayTools: chain
 using Logging, SparseArrays
 
 using SciMLLogging: AbstractVerbositySpecifier, AbstractVerbosityPreset,
-    AbstractMessageLevel, None, Minimal, Standard, Detailed, All,
+    None, Minimal, Standard, Detailed, All,
     Silent, DebugLevel, InfoLevel, WarnLevel, ErrorLevel, @SciMLMessage
 
 using OrdinaryDiffEqCore: DEVerbosity
@@ -192,8 +192,5 @@ export TauLeapingDrift
 
 # General functions
 export solve, init, solve!, step!
-
-# Export misc tools (check functions)
-export checkSRIOrder, checkSRAOrder
 
 end # module

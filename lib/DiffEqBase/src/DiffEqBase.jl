@@ -40,7 +40,7 @@ using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    CustomLevel, AbstractMessageLevel, @verbosity_specifier, verbosity_to_bool
+    MessageLevel, @verbosity_specifier, verbosity_to_bool
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 
@@ -177,6 +177,27 @@ export DEVerbosity
 export initialize!, finalize!
 
 export SensitivityADPassThrough
+
+# Declare DiffEqBase-owned, documented API names `public` so downstream packages can
+# drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is
+# only parseable on Julia >= 1.11.0-DEV.469, so it is gated to keep the 1.10 floor parsing.
+# Only names DiffEqBase itself owns are listed here; names re-exported from SciMLBase (and
+# other upstreams) are handled by migrating callers to the owning package.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(
+        Expr(
+            :public,
+            :get_tstops, :get_tstops_array, :get_tstops_max,
+            :ExplicitRKTableau, :DECostFunction, :merge_problem_kwargs,
+            # Callback API (DiffEqBase-owned shared functionality used by downstream solvers)
+            :apply_callback!, :apply_discrete_callback!, :CallbackCache,
+            :find_first_continuous_callback, :find_callback_time,
+            :max_vector_callback_length, :get_condition,
+            # Default-callback API (integrator defaults overridable via solver keywords)
+            :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE
+        )
+    )
+end
 
 include("precompilation.jl")
 

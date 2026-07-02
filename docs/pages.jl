@@ -52,6 +52,9 @@ pages = [
     "Misc Solvers" => [
         "misc.md",
     ],
+    "APIs" => [
+        "api/controllers.md",
+    ],
     "Developer Documentation" => [
         "devtools/index.md",
         "Contributor Guide" => [

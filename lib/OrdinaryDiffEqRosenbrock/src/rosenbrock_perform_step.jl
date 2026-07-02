@@ -62,10 +62,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -136,7 +137,9 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        # Guard on the field rather than `mass_matrix !== I` so inference can drop
+        # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
+        if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(algvar, fsallast, false) * invatol
@@ -177,10 +180,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -241,7 +245,7 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        if cache.algebraic_vars !== nothing
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
@@ -600,10 +604,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1

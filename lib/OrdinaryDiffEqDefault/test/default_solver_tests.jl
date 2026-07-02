@@ -150,6 +150,27 @@ prob_complex = ODEProblem(schrod_eq, complex([1, -1] / sqrt(2)), (0, 1), 100)
 complex_sol = solve(prob_complex)
 @test complex_sol.retcode == ReturnCode.Success
 
+# the autoswitch detector inside DefaultODEAlgorithm must treat a NaN
+# spectral-radius estimate as "stiff" so it can fall back to an implicit
+# method, instead of as "not stiff" (which gets it stuck on the explicit
+# branch). NaN arises here because the `max(u, 1e-50)` clamp collapses every
+# stage value of the inactive components to the same floor, giving
+# (k_last - k_prev)[i] / (g_last - g_prev)[i] = 0/0 in
+# eigen_est = max(abs((k_last - k_prev) ./ (g_last - g_prev))).
+function clamped_kink_rhs!(du, u, p, t)
+    u = max.(u, 1.0e-50)
+    du[1] = -1000.0 * u[1] + 1.0
+    @views du[2:end] .= 0.0
+    return nothing
+end
+prob_kink = ODEProblem(clamped_kink_rhs!, zeros(20), (0.0, 0.1))
+sol_kink = solve(prob_kink; abstol = 1.0e-12, reltol = 1.0e-9, maxiters = 1_000)
+@test sol_kink.retcode == ReturnCode.Success
+# Without the NaN-safe is_stiff form the run stays on Vern7 the entire time
+# (alg_choice == [2]); with it, autoswitch sees a degenerate eigen estimate
+# and switches to a stiff method (>=3).
+@test any(c -> c >= 3, sol_kink.alg_choice)
+
 # Make sure callback doesn't recurse init, which would cause initialize to be hit twice
 counter = Ref{Int}(0)
 cb = DiscreteCallback(
@@ -160,3 +181,21 @@ cb = DiscreteCallback(
 prob = ODEProblem((u, p, t) -> [0.0], [0.0], (0.0, 1.0))
 sol = solve(prob, callback = cb)
 @test counter[] == 1
+
+# DAEProblem default solver should be DFBDF (residual-form fully implicit DAE)
+function dae_rober!(out, du, u, p, t)
+    out[1] = -0.04u[1] + 1.0e4 * u[2] * u[3] - du[1]
+    out[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3] - du[2]
+    out[3] = u[1] + u[2] + u[3] - 1.0
+    return nothing
+end
+u0_dae = [1.0, 0.0, 0.0]
+du0_dae = [-0.04, 0.04, 0.0]
+prob_dae = DAEProblem(
+    dae_rober!, du0_dae, u0_dae, (0.0, 1.0e3); differential_vars = [true, true, false]
+)
+sol_dae_default = solve(prob_dae)
+sol_dae_dfbdf = solve(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
+@test sol_dae_default.retcode == ReturnCode.Success
+@test sol_dae_default.t == sol_dae_dfbdf.t
+@test sol_dae_default.u == sol_dae_dfbdf.u

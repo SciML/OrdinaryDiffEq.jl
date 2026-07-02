@@ -220,10 +220,13 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
             order = min(order, d2.order)
         end
 
-        # also remove all corresponding time stops
-        while OrdinaryDiffEqCore.has_tstop(integrator) &&
-                abs(OrdinaryDiffEqCore.first_tstop(integrator) - tdir_t) < maxΔt
-            OrdinaryDiffEqCore.pop_tstop!(integrator)
+        # also remove all corresponding propagated time stops, but never user
+        # tstops: a user-supplied tstop (e.g. from PresetTimeCallback) at exactly
+        # this time must still fire even if a propagated discontinuity drifted
+        # to within `maxΔt` of it (issue #1124).
+        while !isempty(integrator.tstops_propagated) &&
+                abs(first(integrator.tstops_propagated) - tdir_t) < maxΔt
+            pop!(integrator.tstops_propagated)
         end
     end
 

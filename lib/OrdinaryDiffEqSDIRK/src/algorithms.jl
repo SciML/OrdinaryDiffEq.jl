@@ -37,6 +37,10 @@ function SDIRK_docstring(
     )
 end
 
+abstract type OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAlgorithm end
+abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
+
 @doc SDIRK_docstring(
     "A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate. Strong-stability preserving (SSP). Good for highly stiff equations.",
     "ImplicitEuler";
@@ -47,11 +51,12 @@ end
     year={1996},
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
-    extrapolant = :constant,
+    predictor = Predictor.Trivial,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -59,7 +64,7 @@ struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -69,14 +74,14 @@ function ImplicitEuler(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :constant,
+        predictor = Predictor.Trivial, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ImplicitEuler(
         linsolve,
-        nlsolve, extrapolant, step_limiter!, autodiff,
+        nlsolve, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -91,19 +96,20 @@ end
     year={1996},
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct ImplicitMidpoint{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -113,14 +119,14 @@ function ImplicitMidpoint(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, step_limiter! = trivial_limiter!
+        predictor = Predictor.Linear, extrapolant = nothing, step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ImplicitMidpoint(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
 
@@ -132,11 +138,12 @@ end
     "Trapezoid";
     references = "Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York, NY, USA.",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -144,7 +151,7 @@ struct Trapezoid{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -154,7 +161,7 @@ function Trapezoid(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -162,7 +169,7 @@ function Trapezoid(;
     return Trapezoid(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -183,21 +190,22 @@ end
     publisher={Elsevier}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct TRBDF2{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -207,14 +215,14 @@ function TRBDF2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return TRBDF2(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -235,21 +243,22 @@ end
     publisher={ACM}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct SDIRK2{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -259,13 +268,13 @@ function SDIRK2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return SDIRK2(
-        linsolve, nlsolve, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -282,12 +291,13 @@ end
     year={2016}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -295,7 +305,7 @@ struct SDIRK22{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -305,7 +315,7 @@ function SDIRK22(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -313,7 +323,7 @@ function SDIRK22(;
     return Trapezoid(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         step_limiter!,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -338,19 +348,20 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :constant,
+    predictor = Predictor.Trivial,
     """
 )
 struct SSPSDIRK2{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm # Not adaptive
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm # Not adaptive
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -359,12 +370,12 @@ function SSPSDIRK2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :constant,
+        smooth_est = true, predictor = Predictor.Trivial, extrapolant = nothing,
     )
     autodiff = _fixup_ad(autodiff)
 
     return SSPSDIRK2(
-        linsolve, nlsolve, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
     )
@@ -384,21 +395,22 @@ end
     publisher={Springer}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct Kvaerno3{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -407,14 +419,14 @@ function Kvaerno3(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno3(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -429,21 +441,22 @@ end
     publisher={National Aeronautics and Space Administration, Langley Research Center}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct KenCarp3{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -452,14 +465,14 @@ function KenCarp3(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp3(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -477,17 +490,18 @@ end
     year={2001},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct CFNLIRK3{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -495,14 +509,14 @@ function CFNLIRK3(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear
+        predictor = Predictor.Linear, extrapolant = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return CFNLIRK3(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -523,21 +537,22 @@ end
     publisher={ACM}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `embedding`: which embedded error estimate to use for step size control.
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     embedding = 3,
     """
 )
 struct Cash4{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     embedding::Int
     autodiff::AD
     concrete_jac::CJ
@@ -546,7 +561,7 @@ function Cash4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         embedding = 3
     )
     autodiff = _fixup_ad(autodiff)
@@ -555,7 +570,7 @@ function Cash4(;
         linsolve,
         nlsolve,
         smooth_est,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         embedding,
         autodiff,
         _unwrap_val(concrete_jac)
@@ -576,17 +591,18 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct SFSDIRK4{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -594,14 +610,14 @@ function SFSDIRK4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear
+        predictor = Predictor.Linear, extrapolant = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return SFSDIRK4(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -621,17 +637,18 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct SFSDIRK5{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -640,14 +657,14 @@ function SFSDIRK5(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear
+        predictor = Predictor.Linear, extrapolant = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return SFSDIRK5(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -667,17 +684,18 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct SFSDIRK6{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -686,14 +704,14 @@ function SFSDIRK6(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear
+        predictor = Predictor.Linear, extrapolant = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return SFSDIRK6(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -713,17 +731,18 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct SFSDIRK7{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -732,14 +751,14 @@ function SFSDIRK7(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear
+        predictor = Predictor.Linear, extrapolant = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return SFSDIRK7(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -759,17 +778,18 @@ end
     year={2008},
     publisher={Elsevier}}",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct SFSDIRK8{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -778,14 +798,14 @@ function SFSDIRK8(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear
+        predictor = Predictor.Linear, extrapolant = nothing
     )
     autodiff = _fixup_ad(autodiff)
 
     return SFSDIRK8(
         linsolve,
         nlsolve,
-        extrapolant,
+        _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
 
@@ -800,19 +820,20 @@ end
     Springer (1996)",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct Hairer4{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -820,12 +841,12 @@ function Hairer4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
     )
     autodiff = _fixup_ad(autodiff)
 
     return Hairer4(
-        linsolve, nlsolve, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
     )
@@ -839,19 +860,20 @@ end
     Springer (1996)",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
 struct Hairer42{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     autodiff::AD
     concrete_jac::CJ
 end
@@ -859,12 +881,12 @@ function Hairer42(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
     )
     autodiff = _fixup_ad(autodiff)
 
     return Hairer42(
-        linsolve, nlsolve, smooth_est, extrapolant,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
         autodiff,
         _unwrap_val(concrete_jac)
     )
@@ -884,21 +906,22 @@ end
     publisher={Springer}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct Kvaerno4{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -907,14 +930,14 @@ function Kvaerno4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno4(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -933,21 +956,22 @@ end
     publisher={Springer}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct Kvaerno5{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -956,14 +980,14 @@ function Kvaerno5(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return Kvaerno5(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -978,21 +1002,22 @@ end
     publisher={National Aeronautics and Space Administration, Langley Research Center}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct KenCarp4{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1001,14 +1026,14 @@ function KenCarp4(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp4(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1028,19 +1053,21 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
-struct KenCarp47{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct KenCarp47{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1048,13 +1075,14 @@ function KenCarp47(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp47(
-        linsolve, nlsolve, smooth_est, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1069,21 +1097,22 @@ end
     publisher={National Aeronautics and Space Administration, Langley Research Center}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     step_limiter! = trivial_limiter!,
     """
 )
 struct KenCarp5{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1092,14 +1121,14 @@ function KenCarp5(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp5(
         linsolve, nlsolve,
-        smooth_est, extrapolant, step_limiter!, autodiff,
+        smooth_est, _resolve_predictor(predictor, extrapolant), step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1117,19 +1146,21 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     smooth_est = true,
-    extrapolant = :linear,
+    predictor = Predictor.Linear,
     """
 )
-struct KenCarp58{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct KenCarp58{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    extrapolant::Symbol
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1137,13 +1168,14 @@ function KenCarp58(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        smooth_est = true, extrapolant = :linear,
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return KenCarp58(
-        linsolve, nlsolve, smooth_est, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1163,17 +1195,20 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK54I8L2SA{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1181,13 +1216,14 @@ function ESDIRK54I8L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, predictor = Predictor.StageExtrap, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK54I8L2SA(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1206,17 +1242,20 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK436L2SA2{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1224,13 +1263,14 @@ function ESDIRK436L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, predictor = Predictor.StageExtrap, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK436L2SA2(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1249,17 +1289,20 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK437L2SA{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1267,13 +1310,14 @@ function ESDIRK437L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, predictor = Predictor.StageExtrap, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK437L2SA(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1292,17 +1336,20 @@ but are still being fully evaluated in context.",
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK547L2SA2{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1310,13 +1357,14 @@ function ESDIRK547L2SA2(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, predictor = Predictor.StageExtrap, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK547L2SA2(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
     )
 end
@@ -1337,17 +1385,20 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     pages={221-244}
     }""",
     extra_keyword_description = """
-    - `extrapolant`: extrapolation method used for the initial guess in the nonlinear solve.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
-    extrapolant = :linear,
+    predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK659L2SA{AD, F, F2, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
 end
@@ -1355,13 +1406,337 @@ function ESDIRK659L2SA(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear,
+        smooth_est = false, predictor = Predictor.StageExtrap, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return ESDIRK659L2SA(
-        linsolve, nlsolve, extrapolant,
-        autodiff,
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
         _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3rd order L-stable IMEX ARK method. Uses a generic tableau-driven implementation that supports both split and non-split forms.",
+    "ARS343";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS343{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS343(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS343(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "2nd order L-stable IMEX ARK method (Ascher-Ruuth-Spiteri ARS(2,2,2)). 3-stage scheme with implicit γ=(2-√2)/2.",
+    "ARS222";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS222{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS222(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS222(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "2nd order IMEX ARK method (Ascher-Ruuth-Spiteri ARS(2,3,2)). Shares the implicit tableau of ARS222 (γ=(2-√2)/2) with a different explicit δ=-2√2/3.",
+    "ARS232";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS232{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS232(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS232(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
+    "3rd order L-stable IMEX ARK method (Ascher-Ruuth-Spiteri ARS(4,4,3)). 5-stage scheme with γ=1/2.",
+    "ARS443";
+    references = "@article{ascher1997implicit,
+    title={Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations},
+    author={Ascher, Uri M and Ruuth, Steven J and Spiteri, Raymond J},
+    journal={Applied Numerical Mathematics},
+    volume={25},
+    number={2-3},
+    pages={151--167},
+    year={1997},
+    publisher={Elsevier}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct ARS443{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ARS443(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ARS443(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+# IMEX-SSP family — Pareschi & Russo 2005, "Implicit-explicit Runge-Kutta schemes
+# and applications to hyperbolic systems with relaxation", J. Sci. Comput. 25, 129-155.
+# These are non-ESDIRK schemes (first stage is implicit) routed through the unified
+# `ESDIRKIMEXTableau` framework via `explicit_first_stage=false` and a distinct `ce`.
+
+const _PARESCHI_RUSSO_REF = "@article{pareschi2005implicit,
+    title={Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Pareschi, Lorenzo and Russo, Giovanni},
+    journal={Journal of Scientific Computing},
+    volume={25},
+    pages={129--155},
+    year={2005},
+    publisher={Springer}}"
+
+for (name, desc) in (
+        (
+            :IMEXSSP222,
+            "2-stage 2nd-order L-stable IMEX-SSP method (Pareschi-Russo Table 2).",
+        ),
+        (
+            :IMEXSSP2322,
+            "3-stage 2nd-order stiffly-accurate IMEX-SSP method (Pareschi-Russo Table 3).",
+        ),
+        (
+            :IMEXSSP3332,
+            "3-stage 2nd-order L-stable IMEX-SSP method (Pareschi-Russo Table 5).",
+        ),
+        (
+            :IMEXSSP3433,
+            "4-stage 3rd-order L-stable IMEX-SSP method (Pareschi-Russo Table 6).",
+        ),
+    )
+    @eval begin
+        @doc SDIRK_docstring(
+            $desc, $(string(name));
+            references = _PARESCHI_RUSSO_REF,
+            extra_keyword_description = """
+            - `smooth_est`: whether to use a smoothed estimate for error control.
+            - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+                (`extrapolant` is deprecated).
+            - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+            """,
+            extra_keyword_default = """
+            smooth_est = true,
+            predictor = Predictor.Linear,
+            step_limiter! = trivial_limiter!,
+            """
+        )
+        struct $name{AD, F, F2, StepLimiter, CJ} <:
+            OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+            linsolve::F
+            nlsolve::F2
+            smooth_est::Bool
+            predictor::Predictor.T
+            step_limiter!::StepLimiter
+            autodiff::AD
+            concrete_jac::CJ
+        end
+        function $name(;
+                autodiff = AutoForwardDiff(),
+                concrete_jac = nothing,
+                linsolve = nothing, nlsolve = NLNewton(),
+                smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+                step_limiter! = trivial_limiter!
+            )
+            autodiff = _fixup_ad(autodiff)
+            return $name(
+                linsolve, nlsolve, smooth_est,
+                _resolve_predictor(predictor, extrapolant),
+                step_limiter!, autodiff, _unwrap_val(concrete_jac)
+            )
+        end
+    end
+end
+
+@doc SDIRK_docstring(
+    "5-stage 3rd-order L-stable IMEX Runge-Kutta method (BHR(5,5,3)*) for split ODEs. From Boscarino & Russo (2009).",
+    "BHR553";
+    references = "@article{boscarino2009class,
+    title={On a class of uniformly accurate IMEX Runge-Kutta schemes and applications to hyperbolic systems with relaxation},
+    author={Boscarino, Sebastiano and Russo, Giovanni},
+    journal={SIAM Journal on Scientific Computing},
+    volume={31},
+    number={3},
+    pages={1926--1945},
+    year={2009},
+    publisher={SIAM}}",
+    extra_keyword_description = """
+    - `smooth_est`: whether to use a smoothed estimate for error control.
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    extra_keyword_default = """
+    smooth_est = true,
+    predictor = Predictor.Linear,
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct BHR553{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function BHR553(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, predictor = Predictor.Linear, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+    return BHR553(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff, _unwrap_val(concrete_jac)
     )
 end

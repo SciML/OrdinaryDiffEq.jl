@@ -13,7 +13,8 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
     resize_non_user_cache!, _ode_addsteps!, full_cache,
     DerivativeOrderNotPossibleError, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, find_algebraic_vars_eqs
+    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined,
+    find_algebraic_vars_eqs
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools: namify
 using MacroTools: @capture
@@ -200,9 +201,9 @@ end
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
     Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
-    Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK, Tsit5DA,
-    RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
-    ROS3PRL2, ROK4a,
+    Rodas4PW, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK,
+    Tsit5DA, RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw,
+    ROS3PRL, ROS3PRL2, ROK4a,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 
 end

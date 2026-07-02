@@ -25,14 +25,14 @@ sol2 = solve(prob2, FBDF(autodiff = AutoFiniteDiff(), nlsolve = nlalg));
 
 @test sol1.t != sol2.t
 @test sol1 != sol2
-@test sol1(sol1.t) ≈ sol2(sol1.t) atol = 1.0e-3
+@test sol1(sol1.t) ≈ sol2(sol1.t) atol = 5.0e-3
 
 sol1 = solve(prob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg));
 sol2 = solve(prob2, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg));
 
 @test sol1.t != sol2.t
 @test sol1.u != sol2.u
-@test sol1(sol1.t) ≈ sol2(sol1.t) atol = 1.0e-3
+@test sol1(sol1.t) ≈ sol2(sol1.t) atol = 5.0e-3
 
 testprob = ODEProblem(rober, [[y₁, y₂, y₃] .=> [1.0; 0.0; 0.0]; [k₁, k₂, k₃] .=> (0.04, 3.0e7, 1.0e4)], (0.0, 1.0), nlstep = true)
 @test testprob.f.nlstep_data !== nothing

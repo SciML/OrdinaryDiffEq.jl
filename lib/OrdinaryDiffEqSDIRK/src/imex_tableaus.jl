@@ -1,0 +1,2670 @@
+# Maximum supported stage count for the generic ESDIRK/IMEX perform_step
+# bodies. The bodies hand-write per-stage `if s >= i ... end` blocks up to
+# this bound. Tableaus with s > MAX_ESDIRKIMEX_STAGES fail with an explicit
+# error at construction. Bumping requires extending the per-stage ladder in
+# generic_imex_perform_step.jl. Current methods top out at s=9 (SFSDIRK8).
+const MAX_ESDIRKIMEX_STAGES = 12
+
+struct ESDIRKIMEXTableau{T, T2, E}
+    Ai::Matrix{T}
+    bi::Vector{T}
+    Ae::Matrix{T}
+    be::Vector{T}
+    c::Vector{T2}
+    ce::Vector{T2}
+    btilde::Vector{T}
+    ebtilde::Vector{T}
+    α::Vector{Vector{T2}}
+    order::Int
+    s::Int
+    reuse_W_at_stage2::Bool
+    split_guess::Vector{Int}
+    nlsolver_init_c::T2
+    explicit_first_stage::Bool
+    fsal::Bool
+    stiffly_accurate::Bool
+    explicit_fsallast::Bool
+    fsallast_c::T2
+    const_stage_guess::Vector{T2}
+    stage1_extrapolation::Bool
+end
+
+# Default-flavor ctor: errors-as-`:standard`. Equivalent to the explicit ::Val(:standard).
+function ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
+        nlsolver_init_c; ce = nothing, kwargs...
+    )
+    return ESDIRKIMEXTableau(
+        Val(:standard),
+        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
+        nlsolver_init_c; ce, kwargs...
+    )
+end
+
+function ESDIRKIMEXTableau(
+        ::Val{E},
+        Ai, bi, Ae, be, c, btilde, ebtilde, α, order, s, reuse_W_at_stage2, split_guess,
+        nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true,
+        explicit_fsallast = false, fsallast_c = one(eltype(c)),
+        const_stage_guess = eltype(c)[], stage1_extrapolation = true,
+        ce = nothing
+    ) where {E}
+    s > MAX_ESDIRKIMEX_STAGES && throw(
+        ArgumentError(
+            "ESDIRKIMEXTableau: stage count s=$s exceeds MAX_ESDIRKIMEX_STAGES=$MAX_ESDIRKIMEX_STAGES; \
+         extend the per-stage ladder in generic_imex_perform_step.jl to support more stages."
+        )
+    )
+    # ce defaults to c — preserves ESDIRK behaviour (implicit and explicit abscissae
+    # are the same). IMEX-SSP / BHR methods supply a distinct ce.
+    ce_vec = isnothing(ce) ? copy(c) : ce
+    return ESDIRKIMEXTableau{eltype(bi), eltype(c), E}(
+        Ai, bi, Ae, be, c, ce_vec, btilde, ebtilde, α, order, s, reuse_W_at_stage2,
+        split_guess, nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate,
+        explicit_fsallast, fsallast_c, const_stage_guess, stage1_extrapolation
+    )
+end
+
+
+# Dispatch: each algorithm type maps to its tableau constructor
+ESDIRKIMEXTableau(::ARS343, T, T2) = ARS343Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS222, T, T2) = ARS222Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS232, T, T2) = ARS232Tableau(T, T2)
+ESDIRKIMEXTableau(::ARS443, T, T2) = ARS443Tableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP222, T, T2) = IMEXSSP222Tableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP2322, T, T2) = IMEXSSP2322Tableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP3332, T, T2) = IMEXSSP3332Tableau(T, T2)
+ESDIRKIMEXTableau(::IMEXSSP3433, T, T2) = IMEXSSP3433Tableau(T, T2)
+ESDIRKIMEXTableau(::BHR553, T, T2) = BHR553Tableau(T, T2)
+ESDIRKIMEXTableau(::CFNLIRK3, T, T2) = CFNLIRK3ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp3, T, T2) = KenCarp3ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Kvaerno3, T, T2) = Kvaerno3ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Kvaerno4, T, T2) = Kvaerno4ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Kvaerno5, T, T2) = Kvaerno5ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp4, T, T2) = KenCarp4ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp5, T, T2) = KenCarp5ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp47, T, T2) = KenCarp47ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::KenCarp58, T, T2) = KenCarp58ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK54I8L2SA, T, T2) = ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK436L2SA2, T, T2) = ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK437L2SA, T, T2) = ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK547L2SA2, T, T2) = ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ESDIRK659L2SA, T, T2) = ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
+
+#
+# KenCarp3 IMEX Tableau
+#
+
+function KenCarp3ESDIRKIMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    γ = convert(T, 0.435866521508459)
+
+    a31 = convert(T, 0.2576482460664272)
+    a32 = -convert(T, 0.09351476757488625)
+    a41 = convert(T, 0.18764102434672383)
+    a42 = -convert(T, 0.595297473576955)
+    a43 = convert(T, 0.9717899277217721)
+
+    btilde1 = convert(T, 0.027099261876665316)
+    btilde2 = convert(T, 0.11013520969201586)
+    btilde3 = -convert(T, 0.10306492520138458)
+    btilde4 = -convert(T, 0.0341695463672966)
+
+    c3 = convert(T2, 0.6)
+    c2 = 2γ
+    θ = c3 / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+    θ = 1 / c2
+    α41 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α42 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+
+    ea21 = convert(T, 0.871733043016918)
+    ea31 = convert(T, 0.5275890119763004)
+    ea32 = convert(T, 0.0724109880236996)
+    ea41 = convert(T, 0.3990960076760701)
+    ea42 = -convert(T, 0.4375576546135194)
+    ea43 = convert(T, 1.0384616469374492)
+    eb1 = convert(T, 0.18764102434672383)
+    eb2 = -convert(T, 0.595297473576955)
+    eb3 = convert(T, 0.9717899277217721)
+    eb4 = convert(T, 0.435866521508459)
+    ebtilde1 = convert(T, 0.027099261876665316)
+    ebtilde2 = convert(T, 0.11013520969201586)
+    ebtilde3 = -convert(T, 0.10306492520138458)
+    ebtilde4 = -convert(T, 0.0341695463672966)
+
+    s = 4
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a41
+    bi_vec[2] = a42
+    bi_vec[3] = a43
+    bi_vec[4] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+
+    be_vec = zeros(T, s)
+    be_vec[1] = eb1
+    be_vec[2] = eb2
+    be_vec[3] = eb3
+    be_vec[4] = eb4
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[2] = btilde2
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[1] = ebtilde1
+    ebtilde_vec[2] = ebtilde2
+    ebtilde_vec[3] = ebtilde3
+    ebtilde_vec[4] = ebtilde4
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_vecs, 3, s, true, [0, 1, 2, 2], c3
+    )
+end
+
+function KenCarp3ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 1767732205903 // 4055673282236)
+
+    a31 = convert(T, 2746238789719 // 10658868560708)
+    a32 = -convert(T, 640167445237 // 6845629431997)
+    a41 = convert(T, 1471266399579 // 7840856788654)
+    a42 = -convert(T, 4482444167858 // 7529755066697)
+    a43 = convert(T, 11266239266428 // 11593286722821)
+
+    btilde1 = convert(
+        T,
+        BigInt(681815649026867975666107) //
+            BigInt(25159934323302256049469295)
+    )
+    btilde2 = convert(
+        T,
+        BigInt(18411887981491912264464127) //
+            BigInt(167175311446532472108584143)
+    )
+    btilde3 = -convert(
+        T,
+        BigInt(12719313754959329011138489) //
+            BigInt(123410692144842870217698057)
+    )
+    btilde4 = -convert(
+        T,
+        BigInt(47289384293135913063989) //
+            BigInt(1383962894467812063558225)
+    )
+
+    c3 = convert(T2, 3 // 5)
+    c2 = 2γ
+    θ = c3 / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+    θ = 1 / c2
+    α41 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ)
+    α42 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ)
+
+    ea21 = convert(T, 1767732205903 // 2027836641118)
+    ea31 = convert(T, 5535828885825 // 10492691773637)
+    ea32 = convert(T, 788022342437 // 10882634858940)
+    ea41 = convert(T, 6485989280629 // 16251701735622)
+    ea42 = -convert(T, 4246266847089 // 9704473918619)
+    ea43 = convert(T, 10755448449292 // 10357097424841)
+    eb1 = convert(T, 1471266399579 // 7840856788654)
+    eb2 = convert(T, -4482444167858 // 7529755066697)
+    eb3 = convert(T, 11266239266428 // 11593286722821)
+    eb4 = convert(T, 1767732205903 // 4055673282236)
+    ebtilde1 = convert(
+        T,
+        BigInt(681815649026867975666107) //
+            BigInt(25159934323302256049469295)
+    )
+    ebtilde2 = convert(
+        T,
+        BigInt(18411887981491912264464127) //
+            BigInt(167175311446532472108584143)
+    )
+    ebtilde3 = -convert(
+        T,
+        BigInt(12719313754959329011138489) //
+            BigInt(123410692144842870217698057)
+    )
+    ebtilde4 = -convert(
+        T,
+        BigInt(47289384293135913063989) //
+            BigInt(1383962894467812063558225)
+    )
+
+    s = 4
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a41
+    bi_vec[2] = a42
+    bi_vec[3] = a43
+    bi_vec[4] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+
+    be_vec = zeros(T, s)
+    be_vec[1] = eb1
+    be_vec[2] = eb2
+    be_vec[3] = eb3
+    be_vec[4] = eb4
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[2] = btilde2
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[1] = ebtilde1
+    ebtilde_vec[2] = ebtilde2
+    ebtilde_vec[3] = ebtilde3
+    ebtilde_vec[4] = ebtilde4
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_vecs, 3, s, true, [0, 1, 2, 2], c3
+    )
+end
+
+#
+# ARS343 Tableau
+#
+
+function ARS343Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    γ = convert(T, 0.435866521508459)
+
+    s = 4
+
+    c2 = convert(T2, 0.435866521508459)
+    c3 = convert(T2, 0.7179332607542295)
+    c4 = one(T2)
+
+    a32_i = convert(T, 0.2820667392457705)
+
+    b3_i = convert(T, -0.644363170684469)
+    b2_i = convert(T, 1.20849664917601)
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = a32_i
+    Ai[3, 3] = γ
+    Ai[4, 2] = b2_i
+    Ai[4, 3] = b3_i
+    Ai[4, 4] = γ
+
+    bi_vec = T[zero(T), b2_i, b3_i, γ]
+
+    ae21 = convert(T, 0.435866521508459)
+    ae31 = convert(T, 0.321278886)
+    ae32 = convert(T, 0.3966543748)
+    ae41 = -convert(T, 0.105858296)
+    ae42 = convert(T, 0.5529291479)
+    ae43 = convert(T, 0.5529291479)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ae21
+    Ae[3, 1] = ae31
+    Ae[3, 2] = ae32
+    Ae[4, 1] = ae41
+    Ae[4, 2] = ae42
+    Ae[4, 3] = ae43
+
+    be_vec = T[zero(T), b2_i, b3_i, γ]
+
+    c_vec = T2[zero(T2), c2, c3, c4]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        T[], T[], Vector{T2}[], 3, s, false, zeros(Int, s), c3
+    )
+end
+
+#
+# KenCarp4 IMEX Tableau
+#
+
+function KenCarp4ESDIRKIMEXTableau(T, T2)
+    γ = convert(T2, 1 // 4)
+
+    a31 = convert(T, 8611 // 62500)
+    a32 = -convert(T, 1743 // 31250)
+    a41 = convert(T, 5012029 // 34652500)
+    a42 = -convert(T, 654441 // 2922500)
+    a43 = convert(T, 174375 // 388108)
+    a51 = convert(T, 15267082809 // 155376265600)
+    a52 = -convert(T, 71443401 // 120774400)
+    a53 = convert(T, 730878875 // 902184768)
+    a54 = convert(T, 2285395 // 8070912)
+    a61 = convert(T, 82889 // 524892)
+    a63 = convert(T, 15625 // 83664)
+    a64 = convert(T, 69875 // 102672)
+    a65 = -convert(T, 2260 // 8211)
+
+    btilde1 = convert(T, -31666707 // 9881966720)
+    btilde3 = convert(T, 256875 // 105007616)
+    btilde4 = convert(T, 2768025 // 128864768)
+    btilde5 = -convert(T, 169839 // 3864644)
+    btilde6 = convert(T, 5247 // 225920)
+
+    c3 = convert(T2, 83 // 250)
+    c4 = convert(T2, 31 // 50)
+    c5 = convert(T2, 17 // 20)
+
+    α21 = one(T2)
+    α31 = convert(T2, 42 // 125)
+    α32 = convert(T2, 83 // 125)
+    α41 = convert(T2, -6 // 25)
+    α42 = convert(T2, 31 // 25)
+    α51 = convert(T2, 914470432 // 2064665255)
+    α52 = convert(T2, 798813 // 724780)
+    α53 = convert(T2, -824765625 // 372971788)
+    α54 = convert(T2, 49640 // 29791)
+    α61 = convert(T2, 288521442795 // 954204491116)
+    α62 = convert(T2, 2224881 // 2566456)
+    α63 = convert(T2, -1074821875 // 905317354)
+    α64 = convert(T2, -3360875 // 8098936)
+    α65 = convert(T2, 7040 // 4913)
+
+    ea21 = convert(T, 1 // 2)
+    ea31 = convert(T, 13861 // 62500)
+    ea32 = convert(T, 6889 // 62500)
+    ea41 = -convert(T, 116923316275 // 2393684061468)
+    ea42 = -convert(T, 2731218467317 // 15368042101831)
+    ea43 = convert(T, 9408046702089 // 11113171139209)
+    ea51 = -convert(T, 451086348788 // 2902428689909)
+    ea52 = -convert(T, 2682348792572 // 7519795681897)
+    ea53 = convert(T, 12662868775082 // 11960479115383)
+    ea54 = convert(T, 3355817975965 // 11060851509271)
+    ea61 = convert(T, 647845179188 // 3216320057751)
+    ea62 = convert(T, 73281519250 // 8382639484533)
+    ea63 = convert(T, 552539513391 // 3454668386233)
+    ea64 = convert(T, 3354512671639 // 8306763924573)
+    ea65 = convert(T, 4040 // 17871)
+
+    eb1 = convert(T, 82889 // 524892)
+    eb3 = convert(T, 15625 // 83664)
+    eb4 = convert(T, 69875 // 102672)
+    eb5 = -convert(T, 2260 // 8211)
+    eb6 = convert(T, 1 // 4)
+
+    ebtilde1 = -convert(T, 31666707 // 9881966720)
+    ebtilde3 = convert(T, 256875 // 105007616)
+    ebtilde4 = convert(T, 2768025 // 128864768)
+    ebtilde5 = -convert(T, 169839 // 3864644)
+    ebtilde6 = convert(T, 5247 // 225920)
+
+    s = 6
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = convert(T, γ)
+    Ai[2, 2] = convert(T, γ)
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = convert(T, γ)
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = convert(T, γ)
+    Ai[5, 1] = a51
+    Ai[5, 2] = a52
+    Ai[5, 3] = a53
+    Ai[5, 4] = a54
+    Ai[5, 5] = convert(T, γ)
+    Ai[6, 1] = a61
+    Ai[6, 3] = a63
+    Ai[6, 4] = a64
+    Ai[6, 5] = a65
+    Ai[6, 6] = convert(T, γ)
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a61
+    bi_vec[3] = a63
+    bi_vec[4] = a64
+    bi_vec[5] = a65
+    bi_vec[6] = convert(T, γ)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+    Ae[5, 1] = ea51
+    Ae[5, 2] = ea52
+    Ae[5, 3] = ea53
+    Ae[5, 4] = ea54
+    Ae[6, 1] = ea61
+    Ae[6, 2] = ea62
+    Ae[6, 3] = ea63
+    Ae[6, 4] = ea64
+    Ae[6, 5] = ea65
+
+    be_vec = zeros(T, s)
+    be_vec[1] = eb1
+    be_vec[3] = eb3
+    be_vec[4] = eb4
+    be_vec[5] = eb5
+    be_vec[6] = eb6
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = c4
+    c_vec[5] = c5
+    c_vec[6] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+    btilde_vec[5] = btilde5
+    btilde_vec[6] = btilde6
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[1] = ebtilde1
+    ebtilde_vec[3] = ebtilde3
+    ebtilde_vec[4] = ebtilde4
+    ebtilde_vec[5] = ebtilde5
+    ebtilde_vec[6] = ebtilde6
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = α21
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+    α_vecs[5][1] = α51
+    α_vecs[5][2] = α52
+    α_vecs[5][3] = α53
+    α_vecs[5][4] = α54
+    α_vecs[6][1] = α61
+    α_vecs[6][2] = α62
+    α_vecs[6][3] = α63
+    α_vecs[6][4] = α64
+    α_vecs[6][5] = α65
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_vecs, 4, s, true, [0, 1, 2, 2, 4, 5], c3
+    )
+end
+
+#
+# KenCarp5 IMEX Tableau
+#
+
+function KenCarp5ESDIRKIMEXTableau(T, T2)
+    γ = convert(T2, 41 // 200)
+
+    a31 = convert(T, 41 // 400)
+    a32 = -convert(T, 567603406766 // 11931857230679)
+    a41 = convert(T, 683785636431 // 9252920307686)
+    a43 = -convert(T, 110385047103 // 1367015193373)
+    a51 = convert(T, 3016520224154 // 10081342136671)
+    a53 = convert(T, 30586259806659 // 12414158314087)
+    a54 = -convert(T, 22760509404356 // 11113319521817)
+    a61 = convert(T, 218866479029 // 1489978393911)
+    a63 = convert(T, 638256894668 // 5436446318841)
+    a64 = -convert(T, 1179710474555 // 5321154724896)
+    a65 = -convert(T, 60928119172 // 8023461067671)
+    a71 = convert(T, 1020004230633 // 5715676835656)
+    a73 = convert(T, 25762820946817 // 25263940353407)
+    a74 = -convert(T, 2161375909145 // 9755907335909)
+    a75 = -convert(T, 211217309593 // 5846859502534)
+    a76 = -convert(T, 4269925059573 // 7827059040749)
+    a81 = -convert(T, 872700587467 // 9133579230613)
+    a84 = convert(T, 22348218063261 // 9555858737531)
+    a85 = -convert(T, 1143369518992 // 8141816002931)
+    a86 = -convert(T, 39379526789629 // 19018526304540)
+    a87 = convert(T, 32727382324388 // 42900044865799)
+
+    btilde1 = -convert(T, 360431431567533808054934 // 89473089856732078284381229)
+    btilde4 = convert(T, 21220331609936495351431026 // 309921249937726682547321949)
+    btilde5 = -convert(T, 42283193605833819490634 // 2144566741190883522084871)
+    btilde6 = -convert(T, 21843466548811234473856609 // 296589222149359214696574660)
+    btilde7 = convert(T, 3333910710978735057753642 // 199750492790973993533703797)
+    btilde8 = convert(T, 45448919757 // 3715198317040)
+
+    c3 = convert(T2, 2935347310677 // 11292855782101)
+    c4 = convert(T2, 1426016391358 // 7196633302097)
+    c5 = convert(T2, 92 // 100)
+    c6 = convert(T2, 24 // 100)
+    c7 = convert(T2, 3 // 5)
+
+    α31 = convert(T2, 169472355998441 // 463007087066141)
+    α32 = convert(T2, 293534731067700 // 463007087066141)
+    α41 = convert(T2, 152460326250177 // 295061965385977)
+    α42 = convert(T2, 142601639135800 // 295061965385977)
+    α51 = convert(T2, -51 // 41)
+    α52 = convert(T2, 92 // 41)
+    α61 = convert(T2, 17 // 41)
+    α62 = convert(T2, 24 // 41)
+    α71 = convert(T2, 13488091065527792 // 122659689776876057)
+    α72 = convert(T2, -3214953045 // 3673655312)
+    α73 = convert(T2, 550552676519862000 // 151043064207496529)
+    α74 = convert(T2, -409689169278408000 // 135215758621947439)
+    α75 = convert(T2, 3345 // 12167)
+    α81 = convert(T2, 1490668709762032 // 122659689776876057)
+    α82 = convert(T2, 5358255075 // 14694621248)
+    α83 = convert(T2, -229396948549942500 // 151043064207496529)
+    α84 = convert(T2, 170703820532670000 // 135215758621947439)
+    α85 = convert(T2, 30275 // 24334)
+
+    ea21 = convert(T, 41 // 100)
+    ea31 = convert(T, 367902744464 // 2072280473677)
+    ea32 = convert(T, 677623207551 // 8224143866563)
+    ea41 = convert(T, 1268023523408 // 10340822734521)
+    ea43 = convert(T, 1029933939417 // 13636558850479)
+    ea51 = convert(T, 14463281900351 // 6315353703477)
+    ea53 = convert(T, 66114435211212 // 5879490589093)
+    ea54 = -convert(T, 54053170152839 // 4284798021562)
+    ea61 = convert(T, 14090043504691 // 34967701212078)
+    ea63 = convert(T, 15191511035443 // 11219624916014)
+    ea64 = -convert(T, 18461159152457 // 12425892160975)
+    ea65 = -convert(T, 281667163811 // 9011619295870)
+    ea71 = convert(T, 19230459214898 // 13134317526959)
+    ea73 = convert(T, 21275331358303 // 2942455364971)
+    ea74 = -convert(T, 38145345988419 // 4862620318723)
+    ea75 = -convert(T, 1 // 8)
+    ea76 = -convert(T, 1 // 8)
+    ea81 = -convert(T, 19977161125411 // 11928030595625)
+    ea83 = -convert(T, 40795976796054 // 6384907823539)
+    ea84 = convert(T, 177454434618887 // 12078138498510)
+    ea85 = convert(T, 782672205425 // 8267701900261)
+    ea86 = -convert(T, 69563011059811 // 9646580694205)
+    ea87 = convert(T, 7356628210526 // 4942186776405)
+
+    eb1 = -convert(T, 872700587467 // 9133579230613)
+    eb4 = convert(T, 22348218063261 // 9555858737531)
+    eb5 = -convert(T, 1143369518992 // 8141816002931)
+    eb6 = -convert(T, 39379526789629 // 19018526304540)
+    eb7 = convert(T, 32727382324388 // 42900044865799)
+    eb8 = convert(T, 41 // 200)
+
+    ebtilde1 = -convert(T, 360431431567533808054934 // 89473089856732078284381229)
+    ebtilde4 = convert(T, 21220331609936495351431026 // 309921249937726682547321949)
+    ebtilde5 = -convert(T, 42283193605833819490634 // 2144566741190883522084871)
+    ebtilde6 = -convert(T, 21843466548811234473856609 // 296589222149359214696574660)
+    ebtilde7 = convert(T, 3333910710978735057753642 // 199750492790973993533703797)
+    ebtilde8 = convert(T, 45448919757 // 3715198317040)
+
+    s = 8
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = convert(T, γ)
+    Ai[2, 2] = convert(T, γ)
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = convert(T, γ)
+    Ai[4, 1] = a41
+    Ai[4, 3] = a43
+    Ai[4, 4] = convert(T, γ)
+    Ai[5, 1] = a51
+    Ai[5, 3] = a53
+    Ai[5, 4] = a54
+    Ai[5, 5] = convert(T, γ)
+    Ai[6, 1] = a61
+    Ai[6, 3] = a63
+    Ai[6, 4] = a64
+    Ai[6, 5] = a65
+    Ai[6, 6] = convert(T, γ)
+    Ai[7, 1] = a71
+    Ai[7, 3] = a73
+    Ai[7, 4] = a74
+    Ai[7, 5] = a75
+    Ai[7, 6] = a76
+    Ai[7, 7] = convert(T, γ)
+    Ai[8, 1] = a81
+    Ai[8, 4] = a84
+    Ai[8, 5] = a85
+    Ai[8, 6] = a86
+    Ai[8, 7] = a87
+    Ai[8, 8] = convert(T, γ)
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a81
+    bi_vec[4] = a84
+    bi_vec[5] = a85
+    bi_vec[6] = a86
+    bi_vec[7] = a87
+    bi_vec[8] = convert(T, γ)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 3] = ea43
+    Ae[5, 1] = ea51
+    Ae[5, 3] = ea53
+    Ae[5, 4] = ea54
+    Ae[6, 1] = ea61
+    Ae[6, 3] = ea63
+    Ae[6, 4] = ea64
+    Ae[6, 5] = ea65
+    Ae[7, 1] = ea71
+    Ae[7, 3] = ea73
+    Ae[7, 4] = ea74
+    Ae[7, 5] = ea75
+    Ae[7, 6] = ea76
+    Ae[8, 1] = ea81
+    Ae[8, 3] = ea83
+    Ae[8, 4] = ea84
+    Ae[8, 5] = ea85
+    Ae[8, 6] = ea86
+    Ae[8, 7] = ea87
+
+    be_vec = zeros(T, s)
+    be_vec[1] = eb1
+    be_vec[4] = eb4
+    be_vec[5] = eb5
+    be_vec[6] = eb6
+    be_vec[7] = eb7
+    be_vec[8] = eb8
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = c4
+    c_vec[5] = c5
+    c_vec[6] = c6
+    c_vec[7] = c7
+    c_vec[8] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[4] = btilde4
+    btilde_vec[5] = btilde5
+    btilde_vec[6] = btilde6
+    btilde_vec[7] = btilde7
+    btilde_vec[8] = btilde8
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[1] = ebtilde1
+    ebtilde_vec[4] = ebtilde4
+    ebtilde_vec[5] = ebtilde5
+    ebtilde_vec[6] = ebtilde6
+    ebtilde_vec[7] = ebtilde7
+    ebtilde_vec[8] = ebtilde8
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][1] = convert(T2, a31)  # master IIP uses a31 (Butcher) not α31 (Hermite predictor)
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+    α_vecs[5][1] = α51
+    α_vecs[5][2] = α52
+    α_vecs[6][1] = α61
+    α_vecs[6][2] = α62
+    α_vecs[7][1] = α71
+    α_vecs[7][2] = α72
+    α_vecs[7][3] = α73
+    α_vecs[7][4] = α74
+    α_vecs[7][5] = α75
+    α_vecs[8][1] = α81
+    α_vecs[8][2] = α82
+    α_vecs[8][3] = α83
+    α_vecs[8][4] = α84
+    α_vecs[8][5] = α85
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_vecs, 5, s, true, [0, 1, 2, 3, 2, 3, 2, 5], c3
+    )
+end
+
+function ARS343Tableau(T, T2)
+    γ = convert(T, 4358665215084590 // 10000000000000000)
+
+    s = 4
+
+    c2 = convert(T2, γ)
+    c3 = (one(T2) + convert(T2, γ)) / 2
+    c4 = one(T2)
+
+    a32_i = (one(T) - γ) / 2
+
+    b3_i = (one(T) / 2 - 2γ + γ^2) / ((one(T) - γ) / 2)
+    b2_i = one(T) - γ - b3_i
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = convert(T, γ)
+    Ai[3, 2] = convert(T, a32_i)
+    Ai[3, 3] = convert(T, γ)
+    Ai[4, 2] = convert(T, b2_i)
+    Ai[4, 3] = convert(T, b3_i)
+    Ai[4, 4] = convert(T, γ)
+
+    bi_vec = T[zero(T), convert(T, b2_i), convert(T, b3_i), convert(T, γ)]
+
+    ae21 = convert(T, γ)
+    ae31 = convert(T, 3212788860 // 10000000000)
+    ae32 = convert(T, 3966543748 // 10000000000)
+    ae41 = -convert(T, 1058582960 // 10000000000)
+    ae42 = convert(T, 5529291479 // 10000000000)
+    ae43 = convert(T, 5529291479 // 10000000000)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ae21
+    Ae[3, 1] = ae31
+    Ae[3, 2] = ae32
+    Ae[4, 1] = ae41
+    Ae[4, 2] = ae42
+    Ae[4, 3] = ae43
+
+    be_vec = T[zero(T), convert(T, b2_i), convert(T, b3_i), convert(T, γ)]
+
+    c_vec = T2[zero(T2), convert(T2, c2), convert(T2, c3), convert(T2, c4)]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        T[], T[], Vector{T2}[], 3, s, false, zeros(Int, s), convert(T2, c3)
+    )
+end
+
+# ARS(2,2,2) — Ascher-Ruuth-Spiteri 1997 §2.6 (Table V).
+# γ = (2-√2)/2; explicit δ = 1 - 1/(2γ) for L-stable explicit part.
+function ARS222Tableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    δ = convert(T, 1 - 1 / (2 * (1 - 1 / sqrt(T(2)))))
+    s = 3
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = 1 - γ
+    Ai[3, 3] = γ
+
+    bi = zeros(T, s)
+    bi[2] = 1 - γ
+    bi[3] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = γ
+    Ae[3, 1] = δ
+    Ae[3, 2] = 1 - δ
+
+    be = zeros(T, s)
+    be[1] = δ
+    be[2] = 1 - δ
+
+    c = T2[zero(T2), convert(T2, γ), one(T2)]
+
+    γ2 = convert(T2, γ)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    θ = one(T2) / c2
+    α[3][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+    α[3][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 1, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+# ARS(2,3,2) — Ascher-Ruuth-Spiteri 1997 §2.6 (Table VI).
+# Same implicit tableau as ARS222 (γ = (2-√2)/2); explicit δ = -2√2/3.
+function ARS232Tableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    δ = convert(T, -2 * sqrt(T(2)) / 3)
+    s = 3
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = 1 - γ
+    Ai[3, 3] = γ
+
+    bi = zeros(T, s)
+    bi[2] = 1 - γ
+    bi[3] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = γ
+    Ae[3, 1] = δ
+    Ae[3, 2] = 1 - δ
+
+    be = zeros(T, s)
+    be[2] = 1 - γ
+    be[3] = γ
+
+    c = T2[zero(T2), convert(T2, γ), one(T2)]
+
+    γ2 = convert(T2, γ)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    θ = one(T2) / c2
+    α[3][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+    α[3][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 1, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+# ARS(4,4,3) — Ascher-Ruuth-Spiteri 1997 §2.8 (Table VII).
+# 5-stage 3rd-order ESDIRK IMEX with γ = 1/2.
+function ARS443Tableau(T, T2)
+    γ = convert(T, 1 // 2)
+    s = 5
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γ
+    Ai[3, 2] = convert(T, 1 // 6)
+    Ai[3, 3] = γ
+    Ai[4, 2] = convert(T, -1 // 2)
+    Ai[4, 3] = convert(T, 1 // 2)
+    Ai[4, 4] = γ
+    Ai[5, 2] = convert(T, 3 // 2)
+    Ai[5, 3] = convert(T, -3 // 2)
+    Ai[5, 4] = convert(T, 1 // 2)
+    Ai[5, 5] = γ
+
+    bi = zeros(T, s)
+    bi[2] = convert(T, 3 // 2)
+    bi[3] = convert(T, -3 // 2)
+    bi[4] = convert(T, 1 // 2)
+    bi[5] = γ
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = convert(T, 1 // 2)
+    Ae[3, 1] = convert(T, 11 // 18)
+    Ae[3, 2] = convert(T, 1 // 18)
+    Ae[4, 1] = convert(T, 5 // 6)
+    Ae[4, 2] = convert(T, -5 // 6)
+    Ae[4, 3] = convert(T, 1 // 2)
+    Ae[5, 1] = convert(T, 1 // 4)
+    Ae[5, 2] = convert(T, 7 // 4)
+    Ae[5, 3] = convert(T, 3 // 4)
+    Ae[5, 4] = convert(T, -7 // 4)
+
+    be = zeros(T, s)
+    be[2] = convert(T, 3 // 2)
+    be[3] = convert(T, -3 // 2)
+    be[4] = convert(T, 1 // 2)
+    be[5] = γ
+
+    c = T2[zero(T2), convert(T2, 1 // 2), convert(T2, 2 // 3), convert(T2, 1 // 2), one(T2)]
+
+    γ2 = convert(T2, 1 // 2)
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    c2 = γ2
+    for i in 3:s
+        ci = c[i]
+        θ = ci / c2
+        α[i][1] = (1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * γ2
+        α[i][2] = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * γ2)
+    end
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, true, [0, 1, 2, 2, 2], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+function IMEXSSP222Tableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    a21 = convert(T, sqrt(T(2)) - 1)   # = 1 - 2γ
+    c2 = convert(T2, 1 / sqrt(T2(2)))  # = 1 - γ
+
+    s = 2
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+
+    bi = T[convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = one(T)
+
+    be = T[convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    c = T2[convert(T2, γ), c2]
+    # Explicit abscissas: ce[1]=0, ce[2]=Ae[2,1]=1
+    ce = T2[zero(T2), one(T2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, true, [0, 0], convert(T2, γ);
+        explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2),
+        stage1_extrapolation = false, ce
+    )
+end
+
+#
+# IMEX-SSP2(3,2,2) — Table 3, 3-stage 2nd-order stiffly accurate
+# Non-ESDIRK: first stage is implicit, γ = 1/2
+# Implicit: c = [1/2, 0, 1]
+#
+function IMEXSSP2322Tableau(T, T2)
+    γ = convert(T, 1 // 2)
+    a21 = convert(T, -1 // 2)
+
+    s = 3
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+    Ai[3, 2] = γ
+    Ai[3, 3] = γ
+
+    bi = T[zero(T), convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    Ae = zeros(T, s, s)
+    Ae[3, 2] = one(T)
+
+    be = T[zero(T), convert(T, 1 // 2), convert(T, 1 // 2)]
+
+    c = T2[convert(T2, 1 // 2), zero(T2), one(T2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, false, [0, 0, 0], convert(T2, γ);
+        explicit_first_stage = false, fsal = false, stiffly_accurate = true,
+        stage1_extrapolation = false
+    )
+end
+
+#
+# IMEX-SSP3(3,3,2) — Table 6, 3-stage 2nd-order L-stable
+# Non-ESDIRK: first stage is implicit, γ = 1 - 1/√2
+# b = [1/6, 1/6, 2/3]
+#
+function IMEXSSP3332Tableau(T, T2)
+    γ = convert(T, 1 - 1 / sqrt(T(2)))
+    a21 = convert(T, sqrt(T(2)) - 1)           # = 1 - 2γ
+    a31 = convert(T, 1 / sqrt(T(2)) - 1 // 2)  # = 1/2 - γ
+    c2 = convert(T2, 1 / sqrt(T2(2)))           # = 1 - γ
+
+    s = 3
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 3] = γ
+
+    bi = T[convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = one(T)
+    Ae[3, 1] = convert(T, 1 // 4)
+    Ae[3, 2] = convert(T, 1 // 4)
+
+    be = T[convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    c = T2[convert(T2, γ), c2, convert(T2, 1 // 2)]
+    # Explicit abscissas: ce[i] = sum(Ae[i,:])
+    # ce[1]=0, ce[2]=Ae[2,1]=1, ce[3]=Ae[3,1]+Ae[3,2]=1/4+1/4=1/2
+    ce = T2[zero(T2), one(T2), convert(T2, 1 // 2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        2, s, false, [0, 0, 0], convert(T2, γ);
+        explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2),
+        stage1_extrapolation = false, ce
+    )
+end
+
+#
+# IMEX-SSP3(4,3,3) — Table 7, 4-stage 3rd-order L-stable SSP
+# Non-ESDIRK: first stage is implicit
+# α = 0.24169426078821, β = 0.06042356519705, η = 0.12915286960590, γ = α
+# b = [0, 1/6, 1/6, 2/3]
+#
+function IMEXSSP3433Tableau(T, T2)
+    α_coef = 0.24169426078821
+    β = 0.06042356519705
+    η = 0.1291528696059
+    γ = convert(T, α_coef)
+    γ2 = convert(T2, α_coef)
+
+    a21 = convert(T, -α_coef)
+    a32 = convert(T, 1 - α_coef)
+    a41 = convert(T, β)
+    a42 = convert(T, η)
+    a43 = convert(T, 1 // 2 - β - η - α_coef)
+    c3 = one(T2)
+    c4 = convert(T2, 1 // 2)
+
+    s = 4
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = a21
+    Ai[2, 2] = γ
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+
+    bi = T[zero(T), convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    Ae = zeros(T, s, s)
+    Ae[3, 2] = one(T)
+    Ae[4, 2] = convert(T, 1 // 4)
+    Ae[4, 3] = convert(T, 1 // 4)
+
+    be = T[zero(T), convert(T, 1 // 6), convert(T, 1 // 6), convert(T, 2 // 3)]
+
+    # c[1] = γ (implicit abscissa for stage 1 = Ai[1,1] = α; explicit abscissa = 0)
+    # c[2] = 0 (row sum of Ai[2,:] = [-α, α] = 0)
+    c = T2[γ2, zero(T2), c3, c4]
+    # Explicit abscissas: ce[i] = sum(Ae[i,:])
+    # ce[1]=0, ce[2]=0, ce[3]=Ae[3,2]=1, ce[4]=Ae[4,2]+Ae[4,3]=1/4+1/4=1/2
+    ce = T2[zero(T2), zero(T2), one(T2), convert(T2, 1 // 2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, false, [0, 0, 0, 0], γ2;
+        explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2),
+        stage1_extrapolation = false, ce
+    )
+end
+
+
+function CFNLIRK3ESDIRKIMEXTableau(T, T2)
+    s = 4
+    γ = convert(T2, 0.43586652150846)
+    γT = convert(T, γ)
+    a32 = convert(T, (1 - γ) / 2)
+    a42 = convert(T, 1.20849664917601276)
+    a43 = -convert(T, 0.64436317068447276)
+    c2 = γ
+    c3 = (one(T2) + γ) / 2
+
+    Ai = zeros(T, s, s)
+    Ai[2, 2] = γT
+    Ai[3, 2] = a32
+    Ai[3, 3] = γT
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γT
+
+    bi_vec = T[zero(T), a42, a43, γT]
+
+    ea21 = convert(T, γ)
+    ea31 = convert(T, (1.7 + γ) / 2)
+    ea32 = convert(T, -0.35)
+    ea42 = convert(T, 1.989175724679859)
+    ea43 = convert(T, -0.989175724679859)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+
+    eb2 = convert(T, 1.20849664917601276)
+    eb3 = -convert(T, 0.64436317068447276)
+    eb4 = convert(T, γ)
+    be_vec = T[zero(T), eb2, eb3, eb4]
+
+    c_vec = T2[zero(T2), c2, c3, one(T2)]
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][2] = one(T2)
+    α_vecs[4][2] = one(T2)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        T[], T[], α_vecs, 3, s, false, [0, 1, 2, 2], γ
+    )
+end
+
+#
+# Kvaerno3 IMEX Tableau
+#
+
+function Kvaerno3ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 0.4358665215)
+
+    a31 = convert(T, 0.490563388419108)
+    a32 = convert(T, 0.073570090080892)
+    a41 = convert(T, 0.308809969973036)
+    a42 = convert(T, 1.490563388254106)
+    a43 = -convert(T, 1.235239879727145)
+
+    btilde1 = convert(T, 0.181753418446072)
+    btilde2 = convert(T, -1.416993298173214)
+    btilde3 = convert(T, 1.671106401227145)
+    btilde4 = -convert(T, 0.4358665215)
+
+    c3 = convert(T2, 1)
+    c2 = convert(T2, 2) * convert(T2, 0.4358665215)
+    θ = c3 / c2
+    α31 = ((1 + (-4θ + 3θ^2)) + (6θ * (1 - θ) / c2) * convert(T2, 0.4358665215))
+    α32 = ((-2θ + 3θ^2) + (6θ * (1 - θ) / c2) * convert(T2, 0.4358665215))
+
+    s = 4
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a41
+    bi_vec[2] = a42
+    bi_vec[3] = a43
+    bi_vec[4] = γ
+
+    Ae = zeros(T, s, s)
+    be_vec = zeros(T, s)
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[3] = c3
+    c_vec[4] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[2] = btilde2
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = convert(T2, a31)
+    α_vecs[4][2] = convert(T2, a32)
+    α_vecs[4][3] = convert(T2, γ)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, T[], α_vecs, 3, s, true, zeros(Int, s),
+        convert(T2, 2) * convert(T2, 0.4358665215)
+    )
+end
+
+#
+# Kvaerno4 IMEX Tableau
+#
+
+function Kvaerno4ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 0.4358665215)
+
+    a31 = convert(T, 0.140737774731968)
+    a32 = convert(T, -0.108365551378832)
+    a41 = convert(T, 0.102399400616089)
+    a42 = convert(T, -0.376878452267324)
+    a43 = convert(T, 0.838612530151233)
+    a51 = convert(T, 0.157024897860995)
+    a52 = convert(T, 0.117330441357768)
+    a53 = convert(T, 0.61667803039168)
+    a54 = convert(T, -0.326899891110444)
+
+    btilde1 = convert(T, -0.054625497244906)
+    btilde2 = convert(T, -0.494208893625092)
+    btilde3 = convert(T, 0.221934499759553)
+    btilde4 = convert(T, 0.762766412610444)
+    btilde5 = -convert(T, 0.4358665215)
+
+    c3 = convert(T2, 0.468238744853136)
+    c4 = convert(T2, 1)
+
+    α31 = convert(T2, 0.462864521870446)
+    α32 = convert(T2, 0.537135478129554)
+    α41 = convert(T2, -0.14714018016178376)
+    α42 = convert(T2, 1.1471401801617838)
+
+    s = 5
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = a51
+    Ai[5, 2] = a52
+    Ai[5, 3] = a53
+    Ai[5, 4] = a54
+    Ai[5, 5] = γ
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a51
+    bi_vec[2] = a52
+    bi_vec[3] = a53
+    bi_vec[4] = a54
+    bi_vec[5] = γ
+
+    Ae = zeros(T, s, s)
+    be_vec = zeros(T, s)
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[3] = c3
+    c_vec[4] = c4
+    c_vec[5] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[2] = btilde2
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+    btilde_vec[5] = btilde5
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+    α_vecs[5][1] = convert(T2, a41)
+    α_vecs[5][2] = convert(T2, a42)
+    α_vecs[5][3] = convert(T2, a43)
+    α_vecs[5][4] = convert(T2, γ)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, T[], α_vecs, 4, s, true, zeros(Int, s), c3
+    )
+end
+
+#
+# Kvaerno5 IMEX Tableau
+#
+
+function Kvaerno5ESDIRKIMEXTableau(T, T2)
+    γ = convert(T, 0.26)
+
+    a31 = convert(T, 0.13)
+    a32 = convert(T, 0.84033320996790809)
+    a41 = convert(T, 0.22371961478320505)
+    a42 = convert(T, 0.47675532319799699)
+    a43 = -convert(T, 0.06470895363112615)
+    a51 = convert(T, 0.16648564323248321)
+    a52 = convert(T, 0.1045001884159172)
+    a53 = convert(T, 0.03631482272098715)
+    a54 = -convert(T, 0.13090704451073998)
+    a61 = convert(T, 0.13855640231268224)
+    a63 = -convert(T, 0.04245337201752043)
+    a64 = convert(T, 0.02446657898003141)
+    a65 = convert(T, 0.61943039072480676)
+    a71 = convert(T, 0.13659751177640291)
+    a73 = -convert(T, 0.05496908796538376)
+    a74 = -convert(T, 0.04118626728321046)
+    a75 = convert(T, 0.62993304899016403)
+    a76 = convert(T, 0.06962479448202728)
+
+    btilde1 = convert(T, 0.00195889053627933)
+    btilde3 = convert(T, 0.01251571594786333)
+    btilde4 = convert(T, 0.06565284626324187)
+    btilde5 = -convert(T, 0.01050265826535727)
+    btilde6 = convert(T, 0.19037520551797272)
+    btilde7 = -convert(T, 0.26)
+
+    c3 = convert(T2, 1.230333209967908)
+    c4 = convert(T2, 0.895765984350076)
+    c5 = convert(T2, 0.436393609858648)
+    c6 = convert(T2, 1)
+
+    α21 = one(T2)
+    α31 = convert(T2, -1.366025403784441)
+    α32 = convert(T2, 2.3660254037844357)
+    α41 = convert(T2, -0.19650552613122207)
+    α42 = convert(T2, 0.8113579546496623)
+    α43 = convert(T2, 0.38514757148155954)
+    α51 = convert(T2, 0.10375304369958693)
+    α52 = convert(T2, 0.937994698066431)
+    α53 = convert(T2, -0.04174774176601781)
+    α61 = convert(T2, -0.17281112873898072)
+    α62 = convert(T2, 0.6235784481025847)
+    α63 = convert(T2, 0.5492326806363959)
+
+    s = 7
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = a51
+    Ai[5, 2] = a52
+    Ai[5, 3] = a53
+    Ai[5, 4] = a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = a61
+    Ai[6, 3] = a63
+    Ai[6, 4] = a64
+    Ai[6, 5] = a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = a71
+    Ai[7, 3] = a73
+    Ai[7, 4] = a74
+    Ai[7, 5] = a75
+    Ai[7, 6] = a76
+    Ai[7, 7] = γ
+
+    bi_vec = zeros(T, s)
+    bi_vec[1] = a71
+    bi_vec[3] = a73
+    bi_vec[4] = a74
+    bi_vec[5] = a75
+    bi_vec[6] = a76
+    bi_vec[7] = γ
+
+    Ae = zeros(T, s, s)
+    be_vec = zeros(T, s)
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 0.26)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[3] = c3
+    c_vec[4] = c4
+    c_vec[5] = c5
+    c_vec[6] = c6
+    c_vec[7] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[1] = btilde1
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+    btilde_vec[5] = btilde5
+    btilde_vec[6] = btilde6
+    btilde_vec[7] = btilde7
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = α21
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+    α_vecs[4][3] = α43
+    α_vecs[5][1] = α51
+    α_vecs[5][2] = α52
+    α_vecs[5][3] = α53
+    α_vecs[6][1] = α61
+    α_vecs[6][2] = α62
+    α_vecs[6][3] = α63
+    α_vecs[7][1] = convert(T2, a61)
+    α_vecs[7][3] = convert(T2, a63)
+    α_vecs[7][4] = convert(T2, a64)
+    α_vecs[7][5] = convert(T2, a65)
+    α_vecs[7][6] = convert(T2, γ)
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, T[], α_vecs, 5, s, true, zeros(Int, s), c3
+    )
+end
+
+#
+# KenCarp47 IMEX Tableau
+#
+
+function KenCarp47ESDIRKIMEXTableau(T, T2)
+    γ = convert(T2, 1235 // 10000)
+
+    a31 = convert(T, 624185399699 // 4186980696204)
+    a32 = a31
+    a41 = convert(T, 1258591069120 // 10082082980243)
+    a42 = a41
+    a43 = -convert(T, 322722984531 // 8455138723562)
+    a51 = -convert(T, 436103496990 // 5971407786587)
+    a52 = a51
+    a53 = -convert(T, 2689175662187 // 11046760208243)
+    a54 = convert(T, 4431412449334 // 12995360898505)
+    a61 = -convert(T, 2207373168298 // 14430576638973)
+    a62 = a61
+    a63 = convert(T, 242511121179 // 3358618340039)
+    a64 = convert(T, 3145666661981 // 7780404714551)
+    a65 = convert(T, 5882073923981 // 14490790706663)
+    a73 = convert(T, 9164257142617 // 17756377923965)
+    a74 = -convert(T, 10812980402763 // 74029279521829)
+    a75 = convert(T, 1335994250573 // 5691609445217)
+    a76 = convert(T, 2273837961795 // 8368240463276)
+
+    btilde3 = convert(T, 216367897668138065439709 // 153341716340757627089664345)
+    btilde4 = -convert(T, 1719969231640509698414113 // 303097339249411872572263321)
+    btilde5 = convert(T, 33321949854538424751892 // 16748125370719759490730723)
+    btilde6 = convert(T, 4033362550194444079469 // 1083063207508329376479196)
+    btilde7 = -convert(T, 29 // 20000)
+
+    c3 = convert(T2, 4276536705230 // 10142255878289)
+    c4 = convert(T2, 67 // 200)
+    c5 = convert(T2, 3 // 40)
+    c6 = convert(T2, 7 // 10)
+
+    α21 = one(T2)
+    α31 = -convert(T2, 796131459065721 // 1125899906842624)
+    α32 = convert(T2, 961015682954173 // 562949953421312)
+    α41 = convert(T2, 139710975840363 // 2251799813685248)
+    α42 = convert(T2, 389969885861609 // 1125899906842624)
+    α43 = convert(T2, 2664298132243335 // 4503599627370496)
+    α51 = convert(T2, 6272219723949193 // 9007199254740992)
+    α52 = convert(T2, 2734979530791799 // 9007199254740992)
+    α61 = convert(T2, 42616678320173 // 140737488355328)
+    α62 = -convert(T2, 2617409280098421 // 1125899906842624)
+    α63 = convert(T2, 1701187880189829 // 562949953421312)
+    α71 = convert(T2, 4978493057967061 // 2251799813685248)
+    α72 = convert(T2, 7230365118049293 // 9007199254740992)
+    α73 = -convert(T2, 6826045129237249 // 18014398509481984)
+    α74 = -convert(T2, 2388848894891525 // 1125899906842624)
+    α75 = -convert(T2, 4796744191239075 // 2251799813685248)
+    α76 = convert(T2, 2946706549191323 // 1125899906842624)
+
+    ea21 = convert(T, 247 // 1000)
+    ea31 = convert(T, 247 // 4000)
+    ea32 = convert(T, 2694949928731 // 7487940209513)
+    ea41 = convert(T, 464650059369 // 8764239774964)
+    ea42 = convert(T, 878889893998 // 2444806327765)
+    ea43 = -convert(T, 952945855348 // 12294611323341)
+    ea51 = convert(T, 476636172619 // 8159180917465)
+    ea52 = -convert(T, 1271469283451 // 7793814740893)
+    ea53 = -convert(T, 859560642026 // 4356155882851)
+    ea54 = convert(T, 1723805262919 // 4571918432560)
+    ea61 = convert(T, 6338158500785 // 11769362343261)
+    ea62 = -convert(T, 4970555480458 // 10924838743837)
+    ea63 = convert(T, 3326578051521 // 2647936831840)
+    ea64 = -convert(T, 880713585975 // 1841400956686)
+    ea65 = -convert(T, 1428733748635 // 8843423958496)
+    ea71 = convert(T, 760814592956 // 3276306540349)
+    ea72 = convert(T, 760814592956 // 3276306540349)
+    ea73 = -convert(T, 47223648122716 // 6934462133451)
+    ea74 = convert(T, 71187472546993 // 9669769126921)
+    ea75 = -convert(T, 13330509492149 // 9695768672337)
+    ea76 = convert(T, 11565764226357 // 8513123442827)
+
+    eb3 = convert(T, 9164257142617 // 17756377923965)
+    eb4 = -convert(T, 10812980402763 // 74029279521829)
+    eb5 = convert(T, 1335994250573 // 5691609445217)
+    eb6 = convert(T, 2273837961795 // 8368240463276)
+    eb7 = convert(T, 247 // 2000)
+
+    ebtilde3 = convert(T, 216367897668138065439709 // 153341716340757627089664345)
+    ebtilde4 = -convert(T, 1719969231640509698414113 // 303097339249411872572263321)
+    ebtilde5 = convert(T, 33321949854538424751892 // 16748125370719759490730723)
+    ebtilde6 = convert(T, 4033362550194444079469 // 1083063207508329376479196)
+    ebtilde7 = -convert(T, 29 // 20000)
+
+    s = 7
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = convert(T, γ)
+    Ai[2, 2] = convert(T, γ)
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = convert(T, γ)
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = convert(T, γ)
+    Ai[5, 1] = a51
+    Ai[5, 2] = a52
+    Ai[5, 3] = a53
+    Ai[5, 4] = a54
+    Ai[5, 5] = convert(T, γ)
+    Ai[6, 1] = a61
+    Ai[6, 2] = a62
+    Ai[6, 3] = a63
+    Ai[6, 4] = a64
+    Ai[6, 5] = a65
+    Ai[6, 6] = convert(T, γ)
+    Ai[7, 3] = a73
+    Ai[7, 4] = a74
+    Ai[7, 5] = a75
+    Ai[7, 6] = a76
+    Ai[7, 7] = convert(T, γ)
+
+    bi_vec = zeros(T, s)
+    bi_vec[3] = a73
+    bi_vec[4] = a74
+    bi_vec[5] = a75
+    bi_vec[6] = a76
+    bi_vec[7] = convert(T, γ)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+    Ae[5, 1] = ea51
+    Ae[5, 2] = ea52
+    Ae[5, 3] = ea53
+    Ae[5, 4] = ea54
+    Ae[6, 1] = ea61
+    Ae[6, 2] = ea62
+    Ae[6, 3] = ea63
+    Ae[6, 4] = ea64
+    Ae[6, 5] = ea65
+    Ae[7, 1] = ea71
+    Ae[7, 2] = ea72
+    Ae[7, 3] = ea73
+    Ae[7, 4] = ea74
+    Ae[7, 5] = ea75
+    Ae[7, 6] = ea76
+
+    be_vec = zeros(T, s)
+    be_vec[3] = eb3
+    be_vec[4] = eb4
+    be_vec[5] = eb5
+    be_vec[6] = eb6
+    be_vec[7] = eb7
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = c4
+    c_vec[5] = c5
+    c_vec[6] = c6
+    c_vec[7] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+    btilde_vec[5] = btilde5
+    btilde_vec[6] = btilde6
+    btilde_vec[7] = btilde7
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[3] = ebtilde3
+    ebtilde_vec[4] = ebtilde4
+    ebtilde_vec[5] = ebtilde5
+    ebtilde_vec[6] = ebtilde6
+    ebtilde_vec[7] = ebtilde7
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = α21
+    α_vecs[3][1] = convert(T2, a31)  # master IIP uses a31 (Butcher) not α31 (Hermite predictor)
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+    α_vecs[4][3] = α43
+    α_vecs[5][1] = α51
+    α_vecs[5][2] = α52
+    α_vecs[6][1] = α61
+    α_vecs[6][2] = α62
+    α_vecs[6][3] = α63
+    α_vecs[7][1] = α71
+    α_vecs[7][2] = α72
+    α_vecs[7][3] = α73
+    α_vecs[7][4] = α74
+    α_vecs[7][5] = α75
+    α_vecs[7][6] = α76
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_vecs, 4, s, true, [0, 1, 2, 3, 1, 3, 6], c3
+    )
+end
+
+#
+# KenCarp58 IMEX Tableau
+#
+
+function KenCarp58ESDIRKIMEXTableau(T, T2)
+    γ = convert(T2, 2 // 9)
+
+    a31 = convert(T, 2366667076620 // 8822750406821)
+    a32 = a31
+    a41 = -convert(T, 257962897183 // 4451812247028)
+    a42 = a41
+    a43 = convert(T, 128530224461 // 14379561246022)
+    a51 = -convert(T, 486229321650 // 11227943450093)
+    a52 = a51
+    a53 = -convert(T, 225633144460 // 6633558740617)
+    a54 = convert(T, 1741320951451 // 6824444397158)
+    a61 = convert(T, 621307788657 // 4714163060173)
+    a62 = a61
+    a63 = -convert(T, 125196015625 // 3866852212004)
+    a64 = convert(T, 940440206406 // 7593089888465)
+    a65 = convert(T, 961109811699 // 6734810228204)
+    a71 = convert(T, 2036305566805 // 6583108094622)
+    a72 = a71
+    a73 = -convert(T, 3039402635899 // 4450598839912)
+    a74 = -convert(T, 1829510709469 // 31102090912115)
+    a75 = -convert(T, 286320471013 // 6931253422520)
+    a76 = convert(T, 8651533662697 // 9642993110008)
+    a83 = convert(T, 3517720773327 // 20256071687669)
+    a84 = convert(T, 4569610470461 // 17934693873752)
+    a85 = convert(T, 2819471173109 // 11655438449929)
+    a86 = convert(T, 3296210113763 // 10722700128969)
+    a87 = -convert(T, 1142099968913 // 5710983926999)
+
+    btilde3 = -convert(T, 18652552508630163520943320 // 168134443655105334713783643)
+    btilde4 = convert(T, 141161430501477620145807 // 319735394533244397237135736)
+    btilde5 = -convert(T, 207757214437709595456056 // 72283007456311581445415925)
+    btilde6 = convert(T, 13674542533282477231637762 // 149163814411398370516486131)
+    btilde7 = convert(T, 11939168497868428048898551 // 210101209758476969753215083)
+    btilde8 = -convert(T, 1815023333875 // 51666766064334)
+
+    c3 = convert(T2, 6456083330201 // 8509243623797)
+    c4 = convert(T2, 1632083962415 // 14158861528103)
+    c5 = convert(T2, 6365430648612 // 17842476412687)
+    c6 = convert(T2, 18 // 25)
+    c7 = convert(T2, 191 // 200)
+
+    α31 = -convert(T2, 796131459065721 // 1125899906842624)
+    α32 = convert(T2, 961015682954173 // 562949953421312)
+    α41 = convert(T2, 3335563016633385 // 4503599627370496)
+    α42 = convert(T2, 2336073221474223 // 9007199254740992)
+    α51 = convert(T2, 1777088537295433 // 9007199254740992)
+    α52 = convert(T2, 7230110717445555 // 9007199254740992)
+    α61 = convert(T2, 305461594360167 // 36028797018963968)
+    α62 = convert(T2, 3700851199347703 // 36028797018963968)
+    α63 = convert(T2, 8005621056314023 // 9007199254740992)
+    α71 = convert(T2, 247009276011491 // 9007199254740992)
+    α72 = -convert(T2, 6222030107065861 // 9007199254740992)
+    α73 = convert(T2, 1872777510724421 // 1125899906842624)
+    α81 = convert(T2, 180631849429283 // 36028797018963968)
+    α82 = -convert(T2, 3454740038041085 // 36028797018963968)
+    α83 = convert(T2, 476708848972457 // 2251799813685248)
+    α84 = convert(T2, 5255799236757313 // 288230376151711744)
+    α85 = convert(T2, 3690914796734375 // 288230376151711744)
+    α86 = -convert(T2, 5010195363762467 // 18014398509481984)
+    α87 = convert(T2, 5072201887169367 // 4503599627370496)
+
+    ea21 = convert(T, 4 // 9)
+    ea31 = convert(T, 1 // 9)
+    ea32 = convert(T, 1183333538310 // 1827251437969)
+    ea41 = convert(T, 895379019517 // 9750411845327)
+    ea42 = convert(T, 477606656805 // 13473228687314)
+    ea43 = -convert(T, 112564739183 // 9373365219272)
+    ea51 = -convert(T, 4458043123994 // 13015289567637)
+    ea52 = -convert(T, 2500665203865 // 9342069639922)
+    ea53 = convert(T, 983347055801 // 8893519644487)
+    ea54 = convert(T, 2185051477207 // 2551468980502)
+    ea61 = -convert(T, 167316361917 // 17121522574472)
+    ea62 = convert(T, 1605541814917 // 7619724128744)
+    ea63 = convert(T, 991021770328 // 13052792161721)
+    ea64 = convert(T, 2342280609577 // 11279663441611)
+    ea65 = convert(T, 3012424348531 // 12792462456678)
+    ea71 = convert(T, 6680998715867 // 14310383562358)
+    ea72 = convert(T, 5029118570809 // 3897454228471)
+    ea73 = convert(T, 2415062538259 // 6382199904604)
+    ea74 = -convert(T, 3924368632305 // 6964820224454)
+    ea75 = -convert(T, 4331110370267 // 15021686902756)
+    ea76 = -convert(T, 3944303808049 // 11994238218192)
+    ea81 = convert(T, 2193717860234 // 3570523412979)
+    ea82 = convert(T, 2193717860234 // 3570523412979)
+    ea83 = convert(T, 5952760925747 // 18750164281544)
+    ea84 = -convert(T, 4412967128996 // 6196664114337)
+    ea85 = convert(T, 4151782504231 // 36106512998704)
+    ea86 = convert(T, 572599549169 // 6265429158920)
+    ea87 = -convert(T, 457874356192 // 11306498036315)
+
+    eb3 = convert(T, 3517720773327 // 20256071687669)
+    eb4 = convert(T, 4569610470461 // 17934693873752)
+    eb5 = convert(T, 2819471173109 // 11655438449929)
+    eb6 = convert(T, 3296210113763 // 10722700128969)
+    eb7 = -convert(T, 1142099968913 // 5710983926999)
+    eb8 = convert(T, 2 // 9)
+
+    ebtilde3 = -convert(T, 18652552508630163520943320 // 168134443655105334713783643)
+    ebtilde4 = convert(T, 141161430501477620145807 // 319735394533244397237135736)
+    ebtilde5 = -convert(T, 207757214437709595456056 // 72283007456311581445415925)
+    ebtilde6 = convert(T, 13674542533282477231637762 // 149163814411398370516486131)
+    ebtilde7 = convert(T, 11939168497868428048898551 // 210101209758476969753215083)
+    ebtilde8 = -convert(T, 1815023333875 // 51666766064334)
+
+    s = 8
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = convert(T, γ)
+    Ai[2, 2] = convert(T, γ)
+    Ai[3, 1] = a31
+    Ai[3, 2] = a32
+    Ai[3, 3] = convert(T, γ)
+    Ai[4, 1] = a41
+    Ai[4, 2] = a42
+    Ai[4, 3] = a43
+    Ai[4, 4] = convert(T, γ)
+    Ai[5, 1] = a51
+    Ai[5, 2] = a52
+    Ai[5, 3] = a53
+    Ai[5, 4] = a54
+    Ai[5, 5] = convert(T, γ)
+    Ai[6, 1] = a61
+    Ai[6, 2] = a62
+    Ai[6, 3] = a63
+    Ai[6, 4] = a64
+    Ai[6, 5] = a65
+    Ai[6, 6] = convert(T, γ)
+    Ai[7, 1] = a71
+    Ai[7, 2] = a72
+    Ai[7, 3] = a73
+    Ai[7, 4] = a74
+    Ai[7, 5] = a75
+    Ai[7, 6] = a76
+    Ai[7, 7] = convert(T, γ)
+    Ai[8, 3] = a83
+    Ai[8, 4] = a84
+    Ai[8, 5] = a85
+    Ai[8, 6] = a86
+    Ai[8, 7] = a87
+    Ai[8, 8] = convert(T, γ)
+
+    bi_vec = zeros(T, s)
+    bi_vec[3] = a83
+    bi_vec[4] = a84
+    bi_vec[5] = a85
+    bi_vec[6] = a86
+    bi_vec[7] = a87
+    bi_vec[8] = convert(T, γ)
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = ea21
+    Ae[3, 1] = ea31
+    Ae[3, 2] = ea32
+    Ae[4, 1] = ea41
+    Ae[4, 2] = ea42
+    Ae[4, 3] = ea43
+    Ae[5, 1] = ea51
+    Ae[5, 2] = ea52
+    Ae[5, 3] = ea53
+    Ae[5, 4] = ea54
+    Ae[6, 1] = ea61
+    Ae[6, 2] = ea62
+    Ae[6, 3] = ea63
+    Ae[6, 4] = ea64
+    Ae[6, 5] = ea65
+    Ae[7, 1] = ea71
+    Ae[7, 2] = ea72
+    Ae[7, 3] = ea73
+    Ae[7, 4] = ea74
+    Ae[7, 5] = ea75
+    Ae[7, 6] = ea76
+    Ae[8, 1] = ea81
+    Ae[8, 2] = ea82
+    Ae[8, 3] = ea83
+    Ae[8, 4] = ea84
+    Ae[8, 5] = ea85
+    Ae[8, 6] = ea86
+    Ae[8, 7] = ea87
+
+    be_vec = zeros(T, s)
+    be_vec[3] = eb3
+    be_vec[4] = eb4
+    be_vec[5] = eb5
+    be_vec[6] = eb6
+    be_vec[7] = eb7
+    be_vec[8] = eb8
+
+    c_vec = zeros(T2, s)
+    c_vec[1] = zero(T2)
+    c_vec[2] = convert(T2, 2γ)
+    c_vec[3] = c3
+    c_vec[4] = c4
+    c_vec[5] = c5
+    c_vec[6] = c6
+    c_vec[7] = c7
+    c_vec[8] = one(T2)
+
+    btilde_vec = zeros(T, s)
+    btilde_vec[3] = btilde3
+    btilde_vec[4] = btilde4
+    btilde_vec[5] = btilde5
+    btilde_vec[6] = btilde6
+    btilde_vec[7] = btilde7
+    btilde_vec[8] = btilde8
+
+    ebtilde_vec = zeros(T, s)
+    ebtilde_vec[3] = ebtilde3
+    ebtilde_vec[4] = ebtilde4
+    ebtilde_vec[5] = ebtilde5
+    ebtilde_vec[6] = ebtilde6
+    ebtilde_vec[7] = ebtilde7
+    ebtilde_vec[8] = ebtilde8
+
+    α_vecs = [zeros(T2, s) for _ in 1:s]
+    α_vecs[2][1] = one(T2)
+    α_vecs[3][1] = α31
+    α_vecs[3][2] = α32
+    α_vecs[4][1] = α41
+    α_vecs[4][2] = α42
+    α_vecs[5][1] = α51
+    α_vecs[5][2] = α52
+    α_vecs[6][1] = α61
+    α_vecs[6][2] = α62
+    α_vecs[6][3] = α63
+    α_vecs[7][1] = α71
+    α_vecs[7][2] = α72
+    α_vecs[7][3] = α73
+    α_vecs[8][1] = α81
+    α_vecs[8][2] = α82
+    α_vecs[8][3] = α83
+    α_vecs[8][4] = α84
+    α_vecs[8][5] = α85
+    α_vecs[8][6] = α86
+    α_vecs[8][7] = α87
+
+    return ESDIRKIMEXTableau(
+        Ai, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, ebtilde_vec, α_vecs, 5, s, true, [0, 1, 2, 1, 2, 3, 3, 7], c3
+    )
+end
+
+#
+# Helper to build an ESDIRKIMEXTableau for pure-implicit ESDIRK methods
+# (no explicit tableau, no extrapolation guess)
+#
+function _pure_esdirk_to_imex_tableau(
+        Ai_mat::Matrix{T}, c_vec::Vector{T2},
+        btilde_vec::Vector{T}, order::Int
+    ) where {T, T2}
+    s = size(Ai_mat, 1)
+    bi_vec = Ai_mat[s, :]
+    Ae = zeros(T, s, s)
+    be_vec = zeros(T, s)
+    return ESDIRKIMEXTableau(
+        Ai_mat, bi_vec, Ae, be_vec, c_vec,
+        btilde_vec, T[], Vector{T2}[], order, s, false, zeros(Int, s), c_vec[3]
+    )
+end
+
+#
+# ESDIRK54I8L2SA IMEX Tableau (8 stages, order 5)
+#
+function ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK54I8L2SATableau(T, T2)
+    s = 8
+    γ = convert(T, tab.γ)
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+    Ai[8, 1] = tab.a81
+    Ai[8, 2] = tab.a82
+    Ai[8, 3] = tab.a83
+    Ai[8, 4] = tab.a84
+    Ai[8, 5] = tab.a85
+    Ai[8, 6] = tab.a86
+    Ai[8, 7] = tab.a87
+    Ai[8, 8] = γ
+
+    c_vec = T2[
+        zero(T2), convert(T2, 2) * convert(T2, tab.γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, one(T2),
+    ]
+
+    btilde_vec = T[
+        tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4,
+        tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8,
+    ]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+end
+
+#
+# ESDIRK436L2SA2 IMEX Tableau (6 stages, order 4)
+#
+function ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK436L2SA2Tableau(T, T2)
+    s = 6
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+
+    c_vec = T2[
+        zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6,
+    ]
+
+    btilde_vec = T[
+        tab.btilde1, tab.btilde2, tab.btilde3,
+        tab.btilde4, tab.btilde5, tab.btilde6,
+    ]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+end
+
+#
+# ESDIRK437L2SA IMEX Tableau (7 stages, order 4)
+#
+function ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK437L2SATableau(T, T2)
+    s = 7
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+
+    c_vec = T2[
+        zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7,
+    ]
+
+    btilde_vec = T[
+        tab.btilde1, tab.btilde2, tab.btilde3,
+        tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7,
+    ]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 4)
+end
+
+#
+# ESDIRK547L2SA2 IMEX Tableau (7 stages, order 5)
+#
+function ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK547L2SA2Tableau(T, T2)
+    s = 7
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+
+    c_vec = T2[
+        zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7,
+    ]
+
+    btilde_vec = T[
+        tab.btilde1, tab.btilde2, tab.btilde3,
+        tab.btilde4, tab.btilde5, tab.btilde6, tab.btilde7,
+    ]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 5)
+end
+
+#
+# ESDIRK659L2SA IMEX Tableau (9 stages, order 6)
+# Note: stage 9 has a91=a92=a93=0 (only depends on stages 4-8)
+#
+function ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
+    tab = ESDIRK659L2SATableau(T, T2)
+    s = 9
+    γ = tab.γ
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ
+    Ai[2, 2] = γ
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γ
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γ
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γ
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γ
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γ
+    Ai[8, 1] = tab.a81
+    Ai[8, 2] = tab.a82
+    Ai[8, 3] = tab.a83
+    Ai[8, 4] = tab.a84
+    Ai[8, 5] = tab.a85
+    Ai[8, 6] = tab.a86
+    Ai[8, 7] = tab.a87
+    Ai[8, 8] = γ
+    # Stage 9: a91=a92=a93=0 (zeros from initialization)
+    Ai[9, 4] = tab.a94
+    Ai[9, 5] = tab.a95
+    Ai[9, 6] = tab.a96
+    Ai[9, 7] = tab.a97
+    Ai[9, 8] = tab.a98
+    Ai[9, 9] = γ
+
+    c_vec = T2[
+        zero(T2), convert(T2, 2) * convert(T2, γ),
+        tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8, tab.c9,
+    ]
+
+    btilde_vec = T[
+        tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4,
+        tab.btilde5, tab.btilde6, tab.btilde7, tab.btilde8, tab.btilde9,
+    ]
+
+    return _pure_esdirk_to_imex_tableau(Ai, c_vec, btilde_vec, 6)
+end
+
+# ============================================================
+# Pure (non-IMEX) SDIRK methods unified into ESDIRKIMEXTableau
+# explicit_first_stage=false: stage 1 is implicit; stiffly_accurate depends on method
+# ============================================================
+
+# Predictor α for SFSDIRK family: stage 3 copies z1, stage i≥4 copies z[i-1]
+function _sfsdirk_α_imex(::Type{T2}, s::Int) where {T2}
+    α = [zeros(T2, s) for _ in 1:s]
+    s >= 3 && (α[3][1] = one(T2))
+    for i in 4:s
+        α[i][i - 1] = one(T2)
+    end
+    return α
+end
+
+ESDIRKIMEXTableau(::SFSDIRK4, T, T2) = SFSDIRK4ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::SFSDIRK5, T, T2) = SFSDIRK5ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::SFSDIRK6, T, T2) = SFSDIRK6ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::SFSDIRK7, T, T2) = SFSDIRK7ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::SFSDIRK8, T, T2) = SFSDIRK8ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(alg::Union{Hairer4, Hairer42}, T, T2) = Hairer4ESDIRKIMEXTableau(alg, T, T2)
+ESDIRKIMEXTableau(::SDIRK2, T, T2) = SDIRK2ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(alg::Cash4, T, T2) = Cash4ESDIRKIMEXTableau(alg, T, T2)
+ESDIRKIMEXTableau(::TRBDF2, T, T2) = TRBDF2ESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ImplicitMidpoint, T, T2) = ImplicitMidpointESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::ImplicitEuler, T, T2) = ImplicitEulerESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::Trapezoid, T, T2) = TrapezoidESDIRKIMEXTableau(T, T2)
+ESDIRKIMEXTableau(::SSPSDIRK2, T, T2) = SSPSDIRK2ESDIRKIMEXTableau(T, T2)
+
+function SFSDIRK4ESDIRKIMEXTableau(T, T2)
+    tab = SFSDIRK4Tableau(T, T2)
+    s = 4
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    bi = T[tab.a51, tab.a52, tab.a53, tab.a54]
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
+    )
+end
+
+function SFSDIRK5ESDIRKIMEXTableau(T, T2)
+    tab = SFSDIRK5Tableau(T, T2)
+    s = 5
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γT
+    bi = T[tab.a61, tab.a62, tab.a63, tab.a64, tab.a65]
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
+    )
+end
+
+function SFSDIRK6ESDIRKIMEXTableau(T, T2)
+    tab = SFSDIRK6Tableau(T, T2)
+    s = 6
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γT
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γT
+    bi = T[tab.a71, tab.a72, tab.a73, tab.a74, tab.a75, tab.a76]
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
+    )
+end
+
+function SFSDIRK7ESDIRKIMEXTableau(T, T2)
+    tab = SFSDIRK7Tableau(T, T2)
+    s = 7
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γT
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γT
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γT
+    bi = T[tab.a81, tab.a82, tab.a83, tab.a84, tab.a85, tab.a86, tab.a87]
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
+    )
+end
+
+function SFSDIRK8ESDIRKIMEXTableau(T, T2)
+    tab = SFSDIRK8Tableau(T, T2)
+    s = 8
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γT
+    Ai[6, 1] = tab.a61
+    Ai[6, 2] = tab.a62
+    Ai[6, 3] = tab.a63
+    Ai[6, 4] = tab.a64
+    Ai[6, 5] = tab.a65
+    Ai[6, 6] = γT
+    Ai[7, 1] = tab.a71
+    Ai[7, 2] = tab.a72
+    Ai[7, 3] = tab.a73
+    Ai[7, 4] = tab.a74
+    Ai[7, 5] = tab.a75
+    Ai[7, 6] = tab.a76
+    Ai[7, 7] = γT
+    Ai[8, 1] = tab.a81
+    Ai[8, 2] = tab.a82
+    Ai[8, 3] = tab.a83
+    Ai[8, 4] = tab.a84
+    Ai[8, 5] = tab.a85
+    Ai[8, 6] = tab.a86
+    Ai[8, 7] = tab.a87
+    Ai[8, 8] = γT
+    bi = T[tab.a91, tab.a92, tab.a93, tab.a94, tab.a95, tab.a96, tab.a97, tab.a98]
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4, tab.c5, tab.c6, tab.c7, tab.c8]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], _sfsdirk_α_imex(T2, s),
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        stage1_extrapolation = false
+    )
+end
+
+function Hairer4ESDIRKIMEXTableau(alg::Union{Hairer4, Hairer42}, T, T2)
+    tab = alg isa Hairer4 ? Hairer4Tableau(T, T2) : Hairer42Tableau(T, T2)
+    s = 5
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γT
+    bi = T[tab.a51, tab.a52, tab.a53, tab.a54, γT]  # = Ai[5,:], stiffly accurate
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4, one(T2)]
+    btilde = T[tab.btilde1, tab.btilde2, tab.btilde3, tab.btilde4, convert(T, tab.btilde5)]
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = tab.α21
+    α[3][1] = tab.α31
+    α[3][2] = tab.α32
+    α[4][1] = tab.α41
+    α[4][3] = tab.α43
+    α[5][1] = convert(T2, tab.bhat1)
+    α[5][2] = convert(T2, tab.bhat2)
+    α[5][3] = convert(T2, tab.bhat3)
+    α[5][4] = convert(T2, tab.bhat4)
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = true
+    )
+end
+
+function SDIRK2ESDIRKIMEXTableau(T, T2)
+    s = 2
+    γT = one(T)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = -one(T)
+    Ai[2, 2] = γT
+    bi = T[one(T) / 2, one(T) / 2]
+    btilde = T[one(T) / 2, -one(T) / 2]
+    c = T2[one(T2), zero(T2)]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], Vector{T2}[],
+        2, s, true, Int[], one(T2); explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = zero(T2)
+    )
+end
+
+function Cash4ESDIRKIMEXTableau(alg::Cash4, T, T2)
+    tab = Cash4Tableau(T, T2)
+    s = 5
+    γT = convert(T, tab.γ)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = tab.a21
+    Ai[2, 2] = γT
+    Ai[3, 1] = tab.a31
+    Ai[3, 2] = tab.a32
+    Ai[3, 3] = γT
+    Ai[4, 1] = tab.a41
+    Ai[4, 2] = tab.a42
+    Ai[4, 3] = tab.a43
+    Ai[4, 4] = γT
+    Ai[5, 1] = tab.a51
+    Ai[5, 2] = tab.a52
+    Ai[5, 3] = tab.a53
+    Ai[5, 4] = tab.a54
+    Ai[5, 5] = γT
+    bi = T[tab.a51, tab.a52, tab.a53, tab.a54, γT]  # = Ai[5,:], stiffly accurate
+    c = T2[tab.γ, tab.c2, tab.c3, tab.c4, one(T2)]
+    if alg.embedding == 3
+        btilde = T[
+            tab.b1hat2 - tab.a51, tab.b2hat2 - tab.a52, tab.b3hat2 - tab.a53,
+            tab.b4hat2 - tab.a54, -γT,
+        ]
+    else
+        btilde = T[
+            tab.b1hat1 - tab.a51, tab.b2hat1 - tab.a52, tab.b3hat1 - tab.a53,
+            tab.b4hat1 - tab.a54, -γT,
+        ]
+    end
+    α = [zeros(T2, s) for _ in 1:s]
+    α[3][1] = one(T2)
+    α[4][3] = one(T2)
+    α[5][1] = convert(T2, tab.b1hat2)
+    α[5][2] = convert(T2, tab.b2hat2)
+    α[5][3] = convert(T2, tab.b3hat2)
+    α[5][4] = convert(T2, tab.b4hat2)
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
+        4, s, true, Int[], tab.γ; explicit_first_stage = false, fsal = false, stiffly_accurate = true,
+        stage1_extrapolation = false
+    )
+end
+
+function TRBDF2ESDIRKIMEXTableau(T, T2)
+    tab = TRBDF2Tableau(T, T2)
+    s = 3
+    Ai = zeros(T, s, s)
+    # Stage 1: FSAL (all zeros in row 1)
+    Ai[2, 1] = tab.d
+    Ai[2, 2] = tab.d
+    Ai[3, 1] = tab.ω
+    Ai[3, 2] = tab.ω
+    Ai[3, 3] = tab.d
+    bi = T[tab.ω, tab.ω, tab.d]  # = Ai[3,:], stiffly accurate
+    c = T2[zero(T2), tab.γ, one(T2)]
+    btilde = T[tab.btilde1, tab.btilde2, tab.btilde3]
+    α = [zeros(T2, s) for _ in 1:s]
+    α[2][1] = one(T2)
+    α[3][1] = convert(T2, tab.α1)
+    α[3][2] = convert(T2, tab.α2)
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
+        2, s, true, Int[], tab.γ; explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+function ImplicitMidpointESDIRKIMEXTableau(T, T2)
+    s = 1
+    γ = convert(T2, 1 // 2)
+    Ai = fill(convert(T, 1 // 2), 1, 1)
+    bi = T[one(T)]  # u = uprev + 1*z, not uprev + (1/2)*z → not stiffly accurate
+    c = T2[γ]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
+        2, s, false, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = one(T2)
+    )
+end
+
+function ImplicitEulerESDIRKIMEXTableau(T, T2)
+    s = 1
+    Ai = fill(one(T), 1, 1)
+    bi = T[one(T)]
+    c = T2[one(T2)]
+    return ESDIRKIMEXTableau(
+        Val(:ie_dd2),
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
+        1, s, false, Int[], one(T2); explicit_first_stage = false, fsal = true,
+        stiffly_accurate = false, explicit_fsallast = true, fsallast_c = one(T2)
+    )
+end
+
+function TrapezoidESDIRKIMEXTableau(T, T2)
+    s = 2
+    γ = convert(T2, 1 // 2)
+    γT = convert(T, 1 // 2)
+    Ai = zeros(T, 2, 2)
+    Ai[2, 1] = γT
+    Ai[2, 2] = γT
+    bi = T[γT, γT]
+    c = T2[zero(T2), one(T2)]
+    return ESDIRKIMEXTableau(
+        Val(:trap_dd3),
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
+        2, s, false, Int[], one(T2); explicit_first_stage = true, fsal = true,
+        stiffly_accurate = true, explicit_fsallast = true, fsallast_c = one(T2)
+    )
+end
+
+function SSPSDIRK2ESDIRKIMEXTableau(T, T2)
+    s = 2
+    γ = convert(T2, 1 // 4)
+    γT = convert(T, 1 // 4)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γT
+    Ai[2, 1] = convert(T, 1 // 2)
+    Ai[2, 2] = γT
+    bi = T[convert(T, 1 // 2), convert(T, 1 // 2)]
+    c = T2[one(T2), one(T2)]
+    c2 = convert(T2, 3 // 4)
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
+        2, s, true, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,
+        explicit_fsallast = true, fsallast_c = zero(T2),
+        const_stage_guess = T2[zero(T2), c2 / γ]
+    )
+end
+
+# BHR(5,5,3)* — Boscarino-Russo 2009 (SISC 31, 1926-1945). Tableau as given in
+# Ma-Huang 2024 (arXiv:2306.08742) Appendix 7.2 with c4=1.5. γ ≈ 0.435866521508460
+# is the middle root of 6γ³ - 18γ² + 9γ - 1. Explicit-first-stage convention:
+# Ai[1,:] = Ae[1,:] = 0, c[1] = 0.
+function BHR553Tableau(T, T2)
+    γv = 0.43586652150846
+    γ = convert(T, γv)
+    γ2 = convert(T2, γv)
+
+    s = 5
+
+    a41 = convert(T, 0.523600775834581)
+    a43 = convert(T, 0.540532702656959)
+    a51 = convert(T, 0.369394442791758)
+    b3 = convert(T, 0.36286338557874)
+    b4 = convert(T, -0.168124349878957)
+
+    ea41 = convert(T, 0.209467297343041)
+    ea43 = convert(T, 1.290532702656959)
+    ea51 = convert(T, 0.317724380220406)
+    ã53 = convert(T, 1.195970114894582)
+    ã54 = convert(T, -0.150831109536248)
+
+    Ai = zeros(T, s, s)
+    Ai[2, 1] = γ; Ai[2, 2] = γ
+    Ai[3, 1] = γ; Ai[3, 3] = γ
+    Ai[4, 1] = a41; Ai[4, 3] = a43; Ai[4, 4] = γ
+    Ai[5, 1] = a51; Ai[5, 3] = b3; Ai[5, 4] = b4; Ai[5, 5] = γ
+
+    bi = T[a51, zero(T), b3, b4, γ]   # stiffly accurate: bi == Ai[5,:]
+
+    Ae = zeros(T, s, s)
+    Ae[2, 1] = 2γ
+    Ae[3, 1] = γ; Ae[3, 2] = γ
+    Ae[4, 1] = ea41; Ae[4, 3] = ea43
+    Ae[5, 1] = ea51; Ae[5, 2] = -b3; Ae[5, 3] = ã53; Ae[5, 4] = ã54
+
+    be = T[a51, zero(T), b3, b4, γ]
+
+    c = T2[zero(T2), convert(T2, 2γv), convert(T2, 2γv), convert(T2, 3 // 2), one(T2)]
+
+    α = [zeros(T2, s) for _ in 1:s]
+
+    return ESDIRKIMEXTableau(
+        Ai, bi, Ae, be, c, T[], T[], α,
+        3, s, false, [0, 0, 0, 0, 0], γ2;
+        explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end

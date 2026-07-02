@@ -156,9 +156,11 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
         g7 = u
-        # Hairer II, page 22 modified to use the Inf norm
+        # Hairer II, page 22 modified to use the Inf norm.
+        # `norm(_, Inf)` rather than `maximum(abs, _)` so an empty state (zero
+        # continuous unknowns) yields 0 instead of reducing over an empty collection.
         integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t
+            norm((k7 .- k6) ./ (g7 .- g6), Inf), t
         )
     end
     if integrator.opts.adaptive

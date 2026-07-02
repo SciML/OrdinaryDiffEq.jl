@@ -25,3 +25,19 @@ get_current_adaptive_order(alg::AdaptiveRadau, cache) = cache.num_stages
 function has_stiff_interpolation(::Union{RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau})
     return true
 end
+
+qmax_default(alg::GaussLegendre) = 8
+
+alg_order(alg::GaussLegendre) = 2 * alg.num_stages
+
+default_controller(QT, alg::GaussLegendre) = PIController(QT, alg)
+
+isfirk(alg::GaussLegendre) = true
+
+# Richardson step-doubling controller
+isadaptive(alg::GaussLegendre) = alg.num_stages >= 2
+alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages
+has_stiff_interpolation(::GaussLegendre) = false
+
+get_current_alg_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
+get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages

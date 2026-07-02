@@ -24,7 +24,7 @@ path = "../../../DiffEqBase"
 [compat]
 ADTypes = "1"
 Adapt = "4"
-CUDA = "4, 5"
+CUDA = "6"
 ComponentArrays = "0.15"
 DiffEqBase = "7"
 FastBroadcast = "1.3"

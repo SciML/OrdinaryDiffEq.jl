@@ -19,11 +19,13 @@ using SciMLBase: SciMLBase,
     ODEProblem, ODEFunction, ODESolution,
     SplitODEProblem, SplitFunction,
     SecondOrderODEProblem, DynamicalODEProblem,
-    DAEProblem, DAEFunction, DAESolution,
+    DAEProblem, DAEFunction, DAESolution, EnsembleProblem,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
     remake, successful_retcode, reinit!,
     derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
+
+using SciMLLogging: SciMLLogging
 
 # Import ADTypes for autodiff specification
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
@@ -45,14 +47,14 @@ export solve, solve!, init, step!
 export ODEProblem, ODEFunction, ODESolution
 export SplitODEProblem, SplitFunction
 export SecondOrderODEProblem, DynamicalODEProblem
-export DAEProblem, DAEFunction, DAESolution
+export DAEProblem, DAEFunction, EnsembleProblem, DAESolution
 
 # Callbacks
 export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback
 
 # Utilities
 export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
-export remake, successful_retcode, reinit!, set_proposed_dt!
+export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!
 
 # ADTypes
 export AutoForwardDiff, AutoFiniteDiff, AutoSparse

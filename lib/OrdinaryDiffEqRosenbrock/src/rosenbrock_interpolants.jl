@@ -7,6 +7,16 @@ ROSENBROCKS_WITH_INTERPOLATIONS = Union{
     HybridExplicitImplicitConstantCache, HybridExplicitImplicitCache,
 }
 
+# Mask used by the `interp_order == -1` Hermite fallback (methods with no
+# H matrix store k[1]=f₀, k[2]=f₁). For DAE algebraic variables, f₀/f₁ are
+# residuals, not derivatives, so the Hermite correction is invalid there —
+# the mask is zero on algebraic vars to fall back to linear interpolation.
+@inline _dae_hermite_mask(::Nothing, ::Any) = true
+@inline _dae_hermite_mask(::DifferentialVarsUndefined, ::Any) = false
+@inline _dae_hermite_mask(dv::AbstractArray, ::Nothing) = dv
+@inline _dae_hermite_mask(dv::AbstractArray, idxs::Number) = dv[idxs]
+@inline _dae_hermite_mask(dv::AbstractArray, idxs) = @view dv[idxs]
+
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
         cache::ROSENBROCKS_WITH_INTERPOLATIONS,
@@ -173,9 +183,19 @@ From MATLAB ODE Suite by Shampine
     )
     Θ1 = 1 - Θ
     if hasproperty(cache, :interp_order) && cache.interp_order == -1
-        # Generic Hermite: k[1]=f₀, k[2]=f₁ (methods with no H matrix)
-        @.. Θ1 * y₀ + Θ * y₁ +
-            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+        # Generic Hermite: k[1]=f₀, k[2]=f₁ (methods with no H matrix).
+        # Mask the Hermite correction by `differential_vars` so DAE algebraic
+        # variables fall back to linear interpolation (f₀/f₁ are residuals there).
+        m = _dae_hermite_mask(differential_vars, nothing)
+        if m === true
+            @.. Θ1 * y₀ + Θ * y₁ +
+                Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+        elseif m === false
+            @.. Θ1 * y₀ + Θ * y₁
+        else
+            @.. Θ1 * y₀ + Θ * y₁ +
+                m * Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+        end
     elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @.. Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     elseif cache.interp_order == 4
@@ -196,8 +216,16 @@ end
     )
     Θ1 = 1 - Θ
     if hasproperty(cache, :interp_order) && cache.interp_order == -1
-        @views @.. Θ1 * y₀[idxs] + Θ * y₁[idxs] +
-            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+        m = _dae_hermite_mask(differential_vars, idxs)
+        if m === true
+            @views @.. Θ1 * y₀[idxs] + Θ * y₁[idxs] +
+                Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+        elseif m === false
+            @views @.. Θ1 * y₀[idxs] + Θ * y₁[idxs]
+        else
+            @views @.. Θ1 * y₀[idxs] + Θ * y₁[idxs] +
+                m * Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+        end
     elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     elseif cache.interp_order == 4
@@ -224,8 +252,16 @@ end
     )
     Θ1 = 1 - Θ
     if hasproperty(cache, :interp_order) && cache.interp_order == -1
-        @.. out = Θ1 * y₀ + Θ * y₁ +
-            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+        m = _dae_hermite_mask(differential_vars, nothing)
+        if m === true
+            @.. out = Θ1 * y₀ + Θ * y₁ +
+                Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+        elseif m === false
+            @.. out = Θ1 * y₀ + Θ * y₁
+        else
+            @.. out = Θ1 * y₀ + Θ * y₁ +
+                m * Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
+        end
     elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @.. out = Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     elseif cache.interp_order == 4
@@ -247,8 +283,16 @@ end
     )
     Θ1 = 1 - Θ
     if hasproperty(cache, :interp_order) && cache.interp_order == -1
-        @views @.. out = Θ1 * y₀[idxs] + Θ * y₁[idxs] +
-            Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+        m = _dae_hermite_mask(differential_vars, idxs)
+        if m === true
+            @views @.. out = Θ1 * y₀[idxs] + Θ * y₁[idxs] +
+                Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+        elseif m === false
+            @views @.. out = Θ1 * y₀[idxs] + Θ * y₁[idxs]
+        else
+            @views @.. out = Θ1 * y₀[idxs] + Θ * y₁[idxs] +
+                m * Θ * (Θ - 1) * ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
+        end
     elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. out = Θ1 * y₀[idxs] + Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
     elseif cache.interp_order == 4
@@ -281,7 +325,23 @@ end
         },
         idxs::Nothing, T::Type{Val{1}}, differential_vars
     )
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        m = _dae_hermite_mask(differential_vars, nothing)
+        hermite_deriv = @.. (
+            k[1] + Θ * (
+                -4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+                    Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
+                    6 * y₁
+            )
+        ) / dt
+        if m === true
+            hermite_deriv
+        elseif m === false
+            @.. (y₁ - y₀) / dt
+        else
+            @.. m * hermite_deriv + (true - m) * (y₁ - y₀) / dt
+        end
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @.. (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
     elseif cache.interp_order == 4
         @.. (
@@ -313,7 +373,23 @@ end
         },
         idxs, T::Type{Val{1}}, differential_vars
     )
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        m = _dae_hermite_mask(differential_vars, idxs)
+        hermite_deriv = @views @.. (
+            k[1][idxs] + Θ * (
+                -4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
+                    Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] + 6 * y₀[idxs] - 6 * y₁[idxs]) +
+                    6 * y₁[idxs]
+            )
+        ) / dt
+        if m === true
+            hermite_deriv
+        elseif m === false
+            @views @.. (y₁[idxs] - y₀[idxs]) / dt
+        else
+            @views @.. m * hermite_deriv + (true - m) * (y₁[idxs] - y₀[idxs]) / dt
+        end
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. (
             k[1][idxs] +
                 Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] - 3 * k[2][idxs] * Θ) -
@@ -351,7 +427,28 @@ end
         },
         idxs::Nothing, T::Type{Val{1}}, differential_vars
     )
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        m = _dae_hermite_mask(differential_vars, nothing)
+        if m === true
+            @.. out = (
+                k[1] + Θ * (
+                    -4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+                        Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
+                        6 * y₁
+                )
+            ) / dt
+        elseif m === false
+            @.. out = (y₁ - y₀) / dt
+        else
+            @.. out = m * (
+                k[1] + Θ * (
+                    -4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+                        Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
+                        6 * y₁
+                )
+            ) / dt + (true - m) * (y₁ - y₀) / dt
+        end
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @.. out = (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
     elseif cache.interp_order == 4
         @.. out = (
@@ -385,7 +482,28 @@ end
         },
         idxs, T::Type{Val{1}}, differential_vars
     )
-    if !hasproperty(cache, :interp_order) || cache.interp_order == 2
+    if hasproperty(cache, :interp_order) && cache.interp_order == -1
+        m = _dae_hermite_mask(differential_vars, idxs)
+        if m === true
+            @views @.. out = (
+                k[1][idxs] + Θ * (
+                    -4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
+                        Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] + 6 * y₀[idxs] - 6 * y₁[idxs]) +
+                        6 * y₁[idxs]
+                )
+            ) / dt
+        elseif m === false
+            @views @.. out = (y₁[idxs] - y₀[idxs]) / dt
+        else
+            @views @.. out = m * (
+                k[1][idxs] + Θ * (
+                    -4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
+                        Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] + 6 * y₀[idxs] - 6 * y₁[idxs]) +
+                        6 * y₁[idxs]
+                )
+            ) / dt + (true - m) * (y₁[idxs] - y₀[idxs]) / dt
+        end
+    elseif !hasproperty(cache, :interp_order) || cache.interp_order == 2
         @views @.. out = (
             k[1][idxs] +
                 Θ *

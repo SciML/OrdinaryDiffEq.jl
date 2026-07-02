@@ -1,7 +1,7 @@
 name = "ImplicitDiscreteSolve"
 uuid = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "1.11.0"
+version = "2.1.2"
 
 [deps]
 NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
@@ -25,17 +25,17 @@ DiffEqBase = {path = "../DiffEqBase"}
 [compat]
 Pkg = "1"
 Test = "1.10.0"
-NonlinearSolveBase = "2.0.0"
-OrdinaryDiffEqSDIRK = "1.6.0"
+NonlinearSolveBase = "2.23.0"
+OrdinaryDiffEqSDIRK = "2"
 SafeTestsets = "0.1.0"
-SciMLBase = "3"
-OrdinaryDiffEqCore = "4"
+SciMLBase = "3.10.0"
+OrdinaryDiffEqCore = "4.4"
 ConcreteStructs = "0.2.3"
-NonlinearSolveFirstOrder = "1.9.0, 2"
-SymbolicIndexingInterface = "0.3.38"
+NonlinearSolveFirstOrder = "2.1.1"
+SymbolicIndexingInterface = "0.3.43"
 julia = "1.10"
 DiffEqBase = "7"
-Reexport = "1.2"
+Reexport = "1.2.2"
 
 [targets]
 test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets"]

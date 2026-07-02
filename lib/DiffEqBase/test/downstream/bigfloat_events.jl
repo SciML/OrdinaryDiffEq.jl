@@ -1,4 +1,5 @@
 using OrdinaryDiffEq
+using SciMLBase: terminate!
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])

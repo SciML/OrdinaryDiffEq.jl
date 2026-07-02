@@ -34,20 +34,19 @@ The stability region of a possible embedded method cannot be calculated
 using this method.
 
 If you use an implicit method, you may run into convergence issues when
-the value of `z` is outside of the stability region, e.g.,
+the value of `z` is outside of the stability region or when `|z|` is so
+large that the true stability-function value is below `floatmin` (subnormal).
+On hardware or BLAS configurations with flush-to-zero (FTZ) enabled, subnormal
+Newton corrections are flushed to zero, causing the solve to fail and return
+the initial value rather than the correct near-zero result. Use inputs where
+`1/|z|` is a normal floating-point number to avoid this.
 
 ```julia-repl
-julia> typemin(Float64)
--Inf
-
 julia> stability_region(typemin(Float64), ImplicitEuler())
 ┌ Warning: Newton steps could not converge and algorithm is not adaptive. Use a lower dt.
 
-julia> nextfloat(typemin(Float64))
--1.7976931348623157e308
-
-julia> stability_region(nextfloat(typemin(Float64)), ImplicitEuler())
-0.0
+julia> abs(stability_region(-1e16, ImplicitEuler())) < eps(Float64)
+true
 ```
 """
 function stability_region(z, alg::AbstractODEAlgorithm)
@@ -70,11 +69,10 @@ function stability_region(
         tab_or_alg::Union{ODERKTableau, AbstractODEAlgorithm};
         initial_guess = -3.0, kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(x[1], tab_or_alg)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(x, tab_or_alg)) - 1
+    prob = NonlinearProblem{false}(f, initial_guess)
+    sol = solve(prob, SimpleTrustRegion(autodiff = AutoFiniteDiff()); kw...)
+    return sol.u
 end
 
 """
@@ -90,11 +88,10 @@ function imaginary_stability_interval(
         initial_guess = length(tab) - one(eltype(tab.A)),
         kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(im * x[1], tab)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(im * x, tab)) - 1
+    prob = NonlinearProblem{false}(f, initial_guess)
+    sol = solve(prob, SimpleTrustRegion(autodiff = AutoFiniteDiff()); kw...)
+    return sol.u
 end
 
 """
@@ -110,11 +107,10 @@ function imaginary_stability_interval(
         initial_guess = 20.0,
         kw...
     )
-    residual! = function (resid, x)
-        return resid[1] = abs(stability_region(im * x[1], alg)) - 1
-    end
-    sol = nlsolve(residual!, [initial_guess]; kw...)
-    return sol.zero[1]
+    f = (x, p) -> abs(stability_region(im * x, alg)) - 1
+    prob = NonlinearProblem{false}(f, initial_guess)
+    sol = solve(prob, SimpleTrustRegion(autodiff = AutoFiniteDiff()); kw...)
+    return sol.u
 end
 
 function RootedTrees.residual_order_condition(

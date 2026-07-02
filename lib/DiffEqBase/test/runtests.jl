@@ -81,6 +81,12 @@ end
         @time @safetestset "LabelledArrays Tests" include("downstream/labelledarrays.jl")
         @time @safetestset "GTPSA Tests" include("downstream/gtpsa.jl")
         @time @safetestset "SubArray Support" include("downstream/subarray_support.jl")
+        # Run ahead of the Unitful/FlexUnits tests: a @safetestset that errors
+        # (FlexUnits currently does) aborts the rest of this group, which would
+        # otherwise shadow this test. DiffEqBaseEnzymeExt is disabled on prerelease.
+        if isempty(VERSION.prerelease)
+            @time @safetestset "Enzyme solve_up rule" include("downstream/enzyme_solve_up_rule.jl")
+        end
         @time @safetestset "Unitful" include("downstream/unitful.jl")
         @time @safetestset "FlexUnits" include("downstream/flexunits.jl")
     end

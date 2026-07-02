@@ -1,0 +1,30 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+StochasticDiffEqIIF = "ebf54054-c36b-4494-9aba-657e36df524f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources.DiffEqBase]
+path = "../../../DiffEqBase"
+
+[sources.OrdinaryDiffEqCore]
+path = "../../../OrdinaryDiffEqCore"
+
+[sources.StochasticDiffEqCore]
+path = "../../../StochasticDiffEqCore"
+
+[sources.StochasticDiffEqIIF]
+path = "../.."
+
+[compat]
+Aqua = "0.8"
+DiffEqBase = "7"
+JET = "0.9, 0.10, 0.11"
+OrdinaryDiffEqCore = "4"
+StochasticDiffEqCore = "2"
+StochasticDiffEqIIF = "2"
+Test = "1"
+julia = "1.10"

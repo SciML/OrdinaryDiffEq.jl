@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqRKIP"
 uuid = "a4daff8c-1d43-4ff3-8eff-f78720aeecdc"
 authors = ["Azercoco <20425137+Azercoco@users.noreply.github.com>"]
-version = "1.3.0"
+version = "2.0.1"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -25,8 +25,8 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 Pkg = "1"
-OrdinaryDiffEqExplicitTableaus = "1"
-SciMLBase = "3"
+OrdinaryDiffEqExplicitTableaus = "2"
+SciMLBase = "3.10.0"
 OrdinaryDiffEqCore = "4"
 Compat = "4.16"
 MaybeInplace = "0.1.4"
@@ -34,7 +34,7 @@ StaticArrays = "1.9.13"
 julia = "1.10"
 DiffEqBase = "7"
 SafeTestsets = "0.1.0"
-SciMLOperators = "1.3.1"
+SciMLOperators = "1.15.0"
 FFTW = "1.8.0"
 
 [targets]

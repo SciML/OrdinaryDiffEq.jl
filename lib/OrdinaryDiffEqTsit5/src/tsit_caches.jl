@@ -1,7 +1,4 @@
-@cache struct Tsit5Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
-    } <: OrdinaryDiffEqMutableCache
+@cache mutable struct Tsit5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -18,6 +15,8 @@
     step_limiter!::StepLimiter
     thread::Thread
 end
+
+@truncate_stacktrace Tsit5Cache 1
 
 function alg_cache(
         alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},

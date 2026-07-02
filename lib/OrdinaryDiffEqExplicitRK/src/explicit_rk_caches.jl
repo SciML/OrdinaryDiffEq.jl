@@ -56,7 +56,11 @@ function ExplicitRKConstantCache(tableau, rate_prototype, ::Type{tType} = Float6
     # t + c[i]*dt doesn't promote t beyond what FunctionWrapper signatures
     # expect under AutoSpecialize. `one(tType)` strips units for Unitful
     # quantities while preserving precision for BigFloat/Float32 time types.
-    cType = typeof(one(tType))
+    # Use promote_type so that when `c`'s eltype is already wider than the
+    # dimensionless dt type (e.g. BigFloat `c` with Rational{Int} dt during
+    # convergence testing), we don't attempt a lossy narrowing that could
+    # throw InexactError for non-exactly-representable coefficients.
+    cType = promote_type(eltype(c), typeof(one(tType)))
     c = cType.(c)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst

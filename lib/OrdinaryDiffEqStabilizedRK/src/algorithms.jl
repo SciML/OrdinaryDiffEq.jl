@@ -61,7 +61,7 @@ end
 
 # SERK methods
 
-for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC3]
+for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC2, :TSRKC3]
     @eval begin
         struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
             eigen_est::E
@@ -159,6 +159,25 @@ end
 SERK2(; eigen_est = nothing) = SERK2(eigen_est)
 
 @doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues.""",
+    "TSRKC2",
+    "Two-step Stabilized Explicit Method.",
+    """A. V. Moisa. A family of two-step second order Runge-Kutta-Chebyshev methods,
+    Journal of Computational and Applied Mathematics, 446, pp 115868, 2024. doi:
+    https://doi.org/10.1016/j.cam.2024.115868""",
+    """
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    eigen_est = nothing,
+    """
+)
+function TSRKC2 end
+
+@doc generic_solver_docstring(
     """Third order method. Exhibits high stability for real eigenvalues.""",
     "TSRKC3",
     "Two-step Stabilized Explicit Method.",
@@ -176,3 +195,183 @@ SERK2(; eigen_est = nothing) = SERK2(eigen_est)
     """
 )
 function TSRKC3 end
+
+@doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues with a monotonically
+    increasing and positive stability function, giving smaller error constants than RKC.""",
+    "RKMC2",
+    "Stabilized Explicit Method.",
+    """Boris Faleichik, Andrew Moisa. Explicit Runge-Kutta-Chebyshev methods of second order
+    with monotonic stability polynomial. Journal of Computational and Applied Mathematics,
+    476, pp 117061, 2026. doi: https://doi.org/10.1016/j.cam.2025.117061""",
+    """
+    - `min_stages`: The minimum degree of the Chebyshev polynomial (>= 3).
+    - `max_stages`: The maximum degree of the Chebyshev polynomial.
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 1000,
+    eigen_est = nothing,
+    """
+)
+struct RKMC2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKMC2(; min_stages = 3, max_stages = 1000, eigen_est = nothing)
+    return RKMC2(max(3, min_stages), max_stages, eigen_est)
+end
+
+@doc generic_solver_docstring(
+    """First-order super-time-stepping method based on shifted Legendre polynomials.
+    Monotone and convex-monotone stable for parabolic operators. The stage count s
+    is chosen adaptively from the spectral radius so that the superstep scales as s²
+    times the explicit timestep.""",
+    "RKL1",
+    "Stabilized Explicit Method.",
+    """C. D. Meyer, D. S. Balsara, T. D. Aslam. A stabilized Runge-Kutta-Legendre method
+    for explicit super-time-stepping of parabolic and mixed equations.
+    Journal of Computational Physics, 257, pp 594-626, 2014.
+    doi: https://doi.org/10.1016/j.jcp.2013.08.021""",
+    """
+    - `min_stages`: Minimum number of stages s (must be odd, >= 3).
+    - `max_stages`: Maximum number of stages s.
+    - `eigen_est`: Optional function `(integrator) -> integrator.eigen_est = upper_bound`
+        providing an upper bound on the spectral radius. If not provided, estimated
+        by power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 200,
+    eigen_est = nothing,
+    """
+)
+struct RKL1{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKL1(; min_stages = 3, max_stages = 200, eigen_est = nothing)
+    min_s = max(3, min_stages)
+    min_s = isodd(min_s) ? min_s : min_s + 1
+    max_s = isodd(max_stages) ? max_stages : max_stages - 1
+    max_s = max(max_s, min_s)
+    if max_s < min_s
+        max_s = min_s
+    end
+    return RKL1(min_s, max_s, eigen_est)
+end
+
+@doc generic_solver_docstring(
+    """Second-order super-time-stepping method based on shifted Legendre polynomials.
+    Monotone and convex-monotone stable for parabolic operators with no spurious
+    staircasing. The stage count s is chosen adaptively from the spectral radius
+    so that the superstep scales as s² times the explicit timestep. Only odd values
+    of s are used to ensure adequate damping of shortest wavelength modes.""",
+    "RKL2",
+    "Stabilized Explicit Method.",
+    """C. D. Meyer, D. S. Balsara, T. D. Aslam. A stabilized Runge-Kutta-Legendre method
+    for explicit super-time-stepping of parabolic and mixed equations.
+    Journal of Computational Physics, 257, pp 594-626, 2014.
+    doi: https://doi.org/10.1016/j.jcp.2013.08.021""",
+    """
+    - `min_stages`: Minimum number of stages s (must be odd, >= 3).
+    - `max_stages`: Maximum number of stages s.
+    - `eigen_est`: Optional function `(integrator) -> integrator.eigen_est = upper_bound`
+        providing an upper bound on the spectral radius. If not provided, estimated
+        by power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 200,
+    eigen_est = nothing,
+    """
+)
+struct RKL2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKL2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
+    min_s = max(3, min_stages)
+    min_s = isodd(min_s) ? min_s : min_s + 1
+    max_s = isodd(max_stages) ? max_stages : max_stages - 1
+    max_s = max(max_s, min_s)
+    return RKL2(min_s, max_s, eigen_est)
+end
+
+@doc generic_solver_docstring(
+    """First-order super-time-stepping method based on shifted Gegenbauer polynomials
+    with parameter α=3/2. Maintains the Convex Monotone Property even in the presence
+    of Dirichlet boundary conditions, unlike RKL1. The stage count s is chosen
+    adaptively so that the superstep scales as s² times the explicit timestep.""",
+    "RKG1",
+    "Stabilized Explicit Method.",
+    """T. Skaras, T. Saxton, C. Meyer, T. D. Aslam. Super-time-stepping schemes for
+    parabolic equations with boundary conditions.
+    Journal of Computational Physics, 425, pp 109879, 2021.
+    doi: https://doi.org/10.1016/j.jcp.2020.109879""",
+    """
+    - `min_stages`: Minimum number of stages s (>= 2).
+    - `max_stages`: Maximum number of stages s.
+    - `eigen_est`: Optional function `(integrator) -> integrator.eigen_est = upper_bound`
+        providing an upper bound on the spectral radius. If not provided, estimated
+        by power iteration.
+    """,
+    """
+    min_stages = 2,
+    max_stages = 200,
+    eigen_est = nothing,
+    """
+)
+struct RKG1{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKG1(; min_stages = 2, max_stages = 200, eigen_est = nothing)
+    # RKG does not require odd s — no odd enforcement needed
+    min_s = max(2, min_stages)
+    max_s = max(max_stages, min_s)
+    return RKG1(min_s, max_s, eigen_est)
+end
+
+@doc generic_solver_docstring(
+    """Second-order super-time-stepping method based on shifted Gegenbauer polynomials
+    with parameter α=3/2. Maintains the Convex Monotone Property even in the presence
+    of Dirichlet boundary conditions, unlike RKL2. The stage count s is chosen
+    adaptively so that the superstep scales as s² times the explicit timestep.""",
+    "RKG2",
+    "Stabilized Explicit Method.",
+    """T. Skaras, T. Saxton, C. Meyer, T. D. Aslam. Super-time-stepping schemes for
+    parabolic equations with boundary conditions.
+    Journal of Computational Physics, 425, pp 109879, 2021.
+    doi: https://doi.org/10.1016/j.jcp.2020.109879""",
+    """
+    - `min_stages`: Minimum number of stages s (>= 3).
+    - `max_stages`: Maximum number of stages s.
+    - `eigen_est`: Optional function `(integrator) -> integrator.eigen_est = upper_bound`
+        providing an upper bound on the spectral radius. If not provided, estimated
+        by power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 200,
+    eigen_est = nothing,
+    """
+)
+struct RKG2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKG2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
+    min_s = max(3, min_stages)
+    max_s = max(max_stages, min_s)
+    return RKG2(min_s, max_s, eigen_est)
+end

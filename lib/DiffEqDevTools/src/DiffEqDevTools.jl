@@ -2,7 +2,7 @@ module DiffEqDevTools
 
 using DiffEqBase: AbstractODEAlgorithm
 using DiffEqBase, RecipesBase, RecursiveArrayTools, DiffEqNoiseProcess, StructArrays
-using NLsolve, LinearAlgebra, RootedTrees
+using SimpleNonlinearSolve, LinearAlgebra, RootedTrees
 
 using LinearAlgebra, Distributed
 
@@ -45,7 +45,7 @@ export ConvergenceSimulation, Shootout, ShootoutSet, TestSolution
 #Benchmark Functions
 export Shootout, ShootoutSet, WorkPrecision, WorkPrecisionSet
 
-export test_convergence, analyticless_test_convergence, appxtrue!, appxtrue
+export test_convergence, analyticless_test_convergence, appxtrue
 
 export get_sample_errors
 
