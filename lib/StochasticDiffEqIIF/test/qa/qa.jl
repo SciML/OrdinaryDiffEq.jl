@@ -6,14 +6,14 @@ run_qa(
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (;
-        # These names are part of the OrdinaryDiffEqCore solver-author interface and
-        # StochasticDiffEqCore's cache machinery, but are not (yet) declared `public`.
-        # They are imported from their owning module; the only residual EI complaint is
-        # that they are not public there. Tracked for make-public in
-        # SciML/OrdinaryDiffEq.jl#3776.
         all_explicit_imports_are_public = (;
             ignore = (
-                :perform_step!, :issplit, :current_extrapolant, :current_extrapolant!,  # OrdinaryDiffEqCore
+                # OrdinaryDiffEqCore solver-author interface, still not `public` there
+                # (the no-bang `current_extrapolant` was made public; the in-place
+                # `current_extrapolant!` was not).
+                :current_extrapolant!,
+                # `@cache` is public in OrdinaryDiffEqCore but imported here from
+                # StochasticDiffEqCore, which does not re-declare it `public`.
                 Symbol("@cache"),  # StochasticDiffEqCore
             ),
         ),
