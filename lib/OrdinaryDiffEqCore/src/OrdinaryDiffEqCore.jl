@@ -242,6 +242,31 @@ include("precompilation_setup.jl")
         :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqMutableCache, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
         :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :strip_cache, :sync_controllers!, :TryAgain,
         :unwrap_alg, :uses_uprev, :VerySlowConvergence,
+        # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
+        # Error / sentinel / dispatch-helper types shared across solver sublibs.
+        :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,
+        # Interpolation kernels (companions to the public _ode_interpolant / ode_addsteps!).
+        :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
+        :current_extrapolant!, :interpolation_differential_vars,
+        # Algorithm-trait predicates extended/queried by solver sublibs.
+        :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
+        :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
+        :allows_null_u0, :isaposteriori, :isdiscretealg, :isdiscretecache, :isdp8,
+        :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,
+        :ssp_coefficient, :fac_default_gamma, :qsteady_max_default, :qsteady_min_default,
+        # Order / stepsize / autodiff-config accessors used across sublibs.
+        :get_current_alg_order, :get_current_qmax, :get_chunksize, :_get_fdtype,
+        :_get_fwd_chunksize, :_get_fwd_chunksize_int, :_fixup_ad, :diffdir,
+        :error_constant, :unitfulvalue,
+        # Integrator step / cache / initialization hooks.
+        :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
+        :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
+        :handle_callback_modifiers!, :set_discontinuity, :resolve_basic,
+        # Noise hooks used by the SDE/RODE solver sublibs.
+        :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
+        :is_noise_saveable,
+        # Docstring builder used by solver sublibs.
+        :differentiation_rk_docstring,
     ))
 end
 
