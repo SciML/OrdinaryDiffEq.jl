@@ -11,27 +11,22 @@ run_qa(
         # Qualified accesses to names that are not (yet) declared public by their owners.
         all_qualified_accesses_are_public = (;
             ignore = (
-                # SciMLBase internals
-                :FunctionWrapperSpecialize, :NoSpecialize, :has_lazy_interpolation,
-                # OrdinaryDiffEqCore internals
-                :increment_nf!, :set_EEst!, :lorenz, :lorenz_oop,
+                # SciMLBase internals (not public on registered SciMLBase 3.30.x)
+                :has_lazy_interpolation,
+                # OrdinaryDiffEqCore test-only helpers (deliberately kept non-public)
+                :lorenz, :lorenz_oop,
             )),
         # Explicit imports of names not (yet) declared public by their owners.
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore internals (solver/cache/interpolation interface)
-                :accept_step_controller, :alg_cache, :alg_stability_size, :AutoAlgSwitch,
-                Symbol("@cache"), :CompiledFloats, :CompositeAlgorithm, :constvalue,
-                :DerivativeOrderNotPossibleError, :explicit_rk_docstring, Symbol("@fold"),
-                :get_fsalfirstlast, :isfsal, :_ode_addsteps!, :_ode_interpolant,
-                :_ode_interpolant!, Symbol("@OnDemandTableauExtract"),
-                :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqConstantCache,
-                :OrdinaryDiffEqMutableCache, :perform_step!, :trivial_limiter!,
-                :unwrap_alg,
-                # SciMLBase internals
+                # OrdinaryDiffEqCore owner-internal names (private codegen macros +
+                # cache/interpolation internals deliberately not part of the public
+                # solver-author API declared in PHASE A)
+                Symbol("@fold"), Symbol("@OnDemandTableauExtract"),
+                :CompiledFloats, :DerivativeOrderNotPossibleError,
+                :_ode_interpolant!, :trivial_limiter!,
+                # SciMLBase internals (not public on registered SciMLBase 3.30.x)
                 Symbol("@def"), :_unwrap_val,
-                # DiffEqBase internals
-                :calculate_residuals, :calculate_residuals!,
                 # TruncatedStacktraces internal macro
                 Symbol("@truncate_stacktrace"),
             )),
