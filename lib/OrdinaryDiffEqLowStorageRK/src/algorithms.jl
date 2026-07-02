@@ -15,6 +15,13 @@ Base.@kwdef struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAl
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -37,6 +44,13 @@ Base.@kwdef struct DGLDDRK73_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -59,6 +73,13 @@ Base.@kwdef struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -78,6 +99,13 @@ Base.@kwdef struct NDBLSRK124{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -97,6 +125,13 @@ Base.@kwdef struct NDBLSRK144{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -111,6 +146,13 @@ Base.@kwdef struct CFRLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -126,6 +168,13 @@ Base.@kwdef struct TSLDDRK74{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -148,6 +197,13 @@ Base.@kwdef struct DGLDDRK84_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -170,6 +226,13 @@ Base.@kwdef struct DGLDDRK84_F{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -190,6 +253,13 @@ Base.@kwdef struct SHLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -201,6 +271,13 @@ Base.@kwdef struct RK46NL{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAl
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -217,6 +294,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S32{StageLimiter, StepLimiter, Thre
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -233,6 +317,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S82{StageLimiter, StepLimiter, Thre
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -249,6 +340,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S53{StageLimiter, StepLimiter, Thre
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -265,6 +363,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S173{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -281,6 +386,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S94{StageLimiter, StepLimiter, Thre
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -297,6 +409,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S184{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -313,6 +432,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S105{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -329,6 +455,13 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S205{StageLimiter, StepLimiter, Thr
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -350,6 +483,13 @@ Base.@kwdef struct CKLLSRK43_2{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -371,6 +511,13 @@ Base.@kwdef struct CKLLSRK54_3C{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -392,6 +539,13 @@ Base.@kwdef struct CKLLSRK95_4S{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -413,6 +567,13 @@ Base.@kwdef struct CKLLSRK95_4C{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -434,6 +595,13 @@ Base.@kwdef struct CKLLSRK95_4M{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -455,6 +623,13 @@ Base.@kwdef struct CKLLSRK54_3C_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -476,6 +651,13 @@ Base.@kwdef struct CKLLSRK54_3M_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -497,6 +679,13 @@ Base.@kwdef struct CKLLSRK54_3N_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -518,6 +707,13 @@ Base.@kwdef struct CKLLSRK85_4C_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -539,6 +735,13 @@ Base.@kwdef struct CKLLSRK85_4M_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -560,6 +763,13 @@ Base.@kwdef struct CKLLSRK85_4P_3R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -581,6 +791,13 @@ Base.@kwdef struct CKLLSRK54_3N_4R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -602,6 +819,13 @@ Base.@kwdef struct CKLLSRK54_3M_4R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -622,6 +846,13 @@ Base.@kwdef struct CKLLSRK65_4M_4R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -643,6 +874,13 @@ Base.@kwdef struct CKLLSRK85_4FM_4R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -664,6 +902,13 @@ Base.@kwdef struct CKLLSRK75_4M_5R{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -680,6 +925,13 @@ Base.@kwdef struct RDPK3Sp35{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -697,6 +949,13 @@ Base.@kwdef struct RDPK3SpFSAL35{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -713,6 +972,13 @@ Base.@kwdef struct RDPK3Sp49{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -730,6 +996,13 @@ Base.@kwdef struct RDPK3SpFSAL49{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -746,6 +1019,13 @@ Base.@kwdef struct RDPK3Sp510{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -763,6 +1043,13 @@ Base.@kwdef struct RDPK3SpFSAL510{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 #Low Storage Explicit Runge-Kutta Methods
@@ -784,6 +1071,13 @@ Base.@kwdef struct NDBLSRK134{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
     williamson_condition::Bool = false
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -803,6 +1097,13 @@ Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc explicit_rk_docstring(
@@ -822,6 +1123,13 @@ Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    # When true, the cache allocates dedicated rate buffers so `init`/`solve`/
+    # `reinit!` compute the starting `dt` without allocating. Default false:
+    # the cache footprint is unchanged from the historical layout (the
+    # published register count is these methods' contract) and `initdt`
+    # allocates its rate temporaries at call time (the state/unit-less scratch
+    # is reused either way).
+    preallocate_initdt_buffers::Bool = false
 end
 
 OrdinaryDiffEqCore.has_stage_limiter(

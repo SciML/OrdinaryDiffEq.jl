@@ -59,7 +59,8 @@ end
 
 @muladd function perform_step!(integrator, cache::KYKSSPRK42Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, tmp, fsalfirst, thread) = cache
+    (; k, fsalfirst, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (; α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3) = cache.tab
 
@@ -221,7 +222,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK53Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, thread) = cache
+    (; k, fsalfirst, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (; α30, α32, α40, α43, α52, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4) = cache.tab
 
@@ -449,7 +451,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK53_HCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, thread) = cache
+    (; k, fsalfirst, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (; α30, α32, α40, α41, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4) = cache.tab
     #stores in u for all intermediate stages
@@ -525,7 +528,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK63Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, u₂, thread) = cache
+    (; k, fsalfirst, u₂, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (;
         α40, α41, α43, α62, α65, β10, β21, β32, β43,
@@ -614,7 +618,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK73Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, u₁, thread) = cache
+    (; k, fsalfirst, u₁, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (;
         α40, α43, α50, α51, α54, α73, α76, β10, β21, β32, β43,
@@ -710,7 +715,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRK83Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k, fsalfirst, tmp, u₂, u₃, thread) = cache
+    (; k, fsalfirst, u₂, u₃, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (;
         α50, α51, α54, α61, α65, α72, α73, α76, β10, β21, β32, β43,

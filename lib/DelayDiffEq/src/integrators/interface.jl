@@ -253,7 +253,9 @@ function Base.resize!(integrator::DDEIntegrator, cache, i)
     # cache.fsalfirst === integrator.k[1]), which can fail with
     # "cannot resize array with shared data" on some platforms.
     for c in full_cache(cache)
-        length(c) != i && resize!(c, i)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && length(c) != i && resize!(c, i)
     end
 
     OrdinaryDiffEqCore.resize_nlsolver!(integrator, i)
@@ -296,7 +298,9 @@ function Base.deleteat!(integrator::DDEIntegrator, idxs)
 
     # delete components of DDE integrator
     for c in full_cache(integrator)
-        deleteat!(c, idxs)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && deleteat!(c, idxs)
     end
     return deleteat_non_user_cache!(integrator, integrator.cache, i)
 end
@@ -317,7 +321,9 @@ function DiffEqBase.addat!(integrator::DDEIntegrator, idxs)
 
     # add components to DDE integrator
     for c in full_cache(integrator)
-        addat!(c, idxs)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && addat!(c, idxs)
     end
     return addat_non_user_cache!(integrator, integrator.cache, idxs)
 end

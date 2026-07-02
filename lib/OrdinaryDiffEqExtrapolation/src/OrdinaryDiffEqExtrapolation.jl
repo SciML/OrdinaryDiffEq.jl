@@ -1,6 +1,7 @@
 module OrdinaryDiffEqExtrapolation
 
-import OrdinaryDiffEqCore: alg_maximum_order, get_current_adaptive_order,
+import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+    alg_maximum_order, get_current_adaptive_order,
     get_current_alg_order,
     accept_step_controller,
     beta2_default, beta1_default, gamma_default,
@@ -57,7 +58,7 @@ include("extrapolation_perform_step.jl")
         alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
         cache::OrdinaryDiffEqMutableCache
     )
-    return (cache.tmp, cache.utilde)
+    return (cache.tmp_cache.tmp, cache.tmp_cache.tmp2)
 end
 
 export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,

@@ -2,11 +2,11 @@ struct MREEFConstantCache{T} <: OrdinaryDiffEqConstantCache
     T::T  # pre-allocated extrapolation table: Vector of length `order`
 end
 
-@cache mutable struct MREEFCache{uType, rateType, uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct MREEFCache{uType, rateType, TmpC <: TmpCache} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     k_slow::rateType
     k_fast::rateType
     T::Array{uType, 1}
@@ -22,15 +22,26 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    # `tmp` + `atmp` migrate into the unified scratch (net-zero arrays); no
+    # `utilde`-style secondary state, so `tmp2 = nothing`. Rate slots stay
+    # `nothing` unless the user opts into preallocated initdt buffers.
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    if OrdinaryDiffEqCore.preallocate_initdt_buffers(alg)
+        tmp_cache = TmpCache(
+            tmp, nothing, atmp, nothing,
+            zero(rate_prototype), zero(rate_prototype)
+        )
+    else
+        tmp_cache = TmpCache(tmp, nothing, atmp, nothing, nothing, nothing)
+    end
     k_slow = zero(rate_prototype)
     k_fast = zero(rate_prototype)
     T = [zero(u) for _ in 1:(alg.order)]
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return MREEFCache(u, uprev, tmp, atmp, k_slow, k_fast, T, fsalfirst, k)
+    return MREEFCache(u, uprev, tmp_cache, k_slow, k_fast, T, fsalfirst, k)
 end
 
 function alg_cache(
@@ -47,12 +58,11 @@ struct MRABConstantCache{TabType} <: OrdinaryDiffEqConstantCache
     tab::TabType
 end
 
-@cache mutable struct MRABCache{uType, rateType, uNoUnitsType, TabType} <:
+@cache mutable struct MRABCache{uType, rateType, TabType, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     k_slow::rateType
     k_fast::rateType
     F_history::Vector{rateType}
@@ -69,16 +79,27 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    # `tmp` + `atmp` migrate into the unified scratch (net-zero arrays). There is
+    # no `utilde`-style secondary state, so `tmp2 = nothing`. Rate slots stay
+    # `nothing` unless the user opts into preallocated initdt buffers.
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    if OrdinaryDiffEqCore.preallocate_initdt_buffers(alg)
+        tmp_cache = TmpCache(
+            tmp, nothing, atmp, nothing,
+            zero(rate_prototype), zero(rate_prototype)
+        )
+    else
+        tmp_cache = TmpCache(tmp, nothing, atmp, nothing, nothing, nothing)
+    end
     k_slow = zero(rate_prototype)
     k_fast = zero(rate_prototype)
     F_history = [zero(rate_prototype) for _ in 1:(alg.k)]
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
     tab = MRABTableau(alg.k, eltype(u))
-    return MRABCache(u, uprev, tmp, atmp, k_slow, k_fast, F_history, fsalfirst, k, tab)
+    return MRABCache(u, uprev, tmp_cache, k_slow, k_fast, F_history, fsalfirst, k, tab)
 end
 
 function alg_cache(
@@ -94,12 +115,11 @@ struct MRIGARKConstantCache{TabType} <: OrdinaryDiffEqConstantCache
     tab::TabType
 end
 
-@cache mutable struct MRIGARKCache{uType, rateType, uNoUnitsType, TabType} <:
+@cache mutable struct MRIGARKCache{uType, rateType, TabType, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     v::uType
     vtmp::uType
     f1eval::rateType
@@ -124,9 +144,21 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = mri_gark_tableau(alg, eltype(u))
     s = length(tab.Δc)
+    # `tmp` + `atmp` migrate into the unified scratch (net-zero arrays); no
+    # `utilde`-style secondary state, so `tmp2 = nothing`. `v` is a method stage
+    # buffer (inner-ODE state) and stays on the cache. Rate slots stay `nothing`
+    # unless the user opts into preallocated initdt buffers.
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    if OrdinaryDiffEqCore.preallocate_initdt_buffers(alg)
+        tmp_cache = TmpCache(
+            tmp, nothing, atmp, nothing,
+            zero(rate_prototype), zero(rate_prototype)
+        )
+    else
+        tmp_cache = TmpCache(tmp, nothing, atmp, nothing, nothing, nothing)
+    end
     v = zero(u)
     vtmp = zero(u)
     f1eval = zero(rate_prototype)
@@ -137,7 +169,7 @@ function alg_cache(
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
     return MRIGARKCache(
-        u, uprev, tmp, atmp, v, vtmp, f1eval, kk, z, fS, zemb,
+        u, uprev, tmp_cache, v, vtmp, f1eval, kk, z, fS, zemb,
         fsalfirst, k, tab
     )
 end

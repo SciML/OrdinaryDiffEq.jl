@@ -2,7 +2,8 @@ module OrdinaryDiffEqSDIRK
 
 # These OrdinaryDiffEqCore functions are extended with SDIRK-specific methods, so
 # they must be brought in with `import` (not `using`) to allow method definitions.
-import OrdinaryDiffEqCore: perform_step!,
+import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+    perform_step!,
     alg_extrapolates,
     alg_cache, full_cache,
     isesdirk, issplit,

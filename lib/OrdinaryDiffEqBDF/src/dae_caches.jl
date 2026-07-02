@@ -3,12 +3,18 @@ function get_fsalfirstlast(cache::DAEBDFMutableCache, u)
     return (cache.fsalfirst, du_alias_or_new(cache.nlsolver, cache.fsalfirst))
 end
 
-@cache mutable struct DImplicitEulerCache{uType, rateType, uNoUnitsType, N} <:
+@cache mutable struct DImplicitEulerCache{uType, rateType, N, TmpC <: TmpCache} <:
     DAEBDFMutableCache
     u::uType
     uprev::uType
     uprev2::uType
-    atmp::uNoUnitsType
+    # Unified scratch: only the cache-level `atmp` migrated here (the Newton
+    # buffers live on the nlsolver and are off limits; `k₁`/`k₂` feed
+    # `integrator.k` and are never legal donors). `tmp`/`tmp2`/`weight` are
+    # `nothing`; the rate slots stay opted out since DImplicitEuler's
+    # positional constructor exposes no `preallocate_initdt_buffers` knob:
+    # `TmpCache{Nothing, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     k₁::rateType
     k₂::rateType
     nlsolver::N
@@ -55,7 +61,11 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return DImplicitEulerCache(u, uprev, uprev2, atmp, k₁, k₂, nlsolver)
+    # `atmp` is the only migrated scratch field; everything else stays
+    # `nothing`, so the array count matches the historical cache exactly.
+    tmp_cache = TmpCache(nothing, nothing, atmp, nothing, nothing, nothing)
+
+    return DImplicitEulerCache(u, uprev, uprev2, tmp_cache, k₁, k₂, nlsolver)
 end
 
 @cache mutable struct DABDF2ConstantCache{N, dtType, rate_prototype} <:
@@ -87,14 +97,19 @@ function alg_cache(
     return DABDF2ConstantCache(nlsolver, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-@cache mutable struct DABDF2Cache{uType, rateType, uNoUnitsType, N, dtType} <:
+@cache mutable struct DABDF2Cache{uType, rateType, N, dtType, TmpC <: TmpCache} <:
     DAEBDFMutableCache
     uₙ::uType
     uₙ₋₁::uType
     uₙ₋₂::uType
     fsalfirst::rateType
     fsalfirstprev::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: only the cache-level `atmp` migrated here (shared with
+    # the bootstrap eulercache, preserving the historical aliasing). The other
+    # slots stay `nothing`; the rate slots stay opted out since DABDF2's
+    # positional constructor exposes no `preallocate_initdt_buffers` knob:
+    # `TmpCache{Nothing, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     nlsolver::N
     eulercache::DImplicitEulerCache
     dtₙ₋₁::dtType
@@ -121,12 +136,17 @@ function alg_cache(
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
 
-    eulercache = DImplicitEulerCache(u, uprev, uprev2, atmp, k₁, k₂, nlsolver)
+    # One TmpCache shared by the outer cache and the bootstrap eulercache —
+    # both wrap the same `atmp` array (preserving the historical aliasing), so
+    # the array count matches the historical cache exactly.
+    tmp_cache = TmpCache(nothing, nothing, atmp, nothing, nothing, nothing)
+
+    eulercache = DImplicitEulerCache(u, uprev, uprev2, tmp_cache, k₁, k₂, nlsolver)
 
     dtₙ₋₁ = one(dt)
 
     return DABDF2Cache(
-        u, uprev, uprev2, fsalfirst, fsalfirstprev, atmp,
+        u, uprev, uprev2, fsalfirst, fsalfirstprev, tmp_cache,
         nlsolver, eulercache, dtₙ₋₁
     )
 end
@@ -208,8 +228,9 @@ function alg_cache(
 end
 
 @cache mutable struct DFBDFCache{
-        MO, N, rateType, uNoUnitsType, tsType, tType, uType,
+        MO, N, rateType, tsType, tType, uType,
         uuType, coeffType, EEstType, rType, wType, fdWeightsType,
+        TmpC <: TmpCache,
     } <:
     DAEBDFMutableCache
     fsalfirst::rateType
@@ -227,8 +248,13 @@ end
     nconsteps::Int
     consfailcnt::Int
     qwait::Int # countdown to next order change consideration (CVODE-style)
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: the former inline `tmp` (corrector RHS, write-first
+    # every step) lives in the `tmp` slot and `atmp` in `atmp`; no `utilde`
+    # existed so `tmp2` stays `nothing`. The error-estimate buffers
+    # `terk_tmp`/`terkp1_tmp` keep their dedicated fields. Rate slots stay
+    # opted out (no `preallocate_initdt_buffers` knob on DFBDF):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     terkm2::EEstType
     terkm1::EEstType
     terk::EEstType
@@ -290,9 +316,13 @@ function alg_cache(
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 
+    # Migrated fields only (`tmp` → tmp, `atmp` → atmp) — the array count
+    # matches the historical cache exactly.
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, nothing, nothing)
+
     return DFBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
-        u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
+        u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp_cache,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
         iters_from_event, dense, fd_weights
     )

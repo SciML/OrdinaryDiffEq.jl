@@ -76,7 +76,8 @@ end
 
 @muladd function perform_step!(integrator, cache::AB3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
+    (; fsalfirst, k2, k3, ralk2, k, thread) = cache
+    tmp = cache.tmp_cache.tmp
     k1 = integrator.fsalfirst
     if integrator.derivative_discontinuity
         cache.step = 1
@@ -136,7 +137,9 @@ end
 
 @muladd function perform_step!(integrator, cache::ABM32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
+    (; fsalfirst, k2, k3, ralk2, k, thread) = cache
+    tmp = cache.tmp_cache.tmp
+    tmp_cache = cache.tmp_cache
     k1 = integrator.fsalfirst
     if integrator.derivative_discontinuity
         cache.step = 1
@@ -154,12 +157,12 @@ end
         if cnt == 2
             perform_step!(
                 integrator,
-                AB3Cache(u, uprev, fsalfirst, copy(k2), k3, ralk2, k, tmp, cnt, thread)
+                AB3Cache(u, uprev, fsalfirst, copy(k2), k3, ralk2, k, tmp_cache, cnt, thread)
             )  #Here passing copy of k2, otherwise it will change in AB3()
         else
             perform_step!(
                 integrator,
-                AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, cnt, thread)
+                AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp_cache, cnt, thread)
             )
         end
         k = integrator.fsallast

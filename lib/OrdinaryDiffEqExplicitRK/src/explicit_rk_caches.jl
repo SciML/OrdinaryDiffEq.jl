@@ -1,14 +1,16 @@
-@cache struct ExplicitRKCache{uType, rateType, uNoUnitsType, TabType} <:
+@cache struct ExplicitRKCache{uType, rateType, TabType, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    utilde::rateType
-    atmp::uNoUnitsType
     fsalfirst::rateType
     fsallast::rateType
     kk::Vector{rateType}
     tab::TabType
+    # Unified scratch: `tmp` (stage scratch), `tmp2` (replaces the former inline
+    # `utilde` accumulation buffer) and `atmp` (error-norm scaling). Default
+    # layout is `TmpCache{uType, Nothing, uNoUnitsType, Nothing}` (rate slots
+    # skipped).
+    tmp_cache::TmpC
 end
 
 get_fsalfirstlast(cache::ExplicitRKCache, u) = (cache.kk[1], cache.fsallast)
@@ -29,12 +31,18 @@ function alg_cache(
     else
         fsallast = zero(rate_prototype)
     end
-    utilde = zero(rate_prototype)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    # The historical inline scratch (`tmp`, `utilde`, `atmp`) migrates into the
+    # unified `TmpCache`, so the array count matches the historical cache
+    # exactly (the former rate-typed `utilde` allocation becomes the state-typed
+    # `tmp2`; the >17-stage fallback accumulators fold `dt` in so the buffer
+    # always carries state units). There are no safe rate donors — `kk` feeds
+    # the generic RK interpolant via `_ode_addsteps!` and `fsalfirst`/`fsallast`
+    # feed the Hermite interpolant — and `ExplicitRK` is not a `@kwdef`
+    # algorithm (no `preallocate_initdt_buffers` field), so the rate slots stay
+    # `nothing` and `initdt` allocates its rate temporaries at call time.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     tab = ExplicitRKConstantCache(alg.tableau, rate_prototype, typeof(dt))
-    return ExplicitRKCache(u, uprev, tmp, utilde, atmp, fsalfirst, fsallast, kk, tab)
+    return ExplicitRKCache(u, uprev, fsalfirst, fsallast, kk, tab, tmp_cache)
 end
 
 struct ExplicitRKConstantCache{MType, VType, CType, KType, BType, BiType} <:

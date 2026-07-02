@@ -146,7 +146,8 @@ end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver) = cache
+    (; gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, nlsolver) = cache
+    (; atmp) = cache.tmp_cache
     (; tmp, z) = nlsolver
     (; minm) = cache.constantcache
     (; f1, f2) = integrator.f

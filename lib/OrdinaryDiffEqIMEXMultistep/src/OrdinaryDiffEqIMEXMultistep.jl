@@ -1,6 +1,7 @@
 module OrdinaryDiffEqIMEXMultistep
 
-import OrdinaryDiffEqCore: issplit, OrdinaryDiffEqNewtonAlgorithm,
+import OrdinaryDiffEqCore: TmpCache,
+    issplit, OrdinaryDiffEqNewtonAlgorithm,
     OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqMutableCache,
     @cache, alg_cache, perform_step!,

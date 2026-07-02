@@ -12,14 +12,12 @@ end
         rateType,
         arrayType,
         dtType,
-        uNoUnitsType,
+        TmpC <: TmpCache,
     } <: ExtrapolationMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp_cache::TmpC
     k::rateType
-    utilde::uType
-    atmp::uNoUnitsType
     fsalfirst::rateType
     dtpropose::dtType
     T::arrayType
@@ -47,8 +45,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    utilde = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     cur_order = max(alg.init_order, alg.min_order)
@@ -72,11 +69,9 @@ function alg_cache(
     end
     work = zero(dt)
     A = one(Int)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
     step_no = zero(Int)
     return AitkenNevilleCache(
-        u, uprev, tmp, k, utilde, atmp, fsalfirst, dtpropose, T, cur_order,
+        u, uprev, tmp_cache, k, fsalfirst, dtpropose, T, cur_order,
         work, A, step_no, u_tmps, k_tmps
     )
 end
@@ -100,16 +95,14 @@ end
 @cache mutable struct ImplicitEulerExtrapolationCache{
         uType, rateType, QType, arrayType,
         dtType, JType, WType, F, JCType,
-        GCType, uNoUnitsType, TFType, UFType,
+        GCType, TmpC <: TmpCache, TFType, UFType,
         sequenceType,
     } <:
     ExtrapolationMutableCache
     uprev::uType
     u_tmps::Array{uType, 1}
     u_tmps2::Array{uType, 1}
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     k_tmps::Array{rateType, 1}
     dtpropose::dtType
     T::arrayType
@@ -230,8 +223,7 @@ function alg_cache(
         u_tmps2[i] = zero(u_tmp)
     end
 
-    utilde = zero(u)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     k_tmp = zero(rate_prototype)
     k_tmps = Array{typeof(k_tmp), 1}(undef, get_thread_count(alg))
 
@@ -250,8 +242,6 @@ function alg_cache(
         end
     end
     A = one(Int)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
     step_no = zero(Int)
 
     du1 = zero(rate_prototype)
@@ -317,7 +307,7 @@ function alg_cache(
         diff2[i] = zero(u)
     end
     return ImplicitEulerExtrapolationCache(
-        uprev, u_tmps, u_tmps2, utilde, tmp, atmp, k_tmps,
+        uprev, u_tmps, u_tmps2, tmp_cache, k_tmps,
         dtpropose, T, A, step_no,
         du1, du2, J, W, tf, uf, linsolve_tmps, linsolve,
         jac_config, grad_config, sequence, cc.stage_number,
@@ -1052,18 +1042,16 @@ function alg_cache(
 end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardCache{
-        uType, uNoUnitsType, rateType,
+        uType, TmpC <: TmpCache, rateType,
         QType, extrapolation_coefficients,
     } <: ExtrapolationMutableCache
     # Values that are mutated
-    utilde::uType
     u_temp1::uType
     u_temp2::uType
     u_temp3::Array{uType, 1}
     u_temp4::Array{uType, 1}
-    tmp::uType # for get_tmp_cache()
+    tmp_cache::TmpC # tmp/utilde/atmp scratch; tmp also serves get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1084,7 +1072,6 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
     u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
@@ -1095,12 +1082,11 @@ function alg_cache(
         u_temp4[i] = zero(u)
     end
 
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     T = Vector{typeof(u)}(undef, alg.max_order + 1)
     for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
-    res = uEltypeNoUnits.(zero(u))
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -1116,8 +1102,8 @@ function alg_cache(
     )
     # Initialize cache
     return ExtrapolationMidpointDeuflhardCache(
-        utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T,
-        res, fsalfirst, k, k_tmps, cc.Q, cc.n_curr,
+        u_temp1, u_temp2, u_temp3, u_temp4, tmp_cache, T,
+        fsalfirst, k, k_tmps, cc.Q, cc.n_curr,
         cc.n_old, cc.coefficients, cc.stage_number
     )
 end
@@ -1145,19 +1131,17 @@ end
         uType, QType,
         extrapolation_coefficients,
         rateType, JType, WType, F, JCType,
-        GCType, uNoUnitsType, TFType,
+        GCType, TmpC <: TmpCache, TFType,
         UFType,
     } <:
     ExtrapolationMutableCache
     # Values that are mutated
-    utilde::uType
     u_temp1::uType
     u_temp2::uType
     u_temp3::Array{uType, 1}
     u_temp4::Array{uType, 1}
-    tmp::uType # for get_tmp_cache()
+    tmp_cache::TmpC # tmp/utilde/atmp scratch; tmp also serves get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1237,7 +1221,6 @@ function alg_cache(
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
     u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
@@ -1248,12 +1231,11 @@ function alg_cache(
         u_temp4[i] = zero(u)
     end
 
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     T = Vector{typeof(u)}(undef, alg.max_order + 1)
     for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
-    res = uEltypeNoUnits.(zero(u))
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -1326,8 +1308,8 @@ function alg_cache(
     end
 
     return ImplicitDeuflhardExtrapolationCache(
-        utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T,
-        res, fsalfirst, k, k_tmps, cc.Q, cc.n_curr,
+        u_temp1, u_temp2, u_temp3, u_temp4, tmp_cache, T,
+        fsalfirst, k, k_tmps, cc.Q, cc.n_curr,
         cc.n_old, cc.coefficients, cc.stage_number,
         du1, du2, J, W, tf, uf, linsolve_tmps, linsolve,
         jac_config, grad_config, diff1, diff2
@@ -1389,20 +1371,18 @@ function alg_cache(
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerCache{
-        uType, uNoUnitsType, rateType,
+        uType, TmpC <: TmpCache, rateType,
         QType,
         extrapolation_coefficients,
     } <:
     ExtrapolationMutableCache
     # Values that are mutated
-    utilde::uType
     u_temp1::uType
     u_temp2::uType
     u_temp3::Array{uType, 1}
     u_temp4::Array{uType, 1}
-    tmp::uType # for get_tmp_cache()
+    tmp_cache::TmpC # tmp/utilde/atmp scratch; tmp also serves get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1428,7 +1408,6 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
     u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
@@ -1438,12 +1417,11 @@ function alg_cache(
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     T = Vector{typeof(u)}(undef, alg.max_order + 1)
     for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
-    res = uEltypeNoUnits.(zero(u))
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
     k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
@@ -1458,8 +1436,8 @@ function alg_cache(
 
     # Initialize the cache
     return ExtrapolationMidpointHairerWannerCache(
-        utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp,
-        T, res, fsalfirst, k, k_tmps,
+        u_temp1, u_temp2, u_temp3, u_temp4, tmp_cache,
+        T, fsalfirst, k, k_tmps,
         cc.Q, cc.n_curr, cc.n_old, cc.coefficients,
         cc.stage_number, cc.sigma, cc.work, cc.dt_new
     )
@@ -1544,7 +1522,7 @@ function alg_cache(
 end
 
 @cache mutable struct ImplicitHairerWannerExtrapolationCache{
-        uType, uNoUnitsType, rateType,
+        uType, TmpC <: TmpCache, rateType,
         QType,
         extrapolation_coefficients,
         JType, WType, F, JCType,
@@ -1552,14 +1530,12 @@ end
     } <:
     ExtrapolationMutableCache
     # Values that are mutated
-    utilde::uType
     u_temp1::uType
     u_temp2::uType
     u_temp3::Array{uType, 1}
     u_temp4::Array{uType, 1}
-    tmp::uType # for get_tmp_cache()
+    tmp_cache::TmpC # tmp/utilde/atmp scratch; tmp also serves get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1599,7 +1575,6 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
     u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
@@ -1609,12 +1584,11 @@ function alg_cache(
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     T = Vector{typeof(u)}(undef, alg.max_order + 1)
     for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
-    res = uEltypeNoUnits.(zero(u))
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
     k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
@@ -1687,8 +1661,8 @@ function alg_cache(
 
     # Initialize the cache
     return ImplicitHairerWannerExtrapolationCache(
-        utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp,
-        T, res, fsalfirst, k, k_tmps,
+        u_temp1, u_temp2, u_temp3, u_temp4, tmp_cache,
+        T, fsalfirst, k, k_tmps,
         cc.Q, cc.n_curr, cc.n_old, cc.coefficients,
         cc.stage_number, cc.sigma, du1, du2, J, W, tf,
         uf, linsolve_tmps,
@@ -1760,7 +1734,7 @@ function alg_cache(
 end
 
 @cache mutable struct ImplicitEulerBarycentricExtrapolationCache{
-        uType, uNoUnitsType,
+        uType, TmpC <: TmpCache,
         rateType, QType,
         extrapolation_coefficients,
         JType, WType, F, JCType,
@@ -1768,14 +1742,12 @@ end
     } <:
     ExtrapolationMutableCache
     # Values that are mutated
-    utilde::uType
     u_temp1::uType
     u_temp2::uType
     u_temp3::Array{uType, 1}
     u_temp4::Array{uType, 1}
-    tmp::uType # for get_tmp_cache()
+    tmp_cache::TmpC # tmp/utilde/atmp scratch; tmp also serves get_tmp_cache()
     T::Array{uType, 1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-    atmp::uNoUnitsType # Storage for the scaled residual of u and utilde
 
     fsalfirst::rateType
     k::rateType
@@ -1814,7 +1786,6 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     # Initialize cache's members
-    utilde = zero(u)
     u_temp1 = zero(u)
     u_temp2 = zero(u)
     u_temp3 = Array{typeof(u), 1}(undef, get_thread_count(alg))
@@ -1824,12 +1795,11 @@ function alg_cache(
         u_temp3[i] = zero(u)
         u_temp4[i] = zero(u)
     end
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     T = Vector{typeof(u)}(undef, alg.max_order + 1)
     for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
-    res = uEltypeNoUnits.(zero(u))
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
     k_tmps = Array{typeof(k), 1}(undef, get_thread_count(alg))
@@ -1902,8 +1872,8 @@ function alg_cache(
 
     # Initialize the cache
     return ImplicitEulerBarycentricExtrapolationCache(
-        utilde, u_temp1, u_temp2, u_temp3, u_temp4,
-        tmp, T, res, fsalfirst, k, k_tmps,
+        u_temp1, u_temp2, u_temp3, u_temp4,
+        tmp_cache, T, fsalfirst, k, k_tmps,
         cc.Q, cc.n_curr, cc.n_old, cc.coefficients,
         cc.stage_number, cc.sigma, du1, du2, J, W,
         tf, uf, linsolve_tmps,
