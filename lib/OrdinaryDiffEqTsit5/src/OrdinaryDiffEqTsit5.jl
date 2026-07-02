@@ -107,4 +107,12 @@ end
 
 export Tsit5, AutoTsit5
 
+# Cross-sublibrary cache types that other OrdinaryDiffEq solver sublibraries
+# (e.g. OrdinaryDiffEqNordsieck) reference to reuse the Tsit5 step. Marked
+# public so those references are recognized as a supported extension API rather
+# than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Tsit5Cache, :Tsit5ConstantCache))
+end
+
 end

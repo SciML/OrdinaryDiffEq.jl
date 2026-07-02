@@ -215,4 +215,12 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
     ROS3PRL, ROS3PRL2, ROK4a,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 
+# Abstract Rosenbrock cache supertype that other OrdinaryDiffEq consumers
+# (e.g. DelayDiffEq) reference to special-case Rosenbrock cache resizing.
+# Marked public so that cross-package reference is recognized as a supported
+# extension API rather than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :RosenbrockMutableCache))
+end
+
 end
