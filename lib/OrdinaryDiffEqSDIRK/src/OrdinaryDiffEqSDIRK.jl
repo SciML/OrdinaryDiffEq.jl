@@ -133,4 +133,14 @@ PrecompileTools.@compile_workload begin
     solver_list = nothing
 end
 
+# Cross-sublibrary IMEX cache/tableau API that other OrdinaryDiffEq solver
+# sublibraries (e.g. OrdinaryDiffEqBDF) reference to build IMEX methods on top
+# of the ESDIRK-IMEX machinery. Marked public so those references are
+# recognized as a supported extension API rather than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public,
+        :ESDIRKIMEXCache, :ESDIRKIMEXConstantCache,
+        :ImplicitEulerESDIRKIMEXTableau))
+end
+
 end
