@@ -13,7 +13,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
     resize_non_user_cache!, _ode_addsteps!, full_cache,
     DerivativeOrderNotPossibleError, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined
+    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
@@ -26,13 +26,11 @@ using LinearAlgebra: mul!, I, norm, lu, UniformScaling
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
-using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
-    UDerivativeWrapper, UJacobianWrapper,
-    wrapprecs, calc_tderivative, build_grad_config,
+using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
     calc_rosenbrock_differentiation!, build_J_W,
-    UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
+    dolinsolve, WOperator
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 
@@ -47,7 +45,8 @@ using OrdinaryDiffEqRosenbrockTableaus: OrdinaryDiffEqRosenbrockTableaus,
     Scholz4_7RodasTableau, Veldd4RodasTableau, Velds4RodasTableau
 using Reexport: Reexport, @reexport
 @reexport using SciMLBase
-using SciMLBase: SciMLBase, LinearProblem, ODEProblem, init, solve
+using SciMLBase: SciMLBase, LinearProblem, ODEProblem, init, solve,
+    TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper
 # alg_order is owned by and public in SciMLBase; import (not using) so methods can be extended
 import SciMLBase: alg_order
 
