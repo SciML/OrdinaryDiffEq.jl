@@ -10,11 +10,8 @@ run_qa(
         # FastBroadcast is not a direct dependency of this sublibrary, so the
         # broadcast macro can only be reached via the DiffEqBase reexport.
         all_explicit_imports_via_owners = (; ignore = (Symbol("@.."),)),
-        # `@..`: external FastBroadcast macro reexported through DiffEqBase (not
-        # public there). `@cache`: StochasticDiffEqCore's owner-internal codegen
-        # macro; StochasticDiffEqCore has no public-API surface declared yet.
-        all_explicit_imports_are_public = (;
-            ignore = (Symbol("@.."), Symbol("@cache")),
-        ),
+        # `@..`: external FastBroadcast macro reexported through DiffEqBase, where
+        # it is not public.
+        all_explicit_imports_are_public = (; ignore = (Symbol("@.."),)),
     ),
 )
