@@ -1,55 +1,35 @@
 using SciMLTesting, StochasticDiffEqCore, Test
 using JET
 
-# StochasticDiffEqCore is an extension package for OrdinaryDiffEqCore's solver
-# loop: it dispatches on and extends OrdinaryDiffEqCore-internal traits/loop
-# helpers and a handful of still-internal SciMLBase/DiffEqBase interface names.
-# Every remaining EI ignore below is a genuinely non-public (or non-owner) name
-# from an upstream package; each is documented with its source. Names that
-# became public (SciMLBase abstract types, is_diagonal_noise, __solve/__init,
-# DEVerbosity, etc.) were migrated to their public owners in src/ rather than
-# ignored. See SciML/OrdinaryDiffEq.jl#3776.
+# StochasticDiffEqCore extends OrdinaryDiffEqCore's solver loop and dispatches on
+# a handful of still-internal SciMLBase/DiffEqBase interface names. The base
+# packages (OrdinaryDiffEqCore/DiffEqBase) now declare their solver-author API
+# public, so every name that became public was dropped from the ignore lists
+# below. Each remaining ignore is a genuinely non-public (or non-owner) name
+# from an upstream package, documented with its source. See
+# SciML/OrdinaryDiffEq.jl#3776.
 
-# OrdinaryDiffEqCore-internal names that this package dispatches on or extends.
-# These are not part of OrdinaryDiffEqCore's public API; they need make-public
-# upstream before they can be dropped from the ignore lists.
+# OrdinaryDiffEqCore names this package dispatches on/extends that were kept
+# owner-internal (loop/trait/autodiff/noise helpers not in the public
+# solver-author surface). These need make-public upstream before they can drop.
 const ODEC_INTERNAL = (
-    # Algorithm/cache supertypes + controllers/defaults (explicit imports)
-    :ODEIntegrator, :StochasticDiffEqAlgorithm, :StochasticDiffEqAdaptiveAlgorithm,
-    :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqRODEAlgorithm,
-    :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODECompositeAlgorithm,
-    :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
-    :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpAdaptiveAlgorithm,
-    :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpDiffusionAlgorithm,
-    :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
-    :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
-    :StochasticDiffEqCache, :StochasticDiffEqConstantCache, :StochasticDiffEqMutableCache,
-    :beta1_default, :beta2_default,
-    :qmin_default, :qmax_default, :qsteady_min_default, :qsteady_max_default,
-    :issplit, :is_composite_algorithm, :perform_step!, :handle_callback_modifiers!,
-    # Loop/trait/autodiff helpers extended via qualified `OrdinaryDiffEqCore.x`
-    :DEOptions, :_determine_initdt, :_get_fdtype, :_get_fwd_chunksize,
-    :_get_fwd_chunksize_int, :_initialize_dae!, :_ode_init, :accept_noise!,
-    :alg_autodiff, :alg_difftype, :alg_extrapolates, :concrete_jac, :gamma_default,
-    :get_chunksize, :get_current_alg_autodiff, :get_fsalfirstlast, :has_autodiff,
-    :is_composite_cache, :is_constant_cache, :is_noise_saveable, :isfsal,
-    :noise_curt, :ode_determine_initdt, :reinit_noise!, :reject_noise!,
-    :save_noise!, :standardtag,
+    :_determine_initdt, :_get_fdtype, :_get_fwd_chunksize, :_get_fwd_chunksize_int,
+    :_initialize_dae!, :_ode_init, :accept_noise!, :concrete_jac, :get_chunksize,
+    :handle_callback_modifiers!, :has_autodiff, :is_noise_saveable, :noise_curt,
+    :ode_determine_initdt, :qsteady_max_default, :qsteady_min_default,
+    :reinit_noise!, :reject_noise!, :save_noise!, :standardtag,
 )
 
-# Still-internal SciMLBase interface names (problem/alg supertypes, alias
-# specifiers, mass-matrix/initialization helpers, autodiff val unwrap).
+# Still-internal SciMLBase interface names (pending SciMLBase#1412 round-5
+# make-public; not yet public on the registered SciMLBase this branch resolves).
 const SCIMLBASE_INTERNAL = (
-    :AbstractRODEProblem, :AbstractSDDEProblem, :AbstractSDDEIntegrator,
-    :AlgorithmInterpretation, :alg_interpretation, :RODEAliasSpecifier,
-    :SDEAliasSpecifier, :__has_mass_matrix, :has_initializeprob,
-    :parameterless_type, :_unwrap_val,
+    :__has_mass_matrix, :_unwrap_val, :has_initializeprob, :parameterless_type,
 )
 
-# Still-internal DiffEqBase names. `@..` is owned by FastBroadcast and obtained
-# through DiffEqBase's re-export (the standard SciML access path), so it is also
-# listed in the via-owners ignore below.
-const DIFFEQBASE_INTERNAL = (:prob2dtmin, :ODE_DEFAULT_UNSTABLE_CHECK, Symbol("@.."))
+# `@..` is owned by FastBroadcast and reaches StochasticDiffEqCore through
+# DiffEqBase's re-export (the standard SciML access path); it is non-public in
+# DiffEqBase, so it is ignored for the are-public check as well as via-owners.
+const DIFFEQBASE_INTERNAL = (Symbol("@.."),)
 
 # Non-public names from other upstream packages.
 const JUMPPROCESSES_INTERNAL = (:reset_jump_problem!, :resetted_jump_problem)
