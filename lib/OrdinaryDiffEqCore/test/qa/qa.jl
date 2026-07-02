@@ -39,7 +39,7 @@ run_qa(
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
                 :EnzymeRules, :inactive_noinl,
                 # SciMLBase internals with no public replacement yet
-                :DECache, :enable_interpolation_sensitivitymode,
+                :enable_interpolation_sensitivitymode,
                 :forwarddiff_chunksize, :get_root_indp,
                 :get_save_idxs_and_saved_subsystem, :has_initializeprob,
                 :has_lazy_interpolation, :late_binding_update_u0_p, :remaker_of,
