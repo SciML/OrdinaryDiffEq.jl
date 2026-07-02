@@ -4,30 +4,20 @@ run_qa(
     OrdinaryDiffEqLowStorageRK;
     explicit_imports = true,
     ei_kwargs = (
-        # All residual names below are non-public internals of their owning
-        # package. They are imported/accessed from their true owner; the only
-        # thing left is that those owners have not yet declared them `public`.
-        # See SciML/OrdinaryDiffEq.jl#3776.
+        # Every remaining name is a genuine non-public internal of its owner. The
+        # solver-author API of OrdinaryDiffEqCore / DiffEqBase is now declared
+        # `public`, so those ignores were dropped.
         all_qualified_accesses_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore internal stats accessors / precompile probes
-                :increment_nf!, :set_EEst!, :lorenz, :lorenz_oop,
-                # SciMLBase specialization markers (used in @compile_workload)
-                :FunctionWrapperSpecialize, :NoSpecialize,
+                # OrdinaryDiffEqCore precompile-workload probes (owner-internal)
+                :lorenz, :lorenz_oop,
                 # Base.Broadcast internals used in ArrayFuse copyto!/materialize!
                 :Broadcasted, :materialize!,
             )),
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore solver-interface internals
-                Symbol("@cache"), :alg_cache, :perform_step!, :constvalue,
-                :trivial_limiter!, :get_fsalfirstlast, :explicit_rk_docstring,
-                :default_controller, :PIDController, :isfsal, :uses_uprev,
-                :full_cache,
-                :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm,
-                :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqMutableCache,
-                # DiffEqBase residual-calculation internals
-                :calculate_residuals, :calculate_residuals!,
+                # OrdinaryDiffEqCore default no-op limiter (owner-internal)
+                :trivial_limiter!,
             )),
     ),
 )
