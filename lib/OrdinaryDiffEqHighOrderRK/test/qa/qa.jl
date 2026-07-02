@@ -16,11 +16,9 @@ run_qa(
             ignore = (
                 # DiffEqBase-internal codegen macro (not declared public upstream).
                 Symbol("@tight_loop_macros"),
-                # OrdinaryDiffEqCore internals deliberately kept non-public: the
-                # precompile-float helper, the derivative-order error type, the
-                # mutating interpolant helper, and the DP8/limiter internals.
-                :CompiledFloats, :DerivativeOrderNotPossibleError,
-                :_ode_interpolant!, :isdp8, :trivial_limiter!,
+                # OrdinaryDiffEqCore-internal no-op limiter default, deliberately
+                # kept non-public.
+                :trivial_limiter!,
             ),
         ),
     ),
