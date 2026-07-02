@@ -4,21 +4,14 @@ run_qa(
     OrdinaryDiffEqPDIRK;
     explicit_imports = true,
     ei_kwargs = (;
-        # Solver-internal names extended/dispatched from their owner modules but
-        # not (yet) declared `public` on the registered releases. No public
-        # alternative exists; tracked for make-public in SciML/OrdinaryDiffEq.jl#3776.
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore
-                Symbol("@cache"), Symbol("@threaded"),
-                :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqMutableCache,
-                :OrdinaryDiffEqNewtonAlgorithm, :_fixup_ad, :alg_cache,
-                :constvalue, :differentiation_rk_docstring, :get_fsalfirstlast,
-                :isfsal, :isthreaded, :perform_step!, :unwrap_alg,
-                # OrdinaryDiffEqNonlinearSolve
-                :NLNewton, :build_nlsolver, :markfirststage!, :nlsolve!,
-                :nlsolvefail,
-                # SciMLBase
+                # OrdinaryDiffEqCore: solver-author API is public, but these three
+                # are deliberately kept non-public upstream. `@threaded` is a
+                # codegen/perf macro; `_fixup_ad` and `differentiation_rk_docstring`
+                # are AD-fixup / docstring helpers not part of the extension surface.
+                Symbol("@threaded"), :_fixup_ad, :differentiation_rk_docstring,
+                # SciMLBase: not declared public on the registered release.
                 :_unwrap_val,
             ),
         ),
