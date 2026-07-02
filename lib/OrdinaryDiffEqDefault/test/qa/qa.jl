@@ -19,23 +19,11 @@ run_qa(
             # stale because of the unanalyzable enum submodule above.
             ignore = (:Tsit5, :Vern7, :Rosenbrock23, :Rodas5P, :FBDF),
         ),
-        # OrdinaryDiffEqCore internal API the default-alg machinery depends on
-        # (no public replacement; see SciML/OrdinaryDiffEq.jl#3776).
-        all_explicit_imports_are_public = (;
-            ignore = (
-                :AutoAlgSwitch, :AutoSwitchCache, :CompositeAlgorithm,
-                :alg_stability_size, :beta1_default, :beta2_default,
-                :default_autoswitch, :is_mass_matrix_alg, :isdefaultalg,
-            ),
-        ),
         all_qualified_accesses_are_public = (;
-            ignore = (
-                # SciMLBase specialization sentinels used only inside opt-in
-                # (default-off) precompile-workload branches.
-                :FunctionWrapperSpecialize, :NoSpecialize,
-                # OrdinaryDiffEqCore precompile test problems.
-                :lorenz, :lorenz_oop,
-            ),
+            # `lorenz`/`lorenz_oop` are OrdinaryDiffEqCore precompile-workload
+            # test problems (defined in `precompilation_setup.jl`), deliberately
+            # not part of its public extension surface.
+            ignore = (:lorenz, :lorenz_oop),
         ),
     ),
 )
