@@ -6,11 +6,9 @@ run_qa(
     ei_kwargs = (;
         all_explicit_imports_are_public = (;
             ignore = (
-                # OrdinaryDiffEqCore: solver-author API is public, but these three
-                # are deliberately kept non-public upstream. `@threaded` is a
-                # codegen/perf macro; `_fixup_ad` and `differentiation_rk_docstring`
-                # are AD-fixup / docstring helpers not part of the extension surface.
-                Symbol("@threaded"), :_fixup_ad, :differentiation_rk_docstring,
+                # OrdinaryDiffEqCore: `@threaded` is a private codegen/perf macro,
+                # deliberately kept non-public upstream (owner-internal).
+                Symbol("@threaded"),
                 # SciMLBase: not declared public on the registered release.
                 :_unwrap_val,
             ),
