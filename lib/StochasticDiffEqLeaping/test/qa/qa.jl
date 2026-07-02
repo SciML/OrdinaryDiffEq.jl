@@ -12,22 +12,21 @@ run_qa(
         # `pois_rand` is owned by PoissonRandom and re-exported by JumpProcesses,
         # the natural dependency that owns the jump-process interface here.
         all_qualified_accesses_via_owners = (; ignore = (:pois_rand,)),
-        # Internal (non-public) solver-interface names this method package must
-        # extend/import. These are private API of OrdinaryDiffEqCore,
-        # OrdinaryDiffEqNonlinearSolve, StochasticDiffEqCore, and DiffEqBase; they
-        # have no public replacement (track make-public in SciML/OrdinaryDiffEq.jl#3776).
         all_explicit_imports_are_public = (;
             ignore = (
-                Symbol("@.."), Symbol("@cache"), :DummyController, :NLFunctional,
-                :issplit, :perform_step!, :step_accept_controller!,
-                :step_reject_controller!, :stepsize_controller!,
+                # FastBroadcast fused-broadcast macro, re-exported via DiffEqBase.
+                Symbol("@.."),
+                # StochasticDiffEqCore internal cache-alloc macro (non-public).
+                Symbol("@cache"),
             )
         ),
         all_qualified_accesses_are_public = (;
             ignore = (
-                :ODEIntegrator, :build_nlsolver, :default_controller, :get_EEst,
-                :isaposteriori, :markfirststage!, :nlsolve!, :nlsolve_f,
-                :nlsolvefail, :pois_rand, :set_EEst!,
+                # OrdinaryDiffEqCore internal a-posteriori error-estimate predicate
+                # (non-public).
+                :isaposteriori,
+                # PoissonRandom sampler, re-exported via JumpProcesses (non-public).
+                :pois_rand,
             )
         ),
     ),
