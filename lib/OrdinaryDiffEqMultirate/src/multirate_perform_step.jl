@@ -518,6 +518,138 @@ end
     end
 end
 
+function initialize!(integrator, cache::MRIGARKImplicitCache)
+    integrator.kshortsize = 2
+    (; fsalfirst, k) = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    return integrator.fsalfirst .+= cache.tmp
+end
+
+function initialize!(integrator, cache::MRIGARKImplicitConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
+        integrator.f.f2(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, atmp, z, fS, nlsolver, tab) = cache
+    (; Δc, W0, W1, γ0, q) = tab
+    alg = unwrap_alg(integrator, true)
+    m = alg.m
+    s = length(Δc)
+    stats = integrator.stats
+
+    markfirststage!(nlsolver)
+
+    @.. broadcast = false z[1] = uprev
+    cprev = zero(eltype(Δc))
+    for i in 1:s
+        f.f2(fS[i], z[i], p, t + cprev * dt)
+        stats.nf2 += 1
+        cnext = cprev + Δc[i]
+        if iszero(γ0[i])
+            _mrigark_substage!(
+                z[i + 1], z[i], cache, f, p, t, dt, Δc[i], cprev, m, q,
+                view(W0, i, :), view(W1, i, :), fS, i, stats
+            )
+        else
+            @.. broadcast = false nlsolver.tmp = z[i]
+            for j in 1:i
+                ω̄ = W0[i, j] + W1[i, j] / 2
+                iszero(ω̄) && continue
+                @.. broadcast = false nlsolver.tmp = nlsolver.tmp + dt * ω̄ * fS[j]
+            end
+            nlsolver.c = cnext
+            @.. broadcast = false nlsolver.z = dt * fS[i]
+            w = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+            @.. broadcast = false z[i + 1] = nlsolver.tmp + nlsolver.γ * w
+        end
+        cprev = cnext
+    end
+    @.. broadcast = false u = z[s + 1]
+
+    return if integrator.opts.adaptive
+        @.. broadcast = false tmp = u - z[s]
+        calculate_residuals!(
+            atmp, tmp, uprev, u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+end
+
+@muladd function perform_step!(
+        integrator, cache::MRIGARKImplicitConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, f, p) = integrator
+    (; nlsolver, tab) = cache
+    (; Δc, W0, W1, γ0, q) = tab
+    alg = unwrap_alg(integrator, true)
+    m = alg.m
+    s = length(Δc)
+    stats = integrator.stats
+
+    markfirststage!(nlsolver)
+
+    z = Vector{typeof(uprev)}(undef, s + 1)
+    fS = Vector{typeof(f.f2(uprev, p, t))}(undef, s)
+    z[1] = uprev
+    cprev = zero(eltype(Δc))
+    for i in 1:s
+        fS[i] = f.f2(z[i], p, t + cprev * dt)
+        stats.nf2 += 1
+        cnext = cprev + Δc[i]
+        if iszero(γ0[i])
+            z[i + 1] = _mrigark_substage(
+                z[i], f, p, t, dt, Δc[i], cprev, m, q,
+                view(W0, i, :), view(W1, i, :), fS, i, stats
+            )
+        else
+            tmp = z[i]
+            for j in 1:i
+                ω̄ = W0[i, j] + W1[i, j] / 2
+                iszero(ω̄) && continue
+                tmp = @.. broadcast = false tmp + dt * ω̄ * fS[j]
+            end
+            nlsolver.tmp = tmp
+            nlsolver.c = cnext
+            nlsolver.z = dt * fS[i]
+            w = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+            z[i + 1] = @.. broadcast = false nlsolver.tmp + nlsolver.γ * w
+        end
+        cprev = cnext
+    end
+    integrator.u = z[s + 1]
+
+    if integrator.opts.adaptive
+        utilde = @.. broadcast = false integrator.u - z[s]
+        atmp = calculate_residuals(
+            utilde, uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+end
+
 # Stage 1 is identity (Y_1 = u_n); inner ODE active only for i ≥ 2.
 
 function initialize!(integrator, cache::MISCache)
