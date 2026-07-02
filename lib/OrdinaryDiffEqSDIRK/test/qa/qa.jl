@@ -5,10 +5,11 @@ using SciMLTesting, OrdinaryDiffEqSDIRK, Test
 # no longer need ignoring here. What remains are genuine non-public internals with no
 # public alternative, grouped by owning package:
 #   * OrdinaryDiffEqCore internals that were intentionally NOT promoted to public
-#     (test fixtures + a few perf/codegen helpers).
+#     (the `lorenz`/`lorenz_oop` precompile-workload fixtures and the
+#     `trivial_limiter!` default limiter).
 #   * SciMLBase private helpers (`_reshape`/`_unwrap_val`/`_vec`).
-#   * External packages whose names have no public export (ConstructionBase,
-#     TruncatedStacktraces).
+#   * External packages whose names have no public export (ConstructionBase's
+#     `constructorof`, TruncatedStacktraces' `@truncate_stacktrace`).
 run_qa(
     OrdinaryDiffEqSDIRK;
     explicit_imports = true,
@@ -20,7 +21,7 @@ run_qa(
             ignore = (
                 # non-public in ConstructionBase (via SciMLBase re-export)
                 :constructorof,
-                # non-public OrdinaryDiffEqCore test fixtures
+                # non-public OrdinaryDiffEqCore precompile-workload fixtures
                 :lorenz, :lorenz_oop,
             )),
         all_explicit_imports_are_public = (;
@@ -29,9 +30,8 @@ run_qa(
                 :_reshape, :_unwrap_val, :_vec,
                 # non-public TruncatedStacktraces macro
                 Symbol("@truncate_stacktrace"),
-                # non-public OrdinaryDiffEqCore internals
-                :CompiledFloats, :_fixup_ad, :current_extrapolant!,
-                :isesdirk, :isnewton, :ssp_coefficient, :trivial_limiter!,
+                # non-public OrdinaryDiffEqCore internal (limiter default)
+                :trivial_limiter!,
             )),
     ),
 )
