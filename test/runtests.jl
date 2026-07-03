@@ -206,8 +206,10 @@ function gpu_group()
     is_APPVEYOR && return
     activate_gpu_env()
     gpudir = joinpath(@__DIR__, "gpu")
-    for f in sort(filter(f -> endswith(f, ".jl"), readdir(gpudir)))
-        @time @eval @safetestset $("GPU: " * f) include($(joinpath(gpudir, f)))
+    @testset "GPU Tests" begin
+        for f in sort(filter(f -> endswith(f, ".jl"), readdir(gpudir)))
+            @time @eval @safetestset $("GPU: " * f) include($(joinpath(gpudir, f)))
+        end
     end
     return nothing
 end
