@@ -151,6 +151,79 @@ function alg_cache(
     return MRIGARKConstantCache(mri_gark_tableau(alg, eltype(u)))
 end
 
+mutable struct MRIGARKImplicitConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
+    nlsolver::N
+    tab::TabType
+end
+
+@cache mutable struct MRIGARKImplicitCache{uType, rateType, uNoUnitsType, N, TabType} <:
+    OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    v::uType
+    vtmp::uType
+    f1eval::rateType
+    kk::Vector{uType}
+    z::Vector{uType}
+    fS::Vector{rateType}
+    fsalfirst::rateType
+    k::rateType
+    nlsolver::N
+    tab::TabType
+end
+
+get_fsalfirstlast(cache::MRIGARKImplicitCache, u) = (cache.fsalfirst, cache.k)
+
+_mrigark_impl_γ(tab) = tab.γ0[findfirst(!iszero, tab.γ0)]
+
+function alg_cache(
+        alg::MRIGARKIRK21a, u, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = mri_gark_tableau(alg, eltype(u))
+    s = length(tab.Δc)
+    γ = _mrigark_impl_γ(tab)
+    c = one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    v = zero(u)
+    vtmp = zero(u)
+    f1eval = zero(rate_prototype)
+    kk = [zero(u) for _ in 1:(tab.q)]
+    z = [zero(u) for _ in 1:(s + 1)]
+    fS = [zero(rate_prototype) for _ in 1:s]
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    return MRIGARKImplicitCache(
+        u, uprev, tmp, atmp, v, vtmp, f1eval, kk, z, fS, fsalfirst, k, nlsolver, tab
+    )
+end
+
+function alg_cache(
+        alg::MRIGARKIRK21a, u, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = mri_gark_tableau(alg, eltype(u))
+    γ = _mrigark_impl_γ(tab)
+    c = one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    return MRIGARKImplicitConstantCache(nlsolver, tab)
+end
+
 struct MISConstantCache{TabType} <: OrdinaryDiffEqConstantCache
     tab::TabType
 end
