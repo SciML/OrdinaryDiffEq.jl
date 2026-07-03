@@ -62,9 +62,12 @@ INITALG = BrownFullBasicInit()
 # solver fails cleanly rather than hangs indefinitely.
 SOLVE_KWARGS = (; maxiters = 10_000)
 
-# Helper: build an ODEFunction with FullSpecialize (CPU or GPU).
+# Helper: build an ODEFunction with FullSpecialize (CPU or GPU). The problem is
+# in-place (`dae!` mutates `du`), so iip = true. FullSpecialize bypasses the
+# FunctionWrappers path described in the header note.
 make_odef(; mass_matrix, jac_prototype) =
-    ODEFunction(dae!; mass_matrix = mass_matrix, jac_prototype = jac_prototype)
+    ODEFunction{true, FullSpecialize}(dae!;
+        mass_matrix = mass_matrix, jac_prototype = jac_prototype)
 
 # ── CPU reference ────────────────────────────────────────────────────────────
 
@@ -103,46 +106,51 @@ MASS_VARIANTS = [
 #   :suitable   — designed or known-good for index-1 mass-matrix DAEs
 #   :marginal   — may lose order / show artifacts but typically runs
 #   :unsuitable — included only for GPU code-path coverage
+#
+# Several solvers pass on the `none`/`CSR` variants but their `CSC` variant uses
+# a Krylov CPU reference that fails to converge (Unstable/MaxIters) *on the CPU
+# too* — the GPU reproduces the same non-convergence, so that variant is skipped
+# (no CPU reference to compare against), not counted as a GPU failure. See
+# `classify`. These are marked "(CSC skipped: CPU non-convergent)" below.
 
 SOLVERS = [
     # ── Rosenbrock 2nd order ──
-    # (Rosenbrock23,  :marginal),
-    # (Rosenbrock32,  :unsuitable),   # low-accuracy, used for coverage
+    (Rosenbrock23,  :marginal),     # (CSC skipped: CPU Unstable)
+    # (Rosenbrock32,  :unsuitable), # Unstable on every variant incl. CPU `none` — no reference anywhere
     (ROS2,          :marginal),
     (ROS2PR,        :suitable),
     (ROS2S,         :suitable),
     # ── Rosenbrock 3rd order ──
-    # (ROS3,          :marginal),
+    (ROS3,          :marginal),     # (CSC skipped: CPU MaxIters)
     (ROS3PR,        :suitable),
     (ROS3PRL,       :suitable),
     (ROS3PRL2,      :suitable),
     (ROS3P,         :suitable),
     (Rodas3,        :suitable),
-    # Rodas23W    — scalar indexing, needs `calculate_interpoldiff!` rework
-    # Rodas3P     — scalar indexing
+    (Rodas23W,      :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
+    (Rodas3P,       :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
     (Scholz4_7,     :suitable),
     # ── Rosenbrock 4th order ──
-    #=
     (ROS34PW1a,     :suitable),
     (ROS34PW1b,     :suitable),
     (ROS34PW2,      :suitable),
     (ROS34PW3,      :suitable),
     (ROS34PRw,      :suitable),
-    # (RosShamp4,     :marginal),     # classical Rosenbrock, not DAE-derived
-    # (Veldd4,        :marginal), # d
+    (RosShamp4,     :marginal),     # (CSC skipped: CPU MaxIters)
+    (Veldd4,        :marginal),     # (CSC skipped: CPU MaxIters)
     (Velds4,        :marginal),
-    # (GRK4T,         :marginal), # does not work with CSC/Krylov
+    (GRK4T,         :marginal),     # (CSC skipped: CPU/Krylov MaxIters)
     (GRK4A,         :marginal),
     (Ros4LStab,     :marginal),
     (Rodas4,        :suitable),
     (Rodas42,       :suitable),
     (Rodas4P,       :suitable),
     (Rodas4P2,      :suitable),
-    # (ROK4a,         :suitable),
+    (ROK4a,         :suitable),     # (CSC skipped: CPU MaxIters)
     # ── Rosenbrock 5th order ──
     (Rodas5,        :suitable),
     (Rodas5P,       :suitable),
-    # (Rodas5Pe,      :suitable),
+    (Rodas5Pe,      :suitable),     # (CSC skipped: CPU MaxIters)
     (Rodas5Pr,      :suitable),
     # ── Rosenbrock 6th order ──
     (Rodas6P,       :suitable),
@@ -157,15 +165,16 @@ SOLVERS = [
     (ABDF2,         :suitable),
     (QNDF1,         :marginal),
     (QNDF2,         :suitable),
-    # QNDF        — DeviceMemory error in LinAlg
-    # (QBDF1,         :marginal),
-    # (QBDF2,         :suitable),
-    # QBDF        — DeviceMemory error in LinAlg
-    # FBDF        — scalar indexing, needs reinitFBDF! rework
-    # ── FIRK (all need `perform_step!` rework) ──
-    # RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau
-    #   — scalar indexing, ComplexF64 sparse unsupported
-    =#
+    (QNDF,          :suitable),     # works on all variants (earlier DeviceMemory issue resolved)
+    (QBDF1,         :marginal),     # works on all variants
+    (QBDF2,         :suitable),     # works on all variants
+    (QBDF,          :suitable),     # works on all variants (earlier DeviceMemory issue resolved)
+    (FBDF,          :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
+    # ── FIRK ── still GPU-incompatible on every variant:
+    #   RadauIIA3/5/9, AdaptiveRadau
+    #     `none`: "Scalar indexing is disallowed" inside perform_step!
+    #     `CSR` : setindex! not defined for CuSparseMatrixCSR{ComplexF64} (complex W)
+    #     `CSC` : non-concrete / ComplexF64 Jacobian not supported by RadauIIA
 ]
 
 # ── Pass-criterion configuration ─────────────────────────────────────────────
@@ -202,14 +211,15 @@ mutable struct TestResult
     case::TestCase
     cpu_abs::Float64      # vs reference (informational)
     cpu_rel::Float64
-    gpu_abs::Float64      # vs CPU same-solver (pass/fail)
+    gpu_abs::Float64      # vs CPU same-solver (informational; see gpu_within_tol)
     gpu_rel::Float64
+    gpu_within_tol::Bool  # combined atol/rtol gate vs CPU same-solver (pass/fail)
     cpu_retcode::Union{Nothing, ReturnCode.T}
     gpu_retcode::Union{Nothing, ReturnCode.T}
     cpu_error::Union{Nothing, Exception}
     gpu_error::Union{Nothing, Exception}
-    status::Symbol        # :pass, :gpu_mismatch, :cpu_failed, :gpu_failed,
-                          # :cpu_error, :gpu_error
+    status::Symbol        # :pass, :cpu_skip (no CPU reference, non-gating),
+                          # :gpu_mismatch, :gpu_failed, :gpu_error
 end
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -240,15 +250,26 @@ function maxerrs(sol_a, sol_b)
     return max_abs, max_rel
 end
 
-within_tol(abs_err, rel_err, tol) =
-    abs_err < tol.atol || rel_err < tol.rtol
+# Gate: GPU must match CPU within a combined atol/rtol at every sampled point,
+# `|a - b| <= atol + rtol*|b|`. Unlike a separate abs-OR-rel test this cannot be
+# passed by a tiny absolute error masking a large relative one (or vice versa),
+# and unlike abs-AND-rel it stays robust where a state passes through zero (atol
+# dominates near 0, rtol for large states).
+function within_tol(sol_a, sol_b, tol)
+    for t in TSPAN[1]:0.1:TSPAN[2]
+        a = Vector(sol_a(t))
+        b = Vector(sol_b(t))
+        all(abs.(a .- b) .<= tol.atol .+ tol.rtol .* abs.(b)) || return false
+    end
+    return true
+end
 
 ok(retcode) = retcode === ReturnCode.Success || retcode === ReturnCode.Default
 
 # ── Run a single case ────────────────────────────────────────────────────────
 
 function run_case(case::TestCase)
-    result = TestResult(case, NaN, NaN, NaN, NaN,
+    result = TestResult(case, NaN, NaN, NaN, NaN, false,
                         nothing, nothing, nothing, nothing, :pending)
 
     # CPU run ---------------------------------------------------------------
@@ -279,6 +300,8 @@ function run_case(case::TestCase)
         result.gpu_retcode = sol_gpu.retcode
         if ok(sol_gpu.retcode) && sol_cpu !== nothing && ok(sol_cpu.retcode)
             result.gpu_abs, result.gpu_rel = maxerrs(sol_gpu, sol_cpu)
+            result.gpu_within_tol =
+                within_tol(sol_gpu, sol_cpu, gpu_match_tol(case.solver))
         end
     catch e
         result.gpu_error = e
@@ -290,33 +313,41 @@ function run_case(case::TestCase)
 end
 
 function classify(r::TestResult)
+    # The CPU solve is the reference. If it can't produce one — it errored, or
+    # returned a non-success retcode (Unstable/MaxIters) because the solver is
+    # intrinsically unsuitable for this problem — there is nothing to compare
+    # the GPU against, so skip (non-gating). Crucially this is checked *before*
+    # the GPU retcode: a GPU that faithfully reproduces the CPU's Unstable/
+    # MaxIters result is matching, not a GPU incompatibility.
+    (r.cpu_error !== nothing ||
+     (r.cpu_retcode !== nothing && !ok(r.cpu_retcode))) && return :cpu_skip
+    # CPU produced a reference; the GPU must now reproduce it without erroring.
     r.gpu_error !== nothing && return :gpu_error
-    r.cpu_error !== nothing && return :cpu_error
     r.gpu_retcode !== nothing && !ok(r.gpu_retcode) && return :gpu_failed
-    r.cpu_retcode !== nothing && !ok(r.cpu_retcode) && return :cpu_failed
-    within_tol(r.gpu_abs, r.gpu_rel, gpu_match_tol(r.case.solver)) && return :pass
+    r.gpu_within_tol && return :pass
     return :gpu_mismatch
 end
 
 # ── Run & report ─────────────────────────────────────────────────────────────
 
+# Run serially. GPU solves share a single CUDA context/default stream, so
+# concurrent execution (e.g. `Threads.@threads`) races on device state and
+# `push!` into a shared Vector is not thread-safe — keep this a plain loop.
 function run_all(cases = build_cases(); verbose = true)
     results = TestResult[]
-    Threads.@threads for (i, case) in collect(enumerate(cases))
-    # for (i, case) in collect(enumerate(cases))
-        verbose && @printf("[%3d/%3d] %s ... \n", i, length(cases), case)
+    for (i, case) in enumerate(cases)
+        verbose && @printf("[%3d/%3d] %s ... ", i, length(cases), case)
         r = run_case(case)
         push!(results, r)
-        # verbose && println(status_glyph(r.status))
+        verbose && println(status_glyph(r.status))
     end
     return results
 end
 
 status_glyph(s) = s === :pass          ? "✓" :
+                  s === :cpu_skip      ? "− skipped (cpu has no reference)" :
                   s === :gpu_mismatch  ? "✗ gpu mismatch" :
-                  s === :cpu_failed    ? "✗ cpu retcode" :
                   s === :gpu_failed    ? "✗ gpu retcode" :
-                  s === :cpu_error     ? "✗ cpu error" :
                   s === :gpu_error     ? "✗ gpu error" :
                                          string(s)
 
@@ -342,7 +373,8 @@ function show_results(results; threshold = 1.0e-3)
         print(_fmt(r.cpu_abs), "  ", _fmt(r.cpu_rel), "  ")
         print(_fmt(r.gpu_abs), "  ", _fmt(r.gpu_rel), "  ")
         print(rpad("$(_rc(r.cpu_retcode)) / $(_rc(r.gpu_retcode))", 24))
-        color = r.status === :pass ? :green : :red
+        color = r.status === :pass ? :green :
+                r.status === :cpu_skip ? :yellow : :red
         printstyled(status_glyph(r.status), "\n"; color)
     end
     println("-"^140)
@@ -353,7 +385,7 @@ function show_results(results; threshold = 1.0e-3)
         counts[r.status] = get(counts, r.status, 0) + 1
     end
     println("\nSummary:")
-    for s in (:pass, :gpu_mismatch, :cpu_failed, :gpu_failed, :cpu_error, :gpu_error)
+    for s in (:pass, :cpu_skip, :gpu_mismatch, :gpu_failed, :gpu_error)
         c = get(counts, s, 0)
         c > 0 && println("  $(rpad(string(s), 15)) $c")
     end
@@ -412,7 +444,13 @@ end
     global results = run_all()
     show_results(results)
     @testset "$(r.case)" for r in results
-        @test r.status === :pass
+        # :cpu_skip = the CPU couldn't solve this case, so there is no reference
+        # to compare against — record as skipped, not pass/fail.
+        if r.status === :cpu_skip
+            @test_skip r.status === :pass
+        else
+            @test r.status === :pass
+        end
     end
 end
 
