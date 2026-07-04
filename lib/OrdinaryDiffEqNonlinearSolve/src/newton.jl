@@ -145,7 +145,13 @@ end
     (; tstep, invγdt) = cache
 
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+    # When no reusable W exists (nlstep/DAE/OOP), the inner NonlinearSolve must be
+    # allowed to refresh its Jacobian every outer iteration: freezing it after iter 1
+    # degrades the inner solve to modified Newton while the outer η·ndz < κ test still
+    # assumes its calibration, leaving a dt-independent unconverged remainder per step
+    # (FBDF nlstep convergence order collapsed to ~0.6). With a reused W the Jacobian
+    # is the ODE-side W by construction, so refreshing beyond iter 1 is pointless.
+    recompute_jacobian = cache.W === nothing || (nlsolver.iter == 1 && cache.new_W)
     step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
@@ -170,7 +176,13 @@ end
 
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+    # When no reusable W exists (nlstep/DAE/OOP), the inner NonlinearSolve must be
+    # allowed to refresh its Jacobian every outer iteration: freezing it after iter 1
+    # degrades the inner solve to modified Newton while the outer η·ndz < κ test still
+    # assumes its calibration, leaving a dt-independent unconverged remainder per step
+    # (FBDF nlstep convergence order collapsed to ~0.6). With a reused W the Jacobian
+    # is the ODE-side W by construction, so refreshing beyond iter 1 is pointless.
+    recompute_jacobian = cache.W === nothing || (nlsolver.iter == 1 && cache.new_W)
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
