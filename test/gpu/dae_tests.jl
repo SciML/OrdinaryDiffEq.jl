@@ -66,8 +66,10 @@ SOLVE_KWARGS = (; maxiters = 10_000)
 # in-place (`dae!` mutates `du`), so iip = true. FullSpecialize bypasses the
 # FunctionWrappers path described in the header note.
 make_odef(; mass_matrix, jac_prototype) =
-    ODEFunction{true, FullSpecialize}(dae!;
-        mass_matrix = mass_matrix, jac_prototype = jac_prototype)
+    ODEFunction{true, FullSpecialize}(
+    dae!;
+    mass_matrix = mass_matrix, jac_prototype = jac_prototype
+)
 
 # ── CPU reference ────────────────────────────────────────────────────────────
 
@@ -88,8 +90,8 @@ MASS_MATRIX_D_DIAG = cu(MASS_MATRIX)
 # Each entry: (name, jac_prototype_for_gpu, needs_krylov_on_cpu)
 JAC_VARIANTS = [
     ("none", nothing, false),
-    ("CSC",  CUDA.CUSPARSE.CuSparseMatrixCSC(JAC_PROTOTYPE), true),
-    ("CSR",  CUDA.CUSPARSE.CuSparseMatrixCSR(JAC_PROTOTYPE), false),
+    ("CSC", CUDA.CUSPARSE.CuSparseMatrixCSC(JAC_PROTOTYPE), true),
+    ("CSR", CUDA.CUSPARSE.CuSparseMatrixCSR(JAC_PROTOTYPE), false),
 ]
 
 # Each entry: (name, gpu_mass_matrix)
@@ -115,61 +117,61 @@ MASS_VARIANTS = [
 
 SOLVERS = [
     # ── Rosenbrock 2nd order ──
-    (Rosenbrock23,  :marginal),     # (CSC skipped: CPU Unstable)
+    (Rosenbrock23, :marginal),     # (CSC skipped: CPU Unstable)
     # (Rosenbrock32,  :unsuitable), # Unstable on every variant incl. CPU `none` — no reference anywhere
-    (ROS2,          :marginal),
-    (ROS2PR,        :suitable),
-    (ROS2S,         :suitable),
+    (ROS2, :marginal),
+    (ROS2PR, :suitable),
+    (ROS2S, :suitable),
     # ── Rosenbrock 3rd order ──
-    (ROS3,          :marginal),     # (CSC skipped: CPU MaxIters)
-    (ROS3PR,        :suitable),
-    (ROS3PRL,       :suitable),
-    (ROS3PRL2,      :suitable),
-    (ROS3P,         :suitable),
-    (Rodas3,        :suitable),
-    (Rodas23W,      :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
-    (Rodas3P,       :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
-    (Scholz4_7,     :suitable),
+    (ROS3, :marginal),     # (CSC skipped: CPU MaxIters)
+    (ROS3PR, :suitable),
+    (ROS3PRL, :suitable),
+    (ROS3PRL2, :suitable),
+    (ROS3P, :suitable),
+    (Rodas3, :suitable),
+    (Rodas23W, :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
+    (Rodas3P, :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
+    (Scholz4_7, :suitable),
     # ── Rosenbrock 4th order ──
-    (ROS34PW1a,     :suitable),
-    (ROS34PW1b,     :suitable),
-    (ROS34PW2,      :suitable),
-    (ROS34PW3,      :suitable),
-    (ROS34PRw,      :suitable),
-    (RosShamp4,     :marginal),     # (CSC skipped: CPU MaxIters)
-    (Veldd4,        :marginal),     # (CSC skipped: CPU MaxIters)
-    (Velds4,        :marginal),
-    (GRK4T,         :marginal),     # (CSC skipped: CPU/Krylov MaxIters)
-    (GRK4A,         :marginal),
-    (Ros4LStab,     :marginal),
-    (Rodas4,        :suitable),
-    (Rodas42,       :suitable),
-    (Rodas4P,       :suitable),
-    (Rodas4P2,      :suitable),
-    (ROK4a,         :suitable),     # (CSC skipped: CPU MaxIters)
+    (ROS34PW1a, :suitable),
+    (ROS34PW1b, :suitable),
+    (ROS34PW2, :suitable),
+    (ROS34PW3, :suitable),
+    (ROS34PRw, :suitable),
+    (RosShamp4, :marginal),     # (CSC skipped: CPU MaxIters)
+    (Veldd4, :marginal),     # (CSC skipped: CPU MaxIters)
+    (Velds4, :marginal),
+    (GRK4T, :marginal),     # (CSC skipped: CPU/Krylov MaxIters)
+    (GRK4A, :marginal),
+    (Ros4LStab, :marginal),
+    (Rodas4, :suitable),
+    (Rodas42, :suitable),
+    (Rodas4P, :suitable),
+    (Rodas4P2, :suitable),
+    (ROK4a, :suitable),     # (CSC skipped: CPU MaxIters)
     # ── Rosenbrock 5th order ──
-    (Rodas5,        :suitable),
-    (Rodas5P,       :suitable),
-    (Rodas5Pe,      :suitable),     # (CSC skipped: CPU MaxIters)
-    (Rodas5Pr,      :suitable),
+    (Rodas5, :suitable),
+    (Rodas5P, :suitable),
+    (Rodas5Pe, :suitable),     # (CSC skipped: CPU MaxIters)
+    (Rodas5Pr, :suitable),
     # ── Rosenbrock 6th order ──
-    (Rodas6P,       :suitable),
+    (Rodas6P, :suitable),
     # ── SDIRK ──
     (ImplicitEuler, :marginal),
-    (Trapezoid,     :unsuitable),   # oscillates on algebraic states
-    (SDIRK2,        :suitable),
-    (Cash4,         :suitable),
-    (Hairer4,       :suitable),
-    (Hairer42,      :suitable),
+    (Trapezoid, :unsuitable),   # oscillates on algebraic states
+    (SDIRK2, :suitable),
+    (Cash4, :suitable),
+    (Hairer4, :suitable),
+    (Hairer42, :suitable),
     # ── BDF ──
-    (ABDF2,         :suitable),
-    (QNDF1,         :marginal),
-    (QNDF2,         :suitable),
-    (QNDF,          :suitable),     # works on all variants (earlier DeviceMemory issue resolved)
-    (QBDF1,         :marginal),     # works on all variants
-    (QBDF2,         :suitable),     # works on all variants
-    (QBDF,          :suitable),     # works on all variants (earlier DeviceMemory issue resolved)
-    (FBDF,          :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
+    (ABDF2, :suitable),
+    (QNDF1, :marginal),
+    (QNDF2, :suitable),
+    (QNDF, :suitable),     # works on all variants (earlier DeviceMemory issue resolved)
+    (QBDF1, :marginal),     # works on all variants
+    (QBDF2, :suitable),     # works on all variants
+    (QBDF, :suitable),     # works on all variants (earlier DeviceMemory issue resolved)
+    (FBDF, :suitable),     # works on all variants (earlier scalar-indexing issue resolved)
     # ── FIRK ── still GPU-incompatible on every variant:
     #   RadauIIA3/5/9, AdaptiveRadau
     #     `none`: "Scalar indexing is disallowed" inside perform_step!
@@ -204,8 +206,10 @@ struct TestCase
     mass_matrix::Any
 end
 
-Base.show(io::IO, c::TestCase) = print(io,
-    "$(nameof(c.solver)) [jac=$(c.jac_name), mass=$(c.mass_name)]")
+Base.show(io::IO, c::TestCase) = print(
+    io,
+    "$(nameof(c.solver)) [jac=$(c.jac_name), mass=$(c.mass_name)]"
+)
 
 mutable struct TestResult
     case::TestCase
@@ -219,18 +223,20 @@ mutable struct TestResult
     cpu_error::Union{Nothing, Exception}
     gpu_error::Union{Nothing, Exception}
     status::Symbol        # :pass, :cpu_skip (no CPU reference, non-gating),
-                          # :gpu_mismatch, :gpu_failed, :gpu_error
+    # :gpu_mismatch, :gpu_failed, :gpu_error
 end
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-function build_cases(; solvers = SOLVERS,
-                       jac_variants = JAC_VARIANTS,
-                       mass_variants = MASS_VARIANTS)
+function build_cases(;
+        solvers = SOLVERS,
+        jac_variants = JAC_VARIANTS,
+        mass_variants = MASS_VARIANTS
+    )
     cases = TestCase[]
     for (sv, cls) in solvers,
-        (jn, jp, needs_krylov) in jac_variants,
-        (mn, mm) in mass_variants
+            (jn, jp, needs_krylov) in jac_variants,
+            (mn, mm) in mass_variants
         push!(cases, TestCase(sv, cls, jn, jp, needs_krylov, mn, mm))
     end
     return cases
@@ -269,14 +275,16 @@ ok(retcode) = retcode === ReturnCode.Success || retcode === ReturnCode.Default
 # ── Run a single case ────────────────────────────────────────────────────────
 
 function run_case(case::TestCase)
-    result = TestResult(case, NaN, NaN, NaN, NaN, false,
-                        nothing, nothing, nothing, nothing, :pending)
+    result = TestResult(
+        case, NaN, NaN, NaN, NaN, false,
+        nothing, nothing, nothing, nothing, :pending
+    )
 
     # CPU run ---------------------------------------------------------------
     ref = case.needs_krylov_cpu ? SOL_REF_KRYLOV : SOL_REF
     cpu_alg = case.needs_krylov_cpu ?
-              case.solver(linsolve = KrylovJL_GMRES()) :
-              case.solver()
+        case.solver(linsolve = KrylovJL_GMRES()) :
+        case.solver()
 
     sol_cpu = nothing
     try
@@ -294,7 +302,8 @@ function run_case(case::TestCase)
     try
         odef_d = make_odef(;
             mass_matrix = case.mass_matrix,
-            jac_prototype = case.jac_prototype)
+            jac_prototype = case.jac_prototype
+        )
         prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
         sol_gpu = solve(prob_d, cpu_alg; SOLVE_KWARGS...)
         result.gpu_retcode = sol_gpu.retcode
@@ -319,8 +328,10 @@ function classify(r::TestResult)
     # the GPU against, so skip (non-gating). Crucially this is checked *before*
     # the GPU retcode: a GPU that faithfully reproduces the CPU's Unstable/
     # MaxIters result is matching, not a GPU incompatibility.
-    (r.cpu_error !== nothing ||
-     (r.cpu_retcode !== nothing && !ok(r.cpu_retcode))) && return :cpu_skip
+    (
+        r.cpu_error !== nothing ||
+            (r.cpu_retcode !== nothing && !ok(r.cpu_retcode))
+    ) && return :cpu_skip
     # CPU produced a reference; the GPU must now reproduce it without erroring.
     r.gpu_error !== nothing && return :gpu_error
     r.gpu_retcode !== nothing && !ok(r.gpu_retcode) && return :gpu_failed
@@ -344,12 +355,12 @@ function run_all(cases = build_cases(); verbose = true)
     return results
 end
 
-status_glyph(s) = s === :pass          ? "✓" :
-                  s === :cpu_skip      ? "− skipped (cpu has no reference)" :
-                  s === :gpu_mismatch  ? "✗ gpu mismatch" :
-                  s === :gpu_failed    ? "✗ gpu retcode" :
-                  s === :gpu_error     ? "✗ gpu error" :
-                                         string(s)
+status_glyph(s) = s === :pass ? "✓" :
+    s === :cpu_skip ? "− skipped (cpu has no reference)" :
+    s === :gpu_mismatch ? "✗ gpu mismatch" :
+    s === :gpu_failed ? "✗ gpu retcode" :
+    s === :gpu_error ? "✗ gpu error" :
+    string(s)
 
 function show_results(results; threshold = 1.0e-3)
     function _fmt(val)
@@ -361,8 +372,10 @@ function show_results(results; threshold = 1.0e-3)
     _rc(rc) = rc === nothing ? "---" : string(rc)
 
     label_w = 42
-    println(rpad("Solver / jac / mass", label_w),
-            "class       cpu_abs   cpu_rel   gpu_abs   gpu_rel   cpu_rc / gpu_rc         status")
+    println(
+        rpad("Solver / jac / mass", label_w),
+        "class       cpu_abs   cpu_rel   gpu_abs   gpu_rel   cpu_rc / gpu_rc         status"
+    )
     println("-"^140)
 
     for r in results
@@ -374,13 +387,13 @@ function show_results(results; threshold = 1.0e-3)
         print(_fmt(r.gpu_abs), "  ", _fmt(r.gpu_rel), "  ")
         print(rpad("$(_rc(r.cpu_retcode)) / $(_rc(r.gpu_retcode))", 24))
         color = r.status === :pass ? :green :
-                r.status === :cpu_skip ? :yellow : :red
+            r.status === :cpu_skip ? :yellow : :red
         printstyled(status_glyph(r.status), "\n"; color)
     end
     println("-"^140)
 
     # Summary
-    counts = Dict{Symbol,Int}()
+    counts = Dict{Symbol, Int}()
     for r in results
         counts[r.status] = get(counts, r.status, 0) + 1
     end
@@ -400,6 +413,7 @@ function show_errors(results)
         r.gpu_error !== nothing && (println("GPU error:"); showerror(stdout, r.gpu_error); println())
         println()
     end
+    return
 end
 
 # ── Convenience for interactive debugging ────────────────────────────────────
@@ -418,8 +432,8 @@ function debug_case(solver::Type; jac = "none", mass = "diag_cu")
 
     ref = case.needs_krylov_cpu ? SOL_REF_KRYLOV : SOL_REF
     cpu_alg = case.needs_krylov_cpu ?
-              case.solver(linsolve = KrylovJL_GMRES()) :
-              case.solver()
+        case.solver(linsolve = KrylovJL_GMRES()) :
+        case.solver()
 
     @info "CPU solve"
     sol_cpu = solve(PROB_CPU, cpu_alg; SOLVE_KWARGS...)
@@ -427,7 +441,8 @@ function debug_case(solver::Type; jac = "none", mass = "diag_cu")
     @info "GPU solve"
     odef_d = make_odef(;
         mass_matrix = case.mass_matrix,
-        jac_prototype = case.jac_prototype)
+        jac_prototype = case.jac_prototype
+    )
     prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
     sol_gpu = solve(prob_d, case.solver(); SOLVE_KWARGS...)
     @info "GPU retcode" sol_gpu.retcode
