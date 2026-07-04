@@ -394,10 +394,14 @@ function build_nlsolver(
                     nlf_jac! = let W = W_for_reuse
                         (J_out, z, p) -> (copyto!(J_out, W); J_out)
                     end
+                    # Without a `jac_prototype`, NonlinearSolve allocates a dense J for an
+                    # analytic-jac function, so a sparse/structured W degrades to dense LU
+                    # and sparse-only linsolves (e.g. KLU) crash. Mirror W's structure.
                     NonlinearProblem(
                         NonlinearFunction{true, SciMLBase.FullSpecialize}(
                             nlf;
-                            jac = nlf_jac!
+                            jac = nlf_jac!,
+                            jac_prototype = similar(W_for_reuse)
                         ),
                         ztmp, nlp_params
                     )
