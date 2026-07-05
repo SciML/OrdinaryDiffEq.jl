@@ -366,6 +366,16 @@ mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R}
     nf::R
 end
 
+# Analytic-jac callback handing the ODE-side W to the inner NonlinearSolve under
+# W-reuse. Deliberately a struct holding a Ref rather than a closure: its type depends
+# only on W's type, not on a captured binding, so when `resize!` replaces the W array
+# the same NonlinearFunction/NonlinearProblem types remain valid and `initialize!` just
+# swaps the Ref target.
+struct WReuseJac{W} <: Function
+    W::Base.RefValue{W}
+end
+(j::WReuseJac)(J_out, z, p) = (copyto!(J_out, j.W[]); J_out)
+
 mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType} <:
     AbstractNLSolverCache
     ustep::uType
