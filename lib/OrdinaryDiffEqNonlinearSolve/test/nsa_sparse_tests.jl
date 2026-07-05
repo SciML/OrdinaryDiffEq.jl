@@ -68,3 +68,43 @@ end
         @test sol.u[end] ≈ refsol.u[end] rtol = 1.0e-5
     end
 end
+
+# Resizing the integrator must rebuild the inner Jacobian at the new size: the jac
+# closure and jac_prototype are fixed at build time, so the length-mismatch path in
+# initialize! has to refresh both against the resized W (this crashed with
+# `DimensionMismatch: B has leading dimension 2, but needs 1` when jac_prototype
+# followed the W structure).
+@testset "resize with W-reuse rebuilds inner Jacobian" begin
+    fgrow = function (du, u, p, t)
+        for i in 1:length(u)
+            du[i] = (0.3 / length(u)) * u[i]
+        end
+        return nothing
+    end
+    condition = (u, t, integrator) -> 1 - maximum(u)
+    affect! = function (integrator)
+        u = integrator.u
+        maxidx = findmax(u)[2]
+        resize!(integrator, length(u) + 1)
+        Θ = 0.3
+        u[maxidx] = Θ
+        u[end] = 1 - Θ
+        return nothing
+    end
+    cb = ContinuousCallback(condition, affect!)
+    probg = ODEProblem(fgrow, [0.2], (0.0, 10.0))
+    # NOTE: assert the resize worked and nothing crashed (mirroring
+    # test/Integrators_II/ode_cache_tests.jl). Whether the marginally-stable
+    # grow-a-cell dynamics finishes with Success is method- and
+    # rounding-sensitive (ImplicitEuler+NLNewton is Unstable on it too), so
+    # retcode is only checked for TRBDF2.
+    for alg in (
+            TRBDF2(nlsolve = nsa), KenCarp4(nlsolve = nsa),
+            ImplicitEuler(nlsolve = nsa),
+        )
+        sol = solve(probg, alg; callback = cb, dt = 1 / 2)
+        @test length(sol.u[end]) > 1
+    end
+    sol = solve(probg, TRBDF2(nlsolve = nsa); callback = cb, dt = 1 / 2)
+    @test SciMLBase.successful_retcode(sol)
+end

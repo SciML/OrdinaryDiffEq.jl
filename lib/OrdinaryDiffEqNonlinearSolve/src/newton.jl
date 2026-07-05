@@ -121,7 +121,16 @@ function initialize!(
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
         if length(cache.cache.u) != length(z)
-            new_prob = SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            new_prob = if cache.W !== nothing
+                # The problem was resized: point the WReuseJac at the resized W and give
+                # the NonlinearFunction a matching jac_prototype. Both keep their types
+                # (only array sizes change), so cache.prob's concrete type is preserved.
+                cache.prob.f.jac.W[] = cache.W
+                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = similar(cache.W))
+                SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
+            else
+                SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            end
             cache.prob = new_prob
             cache.cache = init(new_prob, cache.cache.alg)
         else

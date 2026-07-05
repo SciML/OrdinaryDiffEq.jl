@@ -391,9 +391,7 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    nlf_jac! = let W = W_for_reuse
-                        (J_out, z, p) -> (copyto!(J_out, W); J_out)
-                    end
+                    nlf_jac! = WReuseJac(Ref(W_for_reuse))
                     # Without a `jac_prototype`, NonlinearSolve allocates a dense J for an
                     # analytic-jac function, so a sparse/structured W degrades to dense LU
                     # and sparse-only linsolves (e.g. KLU) crash. Mirror W's structure.
