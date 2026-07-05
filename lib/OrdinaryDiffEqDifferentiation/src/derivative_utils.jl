@@ -1212,6 +1212,8 @@ function build_J_W(
             similar(J)
         elseif J isa StaticMatrix
             StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
+        elseif f.mass_matrix isa MatrixOperator
+            WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
         else
             ArrayInterface.lu_instance(J - f.mass_matrix * invdtgamma_prototype)
         end
