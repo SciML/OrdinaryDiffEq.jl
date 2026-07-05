@@ -4,6 +4,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 version = "3.1.2"
 
 [deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -48,6 +49,7 @@ StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 [compat]
 BVProblemLibrary = "0.1"
 BoundaryValueDiffEq = "5"
+CommonSolve = "0.2.4"
 DDEProblemLibrary = "0.1"
 DelayDiffEq = "6"
 DiffEqBase = "7"
@@ -74,7 +76,7 @@ RecipesBase = "1.3.4"
 RecursiveArrayTools = "4.2.0"
 RootedTrees = "2"
 SDEProblemLibrary = "1"
-SciMLBase = "3.10.0"
+SciMLBase = "3.30"
 SciMLLogging = "2"
 SimpleNonlinearSolve = "2"
 Statistics = "1.10.0"

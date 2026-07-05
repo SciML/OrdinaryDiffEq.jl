@@ -1,27 +1,31 @@
 module OrdinaryDiffEqTsit5
 
-import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
     alg_cache,
     OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
-    constvalue, perform_step!, calculate_residuals, @cache,
-    calculate_residuals!, _ode_interpolant, _ode_interpolant!,
-    CompiledFloats, @OnDemandTableauExtract, initialize!,
-    perform_step!,
-    CompositeAlgorithm, _ode_addsteps!, copyat_or_push!,
+    constvalue, perform_step!, @cache,
+    _ode_interpolant, _ode_interpolant!,
+    CompiledFloats, @OnDemandTableauExtract,
+    CompositeAlgorithm, _ode_addsteps!,
     AutoAlgSwitch, get_fsalfirstlast,
     full_cache, DerivativeOrderNotPossibleError
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..
-import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
+import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype,
+    copyat_or_push!
 import LinearAlgebra: norm
 using TruncatedStacktraces: @truncate_stacktrace
-import SciMLBase: @def
+import SciMLBase: alg_order, @def
+using DiffEqBase: calculate_residuals, calculate_residuals!
+import DiffEqBase: initialize!
 import OrdinaryDiffEqCore
+using CommonSolve: solve
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, ODEProblem
 
 include("algorithms.jl")
 include("alg_utils.jl")
@@ -102,5 +106,13 @@ PrecompileTools.@compile_workload begin
 end
 
 export Tsit5, AutoTsit5
+
+# Cross-sublibrary cache types that other OrdinaryDiffEq solver sublibraries
+# (e.g. OrdinaryDiffEqNordsieck) reference to reuse the Tsit5 step. Marked
+# public so those references are recognized as a supported extension API rather
+# than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Tsit5Cache, :Tsit5ConstantCache))
+end
 
 end

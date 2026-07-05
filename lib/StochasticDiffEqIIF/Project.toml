@@ -1,14 +1,14 @@
 name = "StochasticDiffEqIIF"
 uuid = "ebf54054-c36b-4494-9aba-657e36df524f"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.1"
+version = "2.0.2"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
-RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
@@ -23,13 +23,13 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 DiffEqBase = "7"
+FastBroadcast = "1.3"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "4"
 Pkg = "1"
-RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.10.0"
+SciMLBase = "3.30"
 StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"
 SafeTestsets = "0.1.0"

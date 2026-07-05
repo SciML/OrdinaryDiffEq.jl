@@ -682,7 +682,7 @@ struct DDEDefaultInit <: SciMLBase.DAEInitializationAlgorithm end
 function SciMLBase.initialize_dae!(integrator::DDEIntegrator, initializealg = integrator.initializealg)
     return OrdinaryDiffEqCore._initialize_dae!(
         integrator, integrator.sol.prob, initializealg,
-        Val(DiffEqBase.isinplace(integrator.sol.prob))
+        Val(SciMLBase.isinplace(integrator.sol.prob))
     )
 end
 

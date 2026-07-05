@@ -1,12 +1,17 @@
-using StochasticDiffEqHighOrder
-using Aqua
+using SciMLTesting, StochasticDiffEqHighOrder, Test
 using JET
-using Test
 
-@testset "Aqua" begin
-    Aqua.test_all(StochasticDiffEqHighOrder)
-end
-
-@testset "JET" begin
-    JET.test_package(StochasticDiffEqHighOrder; target_defined_modules = true)
-end
+run_qa(
+    StochasticDiffEqHighOrder;
+    jet_kwargs = (; target_defined_modules = true),
+    explicit_imports = true,
+    ei_kwargs = (
+        # `@..` is owned by FastBroadcast but reexported through DiffEqBase, and
+        # FastBroadcast is not a direct dependency of this sublibrary, so the
+        # broadcast macro can only be reached via the DiffEqBase reexport.
+        all_explicit_imports_via_owners = (; ignore = (Symbol("@.."),)),
+        # `@..`: external FastBroadcast macro reexported through DiffEqBase, where
+        # it is not public.
+        all_explicit_imports_are_public = (; ignore = (Symbol("@.."),)),
+    ),
+)

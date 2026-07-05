@@ -7,10 +7,10 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
     (; u, uprev, dt, t, f, p) = integrator
     alg = unwrap_alg(integrator, nothing)
     (; tmp) = cache
-    return if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
+    return if integrator.f != SciMLBase.DISCRETE_INPLACE_DEFAULT &&
             !(
             integrator.f isa DiffEqBase.EvalFunc &&
-                integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT
+                integrator.f.f === SciMLBase.DISCRETE_INPLACE_DEFAULT
         )
         if FunctionMap_scale_by_time(alg)
             f(tmp, uprev, p, t + dt)
@@ -25,10 +25,10 @@ end
 function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step = false)
     (; uprev, dt, t, f, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    return if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
+    return if integrator.f != SciMLBase.DISCRETE_OUTOFPLACE_DEFAULT &&
             !(
             integrator.f isa DiffEqBase.EvalFunc &&
-                integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT
+                integrator.f.f === SciMLBase.DISCRETE_OUTOFPLACE_DEFAULT
         )
         if FunctionMap_scale_by_time(alg)
             tmp = f(uprev, p, t + dt)
