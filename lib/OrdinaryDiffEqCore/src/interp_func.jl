@@ -14,7 +14,35 @@ struct InterpolationData{
     cache::cacheType
     differential_vars::DV
     sensitivitymode::Bool
+    # Warm-start hint for the interval search in scalar `ode_interpolation`:
+    # repeated evaluations (adjoints sweeping backwards, saveat post-processing,
+    # delay-equation history lookups) hit nearby intervals, so galloping from
+    # the previous hit beats a fresh binary search over all of `ts`. Races on
+    # the hint under concurrent interpolation only degrade the starting guess,
+    # never correctness.
+    ts_hint::Guesser{tType}
 end
+
+# The guesser is constructed in linear-extrapolation mode unconditionally:
+# `ts` is generally still being grown when the interpolation is constructed,
+# so `Guesser(ts)`'s evenly-spaced probe would run over an incomplete grid.
+# The linear guess only seeds the bracketing gallop — a poor guess on a very
+# non-uniform grid degrades the start point, never the result — and solver
+# time grids are close enough to even that it beats both a plain binary
+# search and the previous-hit guess on sweeps, clustered stage times, and
+# random access alike. Downstream packages construct `InterpolationData`
+# positionally with these nine arguments.
+function InterpolationData(
+        f, timeseries, ts, ks, alg_choice, dense, cache,
+        differential_vars, sensitivitymode
+    )
+    return InterpolationData(
+        f, timeseries, ts, ks, alg_choice, dense, cache,
+        differential_vars, sensitivitymode, Guesser(ts, Ref(1), true)
+    )
+end
+
+@inline _ts_hint(id::InterpolationData) = id.ts_hint
 
 @static if isdefined(SciMLBase, :enable_interpolation_sensitivitymode)
     function SciMLBase.enable_interpolation_sensitivitymode(interp::InterpolationData)

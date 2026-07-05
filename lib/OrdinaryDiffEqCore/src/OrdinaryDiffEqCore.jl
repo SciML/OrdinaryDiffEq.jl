@@ -22,6 +22,9 @@ import PrecompileTools
 
 import FastPower: fastpower
 
+import FindFirstFunctions: Guesser, GuesserHint, KIND_BRACKET_GALLOP, searchsorted_first,
+    searchsorted_last
+
 # Interfaces
 import SciMLBase: solve!, step!, isadaptive
 import DiffEqBase: initialize!
