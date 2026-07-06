@@ -1276,6 +1276,52 @@ function ESDIRK436L2SA2(;
 end
 
 @doc SDIRK_docstring(
+    "5-stage, 3rd-order ESDIRK method with L-stable 2nd-order embedded error estimator
+(ESDIRK3(2)5L[2]SA). Stiffly accurate.",
+    "ESDIRK325L2SA";
+    references = """@article{Kennedy2019DiagonallyIR,
+    title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+    author={Christopher A. Kennedy and Mark H. Carpenter},
+    journal={Applied Numerical Mathematics},
+    year={2019},
+    volume={146},
+    pages={221-244}
+    }""",
+    extra_keyword_description = """
+    - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        (`extrapolant` is deprecated).
+        """,
+    extra_keyword_default = """
+    predictor = Predictor.StageExtrap,
+    """
+)
+struct ESDIRK325L2SA{AD, F, F2, StepLimiter, CJ} <:
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    linsolve::F
+    nlsolve::F2
+    smooth_est::Bool
+    predictor::Predictor.T
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+end
+function ESDIRK325L2SA(;
+        autodiff = AutoForwardDiff(),
+        concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = false, predictor = Predictor.StageExtrap, extrapolant = nothing,
+        step_limiter! = trivial_limiter!
+    )
+    autodiff = _fixup_ad(autodiff)
+
+    return ESDIRK325L2SA(
+        linsolve, nlsolve, smooth_est, _resolve_predictor(predictor, extrapolant),
+        step_limiter!, autodiff,
+        _unwrap_val(concrete_jac)
+    )
+end
+
+@doc SDIRK_docstring(
     "Optimized ESDIRK tableaus.
 Updates of the original KenCarp tableau expected to achieve lower error for the same steps in theory,
 but are still being fully evaluated in context.",

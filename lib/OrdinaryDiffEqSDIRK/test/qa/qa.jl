@@ -23,7 +23,8 @@ run_qa(
                 :constructorof,
                 # non-public OrdinaryDiffEqCore precompile-workload fixtures
                 :lorenz, :lorenz_oop,
-            )),
+            ),
+        ),
         all_explicit_imports_are_public = (;
             ignore = (
                 # non-public SciMLBase internals
@@ -32,6 +33,7 @@ run_qa(
                 Symbol("@truncate_stacktrace"),
                 # non-public OrdinaryDiffEqCore internal (limiter default)
                 :trivial_limiter!,
-            )),
+            ),
+        ),
     ),
 )

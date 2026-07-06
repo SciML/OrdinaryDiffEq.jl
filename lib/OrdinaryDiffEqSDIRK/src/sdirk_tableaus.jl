@@ -1930,6 +1930,62 @@ function ESDIRK436L2SA2Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     )
 end
 
+struct ESDIRK325L2SATableau{T, T2}
+    γ::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    c3::T2
+    c4::T2
+    c5::T2
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+end
+
+function ESDIRK325L2SATableau(::Type{T}, ::Type{T2}) where {T, T2}
+    γ = convert(T, 9 // 40)
+    s2 = sqrt(convert(T, 2))
+    a31 = 9 * (1 + s2) / 80
+    a32 = a31
+    a41 = (22 + 15 * s2) / (80 * (1 + s2))
+    a42 = a41
+    a43 = -7 / (40 * (1 + s2))
+    a51 = (2398 + 1205 * s2) / (2835 * (4 + 3 * s2))
+    a52 = a51
+    a53 = -2374 * (1 + 2 * s2) / (2835 * (5 + 3 * s2))
+    a54 = convert(T, 5827 // 7560)
+    c3 = convert(T2, 9) * (2 + convert(T2, s2)) / 40
+    c4 = convert(T2, 3 // 5)
+    c5 = convert(T2, 1)
+    bh1 = convert(T, 4555948517383 // 24713416420891)
+    bh2 = bh1
+    bh3 = convert(T, -7107561914881 // 25547637784726)
+    bh4 = convert(T, 30698249 // 44052120)
+    bh5 = convert(T, 49563 // 233080)
+    btilde1 = bh1 - a51
+    btilde2 = bh2 - a52
+    btilde3 = bh3 - a53
+    btilde4 = bh4 - a54
+    btilde5 = bh5 - γ
+    return ESDIRK325L2SATableau(
+        γ,
+        a31, a32,
+        a41, a42, a43,
+        a51, a52, a53, a54,
+        c3, c4, c5,
+        btilde1, btilde2, btilde3, btilde4, btilde5
+    )
+end
+
 struct ESDIRK437L2SATableau{T, T2}
     γ::T
     a31::T
