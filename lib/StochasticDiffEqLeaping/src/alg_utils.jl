@@ -4,8 +4,13 @@ alg_order(alg::ImplicitTauLeaping) = 1 // 1  # Weak first order (backward Euler)
 alg_order(alg::ThetaTrapezoidalTauLeaping) = 2 // 1  # Weak second order
 
 # special cases in stepsize_controllers.jl
+# Match OrdinaryDiffEqCore's `default_controller(QT, alg)` argument order (QT first,
+# alg second). The previous `(alg, args...)` slurp put `alg` in the `QT` position, so
+# `solve`'s `default_controller(QT, alg)` never reached it (it fell through to the
+# generic `PIController` method) and it was ambiguous with
+# `default_controller(QT, ::OrdinaryDiffEqCompositeAlgorithm)`.
 function OrdinaryDiffEqCore.default_controller(
-        alg::Union{TauLeaping, CaoTauLeaping, ThetaTrapezoidalTauLeaping}, args...
+        QT, alg::Union{TauLeaping, CaoTauLeaping, ThetaTrapezoidalTauLeaping}
     )
     return DummyController()
 end

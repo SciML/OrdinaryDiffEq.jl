@@ -17,6 +17,8 @@
     sqrt3 = sqrt(3one(eltype(integrator.W.dW)))
     chi2 = (integrator.W.dW + integrator.W.dZ / sqrt3) / 2 #I_(1,0)/h
 
+    f2 = nothing
+    k1 = k2 = k3 = k4 = nothing
     if integrator.f isa SplitSDEFunction
         f = integrator.f.f1
         f2 = integrator.f.f2
@@ -42,9 +44,8 @@
     end
     nlsolver.tmp = tmp
 
-    if alg.extrapolant == :min_correct
-        z₂ = zero(z₁)
-    elseif alg.extrapolant == :trivial
+    z₂ = zero(z₁)
+    if alg.extrapolant == :trivial
         z₂ = z₁
     end
     nlsolver.z = z₂
@@ -64,9 +65,8 @@
     end
     nlsolver.tmp = tmp
 
-    if alg.extrapolant == :min_correct
-        z₃ = zero(z₂)
-    elseif alg.extrapolant == :trivial
+    z₃ = zero(z₂)
+    if alg.extrapolant == :trivial
         z₃ = z₂
     end
     nlsolver.z = z₃
@@ -90,9 +90,8 @@
     end
     nlsolver.tmp = tmp
 
-    if alg.extrapolant == :min_correct
-        z₄ = zero(z₂)
-    elseif alg.extrapolant == :trivial
+    z₄ = zero(z₂)
+    if alg.extrapolant == :trivial
         z₄ = z₂
     end
     nlsolver.z = z₄
@@ -170,6 +169,7 @@ end
     E₁ = g4
     E₂ = dz
 
+    f2 = nothing
     if integrator.f isa SplitSDEFunction
         f = integrator.f.f1
         f2 = integrator.f.f2

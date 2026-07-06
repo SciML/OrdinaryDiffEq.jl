@@ -28,6 +28,8 @@
         gtmp = ((integrator.f.g(utilde, p, t) + L) / 2) * integrator.W.dW
     end
 
+    ggprime = nothing
+    mil_correction = nothing
     if cache isa ImplicitRKMilConstantCache || integrator.opts.adaptive == true
         if SciMLBase.alg_interpretation(alg) == SciMLBase.AlgorithmInterpretation.Ito ||
                 cache isa ImplicitEMConstantCache
@@ -156,6 +158,7 @@ end
         mul!(gtmp2, gtmp, dW)
     end
 
+    gtmp3 = nothing
     if cache isa ImplicitEulerHeunCache
         gtmp3 = cache.gtmp3
         @.. z = uprev + gtmp2

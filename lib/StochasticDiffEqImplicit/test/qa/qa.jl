@@ -3,7 +3,13 @@ using JET
 
 run_qa(
     StochasticDiffEqImplicit;
-    jet_kwargs = (; target_defined_modules = true),
+    # Scope JET to this package in `:typo` mode, matching the OrdinaryDiffEq* solver
+    # sublibraries. The deprecated `target_defined_modules = true` also reported
+    # `nlsolve!`/`get_W`/`set_new_W!` "no matching method" cross-package false
+    # positives that arise only because `perform_step!` leaves `integrator`
+    # untyped (at runtime it is always an `ODEIntegrator <: DEIntegrator`, so the
+    # functional Core tests exercise these paths without error).
+    jet_kwargs = (; target_modules = (StochasticDiffEqImplicit,), mode = :typo),
     explicit_imports = true,
     ei_kwargs = (;
         # `@..` is owned by FastBroadcast and re-exported through DiffEqBase; FastBroadcast
