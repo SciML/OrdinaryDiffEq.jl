@@ -19,7 +19,8 @@ using Test
         Kvaerno4(), Kvaerno5(), KenCarp4(), KenCarp47(), KenCarp5(), KenCarp58(),
         ESDIRK54I8L2SA(), SFSDIRK4(), SFSDIRK5(), CFNLIRK3(),
         SFSDIRK6(), SFSDIRK7(), SFSDIRK8(),
-        ESDIRK436L2SA2(), ESDIRK437L2SA(), ESDIRK547L2SA2(), ESDIRK659L2SA(),
+        ESDIRK325L2SA(), ESDIRK436L2SA2(), ESDIRK437L2SA(), ESDIRK547L2SA2(),
+        ESDIRK659L2SA(),
     ]
 
     @testset "SDIRK perform_step! Static Analysis" begin

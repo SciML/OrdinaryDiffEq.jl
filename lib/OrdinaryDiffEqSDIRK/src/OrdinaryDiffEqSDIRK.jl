@@ -59,7 +59,8 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
     Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
     SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
     SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
-    SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA,
+    SFSDIRK7, SFSDIRK8, ESDIRK325L2SA, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2,
+    ESDIRK659L2SA,
     ARS343, ARS222, ARS232, ARS443,
     IMEXSSP222, IMEXSSP2322, IMEXSSP3332, IMEXSSP3433, BHR553
 
@@ -138,9 +139,13 @@ end
 # of the ESDIRK-IMEX machinery. Marked public so those references are
 # recognized as a supported extension API rather than internal access.
 @static if VERSION >= v"1.11.0-DEV.469"
-    eval(Expr(:public,
-        :ESDIRKIMEXCache, :ESDIRKIMEXConstantCache,
-        :ImplicitEulerESDIRKIMEXTableau))
+    eval(
+        Expr(
+            :public,
+            :ESDIRKIMEXCache, :ESDIRKIMEXConstantCache,
+            :ImplicitEulerESDIRKIMEXTableau
+        )
+    )
 end
 
 end
