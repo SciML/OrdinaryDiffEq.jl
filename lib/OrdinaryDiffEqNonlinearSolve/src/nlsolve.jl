@@ -120,7 +120,7 @@ function nlsolve!(
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        η = DiffEqBase.value(θ / (1 - θ))
+        η = SciMLBase.value(θ / (1 - θ))
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergence = (
@@ -184,7 +184,7 @@ function apply_step!(
     return nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
+function SciMLBase.postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nnonliniter += nlsolver.iter
 

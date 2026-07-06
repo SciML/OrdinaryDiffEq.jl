@@ -1,12 +1,8 @@
-using OrdinaryDiffEqImplicitTableaus
-using Aqua
+using SciMLTesting, OrdinaryDiffEqImplicitTableaus, Test
 using JET
-using Test
 
-@testset "Aqua" begin
-    Aqua.test_all(OrdinaryDiffEqImplicitTableaus)
-end
-
-@testset "JET" begin
-    JET.test_package(OrdinaryDiffEqImplicitTableaus; target_defined_modules = true)
-end
+run_qa(
+    OrdinaryDiffEqImplicitTableaus;
+    jet_kwargs = (; target_defined_modules = true),
+    explicit_imports = true,
+)

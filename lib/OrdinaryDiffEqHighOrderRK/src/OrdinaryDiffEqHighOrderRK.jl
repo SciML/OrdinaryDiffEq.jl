@@ -1,23 +1,24 @@
 module OrdinaryDiffEqHighOrderRK
 
-import OrdinaryDiffEqCore: alg_order, qmax_default, qmin_default, beta2_default,
+import OrdinaryDiffEqCore: qmax_default, qmin_default, beta2_default,
     beta1_default,
     explicit_rk_docstring, OrdinaryDiffEqAdaptiveAlgorithm,
     trivial_limiter!,
     _ode_addsteps!, @cache, OrdinaryDiffEqMutableCache,
     constvalue,
-    alg_cache, uses_uprev, initialize!, perform_step!,
+    alg_cache, perform_step!,
     OrdinaryDiffEqConstantCache,
-    calculate_residuals!, calculate_residuals, CompiledFloats,
-    copyat_or_push!, get_fsalfirstlast,
+    CompiledFloats,
+    get_fsalfirstlast,
     unwrap_alg, _ode_interpolant, _ode_interpolant!,
     DerivativeOrderNotPossibleError, full_cache, isdp8
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
-using DiffEqBase
 import FastBroadcast: @..
-import RecursiveArrayTools: recursivefill!
-using DiffEqBase: @def, @tight_loop_macros
+import RecursiveArrayTools: recursivefill!, copyat_or_push!
+import DiffEqBase: @tight_loop_macros, calculate_residuals, calculate_residuals!,
+    initialize!
+import SciMLBase: alg_order
 import OrdinaryDiffEqCore
 
 using Reexport

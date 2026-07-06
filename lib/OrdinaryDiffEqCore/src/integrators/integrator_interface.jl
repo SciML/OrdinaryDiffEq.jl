@@ -56,7 +56,7 @@ function SciMLBase.reeval_internals_due_to_modification!(
         callback_initializealg = nothing
     )
     if integrator.isdae
-        DiffEqBase.initialize_dae!(
+        SciMLBase.initialize_dae!(
             integrator,
             isnothing(callback_initializealg) ? integrator.initializealg :
                 callback_initializealg
@@ -587,7 +587,7 @@ function SciMLBase.reinit!(
 
     if reinit_dae &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
-        DiffEqBase.initialize_dae!(integrator)
+        SciMLBase.initialize_dae!(integrator)
         update_uprev!(integrator)
     end
 

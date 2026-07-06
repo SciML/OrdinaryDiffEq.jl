@@ -146,7 +146,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[2], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -163,7 +163,7 @@ end
                 end
                 @.. broadcast = false zs[2] = (zs[2] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -180,7 +180,7 @@ end
                 end
                 @.. broadcast = false zs[2] = (zs[2] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -238,7 +238,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[3], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -255,7 +255,7 @@ end
                 end
                 @.. broadcast = false zs[3] = (zs[3] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -272,7 +272,7 @@ end
                 end
                 @.. broadcast = false zs[3] = (zs[3] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -328,7 +328,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[4], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -345,7 +345,7 @@ end
                 end
                 @.. broadcast = false zs[4] = (zs[4] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -362,7 +362,7 @@ end
                 end
                 @.. broadcast = false zs[4] = (zs[4] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -419,7 +419,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[5], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -436,7 +436,7 @@ end
                 end
                 @.. broadcast = false zs[5] = (zs[5] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -453,7 +453,7 @@ end
                 end
                 @.. broadcast = false zs[5] = (zs[5] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -511,7 +511,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[6], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -528,7 +528,7 @@ end
                 end
                 @.. broadcast = false zs[6] = (zs[6] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -545,7 +545,7 @@ end
                 end
                 @.. broadcast = false zs[6] = (zs[6] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -604,7 +604,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[7], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -621,7 +621,7 @@ end
                 end
                 @.. broadcast = false zs[7] = (zs[7] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -638,7 +638,7 @@ end
                 end
                 @.. broadcast = false zs[7] = (zs[7] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -698,7 +698,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[8], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -715,7 +715,7 @@ end
                 end
                 @.. broadcast = false zs[8] = (zs[8] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -732,7 +732,7 @@ end
                 end
                 @.. broadcast = false zs[8] = (zs[8] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -793,7 +793,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[9], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -810,7 +810,7 @@ end
                 end
                 @.. broadcast = false zs[9] = (zs[9] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -827,7 +827,7 @@ end
                 end
                 @.. broadcast = false zs[9] = (zs[9] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -889,7 +889,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[10], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -906,7 +906,7 @@ end
                 end
                 @.. broadcast = false zs[10] = (zs[10] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -923,7 +923,7 @@ end
                 end
                 @.. broadcast = false zs[10] = (zs[10] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -986,7 +986,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[11], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -1003,7 +1003,7 @@ end
                 end
                 @.. broadcast = false zs[11] = (zs[11] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -1020,7 +1020,7 @@ end
                 end
                 @.. broadcast = false zs[11] = (zs[11] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -1084,7 +1084,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 fill!(zs[12], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -1101,7 +1101,7 @@ end
                 end
                 @.. broadcast = false zs[12] = (zs[12] - tmp) * inv(γ)
             elseif predictor == Predictor.CutoffOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -1118,7 +1118,7 @@ end
                 end
                 @.. broadcast = false zs[12] = (zs[12] - tmp) * inv(γ)
             elseif predictor == Predictor.VariableOrder
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
                     Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                     dtp_pred = integrator.t - integrator.tprev
@@ -1419,7 +1419,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1487,7 +1487,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1552,7 +1552,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1617,7 +1617,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1682,7 +1682,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1747,7 +1747,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1812,7 +1812,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1877,7 +1877,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -1942,7 +1942,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -2007,7 +2007,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :
@@ -2072,7 +2072,7 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
-                OrdinaryDiffEqCore.SciMLBase.addsteps!(integrator)
+                SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
                 dtp_pred = integrator.t - integrator.tprev
                 q_pred = predictor == Predictor.MaxOrder ? 3 :

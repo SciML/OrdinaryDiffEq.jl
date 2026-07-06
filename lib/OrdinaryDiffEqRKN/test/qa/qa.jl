@@ -1,8 +1,16 @@
-using OrdinaryDiffEqRKN
-using Aqua
+using SciMLTesting, OrdinaryDiffEqRKN, Test
 
-@testset "Aqua" begin
-    Aqua.test_all(
-        OrdinaryDiffEqRKN
-    )
-end
+run_qa(
+    OrdinaryDiffEqRKN;
+    explicit_imports = true,
+    ei_kwargs = (;
+        all_explicit_imports_are_public = (;
+            ignore = (
+                # SciMLBase codegen macro, deliberately kept non-public by its owner.
+                Symbol("@def"),
+                # DiffEqBase perf macro, deliberately kept non-public by its owner.
+                Symbol("@tight_loop_macros"),
+            ),
+        ),
+    ),
+)

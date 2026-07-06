@@ -1,23 +1,27 @@
 module OrdinaryDiffEqRKN
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, alg_extrapolates,
+import OrdinaryDiffEqCore: perform_step!,
+    alg_extrapolates,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptivePartitionedAlgorithm,
     OrdinaryDiffEqPartitionedAlgorithm,
-    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-    constvalue, _unwrap_val, _ode_interpolant,
+    CompiledFloats,
+    alg_cache, @cache, full_cache,
+    constvalue, _ode_interpolant,
     get_fsalfirstlast,
-    trivial_limiter!, _ode_interpolant!, _ode_addsteps!,
+    _ode_interpolant!,
     generic_solver_docstring
-using FastBroadcast, MuladdMacro, RecursiveArrayTools
-using DiffEqBase: @def, @tight_loop_macros
+import SciMLBase: alg_order, @def
+using SciMLBase: SciMLBase
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!,
+    @tight_loop_macros
+using FastBroadcast: FastBroadcast, @..
+using MuladdMacro: MuladdMacro, @muladd
+using RecursiveArrayTools: RecursiveArrayTools, ArrayPartition, recursivefill!
 import OrdinaryDiffEqCore
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")

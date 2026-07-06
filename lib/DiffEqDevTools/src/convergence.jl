@@ -81,7 +81,7 @@ function test_convergence(
 
     if expected_value == nothing
         solutions = [
-            DiffEqBase.calculate_ensemble_errors(
+            SciMLBase.calculate_ensemble_errors(
                     sim;
                     weak_timeseries_errors = weak_timeseries_errors,
                     weak_dense_errors = weak_dense_errors
@@ -239,7 +239,7 @@ function analyticless_test_convergence(
     end
     _solutions = [EnsembleSolution(tmp_solutions[:, i], 0.0, true) for i in 1:length(dts)]
     solutions = [
-        DiffEqBase.calculate_ensemble_errors(
+        SciMLBase.calculate_ensemble_errors(
                 sim;
                 weak_timeseries_errors = weak_timeseries_errors,
                 weak_dense_errors = weak_dense_errors

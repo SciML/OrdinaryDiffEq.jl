@@ -1,8 +1,6 @@
-using OrdinaryDiffEqSymplecticRK
-using Aqua
+using SciMLTesting, OrdinaryDiffEqSymplecticRK, Test
 
-@testset "Aqua" begin
-    Aqua.test_all(
-        OrdinaryDiffEqSymplecticRK
-    )
-end
+run_qa(
+    OrdinaryDiffEqSymplecticRK;
+    explicit_imports = true,
+)

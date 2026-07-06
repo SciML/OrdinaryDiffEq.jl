@@ -4,7 +4,7 @@ alg_order(alg::ImplicitTauLeaping) = 1 // 1  # Weak first order (backward Euler)
 alg_order(alg::ThetaTrapezoidalTauLeaping) = 2 // 1  # Weak second order
 
 # special cases in stepsize_controllers.jl
-function StochasticDiffEqCore.default_controller(
+function OrdinaryDiffEqCore.default_controller(
         alg::Union{TauLeaping, CaoTauLeaping, ThetaTrapezoidalTauLeaping}, args...
     )
     return DummyController()

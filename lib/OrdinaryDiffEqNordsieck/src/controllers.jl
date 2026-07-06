@@ -38,20 +38,20 @@ end
 
 # Algorithm owns the stepsize logic; controller cache delegates back to
 # alg-level dispatch (mirroring how DummyControllerCache used to behave).
-@inline OrdinaryDiffEqCore.stepsize_controller!(integrator, ::JVODEControllerCache, alg) =
+@inline stepsize_controller!(integrator, ::JVODEControllerCache, alg) =
     stepsize_controller!(integrator, alg)
-@inline OrdinaryDiffEqCore.step_accept_controller!(integrator, ::JVODEControllerCache, alg, q) =
+@inline step_accept_controller!(integrator, ::JVODEControllerCache, alg, q) =
     step_accept_controller!(integrator, alg, q)
-@inline OrdinaryDiffEqCore.step_reject_controller!(integrator, ::JVODEControllerCache, alg) =
+@inline step_reject_controller!(integrator, ::JVODEControllerCache, alg) =
     step_reject_controller!(integrator, alg)
-@inline OrdinaryDiffEqCore.post_newton_controller!(integrator, ::JVODEControllerCache, alg) =
+@inline post_newton_controller!(integrator, ::JVODEControllerCache, alg) =
     post_newton_controller!(integrator, alg)
-@inline OrdinaryDiffEqCore.accept_step_controller(
+@inline accept_step_controller(
     integrator, cache::JVODEControllerCache, alg,
 ) = get_EEst(cache) <= 1
 
 function stepsize_controller!(integrator, alg::JVODE)
-    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
+    if iszero(get_EEst(integrator))
         η = get_qmax(integrator)
     else
         η = integrator.cache.η

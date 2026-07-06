@@ -1,45 +1,44 @@
 module OrdinaryDiffEqBDF
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, alg_extrapolates,
-    OrdinaryDiffEqAlgorithm, default_controller, IController,
+import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
+    alg_extrapolates,
+    default_controller, IController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqNewtonAlgorithm,
     AbstractController,
-    CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache,
+    alg_cache, @cache,
     isfsal, full_cache,
-    constvalue, isadaptive, error_constant,
+    constvalue, error_constant,
     has_special_newton_error,
     trivial_limiter!,
-    issplit, qmin_default, qmax_default, gamma_default,
+    issplit, qmax_default, gamma_default,
     qsteady_min_default, qsteady_max_default,
     get_current_alg_order, get_current_adaptive_order,
     stepsize_controller!,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
-    accept_step_controller, get_EEst, set_EEst!,
+    get_EEst,
     setup_controller_cache, get_qmax, get_gamma, get_qsteady_min, get_qsteady_max,
     get_failfactor, CommonControllerOptions, resolve_basic, _resolved_QT,
     AbstractControllerCache,
-    DAEAlgorithm, _unwrap_val, DummyController,
-    get_fsalfirstlast, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
+    DAEAlgorithm,
+    get_fsalfirstlast, generic_solver_docstring, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
+    DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
     find_algebraic_vars_eqs
+import SciMLBase: alg_order, isadaptive, _unwrap_val
+import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
 
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
-using MacroTools: @capture
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
 using LinearAlgebra: mul!, I
 import ArrayInterface
-using ArrayInterface: ismutable
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: default_controller
 
@@ -54,14 +53,13 @@ else
     end
 end
 
-using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
-    nlsolve!, nlsolvefail, isnewton, markfirststage!,
-    set_new_W!, DIRK, compute_step!, COEFFICIENT_MULTISTEP,
-    NonlinearSolveAlg
-import ADTypes: AutoForwardDiff, AutoFiniteDiff, AbstractADType
+    nlsolve!, nlsolvefail, markfirststage!
+import ADTypes: AutoForwardDiff
 
-using Reexport
+using Reexport: Reexport, @reexport
+import SciMLBase
+using SciMLBase: ODEProblem, derivative_discontinuity!, solve
 @reexport using SciMLBase
 
 include("algorithms.jl")

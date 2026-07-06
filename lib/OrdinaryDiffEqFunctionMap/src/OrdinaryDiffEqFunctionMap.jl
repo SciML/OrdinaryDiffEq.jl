@@ -1,20 +1,22 @@
 module OrdinaryDiffEqFunctionMap
 
 import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default, OrdinaryDiffEqAlgorithm,
-    initialize!, perform_step!, unwrap_alg,
+    perform_step!, unwrap_alg,
     OrdinaryDiffEqMutableCache,
     alg_cache, @cache, _ode_addsteps!, _ode_interpolant!,
     _ode_interpolant, get_fsalfirstlast,
-    alg_order, OrdinaryDiffEqConstantCache, dt_required,
+    OrdinaryDiffEqConstantCache, dt_required,
     isdiscretecache, isdiscretealg, full_cache
-using DiffEqBase
+using DiffEqBase: DiffEqBase
+import DiffEqBase: initialize!
 import RecursiveArrayTools: recursivecopy!
 import FastBroadcast: @..
 import MuladdMacro: @muladd
-using FastBroadcast: Serial
 import OrdinaryDiffEqCore
 
-using Reexport
+using Reexport: Reexport, @reexport
+using SciMLBase: SciMLBase
+import SciMLBase: alg_order
 @reexport using SciMLBase
 
 include("algorithms.jl")

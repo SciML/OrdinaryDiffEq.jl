@@ -1,12 +1,8 @@
-using StochasticDiffEqIIF
-using Aqua
+using SciMLTesting, StochasticDiffEqIIF, Test
 using JET
-using Test
 
-@testset "Aqua" begin
-    Aqua.test_all(StochasticDiffEqIIF)
-end
-
-@testset "JET" begin
-    JET.test_package(StochasticDiffEqIIF; target_defined_modules = true)
-end
+run_qa(
+    StochasticDiffEqIIF;
+    jet_kwargs = (; target_defined_modules = true),
+    explicit_imports = true,
+)

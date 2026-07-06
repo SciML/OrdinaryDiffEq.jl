@@ -6,7 +6,8 @@ prob = ODEProblem(vdp!, [2.0, 0.0], (0.0, 6.3))
 ref = solve(prob, ESDIRK659L2SA(predictor = Predictor.Trivial), reltol = 1.0e-12, abstol = 1.0e-12)
 
 methods = [
-    ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA,
+    ESDIRK325L2SA, ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2,
+    ESDIRK659L2SA,
 ]
 predictors = [
     Predictor.Trivial, Predictor.Linear, Predictor.CopyPrev, Predictor.StageExtrap,

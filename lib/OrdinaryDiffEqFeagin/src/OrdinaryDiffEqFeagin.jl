@@ -1,21 +1,20 @@
 module OrdinaryDiffEqFeagin
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals,
-    OrdinaryDiffEqAlgorithm,
+import OrdinaryDiffEqCore: perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-    constvalue, _unwrap_val, get_fsalfirstlast,
-    generic_solver_docstring, trivial_limiter!,
-    _ode_interpolant!, _ode_addsteps!
-using FastBroadcast, MuladdMacro, RecursiveArrayTools
-using DiffEqBase: @def, @tight_loop_macros
-using FastBroadcast: Serial
+    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats,
+    alg_cache, @cache, full_cache,
+    constvalue, get_fsalfirstlast,
+    generic_solver_docstring, trivial_limiter!
+import SciMLBase: alg_order
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
+import FastBroadcast: @..
+import MuladdMacro: @muladd
+import RecursiveArrayTools: recursivefill!
+using DiffEqBase: @tight_loop_macros
 import OrdinaryDiffEqCore
 
-using Reexport
+using Reexport: @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")

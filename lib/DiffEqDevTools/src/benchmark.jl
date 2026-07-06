@@ -531,7 +531,7 @@ function WorkPrecisionSet(
         _abstols = get(setups[i], :abstols, abstols)
         _reltols = get(setups[i], :reltols, reltols)
         _dts = get(setups[i], :dts, nothing)
-        filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[i])
+        filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[i])
 
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
@@ -547,7 +547,7 @@ function WorkPrecisionSet(
 end
 
 @def error_calculation begin
-    if !DiffEqBase.has_analytic(prob.f)
+    if !SciMLBase.has_analytic(prob.f)
         t = prob.tspan[1]:test_dt:prob.tspan[2]
         brownian_values = cumsum(
             [
@@ -578,7 +578,7 @@ end
     _abstols = get(setups[1], :abstols, abstols)
     _reltols = get(setups[1], :reltols, reltols)
     _dts = get(setups[1], :dts, zeros(length(_abstols)))
-    filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[1])
+    filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[1])
 
     sol = solve(
         _prob, setups[1][:alg];
@@ -592,7 +592,7 @@ end
         _abstols = get(setups[k], :abstols, abstols)
         _reltols = get(setups[k], :reltols, reltols)
         _dts = get(setups[k], :dts, zeros(length(_abstols)))
-        filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[k])
+        filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[k])
 
         sol = solve(
             _prob, setups[k][:alg];
@@ -601,7 +601,7 @@ end
             timeseries_errors = timeseries_errors,
             dense_errors = dense_errors
         )
-        DiffEqBase.has_analytic(prob.f) ? err_sol = sol : err_sol = appxtrue(sol, true_sol)
+        SciMLBase.has_analytic(prob.f) ? err_sol = sol : err_sol = appxtrue(sol, true_sol)
         tmp_solutions[i, j, k] = err_sol
     end
 end
@@ -615,11 +615,11 @@ function WorkPrecisionSet(
         kwargs...
     )
     @assert names === nothing || length(setups) == length(names)
-    timeseries_errors = DiffEqBase.has_analytic(prob.f) &&
+    timeseries_errors = SciMLBase.has_analytic(prob.f) &&
         error_estimate ∈ TIMESERIES_ERRORS
     weak_timeseries_errors = error_estimate ∈ WEAK_TIMESERIES_ERRORS
     weak_dense_errors = error_estimate ∈ WEAK_DENSE_ERRORS
-    dense_errors = DiffEqBase.has_analytic(prob.f) && error_estimate ∈ DENSE_ERRORS
+    dense_errors = SciMLBase.has_analytic(prob.f) && error_estimate ∈ DENSE_ERRORS
     N = length(setups)
     M = length(abstols)
     times = Array{Float64}(undef, M, N)
@@ -647,7 +647,7 @@ function WorkPrecisionSet(
     ]
     solutions = [
         [
-                DiffEqBase.calculate_ensemble_errors(
+                SciMLBase.calculate_ensemble_errors(
                     sim;
                     weak_timeseries_errors = weak_timeseries_errors,
                     weak_dense_errors = weak_dense_errors
@@ -670,7 +670,7 @@ function WorkPrecisionSet(
     for k in 1:N
         # precompile
         GC.gc()
-        filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[k])
+        filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[k])
 
         _sol = solve(
             prob, setups[k][:alg];
@@ -740,7 +740,7 @@ function WorkPrecisionSet(
     _reltols = [get(setups[k], :reltols, reltols) for k in 1:N]
     _dts = [get(setups[k], :dts, zeros(length(_abstols))) for k in 1:N]
     for k in 1:N
-        filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[k])
+        filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[k])
 
         for j in 1:M
             sol = solve(
@@ -810,7 +810,7 @@ function WorkPrecisionSet(
     for k in 1:N
         # precompile
         GC.gc()
-        filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[k])
+        filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[k])
 
         _sol = solve(
             prob, setups[k][:alg], ensemblealg;
@@ -874,7 +874,7 @@ function WorkPrecisionSet(
         _abstols = get(setups[i], :abstols, abstols)
         _reltols = get(setups[i], :reltols, reltols)
         _dts = get(setups[i], :dts, nothing)
-        filtered_setup = filter(p -> p.first in DiffEqBase.allowedkeywords, setups[i])
+        filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[i])
 
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
@@ -922,7 +922,7 @@ function get_sample_errors(
         tmp_solutions = vec(tmp_solutions)
     end
 
-    if DiffEqBase.has_analytic(prob.f)
+    if SciMLBase.has_analytic(prob.f)
         analytical_mean_end = mean(1:sample_error_runs) do i
             _dt = prob.tspan[2] - prob.tspan[1]
             if prob.u0 isa Number

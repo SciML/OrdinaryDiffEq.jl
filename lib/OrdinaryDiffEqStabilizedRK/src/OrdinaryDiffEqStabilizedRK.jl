@@ -1,21 +1,28 @@
 module OrdinaryDiffEqStabilizedRK
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
-    beta2_default, beta1_default, gamma_default, qmax_default, alg_extrapolates,
+import OrdinaryDiffEqCore: alg_adaptive_order,
+    gamma_default, qmax_default, alg_extrapolates,
     fac_default_gamma, has_dtnew_modification,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals,
-    OrdinaryDiffEqAlgorithm, default_controller, PredictiveController,
+    perform_step!, unwrap_alg,
+    default_controller, PredictiveController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqAdaptiveAlgorithm, calc_dt_propose!,
-    alg_cache, _vec, _reshape, @cache,
-    constvalue, _unwrap_val, full_cache, get_fsalfirstlast,
+    OrdinaryDiffEqAdaptiveAlgorithm,
+    alg_cache, @cache,
+    constvalue, full_cache, get_fsalfirstlast,
     generic_solver_docstring
-using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import OrdinaryDiffEqCore
-using DiffEqBase: DiffEqBase, value
+using FastBroadcast: FastBroadcast, @..
+using MuladdMacro: MuladdMacro, @muladd
+using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
+# `calculate_residuals`/`calculate_residuals!`/`initialize!` are owned by DiffEqBase;
+# `alg_order`/`_vec`/`value` are owned by SciMLBase. Import from the owner.
+# `initialize!`/`alg_order` are extended here, so they must be `import`ed.
+import DiffEqBase: initialize!
+using DiffEqBase: calculate_residuals, calculate_residuals!
 
-using Reexport
+using SciMLBase: SciMLBase
+import SciMLBase: alg_order, _vec, value
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")
