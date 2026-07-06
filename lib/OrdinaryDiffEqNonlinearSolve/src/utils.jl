@@ -362,7 +362,7 @@ function build_nlsolver(
                     )
                 end
             end
-            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
+            inner_alg = _nlalg_with_linsolve(nlalg.alg, wrapprecs(alg.linsolve, W, weight))
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
@@ -371,6 +371,7 @@ function build_nlsolver(
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
+                weight,
                 zero(tstep), true
             )
         else
@@ -512,7 +513,7 @@ function build_nlsolver(
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing,
+                nothing, nothing, nothing, nothing, nothing, nothing,
                 zero(tstep), true
             )
         else
