@@ -93,11 +93,15 @@ function initialize!(
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
             W_γdt = cache.W_γdt
             first_call = iszero(W_γdt)
-            should_update = first_call || alg.always_new ||
-                nlsolver.status === Divergence ||
+            # Mirror the legacy do_newJW split: a fresh Jacobian is only needed when the
+            # iteration failed or on first use, while a dt/gamma change merely requires
+            # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
+            # Jacobian evaluation is not).
+            new_jac = first_call || alg.always_new || nlsolver.status === Divergence
+            new_w = new_jac ||
                 abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
-            if should_update
-                _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep)
+            if new_w
+                _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
                 cache.new_W = true
             else
                 cache.new_W = false
@@ -119,19 +123,21 @@ function initialize!(
     return nothing
 end
 
-function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep)
+function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = true)
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if SciMLBase.has_jac(f)
-        f.jac(J, uprev, p, tstep)
-    elseif uf !== nothing
-        uf.f = nlsolve_f(f, alg)
-        uf.t = tstep
-        if !(p isa SciMLBase.NullParameters)
-            uf.p = p
+    if new_jac
+        if SciMLBase.has_jac(f)
+            f.jac(J, uprev, p, tstep)
+        elseif uf !== nothing
+            uf.f = nlsolve_f(f, alg)
+            uf.t = tstep
+            if !(p isa SciMLBase.NullParameters)
+                uf.p = p
+            end
+            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
     jacobian2W!(W, mass_matrix, dtgamma, J)
     nlcache.W_γdt = dtgamma
