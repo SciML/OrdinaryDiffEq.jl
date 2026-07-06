@@ -1,6 +1,6 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
+import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     OrdinaryDiffEqRosenbrockAlgorithm, @cache,
     alg_cache, initialize!,
     calculate_residuals!, OrdinaryDiffEqMutableCache,
@@ -12,34 +12,43 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
     constvalue, only_diagonal_mass_matrix,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
     resize_non_user_cache!, _ode_addsteps!, full_cache,
-    DerivativeOrderNotPossibleError, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined
-using MuladdMacro, FastBroadcast, RecursiveArrayTools
-import MacroTools: namify
-using MacroTools: @capture
+    DerivativeOrderNotPossibleError, _fixup_ad,
+    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!
+using MuladdMacro: MuladdMacro, @muladd
+using FastBroadcast: FastBroadcast, @..
+using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
 using DiffEqBase: @def
 import DifferentiationInterface as DI
 import LinearSolve
-import LinearSolve: UniformScaling
 import ForwardDiff
-using FiniteDiff
-using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm, lu, lu!
-using ADTypes
+using FiniteDiff: FiniteDiff
+using LinearAlgebra: mul!, I, norm, lu, UniformScaling
+using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
-using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
-    UDerivativeWrapper, UJacobianWrapper,
-    wrapprecs, calc_tderivative, build_grad_config,
+using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
-    calc_W, calc_rosenbrock_differentiation!, build_J_W,
-    UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
+    calc_rosenbrock_differentiation!, build_J_W,
+    dolinsolve, WOperator
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 
-using OrdinaryDiffEqRosenbrockTableaus
-using Reexport
+using OrdinaryDiffEqRosenbrockTableaus: OrdinaryDiffEqRosenbrockTableaus,
+    GRK4ARodasTableau, GRK4TRodasTableau, ROS2PRRodasTableau, ROS2RodasTableau,
+    ROS2SRodasTableau, ROS34PRwRodasTableau, ROS34PW1aRodasTableau,
+    ROS34PW1bRodasTableau, ROS34PW2RodasTableau, ROS3PRL2RodasTableau,
+    ROS3PRLRodasTableau, ROS3PRRodasTableau, ROS3PRodasTableau, ROS3RodasTableau,
+    Rodas3PRodasTableau, Rodas3RodasTableau, Rodas42Tableau, Rodas4P2Tableau,
+    Rodas4PTableau, Rodas4PWTableau, Rodas4Tableau, Rodas5Tableau, RodasTableau,
+    Ros4LStabRodasTableau, RosShamp4RodasTableau, RosenbrockW6S4OSRodasTableau,
+    Scholz4_7RodasTableau, Veldd4RodasTableau, Velds4RodasTableau
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, LinearProblem, ODEProblem, init, solve,
+    TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper
+# alg_order is owned by and public in SciMLBase; import (not using) so methods can be extended
+import SciMLBase: alg_order
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
@@ -204,5 +213,13 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
     Tsit5DA, RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw,
     ROS3PRL, ROS3PRL2, ROK4a,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+
+# Abstract Rosenbrock cache supertype that other OrdinaryDiffEq consumers
+# (e.g. DelayDiffEq) reference to special-case Rosenbrock cache resizing.
+# Marked public so that cross-package reference is recognized as a supported
+# extension API rather than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :RosenbrockMutableCache))
+end
 
 end

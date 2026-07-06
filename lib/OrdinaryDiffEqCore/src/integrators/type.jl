@@ -166,7 +166,6 @@ mutable struct ODEIntegrator{
     isout::Bool
     reeval_fsal::Bool
     derivative_discontinuity::Bool
-    user_set_discontinuity::Bool
     reinitialize::Bool
     isdae::Bool
     opts::O

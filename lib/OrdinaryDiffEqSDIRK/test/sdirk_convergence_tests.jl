@@ -150,6 +150,9 @@ testTol = 0.2
     sim118 = test_convergence(dts, prob, KenCarp58())
     @test sim118.𝒪est[:final] ≈ 5 atol = testTol
 
+    sim118b = test_convergence(dts, prob, ESDIRK325L2SA())
+    @test sim118b.𝒪est[:final] ≈ 3 atol = testTol
+
     sim119 = test_convergence(dts, prob, ESDIRK436L2SA2())
     @test sim119.𝒪est[:final] ≈ 4 atol = testTol
 

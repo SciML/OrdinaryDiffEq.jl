@@ -43,8 +43,8 @@ function initialize!(
     (; ustep, tstep, k, invγdt) = cache
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
+        integrator.stats.nsolve += cache.cache.stats.nsolve
     end
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
@@ -60,18 +60,26 @@ function initialize!(
         nlsolver::NLSolver{<:NonlinearSolveAlg, true},
         integrator::SciMLBase.DEIntegrator
     )
-    (; uprev, t, p, dt, opts, f) = integrator
+    (; u, uprev, t, p, dt, opts, f) = integrator
     (; z, tmp, ztmp, γ, α, iter, cache, method, alg) = nlsolver
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
+    if cache.weight !== nothing
+        weight = cache.weight
+        calculate_residuals!(
+            weight, fill!(weight, one(eltype(u))), uprev, u,
+            opts.abstol, opts.reltol, opts.internalnorm, t
+        )
+    end
+
     (; ustep, atmp, tstep, k, invγdt) = cache
 
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.nnonliniter += cache.cache.stats.nsteps
         integrator.stats.njacs += cache.cache.stats.njacs
+        integrator.stats.nsolve += cache.cache.stats.nsolve
     end
 
     nlstep_data = f.nlstep_data
@@ -93,11 +101,15 @@ function initialize!(
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
             W_γdt = cache.W_γdt
             first_call = iszero(W_γdt)
-            should_update = first_call || alg.always_new ||
-                nlsolver.status === Divergence ||
+            # Mirror the legacy do_newJW split: a fresh Jacobian is only needed when the
+            # iteration failed or on first use, while a dt/gamma change merely requires
+            # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
+            # Jacobian evaluation is not).
+            new_jac = first_call || alg.always_new || nlsolver.status === Divergence
+            new_w = new_jac ||
                 abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
-            if should_update
-                _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep)
+            if new_w
+                _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
                 cache.new_W = true
             else
                 cache.new_W = false
@@ -108,24 +120,32 @@ function initialize!(
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+        if length(cache.cache.u) != length(z)
+            new_prob = SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            cache.prob = new_prob
+            cache.cache = init(new_prob, cache.cache.alg)
+        else
+            SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+        end
     end
     return nothing
 end
 
-function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep)
+function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = true)
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if SciMLBase.has_jac(f)
-        f.jac(J, uprev, p, tstep)
-    elseif uf !== nothing
-        uf.f = nlsolve_f(f, alg)
-        uf.t = tstep
-        if !(p isa SciMLBase.NullParameters)
-            uf.p = p
+    if new_jac
+        if SciMLBase.has_jac(f)
+            f.jac(J, uprev, p, tstep)
+        elseif uf !== nothing
+            uf.f = nlsolve_f(f, alg)
+            uf.t = tstep
+            if !(p isa SciMLBase.NullParameters)
+                uf.p = p
+            end
+            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
     jacobian2W!(W, mass_matrix, dtgamma, J)
     nlcache.W_γdt = dtgamma
@@ -250,7 +270,10 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     if W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by out-of-place Newton solve.")
+        error(
+            "Out-of-place NLNewton does not support non-concrete W of type $(typeof(W)). " *
+                "Use the in-place form (define f!(du, u, p, t)) or supply a concrete jac_prototype."
+        )
     end
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
@@ -668,5 +691,18 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
     # resize J and W (or rather create new ones of appropriate size and type)
     resize_J_W!(nlcache, integrator, i)
 
+    return nothing
+end
+
+function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrator, i::Int)
+    nlcache.ustep === nothing || resize!(nlcache.ustep, i)
+    nlcache.k === nothing || resize!(nlcache.k, i)
+    nlcache.atmp === nothing || resize!(nlcache.atmp, i)
+    nlcache.du1 === nothing || resize!(nlcache.du1, i)
+    nlcache.weight === nothing || resize!(nlcache.weight, i)
+    nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
+    nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    nlcache.W_γdt = zero(nlcache.W_γdt)
+    nlcache.new_W = true
     return nothing
 end

@@ -1,7 +1,7 @@
 name = "StochasticDiffEqLeaping"
 uuid = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.0"
+version = "2.0.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -40,7 +40,7 @@ OrdinaryDiffEqNonlinearSolve = "2"
 Pkg = "1"
 RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.10.0"
+SciMLBase = "3.30.0"
 StaticArrays = "1.9.18"
 StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"

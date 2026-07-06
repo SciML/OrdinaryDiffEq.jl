@@ -98,7 +98,7 @@ mutable struct DAEResidualJacobianWrapper{
     end
 end
 
-function SciMLBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
+function ConstructionBase.setproperties(wrap::DAEResidualJacobianWrapper, patch::NamedTuple)
     for key in keys(patch)
         setproperty!(wrap, key, patch[key])
     end
@@ -318,14 +318,6 @@ function build_nlsolver(
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-        du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
-        linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
-        linsolve = init(
-            linprob, wrapprecs(alg.linsolve, W, weight),
-            alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-            assumptions = LinearSolve.OperatorAssumptions(true),
-            verbose = verbose.linear_verbosity
-        )
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
@@ -334,8 +326,15 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
-            use_w_reuse = !isdae && f.nlstep_data === nothing && W isa AbstractMatrix &&
-                !(W isa AbstractSciMLOperator)
+            W_for_reuse = if W isa WOperator && W.J !== nothing &&
+                    !(W.J isa AbstractSciMLOperator)
+                W._concrete_form
+            else
+                W
+            end
+            use_w_reuse = !isdae && f.nlstep_data === nothing &&
+                W_for_reuse isa AbstractMatrix &&
+                !(W_for_reuse isa AbstractSciMLOperator)
             prob = if f.nlstep_data !== nothing
                 f.nlstep_data.nlprob
             else
@@ -346,7 +345,7 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    nlf_jac! = let W = W
+                    nlf_jac! = let W = W_for_reuse
                         (J_out, z, p) -> (copyto!(J_out, W); J_out)
                     end
                     NonlinearProblem(
@@ -363,18 +362,28 @@ function build_nlsolver(
                     )
                 end
             end
-            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
+            inner_alg = _nlalg_with_linsolve(nlalg.alg, wrapprecs(alg.linsolve, W, weight))
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
                 use_w_reuse ? J : nothing,
-                use_w_reuse ? W : nothing,
+                use_w_reuse ? W_for_reuse : nothing,
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
+                weight,
                 zero(tstep), true
             )
         else
+            du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
+            linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
+            linsolve = init(
+                linprob, wrapprecs(alg.linsolve, W, weight),
+                alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+                assumptions = LinearSolve.OperatorAssumptions(true),
+                verbose = verbose.linear_verbosity
+            )
+
             # Build separated DAE Jacobian cache if applicable
             if isdae
                 if islinear(f) || SciMLBase.has_jac(f) ||
@@ -504,7 +513,7 @@ function build_nlsolver(
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing,
+                nothing, nothing, nothing, nothing, nothing, nothing,
                 zero(tstep), true
             )
         else
@@ -716,7 +725,7 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
     nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve, i)
 
     # make it reset everything since the caches changed size!
-    nlsolver.cache.firstcall = true
+    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
 
     return nothing
 end

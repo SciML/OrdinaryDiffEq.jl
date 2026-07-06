@@ -1,7 +1,7 @@
 name = "StochasticDiffEqRODE"
 uuid = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.0"
+version = "2.0.1"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -30,7 +30,7 @@ OrdinaryDiffEqCore = "4"
 Pkg = "1"
 RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.10.0"
+SciMLBase = "3.30.0"
 StaticArrays = "1.9.14"
 StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"

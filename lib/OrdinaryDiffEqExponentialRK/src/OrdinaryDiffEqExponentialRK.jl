@@ -1,30 +1,35 @@
 module OrdinaryDiffEqExponentialRK
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, ismultistep,
+import OrdinaryDiffEqCore: alg_adaptive_order, ismultistep,
     OrdinaryDiffEqExponentialAlgorithm,
-    _unwrap_val, OrdinaryDiffEqMutableCache,
+    OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache,
     @cache, alg_cache,
-    initialize!, perform_step!, unwrap_alg,
-    OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
+    perform_step!, unwrap_alg,
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm,
     ExponentialAlgorithm, fsal_typeof, isdtchangeable,
-    calculate_residuals, calculate_residuals!,
     full_cache, get_fsalfirstlast,
-    generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad
+    generic_solver_docstring, _fixup_ad
 import OrdinaryDiffEqCore
-using RecursiveArrayTools
-using MuladdMacro, FastBroadcast
+using RecursiveArrayTools: RecursiveArrayTools
+import RecursiveArrayTools: recursivecopy!
+using MuladdMacro: MuladdMacro, @muladd
+using FastBroadcast: FastBroadcast, @..
 using LinearAlgebra: axpy!, mul!
 import DiffEqBase
-import DiffEqBase: prepare_alg
-using ExponentialUtilities
-import RecursiveArrayTools: recursivecopy!
-using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper,
-    calc_J, calc_J!
-import ADTypes: AutoForwardDiff, AbstractADType
+import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
+using ExponentialUtilities: ExponentialUtilities, ExpvCache, KrylovSubspace,
+    PhivCache, arnoldi, arnoldi!, expv, expv!, phi,
+    phiv, phiv!, phiv_timestep, phiv_timestep!
+# alg_order / _unwrap_val are owned by SciMLBase (re-exported through OrdinaryDiffEqCore);
+# import from the owner to satisfy ExplicitImports' via-owners check.
+import SciMLBase: alg_order, _unwrap_val, UJacobianWrapper, UDerivativeWrapper
+using OrdinaryDiffEqDifferentiation: build_jac_config, calc_J, calc_J!
+import ADTypes: AutoForwardDiff
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, SplitFunction
 
 include("algorithms.jl")
 include("alg_utils.jl")

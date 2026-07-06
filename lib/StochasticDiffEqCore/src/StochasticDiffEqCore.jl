@@ -1,11 +1,15 @@
 module StochasticDiffEqCore
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using DiffEqBase
 
 import ADTypes
 
 import OrdinaryDiffEqCore
+# SDE/RODE/Jump algorithm and cache supertypes plus the shared solver-loop
+# helpers live in OrdinaryDiffEqCore and are not part of its public API; they
+# are dispatched on and extended here (see the EI ignore lists in
+# test/qa/qa.jl).
 import OrdinaryDiffEqCore: ODEIntegrator,
     StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
     StochasticDiffEqCompositeAlgorithm,
@@ -17,101 +21,69 @@ import OrdinaryDiffEqCore: ODEIntegrator,
     StochasticDiffEqJumpDiffusionAlgorithm, StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
     StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
-    default_controller, PredictiveController,
-    beta2_default, beta1_default, gamma_default,
+    beta2_default, beta1_default,
     qmin_default, qmax_default, qsteady_min_default,
-    qsteady_max_default,
-    stepsize_controller!, accept_step_controller,
-    step_accept_controller!,
-    step_reject_controller!, PIController, DummyController, issplit
+    qsteady_max_default, issplit,
+    is_composite_algorithm, perform_step!, handle_callback_modifiers!
 
-# Import shared loop functions from OrdinaryDiffEqCore.
-import OrdinaryDiffEqCore: handle_callbacks!, handle_tstop!,
-    solution_endpoint_match_cur_integrator!,
-    _savevalues!, _postamble!,
-    is_composite_cache, is_composite_algorithm, final_progress,
-    loopheader!, loopfooter!, _loopfooter!, _step!, perform_step!,
-    isaposteriori,
-    increment_accept!, increment_reject!,
-    calc_dt_propose!, fix_dt_at_bounds!, modify_dt_for_tstops!,
-    log_step!, choose_algorithm!, update_uprev!,
-    alg_extrapolates, isfsal,
-    accept_noise!, reject_noise!, save_noise!, noise_curt, is_noise_saveable,
-    reinit_noise!, _determine_initdt, is_constant_cache,
-    handle_callback_modifiers!,
-    initialize_callbacks!,
-    current_extrapolant, current_extrapolant!
-
-using RecursiveArrayTools
-using DiffEqNoiseProcess, Random, ArrayInterface
-using SimpleNonlinearSolve, ForwardDiff, StaticArrays, MuladdMacro, FiniteDiff, Base.Threads
-using Adapt
+using RecursiveArrayTools: RecursiveArrayTools, ArrayPartition,
+    recursive_bottom_eltype, recursive_unitless_bottom_eltype,
+    recursive_unitless_eltype, recursivecopy
+using DiffEqNoiseProcess: DiffEqNoiseProcess, CompoundPoissonProcess,
+    CompoundPoissonProcess!, NoiseProcess, NoiseTransport, RSWM,
+    WienerProcess, WienerProcess!
+using ArrayInterface: ArrayInterface
+using SimpleNonlinearSolve: SimpleNonlinearSolve, SimpleTrustRegion
+using ForwardDiff: ForwardDiff
+using StaticArrays: StaticArrays, SArray
+using MuladdMacro: MuladdMacro, @muladd
+using FiniteDiff: FiniteDiff
+using Adapt: Adapt, adapt
 
 import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN,
     ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
 using SciMLOperators: MatrixOperator, WOperator
 
-using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
-    UDerivativeWrapper
+using Logging: Logging
+using SparseArrays: SparseArrays, issparse
 
-import RecursiveArrayTools: chain
+# DEVerbosity is owned (and made public) by DiffEqBase but also re-exported
+# through OrdinaryDiffEqCore; import it from the owner.
+using DiffEqBase: DEVerbosity
 
-using Logging, SparseArrays
-
-using SciMLLogging: AbstractVerbositySpecifier, AbstractVerbosityPreset,
-    None, Minimal, Standard, Detailed, All,
-    Silent, DebugLevel, InfoLevel, WarnLevel, ErrorLevel, @SciMLMessage
-
-using OrdinaryDiffEqCore: DEVerbosity
-
-using LinearAlgebra, Random
+using LinearAlgebra: LinearAlgebra, I, mul!
+using Random: Random
 
 import ForwardDiff.Dual
 
 import FastPower
 
-import DiffEqBase: step!, initialize!, AbstractDEAlgorithm,
-    AbstractSDEAlgorithm, AbstractRODEAlgorithm, DEIntegrator,
-    DECache, AbstractSDEIntegrator, AbstractRODEIntegrator,
-    AbstractContinuousCallback,
-    Tableau, AbstractSDDEIntegrator
+import DiffEqBase: step!, initialize!
 
 # Integrator Interface
-import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+import DiffEqBase: addat!, full_cache, user_cache, u_cache, du_cache,
     rand_cache, ratenoise_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
     terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
     savevalues!, add_tstop!, add_saveat!, set_reltol!,
-    set_abstol!, postamble!, last_step_failed, has_Wfact, has_jac,
-    get_tstops, get_tstops_array, get_tstops_max
+    set_abstol!
 
-using DiffEqBase: check_error!, is_diagonal_noise, @..
-
-using OrdinaryDiffEqCore: set_new_W!, get_W, _vec, _reshape
-
-if isdefined(OrdinaryDiffEqCore, :FastConvergence)
-    using OrdinaryDiffEqCore:
-        FastConvergence, Convergence, SlowConvergence,
-        VerySlowConvergence, Divergence
-
-    import OrdinaryDiffEqCore:
-        calculate_residuals, calculate_residuals!, nlsolve_f,
-        unwrap_cache, islinear
-else
-    using DiffEqBase:
-        FastConvergence, Convergence, SlowConvergence, VerySlowConvergence,
-        Divergence
-
-    import DiffEqBase:
-        calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache,
-        islinear
-end
+using DiffEqBase: @..
 
 import SciMLBase
-import SciMLBase: isadaptive, alg_order
+# AbstractDEAlgorithm/AbstractSDDEIntegrator supertypes are owned and exported
+# by SciMLBase; is_diagonal_noise is public SciMLBase API.
+import SciMLBase: isadaptive, alg_order, AbstractDEAlgorithm,
+    AbstractSDDEIntegrator, is_diagonal_noise
+using SciMLBase: CallbackSet, DiscreteProblem, DynamicalSDEFunction,
+    NonlinearFunction, NonlinearProblem, ODEAliasSpecifier, SDEProblem,
+    get_tmp_cache, isinplace, reinit!
+using CommonSolve: init, solve, solve!
+using SciMLOperators: SciMLOperators
+using DiffEqBase: DiffEqBase
 
-using StochasticDiffEqLevyArea
+using StochasticDiffEqLevyArea: StochasticDiffEqLevyArea, MaxL2, terms_needed
 
 const CompiledFloats = Union{Float32, Float64}
 
@@ -193,7 +165,13 @@ export TauLeapingDrift
 # General functions
 export solve, init, solve!, step!
 
-# Export misc tools (check functions)
-export checkSRIOrder, checkSRAOrder
+# `@cache` is the cache-definition extension macro that downstream StochasticDiffEq
+# solver subpackages import to define their `alg_cache` structs plus the associated
+# `full_cache`/`rand_cache`/`ratenoise_cache` accessors (mirrors the public `@cache`
+# in OrdinaryDiffEqCore). It is made public (not exported) so ExplicitImports'
+# public-API checks recognize it as the supported solver-author surface.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, Symbol("@cache")))
+end
 
 end # module

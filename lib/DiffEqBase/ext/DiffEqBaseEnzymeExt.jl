@@ -114,6 +114,7 @@ module DiffEqBaseEnzymeExt
             # `sensealg` is inactive (see augmented_primal note); skip its slot
             # whether it arrived as Const or as a runtime-activity-promoted
             # Duplicated/MixedDuplicated/Active.
+            rta = Enzyme.EnzymeRules.runtime_activity(config) # detect runtime activity
             for (darg, ptr) in zip(dargs, (func, prob, sensealg, u0, p, args...))
                 if ptr isa Enzyme.Const
                     continue
@@ -124,9 +125,18 @@ module DiffEqBaseEnzymeExt
                 if darg == ChainRulesCore.NoTangent()
                     continue
                 end
+                # Under `set_runtime_activity` (detected by rta), a runtime-inactive value arrives as
+                # Duplicated/MixedDuplicated with its shadow ALIASING the primal
+                # (`dval === val`). Accumulating the cotangent into such a shadow writes
+                # gradient values into the caller's primal data (e.g. the `u0` of a
+                # `Const` problem whose array was reused via `remake`), silently
+                # corrupting subsequent calls. Skip them: a runtime-inactive value
+                # accumulates nowhere, exactly as if it were `Const`.
                 if ptr isa MixedDuplicated
+                    rta && ptr.dval[] === ptr.val && continue
                     _accumulate_tangent!(ptr.dval[], darg)
                 else
+                    rta && ptr.dval === ptr.val && continue
                     _accumulate_tangent!(ptr.dval, darg)
                 end
             end

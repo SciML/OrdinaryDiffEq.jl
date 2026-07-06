@@ -16,13 +16,24 @@
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
         result_dt = tdir * max(smalldt, dtmin)
         @SciMLMessage(
             lazy"Using default small timestep for DAE: dt = $(result_dt)",
+            integrator.opts.verbose, :shampine_dt
+        )
+        return result_dt
+    end
+
+    # With zero continuous states there is nothing to estimate from (and indexing
+    # into the empty state would throw), so fall back to a finite default dt.
+    if isempty(u0)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(
+            lazy"Empty initial state, using default small timestep: dt = $(result_dt)",
             integrator.opts.verbose, :shampine_dt
         )
         return result_dt
@@ -183,7 +194,7 @@
             (d₁ < 1 // 10^(5)), smalldt,
         convert(
             _tType,
-            oneunit_tType * DiffEqBase.value(
+            oneunit_tType * SciMLBase.value(
                 (d₀ / d₁) /
                     100
             )
@@ -267,7 +278,7 @@
         dt₁ = convert(
             _tType,
             oneunit_tType *
-                DiffEqBase.value(
+                SciMLBase.value(
                 10.0^(-(2 + log10(max_d₁d₂)) / order)
             )
         )
@@ -324,10 +335,16 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
+        return tdir * max(smalldt, dtmin)
+    end
+
+    # With zero continuous states there is nothing to estimate from, so fall back
+    # to a finite default dt rather than indexing into the empty state.
+    if isempty(u0)
         return tdir * max(smalldt, dtmin)
     end
 
@@ -369,7 +386,7 @@ end
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
-        dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
+        dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
     end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
@@ -400,7 +417,7 @@ end
     else
         dt₁ = _tType(
             oneunit_tType *
-                DiffEqBase.value(
+                SciMLBase.value(
                 10^(-(2 + log10(max_d₁d₂)) / order)
             )
         )

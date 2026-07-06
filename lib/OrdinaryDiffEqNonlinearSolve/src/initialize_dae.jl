@@ -176,7 +176,7 @@ function _initialize_dae!(
         # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
         # These non-dual values are thus used to make the caches
         #_du = SciMLBase.value.(du)
-        _u0 = DiffEqBase.value.(u0)
+        _u0 = SciMLBase.value.(u0)
 
         # If not doing auto-diff of the solver, save an allocation
         if typeof(u0) === typeof(_u0)
@@ -195,7 +195,7 @@ function _initialize_dae!(
         end
 
         nlequation! = @closure (out, u, p) -> begin
-            TP = DiffEqBase.anyeltypedual(p)
+            TP = SciMLBase.anyeltypedual(p)
             if TP <: Dual
                 T = Base.promote_type(eltype(u), TP)
             else
@@ -370,7 +370,7 @@ function _initialize_dae!(
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
     #_du = SciMLBase.value.(du)
-    _u0 = DiffEqBase.value.(u0)
+    _u0 = SciMLBase.value.(u0)
 
     # If not doing auto-diff of the solver, save an allocation
     if typeof(u0) === typeof(_u0)
@@ -388,7 +388,7 @@ function _initialize_dae!(
     end
 
     nlequation! = @closure (out, u, p) -> begin
-        TP = DiffEqBase.anyeltypedual(p)
+        TP = SciMLBase.anyeltypedual(p)
         if TP <: Dual
             T = Base.promote_type(eltype(u), TP)
         else
@@ -549,11 +549,11 @@ function _initialize_dae!(
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
-    _u = DiffEqBase.value.(u)
+    _u = SciMLBase.value.(u)
 
     # If auto-diff of the solver, should be non-dual since NonlinearSolve does not differentiate the solver
     if typeof(u) !== typeof(_u)
-        tmp = DiffEqBase.value.(tmp)
+        tmp = SciMLBase.value.(tmp)
     end
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
@@ -571,7 +571,7 @@ function _initialize_dae!(
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        TP = DiffEqBase.anyeltypedual(p)
+        TP = SciMLBase.anyeltypedual(p)
         if TP <: Dual
             T = Base.promote_type(eltype(x), TP)
         else
@@ -706,8 +706,8 @@ function _initialize_dae!(
 
     # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
     # These non-dual values are thus used to make the caches
-    _du = DiffEqBase.value.(du)
-    _u = DiffEqBase.value.(u)
+    _du = SciMLBase.value.(du)
+    _u = SciMLBase.value.(u)
 
     # If not doing auto-diff of the solver, save an allocation
     if typeof(u) === typeof(_u)
@@ -738,7 +738,7 @@ function _initialize_dae!(
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        TP = DiffEqBase.anyeltypedual(p)
+        TP = SciMLBase.anyeltypedual(p)
         if TP <: Dual
             T = Base.promote_type(eltype(x), TP)
         else

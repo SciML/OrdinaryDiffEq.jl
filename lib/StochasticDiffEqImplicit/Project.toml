@@ -1,7 +1,7 @@
 name = "StochasticDiffEqImplicit"
 uuid = "5080b986-4c76-4669-b5dc-373a41579d5b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -44,7 +44,7 @@ OrdinaryDiffEqNonlinearSolve = "2"
 Pkg = "1"
 RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.10.0"
+SciMLBase = "3.30.0"
 StaticArrays = "1.9.18"
 StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"

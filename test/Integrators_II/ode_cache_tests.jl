@@ -3,6 +3,8 @@ using Random
 using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
 using OrdinaryDiffEqBDF, OrdinaryDiffEqExtrapolation, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqSSPRK
+using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
+using NonlinearSolve: NewtonRaphson
 Random.seed!(213)
 CACHE_TEST_ALGS = [
     Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK43(), SSPRK104(),
@@ -75,6 +77,21 @@ sol = solve(prob, TRBDF2(), callback = callback, dt = 1 / 2)
 sol = solve(
     prob, TRBDF2(linsolve = LinearSolve.KrylovJL_GMRES()),
     callback = callback
+)
+@test length(sol.u[end]) > 1
+sol = solve(
+    prob, TRBDF2(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
+    callback = callback, dt = 1 / 2
+)
+@test length(sol.u[end]) > 1
+sol = solve(
+    prob, KenCarp4(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
+    callback = callback, dt = 1 / 2
+)
+@test length(sol.u[end]) > 1
+sol = solve(
+    prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
+    callback = callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
 

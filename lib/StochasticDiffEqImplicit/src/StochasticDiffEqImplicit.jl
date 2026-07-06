@@ -1,10 +1,12 @@
 module StochasticDiffEqImplicit
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+import StochasticDiffEqCore
+import DiffEqBase
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit, default_controller, PIController
+import OrdinaryDiffEqCore: perform_step!, issplit, default_controller, PIController
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, is_split_step, supports_regular_jumps, isadaptive,
@@ -15,25 +17,27 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     unwrap_alg,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @.., SplitSDEFunction
+import DiffEqBase: @.., SplitSDEFunction, initialize!
 import DiffEqBase: calculate_residuals, calculate_residuals!
-import DiffEqBase: full_cache, rand_cache, ratenoise_cache, has_Wfact
+import DiffEqBase: full_cache, rand_cache, ratenoise_cache
 
 import MuladdMacro: @muladd
 import SciMLBase
+import SciMLBase: is_diagonal_noise, has_Wfact, _vec, _reshape, _unwrap_val
 
-using OrdinaryDiffEqCore: _vec, _reshape, current_extrapolant, current_extrapolant!,
+using OrdinaryDiffEqCore: current_extrapolant!,
     isnewton, set_new_W!, get_W
-using OrdinaryDiffEqNonlinearSolve: NLSolver, nlsolvefail, nlsolve!, build_nlsolver,
+using OrdinaryDiffEqNonlinearSolve: nlsolvefail, nlsolve!, build_nlsolver,
     markfirststage!, NLNewton
 import OrdinaryDiffEqDifferentiation
-using OrdinaryDiffEqDifferentiation: calc_J, calc_J!, dolinsolve, get_W
+using OrdinaryDiffEqDifferentiation: calc_J, calc_J!, dolinsolve
 
 using JumpProcesses: JumpProblem
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
-using ForwardDiff, FiniteDiff
+using LinearAlgebra: LinearAlgebra, mul!, norm
+using StaticArrays: StaticArrays, SArray
+using RecursiveArrayTools: RecursiveArrayTools
+using ForwardDiff: ForwardDiff
+using FiniteDiff: FiniteDiff
 import ADTypes
 
 include("tableaus.jl")

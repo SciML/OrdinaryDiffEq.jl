@@ -162,13 +162,13 @@ end
     @test_throws SciMLBase.CommonKwargError sol = solve(prob, Tsit5())
 end
 
-@testset "derivative_discontinuity! sticky-on-true across callbacks" begin
+@testset "derivative_discontinuity! order-independent across callbacks" begin
     # When several callbacks fire on the same step, a derivative discontinuity
     # flagged by *any* callback must survive, regardless of evaluation order and
-    # regardless of other callbacks declaring no discontinuity. The integrator
-    # field is sticky-on-true within a step; an explicit `false` only sticks when
-    # no callback flagged `true`. If no callback calls the setter at all, the
-    # safe default (treat as discontinuity) is preserved.
+    # regardless of other callbacks declaring no discontinuity (any-true-wins). An
+    # explicit `false` only takes effect when no callback flagged `true`. If no
+    # callback calls the setter at all, the safe default (treat as discontinuity)
+    # is preserved.
     prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
 
     flag_true = DiscreteCallback(
@@ -181,25 +181,30 @@ end
     )
     silent = DiscreteCallback((u, t, integ) -> true, integ -> nothing)
 
-    # Helper: step once and read the post-callback step-level state.
-    function step_flags(cbset)
+    # Helper: step once and read the post-callback step-level discontinuity flag.
+    function step_flag(cbset)
         integ = init(prob, Tsit5(); callback = cbset)
         step!(integ)
-        return integ.derivative_discontinuity, integ.user_set_discontinuity
+        return integ.derivative_discontinuity
     end
 
     # true wins regardless of order
-    @test step_flags(CallbackSet(flag_true, flag_false)) == (true, true)
-    @test step_flags(CallbackSet(flag_false, flag_true)) == (true, true)
+    @test step_flag(CallbackSet(flag_true, flag_false)) == true
+    @test step_flag(CallbackSet(flag_false, flag_true)) == true
 
-    # all-false: explicit false sticks, no recomputation flagged
-    @test step_flags(CallbackSet(flag_false, flag_false)) == (false, true)
+    # all-false: no recomputation flagged
+    @test step_flag(CallbackSet(flag_false, flag_false)) == false
 
-    # no setter call at all: safe default keeps discontinuity, marked unset
-    @test step_flags(CallbackSet(silent)) == (true, false)
+    # no setter call at all: safe default keeps discontinuity
+    @test step_flag(CallbackSet(silent)) == true
 
-    # a silent callback does not suppress another callback's explicit false
-    @test step_flags(CallbackSet(silent, flag_false)) == (true, true)
+    # a silent callback (default-on) is not suppressed by another callback's false
+    @test step_flag(CallbackSet(silent, flag_false)) == true
+
+    # a single true-flagging callback must still register at step level even though
+    # it triggers reeval_internals_due_to_modification! (regression: the verdict was
+    # previously re-read after reeval had cleared the flag, reporting false).
+    @test step_flag(CallbackSet(flag_true)) == true
 
     # full solves complete in both orders
     @test solve(prob, Tsit5(); callback = CallbackSet(flag_true, flag_false)).retcode ==

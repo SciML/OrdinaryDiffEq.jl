@@ -15,14 +15,27 @@ function prepare_alg(alg::MRAB, u0::AbstractArray, p, prob)
 end
 
 alg_order(::Union{MRIGARKERK22a, MRIGARKERK22b}) = 2
-isfsal(::Union{MRIGARKERK22a, MRIGARKERK22b}) = false
+alg_order(::MRIGARKERK33a) = 3
+alg_order(::MRIGARKERK45a) = 4
+isfsal(::Union{MRIGARKERK22a, MRIGARKERK22b, MRIGARKERK33a, MRIGARKERK45a}) = false
 
 function prepare_alg(
-        alg::Union{MRIGARKERK22a, MRIGARKERK22b}, u0::AbstractArray, p, prob
+        alg::Union{MRIGARKERK22a, MRIGARKERK22b, MRIGARKERK33a, MRIGARKERK45a},
+        u0::AbstractArray, p, prob
     )
     alg.m >= 1 || throw(ArgumentError("$(nameof(typeof(alg))): `m` must be ≥ 1"))
     return alg
 end
+
+alg_order(::MRIGARKIRK21a) = 2
+isfsal(::MRIGARKIRK21a) = false
+
+function prepare_alg(alg::MRIGARKIRK21a, u0::AbstractArray, p, prob)
+    alg.m >= 1 || throw(ArgumentError("MRIGARKIRK21a: `m` must be ≥ 1"))
+    return alg
+end
+
+nlsolve_f(f, ::MRIGARKIRK21a) = f isa SplitFunction ? f.f2 : f
 
 alg_order(::MIS) = 2
 isfsal(::MIS) = false

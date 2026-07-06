@@ -191,6 +191,27 @@ function qa_group()
     return @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
 end
 
+function activate_gpu_env()
+    Pkg.activate(joinpath(@__DIR__, "gpu"))
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    return Pkg.instantiate()
+end
+
+# Root (integration) GPU tests. The test/gpu environment pulls the full
+# OrdinaryDiffEq stack plus the relevant sublibraries and runs on the self-hosted
+# `gpu` runner (Julia 1, where [sources] is honored natively). Every file in
+# test/gpu is included, so the set stays in sync as GPU tests are added or
+# removed there without touching this dispatch.
+function gpu_group()
+    is_APPVEYOR && return
+    activate_gpu_env()
+    gpudir = joinpath(@__DIR__, "gpu")
+    for f in sort(filter(f -> endswith(f, ".jl"), readdir(gpudir)))
+        @time @eval @safetestset $("GPU: " * f) include($(joinpath(gpudir, f)))
+    end
+    return nothing
+end
+
 @time begin
     # Monorepo sublibrary routing. The root reads GROUP to pick a `lib/<sub>`
     # sublibrary, transitively develops its `[sources]` on Julia < 1.11, then
@@ -278,6 +299,7 @@ end
                 "Downstream" => downstream_group,
                 "AD" => ad_group,
                 "ODEInterfaceRegression" => odeinterface_group,
+                "GPU" => gpu_group,
             ),
             # QA runs in the root test environment (no per-group Project.toml);
             # its body is the ExplicitImports testset, not the standard

@@ -570,16 +570,16 @@ end
 @inline function stepsize_controller!(integrator, cache::IControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
-    EEst = DiffEqBase.value(get_EEst(integrator))
+    EEst = SciMLBase.value(get_EEst(integrator))
 
     if iszero(EEst)
         q = inv(qmax)
     else
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qtmp = fastpower(EEst, expo) / gamma
-        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
+        @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
-        cache.dtreject = DiffEqBase.value(integrator.dt) / q
+        cache.dtreject = SciMLBase.value(integrator.dt) / q
     end
     return q
 end
@@ -704,7 +704,7 @@ end
     (; qmin, qmax, gamma) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
     (; beta1, beta2) = controller
-    EEst = DiffEqBase.value(get_EEst(integrator))
+    EEst = SciMLBase.value(get_EEst(integrator))
 
     if iszero(EEst)
         q = inv(qmax)
@@ -721,7 +721,7 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
     (; controller) = cache
     (; qsteady_min, qsteady_max) = controller.basic
     qoldinit = controller.qoldinit
-    EEst = DiffEqBase.value(get_EEst(integrator))
+    EEst = SciMLBase.value(get_EEst(integrator))
 
     t = integrator.t
     dt = integrator.dt
@@ -902,7 +902,7 @@ end
     (; controller) = cache
     beta1, beta2, beta3 = controller.beta
 
-    EEst = DiffEqBase.value(get_EEst(integrator))
+    EEst = SciMLBase.value(get_EEst(integrator))
 
     # If the error estimate is zero, we can increase the step size as much as
     # desired. This additional check fixes problems of the code below when the
@@ -1075,7 +1075,7 @@ end
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
-    EEst = DiffEqBase.value(get_EEst(integrator))
+    EEst = SciMLBase.value(get_EEst(integrator))
     if iszero(EEst)
         q = inv(qmax)
     else
@@ -1092,7 +1092,7 @@ end
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qtmp = fastpower(EEst, expo) / fac
-        @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
+        @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         cache.qold = q
     end
     return q
@@ -1103,7 +1103,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
 
-    EEst = DiffEqBase.value(get_EEst(integrator))
+    EEst = SciMLBase.value(get_EEst(integrator))
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
@@ -1117,8 +1117,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     if qsteady_min <= qacc <= qsteady_max
         qacc = one(qacc)
     end
-
-    cache.dtacc = DiffEqBase.value(integrator.dt)
+    cache.dtacc = SciMLBase.value(integrator.dt)
     cache.erracc = max(1.0e-2, EEst)
 
     return handle_disco_accept!(integrator, cache.controller.basic, integrator.t, integrator.dt / qacc)

@@ -1,41 +1,48 @@
 module OrdinaryDiffEqFIRK
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, default_controller, PredictiveController, PIController,
-    OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+import OrdinaryDiffEqCore: unwrap_alg,
+    default_controller, PredictiveController, PIController,
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, @threaded, isthreaded,
-    PolyesterThreads,
-    isfsal, full_cache, constvalue, _unwrap_val,
+    alg_cache, @threaded, isthreaded,
+    constvalue,
     differentiation_rk_docstring, trivial_limiter!,
-    _ode_interpolant!, _ode_addsteps!, AbstractController,
     qmax_default, alg_adaptive_order,
-    stepsize_controller!, step_accept_controller!,
-    step_reject_controller!,
+    step_accept_controller!, step_reject_controller!,
     alg_can_repeat_jac, NewtonAlgorithm,
-    fac_default_gamma,
     get_current_adaptive_order, get_fsalfirstlast,
     get_current_alg_order,
-    isfirk, generic_solver_docstring,
-    _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, set_discontinuity
-using MuladdMacro, DiffEqBase, RecursiveArrayTools, Polyester
-using SciMLOperators: AbstractSciMLOperator
-using LinearAlgebra: I, UniformScaling, mul!, lu, dot, eigvals
+    isfirk,
+    _fixup_ad, perform_step!,
+    LinearAliasSpecifier, set_discontinuity,
+    Convergence, FastConvergence, NLStatus,
+    VerySlowConvergence, Divergence, get_new_W_γdt_cutoff
+import SciMLBase
+import SciMLBase: alg_order, _vec, _reshape, _unwrap_val,
+    UDerivativeWrapper, UJacobianWrapper, value,
+    LinearProblem, get_tmp_cache, init
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
+using MuladdMacro: @muladd
+using RecursiveArrayTools: recursivefill!
+import Polyester
+using LinearAlgebra: I, UniformScaling, mul!, lu, dot
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, has_stiff_interpolation
+import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, _ode_addsteps!,
+    has_stiff_interpolation
 import FastPower: fastpower
-using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config,
-    UDerivativeWrapper, calc_J!, dolinsolve, calc_J,
+using OrdinaryDiffEqDifferentiation: build_J_W, build_jac_config,
+    calc_J!, dolinsolve, calc_J,
     islinearfunction
-using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergence, NLStatus,
-    VerySlowConvergence,
-    Divergence, get_new_W_γdt_cutoff
-import ADTypes: AutoForwardDiff, AbstractADType
+import ADTypes: AutoForwardDiff
+import SciMLOperators
+import SciMLOperators: AbstractSciMLOperator
+# Load-bearing runtime dependency: provides the nonlinear-solver machinery the FIRK
+# integrators dispatch into. The convergence-state names FIRK uses are owned by
+# OrdinaryDiffEqCore (imported above), so this is a module-only import to keep the
+# dependency from registering as stale.
+import OrdinaryDiffEqNonlinearSolve
 
 import OrdinaryDiffEqCore: PredictiveControllerCache
 
@@ -50,7 +57,7 @@ else
     end
 end
 
-using Reexport
+using Reexport: @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")

@@ -13,6 +13,7 @@ alg_order(alg::Kvaerno3) = 3
 alg_order(alg::Kvaerno4) = 4
 alg_order(alg::Kvaerno5) = 5
 alg_order(alg::ESDIRK54I8L2SA) = 5
+alg_order(alg::ESDIRK325L2SA) = 3
 alg_order(alg::ESDIRK436L2SA2) = 4
 alg_order(alg::ESDIRK437L2SA) = 4
 alg_order(alg::ESDIRK547L2SA2) = 5
@@ -35,7 +36,7 @@ alg_order(alg::Hairer42) = 4
 function isesdirk(
         alg::Union{
             KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58,
-            Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
+            Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK325L2SA, ESDIRK437L2SA,
             ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
             ESDIRK659L2SA, CFNLIRK3,
         }

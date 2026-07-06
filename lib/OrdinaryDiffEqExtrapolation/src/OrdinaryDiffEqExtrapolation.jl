@@ -1,39 +1,50 @@
 module OrdinaryDiffEqExtrapolation
 
-import OrdinaryDiffEqCore: alg_order, alg_maximum_order, get_current_adaptive_order,
-    get_current_alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_maximum_order, get_current_adaptive_order,
+    get_current_alg_order,
     accept_step_controller,
     beta2_default, beta1_default, gamma_default,
-    initialize!, perform_step!, @cache, unwrap_alg,
-    isthreaded, isadaptive, PIController,
-    step_accept_controller!, calculate_residuals,
+    perform_step!, @cache, unwrap_alg,
+    isthreaded, PIController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     reset_alg_dependent_opts!, AbstractController,
     step_accept_controller!, step_reject_controller!,
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
     alg_cache, CompiledFloats, @threaded, stepsize_controller!,
-    full_cache, qmin_default, qmax_default,
-    constvalue, PolyesterThreads, Sequential, BaseThreads,
-    _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
-    _reshape, _vec, get_fsalfirstlast, generic_solver_docstring,
-    differentiation_rk_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, @SciMLMessage, Minimal
-
-using FastBroadcast, MuladdMacro, RecursiveArrayTools, LinearSolve
-import OrdinaryDiffEqCore
-import FastPower
-import OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper, calc_J,
-    WOperator, TimeGradientWrapper, UJacobianWrapper,
-    build_grad_config,
-    build_jac_config, calc_J!, jacobian2W!, dolinsolve
-import ADTypes: AutoForwardDiff, AbstractADType
-
+    full_cache, qmin_default,
+    constvalue, PolyesterThreads,
+    _fixup_ad,
+    get_fsalfirstlast, generic_solver_docstring,
+    differentiation_rk_docstring,
+    LinearAliasSpecifier
 import OrdinaryDiffEqCore: default_controller, AbstractControllerCache, setup_controller_cache,
     get_qmin, get_qmax
+import OrdinaryDiffEqCore
 
-using Reexport
+# Owned by SciMLBase / DiffEqBase / SciMLOperators, re-exported through
+# OrdinaryDiffEqCore / OrdinaryDiffEqDifferentiation — import from the owners directly so
+# ExplicitImports' owner check is satisfied.
+import SciMLBase: alg_order, _unwrap_val, _reshape, _vec,
+    TimeDerivativeWrapper, UDerivativeWrapper,
+    TimeGradientWrapper, UJacobianWrapper
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timedepentdtmin
+
+using FastBroadcast: FastBroadcast, @..
+using MuladdMacro: MuladdMacro, @muladd
+using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
+using LinearSolve: LinearSolve, RFLUFactorization
+import FastPower
+using SciMLOperators: SciMLOperators, WOperator
+import SciMLLogging: @SciMLMessage
+import OrdinaryDiffEqDifferentiation: calc_J,
+    build_grad_config,
+    build_jac_config, calc_J!, jacobian2W!, dolinsolve
+import ADTypes: AutoForwardDiff
+
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, LinearProblem, init
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -18,7 +18,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
-    # The the number of degree for Chebyshev polynomial
+    # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((T(1.5) + abs(dt) * integrator.eigen_est) / T(0.811))) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 3) - 2
@@ -94,13 +94,13 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; k, tmp, uᵢ₋₂, uᵢ₋₁, atmp) = cache
+    (; k, tmp, uᵢ₋₁, atmp) = cache
     (; ms, fp1, fp2, recf) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
-    # The the number of degree for Chebyshev polynomial
+    # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((T(1.5) + abs(dt) * integrator.eigen_est) / T(0.811))) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 3) - 2
@@ -110,7 +110,7 @@ end
     tᵢ₋₁ = t + dt * recf[ccache.start]
     tᵢ₋₂ = t + dt * recf[ccache.start]
     tᵢ₋₃ = t
-    @.. broadcast = false uᵢ₋₂ = uprev
+    @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * recf[ccache.start]) * fsalfirst
     ccache.mdeg < 2 && (@.. broadcast = false u = uᵢ₋₁)
     # for the second to the ms[ccache.mdeg] th stages
@@ -120,9 +120,9 @@ end
         f(k, uᵢ₋₁, p, tᵢ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
-        @.. broadcast = false u = (dt * μ) * k - ν * uᵢ₋₁ - κ * uᵢ₋₂
+        @.. broadcast = false u = (dt * μ) * k - ν * uᵢ₋₁ - κ * tmp
         if i < ccache.mdeg
-            @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+            @.. broadcast = false tmp = uᵢ₋₁
             @.. broadcast = false uᵢ₋₁ = u
         end
         tᵢ₋₃ = tᵢ₋₂
@@ -139,7 +139,7 @@ end
     else
         @.. broadcast = false u = -δt₂ * k
     end
-    c = DiffEqBase.value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
+    c = value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
     tᵢ₋₁ += c
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -185,7 +185,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
-    # The the number of degree for Chebyshev polynomial
+    # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / T(0.353))) + 1
     mdeg = min(max(mdeg, cache.min_stage), cache.max_stage)
     cache.mdeg = max(mdeg, 5) - 4
@@ -249,7 +249,7 @@ end
 
     # Stage-2
     c₂ = a₂₁
-    _c₂ = DiffEqBase.value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
+    _c₂ = value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₂
     uᵢ₋₁ = f(uᵢ₋₁, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -262,7 +262,7 @@ end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
-    _c₃ = DiffEqBase.value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
+    _c₃ = value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₃
     uᵢ₋₂ = f(uᵢ₋₂, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -274,7 +274,7 @@ end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
-    _c₄ = DiffEqBase.value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
+    _c₄ = value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₄
     uᵢ₋₃ = f(uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -324,7 +324,7 @@ end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
-    # The the number of degree for Chebyshev polynomial
+    # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / T(0.353))) + 1
     mdeg = min(max(mdeg, ccache.min_stage), ccache.max_stage)
     ccache.mdeg = max(mdeg, 5) - 4
@@ -400,7 +400,7 @@ end
 
     # Stage-3
     c₃ = a₃₁ + a₃₂
-    _c₃ = DiffEqBase.value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
+    _c₃ = value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₃
     f(k, uᵢ₋₂, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -412,7 +412,7 @@ end
 
     #Stage-4
     c₄ = a₄₁ + a₄₂ + a₄₃
-    _c₄ = DiffEqBase.value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
+    _c₄ = value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₄
     f(k, uᵢ₋₃, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -538,7 +538,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; k, tmp, gprev2, gprev, atmp) = cache
+    (; k, tmp, gprev, atmp) = cache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
@@ -555,7 +555,7 @@ end
     b2 = b1
 
     # stage-1
-    @.. broadcast = false gprev2 = uprev
+    @.. broadcast = false tmp = uprev
     μs = w1 * b1
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
     th2 = zero(T)
@@ -579,11 +579,11 @@ end
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * gprev2 + (T(1) - μ - ν) * uprev +
+        @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (T(1) - νs)
         if (iter < mdeg)
-            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
             th2 = th1
             th1 = th
@@ -1021,7 +1021,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SERK2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    (; uᵢ₋₁, tmp, Sᵢ, atmp, k) = cache
     (; ms, Bᵢ) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
@@ -1038,22 +1038,22 @@ end
     α = (T(5) / 2) / mdeg^2
 
     @.. broadcast = false uᵢ₋₁ = uprev
-    @.. broadcast = false uᵢ₋₂ = uprev
+    @.. broadcast = false tmp = uprev
     @.. broadcast = false Sᵢ = Bᵢ[start] * uprev
     for i in 1:10
         f(k, uᵢ₋₁, p, t + (1 + (i - 1) * internal_deg^2) * α * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = uᵢ₋₁ + α * dt * k
         @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + (i - 1) * internal_deg + 1] * u
-        @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         for j in 2:internal_deg
-            f(k, uᵢ₋₂, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
+            f(k, tmp, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            @.. broadcast = false u = 2 * uᵢ₋₁ - uᵢ₋₂ + 2 * α * dt * k
+            @.. broadcast = false u = 2 * uᵢ₋₁ - tmp + 2 * α * dt * k
             @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + j + (i - 1) * internal_deg] * u
             if j < mdeg
-                @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+                @.. broadcast = false tmp = uᵢ₋₁
                 @.. broadcast = false uᵢ₋₁ = u
             end
         end
@@ -1102,10 +1102,11 @@ end
     mdeg = floor(Int, sqrt(T(1) + T(0.759782816506459) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.598626091572911)))))) + 1
     tsw0 = cache.tsw0
     acoshtsw0 = cache.acoshtsw0
+    sinhacoshtsw0 = cache.sinhacoshtsw0
     w0m1 = T(2) * (sinh(acoshtsw0 / (T(2) * mdeg))^2)
     w0 = T(1) + w0m1
     w0sqm1 = w0m1 * (w0m1 + T(2))
-    dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+    dtsw0 = mdeg * sinhacoshtsw0 / sqrt(w0sqm1)
     d2tsw0 = ((mdeg^2) * tsw0 - w0 * dtsw0) / w0sqm1
     w1 = (onemq * dtsw0 + sqrt((onemq * dtsw0)^2 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
 
@@ -1172,7 +1173,7 @@ end
 
 @muladd function perform_step!(integrator, cache::TSRKC2Cache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
-    (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
+    (; k, tmp, gprev, atmp, constantcache) = cache
 
     T = typeof(one(t))
 
@@ -1185,15 +1186,16 @@ end
     mdeg = floor(Int, sqrt(T(1) + T(0.759782816506459) * abs(dt) * integrator.eigen_est * (onemq + sqrt(T(1) + q * (q - T(0.598626091572911)))))) + 1
     tsw0 = constantcache.tsw0
     acoshtsw0 = constantcache.acoshtsw0
+    sinhacoshtsw0 = constantcache.sinhacoshtsw0
     w0m1 = T(2) * (sinh(acoshtsw0 / (T(2) * mdeg))^2)
     w0 = T(1) + w0m1
     w0sqm1 = w0m1 * (w0m1 + T(2))
-    dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+    dtsw0 = mdeg * sinhacoshtsw0 / sqrt(w0sqm1)
     d2tsw0 = ((mdeg^2) * tsw0 - w0 * dtsw0) / w0sqm1
     w1 = (onemq * dtsw0 + sqrt((onemq * dtsw0)^2 + T(4) * q * tsw0 * d2tsw0)) / (T(2) * d2tsw0)
 
     # stage-1
-    @.. broadcast = false gprev2 = uprev
+    @.. broadcast = false tmp = uprev
     μs = w1 / w0
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
     th2 = zero(T)
@@ -1209,9 +1211,9 @@ end
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * gprev2 + dt * μs * k
+        @.. broadcast = false u = μ * gprev + ν * tmp + dt * μs * k
         if (iter < mdeg)
-            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
             th = μ * th1 + ν * th2 + μs
             th2 = th1
@@ -1290,12 +1292,13 @@ end
         mdeg2 = mdeg^2
         tsw0 = cache.tsw0
         acoshtsw0 = cache.acoshtsw0
+        sinhacoshtsw0 = cache.sinhacoshtsw0
         acoshtsw0dm = acoshtsw0 / mdeg
         w0m1 = T(2) * (sinh(acoshtsw0dm / T(2))^2)
         w0 = T(1) + w0m1
         w0sq = w0^2
         w0sqm1 = w0m1 * (w0m1 + T(2))
-        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+        dtsw0 = mdeg * sinhacoshtsw0 / sqrt(w0sqm1)
         d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
         d3tsw0 = ((T(1) + T(2) * w0sq + mdeg2 * w0sqm1) * dtsw0 - T(3) * mdeg2 * w0 * tsw0) / (w0sqm1^2)
         w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + T(4) * q * dtsw0 * d3tsw0)) / (T(2) * d3tsw0)
@@ -1394,7 +1397,7 @@ end
 
 @muladd function perform_step!(integrator, cache::TSRKC3Cache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
-    (; k, tmp, gprev2, gprev, atmp, constantcache) = cache
+    (; k, tmp, gprev, atmp, constantcache) = cache
 
     T = typeof(one(t))
 
@@ -1427,12 +1430,13 @@ end
         mdeg2 = mdeg^2
         tsw0 = constantcache.tsw0
         acoshtsw0 = constantcache.acoshtsw0
+        sinhacoshtsw0 = constantcache.sinhacoshtsw0
         acoshtsw0dm = acoshtsw0 / mdeg
         w0m1 = T(2) * (sinh(acoshtsw0dm / T(2))^2)
         w0 = T(1) + w0m1
         w0sq = w0^2
         w0sqm1 = w0m1 * (w0m1 + T(2))
-        dtsw0 = mdeg * sinh(acoshtsw0) / sqrt(w0sqm1)
+        dtsw0 = mdeg * sinhacoshtsw0 / sqrt(w0sqm1)
         d2tsw0 = (mdeg2 * tsw0 - w0 * dtsw0) / w0sqm1
         d3tsw0 = ((T(1) + T(2) * w0sq + mdeg2 * w0sqm1) * dtsw0 - T(3) * mdeg2 * w0 * tsw0) / (w0sqm1^2)
         w1 = (onemq * d2tsw0 + sqrt((onemq * d2tsw0)^2 + T(4) * q * dtsw0 * d3tsw0)) / (T(2) * d3tsw0)
@@ -1443,7 +1447,7 @@ end
     end
 
     # stage-1
-    @.. broadcast = false gprev2 = uprev
+    @.. broadcast = false tmp = uprev
     μs = w1 * b1
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
     th2 = zero(T)
@@ -1466,10 +1470,10 @@ end
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * gprev2 + (T(1) - μ - ν) * uprev +
+        @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
         if (iter < mdeg)
-            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
             th = μ * th1 + ν * th2 + μs * (T(1) - νs)
             th2 = th1
@@ -1589,7 +1593,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RKL1Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1605,7 +1609,7 @@ end
     w1 = T(2) / (s^2 + s)
 
     # stage 1
-    @.. broadcast = false uᵢ₋₂ = uprev
+    @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * w1) * fsalfirst
 
     # stages 2 to s
@@ -1615,8 +1619,8 @@ end
         μ̃ⱼ = μⱼ * w1
         f(k, uᵢ₋₁, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + (dt * μ̃ⱼ) * k
-        @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
+        @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
@@ -1727,7 +1731,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RKL2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1742,7 +1746,7 @@ end
 
     # stage 1 uses previous stage final values for legendre polynomial
     μ̃₁ = (T(1) / 3) * w1
-    @.. broadcast = false uᵢ₋₂ = uprev
+    @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
 
     # stages 2 to s
@@ -1761,11 +1765,11 @@ end
 
         f(k, uᵢ₋₁, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ +
+        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp +
             (1 - μⱼ - νⱼ) * uprev +
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
-        @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
@@ -1867,7 +1871,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RKG1Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1885,7 +1889,7 @@ end
     b0 = rkg1_b(T, 0); b1 = rkg1_b(T, 1)
     μ̃₁ = (3 * b1 / b0) * w1
 
-    @.. broadcast = false uᵢ₋₂ = uprev
+    @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
 
     # stages 2 to s
@@ -1899,8 +1903,8 @@ end
 
         f(k, uᵢ₋₁, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + (dt * μ̃ⱼ) * k
-        @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
+        @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
@@ -2008,7 +2012,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RKG2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; uᵢ₋₁, uᵢ₋₂, tmp, k, atmp) = cache
+    (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -2022,7 +2026,7 @@ end
     w1 = T(6) / ((s + 4) * (s - 1))
     μ̃₁ = w1
 
-    @.. broadcast = false uᵢ₋₂ = uprev
+    @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
 
     # stages 2 to s
@@ -2043,11 +2047,11 @@ end
         f(k, uᵢ₋₁, p, t)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ +
+        @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp +
             (1 - μⱼ - νⱼ) * uprev +
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
-        @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
@@ -2182,7 +2186,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RKMC2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
-    (; k, tmp, gprev, gprev2, atmp) = cache
+    (; k, gprev, tmp, atmp) = cache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -2218,7 +2222,7 @@ end
     bj₋₂ = 1 / (1 + Tj₋₂)
     bj₋₁ = 1 / (1 + Tj₋₁)
 
-    @.. broadcast = false gprev2 = uprev
+    @.. broadcast = false tmp = uprev
     μs = bj₋₁ * w1
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
     th2 = zero(eltype(u))
@@ -2234,10 +2238,10 @@ end
         μ̃ = 2 * w1 * bj / bj₋₁
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μ̃ * (k - bj₋₁ * fsalfirst)
+        @.. broadcast = false u = (1 - μ - ν) * uprev + μ * gprev + ν * tmp + dt * μ̃ * (k - bj₋₁ * fsalfirst)
         th = μ * th1 + ν * th2 + μ̃ * (1 - bj₋₁)
         if j < mdeg
-            @.. broadcast = false gprev2 = gprev
+            @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
             th2 = th1
             th1 = th
@@ -2251,7 +2255,7 @@ end
     # final solution combination of the stages
     γs = bj₋₁ / (2 * mdeg * w1)
     δs = -bj₋₁ / (2 * (mdeg - 2) * w1)
-    @.. broadcast = false u = (1 - γs / bs - δs / bj₋₂) * uprev + (γs / bs) * u + (δs / bj₋₂) * gprev2 + dt * bj₋₁ * fsalfirst
+    @.. broadcast = false u = (1 - γs / bs - δs / bj₋₂) * uprev + (γs / bs) * u + (δs / bj₋₂) * tmp + dt * bj₋₁ * fsalfirst
 
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)

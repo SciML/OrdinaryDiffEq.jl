@@ -1,33 +1,34 @@
 module OrdinaryDiffEqLowOrderRK
 
-import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default,
+import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default,
     alg_stability_size,
     ssp_coefficient, OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqExponentialAlgorithm,
     explicit_rk_docstring, generic_solver_docstring,
     trivial_limiter!,
     OrdinaryDiffEqAdaptiveAlgorithm,
-    unwrap_alg, initialize!, perform_step!,
-    calculate_residuals,
-    calculate_residuals!, _ode_addsteps!, @OnDemandTableauExtract,
+    unwrap_alg, perform_step!,
+    _ode_addsteps!, @OnDemandTableauExtract,
     constvalue,
-    OrdinaryDiffEqMutableCache, uses_uprev,
+    OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, @fold,
     @cache, CompiledFloats, alg_cache, CompositeAlgorithm,
     AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
     accept_step_controller, DerivativeOrderNotPossibleError,
-    du_cache, u_cache, get_fsalfirstlast, copyat_or_push!, _unwrap_val
-using SciMLBase
+    du_cache, u_cache, get_fsalfirstlast
+using SciMLBase: SciMLBase
+import SciMLBase: alg_order, @def, _unwrap_val
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import LinearAlgebra: norm
-import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
+import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype,
+    copyat_or_push!
 using FastBroadcast: Serial
-using DiffEqBase: @def, @tight_loop_macros
-import DiffEqBase: prepare_alg
+using DiffEqBase: @tight_loop_macros, calculate_residuals, calculate_residuals!
+import DiffEqBase: prepare_alg, initialize!
 import OrdinaryDiffEqCore
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")
@@ -47,5 +48,14 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
     PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
     Alshina2, Alshina3, Alshina6, AutoDP5,
     Ralston4
+
+# Cross-sublibrary cache/tableau types that other OrdinaryDiffEq solver
+# sublibraries (e.g. OrdinaryDiffEqAdamsBashforthMoulton) reference to reuse
+# these low-order RK steps. Marked public so those references are recognized as
+# a supported extension API rather than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public,
+        :BS3Cache, :BS3ConstantCache, :RK4Cache, :RK4ConstantCache))
+end
 
 end

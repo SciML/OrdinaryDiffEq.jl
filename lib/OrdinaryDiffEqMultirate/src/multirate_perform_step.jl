@@ -328,64 +328,264 @@ function initialize!(integrator, cache::MRIGARKConstantCache)
     return integrator.k[2] = integrator.fsallast
 end
 
+# Fast-IVP rate at normalized τ: kbuf = Δcᵢ·dt·f1(w, t_phys) + dt·Σⱼ ωⱼ(τ)·fS[j],
+# ωⱼ(τ) = w0[j] + w1[j]·τ (w1=nothing means constant coupling). IIP.
+function _mrigark_rate!(kbuf, f1eval, f, w, p, t, dt, Δci, cprev, τ, w0, w1, fS, upto)
+    t_phys = t + (cprev + τ * Δci) * dt
+    f.f1(f1eval, w, p, t_phys)
+    @.. broadcast = false kbuf = dt * Δci * f1eval
+    for j in 1:upto
+        ω = w1 === nothing ? w0[j] : w0[j] + w1[j] * τ
+        iszero(ω) && continue
+        @.. broadcast = false kbuf = kbuf + dt * ω * fS[j]
+    end
+    return kbuf
+end
+
+# Integrate one fast sub-stage from `vstart` over τ∈[0,1] into `out` (IIP).
+# Δcᵢ=0 ⇒ pure slow quadrature (∫₀¹ω dτ = w0 + w1/2). q = inner explicit-RK order.
+function _mrigark_substage!(
+        out, vstart, cache, f, p, t, dt, Δci, cprev, m, q, w0, w1, fS, upto, stats
+    )
+    (; v, vtmp, f1eval, kk) = cache
+    if iszero(Δci)
+        @.. broadcast = false out = vstart
+        for j in 1:upto
+            ω = w1 === nothing ? w0[j] : w0[j] + w1[j] / 2
+            iszero(ω) && continue
+            @.. broadcast = false out = out + dt * ω * fS[j]
+        end
+        return out
+    end
+    h = 1 / m
+    @.. broadcast = false v = vstart
+    for ks in 1:m
+        τ0 = (ks - 1) * h
+        _mrigark_rate!(kk[1], f1eval, f, v, p, t, dt, Δci, cprev, τ0, w0, w1, fS, upto)
+        @.. broadcast = false vtmp = v + (h / 2) * kk[1]
+        _mrigark_rate!(kk[2], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
+        if q == 2
+            @.. broadcast = false v = v + h * kk[2]
+        elseif q == 3
+            @.. broadcast = false vtmp = v - h * kk[1] + 2 * h * kk[2]
+            _mrigark_rate!(kk[3], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
+            @.. broadcast = false v = v + (h / 6) * (kk[1] + 4 * kk[2] + kk[3])
+        else
+            @.. broadcast = false vtmp = v + (h / 2) * kk[2]
+            _mrigark_rate!(kk[3], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
+            @.. broadcast = false vtmp = v + h * kk[3]
+            _mrigark_rate!(kk[4], f1eval, f, vtmp, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
+            @.. broadcast = false v = v + (h / 6) * (kk[1] + 2 * kk[2] + 2 * kk[3] + kk[4])
+        end
+        OrdinaryDiffEqCore.increment_nf!(stats, q)
+    end
+    @.. broadcast = false out = v
+    return out
+end
+
 function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, atmp, v, f1eval, slow_f, Y, fS, tab) = cache
-    (; Γ, γ, c) = tab
+    (; tmp, atmp, z, fS, zemb, tab) = cache
+    (; Δc, W0, W1, Wemb0, Wemb1, q) = tab
     alg = unwrap_alg(integrator, false)
     m = alg.m
-    s = length(Γ)
+    s = length(Δc)
+    stats = integrator.stats
 
-    @.. broadcast = false Y[1] = uprev
-    h_inner = dt / m
-
+    @.. broadcast = false z[1] = uprev
+    cprev = zero(eltype(Δc))
     for i in 1:s
-        f.f2(fS[i], Y[i], p, t + c[i] * dt)
-        integrator.stats.nf2 += 1
-
-        if i == 1
-            @.. broadcast = false slow_f = γ[i, 1] * fS[1]
-        elseif i == 2
-            @.. broadcast = false slow_f = γ[i, 1] * fS[1] + γ[i, 2] * fS[2]
-        elseif i == 3
-            @.. broadcast = false slow_f = γ[i, 1] * fS[1] + γ[i, 2] * fS[2] +
-                γ[i, 3] * fS[3]
-        elseif i == 4
-            @.. broadcast = false slow_f = γ[i, 1] * fS[1] + γ[i, 2] * fS[2] +
-                γ[i, 3] * fS[3] + γ[i, 4] * fS[4]
-        else
-            @.. broadcast = false slow_f = γ[i, 1] * fS[1]
-            for j in 2:i
-                @.. broadcast = false slow_f = slow_f + γ[i, j] * fS[j]
-            end
-        end
-
-        if iszero(Γ[i])
-            if i < s
-                @.. broadcast = false Y[i + 1] = Y[i] + dt * slow_f
-            else
-                @.. broadcast = false u = Y[i] + dt * slow_f
-            end
-        else
-            @.. broadcast = false v = Y[i]
-            for k_step in 1:m
-                t_a = t + (k_step - 1) * h_inner
-                f.f1(f1eval, v, p, t_a)
-                @.. broadcast = false tmp = v + (h_inner / 2) * (Γ[i] * f1eval + slow_f)
-                f.f1(f1eval, tmp, p, t_a + h_inner / 2)
-                @.. broadcast = false v = v + h_inner * (Γ[i] * f1eval + slow_f)
-                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
-            end
-            if i < s
-                @.. broadcast = false Y[i + 1] = v
-            else
-                @.. broadcast = false u = v
-            end
-        end
+        f.f2(fS[i], z[i], p, t + cprev * dt)
+        stats.nf2 += 1
+        _mrigark_substage!(
+            z[i + 1], z[i], cache, f, p, t, dt, Δc[i], cprev, m, q,
+            view(W0, i, :), view(W1, i, :), fS, i, stats
+        )
+        cprev += Δc[i]
     end
+    @.. broadcast = false u = z[s + 1]
 
     return if integrator.opts.adaptive
-        @.. broadcast = false tmp = u - Y[s]
+        if isempty(Wemb0)
+            @.. broadcast = false tmp = u - z[s]
+        else
+            w1emb = isempty(Wemb1) ? nothing : Wemb1
+            _mrigark_substage!(
+                zemb, z[s], cache, f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
+                Wemb0, w1emb, fS, s, stats
+            )
+            @.. broadcast = false tmp = u - zemb
+        end
+        calculate_residuals!(
+            atmp, tmp, uprev, u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+end
+
+# Fast-IVP rate, out-of-place.
+function _mrigark_rate(f, w, p, t, dt, Δci, cprev, τ, w0, w1, fS, upto)
+    t_phys = t + (cprev + τ * Δci) * dt
+    ffast = f.f1(w, p, t_phys)
+    g = @.. broadcast = false dt * Δci * ffast
+    for j in 1:upto
+        ω = w1 === nothing ? w0[j] : w0[j] + w1[j] * τ
+        iszero(ω) && continue
+        g = @.. broadcast = false g + dt * ω * fS[j]
+    end
+    return g
+end
+
+function _mrigark_substage(vstart, f, p, t, dt, Δci, cprev, m, q, w0, w1, fS, upto, stats)
+    if iszero(Δci)
+        v = vstart
+        for j in 1:upto
+            ω = w1 === nothing ? w0[j] : w0[j] + w1[j] / 2
+            iszero(ω) && continue
+            v = @.. broadcast = false v + dt * ω * fS[j]
+        end
+        return v
+    end
+    h = 1 / m
+    v = vstart
+    for ks in 1:m
+        τ0 = (ks - 1) * h
+        k1 = _mrigark_rate(f, v, p, t, dt, Δci, cprev, τ0, w0, w1, fS, upto)
+        vmid = @.. broadcast = false v + (h / 2) * k1
+        k2 = _mrigark_rate(f, vmid, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
+        if q == 2
+            v = @.. broadcast = false v + h * k2
+        elseif q == 3
+            vmid2 = @.. broadcast = false v - h * k1 + 2 * h * k2
+            k3 = _mrigark_rate(f, vmid2, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
+            v = @.. broadcast = false v + (h / 6) * (k1 + 4 * k2 + k3)
+        else
+            vmid2 = @.. broadcast = false v + (h / 2) * k2
+            k3 = _mrigark_rate(f, vmid2, p, t, dt, Δci, cprev, τ0 + h / 2, w0, w1, fS, upto)
+            vmid3 = @.. broadcast = false v + h * k3
+            k4 = _mrigark_rate(f, vmid3, p, t, dt, Δci, cprev, τ0 + h, w0, w1, fS, upto)
+            v = @.. broadcast = false v + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+        end
+        OrdinaryDiffEqCore.increment_nf!(stats, q)
+    end
+    return v
+end
+
+@muladd function perform_step!(
+        integrator, cache::MRIGARKConstantCache, repeat_step = false
+    )
+    (; t, dt, uprev, f, p) = integrator
+    (; Δc, W0, W1, Wemb0, Wemb1, q) = cache.tab
+    alg = unwrap_alg(integrator, false)
+    m = alg.m
+    s = length(Δc)
+    stats = integrator.stats
+
+    z = Vector{typeof(uprev)}(undef, s + 1)
+    fS = Vector{typeof(f.f2(uprev, p, t))}(undef, s)
+    z[1] = uprev
+    cprev = zero(eltype(Δc))
+    for i in 1:s
+        fS[i] = f.f2(z[i], p, t + cprev * dt)
+        stats.nf2 += 1
+        z[i + 1] = _mrigark_substage(
+            z[i], f, p, t, dt, Δc[i], cprev, m, q,
+            view(W0, i, :), view(W1, i, :), fS, i, stats
+        )
+        cprev += Δc[i]
+    end
+    integrator.u = z[s + 1]
+
+    if integrator.opts.adaptive
+        utilde = if isempty(Wemb0)
+            @.. broadcast = false integrator.u - z[s]
+        else
+            w1emb = isempty(Wemb1) ? nothing : Wemb1
+            zemb = _mrigark_substage(
+                z[s], f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
+                Wemb0, w1emb, fS, s, stats
+            )
+            @.. broadcast = false integrator.u - zemb
+        end
+        atmp = calculate_residuals(
+            utilde, uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+end
+
+function initialize!(integrator, cache::MRIGARKImplicitCache)
+    integrator.kshortsize = 2
+    (; fsalfirst, k) = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    return integrator.fsalfirst .+= cache.tmp
+end
+
+function initialize!(integrator, cache::MRIGARKImplicitConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
+        integrator.f.f2(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; tmp, atmp, z, fS, nlsolver, tab) = cache
+    (; Δc, W0, W1, γ0, q) = tab
+    alg = unwrap_alg(integrator, true)
+    m = alg.m
+    s = length(Δc)
+    stats = integrator.stats
+
+    markfirststage!(nlsolver)
+
+    @.. broadcast = false z[1] = uprev
+    cprev = zero(eltype(Δc))
+    for i in 1:s
+        f.f2(fS[i], z[i], p, t + cprev * dt)
+        stats.nf2 += 1
+        cnext = cprev + Δc[i]
+        if iszero(γ0[i])
+            _mrigark_substage!(
+                z[i + 1], z[i], cache, f, p, t, dt, Δc[i], cprev, m, q,
+                view(W0, i, :), view(W1, i, :), fS, i, stats
+            )
+        else
+            @.. broadcast = false nlsolver.tmp = z[i]
+            for j in 1:i
+                ω̄ = W0[i, j] + W1[i, j] / 2
+                iszero(ω̄) && continue
+                @.. broadcast = false nlsolver.tmp = nlsolver.tmp + dt * ω̄ * fS[j]
+            end
+            nlsolver.c = cnext
+            @.. broadcast = false nlsolver.z = dt * fS[i]
+            w = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+            @.. broadcast = false z[i + 1] = nlsolver.tmp + nlsolver.γ * w
+        end
+        cprev = cnext
+    end
+    @.. broadcast = false u = z[s + 1]
+
+    return if integrator.opts.adaptive
+        @.. broadcast = false tmp = u - z[s]
         calculate_residuals!(
             atmp, tmp, uprev, u,
             integrator.opts.abstol, integrator.opts.reltol,
@@ -396,64 +596,51 @@ function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
 end
 
 @muladd function perform_step!(
-        integrator, cache::MRIGARKConstantCache, repeat_step = false
+        integrator, cache::MRIGARKImplicitConstantCache, repeat_step = false
     )
     (; t, dt, uprev, f, p) = integrator
-    (; Γ, γ, c) = cache.tab
-    alg = unwrap_alg(integrator, false)
+    (; nlsolver, tab) = cache
+    (; Δc, W0, W1, γ0, q) = tab
+    alg = unwrap_alg(integrator, true)
     m = alg.m
-    s = length(Γ)
+    s = length(Δc)
+    stats = integrator.stats
 
-    h_inner = dt / m
-    Y = Vector{typeof(uprev)}(undef, s)
+    markfirststage!(nlsolver)
+
+    z = Vector{typeof(uprev)}(undef, s + 1)
     fS = Vector{typeof(f.f2(uprev, p, t))}(undef, s)
-    Y[1] = uprev
-
+    z[1] = uprev
+    cprev = zero(eltype(Δc))
     for i in 1:s
-        fS[i] = f.f2(Y[i], p, t + c[i] * dt)
-        integrator.stats.nf2 += 1
-
-        slow_f = if i == 1
-            @.. broadcast = false γ[i, 1] * fS[1]
-        elseif i == 2
-            @.. broadcast = false γ[i, 1] * fS[1] + γ[i, 2] * fS[2]
-        elseif i == 3
-            @.. broadcast = false γ[i, 1] * fS[1] + γ[i, 2] * fS[2] + γ[i, 3] * fS[3]
-        elseif i == 4
-            @.. broadcast = false γ[i, 1] * fS[1] + γ[i, 2] * fS[2] +
-                γ[i, 3] * fS[3] + γ[i, 4] * fS[4]
+        fS[i] = f.f2(z[i], p, t + cprev * dt)
+        stats.nf2 += 1
+        cnext = cprev + Δc[i]
+        if iszero(γ0[i])
+            z[i + 1] = _mrigark_substage(
+                z[i], f, p, t, dt, Δc[i], cprev, m, q,
+                view(W0, i, :), view(W1, i, :), fS, i, stats
+            )
         else
-            acc = @.. broadcast = false γ[i, 1] * fS[1]
-            for j in 2:i
-                acc = @.. broadcast = false acc + γ[i, j] * fS[j]
+            tmp = z[i]
+            for j in 1:i
+                ω̄ = W0[i, j] + W1[i, j] / 2
+                iszero(ω̄) && continue
+                tmp = @.. broadcast = false tmp + dt * ω̄ * fS[j]
             end
-            acc
+            nlsolver.tmp = tmp
+            nlsolver.c = cnext
+            nlsolver.z = dt * fS[i]
+            w = nlsolve!(nlsolver, integrator, cache, repeat_step)
+            nlsolvefail(nlsolver) && return
+            z[i + 1] = @.. broadcast = false nlsolver.tmp + nlsolver.γ * w
         end
-
-        if iszero(Γ[i])
-            result = @.. broadcast = false Y[i] + dt * slow_f
-        else
-            v = Y[i]
-            for k_step in 1:m
-                t_a = t + (k_step - 1) * h_inner
-                k1 = f.f1(v, p, t_a)
-                v_mid = @.. broadcast = false v + (h_inner / 2) * (Γ[i] * k1 + slow_f)
-                k2 = f.f1(v_mid, p, t_a + h_inner / 2)
-                v = @.. broadcast = false v + h_inner * (Γ[i] * k2 + slow_f)
-                OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
-            end
-            result = v
-        end
-
-        if i < s
-            Y[i + 1] = result
-        else
-            integrator.u = result
-        end
+        cprev = cnext
     end
+    integrator.u = z[s + 1]
 
     if integrator.opts.adaptive
-        utilde = @.. broadcast = false integrator.u - Y[s]
+        utilde = @.. broadcast = false integrator.u - z[s]
         atmp = calculate_residuals(
             utilde, uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,

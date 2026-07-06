@@ -14,12 +14,12 @@ default_controller(QT, alg::SKenCarp) = PIController(QT, alg)
 
 supports_regular_jumps(::ImplicitEM) = true
 isadaptive(prob::JumpProblem, alg::ImplicitEM) = false
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ImplicitEM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ImplicitEulerHeun) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ISSEM) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ISSEulerHeun) = true
-alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::SKenCarp) = true
-function alg_compatible(prob::DiffEqBase.AbstractSDEProblem, alg::ImplicitRKMil)
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::ImplicitEM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::ImplicitEulerHeun) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::ISSEM) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::ISSEulerHeun) = true
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::SKenCarp) = true
+function alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::ImplicitRKMil)
     return is_diagonal_noise(prob)
 end
 
