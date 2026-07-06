@@ -44,6 +44,7 @@ function initialize!(
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.njacs += cache.cache.stats.njacs
+        integrator.stats.nsolve += cache.cache.stats.nsolve
     end
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
@@ -70,6 +71,7 @@ function initialize!(
     if SciMLBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.njacs += cache.cache.stats.njacs
+        integrator.stats.nsolve += cache.cache.stats.nsolve
     end
 
     nlstep_data = f.nlstep_data
