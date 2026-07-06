@@ -262,7 +262,7 @@ include("precompilation_setup.jl")
         # Integrator step / cache / initialization hooks.
         :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
         :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
-        :handle_callback_modifiers!, :set_discontinuity, :resolve_basic,
+        :handle_callback_modifiers!, :resolve_basic,
         # Noise hooks used by the SDE/RODE solver sublibs.
         :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
         :is_noise_saveable,
