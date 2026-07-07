@@ -3,12 +3,24 @@ module OrdinaryDiffEqModelingToolkitExt
 using OrdinaryDiffEqCore, ModelingToolkit
 using Printf: @sprintf
 
-function OrdinaryDiffEqCore.system_singularity_rootcause(sys, u)
-    substitution_map = Dict(zip(unknowns(sys), u))
+function OrdinaryDiffEqCore.system_singularity_rootcause(sys, u, uprev)
+    prev_substitution_map = Dict(zip(unknowns(sys), uprev))
     diagnosis = String[]
     for eq in equations(sys)
-        find_singular_subterms(eq, eq.rhs, substitution_map, diagnosis)
+        find_singular_subterms(eq, eq.rhs, prev_substitution_map, diagnosis)
     end
+
+    #check for assertion failures
+    unks = unknowns(sys)
+    curr_substitution_map = Dict(zip(unks, u))
+    for (cond, msg) in ModelingToolkit.assertions(sys)
+        f = Symbolics.build_function(cond, unks; expression = Val{false})
+        if f(u) === false
+            push!(diagnosis, "\nAssertion violated: $cond - \"$msg\"")
+            find_failing_subterms(cond, prev_substitution_map, curr_substitution_map, diagnosis)
+        end
+    end
+
     return diagnosis
 end
 
@@ -49,6 +61,46 @@ function find_singular_subterms(eq, expr, sub_map, diagnosis)
         find_singular_subterms(eq, arg, sub_map, diagnosis)
     end
     return diagnosis
+end
+
+function find_failing_subterms(cond, prev_map, curr_map, diagnosis)
+    c = Symbolics.unwrap(cond)
+    !SymbolicUtils.iscall(c) && return diagnosis
+    op = SymbolicUtils.operation(c)
+    args = SymbolicUtils.arguments(c)
+
+    if (op === (<) || op === (>) || op === (<=) || op === (>=)) && length(args) == 2
+        #compare using previous non-nan values to find violating subclauses, then output current values
+        lhs = Symbolics.value(Symbolics.substitute(args[1], prev_map))
+        rhs = Symbolics.value(Symbolics.substitute(args[2], prev_map))
+        if lhs isa Number && rhs isa Number
+            # small margin -> violated
+            margin = (op === (<) || op === (<=)) ? rhs - lhs : lhs - rhs
+            if margin <= 1e-6
+                push!(diagnosis, "   subclause `$c` violated: $(clause_values(c, curr_map))")
+            end
+        end
+    elseif op === (!=) && length(args) == 2
+        lhs = Symbolics.value(Symbolics.substitute(args[1], prev_map))
+        rhs = Symbolics.value(Symbolics.substitute(args[2], prev_map))
+        if lhs isa Number && rhs isa Number && abs(lhs - rhs) <= 1e-6
+            push!(diagnosis, "   subclause `$c` violated: $(clause_values(c, curr_map))")
+        end
+    else #recurse
+        for arg in args
+            find_failing_subterms(arg, prev_map, curr_map, diagnosis)
+        end
+    end
+    return diagnosis
+end
+
+function clause_values(c, curr_map)
+    parts = String[]
+    for v in Symbolics.get_variables(c)
+        val = Symbolics.value(Symbolics.substitute(v, curr_map))
+        push!(parts, val isa Number ? "$v = $(@sprintf("%.4g", val))" : "$v = $val")
+    end
+    return join(parts, ", ")
 end
 
 end

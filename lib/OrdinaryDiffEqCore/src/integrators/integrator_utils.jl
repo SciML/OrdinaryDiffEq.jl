@@ -615,7 +615,7 @@ end
 # overrides this with a method that calls calc_J to get a fresh Jacobian.
 get_fresh_jacobian(integrator, cache) = cache.J
 
-system_singularity_rootcause(sys, u) = ""
+system_singularity_rootcause(sys, u, uprev) = ""
 
 function SciMLBase.log_instability(integrator::ODEIntegrator)
     W = _get_W(integrator)
@@ -688,8 +688,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
 
     # symbolic analysis
     #skip jac analysis if this isn't empty
-    u_vals = length(nan_inf_idxs) == 0 ? u : integrator.uprev
-    symbolic_analysis = system_singularity_rootcause(sys, u_vals)
+    symbolic_analysis = system_singularity_rootcause(sys, u, integrator.uprev)
 
     # diagnostic message construction
     diagnostic = String[]
