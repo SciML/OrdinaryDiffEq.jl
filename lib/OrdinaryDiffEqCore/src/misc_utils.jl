@@ -168,6 +168,29 @@ function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vecto
         end
     end
 end
+"""
+    find_algebraic_vars_eqs(M)
+
+Find algebraic variables (zero columns) and algebraic equations (zero rows) from mass matrix.
+Returns `(algebraic_vars, algebraic_eqs)` as boolean arrays (true = algebraic).
+
+Works on CPU and GPU arrays. Sparse specialization (O(nnz)) is provided in
+OrdinaryDiffEqCoreSparseArraysExt.
+"""
+function find_algebraic_vars_eqs(M::Diagonal)
+    _idxs = map(iszero, diag(M))
+    return _idxs, _idxs
+end
+
+function find_algebraic_vars_eqs(M::AbstractMatrix)
+    algebraic_vars = vec(all(iszero, M, dims = 1))
+    algebraic_eqs = vec(all(iszero, M, dims = 2))
+    return algebraic_vars, algebraic_eqs
+end
+
+function find_algebraic_vars_eqs(M::AbstractSciMLOperator)
+    return find_algebraic_vars_eqs(convert(AbstractMatrix, M))
+end
 
 isnewton(::Any) = false
 

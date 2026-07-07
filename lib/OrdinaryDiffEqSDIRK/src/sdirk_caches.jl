@@ -170,7 +170,9 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     algebraic_vars = if (alg isa ImplicitEuler) && f.mass_matrix !== I
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        # find_algebraic_vars_eqs is GPU-safe (broadcast-based, Diagonal-aware),
+        # unlike `eachcol` which triggers scalar indexing on GPU arrays.
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
     else
         nothing
     end

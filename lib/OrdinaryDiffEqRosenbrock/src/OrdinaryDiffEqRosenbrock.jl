@@ -13,7 +13,8 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
     resize_non_user_cache!, _ode_addsteps!, full_cache,
     DerivativeOrderNotPossibleError, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!
+    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
+    find_algebraic_vars_eqs
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!

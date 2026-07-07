@@ -2,10 +2,16 @@
 ODEInterface = "54ca160b-1b9f-5127-a996-1867f4bc2a2c"
 ODEInterfaceDiffEq = "09606e27-ecf5-54fc-bb29-004bd9f985bf"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqRosenbrockTableaus = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -23,7 +29,13 @@ SciMLTesting = "1"
 
 [sources]
 OrdinaryDiffEq = {path = "../../"}
+OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqHighOrderRK = {path = "../../lib/OrdinaryDiffEqHighOrderRK"}
 OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}
+OrdinaryDiffEqNonlinearSolve = {path = "../../lib/OrdinaryDiffEqNonlinearSolve"}
+OrdinaryDiffEqRosenbrock = {path = "../../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqRosenbrockTableaus = {path = "../../lib/OrdinaryDiffEqRosenbrockTableaus"}
+OrdinaryDiffEqSDIRK = {path = "../../lib/OrdinaryDiffEqSDIRK"}
