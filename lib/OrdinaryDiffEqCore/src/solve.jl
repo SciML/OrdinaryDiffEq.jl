@@ -260,11 +260,9 @@ Base.@constprop :aggressive function _ode_init(
         throw(ArgumentError("alias kwarg must be an ODEAliasSpecifier"))
     end
 
-    if isnothing(alias.alias_f) || alias.alias_f
-        f = prob.f
-    else
-        f = deepcopy(prob.f)
-    end
+    # Aliasing `f` is safe (solver scratch lives in the cache), so `alias_f = false`
+    # needs no copy. Branch-free keeps this `--trim`-safe (deepcopy blocks trimming).
+    f = prob.f
 
     if isnothing(alias.alias_p) || alias.alias_p
         p = prob.p
