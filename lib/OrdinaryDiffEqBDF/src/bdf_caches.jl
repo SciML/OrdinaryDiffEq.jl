@@ -66,7 +66,7 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     ie_tab = ImplicitEulerESDIRKIMEXTableau(
         constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)

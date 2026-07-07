@@ -15,7 +15,7 @@ import Logging: @logmsg, LogLevel
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm, I, UniformScaling, diag, isdiag
+using LinearAlgebra: opnorm, I, UniformScaling, diag, isdiag, Diagonal
 
 import PrecompileTools
 
@@ -37,7 +37,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_UNSTABLE_CHECK,
     DEVerbosity, _process_verbose_param
 
-import SciMLOperators: MatrixOperator, FunctionOperator,
+import SciMLOperators: AbstractSciMLOperator, MatrixOperator, FunctionOperator,
     update_coefficients, update_coefficients!,
     isconstant
 
