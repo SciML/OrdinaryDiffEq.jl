@@ -583,21 +583,41 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
+            use_w_reuse = !isdae && f.nlstep_data === nothing &&
+                W isa StaticWOperator &&
+                nlalg.alg isa AbstractSimpleNonlinearSolveAlgorithm
             nlf = isdae ? oopdaenlf : oopodenlf
             nlp_params = if isdae
                 (tmp, α, tstep, invγdt, p, dt, uprev, f)
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
-            prob = NonlinearProblem(
-                NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
-                copy(ztmp), nlp_params
-            )
+            # StaticWOperator stores inv(W) in its W field for n <= 7, so the
+            # Ref holds the plain W matrix; initialize! rewrites it before the
+            # first solve (W_γdt starts at zero).
+            W_ref = use_w_reuse ? Ref(W.W) : nothing
+            prob = if use_w_reuse
+                nlf_jac = let W_ref = W_ref
+                    (z, p) -> W_ref[]
+                end
+                NonlinearProblem(
+                    NonlinearFunction{false, SciMLBase.FullSpecialize}(
+                        nlf; jac = nlf_jac, jac_prototype = W.W
+                    ),
+                    copy(ztmp), nlp_params
+                )
+            else
+                NonlinearProblem(
+                    NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
+                    copy(ztmp), nlp_params
+                )
+            end
             inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing, nothing,
+                nothing, W_ref, use_w_reuse ? uf : nothing,
+                nothing, nothing, nothing,
                 zero(tstep), true
             )
         else
