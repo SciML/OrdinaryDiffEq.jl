@@ -4,21 +4,30 @@ using OrdinaryDiffEqCore, ModelingToolkit
 using Printf: @sprintf
 
 function OrdinaryDiffEqCore.system_singularity_rootcause(sys, u, uprev)
-    prev_substitution_map = Dict(zip(unknowns(sys), uprev))
     diagnosis = String[]
-    for eq in equations(sys)
-        find_singular_subterms(eq, eq.rhs, prev_substitution_map, diagnosis)
-    end
 
     #check for assertion failures
     unks = unknowns(sys)
     curr_substitution_map = Dict(zip(unks, u))
+    prev_substitution_map = Dict(zip(unknowns(sys), uprev))
+
     for (cond, msg) in ModelingToolkit.assertions(sys)
-        f = Symbolics.build_function(cond, unks; expression = Val{false})
-        if f(u) === false
-            push!(diagnosis, "\nAssertion violated: $cond - \"$msg\"")
-            find_failing_subterms(cond, prev_substitution_map, curr_substitution_map, diagnosis)
+        subclauses = String[]
+        find_failing_subterms(cond, prev_substitution_map, curr_substitution_map, subclauses)
+        if !isempty(subclauses)
+            push!(diagnosis, "\n\nAssertion violated: $cond - \"$msg\"")
+            append!(diagnosis, subclauses)
         end
+    end
+
+    #find singularity causes in equations
+    singularities = String[]
+    for eq in equations(sys)
+        find_singular_subterms(eq, eq.rhs, prev_substitution_map, singularities)
+    end
+    if !isempty(singularities)
+        push!(diagnosis, "\nSymbolic Analysis of MTK System:")
+        append!(diagnosis, singularities)
     end
 
     return diagnosis
@@ -84,6 +93,12 @@ function find_failing_subterms(cond, prev_map, curr_map, diagnosis)
         lhs = Symbolics.value(Symbolics.substitute(args[1], prev_map))
         rhs = Symbolics.value(Symbolics.substitute(args[2], prev_map))
         if lhs isa Number && rhs isa Number && abs(lhs - rhs) <= 1e-6
+            push!(diagnosis, "   subclause `$c` violated: $(clause_values(c, curr_map))")
+        end
+    elseif op === (==) && length(args) == 2
+        lhs = Symbolics.value(Symbolics.substitute(args[1], prev_map))
+        rhs = Symbolics.value(Symbolics.substitute(args[2], prev_map))
+        if lhs isa Number && rhs isa Number && abs(lhs - rhs) > 1e-6
             push!(diagnosis, "   subclause `$c` violated: $(clause_values(c, curr_map))")
         end
     else #recurse

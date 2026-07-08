@@ -706,7 +706,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
                 end
             end
         else
-            push!(diagnostic, "u = $u is non-finite (NaN/Inf), suggesting blow-up or a NaN in the RHS")
+            push!(diagnostic, "u = $u is non-finite (NaN/Inf)")
         end
     elseif !isempty(blown_idxs)
         if u isa AbstractArray
@@ -757,10 +757,10 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         end
     end
 
-    diagnostic = isempty(diagnostic) ? "" : "\n\nDiagnostics:\n" * join(diagnostic, "\n") * "."
+    diagnostic = isempty(diagnostic) ? "" : "\n\nDiagnostics:\n" * join(diagnostic, "\n\n") * "."
 
     if !isempty(symbolic_analysis)
-        diagnostic *= "\n\nSymbolic Analysis of MTK System:\n" * join(symbolic_analysis, "\n")
+        diagnostic *= join(symbolic_analysis, "\n")
     end
 
     return diagnostic
