@@ -93,8 +93,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # constraint derivatives must remain accurate. See Steinebach (2024).
     naccept = integrator.stats.naccept
     if integrator.f.mass_matrix !== I
-        if naccept > jac_reuse.last_naccept 
-           jac_reuse.last_naccept = naccept
+        if naccept > jac_reuse.last_naccept
+            jac_reuse.last_naccept = naccept
             return (true, true)
         else
             return (false, true)
