@@ -638,7 +638,12 @@ function dae_jacobian2W!(
     )::Nothing
     @boundscheck axes(W) == axes(J_u) == axes(J_du) ||
         throw(DimensionMismatch("W, J_u, J_du must have matching axes"))
-    @.. broadcast = false W = muladd(cj, J_du, J_u)
+    if is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+        tmp = J_u + convert(eltype(W), cj) * J_du
+        copyto!(W, tmp isa typeof(W) ? tmp : convert(typeof(W), tmp))
+    else
+        @.. broadcast = false W = muladd(cj, J_du, J_u)
+    end
     return nothing
 end
 
@@ -656,6 +661,10 @@ end
 function dae_jacobian2W(
         J_u::AbstractMatrix, J_du::AbstractMatrix, cj::Number
     )
+    if is_sparse(J_u) && !ArrayInterface.fast_scalar_indexing(nonzeros(J_u))
+        tmp = J_u + convert(eltype(J_u), cj) * J_du
+        return tmp isa typeof(J_u) ? tmp : convert(typeof(J_u), tmp)
+    end
     return @. muladd(cj, J_du, J_u)
 end
 

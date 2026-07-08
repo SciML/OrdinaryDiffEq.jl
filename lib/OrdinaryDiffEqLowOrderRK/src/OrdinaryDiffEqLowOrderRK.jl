@@ -54,8 +54,12 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
 # these low-order RK steps. Marked public so those references are recognized as
 # a supported extension API rather than internal access.
 @static if VERSION >= v"1.11.0-DEV.469"
-    eval(Expr(:public,
-        :BS3Cache, :BS3ConstantCache, :RK4Cache, :RK4ConstantCache))
+    eval(
+        Expr(
+            :public,
+            :BS3Cache, :BS3ConstantCache, :RK4Cache, :RK4ConstantCache
+        )
+    )
 end
 
 end

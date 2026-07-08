@@ -4,6 +4,7 @@ using Reexport: Reexport, @reexport
 @reexport using DiffEqBase
 
 import ADTypes
+import ADTypes: AutoForwardDiff
 
 import OrdinaryDiffEqCore
 # SDE/RODE/Jump algorithm and cache supertypes plus the shared solver-loop

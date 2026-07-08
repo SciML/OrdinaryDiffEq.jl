@@ -212,62 +212,64 @@ include("precompilation_setup.jl")
 # codegen/perf internals (@fold/@threaded/@OnDemandTableauExtract/@swap!) and
 # precompile-workload helpers are deliberately NOT included here.
 @static if VERSION >= v"1.11.0-DEV.469"
-    eval(Expr(
-        :public,
-        :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
-        :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
-        :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
-        :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
-        :CompositeCache, :CompositeController, :CompositeControllerCache, :constvalue, :Convergence, :current_extrapolant,
-        :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
-        :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
-        :DummyControllerCache, :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
-        :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
-        :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
-        :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController, :IControllerCache,
-        :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
-        :is_composite_algorithm, :is_composite_cache, :is_constant_cache, :isdefaultalg, :isdtchangeable, :isfirstcall,
-        :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
-        :issplit, :isthreaded, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
-        :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
-        :OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqAdaptiveExponentialAlgorithm, :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm, :OrdinaryDiffEqAdaptivePartitionedAlgorithm,
-        :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqCache, :OrdinaryDiffEqCompositeAlgorithm, :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqExponentialAlgorithm, :OrdinaryDiffEqImplicitAlgorithm,
-        :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
-        :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
-        :PIControllerCache, :PIDController, :PIDControllerCache, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
-        :PredictiveControllerCache, :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
-        :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
-        :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
-        :StochasticDiffEqCache, :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqConstantCache, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
-        :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqMutableCache, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
-        :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :strip_cache, :sync_controllers!, :TryAgain,
-        :unwrap_alg, :uses_uprev, :VerySlowConvergence,
-        # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
-        # Error / sentinel / dispatch-helper types shared across solver sublibs.
-        :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,
-        # Interpolation kernels (companions to the public _ode_interpolant / ode_addsteps!).
-        :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
-        :current_extrapolant!, :interpolation_differential_vars,
-        # Algorithm-trait predicates extended/queried by solver sublibs.
-        :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
-        :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
-        :allows_null_u0, :isaposteriori, :isdiscretealg, :isdiscretecache, :isdp8,
-        :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,
-        :ssp_coefficient, :fac_default_gamma, :qsteady_max_default, :qsteady_min_default,
-        # Order / stepsize / autodiff-config accessors used across sublibs.
-        :get_current_alg_order, :get_current_qmax, :get_chunksize, :_get_fdtype,
-        :_get_fwd_chunksize, :_get_fwd_chunksize_int, :_fixup_ad, :diffdir,
-        :error_constant, :unitfulvalue,
-        # Integrator step / cache / initialization hooks.
-        :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
-        :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
-        :handle_callback_modifiers!, :set_discontinuity, :resolve_basic,
-        # Noise hooks used by the SDE/RODE solver sublibs.
-        :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
-        :is_noise_saveable,
-        # Docstring builder used by solver sublibs.
-        :differentiation_rk_docstring,
-    ))
+    eval(
+        Expr(
+            :public,
+            :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
+            :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
+            :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
+            :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
+            :CompositeCache, :CompositeController, :CompositeControllerCache, :constvalue, :Convergence, :current_extrapolant,
+            :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
+            :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
+            :DummyControllerCache, :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
+            :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
+            :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
+            :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController, :IControllerCache,
+            :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
+            :is_composite_algorithm, :is_composite_cache, :is_constant_cache, :isdefaultalg, :isdtchangeable, :isfirstcall,
+            :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
+            :issplit, :isthreaded, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
+            :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
+            :OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqAdaptiveExponentialAlgorithm, :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm, :OrdinaryDiffEqAdaptivePartitionedAlgorithm,
+            :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqCache, :OrdinaryDiffEqCompositeAlgorithm, :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqExponentialAlgorithm, :OrdinaryDiffEqImplicitAlgorithm,
+            :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
+            :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
+            :PIControllerCache, :PIDController, :PIDControllerCache, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
+            :PredictiveControllerCache, :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
+            :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
+            :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
+            :StochasticDiffEqCache, :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqConstantCache, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+            :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqMutableCache, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
+            :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :strip_cache, :sync_controllers!, :TryAgain,
+            :unwrap_alg, :uses_uprev, :VerySlowConvergence,
+            # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
+            # Error / sentinel / dispatch-helper types shared across solver sublibs.
+            :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,
+            # Interpolation kernels (companions to the public _ode_interpolant / ode_addsteps!).
+            :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
+            :current_extrapolant!, :interpolation_differential_vars,
+            # Algorithm-trait predicates extended/queried by solver sublibs.
+            :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
+            :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
+            :allows_null_u0, :isaposteriori, :isdiscretealg, :isdiscretecache, :isdp8,
+            :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,
+            :ssp_coefficient, :fac_default_gamma, :qsteady_max_default, :qsteady_min_default,
+            # Order / stepsize / autodiff-config accessors used across sublibs.
+            :get_current_alg_order, :get_current_qmax, :get_chunksize, :_get_fdtype,
+            :_get_fwd_chunksize, :_get_fwd_chunksize_int, :_fixup_ad, :diffdir,
+            :error_constant, :unitfulvalue,
+            # Integrator step / cache / initialization hooks.
+            :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
+            :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
+            :handle_callback_modifiers!, :set_discontinuity, :resolve_basic,
+            # Noise hooks used by the SDE/RODE solver sublibs.
+            :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
+            :is_noise_saveable,
+            # Docstring builder used by solver sublibs.
+            :differentiation_rk_docstring,
+        )
+    )
 end
 
 end

@@ -29,6 +29,7 @@ end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
+    @time @safetestset "Wrapper Compatibility Tests" include("wrapper_compat_tests.jl")
     @time @safetestset "OOP J_t Tracking" include("oop_jt_tracking_test.jl")
     @time @safetestset "Differentiation Trait Tests" include("differentiation_traits_tests.jl")
     @time @safetestset "Autodiff Error Tests" include("autodiff_error_tests.jl")

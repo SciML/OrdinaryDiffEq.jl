@@ -3,13 +3,14 @@ function SDIRK_docstring(
         name::String;
         references::String = "",
         extra_keyword_description::String = "",
-        extra_keyword_default::String = ""
+        extra_keyword_default::String = "",
+        nlsolve_default::String = "NLNewton()"
     )
     keyword_default = """
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
         linsolve = nothing,
-        nlsolve = NLNewton(),
+        nlsolve = $nlsolve_default,
         """ * extra_keyword_default
 
     keyword_default_description = """
@@ -58,7 +59,8 @@ abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewton
     extra_keyword_default = """
     predictor = Predictor.Trivial,
     step_limiter! = trivial_limiter!,
-    """
+    """,
+    nlsolve_default = "NLNewton(κ = 1 // 10000)"
 )
 struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
@@ -73,7 +75,7 @@ end
 function ImplicitEuler(;
         autodiff = AutoForwardDiff(),
         concrete_jac = nothing,
-        linsolve = nothing, nlsolve = NLNewton(),
+        linsolve = nothing, nlsolve = NLNewton(κ = 1 // 10000),
         predictor = Predictor.Trivial, extrapolant = nothing,
         step_limiter! = trivial_limiter!
     )

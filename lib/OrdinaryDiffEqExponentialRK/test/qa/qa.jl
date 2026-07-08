@@ -11,6 +11,7 @@ run_qa(
                 :_fixup_ad, :fsal_typeof,
                 # SciMLBase internal; pending a `public` declaration (SciMLBase#1412).
                 :_unwrap_val,
-            )),
+            ),
+        ),
     ),
 )

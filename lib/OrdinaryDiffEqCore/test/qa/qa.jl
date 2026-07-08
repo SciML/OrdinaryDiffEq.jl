@@ -62,6 +62,8 @@ run_qa(
                 :postamble!,
                 # DiffEqBase internal
                 :_process_verbose_param,
+                # SciMLOperators internal
+                :AbstractSciMLOperator,
                 # Non-public names re-exported for dependent sublibraries
                 # (see `no_stale_explicit_imports` above).
                 :_vec, :_reshape, :unwrap_cache,

@@ -19,6 +19,20 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 @test isapprox(sol3, sol_analytic, rtol = 1.0e-10)
 @test isapprox(sol4, sol_analytic, rtol = 1.0e-8)
 
+struct BrokenOpnormMatrix{T, M <: AbstractMatrix{T}} <: AbstractMatrix{T}
+    A::M
+end
+
+Base.size(A::BrokenOpnormMatrix) = size(A.A)
+Base.getindex(A::BrokenOpnormMatrix, I...) = getindex(A.A, I...)
+Base.collect(A::BrokenOpnormMatrix) = collect(A.A)
+LinearAlgebra.opnorm(A::BrokenOpnormMatrix, p::Real) = throw(MethodError(opnorm, (A, p)))
+
+A_broken_opnorm = MatrixOperator(BrokenOpnormMatrix([2.0 -1.0; -1.0 2.0]))
+prob_broken_opnorm = ODEProblem(A_broken_opnorm, copy(u0), (0.0, 1.0))
+sol_broken_opnorm = solve(prob_broken_opnorm, LinearExponential(krylov = :adaptive))(1.0)
+@test isapprox(sol_broken_opnorm, sol_analytic, rtol = 1.0e-10)
+
 # u' = A(t)u solvers
 function update_func!(A, u, p, t)
     A[1, 1] = 0
