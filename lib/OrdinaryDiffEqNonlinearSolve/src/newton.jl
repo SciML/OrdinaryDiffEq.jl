@@ -41,7 +41,7 @@ function initialize!(
     cache.tstep = integrator.t + nlsolver.c * dt
 
     (; ustep, tstep, k, invγdt) = cache
-    if SciMLBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator) && hasfield(typeof(cache.cache), :stats)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.njacs += cache.cache.stats.njacs
         integrator.stats.nsolve += cache.cache.stats.nsolve
