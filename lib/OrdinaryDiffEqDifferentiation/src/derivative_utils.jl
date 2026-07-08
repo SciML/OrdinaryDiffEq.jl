@@ -1134,6 +1134,13 @@ function build_J_W(
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
+        if is_sparse(J)
+            set_all_nzval!(J, one(eltype(J)))
+            set_all_nzval!(W, one(eltype(W)))
+        else
+            fill!(J, one(eltype(J)))
+            fill!(W, one(eltype(W)))
+        end
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
                 alg.linsolve !== nothing &&
