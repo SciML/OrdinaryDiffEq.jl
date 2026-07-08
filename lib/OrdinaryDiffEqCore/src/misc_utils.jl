@@ -208,8 +208,11 @@ function get_differential_vars(f, u)
         mm = f.mass_matrix
         mm = mm isa MatrixOperator ? mm.A : mm
 
-        if mm isa UniformScaling
+        if mm isa UniformScaling || mm isa SciMLOperators.IdentityOperator
             return nothing
+        elseif mm isa SciMLOperators.ScalarOperator
+            # λ·I: every variable is algebraic when λ is zero.
+            return iszero(mm.val) ? falses(size(u)) : nothing
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && _isdiag(mm)
