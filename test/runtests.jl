@@ -46,6 +46,7 @@ function interface_i()
     @time @safetestset "Inplace Interpolation Tests" include("InterfaceI/inplace_interpolation.jl")
     @time @safetestset "Algebraic Interpolation Tests" include("InterfaceI/algebraic_interpolation.jl")
     @time @safetestset "Interpolation and Cache Stripping Tests" include("InterfaceI/ode_strip_test.jl")
+    @time @safetestset "Public API Package Splits" include("InterfaceI/public_api_package_split.jl")
     @time @safetestset "Aliasing Tests" include("InterfaceI/aliasing_tests.jl")
     return @time @safetestset "Solution Memory Release" include("InterfaceI/solution_memory_tests.jl")
 end
