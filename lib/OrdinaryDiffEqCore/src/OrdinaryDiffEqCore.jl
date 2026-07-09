@@ -95,6 +95,7 @@ import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
 # using MacroTools, Adapt
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse, dense_ad
 import Accessors: @reset
+import ConstructionBase
 
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure

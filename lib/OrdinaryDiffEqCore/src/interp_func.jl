@@ -87,7 +87,7 @@ end
 
 function strip_cache(cache)
     if !(cache isa OrdinaryDiffEqCore.DefaultCache)
-        cache = SciMLBase.constructorof(typeof(cache))(
+        cache = ConstructionBase.constructorof(typeof(cache))(
             [
                 nothing
                     for name in

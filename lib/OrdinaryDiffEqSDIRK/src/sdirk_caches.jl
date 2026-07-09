@@ -73,7 +73,7 @@ end
 
 function OrdinaryDiffEqCore.strip_cache(cache::ESDIRKIMEXCache)
     s = length(cache.zs)
-    return SciMLBase.constructorof(typeof(cache))(
+    return ConstructionBase.constructorof(typeof(cache))(
         nothing, nothing, nothing,
         Vector{Nothing}(undef, s),
         Vector{Nothing}(undef, s),
