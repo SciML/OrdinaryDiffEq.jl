@@ -20,7 +20,7 @@ run_qa(
                 Symbol("@.."),
                 # StochasticDiffEqCore internal cache-alloc macro (non-public).
                 Symbol("@cache"),
-            )
+            ),
         ),
         all_qualified_accesses_are_public = (;
             ignore = (
@@ -29,7 +29,7 @@ run_qa(
                 :isaposteriori,
                 # PoissonRandom sampler, re-exported via JumpProcesses (non-public).
                 :pois_rand,
-            )
+            ),
         ),
     ),
 )

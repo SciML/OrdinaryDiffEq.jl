@@ -13,11 +13,13 @@ run_qa(
                 :lorenz, :lorenz_oop,
                 # Base.Broadcast internals used in ArrayFuse copyto!/materialize!
                 :Broadcasted, :materialize!,
-            )),
+            ),
+        ),
         all_explicit_imports_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore default no-op limiter (owner-internal)
                 :trivial_limiter!,
-            )),
+            ),
+        ),
     ),
 )
