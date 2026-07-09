@@ -105,7 +105,7 @@ const STOCHASTIC_PIRACY_HOOKS = Function[
 
 run_qa(
     StochasticDiffEqCore;
-    aqua_kwargs = (; piracies = (; treat_as_own = STOCHASTIC_PIRACY_HOOKS,)),
+    aqua_kwargs = (; piracies = (; treat_as_own = STOCHASTIC_PIRACY_HOOKS)),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (;
