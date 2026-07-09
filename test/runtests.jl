@@ -8,6 +8,39 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 const GROUP = current_group()
 const LIB_DIR = joinpath(dirname(@__DIR__), "lib")
 
+function develop_local_sources!(project_dir)
+    VERSION < v"1.11.0-DEV.0" || return nothing
+
+    project_dir = normpath(project_dir)
+    developed = Set{String}((project_dir,))
+    specs = Pkg.PackageSpec[]
+    queue = [project_dir]
+
+    while !isempty(queue)
+        pkg_dir = popfirst!(queue)
+        toml_path = joinpath(pkg_dir, "Project.toml")
+        isfile(toml_path) || continue
+
+        toml = Pkg.TOML.parsefile(toml_path)
+        if haskey(toml, "sources")
+            for (dep_name, source_spec) in toml["sources"]
+                if source_spec isa AbstractDict && haskey(source_spec, "path")
+                    dep_path = normpath(joinpath(pkg_dir, source_spec["path"]))
+                    if isdir(dep_path) && !(dep_path in developed)
+                        push!(developed, dep_path)
+                        @info "Queuing local source dependency" dep_name dep_path
+                        push!(specs, Pkg.PackageSpec(path = dep_path))
+                        push!(queue, dep_path)
+                    end
+                end
+            end
+        end
+    end
+
+    isempty(specs) || Pkg.develop(specs)
+    return nothing
+end
+
 # Folder-based v1.2 layout: each functional group's test files live in its own
 # `test/<GroupKey>/` folder (matching the test_groups.toml key casing). The group
 # bodies below `@safetestset include` the files from those folders, reproducing the
@@ -138,28 +171,22 @@ function algconvergence_iii()
 end
 
 # AD / Downstream / ODEInterfaceRegression activate their own per-group
-# Project.toml exactly as the previous `activate_*_env` helpers did:
-# `Pkg.activate(dir)`, `Pkg.develop(path = repo root)`, `Pkg.instantiate()`.
-# They are kept as thunks (not `env =` group specs) so the develop/instantiate
-# behavior — in particular NOT transitively developing the sub-env's `[sources]`
-# on Julia < 1.11 — stays byte-for-byte identical to before the refactor.
-function activate_downstream_env()
-    Pkg.activate("Downstream")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+# Project.toml and develop local sources on Julia versions where Pkg does not
+# honor `[sources]` natively.
+function activate_group_env(group)
+    project_dir = joinpath(@__DIR__, group)
+    Pkg.activate(project_dir)
+    if VERSION < v"1.11.0-DEV.0"
+        develop_local_sources!(project_dir)
+    else
+        Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    end
     return Pkg.instantiate()
 end
 
-function activate_odeinterface_env()
-    Pkg.activate("ODEInterfaceRegression")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
-
-function activate_ad_env()
-    Pkg.activate("AD")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
-end
+activate_downstream_env() = activate_group_env("Downstream")
+activate_odeinterface_env() = activate_group_env("ODEInterfaceRegression")
+activate_ad_env() = activate_group_env("AD")
 
 function downstream_group()
     is_APPVEYOR && return

@@ -10,6 +10,7 @@ import Reexport: @reexport
 using Reexport: @reexport
 @reexport using SciMLBase
 import DiffEqBase
+import ConstructionBase
 
 import Logging: @logmsg, LogLevel
 

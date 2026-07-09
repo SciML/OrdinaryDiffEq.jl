@@ -1,6 +1,9 @@
 [deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEInterface = "54ca160b-1b9f-5127-a996-1867f4bc2a2c"
 ODEInterfaceDiffEq = "09606e27-ecf5-54fc-bb29-004bd9f985bf"
+ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
@@ -17,8 +20,11 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+DiffEqBase = "7"
+DiffEqDevTools = "3"
 ODEInterface = "0.5"
 ODEInterfaceDiffEq = "3.13, 4"
+ODEProblemLibrary = "1"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqExplicitRK = "2"
