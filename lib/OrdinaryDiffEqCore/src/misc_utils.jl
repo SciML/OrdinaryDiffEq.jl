@@ -222,6 +222,10 @@ _fixup_ad(ad_alg) = ad_alg
 # only degrade the starting guess, never correctness.
 struct TsSearchHint{T <: AbstractVector}
     ts::T
+    # 0 means "no query yet": the first search then starts from `lastindex(ts)`
+    # at query time. `ts` grows after construction, and mid-solve consumers
+    # (delay-equation history lookups especially) query near the current end,
+    # so a guess frozen at construction would go stale.
     idx_prev::Base.RefValue{Int}
     kind::Base.RefValue{StrategyKind}
     # `length(ts)` at the last grid probe. `typemax(Int)` disables re-probing
@@ -229,7 +233,12 @@ struct TsSearchHint{T <: AbstractVector}
     probed_len::Base.RefValue{Int}
 end
 
-TsSearchHint(ts::AbstractVector) = TsSearchHint(ts, Ref(1), Ref(KIND_BRACKET_GALLOP), Ref(0))
+TsSearchHint(ts::AbstractVector) = TsSearchHint(ts, Ref(0), Ref(KIND_BRACKET_GALLOP), Ref(0))
+
+@inline function ts_hint_start(h::TsSearchHint, v)
+    prev = h.idx_prev[]
+    return ifelse(prev == 0, lastindex(v), prev)
+end
 
 # Sampled uniformity probe: O(64) regardless of grid size. Interpolation
 # search wins on near-uniform grids (`saveat` ranges, fixed-dt stepping,

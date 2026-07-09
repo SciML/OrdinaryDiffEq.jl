@@ -607,7 +607,7 @@ Base.@constprop :aggressive function _ode_init(
     # Fully adaptive grids start on the robust hinted gallop and re-select on
     # grid growth and at the ending phase (`_finalize_ts_hint!`).
     ts_hint = if !adaptive || (saveat isa AbstractRange && length(saveat) > 1 && !save_everystep)
-        TsSearchHint(ts, Ref(1), Ref(KIND_INTERPOLATION_SEARCH), Ref(typemax(Int)))
+        TsSearchHint(ts, Ref(0), Ref(KIND_INTERPOLATION_SEARCH), Ref(typemax(Int)))
     else
         TsSearchHint(ts)
     end
