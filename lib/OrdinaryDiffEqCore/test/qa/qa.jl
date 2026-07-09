@@ -23,17 +23,12 @@ run_qa(
                 :calculate_residuals, :calculate_residuals!,
             ),
         ),
-        # `constructorof` is owned by ConstructionBase but reached through SciMLBase
-        # (not a direct dependency); accessing it via SciMLBase is intentional.
-        all_qualified_accesses_via_owners = (; ignore = (:constructorof,)),
         # Internal (non-`public`) names of upstream packages that OrdinaryDiffEqCore
         # genuinely needs and that have no public replacement yet.
         all_qualified_accesses_are_public = (;
             ignore = (
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
-                # ConstructionBase (owned there, accessed via SciMLBase)
-                :constructorof,
                 # SciMLOperators internal
                 :AbstractSciMLOperator,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
