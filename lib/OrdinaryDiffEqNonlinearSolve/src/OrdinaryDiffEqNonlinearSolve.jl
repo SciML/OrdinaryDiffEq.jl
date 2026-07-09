@@ -23,7 +23,6 @@ import FastClosures: @closure
 using LinearAlgebra: UniformScaling, UpperTriangular, givens, cond, dot, lmul!, axpy!,
     I, rmul!, norm, mul!, ldiv!
 import LinearAlgebra
-using SparseArrays: SparseMatrixCSC
 import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
