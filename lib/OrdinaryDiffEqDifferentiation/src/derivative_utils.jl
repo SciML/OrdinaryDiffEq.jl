@@ -170,6 +170,14 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     return (false, true)
 end
 
+"""
+    calc_tderivative!(integrator, cache, dtd1, repeat_step)
+
+Compute the time derivative `dT = ∂f/∂t` in place (using the analytic `tgrad` when
+available, else autodiff/finite differences) and store the Rosenbrock right-hand
+side `linsolve_tmp = fsalfirst + dtd1·dT` on the cache. Skipped when `repeat_step`
+is `true`.
+"""
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     return @inbounds begin
         (; t, dt, uprev, u, f, p) = integrator
@@ -218,6 +226,12 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     end
 end
 
+"""
+    calc_tderivative(integrator, cache) -> dT
+
+Out-of-place counterpart of [`calc_tderivative!`](@ref): compute and return the
+time derivative `∂f/∂t` at the current step.
+"""
 function calc_tderivative(integrator, cache)
     (; t, dt, uprev, u, f, p, alg) = integrator
 
@@ -551,6 +565,13 @@ end
     throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 end
 
+"""
+    jacobian2W!(W, mass_matrix, dtgamma, J) -> nothing
+
+Form the linear-system matrix `W = M/dtgamma - J` in place from the Jacobian `J`
+and mass matrix `M` (with `M = I` handled specially), using scalar-indexed,
+broadcast, or allocating paths depending on the array type (dense, sparse, GPU).
+"""
 function jacobian2W!(
         W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix
     )::Nothing
@@ -664,6 +685,13 @@ function dae_jacobian2W(J_u::Number, J_du::Number, cj::Number)
     return muladd(cj, J_du, J_u)
 end
 
+"""
+    is_always_new(alg) -> Bool
+
+Return whether `alg` (or its nonlinear-solver algorithm) requests a fresh `W`
+computed on every solve, i.e. its `always_new` field is `true` (`false` when the
+field is absent).
+"""
 is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
 
 function calc_W!(
@@ -860,6 +888,13 @@ end
     return W
 end
 
+"""
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step) -> new_W
+
+Compute (in place) the Jacobian, the factorized `W = M/(dtgamma) - J`, and the
+time derivative needed by a Rosenbrock step, honoring Jacobian reuse for W-methods.
+Returns whether a fresh `W` was formed. Skips the work on a repeated step.
+"""
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
     nlsolver = nothing
     alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
@@ -962,6 +997,14 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
 end
 
 # update W matrix (only used in Newton method)
+"""
+    update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
+    update_W!(nlsolver, integrator, cache, dtgamma, repeat_step, newJW = nothing)
+
+Recompute/refactorize the nonlinear solver's `W = M/dtgamma - J` when needed for a
+Newton solve, deciding whether the Jacobian and/or the factorization must be
+refreshed (`newJW` can force the decision). No-op for non-Newton solvers.
+"""
 function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
     return update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
 end
@@ -1093,6 +1136,16 @@ as-is.
 end
 @inline _dtgamma_prototype(t, dt, ::Type{T}) where {T} = promote(t, dt)[2]
 
+"""
+    build_J_W(alg, u, uprev, p, t, dt, f, jac_config, ::Type{uEltypeNoUnits}, ::Val{iip}) -> (J, W)
+
+Allocate and return the Jacobian `J` and the linear-system matrix
+`W = M/(γΔt) - J` (or their operator/factorization prototypes) for algorithm
+`alg`. Handles user-provided `jac_prototype` / `W_prototype` `SciMLOperator`s, the
+mass matrix `M`, and the linear vs nonlinear function case; the resulting `W`
+carries the eltype that `calc_W`/`calc_W!` will later produce. `Val{iip}` selects
+the in-place branch.
+"""
 function build_J_W(
         alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}
@@ -1234,6 +1287,14 @@ function build_J_W(
     return J, W
 end
 
+"""
+    build_uf(alg, nf, t, p, ::Val{iip})
+
+Return the wrapper object used to differentiate the RHS `nf` with respect to the
+state: a `UJacobianWrapper` for the in-place case (`Val{true}`) or a
+`UDerivativeWrapper` for the out-of-place case (`Val{false}`). Carries the current
+`t` and `p`, which are updated before each Jacobian evaluation.
+"""
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)
 build_uf(alg, nf, t, p, ::Val{false}) = UDerivativeWrapper(nf, t, p)
 

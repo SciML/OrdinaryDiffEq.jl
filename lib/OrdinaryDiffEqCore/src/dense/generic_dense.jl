@@ -22,6 +22,12 @@ You can find the list of available ODE/DAE solvers with their documented interpo
 
 using SciMLBase: SENSITIVITY_INTERP_MESSAGE
 
+"""
+    DerivativeOrderNotPossibleError <: Exception
+
+Thrown when a dense-output interpolation is asked for a derivative order higher
+than the interpolant supports (Hermite interpolation supports up to order 3).
+"""
 struct DerivativeOrderNotPossibleError <: Exception end
 
 function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
@@ -65,6 +71,14 @@ end
     return lo
 end
 
+"""
+    ode_addsteps!(k, integrator, ...)
+    ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false, allow_calc_end = true, force_calc_end = false)
+
+Ensure the stage-derivative array `k` for the current step is fully populated so
+the dense-output interpolant can be evaluated. Solver sublibraries add methods
+that compute their method-specific extra `k` stages on demand.
+"""
 @inline function ode_addsteps!(
         integrator, f = integrator.f, always_calc_begin = false,
         allow_calc_end = true, force_calc_end = false
@@ -386,6 +400,13 @@ end
     return expr
 end
 
+"""
+    current_interpolant(t, integrator, idxs, deriv)
+
+Evaluate the dense-output interpolant of the *current* step at absolute time(s)
+`t` (mapping to `Θ = (t - tprev)/dt`), for components `idxs` and derivative order
+`deriv`. Out-of-place.
+"""
 @inline function current_interpolant(
         t::Number, integrator::SciMLBase.DEIntegrator, idxs,
         deriv
@@ -426,6 +447,13 @@ end
     return [ode_interpolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
+"""
+    current_extrapolant(t, integrator, idxs = nothing, deriv = Val{0})
+
+Evaluate the extrapolant of the current step at absolute time(s) `t`, i.e. the
+continuous extension used to extrapolate beyond an accepted step (maps to
+`Θ = (t - tprev)/(t_cur - tprev)`). Out-of-place.
+"""
 @inline function current_extrapolant(
         t::Number, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0}
@@ -434,6 +462,11 @@ end
     return ode_extrapolant(Θ, integrator, idxs, deriv)
 end
 
+"""
+    current_extrapolant!(val, t, integrator, idxs = nothing, deriv = Val{0})
+
+In-place version of [`current_extrapolant`](@ref): write the result into `val`.
+"""
 @inline function current_extrapolant!(
         val, t::Number, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0}
@@ -1273,8 +1306,13 @@ end
     return nothing
 end
 
+# By default, Hermite interpolant so update the derivative at the two ends
 """
-By default, Hermite interpolant so update the derivative at the two ends
+    _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false, allow_calc_end = true, force_calc_end = false)
+
+Generic fallback for [`ode_addsteps!`](@ref) that fills `k[1]`, `k[2]` with the
+RHS at the step endpoints (`f(uprev, p, t)` and `f(u, p, t+dt)`), sufficient for
+cubic-Hermite dense output.
 """
 function _ode_addsteps!(
         k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
@@ -1295,8 +1333,16 @@ function _ode_addsteps!(
     return nothing
 end
 
+# ode_interpolant and ode_interpolant! dispatch
 """
-ode_interpolant and ode_interpolant! dispatch
+    ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{deriv}}, differential_vars)
+
+Evaluate the out-of-place dense-output interpolant at fraction `Θ ∈ [0, 1]` of a
+step of length `dt` from `y₀` to `y₁`, using the stage-derivative history `k` and
+the algorithm `cache`. `idxs` selects components (or `nothing` for all), `deriv`
+is the derivative order, and `differential_vars` masks algebraic components for
+DAEs. Solver sublibraries add methods for their cache types; the fallback is
+Hermite (or linear when `k` is empty).
 """
 function ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
@@ -1338,6 +1384,12 @@ function ode_interpolant(
     end
 end
 
+"""
+    ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{deriv}}, differential_vars)
+
+In-place version of [`ode_interpolant`](@ref): write the interpolated value into
+`out`.
+"""
 function ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
@@ -1351,6 +1403,15 @@ end
 @inline _dv(dv::Bool, _) = dv
 @inline _dv(dv, i) = dv[i]
 
+"""
+    interpolation_differential_vars(differential_vars, y₀, idxs)
+
+Resolve the per-component differential-vs-algebraic mask actually used by the
+interpolant, given the problem's `differential_vars`, the value `y₀`, and the
+selected `idxs`. Returns `true` when all selected components are differential,
+`false` when the mask is undefined (forcing linear interpolation), or the
+appropriate (sub)mask otherwise.
+"""
 function interpolation_differential_vars(differential_vars, y₀, idxs)
     if isnothing(differential_vars)
         if y₀ isa Number
@@ -1382,6 +1443,14 @@ function interpolation_differential_vars(differential_vars, y₀, idxs)
 end
 
 # If no dispatch found, assume Hermite (or linear when k is empty, e.g. SDE)
+"""
+    _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
+
+Low-level out-of-place interpolation kernel dispatched on the `cache` type. The
+generic fallback performs cubic Hermite interpolation (linear when there are fewer
+than two stage derivatives). Solver sublibraries specialize this for their own
+dense-output formulas.
+"""
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
@@ -1400,6 +1469,11 @@ function _ode_interpolant(
     )
 end
 
+"""
+    _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
+
+In-place counterpart of [`_ode_interpolant`](@ref); writes into `out`.
+"""
 function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
@@ -1414,10 +1488,14 @@ function _ode_interpolant!(
     return hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
 end
 
+# Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
+# Hermite Interpolation, chosen if no other dispatch for ode_interpolant
 """
-Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
+    hermite_interpolant(Θ, dt, y₀, y₁, k, ::Val{mutable}, idxs, T::Type{Val{deriv}}, differential_vars)
 
-Herimte Interpolation, chosen if no other dispatch for ode_interpolant
+Evaluate the cubic-Hermite interpolant (or its `deriv`-th derivative) between `y₀`
+and `y₁` from the endpoint derivatives `k[1]`, `k[2]`. Algebraic components
+(`differential_vars` false) fall back to linear interpolation.
 """
 @muladd function hermite_interpolant(
         Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
@@ -1492,6 +1570,12 @@ end
     end
 end
 
+"""
+    hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{deriv}}, differential_vars)
+
+In-place cubic-Hermite interpolation, writing into `out`. See
+[`hermite_interpolant`](@ref).
+"""
 @muladd function hermite_interpolant!(
         out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{0}}, differential_vars
     )

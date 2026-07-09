@@ -7,6 +7,13 @@ get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cu
 # handle FIRK
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
 
+"""
+    nlsolvefail(nlsolver) -> Bool
+    nlsolvefail(status::NLStatus) -> Bool
+
+Return whether a nonlinear solve failed, i.e. whether the solver's
+[`NLStatus`](@ref) is non-positive (`SlowConvergence` or worse).
+"""
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
@@ -30,6 +37,13 @@ function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, va
     return (nlcache.firststage = val)
 end
 setfirststage!(::Any, val::Bool) = nothing
+"""
+    markfirststage!(nlsolver)
+
+Mark the nonlinear solver as being on the first implicit stage of the current
+step (sets the cache's `firststage` flag to `true`). Used so predictor/`W`-reuse
+logic can distinguish the first stage from later ones.
+"""
 markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
 
 getnfails(_) = 0
@@ -55,6 +69,12 @@ du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
 du_cache(::AbstractNLSolverCache) = nothing
 du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCache}) = (nlcache.k,)
 
+"""
+    du_alias_or_new(nlsolver, rate_prototype)
+
+Return a derivative buffer for the nonlinear solve: reuse the solver cache's
+existing `du` buffer when it has one, otherwise allocate `zero(rate_prototype)`.
+"""
 function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     _du_cache = du_cache(nlsolver)
     return if _du_cache === nothing
@@ -228,6 +248,18 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
 end
 
+"""
+    build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
+                   uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
+                   iip, verbose) -> AbstractNLSolver
+
+Construct the nonlinear solver object (an [`AbstractNLSolver`](@ref)) that an
+implicit algorithm `alg` uses to solve its stage equations. `γ` and `c` are the
+stage's diagonal coefficient and abscissa, `α` an optional scaling, `iip` the
+in-place flag; the nonlinear-solver algorithm defaults to `alg.nlsolve`. Allocates
+the appropriate cache (Newton `W`/factorization, functional/Anderson buffers, …)
+for the chosen `nlalg`.
+"""
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},

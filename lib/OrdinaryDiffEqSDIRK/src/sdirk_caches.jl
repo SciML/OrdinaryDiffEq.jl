@@ -21,6 +21,14 @@ _esdirk_smooth_est(alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm) = alg.smoot
 _esdirk_smooth_est(alg::OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm) = alg.smooth_est
 _esdirk_smooth_est(alg) = false
 
+"""
+    ESDIRKIMEXConstantCache <: OrdinaryDiffEqConstantCache
+
+Out-of-place solver cache for the ESDIRK-IMEX methods. Holds the nonlinear solver
+`nlsolver`, the Butcher tableau `tab`, and the extra history slots `uprev3` /
+`tprev2` used by the embedded error estimate. Declared public so downstream IMEX
+solvers can reuse the ESDIRK-IMEX step.
+"""
 mutable struct ESDIRKIMEXConstantCache{Tab, N, U3, T2} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::Tab
@@ -32,6 +40,14 @@ function ESDIRKIMEXConstantCache(nlsolver, tab)
     return ESDIRKIMEXConstantCache(nlsolver, tab, nothing, nothing)
 end
 
+"""
+    ESDIRKIMEXCache <: SDIRKMutableCache
+
+In-place solver cache for the ESDIRK-IMEX methods. Holds the stage values `zs`,
+stage-derivative buffers `ks`, error temporary `atmp`, nonlinear solver
+`nlsolver`, tableau `tab`, step limiter, and the extra history slots
+(`uprev2`/`uprev3`/`tprev2`) and `algebraic_vars` mask.
+"""
 mutable struct ESDIRKIMEXCache{
         uType, rateType, uNoUnitsType, N, Tab, kType, StepLimiter, U2, AV, U3, T2,
     } <: SDIRKMutableCache

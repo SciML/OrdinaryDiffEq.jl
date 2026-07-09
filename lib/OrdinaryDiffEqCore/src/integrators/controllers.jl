@@ -535,6 +535,13 @@ IController(alg; kwargs...) = IController(Float64, alg; kwargs...)
 IController(::Type{QT}, alg; kwargs...) where {QT} =
     IController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
+"""
+    IControllerCache <: AbstractControllerCache
+
+Per-solve cache for the integral ([`IController`](@ref)) step-size controller. It
+holds the resolved `controller`, the last rejected step size `dtreject`, and the
+scalar error estimate `EEst`.
+"""
 mutable struct IControllerCache{T, E, NLPType} <: AbstractControllerCache
     controller::IController{CommonControllerOptions{T, NLPType}}
     dtreject::T
@@ -667,6 +674,13 @@ function PIController(
     return PIController{typeof(basic), QT}(basic, QT(beta1), QT(beta2), QT(qoldinit))
 end
 
+"""
+    PIControllerCache <: AbstractControllerCache
+
+Per-solve cache for the PI ([`PIController`](@ref)) step-size controller. In
+addition to the resolved `controller` and the scalar `EEst`, it stores the cached
+`q11 = εₙ^β₁` factor and the previous error `errold` used by the PI update.
+"""
 mutable struct PIControllerCache{T, E, NLPType} <: AbstractControllerCache
     controller::PIController{CommonControllerOptions{T, NLPType}, T}
     # Cached εₙ₊₁^β₁
@@ -871,6 +885,12 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
+"""
+    PIDControllerCache <: AbstractControllerCache
+
+Per-solve cache for the PID ([`PIDController`](@ref)) step-size controller, storing
+the resolved `controller`, its limiter, the error history, and the scalar `EEst`.
+"""
 mutable struct PIDControllerCache{T, Limiter, E, NLPType} <: AbstractControllerCache
     controller::PIDController{CommonControllerOptions{T, NLPType}, T, Limiter}
     err::Vector{T} # history of the error estimates
@@ -1047,6 +1067,13 @@ PredictiveController(alg; kwargs...) = PredictiveController(Float64, alg; kwargs
 PredictiveController(::Type{QT}, alg; kwargs...) where {QT} =
     PredictiveController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
+"""
+    PredictiveControllerCache <: AbstractControllerCache
+
+Per-solve cache for the predictive ([`PredictiveController`](@ref)) step-size
+controller (Gustafsson predictive control, common for implicit solvers), holding
+the resolved `controller` and the scalar `EEst`.
+"""
 mutable struct PredictiveControllerCache{T, E, NLPType} <: AbstractControllerCache
     controller::PredictiveController{CommonControllerOptions{T, NLPType}}
     dtacc::T
@@ -1158,6 +1185,13 @@ struct CompositeController{T} <: AbstractController
     controllers::T
 end
 
+"""
+    CompositeControllerCache <: AbstractControllerCache
+
+Per-solve cache for the [`CompositeController`](@ref) used by composite algorithms.
+Holds the tuple of sub-controller `caches` (one per constituent algorithm) and the
+scalar `EEst`; accessor calls delegate to the currently-active sub-cache.
+"""
 mutable struct CompositeControllerCache{T, E} <: AbstractControllerCache
     caches::T
     EEst::E

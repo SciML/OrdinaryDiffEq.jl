@@ -1,3 +1,9 @@
+"""
+    is_constant_cache(cache) -> Bool
+
+Return whether `cache` is an out-of-place ([`OrdinaryDiffEqConstantCache`](@ref))
+cache. For composite/default caches it reflects the active constituent cache.
+"""
 is_constant_cache(::OrdinaryDiffEqConstantCache) = true
 is_constant_cache(::OrdinaryDiffEqCache) = false
 is_constant_cache(cache::CompositeCache) = is_constant_cache(cache.caches[1])

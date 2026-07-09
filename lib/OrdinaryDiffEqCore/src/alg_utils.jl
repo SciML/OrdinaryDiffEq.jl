@@ -69,6 +69,14 @@ SciMLBase.supports_solve_rng(
 
 ## OrdinaryDiffEq Internal Traits
 
+"""
+    isfsal(alg) -> Bool
+
+Return whether `alg` is a FSAL ("first same as last") method, i.e. the last stage
+derivative of one step equals the first of the next so it can be reused. Explicit
+RK methods are FSAL by default (`true`); the integrator reuses `fsallast` as the
+next `fsalfirst` accordingly.
+"""
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
 
@@ -76,15 +84,46 @@ isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
 # Pseudo Non-FSAL
 #isfsal(alg::RKM) = false
 
+"""
+    isfirk(alg) -> Bool
+
+Return whether `alg` is a fully-implicit Runge–Kutta (FIRK) method
+(`false` by default).
+"""
 isfirk(alg) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
 
+"""
+    dt_required(alg) -> Bool
+
+Return whether `alg` requires the user to supply a `dt` (`true` by default). Only
+fully-adaptive or callback-driven algorithms may relax this.
+"""
 dt_required(alg) = true
 
+"""
+    isdiscretealg(alg) -> Bool
+
+Return whether `alg` is a discrete-time / map-iteration algorithm rather than a
+continuous ODE solver (`false` by default).
+"""
 isdiscretealg(alg) = false
 
+"""
+    alg_stability_size(alg) -> Real
+
+Return the (real-axis) linear stability region size of `alg`, used by
+stabilized/auto-switching heuristics to decide whether an explicit method is
+stable for the current step. Solver sublibraries define it per algorithm.
+"""
 function alg_stability_size end
+"""
+    has_stiff_interpolation(alg) -> Bool
+
+Return whether `alg` provides a special interpolant for its stiff branch
+(`false` by default).
+"""
 has_stiff_interpolation(alg) = false
 
 # evaluates f(t[i])
@@ -113,6 +152,12 @@ all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
     return :(all($ex))
 end
 
+"""
+    issplit(alg) -> Bool
+
+Return whether `alg` treats the RHS as a split function (e.g. IMEX `f = f1 + f2`).
+`false` by default.
+"""
 issplit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 issplit(alg::StochasticDiffEqAlgorithm) = false
 
@@ -172,6 +217,13 @@ end
     return expr
 end
 
+"""
+    fsal_typeof(alg, rate_prototype)
+
+Return the type used to store the FSAL derivative for `alg` given a
+`rate_prototype`. Defaults to `typeof(rate_prototype)`; overridden by algorithms
+whose FSAL slot differs from the ordinary rate type.
+"""
 function fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, rate_prototype)
     return typeof(rate_prototype)
 end
@@ -182,25 +234,56 @@ function fsal_typeof(alg::CompositeAlgorithm, rate_prototype)
     return fsal[1]
 end
 
+"""
+    isimplicit(alg) -> Bool
+
+Return whether `alg` solves an implicit (nonlinear) system each step. `false` for
+explicit methods; `true` for implicit ones. For a [`CompositeAlgorithm`](@ref) it
+is `true` if any constituent is implicit.
+"""
 isimplicit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
 isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
 isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
+"""
+    isdtchangeable(alg) -> Bool
+
+Return whether `alg` allows the step size `dt` to change between steps (`true` by
+default). Multistep-style methods that require a fixed grid set this to `false`.
+"""
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 isdtchangeable(alg) = true
 
+"""
+    ismultistep(alg) -> Bool
+
+Return whether `alg` is a multistep method (uses solution history from more than
+the previous step). `false` by default.
+"""
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
 
+"""
+    isadaptive(alg) -> Bool
+
+Return whether `alg` performs adaptive step-size control. `true` for algorithms
+subtyping an `…Adaptive…` abstract type, `false` otherwise.
+"""
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 isadaptive(alg) = false
 
+"""
+    has_special_newton_error(alg) -> Bool
+
+Return whether `alg` supplies its own Newton-iteration error estimate rather than
+the generic one (`false` by default).
+"""
 has_special_newton_error(alg) = false
 
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
@@ -208,6 +291,12 @@ anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 anyadaptive(alg) = isadaptive(alg)
 
+"""
+    has_dtnew_modification(alg) -> Bool
+
+Return whether `alg` post-processes the controller's proposed `dtnew` via a
+`dtnew_modification` hook (`false` by default).
+"""
 has_dtnew_modification(alg) = false
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
@@ -216,17 +305,53 @@ dtnew_modification(integrator, alg, dtnew) = dtnew
 # (zero(u), similar(u), broadcasts) still works. Solvers that want to preserve the
 # `nothing` signal — e.g., to bypass nonlinear solvers or skip allocation — override
 # to true.
+"""
+    allows_null_u0(alg) -> Bool
+
+Return whether `alg` supports an empty (zero-length) initial condition `u0`
+(`false` by default).
+"""
 allows_null_u0(alg) = false
 
 # Whether an algorithm uses a posteriori dt estimates (always accepts, then picks next dt).
 # Default is false. CaoTauLeaping overrides to true.
+"""
+    isaposteriori(alg) -> Bool
+
+Return whether `alg` uses a-posteriori (rather than embedded) error estimation
+(`false` by default).
+"""
 isaposteriori(alg) = false
 
+"""
+    isautoswitch(alg) -> Bool
+
+Return whether `alg` is a composite algorithm whose choice function is an
+[`AutoSwitch`](@ref) stiffness detector.
+"""
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
+"""
+    only_diagonal_mass_matrix(alg) -> Bool
+
+Return whether `alg` only supports diagonal (not general) mass matrices
+(`false` by default). Used to decide FSAL reevaluation.
+"""
 only_diagonal_mass_matrix(alg) = false
+"""
+    isdp8(alg) -> Bool
+
+Return whether `alg` is the `DP8` method. Used to special-case its FSAL / dense
+handling (`false` by default).
+"""
 isdp8(alg) = false
+"""
+    isdefaultalg(alg) -> Bool
+
+Return whether `alg` is the automatic default algorithm wrapper. Used to route the
+stiffness auto-switching logic through its specialized default path.
+"""
 isdefaultalg(alg) = false
 
 """
@@ -253,12 +378,30 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 qmax_default(alg) = 10
 
+"""
+    get_chunksize(alg) -> Val
+
+Return the ForwardDiff chunk size configured on `alg`'s autodiff choice, as a
+`Val`. `Val(0)` means "let ForwardDiff choose".
+"""
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
 
+"""
+    _get_fwd_chunksize(AD) -> Val
+
+Return, as a `Val`, the ForwardDiff chunk size encoded in the `AutoForwardDiff`
+type/instance `AD` (`Val(0)` when unspecified).
+"""
 _get_fwd_chunksize(::Type{<:AutoForwardDiff{nothing}}) = Val(0)
 _get_fwd_chunksize(::Type{<:AutoForwardDiff{CS}}) where {CS} = Val(CS)
+"""
+    _get_fwd_chunksize_int(AD) -> Int
+
+Return the ForwardDiff chunk size encoded in the `AutoForwardDiff` type/instance
+`AD` as a plain `Int` (`0` when unspecified).
+"""
 _get_fwd_chunksize_int(::Type{<:AutoForwardDiff{nothing}}) = 0
 _get_fwd_chunksize_int(::Type{<:AutoForwardDiff{CS}}) where {CS} = CS
 _get_fwd_chunksize(AD) = Val(0)
@@ -267,6 +410,12 @@ _get_fwd_chunksize_int(::AutoForwardDiff{nothing}) = 0
 _get_fwd_chunksize_int(::AutoForwardDiff{CS}) where {CS} = CS
 _get_fwd_tag(::AutoForwardDiff{CS, T}) where {CS, T} = T
 
+"""
+    _get_fdtype(AD)
+
+Return the finite-difference type parameter (e.g. `Val{:forward}`) of an
+`AutoFiniteDiff` type/instance `AD`.
+"""
 _get_fdtype(::AutoFiniteDiff{T1}) where {T1} = T1
 _get_fdtype(::Type{<:AutoFiniteDiff{T1}}) where {T1} = T1
 
@@ -302,6 +451,13 @@ end
 
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
+"""
+    alg_autodiff(alg)
+
+Return the automatic-differentiation choice (an ADTypes.jl `AbstractADType`) that
+`alg` uses to build Jacobians. Implicit-solver sublibraries define this for their
+algorithms; see also [`get_current_alg_autodiff`](@ref) for composite algorithms.
+"""
 function alg_autodiff end
 
 # Linear Exponential doesn't have any of the AD stuff
@@ -334,6 +490,12 @@ function _prepare_autoswitch_alg(algs::Tuple, u0, p, prob)
     return map(a -> DiffEqBase.prepare_alg(a, u0, p, prob), algs)
 end
 
+"""
+    has_autodiff(alg) -> Bool
+
+Return whether `alg` carries an `autodiff` field configuring Jacobian
+differentiation (`false` for explicit methods).
+"""
 has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
 function has_autodiff(
         alg::Union{
@@ -350,11 +512,25 @@ has_autodiff(alg::ExponentialAlgorithm) = hasfield(typeof(alg), :autodiff)
 # end
 
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
+"""
+    get_current_alg_autodiff(alg, cache)
+
+Return the autodiff choice active for the current step. Equals
+[`alg_autodiff`](@ref)`(alg)` for simple algorithms; for a
+[`CompositeAlgorithm`](@ref) it selects the currently-active constituent via
+`cache.current`.
+"""
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 function get_current_alg_autodiff(alg::CompositeAlgorithm, cache)
     return _eval_index(alg_autodiff, alg.algs, cache.current)::Bool
 end
 
+"""
+    alg_difftype(alg)
+
+Return the finite-difference type (e.g. `Val{:forward}`) configured on `alg`'s
+`AutoFiniteDiff` autodiff choice, used when differentiating by finite differences.
+"""
 function alg_difftype(
         alg::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm,
@@ -368,6 +544,13 @@ function alg_difftype(
     return _get_fdtype(alg.autodiff)
 end
 
+"""
+    standardtag(alg) -> Bool
+
+Return whether `alg` uses the standard ForwardDiff tagging (a custom tag type for
+Dual numbers) when building Jacobians. Used by the differentiation machinery to
+pick the AD config.
+"""
 standardtag(
     alg::Union{
         OrdinaryDiffEqAdaptiveImplicitAlgorithm,
@@ -378,6 +561,13 @@ standardtag(
     }
 ) = true
 
+"""
+    concrete_jac(alg)
+
+Return the `concrete_jac` setting of `alg`: `true`/`false` forces whether a
+concrete Jacobian matrix is materialized, `nothing` lets the solver decide (e.g.
+based on the chosen linear solver).
+"""
 concrete_jac(
     alg::Union{
         OrdinaryDiffEqAdaptiveImplicitAlgorithm,
@@ -388,15 +578,36 @@ concrete_jac(
     }
 ) = alg.concrete_jac
 
+"""
+    alg_extrapolates(alg) -> Bool
+
+Return whether `alg` needs an extrapolated initial guess for its implicit/predictor
+stage (`false` by default). Algorithms that do set this to `true` so the
+integrator computes `uprev2`/extrapolant state for them.
+"""
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 alg_extrapolates(alg) = false
+"""
+    alg_order(alg) -> Int
+
+Return the order of accuracy of `alg`. Solver sublibraries define this for each
+concrete algorithm; for a [`CompositeAlgorithm`](@ref) it is the maximum over the
+constituent algorithms.
+"""
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     error("Order is not defined for this algorithm")
 end
 alg_order(alg::CompositeAlgorithm) = maximum(alg_order, alg.algs)
 
+"""
+    get_current_alg_order(alg, cache) -> Int
+
+Return the order currently in effect for `alg` given its `cache`. Equal to
+[`alg_order`](@ref) for fixed-order methods; for variable-order methods
+(Adams/BDF) it reads the order stored on the cache.
+"""
 function get_current_alg_order(
         alg::Union{
             OrdinaryDiffEqAlgorithm, DAEAlgorithm,
@@ -411,6 +622,13 @@ function get_current_alg_order(alg::CompositeAlgorithm, cache)
 end
 
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache) = cache.order
+"""
+    get_current_adaptive_order(alg, cache) -> Int
+
+Return the order used for the current step's adaptive error estimate given `alg`
+and its `cache` (order-aware analogue of [`alg_adaptive_order`](@ref) for
+variable-order methods).
+"""
 function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache)
     return cache.order
 end
@@ -423,9 +641,23 @@ function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
     return _eval_index(alg_adaptive_order, alg.algs, cache.current)::Int
 end
 
+"""
+    alg_maximum_order(alg) -> Int
+
+Return the maximum order the algorithm can attain. Equal to [`alg_order`](@ref)
+for fixed-order methods; for composite algorithms it is the maximum over the
+constituents.
+"""
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
+"""
+    alg_adaptive_order(alg) -> Int
+
+Return the order used for the adaptive error estimate of `alg`. The generic
+fallback is `alg_order(alg) - 1`; it is deliberately conservative because it
+tracks the realized error better than the embedded-estimate order.
+"""
 alg_adaptive_order(alg) = alg_order(alg) - 1
 
 # this is actually incorrect and is purposefully decreased as this tends
@@ -499,6 +731,13 @@ gamma_default(alg) = isadaptive(alg) ? 9 // 10 : 0
 
 # Whether `PredictiveController.stepsize_controller!` should use the
 # plain `gamma` factor without the Newton-iter correction (used by FIRK).
+"""
+    fac_default_gamma(alg) -> Bool
+
+Return whether the [`PredictiveController`](@ref) should apply the plain `gamma`
+safety factor without the Newton-iteration correction for `alg` (`false` by
+default; `true` for FIRK methods).
+"""
 fac_default_gamma(alg) = false
 
 """
@@ -564,9 +803,24 @@ ssp_coefficient(alg) = error("$alg is not a strong stability preserving method."
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
 
+"""
+    alg_can_repeat_jac(alg) -> Bool
+
+Return whether `alg` may reuse a Jacobian/W factorization across steps rather than
+recomputing every step. `true` for adaptive Newton algorithms, `false` otherwise.
+"""
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 
+"""
+    unwrap_alg(integrator, is_stiff)
+    unwrap_alg(alg, is_stiff)
+
+Return the concrete algorithm actually driving the current step. For a
+non-composite algorithm this is `alg` itself; for a [`CompositeAlgorithm`](@ref)
+it selects the active constituent based on the current cache index or, for a
+two-member auto-switch pair, on the `is_stiff` flag.
+"""
 function unwrap_alg(alg::SciMLBase.AbstractDEAlgorithm, is_stiff)
     if !is_composite_algorithm(alg)
         return alg
@@ -616,16 +870,42 @@ function throwautoswitch(alg)
 end
 
 # Whether `uprev` is used in the algorithm directly.
+"""
+    uses_uprev(alg, adaptive::Bool) -> Bool
+
+Return whether `alg` uses the previous step value `uprev` directly (as opposed to
+only via the FSAL history). `true` by default; used to decide whether the `uprev`
+cache slot must be maintained.
+"""
 uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = true
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 uses_uprev(alg, adaptive) = true
 
 
+"""
+    isWmethod(alg) -> Bool
+
+Return whether `alg` is a W-method, i.e. it remains correct with an inexact
+(stale) Jacobian in its `W` matrix (`false` by default). Rosenbrock-W methods set
+this `true`.
+"""
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 
+"""
+    isesdirk(alg) -> Bool
+
+Return whether `alg` is an ESDIRK (explicit-first-stage singly-diagonally-implicit
+Runge–Kutta) method (`false` by default).
+"""
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 
+"""
+    is_mass_matrix_alg(alg) -> Bool
+
+Return whether `alg` supports solving mass-matrix ODEs/DAEs `M u' = f`
+(`false` by default; `true` for Rosenbrock and appropriate Newton methods).
+"""
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
@@ -641,6 +921,13 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
 end
 
 # Defaults in the current system: currently opt out DAEAlgorithms until complete
+"""
+    default_linear_interpolation(alg, prob) -> Bool
+
+Return whether the solver should default to (cheaper) linear interpolation instead
+of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for DAEs,
+discrete problems, and RODE/SDE problems.
+"""
 default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
 # RODE/SDE always uses linear interpolation (no dense output)
 default_linear_interpolation(prob::SciMLBase.AbstractRODEProblem, alg) = true

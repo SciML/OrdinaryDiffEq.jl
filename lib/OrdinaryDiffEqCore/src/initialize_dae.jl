@@ -27,6 +27,14 @@ end
 ## Default algorithm is CheckInit
 ## Changed in v7--previously was BrownFullBasicInit or ShampineCollocationInit
 
+"""
+    _initialize_dae!(integrator, prob, alg, ::Val{iip})
+
+Run the DAE / mass-matrix initialization: adjust `u0` (and `du0`) so the algebraic
+constraints and initialization equations of `prob` are satisfied to tolerance,
+using the initialization algorithm `alg` (e.g. `CheckInit`, `BrownFullBasicInit`,
+`OverrideInit`). `Val{iip}` selects the in-place branch.
+"""
 function _initialize_dae!(
         integrator::ODEIntegrator, prob::Union{ODEProblem, DAEProblem},
         alg::DefaultInit, x::Union{Val{true}, Val{false}}
@@ -60,6 +68,13 @@ end
 default_nlsolve(alg, isinplace, u, initprob, autodiff = false, chunksize = Val(0)) = alg
 
 ## If the initialization is trivial just use nothing alg
+"""
+    default_nlsolve(alg, isinplace, u, initprob, autodiff = false, chunksize = Val(0))
+
+Return the nonlinear solver to use for a DAE-initialization problem `initprob`. If
+`alg` is already a concrete nonlinear-solve algorithm it is returned as-is;
+otherwise a sensible default is constructed from the arguments.
+"""
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u::Nothing, ::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(0)
