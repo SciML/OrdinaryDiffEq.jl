@@ -659,7 +659,13 @@ function dae_jacobian2W!(
     )::Nothing
     @boundscheck axes(W) == axes(J_u) == axes(J_du) ||
         throw(DimensionMismatch("W, J_u, J_du must have matching axes"))
-    @.. broadcast = false W = muladd(cj, J_du, J_u)
+    if is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+        # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support
+        # broadcasting into W. Same path as jacobian2W!: allocate then copyto!.
+        copyto!(W, J_u + convert(eltype(W), cj) * J_du)
+    else
+        @.. broadcast = false W = muladd(cj, J_du, J_u)
+    end
     return nothing
 end
 
@@ -677,6 +683,9 @@ end
 function dae_jacobian2W(
         J_u::AbstractMatrix, J_du::AbstractMatrix, cj::Number
     )
+    if is_sparse(J_u) && !ArrayInterface.fast_scalar_indexing(nonzeros(J_u))
+        return J_u + convert(eltype(J_u), cj) * J_du
+    end
     return @. muladd(cj, J_du, J_u)
 end
 
