@@ -8,6 +8,23 @@ function _get_alias_noise_from_kwargs(; alias_noise = nothing, alias = nothing, 
     end
 end
 
+@inline function _alias_or_default(alias, default::Bool)
+    return alias === nothing ? default : alias::Bool
+end
+
+function _sde_alias_specifier(::SDEProblem, alias::Nothing)
+    return SciMLBase.SDEAliasSpecifier()
+end
+function _sde_alias_specifier(::SciMLBase.AbstractRODEProblem, alias::Nothing)
+    return SciMLBase.RODEAliasSpecifier()
+end
+function _sde_alias_specifier(_, alias::SciMLBase.AbstractAliasSpecifier)
+    return alias
+end
+function _sde_alias_specifier(prob, alias)
+    throw(ArgumentError("`alias` must be an AbstractAliasSpecifier; got $(typeof(alias))."))
+end
+
 function SciMLBase.__solve(
         prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
@@ -168,30 +185,15 @@ function _sde_init(
     # NOTE: JumpProblem kwargs merge is already done by init_call / __solve
     # before reaching _sde_init. DO NOT call merge_problem_kwargs again here.
 
-    is_sde = _prob isa SDEProblem
-
-    # ── Alias resolution (SDE/RODE-specific specifier types) ─────────────
-    if alias isa Bool
-        aliases = is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
-            SciMLBase.RODEAliasSpecifier(; alias)
-    elseif alias isa SciMLBase.SDEAliasSpecifier
-        aliases = alias
-    elseif alias isa SciMLBase.RODEAliasSpecifier
-        aliases = alias
-    else
-        aliases = is_sde ? SciMLBase.SDEAliasSpecifier() :
-            SciMLBase.RODEAliasSpecifier()
-    end
-
     prob = concrete_prob(_prob)
+    aliases = _sde_alias_specifier(prob, alias)
 
     # ── RNG resolution ───────────────────────────────────────────────────
     _rng, _seed, _rng_provided = _resolve_rng(rng, seed, prob)
 
     # ── JumpProblem reset ────────────────────────────────────────────────
     if _prob isa JumpProblem
-        alias_jumps = isnothing(aliases.alias_jumps) ? Threads.threadid() == 1 :
-            aliases.alias_jumps
+        alias_jumps = _alias_or_default(aliases.alias_jumps, Threads.threadid() == 1)
         _jump_seed = _rng_provided ? nothing : _seed
         if !alias_jumps
             _prob = JumpProcesses.resetted_jump_problem(_prob, _jump_seed)
@@ -246,19 +248,19 @@ function _sde_init(
     end
 
     # ── f/p/u aliasing (needed before cache construction) ────────────────
-    if isnothing(aliases.alias_f) || aliases.alias_f
+    if _alias_or_default(aliases.alias_f, true)
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p
+    if _alias_or_default(aliases.alias_p, true)
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+    if _alias_or_default(aliases.alias_u0, false)
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
@@ -406,8 +408,8 @@ function _sde_init(
             end
         end
     elseif prob isa SciMLBase.AbstractRODEProblem
-        _alias_noise = if hasproperty(aliases, :alias_noise) && aliases.alias_noise !== nothing
-            aliases.alias_noise
+        _alias_noise = if hasproperty(aliases, :alias_noise)
+            _alias_or_default(getproperty(aliases, :alias_noise), true)
         else
             true
         end

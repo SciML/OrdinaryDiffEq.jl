@@ -37,3 +37,26 @@ function alg_cache(
     )
     return StochasticCompositeCache(caches, alg.choice_function, 1)
 end
+
+function alg_cache(
+        alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm},
+        prob,
+        u,
+        ΔW,
+        ΔZ,
+        p,
+        rate_prototype,
+        noise_rate_prototype,
+        jump_rate_prototype,
+        ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits},
+        uprev,
+        f,
+        t,
+        dt,
+        ::Type{Val{T}},
+        verbose
+    ) where {T, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    throw(ArgumentError("No stochastic alg_cache implementation found for $(typeof(alg))."))
+end

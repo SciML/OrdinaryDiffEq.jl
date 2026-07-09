@@ -63,6 +63,7 @@ sol = solve(prob, EM(), dt = 1 / 1000, alias = RODEAliasSpecifier(alias_noise = 
 @test objectid(prob.noise) != objectid(sol.W)
 @test objectid(prob.noise.u) == objectid(prob.noise.W) != objectid(sol.W.W) ==
     objectid(sol.W.u)
+@test_throws ArgumentError solve(prob, EM(), dt = 1 / 1000, alias = true)
 
 function g(du, u, p, t)
     @test du isa SparseMatrixCSC
