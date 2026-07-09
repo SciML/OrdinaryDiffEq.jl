@@ -49,7 +49,7 @@ StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 [compat]
 BVProblemLibrary = "0.1"
 BoundaryValueDiffEq = "5"
-CommonSolve = "0.2.4"
+CommonSolve = "0.2.6"
 DDEProblemLibrary = "0.1"
 DelayDiffEq = "6"
 DiffEqBase = "7"
