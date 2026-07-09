@@ -137,28 +137,30 @@ function algconvergence_iii()
     return @time @safetestset "Split Methods Tests" include("AlgConvergence_III/split_methods_tests.jl")
 end
 
-# AD / Downstream / ODEInterfaceRegression activate their own per-group
-# Project.toml exactly as the previous `activate_*_env` helpers did:
-# `Pkg.activate(dir)`, `Pkg.develop(path = repo root)`, `Pkg.instantiate()`.
-# They are kept as thunks (not `env =` group specs) so the develop/instantiate
-# behavior — in particular NOT transitively developing the sub-env's `[sources]`
-# on Julia < 1.11 — stays byte-for-byte identical to before the refactor.
+# AD / Downstream / ODEInterfaceRegression: use SciMLTesting.activate_group_env
+# so Julia < 1.11 gets `develop_sources!` (the `[sources]` LTS backport already
+# shipped in SciMLTesting). Developing only the monorepo root left registry
+# Rosenbrock ≤2.3.2 paired with monorepo Differentiation 3.3.0 (unsatisfiable
+# after the General retrocap).
 function activate_downstream_env()
-    Pkg.activate("Downstream")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
+    return activate_group_env(
+        joinpath(@__DIR__, "Downstream");
+        parent = dirname(@__DIR__),
+    )
 end
 
 function activate_odeinterface_env()
-    Pkg.activate("ODEInterfaceRegression")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
+    return activate_group_env(
+        joinpath(@__DIR__, "ODEInterfaceRegression");
+        parent = dirname(@__DIR__),
+    )
 end
 
 function activate_ad_env()
-    Pkg.activate("AD")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
+    return activate_group_env(
+        joinpath(@__DIR__, "AD");
+        parent = dirname(@__DIR__),
+    )
 end
 
 function downstream_group()
