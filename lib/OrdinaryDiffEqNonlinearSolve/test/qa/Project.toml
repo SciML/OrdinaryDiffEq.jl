@@ -1,30 +1,23 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../.."
-
-[sources.OrdinaryDiffEqBDF]
-path = "../../../OrdinaryDiffEqBDF"
-
-[sources.OrdinaryDiffEqRosenbrock]
-path = "../../../OrdinaryDiffEqRosenbrock"
 
 [compat]
 ADTypes = "1.16"
 Aqua = "0.8.11"
+ConstructionBase = "1"
 JET = "0.9, 0.11"
 OrdinaryDiffEqBDF = "2"
 OrdinaryDiffEqCore = "4"
@@ -32,3 +25,24 @@ OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqRosenbrock = "2"
 SciMLTesting = "1.7"
 julia = "1.10"
+
+[sources.OrdinaryDiffEqBDF]
+path = "../../../OrdinaryDiffEqBDF"
+
+[sources.OrdinaryDiffEqCore]
+path = "../../../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqDifferentiation]
+path = "../../../OrdinaryDiffEqDifferentiation"
+
+[sources.OrdinaryDiffEqFIRK]
+path = "../../../OrdinaryDiffEqFIRK"
+
+[sources.OrdinaryDiffEqNonlinearSolve]
+path = "../.."
+
+[sources.OrdinaryDiffEqRosenbrock]
+path = "../../../OrdinaryDiffEqRosenbrock"
+
+[sources.OrdinaryDiffEqSDIRK]
+path = "../../../OrdinaryDiffEqSDIRK"

@@ -3,6 +3,21 @@ using Pkg
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
+function develop_local_solver_env()
+    lib_dir = dirname(dirname(@__DIR__))
+    Pkg.develop(
+        [
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqCore")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqDifferentiation")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqBDF")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqFIRK")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqRosenbrock")),
+            PackageSpec(path = joinpath(lib_dir, "OrdinaryDiffEqSDIRK")),
+        ]
+    )
+    return Pkg.instantiate()
+end
+
 function activate_modelingtoolkit_env()
     Pkg.activate(joinpath(@__DIR__, "modelingtoolkit"))
     lib_dir = dirname(dirname(@__DIR__))
@@ -20,11 +35,13 @@ end
 
 function activate_qa_env()
     Pkg.activate(joinpath(@__DIR__, "qa"))
+    develop_local_solver_env()
     return Pkg.instantiate()
 end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "ModelingToolkit")
+    develop_local_solver_env()
     @time @safetestset "Newton Tests" include("newton_tests.jl")
     @time @safetestset "Sparse DAE Initialization" include("sparse_dae_initialization_tests.jl")
     @time @safetestset "Linear Nonlinear Solver Tests" include("linear_nonlinear_tests.jl")

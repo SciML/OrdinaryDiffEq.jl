@@ -71,6 +71,39 @@ function default_nlsolve(
     )
 end
 
+function find_algebraic_vars_eqs(M::LinearAlgebra.Diagonal)
+    idxs = map(iszero, LinearAlgebra.diag(M))
+    return idxs, idxs
+end
+
+function find_algebraic_vars_eqs(M::SparseMatrixCSC)
+    n_cols = size(M, 2)
+    n_rows = size(M, 1)
+    algebraic_vars = fill(true, n_cols)
+    algebraic_eqs = fill(true, n_rows)
+
+    @inbounds for j in 1:n_cols
+        for idx in M.colptr[j]:(M.colptr[j + 1] - 1)
+            if !iszero(M.nzval[idx])
+                algebraic_vars[j] = false
+                algebraic_eqs[M.rowval[idx]] = false
+            end
+        end
+    end
+
+    return algebraic_vars, algebraic_eqs
+end
+
+function find_algebraic_vars_eqs(M::AbstractMatrix)
+    algebraic_vars = vec(all(iszero, M, dims = 1))
+    algebraic_eqs = vec(all(iszero, M, dims = 2))
+    return algebraic_vars, algebraic_eqs
+end
+
+function find_algebraic_vars_eqs(M::AbstractSciMLOperator)
+    return find_algebraic_vars_eqs(convert(AbstractMatrix, M))
+end
+
 ## ShampineCollocationInit
 
 #=
