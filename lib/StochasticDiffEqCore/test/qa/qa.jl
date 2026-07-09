@@ -43,8 +43,69 @@ const NONPUBLIC_IGNORE = (
     FORWARDDIFF_INTERNAL..., BASE_INTERNAL...,
 )
 
+const ODEC = StochasticDiffEqCore.OrdinaryDiffEqCore
+const DEB = StochasticDiffEqCore.DiffEqBase
+const SMB = StochasticDiffEqCore.SciMLBase
+const DNP = StochasticDiffEqCore.DiffEqNoiseProcess
+
+# This package is the stochastic solver-interface extension layer; the shared
+# algorithm/cache supertypes and loop hooks are deliberately owned by the base
+# packages. Keep Aqua piracy checking enabled, but mark only those hooks as the
+# intentional extension surface for this package.
+const STOCHASTIC_PIRACY_HOOKS = Function[
+    SMB.__init,
+    SMB.__solve,
+    ODEC._determine_initdt,
+    ODEC._initialize_dae!,
+    ODEC.accept_noise!,
+    DEB.addat_non_user_cache!,
+    ODEC.alg_autodiff,
+    ODEC.alg_difftype,
+    ODEC.alg_extrapolates,
+    SMB.alg_interpretation,
+    SMB.alg_order,
+    SMB.allows_arbitrary_number_types,
+    SMB.allows_late_binding_tstops,
+    SMB.allowscomplex,
+    ODEC.beta1_default,
+    ODEC.beta2_default,
+    ODEC.concrete_jac,
+    DEB.deleteat_non_user_cache!,
+    SMB.forwarddiffs_model,
+    ODEC.gamma_default,
+    ODEC.get_chunksize,
+    ODEC.get_current_alg_autodiff,
+    ODEC.get_fsalfirstlast,
+    SMB.get_tmp_cache,
+    ODEC.handle_callback_modifiers!,
+    ODEC.has_autodiff,
+    DEB.initialize!,
+    ODEC.is_composite_algorithm,
+    ODEC.is_constant_cache,
+    ODEC.is_noise_saveable,
+    SMB.isadaptive,
+    SMB.isautodifferentiable,
+    SMB.isdiscrete,
+    ODEC.isfsal,
+    ODEC.noise_curt,
+    ODEC.qmax_default,
+    ODEC.qmin_default,
+    ODEC.qsteady_max_default,
+    ODEC.qsteady_min_default,
+    DEB.rand_cache,
+    DEB.ratenoise_cache,
+    ODEC.reject_noise!,
+    DEB.resize_non_user_cache!,
+    ODEC.reinit_noise!,
+    ODEC.save_noise!,
+    DNP.setup_next_step!,
+    ODEC.standardtag,
+    SMB.supports_solve_rng,
+]
+
 run_qa(
     StochasticDiffEqCore;
+    aqua_kwargs = (; piracies = (; treat_as_own = STOCHASTIC_PIRACY_HOOKS,)),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (;

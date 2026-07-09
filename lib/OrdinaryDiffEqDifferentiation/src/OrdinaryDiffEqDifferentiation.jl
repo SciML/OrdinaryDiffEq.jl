@@ -17,11 +17,13 @@ import ArrayInterface
 
 import StaticArraysCore: StaticArray, StaticMatrix
 
+using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
+import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
+
 # These wrappers are owned by SciMLBase. Keep the bindings here for registered
 # solver sublibraries that imported them from OrdinaryDiffEqDifferentiation.
-using SciMLBase: TimeDerivativeWrapper, TimeGradientWrapper, UJacobianWrapper,
-    UDerivativeWrapper, _vec, _unwrap_val
-import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
+const TimeDerivativeWrapper = SciMLBase.TimeDerivativeWrapper
+const TimeGradientWrapper = SciMLBase.TimeGradientWrapper
 import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern

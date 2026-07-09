@@ -20,10 +20,9 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, New
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
-using LinearAlgebra: UniformScaling, UpperTriangular, givens, cond, dot, lmul!, axpy!,
+using LinearAlgebra: UniformScaling, UpperTriangular, Diagonal, givens, cond, dot, lmul!, axpy!,
     I, rmul!, norm, mul!, ldiv!
 import LinearAlgebra
-using SparseArrays: SparseMatrixCSC
 import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
@@ -59,6 +58,17 @@ import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_
     resize_jac_config!, jacobian2W!, jacobian!
 
 import StaticArraysCore: StaticArray
+
+function _matching_mass_matrix_for_W(W::AbstractMatrix, mass_matrix::Diagonal)
+    W isa Matrix && return mass_matrix
+    converted = try
+        typeof(W)(mass_matrix)
+    catch
+        return mass_matrix
+    end
+    return axes(converted) == axes(W) ? converted : mass_matrix
+end
+_matching_mass_matrix_for_W(W, mass_matrix) = mass_matrix
 
 include("type.jl")
 include("utils.jl")

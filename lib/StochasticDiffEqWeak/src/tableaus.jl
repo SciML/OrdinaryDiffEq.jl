@@ -847,6 +847,8 @@ function constructNON(::Type{T} = Float64) where {T}
 end
 
 function checkNONOrder(NON; tol = 1.0e-6)
+    cjl = clj = ckj = Any[0, 0, 0, 0]
+    αjljj = αljjl = αkjjl = zeros(Int, 4, 4)
     if NON isa KomoriNON
         (; c0, cj, cjl, clj, α00, α0j, αj0, αjj, αjl, αjljj, αljjl) = NON
     elseif NON isa KomoriNON2

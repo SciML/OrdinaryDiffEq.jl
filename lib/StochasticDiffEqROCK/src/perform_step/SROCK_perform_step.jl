@@ -14,6 +14,7 @@
     cosh_inv = log(ω₀ + Sqrt_ω)             # arcosh(ω₀)
     ω₁ = (Sqrt_ω * cosh(mdeg * cosh_inv)) / (mdeg * sinh(mdeg * cosh_inv))
 
+    α = β = γ = zero(ω₀)
     if SciMLBase.alg_interpretation(integrator.alg) ==
             SciMLBase.AlgorithmInterpretation.Stratonovich
         α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
@@ -111,6 +112,7 @@ end
     cosh_inv = log(ω₀ + Sqrt_ω)             # arcosh(ω₀)
     ω₁ = (Sqrt_ω * cosh(mdeg * cosh_inv)) / (mdeg * sinh(mdeg * cosh_inv))
 
+    α = β = γ = zero(ω₀)
     if SciMLBase.alg_interpretation(integrator.alg) ==
             SciMLBase.AlgorithmInterpretation.Stratonovich
         α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
@@ -197,7 +199,11 @@ end
         (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
             (length(W.dW) == 1)
     )
-    gen_prob && (vec_χ = 2 .* floor.(false .* W.dW .+ 1 // 2 .+ oftype(W.dW, rand(W.rng, length(W.dW)))) .- true)
+    if gen_prob
+        vec_χ = 2 .* floor.(false .* W.dW .+ 1 // 2 .+ oftype(W.dW, rand(W.rng, length(W.dW)))) .- true
+    else
+        vec_χ = nothing
+    end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -759,9 +765,9 @@ end
         end
         winc = rand() * 6
         if winc < 1
-            u -= (sqrt(3 * dt) * ccache.mc[mdeg - 1]) * uᵢ₋₁
+            u -= (sqrt(3 * dt) * cache.mc[mdeg - 1]) * uᵢ₋₁
         elseif winc < 2
-            u += (sqrt(3 * dt) * ccache.mc[mdeg - 1]) * uᵢ₋₁
+            u += (sqrt(3 * dt) * cache.mc[mdeg - 1]) * uᵢ₋₁
         end
     end
     integrator.u = u
@@ -874,8 +880,7 @@ end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    (integrator.alg.version_num <= 2) &&
-        (
+    if integrator.alg.version_num <= 2
         cache.mdeg = Int(
             floor(
                 sqrt(
@@ -887,9 +892,7 @@ end
                 ) + 1
             )
         )
-    )
-    (integrator.alg.version_num > 2) &&
-        (
+    else
         cache.mdeg = Int(
             floor(
                 sqrt(
@@ -901,7 +904,7 @@ end
                 ) + 1
             )
         )
-    )
+    end
 
     cache.mdeg = max(4, min(cache.mdeg, 200)) - 2
     choose_deg!(integrator, cache)
@@ -923,6 +926,9 @@ end
     t̂₁ = t̂₂ = zero(t)
     tᵢ = tᵢ₋₁ = tᵢ₋₂ = tₓ = t
     uᵢ₋₂ = uprev
+    uᵢ₋₁ = uprev
+    uᵢ = zero(u)
+    uₓ = zero(u)
 
     for i in 0:(mdeg + 1)
         if i == 1
@@ -1036,9 +1042,13 @@ end
 
         for i in 1:length(W.dW)
             for j in 1:length(W.dW)
-                (i > j) && (WikJ = (1 // 2) * (1 + η₂) * W.dW[j])
-                (i < j) && (WikJ = (1 // 2) * (1 - η₂) * W.dW[j])
-                (i == j) && (WikJ = (1 // 2) * (η₁ * sqrt_dt))
+                if i > j
+                    WikJ = (1 // 2) * (1 + η₂) * W.dW[j]
+                elseif i < j
+                    WikJ = (1 // 2) * (1 - η₂) * W.dW[j]
+                else
+                    WikJ = (1 // 2) * (η₁ * sqrt_dt)
+                end
 
                 uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
@@ -1060,8 +1070,7 @@ end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
-    (integrator.alg.version_num <= 2) &&
-        (
+    if integrator.alg.version_num <= 2
         ccache.mdeg = Int(
             floor(
                 sqrt(
@@ -1073,9 +1082,7 @@ end
                 ) + 1
             )
         )
-    )
-    (integrator.alg.version_num > 2) &&
-        (
+    else
         ccache.mdeg = Int(
             floor(
                 sqrt(
@@ -1087,7 +1094,7 @@ end
                 ) + 1
             )
         )
-    )
+    end
     ccache.mdeg = max(4, min(ccache.mdeg, 200)) - 2
     choose_deg!(integrator, cache)
 
@@ -1207,9 +1214,13 @@ end
 
         for i in 1:length(W.dW)
             for j in 1:length(W.dW)
-                (i > j) && (WikJ = (1 // 2) * (1 + η₂) * W.dW[j])
-                (i < j) && (WikJ = (1 // 2) * (1 - η₂) * W.dW[j])
-                (i == j) && (WikJ = (1 // 2) * (η₁ * sqrt_dt))
+                if i > j
+                    WikJ = (1 // 2) * (1 + η₂) * W.dW[j]
+                elseif i < j
+                    WikJ = (1 // 2) * (1 - η₂) * W.dW[j]
+                else
+                    WikJ = (1 // 2) * (η₁ * sqrt_dt)
+                end
 
                 @.. uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
@@ -1245,7 +1256,11 @@ end
     τ = mτ[deg_index]
 
     sqrt_dt = sqrt(abs(dt))
-    (gen_prob) && (vec_χ = 2 .* floor.(1 // 2 .+ false .* W.dW .+ rand(length(W.dW))) .- 1)
+    if gen_prob
+        vec_χ = 2 .* floor.(1 // 2 .+ false .* W.dW .+ rand(length(W.dW))) .- 1
+    else
+        vec_χ = nothing
+    end
 
     tᵢ₋₂ = t
     uᵢ₋₂ = uprev
@@ -1424,7 +1439,7 @@ end
 @muladd function perform_step!(integrator, cache::KomBurSROCK2Cache)
     (;
         utmp, uᵢ₋₁, uᵢ₋₂, k, yₛ₋₁, yₛ₋₂, yₛ₋₃, SXₛ₋₁, SXₛ₋₂,
-        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ,
+        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ, WikRange,
     ) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     (; recf, mσ, mτ, mδ) = cache.constantcache

@@ -10,6 +10,12 @@ ExplicitRK
 IDSolve
 ```
 
+## Core DAE Utilities
+
+```@docs
+OrdinaryDiffEqCore.find_algebraic_vars_eqs
+```
+
 ## Internal Interpolation Utilities
 
 ```@docs

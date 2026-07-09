@@ -3,6 +3,9 @@ uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "4.5.0"
 
+[workspace]
+projects = ["../DiffEqBase", "../OrdinaryDiffEqFIRK", "../OrdinaryDiffEqRosenbrock", "../OrdinaryDiffEqTsit5"]
+
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
@@ -41,6 +44,12 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+OrdinaryDiffEqFIRK = {path = "../OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+
 [extensions]
 OrdinaryDiffEqCoreMooncakeExt = "Mooncake"
 OrdinaryDiffEqCorePolyesterExt = "Polyester"
@@ -53,7 +62,7 @@ Adapt = "4.3"
 ArrayInterface = "7.19"
 BinaryHeaps = "1"
 CommonSolve = "0.2.6"
-DiffEqBase = "7"
+DiffEqBase = "7.4.2"
 DiffEqDevTools = "3"
 DifferentiationInterface = "0.7.18"
 DocStringExtensions = "0.9.5"
@@ -103,12 +112,3 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface"]
-
-[sources.OrdinaryDiffEqFIRK]
-path = "../OrdinaryDiffEqFIRK"
-
-[sources.OrdinaryDiffEqRosenbrock]
-path = "../OrdinaryDiffEqRosenbrock"
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../OrdinaryDiffEqTsit5"

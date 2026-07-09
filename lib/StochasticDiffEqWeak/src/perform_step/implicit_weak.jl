@@ -19,21 +19,20 @@ based on the RI1 scheme with theta-method implicitization of the drift.
 
     alg = unwrap_alg(integrator, true)
     theta = alg.theta
+    nlsolver isa OrdinaryDiffEqCore.AbstractNLSolver ||
+        throw(ArgumentError("IRI1 requires a nonlinear solver cache"))
     OrdinaryDiffEqNonlinearSolve.markfirststage!(nlsolver)
     repeat_step = false
 
     # Define three-point distributed random variables
-    dW_scaled = W.dW / sqrt(dt)
+    dW = W.dW
+    dW_scaled = dW / sqrt(dt)
     sq3dt = sqrt(3 * dt)
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
     chi1 = map(x -> (x^2 - dt) / 2, _dW)  # diagonal of Ihat2
 
-    if !(W.dW isa Number)
-        m = length(W.dW)
-        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-    else
-        m = 1
-    end
+    m = dW isa Number ? 1 : length(dW)
+    _dZ = dW isa Number ? [_dW] : map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
 
     # Stage 1: Compute k1 implicitly
     # For implicit treatment: k1 = f(Y1) where Y1 = uprev + theta*dt*k1
@@ -55,7 +54,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
     g1 = integrator.f.g(uprev, p, t)
 
     # H^(0) Stage 2
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         H02 = uprev + a021 * k1 * dt + b021 * g1 * _dW
     else
         H02 = uprev + a021 * k1 * dt + b021 * g1 .* _dW
@@ -73,7 +72,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
 
     # H^(0) Stage 3
     H03 = uprev + a032 * k2 * dt + a031 * k1 * dt
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         H03 += b031 * g1 * _dW
     else
         H03 += b031 * g1 .* _dW
@@ -90,7 +89,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
     k3 = integrator.f(Y3, p, t + c03 * dt)
 
     # H^(k) stages for diffusion (explicit as in original RI1)
-    if W.dW isa Number
+    if dW isa Number
         H12 = uprev + a121 * k1 * dt + b121 * g1 * integrator.sqdt
         H13 = uprev + a131 * k1 * dt + b131 * g1 * integrator.sqdt
     else
@@ -110,9 +109,11 @@ based on the RI1 scheme with theta-method implicitization of the drift.
     end
 
     # Compute g2 and g3 at H12 and H13
-    if W.dW isa Number
+    if dW isa Number
         g2 = integrator.f.g(H12, p, t + c12 * dt)
         g3 = integrator.f.g(H13, p, t + c13 * dt)
+        H22 = [uprev]
+        H23 = [uprev]
     else
         g2 = [integrator.f.g(H12[k], p, t + c12 * dt) for k in 1:m]
         g3 = [integrator.f.g(H13[k], p, t + c13 * dt) for k in 1:m]
@@ -138,7 +139,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
     u = uprev + α1 * k1 * dt + α2 * k2 * dt + α3 * k3 * dt
 
     # Add noise contribution (same as explicit RI1)
-    if W.dW isa Number
+    if dW isa Number
         u += g1 * (_dW * beta11) + g2 * (_dW * beta12 + chi1 * beta22 / integrator.sqdt) +
             g3 * (_dW * beta13 + chi1 * beta23 / integrator.sqdt)
     else
@@ -247,6 +248,8 @@ IRI1 perform_step! implementation (mutable cache, in-place)
 
     alg = unwrap_alg(integrator, true)
     theta = alg.theta
+    nlsolver isa OrdinaryDiffEqCore.AbstractNLSolver ||
+        throw(ArgumentError("IRI1 requires a nonlinear solver cache"))
     OrdinaryDiffEqNonlinearSolve.markfirststage!(nlsolver)
     repeat_step = false
 

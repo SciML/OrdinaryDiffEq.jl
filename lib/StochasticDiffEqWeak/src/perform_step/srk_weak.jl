@@ -7,15 +7,13 @@
     (; t, dt, uprev, u, W, p, f) = integrator
 
     # define three-point distributed random variables
-    dW_scaled = W.dW / sqrt(dt)
+    dW = W.dW
+    dW_scaled = dW / sqrt(dt)
     sq3dt = sqrt(3 * dt)
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
     chi1 = map(x -> (x^2 - dt) / 2, _dW) # diagonal of Ihat2
-    if !(W.dW isa Number)
-        m = length(W.dW)
-        # define two-point distributed random variables
-        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-    end
+    m = dW isa Number ? 1 : length(dW)
+    _dZ = dW isa Number ? [_dW] : map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
 
     # compute stage values
     k1 = integrator.f(uprev, p, t)
@@ -24,7 +22,7 @@
     # H_i^(0), stage 1
     # H01 = uprev
     # H_i^(0), stage 2
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         H02 = uprev + a021 * k1 * dt + b021 * g1 * _dW
     else
         H02 = uprev + a021 * k1 * dt + b021 * g1 .* _dW
@@ -33,7 +31,7 @@
     # H_i^(0), stage 3 (requires H_i^(k) stage 2 in general)
     k2 = integrator.f(H02, p, t + c02 * dt)
     H03 = uprev + a032 * k2 * dt + a031 * k1 * dt
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         H03 += b031 * g1 * _dW
     else
         H03 += b031 * g1 .* _dW
@@ -44,7 +42,7 @@
     # H_i^(k), stage 1
     # H11 = uprev
     # H_i^(k), stage 2 and 3
-    if W.dW isa Number
+    if dW isa Number
         H12 = uprev + a121 * k1 * dt + b121 * g1 * integrator.sqdt
         H13 = uprev + a131 * k1 * dt + b131 * g1 * integrator.sqdt
     else
@@ -67,9 +65,11 @@
     # H21 = uprev
     # H^_i^(k), stage 2 and 3
 
-    if W.dW isa Number
+    if dW isa Number
         g2 = integrator.f.g(H12, p, t + c12 * dt)
         g3 = integrator.f.g(H13, p, t + c13 * dt)
+        H22 = [uprev]
+        H23 = [uprev]
         # for m=1:  H22 = uprev
     else
         g2 = [integrator.f.g(H12[k], p, t + c12 * dt) for k in 1:m]
@@ -85,8 +85,8 @@
                 tmp[k] = b231 * g1[k] + b232 * g2[k][k] + b233 * g3[k][k]
                 H23[k] += tmp * integrator.sqdt
             else
-                H22[k] += (b221 * g1[:, l] + b222 * g2[l][:, l] + b223 * g3[l][:, l]) * integrator.sqdt
-                H23[k] += (b231 * g1[:, l] + b232 * g2[l][:, l] + b233 * g3[l][:, l]) * integrator.sqdt
+                H22[k] += (b221 * g1[:, k] + b222 * g2[k][:, k] + b223 * g3[k][:, k]) * integrator.sqdt
+                H23[k] += (b231 * g1[:, k] + b232 * g2[k][:, k] + b233 * g3[k][:, k]) * integrator.sqdt
             end
         end
     end
@@ -95,7 +95,7 @@
     u = uprev + α1 * k1 * dt + α2 * k2 * dt + α3 * k3 * dt
 
     # add noise
-    if W.dW isa Number
+    if dW isa Number
         # lines 2 and 3
         u += g1 * (_dW * beta11) + g2 * (_dW * beta12 + chi1 * beta22 / integrator.sqdt) +
             g3 * (_dW * beta13 + chi1 * beta23 / integrator.sqdt)
@@ -145,7 +145,7 @@
     end
 
     if integrator.opts.adaptive &&
-            (W.dW isa Number || is_diagonal_noise(integrator.sol.prob) || m == 1)
+            (dW isa Number || is_diagonal_noise(integrator.sol.prob) || m == 1)
 
         # schemes with lower convergence order
         if c03 != 0.0
@@ -459,9 +459,11 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
 
     # define three-point distributed random variables
-    dW_scaled = W.dW / sqrt(dt)
+    dW = W.dW
+    dW_scaled = dW / sqrt(dt)
     sq3dt = sqrt(3 * dt)
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
+    m = dW isa Number ? 1 : length(dW)
 
     # compute stage values
     k1 = integrator.f(uprev, p, t)
@@ -470,7 +472,7 @@ end
     # H_i^(0), stage 1
     # H01 = uprev
     # H_i^(0), stage 2
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         H02 = uprev + a021 * k1 * dt + b021 * g1 * _dW
     else
         H02 = uprev + a021 * k1 * dt + b021 * g1 .* _dW
@@ -481,7 +483,7 @@ end
     u = uprev + α1 * k1 * dt + α2 * k2 * dt
 
     # add noise
-    if W.dW isa Number
+    if dW isa Number
         # lines 2 and 3
         u += g1 * (_dW * beta11)
     else
@@ -559,14 +561,14 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
 
     # define three-point distributed random variables
-    dW_scaled = W.dW / sqrt(dt)
+    dW = W.dW
+    dW_scaled = dW / sqrt(dt)
     sq3dt = sqrt(3 * dt)
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
-    if !(W.dW isa Number)
-        m = length(W.dW)
-        # define two-point distributed random variables
-        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-    end
+    m = dW isa Number ? 1 : length(dW)
+    _dZ = dW isa Number ? [_dW] : map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
+    H22 = [uprev]
+    H23 = [uprev]
     # compute stage values
     k1 = integrator.f(uprev, p, t)
     g1 = integrator.f.g(uprev, p, t)
@@ -579,7 +581,7 @@ end
     # H_1^(k)
     # H11 = uprev
     # H_2^(k), stage 2
-    if W.dW isa Number
+    if dW isa Number
         H12 = uprev + b121 * g1 * _dW
     elseif is_diagonal_noise(integrator.sol.prob)
         H12 = Vector{typeof(uprev)}[uprev .+ b121 * g1[k] * _dW[k] for k in 1:m]
@@ -587,14 +589,16 @@ end
         H12 = Vector{typeof(uprev)}[uprev .+ b121 * g1[:, k] * _dW[k] for k in 1:m]
     end
 
-    if W.dW isa Number
+    if dW isa Number
         g2 = integrator.f.g(H12, p, t)
+        H22 = [uprev]
+        H23 = [uprev]
     else
         g2 = [integrator.f.g(H12[k], p, t) for k in 1:m]
     end
 
     # H_3^(k)
-    if W.dW isa Number
+    if dW isa Number
         H13 = uprev + a131 * k1 * dt + b131 * g1 * _dW + b132 * g2 * _dW
     else
         H13 = [zero(typeof(uprev)) for k in 1:m]
@@ -608,7 +612,7 @@ end
                     end
                 end
             else
-                H13 += b131 * g1[:, k] * _dW[k] .+ b132 * g2[k][:, k] * _dW[k]
+                H13[k] += b131 * g1[:, k] * _dW[k] .+ b132 * g2[k][:, k] * _dW[k]
                 for l in 1:m
                     if l != k
                         H13[k] += b331 * g1[:, l] * _dW[l] .+ b332 * g2[l][:, l] * _dW[l]
@@ -618,13 +622,13 @@ end
         end
     end
 
-    if W.dW isa Number
+    if dW isa Number
         g3 = integrator.f.g(H13, p, t + c13 * dt)
     else
         g3 = [integrator.f.g(H13[k], p, t + c13 * dt) for k in 1:m]
     end
     # H_3^(k)
-    if W.dW isa Number
+    if dW isa Number
         H14 = uprev + a141 * k1 * dt + b141 * g1 * _dW + b142 * g2 * _dW + b143 * g3 * _dW
     else
         H14 = [zero(typeof(uprev)) for k in 1:m]
@@ -638,7 +642,7 @@ end
                     end
                 end
             else
-                H14 += b141 * g1[:, k] * _dW[k] .+ b142 * g2[k][:, k] * _dW[k] .+
+                H14[k] += b141 * g1[:, k] * _dW[k] .+ b142 * g2[k][:, k] * _dW[k] .+
                     b143 * g3[k][:, k] * _dW[k]
                 for l in 1:m
                     if l != k
@@ -649,7 +653,7 @@ end
         end
     end
 
-    if W.dW isa Number
+    if dW isa Number
         g4 = integrator.f.g(H14, p, t + c14 * dt)
     else
         g4 = [integrator.f.g(H14[k], p, t + c14 * dt) for k in 1:m]
@@ -659,9 +663,9 @@ end
     k2 = integrator.f(H02, p, t + c02 * dt)
     H03 = uprev + a032 * k2 * dt + a031 * k1 * dt
 
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         H03 += b031 * g1 * _dW
-        if W.dW isa Number
+        if dW isa Number
             H03 += b032 * g2 * _dW
         else
             for k in 1:m
@@ -684,7 +688,7 @@ end
     # H21 = uprev
     # H^_2^(k) # H^_3^(k)
 
-    if !(W.dW isa Number)
+    if !(dW isa Number)
         H22 = [uprev for k in 1:m]
         H23 = [uprev for k in 1:m]
         # add inbounds for speed if working properly
@@ -711,7 +715,7 @@ end
     u = uprev + (α1 * k1 + α2 * k2 + α3 * k3 + α4 * k1) * dt
 
     # add noise
-    if W.dW isa Number
+    if dW isa Number
         u += (g1 * beta11 + g2 * beta12 + g3 * beta13 + g4 * beta14) * _dW # beta2 terms are zero by construction
     else
         if is_diagonal_noise(integrator.sol.prob)
@@ -948,24 +952,22 @@ end
     (; NORMAL_ONESIX_QUANTILE) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
 
-    m = length(W.dW)
+    dW = W.dW
+    m = dW isa Number ? 1 : length(dW)
     sq3dt = sqrt(3 * dt)
     # define three-point distributed random variables
-    dW_scaled = W.dW / integrator.sqdt
+    dW_scaled = dW / integrator.sqdt
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
     chi1 = map(x -> (x^2 - dt) / 4, _dW)
-    if !(W.dW isa Number)
-        # define two-point distributed random variables
-        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-    end
+    _dZ = dW isa Number ? [_dW] : map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
     # compute stage values
     k1 = integrator.f(uprev, p, t)
     g1 = integrator.f.g(uprev, p, t)
 
     # Y, Yp, Ym
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if !is_diagonal_noise(integrator.sol.prob) || dW isa Number
         Y = uprev + k1 * dt + g1 * _dW
-        if W.dW isa Number
+        if dW isa Number
             Yp = uprev + k1 * dt + g1 * integrator.sqdt
             Ym = uprev + k1 * dt - g1 * integrator.sqdt
         else
@@ -994,7 +996,7 @@ end
     u = uprev + 1 // 2 * (k1 + k2) * dt
 
     # add noise
-    if W.dW isa Number
+    if dW isa Number
         g2p = integrator.f.g(Yp, p, t)
         g2m = integrator.f.g(Ym, p, t)
         u += 1 // 4 * (g2p + g2m + 2 * g1) * _dW + (g2p - g2m) * chi1 / integrator.sqdt #(1.1)
@@ -1102,7 +1104,7 @@ end
     if W.dW isa Number
         integrator.f.g(tmpg1, Yp, p, t)
         integrator.f.g(tmpg2, Ym, p, t)
-        @.. u = u + 1 // 4 * (tmpg1 + tmpg2 + 2 * g1) * _dW + 1 // 4 * (tmpg1 - tmpg2) * chi1[k] / integrator.sqdt #(1.1)
+        @.. u = u + 1 // 4 * (tmpg1 + tmpg2 + 2 * g1) * _dW + 1 // 4 * (tmpg1 - tmpg2) * chi1 / integrator.sqdt #(1.1)
     else
         if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
             # non-diag noise
@@ -1229,16 +1231,14 @@ end
     ) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
 
-    m = length(W.dW)
+    dW = W.dW
+    m = dW isa Number ? 1 : length(dW)
     # define three-point distributed random variables
     sq3dt = sqrt(3 * dt)
-    dW_scaled = W.dW / integrator.sqdt
+    dW_scaled = dW / integrator.sqdt
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
 
-    if !(W.dW isa Number)
-        # define two-point distributed random variables
-        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-    end
+    _dZ = dW isa Number ? [_dW] : map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
 
     # compute stage values
     # stage 1
@@ -1250,7 +1250,7 @@ end
     Y2jajb = [zero(u) for ja in 1:m, jb in 1:m]
     Y3jajb = [zero(u) for ja in 1:m, jb in 1:m]
     Y4jajb = [zero(u) for ja in 1:m, jb in 1:m]
-    if W.dW isa Number
+    if dW isa Number
         Y1jajb = gtmp * _dW
     else
         for ja in 1:m
@@ -1259,15 +1259,15 @@ end
                 if is_diagonal_noise(integrator.sol.prob)
                     tmpu = zero(integrator.u)
                     tmpu[jb] = gtmp[jb]
-                    @.. Y1jajb[ja, jb] = Ihat2 * tmpu
+                    @.. Y1jajb[ja, jb] = ihat2 * tmpu
                     if ja != jb
-                        @.. Y4jajb[ja, jb] = Ihat2 * tmpu
+                        @.. Y4jajb[ja, jb] = ihat2 * tmpu
                     end
                 else
                     gtmpjb = @view gtmp[:, jb]
-                    @.. Y1jajb[ja, jb] = Ihat2 * gtmpjb
+                    @.. Y1jajb[ja, jb] = ihat2 * gtmpjb
                     if ja != jb
-                        @.. Y4jajb[ja, jb] = Ihat2 * gtmpjb
+                        @.. Y4jajb[ja, jb] = ihat2 * gtmpjb
                     end
                 end
             end
@@ -1277,7 +1277,7 @@ end
     # stage 2
     Y200 = uprev + a0021 * Y100
 
-    if W.dW isa Number
+    if dW isa Number
         Y200 += a0j21 * Y1jajb
         Y2jajb = integrator.f.g(uprev + aj021 * Y100 + ajj21 * Y1jajb[1], p, t) * _dW
     else
@@ -1297,7 +1297,7 @@ end
                     gtmp = integrator.f.g(tmpu, p, t)
                     tmpjb = @view gtmp[:, jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
-                    @.. Y2jajb[ja, jb] = Ihat2 * tmpjb
+                    @.. Y2jajb[ja, jb] = ihat2 * tmpjb
                 end
             end
         else
@@ -1317,7 +1317,7 @@ end
                     tmpu = zero(integrator.u)
                     tmpu[jb] = gtmp[jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
-                    @.. Y2jajb[ja, jb] = Ihat2 * tmpu
+                    @.. Y2jajb[ja, jb] = ihat2 * tmpu
                 end
             end
         end
@@ -1327,7 +1327,7 @@ end
 
     # stage 3
     Y300 = uprev + a0032 * Y200
-    if W.dW isa Number
+    if dW isa Number
         Y300 += a0j31 * Y1jajb + a0j32 * Y2jajb
         Y3jajb = integrator.f.g(uprev + ajj31 * Y1jajb[1] + ajj32 * Y2jajb[1], p, t) * _dW
     else
@@ -1387,7 +1387,7 @@ end
 
     # stage 4
     Y400 = uprev + a0043 * Y300
-    if W.dW isa Number
+    if dW isa Number
         Y400 += a0j41 * Y1jajb
         Y4jajb = integrator.f.g(
             uprev + ajj41 * Y1jajb[1] + ajj42 * Y2jajb[1] + ajj43 * Y3jajb[1] + aj041 * Y100, p, t
@@ -1433,7 +1433,7 @@ end
 
     # add stages together
     u = uprev + c01 * Y100 + c02 * Y200 + c03 * Y300 + c04 * Y400
-    if W.dW isa Number
+    if dW isa Number
         # to be checked
         u += cj1 * Y1jajb + cj2 * Y2jajb + cj3 * Y3jajb + cj4 * Y4jajb
     else
@@ -1483,16 +1483,17 @@ end
         ajl32, ajl41, ajl42, ajljj31, aljjl21, aljjl31, NORMAL_ONESIX_QUANTILE,
     ) = cache.tab
 
-    m = length(W.dW)
+    dW = W.dW
+    if dW isa Number
+        throw(ArgumentError("NONCache requires vector noise increments"))
+    end
+    m = length(dW)
     # define three-point distributed random variables
-    @.. chi1 = W.dW / integrator.sqdt
+    @.. chi1 = dW / integrator.sqdt
     sq3dt = sqrt(3 * dt)
     calc_threepoint_random!(_dW, sq3dt, NORMAL_ONESIX_QUANTILE, chi1)
 
-    if !(W.dW isa Number)
-        # define two-point distributed random variables
-        calc_twopoint_random!(_dZ, integrator.sqdt, W.dZ)
-    end
+    calc_twopoint_random!(_dZ, integrator.sqdt, W.dZ)
 
     # compute stage values
     # stage 1
@@ -1666,34 +1667,30 @@ end
 
     # add stages together
     @.. u = uprev + c01 * Y100 + c02 * Y200 + c03 * Y300 + c04 * Y400
-    if W.dW isa Number
-        @.. u = u + cj1 * Y1jj + cj2 * Y2jj + cj3 * Y3jj + cj4 * Y4jj
-    else
-        if is_diagonal_noise(integrator.sol.prob)
-            for ja in 1:m
-                @.. u = u + cj1 * Y1jajb[ja, ja] + cj2 * Y2jajb[ja, ja] + cj3 * Y3jajb[ja, ja] +
-                    cj4 * Y4jajb[ja, ja]
-                for jb in 1:m
-                    if jb != ja
-                        if ja > jb
-                            @.. u = u + clj2 * Y2jajb[ja, jb] + clj3 * Y3jajb[ja, jb]
-                        else
-                            @.. u = u + cjl2 * Y2jajb[ja, jb] + cjl3 * Y3jajb[ja, jb]
-                        end
+    if is_diagonal_noise(integrator.sol.prob)
+        for ja in 1:m
+            @.. u = u + cj1 * Y1jajb[ja, ja] + cj2 * Y2jajb[ja, ja] + cj3 * Y3jajb[ja, ja] +
+                cj4 * Y4jajb[ja, ja]
+            for jb in 1:m
+                if jb != ja
+                    if ja > jb
+                        @.. u = u + clj2 * Y2jajb[ja, jb] + clj3 * Y3jajb[ja, jb]
+                    else
+                        @.. u = u + cjl2 * Y2jajb[ja, jb] + cjl3 * Y3jajb[ja, jb]
                     end
                 end
             end
-        else
-            for ja in 1:m
-                @.. u = u + cj1 * Y1jajb[ja, ja] + cj2 * Y2jajb[ja, ja] + cj3 * Y3jajb[ja, ja] +
-                    cj4 * Y4jajb[ja, ja]
-                for jb in 1:m
-                    if jb != ja
-                        if ja > jb
-                            @.. u = u + clj2 * Y2jajb[ja, jb] + clj3 * Y3jajb[ja, jb]
-                        else
-                            @.. u = u + cjl2 * Y2jajb[ja, jb] + cjl3 * Y3jajb[ja, jb]
-                        end
+        end
+    else
+        for ja in 1:m
+            @.. u = u + cj1 * Y1jajb[ja, ja] + cj2 * Y2jajb[ja, ja] + cj3 * Y3jajb[ja, ja] +
+                cj4 * Y4jajb[ja, ja]
+            for jb in 1:m
+                if jb != ja
+                    if ja > jb
+                        @.. u = u + clj2 * Y2jajb[ja, jb] + clj3 * Y3jajb[ja, jb]
+                    else
+                        @.. u = u + cjl2 * Y2jajb[ja, jb] + cjl3 * Y3jajb[ja, jb]
                     end
                 end
             end
@@ -2011,22 +2008,23 @@ end
     ) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
 
-    m = length(W.dW)
+    dW = W.dW
+    m = dW isa Number ? 1 : length(dW)
     #_dW = W.dW
 
     # define three-point distributed random variables
     sq3dt = sqrt(3 * dt)
-    chi1 = W.dW / integrator.sqdt
+    chi1 = dW / integrator.sqdt
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), chi1)
+    ihat2 = zeros(eltype(chi1), m, m)
 
-    if !(W.dW isa Number)
+    if !(dW isa Number)
         # define two-point distributed random variables
         _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-        ihat2 = zeros(eltype(W.dZ), m, m) # I^_(k,l)
         for j in 1:m
             for l in 1:(j - 1)
-                Ihat2[j, l] = -_dZ[j] * _dW[l] / integrator.sqdt
-                Ihat2[l, j] = _dW[l] * _dZ[j] / integrator.sqdt
+                ihat2[j, l] = -_dZ[j] * _dW[l] / integrator.sqdt
+                ihat2[l, j] = _dW[l] * _dZ[j] / integrator.sqdt
             end
         end
     end
@@ -2040,7 +2038,7 @@ end
 
     Y10 = ktmp * dt
 
-    if W.dW isa Number
+    if dW isa Number
         Y1j = gtmp * _dW
     else
         if is_diagonal_noise(integrator.sol.prob)
@@ -2053,7 +2051,7 @@ end
     # stage 2
     Y20 = uprev + a0021 * Y10
 
-    if W.dW isa Number
+    if dW isa Number
         Y20 += a0j21 * Y1j
         Y2j = integrator.f.g(uprev + aj021 * Y10 + ajj21 * Y1j, p, t) * _dW
     else
@@ -2079,7 +2077,7 @@ end
 
     # stage 3
     Y30 = uprev + a0032 * Y20
-    if W.dW isa Number
+    if dW isa Number
         Y30 += a0j31 * Y1j + a0j32 * Y2j
         Y3j = integrator.f.g(uprev + ajj31 * Y1j + ajj32 * Y2j, p, t) * _dW
     else
@@ -2111,7 +2109,7 @@ end
 
     # stage 4
     Y40 = uprev + a0043 * Y30
-    if W.dW isa Number
+    if dW isa Number
         Y40 += a0j41 * Y1j
         Y4j = integrator.f.g(uprev + ajj41 * Y1j + ajj42 * Y2j + ajj43 * Y3j + aj041 * Y10, p, t) * _dW
     else
@@ -2146,7 +2144,7 @@ end
     # add stages together
     u = uprev + c01 * Y10 + c02 * Y20 + c03 * Y30 + c04 * Y40
 
-    if W.dW isa Number
+    if dW isa Number
         u += cj1 * Y1j + cj2 * Y2j + cj3 * Y3j + cj4 * Y4j
     else
         if is_diagonal_noise(integrator.sol.prob)
@@ -2156,7 +2154,7 @@ end
                 u += @. cj1 * Y1j[:, j] + cj2 * Y2j[:, j] + cj3 * Y3j[:, j] + cj4 * Y4j[:, j]
                 #add stage values for non-commutative processes, Y3^(k(j)j) and Y4^(k(j)j)
                 for k in 1:m
-                    η2 = @view Ihat2[k, :]
+                    η2 = @view ihat2[k, :]
                     tmp = gtmp1 * η2 / (4 * γ)
                     Y3kj = integrator.sqdt * integrator.f.g(uprev + tmp, p, t)
                     Y4kj = integrator.sqdt * integrator.f.g(uprev - tmp, p, t)

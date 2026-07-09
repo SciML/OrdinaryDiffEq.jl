@@ -94,7 +94,7 @@ dZ_i Fourier coefficients (Lévy area), and the second sum gives the
 cross-interval contributions. Both terms are needed for correct strong
 order 1.0 convergence on rejected steps.
 """
-function _compute_II_from_S2(W_noise, m, dt)
+function _compute_II_from_S2(W_noise, m::Integer, dt)
     !hasproperty(W_noise, :S₂) && return nothing
     S₂ = W_noise.S₂
     n_sub = length(S₂)
@@ -156,7 +156,7 @@ NoiseWrapper or NoiseProcess source. Uses Z grid (Fourier coefficients) for
 within-sub-interval Lévy area when available, falling back to commutative
 approximation (½ dW dW') for sub-intervals without Z data.
 """
-function _compute_II_from_grid(W_noise, m, dt)
+function _compute_II_from_grid(W_noise, m::Integer, dt)
     source = _get_noise_grid_source(W_noise)
     source === nothing && return nothing
 
@@ -277,9 +277,9 @@ end
     L = integrator.f.g(uprev, p, t)
     mil_correction = zero(u)
     ggprime_norm = zero(eltype(u))
+    K = @.. uprev + dt * du1
 
     if dW isa Number || is_diagonal_noise(integrator.sol.prob)
-        K = @.. uprev + dt * du1
         utilde = (
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev

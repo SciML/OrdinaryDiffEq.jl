@@ -64,6 +64,7 @@ end
     if cache isa HeunConstantCache
         a₁ = dt
         a₂ = dt / 2
+        a₃ = a₂
     else # Ralston
         a₁ = 2 * dt / 3
         a₂ = dt / 4
@@ -125,6 +126,7 @@ end
     if cache isa HeunCache
         a₁ = dt
         a₂ = dt / 2
+        a₃ = a₂
     else # Ralston
         a₁ = 2 * dt / 3
         a₂ = dt / 4

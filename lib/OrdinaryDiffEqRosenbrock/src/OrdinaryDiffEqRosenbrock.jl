@@ -23,7 +23,7 @@ import DifferentiationInterface as DI
 import LinearSolve
 import ForwardDiff
 using FiniteDiff: FiniteDiff
-using LinearAlgebra: mul!, I, norm, lu, UniformScaling
+using LinearAlgebra: mul!, I, norm, lu, UniformScaling, Diagonal
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
@@ -53,6 +53,17 @@ import SciMLBase: alg_order
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
+
+function _matching_mass_matrix_for_W(W::AbstractMatrix, mass_matrix::Diagonal)
+    W isa Matrix && return mass_matrix
+    converted = try
+        typeof(W)(mass_matrix)
+    catch
+        return mass_matrix
+    end
+    return axes(converted) == axes(W) ? converted : mass_matrix
+end
+_matching_mass_matrix_for_W(W, mass_matrix) = mass_matrix
 
 function rosenbrock_wolfbrandt_docstring(
         description::String,

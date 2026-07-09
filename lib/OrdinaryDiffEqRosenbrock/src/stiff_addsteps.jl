@@ -163,7 +163,7 @@ function _ode_addsteps!(
         @.. linsolve_tmp = @muladd fsalfirst + dtgamma * dT
 
         # Jacobian does not need to be re-evaluated after an event since it's unchanged
-        jacobian2W!(W, mass_matrix, dtgamma, J)
+        jacobian2W!(W, _matching_mass_matrix_for_W(W, mass_matrix), dtgamma, J)
 
         linsolve = cache.linsolve
 
