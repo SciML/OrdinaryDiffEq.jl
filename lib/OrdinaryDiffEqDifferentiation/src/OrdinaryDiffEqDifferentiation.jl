@@ -17,11 +17,13 @@ import ArrayInterface
 
 import StaticArraysCore: StaticArray, StaticMatrix
 
-# `_vec`, `_unwrap_val`, `UDerivativeWrapper`, `UJacobianWrapper` are owned by
-# SciMLBase (OrdinaryDiffEqCore/DiffEqBase only re-export them), so import them
-# from the owner to satisfy `all_explicit_imports_via_owners`.
+# These wrappers and helpers are owned by SciMLBase; import from the owner while
+# retaining the local bindings expected by registered solver sublibraries that
+# still `using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, ...`.
 using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
 import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
+const TimeDerivativeWrapper = SciMLBase.TimeDerivativeWrapper
+const TimeGradientWrapper = SciMLBase.TimeGradientWrapper
 import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
