@@ -51,6 +51,7 @@ using SparseArrays: SparseArrays, issparse
 # DEVerbosity is owned (and made public) by DiffEqBase but also re-exported
 # through OrdinaryDiffEqCore; import it from the owner.
 using DiffEqBase: DEVerbosity
+using SciMLLogging: AbstractVerbosityPreset, Standard
 
 using LinearAlgebra: LinearAlgebra, I, mul!
 using Random: Random

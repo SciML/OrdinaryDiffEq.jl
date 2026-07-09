@@ -58,7 +58,7 @@ Polyester = "0.7"
 DiffEqBase = "7"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
-SciMLOperators = "1.15.0"
+SciMLOperators = "1.23"
 
 [targets]
 test = ["DiffEqDevTools", "GenericSchur", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg"]

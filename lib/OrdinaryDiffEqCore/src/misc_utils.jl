@@ -176,7 +176,7 @@ function find_algebraic_vars_eqs(M::AbstractMatrix)
     return algebraic_vars, algebraic_eqs
 end
 
-function find_algebraic_vars_eqs(M::AbstractSciMLOperator)
+function find_algebraic_vars_eqs(M::SciMLOperators.AbstractSciMLOperator)
     return find_algebraic_vars_eqs(convert(AbstractMatrix, M))
 end
 

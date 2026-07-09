@@ -93,8 +93,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # constraint derivatives must remain accurate. See Steinebach (2024).
     naccept = integrator.stats.naccept
     if integrator.f.mass_matrix !== I
-        if naccept > jac_reuse.last_naccept 
-           jac_reuse.last_naccept = naccept
+        if naccept > jac_reuse.last_naccept
+            jac_reuse.last_naccept = naccept
             return (true, true)
         else
             return (false, true)
@@ -1134,6 +1134,13 @@ function build_J_W(
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
+        if is_sparse(J)
+            set_all_nzval!(J, one(eltype(J)))
+            set_all_nzval!(W, one(eltype(W)))
+        else
+            fill!(J, one(eltype(J)))
+            fill!(W, one(eltype(W)))
+        end
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
                 alg.linsolve !== nothing &&

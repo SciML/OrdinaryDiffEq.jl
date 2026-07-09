@@ -77,8 +77,8 @@ ODEProblemLibrary = "1"
 PreallocationTools = "1.1.2"
 DiffEqBase = "7"
 SafeTestsets = "0.1.0"
-SciMLOperators = "1.15"
-ConstructionBase = "1"
+SciMLOperators = "1.23"
+ConstructionBase = "1.5.8"
 
 [targets]
 test = ["DiffEqDevTools", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "StaticArrays", "Statistics", "Test", "Pkg"]

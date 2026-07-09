@@ -18,7 +18,7 @@ LinearSolve = "3.75.0, 4"
 OrdinaryDiffEqCore = "4"
 Reexport = "1.2.2"
 SciMLBase = "3.30.0"
-SciMLOperators = "1.15.0"
+SciMLOperators = "1.23"
 julia = "1.10"
 
 [sources.OrdinaryDiffEqCore]
