@@ -147,7 +147,7 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
             jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
     end
-    jacobian2W!(W, _matching_mass_matrix_for_W(W, mass_matrix), dtgamma, J)
+    jacobian2W!(W, mass_matrix, dtgamma, J)
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing

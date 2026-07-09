@@ -12,6 +12,19 @@ end
     return alias === nothing ? default : alias::Bool
 end
 
+function _sde_alias_specifier(::SDEProblem, alias::Nothing)
+    return SciMLBase.SDEAliasSpecifier()
+end
+function _sde_alias_specifier(::SciMLBase.AbstractRODEProblem, alias::Nothing)
+    return SciMLBase.RODEAliasSpecifier()
+end
+function _sde_alias_specifier(_, alias::SciMLBase.AbstractAliasSpecifier)
+    return alias
+end
+function _sde_alias_specifier(prob, alias)
+    throw(ArgumentError("`alias` must be an AbstractAliasSpecifier; got $(typeof(alias))."))
+end
+
 function SciMLBase.__solve(
         prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
@@ -172,22 +185,8 @@ function _sde_init(
     # NOTE: JumpProblem kwargs merge is already done by init_call / __solve
     # before reaching _sde_init. DO NOT call merge_problem_kwargs again here.
 
-    is_sde = _prob isa SDEProblem
-
-    # ── Alias resolution (SDE/RODE-specific specifier types) ─────────────
-    aliases = if alias isa Bool
-        is_sde ? SciMLBase.SDEAliasSpecifier(; alias) :
-            SciMLBase.RODEAliasSpecifier(; alias)
-    elseif alias isa SciMLBase.SDEAliasSpecifier
-        alias
-    elseif alias isa SciMLBase.RODEAliasSpecifier
-        alias
-    else
-        is_sde ? SciMLBase.SDEAliasSpecifier() :
-            SciMLBase.RODEAliasSpecifier()
-    end
-
     prob = concrete_prob(_prob)
+    aliases = _sde_alias_specifier(prob, alias)
 
     # ── RNG resolution ───────────────────────────────────────────────────
     _rng, _seed, _rng_provided = _resolve_rng(rng, seed, prob)
