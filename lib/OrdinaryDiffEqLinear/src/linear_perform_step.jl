@@ -1,3 +1,51 @@
+struct _LinearExponentialFallbackOpnorm end
+
+function _is_opnorm_matrix_method_error(err, A)
+    err isa MethodError || return false
+    return any(arg -> arg === A, err.args)
+end
+
+# Sparse GPU `opnorm` currently MethodErrors (GPUArrays csr_type(instance)).
+# Prefer a nnz-based bound over densifying the full matrix (#3836 review).
+function _nnz_opnorm_bound(A, p)
+    nz = nothing
+    if hasproperty(A, :nzVal)
+        nz = getproperty(A, :nzVal)
+    elseif hasproperty(A, :nzval)
+        nz = getproperty(A, :nzval)
+    else
+        try
+            nz = Base.invokelatest(
+                getfield(parentmodule(typeof(A)), :nonzeros), A
+            )
+        catch
+            nz = nothing
+        end
+    end
+    nz === nothing && return nothing
+    isempty(nz) && return zero(float(real(eltype(A))))
+    # Loose upper bound sufficient for adaptive expv timestep heuristics.
+    return maximum(abs, nz) * max(size(A)...)
+end
+
+function (::_LinearExponentialFallbackOpnorm)(A, p)
+    try
+        return opnorm(A, p)
+    catch err
+        _is_opnorm_matrix_method_error(err, A) || rethrow()
+        bound = _nnz_opnorm_bound(A, p)
+        bound === nothing && rethrow()
+        return bound
+    end
+end
+
+const _LINEAR_EXPONENTIAL_FALLBACK_OPNORM = _LinearExponentialFallbackOpnorm()
+
+function _linear_exponential_adaptive_opnorm(internalopnorm)
+    return internalopnorm === opnorm ? _LINEAR_EXPONENTIAL_FALLBACK_OPNORM :
+        internalopnorm
+end
+
 function initialize!(integrator, cache::MagnusMidpointCache)
     integrator.kshortsize = 2
 
@@ -808,7 +856,7 @@ function perform_step!(
     else
         u = expv_timestep(
             dt, A, integrator.u; m = min(alg.m, size(A, 1)), iop = alg.iop,
-            opnorm = integrator.opts.internalopnorm,
+            opnorm = _linear_exponential_adaptive_opnorm(integrator.opts.internalopnorm),
             tol = integrator.opts.reltol
         )
     end
@@ -856,7 +904,7 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
         expv_timestep!(
             tmp, dt, A, u; adaptive = true, caches = KsCache,
             m = min(alg.m, size(A, 1)), iop = alg.iop,
-            opnorm = integrator.opts.internalopnorm,
+            opnorm = _linear_exponential_adaptive_opnorm(integrator.opts.internalopnorm),
             tol = integrator.opts.reltol
         )
     end
