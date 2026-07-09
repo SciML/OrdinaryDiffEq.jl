@@ -396,6 +396,7 @@ function _postamble!(integrator)
     resize!(integrator.sol.t, integrator.saveiter)
     resize!(integrator.sol.u, integrator.saveiter)
     finalize_solution_storage!(integrator)
+    _finalize_ts_hint!(integrator.sol)
     if integrator.opts.progress
         final_progress(integrator)
     end

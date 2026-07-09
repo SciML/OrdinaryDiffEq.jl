@@ -56,32 +56,30 @@ end
     )
 end
 
-# Interpolation objects that carry a warm-start hint (a
-# `FindFirstFunctions.Guesser`) return it here; the fallback keeps foreign
-# interpolation types on the plain binary search. The typed method for
-# `InterpolationData` lives in interp_func.jl (included after this file).
-@inline _ts_hint(id) = nothing
-
 # Hint-accelerated interval search for the scalar interpolation paths below.
 # Scalar interpolation calls arrive with strongly correlated `tval`s (adjoint
-# solves sweep time monotonically, delay-equation history lookups cluster), so
-# galloping outward from the previous hit is O(1) per lookup instead of a
-# fresh O(log n) binary search over all of `ts`. The `max` clamps reproduce
-# the lower search bounds of the plain methods above.
+# solves sweep time monotonically, delay-equation history lookups cluster) or
+# hit near-uniform grids (`saveat` ranges, fixed-dt stepping); the hint holds
+# a strategy enum selected for the grid plus the previous hit as the gallop
+# guess. The `max` clamps reproduce the lower search bounds of the plain
+# methods above.
 @inline function _searchsortedfirst(
-        hint::Guesser, v::AbstractVector, x, lo::Integer, forward::Bool
+        hint::TsSearchHint, v::AbstractVector, x, lo::Integer, forward::Bool
     )
+    maybe_reprobe_ts_hint!(hint)
     order = forward ? Base.Order.Forward : Base.Order.Reverse
-    return max(lo, searchsorted_first(GuesserHint(hint), v, x; order = order))
+    i = searchsorted_first(hint.kind[], v, x, hint.idx_prev[]; order = order)
+    hint.idx_prev[] = clamp(i, firstindex(v), lastindex(v))
+    return max(lo, i)
 end
 @inline function _searchsortedlast(
-        hint::Guesser, v::AbstractVector, x, lo::Integer, forward::Bool
+        hint::TsSearchHint, v::AbstractVector, x, lo::Integer, forward::Bool
     )
+    maybe_reprobe_ts_hint!(hint)
     order = forward ? Base.Order.Forward : Base.Order.Reverse
-    return max(
-        lo - oftype(lo, 1),
-        searchsorted_last(GuesserHint(hint), v, x; order = order)
-    )
+    i = searchsorted_last(hint.kind[], v, x, hint.idx_prev[]; order = order)
+    hint.idx_prev[] = clamp(i, firstindex(v), lastindex(v))
+    return max(lo - oftype(lo, 1), i)
 end
 @inline function _searchsortedfirst(
         ::Nothing, v::AbstractVector, x, lo::Integer, forward::Bool

@@ -211,3 +211,83 @@ function _fixup_ad(ad_alg::Bool)
     )
 end
 _fixup_ad(ad_alg) = ad_alg
+
+# Warm-start state for the scalar interval searches in `ode_interpolation` /
+# `ode_interpolation!`. The strategy is stored as a `FindFirstFunctions.StrategyKind`
+# enum behind a `Ref`, so it can be re-selected as the time grid's structure
+# becomes known (at solve init from `saveat`/`adaptive`, on grid growth, and at
+# the ending phase) without changing the container's type. All strategies
+# return exact `searchsortedfirst`/`searchsortedlast` results; the kind only
+# affects lookup speed. Races on the `Ref`s under concurrent interpolation
+# only degrade the starting guess, never correctness.
+struct TsSearchHint{T <: AbstractVector}
+    ts::T
+    idx_prev::Base.RefValue{Int}
+    kind::Base.RefValue{StrategyKind}
+    # `length(ts)` at the last grid probe. `typemax(Int)` disables re-probing
+    # (the grid's uniformity is already known from the solve options).
+    probed_len::Base.RefValue{Int}
+end
+
+TsSearchHint(ts::AbstractVector) = TsSearchHint(ts, Ref(1), Ref(KIND_BRACKET_GALLOP), Ref(0))
+
+# Sampled uniformity probe: O(64) regardless of grid size. Interpolation
+# search wins on near-uniform grids (`saveat` ranges, fixed-dt stepping,
+# smooth adaptive solves); the hinted bracketing gallop is the robust choice
+# for irregular grids under the correlated access patterns of adjoints and
+# history lookups.
+function _ts_grid_kind(ts::AbstractVector)
+    n = length(ts)
+    n < 4 && return KIND_BRACKET_GALLOP
+    tf = first(ts)
+    tl = last(ts)
+    mean_dt = (tl - tf) / (n - 1)
+    iszero(mean_dt) && return KIND_BRACKET_GALLOP
+    # Skip the first and last few intervals: the adaptive initial-dt ramp-up
+    # and the final truncated step are structural boundary artifacts, not
+    # indicative of the interior grid.
+    skip = min(4, (n - 1) ÷ 4)
+    navail = n - 1 - 2 * skip
+    navail < 1 && return KIND_BRACKET_GALLOP
+    nsamples = min(navail, 64)
+    stride = navail ÷ nsamples
+    @inbounds for k in 0:(nsamples - 1)
+        i = firstindex(ts) + skip + k * stride
+        r = (ts[i + 1] - ts[i]) / mean_dt
+        # sign flips, plateaus, and strong local stretching all disqualify
+        # the linear index guess that interpolation search relies on
+        (0.25 <= r <= 4.0) || return KIND_BRACKET_GALLOP
+    end
+    return KIND_INTERPOLATION_SEARCH
+end
+
+@inline function reprobe_ts_hint!(h::TsSearchHint)
+    h.kind[] = _ts_grid_kind(h.ts)
+    h.probed_len[] = length(h.ts)
+    return nothing
+end
+
+# Cheap growth check performed by interpolation consumers (never by the step
+# loop): re-probe once the grid has doubled since the last look.
+@inline function maybe_reprobe_ts_hint!(h::TsSearchHint)
+    p = h.probed_len[]
+    p == typemax(Int) && return nothing
+    length(h.ts) >= 2 * max(p, 32) && reprobe_ts_hint!(h)
+    return nothing
+end
+
+# Interpolation objects that carry a `TsSearchHint` return it here; the
+# fallback keeps foreign interpolation types on the plain binary search. The
+# typed method for `InterpolationData` lives in interp_func.jl.
+@inline _ts_hint(id) = nothing
+
+# Ending-phase re-probe, called from `_postamble!` once the time grid is
+# final. Skipped when the kind was fixed from the solve options.
+function _finalize_ts_hint!(sol)
+    interp = hasproperty(sol, :interp) ? sol.interp : nothing
+    h = _ts_hint(interp)
+    h === nothing && return nothing
+    h.probed_len[] == typemax(Int) && return nothing
+    reprobe_ts_hint!(h)
+    return nothing
+end
