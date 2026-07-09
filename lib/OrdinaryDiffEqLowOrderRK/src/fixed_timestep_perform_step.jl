@@ -67,7 +67,6 @@ end
     else # Ralston
         a₁ = 2 * dt / 3
         a₂ = dt / 4
-        a₃ = 3 * a₂
     end
 
     tmp = @.. broadcast = false uprev + a₁ * fsalfirst
@@ -77,14 +76,14 @@ end
     if cache isa HeunConstantCache
         u = @.. broadcast = false uprev + a₂ * (fsalfirst + k2)
     else
-        u = @.. broadcast = false uprev + a₂ * fsalfirst + a₃ * k2
+        u = @.. broadcast = false uprev + a₂ * fsalfirst + 3 * a₂ * k2
     end
 
     if integrator.opts.adaptive
         if cache isa HeunConstantCache
             tmp = @.. broadcast = false a₂ * (k2 - fsalfirst)
         else
-            tmp = @.. broadcast = false a₃ * (k2 - fsalfirst)
+            tmp = @.. broadcast = false 3 * a₂ * (k2 - fsalfirst)
         end
 
         atmp = calculate_residuals(
@@ -128,7 +127,6 @@ end
     else # Ralston
         a₁ = 2 * dt / 3
         a₂ = dt / 4
-        a₃ = 3 * a₂
     end
 
     @.. broadcast = false thread = thread tmp = uprev + a₁ * fsalfirst
@@ -141,7 +139,7 @@ end
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
     else
-        @.. broadcast = false thread = thread u = uprev + a₂ * fsalfirst + a₃ * k
+        @.. broadcast = false thread = thread u = uprev + a₂ * fsalfirst + 3 * a₂ * k
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
     end
@@ -150,7 +148,7 @@ end
         if cache isa HeunCache
             @.. broadcast = false thread = thread tmp = a₂ * (k - fsalfirst)
         else
-            @.. broadcast = false thread = thread tmp = a₃ * (k - fsalfirst)
+            @.. broadcast = false thread = thread tmp = 3 * a₂ * (k - fsalfirst)
         end
 
         calculate_residuals!(
