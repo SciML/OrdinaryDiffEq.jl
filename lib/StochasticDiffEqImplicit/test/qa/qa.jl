@@ -25,6 +25,7 @@ run_qa(
                 :current_extrapolant!, :isnewton, :_fixup_ad,
                 # SciMLBase internals (not yet `public` on registered SciMLBase).
                 :has_Wfact, :_vec, :_reshape, :_unwrap_val,
-            )),
+            ),
+        ),
     ),
 )
