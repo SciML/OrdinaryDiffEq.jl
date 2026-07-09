@@ -52,7 +52,7 @@ Polyester = "0.7"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 SciMLLogging = "2"
-SciMLOperators = "1"
+SciMLOperators = "1.23"
 
 [targets]
 test = ["DiffEqDevTools", "Polyester", "Random", "RecursiveFactorization", "SafeTestsets", "Test", "Pkg"]

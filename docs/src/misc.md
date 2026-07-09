@@ -16,3 +16,9 @@ IDSolve
 OrdinaryDiffEqExplicitRK.generic_rk_interpolant
 OrdinaryDiffEqExplicitRK.generic_rk_interpolant!
 ```
+
+## Mass Matrix Utilities
+
+```@docs
+OrdinaryDiffEqCore.find_algebraic_vars_eqs
+```
