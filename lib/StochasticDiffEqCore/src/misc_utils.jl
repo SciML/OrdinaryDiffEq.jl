@@ -35,7 +35,7 @@ end
 struct NLSOLVEJL_SETUP{AD}
     autodiff::AD
 end
-NLSOLVEJL_SETUP(; autodiff = AutoForwardDiff()) = NLSOLVEJL_SETUP(autodiff)
+NLSOLVEJL_SETUP(; autodiff = ADTypes.AutoForwardDiff()) = NLSOLVEJL_SETUP(autodiff)
 
 # Wrapper to store the function for use with SimpleNonlinearSolve
 struct IIFNLSolveFunc{F}
