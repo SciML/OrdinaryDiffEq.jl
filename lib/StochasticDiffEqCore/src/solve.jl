@@ -191,7 +191,7 @@ function _sde_init(
     # ── JumpProblem reset ────────────────────────────────────────────────
     if _prob isa JumpProblem
         alias_jumps = isnothing(aliases.alias_jumps) ? Threads.threadid() == 1 :
-            aliases.alias_jumps
+            aliases.alias_jumps === true
         _jump_seed = _rng_provided ? nothing : _seed
         if !alias_jumps
             _prob = JumpProcesses.resetted_jump_problem(_prob, _jump_seed)
@@ -246,19 +246,23 @@ function _sde_init(
     end
 
     # ── f/p/u aliasing (needed before cache construction) ────────────────
-    if isnothing(aliases.alias_f) || aliases.alias_f
+    alias_f = aliases.alias_f !== false
+    alias_p = aliases.alias_p !== false
+    alias_u0 = aliases.alias_u0 === true
+
+    if alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p
+    if alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+    if alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)

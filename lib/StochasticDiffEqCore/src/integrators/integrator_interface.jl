@@ -108,6 +108,13 @@ function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
     return
 end
 
+function resize_non_user_cache!(integrator::SDEIntegrator, cache::CompositeCache, i)
+    for _cache in cache.caches
+        resize_non_user_cache!(integrator, _cache, i)
+    end
+    return
+end
+
 function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     if is_diagonal_noise(integrator.sol.prob)
         deleteat_noise!(integrator, cache, idxs)
@@ -121,6 +128,13 @@ function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     return
 end
 
+function deleteat_non_user_cache!(integrator::SDEIntegrator, cache::CompositeCache, idxs)
+    for _cache in cache.caches
+        deleteat_non_user_cache!(integrator, _cache, idxs)
+    end
+    return
+end
+
 function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     if is_diagonal_noise(integrator.sol.prob)
         addat_noise!(integrator, cache, idxs)
@@ -130,6 +144,13 @@ function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     end
     for c in ratenoise_cache(integrator)
         addat!(c, idxs)
+    end
+    return
+end
+
+function addat_non_user_cache!(integrator::SDEIntegrator, cache::CompositeCache, idxs)
+    for _cache in cache.caches
+        addat_non_user_cache!(integrator, _cache, idxs)
     end
     return
 end

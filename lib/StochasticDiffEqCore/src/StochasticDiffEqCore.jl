@@ -21,7 +21,7 @@ import OrdinaryDiffEqCore: ODEIntegrator,
     StochasticDiffEqJumpDiffusionAlgorithm, StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
     StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
-    beta2_default, beta1_default,
+    CompositeCache, beta2_default, beta1_default,
     qmin_default, qmax_default, qsteady_min_default,
     qsteady_max_default, issplit,
     is_composite_algorithm, perform_step!, handle_callback_modifiers!
