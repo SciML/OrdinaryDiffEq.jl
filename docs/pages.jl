@@ -75,6 +75,7 @@ pages = [
         "Internal Documentation" => [
             "devtools/internals/notes_on_algorithms.md",
             "devtools/internals/public_api.md",
+            "devtools/internals/solver_implementation_api.md",
             "devtools/internals/tableaus.md",
         ],
     ],

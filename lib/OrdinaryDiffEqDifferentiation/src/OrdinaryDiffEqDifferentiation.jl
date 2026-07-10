@@ -76,4 +76,8 @@ include("derivative_utils.jl")
 include("derivative_wrappers.jl")
 include("operators.jl")
 
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :resize_grad_config!, :resize_jac_config!))
+end
+
 end

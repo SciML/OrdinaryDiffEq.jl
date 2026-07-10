@@ -12,7 +12,7 @@ abstract type OrdinaryDiffEqCache <: SciMLBase.DECache end
 
 Abstract supertype for out-of-place ("constant") caches used when the state is
 immutable (e.g. `Number`s, `StaticArray`s). These allocate fresh values each step
-instead of mutating in place. [`is_constant_cache`](@ref) returns `true` for them.
+instead of mutating in place. `is_constant_cache` returns `true` for them.
 """
 abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
 """

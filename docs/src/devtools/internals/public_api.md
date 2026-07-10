@@ -204,6 +204,11 @@ OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
 ```
 
+The construction, iteration, cache, and differentiation hooks used by solver
+sublibraries are documented on the
+[solver implementation extension API](@ref Solver-Implementation-Extension-API)
+page.
+
 ## Integrator step and initialization hooks
 
 ```@docs
