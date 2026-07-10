@@ -18,4 +18,5 @@ end
 @time @safetestset "Tableau consistency" include("tableau_consistency_tests.jl")
 @time @safetestset "Stage predictors" include("predictor_tests.jl")
 @time @safetestset "Convergence" include("sdirk_convergence_tests.jl")
+@time @safetestset "ImplicitEuler NLNewton default" include("impliciteuler_nlnewton_default_tests.jl")
 @time @safetestset "DAE tests" include("dae_esdirk_test.jl")
