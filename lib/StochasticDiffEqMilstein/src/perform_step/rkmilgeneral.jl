@@ -48,7 +48,7 @@ function _compute_iterated_I(dt, dW, dZ, W_noise, alg)
     # Only for non-diagonal vector noise (dW must be a Vector, not Matrix or Number)
     dW isa AbstractVector || return nothing
 
-    m = length(dW)
+    m = length(dW)::Int
 
     # Strategy 1: RSwM3 S₂ stack (adaptive, post-rejection)
     J_s2 = _compute_II_from_S2(W_noise, m, dt)
@@ -116,31 +116,31 @@ function _compute_II_from_S2(W_noise, m, dt)
                 Wn_i = dWn / √dt_i
                 A_i = levyarea(Wn_i, coeffs_i.n, MronRoe(), coeffs_i)
                 # J^(i) = ½ dW_i dW_i' + dt_i * A_i  (Stratonovich within sub-interval)
-                for k in 1:m
-                    for j in 1:m
+                for k in axes(I, 2)
+                    for j in axes(I, 1)
                         I[j, k] += 1 // 2 * dWn[j] * dWn[k] + dt_i * A_i[j, k]
                     end
                 end
             else
                 # No usable coefficients — add ½ dW_i dW_i' as best approximation
-                for k in 1:m
-                    for j in 1:m
+                for k in axes(I, 2)
+                    for j in axes(I, 1)
                         I[j, k] += 1 // 2 * dWn[j] * dWn[k]
                     end
                 end
             end
         else
             # No dZ available for this sub-interval — commutative approximation
-            for k in 1:m
-                for j in 1:m
+            for k in axes(I, 2)
+                for j in axes(I, 1)
                     I[j, k] += 1 // 2 * dWn[j] * dWn[k]
                 end
             end
         end
 
         # Cross-interval contribution: W_cumsum_j * dW^(i)_k
-        for k in 1:m
-            for j in 1:m
+        for k in axes(I, 2)
+            for j in axes(I, 1)
                 I[j, k] += W_cumsum[j] * dWn[k]
             end
         end
@@ -191,37 +191,37 @@ function _compute_II_from_grid(W_noise, m, dt)
                 if coeffs_n !== nothing
                     Wn_n = dWn / √dt_n
                     A_n = levyarea(Wn_n, coeffs_n.n, MronRoe(), coeffs_n)
-                    for k in 1:m
-                        for j in 1:m
+                    for k in axes(I, 2)
+                        for j in axes(I, 1)
                             I[j, k] += 1 // 2 * dWn[j] * dWn[k] + dt_n * A_n[j, k]
                         end
                     end
                 else
-                    for k in 1:m
-                        for j in 1:m
+                    for k in axes(I, 2)
+                        for j in axes(I, 1)
                             I[j, k] += 1 // 2 * dWn[j] * dWn[k]
                         end
                     end
                 end
             else
-                for k in 1:m
-                    for j in 1:m
+                for k in axes(I, 2)
+                    for j in axes(I, 1)
                         I[j, k] += 1 // 2 * dWn[j] * dWn[k]
                     end
                 end
             end
         else
             # No Z data — commutative approximation
-            for k in 1:m
-                for j in 1:m
+            for k in axes(I, 2)
+                for j in axes(I, 1)
                     I[j, k] += 1 // 2 * dWn[j] * dWn[k]
                 end
             end
         end
 
         # Cross-interval contribution
-        for k in 1:m
-            for j in 1:m
+        for k in axes(I, 2)
+            for j in axes(I, 1)
                 I[j, k] += W_cumsum[j] * dWn[k]
             end
         end
@@ -278,8 +278,12 @@ end
     mil_correction = zero(u)
     ggprime_norm = zero(eltype(u))
 
+    # `K` is hoisted out of the branches below: both the diagonal-noise path and
+    # the adaptive error estimate need it, and a branch-local assignment leaves it
+    # undefined on some paths as far as inference is concerned (JET).
+    K = @.. uprev + dt * du1
+
     if dW isa Number || is_diagonal_noise(integrator.sol.prob)
-        K = @.. uprev + dt * du1
         utilde = (
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev
@@ -289,8 +293,8 @@ end
         u = K + L .* dW + mil_correction
     else
         for i in 1:length(dW)
-            K = uprev + dt * du1 + integrator.sqdt * @view(L[:, i])
-            gtmp = integrator.f.g(K, p, t)
+            Ktmp = uprev + dt * du1 + integrator.sqdt * @view(L[:, i])
+            gtmp = integrator.f.g(Ktmp, p, t)
             ggprime = @.. (gtmp - L) / integrator.sqdt
             ggprime_norm = zero(eltype(u))
             if integrator.opts.adaptive
@@ -299,7 +303,6 @@ end
             mil_correction += ggprime * @view(J[i, :])
         end
         if integrator.opts.adaptive
-            K = @.. uprev + dt * du1
             u = K + L * dW + mil_correction
         else
             u = uprev + dt * du1 + L * dW + mil_correction
