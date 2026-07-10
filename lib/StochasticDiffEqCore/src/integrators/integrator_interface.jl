@@ -94,7 +94,7 @@ end
     end
 end
 
-function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
+function _sde_resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
     bot_idx = length(integrator.u) + 1
     if is_diagonal_noise(integrator.sol.prob)
         resize_noise!(integrator, cache, bot_idx, i)
@@ -108,7 +108,7 @@ function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
     return
 end
 
-function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
+function _sde_deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     if is_diagonal_noise(integrator.sol.prob)
         deleteat_noise!(integrator, cache, idxs)
         for c in rand_cache(integrator)
@@ -121,7 +121,7 @@ function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     return
 end
 
-function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
+function _sde_addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     if is_diagonal_noise(integrator.sol.prob)
         addat_noise!(integrator, cache, idxs)
         for c in rand_cache(integrator)
@@ -132,6 +132,41 @@ function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
         addat!(c, idxs)
     end
     return
+end
+
+function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
+    return _sde_resize_non_user_cache!(integrator, cache, i)
+end
+
+function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
+    return _sde_deleteat_non_user_cache!(integrator, cache, idxs)
+end
+
+function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
+    return _sde_addat_non_user_cache!(integrator, cache, idxs)
+end
+
+# OrdinaryDiffEqCore defines `(::ODEIntegrator, ::CompositeCache, i)` methods for
+# these three functions, which are ambiguous with the `(::SDEIntegrator, cache, i)`
+# methods above. An SDE integrator's composite cache is `StochasticCompositeCache`,
+# never `OrdinaryDiffEqCore.CompositeCache`, and the SDE bodies ignore `cache`
+# anyway, so the disambiguating methods share the general SDE bodies.
+function resize_non_user_cache!(
+        integrator::SDEIntegrator, cache::OrdinaryDiffEqCore.CompositeCache, i
+    )
+    return _sde_resize_non_user_cache!(integrator, cache, i)
+end
+
+function deleteat_non_user_cache!(
+        integrator::SDEIntegrator, cache::OrdinaryDiffEqCore.CompositeCache, idxs
+    )
+    return _sde_deleteat_non_user_cache!(integrator, cache, idxs)
+end
+
+function addat_non_user_cache!(
+        integrator::SDEIntegrator, cache::OrdinaryDiffEqCore.CompositeCache, idxs
+    )
+    return _sde_addat_non_user_cache!(integrator, cache, idxs)
 end
 
 function deleteat_noise!(integrator, cache, idxs)
