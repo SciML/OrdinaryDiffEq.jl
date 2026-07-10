@@ -1,5 +1,6 @@
 using SciMLTesting, StochasticDiffEqCore, Test
 using JET
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 
 # StochasticDiffEqCore extends OrdinaryDiffEqCore's solver loop and dispatches on
 # a handful of still-internal SciMLBase/DiffEqBase interface names. The base
@@ -43,9 +44,47 @@ const NONPUBLIC_IGNORE = (
     FORWARDDIFF_INTERNAL..., BASE_INTERNAL...,
 )
 
+# The SDE/RODE/Jump algorithm and cache supertypes are declared in
+# OrdinaryDiffEqCore purely as dispatch hooks for the StochasticDiffEq family;
+# StochasticDiffEqCore is their de-facto owner, and its methods on them are the
+# intended implementations of the shared solver loop's extension points, not
+# piracy. Likewise the noise hooks (`accept_noise!` & co.) are declared in
+# OrdinaryDiffEqCore with `::Nothing` fallbacks precisely so this package can
+# implement them for real noise processes.
+const TREAT_AS_OWN = [
+    OrdinaryDiffEqCore.StochasticDiffEqAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqCompositeAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODEAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODEAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODECompositeAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqNewtonAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqCache,
+    OrdinaryDiffEqCore.StochasticDiffEqConstantCache,
+    OrdinaryDiffEqCore.StochasticDiffEqMutableCache,
+    # `_initialize_dae!` is likewise an OrdinaryDiffEqCore-owned hook; this
+    # package implements it for the RODE/SDDE problem types the ODE loop does
+    # not know about.
+    OrdinaryDiffEqCore._initialize_dae!,
+    OrdinaryDiffEqCore.accept_noise!,
+    OrdinaryDiffEqCore.reinit_noise!,
+    OrdinaryDiffEqCore.reject_noise!,
+    OrdinaryDiffEqCore.save_noise!,
+    OrdinaryDiffEqCore.noise_curt,
+    OrdinaryDiffEqCore.is_noise_saveable,
+]
+
 run_qa(
     StochasticDiffEqCore;
     jet_kwargs = (; target_defined_modules = true),
+    aqua_kwargs = (; piracies = (; treat_as_own = TREAT_AS_OWN)),
     explicit_imports = true,
     ei_kwargs = (;
         # `@..` reaches StochasticDiffEqCore via DiffEqBase's re-export of
