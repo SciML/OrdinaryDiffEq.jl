@@ -1,14 +1,46 @@
-# Solver-author extension API
+# Developer Extension API
 
-This page documents the `public` extension API of the OrdinaryDiffEq.jl core and
-solver sublibraries — the names that downstream solver packages (the OrdinaryDiffEq
-solver sublibs, StochasticDiffEq.jl, DelayDiffEq.jl, …) subtype, extend, or call
-when adding a new solver. These are *not exported*: they are marked `public` so
-they are recognized as a supported extension surface rather than internal access.
+This page documents the version-controlled API intended for solver authors and
+OrdinaryDiffEq monorepo subpackages. These names are not application-facing
+OrdinaryDiffEq user API; user-facing DiffEqBase and OrdinaryDiffEqCore APIs are
+documented under the API section.
 
-Everyday users do not need this page; it is for people writing new solvers. The
-step-size controller interface has its own dedicated page, the
-[Controller API](@ref).
+!!! warning "Developer API, not user API"
+
+    Do not build application code against these hooks. They exist so solver
+    packages can extend common traits, controllers, interpolation hooks, and
+    initialization protocols without depending on undocumented implementation
+    details. Cache types and low-level nonlinear solve helper functions are not
+    public API.
+
+## DiffEqBase solver hooks
+
+```@docs
+DiffEqBase.CallbackCache
+DiffEqBase.EvalFunc
+DiffEqBase.OrdinaryDiffEqTag
+DiffEqBase.apply_callback!
+DiffEqBase.apply_discrete_callback!
+DiffEqBase.calculate_residuals
+DiffEqBase.calculate_residuals!
+DiffEqBase.check_prob_alg_pairing
+DiffEqBase.default_factorize
+DiffEqBase.finalize!
+DiffEqBase.find_callback_time
+DiffEqBase.find_first_continuous_callback
+DiffEqBase.get_condition
+DiffEqBase.get_tstops
+DiffEqBase.get_tstops_array
+DiffEqBase.get_tstops_max
+DiffEqBase.initialize!
+DiffEqBase.max_vector_callback_length
+DiffEqBase.max_vector_callback_length_int
+DiffEqBase.merge_problem_kwargs
+DiffEqBase.prepare_alg
+DiffEqBase.prob2dtmin
+DiffEqBase.stripunits
+DiffEqBase.timedepentdtmin
+```
 
 ## Algorithm type hierarchy
 
@@ -42,8 +74,8 @@ OrdinaryDiffEqCore.ImplicitSecondOrderAlgorithm
 
 ### SDE / RODE algorithm hierarchy
 
-Subtyped by StochasticDiffEq.jl; defined in the core so the shared machinery can
-dispatch on them.
+Subtyped by StochasticDiffEq.jl and defined in the core so shared machinery can
+dispatch on these algorithms.
 
 ```@docs
 OrdinaryDiffEqCore.StochasticDiffEqAlgorithm
@@ -62,50 +94,10 @@ OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAdaptiveAlgorithm
 OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm
 ```
 
-## Cache type hierarchy
-
-```@docs
-OrdinaryDiffEqCore.OrdinaryDiffEqCache
-OrdinaryDiffEqCore.OrdinaryDiffEqConstantCache
-OrdinaryDiffEqCore.OrdinaryDiffEqMutableCache
-OrdinaryDiffEqCore.CompositeCache
-OrdinaryDiffEqCore.DefaultCache
-OrdinaryDiffEqCore.AutoSwitchCache
-OrdinaryDiffEqCore.StochasticDiffEqCache
-OrdinaryDiffEqCore.StochasticDiffEqConstantCache
-OrdinaryDiffEqCore.StochasticDiffEqMutableCache
-OrdinaryDiffEqCore.@cache
-OrdinaryDiffEqCore.strip_cache
-OrdinaryDiffEqCore.is_constant_cache
-OrdinaryDiffEqCore.is_composite_cache
-OrdinaryDiffEqCore.is_composite_algorithm
-OrdinaryDiffEqCore.isdiscretecache
-OrdinaryDiffEqCore.get_fsalfirstlast
-OrdinaryDiffEqCore.alg_cache
-```
-
-Example solver-sublibrary caches that are declared public so other sublibraries
-can reuse their step:
-
-```@docs
-OrdinaryDiffEqLowOrderRK.BS3Cache
-OrdinaryDiffEqLowOrderRK.BS3ConstantCache
-OrdinaryDiffEqLowOrderRK.RK4Cache
-OrdinaryDiffEqLowOrderRK.RK4ConstantCache
-OrdinaryDiffEqTsit5.Tsit5Cache
-OrdinaryDiffEqTsit5.Tsit5ConstantCache
-OrdinaryDiffEqSDIRK.ESDIRKIMEXCache
-OrdinaryDiffEqSDIRK.ESDIRKIMEXConstantCache
-OrdinaryDiffEqSDIRK.ImplicitEulerESDIRKIMEXTableau
-OrdinaryDiffEqRosenbrock.RosenbrockMutableCache
-```
-
 ## Composite algorithms and automatic switching
 
 ```@docs
 OrdinaryDiffEqCore.CompositeAlgorithm
-OrdinaryDiffEqCore.AutoSwitch
-OrdinaryDiffEqCore.AutoAlgSwitch
 OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
@@ -114,7 +106,7 @@ OrdinaryDiffEqCore.isdefaultalg
 
 ## Algorithm trait functions
 
-Solver sublibraries specialize these to describe their algorithm.
+Solver sublibraries specialize these to describe their algorithms.
 
 ```@docs
 OrdinaryDiffEqCore.alg_order
@@ -150,7 +142,6 @@ OrdinaryDiffEqCore.issplit
 OrdinaryDiffEqCore.only_diagonal_mass_matrix
 OrdinaryDiffEqCore.standardtag
 OrdinaryDiffEqCore.concrete_jac
-OrdinaryDiffEqCore.ssp_coefficient
 OrdinaryDiffEqCore.fac_default_gamma
 OrdinaryDiffEqCore.default_linear_interpolation
 ```
@@ -172,63 +163,35 @@ OrdinaryDiffEqCore.constvalue
 OrdinaryDiffEqCore.unitfulvalue
 ```
 
-## Threading options
-
-```@docs
-OrdinaryDiffEqCore.AbstractThreadingOption
-OrdinaryDiffEqCore.Sequential
-OrdinaryDiffEqCore.BaseThreads
-OrdinaryDiffEqCore.PolyesterThreads
-OrdinaryDiffEqCore.isthreaded
-```
-
 ## Enums and status types
 
 ```@docs
-OrdinaryDiffEqCore.DIRK
 OrdinaryDiffEqCore.COEFFICIENT_MULTISTEP
-OrdinaryDiffEqCore.NORDSIECK_MULTISTEP
-OrdinaryDiffEqCore.GLM
-OrdinaryDiffEqCore.FastConvergence
-OrdinaryDiffEqCore.Convergence
-OrdinaryDiffEqCore.SlowConvergence
-OrdinaryDiffEqCore.VerySlowConvergence
-OrdinaryDiffEqCore.Divergence
-OrdinaryDiffEqCore.TryAgain
-```
-
-## Error and sentinel types
-
-```@docs
 OrdinaryDiffEqCore.CompiledFloats
-OrdinaryDiffEqCore.DerivativeOrderNotPossibleError
+OrdinaryDiffEqCore.Convergence
 OrdinaryDiffEqCore.DifferentialVarsUndefined
+OrdinaryDiffEqCore.DIRK
+OrdinaryDiffEqCore.Divergence
+OrdinaryDiffEqCore.FastConvergence
+OrdinaryDiffEqCore.GLM
+OrdinaryDiffEqCore.MethodType
+OrdinaryDiffEqCore.NLStatus
+OrdinaryDiffEqCore.NORDSIECK_MULTISTEP
+OrdinaryDiffEqCore.SlowConvergence
+OrdinaryDiffEqCore.TryAgain
+OrdinaryDiffEqCore.VerySlowConvergence
 ```
 
 ## Nonlinear solver interface
 
-The nonlinear-solver types and hooks live in `OrdinaryDiffEqNonlinearSolve`; the
-abstract types and W-matrix hook stubs live in the core.
+The public nonlinear-solver algorithms are documented on the OrdinaryDiffEqCore
+API page. These core abstractions and W-matrix hooks are the solver-author
+extension points.
 
 ```@docs
 OrdinaryDiffEqCore.AbstractNLSolver
 OrdinaryDiffEqCore.AbstractNLSolverAlgorithm
-OrdinaryDiffEqCore.AbstractNLSolverCache
 OrdinaryDiffEqCore.nlsolve_f
-OrdinaryDiffEqCore.MethodType
-OrdinaryDiffEqCore.NLStatus
-OrdinaryDiffEqNonlinearSolve.NLNewton
-OrdinaryDiffEqNonlinearSolve.NLFunctional
-OrdinaryDiffEqNonlinearSolve.NLAnderson
-OrdinaryDiffEqNonlinearSolve.build_nlsolver
-OrdinaryDiffEqNonlinearSolve.nlsolve!
-OrdinaryDiffEqNonlinearSolve.compute_step!
-OrdinaryDiffEqNonlinearSolve.nlsolvefail
-OrdinaryDiffEqNonlinearSolve.initial_η
-OrdinaryDiffEqNonlinearSolve.markfirststage!
-OrdinaryDiffEqNonlinearSolve.du_alias_or_new
-OrdinaryDiffEqNonlinearSolve.anderson
-OrdinaryDiffEqNonlinearSolve.anderson!
 OrdinaryDiffEqCore.get_W
 OrdinaryDiffEqCore.set_new_W!
 OrdinaryDiffEqCore.set_W_γdt!
@@ -241,43 +204,13 @@ OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
 ```
 
-## Jacobian / W-matrix / differentiation configuration
-
-Provided by `OrdinaryDiffEqDifferentiation`.
-
-```@docs
-OrdinaryDiffEqDifferentiation.build_J_W
-OrdinaryDiffEqDifferentiation.build_uf
-OrdinaryDiffEqDifferentiation.build_jac_config
-OrdinaryDiffEqDifferentiation.build_grad_config
-OrdinaryDiffEqDifferentiation.calc_J
-OrdinaryDiffEqDifferentiation.calc_J!
-OrdinaryDiffEqDifferentiation.calc_tderivative
-OrdinaryDiffEqDifferentiation.calc_tderivative!
-OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation
-OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation!
-OrdinaryDiffEqDifferentiation.jacobian!
-OrdinaryDiffEqDifferentiation.jacobian2W!
-OrdinaryDiffEqDifferentiation.update_W!
-OrdinaryDiffEqDifferentiation.resize_jac_config!
-OrdinaryDiffEqDifferentiation.resize_grad_config!
-OrdinaryDiffEqDifferentiation.dolinsolve
-OrdinaryDiffEqDifferentiation.wrapprecs
-OrdinaryDiffEqDifferentiation.is_always_new
-OrdinaryDiffEqDifferentiation.islinearfunction
-OrdinaryDiffEqDifferentiation.issuccess_W
-```
-
 ## Integrator step and initialization hooks
 
 ```@docs
-OrdinaryDiffEqCore.ODEIntegrator
-OrdinaryDiffEqCore.DEOptions
 OrdinaryDiffEqCore.perform_step!
 OrdinaryDiffEqCore.apply_step!
 OrdinaryDiffEqCore.postamble!
 OrdinaryDiffEqCore.last_step_failed
-OrdinaryDiffEqCore.handle_callback_modifiers!
 OrdinaryDiffEqCore.set_discontinuity
 OrdinaryDiffEqCore.increment_accept!
 OrdinaryDiffEqCore.increment_reject!
@@ -286,6 +219,7 @@ OrdinaryDiffEqCore.ode_determine_initdt
 OrdinaryDiffEqCore._determine_initdt
 OrdinaryDiffEqCore._ode_init
 OrdinaryDiffEqCore._initialize_dae!
+OrdinaryDiffEqCore.find_algebraic_vars_eqs
 OrdinaryDiffEqCore.get_differential_vars
 ```
 
@@ -294,6 +228,7 @@ OrdinaryDiffEqCore.get_differential_vars
 ```@docs
 OrdinaryDiffEqCore.OrdinaryDiffEqInterpolation
 OrdinaryDiffEqCore.InterpolationData
+OrdinaryDiffEqCore.DerivativeOrderNotPossibleError
 OrdinaryDiffEqCore.ode_interpolant
 OrdinaryDiffEqCore.ode_interpolant!
 OrdinaryDiffEqCore.hermite_interpolant
@@ -308,24 +243,9 @@ OrdinaryDiffEqCore._ode_interpolant!
 OrdinaryDiffEqCore._ode_addsteps!
 ```
 
-## Controller caches
-
-Per-solve caches for the built-in step-size controllers (see the
-[Controller API](@ref) for the controllers themselves).
-
-```@docs
-OrdinaryDiffEqCore.IControllerCache
-OrdinaryDiffEqCore.PIControllerCache
-OrdinaryDiffEqCore.PIDControllerCache
-OrdinaryDiffEqCore.PredictiveControllerCache
-OrdinaryDiffEqCore.CompositeControllerCache
-OrdinaryDiffEqCore.DummyController
-OrdinaryDiffEqCore.DummyControllerCache
-```
-
 ## Noise-process hooks
 
-Used by the SDE/RODE solver sublibraries; no-ops for pure ODEs.
+Used by SDE/RODE solver sublibraries; no-ops for pure ODEs.
 
 ```@docs
 OrdinaryDiffEqCore.accept_noise!

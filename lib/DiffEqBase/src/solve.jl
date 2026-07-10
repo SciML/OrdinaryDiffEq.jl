@@ -1,3 +1,12 @@
+"""
+    EvalFunc(f)
+
+Callable wrapper used by DiffEqBase solve dispatch to pass an already-prepared
+function object through interfaces that expect a function-like value.
+
+# Fields
+- `f`: Wrapped callable object.
+"""
 struct EvalFunc{F} <: Function
     f::F
 end
@@ -932,6 +941,15 @@ function promote_f(
         remake(f, _func_cache = copy(f._func_cache))
     end
 end
+"""
+    prepare_alg(alg, u0, p, prob) -> alg
+
+Return the algorithm object used for a solve after problem-dependent preparation.
+
+This fallback returns `alg` unchanged. Solver packages specialize it when an
+algorithm needs to inspect the initial condition, parameters, or problem before
+dispatch reaches `solve`.
+"""
 prepare_alg(alg, u0, p, f) = alg
 
 function get_concrete_tspan(prob, isadapt, kwargs, p)
@@ -984,6 +1002,21 @@ function __init(
     end
 end
 
+"""
+    check_prob_alg_pairing(prob, alg) -> nothing
+
+Validate that `alg` is compatible with the problem type `prob`.
+
+The check catches common dispatch mistakes before solver construction, including
+ODE algorithms passed to non-ODE problems, direct AD with algorithms that are not
+AD-compatible, and SDE noise-size mismatches.
+
+# Throws
+- `ProblemSolverPairingError`: If the problem and algorithm families do not match.
+- `DirectAutodiffError`: If the initial condition uses dual numbers but `alg` is
+  not autodifferentiable.
+- `NoiseSizeIncompatibilityError`: If SDE noise dimensions are inconsistent.
+"""
 function check_prob_alg_pairing(prob, alg)
     if prob isa ODEProblem && !(alg isa AbstractODEAlgorithm) ||
             prob isa SDEProblem && !(alg isa AbstractSDEAlgorithm) ||

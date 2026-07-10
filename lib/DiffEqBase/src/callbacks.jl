@@ -136,6 +136,7 @@ function get_condition(integrator::DEIntegrator, callback, abst)
     end
 end
 
+# Use a generated function for type stability even when many callbacks are given
 """
     find_first_continuous_callback(integrator, callbacks...)
 
@@ -144,7 +145,6 @@ fires earliest in the current step: the event time, crossing sign, whether an ev
 the (vector-callback) event index, the identified callback index, and the number of callbacks.
 A generated method keeps the result type-stable for an arbitrary number of callbacks.
 """
-# Use a generated function for type stability even when many callbacks are given
 @inline function find_first_continuous_callback(
         integrator,
         callbacks::Vararg{
@@ -633,6 +633,7 @@ function apply_callback!(
     return false, saved_in_cb
 end
 
+#Base Case: Just one
 """
     apply_discrete_callback!(integrator, callback...)
 
@@ -641,7 +642,6 @@ true at the current `(u, t)`, run its `affect!` and handle any `saveat`/save boo
 Returns whether the discrete-callback set modified the integrator and whether a save was
 performed inside a callback, recursing over multiple callbacks while staying type-stable.
 """
-#Base Case: Just one
 @inline function apply_discrete_callback!(integrator, callback::DiscreteCallback)
     saved_in_cb = false
     did_modify = false
@@ -714,6 +714,14 @@ end
     return discrete_modified || bool, saved_in_cb || saved_in_cb2
 end
 
+"""
+    max_vector_callback_length_int(cs::CallbackSet)
+    max_vector_callback_length_int(callbacks...)
+
+Return the largest `len` among vector continuous callbacks.
+
+Returns `nothing` when no vector continuous callback is present.
+"""
 function max_vector_callback_length_int(cs::CallbackSet)
     return max_vector_callback_length_int(cs.continuous_callbacks...)
 end
