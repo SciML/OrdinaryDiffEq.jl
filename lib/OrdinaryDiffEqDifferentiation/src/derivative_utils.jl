@@ -565,6 +565,18 @@ end
     throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 end
 
+
+# Sparse GPU W-build path: CuSparseMatrixCSC usually subtypes AbstractSparseMatrix
+# (is_sparse true), but CuSparseMatrixCSR often does not. Detect CSR via the
+# cuSPARSE `.nzVal` storage field so we never `@..` broadcast into it.
+@inline function _use_allocating_sparse_W_path(W)
+    if is_sparse(W)
+        return !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+    end
+    return hasproperty(W, :nzVal)
+end
+
+
 """
     jacobian2W!(W, mass_matrix, dtgamma, J) -> nothing
 
@@ -594,7 +606,7 @@ function jacobian2W!(
             else
                 @.. broadcast = false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
             end
-        elseif is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+        elseif _use_allocating_sparse_W_path(W)
             # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting.
             # ArrayInterface.fast_scalar_indexing is not specialized for AbstractGPUSparseArray,
             # so we detect them by checking if the underlying nonzeros storage is a GPU array.
@@ -659,7 +671,7 @@ function dae_jacobian2W!(
     )::Nothing
     @boundscheck axes(W) == axes(J_u) == axes(J_du) ||
         throw(DimensionMismatch("W, J_u, J_du must have matching axes"))
-    if is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+    if _use_allocating_sparse_W_path(W)
         # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support
         # broadcasting into W. Same path as jacobian2W!: allocate then copyto!.
         copyto!(W, J_u + convert(eltype(W), cj) * J_du)
@@ -683,7 +695,7 @@ end
 function dae_jacobian2W(
         J_u::AbstractMatrix, J_du::AbstractMatrix, cj::Number
     )
-    if is_sparse(J_u) && !ArrayInterface.fast_scalar_indexing(nonzeros(J_u))
+    if _use_allocating_sparse_W_path(J_u)
         return J_u + convert(eltype(J_u), cj) * J_du
     end
     return @. muladd(cj, J_du, J_u)
