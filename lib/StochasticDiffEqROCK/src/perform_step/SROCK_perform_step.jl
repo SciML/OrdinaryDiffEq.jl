@@ -14,12 +14,10 @@
     cosh_inv = log(ω₀ + Sqrt_ω)             # arcosh(ω₀)
     ω₁ = (Sqrt_ω * cosh(mdeg * cosh_inv)) / (mdeg * sinh(mdeg * cosh_inv))
 
-    if SciMLBase.alg_interpretation(integrator.alg) ==
-            SciMLBase.AlgorithmInterpretation.Stratonovich
-        α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
-        γ = 1 / (2 * α)
-        β = -γ
-    end
+    # only used on the Stratonovich paths, but computed unconditionally (cheap scalars)
+    α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
+    γ = 1 / (2 * α)
+    β = -γ
 
     uᵢ₋₂ = copy(uprev)
     k = integrator.f(uprev, p, t)
@@ -111,12 +109,10 @@ end
     cosh_inv = log(ω₀ + Sqrt_ω)             # arcosh(ω₀)
     ω₁ = (Sqrt_ω * cosh(mdeg * cosh_inv)) / (mdeg * sinh(mdeg * cosh_inv))
 
-    if SciMLBase.alg_interpretation(integrator.alg) ==
-            SciMLBase.AlgorithmInterpretation.Stratonovich
-        α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
-        γ = 1 / (2 * α)
-        β = -γ
-    end
+    # only used on the Stratonovich paths, but computed unconditionally (cheap scalars)
+    α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
+    γ = 1 / (2 * α)
+    β = -γ
 
     @.. uᵢ₋₂ = uprev
     Tᵢ₋₂ = oneunit(t)
@@ -192,12 +188,6 @@ end
 @muladd function perform_step!(integrator, cache::SROCK2ConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     (; recf, recf2, mα, mσ, mτ) = cache
-
-    gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
-            (length(W.dW) == 1)
-    )
-    gen_prob && (vec_χ = 2 .* floor.(false .* W.dW .+ 1 // 2 .+ oftype(W.dW, rand(W.rng, length(W.dW)))) .- true)
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -289,6 +279,8 @@ end
         Gₛ₁ = integrator.f.g(uᵢ₋₂, p, tᵢ)
         u += 1 // 4 .* W.dW .* Gₛ₁
     else
+        vec_χ = 2 .* floor.(false .* W.dW .+ 1 // 2 .+ oftype(W.dW, rand(W.rng, length(W.dW)))) .- true
+
         Gₛ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
         u += Gₛ * W.dW
 
@@ -759,9 +751,12 @@ end
         end
         winc = rand() * 6
         if winc < 1
-            u -= (sqrt(3 * dt) * ccache.mc[mdeg - 1]) * uᵢ₋₁
+            # cache IS the constant cache here (cf. the SKSROCKCache method, which
+            # accesses this through ccache = cache.constantcache); `ccache` was an
+            # undefined-variable bug on this path
+            u -= (sqrt(3 * dt) * cache.mc[mdeg - 1]) * uᵢ₋₁
         elseif winc < 2
-            u += (sqrt(3 * dt) * ccache.mc[mdeg - 1]) * uᵢ₋₁
+            u += (sqrt(3 * dt) * cache.mc[mdeg - 1]) * uᵢ₋₁
         end
     end
     integrator.u = u
@@ -922,7 +917,7 @@ end
     Û₂ = zero(u)
     t̂₁ = t̂₂ = zero(t)
     tᵢ = tᵢ₋₁ = tᵢ₋₂ = tₓ = t
-    uᵢ₋₂ = uprev
+    uᵢ = uᵢ₋₁ = uₓ = uᵢ₋₂ = uprev
 
     for i in 0:(mdeg + 1)
         if i == 1
@@ -1036,9 +1031,8 @@ end
 
         for i in 1:length(W.dW)
             for j in 1:length(W.dW)
-                (i > j) && (WikJ = (1 // 2) * (1 + η₂) * W.dW[j])
-                (i < j) && (WikJ = (1 // 2) * (1 - η₂) * W.dW[j])
-                (i == j) && (WikJ = (1 // 2) * (η₁ * sqrt_dt))
+                WikJ = i > j ? (1 // 2) * (1 + η₂) * W.dW[j] :
+                    i < j ? (1 // 2) * (1 - η₂) * W.dW[j] : (1 // 2) * (η₁ * sqrt_dt)
 
                 uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
@@ -1207,9 +1201,8 @@ end
 
         for i in 1:length(W.dW)
             for j in 1:length(W.dW)
-                (i > j) && (WikJ = (1 // 2) * (1 + η₂) * W.dW[j])
-                (i < j) && (WikJ = (1 // 2) * (1 - η₂) * W.dW[j])
-                (i == j) && (WikJ = (1 // 2) * (η₁ * sqrt_dt))
+                WikJ = i > j ? (1 // 2) * (1 + η₂) * W.dW[j] :
+                    i < j ? (1 // 2) * (1 - η₂) * W.dW[j] : (1 // 2) * (η₁ * sqrt_dt)
 
                 @.. uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
@@ -1226,11 +1219,6 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
     (; recf, mσ, mτ, mδ) = cache
 
-    gen_prob = !(
-        (is_diagonal_noise(integrator.sol.prob)) || (W.dW isa Number) ||
-            (length(W.dW) == 1)
-    )
-
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     cache.mdeg = Int(floor(sqrt((2 * abs(dt) * integrator.opts.internalnorm(integrator.eigen_est, t) + 1.5) / 0.811) + 1))
@@ -1245,7 +1233,6 @@ end
     τ = mτ[deg_index]
 
     sqrt_dt = sqrt(abs(dt))
-    (gen_prob) && (vec_χ = 2 .* floor.(1 // 2 .+ false .* W.dW .+ rand(length(W.dW))) .- 1)
 
     tᵢ₋₂ = t
     uᵢ₋₂ = uprev
@@ -1330,6 +1317,8 @@ end
         Xₛ₋₁ = integrator.f.g(utmp, p, ttmp)
         u += 1 // 8 .* W.dW .* Xₛ₋₁
     else
+        vec_χ = 2 .* floor.(1 // 2 .+ false .* W.dW .+ rand(length(W.dW))) .- 1
+
         # stage s-3
         yₛ₋₃ = integrator.f(uᵢ₋₁, p, tᵢ₋₁)
         utmp = uᵢ₋₁ + μₛ₋₃ * yₛ₋₃
@@ -1424,7 +1413,7 @@ end
 @muladd function perform_step!(integrator, cache::KomBurSROCK2Cache)
     (;
         utmp, uᵢ₋₁, uᵢ₋₂, k, yₛ₋₁, yₛ₋₂, yₛ₋₃, SXₛ₋₁, SXₛ₋₂,
-        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ,
+        SXₛ₋₃, Gₛ, Xₛ₋₁, Xₛ₋₂, Xₛ₋₃, vec_χ, WikRange,
     ) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     (; recf, mσ, mτ, mδ) = cache.constantcache
