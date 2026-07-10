@@ -101,8 +101,10 @@ end
             current_extrapolant!(u, t + dt, integrator)
             @.. broadcast = false zs[1] = u - uprev
         elseif E === :ie_dd2 && tab.stage1_extrapolation &&
-                (predictor == Predictor.Linear ||
-                 (!(alg isa ImplicitEuler) && predictor == Predictor.Trivial))
+                (
+                predictor == Predictor.Linear ||
+                    (!(alg isa ImplicitEuler) && predictor == Predictor.Trivial)
+            )
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
             zs[1] .= zero(eltype(zs[1]))
@@ -1383,8 +1385,10 @@ end
             current_extrapolant!(u, t + dt, integrator)
             z1 = u - uprev
         elseif E === :ie_dd2 && tab.stage1_extrapolation &&
-                (predictor == Predictor.Linear ||
-                 (!(alg isa ImplicitEuler) && predictor == Predictor.Trivial))
+                (
+                predictor == Predictor.Linear ||
+                    (!(alg isa ImplicitEuler) && predictor == Predictor.Trivial)
+            )
             z1 = dt * integrator.fsalfirst
         else
             z1 = zero(u)

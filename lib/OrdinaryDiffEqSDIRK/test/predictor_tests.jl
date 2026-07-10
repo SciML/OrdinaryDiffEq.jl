@@ -30,12 +30,18 @@ predictors = [
 end
 
 @testset "ImplicitEuler stage 1 predictor" begin
-    stiff_prob = ODEProblem((du, u, p, t) -> (du[1] = -1000 * u[1]^3 + sin(t); nothing),
-        [1.0], (0.0, 1.0))
-    sol_trivial = solve(stiff_prob, ImplicitEuler(predictor = Predictor.Trivial);
-        abstol = 1.0e-4, reltol = 1.0e-4, dt = 1.0e-3)
-    sol_linear = solve(stiff_prob, ImplicitEuler(predictor = Predictor.Linear);
-        abstol = 1.0e-4, reltol = 1.0e-4, dt = 1.0e-3)
+    stiff_prob = ODEProblem(
+        (du, u, p, t) -> (du[1] = -1000 * u[1]^3 + sin(t); nothing),
+        [1.0], (0.0, 1.0)
+    )
+    sol_trivial = solve(
+        stiff_prob, ImplicitEuler(predictor = Predictor.Trivial);
+        abstol = 1.0e-4, reltol = 1.0e-4, dt = 1.0e-3
+    )
+    sol_linear = solve(
+        stiff_prob, ImplicitEuler(predictor = Predictor.Linear);
+        abstol = 1.0e-4, reltol = 1.0e-4, dt = 1.0e-3
+    )
 
     @test all(isfinite, sol_trivial.u[end])
     @test all(isfinite, sol_linear.u[end])
