@@ -12,17 +12,24 @@ end
     return alias === nothing ? default : alias::Bool
 end
 
-function _sde_alias_specifier(::SDEProblem, alias::Nothing)
+# Default alias specifier when `alias === nothing`.
+# JumpProblem / DiscreteProblem (and other non-SDE wrappers) fall through to the
+# RODE default — same as the pre-split path that used `is_sde = _prob isa SDEProblem`.
+function _sde_alias_specifier(::SDEProblem, ::Nothing)
     return SciMLBase.SDEAliasSpecifier()
 end
-function _sde_alias_specifier(::SciMLBase.AbstractRODEProblem, alias::Nothing)
+function _sde_alias_specifier(::Nothing, ::Nothing)
+    # concrete_prob may return nothing in edge cases; treat as RODE default
+    return SciMLBase.RODEAliasSpecifier()
+end
+function _sde_alias_specifier(_, ::Nothing)
     return SciMLBase.RODEAliasSpecifier()
 end
 function _sde_alias_specifier(_, alias::SciMLBase.AbstractAliasSpecifier)
     return alias
 end
 function _sde_alias_specifier(prob, alias)
-    throw(ArgumentError("`alias` must be an AbstractAliasSpecifier; got $(typeof(alias))."))
+    throw(ArgumentError("`alias` must be `nothing` or an AbstractAliasSpecifier; got $(typeof(alias))."))
 end
 
 function SciMLBase.__solve(
