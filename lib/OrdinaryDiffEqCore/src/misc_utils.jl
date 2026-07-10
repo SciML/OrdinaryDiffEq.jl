@@ -213,30 +213,31 @@ end
 _fixup_ad(ad_alg) = ad_alg
 
 # Warm-start state for the scalar interval searches in `ode_interpolation` /
-# `ode_interpolation!`. The strategy is stored as a `FindFirstFunctions.StrategyKind`
-# enum behind a `Ref`, so it can be re-selected as the time grid's structure
-# becomes known (at solve init from `saveat`/`adaptive`, on grid growth, and at
-# the ending phase) without changing the container's type. All strategies
-# return exact `searchsortedfirst`/`searchsortedlast` results; the kind only
-# affects lookup speed. Races on the `Ref`s under concurrent interpolation
+# `ode_interpolation!`. The strategy is stored as a mutable
+# `FindFirstFunctions.StrategyKind` enum field, so it can be re-selected as
+# the time grid's structure becomes known (at solve init from
+# `saveat`/`adaptive`, on grid growth, and at the ending phase) without
+# changing the container's type. All strategies return exact
+# `searchsortedfirst`/`searchsortedlast` results; the kind only affects
+# lookup speed. Races on the mutable fields under concurrent interpolation
 # only degrade the starting guess, never correctness.
-struct TsSearchHint{T <: AbstractVector}
-    ts::T
+mutable struct TsSearchHint{T <: AbstractVector}
+    const ts::T
     # 0 means "no query yet": the first search then starts from `lastindex(ts)`
     # at query time. `ts` grows after construction, and mid-solve consumers
     # (delay-equation history lookups especially) query near the current end,
     # so a guess frozen at construction would go stale.
-    idx_prev::Base.RefValue{Int}
-    kind::Base.RefValue{StrategyKind}
+    idx_prev::Int
+    kind::StrategyKind
     # `length(ts)` at the last grid probe. `typemax(Int)` disables re-probing
     # (the grid's uniformity is already known from the solve options).
-    probed_len::Base.RefValue{Int}
+    probed_len::Int
 end
 
-TsSearchHint(ts::AbstractVector) = TsSearchHint(ts, Ref(0), Ref(KIND_BRACKET_GALLOP), Ref(0))
+TsSearchHint(ts::AbstractVector) = TsSearchHint(ts, 0, KIND_BRACKET_GALLOP, 0)
 
 @inline function ts_hint_start(h::TsSearchHint, v)
-    prev = h.idx_prev[]
+    prev = h.idx_prev
     return ifelse(prev == 0, lastindex(v), prev)
 end
 
@@ -271,15 +272,15 @@ function _ts_grid_kind(ts::AbstractVector)
 end
 
 @inline function reprobe_ts_hint!(h::TsSearchHint)
-    h.kind[] = _ts_grid_kind(h.ts)
-    h.probed_len[] = length(h.ts)
+    h.kind = _ts_grid_kind(h.ts)
+    h.probed_len = length(h.ts)
     return nothing
 end
 
 # Cheap growth check performed by interpolation consumers (never by the step
 # loop): re-probe once the grid has doubled since the last look.
 @inline function maybe_reprobe_ts_hint!(h::TsSearchHint)
-    p = h.probed_len[]
+    p = h.probed_len
     p == typemax(Int) && return nothing
     length(h.ts) >= 2 * max(p, 32) && reprobe_ts_hint!(h)
     return nothing
@@ -296,7 +297,7 @@ function _finalize_ts_hint!(sol)
     interp = hasproperty(sol, :interp) ? sol.interp : nothing
     h = _ts_hint(interp)
     h === nothing && return nothing
-    h.probed_len[] == typemax(Int) && return nothing
+    h.probed_len == typemax(Int) && return nothing
     reprobe_ts_hint!(h)
     return nothing
 end

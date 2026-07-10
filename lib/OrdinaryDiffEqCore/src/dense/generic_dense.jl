@@ -68,8 +68,8 @@ end
     )
     maybe_reprobe_ts_hint!(hint)
     order = forward ? Base.Order.Forward : Base.Order.Reverse
-    i = searchsorted_first(hint.kind[], v, x, ts_hint_start(hint, v); order = order)
-    hint.idx_prev[] = clamp(i, firstindex(v), lastindex(v))
+    i = searchsorted_first(hint.kind, v, x, ts_hint_start(hint, v); order = order)
+    hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
     return max(lo, i)
 end
 @inline function _searchsortedlast(
@@ -77,8 +77,8 @@ end
     )
     maybe_reprobe_ts_hint!(hint)
     order = forward ? Base.Order.Forward : Base.Order.Reverse
-    i = searchsorted_last(hint.kind[], v, x, ts_hint_start(hint, v); order = order)
-    hint.idx_prev[] = clamp(i, firstindex(v), lastindex(v))
+    i = searchsorted_last(hint.kind, v, x, ts_hint_start(hint, v); order = order)
+    hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
     return max(lo - oftype(lo, 1), i)
 end
 @inline function _searchsortedfirst(
