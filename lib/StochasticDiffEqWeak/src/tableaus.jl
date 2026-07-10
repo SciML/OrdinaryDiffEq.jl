@@ -847,13 +847,7 @@ function constructNON(::Type{T} = Float64) where {T}
 end
 
 function checkNONOrder(NON; tol = 1.0e-6)
-    if NON isa KomoriNON
-        (; c0, cj, cjl, clj, α00, α0j, αj0, αjj, αjl, αjljj, αljjl) = NON
-    elseif NON isa KomoriNON2
-        (; c0, cj, ckj, α00, α0j, αj0, αjj, αjl, αkjjl) = NON
-    else
-        (; c0, cj, α00, α0j, αj0, αjj, αjl) = NON
-    end
+    (; c0, cj, α00, α0j, αj0, αjj, αjl) = NON
     e = ones(size(c0))
 
     conditions = Vector{Bool}(undef, 44) # 38 conditions for second order, 6 extra conditions for fourth deterministic order, 44 in total
@@ -893,6 +887,7 @@ function checkNONOrder(NON; tol = 1.0e-6)
     conditions[32] = abs(dot(cj, (αjj * e) .* (αjl * e)) - 1 / 4) < tol
 
     if NON isa KomoriNON
+        (; cjl, clj, αjljj, αljjl) = NON
         conditions[33] = abs(dot(clj, e) - 0) < tol
         conditions[34] = abs(dot(cjl, e) - 0) < tol
         conditions[35] = abs(dot(clj, αljjl * e) - 1 / 2) < tol
@@ -900,12 +895,17 @@ function checkNONOrder(NON; tol = 1.0e-6)
         conditions[37] = abs(dot(clj .* (αljjl * e), αljjl * (αjljj * e)) - 0) < tol
         conditions[38] = abs(dot(clj, (αljjl * e) .^ 2) - 0) < tol
     elseif NON isa KomoriNON2
+        (; ckj, αkjjl) = NON
         conditions[33] = abs(ckj[4] + ckj[3] - 0) < tol
         conditions[34] = abs(ckj[2] - 0) < tol
         conditions[35] = abs(αkjjl[4, 3] - 0) < tol
         conditions[36] = true # we set alpha^(k(j),j,0,0) = 0
         conditions[37] = abs(ckj[3] * αkjjl[3, 2]^2 + ckj[4] * αkjjl[4, 2]^2 - 0) < tol
         conditions[38] = abs(ckj[3] * αkjjl[3, 2] + ckj[4] * αkjjl[4, 2] - 1 / 2) < tol
+    else
+        # tableaus without the extra noise coefficients cannot satisfy conditions 33-38;
+        # previously these entries were left undefined (uninitialized memory)
+        conditions[33:38] .= false
     end
     # deterministic fourth order
     conditions[39] = abs(dot(c0, α00 * α00 * (α00 * e)) - 1 / 24) < tol
