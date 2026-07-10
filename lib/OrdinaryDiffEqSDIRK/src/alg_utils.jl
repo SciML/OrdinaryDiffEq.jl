@@ -91,8 +91,8 @@ isesdirk(alg::BHR553) = true
 # usually direct. The `hasproperty` fallback is for downstream algorithms that
 # reuse `ESDIRKIMEXCache` (e.g. OrdinaryDiffEqBDF's `ABDF2`, which uses the
 # Implicit Euler tableau as a starter step via `cache.eulercache`) without
-# carrying a `predictor` field of their own — `Predictor.Trivial` matches the
-# zero-seed branch they already take through the `alg isa Union{...}` gates.
+# carrying a `predictor` field of their own. The Implicit Euler bootstrap path
+# detects this fallback separately because BDF methods require a linear seed.
 _predictor(alg) = hasproperty(alg, :predictor) ? alg.predictor : Predictor.Trivial
 
 # The interpolant predictors use the Hermite power form; a method with a custom

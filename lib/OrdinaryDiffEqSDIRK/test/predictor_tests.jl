@@ -29,6 +29,39 @@ predictors = [
     end
 end
 
+@testset "ImplicitEuler first-stage predictor" begin
+    for isinplace in (false, true)
+        calls = Float64[]
+        if isinplace
+            function f!(du, u, p, t)
+                eltype(u) === Float64 && push!(calls, u[1])
+                du[1] = 2u[1] - u[1]^2 + 2
+                return nothing
+            end
+            local_prob = ODEProblem(f!, [0.0], (0.0, 1.0))
+        else
+            function f(u, p, t)
+                u isa Float64 && push!(calls, u)
+                return 2u - u^2 + 2
+            end
+            local_prob = ODEProblem(f, 0.0, (0.0, 1.0))
+        end
+
+        solve(
+            local_prob, ImplicitEuler(predictor = Predictor.Trivial);
+            adaptive = false, dt = 1.0
+        )
+        @test calls[1:2] == [0.0, 0.0]
+
+        empty!(calls)
+        solve(
+            local_prob, ImplicitEuler(predictor = Predictor.Linear);
+            adaptive = false, dt = 1.0
+        )
+        @test calls[1:2] == [0.0, 2.0]
+    end
+end
+
 # deprecated `extrapolant` keyword still maps onto a predictor
 @testset "extrapolant deprecation" begin
     @test ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
