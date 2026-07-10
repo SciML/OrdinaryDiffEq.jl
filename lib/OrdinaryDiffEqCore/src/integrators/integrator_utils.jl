@@ -615,9 +615,9 @@ end
 # overrides this with a method that calls calc_J to get a fresh Jacobian.
 get_fresh_jacobian(integrator, cache) = cache.J
 
-system_singularity_rootcause(sys, u, uprev) = ""
+SciMLBase.has_mtk_sys(integrator::ODEIntegrator) = hasproperty(integrator.sol.prob.f, :sys) && integrator.sol.prob.f.sys !== nothing
 
-function SciMLBase.log_instability(integrator::ODEIntegrator)
+function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian_logging = true)
     W = _get_W(integrator)
     u = integrator.u
     u0 = integrator.sol.prob.u0
@@ -686,10 +686,6 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
     sym_eqs = (sys !== nothing && hasfield(typeof(sys), :eqs)) ? getfield(sys, :eqs) : nothing
     sym_vars = (sys !== nothing && hasfield(typeof(sys), :unknowns)) ? getfield(sys, :unknowns) : nothing
 
-    # symbolic analysis
-    #skip jac analysis if this isn't empty
-    symbolic_analysis = system_singularity_rootcause(sys, u, integrator.uprev)
-
     # diagnostic message construction
     diagnostic = String[]
     if !isempty(nan_inf_idxs) #state vars
@@ -718,7 +714,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         end
     end
 
-    if bad_entries !== nothing && !isempty(bad_entries) && isempty(symbolic_analysis) #Jacobian analysis (skipped if we have symbolic analysis)
+    if jacobian_logging && bad_entries !== nothing && !isempty(bad_entries)
         has_nonfinite = false
         has_large = false
         for (_, _, v) in bad_entries
@@ -736,7 +732,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         for (i, j, v) in first(bad_entries, 5)
             push!(example_strs, "J[$i,$j] = $(@sprintf("%.4g", v))")
         end
-        push!(diagnostic, "\nJacobian row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
+        push!(diagnostic, "Jacobian row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
         if sym_eqs !== nothing
             for row in singularity_rows
                 if row <= length(sym_eqs)
@@ -746,7 +742,7 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
         end
         # jac cols
         if !isempty(singularity_cols)
-            push!(diagnostic, "\nJacobian column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
+            push!(diagnostic, "Jacobian column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
             if sym_vars !== nothing
                 for col in singularity_cols
                     if col <= length(sym_vars)
@@ -758,10 +754,6 @@ function SciMLBase.log_instability(integrator::ODEIntegrator)
     end
 
     diagnostic = isempty(diagnostic) ? "" : "\n\nDiagnostics:\n" * join(diagnostic, "\n\n") * "."
-
-    if !isempty(symbolic_analysis)
-        diagnostic *= join(symbolic_analysis, "\n")
-    end
 
     return diagnostic
 end
