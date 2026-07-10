@@ -4,8 +4,10 @@ using SafeTestsets
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 function activate_qa_env()
+    test_project = Base.active_project()
     Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    Pkg.instantiate()
+    return Pkg.activate(dirname(test_project))
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

@@ -1,6 +1,8 @@
 using OrdinaryDiffEqSDIRK
 using Test
 
+@test pkgdir(OrdinaryDiffEqSDIRK) == dirname(@__DIR__)
+
 const SDIRK = OrdinaryDiffEqSDIRK
 
 all_algs = [
