@@ -29,6 +29,21 @@ predictors = [
     end
 end
 
+@testset "ImplicitEuler stage 1 predictor" begin
+    stiff_prob = ODEProblem((du, u, p, t) -> (du[1] = -1000 * u[1]^3 + sin(t); nothing),
+        [1.0], (0.0, 1.0))
+    sol_trivial = solve(stiff_prob, ImplicitEuler(predictor = Predictor.Trivial);
+        abstol = 1.0e-4, reltol = 1.0e-4, dt = 1.0e-3)
+    sol_linear = solve(stiff_prob, ImplicitEuler(predictor = Predictor.Linear);
+        abstol = 1.0e-4, reltol = 1.0e-4, dt = 1.0e-3)
+
+    @test all(isfinite, sol_trivial.u[end])
+    @test all(isfinite, sol_linear.u[end])
+    @test sol_trivial.t != sol_linear.t
+    ts = range(0.0, 1.0; length = 50)
+    @test maximum(abs, Array(sol_trivial(ts)) .- Array(sol_linear(ts))) < 1.0e-2
+end
+
 # deprecated `extrapolant` keyword still maps onto a predictor
 @testset "extrapolant deprecation" begin
     @test ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
