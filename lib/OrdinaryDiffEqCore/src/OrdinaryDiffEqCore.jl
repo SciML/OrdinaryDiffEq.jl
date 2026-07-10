@@ -124,23 +124,114 @@ import EnzymeCore
 end
 export Predictor
 
+"""
+    CompiledFloats
+
+`Union{Float32, Float64}` — the floating-point element types for which the solvers
+provide fully precompiled specializations.
+"""
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
 
+"""
+    AbstractNLSolverCache
+
+Abstract supertype of the mutable cache held by an [`AbstractNLSolver`](@ref),
+storing the W-matrix, factorizations, residual buffers, and per-iteration state.
+"""
 abstract type AbstractNLSolverCache end
+"""
+    AbstractNLSolverAlgorithm
+
+Abstract supertype of the algorithm objects that configure a nonlinear solver
+(e.g. `NLNewton`, `NLFunctional`, `NLAnderson`). Passed as the `nlsolve` keyword
+of an implicit algorithm and consumed by [`OrdinaryDiffEqNonlinearSolve.build_nlsolver`](@ref).
+"""
 abstract type AbstractNLSolverAlgorithm end
+"""
+    AbstractNLSolver{algType, iip}
+
+Abstract supertype of the nonlinear solver object that implicit algorithms use to
+solve their implicit stage equations. Concrete subtypes (e.g. `NLSolver` in
+OrdinaryDiffEqNonlinearSolve) are built with [`OrdinaryDiffEqNonlinearSolve.build_nlsolver`](@ref) and driven
+with [`OrdinaryDiffEqNonlinearSolve.nlsolve!`](@ref). The type parameters are the nonlinear-solver algorithm
+type and the in-place flag `iip`.
+"""
 abstract type AbstractNLSolver{algType, iip} end
 
+"""
+    set_new_W!(nlsolver, val::Bool) -> Bool
+
+Set the flag recording whether a fresh `W` was just computed for this step and
+return `val`. Read via `get_new_W!` to decide whether to reset the Newton
+convergence estimate.
+"""
 function set_new_W! end
+"""
+    set_W_γdt!(nlsolver, W_γdt)
+
+Store the `γΔt` value at which the current `W` was formed and return it. A change
+in `γΔt` beyond [`get_new_W_γdt_cutoff`](@ref) triggers a `W` refactorization.
+"""
 function set_W_γdt! end
+"""
+    get_W(nlsolver)
+
+Return the `W = M/(γΔt) - J` matrix (or its factorization) held by the nonlinear
+solver's cache.
+"""
 function get_W end
+"""
+    isfirstcall(nlsolver) -> Bool
+
+Return whether this is the first nonlinear solve of the current step (so a fresh
+`W`/initial guess is needed).
+"""
 function isfirstcall end
+"""
+    isfirststage(nlsolver) -> Bool
+
+Return whether the nonlinear solver is on the first implicit stage of a multi-stage
+method (used to decide predictor/W reuse).
+"""
 function isfirststage end
+"""
+    isJcurrent(nlsolver, integrator) -> Bool
+
+Return whether the Jacobian stored on the solver is current for the present
+`integrator` state (so it need not be recomputed).
+"""
 function isJcurrent end
+"""
+    get_new_W_γdt_cutoff(nlsolver)
+
+Return the relative-change threshold on `γΔt` above which the nonlinear solver
+recomputes/refactorizes `W` rather than reusing the existing one.
+"""
 function get_new_W_γdt_cutoff end
+"""
+    resize_J_W!(nlsolver, integrator, i)
+
+Resize the Jacobian and `W` matrices held by `nlsolver` to length `i` after the
+state size changes (e.g. from a `resize!` callback). No-op fallback.
+"""
 resize_J_W!(args...) = nothing
+"""
+    resize_nlsolver!(integrator, i)
+
+Resize the nonlinear solver's internal buffers to state length `i` after the state
+size changes. No-op fallback.
+"""
 resize_nlsolver!(args...) = nothing
 
+"""
+    MethodType
+
+`@enum` classifying how an implicit algorithm forms its `W = M/(γΔt) - J` matrix
+and stage system. One of [`DIRK`](@ref), [`COEFFICIENT_MULTISTEP`](@ref),
+[`NORDSIECK_MULTISTEP`](@ref), or [`GLM`](@ref). The nonlinear solver uses it to
+scale `γW` appropriately in [`OrdinaryDiffEqNonlinearSolve.nlsolve!`](@ref).
+"""
 @enum MethodType begin
     DIRK
     COEFFICIENT_MULTISTEP
@@ -148,6 +239,43 @@ resize_nlsolver!(args...) = nothing
     GLM
 end
 
+"""
+    DIRK
+
+[`MethodType`](@ref) value for diagonally-implicit Runge–Kutta stage systems.
+"""
+DIRK
+
+"""
+    COEFFICIENT_MULTISTEP
+
+[`MethodType`](@ref) value for coefficient-form multistep (e.g. BDF) methods.
+"""
+COEFFICIENT_MULTISTEP
+
+"""
+    NORDSIECK_MULTISTEP
+
+[`MethodType`](@ref) value for Nordsieck-form multistep methods.
+"""
+NORDSIECK_MULTISTEP
+
+"""
+    GLM
+
+[`MethodType`](@ref) value for general linear methods.
+"""
+GLM
+
+"""
+    NLStatus
+
+`@enum` reporting the outcome/convergence quality of a nonlinear solve, ordered
+from best to worst: [`FastConvergence`](@ref) (`2`), [`Convergence`](@ref) (`1`),
+[`SlowConvergence`](@ref) (`0`), [`VerySlowConvergence`](@ref) (`-1`),
+[`Divergence`](@ref) (`-2`). A non-positive value means the solve failed
+([`OrdinaryDiffEqNonlinearSolve.nlsolvefail`](@ref)).
+"""
 @enum NLStatus::Int8 begin
     FastConvergence = 2
     Convergence = 1
@@ -155,10 +283,68 @@ end
     VerySlowConvergence = -1
     Divergence = -2
 end
+
+"""
+    FastConvergence
+
+[`NLStatus`](@ref) value (`2`) indicating the nonlinear solve converged quickly.
+"""
+FastConvergence
+
+"""
+    Convergence
+
+[`NLStatus`](@ref) value (`1`) indicating the nonlinear solve converged.
+"""
+Convergence
+
+"""
+    SlowConvergence
+
+[`NLStatus`](@ref) value (`0`) indicating slow convergence. Also aliased as
+[`TryAgain`](@ref).
+"""
+SlowConvergence
+
+"""
+    VerySlowConvergence
+
+[`NLStatus`](@ref) value (`-1`) indicating very slow convergence; treated as a
+failure.
+"""
+VerySlowConvergence
+
+"""
+    Divergence
+
+[`NLStatus`](@ref) value (`-2`) indicating the nonlinear iteration diverged.
+"""
+Divergence
+
+"""
+    TryAgain
+
+Alias for [`SlowConvergence`](@ref); a sentinel [`NLStatus`](@ref) signalling that
+the step should be retried (e.g. with a fresh Jacobian).
+"""
 const TryAgain = SlowConvergence
 
+"""
+    isdiscretecache(cache) -> Bool
+
+Return whether `cache` belongs to a discrete-time / map-iteration algorithm rather
+than a continuous ODE solver (`false` by default). Companion to
+[`isdiscretealg`](@ref).
+"""
 isdiscretecache(cache) = false
 
+"""
+    unitfulvalue(x)
+
+Return the unit-stripped numeric value of `x` (delegates to
+`SciMLBase.unitfulvalue`). Used where a bare number is needed from a possibly
+`Unitful` quantity.
+"""
 unitfulvalue(x) = SciMLBase.unitfulvalue(x)
 
 # Declare the documented custom-stepsize-controller author interface `public` so downstream

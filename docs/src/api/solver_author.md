@@ -1,0 +1,347 @@
+# Solver-author extension API
+
+This page documents the `public` extension API of the OrdinaryDiffEq.jl core and
+solver sublibraries — the names that downstream solver packages (the OrdinaryDiffEq
+solver sublibs, StochasticDiffEq.jl, DelayDiffEq.jl, …) subtype, extend, or call
+when adding a new solver. These are *not exported*: they are marked `public` so
+they are recognized as a supported extension surface rather than internal access.
+
+Everyday users do not need this page; it is for people writing new solvers. The
+step-size controller interface has its own dedicated page, the
+[Controller API](@ref).
+
+## Algorithm type hierarchy
+
+Every solver subtypes one of these abstract algorithm types.
+
+```@docs
+OrdinaryDiffEqCore.OrdinaryDiffEqAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqAdaptiveAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqCompositeAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqImplicitAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqAdaptiveImplicitAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqNewtonAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqNewtonAdaptiveAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqRosenbrockAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+OrdinaryDiffEqCore.NewtonAlgorithm
+OrdinaryDiffEqCore.RosenbrockAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqExponentialAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqAdaptiveExponentialAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqLinearExponentialAlgorithm
+OrdinaryDiffEqCore.ExponentialAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
+OrdinaryDiffEqCore.DAEAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqPartitionedAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqAdaptivePartitionedAlgorithm
+OrdinaryDiffEqCore.PartitionedAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqImplicitSecondOrderAlgorithm
+OrdinaryDiffEqCore.OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm
+OrdinaryDiffEqCore.ImplicitSecondOrderAlgorithm
+```
+
+### SDE / RODE algorithm hierarchy
+
+Subtyped by StochasticDiffEq.jl; defined in the core so the shared machinery can
+dispatch on them.
+
+```@docs
+OrdinaryDiffEqCore.StochasticDiffEqAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqAdaptiveAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqCompositeAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqNewtonAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqNewtonAdaptiveAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqRODEAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqRODEAdaptiveAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqRODECompositeAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqJumpAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqJumpAdaptiveAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonAdaptiveAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAdaptiveAlgorithm
+OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm
+```
+
+## Cache type hierarchy
+
+```@docs
+OrdinaryDiffEqCore.OrdinaryDiffEqCache
+OrdinaryDiffEqCore.OrdinaryDiffEqConstantCache
+OrdinaryDiffEqCore.OrdinaryDiffEqMutableCache
+OrdinaryDiffEqCore.CompositeCache
+OrdinaryDiffEqCore.DefaultCache
+OrdinaryDiffEqCore.AutoSwitchCache
+OrdinaryDiffEqCore.StochasticDiffEqCache
+OrdinaryDiffEqCore.StochasticDiffEqConstantCache
+OrdinaryDiffEqCore.StochasticDiffEqMutableCache
+OrdinaryDiffEqCore.@cache
+OrdinaryDiffEqCore.strip_cache
+OrdinaryDiffEqCore.is_constant_cache
+OrdinaryDiffEqCore.is_composite_cache
+OrdinaryDiffEqCore.is_composite_algorithm
+OrdinaryDiffEqCore.isdiscretecache
+OrdinaryDiffEqCore.get_fsalfirstlast
+OrdinaryDiffEqCore.alg_cache
+```
+
+Example solver-sublibrary caches that are declared public so other sublibraries
+can reuse their step:
+
+```@docs
+OrdinaryDiffEqLowOrderRK.BS3Cache
+OrdinaryDiffEqLowOrderRK.BS3ConstantCache
+OrdinaryDiffEqLowOrderRK.RK4Cache
+OrdinaryDiffEqLowOrderRK.RK4ConstantCache
+OrdinaryDiffEqTsit5.Tsit5Cache
+OrdinaryDiffEqTsit5.Tsit5ConstantCache
+OrdinaryDiffEqSDIRK.ESDIRKIMEXCache
+OrdinaryDiffEqSDIRK.ESDIRKIMEXConstantCache
+OrdinaryDiffEqSDIRK.ImplicitEulerESDIRKIMEXTableau
+OrdinaryDiffEqRosenbrock.RosenbrockMutableCache
+```
+
+## Composite algorithms and automatic switching
+
+```@docs
+OrdinaryDiffEqCore.CompositeAlgorithm
+OrdinaryDiffEqCore.AutoSwitch
+OrdinaryDiffEqCore.AutoAlgSwitch
+OrdinaryDiffEqCore.isautoswitch
+OrdinaryDiffEqCore.default_autoswitch
+OrdinaryDiffEqCore.unwrap_alg
+OrdinaryDiffEqCore.isdefaultalg
+```
+
+## Algorithm trait functions
+
+Solver sublibraries specialize these to describe their algorithm.
+
+```@docs
+OrdinaryDiffEqCore.alg_order
+OrdinaryDiffEqCore.alg_maximum_order
+OrdinaryDiffEqCore.alg_adaptive_order
+OrdinaryDiffEqCore.alg_stability_size
+OrdinaryDiffEqCore.alg_extrapolates
+OrdinaryDiffEqCore.alg_can_repeat_jac
+OrdinaryDiffEqCore.alg_autodiff
+OrdinaryDiffEqCore.alg_difftype
+OrdinaryDiffEqCore.isfsal
+OrdinaryDiffEqCore.fsal_typeof
+OrdinaryDiffEqCore.isimplicit
+OrdinaryDiffEqCore.isadaptive
+OrdinaryDiffEqCore.isdtchangeable
+OrdinaryDiffEqCore.ismultistep
+OrdinaryDiffEqCore.dt_required
+OrdinaryDiffEqCore.uses_uprev
+OrdinaryDiffEqCore.has_autodiff
+OrdinaryDiffEqCore.has_special_newton_error
+OrdinaryDiffEqCore.has_dtnew_modification
+OrdinaryDiffEqCore.has_stiff_interpolation
+OrdinaryDiffEqCore.allows_null_u0
+OrdinaryDiffEqCore.isaposteriori
+OrdinaryDiffEqCore.isdiscretealg
+OrdinaryDiffEqCore.isdp8
+OrdinaryDiffEqCore.isesdirk
+OrdinaryDiffEqCore.isfirk
+OrdinaryDiffEqCore.isnewton
+OrdinaryDiffEqCore.isWmethod
+OrdinaryDiffEqCore.is_mass_matrix_alg
+OrdinaryDiffEqCore.issplit
+OrdinaryDiffEqCore.only_diagonal_mass_matrix
+OrdinaryDiffEqCore.standardtag
+OrdinaryDiffEqCore.concrete_jac
+OrdinaryDiffEqCore.ssp_coefficient
+OrdinaryDiffEqCore.fac_default_gamma
+OrdinaryDiffEqCore.default_linear_interpolation
+```
+
+## Order / step-size / autodiff-config accessors
+
+```@docs
+OrdinaryDiffEqCore.get_current_alg_order
+OrdinaryDiffEqCore.get_current_adaptive_order
+OrdinaryDiffEqCore.get_current_alg_autodiff
+OrdinaryDiffEqCore.get_chunksize
+OrdinaryDiffEqCore._get_fdtype
+OrdinaryDiffEqCore._get_fwd_chunksize
+OrdinaryDiffEqCore._get_fwd_chunksize_int
+OrdinaryDiffEqCore._fixup_ad
+OrdinaryDiffEqCore.diffdir
+OrdinaryDiffEqCore.error_constant
+OrdinaryDiffEqCore.constvalue
+OrdinaryDiffEqCore.unitfulvalue
+```
+
+## Threading options
+
+```@docs
+OrdinaryDiffEqCore.AbstractThreadingOption
+OrdinaryDiffEqCore.Sequential
+OrdinaryDiffEqCore.BaseThreads
+OrdinaryDiffEqCore.PolyesterThreads
+OrdinaryDiffEqCore.isthreaded
+```
+
+## Enums and status types
+
+```@docs
+OrdinaryDiffEqCore.DIRK
+OrdinaryDiffEqCore.COEFFICIENT_MULTISTEP
+OrdinaryDiffEqCore.NORDSIECK_MULTISTEP
+OrdinaryDiffEqCore.GLM
+OrdinaryDiffEqCore.FastConvergence
+OrdinaryDiffEqCore.Convergence
+OrdinaryDiffEqCore.SlowConvergence
+OrdinaryDiffEqCore.VerySlowConvergence
+OrdinaryDiffEqCore.Divergence
+OrdinaryDiffEqCore.TryAgain
+```
+
+## Error and sentinel types
+
+```@docs
+OrdinaryDiffEqCore.CompiledFloats
+OrdinaryDiffEqCore.DerivativeOrderNotPossibleError
+OrdinaryDiffEqCore.DifferentialVarsUndefined
+```
+
+## Nonlinear solver interface
+
+The nonlinear-solver types and hooks live in `OrdinaryDiffEqNonlinearSolve`; the
+abstract types and W-matrix hook stubs live in the core.
+
+```@docs
+OrdinaryDiffEqCore.AbstractNLSolver
+OrdinaryDiffEqCore.AbstractNLSolverAlgorithm
+OrdinaryDiffEqCore.AbstractNLSolverCache
+OrdinaryDiffEqCore.nlsolve_f
+OrdinaryDiffEqCore.MethodType
+OrdinaryDiffEqCore.NLStatus
+OrdinaryDiffEqNonlinearSolve.NLNewton
+OrdinaryDiffEqNonlinearSolve.NLFunctional
+OrdinaryDiffEqNonlinearSolve.NLAnderson
+OrdinaryDiffEqNonlinearSolve.build_nlsolver
+OrdinaryDiffEqNonlinearSolve.nlsolve!
+OrdinaryDiffEqNonlinearSolve.compute_step!
+OrdinaryDiffEqNonlinearSolve.nlsolvefail
+OrdinaryDiffEqNonlinearSolve.initial_η
+OrdinaryDiffEqNonlinearSolve.markfirststage!
+OrdinaryDiffEqNonlinearSolve.du_alias_or_new
+OrdinaryDiffEqNonlinearSolve.anderson
+OrdinaryDiffEqNonlinearSolve.anderson!
+OrdinaryDiffEqCore.get_W
+OrdinaryDiffEqCore.set_new_W!
+OrdinaryDiffEqCore.set_W_γdt!
+OrdinaryDiffEqCore.get_new_W_γdt_cutoff
+OrdinaryDiffEqCore.isfirstcall
+OrdinaryDiffEqCore.isfirststage
+OrdinaryDiffEqCore.isJcurrent
+OrdinaryDiffEqCore.resize_J_W!
+OrdinaryDiffEqCore.resize_nlsolver!
+OrdinaryDiffEqCore.default_nlsolve
+```
+
+## Jacobian / W-matrix / differentiation configuration
+
+Provided by `OrdinaryDiffEqDifferentiation`.
+
+```@docs
+OrdinaryDiffEqDifferentiation.build_J_W
+OrdinaryDiffEqDifferentiation.build_uf
+OrdinaryDiffEqDifferentiation.build_jac_config
+OrdinaryDiffEqDifferentiation.build_grad_config
+OrdinaryDiffEqDifferentiation.calc_J
+OrdinaryDiffEqDifferentiation.calc_J!
+OrdinaryDiffEqDifferentiation.calc_tderivative
+OrdinaryDiffEqDifferentiation.calc_tderivative!
+OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation
+OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation!
+OrdinaryDiffEqDifferentiation.jacobian!
+OrdinaryDiffEqDifferentiation.jacobian2W!
+OrdinaryDiffEqDifferentiation.update_W!
+OrdinaryDiffEqDifferentiation.resize_jac_config!
+OrdinaryDiffEqDifferentiation.resize_grad_config!
+OrdinaryDiffEqDifferentiation.dolinsolve
+OrdinaryDiffEqDifferentiation.wrapprecs
+OrdinaryDiffEqDifferentiation.is_always_new
+OrdinaryDiffEqDifferentiation.islinearfunction
+OrdinaryDiffEqDifferentiation.issuccess_W
+```
+
+## Integrator step and initialization hooks
+
+```@docs
+OrdinaryDiffEqCore.ODEIntegrator
+OrdinaryDiffEqCore.DEOptions
+OrdinaryDiffEqCore.perform_step!
+OrdinaryDiffEqCore.apply_step!
+OrdinaryDiffEqCore.postamble!
+OrdinaryDiffEqCore.last_step_failed
+OrdinaryDiffEqCore.handle_callback_modifiers!
+OrdinaryDiffEqCore.set_discontinuity
+OrdinaryDiffEqCore.increment_accept!
+OrdinaryDiffEqCore.increment_reject!
+OrdinaryDiffEqCore.increment_nf!
+OrdinaryDiffEqCore.ode_determine_initdt
+OrdinaryDiffEqCore._determine_initdt
+OrdinaryDiffEqCore._ode_init
+OrdinaryDiffEqCore._initialize_dae!
+OrdinaryDiffEqCore.get_differential_vars
+```
+
+## Dense output / interpolation
+
+```@docs
+OrdinaryDiffEqCore.OrdinaryDiffEqInterpolation
+OrdinaryDiffEqCore.InterpolationData
+OrdinaryDiffEqCore.ode_interpolant
+OrdinaryDiffEqCore.ode_interpolant!
+OrdinaryDiffEqCore.hermite_interpolant
+OrdinaryDiffEqCore.hermite_interpolant!
+OrdinaryDiffEqCore.interpolation_differential_vars
+OrdinaryDiffEqCore.current_interpolant
+OrdinaryDiffEqCore.current_extrapolant
+OrdinaryDiffEqCore.current_extrapolant!
+OrdinaryDiffEqCore.ode_addsteps!
+OrdinaryDiffEqCore._ode_interpolant
+OrdinaryDiffEqCore._ode_interpolant!
+OrdinaryDiffEqCore._ode_addsteps!
+```
+
+## Controller caches
+
+Per-solve caches for the built-in step-size controllers (see the
+[Controller API](@ref) for the controllers themselves).
+
+```@docs
+OrdinaryDiffEqCore.IControllerCache
+OrdinaryDiffEqCore.PIControllerCache
+OrdinaryDiffEqCore.PIDControllerCache
+OrdinaryDiffEqCore.PredictiveControllerCache
+OrdinaryDiffEqCore.CompositeControllerCache
+OrdinaryDiffEqCore.DummyController
+OrdinaryDiffEqCore.DummyControllerCache
+```
+
+## Noise-process hooks
+
+Used by the SDE/RODE solver sublibraries; no-ops for pure ODEs.
+
+```@docs
+OrdinaryDiffEqCore.accept_noise!
+OrdinaryDiffEqCore.reject_noise!
+OrdinaryDiffEqCore.save_noise!
+OrdinaryDiffEqCore.reinit_noise!
+OrdinaryDiffEqCore.noise_curt
+OrdinaryDiffEqCore.is_noise_saveable
+```
+
+## Docstring builders
+
+Helpers that build consistent algorithm docstrings.
+
+```@docs
+OrdinaryDiffEqCore.generic_solver_docstring
+OrdinaryDiffEqCore.explicit_rk_docstring
+OrdinaryDiffEqCore.differentiation_rk_docstring
+```

@@ -1,3 +1,13 @@
+"""
+    RosenbrockMutableCache <: OrdinaryDiffEqMutableCache
+
+Abstract supertype for the in-place caches of the Rosenbrock (and Rosenbrock-W)
+methods. Concrete Rosenbrock caches subtype this; the shared integrator interface
+dispatches on it to access the stage buffers, Jacobian/`W` matrices, and
+differentiation configs common to the Rosenbrock family. Declared public so
+cross-sublibrary references to the Rosenbrock cache hierarchy are recognized as a
+supported extension point.
+"""
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 

@@ -613,6 +613,12 @@ end
 
 # Extensible initdt hook: ODE defaults to ode_determine_initdt.
 # SDE extends this in StochasticDiffEq to pass the stochastic order.
+"""
+    _determine_initdt(integrator) -> dt
+
+Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
+`integrator` (state, tolerances, norm, problem).
+"""
 function _determine_initdt(integrator)
     return ode_determine_initdt(
         integrator.u, integrator.t,
@@ -629,6 +635,11 @@ function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
     return increment_nf!(integrator.stats, 2)
 end
 
+"""
+    increment_nf!(stats, amt = 1)
+
+Increment the RHS-evaluation counter `stats.nf` by `amt`.
+"""
 function increment_nf!(stats, amt = 1)
     return stats.nf += amt
 end

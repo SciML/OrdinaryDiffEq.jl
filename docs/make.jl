@@ -5,6 +5,13 @@ using OrdinaryDiffEqCore
 # OrdinaryDiffEqCore but are documented public API.
 using OrdinaryDiffEqCore: default_controller, resolve_basic,
     get_EEst, set_EEst!, CompositeController
+using OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqNonlinearSolve
+# Bring the non-exported nonlinear-solver public names referenced by unqualified
+# `@ref` links in the docstrings into Main so those links resolve, matching the
+# controller-symbol pattern above.
+using OrdinaryDiffEqNonlinearSolve: build_nlsolver, nlsolve!, nlsolvefail,
+    anderson, anderson!, NLNewton, NLFunctional, NLAnderson
 using ImplicitDiscreteSolve
 using OrdinaryDiffEqAMF
 using OrdinaryDiffEqAdamsBashforthMoulton
@@ -48,6 +55,8 @@ makedocs(
     modules = [
         OrdinaryDiffEq,
         OrdinaryDiffEqCore,
+        OrdinaryDiffEqDifferentiation,
+        OrdinaryDiffEqNonlinearSolve,
         OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEqBDF,
         OrdinaryDiffEqDefault,

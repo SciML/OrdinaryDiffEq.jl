@@ -1,4 +1,17 @@
 # algorithms
+"""
+    NLFunctional(; κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5)
+
+Functional (fixed-point) iteration solver for the implicit stage equations,
+`z ← g(z)`. No Jacobian/`W` is formed, so it is cheap per iteration but only
+converges for mildly stiff problems.
+
+# Keyword arguments
+
+  - `κ`: relative tolerance on the increment used in the convergence test.
+  - `max_iter`: maximum number of fixed-point iterations per solve.
+  - `fast_convergence_cutoff`: convergence-rate threshold for fast convergence.
+"""
 struct NLFunctional{K, C} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C
@@ -9,6 +22,22 @@ function NLFunctional(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 
     return NLFunctional(κ, fast_convergence_cutoff, max_iter)
 end
 
+"""
+    NLAnderson(; κ = 1//100, max_iter = 10, max_history = 5, aa_start = 1,
+               droptol = nothing, fast_convergence_cutoff = 1//5)
+
+Anderson-accelerated fixed-point iteration for the implicit stage equations. Like
+[`NLFunctional`](@ref) but mixes in `max_history` previous residuals via a
+least-squares update to accelerate convergence (see [`anderson`](@ref) /
+[`anderson!`](@ref)).
+
+# Keyword arguments
+
+  - `κ`, `max_iter`, `fast_convergence_cutoff`: as in [`NLFunctional`](@ref).
+  - `max_history`: number of past iterates kept for the acceleration.
+  - `aa_start`: iteration at which acceleration starts.
+  - `droptol`: optional condition-number threshold for dropping history columns.
+"""
 struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C
@@ -25,6 +54,25 @@ function NLAnderson(;
     return NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
 end
 
+"""
+    NLNewton(; κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5,
+             new_W_dt_cutoff = 1//5, always_new = false, check_div = true, relax = nothing)
+
+Quasi-Newton nonlinear solver for the implicit stage equations. Uses the
+`W = M/(γΔt) - J` matrix (reused/refactorized across steps and stages when
+possible) to solve `g(z) = 0`.
+
+# Keyword arguments
+
+  - `κ`: relative tolerance on the Newton increment used in the convergence test.
+  - `max_iter`: maximum number of Newton iterations per solve.
+  - `fast_convergence_cutoff`: convergence-rate threshold below which convergence
+    is deemed fast (allowing `W` reuse).
+  - `new_W_dt_cutoff`: relative change in `γΔt` above which `W` is refactorized.
+  - `always_new`: force recomputation of `W` on every solve.
+  - `check_div`: enable early divergence detection.
+  - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+"""
 struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int

@@ -1,10 +1,48 @@
 # Noise interface functions — no-ops when W/P are nothing (pure ODE).
 # StochasticDiffEq extends these with methods for NoiseProcess types.
+"""
+    accept_noise!(W, dt, u, p, setup)
+
+Advance/accept the noise process `W` over the accepted step of size `dt` (the
+Brownian bridge/random values for `[t, t+dt]` are committed). No-op when `W` is
+`nothing` (pure ODE). Extended by StochasticDiffEq for `NoiseProcess` types.
+"""
 accept_noise!(::Nothing, args...) = nothing
+"""
+    reject_noise!(W, dt, u, p)
+
+Roll back the noise process `W` after a rejected step of size `dt` so it can be
+re-sampled consistently on the retry. No-op when `W` is `nothing`.
+"""
 reject_noise!(::Nothing, args...) = nothing
+"""
+    save_noise!(W)
+
+Persist the current value of the noise process `W` into its saved history. No-op
+when `W` is `nothing`.
+"""
 save_noise!(::Nothing) = nothing
+"""
+    noise_curt(W)
+
+Return the current time of the noise process `W`, or `nothing` when `W` is
+`nothing`. Used to check whether the noise has already advanced to the current
+integrator time.
+"""
 noise_curt(::Nothing) = nothing
+"""
+    is_noise_saveable(W) -> Bool
+
+Return whether the noise process `W` supports saving its trajectory
+(`false` when `W` is `nothing`).
+"""
 is_noise_saveable(::Nothing) = false
+"""
+    reinit_noise!(W, dt)
+
+Reset the noise process `W` to its initial state for a fresh integration with step
+`dt` (used by `reinit!`). No-op when `W` is `nothing`.
+"""
 reinit_noise!(::Nothing, dt) = nothing
 
 # Noise field accessors — safe for any integrator type.
@@ -97,6 +135,14 @@ function on_derivative_discontinuity_at_init!(integrator)
     return update_fsal!(integrator)
 end
 
+"""
+    apply_step!(integrator)
+
+Commit an accepted step: copy `u` into `uprev`, advance `dt` to the proposed step
+size (if allowed), refresh the FSAL derivative, shorten `dt` to the next `tstop`,
+and accept any noise process. Called by the integrator loop after a step is
+accepted.
+"""
 function apply_step!(integrator)
     update_uprev!(integrator)
 
@@ -153,6 +199,13 @@ function update_fsal!(integrator)
     return nothing
 end
 
+"""
+    last_step_failed(integrator) -> Bool
+
+Return whether the previous step failed and cannot be retried adaptively (i.e. the
+step failed while `adaptive` is `false`). Used by the iterator interface to decide
+whether to stop.
+"""
 function last_step_failed(integrator::ODEIntegrator)
     return integrator.last_stepfail && !integrator.opts.adaptive
 end
@@ -388,6 +441,14 @@ function post_savevalues!(integrator, reduce_size)
 end
 
 # Want to extend postamble! for DDEIntegrator
+"""
+    postamble!(integrator)
+
+Run the end-of-solve finalization for `integrator`: save the final point, finalize
+the noise process, and emit any remaining progress/log messages. Extended for
+`DDEIntegrator`; the `ODEIntegrator` method delegates to the internal
+`_postamble!`.
+"""
 postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
 
 function _postamble!(integrator)
@@ -574,9 +635,21 @@ function _loopfooter!(integrator)
 end
 
 # Trait: is this a composite algorithm cache? Override to include SDE composite caches.
+"""
+    is_composite_cache(cache) -> Bool
+
+Return whether `cache isa CompositeCache`, i.e. whether it wraps several
+sub-caches for a composite algorithm.
+"""
 is_composite_cache(cache) = cache isa CompositeCache
 
 # Trait: is this a composite algorithm? Override to include SDE composite algorithms.
+"""
+    is_composite_algorithm(alg) -> Bool
+
+Return whether `alg isa OrdinaryDiffEqCompositeAlgorithm`, i.e. whether it
+dispatches between several sub-algorithms at runtime.
+"""
 is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 
 # Reset integrator flags at the start of loopfooter.
@@ -593,10 +666,20 @@ end
 # post_newton_controller! does dt = dt / failfactor, which works for both ODE and SDE.
 handle_force_stepfail!(integrator) = post_newton_controller!(integrator, integrator.alg)
 
+"""
+    increment_accept!(stats)
+
+Increment the accepted-step counter `stats.naccept` by one.
+"""
 function increment_accept!(stats)
     return stats.naccept += 1
 end
 
+"""
+    increment_reject!(stats)
+
+Increment the rejected-step counter `stats.nreject` by one.
+"""
 function increment_reject!(stats)
     return stats.nreject += 1
 end
@@ -821,6 +904,13 @@ function handle_tstop!(integrator)
     return nothing
 end
 
+"""
+    handle_callback_modifiers!(integrator)
+
+Hook invoked after a callback modifies the integrator state, letting the algorithm
+react (e.g. re-evaluate FSAL). No-op for a plain `ODEIntegrator`; extended by
+integrators that need to respond to callback-induced changes.
+"""
 handle_callback_modifiers!(integrator::ODEIntegrator) = nothing
 
 function reset_fsal!(integrator)
@@ -841,6 +931,13 @@ function reset_fsal!(integrator)
     # integrator.reeval_fsal = false
 end
 
+"""
+    nlsolve_f(f, alg)
+
+Return the RHS function that the nonlinear solver should use for `alg`. For split
+problems (e.g. IMEX) this selects the implicit part `f.f1`; otherwise it returns
+`f` unchanged.
+"""
 function nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm)
     return f isa SplitFunction && issplit(alg) ? f.f1 : f
 end

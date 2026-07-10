@@ -54,6 +54,7 @@ pages = [
     ],
     "APIs" => [
         "api/controllers.md",
+        "api/solver_author.md",
     ],
     "Developer Documentation" => [
         "devtools/index.md",

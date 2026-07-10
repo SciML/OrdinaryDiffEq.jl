@@ -1,6 +1,23 @@
+"""
+    OrdinaryDiffEqInterpolation{cacheType} <: SciMLBase.AbstractDiffEqInterpolation
+
+Abstract supertype for the dense-output interpolation object attached to a
+solution. Given a saved timeseries plus derivative (`k`) history it evaluates the
+continuous extension. See [`InterpolationData`](@ref) for the concrete type.
+"""
 abstract type OrdinaryDiffEqInterpolation{cacheType} <:
 SciMLBase.AbstractDiffEqInterpolation end
 
+"""
+    InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, sensitivitymode)
+
+Concrete [`OrdinaryDiffEqInterpolation`](@ref) storing everything needed to
+evaluate the continuous solution: the RHS `f`, the saved states `timeseries` at
+times `ts`, the stage-derivative history `ks`, the per-step `alg_choice` (for
+composite algorithms), whether `dense` output is available, the solver `cache`,
+the `differential_vars` mask (for DAEs), and a `sensitivitymode` flag. Calling
+`(interp)(tvals, idxs, deriv, p, continuity)` performs the interpolation.
+"""
 struct InterpolationData{
         F, uType, tType, kType, algType <: Union{Nothing, Vector{Int}}, cacheType, DV,
     } <:
@@ -85,6 +102,14 @@ function SciMLBase.strip_interpolation(id::InterpolationData)
     )
 end
 
+"""
+    strip_cache(cache)
+
+Return a lightweight copy of `cache` with all fields set to `nothing`, used by
+`SciMLBase.strip_interpolation` to drop the (potentially large) working buffers
+from a solution's interpolation object before serialization. Has a special path
+for [`DefaultCache`](@ref).
+"""
 function strip_cache(cache)
     if !(cache isa OrdinaryDiffEqCore.DefaultCache)
         cache = ConstructionBase.constructorof(typeof(cache))(

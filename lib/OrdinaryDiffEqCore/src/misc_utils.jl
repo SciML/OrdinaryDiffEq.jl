@@ -6,6 +6,16 @@ macro swap!(x, y)
     end
 end
 
+"""
+    @cache struct MyCache ... end
+
+Macro used to define a mutable solver cache. It emits the given `struct` definition
+and additionally generates a `full_cache(c::MyCache)` method returning the tuple of
+its resizable buffer fields (those typed `uType`, `rateType`, `kType`,
+`uNoUnitsType`, or the `du`/`dual_du` of a `DiffCacheType`). That `full_cache`
+tuple is what the `resize!`/`deleteat!` integrator interface iterates over when the
+state length changes.
+"""
 macro cache(expr)
     name = expr.args[2].args[1].args[1]
     fields = [x for x in expr.args[3].args if typeof(x) != LineNumberNode]
@@ -28,6 +38,13 @@ end
 
 # Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
 # value should recurse for anything else.
+"""
+    constvalue(x)
+
+Strip any ForwardDiff/unit wrapper from `x` (or a type `T`) down to its underlying
+numeric value, taking the real part for `Complex` so that a scalar constant can be
+compared/used unambiguously. Used e.g. for eigenvalue estimates.
+"""
 function constvalue(::Type{T}) where {T}
     _T = SciMLBase.value(T)
     return _T <: Complex ? SciMLBase.value(real(_T)) : SciMLBase.value(_T)
@@ -37,6 +54,13 @@ function constvalue(x)
     return _x isa Complex ? SciMLBase.value(real(_x)) : SciMLBase.value(_x)
 end
 
+"""
+    diffdir(integrator) -> Int
+
+Return the finite-difference direction (`+1` or `-1`) to use for time
+derivatives, chosen so the stencil stays inside the integration interval near an
+endpoint.
+"""
 function diffdir(integrator::SciMLBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     return dir = integrator.tdir > zero(integrator.tdir) ?
@@ -44,13 +68,52 @@ function diffdir(integrator::SciMLBase.DEIntegrator)
         integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
 end
 
+"""
+    error_constant(integrator, order) -> Real
+
+Return the leading error constant of the current method at the given `order`, used
+when scaling the local error estimate. Dispatches on `integrator.alg`.
+"""
 error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
 
+"""
+    AbstractThreadingOption
+
+Abstract supertype for the `thread = …` option controlling internal broadcasting.
+The concrete choices are [`Sequential`](@ref), [`BaseThreads`](@ref), and
+[`PolyesterThreads`](@ref); [`isthreaded`](@ref) reports whether a given option
+enables multithreading.
+"""
 abstract type AbstractThreadingOption end
+"""
+    Sequential() <: AbstractThreadingOption
+
+Threading option that disables internal multithreading — all per-element work runs
+on a single thread. [`isthreaded`](@ref)`(Sequential())` is `false`.
+"""
 struct Sequential <: AbstractThreadingOption end
+"""
+    BaseThreads() <: AbstractThreadingOption
+
+Threading option that parallelizes internal broadcasting with Julia's built-in
+`Threads.@threads`. [`isthreaded`](@ref)`(BaseThreads())` is `true`.
+"""
 struct BaseThreads <: AbstractThreadingOption end
+"""
+    PolyesterThreads() <: AbstractThreadingOption
+
+Threading option that parallelizes internal broadcasting with Polyester.jl's
+low-overhead `@batch`. [`isthreaded`](@ref)`(PolyesterThreads())` is `true`.
+"""
 struct PolyesterThreads <: AbstractThreadingOption end
 
+"""
+    isthreaded(opt) -> Bool
+
+Return whether the threading option `opt` enables multithreaded internal
+broadcasting. `true` for [`BaseThreads`](@ref)/[`PolyesterThreads`](@ref) (and
+`true` for a `Bool` `opt` equal to `true`), `false` for [`Sequential`](@ref).
+"""
 isthreaded(b::Bool) = b
 isthreaded(::Sequential) = false
 isthreaded(::BaseThreads) = true
@@ -123,6 +186,13 @@ macro fold(arg)
     return esc(:(Base.@assume_effects :foldable $arg))
 end
 
+"""
+    DifferentialVarsUndefined
+
+Sentinel returned by [`get_differential_vars`](@ref) when the differential vs
+algebraic split cannot be determined (the mass matrix is not diagonal). In that
+case dense output falls back to linear interpolation.
+"""
 struct DifferentialVarsUndefined end
 
 """
@@ -180,6 +250,13 @@ function find_algebraic_vars_eqs(M::SciMLOperators.AbstractSciMLOperator)
     return find_algebraic_vars_eqs(convert(AbstractMatrix, M))
 end
 
+"""
+    isnewton(nlsolver) -> Bool
+
+Return whether the nonlinear solver `nlsolver` is a Newton-type solver (as opposed
+to a fixed-point / functional iteration), which determines whether a W-matrix is
+formed and updated.
+"""
 isnewton(::Any) = false
 
 # Extract the chunk size integer from an ADType for use as a type parameter.
@@ -196,6 +273,13 @@ _ad_fdtype(::AutoSparse{<:AutoFiniteDiff{FD}}) where {FD} = FD
 _ad_fdtype(_) = Val{:forward}()
 
 # Fix AutoFiniteDiff dir: default dir of true (Bool) makes integration non-reversible
+"""
+    _fixup_ad(ad, args...)
+
+Internal helper that adjusts an autodiff choice `ad` to be consistent with the
+problem/solver context (e.g. disabling AD when it is not applicable). Returns the
+possibly-modified autodiff choice.
+"""
 function _fixup_ad(ad_alg::AutoFiniteDiff)
     if ad_alg.dir isa Bool
         @reset ad_alg.dir = Int(ad_alg.dir)
