@@ -600,8 +600,20 @@ Base.@constprop :aggressive function _ode_init(
         dense = false
     end
 
+    # Select the interval-search strategy for scalar interpolation from what
+    # the solve options already guarantee about the saved time grid: fixed-dt
+    # stepping and pure range-`saveat` saving produce (near-)uniform grids
+    # where interpolation search is optimal and no re-probing is needed.
+    # Fully adaptive grids start on the robust hinted gallop and re-select on
+    # grid growth and at the ending phase (`_finalize_ts_hint!`).
+    ts_hint = if !adaptive || (saveat isa AbstractRange && length(saveat) > 1 && !save_everystep)
+        TsSearchHint(ts, 0, KIND_INTERPOLATION_SEARCH, typemax(Int))
+    else
+        TsSearchHint(ts)
+    end
     id = InterpolationData(
-        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false
+        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false,
+        ts_hint
     )
 
     _sol_kwargs = if !isnothing(W)

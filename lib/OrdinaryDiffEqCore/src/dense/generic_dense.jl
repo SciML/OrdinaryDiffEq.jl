@@ -41,34 +41,61 @@ end
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
+# `searchsortedfirst` bounded below by `lo`, over `v` sorted ascending
+# (`forward = true`) or descending (`forward = false`). Callers in the sorted
+# vector-`tvals` loop pass the previous hit as `lo`, so the FindFirstFunctions
+# bracketing gallop turns repeated nearby lookups into O(1) instead of a fresh
+# O(log n) bisection; `max(lo, ...)` reproduces the lower bound exactly.
 @inline function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
-    u = oftype(lo, 1)
-    lo = lo - u
-    hi = length(v) + u
-    @inbounds while lo < hi - u
-        m = (lo + hi) >>> 1
-        @inbounds if (forward && v[m] < x) || (!forward && v[m] > x)
-            lo = m
-        else
-            hi = m
-        end
-    end
-    return hi
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    return max(
+        lo,
+        searchsorted_first(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order = order)
+    )
 end
 
 @inline function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
-    u = oftype(lo, 1)
-    lo = lo - u
-    hi = length(v) + u
-    @inbounds while lo < hi - u
-        m = (lo + hi) >>> 1
-        @inbounds if (forward && v[m] > x) || (!forward && v[m] < x)
-            hi = m
-        else
-            lo = m
-        end
-    end
-    return lo
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    return max(
+        lo - oftype(lo, 1),
+        searchsorted_last(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order = order)
+    )
+end
+
+# Hint-accelerated interval search for the scalar interpolation paths below.
+# Scalar interpolation calls arrive with strongly correlated `tval`s (adjoint
+# solves sweep time monotonically, delay-equation history lookups cluster) or
+# hit near-uniform grids (`saveat` ranges, fixed-dt stepping); the hint holds
+# a strategy enum selected for the grid plus the previous hit as the gallop
+# guess. The `max` clamps reproduce the lower search bounds of the plain
+# methods above.
+@inline function _searchsortedfirst(
+        hint::TsSearchHint, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    maybe_reprobe_ts_hint!(hint)
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    i = searchsorted_first(hint.kind, v, x, ts_hint_start(hint, v); order = order)
+    hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
+    return max(lo, i)
+end
+@inline function _searchsortedlast(
+        hint::TsSearchHint, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    maybe_reprobe_ts_hint!(hint)
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    i = searchsorted_last(hint.kind, v, x, ts_hint_start(hint, v); order = order)
+    hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
+    return max(lo - oftype(lo, 1), i)
+end
+@inline function _searchsortedfirst(
+        ::Nothing, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    return _searchsortedfirst(v, x, lo, forward)
+end
+@inline function _searchsortedlast(
+        ::Nothing, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    return _searchsortedlast(v, x, lo, forward)
 end
 
 """
@@ -1074,12 +1101,12 @@ function ode_interpolation(
     if continuity === :left
         # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
-        i₊ = min(lastindex(ts), _searchsortedfirst(ts, tval, 2, tdir > 0))
+        i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
-        i₋ = max(1, _searchsortedlast(ts, tval, 1, tdir > 0))
+        i₋ = max(1, _searchsortedlast(_ts_hint(id), ts, tval, 1, tdir > 0))
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
@@ -1194,12 +1221,12 @@ function ode_interpolation!(
     if continuity === :left
         # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
-        i₊ = min(lastindex(ts), _searchsortedfirst(ts, tval, 2, tdir > 0))
+        i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
-        i₋ = max(1, _searchsortedlast(ts, tval, 1, tdir > 0))
+        i₋ = max(1, _searchsortedlast(_ts_hint(id), ts, tval, 1, tdir > 0))
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)

@@ -22,6 +22,9 @@ import PrecompileTools
 
 import FastPower: fastpower
 
+import FindFirstFunctions: StrategyKind, KIND_BRACKET_GALLOP, KIND_INTERPOLATION_SEARCH,
+    searchsorted_first, searchsorted_last
+
 # Interfaces
 import SciMLBase: solve!, step!, isadaptive
 import DiffEqBase: initialize!

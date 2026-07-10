@@ -31,7 +31,25 @@ struct InterpolationData{
     cache::cacheType
     differential_vars::DV
     sensitivitymode::Bool
+    # Warm-start hint for the interval search in scalar `ode_interpolation`;
+    # see `TsSearchHint`.
+    ts_hint::TsSearchHint{tType}
 end
+
+# Downstream packages (e.g. StochasticDiffEq) construct `InterpolationData`
+# positionally with these nine arguments; the hint then starts on the robust
+# gallop strategy and re-selects itself as the grid is probed.
+function InterpolationData(
+        f, timeseries, ts, ks, alg_choice, dense, cache,
+        differential_vars, sensitivitymode
+    )
+    return InterpolationData(
+        f, timeseries, ts, ks, alg_choice, dense, cache,
+        differential_vars, sensitivitymode, TsSearchHint(ts)
+    )
+end
+
+@inline _ts_hint(id::InterpolationData) = id.ts_hint
 
 @static if isdefined(SciMLBase, :enable_interpolation_sensitivitymode)
     function SciMLBase.enable_interpolation_sensitivitymode(interp::InterpolationData)
