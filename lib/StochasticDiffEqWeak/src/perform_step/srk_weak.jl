@@ -1253,15 +1253,15 @@ end
                 if is_diagonal_noise(integrator.sol.prob)
                     tmpu = zero(integrator.u)
                     tmpu[jb] = gtmp[jb]
-                    @.. Y1jajb[ja, jb] = Ihat2 * tmpu
+                    @.. Y1jajb[ja, jb] = ihat2 * tmpu
                     if ja != jb
-                        @.. Y4jajb[ja, jb] = Ihat2 * tmpu
+                        @.. Y4jajb[ja, jb] = ihat2 * tmpu
                     end
                 else
                     gtmpjb = @view gtmp[:, jb]
-                    @.. Y1jajb[ja, jb] = Ihat2 * gtmpjb
+                    @.. Y1jajb[ja, jb] = ihat2 * gtmpjb
                     if ja != jb
-                        @.. Y4jajb[ja, jb] = Ihat2 * gtmpjb
+                        @.. Y4jajb[ja, jb] = ihat2 * gtmpjb
                     end
                 end
             end
@@ -1291,7 +1291,7 @@ end
                     gtmp = integrator.f.g(tmpu, p, t)
                     tmpjb = @view gtmp[:, jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
-                    @.. Y2jajb[ja, jb] = Ihat2 * tmpjb
+                    @.. Y2jajb[ja, jb] = ihat2 * tmpjb
                 end
             end
         else
@@ -1311,7 +1311,7 @@ end
                     tmpu = zero(integrator.u)
                     tmpu[jb] = gtmp[jb]
                     ihat2 = Ihat2(cache, _dW, _dZ, integrator.sqdt, ja, jb)
-                    @.. Y2jajb[ja, jb] = Ihat2 * tmpu
+                    @.. Y2jajb[ja, jb] = ihat2 * tmpu
                 end
             end
         end
