@@ -53,8 +53,9 @@ pages = [
         "misc.md",
     ],
     "APIs" => [
+        "api/diffeqbase.md",
+        "api/ordinarydiffeqcore.md",
         "api/controllers.md",
-        "api/solver_author.md",
     ],
     "Developer Documentation" => [
         "devtools/index.md",
@@ -73,6 +74,7 @@ pages = [
         ],
         "Internal Documentation" => [
             "devtools/internals/notes_on_algorithms.md",
+            "devtools/internals/public_api.md",
             "devtools/internals/tableaus.md",
         ],
     ],
