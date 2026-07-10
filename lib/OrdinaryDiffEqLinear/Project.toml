@@ -22,6 +22,7 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
@@ -43,11 +44,12 @@ julia = "1.10"
 RecursiveArrayTools = "4.2.0"
 DiffEqBase = "7"
 SafeTestsets = "0.1.0"
+SparseArrays = "1.10"
 OrdinaryDiffEqRosenbrock = "2"
 Reexport = "1.2.2"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
+test = ["DiffEqDevTools", "Random", "OrdinaryDiffEqRosenbrock", "SafeTestsets", "SparseArrays", "Test", "OrdinaryDiffEqVerner", "OrdinaryDiffEqTsit5", "Pkg"]
 
 [sources.OrdinaryDiffEqTsit5]
 path = "../OrdinaryDiffEqTsit5"
