@@ -33,15 +33,38 @@ OrdinaryDiffEqCore.OrdinaryDiffEqMutableCache
 OrdinaryDiffEqCore.DefaultCache
 OrdinaryDiffEqCore.AutoSwitchCache
 OrdinaryDiffEqCore.CompositeControllerCache
+OrdinaryDiffEqCore.PredictiveControllerCache
 OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast
 OrdinaryDiffEqCore.handle_callback_modifiers!
 OrdinaryDiffEqCore.@cache
 ```
 
-## Differentiation cache resizing
+## Jacobian / W-matrix / differentiation configuration
+
+Provided by `OrdinaryDiffEqDifferentiation`: the Jacobian, W-matrix,
+time-derivative, and linear-solve hooks that implicit solver sublibraries build
+their caches and `perform_step!` implementations on.
 
 ```@docs
-OrdinaryDiffEqDifferentiation.resize_grad_config!
+OrdinaryDiffEqDifferentiation.build_J_W
+OrdinaryDiffEqDifferentiation.build_uf
+OrdinaryDiffEqDifferentiation.build_jac_config
+OrdinaryDiffEqDifferentiation.build_grad_config
+OrdinaryDiffEqDifferentiation.calc_J
+OrdinaryDiffEqDifferentiation.calc_J!
+OrdinaryDiffEqDifferentiation.calc_tderivative
+OrdinaryDiffEqDifferentiation.calc_tderivative!
+OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation
+OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation!
+OrdinaryDiffEqDifferentiation.jacobian!
+OrdinaryDiffEqDifferentiation.jacobian2W!
+OrdinaryDiffEqDifferentiation.update_W!
 OrdinaryDiffEqDifferentiation.resize_jac_config!
+OrdinaryDiffEqDifferentiation.resize_grad_config!
+OrdinaryDiffEqDifferentiation.dolinsolve
+OrdinaryDiffEqDifferentiation.wrapprecs
+OrdinaryDiffEqDifferentiation.is_always_new
+OrdinaryDiffEqDifferentiation.islinearfunction
+OrdinaryDiffEqDifferentiation.issuccess_W
 ```
