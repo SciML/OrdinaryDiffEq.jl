@@ -354,16 +354,16 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
     droptol::Union{Nothing, tType}
 end
 
-mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F} <:
+mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType
     invγdt::tType2
     nlfunc::F
-    # residual-evaluation counter: the continuation solutions do not carry stats, so
-    # the residual itself counts its `f` calls for the integrator statistics
-    nf::Base.RefValue{Int}
+    # residual-evaluation counter (a `Ref(0)`): the continuation solutions do not carry
+    # stats, so the residual itself counts its `f` calls for the integrator statistics
+    nf::R
 end
 
 mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType} <:
