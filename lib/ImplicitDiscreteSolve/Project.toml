@@ -27,7 +27,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 CommonSolve = "0.2.6"
 Pkg = "1"
 Test = "1.10.0"
-NonlinearSolveBase = "2.23.0"
+NonlinearSolveBase = "2.31.0"
 OrdinaryDiffEqSDIRK = "2"
 SafeTestsets = "0.1.0"
 SciMLBase = "3.35.1"
