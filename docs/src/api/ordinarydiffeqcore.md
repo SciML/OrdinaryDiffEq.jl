@@ -49,4 +49,5 @@ Lower-level nonlinear-solve hooks are internal implementation details.
 OrdinaryDiffEqNonlinearSolve.NLAnderson
 OrdinaryDiffEqNonlinearSolve.NLFunctional
 OrdinaryDiffEqNonlinearSolve.NLNewton
+OrdinaryDiffEqNonlinearSolve.HomotopyNonlinearSolveAlg
 ```
