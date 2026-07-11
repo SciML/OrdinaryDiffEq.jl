@@ -36,7 +36,6 @@ OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 
 [sources]
-DiffEqBase = {path = "../lib/DiffEqBase"}
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
 ImplicitDiscreteSolve = {path = "../lib/ImplicitDiscreteSolve"}
 OrdinaryDiffEqAMF = {path = "../lib/OrdinaryDiffEqAMF"}
