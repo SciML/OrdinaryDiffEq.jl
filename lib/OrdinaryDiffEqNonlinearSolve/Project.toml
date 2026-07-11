@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
@@ -65,7 +65,7 @@ OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqSDIRK = "2"
 Statistics = "1.10.0"
 SciMLBase = "3.30.0"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4.6"
 SimpleNonlinearSolve = "2.11.1"
 FastClosures = "0.3.2"
 SparseArrays = "1"
