@@ -350,8 +350,6 @@ end
         return convert(eltype(atmp), Inf)
     end
 
-    cache.linsolve = linres.cache
-
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end

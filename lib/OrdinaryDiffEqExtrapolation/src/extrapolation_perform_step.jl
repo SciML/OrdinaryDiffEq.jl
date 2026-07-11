@@ -329,8 +329,6 @@ function perform_step!(
                     )
                 end
 
-                cache.linsolve[1] = linres.cache
-
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_tmps2[1] = u_tmps[1]
                 @.. broadcast = false u_tmps[1] = u_tmps[1] - k_tmps[1]
@@ -392,8 +390,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false u_tmps2[Threads.threadid()] = u_tmps[Threads.threadid()]
                         @.. broadcast = false u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] -
@@ -510,8 +506,6 @@ function perform_step!(
                             linu = _vec(k_tmps[1])
                         )
                     end
-
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false u_tmps[1] = u_tmps[1] - k_tmps[1]
@@ -1317,8 +1311,6 @@ function perform_step!(
                 )
             end
 
-            cache.linsolve[1] = linres.cache
-
             integrator.stats.nsolve += 1
             @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
             @.. broadcast = false diff1[1] = u_temp1 - u_temp2
@@ -1340,7 +1332,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false T[i + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -1401,7 +1392,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
@@ -1437,7 +1427,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 *
                                 u_temp3[Threads.threadid()] -
@@ -1507,7 +1496,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
@@ -1543,7 +1531,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 *
                                 u_temp3[Threads.threadid()] -
@@ -1645,7 +1632,6 @@ function perform_step!(
                     integrator, linsolve; b = _vec(linsolve_tmps[1]),
                     linu = _vec(k)
                 )
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -1659,7 +1645,6 @@ function perform_step!(
                         integrator, linsolve; b = _vec(linsolve_tmps[1]),
                         linu = _vec(k)
                     )
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false T[n_curr + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -2945,7 +2930,6 @@ function perform_step!(
                     b = _vec(linsolve_tmps[1]), linu = _vec(k)
                 )
             end
-            cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
             @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -2968,7 +2952,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false T[i + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -3034,7 +3017,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
                             k_tmps[Threads.threadid()] # Euler starting step
@@ -3068,7 +3050,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 *
                                 u_temp3[Threads.threadid()] -
@@ -3142,7 +3123,6 @@ function perform_step!(
                                 b = _vec(linsolvetmp), linu = _vec(ktmp)
                             )
                         end
-                        cache.linsolve[tid] = linres.cache
 
                         @.. broadcast = false u_temp3[tid] = u_temp4[tid] - ktmp # Euler starting step
                         @.. broadcast = false diff1[tid] = u_temp3[tid] - u_temp4[tid]
@@ -3167,7 +3147,6 @@ function perform_step!(
                                     linu = _vec(ktmp)
                                 )
                             end
-                            cache.linsolve[tid] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 * u_temp3[tid] -
                                 u_temp4[tid] - 2 * ktmp # Explicit Midpoint rule
@@ -3272,7 +3251,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -3294,7 +3272,6 @@ function perform_step!(
                             b = _vec(linsolve_tmps[1]), linu = _vec(k)
                         )
                     end
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false T[n_curr + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -3765,7 +3742,6 @@ function perform_step!(
                     b = _vec(linsolve_tmps[1]), linu = _vec(k)
                 )
             end
-            cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
             @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -3787,7 +3763,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false T[i + 1] = u_temp1 - k
@@ -3853,7 +3828,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
@@ -3884,7 +3858,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = u_temp3[Threads.threadid()] -
                                 k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -3962,7 +3935,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
                             k_tmps[Threads.threadid()] # Euler starting step
@@ -3992,7 +3964,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = u_temp3[Threads.threadid()] -
                                 k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -4112,7 +4083,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false k = -k
@@ -4127,7 +4097,6 @@ function perform_step!(
                         integrator, linsolve; b = _vec(linsolve_tmps[1]),
                         linu = _vec(k)
                     )
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false T[n_curr + 1] = u_temp1 - k # Explicit Midpoint rule
