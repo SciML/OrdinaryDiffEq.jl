@@ -32,7 +32,7 @@ macro cache(expr)
     end
     return quote
         $(esc(expr))
-        $(esc(:full_cache))(c::$(esc(name))) = tuple($(cache_vars...))
+        $(GlobalRef(SciMLBase, :full_cache))(c::$(esc(name))) = tuple($(cache_vars...))
     end
 end
 
