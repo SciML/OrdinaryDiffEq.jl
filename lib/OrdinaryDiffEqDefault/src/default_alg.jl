@@ -33,10 +33,32 @@ current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF, current, current - N
 """
     DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
 
-Construct the automatic default ODE algorithm. The solver starts with explicit
-nonstiff methods and switches to stiff methods when stiffness is detected.
+Construct the automatic default ODE algorithm used when `solve` is called without
+an explicit algorithm for an ODE problem.
 
-Keyword arguments in `kwargs` are forwarded to the stiff solver constructors.
+`DefaultODEAlgorithm` starts with explicit nonstiff methods and switches to stiff
+methods when stiffness is detected. It chooses among `Tsit5`, `Vern7`,
+`Rosenbrock23`, `Rodas5P`, and `FBDF`, using Krylov-based `FBDF` for larger stiff
+systems.
+
+# Keyword Arguments
+
+  - `lazy`: controls lazy tableau construction for `Vern7`.
+  - `stiffalgfirst`: start on the stiff solver branch when `true`.
+  - `kwargs...`: forwarded to the stiff solver constructors.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqDefault
+
+function f!(du, u, p, t)
+    du[1] = -u[1]
+end
+
+prob = ODEProblem(f!, [1.0], (0.0, 1.0))
+sol = solve(prob, DefaultODEAlgorithm(); reltol = 1.0e-6, abstol = 1.0e-8)
+```
 """
 function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
@@ -185,6 +207,35 @@ function is_mass_matrix_alg(
     return true
 end
 
+"""
+    DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
+
+Construct the default ODE algorithm with the stiff branch selected first.
+
+This is useful when a problem is expected to be stiff but can still benefit from
+automatic switching. The nonstiff branch contains `Tsit5` and `Vern7`; the stiff
+branch contains `Rosenbrock23`, `Rodas5P`, and `FBDF` variants.
+
+# Keyword Arguments
+
+  - `lazy`: controls lazy tableau construction for `Vern7`.
+  - `stol`: stiffness-detection tolerance passed as `stifftol`.
+  - `ntol`: nonstiff-detection tolerance passed as `nonstifftol`.
+  - `kwargs...`: forwarded to the stiff solver constructors.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqDefault
+
+function f!(du, u, p, t)
+    du[1] = -1000u[1]
+end
+
+prob = ODEProblem(f!, [1.0], (0.0, 1.0))
+sol = solve(prob, DefaultImplicitODEAlgorithm(); reltol = 1.0e-8, abstol = 1.0e-10)
+```
+"""
 function DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (

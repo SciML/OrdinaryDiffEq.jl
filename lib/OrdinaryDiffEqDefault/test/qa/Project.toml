@@ -1,14 +1,10 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[sources]
-OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
 
 [compat]
 Aqua = "0.8.11"
