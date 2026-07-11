@@ -412,8 +412,6 @@ end
             )
         end
 
-        cache.linsolve = linres.cache
-
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -823,8 +821,6 @@ end
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff = complex(
             fw2 - αdt * Mw2 + βdt * Mw3,
             fw3 - βdt * Mw2 - αdt * Mw3
@@ -843,8 +839,6 @@ end
                 linu = _vec(dw23)
             )
         end
-
-        cache.linsolve2 = linres2.cache
 
         integrator.stats.nsolve += 2
         dw2 = z2
@@ -912,10 +906,9 @@ end
 
         if alg.smooth_est
             linres1 = dolinsolve(
-                integrator, linres1.cache; b = _vec(ubuff),
+                integrator, cache.linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
-            cache.linsolve1 = linres1.cache
             integrator.stats.nsolve += 1
         end
 
@@ -933,10 +926,9 @@ end
 
             if alg.smooth_est
                 linres1 = dolinsolve(
-                    integrator, linres1.cache; b = _vec(ubuff),
+                    integrator, cache.linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
-                cache.linsolve1 = linres1.cache
                 integrator.stats.nsolve += 1
             end
 
@@ -1484,8 +1476,6 @@ end
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff1 = complex(
             fw2 - α1dt * Mw2 + β1dt * Mw3, fw3 - β1dt * Mw2 - α1dt * Mw3
         )
@@ -1502,8 +1492,6 @@ end
             )
         end
 
-        cache.linsolve2 = linres2.cache
-
         @.. cubuff2 = complex(
             fw4 - α2dt * Mw4 + β2dt * Mw5, fw5 - β2dt * Mw4 - α2dt * Mw5
         )
@@ -1519,8 +1507,6 @@ end
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
-
-        cache.linsolve3 = linres3.cache
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1602,10 +1588,9 @@ end
 
         if alg.smooth_est
             linres1 = dolinsolve(
-                integrator, linres1.cache; b = _vec(ubuff),
+                integrator, cache.linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
-            cache.linsolve1 = linres1.cache
             integrator.stats.nsolve += 1
         end
 
@@ -1623,10 +1608,9 @@ end
 
             if alg.smooth_est
                 linres1 = dolinsolve(
-                    integrator, linres1.cache; b = _vec(ubuff),
+                    integrator, cache.linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
-                cache.linsolve1 = linres1.cache
                 integrator.stats.nsolve += 1
             end
 
@@ -2061,13 +2045,13 @@ end
         needfactor = iter == 1 && new_W
 
         if needfactor
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         else
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         end
 
         if !isthreaded(alg.threading)
@@ -2077,15 +2061,15 @@ end
                     fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                 )
                 if needfactor
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = W2[i],
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 else
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = nothing,
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 end
             end
         else
@@ -2099,15 +2083,15 @@ end
                         fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                     )
                     if needfactor
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = W2[i],
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     else
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = nothing,
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     end
                 end
             end
@@ -2195,10 +2179,10 @@ end
         @.. ubuff = integrator.fsalfirst + tmp
 
         if alg.smooth_est
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
-            ).cache
+            )
             integrator.stats.nsolve += 1
         end
 
@@ -2216,10 +2200,10 @@ end
             @.. ubuff = fsallast + tmp
 
             if alg.smooth_est
-                cache.linsolve1 = dolinsolve(
+                dolinsolve(
                     integrator, linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
-                ).cache
+                )
                 integrator.stats.nsolve += 1
             end
 
@@ -2536,8 +2520,7 @@ end
         if needfactor
             LinearSolve.reinit!(linsolve; A = W)
         end
-        linres = LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
-        cache.linsolve = linres.cache
+        LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
         integrator.stats.nsolve += 1
 
         for i in 1:num_stages

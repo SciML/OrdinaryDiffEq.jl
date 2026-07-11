@@ -87,7 +87,7 @@ end
 
     @.. linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -112,7 +112,7 @@ end
                 dt * dT
         end
 
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
         vecu = _vec(linres.u)
         veck3 = _vec(k₃)
         @.. veck3 = vecu * neginvdtγ
@@ -146,7 +146,6 @@ end
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
-    cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
@@ -205,7 +204,7 @@ end
 
     @.. broadcast = false linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -226,7 +225,7 @@ end
         @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
     end
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
 
@@ -251,7 +250,6 @@ end
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
-    cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(
@@ -644,7 +642,7 @@ end
         end
         @.. linsolve_tmp = du + dtd[stage] * dT + du1
 
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
@@ -716,7 +714,6 @@ end
             integrator.k[2] .= du
         end
     end
-    cache.linsolve = linres.cache
 end
 
 

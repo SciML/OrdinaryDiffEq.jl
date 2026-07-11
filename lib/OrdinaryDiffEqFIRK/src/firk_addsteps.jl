@@ -222,8 +222,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve = linres.cache
-
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -570,8 +568,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff = complex(
             fw2 - αdt * Mw2 + βdt * Mw3,
             fw3 - βdt * Mw2 - αdt * Mw3
@@ -590,8 +586,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
                 linu = _vec(dw23)
             )
         end
-
-        cache.linsolve2 = linres2.cache
 
         integrator.stats.nsolve += 2
         dw2 = z2
@@ -1138,8 +1132,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff1 = complex(
             fw2 - α1dt * Mw2 + β1dt * Mw3, fw3 - β1dt * Mw2 - α1dt * Mw3
         )
@@ -1156,8 +1148,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve2 = linres2.cache
-
         @.. cubuff2 = complex(
             fw4 - α2dt * Mw4 + β2dt * Mw5, fw5 - β2dt * Mw4 - α2dt * Mw5
         )
@@ -1173,8 +1163,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
-
-        cache.linsolve3 = linres3.cache
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1626,13 +1614,13 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
         needfactor = iter == 1 && new_W
 
         if needfactor
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         else
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         end
 
         if !isthreaded(alg.threading)
@@ -1642,15 +1630,15 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
                     fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                 )
                 if needfactor
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = W2[i],
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 else
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = nothing,
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 end
             end
         else
@@ -1664,15 +1652,15 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
                         fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                     )
                     if needfactor
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = W2[i],
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     else
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = nothing,
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     end
                 end
             end
