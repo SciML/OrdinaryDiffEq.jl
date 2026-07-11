@@ -4,11 +4,8 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.DiffEqDevTools]
-path = "../.."
-
 [compat]
 Aqua = "0.8.11"
 DiffEqDevTools = "3"
-SciMLTesting = "1.7"
+SciMLTesting = "2.1"
 julia = "1.10"

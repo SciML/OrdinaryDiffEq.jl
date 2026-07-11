@@ -35,12 +35,11 @@ OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqSDIRK = "2"
 OrdinaryDiffEqSSPRK = "2"
 SafeTestsets = "0.1, 1"
-SciMLTesting = "1"
+SciMLTesting = "2.1"
 StaticArrays = "1"
 StochasticDiffEq = "7"
 
 [sources]
-OrdinaryDiffEq = {path = "../../"}
 OrdinaryDiffEqFeagin = {path = "../../lib/OrdinaryDiffEqFeagin"}
 OrdinaryDiffEqHighOrderRK = {path = "../../lib/OrdinaryDiffEqHighOrderRK"}
 OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}

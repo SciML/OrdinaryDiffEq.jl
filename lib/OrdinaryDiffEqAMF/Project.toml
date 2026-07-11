@@ -12,6 +12,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [compat]
+SciMLTesting = "2.1"
 LinearAlgebra = "1.10"
 SafeTestsets = "0.1.0"
 LinearSolve = "3.75.0, 4"
@@ -31,8 +32,9 @@ path = "../OrdinaryDiffEqRosenbrock"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 SciMLSensitivity = "1ed8b502-d754-442c-8d5d-10ac956f44a1"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["OrdinaryDiffEqRosenbrock", "Pkg", "SafeTestsets", "SciMLSensitivity", "Test"]
+test = ["OrdinaryDiffEqRosenbrock", "Pkg", "SafeTestsets", "SciMLSensitivity", "Test", "SciMLTesting"]
