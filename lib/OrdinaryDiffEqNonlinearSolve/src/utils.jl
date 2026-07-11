@@ -300,7 +300,11 @@ function odenlf(ztmp, z, p)
 end
 
 function build_nlsolver(
-        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        alg,
+        nlalg::Union{
+            NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg,
+            HomotopyNonlinearSolveAlg,
+        },
         u, uprev, p, t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -329,7 +333,17 @@ function build_nlsolver(
     atmp .= false
     dz = zero(u)
 
-    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
+    if nlalg isa HomotopyNonlinearSolveAlg
+        isdae && throw(
+            ArgumentError(
+                "HomotopyNonlinearSolveAlg does not support DAE problems: the step-size " *
+                    "embedding degenerates the algebraic equations at λ = 0."
+            )
+        )
+        invγdt = inv(oneunit(t) * one(uTolType))
+        nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(homotopy_odenlf)
+        nlcache = HomotopyNonlinearSolveCache(ustep, tstep, k, invγdt, nlfunc, Ref(0))
+    elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
 
         # TODO: check if the solver is iterative
@@ -490,7 +504,11 @@ function oopodenlf(z, p)
 end
 
 function build_nlsolver(
-        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        alg,
+        nlalg::Union{
+            NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg,
+            HomotopyNonlinearSolveAlg,
+        },
         u, uprev, p,
         t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
@@ -515,7 +533,17 @@ function build_nlsolver(
     # build cache of non-linear solver
     tstep = zero(t)
 
-    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
+    if nlalg isa HomotopyNonlinearSolveAlg
+        isdae && throw(
+            ArgumentError(
+                "HomotopyNonlinearSolveAlg does not support DAE problems: the step-size " *
+                    "embedding degenerates the algebraic equations at λ = 0."
+            )
+        )
+        invγdt = inv(oneunit(t) * one(uTolType))
+        nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(homotopy_oopodenlf)
+        nlcache = HomotopyNonlinearSolveCache(nothing, tstep, nothing, invγdt, nlfunc, Ref(0))
+    elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae
             uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t)

@@ -36,6 +36,7 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "CheckInit Tests" include("checkinit_tests.jl")
     @time @safetestset "Nested AD over NonlinearSolveAlg" include("nested_ad_nlsolvealg_tests.jl")
     @time @safetestset "NonlinearSolveAlg Jacobian Reuse Tests" include("nsa_jacobian_reuse_tests.jl")
+    @time @safetestset "Homotopy Nonlinear Solver Tests" include("homotopy_nlsolve_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)

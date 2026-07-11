@@ -16,7 +16,7 @@ import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    step!
+    HomotopySweep, step!
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
@@ -64,6 +64,7 @@ include("utils.jl")
 include("nlsolve.jl")
 include("functional.jl")
 include("newton.jl")
+include("homotopy.jl")
 include("initialize_dae.jl")
 
 export BrownFullBasicInit, ShampineCollocationInit
@@ -76,7 +77,7 @@ export BrownFullBasicInit, ShampineCollocationInit
     eval(
         Expr(
             :public,
-            :NLNewton, :NLFunctional, :NLAnderson
+            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg
         )
     )
 end

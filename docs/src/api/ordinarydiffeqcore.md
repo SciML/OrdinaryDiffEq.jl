@@ -50,4 +50,5 @@ Lower-level nonlinear-solve hooks intended for solver authors are listed on the
 OrdinaryDiffEqNonlinearSolve.NLAnderson
 OrdinaryDiffEqNonlinearSolve.NLFunctional
 OrdinaryDiffEqNonlinearSolve.NLNewton
+OrdinaryDiffEqNonlinearSolve.HomotopyNonlinearSolveAlg
 ```
