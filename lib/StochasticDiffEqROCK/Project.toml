@@ -21,12 +21,14 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
+SciMLTesting = "2.1"
 DiffEqBase = "7"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
@@ -45,7 +47,7 @@ SafeTestsets = "0.1.0"
 julia = "1.10"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "SDEProblemLibrary", "Random"]
+test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "SDEProblemLibrary", "Random", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

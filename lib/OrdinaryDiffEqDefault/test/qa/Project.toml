@@ -6,16 +6,10 @@ OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
-
-[sources.OrdinaryDiffEqDefault]
-path = "../.."
-
 [compat]
 Aqua = "0.8.11"
 JET = "0.9, 0.11"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqDefault = "2"
-SciMLTesting = "1.7"
+SciMLTesting = "2.1"
 julia = "1.10"

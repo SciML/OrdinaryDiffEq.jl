@@ -204,9 +204,19 @@ OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
 ```
 
-## Integrator step and initialization hooks
+## Integrator step, cache construction, and initialization hooks
+
+The cache hierarchy and `@cache` macro are developer API for solver packages
+that implement new algorithms. They define internal solver storage, not
+application-facing cache objects.
 
 ```@docs
+OrdinaryDiffEqCore.OrdinaryDiffEqCache
+OrdinaryDiffEqCore.OrdinaryDiffEqConstantCache
+OrdinaryDiffEqCore.OrdinaryDiffEqMutableCache
+OrdinaryDiffEqCore.@cache
+OrdinaryDiffEqCore.alg_cache
+OrdinaryDiffEqCore.get_fsalfirstlast
 OrdinaryDiffEqCore.perform_step!
 OrdinaryDiffEqCore.apply_step!
 OrdinaryDiffEqCore.postamble!

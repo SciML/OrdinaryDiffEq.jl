@@ -1,15 +1,11 @@
 using Pkg
+using SciMLTesting
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
-    return Pkg.instantiate()
-end
-
-function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
     return Pkg.instantiate()
 end
 
@@ -26,7 +22,6 @@ end
 
 # Run QA tests (JET, Aqua)
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-    activate_qa_env()
     @time @safetestset "JET Tests" include("qa/jet.jl")
     @time @safetestset "Aqua" include("qa/qa.jl")
 end

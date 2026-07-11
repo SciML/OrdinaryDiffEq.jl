@@ -12,7 +12,7 @@ abstract type OrdinaryDiffEqCache <: SciMLBase.DECache end
 
 Abstract supertype for out-of-place ("constant") caches used when the state is
 immutable (e.g. `Number`s, `StaticArray`s). These allocate fresh values each step
-instead of mutating in place. [`is_constant_cache`](@ref) returns `true` for them.
+instead of mutating in place. `is_constant_cache` returns `true` for them.
 """
 abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
 """
@@ -107,11 +107,27 @@ end
 """
     alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{iip}, verbose)
 
-Construct and return the solver cache for `alg`. Each solver sublibrary defines a
-method for its algorithm type, allocating stage buffers, tableau, nonlinear
-solver, etc. The `Val{iip}` argument selects the in-place
-([`OrdinaryDiffEqMutableCache`](@ref)) or out-of-place
-([`OrdinaryDiffEqConstantCache`](@ref)) branch.
+Construct and return the internal solver cache for `alg`.
+
+This is a developer extension point for solver packages. Each solver sublibrary
+defines a method for its algorithm type that allocates stage buffers, tableau
+data, nonlinear-solver state, and other per-solve scratch storage. The `Val{iip}`
+argument selects the in-place or out-of-place cache branch.
+
+# Examples
+
+Solver packages extend `alg_cache` for their algorithm type:
+
+```julia
+import OrdinaryDiffEqCore: alg_cache
+
+function alg_cache(alg::MyAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{iip}, verbose) where {
+        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, iip}
+    return MyAlgorithmCache(u, rate_prototype)
+end
+```
 """
 function alg_cache(
         alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},

@@ -17,11 +17,13 @@ StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
+SciMLTesting = "2.1"
 DiffEqBase = "7"
 FastBroadcast = "1.3"
 LinearAlgebra = "1.10"
@@ -36,7 +38,7 @@ SafeTestsets = "0.1.0"
 julia = "1.10"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets"]
+test = ["Test", "Pkg", "SafeTestsets", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

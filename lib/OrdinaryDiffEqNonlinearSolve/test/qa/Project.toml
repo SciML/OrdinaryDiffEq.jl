@@ -13,9 +13,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [sources.OrdinaryDiffEqCore]
 path = "../../../OrdinaryDiffEqCore"
 
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../.."
-
 [sources.OrdinaryDiffEqBDF]
 path = "../../../OrdinaryDiffEqBDF"
 
@@ -30,5 +27,5 @@ OrdinaryDiffEqBDF = "2"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqRosenbrock = "2"
-SciMLTesting = "1.7"
+SciMLTesting = "2.1"
 julia = "1.10"

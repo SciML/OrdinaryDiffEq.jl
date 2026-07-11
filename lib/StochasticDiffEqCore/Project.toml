@@ -35,6 +35,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 StochasticDiffEqLevyArea = {path = "../StochasticDiffEqLevyArea"}
 
 [compat]
+SciMLTesting = "2.1"
 ADTypes = "1.22.0"
 Adapt = "4.3.0"
 ArrayInterface = "7.19.0"
@@ -67,7 +68,8 @@ julia = "1.10"
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets"]
+test = ["Test", "Pkg", "SafeTestsets", "SciMLTesting"]

@@ -43,7 +43,8 @@ OrdinaryDiffEqCore.Predictor
 
 These OrdinaryDiffEqNonlinearSolve algorithms are public user API because they
 are passed directly through implicit solver constructors as `nlsolve = ...`.
-Lower-level nonlinear-solve hooks are internal implementation details.
+Lower-level nonlinear-solve hooks intended for solver authors are listed on the
+[developer extension API](@ref Developer-Extension-API) page.
 
 ```@docs
 OrdinaryDiffEqNonlinearSolve.NLAnderson

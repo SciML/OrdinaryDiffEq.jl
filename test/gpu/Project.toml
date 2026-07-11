@@ -35,7 +35,6 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [sources]
 DiffEqBase = {path = "../../lib/DiffEqBase"}
-OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDefault = {path = "../../lib/OrdinaryDiffEqDefault"}
