@@ -92,7 +92,6 @@ Two conventions that keep this working:
  1. Heavy test-only deps (JET, Aqua, AllocCheck, CUDA, MTK, …) live **only** in
     `test/<group>/Project.toml`, not in the sublibrary's `[extras]`. Do not rely on
     `Pkg.add` from inside a test file.
- 2. `test/<group>/Project.toml` uses relative `[sources]` paths for internal deps
-    (e.g. `path = "../../../OrdinaryDiffEqCore"`). The QA environment itself is
-    developed by `activate_group_env`, so it does not need a self-source entry for
-    the sublibrary under test.
+  2. `test/<group>/Project.toml` declares the group-specific dependencies. The QA
+     environment itself is developed by `activate_group_env`, so it does not need
+     a self-source entry for the sublibrary under test.
