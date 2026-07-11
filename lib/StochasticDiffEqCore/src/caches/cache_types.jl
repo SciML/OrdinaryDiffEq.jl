@@ -9,7 +9,8 @@ end
 # (JET) and turns a missing implementation into a descriptive error instead of a
 # `MethodError`.
 function alg_cache(
-        alg, prob, u, ΔW, ΔZ, p, rate_prototype, noise_rate_prototype,
+        alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm},
+        prob, u, ΔW, ΔZ, p, rate_prototype, noise_rate_prototype,
         jump_rate_prototype, ::Type, ::Type, ::Type, uprev, f, t, dt, ::Type, verbose
     )
     throw(
