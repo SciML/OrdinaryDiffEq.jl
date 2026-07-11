@@ -29,7 +29,6 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [sources]
-DiffEqBase = {path = "../.."}
 OrdinaryDiffEq = {path = "../../../.."}
 OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
 OrdinaryDiffEqLowOrderRK = {path = "../../../OrdinaryDiffEqLowOrderRK"}

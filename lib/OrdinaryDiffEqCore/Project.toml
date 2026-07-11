@@ -49,6 +49,7 @@ OrdinaryDiffEqCorePolyesterExt = "Polyester"
 OrdinaryDiffEqCoreSparseArraysExt = "SparseArrays"
 
 [compat]
+SciMLTesting = "2.1"
 ADTypes = "1.22.0"
 Accessors = "0.1.42"
 ConstructionBase = "1.5.8"
@@ -103,10 +104,11 @@ OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface"]
+test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting"]
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}

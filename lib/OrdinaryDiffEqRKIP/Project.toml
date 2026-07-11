@@ -17,6 +17,7 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
@@ -24,6 +25,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
+SciMLTesting = "2.1"
 Pkg = "1"
 OrdinaryDiffEqExplicitTableaus = "2"
 SciMLBase = "3.30.0"
@@ -38,7 +40,7 @@ SciMLOperators = "1.23"
 FFTW = "1.8.0"
 
 [targets]
-test = ["FFTW", "Test", "SafeTestsets", "Pkg", "StaticArrays"]
+test = ["FFTW", "Test", "SafeTestsets", "Pkg", "StaticArrays", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

@@ -30,6 +30,14 @@ const DEFAULTBETA1S = (
 callbacks_exists(integrator) = !isempty(integrator.opts.callbacks)
 current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF, current, current - NUM_STIFF)
 
+"""
+    DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
+
+Construct the automatic default ODE algorithm. The solver starts with explicit
+nonstiff methods and switches to stiff methods when stiffness is detected.
+
+Keyword arguments in `kwargs` are forwarded to the stiff solver constructors.
+"""
 function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (

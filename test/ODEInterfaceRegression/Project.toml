@@ -25,10 +25,9 @@ OrdinaryDiffEqExplicitRK = "2"
 OrdinaryDiffEqHighOrderRK = "2"
 OrdinaryDiffEqLowOrderRK = "2"
 SafeTestsets = "0.1, 1"
-SciMLTesting = "1"
+SciMLTesting = "2.1"
 
 [sources]
-OrdinaryDiffEq = {path = "../../"}
 OrdinaryDiffEqBDF = {path = "../../lib/OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../../lib/OrdinaryDiffEqDifferentiation"}

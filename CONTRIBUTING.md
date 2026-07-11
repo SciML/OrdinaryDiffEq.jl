@@ -72,8 +72,7 @@ activates that environment before running the group's tests:
 
 ```julia
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = dirname(@__DIR__))
 end
 
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
@@ -84,7 +83,7 @@ if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
 end
 ```
 
-This pattern is the standard for the `QA` (JET + Aqua + AllocCheck) and `GPU` groups.
+This pattern is the standard for the `QA` (JET + Aqua + AllocCheck) group.
 Use it for any new group whose dependencies shouldn't leak into the main test env or
 into reverse-dependency resolution.
 
@@ -93,6 +92,7 @@ Two conventions that keep this working:
  1. Heavy test-only deps (JET, Aqua, AllocCheck, CUDA, MTK, …) live **only** in
     `test/<group>/Project.toml`, not in the sublibrary's `[extras]`. Do not rely on
     `Pkg.add` from inside a test file.
- 2. `test/<group>/Project.toml` uses relative `[sources]` paths (e.g.
-    `path = "../.."` for the sublibrary itself, `path = "../../../OrdinaryDiffEqCore"`
-    for internal deps) so that the isolated env resolves against the in-tree sources.
+ 2. `test/<group>/Project.toml` uses relative `[sources]` paths for internal deps
+    (e.g. `path = "../../../OrdinaryDiffEqCore"`). The QA environment itself is
+    developed by `activate_group_env`, so it does not need a self-source entry for
+    the sublibrary under test.

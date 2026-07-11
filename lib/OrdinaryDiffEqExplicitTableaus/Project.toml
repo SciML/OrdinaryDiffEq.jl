@@ -7,6 +7,7 @@ version = "2.2.0"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [extras]
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
@@ -24,6 +25,7 @@ OrdinaryDiffEqExplicitRK = {path = "../OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 
 [compat]
+SciMLTesting = "2.1"
 DiffEqBase = "7"
 DiffEqDevTools = "3"
 ODEProblemLibrary = "1"
@@ -36,4 +38,4 @@ Test = "<0.0.1, 1"
 julia = "1.10"
 
 [targets]
-test = ["DiffEqDevTools", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqLowOrderRK", "Pkg", "Random", "Test"]
+test = ["DiffEqDevTools", "ODEProblemLibrary", "OrdinaryDiffEq", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqLowOrderRK", "Pkg", "Random", "Test", "SciMLTesting"]

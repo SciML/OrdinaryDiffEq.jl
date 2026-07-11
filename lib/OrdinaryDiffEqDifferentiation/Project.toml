@@ -4,13 +4,14 @@ uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
 [targets]
-test = ["DiffEqDevTools", "OrdinaryDiffEqBDF", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "RecursiveFactorization", "SafeTestsets", "StaticArrays", "Test", "SparseArrays", "Pkg"]
+test = ["DiffEqDevTools", "OrdinaryDiffEqBDF", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "RecursiveFactorization", "SafeTestsets", "StaticArrays", "Test", "SparseArrays", "Pkg", "SciMLTesting"]
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
+SciMLTesting = "2.1"
 Pkg = "1"
 ForwardDiff = "1.3.3"
 FunctionWrappersWrappers = "1"
@@ -75,6 +76,7 @@ OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 RecursiveFactorization = "f2c3362d-daeb-58d1-803e-2bc74f2840b4"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
