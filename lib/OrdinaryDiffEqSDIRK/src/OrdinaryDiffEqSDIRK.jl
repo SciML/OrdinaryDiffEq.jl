@@ -16,7 +16,7 @@ using OrdinaryDiffEqCore: unwrap_alg,
     constvalue,
     trivial_limiter!,
     generic_solver_docstring,
-    _fixup_ad, current_extrapolant!, Predictor,
+    _fixup_ad, current_extrapolant!, current_extrapolant, Predictor,
     isnewton, get_W, set_new_W!, COEFFICIENT_MULTISTEP,
     find_algebraic_vars_eqs
 export Predictor
