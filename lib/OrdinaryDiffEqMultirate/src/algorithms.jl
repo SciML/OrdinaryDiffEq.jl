@@ -268,6 +268,55 @@ function MRIGARKESDIRK34a(;
 end
 
 @doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — 4th-order solve-decoupled implicit (MRI-GARK-ESDIRK46a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). 11-stage, 4th-order
+solve-decoupled implicit MRI-GARK method of Sandu 2019: the fast component is
+integrated over five sub-intervals with `m` explicit-RK4 inner micro-steps, each
+followed by a `Δc = 0` stage that applies an ESDIRK slow correction requiring a
+nonlinear solve in the slow rate `f2`. The five implicit stages share the common
+diagonal coefficient `1/4`, so a single Jacobian/`W` is reused. Unlike the lower
+order members of the family this method carries a 3rd-order embedded pair, giving
+a proper local error estimate for adaptive stepping.",
+    "MRIGARKESDIRK46a",
+    "Multirate infinitesimal GARK solve-decoupled implicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner RK4 micro-steps per fast stage.
+    """,
+    """
+    m::Int,
+    """
+)
+struct MRIGARKESDIRK46a{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    m::Int
+    linsolve::F
+    nlsolve::F2
+    autodiff::AD
+    concrete_jac::CJ
+end
+
+function MRIGARKESDIRK46a(;
+        m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton()
+    )
+    autodiff = _fixup_ad(autodiff)
+    return MRIGARKESDIRK46a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
+end
+
+const MRIGARKImplicitAlg = Union{
+    MRIGARKIRK21a, MRIGARKESDIRK34a, MRIGARKESDIRK46a,
+}
+
+@doc generic_solver_docstring(
     "Multirate Infinitesimal Step (MIS).
 
 Solves a split ODE of the form `du/dt = f1(u,t) + f2(u,t)` where `f1` is the
