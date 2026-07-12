@@ -565,6 +565,15 @@ end
     throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 end
 
+
+# Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting into
+# W, so they need the allocating build path. All cuSPARSE matrix types subtype
+# AbstractSparseMatrix (is_sparse true); their `nonzeros` storage is a GPU array,
+# which is not fast_scalar_indexing, whereas CPU sparse storage is.
+@inline _use_allocating_sparse_W_path(W) =
+    is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+
+
 """
     jacobian2W!(W, mass_matrix, dtgamma, J) -> nothing
 
@@ -594,11 +603,9 @@ function jacobian2W!(
             else
                 @.. broadcast = false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
             end
-        elseif is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
-            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting.
-            # ArrayInterface.fast_scalar_indexing is not specialized for AbstractGPUSparseArray,
-            # so we detect them by checking if the underlying nonzeros storage is a GPU array.
-            # we then fall back to allocating matrix arithmetic
+        elseif _use_allocating_sparse_W_path(W)
+            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting
+            # into W, so fall back to allocating matrix arithmetic.
             copyto!(W, J - invdtgamma * mass_matrix)
         else
             @.. broadcast = false W = muladd(-mass_matrix, invdtgamma, J)
@@ -659,7 +666,13 @@ function dae_jacobian2W!(
     )::Nothing
     @boundscheck axes(W) == axes(J_u) == axes(J_du) ||
         throw(DimensionMismatch("W, J_u, J_du must have matching axes"))
-    @.. broadcast = false W = muladd(cj, J_du, J_u)
+    if _use_allocating_sparse_W_path(W)
+        # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support
+        # broadcasting into W. Same path as jacobian2W!: allocate then copyto!.
+        copyto!(W, J_u + convert(eltype(W), cj) * J_du)
+    else
+        @.. broadcast = false W = muladd(cj, J_du, J_u)
+    end
     return nothing
 end
 
@@ -677,6 +690,9 @@ end
 function dae_jacobian2W(
         J_u::AbstractMatrix, J_du::AbstractMatrix, cj::Number
     )
+    if _use_allocating_sparse_W_path(J_u)
+        return J_u + convert(eltype(J_u), cj) * J_du
+    end
     return @. muladd(cj, J_du, J_u)
 end
 
