@@ -1,18 +1,3 @@
-# Scale-aware absolute tolerance for the adaptive Krylov time-stepper
-# (`expv_timestep`). Supplying this together with an explicit initial `tau` lets
-# ExponentialUtilities skip its default `opnorm(A, Inf)` scale estimate, which
-# is undefined for some operator types (e.g. sparse GPU matrices). Using the
-# solution scale `norm(u)` -- a vector norm, always defined -- honors both
-# `abstol` and `reltol` without needing an operator norm, and avoids the
-# over-solving of a bare fixed `abstol`. Component-wise tolerances are reduced
-# to a representative scalar.
-_tol_scalar(x::Number) = x
-_tol_scalar(x) = maximum(x)
-function _linear_krylov_abstol(integrator, u)
-    return _tol_scalar(integrator.opts.abstol) +
-        _tol_scalar(integrator.opts.reltol) * norm(u, Inf)
-end
-
 function initialize!(integrator, cache::MagnusMidpointCache)
     integrator.kshortsize = 2
 
@@ -823,7 +808,6 @@ function perform_step!(
     else
         u = expv_timestep(
             dt, A, integrator.u; m = min(alg.m, size(A, 1)), iop = alg.iop,
-            tau = dt, abstol = _linear_krylov_abstol(integrator, integrator.u),
             tol = integrator.opts.reltol
         )
     end
@@ -871,7 +855,6 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
         expv_timestep!(
             tmp, dt, A, u; adaptive = true, caches = KsCache,
             m = min(alg.m, size(A, 1)), iop = alg.iop,
-            tau = dt, abstol = _linear_krylov_abstol(integrator, u),
             tol = integrator.opts.reltol
         )
     end
