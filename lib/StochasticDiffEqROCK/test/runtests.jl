@@ -20,6 +20,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test SKSROCK() isa StochasticDiffEqAlgorithm
         @test TangXiaoSROCK2() isa StochasticDiffEqAlgorithm
     end
+
+    @time @safetestset "KomBurSROCK2 non-diagonal noise" begin
+        include("kombursrock2_nondiag_tests.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "SROCKC2WeakConvergence"
