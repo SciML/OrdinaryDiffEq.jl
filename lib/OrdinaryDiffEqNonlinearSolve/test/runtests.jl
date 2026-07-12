@@ -38,6 +38,7 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "NonlinearSolveAlg Jacobian Reuse Tests" include("nsa_jacobian_reuse_tests.jl")
     @time @safetestset "Homotopy Nonlinear Solver Tests" include("homotopy_nlsolve_tests.jl")
     @time @safetestset "NonlinearSolveAlg Sparse Jacobian Tests" include("nsa_sparse_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Matrix-Free WOperator Tests" include("nsa_matrixfree_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)

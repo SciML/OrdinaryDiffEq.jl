@@ -121,12 +121,17 @@ function initialize!(
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
         if length(cache.cache.u) != length(z)
-            new_prob = if cache.W !== nothing
-                # The problem was resized: point the WReuseJac at the resized W and give
-                # the NonlinearFunction a matching jac_prototype. Both keep their types
-                # (only array sizes change), so cache.prob's concrete type is preserved.
+            new_prob = if cache.W !== nothing && cache.prob.f.jac isa WReuseJac
+                # Concrete reuse: point the WReuseJac at the resized W and give the
+                # NonlinearFunction a matching jac_prototype. Both keep their types (only
+                # array sizes change), so cache.prob's concrete type is preserved.
                 cache.prob.f.jac.W[] = cache.W
                 new_f = SciMLBase.remake(cache.prob.f; jac_prototype = similar(cache.W))
+                SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
+            elseif cache.W !== nothing
+                # Matrix-free reuse: the operator is resized by the integrator's resize!
+                # machinery; just re-point the jac_prototype at it.
+                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = cache.W)
                 SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
             else
                 SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
@@ -144,19 +149,26 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if new_jac
-        if SciMLBase.has_jac(f)
-            f.jac(J, uprev, p, tstep)
-        elseif uf !== nothing
-            uf.f = nlsolve_f(f, alg)
-            uf.t = tstep
-            if !(p isa SciMLBase.NullParameters)
-                uf.p = p
+    if W isa AbstractSciMLOperator
+        # Matrix-free reused W: refresh its state and gamma in place; its own `mul!`
+        # supplies the Jacobian action to the inner (Krylov) solve, so there is no
+        # concrete J to reassemble.
+        update_coefficients!(W, uprev, p, tstep; gamma = dtgamma)
+    else
+        if new_jac
+            if SciMLBase.has_jac(f)
+                f.jac(J, uprev, p, tstep)
+            elseif uf !== nothing
+                uf.f = nlsolve_f(f, alg)
+                uf.t = tstep
+                if !(p isa SciMLBase.NullParameters)
+                    uf.p = p
+                end
+                jacobian!(J, uf, uprev, du1, integrator, jac_config)
             end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
+        jacobian2W!(W, mass_matrix, dtgamma, J)
     end
-    jacobian2W!(W, mass_matrix, dtgamma, J)
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing

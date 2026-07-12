@@ -372,6 +372,10 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
+            # A matrix-free W (a `WOperator` wrapping a `JVPCache`, built for a Krylov
+            # linear solver) is reused as an operator: NonlinearSolve applies it via
+            # `mul!` rather than rebuilding a residual-derived AD JVP.
+            matrixfree_W = W isa WOperator && W.J isa AbstractSciMLOperator
             W_for_reuse = if W isa WOperator && W.J !== nothing &&
                     !(W.J isa AbstractSciMLOperator)
                 W._concrete_form
@@ -379,8 +383,12 @@ function build_nlsolver(
                 W
             end
             use_w_reuse = !isdae && f.nlstep_data === nothing &&
-                W_for_reuse isa AbstractMatrix &&
-                !(W_for_reuse isa AbstractSciMLOperator)
+                (
+                (
+                    W_for_reuse isa AbstractMatrix &&
+                        !(W_for_reuse isa AbstractSciMLOperator)
+                ) || matrixfree_W
+            )
             prob = if f.nlstep_data !== nothing
                 f.nlstep_data.nlprob
             else
@@ -390,7 +398,17 @@ function build_nlsolver(
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                if use_w_reuse
+                if use_w_reuse && matrixfree_W
+                    # Hand the matrix-free WOperator over as the Jacobian operator; the
+                    # inner Krylov solve applies it via `mul!`.
+                    NonlinearProblem(
+                        NonlinearFunction{true, SciMLBase.FullSpecialize}(
+                            nlf;
+                            jac_prototype = W
+                        ),
+                        ztmp, nlp_params
+                    )
+                elseif use_w_reuse
                     nlf_jac! = WReuseJac(Ref(W_for_reuse))
                     # Without a `jac_prototype`, NonlinearSolve allocates a dense J for an
                     # analytic-jac function, so a sparse/structured W degrades to dense LU
