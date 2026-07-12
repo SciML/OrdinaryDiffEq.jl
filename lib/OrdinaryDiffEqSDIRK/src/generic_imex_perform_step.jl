@@ -94,18 +94,27 @@ end
             @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
         end
     else
-        # Implicit first stage requires nlsolve. The IE tableau (E === :ie_dd2)
-        # is the only configuration that reaches this branch (Trapezoid and
-        # the other Newton-SDIRKs all have `explicit_first_stage = true` and
-        # take the `if` arm above), and for IE the linear extrapolant
-        # z = dt·f(uprev) is always the right nlsolve initial guess. Gating
-        # on the tableau (not the calling alg) also covers BDF callers that
-        # reuse the ImplicitEuler ESDIRKIMEXCache as a first-step bootstrap
-        # (e.g. ABDF2 via `cache.eulercache`) — which otherwise would have
-        # fallen through to `zs[1] = 0` and lost their second-order
-        # convergence under the loose NonlinearSolveAlg `iter==1 && ndz<1e-5`
-        # early-exit at small dt.
-        if E === :ie_dd2
+        # Implicit first stage requires nlsolve; seed it from the requested
+        # predictor. The IE tableau (E === :ie_dd2) is the only configuration
+        # that reaches this branch — Trapezoid and the other Newton-SDIRKs set
+        # `explicit_first_stage = true` and take the `if` arm above.
+        #
+        # `MaxOrder` extrapolates the previous step's interpolant, available only
+        # once a step has succeeded and outside an fsal reeval; `Linear` uses
+        # z = dt·f(uprev). BDF callers reuse this tableau as a first-step
+        # bootstrap (e.g. ABDF2 via `cache.eulercache`) without a `predictor`
+        # field of their own: `_predictor` reports `Trivial`, but
+        # `!hasproperty(alg, :predictor)` keeps them on the linear bootstrap seed
+        # from #3694 that preserves their convergence order under the loose
+        # NonlinearSolveAlg `iter==1 && ndz<1e-5` early-exit at small dt. A
+        # genuine `Trivial` request from a predictor-carrying alg falls through
+        # to the zero seed.
+        if E === :ie_dd2 && predictor == Predictor.MaxOrder &&
+                integrator.success_iter > 0 && !integrator.reeval_fsal
+            current_extrapolant!(u, t + dt, integrator)
+            @.. broadcast = false zs[1] = u - uprev
+        elseif E === :ie_dd2 && tab.stage1_extrapolation &&
+                (predictor == Predictor.Linear || !hasproperty(alg, :predictor))
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
             zs[1] .= zero(eltype(zs[1]))
@@ -1380,8 +1389,14 @@ end
             z1 = dt * integrator.fsalfirst
         end
     else
-        # See matching branch in `_perform_step_iip!` above.
-        if E === :ie_dd2
+        # See the matching branch in `_perform_step_iip!` above. `u` is immutable
+        # here (scalar / SVector out-of-place), so the MaxOrder seed uses the
+        # allocating `current_extrapolant` rather than the in-place variant.
+        if E === :ie_dd2 && predictor == Predictor.MaxOrder &&
+                integrator.success_iter > 0 && !integrator.reeval_fsal
+            z1 = current_extrapolant(t + dt, integrator) - uprev
+        elseif E === :ie_dd2 && tab.stage1_extrapolation &&
+                (predictor == Predictor.Linear || !hasproperty(alg, :predictor))
             z1 = dt * integrator.fsalfirst
         else
             z1 = zero(u)
