@@ -92,6 +92,12 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "IRI1WeakConvergence"
     end
 end
 
+if TEST_GROUP == "ALL" || TEST_GROUP == "WeakOOPRegression"
+    @time @safetestset "Out-of-place weak SDE regression" begin
+        include("weak_convergence/oop_weak_regression.jl")
+    end
+end
+
 if TEST_GROUP == "ALL" || TEST_GROUP == "WeakAdaptiveCPU"
     @time @safetestset "CPU Weak adaptive" begin
         include("adaptive/sde_weak_adaptive.jl")
