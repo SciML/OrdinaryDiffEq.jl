@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_extrapolates, dt_required,
     get_fsalfirstlast,
     isdtchangeable, full_cache,
     generic_solver_docstring
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, I, norm
 using SciMLOperators: AbstractSciMLOperator, update_coefficients, update_coefficients!
 using ExponentialUtilities: ExponentialUtilities, ExpMethodGeneric, ExpvCache,
     KrylovSubspace, PhivCache, arnoldi!, exponential!,
