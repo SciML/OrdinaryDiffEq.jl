@@ -566,15 +566,12 @@ end
 end
 
 
-# Sparse GPU W-build path: CuSparseMatrixCSC usually subtypes AbstractSparseMatrix
-# (is_sparse true), but CuSparseMatrixCSR often does not. Detect CSR via the
-# cuSPARSE `.nzVal` storage field so we never `@..` broadcast into it.
-@inline function _use_allocating_sparse_W_path(W)
-    if is_sparse(W)
-        return !ArrayInterface.fast_scalar_indexing(nonzeros(W))
-    end
-    return hasproperty(W, :nzVal)
-end
+# Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting into
+# W, so they need the allocating build path. All cuSPARSE matrix types subtype
+# AbstractSparseMatrix (is_sparse true); their `nonzeros` storage is a GPU array,
+# which is not fast_scalar_indexing, whereas CPU sparse storage is.
+@inline _use_allocating_sparse_W_path(W) =
+    is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
 
 
 """
@@ -607,10 +604,8 @@ function jacobian2W!(
                 @.. broadcast = false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
             end
         elseif _use_allocating_sparse_W_path(W)
-            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting.
-            # ArrayInterface.fast_scalar_indexing is not specialized for AbstractGPUSparseArray,
-            # so we detect them by checking if the underlying nonzeros storage is a GPU array.
-            # we then fall back to allocating matrix arithmetic
+            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting
+            # into W, so fall back to allocating matrix arithmetic.
             copyto!(W, J - invdtgamma * mass_matrix)
         else
             @.. broadcast = false W = muladd(-mass_matrix, invdtgamma, J)
