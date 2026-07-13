@@ -55,11 +55,12 @@ nsa = NonlinearSolveAlg(NewtonRaphson(; autodiff = AutoForwardDiff()))
     integ = init(prob, FBDF(nlsolve = nsa); reltol = 1.0e-8, abstol = 1.0e-10)
     nsacache = integ.cache.nlsolver.cache
     @test nsacache.W isa SparseMatrixCSC
-    # The inner NonlinearSolve Jacobian is the reused W as an operator; its underlying
-    # matrix must mirror W's structure (stay sparse), not densify.
+    # The inner NonlinearSolve Jacobian mirrors W's structure (stays sparse), rather
+    # than densifying. It is handed over as a plain matrix, not wrapped in an operator:
+    # a globalized inner solver (TrustRegion) needs a concrete J to build its model.
     J = integ.cache.nlsolver.cache.cache.jac_cache.J
-    @test J isa MatrixOperator
-    @test convert(AbstractMatrix, J) isa SparseMatrixCSC
+    @test J isa SparseMatrixCSC
+    @test nnz(J) == nnz(nsacache.W)
 end
 
 @testset "NSA + sparse-only linsolve (KLU) solves" begin

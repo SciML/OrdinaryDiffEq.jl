@@ -248,16 +248,18 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
 end
 
-# The reused ODE `W` as the operator handed to the inner NonlinearSolve as `jac_prototype`.
-# A matrix-free `WOperator` (its `J` an operator) is passed through and applied via `mul!`;
-# a concrete `WOperator`'s materialized form, or a raw matrix, is wrapped in a
-# `MatrixOperator` and materialized via `convert` for a factorization. Used identically at
-# build time and after a `resize!` so the inner `NonlinearFunction`'s concrete type is
-# preserved.
+# The reused ODE `W` handed to the inner NonlinearSolve as `jac_prototype`. A matrix-free
+# `WOperator` (its `J` an operator) is passed through and applied via `mul!`; a concrete
+# `WOperator`'s materialized form, or a raw matrix, is handed over as that matrix so the
+# inner Jacobian mirrors W's structure (a sparse W stays sparse) without densifying.
+# It is deliberately not wrapped in a `MatrixOperator`: a globalized inner solver
+# (e.g. `TrustRegion`) builds its step from a concrete J, and an operator-valued J leaves
+# it converging on a wrong model. Used identically at build time and after a `resize!` so
+# the inner `NonlinearFunction`'s concrete type is preserved.
 function reuse_jac_prototype(W)
     Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
         W._concrete_form : W
-    return Wr isa AbstractSciMLOperator ? Wr : MatrixOperator(Wr)
+    return Wr
 end
 
 """
@@ -411,16 +413,24 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    # Hand the reused W to the inner NonlinearFunction as an operator
-                    # `jac_prototype`. A matrix-free `WOperator` is applied via `mul!`
-                    # (Krylov); a concrete W is materialized via `convert` for a
-                    # factorization (NonlinearSolve copies it before an in-place `lu!`, so the
-                    # ODE-owned W is never destroyed). `jac` is auto-wired to
-                    # `update_coefficients!`; the ODE owns W's updates, so NonlinearSolve holds
-                    # W fixed across its Newton steps.
+                    # Hand the reused W to the inner NonlinearFunction as `jac_prototype`,
+                    # so its Jacobian mirrors W's structure. A matrix-free `WOperator` is
+                    # applied via `mul!` (Krylov) and needs no `jac`. A concrete W is
+                    # copied in by an analytic `jac` instead of being re-derived by AD; the
+                    # ODE owns W's updates, so NonlinearSolve holds it fixed across its
+                    # Newton steps (NonlinearSolve copies J before an in-place `lu!`, so the
+                    # ODE-owned W is never destroyed).
+                    nlf_jac! = if matrixfree_W
+                        nothing
+                    else
+                        let W = W_for_reuse
+                            (J_out, z, p) -> (copyto!(J_out, W); J_out)
+                        end
+                    end
                     NonlinearProblem(
                         NonlinearFunction{true, SciMLBase.FullSpecialize}(
                             nlf;
+                            jac = nlf_jac!,
                             jac_prototype = reuse_jac_prototype(W)
                         ),
                         ztmp, nlp_params

@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
-using NonlinearSolve: NewtonRaphson
+using NonlinearSolve: NewtonRaphson, TrustRegion
 using ADTypes, LinearAlgebra, SciMLBase
 using Test
 
@@ -46,5 +46,23 @@ refsol = solve(prob, FBDF(); reltol = 1.0e-12, abstol = 1.0e-14)
         # stats.nw one-to-one.
         @test JAC_CALLS[] < sol.stats.nw / 3
         @test JAC_CALLS[] >= 1
+    end
+end
+
+@testset "W-reuse keeps a globalized inner solver accurate" begin
+    # Handing the reused W to the inner solver as a `MatrixOperator` leaves it without a
+    # concrete J to build a trust-region model from: TrustRegion then converges to a
+    # wrong answer while still reporting Success. Newton-type inner solvers tolerate it,
+    # so this is only visible with a globalized one.
+    for inner in (
+            TrustRegion(; autodiff = AutoForwardDiff()),
+            NewtonRaphson(; autodiff = AutoForwardDiff()),
+        )
+        sol = solve(
+            prob, FBDF(nlsolve = NonlinearSolveAlg(inner));
+            reltol = 1.0e-8, abstol = 1.0e-10
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test norm(sol.u[end] .- refsol.u[end]) / norm(refsol.u[end]) < 1.0e-6
     end
 end
