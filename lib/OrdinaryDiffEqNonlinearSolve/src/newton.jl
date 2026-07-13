@@ -121,7 +121,16 @@ function initialize!(
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
         if length(cache.cache.u) != length(z)
-            new_prob = SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            new_prob = if cache.W !== nothing
+                # W-reuse: re-point the operator `jac_prototype` at the resized W via the same
+                # mapping used at build time. Only array sizes change, so the operator's type
+                # — and hence `cache.prob`'s concrete type — is preserved and `init` stays
+                # type-stable.
+                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = reuse_jac_prototype(cache.W))
+                SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
+            else
+                SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            end
             cache.prob = new_prob
             cache.cache = init(new_prob, cache.cache.alg)
         else
@@ -135,19 +144,26 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if new_jac
-        if SciMLBase.has_jac(f)
-            f.jac(J, uprev, p, tstep)
-        elseif uf !== nothing
-            uf.f = nlsolve_f(f, alg)
-            uf.t = tstep
-            if !(p isa SciMLBase.NullParameters)
-                uf.p = p
+    if W isa AbstractSciMLOperator
+        # Matrix-free reused W: refresh its state and gamma in place; its own `mul!`
+        # supplies the Jacobian action to the inner (Krylov) solve, so there is no
+        # concrete J to reassemble.
+        update_coefficients!(W, uprev, p, tstep; gamma = dtgamma)
+    else
+        if new_jac
+            if SciMLBase.has_jac(f)
+                f.jac(J, uprev, p, tstep)
+            elseif uf !== nothing
+                uf.f = nlsolve_f(f, alg)
+                uf.t = tstep
+                if !(p isa SciMLBase.NullParameters)
+                    uf.p = p
+                end
+                jacobian!(J, uf, uprev, du1, integrator, jac_config)
             end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
+        jacobian2W!(W, mass_matrix, dtgamma, J)
     end
-    jacobian2W!(W, mass_matrix, dtgamma, J)
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing

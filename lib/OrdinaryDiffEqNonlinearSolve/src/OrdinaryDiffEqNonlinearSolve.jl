@@ -30,7 +30,7 @@ using ForwardDiff: Dual
 using RecursiveArrayTools: recursivecopy!
 import OrdinaryDiffEqCore
 
-import SciMLOperators: islinear, AbstractSciMLOperator
+import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
 import OrdinaryDiffEqCore: default_nlsolve
