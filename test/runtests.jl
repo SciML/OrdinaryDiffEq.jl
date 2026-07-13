@@ -172,8 +172,7 @@ function downstream_group()
 end
 
 function ad_group()
-    # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
-    # Mooncake works on all Julia versions
+    # Enzyme and Mooncake run on both AD lanes; Zygote runs on Julia <= 1.11.
     is_APPVEYOR && return
     activate_ad_env()
     @time @safetestset "AD Tests" include("AD/ad_tests.jl")
