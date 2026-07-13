@@ -355,15 +355,21 @@ stiffness auto-switching logic through its specialized default path.
 isdefaultalg(alg) = false
 
 """
-    qmin_default(alg)
-    qmax_default(alg)
+    qmin_default(alg) -> Real
 
-Algorithm-specific default for the lower / upper bound on the per-step
-shrink/grow factor. Used by `resolve_basic` to fill in
-[`CommonControllerOptions`](@ref) when the user didn't override.
-Override these for a new algorithm type to change its defaults.
-The generic fallbacks are `qmin = 1 // 5`, `qmax = 10` for adaptive
-algorithms (`qmin = 0` for non-adaptive).
+Return the algorithm-specific lower bound for the per-step shrink factor.
+
+`resolve_basic` uses this developer extension point to fill
+[`CommonControllerOptions`](@ref) when the user did not pass `qmin`.
+
+# Arguments
+
+- `alg`: The solver algorithm whose controller defaults are being resolved.
+
+# Returns
+
+- `Real`: The default lower bound. Adaptive algorithms use `1 // 5`; non-adaptive
+    algorithms use `0`.
 """
 function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 1 // 5 : 0
@@ -372,7 +378,22 @@ qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 qmin_default(alg) = 1 // 5
 
-@doc (@doc qmin_default) qmax_default
+"""
+    qmax_default(alg) -> Real
+
+Return the algorithm-specific upper bound for the per-step growth factor.
+
+`resolve_basic` uses this developer extension point to fill
+[`CommonControllerOptions`](@ref) when the user did not pass `qmax`.
+
+# Arguments
+
+- `alg`: The solver algorithm whose controller defaults are being resolved.
+
+# Returns
+
+- `Real`: The default upper bound. The generic default is `10`.
+"""
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
@@ -697,20 +718,40 @@ function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
 end
 
 """
-    beta1_default(alg, beta2)
-    beta2_default(alg)
+    beta2_default(alg) -> Real
 
-Algorithm-specific defaults for the proportional / integral gains of the
-[`PIController`](@ref). Defaults are scaled by the algorithm's order
-(`beta2 = 2 // (5 alg_order(alg))`, `beta1 = 7 // (10 alg_order(alg))`)
-for adaptive algorithms and `0` otherwise. `beta1` is computed from
-`beta2`, so override `beta2_default` first if you want both to change.
+Return the algorithm-specific default integral gain for [`PIController`](@ref).
+
+# Arguments
+
+- `alg`: The solver algorithm whose PI-controller defaults are being resolved.
+
+# Returns
+
+- `Real`: For adaptive algorithms, `2 // (5 * alg_order(alg))`; otherwise `0`.
 """
 function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     return isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
 
-@doc (@doc beta2_default) beta1_default
+"""
+    beta1_default(alg, beta2) -> Real
+
+Return the algorithm-specific default proportional gain for
+[`PIController`](@ref).
+
+`beta1` is allowed to depend on the resolved `beta2` value, so algorithms that
+override both should normally override `beta2_default` first.
+
+# Arguments
+
+- `alg`: The solver algorithm whose PI-controller defaults are being resolved.
+- `beta2`: The resolved integral gain.
+
+# Returns
+
+- `Real`: For adaptive algorithms, `7 // (10 * alg_order(alg))`; otherwise `0`.
+"""
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
     return isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
 end
@@ -741,17 +782,41 @@ default; `true` for FIRK methods).
 fac_default_gamma(alg) = false
 
 """
-    qsteady_min_default(alg)
-    qsteady_max_default(alg)
+    qsteady_min_default(alg) -> Real
 
-Algorithm-specific defaults for the deadband interval — if the proposed
-step-size factor lies inside `[qsteady_min, qsteady_max]`, the controller
-holds `dt` constant. Generic fallback is `1` for both (no deadband).
-Adaptive implicit algorithms widen `qsteady_max` to `6 // 5` to reduce
-Jacobian recomputation; BDF widens both (`9 // 10`, `12 // 10`).
+Return the lower edge of the algorithm-specific step-size deadband.
+
+If the proposed step-size factor lies inside
+`[qsteady_min, qsteady_max]`, the controller holds `dt` constant.
+
+# Arguments
+
+- `alg`: The solver algorithm whose controller deadband is being resolved.
+
+# Returns
+
+- `Real`: The lower deadband edge. The generic default is `1`.
 """
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
-@doc (@doc qsteady_min_default) qsteady_max_default
+
+"""
+    qsteady_max_default(alg) -> Real
+
+Return the upper edge of the algorithm-specific step-size deadband.
+
+If the proposed step-size factor lies inside
+`[qsteady_min, qsteady_max]`, the controller holds `dt` constant.
+Adaptive implicit algorithms widen this default to `6 // 5` to reduce
+Jacobian recomputation; BDF methods may specialize it further.
+
+# Arguments
+
+- `alg`: The solver algorithm whose controller deadband is being resolved.
+
+# Returns
+
+- `Real`: The upper deadband edge. The generic default is `1`.
+"""
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 # Generic fallbacks for non-ODE algorithms (SDE, RODE) calling __init
 qsteady_min_default(alg) = 1
