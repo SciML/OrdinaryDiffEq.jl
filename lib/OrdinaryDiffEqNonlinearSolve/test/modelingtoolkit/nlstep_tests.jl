@@ -46,7 +46,7 @@ sol2 = solve(testprob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg), ada
 test_setup = Dict(:alg => FBDF(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 dts = 2.0 .^ (-10:-1:-15)
 sim = analyticless_test_convergence(dts, testprob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
-@test_broken abs(sim.𝒪est[:l∞] - 2) < 0.2
+@test abs(sim.𝒪est[:l∞] - 2) < 0.2
 
 dts = 2.0 .^ (-10:-1:-12)
 sim = analyticless_test_convergence(dts, testprob, KenCarp4(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
@@ -58,7 +58,7 @@ sim = analyticless_test_convergence(dts, testprob, ABDF2(autodiff = AutoFiniteDi
 
 dts = 2.0 .^ (-13:-1:-16)
 sim = analyticless_test_convergence(dts, testprob, QNDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
-@test_broken abs(sim.𝒪est[:l∞] - 2.5) < 0.2 # Superconvergence
+@test abs(sim.𝒪est[:l∞] - 2.5) < 0.2 # Superconvergence
 
 dts = 2.0 .^ (-14:-1:-17)
 sim = analyticless_test_convergence(dts, testprob, FBDF(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
@@ -102,7 +102,7 @@ sol2 = solve(testprob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg), ada
 test_setup = Dict(:alg => FBDF(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 dts = 2.0 .^ (-10:-1:-15)
 sim = analyticless_test_convergence(dts, testprob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
-@test_broken abs(sim.𝒪est[:l∞] - 2) < 0.2
+@test abs(sim.𝒪est[:l∞] - 2) < 0.2
 
 dts = 2.0 .^ (-10:-1:-12)
 sim = analyticless_test_convergence(dts, testprob, KenCarp4(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
@@ -114,7 +114,7 @@ sim = analyticless_test_convergence(dts, testprob, ABDF2(autodiff = AutoFiniteDi
 
 dts = 2.0 .^ (-13:-1:-16)
 sim = analyticless_test_convergence(dts, testprob, QNDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
-@test_broken abs(sim.𝒪est[:l∞] - 2.5) < 0.2 # Superconvergence
+@test abs(sim.𝒪est[:l∞] - 2.5) < 0.2 # Superconvergence
 
 dts = 2.0 .^ (-14:-1:-17)
 sim = analyticless_test_convergence(dts, testprob, FBDF(autodiff = AutoFiniteDiff(), nlsolve = nlalgrobust), test_setup);
