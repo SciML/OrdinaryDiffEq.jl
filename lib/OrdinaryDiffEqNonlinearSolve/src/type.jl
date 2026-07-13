@@ -161,7 +161,7 @@ step-size homotopy.
     `ArcLengthContinuation(inner = NewtonRaphson(autodiff = AutoFiniteDiff()))` to track
     the branch around folds. Note that the inner solver must not use ForwardDiff-based
     autodiff: the stage residual closes over preallocated `Float64` buffers (the same
-    restriction as [`NonlinearSolveAlg`](@ref)).
+    restriction as `NonlinearSolveAlg`).
 
 # Keyword arguments
 

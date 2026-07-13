@@ -286,40 +286,119 @@ See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 end
 
 """
-    get_qmin(integrator)
-    get_qmax(integrator)
-    get_qmax_first_step(integrator)
-    get_gamma(integrator)
-    get_qsteady_min(integrator)
-    get_qsteady_max(integrator)
-    get_failfactor(integrator)
+    get_qmin(integrator) -> Real
 
-Read a step-size knob from the integrator's controller. Default
-dispatch reads `integrator.controller_cache.controller.basic.X` —
-i.e. it goes through the `CommonControllerOptions` embedded on every concrete
-controller (`IController`/`PIController`/`PIDController`/
-`PredictiveController`/`BDFController`/`JVODEController`).
+Read the lower step-size shrink bound from the integrator's active controller.
 
-`CompositeControllerCache` overrides each accessor to delegate to the
-currently active sub-cache (mirroring how `stepsize_controller!` and
-friends dispatch). The transitional `DummyControllerCache` also
-provides overrides for the BDF/Nordsieck cases that haven't been
-migrated yet.
+The default dispatch reads `integrator.controller_cache.controller.basic.qmin`
+through [`CommonControllerOptions`](@ref). `CompositeControllerCache` delegates
+to the currently active sub-cache.
 
-These accessors are what the integrator-level paths (e.g. the
-`isoutofdomain` rejection path for `qmin`,
-[`post_newton_controller!`](@ref) for `failfactor`) call instead of
-reading `integrator.opts.X` — the v7 controller refactor moved these
-knobs off `DEOptions` and onto the controller object.
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's lower step-size shrink bound.
 """
 function get_qmin end
 
-@doc (@doc get_qmin) function get_qmax end
-@doc (@doc get_qmin) function get_qmax_first_step end
-@doc (@doc get_qmin) function get_gamma end
-@doc (@doc get_qmin) function get_qsteady_min end
-@doc (@doc get_qmin) function get_qsteady_max end
-@doc (@doc get_qmin) function get_failfactor end
+"""
+    get_qmax(integrator) -> Real
+
+Read the upper step-size growth bound from the integrator's active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's upper step-size growth bound.
+"""
+function get_qmax end
+
+"""
+    get_qmax_first_step(integrator) -> Real
+
+Read the first-step upper growth bound from the integrator's active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's upper step-size growth bound for the first accepted
+    step attempt.
+"""
+function get_qmax_first_step end
+
+"""
+    get_gamma(integrator) -> Real
+
+Read the safety factor from the integrator's active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's multiplicative safety factor.
+"""
+function get_gamma end
+
+"""
+    get_qsteady_min(integrator) -> Real
+
+Read the lower edge of the steady-step deadband from the active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The lower edge of the interval in which proposed `dt` changes are
+    suppressed.
+"""
+function get_qsteady_min end
+
+"""
+    get_qsteady_max(integrator) -> Real
+
+Read the upper edge of the steady-step deadband from the active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The upper edge of the interval in which proposed `dt` changes are
+    suppressed.
+"""
+function get_qsteady_max end
+
+"""
+    get_failfactor(integrator) -> Real
+
+Read the implicit-solver failure shrink factor from the active controller.
+
+[`post_newton_controller!`](@ref) uses this value to reduce `integrator.dt`
+after a nonlinear solver failure.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The factor used to shrink `dt` after a nonlinear solve failure.
+"""
+function get_failfactor end
 
 @inline get_qmin(integrator::SciMLBase.DEIntegrator) =
     get_qmin(integrator, integrator.controller_cache)
