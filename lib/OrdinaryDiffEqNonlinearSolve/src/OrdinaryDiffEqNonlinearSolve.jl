@@ -14,7 +14,8 @@ import DiffEqBase: OrdinaryDiffEqTag, calculate_residuals, calculate_residuals!,
     BrownFullBasicInit, ShampineCollocationInit
 import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
-using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
+using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton,
+    AbstractSimpleNonlinearSolveAlgorithm
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
     HomotopySweep, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.

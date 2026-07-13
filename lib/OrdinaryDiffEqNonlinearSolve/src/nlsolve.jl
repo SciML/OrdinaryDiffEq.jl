@@ -1,5 +1,21 @@
 @inline eps_around_one(θ::T) where {T} = 100sqrt(eps(one(θ)))
 
+# The `iter == 1 && ndz < 1e-5` shortcut below assumes a plain (modified-)Newton
+# contraction: a tiny first-iterate displacement means the initial guess was
+# already the solution. For `NonlinearSolveAlg` backed by a globalized inner
+# solver (e.g. TrustRegion), a tiny displacement can instead mean the inner
+# solver took a cautious/rejected trial step and has not decided anything yet —
+# accepting that as convergence applies zero correction and silently produces
+# the wrong stage value (#3817). Only the inner cache's own retcode
+# distinguishes "genuinely done already" from "hasn't started converging".
+# Iterations beyond the first use `η`/`θ` computed from actual step history and
+# are not vulnerable to this false positive, so they are left untouched.
+_nsa_inner_converged(nlsolver) = true
+function _nsa_inner_converged(nlsolver::NLSolver{<:NonlinearSolveAlg})
+    nlsolver.alg.alg isa AbstractSimpleNonlinearSolveAlgorithm && return true
+    return SciMLBase.successful_retcode(nlsolver.cache.cache.retcode)
+end
+
 """
     nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
@@ -136,7 +152,7 @@ function nlsolve!(
                 )
             )
         )
-        if (iter == 1 && ndz < 1.0e-5) ||
+        if (iter == 1 && ndz < 1.0e-5 && _nsa_inner_converged(nlsolver)) ||
                 (check_η_convergence && η >= zero(η) && η * ndz < κ)
             @SciMLMessage(
                 lazy"Newton iteration converged in $(iter) iterations: η = $(η), ndz = $(ndz)",
