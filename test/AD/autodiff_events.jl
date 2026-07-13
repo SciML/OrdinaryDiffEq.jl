@@ -1,12 +1,13 @@
 # Version-dependent AD backend selection
-# Enzyme/Zygote: Julia <= 1.11 only (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
+# Enzyme: all AD test lanes
+# Zygote: Julia <= 1.11 only
 # Mooncake: works on all Julia versions for the ForwardDiffSensitivity-based
 #   gradient tests below via SciMLSensitivityMooncakeExt. Mooncake does NOT
 #   support ReverseDiffAdjoint (TypeError on the ODESolution CoDual), so the
 #   ReverseDiffAdjoint-based gradient tests are not run with Mooncake.
 # ForwardDiff: all versions
 
-const JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
+const JULIA_VERSION_ALLOWS_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
 
 using SciMLSensitivity
 using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
@@ -14,23 +15,22 @@ using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: IController, PIController, PIDController
 using ADTypes
 import DifferentiationInterface as DI
+using Enzyme
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
 # Load version-dependent packages
-if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
-    using Enzyme
+if JULIA_VERSION_ALLOWS_ZYGOTE
     using Zygote
     get_gradient_backends() = [AutoZygote()]
-    get_jacobian_backends() = [AutoForwardDiff()]
 else
-    # On Julia 1.12+, Zygote/Enzyme aren't available; the gradient_backends list
+    # On Julia 1.12+, Zygote isn't available; the gradient_backends list
     # is empty here because the existing gradient testset exercises sensealgs
     # (ReverseDiffAdjoint, PIDController, ...) that Mooncake does not support.
     # Mooncake-specific gradient tests for the sensealgs Mooncake DOES support
     # are added in a separate testset below.
     get_gradient_backends() = []
-    get_jacobian_backends() = [AutoForwardDiff()]
 end
+get_jacobian_backends() = [AutoForwardDiff()]
 
 function f(du, u, p, t)
     du[1] = u[2]
@@ -72,13 +72,11 @@ findiff
 end
 
 # Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
-if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
-    @testset "Enzyme callback limitation (jacobian)" begin
-        @test_broken (
-            ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
-            ad ≈ findiff
-        )
-    end
+@testset "Enzyme callback limitation (jacobian)" begin
+    @test_broken (
+        ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
+        ad ≈ findiff
+    )
 end
 
 function test_f2(
@@ -141,13 +139,11 @@ end
 end
 
 # Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
-if JULIA_VERSION_ALLOWS_ENZYME_ZYGOTE
-    @testset "Enzyme callback limitation (gradient)" begin
-        @test (
-            g = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), p);
-            g ≈ findiff[2, 1:2]
-        )
-    end
+@testset "Enzyme callback limitation (gradient)" begin
+    @test (
+        g = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), p);
+        g ≈ findiff[2, 1:2]
+    )
 end
 
 # Mooncake gradient tests (all Julia versions). Only the sensealgs Mooncake
