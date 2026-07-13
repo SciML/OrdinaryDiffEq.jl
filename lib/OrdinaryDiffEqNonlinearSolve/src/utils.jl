@@ -248,6 +248,18 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
 end
 
+# The reused ODE `W` as the operator handed to the inner NonlinearSolve as `jac_prototype`.
+# A matrix-free `WOperator` (its `J` an operator) is passed through and applied via `mul!`;
+# a concrete `WOperator`'s materialized form, or a raw matrix, is wrapped in a
+# `MatrixOperator` and materialized via `convert` for a factorization. Used identically at
+# build time and after a `resize!` so the inner `NonlinearFunction`'s concrete type is
+# preserved.
+function reuse_jac_prototype(W)
+    Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
+        W._concrete_form : W
+    return Wr isa AbstractSciMLOperator ? Wr : MatrixOperator(Wr)
+end
+
 """
     build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
                    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
@@ -398,26 +410,18 @@ function build_nlsolver(
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
-                if use_w_reuse && matrixfree_W
-                    # Hand the matrix-free WOperator over as the Jacobian operator; the
-                    # inner Krylov solve applies it via `mul!`.
+                if use_w_reuse
+                    # Hand the reused W to the inner NonlinearFunction as an operator
+                    # `jac_prototype`. A matrix-free `WOperator` is applied via `mul!`
+                    # (Krylov); a concrete W is materialized via `convert` for a
+                    # factorization (NonlinearSolve copies it before an in-place `lu!`, so the
+                    # ODE-owned W is never destroyed). `jac` is auto-wired to
+                    # `update_coefficients!`; the ODE owns W's updates, so NonlinearSolve holds
+                    # W fixed across its Newton steps.
                     NonlinearProblem(
                         NonlinearFunction{true, SciMLBase.FullSpecialize}(
                             nlf;
-                            jac_prototype = W
-                        ),
-                        ztmp, nlp_params
-                    )
-                elseif use_w_reuse
-                    nlf_jac! = WReuseJac(Ref(W_for_reuse))
-                    # Without a `jac_prototype`, NonlinearSolve allocates a dense J for an
-                    # analytic-jac function, so a sparse/structured W degrades to dense LU
-                    # and sparse-only linsolves (e.g. KLU) crash. Mirror W's structure.
-                    NonlinearProblem(
-                        NonlinearFunction{true, SciMLBase.FullSpecialize}(
-                            nlf;
-                            jac = nlf_jac!,
-                            jac_prototype = similar(W_for_reuse)
+                            jac_prototype = reuse_jac_prototype(W)
                         ),
                         ztmp, nlp_params
                     )

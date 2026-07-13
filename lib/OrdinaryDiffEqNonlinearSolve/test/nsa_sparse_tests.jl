@@ -4,6 +4,7 @@ using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using NonlinearSolve: NewtonRaphson
 using LinearSolve, LinearAlgebra, SparseArrays, ADTypes
 using SciMLBase
+using SciMLOperators: MatrixOperator
 using Test
 
 # 1D Brusselator with a hand-assembled sparse Jacobian pattern (tridiagonal blocks).
@@ -54,8 +55,11 @@ nsa = NonlinearSolveAlg(NewtonRaphson(; autodiff = AutoForwardDiff()))
     integ = init(prob, FBDF(nlsolve = nsa); reltol = 1.0e-8, abstol = 1.0e-10)
     nsacache = integ.cache.nlsolver.cache
     @test nsacache.W isa SparseMatrixCSC
-    # The inner NonlinearSolve Jacobian must mirror W's structure, not densify.
-    @test integ.cache.nlsolver.cache.cache.jac_cache.J isa SparseMatrixCSC
+    # The inner NonlinearSolve Jacobian is the reused W as an operator; its underlying
+    # matrix must mirror W's structure (stay sparse), not densify.
+    J = integ.cache.nlsolver.cache.cache.jac_cache.J
+    @test J isa MatrixOperator
+    @test convert(AbstractMatrix, J) isa SparseMatrixCSC
 end
 
 @testset "NSA + sparse-only linsolve (KLU) solves" begin

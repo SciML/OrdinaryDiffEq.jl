@@ -121,17 +121,12 @@ function initialize!(
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
         if length(cache.cache.u) != length(z)
-            new_prob = if cache.W !== nothing && cache.prob.f.jac isa WReuseJac
-                # Concrete reuse: point the WReuseJac at the resized W and give the
-                # NonlinearFunction a matching jac_prototype. Both keep their types (only
-                # array sizes change), so cache.prob's concrete type is preserved.
-                cache.prob.f.jac.W[] = cache.W
-                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = similar(cache.W))
-                SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
-            elseif cache.W !== nothing
-                # Matrix-free reuse: the operator is resized by the integrator's resize!
-                # machinery; just re-point the jac_prototype at it.
-                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = cache.W)
+            new_prob = if cache.W !== nothing
+                # W-reuse: re-point the operator `jac_prototype` at the resized W via the same
+                # mapping used at build time. Only array sizes change, so the operator's type
+                # — and hence `cache.prob`'s concrete type — is preserved and `init` stays
+                # type-stable.
+                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = reuse_jac_prototype(cache.W))
                 SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
             else
                 SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
