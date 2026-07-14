@@ -526,9 +526,9 @@ weakdeps = ["PDMats", "SparseArrays", "StaticArrays", "Statistics"]
 
 [[deps.FindFirstFunctions]]
 deps = ["PrecompileTools"]
-git-tree-sha1 = "0a3bdd18071a4849bb8f58111374e7cbb26bf9f3"
+git-tree-sha1 = "acb3ed7a72a4f8736d6f34454306cbbe24e63cb2"
 uuid = "64ca27bc-2ba2-4a57-88aa-44e436879224"
-version = "3.1.0"
+version = "3.2.0"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Setfield"]
@@ -999,9 +999,9 @@ version = "4.21.0"
 
 [[deps.NonlinearSolveBase]]
 deps = ["ADTypes", "Adapt", "ArrayInterface", "CommonSolve", "Compat", "ConcreteStructs", "DifferentiationInterface", "EnzymeCore", "FastClosures", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "LogExpFunctions", "Markdown", "MaybeInplace", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "RecursiveArrayTools", "SciMLBase", "SciMLJacobianOperators", "SciMLLogging", "SciMLOperators", "SciMLStructures", "Setfield", "StaticArraysCore", "SymbolicIndexingInterface", "TimerOutputs"]
-git-tree-sha1 = "23b0da309f3a24d22d32b80b44ad414011beabfb"
+git-tree-sha1 = "a7665ca27bf147c0de4f035e622330bec37f4c99"
 uuid = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
-version = "2.34.1"
+version = "2.35.0"
 
     [deps.NonlinearSolveBase.extensions]
     NonlinearSolveBaseBandedMatricesExt = "BandedMatrices"
@@ -1507,9 +1507,9 @@ version = "2.23.1"
 
 [[deps.Roots]]
 deps = ["Accessors", "CommonSolve", "Printf"]
-git-tree-sha1 = "125cbd31a56de53169c3eed9c17180bc6c245f83"
+git-tree-sha1 = "a7caaf7ba8cf307112ca443784d1b56b4a591455"
 uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-version = "3.0.4"
+version = "3.0.5"
 
     [deps.Roots.extensions]
     RootsChainRulesCoreExt = "ChainRulesCore"
@@ -1544,9 +1544,9 @@ version = "0.1.0"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FindFirstFunctions", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "Random", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "14db8c4067550071d7906604d4a8e79618d2ee78"
+git-tree-sha1 = "c248f27771416daab4f2e573a956f41467d43821"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "3.35.2"
+version = "3.36.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
