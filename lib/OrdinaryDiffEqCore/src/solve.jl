@@ -260,11 +260,7 @@ Base.@constprop :aggressive function _ode_init(
         throw(ArgumentError("alias kwarg must be an ODEAliasSpecifier"))
     end
 
-    if isnothing(alias.alias_f) || alias.alias_f
-        f = prob.f
-    else
-        f = deepcopy(prob.f)
-    end
+    f = prob.f
 
     if isnothing(alias.alias_p) || alias.alias_p
         p = prob.p
