@@ -13,7 +13,7 @@ mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     min_stage::Int
     max_stage::Int
 end
-@cache struct ROCK2Cache{uType, rateType, uNoUnitsType, C <: ROCK2ConstantCache} <:
+@cache struct ROCK2Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: ROCK2ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -22,6 +22,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -42,7 +44,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return ROCK2Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, constantcache)
+    return ROCK2Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -68,7 +70,7 @@ mutable struct ROCK4ConstantCache{T, T2, T3, T4, zType} <: OrdinaryDiffEqConstan
     max_stage::Int
 end
 
-@cache struct ROCK4Cache{uType, rateType, uNoUnitsType, C <: ROCK4ConstantCache} <:
+@cache struct ROCK4Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: ROCK4ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -79,6 +81,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -101,7 +105,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return ROCK4Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, fsalfirst, k, constantcache)
+    return ROCK4Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -117,7 +121,7 @@ mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
     #to match the types to call maxeig!
     zprev::zType
 end
-@cache struct RKCCache{uType, rateType, uNoUnitsType, C <: RKCConstantCache} <:
+@cache struct RKCCache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: RKCConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -126,6 +130,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -142,7 +148,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return RKCCache(u, uprev, gprev, tmp, atmp, fsalfirst, k, constantcache)
+    return RKCCache(u, uprev, gprev, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -163,7 +169,7 @@ mutable struct RKMC2ConstantCache{zType, T} <: OrdinaryDiffEqConstantCache
     w1::T
 end
 
-@cache struct RKMC2Cache{uType, rateType, uNoUnitsType, C <: RKMC2ConstantCache} <:
+@cache struct RKMC2Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: RKMC2ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -172,6 +178,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -189,7 +197,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return RKMC2Cache(u, uprev, gprev, tmp, atmp, fsalfirst, k, constantcache)
+    return RKMC2Cache(u, uprev, gprev, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -213,7 +221,7 @@ mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
     internal_deg::Int
 end
 
-@cache struct ESERK4Cache{uType, rateType, uNoUnitsType, C <: ESERK4ConstantCache} <:
+@cache struct ESERK4Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: ESERK4ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -225,6 +233,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -244,7 +254,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return ESERK4Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
+    return ESERK4Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -267,7 +277,7 @@ mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
     internal_deg::Int
 end
 
-@cache struct ESERK5Cache{uType, rateType, uNoUnitsType, C <: ESERK5ConstantCache} <:
+@cache struct ESERK5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: ESERK5ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -279,6 +289,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -298,7 +310,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return ESERK5Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
+    return ESERK5Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -319,7 +331,7 @@ mutable struct SERK2ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
     internal_deg::Int
 end
 
-@cache struct SERK2Cache{uType, rateType, uNoUnitsType, C <: SERK2ConstantCache} <:
+@cache struct SERK2Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: SERK2ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -329,6 +341,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -346,7 +360,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return SERK2Cache(u, uprev, uᵢ₋₁, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
+    return SERK2Cache(u, uprev, uᵢ₋₁, Sᵢ, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -365,7 +379,7 @@ mutable struct TSRKC2ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstan
     acoshtsw0::tTypeNoUnits
     sinhacoshtsw0::tTypeNoUnits
 end
-@cache struct TSRKC2Cache{uType, rateType, uNoUnitsType, C <: TSRKC2ConstantCache} <:
+@cache struct TSRKC2Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: TSRKC2ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -374,6 +388,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -393,7 +409,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return TSRKC2Cache(u, uprev, gprev, tmp, atmp, fsalfirst, k, constantcache)
+    return TSRKC2Cache(u, uprev, gprev, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -415,7 +431,7 @@ mutable struct TSRKC3ConstantCache{zType, tTypeNoUnits} <: OrdinaryDiffEqConstan
     acoshtsw0::tTypeNoUnits
     sinhacoshtsw0::tTypeNoUnits
 end
-@cache struct TSRKC3Cache{uType, rateType, uNoUnitsType, C <: TSRKC3ConstantCache} <:
+@cache struct TSRKC3Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: TSRKC3ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -424,6 +440,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -443,7 +461,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return TSRKC3Cache(u, uprev, gprev, tmp, atmp, fsalfirst, k, constantcache)
+    return TSRKC3Cache(u, uprev, gprev, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -469,7 +487,7 @@ function RKL1ConstantCache(u, min_stage, max_stage)
     return RKL1ConstantCache(zero(u), 3, min_stage, max_stage)
 end
 
-@cache struct RKL1Cache{uType, rateType, uNoUnitsType, C <: RKL1ConstantCache} <:
+@cache struct RKL1Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: RKL1ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -478,6 +496,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -494,7 +514,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return RKL1Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, constantcache)
+    return RKL1Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -517,7 +537,7 @@ function RKL2ConstantCache(u, min_stage, max_stage)
     return RKL2ConstantCache(zero(u), 3, min_stage, max_stage)
 end
 
-@cache struct RKL2Cache{uType, rateType, uNoUnitsType, C <: RKL2ConstantCache} <:
+@cache struct RKL2Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: RKL2ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -526,6 +546,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -542,7 +564,7 @@ function alg_cache(
     recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
-    return RKL2Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, constantcache)
+    return RKL2Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -565,7 +587,7 @@ function RKG1ConstantCache(u, min_stage, max_stage)
     return RKG1ConstantCache(zero(u), 2, min_stage, max_stage)
 end
 
-@cache struct RKG1Cache{uType, rateType, uNoUnitsType, C <: RKG1ConstantCache} <:
+@cache struct RKG1Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: RKG1ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -574,6 +596,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -588,7 +612,7 @@ function alg_cache(
     uᵢ₋₁ = zero(u); tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype); k = zero(rate_prototype)
-    return RKG1Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, constantcache)
+    return RKG1Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(
@@ -612,7 +636,7 @@ function RKG2ConstantCache(u, min_stage, max_stage)
     return RKG2ConstantCache(zero(u), 3, min_stage, max_stage)
 end
 
-@cache struct RKG2Cache{uType, rateType, uNoUnitsType, C <: RKG2ConstantCache} <:
+@cache struct RKG2Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, C <: RKG2ConstantCache} <:
     StabilizedRKMutableCache
     u::uType
     uprev::uType
@@ -621,6 +645,8 @@ end
     atmp::uNoUnitsType
     fsalfirst::rateType
     k::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     constantcache::C
 end
 
@@ -635,7 +661,7 @@ function alg_cache(
     uᵢ₋₁ = zero(u); tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp, false)
     fsalfirst = zero(rate_prototype); k = zero(rate_prototype)
-    return RKG2Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, constantcache)
+    return RKG2Cache(u, uprev, uᵢ₋₁, tmp, atmp, fsalfirst, k, alg.stage_limiter!, alg.step_limiter!, constantcache)
 end
 
 function alg_cache(

@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqFeagin, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqSSPRK
-using OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqQPRK
+using OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqQPRK, OrdinaryDiffEqStabilizedRK
 using OrdinaryDiffEqFIRK: AdaptiveRadau, RadauIIA9, RadauIIA5, RadauIIA3
 
 # define the counting variable
@@ -48,6 +48,7 @@ end
         CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M, CKLLSRK54_3C_3R,
         CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
         CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
+        ROCK2, ROCK4, RKC, RKMC2, SERK2, ESERK4, ESERK5, TSRKC2, TSRKC3, RKL1, RKL2, RKG1, RKG2, 
     ] #Stepanov5
 
     for alg_type in alg_types
