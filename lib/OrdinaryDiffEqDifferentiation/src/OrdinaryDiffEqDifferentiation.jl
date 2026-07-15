@@ -22,7 +22,7 @@ import StaticArraysCore: StaticArray, StaticMatrix
 # from the owner to satisfy `all_explicit_imports_via_owners`.
 using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
 import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
-import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
+import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator, ScalarOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
