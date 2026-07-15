@@ -15,7 +15,7 @@ end
 
 const LONGER_TESTS = false
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", get(ENV, "GROUP", "ALL"))
 
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 

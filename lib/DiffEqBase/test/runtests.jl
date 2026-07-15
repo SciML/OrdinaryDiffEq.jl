@@ -2,7 +2,7 @@ using Pkg
 using SafeTestsets
 using Test
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "Core")
+const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", get(ENV, "GROUP", "Core"))
 
 function activate_downstream_env()
     Pkg.activate(joinpath(@__DIR__, "downstream"))
