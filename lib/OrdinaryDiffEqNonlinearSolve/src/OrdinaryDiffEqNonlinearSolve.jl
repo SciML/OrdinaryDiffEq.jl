@@ -19,6 +19,7 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, New
     HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
+using NonlinearSolveBase: get_linear_cache
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure

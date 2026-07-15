@@ -37,7 +37,7 @@ import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
-    nlsolve!, nlsolvefail,
+    nlsolve!, nlsolvefail, can_smooth_est,
     NLNewton
 import ADTypes: AutoForwardDiff
 using CommonSolve: solve

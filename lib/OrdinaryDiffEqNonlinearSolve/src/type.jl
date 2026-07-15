@@ -366,7 +366,7 @@ mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R}
     nf::R
 end
 
-mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType} <:
+mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType, dzType, lsType} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -381,6 +381,11 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     jac_config::jcType
     du1::du1Type
     weight::weightType
+    # Smoothed error estimate `W \ tmp` for the `smooth_est` option (into buffer `dz`).
+    # `linsolve` is not a second solver: it aliases the inner NonlinearSolve's own W
+    # factorization (`get_linear_cache`), or is `nothing` when none is reusable (→ raw estimate).
+    dz::dzType
+    linsolve::lsType
     W_γdt::tType
     new_W::Bool
 end
