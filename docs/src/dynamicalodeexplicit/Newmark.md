@@ -4,7 +4,7 @@ CollapsedDocStrings = true
 
 # OrdinaryDiffEqNewmark
 
-Newmark-β and generalized-α methods for second-order ODEs, typically in mass-matrix form. These are second order time integrators, advancing the displacement and velocity with Newmark updates and solve a nonlinear residual for the acceleration directly. They arose from time stepping in structural and computational mechanics and are designed for such systems.
+Newmark-β and generalized-α methods for second-order ODEs, typically in mass-matrix form. These are second-order time integrators, advancing the displacement and velocity with Newmark updates and solving a nonlinear residual for the acceleration directly. They arose from time stepping in structural and computational mechanics and are designed for such systems.
 
 ## Key Properties
 
@@ -44,9 +44,9 @@ and the standard Newmark updates for `uₙ₊₁` and `vₙ₊₁`. Setting `α�
 
   - **`NewmarkBeta`**: Classical Newmark-β. Default `β = 1/4`, `γ = 1/2` (average acceleration, second-order when `γ = 1/2`).
   - **`GeneralizedAlpha`**: Preferred when controllable high-frequency damping is needed.
-      - **`GeneralizedAlpha(; rho_inf)`**: Recommended parameterization. `ρ∞ = 1` gives no algorithmic damping (equivalent to undamped Newmark); `ρ∞ = 0` gives maximum damping. Always sets unconditionally stable in [0, 1].
+      - **`GeneralizedAlpha(; rho_inf)`**: Recommended parameterization. `ρ∞ = 1` gives no algorithmic damping (equivalent to undamped Newmark); `ρ∞ = 0` gives maximum damping. Always unconditionally stable in [0, 1].
       - **`GeneralizedAlpha(; alpha_hht)`**: HHT-α convenience (`α ∈ [-1/3, 0]`). Also unconditionally stable in that range.
-      - **`GeneralizedAlpha(αm, αf, β, γ)`**: Explicit four-parameter construction. Can break unconditionally stablity if parameters are chosen poorly.
+      - **`GeneralizedAlpha(αm, αf, β, γ)`**: Explicit four-parameter construction. Can break unconditional stability if parameters are chosen poorly.
 
 ### Unconditional stability
 
@@ -60,7 +60,7 @@ Second-order accuracy further requires `γ = 1/2 - αₘ + αf`. The `rho_inf` a
 
 ## Installation
 
-To be able to access the solvers in `OrdinaryDiffEqNewmark`, you must first install them use the Julia package manager:
+To be able to access the solvers in `OrdinaryDiffEqNewmark`, you must first install them using the Julia package manager:
 
 ```julia
 using Pkg
