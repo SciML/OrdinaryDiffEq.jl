@@ -630,6 +630,13 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
             ref = max(abs(u0[i]), oneunit(eltype(u)))
             abs(u[i]) > 1.0e6 * ref && push!(blown_idxs, i)
         end
+        # keep only components within 20 orders of magnitude of the largest
+        if !isempty(blown_idxs)
+            max_blown = maximum(abs(u[i]) for i in blown_idxs)
+            cutoff = max_blown * 1e-20
+            filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
+            sort!(blown_idxs, by = i -> abs(u[i]), rev = true)
+        end
     end
 
     # jacobian analysis over rows and columns for large values
