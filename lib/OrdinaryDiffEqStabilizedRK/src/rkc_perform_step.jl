@@ -115,7 +115,6 @@ end
     stage_limiter!(uᵢ₋₁, integrator, p, tᵢ₋₁)
     if ccache.mdeg < 2
         @.. broadcast = false u = uᵢ₋₁
-        stage_limiter!(u, integrator, p, tᵢ₋₁)
     end
     # for the second to the ms[ccache.mdeg] th stages
     for i in 2:(ccache.mdeg)
@@ -139,13 +138,13 @@ end
     f(k, u, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false uᵢ₋₁ = u + δt₁ * k
-    stage_limiter!(uᵢ₋₁, integrator, p, tᵢ₋₁)
     if integrator.opts.adaptive
         @.. broadcast = false tmp = -δt₂ * k
     else
         @.. broadcast = false u = -δt₂ * k
     end
     c = value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
+    stage_limiter!(uᵢ₋₁, integrator, p, tᵢ₋₁ + c)
     tᵢ₋₁ += c
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -347,7 +346,6 @@ end
     stage_limiter!(uᵢ₋₁, integrator, p, tᵢ₋₁)
     if ccache.mdeg < 2
         @.. broadcast = false u = uᵢ₋₁
-        stage_limiter!(u, integrator, p, tᵢ₋₁)
     end
     # for the second to the ccache.mdeg th stages
     for i in 2:(ccache.mdeg)
@@ -598,8 +596,8 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
-        stage_limiter!(u, integrator, p, t + dt * th1)
         th = μ * th1 + ν * th2 + μs * (T(1) - νs)
+        stage_limiter!(u, integrator, p, t + dt * th)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
@@ -615,7 +613,6 @@ end
             d2z1 = d2z
         end
     end
-    stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1245,11 +1242,11 @@ end
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + dt * μs * k
-        stage_limiter!(u, integrator, p, t + dt * th1)
+        th = μ * th1 + ν * th2 + μs
+        stage_limiter!(u, integrator, p, t + dt * th)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs
             th2 = th1
             th1 = th
             z2 = z1
@@ -1507,13 +1504,12 @@ end
         μs = μ * w1 / w0
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
-            dt * μs * (k - νs * fsalfirst)
-        stage_limiter!(u, integrator, p, t + dt * th1)
+        @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev + dt * μs * (k - νs * fsalfirst)
+        th = μ * th1 + ν * th2 + μs * (T(1) - νs)
+        stage_limiter!(u, integrator, p, t + dt * th)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs * (T(1) - νs)
             th2 = th1
             th1 = th
             b2 = b1
@@ -1539,9 +1535,9 @@ end
         b = a / (b * w1)
         μ = T(1) - g - b
         @.. broadcast = false u = μ * uprev + g * uprev2 + b * u
+        stage_limiter!(u, integrator, p, t + dt)
     end
 
-    stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1608,7 +1604,10 @@ end
         μⱼ = T(2j - 1) / j
         νⱼ = -T(j - 1) / j
         μ̃ⱼ = μⱼ * w1
-        fYm1 = f(uᵢ₋₁, p, t)
+
+        #cⱼ = j(j+1)/(s(s+1))
+        tⱼ₋₁ = t + dt * T((j - 1) * j) / (s * (s + 1))
+        fYm1 = f(uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + μ̃ⱼ * dt * fYm1
         uᵢ₋₂ = uᵢ₋₁
@@ -1651,22 +1650,24 @@ end
     # stage 1
     @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * w1) * fsalfirst
-    stage_limiter!(uᵢ₋₁, integrator, p, t)
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * w1)
 
     # stages 2 to s
     for j in 2:s
         μⱼ = T(2j - 1) / j
         νⱼ = -T(j - 1) / j
         μ̃ⱼ = μⱼ * w1
-        f(k, uᵢ₋₁, p, t)
+        #cⱼ = j(j+1)/(s(s+1))
+        tⱼ₋₁ = t + dt * T((j - 1) * j) / (s * (s + 1))
+        f(k, uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
-        stage_limiter!(u, integrator, p, t)
+        tⱼ = t + dt * T(j * (j + 1)) / (s * (s + 1))
+        stage_limiter!(u, integrator, p, tⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
-    stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
@@ -1744,7 +1745,8 @@ end
         ajm1 = 1 - bjm1
         γ̃ⱼ = -ajm1 * μ̃ⱼ
 
-        fYm1 = f(uᵢ₋₁, p, t)
+        tⱼ₋₁ = j == 2 ? t + dt * μ̃₁ : t + dt * T((j - 1) * j - 2) / (s^2 + s - 2) #cⱼ = (j²+j-2)/(s²+s-2) for j≥2
+        fYm1 = f(uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + (1 - μⱼ - νⱼ) * uprev +
@@ -1793,7 +1795,7 @@ end
     μ̃₁ = (T(1) / 3) * w1
     @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
-    stage_limiter!(uᵢ₋₁, integrator, p, t)
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * μ̃₁)
 
     # stages 2 to s
     for j in 2:s
@@ -1809,18 +1811,19 @@ end
         μ̃ⱼ = μⱼ * w1
         γ̃ⱼ = -ajm1 * μ̃ⱼ
 
-        f(k, uᵢ₋₁, p, t)
+        tⱼ₋₁ = j == 2 ? t + dt * μ̃₁ : t + dt * T((j - 1) * j - 2) / (s^2 + s - 2)
+        f(k, uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp +
             (1 - μⱼ - νⱼ) * uprev +
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
-        stage_limiter!(u, integrator, p, t)
+        tⱼ = t + dt * T(j * j + j - 2) / (s^2 + s - 2)
+        stage_limiter!(u, integrator, p, tⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
-    stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
@@ -1893,7 +1896,8 @@ end
         νⱼ = -T(j + 1) / j * bj / bjm2
         μ̃ⱼ = μⱼ * w1
 
-        fYm1 = f(uᵢ₋₁, p, t)
+        tⱼ₋₁ = t + dt * T((j - 1) * (j + 2)) / (s * (s + 3)) #cⱼ = j(j+3)/(s(s+3))
+        fYm1 = f(uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + μ̃ⱼ * dt * fYm1
         uᵢ₋₂ = uᵢ₋₁
@@ -1941,7 +1945,7 @@ end
 
     @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
-    stage_limiter!(uᵢ₋₁, integrator, p, t)
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * μ̃₁)
 
     # stages 2 to s
     for j in 2:s
@@ -1952,15 +1956,16 @@ end
         νⱼ = -T(j + 1) / j * bj / bjm2
         μ̃ⱼ = μⱼ * w1
 
-        f(k, uᵢ₋₁, p, t)
+        tⱼ₋₁ = t + dt * T((j - 1) * (j + 2)) / (s * (s + 3)) #cⱼ = j(j+3)/(s(s+3))
+        f(k, uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
-        stage_limiter!(u, integrator, p, t)
+        tⱼ = t + dt * T(j * (j + 3)) / (s * (s + 3))
+        stage_limiter!(u, integrator, p, tⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
-    stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
@@ -2036,7 +2041,8 @@ end
         μ̃ⱼ = μⱼ * w1
         γ̃ⱼ = -μ̃ⱼ * ajm1
 
-        fYm1 = f(uᵢ₋₁, p, t)
+        tⱼ₋₁ = j == 2 ? t + dt * μ̃₁ : t + dt * T((j + 3) * (j - 2)) / ((s + 4) * (s - 1)) #cⱼ = (j+4)(j-1)/((s+4)(s-1)) for j≥2
+        fYm1 = f(uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + (1 - μⱼ - νⱼ) * uprev +
@@ -2083,7 +2089,7 @@ end
 
     @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
-    stage_limiter!(uᵢ₋₁, integrator, p, t)
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * μ̃₁)
 
     # stages 2 to s
     for j in 2:s
@@ -2100,19 +2106,20 @@ end
         μ̃ⱼ = μⱼ * w1
         γ̃ⱼ = -μ̃ⱼ * ajm1
 
-        f(k, uᵢ₋₁, p, t)
+        tⱼ₋₁ = j == 2 ? t + dt * μ̃₁ : t + dt * T((j + 3) * (j - 2)) / ((s + 4) * (s - 1))
+        f(k, uᵢ₋₁, p, tⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp +
             (1 - μⱼ - νⱼ) * uprev +
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
-        stage_limiter!(u, integrator, p, t)
+        tⱼ = t + dt * T((j + 4) * (j - 1)) / ((s + 4) * (s - 1))
+        stage_limiter!(u, integrator, p, tⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
     end
 
-    stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
@@ -2300,8 +2307,8 @@ end
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = (1 - μ - ν) * uprev + μ * gprev + ν * tmp + dt * μ̃ * (k - bj₋₁ * fsalfirst)
-        stage_limiter!(u, integrator, p, t + dt * th1)
         th = μ * th1 + ν * th2 + μ̃ * (1 - bj₋₁)
+        stage_limiter!(u, integrator, p, t + dt * th)
         if j < mdeg
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
