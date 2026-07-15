@@ -1206,6 +1206,10 @@ function build_J_W(
         if is_sparse(J)
             set_all_nzval!(J, one(eltype(J)))
             set_all_nzval!(W, one(eltype(W)))
+        elseif ArrayInterface.has_sparsestruct(J)
+            # A nonzero fill conflicts with the implicit zeros of structured matrices.
+            copyto!(J, one(J))
+            copyto!(W, one(W))
         else
             fill!(J, one(eltype(J)))
             fill!(W, one(eltype(W)))
