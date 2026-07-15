@@ -134,6 +134,14 @@ end
 
 isfsal(tab::ExplicitRKTableau) = tab.fsal
 isfsal(::ImplicitRKTableau) = nothing
+
+"""
+    check_tableau(tab; tol = 10eps(1.0))
+
+Check that a Runge-Kutta tableau satisfies the order conditions for its declared
+primary and embedded orders within `tol`. Return `true` when all conditions hold and
+throw an error when an order condition fails.
+"""
 function check_tableau(tab; tol = 10eps(1.0))
     order = all(i -> residual_order_condition(tab, i, +, abs) < tol, 1:(tab.order))
     if !order
