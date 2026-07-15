@@ -39,7 +39,7 @@ which relies on OrdinaryDiffEqCore.
 Each sublibrary declares its CI jobs through `test/test_groups.toml`. Groups listed there
 (e.g. `Core`, `QA`, `GPU`, `ModelingToolkit`) become matrix entries dispatched by
 `.github/scripts/compute_affected_sublibraries.jl`. The group name is passed to the
-sublibrary's `test/runtests.jl` via `ENV["ODEDIFFEQ_TEST_GROUP"]`.
+sublibrary's `test/runtests.jl` via `ENV["GROUP"]`.
 
 ### Skipping a group on dependency-graph triggers (`local_only`)
 
