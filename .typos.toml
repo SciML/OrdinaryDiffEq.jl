@@ -54,6 +54,7 @@ Darmstadt = "Darmstadt"
 "problèmes" = "problèmes"
 problemes = "problemes"  # French word in citation without accent
 Ono = "Ono"  # Hiroshi Ono, author of Ono10/Ono12 RK methods
+Vor = "Vor"  # vorticity-optimized AlJahdaliVor3S* method family (Al Jahdali et al. 2022)
 padd = "padd"  # variable name in analyticless_convergence_tests.jl
 Preprint = "Preprint"
 Nr = "Nr"
