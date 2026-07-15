@@ -92,6 +92,20 @@ if TEST_GROUP != "QA"
         @test idsol.retcode == ReturnCode.Success
     end
 
+    @testset "Kantorovich strict acceptance" begin
+        strict = ImplicitDiscreteSolve.KantorovichTypeController(;
+            Θmin = 1 // 8, p = 1
+        )
+        @test ImplicitDiscreteSolve._accept_kantorovich_step(strict, Float64[])
+        @test ImplicitDiscreteSolve._accept_kantorovich_step(strict, [0.2, 0.95])
+        @test !ImplicitDiscreteSolve._accept_kantorovich_step(strict, [0.2, 0.951])
+
+        nonstrict = ImplicitDiscreteSolve.KantorovichTypeController(;
+            Θmin = 1 // 8, p = 1, strict = false
+        )
+        @test ImplicitDiscreteSolve._accept_kantorovich_step(nonstrict, [Inf])
+    end
+
     @testset "Handle nothing in u0" begin
         emptyiip(residual, u_next, u, p, t) = nothing
         emptyoop(u_next, u, p, t) = nothing
