@@ -34,9 +34,10 @@ pages = [
         "imex/StabilizedIRK.md",
         "imex/IMEXBDF.md",
     ],
-    "Dynamical ODE Explicit Solvers" => [
+    "Dynamical ODE Solvers" => [
         "dynamicalodeexplicit/RKN.md",
         "dynamicalodeexplicit/SymplecticRK.md",
+        "dynamicalodeexplicit/Newmark.md",
     ],
     "Semilinear ODE Solvers" => [
         "semilinear/ExponentialRK.md",
