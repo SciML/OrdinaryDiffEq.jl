@@ -160,7 +160,7 @@ end
     end
 end
 
-@testset "GaussLegendre Richardson tightens step count when tol tightens" begin
+@testset "GaussLegendre adaptive tightens step count when tol tightens" begin
     s = 3
     sol_loose = solve(
         prob_ode_linear, GaussLegendre(num_stages = s);

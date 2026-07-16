@@ -369,11 +369,10 @@ function GaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1
     return GaussLegendreTableau{T1, T2}(tab.A, tab.b, tab.c, tab.e)
 end
 
-# TODO: embedded error coefficients use s-1 GL rule interpolated to s nodes
-# a proper derivation following Hairer Vol I would improve adaptive performance
-
-# TODO: add the symplectic integrator stage decoupling from Antonan et al to increase efficiency
-
+# Embedded weights (bhat) share nodes c with the main method and satisfy the
+# quadrature conditions of order s-1, with the s-th moment set to 0
+# (instead of 1/s). Then e = b - bbhat and the local error estimate is
+#  u - uhat = dt * Σ eᵢ f(Yᵢ), which becomes the embedded error estimate
 function generateGaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) where {T1, T2}
     x, w = gausslegendre(promote_type(T1, T2), num_stages)
     c = T2.((x .+ 1) ./ 2)
@@ -395,24 +394,11 @@ function generateGaussLegendreTableau(::Type{T1}, ::Type{T2}, num_stages::Int) w
         end
     end
 
-
-    # error estimate coefficients: embed using s-1 GL weights via interpolation
     if num_stages > 1
-        x_low, w_low = gausslegendre(T1, num_stages - 1)
-        c_low = T1.((x_low .+ 1) ./ 2)
-        b_low = zeros(T1, num_stages)
-        for i in 1:num_stages
-            for j in 1:(num_stages - 1)
-                Lj = one(T1)
-                for k in 1:(num_stages - 1)
-                    if k != j
-                        Lj *= (c[i] - c_low[k]) / (c_low[j] - c_low[k])
-                    end
-                end
-                b_low[i] += T1(w_low[j] / 2) * Lj
-            end
-        end
-        e = b .- b_low
+        V = [T1(c[j])^(i - 1) for i in 1:num_stages, j in 1:num_stages]
+        rhs = [i < num_stages ? T1(1 // i) : zero(T1) for i in 1:num_stages]
+        bhat = V \ rhs
+        e = b .- bhat
     else
         e = b
     end

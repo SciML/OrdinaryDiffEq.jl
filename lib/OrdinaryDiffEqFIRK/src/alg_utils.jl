@@ -34,10 +34,10 @@ default_controller(QT, alg::GaussLegendre) = PIController(QT, alg)
 
 isfirk(alg::GaussLegendre) = true
 
-# Richardson step-doubling controller
+# Embedded error estimate controller using s-1 stages
 isadaptive(alg::GaussLegendre) = alg.num_stages >= 2
-alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages
+alg_adaptive_order(alg::GaussLegendre) = alg.num_stages - 1
 has_stiff_interpolation(::GaussLegendre) = false
 
 get_current_alg_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
-get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
+get_current_adaptive_order(alg::GaussLegendre, cache) = alg.num_stages - 1

@@ -763,18 +763,18 @@ end
 
 
 mutable struct GaussLegendreCache{
-        uType, uNoUnitsType, rateType, JType, WType, Buff,
+        uType, tType, uNoUnitsType, rateType, JType, WType, Buff,
         UF, JC, F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
     } <: FIRKMutableCache
     u::uType
     uprev::uType
     z::Vector{uType}
-    z_last::Vector{uType}
     w::Vector{uType}
+    c_prime::Vector{tType}
     dw::Vector{uType}
     ubuff::Buff
-    u_full::uType
-    u_half::uType
+    utilde::uType
+    derivatives::Matrix{uType}
     du1::rateType
     fsalfirst::rateType
     k::rateType
@@ -813,14 +813,21 @@ function alg_cache(
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
     z = [zero(u) for _ in 1:num_stages]
-    z_last = [zero(u) for _ in 1:num_stages]
     w = [zero(u) for _ in 1:num_stages]
+    c_prime = Vector{typeof(t)}(undef, num_stages) #time stepping
+    for i in 1:num_stages
+        c_prime[i] = zero(t)
+    end
     dw = [zero(u) for _ in 1:num_stages]
     n = length(_vec(u))
     ubuff = similar(_vec(u), num_stages * n)
     recursivefill!(ubuff, false)
-    u_full = zero(u)
-    u_half = zero(u)
+    utilde = zero(u)
+
+    derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
+    for i in 1:num_stages, j in 1:num_stages
+        derivatives[i, j] = zero(u)
+    end
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -854,7 +861,7 @@ function alg_cache(
     atol = reltol isa Number ? reltol : zero(reltol)
 
     return GaussLegendreCache(
-        u, uprev, z, z_last, w, dw, ubuff, u_full, u_half,
+        u, uprev, z, w, c_prime, dw, ubuff, utilde, derivatives,
         du1, fsalfirst, k, ks, fw,
         J, W,
         uf, tab, κ, one(uToltype), 10000,
