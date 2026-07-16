@@ -228,26 +228,31 @@ author={Butcher, John Charles},
 year={2008},
 publisher={Wiley}}"""
 
+gauss_extra_keyword_description = """
+- `extrapolant`: `:dense` uses the previous collocation polynomial as the Newton guess; `:constant` starts from zero
+- `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`"""
+gauss_extra_keyword_default = """
+extrapolant = :dense,
+step_limiter! = trivial_limiter!"""
+
 @doc differentiation_rk_docstring(
     "A symplectic fully implicit Runge-Kutta method based on Gauss-Legendre quadrature.
 With s stages, the method has order 2s. Symplectic and A-stable, making it suitable
 for Hamiltonian systems and problems requiring long-time geometric integration.
 
-!!! warning \"Experimental\"
-    `GaussLegendre` is experimental. Adaptive stepping currently uses Richardson
-    step-doubling (roughly 3× the work per accepted step) and requires `num_stages ≥ 2`;
-    Details may change as the implementation is refined.",
+Adaptive stepping uses a same-node embedded method of order s-1
+(err = dt * Σ (bᵢ - b̂ᵢ) f(Yᵢ), with bhat fixed by the s-1 moment
+conditions and a zero s-th moment) and requires num_stages ≥ 2.",
     "GaussLegendre",
     "Fully-Implicit Runge-Kutta Method.";
     references = gauss_legendre_docstring,
-    extra_keyword_description = extra_keyword_description,
-    extra_keyword_default = extra_keyword_default
+    extra_keyword_description = gauss_extra_keyword_description,
+    extra_keyword_default = gauss_extra_keyword_default
 )
 struct GaussLegendre{AD, F, P, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     precs::P
-    smooth_est::Bool
     extrapolant::Symbol
     κ::Tol
     maxiters::Int
@@ -267,7 +272,7 @@ function GaussLegendre(;
         linsolve = nothing, precs = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
         new_W_γdt_cutoff = 1 // 5,
-        controller = :PI, κ = nothing, maxiters = 10, smooth_est = true,
+        controller = :PI, κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
@@ -275,7 +280,6 @@ function GaussLegendre(;
     return GaussLegendre(
         linsolve,
         precs,
-        smooth_est,
         extrapolant,
         κ,
         maxiters,
