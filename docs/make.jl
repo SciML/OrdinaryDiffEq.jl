@@ -26,6 +26,7 @@ using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqPDIRK
 using OrdinaryDiffEqPRK
 using OrdinaryDiffEqQPRK
+using OrdinaryDiffEqNewmark
 using OrdinaryDiffEqRKN
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqSDIRK
@@ -69,6 +70,7 @@ makedocs(
         OrdinaryDiffEqPDIRK,
         OrdinaryDiffEqPRK,
         OrdinaryDiffEqQPRK,
+        OrdinaryDiffEqNewmark,
         OrdinaryDiffEqRKN,
         OrdinaryDiffEqRosenbrock,
         OrdinaryDiffEqSDIRK,
