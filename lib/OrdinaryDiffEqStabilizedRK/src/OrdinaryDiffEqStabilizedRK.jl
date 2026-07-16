@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order,
     OrdinaryDiffEqAdaptiveAlgorithm,
     alg_cache, @cache,
     constvalue, full_cache, get_fsalfirstlast,
-    generic_solver_docstring, trivial_limiter!
+    generic_solver_docstring
 import OrdinaryDiffEqCore
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd

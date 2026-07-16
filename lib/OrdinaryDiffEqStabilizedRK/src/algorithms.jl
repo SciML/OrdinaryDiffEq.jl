@@ -19,15 +19,13 @@
     eigen_est = nothing,
     """
 )
-struct ROCK2{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing, stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
-    return ROCK2(min_stages, max_stages, eigen_est, stage_limiter!, step_limiter!)
+function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
+    return ROCK2(min_stages, max_stages, eigen_est)
 end
 
 @doc generic_solver_docstring(
@@ -52,30 +50,23 @@ end
     eigen_est = nothing,
     """
 )
-struct ROCK4{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing, stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
-    return ROCK4(min_stages, max_stages, eigen_est, stage_limiter!, step_limiter!)
+function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing)
+    return ROCK4(min_stages, max_stages, eigen_est)
 end
 
 # SERK methods
 
 for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC2, :TSRKC3]
     @eval begin
-        struct $Alg{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+        struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
             eigen_est::E
-            stage_limiter!::StageLimiter
-            step_limiter!::StepLimiter
         end
-        function $Alg(; eigen_est = nothing, stage_limiter! = trivial_limiter!,
-                step_limiter! = trivial_limiter!)
-            return $Alg(eigen_est, stage_limiter!, step_limiter!)
-        end
+        $Alg(; eigen_est = nothing) = $Alg(eigen_est)
     end
 end
 
@@ -162,14 +153,10 @@ function ESERK5 end
     eigen_est = nothing,
     """
 )
-struct SERK2{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function SERK2(; eigen_est = nothing, stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
-    return SERK2(eigen_est, stage_limiter!, step_limiter!)
-end
+SERK2(; eigen_est = nothing) = SERK2(eigen_est)
 
 @doc generic_solver_docstring(
     """Second order method. Exhibits high stability for real eigenvalues.""",
@@ -231,16 +218,13 @@ function TSRKC3 end
     eigen_est = nothing,
     """
 )
-struct RKMC2{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RKMC2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function RKMC2(; min_stages = 3, max_stages = 1000, eigen_est = nothing,
-        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
-    return RKMC2(max(3, min_stages), max_stages, eigen_est, stage_limiter!, step_limiter!)
+function RKMC2(; min_stages = 3, max_stages = 1000, eigen_est = nothing)
+    return RKMC2(max(3, min_stages), max_stages, eigen_est)
 end
 
 @doc generic_solver_docstring(
@@ -267,15 +251,12 @@ end
     eigen_est = nothing,
     """
 )
-struct RKL1{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RKL1{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function RKL1(; min_stages = 3, max_stages = 200, eigen_est = nothing,
-        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
+function RKL1(; min_stages = 3, max_stages = 200, eigen_est = nothing)
     min_s = max(3, min_stages)
     min_s = isodd(min_s) ? min_s : min_s + 1
     max_s = isodd(max_stages) ? max_stages : max_stages - 1
@@ -283,7 +264,7 @@ function RKL1(; min_stages = 3, max_stages = 200, eigen_est = nothing,
     if max_s < min_s
         max_s = min_s
     end
-    return RKL1(min_s, max_s, eigen_est, stage_limiter!, step_limiter!)
+    return RKL1(min_s, max_s, eigen_est)
 end
 
 @doc generic_solver_docstring(
@@ -311,20 +292,17 @@ end
     eigen_est = nothing,
     """
 )
-struct RKL2{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RKL2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function RKL2(; min_stages = 3, max_stages = 200, eigen_est = nothing,
-        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
+function RKL2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
     min_s = max(3, min_stages)
     min_s = isodd(min_s) ? min_s : min_s + 1
     max_s = isodd(max_stages) ? max_stages : max_stages - 1
     max_s = max(max_s, min_s)
-    return RKL2(min_s, max_s, eigen_est, stage_limiter!, step_limiter!)
+    return RKL2(min_s, max_s, eigen_est)
 end
 
 @doc generic_solver_docstring(
@@ -351,19 +329,16 @@ end
     eigen_est = nothing,
     """
 )
-struct RKG1{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RKG1{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function RKG1(; min_stages = 2, max_stages = 200, eigen_est = nothing,
-        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
+function RKG1(; min_stages = 2, max_stages = 200, eigen_est = nothing)
     # RKG does not require odd s — no odd enforcement needed
     min_s = max(2, min_stages)
     max_s = max(max_stages, min_s)
-    return RKG1(min_s, max_s, eigen_est, stage_limiter!, step_limiter!)
+    return RKG1(min_s, max_s, eigen_est)
 end
 
 @doc generic_solver_docstring(
@@ -390,16 +365,13 @@ end
     eigen_est = nothing,
     """
 )
-struct RKG2{E, StageLimiter, StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RKG2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
 end
-function RKG2(; min_stages = 3, max_stages = 200, eigen_est = nothing,
-        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
+function RKG2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
     min_s = max(3, min_stages)
     max_s = max(max_stages, min_s)
-    return RKG2(min_s, max_s, eigen_est, stage_limiter!, step_limiter!)
+    return RKG2(min_s, max_s, eigen_est)
 end
