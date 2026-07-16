@@ -1152,6 +1152,14 @@ as-is.
 end
 @inline _dtgamma_prototype(t, dt, ::Type{T}) where {T} = promote(t, dt)[2]
 
+function _fill_structural_nonzeros!(A, value)
+    rows, cols = ArrayInterface.findstructralnz(A)
+    for k in 1:length(rows)
+        A[rows[k], cols[k]] = value
+    end
+    return A
+end
+
 """
     build_J_W(alg, u, uprev, p, t, dt, f, jac_config, ::Type{uEltypeNoUnits}, ::Val{iip}) -> (J, W)
 
@@ -1208,8 +1216,8 @@ function build_J_W(
             set_all_nzval!(W, one(eltype(W)))
         elseif ArrayInterface.has_sparsestruct(J)
             # A nonzero fill conflicts with the implicit zeros of structured matrices.
-            copyto!(J, one(J))
-            copyto!(W, one(W))
+            _fill_structural_nonzeros!(J, one(eltype(J)))
+            _fill_structural_nonzeros!(W, one(eltype(W)))
         else
             fill!(J, one(eltype(J)))
             fill!(W, one(eltype(W)))

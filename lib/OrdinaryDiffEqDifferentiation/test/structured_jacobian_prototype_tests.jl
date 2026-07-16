@@ -18,6 +18,7 @@ end
 prototypes = (
     Diagonal(zeros(2)),
     Bidiagonal(zeros(2), zeros(1), :U),
+    Bidiagonal(zeros(2), zeros(1), :L),
     Tridiagonal(zeros(1), zeros(2), zeros(1)),
 )
 
