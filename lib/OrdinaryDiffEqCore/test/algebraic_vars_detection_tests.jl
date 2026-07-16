@@ -113,3 +113,37 @@ end
     ff_singular = ODEFunction(f!, mass_matrix = ScalarOperator(0.0))
     @test get_differential_vars(ff_singular, u) == falses(3)
 end
+
+@testset "get_differential_vars: Diagonal mass matrix" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    u = zeros(4)
+    ff_mixed = ODEFunction(f!, mass_matrix = Diagonal([1.0, 1.0, 0.0, 0.0]))
+    @test get_differential_vars(ff_mixed, u) == Bool[1, 1, 0, 0]
+    ff_alldiff = ODEFunction(f!, mass_matrix = Diagonal([1.0, 2.0, 3.0, 4.0]))
+    @test get_differential_vars(ff_alldiff, u) == Bool[1, 1, 1, 1]
+    ff_allalg = ODEFunction(f!, mass_matrix = Diagonal(zeros(4)))
+    @test get_differential_vars(ff_allalg, u) == Bool[0, 0, 0, 0]
+end
+
+# Mimics GPU device-array semantics on the CPU: elementwise scalar `getindex`
+# is forbidden (like CUDA's default `allowscalar(false)`), while whole-array
+# broadcast still works. Any code path that walks a `Diagonal` of this via
+# `getindex` -- `all(!iszero, mm)` or a `diag(mm)` copy -- errors, so the test
+# below catches a regression back to the whole-matrix check without needing a
+# GPU. Must be top-level: structs cannot be defined inside a `@testset`.
+struct NoScalarIndexVector{T} <: AbstractVector{T}
+    data::Vector{T}
+end
+Base.size(v::NoScalarIndexVector) = size(v.data)
+function Base.getindex(::NoScalarIndexVector, ::Int)
+    error("scalar getindex disallowed on NoScalarIndexVector")
+end
+Base.Broadcast.broadcastable(v::NoScalarIndexVector) = v.data
+
+@testset "get_differential_vars: no scalar indexing of Diagonal mass matrix" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    u = zeros(4)
+    mm = Diagonal(NoScalarIndexVector([1.0, 1.0, 0.0, 0.0]))
+    ff = ODEFunction(f!, mass_matrix = mm)
+    @test get_differential_vars(ff, u) == Bool[1, 1, 0, 0]
+end
