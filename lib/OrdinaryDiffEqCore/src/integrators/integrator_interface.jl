@@ -511,6 +511,14 @@ function SciMLBase.reinit!(
             integrator.sol = sol
         end
     end
+    # Null u0 (e.g., MTK systems with only observed/algebraic variables and no state).
+    # `init` coerces such a `nothing` to the working state (`Float64[]`), but `prob.u0`
+    # (the default here) and `late_binding_update_u0_p` can still hand back `nothing`.
+    # There is no state to reinitialize, so fall back to the integrator's current `u`,
+    # which downstream copying/saving can handle uniformly.
+    if u0 === nothing
+        u0 = integrator.u
+    end
     if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.u, u0)
         recursivecopy!(integrator.uprev, integrator.u)
