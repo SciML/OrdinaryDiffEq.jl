@@ -194,7 +194,7 @@ function _ode_addsteps!(
             end
 
             linres = dolinsolve(
-                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol
+                cache, linsolve; b = _vec(linsolve_tmp), reltol = cache.reltol
             )
             @.. $(_vec(ks[stage])) = -linres.u
         end

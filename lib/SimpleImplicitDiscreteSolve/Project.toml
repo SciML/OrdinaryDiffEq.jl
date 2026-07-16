@@ -1,7 +1,7 @@
 name = "SimpleImplicitDiscreteSolve"
 uuid = "8b67ef88-54bd-43ff-aca0-8be02588656a"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "2.0.1"
+version = "2.0.2"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -13,12 +13,14 @@ SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
+SciMLTesting = "2.1"
 julia = "1.10"
 Pkg = "1"
 OrdinaryDiffEqSDIRK = "2"
@@ -26,11 +28,11 @@ SafeTestsets = "0.1.0"
 Test = "<0.0.1, 1"
 DiffEqBase = "7"
 Reexport = "1.2.2"
-SciMLBase = "3.30.0"
+SciMLBase = "3.35.1"
 SimpleNonlinearSolve = "2.11.1"
 
 [targets]
-test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets"]
+test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqSDIRK]
 path = "../OrdinaryDiffEqSDIRK"

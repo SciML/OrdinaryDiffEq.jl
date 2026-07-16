@@ -1,7 +1,7 @@
 name = "StochasticDiffEqLeaping"
 uuid = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.1"
+version = "2.0.2"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -23,11 +23,13 @@ StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
+SciMLTesting = "2.1"
 ADTypes = "1.22.0"
 DiffEqBase = "7"
 FiniteDiff = "2.27.0"
@@ -40,7 +42,7 @@ OrdinaryDiffEqNonlinearSolve = "2"
 Pkg = "1"
 RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.30.0"
+SciMLBase = "3.35.1"
 StaticArrays = "1.9.18"
 StochasticDiffEqCore = "2"
 Test = "<0.0.1, 1"
@@ -48,7 +50,7 @@ SafeTestsets = "0.1.0"
 julia = "1.10"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets"]
+test = ["Test", "Pkg", "SafeTestsets", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

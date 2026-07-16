@@ -1,4 +1,5 @@
 [deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
@@ -8,6 +9,7 @@ OrdinaryDiffEqAdamsBashforthMoulton = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
+OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 OrdinaryDiffEqExponentialRK = "e0540318-69ee-4070-8777-9e2de6de23de"
 OrdinaryDiffEqExtrapolation = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
@@ -18,6 +20,8 @@ OrdinaryDiffEqIMEXMultistep = "9f002381-b378-40b7-97a6-27a27c83f129"
 OrdinaryDiffEqLinear = "521117fe-8c41-49f8-b3b6-30780b3f0fb5"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
+OrdinaryDiffEqNewmark = "d204908a-63b9-11ef-18f5-cfec7123a93b"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 OrdinaryDiffEqNordsieck = "c9986a66-5c92-4813-8696-a7ec84c806c8"
 OrdinaryDiffEqPDIRK = "5dd0a6cf-3d4b-4314-aa06-06d4e299bc89"
 OrdinaryDiffEqPRK = "5b33eab2-c0f1-4480-b2c3-94bc1e80bda1"
@@ -33,6 +37,7 @@ OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 
 [sources]
+DiffEqBase = {path = "../lib/DiffEqBase"}
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
 ImplicitDiscreteSolve = {path = "../lib/ImplicitDiscreteSolve"}
 OrdinaryDiffEqAMF = {path = "../lib/OrdinaryDiffEqAMF"}
@@ -40,6 +45,7 @@ OrdinaryDiffEqAdamsBashforthMoulton = {path = "../lib/OrdinaryDiffEqAdamsBashfor
 OrdinaryDiffEqBDF = {path = "../lib/OrdinaryDiffEqBDF"}
 OrdinaryDiffEqCore = {path = "../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
+OrdinaryDiffEqDifferentiation = {path = "../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
 OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
@@ -50,6 +56,8 @@ OrdinaryDiffEqIMEXMultistep = {path = "../lib/OrdinaryDiffEqIMEXMultistep"}
 OrdinaryDiffEqLinear = {path = "../lib/OrdinaryDiffEqLinear"}
 OrdinaryDiffEqLowOrderRK = {path = "../lib/OrdinaryDiffEqLowOrderRK"}
 OrdinaryDiffEqLowStorageRK = {path = "../lib/OrdinaryDiffEqLowStorageRK"}
+OrdinaryDiffEqNewmark = {path = "../lib/OrdinaryDiffEqNewmark"}
+OrdinaryDiffEqNonlinearSolve = {path = "../lib/OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqNordsieck = {path = "../lib/OrdinaryDiffEqNordsieck"}
 OrdinaryDiffEqPDIRK = {path = "../lib/OrdinaryDiffEqPDIRK"}
 OrdinaryDiffEqPRK = {path = "../lib/OrdinaryDiffEqPRK"}
@@ -65,6 +73,7 @@ OrdinaryDiffEqTsit5 = {path = "../lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
 
 [compat]
+DiffEqBase = "7.6.1"
 DiffEqDevTools = "3, 4.0"
 Documenter = "0.27, 1"
 ImplicitDiscreteSolve = "2"
@@ -74,6 +83,7 @@ OrdinaryDiffEqAdamsBashforthMoulton = "2.0.0"
 OrdinaryDiffEqBDF = "2.0.0"
 OrdinaryDiffEqCore = "4.1"
 OrdinaryDiffEqDefault = "2.0.0"
+OrdinaryDiffEqDifferentiation = "3"
 OrdinaryDiffEqExplicitRK = "2.0.0"
 OrdinaryDiffEqExponentialRK = "2.0.0"
 OrdinaryDiffEqExtrapolation = "2.0.0"
@@ -84,6 +94,8 @@ OrdinaryDiffEqIMEXMultistep = "2.0.0"
 OrdinaryDiffEqLinear = "2.0.0"
 OrdinaryDiffEqLowOrderRK = "2.0.0"
 OrdinaryDiffEqLowStorageRK = "3.0.0"
+OrdinaryDiffEqNewmark = "2.0.0"
+OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqNordsieck = "2.0.0"
 OrdinaryDiffEqPDIRK = "2.0.0"
 OrdinaryDiffEqPRK = "2.0.0"

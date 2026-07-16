@@ -4,6 +4,10 @@ mutable struct StochasticCompositeCache{T, F} <: StochasticDiffEqCache
     current::Int
 end
 
+function alg_cache(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}, args...)
+    error("No cache constructor was loaded for $(typeof(alg)). Load the solver subpackage that defines this algorithm.")
+end
+
 function alg_cache(
         alg::algType,
         prob,

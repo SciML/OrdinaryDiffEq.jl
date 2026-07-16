@@ -287,6 +287,13 @@
 end
 
 # ODE iip entry point
+"""
+    ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, integrator) -> dt
+
+Compute an automatic initial step size for `prob` using the standard
+Hairer–Nørsett–Wanner heuristic (based on the norms of `f` and its derivative at
+`u0`), respecting `dtmax`, the tolerances, and the integration direction `tdir`.
+"""
 function ode_determine_initdt(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob::SciMLBase.AbstractODEProblem{uType, tType, true},

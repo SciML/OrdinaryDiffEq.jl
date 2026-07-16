@@ -178,8 +178,10 @@ get_fsalfirstlast(cache::MRIGARKImplicitCache, u) = (cache.fsalfirst, cache.k)
 
 _mrigark_impl_γ(tab) = tab.γ0[findfirst(!iszero, tab.γ0)]
 
+const MRIGARKImplicitAlg = Union{MRIGARKIRK21a, MRIGARKESDIRK34a}
+
 function alg_cache(
-        alg::MRIGARKIRK21a, u, rate_prototype,
+        alg::MRIGARKImplicitAlg, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
@@ -209,7 +211,7 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::MRIGARKIRK21a, u, rate_prototype,
+        alg::MRIGARKImplicitAlg, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose

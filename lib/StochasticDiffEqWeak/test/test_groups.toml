@@ -53,6 +53,10 @@ local_only = true
 versions = ["1"]
 local_only = true
 
+[WeakOOPRegression]
+versions = ["1"]
+local_only = true
+
 [WeakAdaptiveCPU]
 versions = ["1"]
 local_only = true

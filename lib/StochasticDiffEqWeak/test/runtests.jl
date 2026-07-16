@@ -1,11 +1,10 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
@@ -90,6 +89,12 @@ end
 if TEST_GROUP == "ALL" || TEST_GROUP == "IRI1WeakConvergence"
     @time @safetestset "IRI1 Weak Convergence Tests" begin
         include("weak_convergence/iri1_weak.jl")
+    end
+end
+
+if TEST_GROUP == "ALL" || TEST_GROUP == "WeakOOPRegression"
+    @time @safetestset "Out-of-place weak SDE regression" begin
+        include("weak_convergence/oop_weak_regression.jl")
     end
 end
 

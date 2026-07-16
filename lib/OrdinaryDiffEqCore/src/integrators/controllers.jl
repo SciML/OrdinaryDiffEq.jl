@@ -293,40 +293,119 @@ See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 end
 
 """
-    get_qmin(integrator)
-    get_qmax(integrator)
-    get_qmax_first_step(integrator)
-    get_gamma(integrator)
-    get_qsteady_min(integrator)
-    get_qsteady_max(integrator)
-    get_failfactor(integrator)
+    get_qmin(integrator) -> Real
 
-Read a step-size knob from the integrator's controller. Default
-dispatch reads `integrator.controller_cache.controller.basic.X` —
-i.e. it goes through the `CommonControllerOptions` embedded on every concrete
-controller (`IController`/`PIController`/`PIDController`/
-`PredictiveController`/`BDFController`/`JVODEController`).
+Read the lower step-size shrink bound from the integrator's active controller.
 
-`CompositeControllerCache` overrides each accessor to delegate to the
-currently active sub-cache (mirroring how `stepsize_controller!` and
-friends dispatch). The transitional `DummyControllerCache` also
-provides overrides for the BDF/Nordsieck cases that haven't been
-migrated yet.
+The default dispatch reads `integrator.controller_cache.controller.basic.qmin`
+through [`CommonControllerOptions`](@ref). `CompositeControllerCache` delegates
+to the currently active sub-cache.
 
-These accessors are what the integrator-level paths (e.g. the
-`isoutofdomain` rejection path for `qmin`,
-[`post_newton_controller!`](@ref) for `failfactor`) call instead of
-reading `integrator.opts.X` — the v7 controller refactor moved these
-knobs off `DEOptions` and onto the controller object.
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's lower step-size shrink bound.
 """
 function get_qmin end
 
-@doc (@doc get_qmin) function get_qmax end
-@doc (@doc get_qmin) function get_qmax_first_step end
-@doc (@doc get_qmin) function get_gamma end
-@doc (@doc get_qmin) function get_qsteady_min end
-@doc (@doc get_qmin) function get_qsteady_max end
-@doc (@doc get_qmin) function get_failfactor end
+"""
+    get_qmax(integrator) -> Real
+
+Read the upper step-size growth bound from the integrator's active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's upper step-size growth bound.
+"""
+function get_qmax end
+
+"""
+    get_qmax_first_step(integrator) -> Real
+
+Read the first-step upper growth bound from the integrator's active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's upper step-size growth bound for the first accepted
+    step attempt.
+"""
+function get_qmax_first_step end
+
+"""
+    get_gamma(integrator) -> Real
+
+Read the safety factor from the integrator's active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The controller's multiplicative safety factor.
+"""
+function get_gamma end
+
+"""
+    get_qsteady_min(integrator) -> Real
+
+Read the lower edge of the steady-step deadband from the active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The lower edge of the interval in which proposed `dt` changes are
+    suppressed.
+"""
+function get_qsteady_min end
+
+"""
+    get_qsteady_max(integrator) -> Real
+
+Read the upper edge of the steady-step deadband from the active controller.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The upper edge of the interval in which proposed `dt` changes are
+    suppressed.
+"""
+function get_qsteady_max end
+
+"""
+    get_failfactor(integrator) -> Real
+
+Read the implicit-solver failure shrink factor from the active controller.
+
+[`post_newton_controller!`](@ref) uses this value to reduce `integrator.dt`
+after a nonlinear solver failure.
+
+# Arguments
+
+- `integrator`: The active `DEIntegrator`.
+
+# Returns
+
+- `Real`: The factor used to shrink `dt` after a nonlinear solve failure.
+"""
+function get_failfactor end
 
 @inline get_qmin(integrator::SciMLBase.DEIntegrator) =
     get_qmin(integrator, integrator.controller_cache)
@@ -554,6 +633,13 @@ IController(alg; kwargs...) = IController(Float64, alg; kwargs...)
 IController(::Type{QT}, alg; kwargs...) where {QT} =
     IController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
+"""
+    IControllerCache <: AbstractControllerCache
+
+Per-solve cache for the integral ([`IController`](@ref)) step-size controller. It
+holds the resolved `controller`, the last rejected step size `dtreject`, and the
+scalar error estimate `EEst`.
+"""
 mutable struct IControllerCache{T, E, NLPType} <: AbstractControllerCache
     controller::IController{CommonControllerOptions{T, NLPType}}
     dtreject::T
@@ -678,6 +764,13 @@ function PIController(
     return PIController{typeof(basic), QT}(basic, QT(beta1), QT(beta2), QT(qoldinit))
 end
 
+"""
+    PIControllerCache <: AbstractControllerCache
+
+Per-solve cache for the PI ([`PIController`](@ref)) step-size controller. In
+addition to the resolved `controller` and the scalar `EEst`, it stores the cached
+`q11 = εₙ^β₁` factor and the previous error `errold` used by the PI update.
+"""
 mutable struct PIControllerCache{T, E, NLPType} <: AbstractControllerCache
     controller::PIController{CommonControllerOptions{T, NLPType}, T}
     # Cached εₙ₊₁^β₁
@@ -873,6 +966,12 @@ function Base.show(io::IO, controller::PIDController)
     )
 end
 
+"""
+    PIDControllerCache <: AbstractControllerCache
+
+Per-solve cache for the PID ([`PIDController`](@ref)) step-size controller, storing
+the resolved `controller`, its limiter, the error history, and the scalar `EEst`.
+"""
 mutable struct PIDControllerCache{T, Limiter, E, NLPType} <: AbstractControllerCache
     controller::PIDController{CommonControllerOptions{T, NLPType}, T, Limiter}
     err::Vector{T} # history of the error estimates
@@ -1040,6 +1139,13 @@ PredictiveController(alg; kwargs...) = PredictiveController(Float64, alg; kwargs
 PredictiveController(::Type{QT}, alg; kwargs...) where {QT} =
     PredictiveController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
+"""
+    PredictiveControllerCache <: AbstractControllerCache
+
+Per-solve cache for the predictive ([`PredictiveController`](@ref)) step-size
+controller (Gustafsson predictive control, common for implicit solvers), holding
+the resolved `controller` and the scalar `EEst`.
+"""
 mutable struct PredictiveControllerCache{T, E, NLPType} <: AbstractControllerCache
     controller::PredictiveController{CommonControllerOptions{T, NLPType}}
     dtacc::T
@@ -1144,6 +1250,13 @@ struct CompositeController{T} <: AbstractController
     controllers::T
 end
 
+"""
+    CompositeControllerCache <: AbstractControllerCache
+
+Per-solve cache for the [`CompositeController`](@ref) used by composite algorithms.
+Holds the tuple of sub-controller `caches` (one per constituent algorithm) and the
+scalar `EEst`; accessor calls delegate to the currently-active sub-cache.
+"""
 mutable struct CompositeControllerCache{T, E} <: AbstractControllerCache
     caches::T
     EEst::E

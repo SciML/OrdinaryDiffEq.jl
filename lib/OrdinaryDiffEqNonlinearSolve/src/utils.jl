@@ -7,6 +7,13 @@ get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cu
 # handle FIRK
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
 
+"""
+    nlsolvefail(nlsolver) -> Bool
+    nlsolvefail(status::NLStatus) -> Bool
+
+Return whether a nonlinear solve failed, i.e. whether the solver's
+[`NLStatus`](@ref) is non-positive (`SlowConvergence` or worse).
+"""
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
@@ -30,6 +37,13 @@ function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, va
     return (nlcache.firststage = val)
 end
 setfirststage!(::Any, val::Bool) = nothing
+"""
+    markfirststage!(nlsolver)
+
+Mark the nonlinear solver as being on the first implicit stage of the current
+step (sets the cache's `firststage` flag to `true`). Used so predictor/`W`-reuse
+logic can distinguish the first stage from later ones.
+"""
 markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
 
 getnfails(_) = 0
@@ -55,6 +69,12 @@ du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
 du_cache(::AbstractNLSolverCache) = nothing
 du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCache}) = (nlcache.k,)
 
+"""
+    du_alias_or_new(nlsolver, rate_prototype)
+
+Return a derivative buffer for the nonlinear solve: reuse the solver cache's
+existing `du` buffer when it has one, otherwise allocate `zero(rate_prototype)`.
+"""
 function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     _du_cache = du_cache(nlsolver)
     return if _du_cache === nothing
@@ -228,6 +248,30 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
 end
 
+# The reused ODE `W` as the operator handed to the inner NonlinearSolve as `jac_prototype`.
+# A matrix-free `WOperator` (its `J` an operator) is passed through and applied via `mul!`;
+# a concrete `WOperator`'s materialized form, or a raw matrix, is wrapped in a
+# `MatrixOperator` and materialized via `convert` for a factorization. Used identically at
+# build time and after a `resize!` so the inner `NonlinearFunction`'s concrete type is
+# preserved.
+function reuse_jac_prototype(W)
+    Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
+        W._concrete_form : W
+    return Wr isa AbstractSciMLOperator ? Wr : MatrixOperator(Wr)
+end
+
+"""
+    build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
+                   uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
+                   iip, verbose) -> AbstractNLSolver
+
+Construct the nonlinear solver object (an [`AbstractNLSolver`](@ref)) that an
+implicit algorithm `alg` uses to solve its stage equations. `γ` and `c` are the
+stage's diagonal coefficient and abscissa, `α` an optional scaling, `iip` the
+in-place flag; the nonlinear-solver algorithm defaults to `alg.nlsolve`. Allocates
+the appropriate cache (Newton `W`/factorization, functional/Anderson buffers, …)
+for the chosen `nlalg`.
+"""
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
@@ -268,7 +312,11 @@ function odenlf(ztmp, z, p)
 end
 
 function build_nlsolver(
-        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        alg,
+        nlalg::Union{
+            NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg,
+            HomotopyNonlinearSolveAlg,
+        },
         u, uprev, p, t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -297,7 +345,17 @@ function build_nlsolver(
     atmp .= false
     dz = zero(u)
 
-    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
+    if nlalg isa HomotopyNonlinearSolveAlg
+        isdae && throw(
+            ArgumentError(
+                "HomotopyNonlinearSolveAlg does not support DAE problems: the step-size " *
+                    "embedding degenerates the algebraic equations at λ = 0."
+            )
+        )
+        invγdt = inv(oneunit(t) * one(uTolType))
+        nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(homotopy_odenlf)
+        nlcache = HomotopyNonlinearSolveCache(ustep, tstep, k, invγdt, nlfunc, Ref(0))
+    elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
 
         # TODO: check if the solver is iterative
@@ -326,6 +384,10 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
+            # A matrix-free W (a `WOperator` wrapping a `JVPCache`, built for a Krylov
+            # linear solver) is reused as an operator: NonlinearSolve applies it via
+            # `mul!` rather than rebuilding a residual-derived AD JVP.
+            matrixfree_W = W isa WOperator && W.J isa AbstractSciMLOperator
             W_for_reuse = if W isa WOperator && W.J !== nothing &&
                     !(W.J isa AbstractSciMLOperator)
                 W._concrete_form
@@ -333,8 +395,12 @@ function build_nlsolver(
                 W
             end
             use_w_reuse = !isdae && f.nlstep_data === nothing &&
-                W_for_reuse isa AbstractMatrix &&
-                !(W_for_reuse isa AbstractSciMLOperator)
+                (
+                (
+                    W_for_reuse isa AbstractMatrix &&
+                        !(W_for_reuse isa AbstractSciMLOperator)
+                ) || matrixfree_W
+            )
             prob = if f.nlstep_data !== nothing
                 f.nlstep_data.nlprob
             else
@@ -345,13 +411,17 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    nlf_jac! = let W = W_for_reuse
-                        (J_out, z, p) -> (copyto!(J_out, W); J_out)
-                    end
+                    # Hand the reused W to the inner NonlinearFunction as an operator
+                    # `jac_prototype`. A matrix-free `WOperator` is applied via `mul!`
+                    # (Krylov); a concrete W is materialized via `convert` for a
+                    # factorization (NonlinearSolve copies it before an in-place `lu!`, so the
+                    # ODE-owned W is never destroyed). `jac` is auto-wired to
+                    # `update_coefficients!`; the ODE owns W's updates, so NonlinearSolve holds
+                    # W fixed across its Newton steps.
                     NonlinearProblem(
                         NonlinearFunction{true, SciMLBase.FullSpecialize}(
                             nlf;
-                            jac = nlf_jac!
+                            jac_prototype = reuse_jac_prototype(W)
                         ),
                         ztmp, nlp_params
                     )
@@ -458,7 +528,11 @@ function oopodenlf(z, p)
 end
 
 function build_nlsolver(
-        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        alg,
+        nlalg::Union{
+            NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg,
+            HomotopyNonlinearSolveAlg,
+        },
         u, uprev, p,
         t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
@@ -483,7 +557,17 @@ function build_nlsolver(
     # build cache of non-linear solver
     tstep = zero(t)
 
-    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
+    if nlalg isa HomotopyNonlinearSolveAlg
+        isdae && throw(
+            ArgumentError(
+                "HomotopyNonlinearSolveAlg does not support DAE problems: the step-size " *
+                    "embedding degenerates the algebraic equations at λ = 0."
+            )
+        )
+        invγdt = inv(oneunit(t) * one(uTolType))
+        nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(homotopy_oopodenlf)
+        nlcache = HomotopyNonlinearSolveCache(nothing, tstep, nothing, invγdt, nlfunc, Ref(0))
+    elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae
             uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t)

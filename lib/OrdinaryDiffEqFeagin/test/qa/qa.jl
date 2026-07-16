@@ -13,6 +13,7 @@ run_qa(
                 :CompiledFloats, :trivial_limiter!,
                 # DiffEqBase-owned internal macro, deliberately not `public`.
                 Symbol("@tight_loop_macros"),
-            )),
+            ),
+        ),
     ),
 )

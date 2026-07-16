@@ -1,10 +1,12 @@
 using Documenter, OrdinaryDiffEq, DiffEqDevTools
+using DiffEqBase
 using OrdinaryDiffEqCore
 # Bring controller API symbols into Main so unqualified @ref links in
 # docs/src/api/controllers.md resolve. These are not exported by
 # OrdinaryDiffEqCore but are documented public API.
 using OrdinaryDiffEqCore: default_controller, resolve_basic,
     get_EEst, set_EEst!, CompositeController
+using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
 using OrdinaryDiffEqAMF
 using OrdinaryDiffEqAdamsBashforthMoulton
@@ -24,6 +26,7 @@ using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqPDIRK
 using OrdinaryDiffEqPRK
 using OrdinaryDiffEqQPRK
+using OrdinaryDiffEqNewmark
 using OrdinaryDiffEqRKN
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqSDIRK
@@ -47,7 +50,9 @@ makedocs(
     doctest = false,
     modules = [
         OrdinaryDiffEq,
+        DiffEqBase,
         OrdinaryDiffEqCore,
+        OrdinaryDiffEqNonlinearSolve,
         OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEqBDF,
         OrdinaryDiffEqDefault,
@@ -65,6 +70,7 @@ makedocs(
         OrdinaryDiffEqPDIRK,
         OrdinaryDiffEqPRK,
         OrdinaryDiffEqQPRK,
+        OrdinaryDiffEqNewmark,
         OrdinaryDiffEqRKN,
         OrdinaryDiffEqRosenbrock,
         OrdinaryDiffEqSDIRK,

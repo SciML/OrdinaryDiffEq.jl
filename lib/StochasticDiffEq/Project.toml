@@ -1,6 +1,6 @@
 name = "StochasticDiffEq"
 uuid = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
-version = "7.1.1"
+version = "7.1.2"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
@@ -53,8 +53,10 @@ OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqNonlinearSolve = "2"
 RecursiveArrayTools = "4.2"
 Reexport = "1.2.2"
-SciMLBase = "3.30.0"
+SciMLBase = "3.35.1"
 SciMLLogging = "2"
+SciMLOperators = "1.23"
+StaticArrays = "1.9.18"
 StochasticDiffEqCore = "2"
 StochasticDiffEqHighOrder = "2"
 StochasticDiffEqIIF = "2"

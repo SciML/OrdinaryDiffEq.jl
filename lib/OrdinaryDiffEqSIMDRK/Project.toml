@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSIMDRK"
 uuid = "dc97f408-7a72-40e4-9b0d-228a53b292f8"
 authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Chris Elrod <elrodc@gmail.com>"]
-version = "2.0.2"
+version = "2.1.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -17,8 +17,10 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [compat]
+SciMLTesting = "2.1"
 Pkg = "1"
 Test = "<0.0.1, 1"
 DiffEqDevTools = "3"
@@ -33,7 +35,7 @@ SafeTestsets = "0.1.0"
 Reexport = "1.2.2"
 
 [targets]
-test = ["DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test", "Pkg"]
+test = ["DiffEqDevTools", "SafeTestsets", "StaticArrays", "Test", "Pkg", "SciMLTesting"]
 
 [sources.DiffEqDevTools]
 path = "../DiffEqDevTools"

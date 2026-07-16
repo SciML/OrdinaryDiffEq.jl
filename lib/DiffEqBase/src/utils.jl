@@ -3,6 +3,22 @@ macro tight_loop_macros(ex)
 end
 
 # TODO: would be good to have dtmin a function of dt
+"""
+    prob2dtmin(prob; use_end_time = true)
+    prob2dtmin(tspan, onet, use_end_time)
+
+Compute the default minimum timestep implied by a problem or time span.
+
+# Arguments
+- `prob`: Differential-equation problem with a `tspan` field.
+- `tspan`: Tuple-like time span.
+- `onet`: Unit step value used to preserve units for non-floating time types.
+- `use_end_time`: Whether the end of the time span contributes to the floating
+  point spacing calculation.
+
+# Returns
+- A nonnegative minimum timestep with units compatible with the time span.
+"""
 function prob2dtmin(prob; use_end_time = true)
     return prob2dtmin(prob.tspan, oneunit(eltype(prob.tspan)), use_end_time)
 end
@@ -22,6 +38,15 @@ prob2dtmin(tspan, ::Integer, ::Any) = 0
 # Multiplication is for putting the right units on the constant!
 prob2dtmin(tspan, onet, ::Any) = onet * 1 // Int64(2)^33 # roughly 10^10 but more likely to turn into a multiplication.
 
+"""
+    timedepentdtmin(integrator)
+    timedepentdtmin(t, dtmin)
+
+Return the time-dependent minimum timestep at the current time.
+
+Floating-point times are bounded below by machine spacing at `t`; other time
+types use `abs(dtmin)`.
+"""
 function timedepentdtmin(integrator::DEIntegrator)
     return timedepentdtmin(integrator.t, integrator.opts.dtmin)
 end
@@ -56,6 +81,14 @@ _rate_prototype(u, t::T, onet::T) where {T} = u
 # Tracker, etc.) intact. Extensions for Unitful, DynamicQuantities, and FlexUnits
 # override this to return the underlying numeric value.
 # Complementary to `value` (strips everything) and `unitfulvalue` (strips AD, keeps units).
+"""
+    stripunits(x)
+
+Return `x` with only its unit wrapper removed.
+
+The default method returns `x` unchanged. Unitful extension packages specialize
+this function while preserving AD and uncertainty wrappers.
+"""
 stripunits(x) = x
 
 # Nonlinear Solve functionality

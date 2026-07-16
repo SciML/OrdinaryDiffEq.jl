@@ -1,5 +1,6 @@
 using SciMLTesting, StochasticDiffEqCore, Test
 using JET
+import OrdinaryDiffEqCore
 
 # StochasticDiffEqCore extends OrdinaryDiffEqCore's solver loop and dispatches on
 # a handful of still-internal SciMLBase/DiffEqBase interface names. The base
@@ -43,8 +44,38 @@ const NONPUBLIC_IGNORE = (
     FORWARDDIFF_INTERNAL..., BASE_INTERNAL...,
 )
 
+const ODEC_STOCHASTIC_SURFACE = (
+    OrdinaryDiffEqCore.ODEIntegrator,
+    OrdinaryDiffEqCore.CompositeCache,
+    OrdinaryDiffEqCore.StochasticDiffEqAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqCompositeAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODEAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODEAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODECompositeAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqNewtonAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqCache,
+    OrdinaryDiffEqCore.StochasticDiffEqConstantCache,
+    OrdinaryDiffEqCore.StochasticDiffEqMutableCache,
+    OrdinaryDiffEqCore._initialize_dae!,
+    OrdinaryDiffEqCore.accept_noise!,
+    OrdinaryDiffEqCore.is_noise_saveable,
+    OrdinaryDiffEqCore.noise_curt,
+    OrdinaryDiffEqCore.reinit_noise!,
+    OrdinaryDiffEqCore.reject_noise!,
+    OrdinaryDiffEqCore.save_noise!,
+)
+
 run_qa(
     StochasticDiffEqCore;
+    aqua_kwargs = (; piracies = (; treat_as_own = ODEC_STOCHASTIC_SURFACE)),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (;

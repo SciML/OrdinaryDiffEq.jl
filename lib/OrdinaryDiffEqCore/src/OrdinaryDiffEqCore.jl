@@ -15,12 +15,15 @@ import Logging: @logmsg, LogLevel
 
 using MuladdMacro: @muladd
 
-using LinearAlgebra: opnorm, I, UniformScaling, diag, isdiag
+using LinearAlgebra: opnorm, I, UniformScaling, diag, isdiag, Diagonal
 
 import PrecompileTools
 
 
 import FastPower: fastpower
+
+import FindFirstFunctions: StrategyKind, KIND_BRACKET_GALLOP, KIND_INTERPOLATION_SEARCH,
+    searchsorted_first, searchsorted_last
 
 # Interfaces
 import SciMLBase: solve!, step!, isadaptive
@@ -95,6 +98,7 @@ import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
 # using MacroTools, Adapt
 import ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse, dense_ad
 import Accessors: @reset
+import ConstructionBase
 
 # SciMLStructures symbols imported but not directly used in OrdinaryDiffEqCore
 # using SciMLStructures: canonicalize, Tunable, isscimlstructure
@@ -110,7 +114,25 @@ using EnumX: @enumx
 
 import EnzymeCore
 
-# Per-stage Newton initial-guess ("predictor") strategies for implicit RK methods.
+"""
+    Predictor
+
+Enumeration of per-stage initial-guess strategies for implicit Runge-Kutta
+methods.
+
+# Values
+- `Predictor.Trivial`: Use a zero increment.
+- `Predictor.Linear`: Use a linear extrapolation from the first-same-as-last
+  derivative.
+- `Predictor.MaxOrder`: Use the full previous-step interpolation order.
+- `Predictor.VariableOrder`: Reduce interpolation order as the stage extrapolates
+  farther from the previous step.
+- `Predictor.CutoffOrder`: Use full interpolation order below a cutoff and order
+  one above it.
+- `Predictor.CopyPrev`: Reuse the previous stage derivative.
+- `Predictor.StageExtrap`: Extrapolate recent stage derivatives.
+- `Predictor.Tableau`: Use the tableau-derived stage guess.
+"""
 @enumx Predictor begin
     Trivial        # zero increment (z = 0)
     Linear         # linear extrapolation (z = dt * fsalfirst)
@@ -124,23 +146,114 @@ end
 export Predictor
 export set_discontinuity
 
+"""
+    CompiledFloats
+
+`Union{Float32, Float64}` — the floating-point element types for which the solvers
+provide fully precompiled specializations.
+"""
 const CompiledFloats = Union{Float32, Float64}
 import Preferences
 
+"""
+    AbstractNLSolverCache
+
+Abstract supertype of the mutable cache held by an [`AbstractNLSolver`](@ref),
+storing the W-matrix, factorizations, residual buffers, and per-iteration state.
+"""
 abstract type AbstractNLSolverCache end
+"""
+    AbstractNLSolverAlgorithm
+
+Abstract supertype of the algorithm objects that configure a nonlinear solver
+(e.g. `NLNewton`, `NLFunctional`, `NLAnderson`). Passed as the `nlsolve` keyword
+of an implicit algorithm and consumed internally by `OrdinaryDiffEqNonlinearSolve.build_nlsolver`.
+"""
 abstract type AbstractNLSolverAlgorithm end
+"""
+    AbstractNLSolver{algType, iip}
+
+Abstract supertype of the nonlinear solver object that implicit algorithms use to
+solve their implicit stage equations. Concrete subtypes (e.g. `NLSolver` in
+OrdinaryDiffEqNonlinearSolve) are built with `OrdinaryDiffEqNonlinearSolve.build_nlsolver`
+and driven with `OrdinaryDiffEqNonlinearSolve.nlsolve!`. The type parameters are
+the nonlinear-solver algorithm type and the in-place flag `iip`.
+"""
 abstract type AbstractNLSolver{algType, iip} end
 
+"""
+    set_new_W!(nlsolver, val::Bool) -> Bool
+
+Set the flag recording whether a fresh `W` was just computed for this step and
+return `val`. Read via `get_new_W!` to decide whether to reset the Newton
+convergence estimate.
+"""
 function set_new_W! end
+"""
+    set_W_γdt!(nlsolver, W_γdt)
+
+Store the `γΔt` value at which the current `W` was formed and return it. A change
+in `γΔt` beyond [`get_new_W_γdt_cutoff`](@ref) triggers a `W` refactorization.
+"""
 function set_W_γdt! end
+"""
+    get_W(nlsolver)
+
+Return the `W = M/(γΔt) - J` matrix (or its factorization) held by the nonlinear
+solver's cache.
+"""
 function get_W end
+"""
+    isfirstcall(nlsolver) -> Bool
+
+Return whether this is the first nonlinear solve of the current step (so a fresh
+`W`/initial guess is needed).
+"""
 function isfirstcall end
+"""
+    isfirststage(nlsolver) -> Bool
+
+Return whether the nonlinear solver is on the first implicit stage of a multi-stage
+method (used to decide predictor/W reuse).
+"""
 function isfirststage end
+"""
+    isJcurrent(nlsolver, integrator) -> Bool
+
+Return whether the Jacobian stored on the solver is current for the present
+`integrator` state (so it need not be recomputed).
+"""
 function isJcurrent end
+"""
+    get_new_W_γdt_cutoff(nlsolver)
+
+Return the relative-change threshold on `γΔt` above which the nonlinear solver
+recomputes/refactorizes `W` rather than reusing the existing one.
+"""
 function get_new_W_γdt_cutoff end
+"""
+    resize_J_W!(nlsolver, integrator, i)
+
+Resize the Jacobian and `W` matrices held by `nlsolver` to length `i` after the
+state size changes (e.g. from a `resize!` callback). No-op fallback.
+"""
 resize_J_W!(args...) = nothing
+"""
+    resize_nlsolver!(integrator, i)
+
+Resize the nonlinear solver's internal buffers to state length `i` after the state
+size changes. No-op fallback.
+"""
 resize_nlsolver!(args...) = nothing
 
+"""
+    MethodType
+
+`@enum` classifying how an implicit algorithm forms its `W = M/(γΔt) - J` matrix
+and stage system. One of [`DIRK`](@ref), [`COEFFICIENT_MULTISTEP`](@ref),
+[`NORDSIECK_MULTISTEP`](@ref), or [`GLM`](@ref). The nonlinear solver uses it to
+scale `γW` appropriately in `OrdinaryDiffEqNonlinearSolve.nlsolve!`.
+"""
 @enum MethodType begin
     DIRK
     COEFFICIENT_MULTISTEP
@@ -148,6 +261,43 @@ resize_nlsolver!(args...) = nothing
     GLM
 end
 
+"""
+    DIRK
+
+[`MethodType`](@ref) value for diagonally-implicit Runge–Kutta stage systems.
+"""
+DIRK
+
+"""
+    COEFFICIENT_MULTISTEP
+
+[`MethodType`](@ref) value for coefficient-form multistep (e.g. BDF) methods.
+"""
+COEFFICIENT_MULTISTEP
+
+"""
+    NORDSIECK_MULTISTEP
+
+[`MethodType`](@ref) value for Nordsieck-form multistep methods.
+"""
+NORDSIECK_MULTISTEP
+
+"""
+    GLM
+
+[`MethodType`](@ref) value for general linear methods.
+"""
+GLM
+
+"""
+    NLStatus
+
+`@enum` reporting the outcome/convergence quality of a nonlinear solve, ordered
+from best to worst: [`FastConvergence`](@ref) (`2`), [`Convergence`](@ref) (`1`),
+[`SlowConvergence`](@ref) (`0`), [`VerySlowConvergence`](@ref) (`-1`),
+[`Divergence`](@ref) (`-2`). A non-positive value means the solve failed
+(`OrdinaryDiffEqNonlinearSolve.nlsolvefail`).
+"""
 @enum NLStatus::Int8 begin
     FastConvergence = 2
     Convergence = 1
@@ -155,10 +305,68 @@ end
     VerySlowConvergence = -1
     Divergence = -2
 end
+
+"""
+    FastConvergence
+
+[`NLStatus`](@ref) value (`2`) indicating the nonlinear solve converged quickly.
+"""
+FastConvergence
+
+"""
+    Convergence
+
+[`NLStatus`](@ref) value (`1`) indicating the nonlinear solve converged.
+"""
+Convergence
+
+"""
+    SlowConvergence
+
+[`NLStatus`](@ref) value (`0`) indicating slow convergence. Also aliased as
+[`TryAgain`](@ref).
+"""
+SlowConvergence
+
+"""
+    VerySlowConvergence
+
+[`NLStatus`](@ref) value (`-1`) indicating very slow convergence; treated as a
+failure.
+"""
+VerySlowConvergence
+
+"""
+    Divergence
+
+[`NLStatus`](@ref) value (`-2`) indicating the nonlinear iteration diverged.
+"""
+Divergence
+
+"""
+    TryAgain
+
+Alias for [`SlowConvergence`](@ref); a sentinel [`NLStatus`](@ref) signalling that
+the step should be retried (e.g. with a fresh Jacobian).
+"""
 const TryAgain = SlowConvergence
 
+"""
+    isdiscretecache(cache) -> Bool
+
+Return whether `cache` belongs to a discrete-time / map-iteration algorithm rather
+than a continuous ODE solver (`false` by default). Companion to
+[`isdiscretealg`](@ref).
+"""
 isdiscretecache(cache) = false
 
+"""
+    unitfulvalue(x)
+
+Return the unit-stripped numeric value of `x` (delegates to
+`SciMLBase.unitfulvalue`). Used where a bare number is needed from a possibly
+`Unitful` quantity.
+"""
 unitfulvalue(x) = SciMLBase.unitfulvalue(x)
 
 # Declare the documented custom-stepsize-controller author interface `public` so downstream
@@ -213,62 +421,64 @@ include("precompilation_setup.jl")
 # codegen/perf internals (@fold/@threaded/@OnDemandTableauExtract/@swap!) and
 # precompile-workload helpers are deliberately NOT included here.
 @static if VERSION >= v"1.11.0-DEV.469"
-    eval(Expr(
-        :public,
-        :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
-        :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
-        :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
-        :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
-        :CompositeCache, :CompositeController, :CompositeControllerCache, :constvalue, :Convergence, :current_extrapolant,
-        :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
-        :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
-        :DummyControllerCache, :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
-        :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
-        :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
-        :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController, :IControllerCache,
-        :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
-        :is_composite_algorithm, :is_composite_cache, :is_constant_cache, :isdefaultalg, :isdtchangeable, :isfirstcall,
-        :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
-        :issplit, :isthreaded, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
-        :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
-        :OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqAdaptiveExponentialAlgorithm, :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm, :OrdinaryDiffEqAdaptivePartitionedAlgorithm,
-        :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqCache, :OrdinaryDiffEqCompositeAlgorithm, :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqExponentialAlgorithm, :OrdinaryDiffEqImplicitAlgorithm,
-        :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
-        :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
-        :PIControllerCache, :PIDController, :PIDControllerCache, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
-        :PredictiveControllerCache, :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
-        :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
-        :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
-        :StochasticDiffEqCache, :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqConstantCache, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
-        :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqMutableCache, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
-        :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :strip_cache, :sync_controllers!, :TryAgain,
-        :unwrap_alg, :uses_uprev, :VerySlowConvergence,
-        # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
-        # Error / sentinel / dispatch-helper types shared across solver sublibs.
-        :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,
-        # Interpolation kernels (companions to the public _ode_interpolant / ode_addsteps!).
-        :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
-        :current_extrapolant!, :interpolation_differential_vars,
-        # Algorithm-trait predicates extended/queried by solver sublibs.
-        :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
-        :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
-        :allows_null_u0, :isaposteriori, :isdiscretealg, :isdiscretecache, :isdp8,
-        :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,
-        :ssp_coefficient, :fac_default_gamma, :qsteady_max_default, :qsteady_min_default,
-        # Order / stepsize / autodiff-config accessors used across sublibs.
-        :get_current_alg_order, :get_current_qmax, :get_chunksize, :_get_fdtype,
-        :_get_fwd_chunksize, :_get_fwd_chunksize_int, :_fixup_ad, :diffdir,
-        :error_constant, :unitfulvalue,
-        # Integrator step / cache / initialization hooks.
-        :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
-        :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
-        :handle_callback_modifiers!, :resolve_basic,
-        # Noise hooks used by the SDE/RODE solver sublibs.
-        :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
-        :is_noise_saveable,
-        # Docstring builder used by solver sublibs.
-        :differentiation_rk_docstring,
-    ))
+    eval(
+        Expr(
+            :public,
+            :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractThreadingOption,
+            :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
+            :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :BaseThreads,
+            :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
+            :CompositeController, :constvalue, :Convergence, :current_extrapolant,
+            :current_interpolant, :DAEAlgorithm, :default_autoswitch, :default_controller, :default_linear_interpolation,
+            :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
+            :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
+            :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
+            :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
+            :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController,
+            :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
+            :is_composite_algorithm, :isdefaultalg, :isdtchangeable, :isfirstcall,
+            :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
+            :issplit, :isthreaded, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
+            :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
+            :OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqAdaptiveExponentialAlgorithm, :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm, :OrdinaryDiffEqAdaptivePartitionedAlgorithm,
+            :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqCache, :OrdinaryDiffEqCompositeAlgorithm, :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqExponentialAlgorithm, :OrdinaryDiffEqImplicitAlgorithm,
+            :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
+            :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
+            :PIDController, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
+            :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
+            :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
+            :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
+            :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+            :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
+            :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :sync_controllers!, :TryAgain,
+            :unwrap_alg, :uses_uprev, :VerySlowConvergence,
+            # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
+            # Error / sentinel / dispatch-helper types shared across solver sublibs.
+            :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,
+            # Interpolation kernels (companions to the public _ode_interpolant / ode_addsteps!).
+            :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
+            :current_extrapolant!, :interpolation_differential_vars,
+            # Algorithm-trait predicates extended/queried by solver sublibs.
+            :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
+            :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
+            :allows_null_u0, :isaposteriori, :isdiscretealg, :isdp8,
+            :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,
+            :ssp_coefficient, :fac_default_gamma, :qsteady_max_default, :qsteady_min_default,
+            # Order / stepsize / autodiff-config accessors used across sublibs.
+            :get_current_alg_order, :get_current_qmax, :get_chunksize, :_get_fdtype,
+            :_get_fwd_chunksize, :_get_fwd_chunksize_int, :_fixup_ad, :diffdir,
+            :error_constant, :unitfulvalue,
+            # Integrator step / cache / initialization hooks.
+            :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
+            :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
+            :set_discontinuity, :resolve_basic,
+            # Noise hooks used by the SDE/RODE solver sublibs.
+            :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
+            :is_noise_saveable,
+            # Docstring builder used by solver sublibs.
+            :differentiation_rk_docstring,
+        )
+    )
 end
 
 end

@@ -1,6 +1,9 @@
 using Test
 using SparseArrays
-using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs
+using OrdinaryDiffEqCore: find_algebraic_vars_eqs, get_differential_vars
+using LinearAlgebra
+using SciMLBase: ODEFunction
+using SciMLOperators: IdentityOperator, ScalarOperator
 
 @testset "Sparse Algebraic Detection Performance" begin
     # Test 1: Correctness - results should match between sparse and dense methods
@@ -88,4 +91,25 @@ using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs
         @test vars == [false, true]
         @test eqs == [false, true]
     end
+
+    # Test 4: Test Diagonal case
+    @testset "Test Diagonal cast" begin
+        M_diag = Diagonal([1.0, 0.0, 1.0, 1.0, 0.0])
+        vars, eqs = find_algebraic_vars_eqs(M_diag)
+        @test vars == [false, true, false, false, true]
+        @test eqs == [false, true, false, false, true]
+        # compare to dense
+        @test find_algebraic_vars_eqs(M_diag) == find_algebraic_vars_eqs(collect(M_diag))
+    end
+end
+
+@testset "get_differential_vars: operator mass matrix" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    u = ones(3)
+    ff_id = ODEFunction(f!, mass_matrix = IdentityOperator(3))
+    @test get_differential_vars(ff_id, u) === nothing
+    ff_scalar = ODEFunction(f!, mass_matrix = ScalarOperator(2.0))
+    @test get_differential_vars(ff_scalar, u) === nothing
+    ff_singular = ODEFunction(f!, mass_matrix = ScalarOperator(0.0))
+    @test get_differential_vars(ff_singular, u) == falses(3)
 end

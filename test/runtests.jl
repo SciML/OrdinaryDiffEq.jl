@@ -46,6 +46,7 @@ function interface_i()
     @time @safetestset "Inplace Interpolation Tests" include("InterfaceI/inplace_interpolation.jl")
     @time @safetestset "Algebraic Interpolation Tests" include("InterfaceI/algebraic_interpolation.jl")
     @time @safetestset "Interpolation and Cache Stripping Tests" include("InterfaceI/ode_strip_test.jl")
+    @time @safetestset "Public API Package Splits" include("InterfaceI/public_api_package_split.jl")
     @time @safetestset "Aliasing Tests" include("InterfaceI/aliasing_tests.jl")
     return @time @safetestset "Solution Memory Release" include("InterfaceI/solution_memory_tests.jl")
 end
@@ -136,28 +137,30 @@ function algconvergence_iii()
     return @time @safetestset "Split Methods Tests" include("AlgConvergence_III/split_methods_tests.jl")
 end
 
-# AD / Downstream / ODEInterfaceRegression activate their own per-group
-# Project.toml exactly as the previous `activate_*_env` helpers did:
-# `Pkg.activate(dir)`, `Pkg.develop(path = repo root)`, `Pkg.instantiate()`.
-# They are kept as thunks (not `env =` group specs) so the develop/instantiate
-# behavior — in particular NOT transitively developing the sub-env's `[sources]`
-# on Julia < 1.11 — stays byte-for-byte identical to before the refactor.
+# AD / Downstream / ODEInterfaceRegression: use SciMLTesting.activate_group_env
+# so Julia < 1.11 gets `develop_sources!` (the `[sources]` LTS backport already
+# shipped in SciMLTesting). Developing only the monorepo root left registry
+# Rosenbrock ≤2.3.2 paired with monorepo Differentiation 3.3.0 (unsatisfiable
+# after the General retrocap).
 function activate_downstream_env()
-    Pkg.activate("Downstream")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
+    return activate_group_env(
+        joinpath(@__DIR__, "Downstream");
+        parent = dirname(@__DIR__),
+    )
 end
 
 function activate_odeinterface_env()
-    Pkg.activate("ODEInterfaceRegression")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
+    return activate_group_env(
+        joinpath(@__DIR__, "ODEInterfaceRegression");
+        parent = dirname(@__DIR__),
+    )
 end
 
 function activate_ad_env()
-    Pkg.activate("AD")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    return Pkg.instantiate()
+    return activate_group_env(
+        joinpath(@__DIR__, "AD");
+        parent = dirname(@__DIR__),
+    )
 end
 
 function downstream_group()
@@ -169,8 +172,7 @@ function downstream_group()
 end
 
 function ad_group()
-    # AD tests - Enzyme/Zygote only on Julia <= 1.11 (see https://github.com/EnzymeAD/Enzyme.jl/issues/2699)
-    # Mooncake works on all Julia versions
+    # Enzyme and Mooncake run on both AD lanes; Zygote runs on Julia <= 1.11.
     is_APPVEYOR && return
     activate_ad_env()
     @time @safetestset "AD Tests" include("AD/ad_tests.jl")
@@ -206,8 +208,10 @@ function gpu_group()
     is_APPVEYOR && return
     activate_gpu_env()
     gpudir = joinpath(@__DIR__, "gpu")
-    for f in sort(filter(f -> endswith(f, ".jl"), readdir(gpudir)))
-        @time @eval @safetestset $("GPU: " * f) include($(joinpath(gpudir, f)))
+    @testset "GPU Tests" begin
+        for f in sort(filter(f -> endswith(f, ".jl"), readdir(gpudir)))
+            @time @eval @safetestset $("GPU: " * f) include($(joinpath(gpudir, f)))
+        end
     end
     return nothing
 end

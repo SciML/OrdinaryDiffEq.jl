@@ -1,7 +1,7 @@
 name = "StochasticDiffEqWeak"
 uuid = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.1.1"
+version = "2.1.2"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -26,12 +26,14 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
+SciMLTesting = "2.1"
 ADTypes = "1.22.0"
 DiffEqBase = "7"
 DiffEqNoiseProcess = "5.30.0"
@@ -44,7 +46,7 @@ OrdinaryDiffEqNonlinearSolve = "2"
 Pkg = "1"
 RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
-SciMLBase = "3.30.0"
+SciMLBase = "3.35.1"
 StaticArrays = "1.9.18"
 StochasticDiffEqCore = "2"
 DiffEqDevTools = "3"
@@ -55,7 +57,7 @@ SafeTestsets = "0.1.0"
 julia = "1.10"
 
 [targets]
-test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "Random", "Statistics"]
+test = ["Test", "Pkg", "SafeTestsets", "DiffEqDevTools", "Random", "Statistics", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

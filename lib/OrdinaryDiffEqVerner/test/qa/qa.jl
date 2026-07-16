@@ -15,7 +15,8 @@ run_qa(
                 :has_lazy_interpolation,
                 # OrdinaryDiffEqCore test-only helpers (deliberately kept non-public)
                 :lorenz, :lorenz_oop,
-            )),
+            ),
+        ),
         # Explicit imports of names not (yet) declared public by their owners.
         all_explicit_imports_are_public = (;
             ignore = (
@@ -29,6 +30,7 @@ run_qa(
                 Symbol("@def"), :_unwrap_val,
                 # TruncatedStacktraces internal macro
                 Symbol("@truncate_stacktrace"),
-            )),
+            ),
+        ),
     ),
 )

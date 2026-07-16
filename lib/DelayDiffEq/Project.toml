@@ -1,7 +1,7 @@
 name = "DelayDiffEq"
 uuid = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "6.0.6"
+version = "6.0.7"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -91,8 +91,8 @@ Random = "<0.0.1, 1"
 RecursiveArrayTools = "4.2.0"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
-SciMLBase = "3.30.0"
-SciMLTesting = "1.7"
+SciMLBase = "3.35.1"
+SciMLTesting = "2.1"
 SparseArrays = "<0.0.1, 1, 2"
 StochasticDiffEqCore = "2"
 StochasticDiffEqHighOrder = "2"

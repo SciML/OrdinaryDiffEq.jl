@@ -1,5 +1,6 @@
 using SafeTestsets
 using Pkg
+using SciMLTesting
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
@@ -19,14 +20,12 @@ function activate_modelingtoolkit_env()
 end
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "Newton Tests" include("newton_tests.jl")
-    @time @safetestset "Sparse Algebraic Detection" include("sparse_algebraic_detection_tests.jl")
     @time @safetestset "Sparse DAE Initialization" include("sparse_dae_initialization_tests.jl")
     @time @safetestset "Linear Nonlinear Solver Tests" include("linear_nonlinear_tests.jl")
     @time @safetestset "Linear Solver Tests" include("linear_solver_tests.jl")
@@ -37,6 +36,9 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "CheckInit Tests" include("checkinit_tests.jl")
     @time @safetestset "Nested AD over NonlinearSolveAlg" include("nested_ad_nlsolvealg_tests.jl")
     @time @safetestset "NonlinearSolveAlg Jacobian Reuse Tests" include("nsa_jacobian_reuse_tests.jl")
+    @time @safetestset "Homotopy Nonlinear Solver Tests" include("homotopy_nlsolve_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Sparse Jacobian Tests" include("nsa_sparse_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Matrix-Free WOperator Tests" include("nsa_matrixfree_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)

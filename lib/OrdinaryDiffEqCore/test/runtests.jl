@@ -1,4 +1,5 @@
 using Pkg
+using SciMLTesting
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
@@ -9,8 +10,7 @@ function activate_gpu_env()
 end
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run GPU tests
@@ -33,4 +33,7 @@ end
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
+    @time @safetestset "Algebraic Vars Detection" include("algebraic_vars_detection_tests.jl")
+    @time @safetestset "Discontinuity Detection" include("disco_tests.jl")
+    @time @safetestset "Interpolation Search Hint" include("interpolation_hint_tests.jl")
 end

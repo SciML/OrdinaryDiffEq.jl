@@ -8,9 +8,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [sources.OrdinaryDiffEqCore]
 path = "../../../OrdinaryDiffEqCore"
 
-[sources.OrdinaryDiffEqMultirate]
-path = "../../"
-
 [compat]
 AllocCheck = "0.2"
 OrdinaryDiffEqCore = "4"

@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSSPRK"
 uuid = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.1.1"
+version = "2.2.0"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -23,6 +23,7 @@ DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEqLowStorageRK = "b0944070-b475-4768-8dec-fb6eb410534d"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
@@ -30,6 +31,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
+SciMLTesting = "2.1"
 Pkg = "1"
 Test = "<0.0.1, 1"
 FastBroadcast = "1.3"
@@ -38,7 +40,7 @@ DiffEqDevTools = "3"
 StructArrays = "0.6, 0.7"
 MuladdMacro = "0.2.1"
 PrecompileTools = "1.2.1, 1.3"
-SciMLBase = "3.30.0"
+SciMLBase = "3.35.1"
 OrdinaryDiffEqCore = "4"
 Preferences = "1.5.0"
 StaticArrays = "1.9.18"
@@ -51,7 +53,7 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "StaticArrays", "StructArrays", "Test", "ODEProblemLibrary", "OrdinaryDiffEqLowStorageRK", "Pkg"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "StaticArrays", "StructArrays", "Test", "ODEProblemLibrary", "OrdinaryDiffEqLowStorageRK", "Pkg", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

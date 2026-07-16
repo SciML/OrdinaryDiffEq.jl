@@ -167,6 +167,13 @@ end
 
 initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
 
+"""
+    initial_η(nlsolver, integrator) -> η
+
+Return the initial convergence-rate estimate `η` for a fresh nonlinear solve.
+Functional/Anderson solvers reuse the previous `ηold`; the Newton solver method
+derives it from the tolerance. Consumed by [`nlsolve!`](@ref).
+"""
 function initial_η(nlsolver::NLSolver, integrator)
     return max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 end

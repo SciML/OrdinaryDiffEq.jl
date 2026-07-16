@@ -1,11 +1,10 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
 const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
@@ -20,6 +19,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test SROCKEM() isa StochasticDiffEqAlgorithm
         @test SKSROCK() isa StochasticDiffEqAlgorithm
         @test TangXiaoSROCK2() isa StochasticDiffEqAlgorithm
+    end
+
+    @time @safetestset "KomBurSROCK2 non-diagonal noise" begin
+        include("kombursrock2_nondiag_tests.jl")
     end
 end
 

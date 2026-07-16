@@ -808,7 +808,6 @@ function perform_step!(
     else
         u = expv_timestep(
             dt, A, integrator.u; m = min(alg.m, size(A, 1)), iop = alg.iop,
-            opnorm = integrator.opts.internalopnorm,
             tol = integrator.opts.reltol
         )
     end
@@ -856,7 +855,6 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
         expv_timestep!(
             tmp, dt, A, u; adaptive = true, caches = KsCache,
             m = min(alg.m, size(A, 1)), iop = alg.iop,
-            opnorm = integrator.opts.internalopnorm,
             tol = integrator.opts.reltol
         )
     end

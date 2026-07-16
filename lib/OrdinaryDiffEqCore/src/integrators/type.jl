@@ -1,3 +1,16 @@
+"""
+    DEOptions
+
+Mutable container holding the resolved common solver options for a running
+integrator, reachable as `integrator.opts`. Fields include the tolerances
+(`abstol`, `reltol`), the norm (`internalnorm`), step-size bounds
+(`dtmax`, `dtmin`, `failfactor`), the saving controls (`saveat`, `save_everystep`,
+`dense`, `save_start`, `save_end`, …), the `tstops`/`d_discontinuities` schedules
+and their caches, callback (`callback`), domain/stability checks
+(`isoutofdomain`, `unstable_check`), progress-logging options, and the
+`verbose`/`maxiters` settings. Mutating a field changes the solver behavior for
+subsequent steps.
+"""
 mutable struct DEOptions{
         absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,

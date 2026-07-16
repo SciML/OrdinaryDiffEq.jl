@@ -28,14 +28,17 @@ function prepare_alg(
 end
 
 alg_order(::MRIGARKIRK21a) = 2
-isfsal(::MRIGARKIRK21a) = false
+alg_order(::MRIGARKESDIRK34a) = 3
+isfsal(::Union{MRIGARKIRK21a, MRIGARKESDIRK34a}) = false
 
-function prepare_alg(alg::MRIGARKIRK21a, u0::AbstractArray, p, prob)
-    alg.m >= 1 || throw(ArgumentError("MRIGARKIRK21a: `m` must be ≥ 1"))
+function prepare_alg(
+        alg::Union{MRIGARKIRK21a, MRIGARKESDIRK34a}, u0::AbstractArray, p, prob
+    )
+    alg.m >= 1 || throw(ArgumentError("$(nameof(typeof(alg))): `m` must be ≥ 1"))
     return alg
 end
 
-nlsolve_f(f, ::MRIGARKIRK21a) = f isa SplitFunction ? f.f2 : f
+nlsolve_f(f, ::Union{MRIGARKIRK21a, MRIGARKESDIRK34a}) = f isa SplitFunction ? f.f2 : f
 
 alg_order(::MIS) = 2
 isfsal(::MIS) = false

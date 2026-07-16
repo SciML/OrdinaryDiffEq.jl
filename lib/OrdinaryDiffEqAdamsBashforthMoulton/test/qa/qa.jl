@@ -9,6 +9,7 @@ run_qa(
                 # OrdinaryDiffEqCore internal limiter hook (owner-internal;
                 # deliberately not declared public, like the @fold/@threaded codegen macros).
                 :trivial_limiter!,
-            )),
+            ),
+        ),
     ),
 )

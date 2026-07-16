@@ -154,6 +154,14 @@ include("integrator_accessors.jl")
 include("verbosity.jl")
 
 # This is only used for oop stiff solvers
+"""
+    default_factorize(A)
+
+Factorize matrix `A` for out-of-place stiff solver paths.
+
+The default implementation uses unchecked LU factorization and is intended as a
+solver-author extension hook.
+"""
 default_factorize(A) = lu(A; check = false)
 
 if isdefined(SciMLBase, :AbstractParameterizedFunction)
