@@ -160,4 +160,6 @@ Velds4
 GRK4T
 GRK4A
 Ros4LStab
+HybridExplicitImplicitRK
+Tsit5DA
 ```
