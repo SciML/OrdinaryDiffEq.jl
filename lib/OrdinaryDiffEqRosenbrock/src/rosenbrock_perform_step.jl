@@ -573,6 +573,107 @@ function initialize!(integrator, cache::RosenbrockCache)
     return
 end
 
+# Fused single-sweep accumulation kernels for the stage loops below. Each
+# replaces a sequence of per-coefficient broadcasts — one full memory sweep per
+# tableau entry — with a single sweep using muladd, which is where the
+# pre-consolidation hand-unrolled kernels got their speed. `Array` states (incl.
+# N-d arrays; linear indexing) take these; anything without fast scalar indexing
+# (GPU etc.) keeps the broadcast fallback.
+
+# out .= base .+ sum(A[stage, i] .* ks[i] for i in 1:(stage-1))
+@inline function _stage_accum!(
+        out::Array, base::Array, A::AbstractMatrix, ks::Vector{<:Array}, stage::Int
+    )
+    @inbounds for idx in eachindex(out)
+        acc = base[idx]
+        for i in 1:(stage - 1)
+            acc = muladd(A[stage, i], ks[i][idx], acc)
+        end
+        out[idx] = acc
+    end
+    return nothing
+end
+
+@inline function _stage_accum!(out, base, A, ks, stage::Int)
+    out === base || copyto!(out, base)
+    @inbounds for i in 1:(stage - 1)
+        @.. out += A[stage, i] * ks[i]
+    end
+    return nothing
+end
+
+# linsolve_tmp .= du .+ dtd_s .* dT .+ sum(dtC[stage, i] .* ks[i] for i in 1:(stage-1))
+@inline function _stage_rhs!(
+        linsolve_tmp::Array, du::Array, dtd_s, dT::Array, dtC::AbstractMatrix,
+        ks::Vector{<:Array}, stage::Int
+    )
+    @inbounds for idx in eachindex(linsolve_tmp)
+        acc = muladd(dtd_s, dT[idx], du[idx])
+        for i in 1:(stage - 1)
+            acc = muladd(dtC[stage, i], ks[i][idx], acc)
+        end
+        linsolve_tmp[idx] = acc
+    end
+    return nothing
+end
+
+@inline function _stage_rhs!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage::Int)
+    @.. linsolve_tmp = du + dtd_s * dT
+    @inbounds for i in 1:(stage - 1)
+        @.. linsolve_tmp += dtC[stage, i] * ks[i]
+    end
+    return nothing
+end
+
+# out .= (base or zero) .+ sum(w[i] .* ks[i] for nonzero w[i])
+@inline function _weighted_sum!(
+        out::Array, base::Union{Array, Nothing}, w::AbstractVector, ks::Vector{<:Array}
+    )
+    @inbounds for idx in eachindex(out)
+        acc = base === nothing ? zero(eltype(out)) : base[idx]
+        for i in eachindex(ks)
+            wi = w[i]
+            iszero(wi) || (acc = muladd(wi, ks[i][idx], acc))
+        end
+        out[idx] = acc
+    end
+    return nothing
+end
+
+@inline function _weighted_sum!(out, base, w, ks)
+    if base === nothing
+        fill!(out, zero(eltype(out)))
+    else
+        out === base || copyto!(out, base)
+    end
+    @inbounds for i in eachindex(ks)
+        if !iszero(w[i])
+            @.. out += w[i] * ks[i]
+        end
+    end
+    return nothing
+end
+
+# kj .= sum(H[j, i] .* ks[i] for i in eachindex(ks))
+@inline function _dense_row!(kj::Array, H::AbstractMatrix, j::Int, ks::Vector{<:Array})
+    @inbounds for idx in eachindex(kj)
+        acc = zero(eltype(kj))
+        for i in eachindex(ks)
+            acc = muladd(H[j, i], ks[i][idx], acc)
+        end
+        kj[idx] = acc
+    end
+    return nothing
+end
+
+@inline function _dense_row!(kj, H, j::Int, ks)
+    fill!(kj, zero(eltype(kj)))
+    @inbounds for i in eachindex(ks)
+        @.. kj += H[j, i] * ks[i]
+    end
+    return nothing
+end
+
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (;
@@ -591,8 +692,11 @@ end
     @. dtd = dt * d
     dtgamma = dt * gamma
 
-    f(cache.fsalfirst, uprev, p, t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if !repeat_step
+        # On a repeated step uprev and t are unchanged, so fsalfirst is still valid.
+        f(cache.fsalfirst, uprev, p, t)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
 
     new_W = calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step)
 
@@ -612,10 +716,7 @@ end
     integrator.stats.nsolve += 1
 
     for stage in 2:length(ks)
-        u .= uprev
-        for i in 1:(stage - 1)
-            @.. u += A[stage, i] * ks[i]
-        end
+        _stage_accum!(u, uprev, A, ks, stage)
 
         stage_limiter!(u, integrator, p, t + c[stage] * dt)
         # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
@@ -628,19 +729,14 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
 
-        du1 .= 0
         if mass_matrix === I
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
+            _stage_rhs!(linsolve_tmp, du, dtd[stage], dT, dtC, ks, stage)
         else
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
+            fill!(du1, zero(eltype(du1)))
+            _stage_accum!(du1, du1, dtC, ks, stage)
             mul!(_vec(du2), mass_matrix, _vec(du1))
-            du1 .= du2
+            @.. linsolve_tmp = du + dtd[stage] * dT + du2
         end
-        @.. linsolve_tmp = du + dtd[stage] * dT + du1
 
         linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
         @.. $(_vec(ks[stage])) = -linres.u
@@ -649,23 +745,13 @@ end
 
     # Solution update using explicit b weights
     tab = cache.tab
-    u .= uprev
-    for i in eachindex(ks)
-        if !iszero(tab.b[i])
-            @.. u += tab.b[i] * ks[i]
-        end
-    end
+    _weighted_sum!(u, uprev, tab.b, ks)
 
     step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive && tab.btilde !== nothing
         # Error estimate using explicit btilde weights
-        du .= 0
-        for i in eachindex(ks)
-            if !iszero(tab.btilde[i])
-                @.. du += tab.btilde[i] * ks[i]
-            end
-        end
+        _weighted_sum!(du, nothing, tab.btilde, ks)
         calculate_residuals!(
             atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -676,12 +762,7 @@ end
     if integrator.opts.calck
         if size(H, 1) > 0
             for j in eachindex(integrator.k)
-                integrator.k[j] .= 0
-            end
-            for i in eachindex(ks)
-                for j in eachindex(integrator.k)
-                    @.. integrator.k[j] += H[j, i] * ks[i]
-                end
+                _dense_row!(integrator.k[j], H, j, ks)
             end
             if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
                     (OrdinaryDiffEqCore.get_EEst(integrator) < 1.0)
