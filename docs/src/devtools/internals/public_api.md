@@ -204,6 +204,33 @@ OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
 ```
 
+## Jacobian / W-matrix / differentiation configuration
+
+Provided by `OrdinaryDiffEqDifferentiation`.
+
+```@docs
+OrdinaryDiffEqDifferentiation.build_J_W
+OrdinaryDiffEqDifferentiation.build_uf
+OrdinaryDiffEqDifferentiation.build_jac_config
+OrdinaryDiffEqDifferentiation.build_grad_config
+OrdinaryDiffEqDifferentiation.calc_J
+OrdinaryDiffEqDifferentiation.calc_J!
+OrdinaryDiffEqDifferentiation.calc_tderivative
+OrdinaryDiffEqDifferentiation.calc_tderivative!
+OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation
+OrdinaryDiffEqDifferentiation.calc_rosenbrock_differentiation!
+OrdinaryDiffEqDifferentiation.jacobian!
+OrdinaryDiffEqDifferentiation.jacobian2W!
+OrdinaryDiffEqDifferentiation.update_W!
+OrdinaryDiffEqDifferentiation.resize_jac_config!
+OrdinaryDiffEqDifferentiation.resize_grad_config!
+OrdinaryDiffEqDifferentiation.dolinsolve
+OrdinaryDiffEqDifferentiation.wrapprecs
+OrdinaryDiffEqDifferentiation.is_always_new
+OrdinaryDiffEqDifferentiation.islinearfunction
+OrdinaryDiffEqDifferentiation.issuccess_W
+```
+
 ## Integrator step, cache construction, and initialization hooks
 
 The cache hierarchy and `@cache` macro are developer API for solver packages

@@ -1,3 +1,13 @@
+"""
+    RodasTableau
+
+Coefficient tableau for Rosenbrock methods: the stage coefficient matrices `A`
+and `C`, the diagonal coefficient `gamma`, the abscissae `c`, the
+time-derivative coefficients `d`, the dense-output interpolation matrix `H`
+(empty for methods without stiff-aware interpolation), the solution weights
+`b`, and the embedded error-estimate weights `btilde` (a vector for adaptive
+methods, `nothing` for fixed-step methods).
+"""
 struct RodasTableau{T, T2, btType}
     A::Matrix{T}
     C::Matrix{T}
@@ -45,6 +55,13 @@ const RODAS5H = [
     -44.0988150021747 -5.755396159656812e-13 -181.26175034586677 56.99302194811676 183.21182741427398 -7.480257918273637 -5.792426076169686 -5.32503859794143
 ]
 
+"""
+    Rodas5Tableau(T, T2)
+
+The tableau for the 5th order stiffly accurate Rosenbrock method Rodas5.
+It is an 8-stage method with a built-in error estimate.
+Reference: Di Marzo, G. (1993). RODAS5(4) - Méthodes de Rosenbrock d'ordre 5(4) adaptées aux problèmes différentiels-algébriques.
+"""
 function Rodas5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.19
     s = size(RODAS5A, 1)
@@ -244,6 +261,12 @@ function Rodas4PWTableau(::Type{T}, ::Type{T2}) where {T, T2}
     return RodasTableau{T, T2, Vector{T}}(RODAS4PWA, RODAS4PWC, gamma, RODAS4PWc, RODAS4PWd, RODAS4PWH, b, btilde)
 end
 
+"""
+    ROS3PRodasTableau(T, T2)
+
+A 3rd order A-stable Rosenbrock method with 3 stages, designed for parabolic problems.
+Reference: Lang, J., & Verwer, J. (2001). ROS3P - An accurate third-order Rosenbrock solver designed for parabolic problems.
+"""
 function ROS3PRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 / 2 + sqrt(3) / 6)
     igamma = inv(gamma)
@@ -379,6 +402,12 @@ function Rodas3PRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    RosShamp4RodasTableau(T, T2)
+
+A 4th order A-stable Rosenbrock method by Shampine.
+Reference: Shampine, L. F. (1982). Implementation of Rosenbrock methods.
+"""
 function RosShamp4RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 // 2)
     A = zeros(T, 4, 4)
@@ -430,6 +459,11 @@ function Veldd4RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    Velds4RodasTableau(T, T2)
+
+A 4th order Rosenbrock method by van Veldhuizen.
+"""
 function Velds4RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 // 2)
     A = zeros(T, 4, 4)
@@ -481,6 +515,11 @@ function GRK4TRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    GRK4ARodasTableau(T, T2)
+
+A 4th order Generalized Runge-Kutta (Rosenbrock) method by Kaps and Rentrop.
+"""
 function GRK4ARodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.395)
     A = zeros(T, 4, 4)
@@ -551,6 +590,12 @@ function ROS2RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS2PRRodasTableau(T, T2)
+
+A 2nd order stiffly accurate Rosenbrock method with 3 stages and Rinf = 0.
+Reference: Rang, J. (2014). The Prothero and Robinson example: Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+"""
 function ROS2PRRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.228155493653962)
     A = zeros(T, 3, 3)
@@ -689,6 +734,12 @@ function ROS34PW1aRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
+"""
+    ROS34PW1bRodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005). New Rosenbrock-W methods of order 3 and 4 for stiff problems.
+"""
 function ROS34PW1bRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
