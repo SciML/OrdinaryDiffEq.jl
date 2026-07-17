@@ -28,7 +28,8 @@ end
 
 Anderson-accelerated fixed-point iteration for the implicit stage equations. Like
 [`NLFunctional`](@ref) but mixes in `max_history` previous residuals via a
-least-squares update to accelerate convergence.
+least-squares update to accelerate convergence (see [`anderson`](@ref) /
+[`anderson!`](@ref)).
 
 # Keyword arguments
 
