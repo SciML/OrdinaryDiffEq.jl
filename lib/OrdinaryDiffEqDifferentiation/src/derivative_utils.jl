@@ -1207,8 +1207,8 @@ function build_J_W(
             set_all_nzval!(J, one(eltype(J)))
             set_all_nzval!(W, one(eltype(W)))
         else
-            fill!(J, one(eltype(J)))
-            fill!(W, one(eltype(W)))
+            fill_stored!(J, one(eltype(J)))
+            fill_stored!(W, one(eltype(W)))
         end
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
