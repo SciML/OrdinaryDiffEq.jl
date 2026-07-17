@@ -575,26 +575,63 @@ end
 
 # Fused single-sweep accumulation kernels for the stage loops below. Each
 # replaces a sequence of per-coefficient broadcasts — one full memory sweep per
-# tableau entry — with a single sweep using muladd, which is where the
-# pre-consolidation hand-unrolled kernels got their speed. `Array` states (incl.
-# N-d arrays; linear indexing) take these; anything without fast scalar indexing
-# (GPU etc.) keeps the broadcast fallback.
+# tableau entry — with a single sweep, which is where the pre-consolidation
+# hand-unrolled kernels got their speed. The tableau coefficients are hoisted
+# into an NTuple through a bounded `@nif` ladder (single function, not
+# per-`Val{num_stages}` specializations, so no compile-time blowup) and the
+# inner term expansion unrolls statically so the sweep SIMD-vectorizes.
+# `Array` states take these; anything without fast scalar indexing (GPU etc.)
+# keeps the per-coefficient broadcast fallback. Beyond 8 fused terms (only
+# Rodas6P's late stages) the fallback path is used as well.
+
+@inline function _madd_terms(acc, idx, cs::Tuple, karrs::Tuple)
+    return _madd_terms(
+        muladd(first(cs), (@inbounds first(karrs)[idx]), acc),
+        idx, Base.tail(cs), Base.tail(karrs)
+    )
+end
+@inline _madd_terms(acc, idx, ::Tuple{}, ::Tuple{}) = acc
+
+@inline function _fused_lincomb!(
+        out::Array, base::Array, cs::NTuple{N, Any}, karrs::NTuple{N, Any}
+    ) where {N}
+    @inbounds @simd ivdep for idx in eachindex(out)
+        out[idx] = _madd_terms(base[idx], idx, cs, karrs)
+    end
+    return nothing
+end
+
+@inline function _fused_lincomb!(
+        out::Array, ::Nothing, cs::NTuple{N, Any}, karrs::NTuple{N, Any}
+    ) where {N}
+    z = zero(eltype(out))
+    @inbounds @simd ivdep for idx in eachindex(out)
+        out[idx] = _madd_terms(z, idx, cs, karrs)
+    end
+    return nothing
+end
 
 # out .= base .+ sum(A[stage, i] .* ks[i] for i in 1:(stage-1))
 @inline function _stage_accum!(
         out::Array, base::Array, A::AbstractMatrix, ks::Vector{<:Array}, stage::Int
     )
-    @inbounds for idx in eachindex(out)
-        acc = base[idx]
-        for i in 1:(stage - 1)
-            acc = muladd(A[stage, i], ks[i][idx], acc)
+    nks = stage - 1
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> A[stage, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(out, base, cs, ka)
         end
-        out[idx] = acc
+    else
+        _stage_accum_fallback!(out, base, A, ks, stage)
     end
     return nothing
 end
 
-@inline function _stage_accum!(out, base, A, ks, stage::Int)
+_stage_accum!(out, base, A, ks, stage::Int) =
+    _stage_accum_fallback!(out, base, A, ks, stage)
+
+@inline function _stage_accum_fallback!(out, base, A, ks, stage::Int)
     out === base || copyto!(out, base)
     @inbounds for i in 1:(stage - 1)
         @.. out += A[stage, i] * ks[i]
@@ -607,17 +644,27 @@ end
         linsolve_tmp::Array, du::Array, dtd_s, dT::Array, dtC::AbstractMatrix,
         ks::Vector{<:Array}, stage::Int
     )
-    @inbounds for idx in eachindex(linsolve_tmp)
-        acc = muladd(dtd_s, dT[idx], du[idx])
-        for i in 1:(stage - 1)
-            acc = muladd(dtC[stage, i], ks[i][idx], acc)
+    nks = stage - 1
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> dtC[stage, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            @inbounds @simd ivdep for idx in eachindex(linsolve_tmp)
+                linsolve_tmp[idx] = _madd_terms(
+                    muladd(dtd_s, dT[idx], du[idx]), idx, cs, ka
+                )
+            end
         end
-        linsolve_tmp[idx] = acc
+    else
+        _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage)
     end
     return nothing
 end
 
-@inline function _stage_rhs!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage::Int)
+_stage_rhs!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage::Int) =
+    _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage)
+
+@inline function _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage::Int)
     @.. linsolve_tmp = du + dtd_s * dT
     @inbounds for i in 1:(stage - 1)
         @.. linsolve_tmp += dtC[stage, i] * ks[i]
@@ -625,22 +672,28 @@ end
     return nothing
 end
 
-# out .= (base or zero) .+ sum(w[i] .* ks[i] for nonzero w[i])
+# out .= (base or zero) .+ sum(w[i] .* ks[i]); zero weights are multiplied
+# through on the fused path (exact zeros, ks are always finite solver output)
+# and skipped on the fallback path.
 @inline function _weighted_sum!(
         out::Array, base::Union{Array, Nothing}, w::AbstractVector, ks::Vector{<:Array}
     )
-    @inbounds for idx in eachindex(out)
-        acc = base === nothing ? zero(eltype(out)) : base[idx]
-        for i in eachindex(ks)
-            wi = w[i]
-            iszero(wi) || (acc = muladd(wi, ks[i][idx], acc))
+    nks = length(ks)
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> w[i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(out, base, cs, ka)
         end
-        out[idx] = acc
+    else
+        _weighted_sum_fallback!(out, base, w, ks)
     end
     return nothing
 end
 
-@inline function _weighted_sum!(out, base, w, ks)
+_weighted_sum!(out, base, w, ks) = _weighted_sum_fallback!(out, base, w, ks)
+
+@inline function _weighted_sum_fallback!(out, base, w, ks)
     if base === nothing
         fill!(out, zero(eltype(out)))
     else
@@ -656,17 +709,22 @@ end
 
 # kj .= sum(H[j, i] .* ks[i] for i in eachindex(ks))
 @inline function _dense_row!(kj::Array, H::AbstractMatrix, j::Int, ks::Vector{<:Array})
-    @inbounds for idx in eachindex(kj)
-        acc = zero(eltype(kj))
-        for i in eachindex(ks)
-            acc = muladd(H[j, i], ks[i][idx], acc)
+    nks = length(ks)
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> H[j, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(kj, nothing, cs, ka)
         end
-        kj[idx] = acc
+    else
+        _dense_row_fallback!(kj, H, j, ks)
     end
     return nothing
 end
 
-@inline function _dense_row!(kj, H, j::Int, ks)
+_dense_row!(kj, H, j::Int, ks) = _dense_row_fallback!(kj, H, j, ks)
+
+@inline function _dense_row_fallback!(kj, H, j::Int, ks)
     fill!(kj, zero(eltype(kj)))
     @inbounds for i in eachindex(ks)
         @.. kj += H[j, i] * ks[i]
