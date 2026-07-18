@@ -42,12 +42,15 @@ end
             # to the true error one order faster than the solution converges
             @test est_order ≈ p + 1 atol = 0.2
         end
+        sol_order, est_order = glee_convergence(prob, MM5GEE(), 2.0 .^ -(2:5))
+        @test sol_order ≈ 5 atol = 0.35
+        @test est_order > 5.5
     end
 end
 
 @testset "GLEE estimate tracks the true error" begin
     prob = ODEProblem(f_prince!, [0.0], prince_tspan)
-    for alg in (GLEE23(), GLEE24(), GLEE35())
+    for alg in (GLEE23(), GLEE24(), GLEE35(), MM5GEE())
         sol = solve(prob, alg; dt = 1 / 128, adaptive = false)
         err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
         est = global_error_estimate(sol)[end][1]
@@ -57,7 +60,7 @@ end
 
 @testset "GLEE adaptive stepping" begin
     prob = ODEProblem(f_prince!, [0.0], prince_tspan)
-    for alg in (GLEE24(), GLEE35())
+    for alg in (GLEE24(), MM5GEE())
         sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
         @test SciMLBase.successful_retcode(sol)
         err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
@@ -78,6 +81,14 @@ end
     @test global_error_estimate(sol)[end][1] / err ≈ 1 rtol = 0.1
 end
 
+@testset "MM5GEE function evaluation count" begin
+    prob = ODEProblem(f_prince!, [0.0], prince_tspan)
+    sol = solve(prob, MM5GEE(); dt = 1 / 32, adaptive = false)
+    # 9 f-evals per step (FSAL first stage + solution stage reuse) plus the
+    # initialization evaluation
+    @test sol.stats.nf == 9 * (length(sol.t) - 1) + 1
+end
+
 @testset "GLEE argument validation" begin
     prob = ODEProblem(f_prince!, [0.0], prince_tspan)
     partitioned_prob = ODEProblem(
@@ -96,4 +107,5 @@ end
     @test SciMLBase.alg_order(GLEE23()) == 2
     @test SciMLBase.alg_order(GLEE24()) == 2
     @test SciMLBase.alg_order(GLEE35()) == 3
+    @test SciMLBase.alg_order(MM5GEE()) == 5
 end

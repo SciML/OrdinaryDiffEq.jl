@@ -142,3 +142,48 @@ function GLEE35Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     Uyε, Byε = _yytilde_to_yeps(U, B, Z)
     return _glee_tableau(T, T2, A, Uyε, Byε, 0, 3)
 end
+
+"""
+    MM5GEETableau(T, T2)
+
+Tableau of the Makazaga-Murua global-error-estimating scheme built on the
+Dormand-Prince 5(4) method (Makazaga and Murua, BIT Numerical Mathematics 43,
+2003, Table 4.1), rewritten in the y-ε general linear form: stages 1-7 are the
+standard DOPRI5 stages (stage 7 the FSAL stage), stages 8-10 propagate the
+order-6 companion solution `ȳ = y + ε` through the mixing coefficients
+`U[i,2] = 1 - μ_i`, and the second output row is `b̄ - b`.
+"""
+function MM5GEETableau(::Type{T}, ::Type{T2}) where {T, T2}
+    R(num, den) = big(num) // big(den)
+    Z = R(0, 1)
+    b = [
+        R(35, 384), Z, R(500, 1113), R(125, 192), R(-2187, 6784), R(11, 84), Z,
+        Z, Z, Z,
+    ]
+    A = [
+        Z Z Z Z Z Z Z Z Z Z;
+        R(1, 5) Z Z Z Z Z Z Z Z Z;
+        R(3, 40) R(9, 40) Z Z Z Z Z Z Z Z;
+        R(44, 45) R(-56, 15) R(32, 9) Z Z Z Z Z Z Z;
+        R(19372, 6561) R(-25360, 2187) R(64448, 6561) R(-212, 729) Z Z Z Z Z Z;
+        R(9017, 3168) R(-355, 33) R(46732, 5247) R(49, 176) R(-5103, 18656) Z Z Z Z Z;
+        R(35, 384) Z R(500, 1113) R(125, 192) R(-2187, 6784) R(11, 84) Z Z Z Z;
+        R(26251126, 75292183) R(-30511879, 68834945) R(11490887, 155205387) R(700737845, 174891007) R(-5336, 941) R(5735, 1214) R(-2507, 898) Z Z Z;
+        R(-126276029, 115017392) R(153409379, 49308629) R(-107711621, 48274693) R(-675136779, 64711289) R(559269939, 36928210) R(-669687859, 52442748) R(193952703, 25738526) R(169021117, 130072535) Z Z;
+        R(89178409, 82486612) R(-275044175, 99029299) R(115406143, 68971088) R(140298385, 24130572) R(-344040692, 42025591) R(121333564, 17575013) R(-190380249, 47005513) R(-12078143, 165601005) R(56747365, 92317949) Z
+    ]
+    # U[:, 2] = 1 - μ_i: the weight of the companion register ȳ = y + ε in each
+    # stage; μ_i = 1 for the DOPRI5 stages 1-7.
+    one_minus_μ = [
+        Z, Z, Z, Z, Z, Z, Z,
+        R(140719960, 143529893), R(941, 896), R(92493035, 95359057),
+    ]
+    U = hcat(fill(R(1, 1), 10), one_minus_μ)
+    b̄ = [
+        R(56696811, 789712427), Z, R(-47431484, 279691831), R(72791025, 357831874),
+        R(17490085, 349505178), R(-66245097, 563676842), R(-24, 611),
+        R(40757463, 82884629), R(33159666, 111811519), R(42422453, 199331202),
+    ]
+    B = permutedims(hcat(b, b̄ .- b))
+    return _glee_tableau(T, T2, A, U, B, 0, 5)
+end

@@ -22,7 +22,7 @@ include("glee/caches.jl")
 include("glee/perform_step.jl")
 
 export GlobalAdjoint, GlobalRichardson, adjoint_error_estimate
-export GLEE23, GLEE24, GLEE35, global_error_estimate
+export GLEE23, GLEE24, GLEE35, MM5GEE, global_error_estimate
 
 @setup_workload begin
     # Simple test ODE: exponential decay du/dt = -u

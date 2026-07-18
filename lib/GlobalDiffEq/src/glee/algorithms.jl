@@ -58,9 +58,28 @@ $(_GLEE_DOCS_SHARED)
 """
 struct GLEE35 <: AbstractGLEEAlgorithm end
 
+"""
+    MM5GEE()
+
+Fifth-order Dormand-Prince-based scheme with cheap global error estimation
+(Makazaga and Murua, BIT Numerical Mathematics 43, 2003). Propagates the
+standard DOPRI5 solution together with an order-6 companion solution through
+three extra stages (9 function evaluations per step in total), whose
+difference is an asymptotically correct global error estimate. This is the
+recommended method of the Runge-Kutta triple family of Dormand, Duckers and
+Prince, as it is the coefficient-complete published scheme of that type.
+
+$(_GLEE_DOCS_SHARED)
+
+  - J. Makazaga and A. Murua, New Runge-Kutta based schemes for ODEs with
+    cheap global error estimation, BIT Numerical Mathematics 43 (2003).
+"""
+struct MM5GEE <: AbstractGLEEAlgorithm end
+
 SciMLBase.alg_order(::GLEE23) = 2
 SciMLBase.alg_order(::GLEE24) = 2
 SciMLBase.alg_order(::GLEE35) = 3
+SciMLBase.alg_order(::MM5GEE) = 5
 
 OrdinaryDiffEqCore.alg_adaptive_order(alg::AbstractGLEEAlgorithm) =
     SciMLBase.alg_order(alg)
@@ -68,3 +87,4 @@ OrdinaryDiffEqCore.alg_adaptive_order(alg::AbstractGLEEAlgorithm) =
 _glee_tableau_for(::GLEE23, ::Type{T}, ::Type{T2}) where {T, T2} = GLEE23Tableau(T, T2)
 _glee_tableau_for(::GLEE24, ::Type{T}, ::Type{T2}) where {T, T2} = GLEE24Tableau(T, T2)
 _glee_tableau_for(::GLEE35, ::Type{T}, ::Type{T2}) where {T, T2} = GLEE35Tableau(T, T2)
+_glee_tableau_for(::MM5GEE, ::Type{T}, ::Type{T2}) where {T, T2} = MM5GEETableau(T, T2)
