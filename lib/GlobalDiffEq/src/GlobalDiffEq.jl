@@ -18,6 +18,7 @@ include("richardson.jl")
 include("adjoint.jl")
 include("companion.jl")
 include("transport.jl")
+include("correction.jl")
 include("glee/tableaus.jl")
 include("glee/algorithms.jl")
 include("glee/solve.jl")
@@ -25,7 +26,7 @@ include("glee/caches.jl")
 include("glee/perform_step.jl")
 
 export GlobalAdjoint, GlobalRichardson, adjoint_error_estimate
-export GlobalErrorTransport
+export GlobalDefectCorrection, GlobalErrorTransport
 export GLEE23, GLEE24, GLEE35, MM5GEE, global_error_estimate
 
 @setup_workload begin

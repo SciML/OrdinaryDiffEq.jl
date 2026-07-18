@@ -10,7 +10,7 @@ const lv_tspan = (0.0, 10.0)
     prob = ODEProblem(lv!, [1.0, 1.0], lv_tspan)
     ref = solve(prob, Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
 
-    for alg in (GlobalErrorTransport(Tsit5()),)
+    for alg in (GlobalErrorTransport(Tsit5()), GlobalDefectCorrection(Tsit5()))
         for tol in (1.0e-4, 1.0e-6)
             est = global_error_estimate(prob, alg; abstol = tol, reltol = tol)
             sol = solve(prob, Tsit5(); abstol = tol, reltol = tol)
@@ -21,7 +21,7 @@ const lv_tspan = (0.0, 10.0)
 
     # out-of-place problems
     prob_oop = ODEProblem(lv, [1.0, 1.0], lv_tspan)
-    for alg in (GlobalErrorTransport(Tsit5()),)
+    for alg in (GlobalErrorTransport(Tsit5()), GlobalDefectCorrection(Tsit5()))
         est = global_error_estimate(prob_oop, alg; abstol = 1.0e-6, reltol = 1.0e-6)
         sol = solve(prob_oop, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6)
         true_err = norm(sol.u[end] - ref.u[end])
@@ -36,6 +36,7 @@ end
 
     for alg in (
             GlobalErrorTransport(Tsit5(); gtol),
+            GlobalDefectCorrection(Tsit5(); gtol),
         )
         sol = solve(prob, alg; abstol = 1.0e-3, reltol = 1.0e-3)
         @test SciMLBase.successful_retcode(sol)
@@ -46,7 +47,7 @@ end
 @testset "Companion estimator argument validation" begin
     prob = ODEProblem(lv!, [1.0, 1.0], lv_tspan)
 
-    for Alg in (GlobalErrorTransport,)
+    for Alg in (GlobalErrorTransport, GlobalDefectCorrection)
         alg = Alg(Tsit5())
         @test !SciMLBase.allows_arbitrary_number_types(alg)
         @test !SciMLBase.allowscomplex(alg)
