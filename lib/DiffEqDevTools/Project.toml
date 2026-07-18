@@ -75,8 +75,6 @@ OrdinaryDiffEqVerner = "2"
 ParameterizedFunctions = "5.24"
 RecipesBase = "1.3.4"
 RecursiveArrayTools = "4.2.0"
-# 2.8 is the first version with `RungeKuttaMethod`; without this floor the resolver
-# can downgrade RootedTrees below it to escape Latexify's OrderedCollections 1 bound.
 RootedTrees = "2.8"
 SDEProblemLibrary = "1"
 SciMLBase = "3.35.1"
