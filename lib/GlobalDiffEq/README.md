@@ -20,6 +20,9 @@ provides:
   - `GlobalErrorTransport`: global error estimation and `gtol`-based control by
     integrating the linearized error-transport equation driven by the
     dense-output defect (Shampine 1986, Berzins 1988, Lang-Verwer 2007).
+  - `GlobalDefectCorrection`: global error estimation and control by solving
+    for the correction (Zadunaisky 1976, Dormand-Duckers-Prince 1984/1989),
+    requiring no Jacobian.
   - `GlobalAdjoint`: adjoint-based a posteriori endpoint error estimation and
     control (Cao and Petzold 2004), available as a package extension when
     SciMLSensitivity and QuadGK are loaded.

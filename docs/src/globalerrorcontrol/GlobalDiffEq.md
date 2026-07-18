@@ -25,18 +25,19 @@ using GlobalDiffEq
   - To *control* the endpoint global error to a tolerance `gtol`, wrap any
     adaptive solver in [`GlobalErrorTransport`](@ref) (linearized
     error-transport equation, Jacobian-vector products via automatic
-    differentiation) or [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint
-    functionals; requires SciMLSensitivity and QuadGK to be loaded). Each
-    solves the problem, estimates the endpoint global error, and tightens the
-    local tolerances until the requested global tolerance is met.
+    differentiation), [`GlobalDefectCorrection`](@ref) (solving for the
+    correction; no Jacobian needed), or [`GlobalAdjoint`](@ref) (adjoint-based,
+    for endpoint functionals; requires SciMLSensitivity and QuadGK to be
+    loaded). Each solves the problem, estimates the endpoint global error, and
+    tightens the local tolerances until the requested global tolerance is met.
   - [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
     extrapolation over whole solves, interpreting `abstol` and `reltol` as
     global tolerances. It is the most robust and most expensive option.
 
-For example, solving while tracking the global error along the trajectory:
+For example, solving with a controlled endpoint global error of `1e-8`:
 
 ```julia
-using GlobalDiffEq
+using GlobalDiffEq, OrdinaryDiffEqTsit5
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
@@ -44,6 +45,12 @@ function lorenz!(du, u, p, t)
     du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
 prob = ODEProblem(lorenz!, [1.0; 0.0; 0.0], (0.0, 10.0))
+sol = solve(prob, GlobalDefectCorrection(Tsit5(); gtol = 1.0e-8))
+```
+
+or solving while tracking the global error along the trajectory:
+
+```julia
 sol = solve(prob, GLEE35(); abstol = 1.0e-8, reltol = 1.0e-8)
 errs = global_error_estimate(sol)  # global error estimate at every sol.t
 ```
@@ -63,6 +70,7 @@ global_error_estimate
 ```@docs
 GlobalRichardson
 GlobalErrorTransport
+GlobalDefectCorrection
 GlobalAdjoint
 adjoint_error_estimate
 ```
