@@ -277,6 +277,46 @@ end
     end
 end
 
+@testset "RKG non-autonomous convergence" begin
+    # Prothero-Robinson-type problem: uᵢ' = -λᵢ*(uᵢ - cos(t)) - sin(t), exact uᵢ = cos(t).
+    # Catches wrong or missing stage times, which autonomous problems cannot see.
+    lams = [1.0, 5.0, 20.0, 50.0]
+    f_na_oop(u, p, t) = @. -p * (u - cos(t)) - sin(t)
+    f_na_iip(du, u, p, t) = (@. du = -p * (u - cos(t)) - sin(t); nothing)
+    na_analytic(u0, p, t) = cos(t) .* ones(length(p))
+    prob_na_oop = ODEProblem(
+        ODEFunction{false}(f_na_oop, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    prob_na_iip = ODEProblem(
+        ODEFunction{true}(f_na_iip, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    # pure quadrature: u' = cos(t), any correct second-order method gets order 2
+    fq_oop(u, p, t) = fill(cos(t), 2)
+    fq_iip(du, u, p, t) = (du .= cos(t); nothing)
+    q_analytic(u0, p, t) = u0 .+ sin(t)
+    prob_q_oop = ODEProblem(
+        ODEFunction{false}(fq_oop, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+    prob_q_iip = ODEProblem(
+        ODEFunction{true}(fq_iip, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+
+    dts = 1 .// 2 .^ (10:-1:5)
+    testTol = 0.25
+    # fixed estimate exercises the classical dt -> 0 regime; the 1/dt-scaled
+    # estimate keeps the stage count constant (stiff regime)
+    fixed_eig = (integrator) -> integrator.eigen_est = 55.0
+    scaled_eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    for prob in [prob_na_oop, prob_na_iip, prob_q_oop, prob_q_iip],
+            eig in [fixed_eig, scaled_eig]
+
+        sim = test_convergence(dts, prob, RKG1(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+        sim = test_convergence(dts, prob, RKG2(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+    end
+end
+
 @testset "Number of function evaluations" begin
     x = Ref(0)
     u0 = [1.0, 1.0]
