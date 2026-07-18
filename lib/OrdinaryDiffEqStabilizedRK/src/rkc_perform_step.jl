@@ -110,51 +110,49 @@ end
     tᵢ₋₁ = t + dt * recf[ccache.start]
     tᵢ₋₂ = t + dt * recf[ccache.start]
     tᵢ₋₃ = t
-    @.. broadcast = false tmp = uprev
-    @.. broadcast = false uᵢ₋₁ = uprev + (dt * recf[ccache.start]) * fsalfirst
-    ccache.mdeg < 2 && (@.. broadcast = false u = uᵢ₋₁)
+    # The three stage buffers are rotated by rebinding instead of copied each
+    # stage; role bindings are resolved afterwards so the result lands in `u`.
+    uold, ucur, unext = tmp, uᵢ₋₁, u
+    @.. broadcast = false uold = uprev
+    @.. broadcast = false ucur = uprev + (dt * recf[ccache.start]) * fsalfirst
     # for the second to the ms[ccache.mdeg] th stages
     for i in 2:(ccache.mdeg)
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
-        f(k, uᵢ₋₁, p, tᵢ₋₁)
+        f(k, ucur, p, tᵢ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
-        @.. broadcast = false u = (dt * μ) * k - ν * uᵢ₋₁ - κ * tmp
+        @.. broadcast = false unext = (dt * μ) * k - ν * ucur - κ * uold
         if i < ccache.mdeg
-            @.. broadcast = false tmp = uᵢ₋₁
-            @.. broadcast = false uᵢ₋₁ = u
+            uold, ucur, unext = ucur, unext, uold
         end
         tᵢ₋₃ = tᵢ₋₂
         tᵢ₋₂ = tᵢ₋₁
     end # end if
+    # g0 holds the last stage value; g1 and e are scratch, with e ≢ u so the
+    # error estimate survives the final write into `u`
+    g0 = ccache.mdeg < 2 ? ucur : unext
+    x1, x2 = g0 === unext ? (ucur, uold) : (unext, uold)
+    g1, e = x2 === u ? (x2, x1) : (x1, x2)
     # two-stage finishing procedure.
     δt₁ = dt * fp1[ccache.deg_index]
     δt₂ = dt * fp2[ccache.deg_index]
-    f(k, u, p, tᵢ₋₁)
+    f(k, g0, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast = false uᵢ₋₁ = u + δt₁ * k
-    if integrator.opts.adaptive
-        @.. broadcast = false tmp = -δt₂ * k
-    else
-        @.. broadcast = false u = -δt₂ * k
-    end
+    @.. broadcast = false g1 = g0 + δt₁ * k
+    @.. broadcast = false e = -δt₂ * k
     c = value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
     tᵢ₋₁ += c
-    f(k, uᵢ₋₁, p, tᵢ₋₁)
+    f(k, g1, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    if integrator.opts.adaptive
-        @.. broadcast = false tmp += δt₂ * k
-        @.. broadcast = false u = uᵢ₋₁ + δt₁ * k + tmp
-    else
-        @.. broadcast = false u += uᵢ₋₁ + (δt₁ + δt₂) * k
-    end
+    @.. broadcast = false e += δt₂ * k
+    @.. broadcast = false u = g1 + δt₁ * k + e
 
     # error estimate
     if integrator.opts.adaptive
         calculate_residuals!(
-            atmp, tmp, uprev, u, integrator.opts.abstol,
+            atmp, e, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
@@ -334,26 +332,30 @@ end
     tᵢ₋₁ = t + dt * recf[ccache.start]
     tᵢ₋₂ = t + dt * recf[ccache.start]
     tᵢ₋₃ = t
-    @.. broadcast = false uᵢ₋₂ = uprev
-    @.. broadcast = false uᵢ₋₁ = uprev + (dt * recf[ccache.start]) * fsalfirst
-    if ccache.mdeg < 2
-        @.. broadcast = false u = uᵢ₋₁
-    end
+    # The three stage buffers are rotated by rebinding instead of copied each
+    # stage; role bindings are resolved afterwards so the result lands in `u`.
+    uold, ucur, unext = uᵢ₋₂, uᵢ₋₁, u
+    @.. broadcast = false uold = uprev
+    @.. broadcast = false ucur = uprev + (dt * recf[ccache.start]) * fsalfirst
     # for the second to the ccache.mdeg th stages
     for i in 2:(ccache.mdeg)
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
         ν = -1 - κ
-        f(k, uᵢ₋₁, p, tᵢ₋₁)
+        f(k, ucur, p, tᵢ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = (dt * μ) - ν * tᵢ₋₂ - κ * tᵢ₋₃
-        @.. broadcast = false u = (dt * μ) * k - ν * uᵢ₋₁ - κ * uᵢ₋₂
+        @.. broadcast = false unext = (dt * μ) * k - ν * ucur - κ * uold
         if i < ccache.mdeg
-            @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
-            @.. broadcast = false uᵢ₋₁ = u
+            uold, ucur, unext = ucur, unext, uold
         end
         tᵢ₋₃ = tᵢ₋₂
         tᵢ₋₂ = tᵢ₋₁
     end
+    # acc accumulates the solution in the buffer holding the last stage value;
+    # Y2/Y3 reuse the two free rotated buffers and Y4 the dedicated one
+    acc = ccache.mdeg < 2 ? ucur : unext
+    Y2, Y3 = acc === unext ? (ucur, uold) : (unext, uold)
+    Y4 = uᵢ₋₃
 
     # These constants correspond to the Buther Tableau coefficients of explicit RK methods
     a₂₁ = dt * fpa[ccache.deg_index][1]
@@ -375,12 +377,12 @@ end
 
     # 4-stage finishing procedure.
     # Stage-1
-    f(k, u, p, tᵢ₋₁)
+    f(k, acc, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast = false uᵢ₋₂ = u + a₃₁ * k
-    @.. broadcast = false uᵢ₋₃ = u + a₄₁ * k
-    @.. broadcast = false uᵢ₋₁ = u + a₂₁ * k
-    @.. broadcast = false u += B₁ * k
+    @.. broadcast = false Y3 = acc + a₃₁ * k
+    @.. broadcast = false Y4 = acc + a₄₁ * k
+    @.. broadcast = false Y2 = acc + a₂₁ * k
+    @.. broadcast = false acc += B₁ * k
     if integrator.opts.adaptive
         @.. broadcast = false tmp = B̂₁ * k
     end
@@ -389,11 +391,11 @@ end
     c₂ = a₂₁
     _c₂ = value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₂
-    f(k, uᵢ₋₁, p, tᵢ₋₂)
+    f(k, Y2, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast = false uᵢ₋₂ += a₃₂ * k
-    @.. broadcast = false uᵢ₋₃ += a₄₂ * k
-    @.. broadcast = false u += B₂ * k
+    @.. broadcast = false Y3 += a₃₂ * k
+    @.. broadcast = false Y4 += a₄₂ * k
+    @.. broadcast = false acc += B₂ * k
     if integrator.opts.adaptive
         @.. broadcast = false tmp += B̂₂ * k
     end
@@ -402,10 +404,10 @@ end
     c₃ = a₃₁ + a₃₂
     _c₃ = value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₃
-    f(k, uᵢ₋₂, p, tᵢ₋₂)
+    f(k, Y3, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast = false uᵢ₋₃ += a₄₃ * k
-    @.. broadcast = false u += B₃ * k
+    @.. broadcast = false Y4 += a₄₃ * k
+    @.. broadcast = false acc += B₃ * k
     if integrator.opts.adaptive
         @.. broadcast = false tmp += B̂₃ * k
     end
@@ -414,24 +416,27 @@ end
     c₄ = a₄₁ + a₄₂ + a₄₃
     _c₄ = value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₄
-    f(k, uᵢ₋₃, p, tᵢ₋₂)
+    f(k, Y4, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    @.. broadcast = false u += B₄ * k
+    @.. broadcast = false acc += B₄ * k
     if integrator.opts.adaptive
         @.. broadcast = false tmp += B̂₄ * k
     end
 
-    f(k, u, p, t + dt)
+    f(k, acc, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     #Error estimate (embedded method of order 3)
     if integrator.opts.adaptive
         @.. broadcast = false tmp += B̂₅ * k
         calculate_residuals!(
-            atmp, tmp, uprev, u, integrator.opts.abstol,
+            atmp, tmp, uprev, acc, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    if acc !== u
+        @.. broadcast = false u = acc
     end
     @.. broadcast = false integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
@@ -555,9 +560,12 @@ end
     b2 = b1
 
     # stage-1
-    @.. broadcast = false tmp = uprev
+    # The three stage buffers are rotated by rebinding instead of copied each
+    # stage; role bindings are resolved afterwards so the result lands in `u`.
+    uold, ucur, unext = tmp, gprev, u
+    @.. broadcast = false uold = uprev
     μs = w1 * b1
-    @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
+    @.. broadcast = false ucur = uprev + dt * μs * fsalfirst
     th2 = zero(T)
     th1 = μs
     z1 = w0
@@ -577,14 +585,13 @@ end
         μ = T(2) * w0 * b / b1
         ν = -b / b2
         μs = μ * w1 / w0
-        f(k, gprev, p, t + dt * th1)
+        f(k, ucur, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
+        @.. broadcast = false unext = μ * ucur + ν * uold + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (T(1) - νs)
         if (iter < mdeg)
-            @.. broadcast = false tmp = gprev
-            @.. broadcast = false gprev = u
+            uold, ucur, unext = ucur, unext, uold
             th2 = th1
             th1 = th
             b2 = b1
@@ -597,13 +604,20 @@ end
             d2z1 = d2z
         end
     end
-    f(integrator.fsallast, u, p, t + dt)
+    # mdeg >= 2 always holds, so the last stage value is in unext
+    e = ucur === u ? uold : ucur
+    f(integrator.fsallast, unext, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # error estimate
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = (T(4) * (uprev - u) + T(2) * dt * (fsalfirst + integrator.fsallast)) / T(5)
+        @.. broadcast = false e = (T(4) * (uprev - unext) + T(2) * dt * (fsalfirst + integrator.fsallast)) / T(5)
+    end
+    if unext !== u
+        @.. broadcast = false u = unext
+    end
+    if integrator.opts.adaptive
         calculate_residuals!(
-            atmp, tmp, uprev, u, integrator.opts.abstol,
+            atmp, e, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
