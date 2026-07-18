@@ -23,10 +23,12 @@ using GlobalDiffEq
     only a few extra stages per step over a plain method of the same order and
     require nothing beyond the right-hand side `f`.
   - To *control* the endpoint global error to a tolerance `gtol`, wrap any
-    adaptive solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint
-    functionals; requires SciMLSensitivity and QuadGK to be loaded). It solves
-    the problem, estimates the endpoint global error, and tightens the local
-    tolerances until the requested global tolerance is met.
+    adaptive solver in [`GlobalErrorTransport`](@ref) (linearized
+    error-transport equation, Jacobian-vector products via automatic
+    differentiation) or [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint
+    functionals; requires SciMLSensitivity and QuadGK to be loaded). Each
+    solves the problem, estimates the endpoint global error, and tightens the
+    local tolerances until the requested global tolerance is met.
   - [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
     extrapolation over whole solves, interpreting `abstol` and `reltol` as
     global tolerances. It is the most robust and most expensive option.
@@ -60,6 +62,7 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalErrorTransport
 GlobalAdjoint
 adjoint_error_estimate
 ```
