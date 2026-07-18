@@ -18,9 +18,10 @@ using GlobalDiffEq
 
   - For a solution accompanied by a running, asymptotically correct estimate of
     its global error at every time point, use the global-error-estimating
-    solvers [`GLEE24`](@ref) or [`GLEE35`](@ref) (Constantinescu 2016). These
-    cost only a few extra stages per step over a plain method of the same order
-    and require nothing beyond the right-hand side `f`.
+    solvers [`GLEE24`](@ref), [`GLEE35`](@ref) (Constantinescu 2016), or the
+    Dormand-Prince-based [`MM5GEE`](@ref) (Makazaga and Murua 2003). These cost
+    only a few extra stages per step over a plain method of the same order and
+    require nothing beyond the right-hand side `f`.
   - To *control* the endpoint global error to a tolerance `gtol`, wrap any
     adaptive solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint
     functionals; requires SciMLSensitivity and QuadGK to be loaded). It solves
@@ -51,6 +52,7 @@ errs = global_error_estimate(sol)  # global error estimate at every sol.t
 GLEE23
 GLEE24
 GLEE35
+MM5GEE
 global_error_estimate
 ```
 
