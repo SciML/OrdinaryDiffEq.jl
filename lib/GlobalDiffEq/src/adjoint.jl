@@ -312,6 +312,17 @@ function adjoint_error_estimate(
     )
 end
 
+"""
+    global_error_estimate(prob, alg::GlobalAdjoint; kwargs...)
+
+Alias for [`adjoint_error_estimate`](@ref).
+"""
+function global_error_estimate(
+        prob::SciMLBase.AbstractODEProblem, alg::GlobalAdjoint, args...; kwargs...
+    )
+    return adjoint_error_estimate(prob, alg, args...; kwargs...)
+end
+
 function SciMLBase.__solve(
         prob::SciMLBase.AbstractODEProblem, alg::GlobalAdjoint, args...;
         abstol = something(alg.gtol, 1.0e-6),

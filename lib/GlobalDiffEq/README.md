@@ -17,6 +17,9 @@ provides:
     together with an asymptotically correct estimate of its global error.
   - `MM5GEE`: the Makazaga-Murua (2003) Dormand-Prince-based order-5 scheme
     with a cheap built-in global error estimate.
+  - `GlobalErrorTransport`: global error estimation and `gtol`-based control by
+    integrating the linearized error-transport equation driven by the
+    dense-output defect (Shampine 1986, Berzins 1988, Lang-Verwer 2007).
   - `GlobalAdjoint`: adjoint-based a posteriori endpoint error estimation and
     control (Cao and Petzold 2004), available as a package extension when
     SciMLSensitivity and QuadGK are loaded.
