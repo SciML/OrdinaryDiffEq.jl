@@ -197,6 +197,46 @@ end
     end
 end
 
+@testset "In-place and out-of-place agree in the stiff high-stage regime" begin
+    # Stiff forced heat equation stepped at fixed dt with dt*λ ≈ 217 so that the
+    # stage counts are high enough to exercise the deep recurrences (e.g. SERK2's
+    # inner stage loop only runs once mdeg >= 20).
+    N = 32
+    dx = 1.0 / (N + 1)
+    xs = collect(range(dx, 1 - dx; length = N))
+    A = Tridiagonal(fill(1 / dx^2, N - 1), fill(-2 / dx^2, N), fill(1 / dx^2, N - 1))
+    lam = 4 / dx^2
+    g(t) = cos(10t)
+    f_oop(u, p, t) = A * u .+ g(t)
+    f_iip(du, u, p, t) = (mul!(du, A, u); du .+= g(t); nothing)
+    u0 = sin.(pi .* xs)
+    tspan = (0.0, 0.5)
+    prob_oop = ODEProblem{false}(f_oop, u0, tspan)
+    prob_iip = ODEProblem{true}(f_iip, u0, tspan)
+    eigen_est = (integrator) -> integrator.eigen_est = lam
+
+    algs = [
+        ROCK2(eigen_est = eigen_est), ROCK4(eigen_est = eigen_est),
+        RKC(eigen_est = eigen_est), RKMC2(eigen_est = eigen_est),
+        TSRKC2(eigen_est = eigen_est), TSRKC3(eigen_est = eigen_est),
+        SERK2(eigen_est = eigen_est), ESERK4(eigen_est = eigen_est),
+        ESERK5(eigen_est = eigen_est), RKL1(eigen_est = eigen_est),
+        RKL2(eigen_est = eigen_est), RKG1(eigen_est = eigen_est),
+        RKG2(eigen_est = eigen_est),
+    ]
+    @testset "$alg" for alg in algs
+        sol_oop = solve(
+            prob_oop, alg, adaptive = false, dt = 0.05,
+            save_everystep = false
+        )
+        sol_iip = solve(
+            prob_iip, alg, adaptive = false, dt = 0.05,
+            save_everystep = false
+        )
+        @test norm(sol_oop.u[end] .- sol_iip.u[end], Inf) < 1.0e-6
+    end
+end
+
 @testset "Number of function evaluations" begin
     x = Ref(0)
     u0 = [1.0, 1.0]
