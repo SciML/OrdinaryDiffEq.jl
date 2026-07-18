@@ -36,6 +36,7 @@ using OrdinaryDiffEqStabilizedRK
 using OrdinaryDiffEqSymplecticRK
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqVerner
+using GlobalDiffEq
 
 cp(joinpath(@__DIR__, "Manifest.toml"), joinpath(@__DIR__, "src", "assets", "Manifest.toml"), force = true)
 cp(joinpath(@__DIR__, "Project.toml"), joinpath(@__DIR__, "src", "assets", "Project.toml"), force = true)
@@ -83,6 +84,7 @@ makedocs(
         OrdinaryDiffEqAMF,
         ImplicitDiscreteSolve,
         DiffEqDevTools,
+        GlobalDiffEq,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],
     warnonly = [:docs_block, :missing_docs, :eval_block],

@@ -1,0 +1,41 @@
+name = "GlobalDiffEq"
+uuid = "1d72d19b-84cc-4cb7-a099-7cbdb9ccc67c"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com> and contributors"]
+version = "1.2.1"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Richardson = "708f8203-808e-40c0-ba2d-98a6953ed40d"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+
+[compat]
+DiffEqBase = "7"
+LinearAlgebra = "1"
+OrdinaryDiffEqSSPRK = "2"
+OrdinaryDiffEqTsit5 = "2"
+PrecompileTools = "1.1"
+Reexport = "0.2, 1.0"
+Richardson = "1.2"
+SafeTestsets = "0.0.1, 0.1"
+SciMLBase = "3"
+SciMLTesting = "2.1"
+Test = "1"
+julia = "1.10"
+
+[extras]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["LinearAlgebra", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqTsit5", "SafeTestsets", "SciMLTesting", "Test"]

@@ -2,6 +2,7 @@
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GlobalDiffEq = "1d72d19b-84cc-4cb7-a099-7cbdb9ccc67c"
 ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqAMF = "08082164-f6a1-4363-b3df-3aa6fcf571ad"
@@ -39,6 +40,7 @@ OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 [sources]
 DiffEqBase = {path = "../lib/DiffEqBase"}
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
+GlobalDiffEq = {path = "../lib/GlobalDiffEq"}
 ImplicitDiscreteSolve = {path = "../lib/ImplicitDiscreteSolve"}
 OrdinaryDiffEqAMF = {path = "../lib/OrdinaryDiffEqAMF"}
 OrdinaryDiffEqAdamsBashforthMoulton = {path = "../lib/OrdinaryDiffEqAdamsBashforthMoulton"}
@@ -76,6 +78,7 @@ OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
 DiffEqBase = "7.6.1"
 DiffEqDevTools = "3, 4.0"
 Documenter = "0.27, 1"
+GlobalDiffEq = "1.2.1"
 ImplicitDiscreteSolve = "2"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqAMF = "2"
