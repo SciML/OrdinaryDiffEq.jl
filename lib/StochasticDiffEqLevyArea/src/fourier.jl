@@ -1,9 +1,27 @@
+"""
+    Fourier()
+
+Basic Fourier-series approximation of Lévy areas. Its truncation error has
+convergence order ``1/2`` in the number of retained Fourier terms.
+"""
 struct Fourier <: AbstractIteratedIntegralAlgorithm end
 
 convorder(::Fourier) = 1 // 2
 errcoeff(m, h, ::Fourier, ::MaxLp{2}) = h * √3 / (√2 * π)
 norv(m, n, ::Fourier) = 2 * m * n
 
+"""
+    levyarea(W, n, alg; rng=default_rng())
+    levyarea(W, n, alg, coeffs)
+
+Approximate the antisymmetric Lévy-area matrix for the normalized Wiener
+increment `W` using `n` Fourier terms and algorithm `alg`.
+
+The keyword form draws the required random coefficients from `rng`. Passing
+pre-generated [`LevyAreaCoefficients`](@ref) makes the computation
+deterministic. Use [`iterated_integrals`](@ref) to obtain the complete matrix
+of iterated integrals over a time step of length `h`.
+"""
 function levyarea(
         W::AbstractVector{T}, n::Integer, alg::Fourier;
         rng::AbstractRNG = default_rng()

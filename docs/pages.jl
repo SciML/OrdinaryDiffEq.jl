@@ -47,6 +47,9 @@ pages = [
         "massmatrixdae/Rosenbrock.md",
         "massmatrixdae/BDF.md",
     ],
+    "Stochastic Utilities" => [
+        "stochastic/LevyArea.md",
+    ],
     "Fully Implicit DAE Solvers" => [
         "fullyimplicitdae/BDF.md",
     ],

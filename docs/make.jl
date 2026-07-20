@@ -8,6 +8,7 @@ using OrdinaryDiffEqCore: default_controller, resolve_basic,
     get_EEst, set_EEst!, CompositeController
 using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
+using StochasticDiffEqLevyArea
 using OrdinaryDiffEqAMF
 using OrdinaryDiffEqAdamsBashforthMoulton
 using OrdinaryDiffEqBDF
@@ -82,6 +83,7 @@ makedocs(
         OrdinaryDiffEqVerner,
         OrdinaryDiffEqAMF,
         ImplicitDiscreteSolve,
+        StochasticDiffEqLevyArea,
         DiffEqDevTools,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],
