@@ -188,8 +188,10 @@ end
             !(prob.f isa DynamicalODEFunction) ||
                 any(mm != I for mm in prob.f.mass_matrix)
         )
-        ftmp = (init_tmp_cache !== nothing && init_tmp_cache.rate_tmp2 isa AbstractArray &&
-            eltype(init_tmp_cache.rate_tmp2) === eltype(f₀)) ?
+        ftmp = (
+                init_tmp_cache !== nothing && init_tmp_cache.rate_tmp2 isa AbstractArray &&
+                eltype(init_tmp_cache.rate_tmp2) === eltype(f₀)
+            ) ?
             fill!(init_tmp_cache.rate_tmp2, zero(eltype(f₀))) : zero(f₀)
         try
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
@@ -285,8 +287,10 @@ end
     end
     # `f₁` reuses the primary rate slot when present and type-compatible (this is
     # the buffer `preallocate_initdt_buffers` exists to provide); else `zero(f₀)`.
-    f₁ = (init_tmp_cache !== nothing && init_tmp_cache.rate_tmp isa AbstractArray &&
-        eltype(init_tmp_cache.rate_tmp) === eltype(f₀)) ?
+    f₁ = (
+            init_tmp_cache !== nothing && init_tmp_cache.rate_tmp isa AbstractArray &&
+            eltype(init_tmp_cache.rate_tmp) === eltype(f₀)
+        ) ?
         fill!(init_tmp_cache.rate_tmp, zero(eltype(f₀))) : zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 

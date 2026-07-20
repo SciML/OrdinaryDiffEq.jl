@@ -51,8 +51,10 @@ function alg_cache(
     # allocated only when the user opts in via `preallocate_initdt_buffers`
     # (default false); otherwise those slots are `nothing` and `initdt`
     # allocates its rate temporaries at call time.
-    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
-        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     return Tsit5Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread

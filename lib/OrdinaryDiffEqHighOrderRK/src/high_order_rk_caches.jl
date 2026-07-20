@@ -49,8 +49,10 @@ function alg_cache(
     # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
     # All stage k's feed the FSAL interpolant, so there are no safe rate donors:
     # the initdt rate buffers are allocated only on user opt-in.
-    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
-        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     k = zero(rate_prototype)
     return TanYam7Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp_cache, k,
@@ -133,8 +135,10 @@ function alg_cache(
     # inline fields were. All k's and the dense_tmp buffers feed the interpolant,
     # so no safe rate donors exist: the initdt rate buffers are allocated only on
     # user opt-in.
-    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
-        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     k13 = zero(rate_prototype)
     k14 = zero(rate_prototype)
     k15 = zero(rate_prototype)
@@ -222,8 +226,10 @@ function alg_cache(
     # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
     # All stage k's feed the FSAL interpolant, so there are no safe rate donors:
     # the initdt rate buffers are allocated only on user opt-in.
-    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
-        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     return TsitPap8Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13,
         tmp_cache, k, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
@@ -295,8 +301,10 @@ function alg_cache(
     # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
     # All stage k's feed the FSAL interpolant, so there are no safe rate donors:
     # the initdt rate buffers are allocated only on user opt-in.
-    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
-        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     return PFRK87Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13,
         tmp_cache, k, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread

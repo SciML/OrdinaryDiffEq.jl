@@ -65,8 +65,10 @@ function alg_cache(
     # only when the user opts in via `preallocate_initdt_buffers` (default
     # false); otherwise those slots are `nothing` and `initdt` allocates its
     # rate temporaries at call time.
-    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits,
-        alg.preallocate_initdt_buffers ? Val(true) : Val(false))
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     return QPRK98Cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
         k16, k, tmp_cache, alg.stage_limiter!, alg.step_limiter!,

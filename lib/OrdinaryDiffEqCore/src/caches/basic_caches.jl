@@ -127,7 +127,8 @@ type-stable:
 
 A skipped slot holds the `nothing` singleton and allocates no array.
 """
-function build_tmp_cache(u, rate_prototype, ::Type{uEltypeNoUnits},
+function build_tmp_cache(
+        u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{need_rates} = Val(false), ::Val{need_weight} = Val(false)
     ) where {uEltypeNoUnits, need_rates, need_weight}
     tmp = zero(u)

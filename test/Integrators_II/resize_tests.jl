@@ -247,7 +247,7 @@ end
 # `deleteat!(nothing, idxs)` / `addat!(nothing, idxs)`, which has no method and
 # threw a MethodError for any migrated cache.
 @testset "deleteat!/addat! skip nothing TmpCache slots ($(nameof(typeof(alg))))" for alg in
-                                                                                      (
+    (
         Tsit5(), BS3(),
     )
     fda(du, u, p, t) = du .= u
