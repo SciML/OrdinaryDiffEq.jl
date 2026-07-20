@@ -182,3 +182,31 @@ solve(
 
 @test length(interp_lazy) == length(interp_nolazy)
 @test maximum(abs.(interp_lazy .- interp_nolazy)) < 1.0e-10
+
+### Interpolation inside a step truncated by a ContinuousCallback
+# The extra interpolation stages of the non-lazy interpolants live inside
+# kshortsize, so a shortened step must explicitly force them to be recomputed
+# rather than reuse the ones built for the original dt.
+println("Interpolation in a callback-truncated step")
+
+exp_prob = ODEProblem((du, u, p, t) -> (du[1] = u[1]; nothing), [1.0], (0.0, 5.0))
+root_cb = ContinuousCallback((u, t, integ) -> u[1] - 50.0, integ -> nothing)
+
+function worst_interior_error(sol, lo, hi)
+    return maximum(
+        abs(sol(t)[1] - exp(t)) / exp(t)
+            for t in range(lo, hi, length = 21)[2:(end - 1)]
+    )
+end
+
+for alg in (
+        Vern6(lazy = false), Vern7(lazy = false),
+        Vern8(lazy = false), Vern9(lazy = false),
+        Vern6(), Vern7(), Vern8(), Vern9(),
+    )
+    sol = solve(
+        exp_prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, callback = root_cb
+    )
+    i = findfirst(≈(log(50.0)), sol.t)
+    @test worst_interior_error(sol, sol.t[i - 1], sol.t[i]) < 1.0e-8
+end
