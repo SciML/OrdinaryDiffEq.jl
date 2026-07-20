@@ -35,6 +35,8 @@ OrdinaryDiffEqStabilizedRK = "358294b1-0aab-51c3-aafe-ad5ab194a2ad"
 OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
 
 [sources]
 DiffEqBase = {path = "../lib/DiffEqBase"}
@@ -109,3 +111,5 @@ OrdinaryDiffEqStabilizedRK = "2.0.0"
 OrdinaryDiffEqSymplecticRK = "2.0.0"
 OrdinaryDiffEqTsit5 = "2.0.0"
 OrdinaryDiffEqVerner = "2.0.0"
+SciMLBase = "3.35.1"
+SciMLLogging = "2.0.0"
