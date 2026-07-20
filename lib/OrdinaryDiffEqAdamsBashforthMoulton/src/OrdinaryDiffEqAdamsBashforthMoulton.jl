@@ -1,6 +1,6 @@
 module OrdinaryDiffEqAdamsBashforthMoulton
 
-import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+import OrdinaryDiffEqCore: TmpCache, 
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache,
     alg_cache,
     perform_step!, default_controller, IController,

@@ -1,6 +1,6 @@
 module OrdinaryDiffEqStabilizedRK
 
-import OrdinaryDiffEqCore: TmpCache, build_tmp_cache, preallocate_initdt_buffers,
+import OrdinaryDiffEqCore: TmpCache, preallocate_initdt_buffers,
     alg_adaptive_order,
     gamma_default, qmax_default, alg_extrapolates,
     fac_default_gamma, has_dtnew_modification,

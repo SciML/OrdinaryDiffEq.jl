@@ -1,6 +1,6 @@
 module OrdinaryDiffEqSSPRK
 
-import OrdinaryDiffEqCore: TmpCache, build_tmp_cache, preallocate_initdt_buffers,
+import OrdinaryDiffEqCore: TmpCache, preallocate_initdt_buffers,
     perform_step!, ssp_coefficient,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
