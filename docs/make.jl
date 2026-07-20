@@ -1,4 +1,5 @@
 using Documenter, OrdinaryDiffEq, DiffEqDevTools
+import SciMLBase, SciMLLogging
 using DiffEqBase
 using OrdinaryDiffEqCore
 # Bring controller API symbols into Main so unqualified @ref links in
@@ -8,6 +9,46 @@ using OrdinaryDiffEqCore: default_controller, resolve_basic,
     get_EEst, set_EEst!, CompositeController
 using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
+
+# Register the re-exported bindings with the umbrella module for Documenter.
+for (name, owner) in (
+        (:solve, "CommonSolve.solve"),
+        (:solve!, "CommonSolve.solve!"),
+        (:init, "CommonSolve.init"),
+        (:step!, "CommonSolve.step!"),
+        (:ODEProblem, "SciMLBase.ODEProblem"),
+        (:ODEFunction, "SciMLBase.ODEFunction"),
+        (:ODESolution, "SciMLBase.ODESolution"),
+        (:SplitODEProblem, "SciMLBase.SplitODEProblem"),
+        (:SplitFunction, "SciMLBase.SplitFunction"),
+        (:SecondOrderODEProblem, "SciMLBase.SecondOrderODEProblem"),
+        (:DynamicalODEProblem, "SciMLBase.DynamicalODEProblem"),
+        (:DAEProblem, "SciMLBase.DAEProblem"),
+        (:DAEFunction, "SciMLBase.DAEFunction"),
+        (:DAESolution, "SciMLBase.DAESolution"),
+        (:EnsembleProblem, "SciMLBase.EnsembleProblem"),
+        (:CallbackSet, "SciMLBase.CallbackSet"),
+        (:ContinuousCallback, "SciMLBase.ContinuousCallback"),
+        (:DiscreteCallback, "SciMLBase.DiscreteCallback"),
+        (:VectorContinuousCallback, "SciMLBase.VectorContinuousCallback"),
+        (:ODEAliasSpecifier, "SciMLBase.ODEAliasSpecifier"),
+        (:add_tstop!, "SciMLBase.add_tstop!"),
+        (:derivative_discontinuity!, "SciMLBase.derivative_discontinuity!"),
+        (:reinit!, "SciMLBase.reinit!"),
+        (:remake, "SciMLBase.remake"),
+        (:set_proposed_dt!, "SciMLBase.set_proposed_dt!"),
+        (:successful_retcode, "SciMLBase.successful_retcode"),
+        (:AutoFiniteDiff, "ADTypes.AutoFiniteDiff"),
+        (:AutoForwardDiff, "ADTypes.AutoForwardDiff"),
+        (:AutoSparse, "ADTypes.AutoSparse"),
+        (:DefaultODEAlgorithm, "OrdinaryDiffEqDefault.DefaultODEAlgorithm"),
+    )
+    doc = "Re-export of `$owner`."
+    Core.eval(OrdinaryDiffEq, :(@doc $doc $name))
+end
+
+@eval SciMLBase @doc "The common interfaces and types used throughout the SciML ecosystem." SciMLBase
+@eval SciMLLogging @doc "The common logging interface used by SciML solvers." SciMLLogging
 using OrdinaryDiffEqAMF
 using OrdinaryDiffEqAdamsBashforthMoulton
 using OrdinaryDiffEqBDF
@@ -50,6 +91,9 @@ makedocs(
     doctest = false,
     modules = [
         OrdinaryDiffEq,
+        SciMLBase,
+        SciMLBase.ReturnCode,
+        SciMLLogging,
         DiffEqBase,
         OrdinaryDiffEqCore,
         OrdinaryDiffEqNonlinearSolve,
