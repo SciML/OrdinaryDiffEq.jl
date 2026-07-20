@@ -51,7 +51,7 @@ import SciMLOperators: MatrixOperator, FunctionOperator,
 
 import Random
 
-import RecursiveArrayTools: recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
+import RecursiveArrayTools: recursivecopy!, recursivecopy, recursivefill!, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
 
 import RecursiveArrayTools
 using BinaryHeaps: BinaryHeap, FasterForward
