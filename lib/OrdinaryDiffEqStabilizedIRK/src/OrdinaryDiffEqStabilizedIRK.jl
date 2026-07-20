@@ -1,6 +1,6 @@
 module OrdinaryDiffEqStabilizedIRK
 
-import OrdinaryDiffEqCore: TmpCache, 
+import OrdinaryDiffEqCore: TmpCache,
     default_controller, IController,
     gamma_default, issplit,
     perform_step!, unwrap_alg, fac_default_gamma,

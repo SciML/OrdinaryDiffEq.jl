@@ -1,6 +1,6 @@
 module OrdinaryDiffEqFIRK
 
-import OrdinaryDiffEqCore: TmpCache, preallocate_initdt_buffers, 
+import OrdinaryDiffEqCore: TmpCache, preallocate_initdt_buffers,
     unwrap_alg,
     default_controller, PredictiveController, PIController,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,

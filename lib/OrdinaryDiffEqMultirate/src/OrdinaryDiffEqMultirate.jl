@@ -1,6 +1,6 @@
 module OrdinaryDiffEqMultirate
 
-import OrdinaryDiffEqCore: TmpCache, 
+import OrdinaryDiffEqCore: TmpCache,
     alg_order, isfsal,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     generic_solver_docstring,

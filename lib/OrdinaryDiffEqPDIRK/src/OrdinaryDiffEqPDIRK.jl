@@ -1,6 +1,6 @@
 module OrdinaryDiffEqPDIRK
 
-import OrdinaryDiffEqCore: TmpCache, 
+import OrdinaryDiffEqCore: TmpCache,
     isfsal,
     OrdinaryDiffEqNewtonAlgorithm, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqMutableCache, constvalue, alg_cache,
