@@ -1,3 +1,10 @@
+"""
+    Milstein()
+
+Fourier-series Lévy-area approximation with Milstein's Gaussian tail
+approximation. Its truncation error has convergence order ``1/2`` in the
+number of retained Fourier terms.
+"""
 struct Milstein <: AbstractIteratedIntegralAlgorithm end
 
 convorder(::Milstein) = 1 // 2
