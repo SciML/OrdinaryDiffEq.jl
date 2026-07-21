@@ -132,6 +132,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Non-diagonal EulerHeun sparse alloc" begin
             include("nondiag_noise_eulerheun_test.jl")
         end
+        @time @safetestset "Sparse noise_rate_prototype Tests" begin
+            include("sparse_noise_tests.jl")
+        end
         @time @safetestset "No Index Tests" begin
             include("noindex_tests.jl")
         end
