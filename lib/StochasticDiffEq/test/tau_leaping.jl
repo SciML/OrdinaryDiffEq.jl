@@ -85,8 +85,8 @@ jumpdiff_prob = JumpProblem(oop_sdeprob, Direct(), rj)
 @time sol = solve(jumpdiff_prob, EM(); dt = 1.0)
 @time sol = solve(jumpdiff_prob, ImplicitEM(); dt = 1.0)
 
-sol = solve(EnsembleProblem(jumpdiff_prob), EM(); dt = 1.0, trajectories = 10_000)
-meanX = mean([sol.u[i][end, end] for i in 1:10_000])
+sol = solve(EnsembleProblem(jumpdiff_prob), EM(); dt = 1.0, trajectories = N)
+meanX = mean([sol.u[i][end, end] for i in 1:N])
 @test mean1 ≈ meanX rtol = 1.0e-2
 
 sol = solve(EnsembleProblem(jumpdiff_prob), ImplicitEM(); dt = 1.0, trajectories = 1_000)
