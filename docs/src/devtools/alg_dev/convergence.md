@@ -91,3 +91,11 @@ halving/doubling stepsizes via
 log2(error[i+1]/error[i])
 
 Returns the mean of the convergence estimates.
+
+## API
+
+```@docs
+DiffEqDevTools.ConvergenceSimulation
+DiffEqDevTools.test_convergence
+DiffEqDevTools.analyticless_test_convergence
+```
