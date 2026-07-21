@@ -54,6 +54,7 @@ pages = [
         "misc.md",
     ],
     "APIs" => [
+        "api/common_interface.md",
         "api/diffeqbase.md",
         "api/ordinarydiffeqcore.md",
         "api/controllers.md",

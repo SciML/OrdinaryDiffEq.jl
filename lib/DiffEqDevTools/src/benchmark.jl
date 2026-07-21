@@ -11,6 +11,18 @@ __default_name(alg) = string(nameof(typeof(alg)))
 
 ## Shootouts
 
+"""
+    Shootout(prob, setups; appxsol = nothing, names = nothing,
+        error_estimate = :final, numruns = 20, seconds = 2, kwargs...)
+
+Benchmark multiple solver configurations on one problem. Each entry of `setups` is a
+dictionary containing an `:alg` and any solver-specific keyword arguments. The result
+stores the solutions, errors, timings, efficiencies, and the configuration with the
+highest efficiency, where efficiency is `1 / (error * time)`.
+
+Use `appxsol` as a numerical reference when the problem has no analytic solution.
+Additional keyword arguments are forwarded to every solve.
+"""
 mutable struct Shootout
     setups::Vector{Dict{Symbol, Any}}
     times::Any #::Vector{Float64}
@@ -24,6 +36,14 @@ mutable struct Shootout
     winner::String
 end
 
+"""
+    ShootoutSet(probs, setups; probaux = nothing, names = nothing,
+        print_names = false, kwargs...)
+
+Run a [`Shootout`](@ref) for every problem in `probs`. `probaux` may contain one
+dictionary of per-problem keyword arguments for each problem; other keyword arguments
+are shared by every shootout.
+"""
 mutable struct ShootoutSet
     shootouts::Vector{Shootout}
     probs::Any #::Vector{AbstractDEProblem}
@@ -165,6 +185,19 @@ Base.lastindex(shoot::ShootoutSet) = lastindex(shoot.shootouts)
 
 ## WorkPrecisions
 
+"""
+    WorkPrecision(prob, alg, abstols, reltols, dts = nothing;
+        name = nothing, appxsol = nothing, error_estimate = :final,
+        numruns = 20, seconds = 2, kwargs...)
+
+Measure error and execution time for `alg` at corresponding absolute and relative
+tolerances. When `dts` is provided, its entries select a fixed time step for each
+tolerance pair. The result stores the measured errors, timings, solver statistics, and
+inputs for plotting a work-precision diagram.
+
+Use `appxsol` as a numerical reference when the problem has no analytic solution.
+Additional keyword arguments are forwarded to `solve`.
+"""
 mutable struct WorkPrecision
     prob::Any
     abstols::Any
@@ -178,6 +211,14 @@ mutable struct WorkPrecision
     N::Int
 end
 
+"""
+    WorkPrecisionSet(prob, abstols, reltols, setups; kwargs...)
+
+Build one [`WorkPrecision`](@ref) result for each solver configuration in `setups` so
+their work-precision curves can be compared. Each setup is a dictionary containing an
+`:alg` and may override the shared tolerances or fixed step sizes with `:abstols`,
+`:reltols`, or `:dts`.
+"""
 mutable struct WorkPrecisionSet
     wps::Vector{WorkPrecision}
     N::Int
@@ -889,6 +930,22 @@ function WorkPrecisionSet(
     )
 end
 
+"""
+    get_sample_errors(prob::AbstractRODEProblem, setup, test_dt = nothing;
+        numruns, solution_runs, appxsol_setup = nothing,
+        sample_error_runs = 10^7, parallel_type = :none, kwargs...)
+
+Estimate an approximate 95% confidence half-width for the sampling error of an RODE
+solver setup. `numruns` may be one sample count or a collection of counts; the return
+value is respectively a scalar or a collection of sampling-error estimates.
+`solution_runs` controls the number of independent estimates used to measure their
+variation.
+
+When an analytic solution is available, `sample_error_runs` controls the Monte Carlo
+estimate of its expected endpoint. Otherwise, repeated numerical solution means provide
+the endpoint reference. Set `parallel_type = :threads` to parallelize the solution
+samples.
+"""
 function get_sample_errors(
         prob::AbstractRODEProblem, setup, test_dt = nothing;
         appxsol_setup = nothing,

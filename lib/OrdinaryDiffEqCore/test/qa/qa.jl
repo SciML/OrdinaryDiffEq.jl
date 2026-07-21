@@ -4,6 +4,10 @@ using SciMLTesting, OrdinaryDiffEqCore, Test
 # ExplicitImports cannot statically analyze; allow it to be unanalyzable.
 const UNANALYZABLE = (OrdinaryDiffEqCore.Predictor,)
 
+@static if VERSION >= v"1.11.0-DEV.469"
+    @test Base.ispublic(OrdinaryDiffEqCore, :isdiscretecache)
+end
+
 run_qa(
     OrdinaryDiffEqCore;
     aqua_kwargs = (; piracies = false, unbound_args = false),
