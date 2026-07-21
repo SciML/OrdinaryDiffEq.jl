@@ -428,5 +428,21 @@ using NonlinearSolve: NonlinearVerbosity
             @test integrator.cache.nlsolver.cache.cache.verbose == NonlinearVerbosity(SciMLLogging.Detailed())
         end
 
+        @testset "Resize preserves Detailed NonlinearVerbosity" begin
+            resize_prob = ODEProblem((du, u, p, t) -> du .= u, [1.0], (0.0, 1.0))
+            verbose = DEVerbosity(nonlinear_verbosity = SciMLLogging.Detailed())
+            integrator = init(
+                resize_prob, ImplicitEuler(nlsolve = NonlinearSolveAlg());
+                verbose, dt = 0.1
+            )
+            expected = NonlinearVerbosity(SciMLLogging.Detailed())
+            @test integrator.cache.nlsolver.cache.cache.verbose == expected
+
+            resize!(integrator, 2)
+            step!(integrator)
+
+            @test integrator.cache.nlsolver.cache.cache.verbose == expected
+        end
+
     end
 end
