@@ -11,6 +11,14 @@ run_qa(
         # kept non-public there:
         #   OrdinaryDiffEqCore: `_fixup_ad` (autodiff-fixup private helper)
         #   SciMLBase:          `_unwrap_val`
-        all_explicit_imports_are_public = (; ignore = (:_fixup_ad, :_unwrap_val)),
+        # OrdinaryDiffEqNonlinearSolve owner-internal cross-sublibrary hooks;
+        # no public wrapper exists.
+        all_explicit_imports_are_public = (;
+            ignore = (
+                :_fixup_ad, :_unwrap_val,
+                :build_nlsolver, :du_alias_or_new, :markfirststage!, :nlsolve!,
+                :nlsolvefail,
+            ),
+        ),
     ),
 )
