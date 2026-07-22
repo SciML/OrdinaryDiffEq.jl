@@ -1048,11 +1048,11 @@ end
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         for j in 2:internal_deg
-            f(k, tmp, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
+            f(k, uᵢ₋₁, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. broadcast = false u = 2 * uᵢ₋₁ - tmp + 2 * α * dt * k
             @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + j + (i - 1) * internal_deg] * u
-            if j < mdeg
+            if j * i < mdeg
                 @.. broadcast = false tmp = uᵢ₋₁
                 @.. broadcast = false uᵢ₋₁ = u
             end
