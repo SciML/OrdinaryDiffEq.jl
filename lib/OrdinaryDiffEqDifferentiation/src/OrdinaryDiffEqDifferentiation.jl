@@ -63,12 +63,16 @@ function nonzeros end
 function spzeros end
 function get_nzval end
 function set_all_nzval! end
+function same_sparsity_structure end
 
 # Provide error messages if these are called without extension
 nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+# Conservative fallback: without the extension we cannot compare patterns, so
+# callers must take the rebuild path.
+same_sparsity_structure(A, B) = false
 
 include("alg_utils.jl")
 include("linsolve_utils.jl")

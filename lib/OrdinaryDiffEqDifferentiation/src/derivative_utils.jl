@@ -265,6 +265,34 @@ function calc_tderivative(integrator, cache)
 end
 
 """
+    prepare_sparse_jac!(J, jac_prototype)
+
+Give `J` the sparsity structure of `jac_prototype` with all stored values zeroed,
+ready for a user-supplied `f.jac` to write into.
+
+`f.jac` only assigns into already-stored entries, so `J`'s structure is invariant
+across the solve and the (O(nnz), allocating) structural rebuild is only needed when
+`J` does not already match the prototype — in practice just the first call. Skipping it
+otherwise saves a sparse broadcast on *every* Jacobian evaluation, which matters most for
+strict Rosenbrock methods (e.g. `Rodas5P`) that re-evaluate `J` every step.
+
+See https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653 for why the structure must
+track `jac_prototype` rather than whatever `f.jac` happens to fill in.
+"""
+function prepare_sparse_jac!(J, jac_prototype)
+    if same_sparsity_structure(J, jac_prototype)
+        set_all_nzval!(J, false)
+    else
+        # `jac_prototype`'s stored values must be made nonzero first: the broadcast
+        # below prunes numerical zeros, which would drop those entries from `J`.
+        set_all_nzval!(jac_prototype, true)
+        J .= true .* jac_prototype
+        set_all_nzval!(J, false)
+    end
+    return J
+end
+
+"""
     calc_J(integrator, cache, next_step::Bool = false)
 
 Return a new Jacobian object.
@@ -346,20 +374,13 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         if SciMLBase.has_jac(f)
             duprev = integrator.duprev
             uf = cache.uf
-            # need to do some jank here to account for sparsity pattern of W
+            # J's structure must track jac_prototype's, not whatever f.jac fills in
             # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
-
-            # we need to set all nzval to a non-zero number
-            # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
                     is_sparse_csc(integrator.f.jac_prototype)
-                set_all_nzval!(integrator.f.jac_prototype, true)
-                J .= true .* integrator.f.jac_prototype
-                set_all_nzval!(J, false)
-                f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
-            else
-                f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+                prepare_sparse_jac!(J, integrator.f.jac_prototype)
             end
+            f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
         else
             (; du1, uf, jac_config) = cache
             # using `dz` as temporary array
@@ -370,20 +391,13 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         end
     else
         if SciMLBase.has_jac(f)
-            # need to do some jank here to account for sparsity pattern of W
+            # J's structure must track jac_prototype's, not whatever f.jac fills in
             # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
-
-            # we need to set all nzval to a non-zero number
-            # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
                     is_sparse_csc(integrator.f.jac_prototype)
-                set_all_nzval!(integrator.f.jac_prototype, true)
-                J .= true .* integrator.f.jac_prototype
-                set_all_nzval!(J, false)
-                f.jac(J, uprev, p, t)
-            else
-                f.jac(J, uprev, p, t)
+                prepare_sparse_jac!(J, integrator.f.jac_prototype)
             end
+            f.jac(J, uprev, p, t)
         else
             (; du1, uf, jac_config) = cache
             uf.f = nlsolve_f(f, alg)
@@ -426,13 +440,10 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
 
         if !isnothing(integrator.f.jac_prototype) &&
                 is_sparse_csc(integrator.f.jac_prototype)
-            set_all_nzval!(integrator.f.jac_prototype, true)
-            J_u .= true .* integrator.f.jac_prototype
-            set_all_nzval!(J_u, false)
+            prepare_sparse_jac!(J_u, integrator.f.jac_prototype)
             f.jac(J_u, duprev, uprev, p, cj_zero, t)
 
-            J_du .= true .* integrator.f.jac_prototype
-            set_all_nzval!(J_du, false)
+            prepare_sparse_jac!(J_du, integrator.f.jac_prototype)
             f.jac(J_du, duprev, uprev, p, cj_one, t)
         else
             f.jac(J_u, duprev, uprev, p, cj_zero, t)
