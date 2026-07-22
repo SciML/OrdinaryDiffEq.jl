@@ -1,3 +1,14 @@
+"""
+    ConvergenceSimulation(solutions, convergence_axis;
+        auxdata = nothing, additional_errors = nothing, expected_value = nothing)
+
+Collect solutions and error series from a convergence experiment. The constructor
+combines the error measurements from `solutions` with `additional_errors` and estimates
+the observed convergence order between adjacent points on `convergence_axis`.
+
+Set `expected_value` when the error series are supplied through `additional_errors`, as
+done by ensemble convergence tests.
+"""
 mutable struct ConvergenceSimulation{SolType}
     solutions::Array{SolType}
     errors::Any
@@ -43,6 +54,19 @@ function ConvergenceSimulation(
     return (ConvergenceSimulation(solutions, errors, N, auxdata, 𝒪est, convergence_axis))
 end
 
+"""
+    test_convergence(dts, prob, alg[, ensemblealg]; kwargs...)
+    test_convergence(probs, convergence_axis, alg; kwargs...)
+    test_convergence(setup::ConvergenceSetup, alg; kwargs...)
+
+Solve a problem at each point on a convergence axis and return a
+[`ConvergenceSimulation`](@ref). For time-step convergence tests, each value in `dts`
+is passed to the solver as `dt`. Remaining keyword arguments are forwarded to `solve`.
+
+The computed solutions must contain error measurements, usually obtained from an
+analytic solution. Use [`analyticless_test_convergence`](@ref) when only a numerical
+reference solution is available.
+"""
 function test_convergence(
         dts::AbstractArray,
         prob::Union{
@@ -120,6 +144,15 @@ function test_convergence(
     )
 end
 
+"""
+    analyticless_test_convergence(dts, prob, alg, reference; kwargs...)
+
+Estimate convergence against a numerical reference solution and return a
+[`ConvergenceSimulation`](@ref). For ODE problems, `reference` is a solver setup whose
+`:alg` entry selects the reference algorithm. For stochastic problems, `reference` is
+the finer reference step size, and each tested solution reuses the reference noise
+realization.
+"""
 function analyticless_test_convergence(
         dts::AbstractArray,
         prob::Union{

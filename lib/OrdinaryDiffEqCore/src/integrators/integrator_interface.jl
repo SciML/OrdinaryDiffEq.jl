@@ -67,11 +67,11 @@ function SciMLBase.reeval_internals_due_to_modification!(
     if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if SciMLBase.has_lazy_interpolation(alg)
-            ode_addsteps!(integrator, integrator.f, true, false, !_unwrap_val(alg.lazy))
-        else
-            ode_addsteps!(integrator, integrator.f, true, false)
-        end
+        # A non-lazy interpolant keeps its extra stages inside kshortsize, so the
+        # resize! above cannot drop them and they stay stale for the shortened dt.
+        # Force them to be recomputed; lazy interpolants build them on demand.
+        force_calc_end = !SciMLBase.has_lazy_interpolation(alg)
+        ode_addsteps!(integrator, integrator.f, true, false, force_calc_end)
     end
 
     integrator.derivative_discontinuity = false

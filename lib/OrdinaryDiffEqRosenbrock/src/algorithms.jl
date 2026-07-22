@@ -352,9 +352,37 @@ the underlying explicit Runge-Kutta scheme. The tableau `tab` supplies the
 coefficients and `order` the classical order of the pair; `Tsit5DA` is the
 provided instantiation based on the Tsit5 tableau.
 
+The concrete method is determined by the tableau `tab` (e.g. `Tsit5DATableau`)
+together with its adaptive `order`; `Tsit5DA` is the provided instance of this
+algorithm.
+
+# Arguments
+
+  - `tab`: tableau constructor `(T, T2) -> tableau` holding the explicit
+    coefficients, the linear-implicit (Gamma) coefficients, the embedded-error
+    weights, and the dense output coefficients.
+  - `order`: the order of accuracy of the method described by `tab`, used for
+    adaptive time stepping.
+
+# Keyword Arguments
+
+  - `autodiff`: AD backend used for the Jacobian of the algebraic block, an
+    `ADTypes.AbstractADType` (defaults to `AutoForwardDiff()`).
+  - `concrete_jac`: whether a concrete Jacobian is materialized for the linear
+    solver (defaults to `nothing`, letting the linear solver decide).
+  - `linsolve`: LinearSolve.jl algorithm for the linear-implicit stages
+    (defaults to `nothing`, i.e. the default linear solver).
+  - `step_limiter!`, `stage_limiter!`: limiter functions applied after each step
+    / explicit stage (default `trivial_limiter!`).
+  - `max_jac_age`, `jac_reuse_gamma_tol`: Jacobian-reuse tuning knobs shared
+    with the other Rosenbrock algorithm constructors. Jacobian reuse currently
+    activates only for W-methods on non-mass-matrix problems, so for this
+    method the Jacobian is recomputed every step regardless of these values.
+
 References:
-- Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for DAEs.
-  arXiv:2511.21252, 2025.
+
+  - Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for
+    DAEs. arXiv:2511.21252, 2025.
 """
 struct HybridExplicitImplicitRK{TabType, AD, F, StepLimiter, StageLimiter, CJ} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm

@@ -132,7 +132,10 @@ function initialize!(
                 SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
             end
             cache.prob = new_prob
-            cache.cache = init(new_prob, cache.cache.alg)
+            cache.cache = init(
+                new_prob, cache.cache.alg;
+                verbose = integrator.opts.verbose.nonlinear_verbosity
+            )
         else
             SciMLBase.reinit!(cache.cache, z, p = nlp_params)
         end

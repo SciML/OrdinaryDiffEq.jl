@@ -37,7 +37,7 @@ using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, I, Diagonal
 import ArrayInterface
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: default_controller
@@ -59,7 +59,7 @@ import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport
 import SciMLBase
-using SciMLBase: ODEProblem, derivative_discontinuity!, solve
+using SciMLBase: ODEProblem, ODEFunction, derivative_discontinuity!, solve
 @reexport using SciMLBase
 
 include("algorithms.jl")
@@ -77,6 +77,16 @@ include("stiff_addsteps.jl")
 
 import PrecompileTools
 import Preferences
+
+# Index-1 mass matrix DAE (Robertson). The pure-ODE problems in the workload below
+# never reach the algebraic variable detection or the DAE initialization solve, so
+# without this every mass matrix FBDF user pays that inference at first solve.
+function precompile_mm_dae(du, u, p, t)
+    du[1] = -0.04u[1] + 1.0e4 * u[2] * u[3]
+    du[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3]
+    return du[3] = u[1] + u[2] + u[3] - 1.0
+end
+
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
@@ -86,6 +96,14 @@ PrecompileTools.@compile_workload begin
     if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
         push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
         push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileMassMatrixDAE", true)
+        mm_dae = ODEFunction(
+            precompile_mm_dae, mass_matrix = Diagonal([1.0, 1.0, 0.0])
+        )
+        push!(prob_list, ODEProblem(mm_dae, [1.0, 0.0, 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(mm_dae, [1.0, 0.0, 0.0], (0.0, 1.0), Float64[]))
     end
 
     if Preferences.@load_preference("PrecompileAutoSpecialize", false)

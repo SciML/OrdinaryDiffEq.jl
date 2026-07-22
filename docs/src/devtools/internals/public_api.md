@@ -132,6 +132,7 @@ OrdinaryDiffEqCore.has_stiff_interpolation
 OrdinaryDiffEqCore.allows_null_u0
 OrdinaryDiffEqCore.isaposteriori
 OrdinaryDiffEqCore.isdiscretealg
+OrdinaryDiffEqCore.isdiscretecache
 OrdinaryDiffEqCore.isdp8
 OrdinaryDiffEqCore.isesdirk
 OrdinaryDiffEqCore.isfirk
