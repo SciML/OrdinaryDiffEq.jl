@@ -352,9 +352,23 @@ function build_nlsolver(
                     "embedding degenerates the algebraic equations at λ = 0."
             )
         )
+        γ = tTypeNoUnits(γ)
+        α = tTypeNoUnits(α)
         invγdt = inv(oneunit(t) * one(uTolType))
         nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(homotopy_odenlf)
-        nlcache = HomotopyNonlinearSolveCache(ustep, tstep, k, invγdt, nlfunc, Ref(0))
+        nf = Ref(0)
+        nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f, nf)
+        prob = SciMLBase.HomotopyProblem{true}(
+            nlfunc, ztmp, nlp_params; λspan = (zero(γ), one(γ))
+        )
+        cache_abstol = nlalg.abstol === nothing ? zero(nlalg.κ * one(uTolType)) :
+            nlalg.abstol
+        cache = _init_homotopy_nonlinear_cache(
+            prob, nlalg, cache_abstol, verbose.nonlinear_verbosity
+        )
+        nlcache = HomotopyNonlinearSolveCache(
+            ustep, tstep, k, invγdt, nlfunc, nf, verbose.nonlinear_verbosity, cache, false
+        )
     elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
 
@@ -564,9 +578,24 @@ function build_nlsolver(
                     "embedding degenerates the algebraic equations at λ = 0."
             )
         )
+        γ = tTypeNoUnits(γ)
+        α = tTypeNoUnits(α)
         invγdt = inv(oneunit(t) * one(uTolType))
         nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(homotopy_oopodenlf)
-        nlcache = HomotopyNonlinearSolveCache(nothing, tstep, nothing, invγdt, nlfunc, Ref(0))
+        nf = Ref(0)
+        nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f, nf)
+        prob = SciMLBase.HomotopyProblem{false}(
+            nlfunc, zero(z), nlp_params; λspan = (zero(γ), one(γ))
+        )
+        cache_abstol = nlalg.abstol === nothing ? zero(nlalg.κ * one(uTolType)) :
+            nlalg.abstol
+        cache = _init_homotopy_nonlinear_cache(
+            prob, nlalg, cache_abstol, verbose.nonlinear_verbosity
+        )
+        nlcache = HomotopyNonlinearSolveCache(
+            nothing, tstep, nothing, invγdt, nlfunc, nf,
+            verbose.nonlinear_verbosity, cache, false
+        )
     elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae

@@ -133,7 +133,7 @@ a plain Newton iteration. The stage equation
 is embedded into the one-parameter family
 
 ```math
-H(z, λ) = λ⋅dt⋅f(\\mathrm{tmp} + γ⋅z, p, t + c⋅dt) - M z, \\quad λ ∈ (0, 1)
+H(z, λ) = λ⋅dt⋅f(\\mathrm{tmp} + γ⋅z, p, t + c⋅dt) - M z, \\quad λ ∈ [0, 1]
 ```
 
 (with the analogous embedding `tmp + λ⋅f(z) - α/(γ dt)⋅M z` for multistep-form
@@ -146,6 +146,11 @@ timesteps of implicit ODE methods*, AIMS Mathematics 4(6), 2019). This is much m
 expensive than [`NLNewton`](@ref) per stage, but it converges from the exact anchor at
 `λ = 0` regardless of predictor quality, which makes it useful on problems where the
 Newton iteration fails even after step-size reduction.
+
+For continuation algorithms that implement `init`/`reinit!`/`solve!` (currently
+`HomotopySweep` and `KantorovichHomotopy`), the homotopy problem and solver cache are
+initialized with the ODE cache and reused across implicit stages. Other homotopy
+algorithms retain the one-shot `solve` path.
 
 When the continuation cannot reach `λ = 1` (for example at a fold, where the connected
 solution branch of the stage equation turns back and no consistent solution at the full
@@ -354,7 +359,7 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
     droptol::Union{Nothing, tType}
 end
 
-mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R} <:
+mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R, V, C} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -364,6 +369,9 @@ mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R}
     # residual-evaluation counter (a `Ref(0)`): the continuation solutions do not carry
     # stats, so the residual itself counts its `f` calls for the integrator statistics
     nf::R
+    verbose::V
+    continuation_cache::C
+    needs_rebuild::Bool
 end
 
 mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType} <:
