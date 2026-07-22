@@ -13,5 +13,5 @@ OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
 [compat]
 ComponentArrays = "0.15, 1"
-LinearSolve = "3, 4"
+LinearSolve = "3, 4, 5"
 OrdinaryDiffEq = "7"

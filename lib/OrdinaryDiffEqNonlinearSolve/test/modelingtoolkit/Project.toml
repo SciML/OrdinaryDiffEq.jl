@@ -24,7 +24,7 @@ OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 DiffEqDevTools = "3"
 ImplicitDiscreteSolve = "2"
 IncompleteLU = "0.2"
-LinearSolve = "3, 4"
+LinearSolve = "3, 4, 5"
 ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
 OrdinaryDiffEq = "7"
