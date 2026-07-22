@@ -1,6 +1,7 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+using CommonSolve: solve!
 
 import SciMLBase
 import SciMLBase: init, solve, remake
@@ -16,7 +17,7 @@ import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    HomotopySweep, step!
+    HomotopySweep, KantorovichHomotopy, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
 using MuladdMacro: @muladd
