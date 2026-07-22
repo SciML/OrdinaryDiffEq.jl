@@ -1,7 +1,7 @@
 # Step-size homotopy for the implicit stage equations.
 #
 # The stage residual of `nlsolve!` (see nlsolve.jl) is embedded into the one-parameter
-# family obtained by scaling the `f` evaluation with `λ ∈ (0, 1)`:
+# family obtained by scaling the `f` evaluation with `λ ∈ [0, 1]`:
 #
 #   DIRK form:                H(z, λ) = λ⋅dt⋅f(tmp + γ⋅z, p, tstep) - M z
 #   COEFFICIENT_MULTISTEP:    H(z, λ) = (γ dt / α)⋅(tmp + λ⋅f(z, p, tstep)) - M z
@@ -18,6 +18,14 @@
 
 _scalar_tol(x::Number) = x
 _scalar_tol(x) = minimum(x)
+
+function _init_homotopy_nonlinear_cache(prob, alg, abstol, verbose)
+    alg.alg isa Union{HomotopySweep, KantorovichHomotopy} || return nothing
+    if alg.reltol === nothing
+        return init(prob, alg.alg; abstol, verbose)
+    end
+    return init(prob, alg.alg; abstol, reltol = alg.reltol, verbose)
+end
 
 function homotopy_odenlf(ztmp, z, p, λ)
     tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, nf = p
@@ -127,15 +135,26 @@ function nlsolve!(
         u0 = method === COEFFICIENT_MULTISTEP ? z : zero(z)
         nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, f, nlcache.nf)
     end
-    prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan = λspan)
-
     # The residual is in `u` units, so the integrator's absolute tolerance sets its
     # natural convergence scale; κ tightens it like the Newton κ⋅tol criterion.
     abstol = alg.abstol === nothing ?
         nlsolver.κ * _scalar_tol(integrator.opts.abstol) : alg.abstol
     kwargs = (; abstol = abstol)
     alg.reltol === nothing || (kwargs = merge(kwargs, (; reltol = alg.reltol)))
-    sol = solve(prob, alg.alg; kwargs...)
+    if nlcache.needs_rebuild
+        prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan = λspan)
+        nlcache.continuation_cache = _init_homotopy_nonlinear_cache(
+            prob, alg, abstol, nlcache.verbose
+        )
+        nlcache.needs_rebuild = false
+    end
+    sol = if nlcache.continuation_cache === nothing
+        prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan = λspan)
+        solve(prob, alg.alg; kwargs...)
+    else
+        SciMLBase.reinit!(nlcache.continuation_cache, u0; p = nlp_params, kwargs...)
+        solve!(nlcache.continuation_cache)
+    end
 
     if iip
         copyto!(z, sol.u)
@@ -173,5 +192,6 @@ function Base.resize!(
     )
     nlcache.ustep === nothing || resize!(nlcache.ustep, i)
     nlcache.k === nothing || resize!(nlcache.k, i)
+    nlcache.needs_rebuild = nlcache.continuation_cache !== nothing
     return nothing
 end

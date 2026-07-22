@@ -1,9 +1,10 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+using CommonSolve: init, solve, solve!, step!
 
 import SciMLBase
-import SciMLBase: init, solve, remake
+import SciMLBase: remake
 using SciMLOperators: update_coefficients!
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
@@ -16,13 +17,14 @@ import DiffEqBase: OrdinaryDiffEqTag, calculate_residuals, calculate_residuals!,
 import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
-using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
+using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
 # `get_u`/`get_fu` are the only inner-state reads that hold for every inner cache type:
 # polyalgorithm caches keep `u`/`fu` on the active branch, not as top-level fields.
-using NonlinearSolveBase: get_linear_cache, get_u, get_fu
+using NonlinearSolveBase:
+    ArcLengthContinuation, HomotopyPolyAlgorithm, HomotopySweep, KantorovichHomotopy,
+    get_linear_cache, get_u, get_fu
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
