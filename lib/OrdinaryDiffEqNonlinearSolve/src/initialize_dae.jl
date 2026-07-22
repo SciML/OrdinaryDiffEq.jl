@@ -111,11 +111,14 @@ end
 # default. A pure-`NonlinearProblem` SCC keeps the `FastShortcutNonlinearPolyalg` default.
 #
 # NOTE (autodiff): unlike the whole-system `HomotopyProblem` branch above, the `autodiff`
-# signal is NOT threaded here — `SCCNonlinearSolve` applies one algorithm to every block, so
-# there is no single value that both continues the homotopy blocks and Newton-solves the
-# plain ones with a chosen AD backend. Honoring `autodiff` per block needs `SCCNonlinearSolve`
-# to route by block type (Newton for plain blocks, continuation for homotopy blocks, each
-# with the requested AD); until then the blocks fall back to their ForwardDiff defaults.
+# signal is NOT threaded here — with `nothing` each block picks its own default, so the
+# continuation runs its default inner corrector rather than the requested AD backend.
+# SciML/NonlinearSolve.jl#1104 makes `SCCNonlinearSolve` route by block type (continuation
+# for homotopy blocks, the block algorithm applied directly otherwise) with that algorithm
+# threaded in as the inner corrector; once it is released these methods can return
+# `FastShortcutNonlinearPolyalg(; autodiff)` (bumping the `SCCNonlinearSolve` compat) to
+# honor `autodiff` per block. Until then, returning `nothing` keeps the homotopy blocks on
+# continuation (correct branch) at their ForwardDiff defaults.
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, prob::SciMLBase.SCCNonlinearProblem,
         autodiff = false, chunksize = Val(1)
