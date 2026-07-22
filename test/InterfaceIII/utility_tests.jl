@@ -1,7 +1,8 @@
-using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
+using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test
 using OrdinaryDiffEqRosenbrock: OrdinaryDiffEqDifferentiation
-using OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, jacobian2W!
+using OrdinaryDiffEqDifferentiation: calc_W, calc_W!
 using OrdinaryDiffEqSDIRK
+using SciMLOperators: MatrixOperator
 
 @testset "calc_W and calc_W!" begin
     A = [-1.0 0.0; 0.0 -0.5]
@@ -28,31 +29,26 @@ using OrdinaryDiffEqSDIRK
     @test W \ u0 ≈ concrete_W \ u0
 
     # In-place
+    jacobian_updates = Ref(0)
+    update_jacobian!(J, u, p, t) = (jacobian_updates[] += 1; copyto!(J, A))
     fun = ODEFunction(
         (du, u, p, t) -> mul!(du, A, u);
         mass_matrix = mm,
-        jac_prototype = MatrixOperator(A)
+        jac_prototype = MatrixOperator(copy(A); update_func! = update_jacobian!)
     )
     integrator = init(
         ODEProblem(fun, u0, tspan), ImplicitEuler(); adaptive = false,
         dt = dt
     )
+    updates_before_calc_W = jacobian_updates[]
     calc_W!(
         integrator.cache.nlsolver.cache.W, integrator, integrator.cache.nlsolver,
         integrator.cache, dtgamma, false
     )
 
-    # Did not update because it's an array operator
-    # We don't want to build Jacobians when we have operators!
-    @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) != concrete_W
-    ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
-    @test tmp != concrete_W \ u0
-
-    # But jacobian2W! will update the cache
-    jacobian2W!(
-        integrator.cache.nlsolver.cache.W._concrete_form, mm,
-        dtgamma, integrator.cache.nlsolver.cache.W.J.A
-    )
+    # The operator already represents the Jacobian, so calc_W! only updates its
+    # coefficient and leaves the Jacobian callback untouched.
+    @test jacobian_updates[] == updates_before_calc_W
     @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
     ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
     @test tmp == concrete_W \ u0
