@@ -2,16 +2,21 @@ using SciMLTesting, OrdinaryDiffEq, SciMLBase
 using Test
 
 @testset "PureKLU-compatible MuladdMacro floors" begin
-    for package in (
-            "OrdinaryDiffEqBDF",
-            "OrdinaryDiffEqCore",
-            "OrdinaryDiffEqExponentialRK",
-            "OrdinaryDiffEqFunctionMap",
-            "OrdinaryDiffEqMultirate",
-            "OrdinaryDiffEqPDIRK",
-            "OrdinaryDiffEqSDIRK",
+    lib_dir = joinpath(@__DIR__, "..", "..", "lib")
+    projects = filter(readdir(lib_dir)) do package
+        project_path = joinpath(lib_dir, package, "Project.toml")
+        isfile(project_path) || return false
+        project = read(project_path, String)
+        has_muladdmacro = occursin(
+            r"(?m)^MuladdMacro = \"[0-9]+\.[0-9]+\.[0-9]+", project
         )
-        project = read(joinpath(@__DIR__, "..", "..", "lib", package, "Project.toml"), String)
+        uses_core = package == "OrdinaryDiffEqCore" ||
+            occursin(r"(?m)^OrdinaryDiffEqCore = ", project)
+        has_muladdmacro && uses_core
+    end
+    @test length(projects) == 39
+    for package in projects
+        project = read(joinpath(lib_dir, package, "Project.toml"), String)
         floor_match = match(r"(?m)^MuladdMacro = \"([0-9]+\.[0-9]+\.[0-9]+)", project)
         @test floor_match !== nothing
         if floor_match !== nothing
