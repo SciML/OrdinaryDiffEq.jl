@@ -338,16 +338,19 @@ end
 ################################################################################
 
 """
-    HybridExplicitImplicitRK(tab; order, kwargs...)
-    HybridExplicitImplicitRK(; tab, order, kwargs...)
+    HybridExplicitImplicitRK(tab; order, autodiff = AutoForwardDiff(),
+        concrete_jac = nothing, linsolve = nothing,
+        step_limiter! = trivial_limiter!, stage_limiter! = trivial_limiter!,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03)
 
-Generic tableau-driven hybrid explicit/linear-implicit Runge-Kutta method for
-semi-explicit index-1 DAEs in mass matrix form. Differential variables are
-advanced with explicit Runge-Kutta stages while algebraic variables are treated
-with Rosenbrock-type linear-implicit stages, so only the (typically small)
-algebraic block of the Jacobian needs to be factorized. For pure ODEs (no
-algebraic constraints), the method reduces to the underlying explicit
-Runge-Kutta method.
+Generic tableau-based hybrid explicit/linear-implicit Runge-Kutta method for
+semi-explicit index-1 DAEs. Differential variables are advanced with explicit
+Runge-Kutta stages while algebraic variables are handled by Rosenbrock-type
+linear-implicit stages, so only the algebraic Jacobian block needs
+factorization. For pure ODEs (no algebraic constraints), the method reduces to
+the underlying explicit Runge-Kutta scheme. The tableau `tab` supplies the
+coefficients and `order` the classical order of the pair; `Tsit5DA` is the
+provided instantiation based on the Tsit5 tableau.
 
 The concrete method is determined by the tableau `tab` (e.g. `Tsit5DATableau`)
 together with its adaptive `order`; `Tsit5DA` is the provided instance of this

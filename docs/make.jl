@@ -7,6 +7,7 @@ using OrdinaryDiffEqCore
 # OrdinaryDiffEqCore but are documented public API.
 using OrdinaryDiffEqCore: default_controller, resolve_basic,
     get_EEst, set_EEst!, CompositeController
+using OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
 
@@ -96,6 +97,7 @@ makedocs(
         SciMLLogging,
         DiffEqBase,
         OrdinaryDiffEqCore,
+        OrdinaryDiffEqDifferentiation,
         OrdinaryDiffEqNonlinearSolve,
         OrdinaryDiffEqAdamsBashforthMoulton,
         OrdinaryDiffEqBDF,
@@ -137,6 +139,7 @@ makedocs(
         size_threshold_ignore = [
             joinpath("semiimplicit", "Rosenbrock.md"),
             joinpath("massmatrixdae", "Rosenbrock.md"),
+            joinpath("devtools", "internals", "public_api.md"),
         ]
     ),
     pages = pages
