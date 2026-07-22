@@ -57,7 +57,7 @@ export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!
 
 # ADTypes
-export AutoForwardDiff, AutoFiniteDiff, AutoSparse
+export AutoForwardDiff, AutoFiniteDiff, NoAutoDiff, AutoSparse
 
 # Default algorithm
 export DefaultODEAlgorithm
