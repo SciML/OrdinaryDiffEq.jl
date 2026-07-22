@@ -28,7 +28,7 @@ using SciMLBase: SciMLBase,
 using SciMLLogging: SciMLLogging
 
 # Import ADTypes for autodiff specification
-using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
+using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, NoAutoDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqCore
