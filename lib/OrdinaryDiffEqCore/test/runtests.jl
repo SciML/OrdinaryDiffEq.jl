@@ -36,4 +36,5 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Algebraic Vars Detection" include("algebraic_vars_detection_tests.jl")
     @time @safetestset "Discontinuity Detection" include("disco_tests.jl")
     @time @safetestset "Interpolation Search Hint" include("interpolation_hint_tests.jl")
+    @time @safetestset "Bool Equal Coercion" include("bool_equal_tests.jl")
 end
