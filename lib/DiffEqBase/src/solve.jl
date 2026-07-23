@@ -852,7 +852,14 @@ function promote_f(
     # Idempotency: never re-wrap an already function-wrapped `f` (e.g. when a
     # sensitivity adjoint re-concretizes a problem whose `f.f` is already an
     # opaque wrapper) — doing so would nest `OpaqueVoid` around the wrapper.
+    # Symbolic systems (`has_sys`, e.g. ModelingToolkit): decline. Their `p`
+    # (MTKParameters) must stay concrete for the initialization pipeline and
+    # symbolic parameter indexing; an opaque container makes `solve` error in
+    # `promote_u0_p` and breaks `getp`/observed. They also gain nothing here
+    # (MTKParameters is non-isbits and already type-uniform), so falling back to
+    # the normal specialization is the correct no-op.
     opaque = specialize === AutoDePSpecialize && should_opaque_p(p) &&
+        !SciMLBase.has_sys(f) &&
         !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
     P = typeof(p)
     sig_p = opaque ? RespecializeParams.opaque_container_type(P) : P
@@ -953,6 +960,7 @@ function promote_f(
     end
 
     if specialize === AutoDePSpecialize && should_opaque_p(p) &&
+            !SciMLBase.has_sys(f) &&
             !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
         P = typeof(p)
         sig = Tuple{typeof(u0), typeof(u0), P, typeof(t)}

@@ -28,7 +28,10 @@ the wrapper signature carries it in the `p` slot.
 
 Excluded (kept as-is): `SciMLBase.NullParameters` (already a uniform singleton)
 and already-packed containers (idempotency, so a sensitivity adjoint that
-re-concretizes an opaque problem does not nest wrappers).
+re-concretizes an opaque problem does not nest wrappers). Problems carrying a
+symbolic system (`SciMLBase.has_sys(f)`, e.g. ModelingToolkit) are declined at
+the `promote_f` call site rather than here, since that policy needs `f`, not
+just `p`: their `p` must stay concrete for initialization and symbolic indexing.
 
 De-specializing makes `sol.prob.p` an opaque container, so **`AutoDePSpecialize`
 is a forward-solve latency tool, not for parameter-estimation workflows**:

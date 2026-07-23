@@ -3,6 +3,7 @@ using SciMLBase
 using RespecializeParams
 using Test
 using ForwardDiff
+using SymbolicIndexingInterface: SymbolCache
 
 # An `isbits` parameter struct. `get_concrete_problem` on an AutoDePSpecialize
 # in-place ODEFunction with such a `p` should route through the opaque path:
@@ -84,6 +85,27 @@ concretize(prob, alg = nothing) = DiffEqBase.get_concrete_problem(prob, true; al
         f_vec!(du, u, p::Vector{Float64}, t) = (@inbounds du[1] = -p[1] * u[1]; nothing)
         cpv = concretize(ODEProblem{true, DiffEqBase.AutoDePSpecialize}(f_vec!, [1.0], (0.0, 1.0), [0.5]))
         @test cpv.p isa RespecializeParams.OpaqueRef
+    end
+
+    @testset "symbolic-system problems are declined (MTK safety)" begin
+        # A problem whose `f` carries a symbolic system (`has_sys`, as every
+        # ModelingToolkit problem does) must NOT be opaque-ified: its `p` has to
+        # stay concrete for the initialization pipeline and symbolic parameter
+        # indexing. `SymbolCache` stands in for an MTK `System` here without the
+        # ModelingToolkit dependency. The opaque path declines and falls back.
+        f_sym!(du, u, p, t) = (@inbounds du[1] = -u[1]; nothing)
+        ff = ODEFunction(f_sym!; sys = SymbolCache([:x], [:k], :t))
+        @test SciMLBase.has_sys(ff)
+
+        # non-isbits p that would otherwise pack into an OpaqueRef:
+        cp = concretize(ODEProblem{true, DiffEqBase.AutoDePSpecialize}(ff, [1.0], (0.0, 1.0), VecP([0.5])))
+        @test cp.p isa VecP
+        @test !(cp.p isa RespecializeParams.OpaqueRef)
+
+        # isbits p that would otherwise pack into an OpaqueParams:
+        cpi = concretize(ODEProblem{true, DiffEqBase.AutoDePSpecialize}(ff, [1.0], (0.0, 1.0), LinearP(0.5)))
+        @test cpi.p isa LinearP
+        @test !(cpi.p isa RespecializeParams.OpaqueParams)
     end
 
     @testset "already-packed p is not re-wrapped (idempotent)" begin
