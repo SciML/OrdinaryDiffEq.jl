@@ -16,7 +16,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; ms, fp1, fp2, recf) = cache
     alg = unwrap_alg(integrator, true)
-    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((T(1.5) + abs(dt) * integrator.eigen_est) / T(0.811))) + 1
@@ -98,7 +98,7 @@ end
     (; ms, fp1, fp2, recf) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
-    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((T(1.5) + abs(dt) * integrator.eigen_est) / T(0.811))) + 1
@@ -181,7 +181,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; ms, fpa, fpb, fpbe, recf) = cache
     alg = unwrap_alg(integrator, true)
-    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / T(0.353))) + 1
@@ -320,7 +320,7 @@ end
     (; ms, fpa, fpb, fpbe, recf) = cache.constantcache
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
-    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt((3 + abs(dt) * integrator.eigen_est) / T(0.353))) + 1
@@ -459,7 +459,7 @@ end
 @muladd function perform_step!(integrator, cache::RKCConstantCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     alg = unwrap_alg(integrator, true)
-    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + T(1))) + 1
@@ -545,7 +545,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; k, tmp, gprev, atmp) = cache
     alg = unwrap_alg(integrator, true)
-    alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
+    maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
     # The number of degree for Chebyshev polynomial
     mdeg = floor(Int, sqrt(T(1.54) * abs(dt) * integrator.eigen_est + T(1))) + 1

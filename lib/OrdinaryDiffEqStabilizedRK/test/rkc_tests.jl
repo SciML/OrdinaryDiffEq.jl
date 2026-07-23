@@ -317,6 +317,44 @@ end
     end
 end
 
+@testset "eigen_est_interval" begin
+    # Stiff parabolic problem solved with the internal power iteration. The default
+    # sparse recompute interval (25) must stay accurate while spending fewer f
+    # evaluations than recomputing the spectral radius on every step.
+    N = 40
+    dx = 1.0 / (N + 1)
+    xs = collect(range(dx, 1 - dx; length = N))
+    D2 = Tridiagonal(fill(1 / dx^2, N - 1), fill(-2 / dx^2, N), fill(1 / dx^2, N - 1))
+    u0 = sin.(pi .* xs)
+    tspan = (0.0, 0.5)
+    prob = ODEProblem((du, u, p, t) -> mul!(du, D2, u), u0, tspan)
+    exact = exp(-pi^2 * tspan[2]) .* sin.(pi .* xs)
+
+    # default interval is 25; compare against recomputing every step (interval = 1)
+    @test ROCK2().eigen_est_interval == 25
+    @test ROCK4().eigen_est_interval == 25
+    @test RKC().eigen_est_interval == 25
+    for (alg_every, alg_default) in [
+            (ROCK2(eigen_est_interval = 1), ROCK2()),
+            (ROCK4(eigen_est_interval = 1), ROCK4()),
+            (RKC(eigen_est_interval = 1), RKC()),
+        ]
+        sol_every = solve(prob, alg_every, abstol = 1.0e-6, reltol = 1.0e-6)
+        sol_default = solve(prob, alg_default, abstol = 1.0e-6, reltol = 1.0e-6)
+        @test sol_default.retcode == ReturnCode.Success
+        @test norm(sol_default.u[end] - exact) <
+            10 * max(norm(sol_every.u[end] - exact), 1.0e-6)
+        @test sol_default.stats.nf < sol_every.stats.nf
+    end
+
+    # convergence order is unaffected by sparse recomputes (default interval)
+    dts = 1 .// 2 .^ (8:-1:4)
+    sim = test_convergence(dts, prob_ode_2Dlinear, ROCK2())
+    @test sim.𝒪est[:l∞] ≈ 2 atol = 0.2
+    sim = test_convergence(dts, prob_ode_2Dlinear, ROCK4())
+    @test sim.𝒪est[:l∞] ≈ 4 atol = 0.2
+end
+
 @testset "Number of function evaluations" begin
     x = Ref(0)
     u0 = [1.0, 1.0]
