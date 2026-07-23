@@ -1872,6 +1872,10 @@ end
     μ̃₁ = (3 * b1 / b0) * w1
     uᵢ₋₂ = uprev
     uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
+    # stage times follow the same recurrence as the stage values so that each
+    # stage is internally consistent
+    cⱼ₋₂ = zero(T)
+    cⱼ₋₁ = μ̃₁
 
     # stages 2 to s
     for j in 2:s
@@ -1885,11 +1889,14 @@ end
         νⱼ = -T(j + 1) / j * bj / bjm2
         μ̃ⱼ = μⱼ * w1
 
-        fYm1 = f(uᵢ₋₁, p, t)
+        fYm1 = f(uᵢ₋₁, p, t + dt * cⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + μ̃ⱼ * dt * fYm1
+        cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
+        cⱼ₋₂ = cⱼ₋₁
+        cⱼ₋₁ = cⱼ
     end
 
     if integrator.opts.adaptive
@@ -1933,6 +1940,10 @@ end
 
     @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
+    # stage times follow the same recurrence as the stage values so that each
+    # stage is internally consistent
+    cⱼ₋₂ = zero(T)
+    cⱼ₋₁ = μ̃₁
 
     # stages 2 to s
     for j in 2:s
@@ -1943,11 +1954,14 @@ end
         νⱼ = -T(j + 1) / j * bj / bjm2
         μ̃ⱼ = μⱼ * w1
 
-        f(k, uᵢ₋₁, p, t)
+        f(k, uᵢ₋₁, p, t + dt * cⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
+        cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
+        cⱼ₋₂ = cⱼ₋₁
+        cⱼ₋₁ = cⱼ
     end
 
     if integrator.opts.adaptive
@@ -2006,6 +2020,10 @@ end
     μ̃₁ = w1
     uᵢ₋₂ = uprev
     uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
+    # stage times follow the same recurrence as the stage values so that each
+    # stage is internally consistent
+    cⱼ₋₂ = zero(T)
+    cⱼ₋₁ = μ̃₁
 
     # stages 2 to s: b_0=1, b_1=1/3, b_j=4(j-1)(j+4)/(3j(j+1)(j+2)(j+3)) for j>=2
     # a_{j-1} = 1 - j(j+1)/2 * b_{j-1}
@@ -2023,14 +2041,17 @@ end
         μ̃ⱼ = μⱼ * w1
         γ̃ⱼ = -μ̃ⱼ * ajm1
 
-        fYm1 = f(uᵢ₋₁, p, t)
+        fYm1 = f(uᵢ₋₁, p, t + dt * cⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         u = μⱼ * uᵢ₋₁ + νⱼ * uᵢ₋₂ + (1 - μⱼ - νⱼ) * uprev +
             dt * μ̃ⱼ * fYm1 + dt * γ̃ⱼ * fsalfirst
 
+        cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ + γ̃ⱼ
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
+        cⱼ₋₂ = cⱼ₋₁
+        cⱼ₋₁ = cⱼ
     end
 
     if integrator.opts.adaptive
@@ -2070,6 +2091,10 @@ end
 
     @.. broadcast = false tmp = uprev
     @.. broadcast = false uᵢ₋₁ = uprev + (dt * μ̃₁) * fsalfirst
+    # stage times follow the same recurrence as the stage values so that each
+    # stage is internally consistent
+    cⱼ₋₂ = zero(T)
+    cⱼ₋₁ = μ̃₁
 
     # stages 2 to s
     for j in 2:s
@@ -2086,15 +2111,18 @@ end
         μ̃ⱼ = μⱼ * w1
         γ̃ⱼ = -μ̃ⱼ * ajm1
 
-        f(k, uᵢ₋₁, p, t)
+        f(k, uᵢ₋₁, p, t + dt * cⱼ₋₁)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp +
             (1 - μⱼ - νⱼ) * uprev +
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
+        cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ + γ̃ⱼ
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
+        cⱼ₋₂ = cⱼ₋₁
+        cⱼ₋₁ = cⱼ
     end
 
     if integrator.opts.adaptive
