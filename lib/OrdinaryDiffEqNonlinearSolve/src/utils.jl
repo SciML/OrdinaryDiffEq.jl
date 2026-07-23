@@ -2,6 +2,13 @@
 # This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
 get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
 
+# Map a flat linear-solve result back onto the state container. Delegates to
+# ArrayInterface.restructure (which preserves ArrayPartition / other wrappers that
+# plain reshape collapses); Number states need a convert because restructure
+# relies on `similar`.
+@inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
+@inline _restructure_state(template::Number, x) = oftype(template, x)
+
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
