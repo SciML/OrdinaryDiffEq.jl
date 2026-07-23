@@ -32,6 +32,12 @@ isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
 
+# Whether the solver can supply the W linear solve for the SDIRK/ESDIRK `smooth_est` estimate;
+# otherwise the caller falls back to the raw embedded estimate.
+can_smooth_est(nlsolver::AbstractNLSolver) = can_smooth_est(nlsolver.cache)
+can_smooth_est(cache::AbstractNLSolverCache) = isnewton(cache)
+can_smooth_est(cache::NonlinearSolveCache) = cache.linsolve !== nothing
+
 is_always_new(nlsolver::AbstractNLSolver) = is_always_new(nlsolver.alg)
 check_div(nlsolver::AbstractNLSolver) = check_div(nlsolver.alg)
 check_div(alg) = isdefined(alg, :check_div) ? alg.check_div : true
@@ -255,16 +261,25 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
 end
 
-# The reused ODE `W` as the operator handed to the inner NonlinearSolve as `jac_prototype`.
-# A matrix-free `WOperator` (its `J` an operator) is passed through and applied via `mul!`;
-# a concrete `WOperator`'s materialized form, or a raw matrix, is wrapped in a
-# `MatrixOperator` and materialized via `convert` for a factorization. Used identically at
-# build time and after a `resize!` so the inner `NonlinearFunction`'s concrete type is
-# preserved.
-function reuse_jac_prototype(W)
+# Analytic jacobian that copies the reused ODE `W` into the inner solver's own buffer each
+# evaluation, so its factorization refreshes when the ODE rewrites `W`. A bare operator
+# `jac_prototype` aliasing `W` would instead leave that factorization stale (its
+# `update_coefficients!` is a no-op), silently converging the inner Newton on an out-of-date
+# factorization.
+struct WReuseJac{W} <: Function
+    W::Base.RefValue{W}
+end
+(j::WReuseJac)(J_out, z, p) = (copyto!(J_out, j.W[]); J_out)
+
+# The reused ODE `W` as the jacobian for the inner NonlinearSolve: a matrix-free `WOperator`
+# passed through as an operator `jac_prototype` (applied via `mul!`, Krylov); a concrete W
+# reused via an analytic `WReuseJac`. Used at build time and after `resize!` so the inner
+# `NonlinearFunction`'s concrete type is preserved.
+function reuse_jac_kwargs(W)
     Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
         W._concrete_form : W
-    return Wr isa AbstractSciMLOperator ? Wr : MatrixOperator(Wr)
+    return Wr isa AbstractSciMLOperator ? (; jac_prototype = Wr) :
+        (; jac = WReuseJac(Ref(Wr)), jac_prototype = similar(Wr))
 end
 
 """
@@ -418,17 +433,9 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    # Hand the reused W to the inner NonlinearFunction as an operator
-                    # `jac_prototype`. A matrix-free `WOperator` is applied via `mul!`
-                    # (Krylov); a concrete W is materialized via `convert` for a
-                    # factorization (NonlinearSolve copies it before an in-place `lu!`, so the
-                    # ODE-owned W is never destroyed). `jac` is auto-wired to
-                    # `update_coefficients!`; the ODE owns W's updates, so NonlinearSolve holds
-                    # W fixed across its Newton steps.
                     NonlinearProblem(
                         NonlinearFunction{true, SciMLBase.FullSpecialize}(
-                            nlf;
-                            jac_prototype = reuse_jac_prototype(W)
+                            nlf; reuse_jac_kwargs(W)...
                         ),
                         ztmp, nlp_params
                     )
@@ -444,6 +451,10 @@ function build_nlsolver(
                 wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight)
             )
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
+            # Smoothed estimate `W \ tmp` reuses the inner solver's own W factorization (see
+            # NonlinearSolveCache); `nothing` when it exposes none (native scalar/StaticArray
+            # solve) falls back to the raw estimate.
+            est_linsolve = use_w_reuse ? get_linear_cache(cache) : nothing
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
                 use_w_reuse ? J : nothing,
@@ -452,6 +463,8 @@ function build_nlsolver(
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
                 weight,
+                use_w_reuse ? dz : nothing,
+                est_linsolve,
                 zero(tstep), true
             )
         else
@@ -607,7 +620,7 @@ function build_nlsolver(
             cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing, nothing,
+                nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,
                 zero(tstep), true
             )
         else
