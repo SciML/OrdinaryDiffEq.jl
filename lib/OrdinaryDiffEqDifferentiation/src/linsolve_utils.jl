@@ -53,6 +53,30 @@ function dolinsolve(
 end
 
 """
+    default_krylov_warm_start(linsolver) -> linsolver
+
+Resolve a Krylov linear solver left at `LinearSolve.WarmStart.Auto` to the mode
+appropriate for a Newton-based integrator, `LinearSolve.WarmStart.Hegedus`
+(Hegedüs-scaled reuse of the previous solution — the recommended mode for the
+sequence of correlated preconditioned solves inside a Newton iteration).
+
+Only the `Auto` default is resolved: an explicit `WarmStart.None`/`Previous`/
+`Hegedus`, a non-Krylov solver, or a LinearSolve too old to define `WarmStart`
+is returned unchanged. This is called on the Newton nonlinear-solver path only;
+Rosenbrock/W-method integrators never call it, so their `Auto` solver stays a
+cold start (warm starting is unsafe there — no outer Newton iteration absorbs
+the within-tolerance stage-solve perturbation).
+"""
+function default_krylov_warm_start(linsolver)
+    isdefined(LinearSolve, :WarmStart) || return linsolver
+    (
+        linsolver isa LinearSolve.KrylovJL &&
+            linsolver.warm_start === LinearSolve.WarmStart.Auto
+    ) || return linsolver
+    return SciMLBase.remake(linsolver; warm_start = LinearSolve.WarmStart.Hegedus)
+end
+
+"""
     wrapprecs(linsolver, W, weight) -> linsolver
 
 Attach a diagonal (`weight`-based) left/right preconditioner to `linsolver` when it
