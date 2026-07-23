@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSDIRK"
 uuid = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.8.1"
+version = "2.8.2"
 
 [deps]
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
@@ -50,7 +50,7 @@ LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "3"
 TruncatedStacktraces = "1.4"
 SciMLBase = "3.35.1"
-OrdinaryDiffEqCore = "4.6"
+OrdinaryDiffEqCore = "4.8"
 ODEProblemLibrary = "1"
 MacroTools = "0.5.6"
 PrecompileTools = "1.2.1, 1.3"

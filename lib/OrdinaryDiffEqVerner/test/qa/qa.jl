@@ -14,7 +14,7 @@ run_qa(
                 # SciMLBase internals (not public on registered SciMLBase 3.30.x)
                 :has_lazy_interpolation,
                 # OrdinaryDiffEqCore test-only helpers (deliberately kept non-public)
-                :lorenz, :lorenz_oop,
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
             ),
         ),
         # Explicit imports of names not (yet) declared public by their owners.

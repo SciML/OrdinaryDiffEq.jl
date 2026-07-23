@@ -21,7 +21,7 @@ run_qa(
         ),
         # OrdinaryDiffEqCore precompile-workload test problems (not public API).
         all_qualified_accesses_are_public = (;
-            ignore = (:lorenz, :lorenz_oop),
+            ignore = (:lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params),
         ),
     ),
 )

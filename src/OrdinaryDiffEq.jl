@@ -23,7 +23,8 @@ using SciMLBase: SciMLBase,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
     remake, successful_retcode, reinit!,
-    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
+    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier,
+    AutoDePSpecialize
 
 using SciMLLogging: SciMLLogging
 
@@ -55,6 +56,9 @@ export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallba
 # Utilities
 export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!
+
+# Specialization levels
+export AutoDePSpecialize
 
 # ADTypes
 export AutoForwardDiff, AutoFiniteDiff, AutoSparse

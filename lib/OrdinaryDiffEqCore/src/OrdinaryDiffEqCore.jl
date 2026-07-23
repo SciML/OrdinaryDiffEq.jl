@@ -34,6 +34,11 @@ import DiffEqBase: initialize!
 # for dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
+# Specialization level owned by SciMLBase (declared `public` there, not
+# exported). Re-exported here so `using OrdinaryDiffEq` surfaces it unqualified.
+import SciMLBase: AutoDePSpecialize
+export AutoDePSpecialize
+
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
