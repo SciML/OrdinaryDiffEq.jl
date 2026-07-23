@@ -10,7 +10,7 @@ run_qa(
         all_qualified_accesses_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore precompile-workload probes (owner-internal)
-                :lorenz, :lorenz_oop,
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
                 # Base.Broadcast internals used in ArrayFuse copyto!/materialize!
                 :Broadcasted, :materialize!,
             ),

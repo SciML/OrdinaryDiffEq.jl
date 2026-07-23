@@ -8,7 +8,7 @@ run_qa(
             ignore = (
                 # Precompile-workload test problems in OrdinaryDiffEqCore, kept
                 # non-public on purpose (test fixtures, not solver-author API).
-                :lorenz, :lorenz_oop,
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
             ),
         ),
         all_explicit_imports_are_public = (;

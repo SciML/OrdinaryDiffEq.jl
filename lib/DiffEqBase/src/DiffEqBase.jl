@@ -137,7 +137,11 @@ $(TYPEDEF)
 """
 abstract type DECostFunction end
 
-import SciMLBase: Void, unwrapped_f
+import SciMLBase: Void, unwrapped_f, AutoDePSpecialize
+
+import RespecializeParams
+
+include("opaque_void.jl")
 
 include("utils.jl")
 include("stats.jl")
@@ -185,6 +189,8 @@ export DEVerbosity
 export initialize!, finalize!
 
 export SensitivityADPassThrough
+
+export AutoDePSpecialize
 
 # Declare DiffEqBase-owned, documented API names `public` so downstream packages can
 # drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is

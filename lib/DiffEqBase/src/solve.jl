@@ -698,7 +698,7 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
     u0_promote = promote_u0(u0, p, tspan[1])
     tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
-    f_promote = promote_f(
+    f_promote, p_promote = promote_f(
         prob.f, Val(SciMLBase.specialization(prob.f)), u0_promote, p,
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
@@ -706,10 +706,13 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     if isconcreteu0(prob, tspan[1], kwargs) && prob.u0 === u0 &&
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
-            p === prob.p && f_promote === prob.f
+            p === prob.p && p_promote === prob.p && f_promote === prob.f
         return prob
     else
-        return remake(prob; f = f_promote, u0 = u0_promote, p = p, tspan = tspan_promote)
+        return remake(
+            prob; f = f_promote, u0 = u0_promote, p = p_promote,
+            tspan = tspan_promote
+        )
     end
 end
 
@@ -728,7 +731,7 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
     du0_promote = promote_u0(du0, p, tspan[1])
     tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
 
-    f_promote = promote_f(
+    f_promote, p_promote = promote_f(
         prob.f, Val(SciMLBase.specialization(prob.f)), u0_promote, p,
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
@@ -736,11 +739,11 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
     if isconcreteu0(prob, tspan[1], kwargs) && typeof(u0_promote) === typeof(prob.u0) &&
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
-            p === prob.p && f_promote === prob.f
+            p === prob.p && p_promote === prob.p && f_promote === prob.f
         return prob
     else
         return remake(
-            prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p,
+            prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
             tspan = tspan_promote
         )
     end
@@ -815,68 +818,94 @@ function promote_f(
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
 
-    return f = if f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
-            # Opt-out SubArrays since they would create type mismatches with the integrator's internal Arrays
-            !(u0 isa SubArray) &&
+    wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
+        # Opt-out SubArrays since they would create type mismatches with the integrator's internal Arrays
+        !(u0 isa SubArray) &&
+        (
+        (
+            (specialize === SciMLBase.AutoSpecialize || specialize === AutoDePSpecialize) &&
+                eltype(u0) !== Any &&
+                RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
+                one(t) === oneunit(t) &&
+                hasdualpromote(u0, t)
+        ) ||
             (
-            (
-                specialize === SciMLBase.AutoSpecialize && eltype(u0) !== Any &&
-                    RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
-                    one(t) === oneunit(t) &&
-                    hasdualpromote(u0, t)
-            ) ||
-                (
-                specialize === SciMLBase.FunctionWrapperSpecialize &&
-                    !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            )
+            specialize === SciMLBase.FunctionWrapperSpecialize &&
+                !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
         )
-        # Wrap tgrad if present, so its type is also erased.
-        # tgrad!(dT, u, p, t) -> Nothing has the same shape as the RHS.
-        if f.tgrad !== nothing && !(f.tgrad isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+    )
+
+    if !wrap_path
+        return (f, p)
+    end
+
+    # Opaque-p path (AutoDePSpecialize only): when p is an isbits
+    # non-NullParameters payload, route the wrapped Void through OpaqueVoid so
+    # the wrapper's signature has `OpaqueParams` in the p slot. The packed p is
+    # returned alongside f and is plumbed into prob.p by `get_concrete_problem`.
+    opaque = specialize === AutoDePSpecialize && should_opaque_p(p)
+    P = typeof(p)
+    sig_p = opaque ? RespecializeParams.OpaqueParams : P
+
+    # tgrad: same (dT, u, p, t) shape as the RHS.
+    if f.tgrad !== nothing && !(f.tgrad isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        if opaque
+            tgrad_sig = Tuple{typeof(u0), typeof(u0), RespecializeParams.OpaqueParams, typeof(t)}
+            f = @set f.tgrad = RespecializeParams.wrap_void_opaque(f.tgrad, P, (tgrad_sig,))
+        else
             f = @set f.tgrad = wrapfun_jac_iip(f.tgrad, (u0, u0, p, t))
         end
-        # Wrap the Jacobian if present, so its type is also erased.
-        # Include both dense and sparse matrix signatures when the function
-        # has a sparsity pattern, since the solver may use either depending on
-        # the autodiff configuration (AutoSparse creates sparse J from sparsity).
-        if f.jac !== nothing && !(f.jac isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            if f.jac_prototype !== nothing && !(f.jac_prototype isa AbstractSciMLOperator)
-                J_T = Base.promote_op(similar, typeof(f.jac_prototype), Type{uElType})
-                sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
-                f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
+    end
+
+    # Jacobian: (J, u, p, t).
+    if f.jac !== nothing && !(f.jac isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        if f.jac_prototype !== nothing && !(f.jac_prototype isa AbstractSciMLOperator)
+            J_T = Base.promote_op(similar, typeof(f.jac_prototype), Type{uElType})
+            sig = Tuple{J_T, typeof(u0), sig_p, typeof(t)}
+            f = if opaque
+                @set f.jac = RespecializeParams.wrap_void_opaque(f.jac, P, (sig,))
+            else
+                @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
                     Void(f.jac), (sig,), (Nothing,)
                 )
-            elseif isdefined(f, :sparsity) && f.sparsity isa AbstractMatrix &&
-                    !(f.sparsity isa Matrix)
-                # The sparsity pattern is a non-dense matrix (e.g. SparseMatrixCSC).
-                # The solver may call the Jacobian with either a dense or sparse matrix
-                # depending on the autodiff config, so wrap for both signatures.
-                dense_sig = Tuple{Matrix{uElType}, typeof(u0), typeof(p), typeof(t)}
-                sparse_J_T = Base.promote_op(similar, typeof(f.sparsity), Type{uElType})
-                sparse_sig = Tuple{sparse_J_T, typeof(u0), typeof(p), typeof(t)}
-                f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
+            end
+        elseif isdefined(f, :sparsity) && f.sparsity isa AbstractMatrix &&
+                !(f.sparsity isa Matrix)
+            # The sparsity pattern is a non-dense matrix (e.g. SparseMatrixCSC).
+            # The solver may call the Jacobian with either a dense or sparse matrix.
+            dense_sig = Tuple{Matrix{uElType}, typeof(u0), sig_p, typeof(t)}
+            sparse_J_T = Base.promote_op(similar, typeof(f.sparsity), Type{uElType})
+            sparse_sig = Tuple{sparse_J_T, typeof(u0), sig_p, typeof(t)}
+            f = if opaque
+                @set f.jac = RespecializeParams.wrap_void_opaque(f.jac, P, (dense_sig, sparse_sig))
+            else
+                @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
                     Void(f.jac),
                     (dense_sig, sparse_sig),
                     (Nothing, Nothing)
                 )
+            end
+        else
+            # No `jac_prototype` and no non-dense sparsity pattern. Derive the wrapper
+            # signature from `u0` rather than hardcoding `Matrix` so GPU arrays
+            # (e.g. `CuArray`) and other non-`Array` storage types still work.
+            J_T = Base.promote_op(ArrayInterface.zeromatrix, typeof(u0))
+            sig = Tuple{J_T, typeof(u0), sig_p, typeof(t)}
+            f = if opaque
+                @set f.jac = RespecializeParams.wrap_void_opaque(f.jac, P, (sig,))
             else
-                # No `jac_prototype` and no non-dense sparsity pattern. The integrator
-                # builds J via `ArrayInterface.zeromatrix(u)` (see
-                # `OrdinaryDiffEqDifferentiation/src/derivative_utils.jl`), so derive
-                # the wrapper signature from `u0` rather than hardcoding `Matrix`,
-                # which would break GPU arrays (e.g. `CuArray`) and other
-                # non-`Array` storage types.
-                J_T = Base.promote_op(ArrayInterface.zeromatrix, typeof(u0))
-                sig = Tuple{J_T, typeof(u0), typeof(p), typeof(t)}
-                f = @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
+                @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
                     Void(f.jac), (sig,), (Nothing,)
                 )
             end
         end
-        return unwrapped_f(f, wrapfun_iip(f.f, (u0, u0, p, t), Val(CS)))
-    else
-        return f
     end
+
+    wrapped_iip = opaque ?
+        wrapfun_iip_opaque(f.f, P, (u0, u0, p, t), Val(CS)) :
+        wrapfun_iip(f.f, (u0, u0, p, t), Val(CS))
+    p_out = opaque ? RespecializeParams.pack_auto(p) : p
+    return (unwrapped_f(f, wrapped_iip), p_out)
 end
 
 # Simple path for algorithms that do NOT use ForwardDiff internally (e.g. Tsit5, Verner).
@@ -892,30 +921,38 @@ function promote_f(
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
 
-    return f = if f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
-            f.mass_matrix isa UniformScaling &&
-            f.jac === nothing &&
-            !(u0 isa SubArray) &&
+    wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
+        f.mass_matrix isa UniformScaling &&
+        f.jac === nothing &&
+        !(u0 isa SubArray) &&
+        (
+        (
+            (specialize === SciMLBase.AutoSpecialize || specialize === AutoDePSpecialize) &&
+                eltype(u0) !== Any &&
+                RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
+                one(t) === oneunit(t)
+        ) ||
             (
-            (
-                specialize === SciMLBase.AutoSpecialize && eltype(u0) !== Any &&
-                    RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
-                    one(t) === oneunit(t)
-            ) ||
-                (
-                specialize === SciMLBase.FunctionWrapperSpecialize &&
-                    !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-            )
+            specialize === SciMLBase.FunctionWrapperSpecialize &&
+                !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
         )
-        return unwrapped_f(
-            f,
-            FunctionWrappersWrappers.FunctionWrappersWrapper(
-                Void(f.f), (typeof((u0, u0, p, t)),), (Nothing,)
-            )
-        )
-    else
-        return f
+    )
+
+    if !wrap_path
+        return (f, p)
     end
+
+    if specialize === AutoDePSpecialize && should_opaque_p(p)
+        P = typeof(p)
+        sig = Tuple{typeof(u0), typeof(u0), P, typeof(t)}
+        wrapped = RespecializeParams.wrap_void_opaque(f.f, P, (sig,))
+        return (unwrapped_f(f, wrapped), RespecializeParams.pack_auto(p))
+    end
+
+    wrapped = FunctionWrappersWrappers.FunctionWrappersWrapper(
+        Void(f.f), (typeof((u0, u0, p, t)),), (Nothing,)
+    )
+    return (unwrapped_f(f, wrapped), p)
 end
 
 hasdualpromote(u0, t) = true
@@ -924,22 +961,24 @@ function promote_f(
         f::SplitFunction, ::Val{specialize}, u0, p, t, ::Val{true},
         ::Val{CS} = Val(1)
     ) where {specialize, CS}
-    return if isnothing(f._func_cache)
+    f_out = if isnothing(f._func_cache)
         f
     else
         # Copy the cache to ensure it's properly initialized
         remake(f, _func_cache = copy(f._func_cache))
     end
+    return (f_out, p)
 end
 function promote_f(
         f::SplitFunction, ::Val{specialize}, u0, p, t, ::Val{false},
         ::Val{CS} = Val(1)
     ) where {specialize, CS}
-    return if isnothing(f._func_cache)
+    f_out = if isnothing(f._func_cache)
         f
     else
         remake(f, _func_cache = copy(f._func_cache))
     end
+    return (f_out, p)
 end
 """
     prepare_alg(alg, u0, p, prob) -> alg

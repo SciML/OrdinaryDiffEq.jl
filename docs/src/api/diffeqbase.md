@@ -4,6 +4,18 @@ This page lists the user-facing DiffEqBase API documented with OrdinaryDiffEq.
 Solver-author hooks, callback machinery, and cache types are documented separately
 in the [developer extension API](@ref Developer-Extension-API).
 
+## Specialization levels
+
+DiffEqBase implements the ODE-path wrapping for the `AutoDePSpecialize`
+specialization level, which is owned and documented by
+[SciMLBase](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/#specialization_levels).
+It is re-exported from OrdinaryDiffEq, so
+`ODEProblem{true, AutoDePSpecialize}(f!, u0, tspan, p)` works from a plain
+`using OrdinaryDiffEq`. It packs an `isbits` parameter into a
+`RespecializeParams.OpaqueParams` container so one precompiled solve is shared
+across all parameter struct types; recover the original payload from
+`sol.prob.p` with `RespecializeParams.unpack(sol.prob.p, typeof(p))`.
+
 ## Default callback behavior
 
 ```@docs

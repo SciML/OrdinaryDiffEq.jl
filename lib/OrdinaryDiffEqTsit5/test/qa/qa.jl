@@ -12,7 +12,7 @@ run_qa(
         all_qualified_accesses_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore — precompile-workload test functions (internal)
-                :lorenz, :lorenz_oop,
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
             ),
         ),
         all_explicit_imports_are_public = (;

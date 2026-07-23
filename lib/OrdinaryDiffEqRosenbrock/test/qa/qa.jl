@@ -23,7 +23,7 @@ const ROSENBROCK_INTERNAL_EXPLICIT_IMPORTS = (
 # module they are accessed through.
 const ROSENBROCK_INTERNAL_QUALIFIED_ACCESSES = (
     Symbol("@set"),        # owner Accessors, accessed via SciMLBase.@set, non-public
-    :lorenz, :lorenz_oop,  # OrdinaryDiffEqCore precompile-workload helpers, non-public
+    :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,  # OrdinaryDiffEqCore precompile-workload helpers, non-public
     :setindex,             # Base internal, non-public
 )
 

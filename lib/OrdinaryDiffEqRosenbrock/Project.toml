@@ -1,6 +1,6 @@
 name = "OrdinaryDiffEqRosenbrock"
 uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
-version = "2.5.0"
+version = "2.5.1"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 
 [deps]
@@ -46,7 +46,7 @@ LinearSolve = "3.75.0, 4"
 MacroTools = "0.5.6"
 MuladdMacro = "0.2.4"
 ODEProblemLibrary = "1"
-OrdinaryDiffEqCore = "4.6"
+OrdinaryDiffEqCore = "4.8"
 OrdinaryDiffEqDifferentiation = "3.2.1"
 OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqRosenbrockTableaus = "2.1"
