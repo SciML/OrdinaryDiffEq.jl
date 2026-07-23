@@ -509,7 +509,17 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     integrator.iter <= 1 && return true, true # at least one JW eval at the start
     repeat_step && return false, false
     islin, _ = islinearfunction(integrator)
-    islin && return false, false # no further JW eval when it's linear
+    if islin
+        # J is constant for a linear function, but W = J - M/(γdt) still depends
+        # on γdt: W must be rebuilt/refactorized when the step size has drifted
+        # past the cutoff, otherwise concrete-A linear solvers keep a stale
+        # factorization from the first step's (possibly tiny) dt.
+        isnewton(nlsolver) || return false, true
+        W_iγdt = inv(nlsolver.cache.W_γdt)
+        iγdt = inv(nlsolver.γ * integrator.dt)
+        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+        return false, !smallstepchange
+    end
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
     errorfail = OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
     # TODO: add `isJcurrent` support for Rosenbrock solvers
