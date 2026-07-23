@@ -29,7 +29,7 @@ import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
 using ForwardDiff: Dual
-using RecursiveArrayTools: recursivecopy!
+using RecursiveArrayTools: recursivecopy!, ArrayPartition
 import OrdinaryDiffEqCore
 
 import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator

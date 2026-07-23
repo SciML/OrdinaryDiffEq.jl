@@ -17,7 +17,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     find_algebraic_vars_eqs
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
-using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
+using RecursiveArrayTools: RecursiveArrayTools, recursivefill!, ArrayPartition
 using DiffEqBase: @def
 import DifferentiationInterface as DI
 import LinearSolve

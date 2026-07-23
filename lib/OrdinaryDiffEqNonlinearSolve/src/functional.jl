@@ -126,7 +126,7 @@ end
                 ztmp = (tmp .+ f(z, p, tstep)) * (γdt / α)
                 dz = ztmp .- z
             else
-                ztmp = _reshape(mass_matrix * _vec(z), axes(z))
+                ztmp = _reshape_state(mass_matrix * _vec(z), z)
                 dz = (tmp .+ f(z, p, tstep)) * γdt - α .* ztmp
                 ztmp = dz .+ z
             end
@@ -136,7 +136,7 @@ end
                 ztmp = dt .* f(ustep, p, tstep)
                 dz = ztmp .- z
             else
-                ztmp = _reshape(mass_matrix * _vec(z), axes(z))
+                ztmp = _reshape_state(mass_matrix * _vec(z), z)
                 dz = dt .* f(ustep, p, tstep) .- ztmp
                 ztmp = z .+ dz
             end
