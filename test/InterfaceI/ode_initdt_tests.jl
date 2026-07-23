@@ -104,9 +104,13 @@ end
         dae_lin!, du0b, u0b, (5.0, 0.0); differential_vars = [true, false]
     )
     for alg in (DImplicitEuler(), DABDF2(), DFBDF())
-        sol = solve(prob_b, alg)
+        # Core #908 regression: auto initdt must be negative for tspan[1] > tspan[2].
+        integ = init(prob_b, alg)
+        @test integ.dt < 0
+        # Tighter tols so endpoint accuracy is not confounded with default adaptive error.
+        sol = solve(prob_b, alg; abstol = 1.0e-8, reltol = 1.0e-8)
         @test SciMLBase.successful_retcode(sol)
         @test sol.t[end] == 0.0
-        @test sol.u[end][1] ≈ 1.0 atol = 1e-2
+        @test sol.u[end][1] ≈ 1.0 atol = 1.0e-2
     end
 end
