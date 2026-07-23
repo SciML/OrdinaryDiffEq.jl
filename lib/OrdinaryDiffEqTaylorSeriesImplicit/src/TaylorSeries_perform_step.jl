@@ -131,19 +131,19 @@ end
         else
             A = nothing
         end
-        linres = dolinsolve(integrator, linsolve; A, b = _vec(tmp), linu = dw)
+        linres = dolinsolve(integrator, linsolve; A, b = _vec(tmp), linu = dw) # dw = A^-1 * tmp
         cache.linsolve = linres.cache
         integrator.stats.nsolve += 1
 
         # compute norm of residuals
         iter > 1 && (ndwprev = ndw)
         calculate_residuals!(atmp, dw, uprev, uintermediate, abstol, reltol, internalnorm, t)
-        ndw = internalnorm(atmp, t)
+        ndw = internalnorm(atmp, t) # ndw is error at current iteration of the Newton step
 
         uintermediate .-= reshape(dw, size(uintermediate))
         # check divergence (not in initial step)
         if iter > 1
-            θ = ndw / ndwprev
+            θ = ndw / ndwprev # convergence rate
             (diverge = θ > 2) && (cache.status = Divergence)
             if diverge
                 break

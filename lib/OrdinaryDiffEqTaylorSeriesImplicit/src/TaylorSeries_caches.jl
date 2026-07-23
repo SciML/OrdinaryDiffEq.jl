@@ -87,7 +87,8 @@ function alg_cache(
     rhs = similar(u)
     tmp_vec = _vec(tmp)
     linsolve_u0 = copy(tmp_vec)
-    κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
+    default_κ = is_taylor_pade(alg) ? 1 // 10000 : 1 // 100
+    κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, default_κ)
     J = ArrayInterface.zeromatrix(tmp_vec)
     linprob = LinearProblem(J, tmp_vec, (nothing, u, p, t); u0 = linsolve_u0)
     linsolve = init(

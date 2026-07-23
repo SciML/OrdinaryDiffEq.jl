@@ -120,8 +120,8 @@ function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length 
         else
             fu = f(u, p, t)
         end
-        d = get_coefficient(fu, index - 1) / index
-        u = append_coefficient(u, d)
+        d = TaylorDiff.get_coefficient(fu, index - 1) / index
+        u = TaylorDiff.append_coefficient(u, d)
     end
     ut = eval_taylor_polynomial(u, coeffs, dt)
     polynomial = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
