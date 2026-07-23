@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes
+using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes, SciMLBase
 using OrdinaryDiffEqNonlinearSolve
 
 f = function (du, u, p, t)
@@ -166,4 +166,24 @@ for initializealg in (
     @test isapprox(
         init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u
     )
+end
+
+# Vector abstol with default CheckInit must not MethodError (OrdinaryDiffEq #1214).
+# Residual is already consistent, so initialization should succeed.
+@testset "Vector abstol CheckInit (#1214)" begin
+    function dae1214!(resid, du, u, p, t)
+        resid[1] = du[1] + u[1]
+        resid[2] = u[2] - u[1]
+        return nothing
+    end
+    u0 = [1.0, 1.0]
+    du0 = [-1.0, -1.0]
+    prob = DAEProblem(
+        dae1214!, du0, u0, (0.0, 1.0); differential_vars = [true, false]
+    )
+    abstol = [1e-6, 1e-6]
+    for alg in (DABDF2(), DFBDF(), DImplicitEuler())
+        sol = solve(prob, alg; abstol = abstol, reltol = 1e-6)
+        @test SciMLBase.successful_retcode(sol)
+    end
 end
