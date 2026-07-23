@@ -16,7 +16,7 @@ import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    HomotopySweep, step!
+    HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
 using MuladdMacro: @muladd
