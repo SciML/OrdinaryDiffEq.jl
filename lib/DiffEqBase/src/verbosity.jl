@@ -6,7 +6,7 @@
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
         :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-        :stability_check, :near_singular,
+        :stability_check, :near_singular, :stage_limiter_unused, :step_limiter_unused,
         :sensitivity_vjp_choice,
         # SDE-specific fields
         :noise_evaluation,
@@ -45,6 +45,8 @@
             dt_epsilon = Silent(),
             stability_check = Silent(),
             near_singular = Silent(),
+            stage_limiter_unused = Silent(),
+            step_limiter_unused = Silent(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -81,6 +83,8 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = WarnLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -117,6 +121,8 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = Silent(),
+            stage_limiter_unused = WarnLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -153,6 +159,8 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = WarnLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
@@ -189,6 +197,8 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = WarnLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
@@ -213,7 +223,7 @@
         ),
         numerical = (
             :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-            :stability_check, :near_singular,
+            :stability_check, :near_singular, :stage_limiter_unused, :step_limiter_unused,
         ),
         sensitivity = (
             :sensitivity_vjp_choice,
@@ -271,6 +281,8 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
 - `stability_check`: Messages about stability checks in extrapolation methods
 - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
+- `stage_limiter_unused`: Messages when a stage limiter is supplied to a solver that does not use it
+- `step_limiter_unused`: Messages when a step limiter is supplied to a solver that does not use it
 
 ## Sensitivity Group
 - `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)

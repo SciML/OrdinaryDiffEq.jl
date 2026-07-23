@@ -269,9 +269,14 @@ purposes or when you need a specific tableau not already implemented.
 
 For most applications, prefer the named methods like `DP5()`, `Tsit5()`, etc.
 """
-struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
-    tableau::TabType
+Base.@kwdef struct ExplicitRK{TabType, StageLimiter, StepLimiter} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
+    tableau::TabType = ODE_DEFAULT_TABLEAU
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
 end
-ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
+function ExplicitRK(tableau)
+    return ExplicitRK(tableau, trivial_limiter!, trivial_limiter!)
+end
 
 @truncate_stacktrace ExplicitRK

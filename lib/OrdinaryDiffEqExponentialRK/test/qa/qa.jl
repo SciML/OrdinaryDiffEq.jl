@@ -8,7 +8,7 @@ run_qa(
             ignore = (
                 # OrdinaryDiffEqCore owner-internal helpers (deliberately not in the
                 # solver-author public API surface declared upstream).
-                :_fixup_ad, :fsal_typeof,
+                :_fixup_ad, :fsal_typeof, :trivial_limiter!,
                 # SciMLBase internal; pending a `public` declaration (SciMLBase#1412).
                 :_unwrap_val,
             ),

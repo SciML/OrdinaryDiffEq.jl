@@ -138,7 +138,8 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     uidx = eachindex(integrator.uprev)
     (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9) = cache.tab
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
     stage_limiter!(tmp, integrator, p, t + c1 * dt)
@@ -178,7 +179,6 @@ end
             a97 * k7 + a98 * k8
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k9, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     if integrator.alg isa CompositeAlgorithm
@@ -414,7 +414,8 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern7Tableau T T2
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     f(k1, uprev, p, t)
     a = dt * a021
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -477,7 +478,6 @@ end
             b9 * k9
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     if integrator.alg isa CompositeAlgorithm
         g10 = u
@@ -795,7 +795,8 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     uidx = eachindex(integrator.uprev)
     (; c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13) = cache.tab
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, rtmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     f(k1, uprev, p, t)
     a = dt * a0201
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -873,7 +874,6 @@ end
             a1308 * k8 + a1309 * k9 + a1310 * k10
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k13, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 13)
     if integrator.alg isa CompositeAlgorithm
@@ -1275,7 +1275,8 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern9Tableau T T2
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     f(k1, uprev, p, t)
     a = dt * a0201
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -1375,7 +1376,6 @@ end
             a1613 * k13
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k16, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
     if integrator.alg isa CompositeAlgorithm

@@ -73,6 +73,12 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     return kwargs
 end
 
+const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
+    (:stage_limiter, :step_limiter),
+}
+checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...) =
+    checkkwargs(kwargshandle; Base.structdiff(values(kwargs), ORDINARYDIFFEQ_LIMITER_KWARGS)...)
+
 function init_call(
         _prob, args...; merge_callbacks = true, kwargshandle = nothing,
         kwargs...
@@ -84,7 +90,7 @@ function init_call(
     # Merge problem kwargs with passed kwargs
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
 
-    checkkwargs(kwargshandle; kwargs...)
+    checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
 
     return if _prob isa Union{ODEProblem, DAEProblem} && isnothing(_prob.u0) &&
             !has_callbacks(kwargs)
@@ -154,7 +160,7 @@ function solve_call(
     # Merge problem kwargs with passed kwargs
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
 
-    checkkwargs(kwargshandle; kwargs...)
+    checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
     if isdefined(_prob, :u0)
         if _prob.u0 isa Array
             if !isconcretetype(RecursiveArrayTools.recursive_unitless_eltype(_prob.u0))

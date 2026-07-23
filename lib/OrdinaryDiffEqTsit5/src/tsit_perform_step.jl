@@ -206,7 +206,8 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-    (; k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
     stage_limiter!(tmp, f, p, t + c1 * dt)
@@ -234,7 +235,6 @@ end
             a75 * k5 + a76 * k6
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
