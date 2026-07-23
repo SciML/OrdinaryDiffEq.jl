@@ -61,14 +61,13 @@ appropriate for a Newton-based integrator, `LinearSolve.WarmStart.Hegedus`
 sequence of correlated preconditioned solves inside a Newton iteration).
 
 Only the `Auto` default is resolved: an explicit `WarmStart.None`/`Previous`/
-`Hegedus`, a non-Krylov solver, or a LinearSolve too old to define `WarmStart`
-is returned unchanged. This is called on the Newton nonlinear-solver path only;
-Rosenbrock/W-method integrators never call it, so their `Auto` solver stays a
-cold start (warm starting is unsafe there — no outer Newton iteration absorbs
-the within-tolerance stage-solve perturbation).
+`Hegedus` or a non-Krylov solver is returned unchanged. This is called on the
+Newton nonlinear-solver path only; Rosenbrock/W-method integrators never call
+it, so their `Auto` solver stays a cold start (warm starting is unsafe there —
+no outer Newton iteration absorbs the within-tolerance stage-solve
+perturbation).
 """
 function default_krylov_warm_start(linsolver)
-    isdefined(LinearSolve, :WarmStart) || return linsolver
     (
         linsolver isa LinearSolve.KrylovJL &&
             linsolver.warm_start === LinearSolve.WarmStart.Auto
