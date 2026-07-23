@@ -341,6 +341,48 @@ function Rodas3RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
 end
 
 ################################################################################
+# Rodas3d (4-stage, hand-written)
+################################################################################
+
+"""
+    Rodas3dRodasTableau(T, T2)
+
+A 3rd order stiffly accurate Rosenbrock method with 4 stages and an embedded
+2nd order method for adaptivity. Constructed with the damping parameter
+γ = 0.57281606 so that R(±∞) = 0, which damps both stable and unstable modes.
+Designed for steady-state focused DAE integration such as the semi-implicit
+continuous Newton method, where damping speed matters more than trajectory
+accuracy.
+Reference: Yu, R., Gu, W., Xu, Y., Lu, S. (2024). Semi-implicit Continuous
+Newton Method for Power Flow Analysis. arXiv:2312.02809.
+Coefficients: https://github.com/rzyu45/MATPOWER-SICNM (coeff_rodas3d.m).
+"""
+function Rodas3dRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.1736562342774159)
+    A[3, 1] = convert(T, 1.745761108723104)
+    A[4, 1] = convert(T, 1.745761108723104)
+    A[4, 3] = convert(T, 1)
+
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -13.387001858207178)
+    C[3, 1] = convert(T, 0.30442314006596932)
+    C[3, 2] = convert(T, 0.30745278826153299)
+    C[4, 1] = convert(T, 0.57287646414081528)
+    C[4, 2] = convert(T, 0.34771098605699358)
+    C[4, 3] = convert(T, -2.7425340696473901)
+
+    gamma = convert(T2, 0.57281606)
+    c = T2[convert(T2, 0), convert(T2, 1.2451051999132263), convert(T2, 1), convert(T2, 1)]
+    d = T[convert(T, 0.57281606), convert(T, -3.819703409768521), zero(T), zero(T)]
+    b = T[convert(T, 1.745761108723104), zero(T), convert(T, 1), convert(T, 1)]
+    btilde = T[zero(T), zero(T), zero(T), one(T)]
+    H = zeros(T, 0, 4)
+
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+################################################################################
 # Rodas3P (5-stage, with H matrix for dense output)
 ################################################################################
 

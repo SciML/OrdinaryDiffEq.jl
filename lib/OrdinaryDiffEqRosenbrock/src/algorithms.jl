@@ -27,6 +27,12 @@ for (Alg, desc, refs, is_W) in [
             false,
         ),
         (
+            :Rodas3d,
+            "3rd order L-stable stiffly accurate Rosenbrock method with a 2nd order embedded method,\nconstructed with damping parameter γ = 0.57281606 so that R(±∞) = 0 (damps both stable and\nunstable modes). Since this γ is a root of the 4th-order linear order condition, the method\nis 4th order on linear problems. Designed for steady-state focused DAE integration such as\nthe semi-implicit continuous Newton method, where fast damping toward the equilibrium\nmatters more than trajectory accuracy.",
+            "- Yu, R., Gu, W., Xu, Y., Lu, S. (2024). Semi-implicit Continuous Newton Method\n  for Power Flow Analysis. arXiv:2312.02809. https://arxiv.org/abs/2312.02809",
+            false,
+        ),
+        (
             :Rodas23W,
             "An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix form. 2nd order stiff-aware interpolation and additional error test for interpolation.",
             "- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
