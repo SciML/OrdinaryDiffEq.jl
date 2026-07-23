@@ -1,7 +1,8 @@
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, Test, Random,
-    LinearAlgebra, LinearSolve, ADTypes
+    LinearAlgebra, LinearSolve, ADTypes, SciMLBase
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using NonlinearSolve: NewtonRaphson
+using SimpleNonlinearSolve: SimpleNewtonRaphson
 Random.seed!(123)
 
 A = 0.01 * rand(3, 3)
@@ -207,4 +208,24 @@ let integ = init(
     @test integ.cache.nlsolver.cache.weight !== nothing
     step!(integ)
     @test !iszero(integ.cache.nlsolver.cache.weight)
+end
+
+using StaticArrays
+let
+    vdp_static(u, p, t) = SVector(u[2], p[1] * ((1 - u[1]^2) * u[2] - u[1]))
+    prob = ODEProblem(
+        vdp_static, SVector(2.0, 0.0), (0.0, 1.0), SVector(1.0e3)
+    )
+    integ = init(
+        prob,
+        TRBDF2(
+            nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson(; autodiff = AutoForwardDiff())),
+            concrete_jac = true
+        ); reltol = 1.0e-8, abstol = 1.0e-10
+    )
+    @test integ.cache.nlsolver.cache.W isa Base.RefValue
+    sol = solve!(integ)
+    @test SciMLBase.successful_retcode(sol.retcode)
+    solref = solve(prob, TRBDF2(); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test maximum(abs.(sol.u[end] .- solref.u[end])) < 1.0e-3
 end

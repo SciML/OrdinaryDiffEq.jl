@@ -41,11 +41,29 @@ function initialize!(
     cache.tstep = integrator.t + nlsolver.c * dt
 
     (; ustep, tstep, k, invγdt) = cache
-    if SciMLBase.has_stats(integrator)
+    if SciMLBase.has_stats(integrator) && hasfield(typeof(cache.cache), :stats)
         integrator.stats.nf += cache.cache.stats.nf
         integrator.stats.njacs += cache.cache.stats.njacs
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
+
+    if cache.W !== nothing
+        dtgamma = method === DIRK ? γ * dt : γ * dt / α
+        W_γdt = cache.W_γdt
+        first_call = iszero(W_γdt)
+        should_update = first_call || alg.always_new ||
+            nlsolver.status === Divergence ||
+            abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
+        if should_update
+            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma, tstep)
+            cache.W_γdt = dtgamma
+            integrator.stats.nw += 1
+            cache.new_W = true
+        else
+            cache.new_W = false
+        end
+    end
+
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
     else
@@ -172,6 +190,22 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     return nothing
 end
 
+function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, tstep)
+    (; f, p, uprev, alg) = integrator
+    mass_matrix = f.mass_matrix
+    uf = nlcache.uf
+    J_new = if SciMLBase.has_jac(f)
+        f.jac(uprev, p, tstep)
+    else
+        uf.f = nlsolve_f(f, alg)
+        uf.p = p
+        uf.t = tstep
+        jacobian(uf, uprev, integrator)
+    end
+    nlcache.W[] = J_new - mass_matrix * inv(dtgamma)
+    return nothing
+end
+
 ## compute_step!
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, false}, integrator)
@@ -181,12 +215,25 @@ end
 
     nlcache = nlsolver.cache.cache
     recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
-    step!(nlcache; recompute_jacobian)
-    nlsolver.ztmp = nlcache.u
+    # SimpleNonlinearSolve defines no `__init`, so its caches are non-iterable and
+    # only support `solve!`, not `step!`.
+    znew = if nlsolver.alg.alg isa AbstractSimpleNonlinearSolveAlgorithm
+        sol = SciMLBase.solve!(nlcache)
+        if SciMLBase.has_stats(integrator) && sol.stats !== nothing
+            integrator.stats.nf += sol.stats.nf
+            integrator.stats.njacs += sol.stats.njacs
+            integrator.stats.nsolve += sol.stats.nsolve
+        end
+        sol.u
+    else
+        step!(nlcache; recompute_jacobian)
+        nlcache.u
+    end
+    nlsolver.ztmp = znew
 
     ustep = compute_ustep(tmp, γ, z, method)
     atmp = calculate_residuals(
-        z .- nlcache.u, uprev, ustep, opts.abstol, opts.reltol,
+        z .- znew, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
     )
     ndz = opts.internalnorm(atmp, t)
@@ -718,7 +765,8 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.du1 === nothing || resize!(nlcache.du1, i)
     nlcache.weight === nothing || resize!(nlcache.weight, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
-    nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    # Ref-held W = OOP static path, fixed-size, not resizable.
+    nlcache.W === nothing || nlcache.W isa Ref || resize_J_W!(nlcache, integrator, i)
     nlcache.W_γdt = zero(nlcache.W_γdt)
     nlcache.new_W = true
     return nothing
