@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSDIRK"
 uuid = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.8.2"
+version = "2.8.3"
 
 [deps]
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
