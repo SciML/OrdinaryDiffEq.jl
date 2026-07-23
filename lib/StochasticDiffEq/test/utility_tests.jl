@@ -1,6 +1,6 @@
 using StochasticDiffEq, LinearAlgebra, SparseArrays, Random, LinearSolve, Test
 using OrdinaryDiffEqDifferentiation: OrdinaryDiffEqDifferentiation, calc_W!, calc_W
-using SciMLOperators: MatrixOperator, WOperator
+using SciMLOperators: MatrixOperator
 using OrdinaryDiffEq
 
 #horid nasty hack to deal with temporary calc_W refactor
@@ -44,16 +44,19 @@ end
         @test W \ u0 ≈ concrete_W \ u0
 
         # In-place
+        jacobian_updates = Ref(0)
+        update_jacobian!(J, u, p, t) = (jacobian_updates[] += 1; copyto!(J, A))
         _f = (du, u, p, t) -> mul!(du, A, u)
         _g = (du, u, p, t) -> mul!(du, σ, u)
         fun = SDEFunction(
             _f, _g;
             mass_matrix = mm,
-            jac_prototype = MatrixOperator(A)
+            jac_prototype = MatrixOperator(copy(A); update_func! = update_jacobian!)
         )
         prob = SDEProblem(fun, u0, tspan)
         integrator = init(prob, ImplicitEM(theta = 1); adaptive = false, dt = dt)
         W = integrator.cache.nlsolver.cache.W
+        updates_before_calc_W = jacobian_updates[]
         calc_W!(
             W, integrator, integrator.cache.nlsolver,
             integrator.cache, dtgamma,
@@ -61,19 +64,11 @@ end
             false
         )
 
-        # Did not update because it's an array operator
-        # We don't want to build Jacobians when we have operators!
-        @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) != concrete_W
-        ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
-        @test tmp != concrete_W \ u0
-
-        # But jacobian2W! will update the cache
-        OrdinaryDiffEqDifferentiation.jacobian2W!(
-            integrator.cache.nlsolver.cache.W._concrete_form,
-            mm, dtgamma, integrator.cache.nlsolver.cache.W.J.A
-        )
-        @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
-        ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
+        # The operator already represents the Jacobian, so calc_W! only updates its
+        # coefficient and leaves the Jacobian callback untouched.
+        @test jacobian_updates[] == updates_before_calc_W
+        @test convert(AbstractMatrix, W) == concrete_W
+        ldiv!(tmp, lu!(W), u0)
         @test tmp == concrete_W \ u0
     end
 

@@ -27,6 +27,12 @@ for (Alg, desc, refs, is_W) in [
             false,
         ),
         (
+            :Rodas3d,
+            "3rd order L-stable stiffly accurate Rosenbrock method with a 2nd order embedded method,\nconstructed with damping parameter γ = 0.57281606 so that R(±∞) = 0 (damps both stable and\nunstable modes). Since this γ is a root of the 4th-order linear order condition, the method\nis 4th order on linear problems. Designed for steady-state focused DAE integration such as\nthe semi-implicit continuous Newton method, where fast damping toward the equilibrium\nmatters more than trajectory accuracy.",
+            "- Yu, R., Gu, W., Xu, Y., Lu, S. (2024). Semi-implicit Continuous Newton Method\n  for Power Flow Analysis. arXiv:2312.02809. https://arxiv.org/abs/2312.02809",
+            false,
+        ),
+        (
             :Rodas23W,
             "An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix form. 2nd order stiff-aware interpolation and additional error test for interpolation.",
             "- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
@@ -337,6 +343,53 @@ end
 # HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
 ################################################################################
 
+"""
+    HybridExplicitImplicitRK(tab; order, autodiff = AutoForwardDiff(),
+        concrete_jac = nothing, linsolve = nothing,
+        step_limiter! = trivial_limiter!, stage_limiter! = trivial_limiter!,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03)
+
+Generic tableau-based hybrid explicit/linear-implicit Runge-Kutta method for
+semi-explicit index-1 DAEs. Differential variables are advanced with explicit
+Runge-Kutta stages while algebraic variables are handled by Rosenbrock-type
+linear-implicit stages, so only the algebraic Jacobian block needs
+factorization. For pure ODEs (no algebraic constraints), the method reduces to
+the underlying explicit Runge-Kutta scheme. The tableau `tab` supplies the
+coefficients and `order` the classical order of the pair; `Tsit5DA` is the
+provided instantiation based on the Tsit5 tableau.
+
+The concrete method is determined by the tableau `tab` (e.g. `Tsit5DATableau`)
+together with its adaptive `order`; `Tsit5DA` is the provided instance of this
+algorithm.
+
+# Arguments
+
+  - `tab`: tableau constructor `(T, T2) -> tableau` holding the explicit
+    coefficients, the linear-implicit (Gamma) coefficients, the embedded-error
+    weights, and the dense output coefficients.
+  - `order`: the order of accuracy of the method described by `tab`, used for
+    adaptive time stepping.
+
+# Keyword Arguments
+
+  - `autodiff`: AD backend used for the Jacobian of the algebraic block, an
+    `ADTypes.AbstractADType` (defaults to `AutoForwardDiff()`).
+  - `concrete_jac`: whether a concrete Jacobian is materialized for the linear
+    solver (defaults to `nothing`, letting the linear solver decide).
+  - `linsolve`: LinearSolve.jl algorithm for the linear-implicit stages
+    (defaults to `nothing`, i.e. the default linear solver).
+  - `step_limiter!`, `stage_limiter!`: limiter functions applied after each step
+    / explicit stage (default `trivial_limiter!`).
+  - `max_jac_age`, `jac_reuse_gamma_tol`: Jacobian-reuse tuning knobs shared
+    with the other Rosenbrock algorithm constructors. Jacobian reuse currently
+    activates only for W-methods on non-mass-matrix problems, so for this
+    method the Jacobian is recomputed every step regardless of these values.
+
+References:
+
+  - Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for
+    DAEs. arXiv:2511.21252, 2025.
+"""
 struct HybridExplicitImplicitRK{TabType, AD, F, StepLimiter, StageLimiter, CJ} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
     tab::TabType

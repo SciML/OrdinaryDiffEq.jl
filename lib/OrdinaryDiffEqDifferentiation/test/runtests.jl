@@ -36,6 +36,7 @@ if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
     @time @safetestset "Differentiation Trait Tests" include("differentiation_traits_tests.jl")
     @time @safetestset "Autodiff Error Tests" include("autodiff_error_tests.jl")
     @time @safetestset "No Jac Tests" include("nojac_tests.jl")
+    @time @safetestset "Stale W Linear Operator Tests" include("stale_w_linear_operator_tests.jl")
 end
 
 # Run sparse tests (separate environment due to ComponentArrays dep conflicts)

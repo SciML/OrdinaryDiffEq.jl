@@ -30,7 +30,7 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
 SciMLTesting = "2.1"
-SciMLOperators = "1.23"
+SciMLOperators = "1.24.3"
 Pkg = "1"
 OrdinaryDiffEqTsit5 = "2"
 Test = "<0.0.1, 1"

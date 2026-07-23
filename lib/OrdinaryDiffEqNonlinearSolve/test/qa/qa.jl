@@ -26,6 +26,13 @@ run_qa(
                 :AbstractSciMLOperator,
                 # OrdinaryDiffEqDifferentiation W-operator types (attributed to SciMLOperators).
                 :WOperator, :StaticWOperator,
+                # Owner-internal cross-sublibrary hooks with no public wrapper.
+                # OrdinaryDiffEqCore:
+                :AbstractNLSolverCache,
+                # OrdinaryDiffEqDifferentiation:
+                :build_J_W, :build_jac_config, :build_uf, :dolinsolve,
+                :is_always_new, :jacobian!, :jacobian2W!, :resize_jac_config!,
+                :update_W!, :wrapprecs,
                 # ForwardDiff / StaticArraysCore internals.
                 :Dual, :StaticArray,
             ),

@@ -159,6 +159,38 @@ end
     end
 
 
+    println("Rodas3d")
+
+    # Rodas3d's damping parameter γ = 0.57281606 is a root of the 4th-order
+    # linear order condition (an endpoint of the L-stability interval in
+    # Hairer & Wanner Table 6.4), so the method superconverges at order 4 on
+    # linear problems; the design order 3 is checked on a nonlinear problem below.
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas3d())
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+
+    sol = solve(prob, Rodas3d())
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas3d())
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+
+    sol = solve(prob, Rodas3d())
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = ODEProblem(
+        (u, p, t) -> [-2u[1] + u[2]^2, -u[2] + sin(u[1]) + 0.1t],
+        [1.0, 0.5], (0.0, 1.0)
+    )
+    test_setup = Dict(:alg => Rodas4(), :reltol => 1.0e-13, :abstol => 1.0e-13)
+    sim = analyticless_test_convergence((1 / 2) .^ (7:-1:4), prob, Rodas3d(), test_setup)
+    @test sim.𝒪est[:final] ≈ 3 atol = testTol
+
     println("Rodas5P")
 
     prob = prob_ode_linear
@@ -418,7 +450,7 @@ end
     # interpolation errors orders of magnitude larger than the knot errors.
     for (method, expected_interp) in (
             (Rodas4P, 1.0e-10), (ROS34PW2, 5.0e-2),
-            (ROS34PW3, 5.0e-2), (Rodas3, 5.0e-2),
+            (ROS34PW3, 5.0e-2), (Rodas3, 5.0e-2), (Rodas3d, 5.0e-2),
         )
         sol = solve(prob, method(); dense = true, reltol = 1.0e-4, abstol = 1.0e-4)
         err_knot = maximum(abs.(sol[1, :] .- anasol(sol.t, p)))
