@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqBDF
 import OrdinaryDiffEqExplicitTableaus
 
 prob = prob_ode_linear
@@ -86,5 +87,26 @@ let
         @test SciMLBase.successful_retcode(solve(prob, Tsit5()))
         # the default algorithm is a CompositeAlgorithm and used to BoundsError here
         @test SciMLBase.successful_retcode(solve(prob, DefaultODEAlgorithm()))
+    end
+end
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/908
+# Automatic initial dt for DAEProblem on a reversed tspan must have tdir sign.
+@testset "DAE reversed tspan automatic initdt (#908)" begin
+    function dae_lin!(resid, du, u, p, t)
+        resid[1] = du[1] + u[1]
+        resid[2] = u[2] - u[1]
+        return nothing
+    end
+    u0b = [exp(-5), exp(-5)]
+    du0b = [-exp(-5), -exp(-5)]
+    prob_b = DAEProblem(
+        dae_lin!, du0b, u0b, (5.0, 0.0); differential_vars = [true, false]
+    )
+    for alg in (DImplicitEuler(), DABDF2(), DFBDF())
+        sol = solve(prob_b, alg)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == 0.0
+        @test sol.u[end][1] ≈ 1.0 atol = 1e-2
     end
 end
