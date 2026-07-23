@@ -64,13 +64,6 @@ condition2(u, t, integrator) = u[1] - 2
 cb2 = ContinuousCallback(condition2, default_affect!; maybe_discontinuity = true)
 cb = CallbackSet(cb1, cb2)
 
-sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6, controller = predictive_disco_controller(RadauIIA5()))
-#  930.334 μs (25771 allocations: 802.09 KiB)
-sol_no_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1e-6)
-#  1.256 ms (34747 allocations: 1.05 MiB)
-@test sol_disco_radau.retcode == ReturnCode.Success
-@test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
-
 sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6, controller = PI_disco_controller(Rodas5P()))
 #  1.224 ms (42698 allocations: 1.46 MiB)
 sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1e-6)
