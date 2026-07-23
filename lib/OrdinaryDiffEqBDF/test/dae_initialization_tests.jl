@@ -181,9 +181,9 @@ end
     prob = DAEProblem(
         dae1214!, du0, u0, (0.0, 1.0); differential_vars = [true, false]
     )
-    abstol = [1e-6, 1e-6]
+    abstol = [1.0e-6, 1.0e-6]
     for alg in (DABDF2(), DFBDF(), DImplicitEuler())
-        sol = solve(prob, alg; abstol = abstol, reltol = 1e-6)
+        sol = solve(prob, alg; abstol = abstol, reltol = 1.0e-6)
         @test SciMLBase.successful_retcode(sol)
     end
 end
