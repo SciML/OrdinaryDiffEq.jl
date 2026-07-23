@@ -443,7 +443,7 @@ for (Alg, Cache) in [
     end
 end
 
-@cache struct Exp4Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct Exp4Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -458,6 +458,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::Exp4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -489,10 +490,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 1)
-    return Exp4Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 3)
+    return Exp4Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK4s3ACache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK4s3ACache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -507,6 +509,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK4s3A, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -537,10 +540,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 4)
-    return EPIRK4s3ACache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 2)
+    return EPIRK4s3ACache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK4s3BCache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK4s3BCache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -555,6 +559,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK4s3B, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -585,7 +590,8 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 4)
-    return EPIRK4s3BCache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 2)
+    return EPIRK4s3BCache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
 @cache struct EPIRK5s3Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
@@ -635,7 +641,7 @@ function alg_cache(
     return EPIRK5s3Cache(u, uprev, tmp, dz, k, rtmp, rtmp2, du1, jac_config, uf, J, B, KsCache)
 end
 
-@cache struct EXPRB53s3Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EXPRB53s3Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -650,6 +656,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EXPRB53s3, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -680,10 +687,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 4)
-    return EXPRB53s3Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 2)
+    return EXPRB53s3Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK5P1Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK5P1Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -698,6 +706,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK5P1, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -728,10 +737,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 3)
-    return EPIRK5P1Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 3)
+    return EPIRK5P1Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK5P2Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK5P2Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -747,6 +757,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK5P2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -777,7 +788,8 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 3)
-    return EPIRK5P2Cache(u, uprev, tmp, dz, rtmp, rtmp2, dR, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 3)
+    return EPIRK5P2Cache(u, uprev, tmp, dz, rtmp, rtmp2, dR, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
 ####################################
