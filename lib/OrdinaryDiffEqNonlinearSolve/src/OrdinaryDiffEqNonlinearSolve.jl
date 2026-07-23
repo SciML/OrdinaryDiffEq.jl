@@ -16,7 +16,7 @@ import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    HomotopySweep, step!
+    HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
 using MuladdMacro: @muladd
@@ -55,7 +55,7 @@ import OrdinaryDiffEqCore: _initialize_dae!,
     @SciMLMessage
 
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
-    WOperator, StaticWOperator, wrapprecs,
+    WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
     build_jac_config, dolinsolve,
     resize_jac_config!, jacobian2W!, jacobian!
 
