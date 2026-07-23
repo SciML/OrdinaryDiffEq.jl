@@ -46,7 +46,7 @@ using NonlinearSolve: NonlinearVerbosity
         @test v1.dt_epsilon == SciMLLogging.WarnLevel()
         @test v1.stability_check == SciMLLogging.Silent()
         @test v1.near_singular == SciMLLogging.Silent()
-        @test v1.stage_limiter_unused == SciMLLogging.WarnLevel()
+        @test v1.stage_limiter_unused == SciMLLogging.ErrorLevel()
         @test v1.step_limiter_unused == SciMLLogging.WarnLevel()
     end
 
@@ -78,7 +78,7 @@ using NonlinearSolve: NonlinearVerbosity
         @test v_minimal.alg_switch == SciMLLogging.Silent()
         @test v_minimal.dense_output_saveat == SciMLLogging.Silent()
         @test v_minimal.mismatched_input_output_type == SciMLLogging.Silent()
-        @test v_minimal.stage_limiter_unused == SciMLLogging.WarnLevel()
+        @test v_minimal.stage_limiter_unused == SciMLLogging.ErrorLevel()
         @test v_minimal.step_limiter_unused == SciMLLogging.WarnLevel()
 
         # Test Standard - same as default
@@ -87,7 +87,7 @@ using NonlinearSolve: NonlinearVerbosity
         @test v_standard.alg_switch == SciMLLogging.Silent()
         @test v_standard.dense_output_saveat == SciMLLogging.WarnLevel()
         @test v_standard.mismatched_input_output_type == SciMLLogging.WarnLevel()
-        @test v_standard.stage_limiter_unused == SciMLLogging.WarnLevel()
+        @test v_standard.stage_limiter_unused == SciMLLogging.ErrorLevel()
         @test v_standard.step_limiter_unused == SciMLLogging.WarnLevel()
 
         # Test Detailed - includes debugging info
@@ -99,7 +99,7 @@ using NonlinearSolve: NonlinearVerbosity
         @test v_detailed.jacobian_update == SciMLLogging.InfoLevel()
         @test v_detailed.w_factorization == SciMLLogging.InfoLevel()
         @test v_detailed.convergence_limit == SciMLLogging.InfoLevel()
-        @test v_detailed.stage_limiter_unused == SciMLLogging.WarnLevel()
+        @test v_detailed.stage_limiter_unused == SciMLLogging.ErrorLevel()
         @test v_detailed.step_limiter_unused == SciMLLogging.WarnLevel()
 
         # Test All - maximum verbosity
@@ -111,7 +111,7 @@ using NonlinearSolve: NonlinearVerbosity
         @test v_all.step_rejected == SciMLLogging.InfoLevel()
         @test v_all.step_accepted == SciMLLogging.InfoLevel()
         @test v_all.stiff_detection == SciMLLogging.InfoLevel()
-        @test v_all.stage_limiter_unused == SciMLLogging.WarnLevel()
+        @test v_all.stage_limiter_unused == SciMLLogging.ErrorLevel()
         @test v_all.step_limiter_unused == SciMLLogging.WarnLevel()
     end
 

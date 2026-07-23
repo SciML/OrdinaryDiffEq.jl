@@ -66,3 +66,5 @@ Base.@kwdef struct PFRK87{StageLimiter, StepLimiter, Thread, T} <:
     thread::Thread = Serial()
     omega::T = 0.0
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(::Union{DP8, PFRK87, TanYam7, TsitPap8}) = true

@@ -33,6 +33,12 @@ OrdinaryDiffEqCore.AutoSwitch
 OrdinaryDiffEqCore.ssp_coefficient
 ```
 
+## Limiter support
+
+```@docs
+OrdinaryDiffEqCore.has_stage_limiter
+```
+
 ## Implicit method predictors
 
 ```@docs
