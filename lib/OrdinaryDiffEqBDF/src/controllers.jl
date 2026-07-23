@@ -27,7 +27,7 @@ mutable struct BDFControllerCache{T, E, C, NLPType} <: AbstractControllerCache
 end
 
 function setup_controller_cache(
-        alg::Union{QNDF, FBDF, DFBDF}, cache, controller::BDFController, ::Type{E}, disco_probs
+        alg::Union{QNDF, FBDF, DFBDF, MOOSE234}, cache, controller::BDFController, ::Type{E}, disco_probs
     ) where {E}
     QT = _resolved_QT(controller.basic)
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
@@ -68,6 +68,10 @@ function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
         qsteady_max = alg.qsteady_max,
     )
 end
+
+# MOOSE234's struct carries no qmax/qsteady fields, so build the delegating
+# BDFController from the trait-based defaults instead of threading alg kwargs.
+default_controller(QT, alg::MOOSE234) = BDFController(QT, alg)
 
 # QNDF
 stepsize_controller!(integrator, alg::QNDF) = nothing
@@ -591,4 +595,206 @@ function step_accept_controller!(
         cache.qwait -= 1 # countdown
     end
     return integrator.dt / q
+end
+
+# ============================================================================
+# MOOSE234 Controllers
+#
+# MOOSE234 error estimates (set in perform_step!):
+#   cache.terkm1 = |Est2| — order 2 LTE norm (from BDF3-Stab filter: y² − y³)
+#   cache.terkp1 = |Est3| — order 3 LTE norm (from FBDF4 filter: y⁴ − y³)
+#   cache.terk   = LTE norm at the current active order (used for EEst)
+#
+# Est4 (order 4 LTE) would require an extra f-eval and is not computed;
+# order-4 candidate step uses a geometric-extrapolation heuristic.
+# ============================================================================
+
+# --------------------------------------------------------------------------
+# Order selection: compute candidate stepsizes for each available order
+# (2, 3, 4) and pick the order allowing the largest next step.
+#
+#   hₖ = dt · (γ / |Estₖ|)^(1/(k+1)),   γ = 0.9
+#
+# Returns (kₙ, terk_new) where terk_new is the error norm at the chosen order.
+# --------------------------------------------------------------------------
+function choose_order_moose!(
+        integrator,
+        cache::Union{MOOSE234Cache, MOOSE234ConstantCache}
+    )
+    k = cache.order
+    dt = integrator.dt
+    n_hist = min(cache.iters_from_event + 1, 5)
+    max_avail = n_hist >= 4 ? 4 : (n_hist >= 3 ? 3 : 2)
+
+    est2 = cache.terkm1
+    est3 = cache.terkp1
+
+    # Candidate step for order 2:  h₂ = dt · (γ / est2)^(1/3)
+    if est2 > zero(est2)
+        h2 = dt * (0.9 / est2)^(1 / 3)
+    else
+        h2 = 10 * dt
+    end
+
+    # Candidate step for order 3:  h₃ = dt · (γ / est3)^(1/4)
+    if max_avail >= 3 && est3 > zero(est3)
+        h3 = dt * (0.9 / est3)^(1 / 4)
+    else
+        h3 = zero(dt)
+    end
+
+    # Candidate step for order 4: Est4 is not available, so approximate it.
+    # When errors decrease geometrically (est2 > est3), extrapolate
+    # est4 ≈ est3² / est2.
+    h4 = zero(dt)
+    if max_avail >= 4 && est2 > zero(est2) && est3 > zero(est3) && est3 < est2
+        est4_approx = est3 * est3 / est2
+        h4 = dt * (0.9 / est4_approx)^(1 / 5)
+    end
+
+    # Pick the order with the largest candidate step
+    kₙ = 2
+    hₙ = h2
+    if max_avail >= 3 && h3 > hₙ
+        kₙ = 3
+        hₙ = h3
+    end
+    if max_avail >= 4 && h4 > hₙ
+        kₙ = 4
+        hₙ = h4
+    end
+
+    # Only allow order *increase* when the qwait countdown has reached 0
+    if kₙ > k && cache.qwait > 0
+        kₙ = k
+    end
+
+    # Error norm at the chosen order (drives the stepsize formula)
+    if kₙ == 2
+        terk_new = est2
+    elseif kₙ == 3
+        terk_new = est3
+    else
+        terk_new = (est2 > zero(est2) && est3 > zero(est3) && est3 < est2) ?
+                   est3 * est3 / est2 : est3
+    end
+
+    return kₙ, terk_new
+end
+
+# --------------------------------------------------------------------------
+# Stepsize controller: run order selection, compute q = dt / dt_new
+# --------------------------------------------------------------------------
+function stepsize_controller!(integrator, alg::MOOSE234)
+    return stepsize_controller!(integrator, integrator.cache, alg)
+end
+
+function stepsize_controller!(
+        integrator,
+        cache::Union{MOOSE234Cache, MOOSE234ConstantCache},
+        alg::MOOSE234
+    )
+    cache.prev_order = cache.order
+
+    kₙ, terk = choose_order_moose!(integrator, cache)
+    if kₙ != cache.order
+        cache.nconsteps = 0
+        cache.order = kₙ
+    end
+
+    if iszero(terk)
+        q = inv(get_current_qmax(integrator, get_qmax(integrator)))
+    else
+        q = (terk / 0.9)^(1 / (kₙ + 1))
+    end
+    return q
+end
+
+# --------------------------------------------------------------------------
+# Step accept controller
+# --------------------------------------------------------------------------
+function step_accept_controller!(integrator, alg::MOOSE234, q)
+    return step_accept_controller!(integrator, integrator.cache, alg, q)
+end
+
+function step_accept_controller!(
+        integrator,
+        cache::Union{MOOSE234Cache, MOOSE234ConstantCache},
+        alg::MOOSE234, q
+    )
+    cache.consfailcnt = 0
+    if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
+        q = one(q)
+    end
+    cache.nconsteps += 1
+    cache.iters_from_event += 1
+    # CVODE-style qwait countdown: order + 2 steps after an order change
+    if cache.order != cache.prev_order
+        cache.qwait = cache.order + 2
+    elseif cache.qwait > 0
+        cache.qwait -= 1
+    end
+    return integrator.dt / q
+end
+
+# --------------------------------------------------------------------------
+# Step reject controller (MOOSE234-specific, min order = 2)
+#
+# On repeated failures: drop order, halve step size.
+# On consfailcnt > 3 at min order: restart (clear history).
+# --------------------------------------------------------------------------
+function step_reject_controller!(integrator, ::MOOSE234)
+    k = integrator.cache.order
+    h = integrator.dt
+    integrator.cache.consfailcnt += 1
+    integrator.cache.nconsteps = 0
+
+    if integrator.cache.consfailcnt > 1
+        h = h / 2
+    end
+
+    # Candidate step at current order
+    expo = 1 / (k + 1)
+    z = 1.2 * OrdinaryDiffEqCore.get_EEst(integrator)^expo
+    hₖ = z <= 10 ? h / z : 0.1 * h
+
+    hₙ = hₖ
+    kₙ = k
+
+    if k > 2
+        # Error at one order below:
+        #   k = 3 → order 2 error (terkm1)
+        #   k = 4 → order 3 error (terkp1)
+        est_lower = k == 4 ? integrator.cache.terkp1 : integrator.cache.terkm1
+        expo_lower = 1 / k  # 1 / ((k-1) + 1)
+        zₖ₋₁ = 1.3 * est_lower^expo_lower
+        hₖ₋₁ = zₖ₋₁ <= 10 ? h / zₖ₋₁ : 0.1 * h
+
+        if integrator.cache.consfailcnt > 2 || hₖ₋₁ > hₖ
+            hₙ = min(h, hₖ₋₁)
+            kₙ = k - 1
+        end
+    end
+
+    # Restart from order 2 (clear history) when stuck at minimum order
+    if kₙ == 2 && integrator.cache.consfailcnt > 3
+        integrator.derivative_discontinuity = true
+    end
+
+    integrator.dt = hₙ
+    return integrator.cache.order = kₙ
+end
+
+# --------------------------------------------------------------------------
+# Post-Newton failure controller
+# --------------------------------------------------------------------------
+function post_newton_controller!(integrator, alg::MOOSE234)
+    (; cache) = integrator
+    if cache.order > 2 && cache.nlsolver.nfails >= 3
+        cache.order -= 1
+    end
+    integrator.dt = integrator.dt / get_failfactor(integrator)
+    integrator.cache.consfailcnt += 1
+    integrator.cache.nconsteps = 0
+    return nothing
 end
