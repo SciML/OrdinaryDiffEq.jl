@@ -82,7 +82,11 @@ end
 # the inner `FastShortcutNonlinearPolyalg` built here.
 #
 # This is exactly `NonlinearSolve.FastShortcutHomotopyPolyalg(; autodiff)`
-# (SciML/NonlinearSolve.jl#1105); once that releases, this body collapses to a call to it.
+# (SciML/NonlinearSolve.jl#1105, released in NonlinearSolve 4.23). Collapsing this body to a
+# call to it is blocked, though: 4.23 pulls NonlinearSolveBase 2.37 → LinearSolve 5, while
+# OrdinaryDiffEq is capped at LinearSolve "3.75.0, 4" (so it is currently pinned to
+# NonlinearSolve ≤ 4.21). The collapse waits on the OrdinaryDiffEq LinearSolve-5 migration;
+# until then this hand-rolled equivalent (valid on NonlinearSolveBase 2.35) stays.
 function _homotopy_init_alg(u, autodiff, chunksize)
     inner = FastShortcutNonlinearPolyalg(;
         autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
@@ -116,12 +120,16 @@ end
 # NOTE (autodiff): unlike the whole-system `HomotopyProblem` branch above, the `autodiff`
 # signal is NOT threaded here — with `nothing` each block picks its own default, so the
 # continuation runs its default inner corrector rather than the requested AD backend.
-# SciML/NonlinearSolve.jl#1104 makes `SCCNonlinearSolve` route by block type (continuation
-# for homotopy blocks, the block algorithm applied directly otherwise) with that algorithm
-# threaded in as the inner corrector; once it is released these methods can return
-# `FastShortcutNonlinearPolyalg(; autodiff)` (bumping the `SCCNonlinearSolve` compat) to
-# honor `autodiff` per block. Until then, returning `nothing` keeps the homotopy blocks on
-# continuation (correct branch) at their ForwardDiff defaults.
+# SciML/NonlinearSolve.jl#1104 (SCCNonlinearSolve 1.14) makes `SCCNonlinearSolve` route by
+# block type (continuation for homotopy blocks, the block algorithm applied directly
+# otherwise) with that algorithm threaded in as the inner corrector, which would let these
+# methods return `FastShortcutNonlinearPolyalg(; autodiff)` to honor `autodiff` per block.
+# That flip is blocked on two counts: (1) SCCNonlinearSolve 1.14 → NonlinearSolveBase 2.37 →
+# LinearSolve 5, incompatible with OrdinaryDiffEq's LinearSolve "3.75.0, 4" cap; and (2)
+# SCCNonlinearSolve is a *reverse* dependency of NonlinearSolve, so its per-block routing is
+# not loaded by `using NonlinearSolve` — a direct SCCNonlinearSolve dep would be needed too.
+# Both wait on the OrdinaryDiffEq LinearSolve-5 migration. Until then, returning `nothing`
+# keeps the homotopy blocks on continuation (correct branch) at their ForwardDiff defaults.
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, prob::SciMLBase.SCCNonlinearProblem,
         autodiff = false, chunksize = Val(1)
