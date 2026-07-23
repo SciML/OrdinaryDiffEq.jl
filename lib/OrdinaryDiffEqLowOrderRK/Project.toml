@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqLowOrderRK"
 uuid = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.2.1"
+version = "2.2.2"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -36,7 +36,7 @@ DiffEqDevTools = "3"
 MuladdMacro = "0.2.4"
 LinearAlgebra = "1.10"
 SciMLBase = "3.35.1"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4.10"
 julia = "1.10"
 RecursiveArrayTools = "4.2.0"
 ODEProblemLibrary = "1"

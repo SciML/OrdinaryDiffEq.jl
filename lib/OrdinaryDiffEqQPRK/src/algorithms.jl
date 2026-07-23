@@ -10,3 +10,5 @@ Base.@kwdef struct QPRK98{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(::QPRK98) = true

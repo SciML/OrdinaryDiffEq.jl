@@ -463,6 +463,7 @@ include("precompilation_setup.jl")
             :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
             :current_extrapolant!, :interpolation_differential_vars,
             # Algorithm-trait predicates extended/queried by solver sublibs.
+            :has_stage_limiter,
             :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
             :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
             :allows_null_u0, :isaposteriori, :isdiscretealg, :isdp8,

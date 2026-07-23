@@ -83,7 +83,7 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = WarnLevel(),
-            stage_limiter_unused = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
             step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
@@ -121,7 +121,7 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = Silent(),
-            stage_limiter_unused = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
             step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
@@ -159,7 +159,7 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
-            stage_limiter_unused = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
             step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
@@ -197,7 +197,7 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
-            stage_limiter_unused = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
             step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
@@ -281,7 +281,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
 - `stability_check`: Messages about stability checks in extrapolation methods
 - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
-- `stage_limiter_unused`: Messages when a stage limiter is supplied to a solver that does not use it
+- `stage_limiter_unused`: Supplying a `stage_limiter` to a solver that does not apply one (defaults to `ErrorLevel`; lower it to allow the unused limiter)
 - `step_limiter_unused`: Messages when a step limiter is supplied to a solver that does not use it
 
 ## Sensitivity Group

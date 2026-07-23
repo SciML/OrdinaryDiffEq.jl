@@ -280,3 +280,5 @@ function ExplicitRK(tableau)
 end
 
 @truncate_stacktrace ExplicitRK
+
+OrdinaryDiffEqCore.has_stage_limiter(::ExplicitRK) = true
