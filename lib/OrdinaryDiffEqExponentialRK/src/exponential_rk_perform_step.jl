@@ -768,7 +768,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
     B1 = [zero(f0) f0]
     K1 = phiv_timestep(ts, J, B1; kwargs...) # tϕ(tA)f0
     @inbounds for i in 1:3
-        K1[:, i] ./= ts[i]
+        @views K1[:, i] ./= ts[i]
     end
     w4 = K1 * [-7 / 300, 97 / 150, -37 / 300]
     u4 = uprev + dt * w4
@@ -778,7 +778,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
     B2 = [zero(d4) d4]
     K2 = phiv_timestep(ts, J, B2; kwargs...)
     @inbounds for i in 1:3
-        K2[:, i] ./= ts[i]
+        @views K2[:, i] ./= ts[i]
     end
     w7 = K1 * [59 / 300, -7 / 75, 269 / 300] + K2 * [2 / 3, 2 / 3, 2 / 3]
     u7 = uprev + dt * w7
@@ -819,7 +819,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     B[:, 2] .= f0
     phiv_timestep!(K, ts, J, B; kwargs...)
     @inbounds for i in 1:3
-        K[:, i] ./= ts[i]
+        @views K[:, i] ./= ts[i]
     end
     @views @.. broadcast = false rtmp = (-7 / 300) * K[:, 1] + (97 / 150) * K[:, 2] +
         (-37 / 300) * K[:, 3] # rtmp is now w4
@@ -835,7 +835,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     # Krylov for the first remainder d4
     phiv_timestep!(K, ts, J, B; kwargs...)
     @inbounds for i in 1:3
-        K[:, i] ./= ts[i]
+        @views K[:, i] ./= ts[i]
     end
     @views @.. broadcast = false rtmp2 = (2 / 3) * (K[:, 1] + K[:, 2] + K[:, 3])
     rtmp .+= rtmp2 # w7 fully updated
@@ -924,8 +924,8 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
     f(rtmp, tmp, p, t + 2dt / 3)
     mul!(rtmp2, J, @view(K[:, 2]))
     @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
-    B[:, 4] .-= (13.5 / dt^2) .* rtmp
-    B[:, 5] .+= (81 / dt^3) .* rtmp
+    @views B[:, 4] .-= (13.5 / dt^2) .* rtmp
+    @views B[:, 5] .+= (81 / dt^3) .* rtmp
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
 
     # Update u
@@ -953,8 +953,8 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = 
 
     # Compute U2 and U3 vertically
     K = phiv_timestep([dt / 2, 3dt / 4], J, [zero(f0) zero(f0) f0]; kwargs...)
-    K[:, 1] .*= 8 / (3 * dt)
-    K[:, 2] .*= 16 / (9 * dt)
+    @views K[:, 1] .*= 8 / (3 * dt)
+    @views K[:, 2] .*= 16 / (9 * dt)
     U2 = uprev + K[:, 1]
     U3 = uprev + K[:, 2]
     R2 = f(U2, p, t + dt / 2) - f0 - J * K[:, 1] # remainder of U2
@@ -995,8 +995,8 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     ts[1] = dt / 2
     ts[2] = 3dt / 4
     phiv_timestep!(K, ts, J, @view(B[:, 1:3]); kwargs...)
-    K[:, 1] .*= 8 / (3 * dt)
-    K[:, 2] .*= 16 / (9 * dt)
+    @views K[:, 1] .*= 8 / (3 * dt)
+    @views K[:, 2] .*= 16 / (9 * dt)
     ## U2 and R2
     @.. broadcast = false tmp = uprev + @view(K[:, 1]) # tmp is now U2
     f(rtmp, tmp, p, t + dt / 2)
@@ -1009,8 +1009,8 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     f(rtmp, tmp, p, t + 3dt / 4)
     mul!(rtmp2, J, @view(K[:, 2]))
     @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
-    B[:, 4] .-= (16 / dt^2) .* rtmp
-    B[:, 5] .+= (144 / dt^3) .* rtmp
+    @views B[:, 4] .-= (16 / dt^2) .* rtmp
+    @views B[:, 5] .+= (144 / dt^3) .* rtmp
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
 
     # Update u
@@ -1112,8 +1112,8 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     mul!(rtmp2, J, k)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
-    B[:, 4] .+= (2187 / (106 * dt^2)) .* rtmp
-    B[:, 5] .-= (2187 / (106 * dt^3)) .* rtmp
+    @views B[:, 4] .+= (2187 / (106 * dt^2)) .* rtmp
+    @views B[:, 5] .-= (2187 / (106 * dt^3)) .* rtmp
 
     # Update u
     phiv_timestep!(k, dt, J, B; kwargs...)
@@ -1209,8 +1209,8 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     mul!(rtmp2, J, tmp)
     @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
     ## Update B using R3
-    B[:, 4] .-= (250 / (81 * dt^2)) .* rtmp
-    B[:, 5] .+= (500 / (27 * dt^3)) .* rtmp
+    @views B[:, 4] .-= (250 / (81 * dt^2)) .* rtmp
+    @views B[:, 5] .+= (500 / (27 * dt^3)) .* rtmp
 
     # Update u
     du = @view(K[:, 1])
@@ -1327,7 +1327,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     mul!(rtmp2, J, tmp)
     @.. broadcast = false rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
     axpy!(b2, k, u) # partially update u
-    B[:, 4] .+= rtmp # is now dR
+    @views B[:, 4] .+= rtmp # is now dR
 
     # Compute the third column (dR = R2 - 2R1)
     fill!(@view(B[:, 2]), zero(eltype(B)))
