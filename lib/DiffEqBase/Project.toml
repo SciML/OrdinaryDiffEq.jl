@@ -71,7 +71,7 @@ DiffEqBaseUnitfulExt = "Unitful"
 [compat]
 ADTypes = "1.22.0"
 Aqua = "0.8"
-ArrayInterface = "7.19.0"
+ArrayInterface = "7.28"
 BracketingNonlinearSolve = "1.12.1"
 CUDA = "5, 6"
 ChainRulesCore = "1"
