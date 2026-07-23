@@ -1,5 +1,5 @@
 name = "OrdinaryDiffEqDifferentiation"
-version = "3.4.1"
+version = "3.5.0"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 
@@ -21,7 +21,7 @@ DiffEqDevTools = "3"
 Test = "<0.0.1, 1"
 FiniteDiff = "2.27"
 DifferentiationInterface = "0.7.18"
-LinearSolve = "3.75.0, 4"
+LinearSolve = "5.1"
 ConstructionBase = "1.5.8"
 LinearAlgebra = "1.10"
 SciMLBase = "3.35.1"
