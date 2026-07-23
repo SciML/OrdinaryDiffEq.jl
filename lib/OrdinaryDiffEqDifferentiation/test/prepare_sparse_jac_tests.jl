@@ -1,9 +1,10 @@
 using OrdinaryDiffEqDifferentiation
 using SparseArrays
 using LinearAlgebra
+using ArrayInterface: same_sparsity_structure
 using Test
 
-using OrdinaryDiffEqDifferentiation: prepare_sparse_jac!, same_sparsity_structure
+using OrdinaryDiffEqDifferentiation: prepare_sparse_jac!
 
 # Reference: the unconditional rebuild `prepare_sparse_jac!` replaced. Used to assert
 # the guarded version is byte-identical to the old behavior on both paths.

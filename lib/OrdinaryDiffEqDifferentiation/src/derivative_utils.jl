@@ -280,7 +280,7 @@ See https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653 for why the structure
 track `jac_prototype` rather than whatever `f.jac` happens to fill in.
 """
 function prepare_sparse_jac!(J, jac_prototype)
-    if same_sparsity_structure(J, jac_prototype)
+    if ArrayInterface.same_sparsity_structure(J, jac_prototype)
         set_all_nzval!(J, false)
     else
         # `jac_prototype`'s stored values must be made nonzero first: the broadcast
