@@ -145,3 +145,4 @@ Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
 
 # Julia spelling convention
 inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"
+hom = "hom"  # scc_hom homotopy abbreviation in NonlinearSolve tests (#3989)
