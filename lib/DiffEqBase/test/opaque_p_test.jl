@@ -14,6 +14,10 @@ struct LinearP
     k::Float64
 end
 
+struct VecP
+    ks::Vector{Float64}
+end
+
 function linear_rhs!(du, u, p::LinearP, t)
     @inbounds du[1] = -p.k * u[1]
     return nothing
@@ -64,14 +68,29 @@ concretize(prob, alg = nothing) = DiffEqBase.get_concrete_problem(prob, true; al
         @test cp.p isa SciMLBase.NullParameters
     end
 
-    @testset "Non-isbits p falls back to AutoSpecialize-style wrapping" begin
-        f_vec!(du, u, p::Vector{Float64}, t) = (@inbounds du[1] = -p[1] * u[1]; nothing)
-        prob = ODEProblem{true, DiffEqBase.AutoDePSpecialize}(
-            f_vec!, [1.0], (0.0, 1.0), [0.5],
-        )
+    @testset "non-isbits p is de-specialized via OpaqueRef" begin
+        # A non-isbits struct (Vector field). It packs by reference into an
+        # OpaqueRef, and the wrapper signature carries OpaqueRef in the p slot.
+        f_vecp!(du, u, p::VecP, t) = (@inbounds du[1] = -p.ks[1] * u[1]; nothing)
+        prob = ODEProblem{true, DiffEqBase.AutoDePSpecialize}(f_vecp!, [1.0], (0.0, 1.0), VecP([0.5]))
         cp = concretize(prob)
-        @test cp.p isa Vector{Float64}
-        @test cp.f.f isa DiffEqBase.FunctionWrappersWrappers.FunctionWrappersWrapper
+        @test cp.p isa RespecializeParams.OpaqueRef
+        du = [0.0]
+        cp.f(du, [1.0], cp.p, 0.0)
+        @test du[1] ≈ -0.5
+        @test RespecializeParams.unpack(cp.p, VecP).ks == [0.5]
+
+        # a bare Vector parameter is likewise de-specialized into an OpaqueRef
+        f_vec!(du, u, p::Vector{Float64}, t) = (@inbounds du[1] = -p[1] * u[1]; nothing)
+        cpv = concretize(ODEProblem{true, DiffEqBase.AutoDePSpecialize}(f_vec!, [1.0], (0.0, 1.0), [0.5]))
+        @test cpv.p isa RespecializeParams.OpaqueRef
+    end
+
+    @testset "already-packed p is not re-wrapped (idempotent)" begin
+        cp = concretize(deprob([1.0], LinearP(0.5)))
+        cp2 = concretize(cp)   # re-concretize the opaque problem
+        @test cp2.p isa RespecializeParams.OpaqueParams
+        @test typeof(cp2.f) === typeof(cp.f)   # no nested OpaqueVoid wrapping
     end
 
     @testset "two LinearP problems share the wrapped-f type" begin

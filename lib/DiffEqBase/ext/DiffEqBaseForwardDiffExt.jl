@@ -133,9 +133,10 @@ function wrapfun_iip(
 end
 
 # Opaque-p variant of the 3-arg wrapfun_iip: same matrix of (du, u, p, t)
-# variants as the regular FD wrapper, but with `OpaqueParams` substituted in
-# place of `T3` (the parameter slot). The user's `ff` is wrapped in
-# `OpaqueVoid(P, ff)` so the unpack-to-`P` happens before `ff` is invoked.
+# variants as the regular FD wrapper, but with the opaque container substituted
+# in place of `T3` (the parameter slot) — `OpaqueParams` for an `isbits` `P`,
+# `OpaqueRef` otherwise. The user's `ff` is wrapped in `OpaqueVoid(P, ff)` so
+# the unpack-to-`P` happens before `ff` is invoked.
 function wrapfun_iip_opaque(
         ff,
         ::Type{P},
@@ -152,7 +153,7 @@ function wrapfun_iip_opaque(
     dualT1_time = ArrayInterface.promote_eltype(T1, dualT_time)
     dualT4_time = dualgen(promote_type(T, T4))
 
-    O = RespecializeParams.OpaqueParams
+    O = RespecializeParams.opaque_container_type(P)
     return _make_fww(
         OpaqueVoid(P, ff),
         Tuple{T1, T2, O, T4},
