@@ -80,6 +80,9 @@ end
 # level `autodiff` knob on `HomotopyPolyAlgorithm` itself cannot do this: it lives in
 # NonlinearSolveBase, which cannot construct the concrete inner solver, so the AD rides on
 # the inner `FastShortcutNonlinearPolyalg` built here.
+#
+# This is exactly `NonlinearSolve.FastShortcutHomotopyPolyalg(; autodiff)`
+# (SciML/NonlinearSolve.jl#1105); once that releases, this body collapses to a call to it.
 function _homotopy_init_alg(u, autodiff, chunksize)
     inner = FastShortcutNonlinearPolyalg(;
         autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
