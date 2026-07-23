@@ -190,7 +190,8 @@ end
 
 function qa_group()
     is_APPVEYOR && return
-    return @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
+    @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
+    return @time @safetestset "Sublibrary Group Selection" include("qa/sublibrary_group_selection.jl")
 end
 
 function activate_gpu_env()
