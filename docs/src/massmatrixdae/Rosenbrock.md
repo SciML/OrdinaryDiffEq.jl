@@ -129,6 +129,7 @@ Rosenbrock23
 Rosenbrock32
 ROS3P
 Rodas3
+Rodas3d
 Rodas23W
 Rodas3P
 Rodas4
@@ -160,4 +161,6 @@ Velds4
 GRK4T
 GRK4A
 Ros4LStab
+HybridExplicitImplicitRK
+Tsit5DA
 ```

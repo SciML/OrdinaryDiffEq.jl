@@ -23,6 +23,8 @@ TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+# DiffEqDevTools brings Latexify; releases compatible with Symbolics 7 require OrderedCollections 1.
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
@@ -40,9 +42,10 @@ DiffEqDevTools = "3"
 FastBroadcast = "1.3"
 FunctionWrappers = "1.1.3"
 LinearAlgebra = "1.10"
-MuladdMacro = "0.2.1"
+MuladdMacro = "0.2.4"
 ODEProblemLibrary = "1"
 OrdinaryDiffEqCore = "4"
+OrderedCollections = "1"
 Pkg = "1"
 PrecompileTools = "1.2.1, 1.3"
 Preferences = "1.5.0"
@@ -62,4 +65,4 @@ julia = "1.10"
 path = "../OrdinaryDiffEqCore"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg", "SciMLTesting"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "OrderedCollections", "Pkg", "SciMLTesting"]

@@ -40,7 +40,7 @@ using OrdinaryDiffEqRosenbrockTableaus: OrdinaryDiffEqRosenbrockTableaus,
     ROS2SRodasTableau, ROS34PRwRodasTableau, ROS34PW1aRodasTableau,
     ROS34PW1bRodasTableau, ROS34PW2RodasTableau, ROS3PRL2RodasTableau,
     ROS3PRLRodasTableau, ROS3PRRodasTableau, ROS3PRodasTableau, ROS3RodasTableau,
-    Rodas3PRodasTableau, Rodas3RodasTableau, Rodas42Tableau, Rodas4P2Tableau,
+    Rodas3PRodasTableau, Rodas3RodasTableau, Rodas3dRodasTableau, Rodas42Tableau, Rodas4P2Tableau,
     Rodas4PTableau, Rodas4PWTableau, Rodas4Tableau, Rodas5Tableau, RodasTableau,
     Ros4LStabRodasTableau, RosShamp4RodasTableau, RosenbrockW6S4OSRodasTableau,
     Scholz4_7RodasTableau, Veldd4RodasTableau, Velds4RodasTableau
@@ -209,7 +209,7 @@ PrecompileTools.@compile_workload begin
 end
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-    Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
+    Ros4LStab, ROS3P, Rodas3, Rodas3d, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
     Rodas4PW, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK,
     Tsit5DA, RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw,
     ROS3PRL, ROS3PRL2, ROK4a,

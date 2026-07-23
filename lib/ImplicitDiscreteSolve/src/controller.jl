@@ -112,14 +112,14 @@ function OrdinaryDiffEqCore.step_reject_controller!(
     return
 end
 
+function _accept_kantorovich_step(controller, Θks)
+    return !controller.strict || all(Θk -> Θk <= controller.Θreject, Θks)
+end
+
 function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::KantorovichTypeControllerCache, alg)
     (; controller) = cache
     (; Θks) = integrator.cache
-    if controller.strict
-        return all(controller.Θreject .< Θks)
-    else
-        return true
-    end
+    return _accept_kantorovich_step(controller, Θks)
 end
 
 function OrdinaryDiffEqCore.sync_controllers!(cache1::KantorovichTypeControllerCache, cache2::KantorovichTypeControllerCache)
