@@ -534,10 +534,10 @@ using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 end
 
 # Regression test for issue #3962 (and #1263): out-of-place Rosenbrock/Rodas steps
-# used `_reshape(W \ _vec(...), axes(uprev))`, which collapses the ArrayPartition
-# state behind SecondOrderODEProblem/DynamicalODEFunction down to a bare Vector. The
-# next `f(u,p,t)` then failed with `type Array has no field x`. The out-of-place
-# stages must keep the state an ArrayPartition.
+# previously used `_reshape(W \ _vec(...), axes(uprev))`, which collapses the
+# ArrayPartition state behind SecondOrderODEProblem/DynamicalODEFunction down to a
+# bare Vector. The next `f(u,p,t)` then failed with `type Array has no field x`.
+# Stages now use `ArrayInterface.restructure(uprev, ...)` so the wrapper is kept.
 @testset "OOP SecondOrderODEProblem preserves ArrayPartition (#3962)" begin
     # u'' = -u  ⇒  position = [cos t, sin t], velocity = [-sin t, cos t]
     ho_iip(ddu, du, u, p, t) = (@. ddu = -u)

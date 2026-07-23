@@ -294,7 +294,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
                 "Use the in-place form (define f!(du, u, p, t)) or supply a concrete jac_prototype."
         )
     end
-    dz = _reshape_state(W \ _vec(ztmp), ztmp)
+    dz = _restructure_state(ztmp, W \ _vec(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1

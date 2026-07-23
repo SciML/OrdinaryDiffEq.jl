@@ -1,12 +1,3 @@
-# Reshape a flat linear-solve result back into the shape/container of the state.
-# Plain `reshape` (used for matrix-valued states) collapses structured AbstractVector
-# wrappers such as ArrayPartition — the state type behind SecondOrderODEProblem /
-# DynamicalODEFunction — down to a bare Vector. That bare Vector then survives the
-# out-of-place stage broadcasts and breaks the user's `f(u,p,t)` which expects `u.x`.
-# For those states, copy into a matching container so the wrapper is preserved.
-@inline _reshape_state(x, uprev) = _reshape(x, axes(uprev))
-@inline _reshape_state(x, uprev::ArrayPartition) = copyto!(similar(uprev, eltype(x)), x)
-
 function initialize!(
         integrator, cache::Union{
             Rosenbrock23Cache,
@@ -288,16 +279,16 @@ end
         return nothing
     end
 
-    k₁ = _reshape_state(W \ _vec((integrator.fsalfirst + dtγ * dT)), uprev) * neginvdtγ
+    k₁ = _restructure_state(uprev, W \ _vec((integrator.fsalfirst + dtγ * dT))) * neginvdtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _reshape_state(W \ _vec(f₁ - k₁), uprev)
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
     else
-        k₂ = _reshape_state(W \ _vec(f₁ - mass_matrix * k₁), uprev)
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - mass_matrix * k₁))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
     integrator.stats.nsolve += 1
@@ -319,7 +310,7 @@ end
                     c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
             )
         end
-        k₃ = _reshape_state(W \ _vec(linsolve_tmp), uprev) * neginvdtγ
+        k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
         integrator.stats.nsolve += 1
 
         if u isa Number
@@ -373,17 +364,17 @@ end
         return nothing
     end
 
-    k₁ = _reshape_state(W \ -_vec((integrator.fsalfirst + dtγ * dT)), uprev) / dtγ
+    k₁ = _restructure_state(uprev, W \ -_vec((integrator.fsalfirst + dtγ * dT))) / dtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _reshape_state(W \ _vec(f₁ - k₁), uprev)
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
     else
         linsolve_tmp = f₁ - mass_matrix * k₁
-        k₂ = _reshape_state(W \ _vec(linsolve_tmp), uprev)
+        k₂ = _restructure_state(uprev, W \ _vec(linsolve_tmp))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
 
@@ -404,7 +395,7 @@ end
                 c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
         )
     end
-    k₃ = _reshape_state(W \ _vec(linsolve_tmp), uprev) * neginvdtγ
+    k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
     integrator.stats.nsolve += 1
     u = @.. uprev + dto6 * (k₁ + 4k₂ + k₃)
 
@@ -470,7 +461,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
     linsolve_tmp = @.. du + dtd[1] * dT
-    k1 = _reshape_state(W \ -_vec(linsolve_tmp), uprev)
+    k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
 
@@ -505,7 +496,7 @@ end
         end
         linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
 
-        ks = Base.setindex(ks, _reshape_state(W \ -_vec(linsolve_tmp), uprev), stage)
+        ks = Base.setindex(ks, _restructure_state(uprev, W \ -_vec(linsolve_tmp)), stage)
         integrator.stats.nsolve += 1
     end
     # Solution update using explicit b weights

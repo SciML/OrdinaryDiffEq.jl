@@ -2,14 +2,12 @@
 # This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
 get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
 
-# Reshape a flat linear-solve result back into the shape/container of the state.
-# Plain `reshape` collapses structured AbstractVector wrappers such as ArrayPartition
-# (the state type behind SecondOrderODEProblem / DynamicalODEFunction) down to a bare
-# Vector. That bare Vector then poisons the out-of-place Newton update `z .- dz`, whose
-# result can no longer be stored back into the ArrayPartition-typed nlsolver fields.
-# For those states, copy into a matching container so the wrapper is preserved.
-@inline _reshape_state(x, template) = _reshape(x, axes(template))
-@inline _reshape_state(x, template::ArrayPartition) = copyto!(similar(template, eltype(x)), x)
+# Map a flat linear-solve result back onto the state container. Delegates to
+# ArrayInterface.restructure (which preserves ArrayPartition / other wrappers that
+# plain reshape collapses); Number states need a convert because restructure
+# relies on `similar`.
+@inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
+@inline _restructure_state(template::Number, x) = oftype(template, x)
 
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
