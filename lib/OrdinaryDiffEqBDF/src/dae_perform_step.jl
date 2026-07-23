@@ -120,6 +120,10 @@ end
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
         integrator.fsalfirst = @.. broadcast = false (integrator.u - integrator.uprev) / dtₙ
+        # DImplicitEuler is not FSAL and leaves integrator.fsallast stale, but DABDF2 is
+        # FSAL: the next step copies fsallast into fsalfirst. Seed fsallast with the
+        # startup derivative so the first BDF2 error estimate sees a valid duₙ₋₁.
+        integrator.fsallast = integrator.fsalfirst
         cache.fsalfirstprev = integrator.fsalfirst
         return
     end
@@ -138,7 +142,10 @@ end
     nlsolvefail(nlsolver) && return
 
     uₙ = uₙ₋₁ + z
-    integrator.fsallast = @.. broadcast = false z / dtₙ
+    integrator.du = du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dtₙ)
+    # fsallast is the BDF2 derivative duₙ (matching fsalfirst = duₙ₋₁), not the chord
+    # slope z/dtₙ; the latter makes the LTE second-difference estimate inconsistent.
+    integrator.fsallast = du
 
     if integrator.opts.adaptive
         tmp = integrator.fsallast - (1 + dtₙ / dtₙ₋₁) * integrator.fsalfirst +
@@ -159,7 +166,6 @@ end
     end
 
     integrator.u = uₙ
-    integrator.du = du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dtₙ)
 
     if integrator.opts.calck
         integrator.k[2] = integrator.k[1]
@@ -187,6 +193,10 @@ end
         cache.dtₙ₋₁ = dtₙ
         perform_step!(integrator, cache.eulercache, repeat_step)
         @.. broadcast = false integrator.fsalfirst = (uₙ - uₙ₋₁) / dt
+        # DImplicitEuler is not FSAL and leaves integrator.fsallast stale, but DABDF2 is
+        # FSAL: the next step copies fsallast into fsalfirst. Seed fsallast with the
+        # startup derivative so the first BDF2 error estimate sees a valid duₙ₋₁.
+        @.. broadcast = false integrator.fsallast = integrator.fsalfirst
         cache.fsalfirstprev .= integrator.fsalfirst
         return
     end
