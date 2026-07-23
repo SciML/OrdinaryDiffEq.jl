@@ -4,9 +4,20 @@
     "Explicit Runge-Kutta Method.",
     """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""", "", ""
+    Springer-Verlag.""",
+    """
+    - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    """
+    stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    """
 )
-struct Euler <: OrdinaryDiffEqAlgorithm end
+Base.@kwdef struct Euler{StageLimiter, StepLimiter} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 @doc generic_solver_docstring(
     "1st order fully explicit method for testing split accuracy",

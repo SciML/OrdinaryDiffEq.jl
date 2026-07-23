@@ -53,7 +53,7 @@ end
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{T, T2, E}
     ) where {T, T2, E}
     (; t, dt, uprev, u, p) = integrator
-    (; zs, ks, atmp, nlsolver, step_limiter!) = cache
+    (; zs, ks, atmp, nlsolver) = cache
     (; tmp) = nlsolver
     Ai = tab.Ai
     bi = tab.bi
@@ -1226,7 +1226,6 @@ end
         end
     end
 
-    step_limiter!(u, integrator, p, t + dt)
 
     # ---------------- Error estimate ----------------
     if E === :standard
@@ -2509,7 +2508,7 @@ end
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{T, T2, :trap_dd3}
     ) where {T, T2}
     (; t, dt, uprev, u, p) = integrator
-    (; atmp, nlsolver, step_limiter!) = cache
+    (; atmp, nlsolver) = cache
     (; z, tmp) = nlsolver
     f = integrator.f
     mass_matrix = f.mass_matrix
@@ -2533,7 +2532,6 @@ end
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = z
 
-    step_limiter!(u, integrator, p, t + dt)
 
     calculate_error_estimate!(integrator, cache, tab, t)
 

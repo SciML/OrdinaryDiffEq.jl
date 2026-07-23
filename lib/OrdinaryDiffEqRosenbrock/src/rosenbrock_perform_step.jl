@@ -33,10 +33,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (;
-        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
-        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -96,7 +94,6 @@ end
 
     @.. u = uprev + dt * k₂
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         f(fsallast, u, p, t + dt)
@@ -150,10 +147,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (;
-        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
-        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -234,7 +229,6 @@ end
 
     @.. broadcast = false u = uprev + dto6 * (k₁ + 4k₂ + k₃)
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
@@ -734,10 +728,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (;
-        du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp,
-        jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
@@ -805,7 +797,6 @@ end
     tab = cache.tab
     _weighted_sum!(u, uprev, tab.b, ks)
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive && tab.btilde !== nothing
         # Error estimate using explicit btilde weights
@@ -1022,11 +1013,8 @@ end
 
 @muladd function perform_step!(integrator, cache::HybridExplicitImplicitCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (;
-        du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight,
-        stage_limiter!, step_limiter!, diff_vars, alg_vars,
-        g_z, g_y, linsolve_tmp_z,
-    ) = cache
+    (; du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, diff_vars, alg_vars, g_z, g_y, linsolve_tmp_z) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     W_z = cache.W_z
     (; A, C, gamma, b, bhat, c, d, H) = cache.tab
 
@@ -1154,7 +1142,6 @@ end
         @.. u += b[i] * ks[i]
     end
 
-    step_limiter!(u, integrator, p, t + dt)
 
     # Error estimation
     if integrator.opts.adaptive

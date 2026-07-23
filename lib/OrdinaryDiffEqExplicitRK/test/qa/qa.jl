@@ -8,6 +8,8 @@ run_qa(
             ignore = (
                 # TruncatedStacktraces-owned macro (external, not `public`).
                 Symbol("@truncate_stacktrace"),
+                # OrdinaryDiffEqCore owner-internal no-op limiter (deliberately not public).
+                :trivial_limiter!,
             ),
         ),
         all_qualified_accesses_are_public = (;
