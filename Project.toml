@@ -53,6 +53,7 @@ OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
 
 [compat]
 ADTypes = "1.22.0"
+ArrayInterface = "7.28"
 CommonSolve = "0.2.6"
 DifferentiationInterface = "0.7.18"
 DocStringExtensions = "0.9.5"
