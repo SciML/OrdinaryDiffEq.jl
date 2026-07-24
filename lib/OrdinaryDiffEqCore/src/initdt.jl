@@ -6,6 +6,14 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
+# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
+# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
+# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+@inline function _bool_equal(a, b)
+    r = a == b
+    return r isa Bool ? r : all(r)
+end
+
 @muladd function _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
@@ -242,8 +250,11 @@
 
     # Constant zone before callback
     # Just return first guess
-    # Avoids AD issues
-    length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+    # Avoids AD issues.
+    # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
+    # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
+    # Coerce array-valued equality so the boolean context always receives a Bool.
+    length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
@@ -417,8 +428,9 @@ end
 
     # Constant zone before callback
     # Just return first guess
-    # Avoids AD issues
-    f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+    # Avoids AD issues.
+    # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
+    _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
