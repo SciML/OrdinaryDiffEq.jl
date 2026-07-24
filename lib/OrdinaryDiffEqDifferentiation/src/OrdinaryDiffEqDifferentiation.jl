@@ -11,7 +11,8 @@ import FunctionWrappersWrappers
 import DiffEqBase
 
 import LinearAlgebra
-import LinearAlgebra: Diagonal, I, UniformScaling, diagind, opnorm
+import LinearAlgebra: Bidiagonal, Diagonal, I, SymTridiagonal, Tridiagonal,
+    UniformScaling, diagind, opnorm
 import LinearAlgebra: LowerTriangular
 import ArrayInterface
 
@@ -69,6 +70,15 @@ nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays
 spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+
+# `fill!` on LinearAlgebra's banded structured matrices throws for nonzero
+# values since the off-band entries are constrained to zero, so write the
+# stored bands directly instead.
+fill_stored!(A, v) = fill!(A, v)
+fill_stored!(A::Diagonal, v) = (fill!(A.diag, v); A)
+fill_stored!(A::Bidiagonal, v) = (fill!(A.dv, v); fill!(A.ev, v); A)
+fill_stored!(A::Tridiagonal, v) = (fill!(A.dl, v); fill!(A.d, v); fill!(A.du, v); A)
+fill_stored!(A::SymTridiagonal, v) = (fill!(A.dv, v); fill!(A.ev, v); A)
 
 include("alg_utils.jl")
 include("linsolve_utils.jl")
