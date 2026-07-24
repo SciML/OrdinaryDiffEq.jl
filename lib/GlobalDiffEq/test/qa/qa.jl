@@ -1,6 +1,7 @@
 using SciMLTesting, GlobalDiffEq, Test
 using JET
 using OrdinaryDiffEqTsit5, OrdinaryDiffEqSSPRK
+using SciMLSensitivity, QuadGK
 
 # `@reexport using DiffEqBase` republishes DiffEqBase's API; those names are
 # documented and rendered at their owning packages, not in the OrdinaryDiffEq
@@ -26,10 +27,17 @@ run_qa(
     ),
     ei_kwargs = (;
         all_qualified_accesses_are_public = (;
-            # `SciMLBase.__solve` is SciMLBase's internal solve entry point (not
-            # part of the public API); GlobalDiffEq overloads it via its owner
-            # SciMLBase.
-            ignore = (:__solve,),
+            ignore = (
+                # `SciMLBase.__solve` is SciMLBase's internal solve entry point (not
+                # part of the public API); GlobalDiffEq overloads it via its owner
+                # SciMLBase.
+                :__solve,
+                # Extension hooks owned by GlobalDiffEq itself: the
+                # SciMLSensitivity extension adds methods to these internal
+                # functions of its parent package.
+                :_adjoint_solution, :_defect_projection,
+                :_default_quadrature_sensealg, :_is_quadrature_adjoint,
+            ),
         ),
     ),
     # `@reexport using DiffEqBase` deliberately reexports DiffEqBase's API, so
