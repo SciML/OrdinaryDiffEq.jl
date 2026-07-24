@@ -2,7 +2,7 @@
 
 This page lists the user-facing DiffEqBase API documented with OrdinaryDiffEq.
 Solver-author hooks, callback machinery, and cache types are documented separately
-in the [developer extension API](@ref Developer-Extension-API).
+in the [developer extension API](https://docs.sciml.ai/OrdinaryDiffEq/stable/devtools/internals/public_api/).
 
 ## Specialization levels
 

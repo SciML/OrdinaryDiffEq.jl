@@ -2,7 +2,7 @@
 
 This page lists user-facing OrdinaryDiffEqCore API. The controller API has its
 own page, and solver-author hooks are documented separately in the
-[developer extension API](@ref Developer-Extension-API).
+[developer extension API](https://docs.sciml.ai/OrdinaryDiffEq/stable/devtools/internals/public_api/).
 
 ## Integrator objects
 
@@ -50,7 +50,7 @@ OrdinaryDiffEqCore.Predictor
 These OrdinaryDiffEqNonlinearSolve algorithms are public user API because they
 are passed directly through implicit solver constructors as `nlsolve = ...`.
 Lower-level nonlinear-solve hooks intended for solver authors are listed on the
-[developer extension API](@ref Developer-Extension-API) page.
+[developer extension API](https://docs.sciml.ai/OrdinaryDiffEq/stable/devtools/internals/public_api/) page.
 
 ```@docs
 OrdinaryDiffEqNonlinearSolve.NLAnderson
