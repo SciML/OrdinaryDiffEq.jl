@@ -1,4 +1,4 @@
-@cache struct NewmarkBetaCache{uType, rateType, parameterType, N, Thread} <:
+@cache struct NewmarkBetaCache{uType, rateType, parameterType, N, Thread, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType # Current solution
     uprev::uType # Previous solution
@@ -6,8 +6,7 @@
     β::parameterType # newmark parameter 1
     γ::parameterType # newmark parameter 2
     nlcache::N # Inner solver
-    tmp::uType # temporary, because it is required.
-    atmp::uType
+    tmp_cache::TmpC # unified scratch (tmp = former `tmp`, tmp2 = former `atmp`)
     thread::Thread
 end
 
@@ -36,9 +35,8 @@ function alg_cache(
     prob = NonlinearProblem{true}(discretized_residual!, aₙ₊₁, evalcache)
     nlcache = init(prob, alg.nlsolve)
 
-    tmp = zero(u)
-    atmp = zero(u)
-    return NewmarkBetaCache(u, uprev, fsalfirst, β, γ, nlcache, tmp, atmp, thread)
+    tmp_cache = TmpCache(zero(u), zero(u), nothing, nothing, nothing, nothing)
+    return NewmarkBetaCache(u, uprev, fsalfirst, β, γ, nlcache, tmp_cache, thread)
 end
 
 @cache struct NewmarkBetaConstantCache{uType, rateType, parameterType, N, Thread} <:
@@ -79,7 +77,7 @@ function alg_cache(
     return NewmarkBetaConstantCache(u, uprev, fsalfirst, β, γ, alg.nlsolve, tmp, atmp, thread)
 end
 
-@cache struct GeneralizedAlphaCache{uType, rateType, parameterType, N, Thread} <:
+@cache struct GeneralizedAlphaCache{uType, rateType, parameterType, N, Thread, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType # Current solution
     uprev::uType # Previous solution
@@ -89,8 +87,7 @@ end
     β::parameterType # newmark parameter 1
     γ::parameterType # newmark parameter 2
     nlcache::N
-    tmp::uType
-    atmp::uType
+    tmp_cache::TmpC # unified scratch (tmp = former `tmp`, tmp2 = former `atmp`)
     thread::Thread
 end
 
@@ -118,9 +115,8 @@ function alg_cache(
     prob = NonlinearProblem{true}(discretized_residual!, aₙ₊₁, evalcache)
     nlcache = init(prob, alg.nlsolve)
 
-    tmp = zero(u)
-    atmp = zero(u)
-    return GeneralizedAlphaCache(u, uprev, fsalfirst, αm, αf, β, γ, nlcache, tmp, atmp, thread)
+    tmp_cache = TmpCache(zero(u), zero(u), nothing, nothing, nothing, nothing)
+    return GeneralizedAlphaCache(u, uprev, fsalfirst, αm, αf, β, γ, nlcache, tmp_cache, thread)
 end
 
 @cache struct GeneralizedAlphaConstantCache{uType, rateType, parameterType, N, Thread} <:

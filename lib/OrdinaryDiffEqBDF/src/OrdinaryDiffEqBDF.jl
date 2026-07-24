@@ -1,6 +1,7 @@
 module OrdinaryDiffEqBDF
 
-import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
+import OrdinaryDiffEqCore: TmpCache,
+    perform_step!, unwrap_alg,
     alg_extrapolates,
     default_controller, IController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

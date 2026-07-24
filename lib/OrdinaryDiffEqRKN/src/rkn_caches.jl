@@ -7,16 +7,17 @@ struct NystromVIConstantCache{TabType} <: NystromConstantCache
     tab::TabType
 end
 
-@cache struct NystromVICache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
+@cache struct NystromVICache{uType, rateType, reducedRateType, TabType, TmpC <: TmpCache} <:
     NystromMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     ks::Vector{reducedRateType}   # stage derivatives k2..kN (length nstages-1)
     k::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` (stage state), `tmp2` (embedded solution, was
+    # `utilde`) and `atmp` (error-norm scaling) — migrated fields, so the array
+    # count matches the historical cache exactly. Rate slots are `nothing`.
+    tmp_cache::TmpC
     tab::TabType
 end
 
@@ -24,7 +25,7 @@ end
 # its specialized dense-output interpolant can dispatch.
 const DPRKN6Caches = Union{
     NystromVIConstantCache{<:DPRKN6Tableau},
-    NystromVICache{<:Any, <:Any, <:Any, <:Any, <:DPRKN6Tableau},
+    NystromVICache{<:Any, <:Any, <:Any, <:DPRKN6Tableau},
 }
 
 ## Generic velocity-dependent Nyström caches
@@ -33,16 +34,17 @@ struct NystromVDConstantCache{T, T2} <: NystromConstantCache
     tab::NystromVDTableau{T, T2}
 end
 
-@cache struct NystromVDCache{uType, rateType, reducedRateType, uNoUnitsType, T, T2} <:
+@cache struct NystromVDCache{uType, rateType, reducedRateType, T, T2, TmpC <: TmpCache} <:
     NystromMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     ks::Vector{reducedRateType}   # stage derivatives k2..kN (length nstages-1)
     k::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` (stage state), `tmp2` (embedded solution, was
+    # `utilde`) and `atmp` (error-norm scaling) — migrated fields, so the array
+    # count matches the historical cache exactly. Rate slots are `nothing`.
+    tmp_cache::TmpC
     tab::NystromVDTableau{T, T2}
 end
 
@@ -58,11 +60,11 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). No safe rate donors (stages persist via `ks`),
+    # so the rate slots stay `nothing`.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVDCache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -88,11 +90,11 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). No safe rate donors (stages persist via `ks`),
+    # so the rate slots stay `nothing`.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVDCache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -118,11 +120,11 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). No safe rate donors (stages persist via `ks`),
+    # so the rate slots stay `nothing`.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVDCache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -136,15 +138,20 @@ function alg_cache(
     )
 end
 
-@cache struct Nystrom4VelocityIndependentCache{uType, rateType, reducedRateType} <:
-    NystromMutableCache
+@cache struct Nystrom4VelocityIndependentCache{
+        uType, rateType, reducedRateType, TmpC <: TmpCache,
+    } <: NystromMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     k₂::reducedRateType
     k₃::reducedRateType
     k::rateType
-    tmp::uType
+    # Unified scratch: only `tmp` is populated (the former inline `tmp` field);
+    # this layout never had `utilde`/`atmp`. `tmp2` shares `tmp`'s type
+    # parameter, so it donor-aliases the same `tmp` array (no new arrays);
+    # `atmp`/`weight` and the rate slots are `nothing`.
+    tmp_cache::TmpC
 end
 
 function alg_cache(
@@ -162,11 +169,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 struct Nystrom4VelocityIndependentConstantCache <: NystromConstantCache end
@@ -184,14 +192,20 @@ function alg_cache(
     return NystromVIConstantCache(tab)
 end
 
-@cache struct IRKN3Cache{uType, rateType, TabType} <: NystromMutableCache
+@cache struct IRKN3Cache{uType, rateType, TabType, TmpC <: TmpCache} <:
+    NystromMutableCache
     u::uType
     uprev::uType
     uprev2::uType
     fsalfirst::rateType
     k₂::rateType
     k::rateType
-    tmp::uType
+    # Unified scratch: only `tmp` is populated (the former inline `tmp` field);
+    # the TmpCache `tmp2` slot donor-aliases the same `tmp` array (shared type
+    # parameter, no new arrays). The cache field `tmp2` below is NOT scratch —
+    # it carries stage history (`k1cache`) across steps, so it must not live in
+    # (or donate to) the TmpCache slots, which initdt may scribble on mid-solve.
+    tmp_cache::TmpC
     tmp2::rateType
     onestep_cache::Nystrom4VelocityIndependentCache
     tab::TabType
@@ -208,10 +222,18 @@ function alg_cache(
     k₃ = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
+    # Wrap the existing scratch; the onestep bootstrap cache shares the SAME
+    # TmpCache so it aliases the same `tmp` array as before (zero new arrays).
+    # `tmp`/`tmp2` share the `uType` type parameter, so a tmp-only layout
+    # donor-aliases `tmp2` to the same array (`tmp` is dead between steps and
+    # never read by dense output). This is safe for initdt: with `atmp === nothing`
+    # its state-reuse path (the only place `tmp` and `tmp2` are live together)
+    # can never engage.
+    tmp_cache = TmpCache(tmp, tmp, nothing, nothing, nothing, nothing)
     tab = IRKN3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return IRKN3Cache(
-        u, uprev, uprev2, k₁, k₂, k, tmp, k₃,
-        Nystrom4VelocityIndependentCache(u, uprev, k₁, k₂.x[2], k₃.x[2], k, tmp),
+        u, uprev, uprev2, k₁, k₂, k, tmp_cache, k₃,
+        Nystrom4VelocityIndependentCache(u, uprev, k₁, k₂.x[2], k₃.x[2], k, tmp_cache),
         tab
     )
 end
@@ -225,7 +247,8 @@ function alg_cache(
     return IRKN3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct IRKN4Cache{uType, rateType, TabType} <: NystromMutableCache
+@cache struct IRKN4Cache{uType, rateType, TabType, TmpC <: TmpCache} <:
+    NystromMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -233,7 +256,12 @@ end
     k₂::rateType
     k₃::rateType
     k::rateType
-    tmp::uType
+    # Unified scratch: only `tmp` is populated (the former inline `tmp` field);
+    # the TmpCache `tmp2` slot donor-aliases the same `tmp` array (shared type
+    # parameter, no new arrays). The cache field `tmp2` below is NOT scratch —
+    # it carries stage history (`k1cache`) across steps, so it must not live in
+    # (or donate to) the TmpCache slots, which initdt may scribble on mid-solve.
+    tmp_cache::TmpC
     tmp2::rateType
     onestep_cache::Nystrom4VelocityIndependentCache
     tab::TabType
@@ -251,10 +279,18 @@ function alg_cache(
     k = zero(rate_prototype)
     tmp = zero(u)
     tmp2 = zero(rate_prototype)
+    # Wrap the existing scratch; the onestep bootstrap cache shares the SAME
+    # TmpCache so it aliases the same `tmp` array as before (zero new arrays).
+    # `tmp`/`tmp2` share the `uType` type parameter, so a tmp-only layout
+    # donor-aliases `tmp2` to the same array (`tmp` is dead between steps and
+    # never read by dense output). This is safe for initdt: with `atmp === nothing`
+    # its state-reuse path (the only place `tmp` and `tmp2` are live together)
+    # can never engage.
+    tmp_cache = TmpCache(tmp, tmp, nothing, nothing, nothing, nothing)
     tab = IRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return IRKN4Cache(
-        u, uprev, uprev2, k₁, k₂, k₃, k, tmp, tmp2,
-        Nystrom4VelocityIndependentCache(u, uprev, k₁, k₂.x[2], k₃.x[2], k, tmp),
+        u, uprev, uprev2, k₁, k₂, k₃, k, tmp_cache, tmp2,
+        Nystrom4VelocityIndependentCache(u, uprev, k₁, k₂.x[2], k₃.x[2], k, tmp_cache),
         tab
     )
 end
@@ -283,11 +319,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -315,11 +352,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -345,11 +383,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -375,11 +414,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -405,11 +445,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -435,11 +476,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -465,11 +507,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -495,11 +538,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -525,11 +569,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -555,11 +600,12 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVICache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). The stage arrays `ks` feed dense output (DPRKN6's
+    # interpolant) so there are no safe rate donors; the rate slots stay
+    # `nothing` (RKN algorithms carry no `preallocate_initdt_buffers` knob).
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVICache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(
@@ -585,11 +631,11 @@ function alg_cache(
     k1 = zero(rate_prototype)
     ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
-    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+    # `tmp`/`tmp2`/`atmp` replace the former inline `tmp`/`utilde`/`atmp`
+    # (net-zero array count). No safe rate donors (stages persist via `ks`),
+    # so the rate slots stay `nothing`.
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
+    return NystromVDCache(u, uprev, k1, ks, k, tmp_cache, tab)
 end
 
 function alg_cache(

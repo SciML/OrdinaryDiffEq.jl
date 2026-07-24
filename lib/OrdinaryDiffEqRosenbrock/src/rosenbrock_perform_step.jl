@@ -33,8 +33,11 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, uf, tf, jac_config) = cache
     stage_limiter! = integrator.opts.stage_limiter!
+    (; rate_tmp, rate_tmp2, atmp, weight) = cache.tmp_cache
+    tmp = rate_tmp
+    linsolve_tmp = rate_tmp2
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -147,8 +150,11 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, uf, tf, jac_config) = cache
     stage_limiter! = integrator.opts.stage_limiter!
+    (; rate_tmp, rate_tmp2, atmp, weight) = cache.tmp_cache
+    tmp = rate_tmp
+    linsolve_tmp = rate_tmp2
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -728,8 +734,10 @@ end
 
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight) = cache
+    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, jac_config) = cache
     stage_limiter! = integrator.opts.stage_limiter!
+    (; rate_tmp2, atmp, weight) = cache.tmp_cache
+    linsolve_tmp = rate_tmp2
     (; A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
@@ -1013,8 +1021,9 @@ end
 
 @muladd function perform_step!(integrator, cache::HybridExplicitImplicitCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, diff_vars, alg_vars, g_z, g_y, linsolve_tmp_z) = cache
+    (; du, du1, du2, dT, J, W, uf, tf, ks, jac_config, diff_vars, alg_vars, g_z, g_y, linsolve_tmp_z) = cache
     stage_limiter! = integrator.opts.stage_limiter!
+    atmp = cache.tmp_cache.atmp
     W_z = cache.W_z
     (; A, C, gamma, b, bhat, c, d, H) = cache.tab
 

@@ -4,7 +4,7 @@ get_fsalfirstlast(cache::ABMMutableCache, u) = (cache.fsalfirst, cache.k)
 function get_fsalfirstlast(cache::ABMVariableCoefficientMutableCache, u)
     return (cache.fsalfirst, cache.k4)
 end
-@cache mutable struct AB3Cache{uType, rateType, Thread} <: ABMMutableCache
+@cache mutable struct AB3Cache{uType, rateType, Thread, TmpC <: TmpCache} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -12,7 +12,12 @@ end
     k3::rateType
     ralk2::rateType
     k::rateType
-    tmp::uType
+    # Former inline `tmp` (stage scratch). Non-adaptive and no `utilde`, so
+    # `tmp2`/`atmp`/`weight` are `nothing`. `k2`/`k3` are multistep history and
+    # `k` is the FSAL/interpolation derivative, so the only safe rate donor is
+    # `ralk2` — one donor cannot fill both rate slots, hence the rate buffers
+    # are opt-in via `preallocate_initdt_buffers` (default false).
+    tmp_cache::TmpC
     step::Int
     thread::Thread
 end
@@ -35,7 +40,14 @@ function alg_cache(
     ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    return AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
+    # `ralk2` is dead between steps (written before read, startup only) so it
+    # donor-aliases `rate_tmp` when the rate slots are opted in; only the second
+    # rate buffer is a fresh allocation. Default (flag off) is footprint-neutral.
+    prealloc = OrdinaryDiffEqCore.preallocate_initdt_buffers(alg)
+    rate_tmp = prealloc ? ralk2 : nothing
+    rate_tmp2 = prealloc ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, rate_tmp, rate_tmp2)
+    return AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp_cache, 1, alg.thread)
 end
 
 function alg_cache(
@@ -49,7 +61,7 @@ function alg_cache(
     return AB3ConstantCache(k2, k3, 1)
 end
 
-@cache mutable struct ABM32Cache{uType, rateType, Thread} <: ABMMutableCache
+@cache mutable struct ABM32Cache{uType, rateType, Thread, TmpC <: TmpCache} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -57,7 +69,10 @@ end
     k3::rateType
     ralk2::rateType
     k::rateType
-    tmp::uType
+    # Former inline `tmp` (stage scratch); same slot layout/donor story as
+    # `AB3Cache` (only `ralk2` is a safe rate donor, so the rate pair is opt-in
+    # via `preallocate_initdt_buffers`).
+    tmp_cache::TmpC
     step::Int
     thread::Thread
 end
@@ -80,7 +95,14 @@ function alg_cache(
     ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    return ABM32Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
+    # Same layout/donor story as `AB3Cache`: only `ralk2` is a safe rate donor,
+    # so the rate pair is opt-in via `preallocate_initdt_buffers` (default off,
+    # footprint-neutral).
+    prealloc = OrdinaryDiffEqCore.preallocate_initdt_buffers(alg)
+    rate_tmp = prealloc ? ralk2 : nothing
+    rate_tmp2 = prealloc ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, rate_tmp, rate_tmp2)
+    return ABM32Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp_cache, 1, alg.thread)
 end
 
 function alg_cache(
@@ -418,8 +440,11 @@ function alg_cache(
     batmp = similar(u, uEltypeNoUnits)
     recursivefill!(batmp, false)
     btmp = zero(u)
+    # BS3 migrated `tmp`/`utilde`/`atmp` into `tmp_cache` (tmp2 == utilde); same
+    # array count as the historical sub-cache.
+    bs3tmp_cache = TmpCache(btmp, butilde, batmp, nothing, nothing, nothing)
     bs3cache = BS3Cache(
-        u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
+        u, uprev, bk1, bk2, bk3, bk4, bs3tmp_cache, tab,
         trivial_limiter!, trivial_limiter!, Serial()
     )
     fsalfirst = zero(rate_prototype)
@@ -525,8 +550,10 @@ function alg_cache(
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
+    # RK4 migrated `tmp`/`atmp` into `tmp_cache` (no `utilde`, so tmp2 == nothing).
+    rk4tmp_cache = TmpCache(rtmp, nothing, ratmp, nothing, nothing, nothing)
     rk4cache = RK4Cache(
-        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        u, uprev, rk1, rk2, rk3, rk4, rk, rk4tmp_cache, trivial_limiter!,
         trivial_limiter!, Serial()
     )
     fsalfirst = zero(rate_prototype)
@@ -634,8 +661,10 @@ function alg_cache(
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
+    # RK4 migrated `tmp`/`atmp` into `tmp_cache` (no `utilde`, so tmp2 == nothing).
+    rk4tmp_cache = TmpCache(rtmp, nothing, ratmp, nothing, nothing, nothing)
     rk4cache = RK4Cache(
-        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        u, uprev, rk1, rk2, rk3, rk4, rk, rk4tmp_cache, trivial_limiter!,
         trivial_limiter!, Serial()
     )
     fsalfirst = zero(rate_prototype)
@@ -748,8 +777,11 @@ function alg_cache(
     batmp = similar(u, uEltypeNoUnits)
     recursivefill!(batmp, false)
     btmp = zero(u)
+    # BS3 migrated `tmp`/`utilde`/`atmp` into `tmp_cache` (tmp2 == utilde); same
+    # array count as the historical sub-cache.
+    bs3tmp_cache = TmpCache(btmp, butilde, batmp, nothing, nothing, nothing)
     bs3cache = BS3Cache(
-        u, uprev, bk1, bk2, bk3, bk4, butilde, btmp, batmp, tab,
+        u, uprev, bk1, bk2, bk3, bk4, bs3tmp_cache, tab,
         trivial_limiter!, trivial_limiter!, Serial()
     )
     fsalfirst = zero(rate_prototype)
@@ -867,8 +899,10 @@ function alg_cache(
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
+    # RK4 migrated `tmp`/`atmp` into `tmp_cache` (no `utilde`, so tmp2 == nothing).
+    rk4tmp_cache = TmpCache(rtmp, nothing, ratmp, nothing, nothing, nothing)
     rk4cache = RK4Cache(
-        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        u, uprev, rk1, rk2, rk3, rk4, rk, rk4tmp_cache, trivial_limiter!,
         trivial_limiter!, Serial()
     )
     fsalfirst = zero(rate_prototype)
@@ -986,8 +1020,10 @@ function alg_cache(
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
+    # RK4 migrated `tmp`/`atmp` into `tmp_cache` (no `utilde`, so tmp2 == nothing).
+    rk4tmp_cache = TmpCache(rtmp, nothing, ratmp, nothing, nothing, nothing)
     rk4cache = RK4Cache(
-        u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+        u, uprev, rk1, rk2, rk3, rk4, rk, rk4tmp_cache, trivial_limiter!,
         trivial_limiter!, Serial()
     )
     fsalfirst = zero(rate_prototype)

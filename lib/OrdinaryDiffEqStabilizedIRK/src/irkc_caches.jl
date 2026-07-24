@@ -6,8 +6,9 @@
     du₂::rateType
 end
 
-@cache mutable struct IRKCCache{uType, rateType, uNoUnitsType, N, C <: IRKCConstantCache} <:
-    OrdinaryDiffEqMutableCache
+@cache mutable struct IRKCCache{
+        uType, rateType, N, C <: IRKCConstantCache, TmpC <: TmpCache,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     gprev::uType
@@ -16,7 +17,11 @@ end
     f1ⱼ₋₁::rateType
     f1ⱼ₋₂::rateType
     f2ⱼ₋₁::rateType
-    atmp::uNoUnitsType
+    # Unified scratch: only `atmp` (error-norm scaling, was an inline field) is
+    # populated — `TmpCache{Nothing, Nothing, uNoUnitsType, Nothing}`. The
+    # state/rate slots are `nothing`: the Newton machinery owns its own
+    # tmp/z/dz state and `initdt` falls back to allocating.
+    tmp_cache::TmpC
     nlsolver::N
     du₁::rateType
     du₂::rateType
@@ -67,9 +72,16 @@ function alg_cache(
     f2ⱼ₋₁ = zero(rate_prototype)
     du₁ = zero(rate_prototype)
     du₂ = zero(rate_prototype)
+    # Raw constructor: only the migrated `atmp` is populated (footprint
+    # unchanged — same single unit-less array the old inline field allocated).
+    # The state slots stay `nothing`: the Newton scratch (`nlsolver.tmp`) is
+    # owned by the nlsolver and `initdt` falls back to allocating its state
+    # temporaries. No rate slots either, since `IRKC` is not a `@kwdef`
+    # algorithm and so has no `preallocate_initdt_buffers` knob.
+    tmp_cache = TmpCache(nothing, nothing, atmp, nothing, nothing, nothing)
     constantcache = IRKCConstantCache(50, zprev, nlsolver, du₁, du₂)
     return IRKCCache(
-        u, uprev, gprev, gprev2, fsalfirst, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, atmp, nlsolver, du₁,
-        du₂, constantcache
+        u, uprev, gprev, gprev2, fsalfirst, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, tmp_cache, nlsolver,
+        du₁, du₂, constantcache
     )
 end

@@ -1,4 +1,5 @@
-@cache struct KuttaPRK2p5Cache{uType, rateType, TabType} <: OrdinaryDiffEqMutableCache
+@cache struct KuttaPRK2p5Cache{uType, rateType, TabType, TmpC <: TmpCache} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -7,7 +8,11 @@
     k3::rateType
     k4::rateType
     k5_6::Array{rateType, 1}
-    tmp::uType
+    # The former inline `tmp` lives in `tmp_cache.tmp`. The method had no
+    # `utilde` and is non-adaptive (no `atmp`), so `tmp2`/`atmp`/`weight` are
+    # `nothing`. The rate slots are allocated only when the user opts in via
+    # `preallocate_initdt_buffers` (default false: footprint unchanged).
+    tmp_cache::TmpC
     fsalfirst::rateType
     tab::TabType
 end
@@ -85,7 +90,16 @@ function alg_cache(
         constvalue(uBottomEltypeNoUnits),
         constvalue(tTypeNoUnits)
     )
-    return KuttaPRK2p5Cache(u, uprev, k, k1, k2, k3, k4, k5_6, tmp, fsalfirst, tab)
+    # Migrated layout: the former inline `tmp` is the only state scratch this
+    # method ever had (no `utilde`, non-adaptive so no `atmp`), so only the
+    # `tmp` slot is populated — array count is identical to the historical
+    # cache. The rate slots are allocated only on user opt-in via
+    # `preallocate_initdt_buffers` (default false); otherwise they are
+    # `nothing` and `initdt` allocates its rate temporaries at call time.
+    rate_tmp = alg.preallocate_initdt_buffers ? zero(rate_prototype) : nothing
+    rate_tmp2 = alg.preallocate_initdt_buffers ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, rate_tmp, rate_tmp2)
+    return KuttaPRK2p5Cache(u, uprev, k, k1, k2, k3, k4, k5_6, tmp_cache, fsalfirst, tab)
 end
 
 function alg_cache(

@@ -27,6 +27,9 @@ Base.@kwdef struct MREEF <: OrdinaryDiffEqAdaptiveAlgorithm
     m::Int = 4
     order::Int = 4
     seq::Symbol = :harmonic
+    # Allocate dedicated initdt rate-scratch buffers (see Tsit5); default off keeps
+    # the cache footprint identical to the historical layout.
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc generic_solver_docstring(
@@ -62,6 +65,7 @@ slow rate (same starting order as MREEF before Richardson extrapolation).",
 Base.@kwdef struct MRAB <: OrdinaryDiffEqAdaptiveAlgorithm
     k::Int = 2
     m::Int = 4
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc generic_solver_docstring(
@@ -91,6 +95,7 @@ Embedded 1st-order error estimate.",
 )
 Base.@kwdef struct MRIGARKERK22a <: OrdinaryDiffEqAdaptiveAlgorithm
     m::Int
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc generic_solver_docstring(
@@ -120,6 +125,7 @@ micro-steps. Embedded 1st-order error estimate.",
 )
 Base.@kwdef struct MRIGARKERK22b <: OrdinaryDiffEqAdaptiveAlgorithm
     m::Int
+    preallocate_initdt_buffers::Bool = false
 end
 
 @doc generic_solver_docstring(

@@ -120,7 +120,8 @@ end
         repeat_step = false
     )
     (; t, dt, uprev, u, f, p) = integrator
-    (; fsalfirst, k, tmp, atmp, thread) = cache
+    (; fsalfirst, k, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
     stage_limiter! = integrator.opts.stage_limiter!
 
     # precalculations
@@ -215,7 +216,8 @@ end
 
 @muladd function perform_step!(integrator, cache::MidpointCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, k, fsalfirst, atmp, thread) = cache
+    (; k, fsalfirst, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
     stage_limiter! = integrator.opts.stage_limiter!
     halfdt = dt / 2
     @.. broadcast = false thread = thread tmp = uprev + halfdt * fsalfirst
@@ -317,7 +319,7 @@ end
 
 get_fsalfirstlast(cache::RK4Cache, u) = (cache.fsalfirst, cache.k)
 function initialize!(integrator, cache::RK4Cache)
-    (; tmp, fsalfirst, k₂, k₃, k₄, k) = cache
+    (; fsalfirst, k₂, k₃, k₄, k) = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     integrator.kshortsize = 2
@@ -330,7 +332,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RK4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k₂, k₃, k₄, k, atmp, thread) = cache
+    (; fsalfirst, k₂, k₃, k₄, k, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
     stage_limiter! = integrator.opts.stage_limiter!
     k₁ = fsalfirst
     halfdt = dt / 2

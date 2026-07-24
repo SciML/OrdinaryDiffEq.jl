@@ -1,6 +1,7 @@
 module OrdinaryDiffEqPRK
 
-import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqMutableCache,
+import OrdinaryDiffEqCore: TmpCache,
+    OrdinaryDiffEqAlgorithm, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, constvalue, @cache,
     alg_cache, get_fsalfirstlast,
     unwrap_alg, perform_step!, @threaded, isthreaded,

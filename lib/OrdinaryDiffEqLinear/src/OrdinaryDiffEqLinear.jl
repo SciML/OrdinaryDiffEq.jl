@@ -1,6 +1,7 @@
 module OrdinaryDiffEqLinear
 
-import OrdinaryDiffEqCore: alg_extrapolates, dt_required,
+import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+    alg_extrapolates, dt_required,
     OrdinaryDiffEqLinearExponentialAlgorithm,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, @cache, alg_cache,

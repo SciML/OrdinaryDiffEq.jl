@@ -1,6 +1,7 @@
 module OrdinaryDiffEqExponentialRK
 
-import OrdinaryDiffEqCore: alg_adaptive_order, ismultistep,
+import OrdinaryDiffEqCore: TmpCache,
+    alg_adaptive_order, ismultistep,
     OrdinaryDiffEqExponentialAlgorithm,
     OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache,

@@ -1,8 +1,8 @@
 abstract type HighOrderRKMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::HighOrderRKMutableCache, u) = (cache.fsalfirst, cache.k)
 @cache struct TanYam7Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter,
-        StepLimiter, Thread,
+        uType, rateType, TabType, StageLimiter,
+        StepLimiter, Thread, TmpC <: TmpCache,
     } <:
     HighOrderRKMutableCache
     u::uType
@@ -17,9 +17,10 @@ get_fsalfirstlast(cache::HighOrderRKMutableCache, u) = (cache.fsalfirst, cache.k
     k8::rateType
     k9::rateType
     k10::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Holds `tmp` (stage scratch), `tmp2` (embedded solution, was `utilde`) and
+    # `atmp` (error-norm scaling). Parameterized so the rate slots can be opted
+    # in (`preallocate_initdt_buffers`).
+    tmp_cache::TmpC
     k::rateType
     tab::TabType
     stage_limiter!::StageLimiter
@@ -44,13 +45,17 @@ function alg_cache(
     k8 = zero(rate_prototype)
     k9 = zero(rate_prototype)
     k10 = zero(rate_prototype)
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    # `tmp`/`utilde`/`atmp` were inline fields; `build_tmp_cache` allocates the
+    # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
+    # All stage k's feed the FSAL interpolant, so there are no safe rate donors:
+    # the initdt rate buffers are allocated only on user opt-in.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     k = zero(rate_prototype)
     return TanYam7Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, atmp, k,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp_cache, k,
         tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -65,8 +70,8 @@ function alg_cache(
 end
 
 @cache struct DP8Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: HighOrderRKMutableCache
     u::uType
     uprev::uType
@@ -94,9 +99,10 @@ end
     dense_tmp5::rateType
     dense_tmp6::rateType
     dense_tmp7::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Holds `tmp` (stage scratch), `tmp2` (embedded solution, was `utilde`) and
+    # `atmp` (error-norm scaling). Parameterized so the rate slots can be opted
+    # in (`preallocate_initdt_buffers`).
+    tmp_cache::TmpC
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -123,10 +129,16 @@ function alg_cache(
     k11 = zero(rate_prototype)
     k12 = zero(rate_prototype)
     kupdate = zero(rate_prototype)
-    utilde = zero(u)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    # `tmp`/`utilde`/`atmp` were inline fields; `build_tmp_cache` allocates the
+    # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
+    # `tmp`/`tmp2` are reused as scratch by `_ode_addsteps!`, exactly as the old
+    # inline fields were. All k's and the dense_tmp buffers feed the interpolant,
+    # so no safe rate donors exist: the initdt rate buffers are allocated only on
+    # user opt-in.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     k13 = zero(rate_prototype)
     k14 = zero(rate_prototype)
     k15 = zero(rate_prototype)
@@ -145,7 +157,7 @@ function alg_cache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
         k16, kupdate,
         udiff, bspl, dense_tmp3, dense_tmp4, dense_tmp5, dense_tmp6, dense_tmp7,
-        utilde, tmp, atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
+        tmp_cache, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
@@ -159,8 +171,8 @@ function alg_cache(
 end
 
 @cache struct TsitPap8Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter,
-        StepLimiter, Thread,
+        uType, rateType, TabType, StageLimiter,
+        StepLimiter, Thread, TmpC <: TmpCache,
     } <:
     HighOrderRKMutableCache
     u::uType
@@ -178,9 +190,10 @@ end
     k11::rateType
     k12::rateType
     k13::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Holds `tmp` (stage scratch), `tmp2` (embedded solution, was `utilde`) and
+    # `atmp` (error-norm scaling). Parameterized so the rate slots can be opted
+    # in (`preallocate_initdt_buffers`).
+    tmp_cache::TmpC
     k::rateType
     tab::TabType
     stage_limiter!::StageLimiter
@@ -208,14 +221,18 @@ function alg_cache(
     k11 = zero(rate_prototype)
     k12 = zero(rate_prototype)
     k13 = zero(rate_prototype)
-    utilde = zero(u)
     k = zero(rate_prototype)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    # `tmp`/`utilde`/`atmp` were inline fields; `build_tmp_cache` allocates the
+    # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
+    # All stage k's feed the FSAL interpolant, so there are no safe rate donors:
+    # the initdt rate buffers are allocated only on user opt-in.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     return TsitPap8Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde,
-        tmp, atmp, k, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13,
+        tmp_cache, k, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 
@@ -229,8 +246,8 @@ function alg_cache(
 end
 
 @cache struct PFRK87Cache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
-        Thread,
+        uType, rateType, TabType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <:
     HighOrderRKMutableCache
     u::uType
@@ -248,9 +265,10 @@ end
     k11::rateType
     k12::rateType
     k13::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    # Holds `tmp` (stage scratch), `tmp2` (embedded solution, was `utilde`) and
+    # `atmp` (error-norm scaling). Parameterized so the rate slots can be opted
+    # in (`preallocate_initdt_buffers`).
+    tmp_cache::TmpC
     k::rateType
     tab::TabType
     stage_limiter!::StageLimiter
@@ -278,14 +296,18 @@ function alg_cache(
     k11 = zero(rate_prototype)
     k12 = zero(rate_prototype)
     k13 = zero(rate_prototype)
-    utilde = zero(u)
     k = zero(rate_prototype)
-    tmp = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
+    # `tmp`/`utilde`/`atmp` were inline fields; `build_tmp_cache` allocates the
+    # same three arrays (`tmp`, `tmp2`, `atmp`), so the array count is unchanged.
+    # All stage k's feed the FSAL interpolant, so there are no safe rate donors:
+    # the initdt rate buffers are allocated only on user opt-in.
+    tmp_cache = build_tmp_cache(
+        u, rate_prototype, uEltypeNoUnits,
+        alg.preallocate_initdt_buffers ? Val(true) : Val(false)
+    )
     return PFRK87Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde,
-        tmp, atmp, k, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13,
+        tmp_cache, k, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
 

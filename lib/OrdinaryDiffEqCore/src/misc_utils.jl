@@ -28,6 +28,19 @@ macro cache(expr)
         elseif x.args[2] == :DiffCacheType
             push!(cache_vars, :(c.$(x.args[1]).du))
             push!(cache_vars, :(c.$(x.args[1]).dual_du))
+        elseif x.args[1] == :tmp_cache
+            # The unified scratch field is detected by name (`tmp_cache`) rather
+            # than by type, so the cache may declare it as a concrete
+            # `TmpCache{...}` or via a type parameter (to allow opted-out slots).
+            # It expands into its sub-buffers so they show up in `full_cache`
+            # (used by resize!, etc.) just like inline scratch fields used to.
+            # The slot list lives in `tmp_cache_buffers` next to the struct
+            # definition (single source of truth — adding a slot to `TmpCache`
+            # never requires touching this macro). Opted-out slots are
+            # `nothing`; `full_cache` consumers skip those. The unescaped
+            # `tmp_cache_buffers` resolves to OrdinaryDiffEqCore's binding via
+            # macro hygiene, so this works in downstream sublibraries.
+            push!(cache_vars, :(tmp_cache_buffers(c.$(x.args[1]))...))
         end
     end
     return quote

@@ -1,10 +1,20 @@
-@cache struct PDIRK44Cache{uType, rateType, N, TabType} <: OrdinaryDiffEqMutableCache
+@cache struct PDIRK44Cache{uType, rateType, N, TabType, TmpC <: TmpCache} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::Array{rateType}
     k2::Array{rateType}
     nlsolver::N
     tab::TabType
+    # PDIRK44 is non-adaptive and keeps all of its state scratch inside the
+    # nlsolvers, so the historical cache had no inline `tmp`/`utilde`/`atmp`
+    # fields to migrate — the state and unit-less slots are `nothing`. The
+    # initdt rate slots donor-alias `k2[1]`/`k2[2]`: those stage buffers are
+    # dead between steps (rewritten by `nlsolve!` before their only read, the
+    # final `u` update) and never feed dense output (`initialize!` is empty and
+    # the library defines no `_ode_addsteps!`), so initdt may scribble on them
+    # mid-solve. Zero new arrays — `TmpCache{Nothing, rateType, Nothing, Nothing}`.
+    tmp_cache::TmpC
 end
 
 # Non-FSAL
@@ -78,7 +88,11 @@ function alg_cache(
     tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = [zero(rate_prototype) for i in 1:2]
     k2 = [zero(rate_prototype) for i in 1:2]
-    return PDIRK44Cache(u, uprev, k1, k2, nlsolver, tab)
+    # Donor-alias the initdt rate scratch onto the second-stage buffers (see the
+    # comment on the `tmp_cache` field); all other slots are opted out, so the
+    # cache footprint is identical to the historical one.
+    tmp_cache = TmpCache(nothing, nothing, nothing, nothing, k2[1], k2[2])
+    return PDIRK44Cache(u, uprev, k1, k2, nlsolver, tab, tmp_cache)
 end
 
 function alg_cache(
