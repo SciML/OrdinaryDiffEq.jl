@@ -1,4 +1,4 @@
-# Developer Extension API
+# [Developer Extension API](@id Developer-Extension-API)
 
 This page documents the version-controlled API intended for solver authors and
 OrdinaryDiffEq monorepo subpackages. These names are not application-facing
