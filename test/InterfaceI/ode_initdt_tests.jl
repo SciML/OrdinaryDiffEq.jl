@@ -113,4 +113,18 @@ end
         @test sol.t[end] == 0.0
         @test sol.u[end][1] ≈ 1.0 atol = 1.0e-2
     end
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1404
+# OOP initdt must route through DiffEqBase.NAN_CHECK (not nested any(isnan, ·))
+# so custom array types can overload it, matching the IIP intent.
+@testset "OOP initdt NaN handling (#1404)" begin
+    f_nan(u, p, t) = [NaN]
+    prob = ODEProblem(f_nan, [1.0], (0.0, 1.0))
+    sol = solve(prob, Tsit5())
+    # NAN_CHECK triggers early exit with dtmin; subsequent stepping aborts as
+    # Unstable (tiny dt). Must not MethodError on any(isnan, ·).
+    @test sol.retcode in (ReturnCode.DtNaN, ReturnCode.Unstable)
+
+    f_ok(u, p, t) = -u
+    sol_ok = solve(ODEProblem(f_ok, [1.0], (0.0, 1.0)), Tsit5())
+    @test SciMLBase.successful_retcode(sol_ok)
 end

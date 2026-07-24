@@ -18,6 +18,11 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
+using ArrayInterface: ArrayInterface
+
+# Map flat linear-solve results onto the state container (ArrayPartition-safe).
+@inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
+@inline _restructure_state(template::Number, x) = oftype(template, x)
 using DiffEqBase: @def
 import DifferentiationInterface as DI
 import LinearSolve

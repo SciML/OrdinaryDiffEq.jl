@@ -452,3 +452,13 @@ References:
   arXiv:2511.21252, 2025.
 """
 Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        GRK4A, GRK4T, ROK4a, ROS2, ROS2PR, ROS2S, ROS3, ROS34PRw, ROS34PW1a, ROS34PW1b,
+        ROS34PW2, ROS34PW3, ROS3P, ROS3PR, ROS3PRL, ROS3PRL2, Rodas23W, Rodas3, Rodas3P,
+        Rodas3d, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas4PW, Rodas5, Rodas5P, Rodas5Pe,
+        Rodas5Pr, Rodas6P, Ros4LStab, RosShamp4, Rosenbrock23, Rosenbrock32,
+        RosenbrockW6S4OS, Scholz4_7, Veldd4, Velds4,
+    },
+) = true

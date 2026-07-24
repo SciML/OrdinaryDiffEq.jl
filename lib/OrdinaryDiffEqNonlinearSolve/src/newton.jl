@@ -122,11 +122,11 @@ function initialize!(
         end
         if length(cache.cache.u) != length(z)
             new_prob = if cache.W !== nothing
-                # W-reuse: re-point the operator `jac_prototype` at the resized W via the same
-                # mapping used at build time. Only array sizes change, so the operator's type
-                # — and hence `cache.prob`'s concrete type — is preserved and `init` stays
+                # W-reuse: re-point the inner jacobian at the resized W via the same mapping
+                # used at build time. Only array sizes change, so the jac's concrete type —
+                # and hence `cache.prob`'s concrete type — is preserved and `init` stays
                 # type-stable.
-                new_f = SciMLBase.remake(cache.prob.f; jac_prototype = reuse_jac_prototype(cache.W))
+                new_f = SciMLBase.remake(cache.prob.f; reuse_jac_kwargs(cache.W)...)
                 SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
             else
                 SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
@@ -136,6 +136,8 @@ function initialize!(
                 new_prob, cache.cache.alg;
                 verbose = integrator.opts.verbose.nonlinear_verbosity
             )
+            # re-point the estimator linsolve alias at the rebuilt inner cache
+            cache.linsolve = cache.W !== nothing ? get_linear_cache(cache.cache) : nothing
         else
             SciMLBase.reinit!(cache.cache, z, p = nlp_params)
         end
@@ -167,6 +169,8 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
         end
         jacobian2W!(W, mass_matrix, dtgamma, J)
     end
+    # No estimator refresh needed: the smoothed estimate reuses the inner solver's own W
+    # factorization, which the inner Newton re-factorizes itself when it refreshes W.
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing
@@ -294,7 +298,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
                 "Use the in-place form (define f!(du, u, p, t)) or supply a concrete jac_prototype."
         )
     end
-    dz = _reshape(W \ _vec(ztmp), axes(ztmp))
+    dz = _restructure_state(ztmp, W \ _vec(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
@@ -717,8 +721,11 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.atmp === nothing || resize!(nlcache.atmp, i)
     nlcache.du1 === nothing || resize!(nlcache.du1, i)
     nlcache.weight === nothing || resize!(nlcache.weight, i)
+    nlcache.dz === nothing || resize!(nlcache.dz, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
     nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    # `nlcache.linsolve` is re-pointed by `initialize!` when it rebuilds the inner cache on the
+    # next length mismatch, before any estimator solve — nothing to rebuild here.
     nlcache.W_γdt = zero(nlcache.W_γdt)
     nlcache.new_W = true
     return nothing

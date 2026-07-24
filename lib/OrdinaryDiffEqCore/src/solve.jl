@@ -77,14 +77,17 @@ Resolve the effective `(stage_limiter!, step_limiter!)` from the solve-level
 `stage_limiter`/`step_limiter` keywords. A non-trivial per-algorithm
 `stage_limiter!`/`step_limiter!` field is still honored (with a deprecation
 warning) when the matching keyword is not supplied. `alg` should be the concrete
-method (e.g. unwrapped from `MethodOfSteps`). Warns when `stage_limiter` is
-supplied to a method that has no stage-limiter hook.
+method (e.g. unwrapped from `MethodOfSteps`). Supplying `stage_limiter` to a
+method for which [`has_stage_limiter`](@ref) is `false` triggers the
+`stage_limiter_unused` verbosity toggle, which defaults to `ErrorLevel` (it
+errors) and can be lowered to `WarnLevel`/`Silent` to allow it.
 """
 function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_spec)
     stage_limiter! = stage_limiter
     step_limiter! = step_limiter
     if stage_limiter === trivial_limiter!
-        if hasproperty(alg, :stage_limiter!) && alg.stage_limiter! !== trivial_limiter!
+        if has_stage_limiter(alg) && hasproperty(alg, :stage_limiter!) &&
+                alg.stage_limiter! !== trivial_limiter!
             Base.depwarn(
                 "Passing `stage_limiter!` to the algorithm constructor is deprecated; " *
                     "pass `stage_limiter` as a keyword argument to `solve`/`init` instead.",
@@ -92,9 +95,13 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
             )
             stage_limiter! = alg.stage_limiter!
         end
-    elseif !hasproperty(alg, :stage_limiter!)
+    elseif !has_stage_limiter(alg)
         @SciMLMessage(
-            "`stage_limiter` was supplied, but $(nameof(typeof(alg))) does not use stage limiters.",
+            "`stage_limiter` was supplied, but $(nameof(typeof(alg))) does not apply stage " *
+                "limiters (it does not opt into `OrdinaryDiffEqCore.has_stage_limiter`). This " *
+                "errors by default; set the `stage_limiter_unused` verbosity toggle to " *
+                "`WarnLevel()` or `Silent()` to allow it. Use `step_limiter` for a limiter " *
+                "applied once per accepted step, which every method supports.",
             verbose_spec, :stage_limiter_unused
         )
     end

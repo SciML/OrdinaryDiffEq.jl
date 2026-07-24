@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+import OrdinaryDiffEqCore
 using OrdinaryDiffEqBDF, OrdinaryDiffEqFeagin, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqSSPRK
 using OrdinaryDiffEqLowStorageRK, OrdinaryDiffEqQPRK
@@ -69,11 +70,24 @@ end
     sol = solve(prob, Tsit5(), dt = 0.1; step_limiter = step_limiter!)
     @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
 
+    # Supplying `stage_limiter` to a method that does not apply stage limiters
+    # errors (by default) rather than silently dropping it.
     STEP_LIMITER_VAR[] = 0
-    @test_logs (:warn, r"`stage_limiter` was supplied") solve(
+    @test_throws ErrorException solve(
         prob, FunctionMap(), dt = 0.1; stage_limiter = stage_limiter!
     )
     @test STEP_LIMITER_VAR[] == 0
+
+    # The check is gated on the `stage_limiter_unused` verbosity toggle, so it can
+    # be lowered (`WarnLevel`) or turned off (`Silent`) to allow the unused limiter.
+    STEP_LIMITER_VAR[] = 0
+    sol = solve(
+        prob, FunctionMap(), dt = 0.1; stage_limiter = stage_limiter!,
+        verbose = OrdinaryDiffEqCore.DEVerbosity(
+            stage_limiter_unused = OrdinaryDiffEqCore.SciMLLogging.Silent()
+        )
+    )
+    @test sol.retcode == ReturnCode.Success
 end
 
 @testset "Solve-level step_limiter Test" begin
@@ -138,4 +152,41 @@ end
     STEP_LIMITER_VAR[] = 0
     solve(prob, SSPRK43(; stage_limiter! = stage_limiter!), dt = 0.1)
     @test STEP_LIMITER_VAR[] > 0
+end
+
+# Enforce that the `has_stage_limiter` trait matches the implementation: a method
+# that opts in must actually call the stage limiter, and a method that does not
+# opt in must error (rather than silently ignore) when a `stage_limiter` is given.
+@testset "has_stage_limiter trait matches implementation" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [1.0, 1.0], (0.0, 1.0))
+    ctr = Ref(0)
+    slim!(u, integrator, p, t) = (ctr[] += 1)
+
+    # Representative opted-in methods across every stage-limiter-supporting family.
+    supported = [
+        Euler, Heun, Ralston, Midpoint, RK4, BS3, OwrenZen3, DP5, Tsit5,
+        Vern6, Vern9, DP8, TanYam7, TsitPap8, QPRK98, ExplicitRK,
+        SSPRK22, SSPRK43, SSPRK104, SSPRK932,
+        CarpenterKennedy2N54, ORK256, RDPK3Sp35, NDBLSRK124,
+        Rosenbrock23, Rosenbrock32, ROS3P, Rodas4, Rodas5P,
+    ]
+    for A in supported
+        alg = A()
+        @test OrdinaryDiffEqCore.has_stage_limiter(alg)
+        ctr[] = 0
+        solve(prob, alg, dt = 0.1; stage_limiter = slim!)
+        @test ctr[] > 0
+    end
+
+    # Methods that do not apply stage limiters (including ones that merely carry a
+    # vestigial `stage_limiter!` field) must reject the keyword.
+    unsupported = [
+        FunctionMap, ImplicitEuler, KenCarp4, ROCK2, RKC, ESERK4, RKL1,
+        AB3, AitkenNeville, CKLLSRK54_3C, ParsaniKetchesonDeconinck3S32,
+    ]
+    for A in unsupported
+        alg = A()
+        @test !OrdinaryDiffEqCore.has_stage_limiter(alg)
+        @test_throws ErrorException solve(prob, alg, dt = 0.1; stage_limiter = slim!)
+    end
 end

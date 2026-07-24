@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExplicitRK"
 uuid = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -37,7 +37,7 @@ MuladdMacro = "0.2.4"
 LinearAlgebra = "1.10"
 TruncatedStacktraces = "1.4"
 SciMLBase = "3.35.1"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4.10"
 julia = "1.10"
 RecursiveArrayTools = "4.2.0"
 DiffEqBase = "7"
