@@ -30,6 +30,7 @@ end
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
     @time @safetestset "DAE jacobian2W sparse" include("dae_jacobian2w_sparse_tests.jl")
+    @time @safetestset "ScalarOperator mass matrix" include("scalar_operator_massmatrix_tests.jl")
     @time @safetestset "nzval helpers" include("nzval_helpers_tests.jl")
     @time @safetestset "prepare_sparse_jac!" include("prepare_sparse_jac_tests.jl")
     @time @safetestset "OOP J_t Tracking" include("oop_jt_tracking_test.jl")
