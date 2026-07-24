@@ -113,3 +113,21 @@ end
     ff_singular = ODEFunction(f!, mass_matrix = ScalarOperator(0.0))
     @test get_differential_vars(ff_singular, u) == falses(3)
 end
+
+@testset "get_differential_vars: Diagonal mass matrix" begin
+    # `get_differential_vars` must only ever check `mm.diag`, not the full matrix
+    # via `all(!iszero, mm)` -- that visits every (i, j) pair, which is wrong (both
+    # slow: O(n^2) instead of O(n)) and, for a GPU-backed diagonal
+    # (`Diagonal{Float64, <:CuVector}`), unsafe: it calls `getindex` on the
+    # underlying vector one element at a time, which CUDA disallows by default.
+    # Can't construct a CuVector here (no GPU in CI); this pins the CPU behavior
+    # so a regression back to the whole-matrix check is caught.
+    f!(du, u, p, t) = (du .= -u; nothing)
+    u = zeros(4)
+    ff_mixed = ODEFunction(f!, mass_matrix = Diagonal([1.0, 1.0, 0.0, 0.0]))
+    @test get_differential_vars(ff_mixed, u) == Bool[1, 1, 0, 0]
+    ff_alldiff = ODEFunction(f!, mass_matrix = Diagonal([1.0, 2.0, 3.0, 4.0]))
+    @test get_differential_vars(ff_alldiff, u) == Bool[1, 1, 1, 1]
+    ff_allalg = ODEFunction(f!, mass_matrix = Diagonal(zeros(4)))
+    @test get_differential_vars(ff_allalg, u) == Bool[0, 0, 0, 0]
+end

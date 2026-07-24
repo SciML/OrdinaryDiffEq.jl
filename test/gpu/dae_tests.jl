@@ -458,6 +458,11 @@ end
 @testset "GPU DAE solver compatibility" begin
     global results = run_all()
     show_results(results)
+    # Print the actual caught exceptions on failure -- `show_results` only prints
+    # a per-case status glyph, which is not enough on its own to diagnose what
+    # broke from a CI log.
+    any(r -> r.status ∈ (:gpu_error, :gpu_mismatch, :gpu_failed), results) &&
+        show_errors(results)
     @testset "$(r.case)" for r in results
         # :cpu_skip = the CPU couldn't solve this case, so there is no reference
         # to compare against — record as skipped, not pass/fail.

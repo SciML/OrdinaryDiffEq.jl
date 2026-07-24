@@ -213,6 +213,14 @@ function get_differential_vars(f, u)
         elseif mm isa SciMLOperators.ScalarOperator
             # λ·I: every variable is algebraic when λ is zero.
             return iszero(mm.val) ? falses(size(u)) : nothing
+        elseif mm isa Diagonal
+            # `Diagonal` structurally guarantees off-diagonal zeros, so check
+            # only `mm.diag` rather than the generic `all(!iszero, ::AbstractMatrix)`
+            # / `_isdiag` paths below, both of which visit every (i, j) pair via
+            # scalar `getindex` -- disallowed when `mm.diag` is GPU-backed
+            # (e.g. `Diagonal{Float64, <:CuVector}`), unlike a reduction over
+            # `mm.diag` itself, which dispatches to a proper GPU kernel.
+            return reshape(mm.diag .!= 0, size(u))
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && _isdiag(mm)
