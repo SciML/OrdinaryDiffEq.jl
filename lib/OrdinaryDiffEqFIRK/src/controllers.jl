@@ -21,8 +21,6 @@ function step_accept_controller!(
     if qsteady_min <= qacc <= qsteady_max
         qacc = one(qacc)
     end
-    ccache.dtacc = integrator.dt
-    ccache.erracc = max(1.0e-2, EEst)
     cache.step = step + 1
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
@@ -46,6 +44,12 @@ function step_accept_controller!(
             cache.hist_iter = iter
         end
     end
+    ccache.dtacc = integrator.dt
+    ccache.erracc = max(1.0e-2, EEst)
+    if controller.basic.discontinuity_detection && integrator.is_disco_step
+        integrator.is_disco_step = false
+        return min((integrator.disco_checkpoint - integrator.t) / 4, integrator.dt / qacc)
+    end
     return integrator.dt / qacc
 end
 
@@ -63,7 +67,7 @@ function step_reject_controller!(
     min_stages = (alg.min_order - 1) ÷ 4 * 2 + 1
 
     if (discontinuity_detection)
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
+        disco_dt = set_discontinuity(integrator)
         if disco_dt > zero(dt)
             integrator.dt = disco_dt
         end

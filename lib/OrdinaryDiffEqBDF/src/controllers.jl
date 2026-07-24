@@ -83,9 +83,14 @@ end
 function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, alg::QNDF{max_order}, q) where {max_order}
     #step is accepted, reset count of consecutive failed steps
     cache.consfailcnt = 0
+    is_disco = integrator.is_disco_step
+    if is_disco
+        integrator.is_disco_step = false
+        cache.nconsteps = 0
+    end
     cache.nconsteps += 1
-    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
-        return integrator.dt * get_current_qmax(integrator, get_qmax(integrator))
+    new_dt = if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
+        integrator.dt * get_current_qmax(integrator, get_qmax(integrator))
     else
         est = OrdinaryDiffEqCore.get_EEst(integrator)
         estₖ₋₁ = cache.EEst1
@@ -147,16 +152,16 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
         end
         cache.order = kₙ
         q = integrator.dt / hₙ
-    end
-    if prefer_const_step
-        if q < 1.2 && q > 0.6
-            return integrator.dt
+
+        if prefer_const_step && 0.6 < q < 1.2
+            h
+        elseif q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
+            h
+        else
+            h / q
         end
     end
-    if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
-        return integrator.dt
-    end
-    return integrator.dt / q
+    return is_disco ? min((integrator.disco_checkpoint - integrator.t) / 4, new_dt) : new_dt
 end
 
 function bdf_step_reject_controller!(integrator, cache, EEst1)
@@ -174,8 +179,8 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     end
 
     if discontinuity_detection
-        disco_dt = set_discontinuity(integrator.u, integrator.uprev, integrator)
-        if disco_dt != -1
+        disco_dt = set_discontinuity(integrator)
+        if disco_dt > zero(disco_dt)
             integrator.dt = disco_dt
             return integrator.dt
         end
@@ -416,6 +421,11 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    is_disco = integrator.is_disco_step
+    if is_disco
+        integrator.is_disco_step = false
+        cache.nconsteps = 0
+    end
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
@@ -427,7 +437,8 @@ function step_accept_controller!(
     elseif cache.qwait > 0
         cache.qwait -= 1 # countdown
     end
-    return integrator.dt / q
+    new_dt = integrator.dt / q
+    return is_disco ? min((integrator.disco_checkpoint - integrator.t) / 4, new_dt) : new_dt
 end
 
 function step_reject_controller!(integrator, alg::DFBDF)
@@ -579,6 +590,11 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    is_disco = integrator.is_disco_step
+    if is_disco
+        integrator.is_disco_step = false
+        cache.nconsteps = 0
+    end
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
@@ -590,5 +606,6 @@ function step_accept_controller!(
     elseif cache.qwait > 0
         cache.qwait -= 1 # countdown
     end
-    return integrator.dt / q
+    new_dt = integrator.dt / q
+    return is_disco ? min((integrator.disco_checkpoint - integrator.t) / 4, new_dt) : new_dt
 end
