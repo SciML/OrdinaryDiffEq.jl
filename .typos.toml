@@ -69,6 +69,7 @@ arXiv = "arXiv"
 # (Numer already declared above for "BIT Numer" context.)
 
 # Technical variable names
+hom = "hom"  # homotopy abbreviation (scc_hom, HomotopyProblem)
 dorder = "dorder"  # Parameter for delta order / order change
 
 
