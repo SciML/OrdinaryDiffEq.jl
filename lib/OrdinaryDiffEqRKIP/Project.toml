@@ -28,7 +28,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 SciMLTesting = "2.1"
 Pkg = "1"
 OrdinaryDiffEqExplicitTableaus = "2"
-SciMLBase = "3.37"
+SciMLBase = "3.39"
 OrdinaryDiffEqCore = "4"
 Compat = "4.16"
 MaybeInplace = "0.1.4"

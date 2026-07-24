@@ -169,10 +169,8 @@ for initializealg in (
 end
 
 # Vector abstol with default CheckInit must not MethodError (OrdinaryDiffEq #1214).
-# Residual is already consistent, so initialization should succeed when SciMLBase
-# has exceeds_checkinit_abstol (3.39+, SciMLBase#1464). Older floors MethodError
-# on `normresid > abstol` with vector abstol — raise SciMLBase floor to 3.39 once
-# General#162199 merges.
+# Residual is already consistent, so initialization should succeed.
+# Needs SciMLBase >= 3.39 (exceeds_checkinit_abstol; SciMLBase#1464).
 @testset "Vector abstol CheckInit (#1214)" begin
     function dae1214!(resid, du, u, p, t)
         resid[1] = du[1] + u[1]
@@ -186,12 +184,7 @@ end
     )
     abstol = [1.0e-6, 1.0e-6]
     for alg in (DABDF2(), DFBDF(), DImplicitEuler())
-        if pkgversion(SciMLBase) >= v"3.39"
-            sol = solve(prob, alg; abstol = abstol, reltol = 1.0e-6)
-            @test SciMLBase.successful_retcode(sol)
-        else
-            # Document pre-3.39 failure mode; floor raise lands with General#162199.
-            @test_throws MethodError solve(prob, alg; abstol = abstol, reltol = 1.0e-6)
-        end
+        sol = solve(prob, alg; abstol = abstol, reltol = 1.0e-6)
+        @test SciMLBase.successful_retcode(sol)
     end
 end
