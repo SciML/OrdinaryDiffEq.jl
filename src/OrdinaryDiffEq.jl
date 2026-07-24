@@ -29,7 +29,7 @@ using SciMLBase: SciMLBase,
 using SciMLLogging: SciMLLogging
 
 # Import ADTypes for autodiff specification
-using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
+using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, NoAutoDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqCore
@@ -61,7 +61,7 @@ export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_propose
 export AutoDePSpecialize
 
 # ADTypes
-export AutoForwardDiff, AutoFiniteDiff, AutoSparse
+export AutoForwardDiff, AutoFiniteDiff, NoAutoDiff, AutoSparse
 
 # Default algorithm
 export DefaultODEAlgorithm
