@@ -61,6 +61,8 @@ function expRK_operators(::HochOst4, dt, A)
     return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
 
+_expRK_matrix_or_scalar(A) = size(A) == () ? convert(Number, A) : convert(AbstractMatrix, A)
+
 # Unified constructor for constant caches
 for (Alg, Cache) in [
         (:LawsonEuler, :LawsonEulerConstantCache),
@@ -89,8 +91,7 @@ for (Alg, Cache) in [
         else
             isa(f, SplitFunction) ||
                 throw(ArgumentError("Caching can only be used with SplitFunction"))
-            A = size(f.f1.f) == () ? convert(Number, f.f1.f) :
-                convert(AbstractMatrix, f.f1.f)
+            A = _expRK_matrix_or_scalar(f.f1.f)
             ops = expRK_operators(alg, dt, A)
         end
         if isa(f, SplitFunction) || SciMLBase.has_jac(f)
@@ -143,7 +144,7 @@ function alg_cache_expRK(
     else
         KsCache = nothing
         # Precompute the operators
-        A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
+        A = _expRK_matrix_or_scalar(f.f1.f)
         ops = expRK_operators(alg, dt, A)
     end
     return uf, jac_config, J, ops, KsCache
@@ -202,7 +203,7 @@ function alg_cache(
         KsCache = (Ks, expv_cache)
     else
         KsCache = nothing
-        A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
+        A = _expRK_matrix_or_scalar(f.f1.f)
         exphA = expRK_operators(alg, dt, A)
     end
     return LawsonEulerCache(u, uprev, tmp, dz, rtmp, G, du1, jac_config, uf, J, exphA, KsCache)
