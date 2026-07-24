@@ -123,14 +123,20 @@ function prepare_user_sparsity(ad_alg, prob)
                     @. @view(jac_prototype[idxs]) = 1
                 end
             else
-                idxs = findall(!iszero, prob.f.mass_matrix)
+                # `findall`/`getindex` need a concrete matrix; a SciMLOperator mass
+                # matrix (e.g. `MatrixOperator`) doesn't support either directly.
+                # `convert` here only reads the operator's currently-cached array,
+                # not a live re-evaluation (no `update_coefficients!` call).
+                mm = prob.f.mass_matrix
+                mm = mm isa AbstractSciMLOperator ? convert(AbstractMatrix, mm) : mm
+                idxs = findall(!iszero, mm)
                 for idx in idxs
-                    sparsity[idx] = prob.f.mass_matrix[idx]
+                    sparsity[idx] = mm[idx]
                 end
 
                 if !isnothing(jac_prototype)
                     for idx in idxs
-                        jac_prototype[idx] = prob.f.mass_matrix[idx]
+                        jac_prototype[idx] = mm[idx]
                     end
                 end
             end
