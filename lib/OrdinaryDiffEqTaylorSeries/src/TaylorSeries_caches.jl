@@ -81,7 +81,14 @@ function alg_cache(
     )
 end
 
-get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (cache.u, cache.u)
+# FSAL currently not used. `cache.u` must NOT be reused here: the generic
+# auto-dt heuristic (`ode_determine_initdt`) writes an extra `f` evaluation
+# into whichever buffer `fsallast` points to, so aliasing it to the state
+# itself makes that call `f(u, u, p, t)` and can corrupt `u` mid-evaluation
+# for RHS functions that read from `u` after writing to `du` (e.g. the
+# Pleiades N-body problem), producing a spurious NaN. Use an independent
+# dummy buffer instead, matching `ExplicitTaylor2Cache` above.
+get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (zero(cache.u), zero(cache.u))
 
 struct ExplicitTaylorConstantCache{P, taylorType, uType, tType} <:
     OrdinaryDiffEqConstantCache
@@ -151,7 +158,9 @@ function alg_cache(
     )
 end
 
-get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (cache.u, cache.u)
+# See the note on `ExplicitTaylorCache`'s `get_fsalfirstlast` above: `cache.u`
+# must not be reused as the FSAL buffer here either.
+get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (zero(cache.u), zero(cache.u))
 
 struct ExplicitTaylorAdaptiveOrderConstantCache{P, Q, taylorType, uType, tType} <:
     OrdinaryDiffEqConstantCache

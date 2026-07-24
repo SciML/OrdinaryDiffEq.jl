@@ -41,6 +41,42 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test SciMLBase.successful_retcode(sol)
     end
 
+    # Regression test: `get_fsalfirstlast` used to alias `fsallast` to `cache.u`
+    # for ExplicitTaylor. The generic auto-dt heuristic (`ode_determine_initdt`)
+    # writes an extra `f` evaluation into `fsallast`, so with that aliasing it
+    # effectively called `f(u, u, p, t)`, corrupting `u` mid-evaluation for RHS
+    # functions that read from `u` after writing to `du`. On the Pleiades
+    # N-body problem several bodies share identical initial velocity
+    # components, so the corruption produced coincident positions and a 0/0
+    # division in the pairwise force term, yielding `retcode == DtNaN` on the
+    # very first step under fully default (adaptive, no starting `dt`)
+    # settings.
+    @testset "Default auto-dt on Pleiades (fsallast aliasing regression)" begin
+        sol = solve(
+            prob_ode_pleiades, ExplicitTaylor(order = Val(6)),
+            abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        @test SciMLBase.successful_retcode(sol)
+        # A real integration of this problem at this tolerance takes hundreds
+        # of accepted steps; a handful of steps would indicate the state got
+        # silently corrupted and the step-size controller was fooled into
+        # accepting one enormous, inaccurate step instead of erroring loudly.
+        @test length(sol.t) > 100
+        @test all(isfinite, sol.u[end])
+
+        # ExplicitTaylorAdaptiveOrder had the same fsallast aliasing bug and no
+        # longer crashes with DtNaN, but its per-step order/error controller
+        # separately accepts an oversized step on this problem (3 total steps)
+        # independent of this fix. Tracked as a known follow-up rather than
+        # silently passing or failing here.
+        sol_adaptive = solve(
+            prob_ode_pleiades, ExplicitTaylorAdaptiveOrder(),
+            abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        @test sol_adaptive.retcode != SciMLBase.ReturnCode.DtNaN
+        @test_broken length(sol_adaptive.t) > 100
+    end
+
     # Test AutoSpecialize (default ODEProblem wraps in FunctionWrappers)
     # and FullSpecialize paths for IIP problems
     @testset "AutoSpecialize / FullSpecialize IIP" begin
