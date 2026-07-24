@@ -29,8 +29,14 @@ function setup_fd2d_problem(; A = 0.1, B = 0.1, C = 0.0, N = 40, final_t = 1.0)
     u0 = [16 * (h * i) * (h * j) * (1 - h * i) * (1 - h * j) for i in 1:N for j in 1:N]
     tspan = (0.0, final_t)
 
+    # Dense ROS34PW1a reference path needs a matrix jac_prototype: SciMLOperators
+    # WOperator still MethodErrors convert when J is an AddedOperator/tensor-product
+    # graph (isconvertible=false but convert works; _concrete_form slot mistyped).
+    # Fixed upstream in SciMLOperators#411 (v1.24.5); until that floor lands, keep the
+    # reference on a materialized Jacobian. AMF paths below still use operator J/split.
+    J_mat = convert(AbstractMatrix, J_op)
     ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(
-        f!; jac_prototype = J_op, sparsity = convert(AbstractMatrix, J_op)
+        f!; jac_prototype = J_mat, sparsity = J_mat
     )
     ref_prob = ODEProblem(ref_func, u0, tspan)
 

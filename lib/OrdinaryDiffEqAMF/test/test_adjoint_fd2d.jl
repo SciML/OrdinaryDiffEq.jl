@@ -90,9 +90,11 @@ end
             [final_t],
             dgdu_discrete,
         )
+        # Materialize jac for dense ROS34PW1a baseline (SciMLOperators WOperator
+        # convert bug with AddedOperator J; see SciMLOperators#411 / test_fd2d.jl).
         bf = ODEFunction{true, SciMLBase.FullSpecialize}(
             ap.f.f;
-            jac_prototype = ap.f.jac_prototype,
+            jac_prototype = adj_sparsity,
             sparsity = adj_sparsity,
         )
         return ODEProblem(
@@ -138,7 +140,7 @@ end
 
     # Finite-difference validation on a few components
     ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(
-        f!; jac_prototype = J_op, sparsity = adj_sparsity,
+        f!; jac_prototype = adj_sparsity, sparsity = adj_sparsity,
     )
 
     function fd_gradient_component(idx; ε = 1.0e-7)

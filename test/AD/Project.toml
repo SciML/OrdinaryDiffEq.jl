@@ -37,7 +37,7 @@ DiffEqBase = {path = "../../lib/DiffEqBase"}
 ADTypes = "1.16"
 DiffEqBase = "7"
 DifferentiationInterface = "0.6.54, 0.7"
-Enzyme = "0.13"
+Enzyme = "0.13.180"
 FiniteDiff = "2.27"
 ForwardDiff = "0.10, 1"
 Mooncake = "0.4, 0.5"
