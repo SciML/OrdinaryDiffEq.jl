@@ -1,5 +1,6 @@
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqAMF
+using LinearSolve
 using SciMLOperators
 using SciMLSensitivity
 using LinearAlgebra
@@ -90,11 +91,9 @@ end
             [final_t],
             dgdu_discrete,
         )
-        # Materialize jac for dense ROS34PW1a baseline (SciMLOperators WOperator
-        # convert bug with AddedOperator J; see SciMLOperators#411 / test_fd2d.jl).
         bf = ODEFunction{true, SciMLBase.FullSpecialize}(
             ap.f.f;
-            jac_prototype = adj_sparsity,
+            jac_prototype = ap.f.jac_prototype,
             sparsity = adj_sparsity,
         )
         return ODEProblem(
@@ -124,7 +123,7 @@ end
     end
 
     # Baseline adjoint solve (no AMF)
-    adjoint_sol_baseline = solve(make_baseline_prob(), ROS34PW1a())
+    adjoint_sol_baseline = solve(make_baseline_prob(), ROS34PW1a(linsolve = KrylovJL()))
     @test adjoint_sol_baseline.retcode == SciMLBase.ReturnCode.Success
     dLdu0_baseline = adjoint_sol_baseline.u[end]
 
@@ -140,14 +139,15 @@ end
 
     # Finite-difference validation on a few components
     ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(
-        f!; jac_prototype = adj_sparsity, sparsity = adj_sparsity,
+        f!; jac_prototype = J_op, sparsity = adj_sparsity,
     )
+    ref_alg = ROS34PW1a(linsolve = KrylovJL())
 
     function fd_gradient_component(idx; ε = 1.0e-7)
         u_plus = copy(u0); u_plus[idx] += ε
         u_minus = copy(u0); u_minus[idx] -= ε
-        sol_plus = solve(ODEProblem(ref_func, u_plus, tspan), ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
-        sol_minus = solve(ODEProblem(ref_func, u_minus, tspan), ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+        sol_plus = solve(ODEProblem(ref_func, u_plus, tspan), ref_alg; abstol = 1.0e-10, reltol = 1.0e-10)
+        sol_minus = solve(ODEProblem(ref_func, u_minus, tspan), ref_alg; abstol = 1.0e-10, reltol = 1.0e-10)
         L_plus = 0.5 * dot(sol_plus.u[end], sol_plus.u[end])
         L_minus = 0.5 * dot(sol_minus.u[end], sol_minus.u[end])
         return (L_plus - L_minus) / (2ε)
