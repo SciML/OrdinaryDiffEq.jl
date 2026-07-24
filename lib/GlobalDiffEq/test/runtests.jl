@@ -11,6 +11,15 @@ run_tests(;
         @safetestset "Algorithm traits forwarding" begin
             include("algorithm_traits_tests.jl")
         end
+        @safetestset "Adjoint error estimation and control" begin
+            include("adjoint_tests.jl")
+        end
+        @safetestset "GLEE solvers" begin
+            include("glee_tests.jl")
+        end
+        @safetestset "Companion error estimators" begin
+            include("companion_tests.jl")
+        end
         return @safetestset "BigFloat support" begin
             include("bigfloat_tests.jl")
         end
