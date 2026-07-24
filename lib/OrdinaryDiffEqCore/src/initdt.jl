@@ -360,11 +360,15 @@ end
 
     f₀ = f(u0, p, t)
 
-    if any(x -> any(isnan, x), f₀)
+    # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
+    # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
+    # field types cannot sensibly overload (OrdinaryDiffEq #1404).
+    if DiffEqBase.NAN_CHECK(f₀)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
+        return tdir * dtmin
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
@@ -377,17 +381,27 @@ end
     g₀ = nothing
     if g !== nothing
         g₀ = 3g(u0, p, t)
-        if any(x -> any(isnan, x), g₀)
+        if DiffEqBase.NAN_CHECK(g₀)
             @SciMLMessage(
                 "First function call for g produced NaNs. Exiting.",
                 integrator.opts.verbose, :init_NaN
             )
+            return tdir * dtmin
         end
         d₁ = internalnorm(
             max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
         )
     else
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
+    end
+
+    # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
+    if isnan(d₁)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
+        return tdir * dtmin
     end
 
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
