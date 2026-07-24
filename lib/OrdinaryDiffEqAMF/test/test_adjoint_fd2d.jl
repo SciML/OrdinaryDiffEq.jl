@@ -158,7 +158,7 @@ end
         fd_grad = fd_gradient_component(idx)
         adj_amf = dLdu0_amf[idx]
         relerr_vs_fd = abs(fd_grad - adj_amf) / max(abs(fd_grad), 1.0e-12)
-        @test relerr_vs_fd < 0.01  # AMF + forward tolerance → ~1e-3
+        @test relerr_vs_fd < 0.015  # Krylov ref + AMF + forward tol; was 0.01 pre-Krylov
         @info "FD validation idx=$idx" fd = fd_grad adj_amf = adj_amf relerr = relerr_vs_fd
     end
 end
