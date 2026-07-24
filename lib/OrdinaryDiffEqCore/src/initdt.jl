@@ -471,7 +471,9 @@ end
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])
     init_dt = isfinite(init_dt) ? init_dt : oneunit(_tType)
-    return convert(_tType, init_dt * 1 // 10^(6))
+    # Must include tdir so reversed tspans get a negative initial dt
+    # (DifferentialEquations.jl #908).
+    return convert(_tType, tdir * init_dt * 1 // 10^(6))
 end
 
 # RODE/SDE iip entry: folds noise terms into the Hairer-Wanner estimate

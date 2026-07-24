@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqBDF
 import OrdinaryDiffEqExplicitTableaus
 
 prob = prob_ode_linear
@@ -89,6 +90,29 @@ let
     end
 end
 
+# https://github.com/SciML/DifferentialEquations.jl/issues/908
+# Automatic initial dt for DAEProblem on a reversed tspan must have tdir sign.
+@testset "DAE reversed tspan automatic initdt (#908)" begin
+    function dae_lin!(resid, du, u, p, t)
+        resid[1] = du[1] + u[1]
+        resid[2] = u[2] - u[1]
+        return nothing
+    end
+    u0b = [exp(-5), exp(-5)]
+    du0b = [-exp(-5), -exp(-5)]
+    prob_b = DAEProblem(
+        dae_lin!, du0b, u0b, (5.0, 0.0); differential_vars = [true, false]
+    )
+    for alg in (DImplicitEuler(), DABDF2(), DFBDF())
+        # Core #908 regression: auto initdt must be negative for tspan[1] > tspan[2].
+        integ = init(prob_b, alg)
+        @test integ.dt < 0
+        # Tighter tols so endpoint accuracy is not confounded with default adaptive error.
+        sol = solve(prob_b, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == 0.0
+        @test sol.u[end][1] ≈ 1.0 atol = 1.0e-2
+    end
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1404
 # OOP initdt must route through DiffEqBase.NAN_CHECK (not nested any(isnan, ·))
 # so custom array types can overload it, matching the IIP intent.
