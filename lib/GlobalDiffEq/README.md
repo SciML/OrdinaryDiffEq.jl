@@ -12,6 +12,12 @@ provides:
 
   - `GlobalRichardson`: global Richardson extrapolation of whole solves of any
     fixed-step method, interpreting `abstol`/`reltol` as global tolerances.
+  - `GLEE23`, `GLEE24`, `GLEE35`: explicit general linear methods with built-in
+    global error estimation (Constantinescu 2016), which propagate the solution
+    together with an asymptotically correct estimate of its global error.
+  - `GlobalAdjoint`: adjoint-based a posteriori endpoint error estimation and
+    control (Cao and Petzold 2004), available as a package extension when
+    SciMLSensitivity and QuadGK are loaded.
 
 See the [OrdinaryDiffEq.jl documentation](https://docs.sciml.ai/OrdinaryDiffEq/stable/)
 for the full API reference.
