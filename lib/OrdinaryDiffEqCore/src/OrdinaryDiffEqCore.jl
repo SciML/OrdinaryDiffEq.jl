@@ -50,6 +50,7 @@ import SciMLOperators: MatrixOperator, FunctionOperator,
     isconstant
 
 import Random
+import Printf: @sprintf
 
 import RecursiveArrayTools: recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
 
@@ -92,7 +93,7 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier, log_numerical_instability, has_mtk_sys
 
 import SciMLBase: islinear
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
