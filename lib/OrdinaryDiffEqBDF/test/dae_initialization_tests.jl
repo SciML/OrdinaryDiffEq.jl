@@ -170,6 +170,7 @@ end
 
 # Vector abstol with default CheckInit must not MethodError (OrdinaryDiffEq #1214).
 # Residual is already consistent, so initialization should succeed.
+# Needs SciMLBase >= 3.39 (exceeds_checkinit_abstol; SciMLBase#1464).
 @testset "Vector abstol CheckInit (#1214)" begin
     function dae1214!(resid, du, u, p, t)
         resid[1] = du[1] + u[1]
