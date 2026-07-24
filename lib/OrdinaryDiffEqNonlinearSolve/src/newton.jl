@@ -1,5 +1,27 @@
 ## initialize!
 
+# `NonlinearSolvePolyAlgorithmCache` (used when `nlsolve` wraps a polyalgorithm like
+# `RobustMultiNewton` or `FastShortcutNonlinearPolyalg`) has no top-level `u`/`fu`/`trace`
+# fields: those live on whichever branch cache is currently active. `hasfield` on a
+# concrete type is resolved at compile time, so this adds no runtime branch.
+@inline function _active_nlcache(nlcache)
+    hasfield(typeof(nlcache), :u) && return nlcache
+    return nlcache.caches[nlcache.current]
+end
+
+# `NonlinearSolvePolyAlgorithmCache`'s own `reinit!` resets `current`/`nsteps`/`stats`
+# but not `force_stop`/`retcode`. Once any branch has converged once, those two stay
+# set, so `CommonSolve.step!`'s `not_terminated(cache) || return` guard makes every
+# later `step!` on the same cache silently a no-op (stale `u` reused every step).
+# Reset them explicitly after each `reinit!` until this is fixed upstream.
+@inline function _reset_polyalg_termination!(nlcache)
+    if !hasfield(typeof(nlcache), :u)
+        nlcache.force_stop = false
+        nlcache.retcode = SciMLBase.ReturnCode.Default
+    end
+    return nothing
+end
+
 @muladd function initialize!(
         nlsolver::NLSolver{<:NLNewton, false},
         integrator::SciMLBase.DEIntegrator
@@ -53,6 +75,7 @@ function initialize!(
     end
 
     SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+    _reset_polyalg_termination!(cache.cache)
     return nothing
 end
 
@@ -96,6 +119,7 @@ function initialize!(
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
         SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlstep_data.nlprob.p)
+        _reset_polyalg_termination!(cache.cache)
     else
         if cache.W !== nothing
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
@@ -120,7 +144,7 @@ function initialize!(
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        if length(cache.cache.u) != length(z)
+        if length(_active_nlcache(cache.cache).u) != length(z)
             new_prob = if cache.W !== nothing
                 # W-reuse: re-point the inner jacobian at the resized W via the same mapping
                 # used at build time. Only array sizes change, so the jac's concrete type —
@@ -140,6 +164,7 @@ function initialize!(
             cache.linsolve = cache.W !== nothing ? get_linear_cache(cache.cache) : nothing
         else
             SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+            _reset_polyalg_termination!(cache.cache)
         end
     end
     return nothing
@@ -186,11 +211,12 @@ end
     nlcache = nlsolver.cache.cache
     recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
     step!(nlcache; recompute_jacobian)
-    nlsolver.ztmp = nlcache.u
+    active_u = _active_nlcache(nlcache).u
+    nlsolver.ztmp = active_u
 
     ustep = compute_ustep(tmp, γ, z, method)
     atmp = calculate_residuals(
-        z .- nlcache.u, uprev, ustep, opts.abstol, opts.reltol,
+        z .- active_u, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
     )
     ndz = opts.internalnorm(atmp, t)
@@ -213,15 +239,16 @@ end
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
+        active_nlcache = _active_nlcache(nlcache)
         nlstepsol = SciMLBase.build_solution(
-            nlcache.prob, nlcache.alg, nlcache.u, nlcache.fu;
-            nlcache.retcode, nlcache.stats, nlcache.trace
+            nlcache.prob, nlcache.alg, active_nlcache.u, active_nlcache.fu;
+            nlcache.retcode, nlcache.stats, active_nlcache.trace
         )
         nlstep_data.nlprobmap(ztmp, nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         atmp_sub = @view(atmp[nlstep_data.u0perm])
         calculate_residuals!(
-            atmp_sub, nlcache.fu,
+            atmp_sub, active_nlcache.fu,
             @view(uprev[nlstep_data.u0perm]),
             @view(ustep[nlstep_data.u0perm]), opts.abstol,
             opts.reltol, opts.internalnorm, t
@@ -233,7 +260,7 @@ end
         # convergence check to declare success ~sqrt(n_full/n_sub) early.
         ndz = opts.internalnorm(atmp_sub, t)
     else
-        @.. broadcast = false ztmp = nlcache.u
+        @.. broadcast = false ztmp = _active_nlcache(nlcache).u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         @.. broadcast = false atmp = z - ztmp
         calculate_residuals!(
