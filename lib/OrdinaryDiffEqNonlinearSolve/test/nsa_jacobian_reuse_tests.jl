@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
-using NonlinearSolve: NewtonRaphson
+using NonlinearSolve: NewtonRaphson, TrustRegion
 using ADTypes, LinearAlgebra, SciMLBase
 using Test
 
@@ -47,4 +47,31 @@ refsol = solve(prob, FBDF(); reltol = 1.0e-12, abstol = 1.0e-14)
         @test JAC_CALLS[] < sol.stats.nw / 3
         @test JAC_CALLS[] >= 1
     end
+end
+
+@testset "globalized inner solver does not converge on a rejected step" begin
+    # A TrustRegion step that is rejected/truncated leaves the iterate nearly
+    # unmoved, which the outer displacement test alone reads as convergence — the
+    # stage is then accepted with no correction applied (#3817). Driven at a dt
+    # that is far too coarse for the Robertson transient, so the inner solves
+    # genuinely cannot converge and the failure must be reported rather than
+    # silently absorbed.
+    nsa_tr = NonlinearSolveAlg(TrustRegion(; autodiff = AutoForwardDiff()))
+    nsa_nr = NonlinearSolveAlg(NewtonRaphson(; autodiff = AutoForwardDiff()))
+    hard = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e3), [0.04, 3.0e7, 1.0e4])
+
+    sol_tr = solve(hard, FBDF(nlsolve = nsa_tr); dt = 1.0, adaptive = false)
+    sol_nr = solve(hard, FBDF(nlsolve = nsa_nr); dt = 1.0, adaptive = false)
+
+    # The state must not be reported as a successful solve while frozen at u0.
+    @test !(SciMLBase.successful_retcode(sol_tr) && sol_tr.u[end] == hard.u0)
+    # TrustRegion must reach the same verdict as the non-globalized inner solver.
+    @test SciMLBase.successful_retcode(sol_tr) == SciMLBase.successful_retcode(sol_nr)
+end
+
+@testset "TrustRegion matches NewtonRaphson when the solves do converge" begin
+    nsa_tr = NonlinearSolveAlg(TrustRegion(; autodiff = AutoForwardDiff()))
+    sol = solve(prob, FBDF(nlsolve = nsa_tr); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test SciMLBase.successful_retcode(sol)
+    @test norm(sol.u[end] .- refsol.u[end]) / norm(refsol.u[end]) < 1.0e-4
 end
