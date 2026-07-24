@@ -168,6 +168,7 @@ end
     kk::Vector{uType}
     z::Vector{uType}
     fS::Vector{rateType}
+    zemb::uType
     fsalfirst::rateType
     k::rateType
     nlsolver::N
@@ -177,8 +178,6 @@ end
 get_fsalfirstlast(cache::MRIGARKImplicitCache, u) = (cache.fsalfirst, cache.k)
 
 _mrigark_impl_γ(tab) = tab.γ0[findfirst(!iszero, tab.γ0)]
-
-const MRIGARKImplicitAlg = Union{MRIGARKIRK21a, MRIGARKESDIRK34a}
 
 function alg_cache(
         alg::MRIGARKImplicitAlg, u, rate_prototype,
@@ -203,10 +202,12 @@ function alg_cache(
     kk = [zero(u) for _ in 1:(tab.q)]
     z = [zero(u) for _ in 1:(s + 1)]
     fS = [zero(rate_prototype) for _ in 1:s]
+    zemb = zero(u)
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
     return MRIGARKImplicitCache(
-        u, uprev, tmp, atmp, v, vtmp, f1eval, kk, z, fS, fsalfirst, k, nlsolver, tab
+        u, uprev, tmp, atmp, v, vtmp, f1eval, kk, z, fS, zemb,
+        fsalfirst, k, nlsolver, tab
     )
 end
 
