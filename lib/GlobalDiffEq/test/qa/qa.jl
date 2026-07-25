@@ -16,6 +16,7 @@ reexported_names = Tuple(
 
 run_qa(
     GlobalDiffEq;
+    reexports_allow = union(public_api_names(DiffEqBase), (:DiffEqBase,)),
     explicit_imports = true,
     # GlobalDiffEq's rendered documentation lives in the monorepo docs, two
     # directories up from the sublibrary root.

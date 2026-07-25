@@ -75,6 +75,9 @@ const ODEC_STOCHASTIC_SURFACE = (
 
 run_qa(
     StochasticDiffEqCore;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(DiffEqBase), (:DiffEqBase,)),
     aqua_kwargs = (; piracies = (; treat_as_own = ODEC_STOCHASTIC_SURFACE)),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,

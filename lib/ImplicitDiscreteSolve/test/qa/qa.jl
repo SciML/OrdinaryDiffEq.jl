@@ -2,6 +2,7 @@ using SciMLTesting, ImplicitDiscreteSolve, Test
 
 run_qa(
     ImplicitDiscreteSolve;
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,
     ei_kwargs = (;

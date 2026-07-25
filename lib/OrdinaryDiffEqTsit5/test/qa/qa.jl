@@ -2,6 +2,9 @@ using SciMLTesting, OrdinaryDiffEqTsit5, Test
 
 run_qa(
     OrdinaryDiffEqTsit5;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;
         # Residual after the PHASE-A make-public sweep: the solver-author API
