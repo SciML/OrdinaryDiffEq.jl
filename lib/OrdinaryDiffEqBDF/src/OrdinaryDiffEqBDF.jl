@@ -72,6 +72,7 @@ include("controllers.jl")
 include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
 include("interp_func.jl")
+include("nordsieck.jl")
 include("bdf_interpolants.jl")
 include("stiff_addsteps.jl")
 
@@ -182,6 +183,7 @@ end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
     SBDF, SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
-    DABDF2, DImplicitEuler, DFBDF
+    DABDF2, DImplicitEuler, DFBDF,
+    NordsieckBDF, DNordsieckBDF
 
 end
