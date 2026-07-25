@@ -91,7 +91,7 @@ end
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
-    solver_list = [FBDF()]
+    solver_list = [FBDF(), NordsieckBDF()]
     prob_list = []
 
     if Preferences.@load_preference("PrecompileDefaultSpecialize", true)

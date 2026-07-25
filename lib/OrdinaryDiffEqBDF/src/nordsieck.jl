@@ -503,6 +503,7 @@ struct NordsieckBDF{MO, AD, F, F2, T, StepLimiter, CJ, QT} <:
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
+    stald::Bool
     qmax::QT
     qsteady_min::QT
     qsteady_max::QT
@@ -512,13 +513,13 @@ function NordsieckBDF(;
         max_order::Val{MO} = Val{5}(),
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(), tol = nothing,
-        extrapolant = :linear, step_limiter! = trivial_limiter!,
+        extrapolant = :linear, step_limiter! = trivial_limiter!, stald = false,
         qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
     return NordsieckBDF(
         max_order, linsolve, nlsolve, tol, extrapolant, step_limiter!,
-        autodiff, _unwrap_val(concrete_jac), qmax, qsteady_min, qsteady_max
+        autodiff, _unwrap_val(concrete_jac), stald, qmax, qsteady_min, qsteady_max
     )
 end
 
@@ -559,6 +560,7 @@ struct DNordsieckBDF{MO, AD, F, F2, T, CJ, QT} <: DAEAlgorithm
     extrapolant::Symbol
     autodiff::AD
     concrete_jac::CJ
+    stald::Bool
     qmax::QT
     qsteady_min::QT
     qsteady_max::QT
@@ -568,13 +570,13 @@ function DNordsieckBDF(;
         max_order::Val{MO} = Val{5}(),
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(), tol = nothing,
-        extrapolant = :linear,
+        extrapolant = :linear, stald = false,
         qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
     return DNordsieckBDF(
         max_order, linsolve, nlsolve, tol, extrapolant, autodiff,
-        _unwrap_val(concrete_jac), qmax, qsteady_min, qsteady_max
+        _unwrap_val(concrete_jac), stald, qmax, qsteady_min, qsteady_max
     )
 end
 
@@ -594,6 +596,7 @@ has_stiff_interpolation(::NordsieckBDFAlgs) = true
 # fraction of the error-test budget the corrector may consume.
 has_special_newton_error(alg::NordsieckBDFAlgs) = true
 error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
+
 
 # The step-size logic is CVODE's (`cvSetEta` keeps h unless eta >= 1.5), so the
 # generic qsteady band must not also clamp it.
@@ -621,7 +624,7 @@ end
 
 # ================================================================= caches
 @cache mutable struct NordsieckBDFCache{
-        MO, N, rateType, uNoUnitsType, uType, tType, coeffType, StepLimiter,
+        MO, N, rateType, uNoUnitsType, uType, tType, coeffType, staldType, StepLimiter,
     } <: BDFMutableCache
     fsalfirst::rateType
     nlsolver::N
@@ -639,6 +642,7 @@ end
     qwait::Int
     nst::Int
     nef::Int
+    ncf::Int
     indx_acor::Int
     max_order::Val{MO}
     max_order_int::Int
@@ -650,12 +654,13 @@ end
     etaqp1::tType
     saved_tq5::tType
     predicted::Bool
+    stald::staldType
     step_limiter!::StepLimiter
 end
 
 @truncate_stacktrace NordsieckBDFCache 1
 
-mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType} <:
+mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldType} <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
     zn::Vector{uType}
@@ -669,6 +674,7 @@ mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType} <:
     qwait::Int
     nst::Int
     nef::Int
+    ncf::Int
     indx_acor::Int
     max_order::Val{MO}
     max_order_int::Int
@@ -680,12 +686,13 @@ mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType} <:
     etaqp1::tType
     saved_tq5::tType
     predicted::Bool
+    stald::staldType
 end
 
 # DAE caches carry `u₀` because `get_dae_uprev` uses it as the predictor the
 # correction `z` is measured against.
 @cache mutable struct DNordsieckBDFCache{
-        MO, N, rateType, uNoUnitsType, uType, tType, coeffType,
+        MO, N, rateType, uNoUnitsType, uType, tType, coeffType, staldType,
     } <: BDFMutableCache
     fsalfirst::rateType
     nlsolver::N
@@ -704,6 +711,7 @@ end
     qwait::Int
     nst::Int
     nef::Int
+    ncf::Int
     indx_acor::Int
     max_order::Val{MO}
     max_order_int::Int
@@ -715,11 +723,12 @@ end
     etaqp1::tType
     saved_tq5::tType
     predicted::Bool
+    stald::staldType
 end
 
 @truncate_stacktrace DNordsieckBDFCache 1
 
-mutable struct DNordsieckBDFConstantCache{MO, N, uType, tType, coeffType} <:
+mutable struct DNordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldType} <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
     zn::Vector{uType}
@@ -734,6 +743,7 @@ mutable struct DNordsieckBDFConstantCache{MO, N, uType, tType, coeffType} <:
     qwait::Int
     nst::Int
     nef::Int
+    ncf::Int
     indx_acor::Int
     max_order::Val{MO}
     max_order_int::Int
@@ -745,6 +755,7 @@ mutable struct DNordsieckBDFConstantCache{MO, N, uType, tType, coeffType} <:
     etaqp1::tType
     saved_tq5::tType
     predicted::Bool
+    stald::staldType
 end
 
 const NordsieckCaches = Union{
@@ -765,16 +776,17 @@ function alg_cache(
     zn = [zero(u) for _ in 1:(MO + 1)]
     coeffs() = zeros(typeof(t), MO + 3)
     tq = zeros(typeof(t), 6)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
     return NordsieckBDFCache{
         MO, typeof(nlsolver), typeof(rate_prototype),
         typeof(similar(u, uEltypeNoUnits)), typeof(u), typeof(t),
-        typeof(coeffs()), typeof(alg.step_limiter!),
+        typeof(coeffs()), typeof(stald), typeof(alg.step_limiter!),
     }(
         zero(rate_prototype), nlsolver, zn, zero(u), zero(u), zero(u), zero(u),
         similar(u, uEltypeNoUnits), coeffs(), coeffs(), tq,
-        1, 1, 2, 0, 0, MO, Val(MO), MO,
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
         zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
-        zero(t), false, alg.step_limiter!
+        zero(t), false, stald, alg.step_limiter!
     )
 end
 
@@ -790,13 +802,14 @@ function alg_cache(
     )
     zn = [zero(u) for _ in 1:(MO + 1)]
     coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
     return NordsieckBDFConstantCache{
-        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()),
+        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()), typeof(stald),
     }(
         nlsolver, zn, zero(u), zero(u), coeffs(), coeffs(), zeros(typeof(t), 6),
-        1, 1, 2, 0, 0, MO, Val(MO), MO,
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
         zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
-        zero(t), false
+        zero(t), false, stald
     )
 end
 
@@ -812,15 +825,17 @@ function alg_cache(
     )
     zn = [zero(u) for _ in 1:(MO + 1)]
     coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
     return DNordsieckBDFCache{
         MO, typeof(nlsolver), typeof(rate_prototype),
         typeof(similar(u, uEltypeNoUnits)), typeof(u), typeof(t), typeof(coeffs()),
+        typeof(stald),
     }(
         zero(rate_prototype), nlsolver, zn, zero(u), zero(u), zero(u), zero(u),
         zero(u), similar(u, uEltypeNoUnits), coeffs(), coeffs(), zeros(typeof(t), 6),
-        1, 1, 2, 0, 0, MO, Val(MO), MO,
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
         zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
-        zero(t), false
+        zero(t), false, stald
     )
 end
 
@@ -836,13 +851,14 @@ function alg_cache(
     )
     zn = [zero(u) for _ in 1:(MO + 1)]
     coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
     return DNordsieckBDFConstantCache{
-        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()),
+        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()), typeof(stald),
     }(
         nlsolver, zn, zero(u), zero(u), zero(u), coeffs(), coeffs(),
-        zeros(typeof(t), 6), 1, 1, 2, 0, 0, MO, Val(MO), MO,
+        zeros(typeof(t), 6), 1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
         zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
-        zero(t), false
+        zero(t), false, stald
     )
 end
 
@@ -895,12 +911,14 @@ function _nordsieck_start_common!(cache, dt)
     cache.qprime = 1
     cache.qwait = 2
     cache.nef = 0
+    cache.ncf = 0
     cache.hscale = dt
     cache.eta = one(cache.eta)
     cache.etamax = typeof(cache.etamax)(NORD_ETA_MAX_FS)
     cache.saved_tq5 = zero(cache.saved_tq5)
     cache.indx_acor = cache.max_order_int
     cache.predicted = false
+    stald_reset!(cache.stald)
     fill!(cache.tau, zero(eltype(cache.tau)))
     return nothing
 end
@@ -1036,6 +1054,35 @@ function perform_step!(integrator, cache::NordsieckBDFConstantCache, repeat_step
     return nothing
 end
 
+"""
+    nordsieck_stald!(cache, integrator, u, uprev, dsm)
+
+CVODE `cvBDFStab`: feed the stability-limit detector the scaled derivative norms
+
+    sqm2 = (q-1)! * ‖zn[q-1]‖,  sqm1 = (q-1)! * q * ‖zn[q]‖,
+    sq   = (q-1)! * q * (q+1) * acnrm / tq[5]
+
+and return whether the order must be reduced. BDF orders 3–5 are only α-stable, so
+eigenvalues near the imaginary axis can destabilise the integration at high order;
+this detects that from the history and drops the order. Off by default, as in CVODE.
+"""
+function nordsieck_stald!(cache, integrator, u, uprev, dsm)
+    cache.stald.enabled || return false
+    q = cache.order
+    q < 3 && return false
+    T = typeof(cache.eta)
+    fact = one(T)
+    for i in 1:(q - 1)
+        fact *= i
+    end
+    acnrm = dsm / max(cache.tq[2], eps(T))
+    sq = fact * q * (q + 1) * acnrm / max(cache.tq[5], eps(T))
+    sqm1 = fact * q * _nord_wrms(integrator, cache, cache.zn[q + 1], uprev, u)
+    sqm2 = fact * _nord_wrms(integrator, cache, cache.zn[q], uprev, u)
+    stald_collect_data!(cache.stald, q, sqm2, sqm1, sq)
+    return stald_check!(cache.stald, q)
+end
+
 # ================================================================= controllers
 # The controller hooks own the Nordsieck bookkeeping: `perform_step!` leaves the
 # array in the *predicted* state, accepting commits it with the rank-1 update, and
@@ -1055,8 +1102,13 @@ function step_accept_controller!(integrator, alg::NordsieckBDFAlgs, q)
     dsm = OrdinaryDiffEqCore.get_EEst(integrator)
     acor = cache.acor
 
+    # STALD inspects the step that was just taken, so it runs before the array is
+    # advanced and before the new order is chosen.
+    stald_reduce = nordsieck_stald!(cache, integrator, u, uprev, dsm)
+
     nordsieck_complete!(cache, dt, acor, iip)
     cache.nef = 0
+    cache.ncf = 0
     # dense output data: the committed Nordsieck columns about t_{n+1}
     _nordsieck_store_k!(integrator, cache, iip)
 
@@ -1079,7 +1131,13 @@ function step_accept_controller!(integrator, alg::NordsieckBDFAlgs, q)
             nordsieck_set_eta!(cache, integrator)
         end
     end
-    cache.etamax = cache.nst <= NORD_SMALL_NST ? T(NORD_ETA_MAX_GS) : T(NORD_ETA_MAX_GS)
+    if stald_reduce && cache.qprime > 1
+        # a stability violation overrides whatever order the error estimates chose
+        cache.qprime = min(cache.qprime, cache.order - 1)
+        cache.eta = min(cache.eta, one(T))
+    end
+    # after the first step the growth cap drops from ETA_MAX_FS to the steady value
+    cache.etamax = T(NORD_ETA_MAX_GS)
     eta = min(cache.eta, get_current_qmax(integrator, get_qmax(integrator)))
     return dt * eta
 end
@@ -1124,6 +1182,16 @@ function post_newton_controller!(integrator, alg::NordsieckBDFAlgs)
     T = typeof(cache.eta)
     nordsieck_restore!(cache, iip)
     cache.etamax = one(T)
+    cache.ncf += 1
+    if cache.ncf >= 3 && cache.order > 1
+        # repeated corrector failures usually mean the high-order predictor is the
+        # problem, so drop the order as well as the step size
+        nordsieck_adjust_order!(cache, -1, iip)
+        cache.order -= 1
+        cache.qprime = cache.order
+        cache.qwait = cache.order + 1
+        cache.ncf = 0
+    end
     cache.eta = T(NORD_ETA_CF)
     nordsieck_rescale!(cache, cache.eta, iip)
     integrator.dt = cache.hscale

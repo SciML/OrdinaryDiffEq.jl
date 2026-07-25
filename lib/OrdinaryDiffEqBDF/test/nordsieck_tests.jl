@@ -208,3 +208,40 @@ end
     ref = solve(prob, Rodas5P(), abstol = 1.0e-14, reltol = 1.0e-14)
     @test norm(sol.u[end] .- ref(prob.tspan[2])) / norm(ref(prob.tspan[2])) < 1.0e-4
 end
+
+@testset "NordsieckBDF: stald and repeated-failure order reduction" begin
+    # STALD is off by default (as in CVODE). Enabling it must not change results on
+    # problems that are not stability-limited, and must not break anything.
+    for prob in (
+            ODEProblemLibrary.prob_ode_hires,
+            remake(ODEProblemLibrary.prob_ode_rober, tspan = (0.0, 1.0e5)),
+        )
+        off = solve(
+            prob, NordsieckBDF(), abstol = 1.0e-8, reltol = 1.0e-6,
+            save_everystep = false
+        )
+        on = solve(
+            prob, NordsieckBDF(stald = true), abstol = 1.0e-8, reltol = 1.0e-6,
+            save_everystep = false
+        )
+        @test successful_retcode(off) && successful_retcode(on)
+        @test isapprox(off.u[end], on.u[end], rtol = 1.0e-8)
+    end
+    @test successful_retcode(
+        solve(
+            DAEProblem(
+                (res, du, u, p, t) -> (res[1] = du[1] + u[1]; nothing),
+                [-1.0], [1.0], (0.0, 1.0), differential_vars = [true]
+            ),
+            DNordsieckBDF(stald = true), abstol = 1.0e-8, reltol = 1.0e-8
+        )
+    )
+
+    # A jump in the RHS forces corrector failures; the solver must recover rather
+    # than only shrinking dt forever.
+    f = (du, u, p, t) -> (du[1] = t < 1.0 ? -u[1] : -100 * u[1] + 99; nothing)
+    prob = ODEProblem(f, [1.0], (0.0, 2.0))
+    sol = solve(prob, NordsieckBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
+    @test successful_retcode(sol)
+    @test isapprox(sol.u[end][1], 0.99, atol = 1.0e-3)
+end
