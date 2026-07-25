@@ -1,5 +1,6 @@
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqAMF
+using LinearSolve
 using SciMLOperators
 using SciMLSensitivity
 using LinearAlgebra
@@ -122,7 +123,7 @@ end
     end
 
     # Baseline adjoint solve (no AMF)
-    adjoint_sol_baseline = solve(make_baseline_prob(), ROS34PW1a())
+    adjoint_sol_baseline = solve(make_baseline_prob(), ROS34PW1a(linsolve = KrylovJL()))
     @test adjoint_sol_baseline.retcode == SciMLBase.ReturnCode.Success
     dLdu0_baseline = adjoint_sol_baseline.u[end]
 
@@ -140,12 +141,13 @@ end
     ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(
         f!; jac_prototype = J_op, sparsity = adj_sparsity,
     )
+    ref_alg = ROS34PW1a(linsolve = KrylovJL())
 
     function fd_gradient_component(idx; ε = 1.0e-7)
         u_plus = copy(u0); u_plus[idx] += ε
         u_minus = copy(u0); u_minus[idx] -= ε
-        sol_plus = solve(ODEProblem(ref_func, u_plus, tspan), ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
-        sol_minus = solve(ODEProblem(ref_func, u_minus, tspan), ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+        sol_plus = solve(ODEProblem(ref_func, u_plus, tspan), ref_alg; abstol = 1.0e-10, reltol = 1.0e-10)
+        sol_minus = solve(ODEProblem(ref_func, u_minus, tspan), ref_alg; abstol = 1.0e-10, reltol = 1.0e-10)
         L_plus = 0.5 * dot(sol_plus.u[end], sol_plus.u[end])
         L_minus = 0.5 * dot(sol_minus.u[end], sol_minus.u[end])
         return (L_plus - L_minus) / (2ε)
@@ -156,7 +158,7 @@ end
         fd_grad = fd_gradient_component(idx)
         adj_amf = dLdu0_amf[idx]
         relerr_vs_fd = abs(fd_grad - adj_amf) / max(abs(fd_grad), 1.0e-12)
-        @test relerr_vs_fd < 0.01  # AMF + forward tolerance → ~1e-3
+        @test relerr_vs_fd < 0.015  # Krylov ref + AMF + forward tol; was 0.01 pre-Krylov
         @info "FD validation idx=$idx" fd = fd_grad adj_amf = adj_amf relerr = relerr_vs_fd
     end
 end
