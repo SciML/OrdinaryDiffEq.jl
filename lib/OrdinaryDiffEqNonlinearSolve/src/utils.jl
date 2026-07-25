@@ -275,6 +275,20 @@ end
 # passed through as an operator `jac_prototype` (applied via `mul!`, Krylov); a concrete W
 # reused via an analytic `WReuseJac`. Used at build time and after `resize!` so the inner
 # `NonlinearFunction`'s concrete type is preserved.
+# Tolerances for the inner NonlinearSolve. `nlsolve!` drives that cache one `step!` at a time
+# and decides convergence itself with the integrator's weighted `κ`/`η` test, exactly as it does
+# for `NLNewton`, so the inner solver must never terminate on its own first: its default is an
+# absolute residual bound unrelated to the integrator's tolerances, and the residual carries a
+# `1/(γ·dt)` factor, so once `dt` grows it is met immediately — after which `step!` becomes a
+# no-op, every later outer iteration sees a zero increment, and the outer test reads that as a
+# perfect solve and accepts an unconverged stage.
+#
+# Zeroing `abstol`/`reltol` disables that criterion, but those same values are forwarded to the
+# descent's linear solver, where zero is an unreachable target that costs an iterative (Krylov)
+# solve its Newton-direction accuracy. `linsolve_kwargs` is splatted after them, so it restores
+# a usable tolerance for the linear solve alone.
+_inner_lintol(::Type{T}) where {T} = eps(real(one(T)))^(4 // 5)
+
 function reuse_jac_kwargs(W)
     Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
         W._concrete_form : W
@@ -450,7 +464,21 @@ function build_nlsolver(
                 nlalg.alg,
                 wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight)
             )
-            cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
+            # The integrator owns the convergence decision, exactly as it does for `NLNewton`:
+            # `nlsolve!` drives this cache one `step!` at a time and stops on its own weighted
+            # `κ`/`η` test. Zero tolerances keep the inner solver's own criterion from ever
+            # firing first — otherwise it terminates on an absolute residual bound unrelated to
+            # the integrator's tolerances (and scaled by `1/(γ·dt)`, so it is trivially met once
+            # `dt` grows), after which `step!` becomes a no-op, every later outer iteration sees
+            # `ndz == 0`, and the outer test reads that as perfect convergence and accepts the
+            # step with an unconverged stage.
+            cache = init(
+                prob, inner_alg; verbose = verbose.nonlinear_verbosity,
+                abstol = zero(uTolType), reltol = zero(uTolType),
+                linsolve_kwargs = (;
+                    abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
+                )
+            )
             # Smoothed estimate `W \ tmp` reuses the inner solver's own W factorization (see
             # NonlinearSolveCache); `nothing` when it exposes none (native scalar/StaticArray
             # solve) falls back to the raw estimate.
@@ -617,7 +645,14 @@ function build_nlsolver(
                 copy(ztmp), nlp_params
             )
             inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
-            cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
+            # Zero tolerances: the integrator owns convergence (see the in-place branch above).
+            cache = init(
+                prob, inner_alg; verbose = verbose.nonlinear_verbosity,
+                abstol = zero(uTolType), reltol = zero(uTolType),
+                linsolve_kwargs = (;
+                    abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
+                )
+            )
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
                 nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,

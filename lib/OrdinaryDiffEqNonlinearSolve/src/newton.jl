@@ -185,6 +185,15 @@ end
 
     nlcache = nlsolver.cache.cache
     recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+    # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
+    # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
+    # path (the inner solve converged before the integrator's own test was satisfied); any
+    # other terminal state is a genuine failure and must reach the step controller, so report
+    # it the way `NLNewton` reports a failed linear solve.
+    if !NonlinearSolveBase.not_terminated(nlcache) &&
+            !SciMLBase.successful_retcode(nlcache.retcode)
+        return convert(eltype(z), Inf)
+    end
     step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
@@ -210,6 +219,15 @@ end
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
     recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+    # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
+    # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
+    # path (the inner solve converged before the integrator's own test was satisfied); any
+    # other terminal state is a genuine failure and must reach the step controller, so report
+    # it the way `NLNewton` reports a failed linear solve.
+    if !NonlinearSolveBase.not_terminated(nlcache) &&
+            !SciMLBase.successful_retcode(nlcache.retcode)
+        return convert(eltype(atmp), Inf)
+    end
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
