@@ -113,6 +113,8 @@ end
         @test sol.t[end] == 0.0
         @test sol.u[end][1] ≈ 1.0 atol = 1.0e-2
     end
+end
+
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1404
 # OOP initdt must route through DiffEqBase.NAN_CHECK (not nested any(isnan, ·))
 # so custom array types can overload it, matching the IIP intent.
