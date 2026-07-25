@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, ODEProblemLibrary
 using SciMLBase: DAEProblem, ODEProblem, ODEFunction, successful_retcode, remake,
     DiscreteCallback
-using OrdinaryDiffEqNonlinearSolve: NLNewton
+using OrdinaryDiffEqNonlinearSolve: NLNewton, NonlinearSolveAlg
 using LinearAlgebra, Test
 
 @testset "NordsieckBDF: adaptive accuracy" begin
@@ -175,4 +175,36 @@ end
     ntight = tight.stats.naccept + tight.stats.nreject
     nloose = loose.stats.naccept + loose.stats.nreject
     @test nloose < 3 * ntight
+end
+
+@testset "NordsieckBDF: NonlinearSolveAlg backend" begin
+    # The pluggable NonlinearSolve.jl corrector must give the same answer as the
+    # built-in Newton, and `has_special_newton_error` is honoured on both paths so
+    # `κ` keeps its NLSCOEF meaning either way.
+    for (nm, prob) in (
+            ("out-of-place", ODEProblemLibrary.prob_ode_linear),
+            ("in-place", ODEProblemLibrary.prob_ode_2Dlinear),
+        )
+        @testset "$nm" begin
+            exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[2])
+            ref = solve(prob, NordsieckBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
+            sol = solve(
+                prob, NordsieckBDF(nlsolve = NonlinearSolveAlg()),
+                abstol = 1.0e-10, reltol = 1.0e-10
+            )
+            @test successful_retcode(sol)
+            @test norm(sol.u[end] .- exact) / norm(exact) < 1.0e-6
+            @test isapprox(sol.u[end], ref.u[end], rtol = 1.0e-6)
+        end
+    end
+
+    # stiff problem, to exercise the W-reuse path
+    prob = ODEProblemLibrary.prob_ode_hires
+    sol = solve(
+        prob, NordsieckBDF(nlsolve = NonlinearSolveAlg()),
+        abstol = 1.0e-10, reltol = 1.0e-8, save_everystep = false
+    )
+    @test successful_retcode(sol)
+    ref = solve(prob, Rodas5P(), abstol = 1.0e-14, reltol = 1.0e-14)
+    @test norm(sol.u[end] .- ref(prob.tspan[2])) / norm(ref(prob.tspan[2])) < 1.0e-4
 end
