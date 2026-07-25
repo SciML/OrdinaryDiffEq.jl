@@ -131,6 +131,13 @@ PrecompileTools.@compile_workload begin
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
+        push!(
+            prob_list,
+            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+            )
+        )
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
