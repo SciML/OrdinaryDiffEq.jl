@@ -558,3 +558,74 @@ end
         @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
     end
 end
+
+# Regression for #3974: after the #3935 8-term stage-fuse, Rodas5P could accept
+# ~1e6 micro-steps (MaxIters) on stiff singular mass-matrix DAEs while Rodas4
+# on the same problem succeeded. Stage fusion is now capped at 5 prior stages so
+# Rodas5P late stages use the broadcast fallback; guard that step control stays
+# healthy on a singular-diagonal mass-matrix problem.
+@testset "Rodas5P singular mass-matrix step control (#3974)" begin
+    function rober!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+        du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+        du[3] = y₁ + y₂ + y₃ - 1
+        return nothing
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    prob = ODEProblem(
+        ODEFunction(rober!; mass_matrix = M),
+        [1.0, 0.0, 0.0],
+        (0.0, 1.0e5),
+        (0.04, 3.0e7, 1.0e4),
+    )
+
+    # Larger stiff index-1 system: n differential + n algebraic constraints.
+    # Exercises Rodas5P stages 7–8 (nks = 6, 7) on a singular Diagonal mass matrix.
+    function stiff_dae!(du, u, p, t)
+        n = length(p)
+        @inbounds for i in 1:n
+            du[i] = -p[i] * u[i] + u[n + i]
+            du[n + i] = u[i] + u[n + i] - 1 / (1 + i)
+        end
+        return nothing
+    end
+    n = 8
+    p = [10.0^i for i in 1:n]
+    Mbig = Diagonal([ones(n); zeros(n)])
+    u0 = [ones(n); 1 ./ (1 .+ (1:n)) .- 1]
+    # Consistent-ish init for algebraic slots: u[n+i] = 1/(1+i) - u[i]
+    @inbounds for i in 1:n
+        u0[n + i] = 1 / (1 + i) - u0[i]
+    end
+    prob_big = ODEProblem(
+        ODEFunction(stiff_dae!; mass_matrix = Mbig),
+        u0,
+        (0.0, 1.0),
+        p,
+    )
+
+    for (prob_i, tols) in (
+            (prob, (1.0e-8, 1.0e-8)),
+            (prob_big, (1.0e-6, 1.0e-6)),
+        )
+        sol4 = solve(
+            prob_i, Rodas4();
+            abstol = tols[1], reltol = tols[2],
+            initializealg = BrownFullBasicInit(),
+            maxiters = 100_000,
+        )
+        sol5 = solve(
+            prob_i, Rodas5P();
+            abstol = tols[1], reltol = tols[2],
+            initializealg = BrownFullBasicInit(),
+            maxiters = 100_000,
+        )
+        @test SciMLBase.successful_retcode(sol4)
+        @test SciMLBase.successful_retcode(sol5)
+        # Must not crawl: collapse signature was ~1e6 accepts with MaxIters.
+        @test sol5.stats.naccept < 100_000
+        @test sol5.stats.naccept < 50 * max(sol4.stats.naccept, 10)
+    end
+end
