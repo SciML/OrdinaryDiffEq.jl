@@ -30,6 +30,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     @time @safetestset "Fixed-point Iteration Tests" begin
         include("interface/fpsolve.jl")
     end
+    @time @safetestset "Limiter Tests" begin
+        include("interface/limiters.jl")
+    end
     @time @safetestset "History Function Tests" begin
         include("interface/history_function.jl")
     end

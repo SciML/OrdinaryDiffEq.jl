@@ -2,6 +2,22 @@ REF1 = """
 Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
   Numerica 19 (2010): 209–286. doi:10.1017/S0962492910000048.
 """
+
+function _resolve_step_limiter_keyword(step_limiter, kwargs)
+    kwargs_nt = values(kwargs)
+    old_kw = Symbol("step_limiter!")
+    if haskey(kwargs_nt, old_kw)
+        if step_limiter === trivial_limiter!
+            step_limiter = get(kwargs_nt, old_kw, trivial_limiter!)
+        end
+    end
+    extra_kwargs = Base.structdiff(kwargs_nt, NamedTuple{(old_kw,)})
+    if !isempty(extra_kwargs)
+        throw(ArgumentError("Unsupported keyword argument(s): $(keys(extra_kwargs))"))
+    end
+    return step_limiter
+end
+
 for (Alg, Description, Ref) in [
         (:LawsonEuler, "First order exponential Euler scheme (fixed timestepping)", REF1),
         (:NorsettEuler, "First order exponential-RK scheme. Alias: `ETD1`", REF1),
@@ -29,8 +45,9 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{AD, CJ} <:
+        struct $Alg{StepLimiter, AD, CJ} <:
             OrdinaryDiffEqExponentialAlgorithm
+            step_limiter!::StepLimiter
             krylov::Bool
             m::Int
             iop::Int
@@ -38,14 +55,19 @@ for (Alg, Description, Ref) in [
 
             concrete_jac::CJ
         end
+        $Alg(krylov::Bool, m::Int, iop::Int, autodiff, concrete_jac) = $Alg(
+            trivial_limiter!, krylov, m, iop, autodiff, concrete_jac
+        )
     end
     @eval function $Alg(;
             krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            concrete_jac = nothing,
+            concrete_jac = nothing, step_limiter = trivial_limiter!, kwargs...
         )
         autodiff = _fixup_ad(autodiff)
+        step_limiter = _resolve_step_limiter_keyword(step_limiter, kwargs)
 
         return $Alg(
+            step_limiter,
             krylov,
             m,
             iop,
@@ -82,22 +104,28 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-        struct $Alg{AD, CJ} <:
+        struct $Alg{StepLimiter, AD, CJ} <:
             OrdinaryDiffEqAdaptiveExponentialAlgorithm
+            step_limiter!::StepLimiter
             m::Int
             iop::Int
             autodiff::AD
 
             concrete_jac::CJ
         end
+        $Alg(m::Int, iop::Int, autodiff, concrete_jac) = $Alg(
+            trivial_limiter!, m, iop, autodiff, concrete_jac
+        )
     end
     @eval function $Alg(;
             m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            concrete_jac = nothing,
+            concrete_jac = nothing, step_limiter = trivial_limiter!, kwargs...
         )
         autodiff = _fixup_ad(autodiff)
+        step_limiter = _resolve_step_limiter_keyword(step_limiter, kwargs)
 
         return $Alg(
+            step_limiter,
             m,
             iop,
             autodiff,
@@ -159,8 +187,9 @@ for (Alg, Description, Ref) in [
             """
         )
 
-        struct $Alg{AD, CJ} <:
+        struct $Alg{StepLimiter, AD, CJ} <:
             OrdinaryDiffEqExponentialAlgorithm
+            step_limiter!::StepLimiter
             adaptive_krylov::Bool
             m::Int
             iop::Int
@@ -168,14 +197,19 @@ for (Alg, Description, Ref) in [
 
             concrete_jac::CJ
         end
+        $Alg(adaptive_krylov::Bool, m::Int, iop::Int, autodiff, concrete_jac) = $Alg(
+            trivial_limiter!, adaptive_krylov, m, iop, autodiff, concrete_jac
+        )
     end
     @eval function $Alg(;
             adaptive_krylov = true, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-            concrete_jac = nothing,
+            concrete_jac = nothing, step_limiter = trivial_limiter!, kwargs...
         )
         autodiff = _fixup_ad(autodiff)
+        step_limiter = _resolve_step_limiter_keyword(step_limiter, kwargs)
 
         return $Alg(
+            step_limiter,
             adaptive_krylov,
             m,
             iop,
@@ -190,4 +224,6 @@ end
 ETD2: Exponential Runge-Kutta Method
 Second order Exponential Time Differencing method (in development).
 """
-struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
+Base.@kwdef struct ETD2{StepLimiter} <: OrdinaryDiffEqExponentialAlgorithm
+    step_limiter!::StepLimiter = trivial_limiter!
+end

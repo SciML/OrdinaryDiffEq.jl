@@ -34,6 +34,11 @@ import DiffEqBase: initialize!
 # for dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
+# Specialization level owned by SciMLBase (declared `public` there, not
+# exported). Re-exported here so `using OrdinaryDiffEq` surfaces it unqualified.
+import SciMLBase: AutoDePSpecialize
+export AutoDePSpecialize
+
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
@@ -435,7 +440,7 @@ include("precompilation_setup.jl")
             :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
             :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController,
             :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
-            :is_composite_algorithm, :isdefaultalg, :isdtchangeable, :isfirstcall,
+            :is_composite_algorithm, :isdefaultalg, :isdiscretecache, :isdtchangeable, :isfirstcall,
             :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
             :issplit, :isthreaded, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
             :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
@@ -458,6 +463,7 @@ include("precompilation_setup.jl")
             :_ode_interpolant!, :ode_interpolant, :ode_interpolant!, :hermite_interpolant!,
             :current_extrapolant!, :interpolation_differential_vars,
             # Algorithm-trait predicates extended/queried by solver sublibs.
+            :has_stage_limiter,
             :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
             :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
             :allows_null_u0, :isaposteriori, :isdiscretealg, :isdp8,

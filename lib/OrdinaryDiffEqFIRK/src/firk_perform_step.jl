@@ -318,13 +318,7 @@ end
     (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
     (; c1, c2, α, β, e1, e2) = cache.tab
     (; κ) = cache
-    (;
-        z1, z2, w1, w2,
-        dw12, cubuff,
-        k, k2, fw1, fw2,
-        J, W1,
-        tmp, atmp, jac_config, rtol, atol, step_limiter!,
-    ) = cache
+    (; z1, z2, w1, w2, dw12, cubuff, k, k2, fw1, fw2, J, W1, tmp, atmp, jac_config, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -459,7 +453,6 @@ end
     cache.iter = iter
 
     @. u = uprev + z2
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -692,13 +685,7 @@ end
     (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
     (; κ) = cache
     linres1 = nothing
-    (;
-        z1, z2, z3, w1, w2, w3,
-        dw1, ubuff, dw23, cubuff,
-        k, k1, k2, k3, fw1, fw2, fw3,
-        J, W1, W2,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
-    ) = cache
+    (; z1, z2, z3, w1, w2, w3, dw1, ubuff, dw23, cubuff, k, k1, k2, k3, fw1, fw2, fw3, J, W1, W2, tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -895,7 +882,6 @@ end
     cache.iter = iter
 
     @.. u = uprev + z3
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -1265,10 +1251,7 @@ end
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
     (; k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
-    (;
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
-        linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
-    ) = cache
+    (; tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config, linsolve1, linsolve2, linsolve3, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1577,7 +1560,6 @@ end
 
     @.. u = uprev + z5
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -1900,7 +1882,7 @@ end
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -2166,7 +2148,6 @@ end
 
     @.. u = uprev + z[num_stages]
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w[2]
@@ -2577,10 +2558,7 @@ end
 
 @muladd function perform_step!(integrator, cache::GaussLegendreCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsallast) = integrator
-    (;
-        atmp, J, z, z_last, u_full, u_half, rtol, atol,
-        step_limiter!, num_stages,
-    ) = cache
+    (; atmp, J, z, z_last, u_full, u_half, rtol, atol, num_stages) = cache
     (; internalnorm, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
 
@@ -2617,7 +2595,6 @@ end
             return
         end
 
-        step_limiter!(u, integrator, p, t + dt)
 
         p_order = 2 * num_stages
         denom = 2^p_order - 1
@@ -2634,7 +2611,6 @@ end
         for i in 1:num_stages
             @.. z_last[i] = z[i]
         end
-        step_limiter!(u, integrator, p, t + dt)
     end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))

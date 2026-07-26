@@ -62,6 +62,16 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(n, t)
     end
 
+    has_limiter = integrator.opts.stage_limiter! !== trivial_limiter!
+    if has_limiter
+        integrator.opts.stage_limiter!(u, integrator, p, t + dt)
+        integrator.fsallast = f(u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    elseif !isfsal(alg.tableau)
+        integrator.fsallast = f(u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
     if integrator.opts.adaptive
         utilde = αEEst[1] .* kk[1]
         for i in 2:stages
@@ -72,11 +82,6 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-    end
-
-    if !isfsal(alg.tableau)
-        integrator.fsallast = f(u, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 
     if isnothing(B_interp)
@@ -284,6 +289,16 @@ end
         integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
 
+    has_limiter = integrator.opts.stage_limiter! !== trivial_limiter!
+    if has_limiter
+        integrator.opts.stage_limiter!(u, integrator, p, t + dt)
+        f(integrator.fsallast, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    elseif !isfsal(alg.tableau)
+        f(integrator.fsallast, u, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
     if integrator.opts.adaptive
         runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
         calculate_residuals!(
@@ -292,11 +307,6 @@ end
             integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-    end
-
-    if !isfsal(alg.tableau)
-        f(integrator.fsallast, u, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
 end
 

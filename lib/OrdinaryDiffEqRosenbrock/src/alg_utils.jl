@@ -6,6 +6,7 @@ alg_order(alg::ROS3PRL) = 3
 alg_order(alg::ROS3PRL2) = 3
 alg_order(alg::ROS3P) = 3
 alg_order(alg::Rodas3) = 3
+alg_order(alg::Rodas3d) = 3
 alg_order(alg::Rodas23W) = 3
 alg_order(alg::ROS2) = 2
 alg_order(alg::ROS2PR) = 2

@@ -7,6 +7,9 @@ using SciMLTesting, OrdinaryDiffEqTaylorSeries, Test
 # been dropped; only the genuine residual remains (see SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqTaylorSeries;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (;
         unbound_args = false, undefined_exports = false, stale_deps = false,
         ambiguities = false,

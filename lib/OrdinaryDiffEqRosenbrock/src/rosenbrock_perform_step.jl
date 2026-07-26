@@ -33,10 +33,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (;
-        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
-        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -96,7 +94,6 @@ end
 
     @.. u = uprev + dt * k₂
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         f(fsallast, u, p, t + dt)
@@ -150,10 +147,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (;
-        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
-        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -234,7 +229,6 @@ end
 
     @.. broadcast = false u = uprev + dto6 * (k₁ + 4k₂ + k₃)
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
@@ -279,16 +273,16 @@ end
         return nothing
     end
 
-    k₁ = _reshape(W \ _vec((integrator.fsalfirst + dtγ * dT)), axes(uprev)) * neginvdtγ
+    k₁ = _restructure_state(uprev, W \ _vec((integrator.fsalfirst + dtγ * dT))) * neginvdtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
     else
-        k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - mass_matrix * k₁))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
     integrator.stats.nsolve += 1
@@ -310,7 +304,7 @@ end
                     c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
             )
         end
-        k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
+        k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
         integrator.stats.nsolve += 1
 
         if u isa Number
@@ -364,17 +358,17 @@ end
         return nothing
     end
 
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ * dT)), axes(uprev)) / dtγ
+    k₁ = _restructure_state(uprev, W \ -_vec((integrator.fsalfirst + dtγ * dT))) / dtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
     else
         linsolve_tmp = f₁ - mass_matrix * k₁
-        k₂ = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(linsolve_tmp))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
 
@@ -395,7 +389,7 @@ end
                 c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
         )
     end
-    k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
+    k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
     integrator.stats.nsolve += 1
     u = @.. uprev + dto6 * (k₁ + 4k₂ + k₃)
 
@@ -461,7 +455,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
     linsolve_tmp = @.. du + dtd[1] * dT
-    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+    k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
 
@@ -496,7 +490,7 @@ end
         end
         linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
 
-        ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
+        ks = Base.setindex(ks, _restructure_state(uprev, W \ -_vec(linsolve_tmp)), stage)
         integrator.stats.nsolve += 1
     end
     # Solution update using explicit b weights
@@ -734,10 +728,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (;
-        du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp,
-        jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
@@ -805,7 +797,6 @@ end
     tab = cache.tab
     _weighted_sum!(u, uprev, tab.b, ks)
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive && tab.btilde !== nothing
         # Error estimate using explicit btilde weights
@@ -1022,11 +1013,8 @@ end
 
 @muladd function perform_step!(integrator, cache::HybridExplicitImplicitCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (;
-        du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight,
-        stage_limiter!, step_limiter!, diff_vars, alg_vars,
-        g_z, g_y, linsolve_tmp_z,
-    ) = cache
+    (; du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, diff_vars, alg_vars, g_z, g_y, linsolve_tmp_z) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     W_z = cache.W_z
     (; A, C, gamma, b, bhat, c, d, H) = cache.tab
 
@@ -1154,7 +1142,6 @@ end
         @.. u += b[i] * ks[i]
     end
 
-    step_limiter!(u, integrator, p, t + dt)
 
     # Error estimation
     if integrator.opts.adaptive

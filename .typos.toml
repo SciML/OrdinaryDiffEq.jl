@@ -69,6 +69,7 @@ arXiv = "arXiv"
 # (Numer already declared above for "BIT Numer" context.)
 
 # Technical variable names
+hom = "hom"  # homotopy abbreviation (scc_hom, HomotopyProblem)
 dorder = "dorder"  # Parameter for delta order / order change
 
 
@@ -145,3 +146,6 @@ Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
 
 # Julia spelling convention
 inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"
+
+# (hom already declared above under "Technical variable names"; it covers the
+# scc_hom NonlinearSolve test variables too.)

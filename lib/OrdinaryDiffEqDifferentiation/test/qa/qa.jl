@@ -8,6 +8,8 @@ using SciMLTesting, OrdinaryDiffEqDifferentiation, Test
 # tracked in SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqDifferentiation;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
     aqua_kwargs = (; piracies = false, ambiguities = false),
     explicit_imports = true,
     ei_kwargs = (;

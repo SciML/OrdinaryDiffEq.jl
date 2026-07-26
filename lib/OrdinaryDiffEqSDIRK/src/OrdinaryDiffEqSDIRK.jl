@@ -37,7 +37,7 @@ import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
-    nlsolve!, nlsolvefail,
+    nlsolve!, nlsolvefail, can_smooth_est,
     NLNewton
 import ADTypes: AutoForwardDiff
 using CommonSolve: solve
@@ -92,6 +92,23 @@ PrecompileTools.@compile_workload begin
             ODEProblem{true, SciMLBase.AutoSpecialize}(
                 lorenz, [1.0; 0.0; 0.0],
                 (0.0, 1.0), Float64[]
+            )
+        )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
+        push!(
+            prob_list,
+            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )
         )
     end

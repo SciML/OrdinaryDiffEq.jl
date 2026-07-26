@@ -124,3 +124,59 @@ using Test
         end
     end
 end
+
+# Runtime allocation guard for the Krylov steppers. Before the column-slice
+# updates in perform_step! were `@views`-wrapped, each `X[:, i] .op= ...` read
+# materialized a fresh length-`n` column copy, so per-step allocations grew
+# linearly with the state size `n`. A view-based (or copy-based) regression can
+# only be told apart from the constant-overhead baseline by how it scales with
+# `n`, which is version- and platform-robust, unlike an absolute byte ceiling.
+# Exp4 uses the symmetric-Jacobian Lanczos path, which keeps a stable Krylov
+# subspace, so its per-step allocation is `n`-independent once the slices are
+# views; a reintroduced slice copy makes it scale with `n` and trips this test.
+@testset "Krylov perform_step! runtime allocations do not scale with state size" begin
+    function reaction_diffusion(n)
+        dx = 1.0 / (n + 1)
+        A = zeros(n, n)
+        for i in 1:n
+            A[i, i] = -2.0 / dx^2
+            i > 1 && (A[i, i - 1] = 1.0 / dx^2)
+            i < n && (A[i, i + 1] = 1.0 / dx^2)
+        end
+        u0 = [sinpi(i * dx) for i in 1:n]
+        f! = (du, u, p, t) -> (mul!(du, A, u); @inbounds @. du += u - u^3; nothing)
+        function jac!(J, u, p, t)
+            copyto!(J, A)
+            @inbounds for i in 1:n
+                J[i, i] += 1 - 3u[i]^2
+            end
+            nothing
+        end
+        ODEProblem(
+            ODEFunction{true, FullSpecialize}(f!; jac = jac!, jac_prototype = zeros(n, n)),
+            u0, (0.0, 1.0)
+        )
+    end
+
+    function per_step_allocs(n; nsteps = 40)
+        integrator = init(
+            reaction_diffusion(n), Exp4(m = 30);
+            dt = 1.0e-3, adaptive = false, save_everystep = false, save_start = false
+        )
+        for _ in 1:5
+            step!(integrator)  # warm up compilation and the workspace caches
+        end
+        return @allocated(
+            for _ in 1:nsteps
+                step!(integrator)
+            end
+        ) / nsteps
+    end
+
+    small = per_step_allocs(32)
+    large = per_step_allocs(256)
+    # An unviewed slice copy scales ~8n bytes/step: at n=256 that is several KB
+    # over the n=32 baseline, i.e. a large multiple. The view-based code stays
+    # essentially flat, so a generous 3x bound cleanly separates the two.
+    @test large < 3 * small
+end

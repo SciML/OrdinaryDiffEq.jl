@@ -71,6 +71,53 @@ Base.@constprop :aggressive function SciMLBase.__init(
 end
 
 """
+    resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_spec)
+
+Resolve the effective `(stage_limiter!, step_limiter!)` from the solve-level
+`stage_limiter`/`step_limiter` keywords. A non-trivial per-algorithm
+`stage_limiter!`/`step_limiter!` field is still honored (with a deprecation
+warning) when the matching keyword is not supplied. `alg` should be the concrete
+method (e.g. unwrapped from `MethodOfSteps`). Supplying `stage_limiter` to a
+method for which [`has_stage_limiter`](@ref) is `false` triggers the
+`stage_limiter_unused` verbosity toggle, which defaults to `ErrorLevel` (it
+errors) and can be lowered to `WarnLevel`/`Silent` to allow it.
+"""
+function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_spec)
+    stage_limiter! = stage_limiter
+    step_limiter! = step_limiter
+    if stage_limiter === trivial_limiter!
+        if has_stage_limiter(alg) && hasproperty(alg, :stage_limiter!) &&
+                alg.stage_limiter! !== trivial_limiter!
+            Base.depwarn(
+                "Passing `stage_limiter!` to the algorithm constructor is deprecated; " *
+                    "pass `stage_limiter` as a keyword argument to `solve`/`init` instead.",
+                :stage_limiter,
+            )
+            stage_limiter! = alg.stage_limiter!
+        end
+    elseif !has_stage_limiter(alg)
+        @SciMLMessage(
+            "`stage_limiter` was supplied, but $(nameof(typeof(alg))) does not apply stage " *
+                "limiters (it does not opt into `OrdinaryDiffEqCore.has_stage_limiter`). This " *
+                "errors by default; set the `stage_limiter_unused` verbosity toggle to " *
+                "`WarnLevel()` or `Silent()` to allow it. Use `step_limiter` for a limiter " *
+                "applied once per accepted step, which every method supports.",
+            verbose_spec, :stage_limiter_unused
+        )
+    end
+    if step_limiter === trivial_limiter! && hasproperty(alg, :step_limiter!) &&
+            alg.step_limiter! !== trivial_limiter!
+        Base.depwarn(
+            "Passing `step_limiter!` to the algorithm constructor is deprecated; " *
+                "pass `step_limiter` as a keyword argument to `solve`/`init` instead.",
+            :step_limiter,
+        )
+        step_limiter! = alg.step_limiter!
+    end
+    return stage_limiter!, step_limiter!
+end
+
+"""
     _ode_init(prob, alg, timeseries_init=(), ts_init=(), ks_init=(); kwargs...)
 
 Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
@@ -113,6 +160,8 @@ Base.@constprop :aggressive function _ode_init(
         maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
         internalnorm = ODE_DEFAULT_NORM,
         internalopnorm = opnorm,
+        stage_limiter = trivial_limiter!,
+        step_limiter = trivial_limiter!,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
@@ -179,6 +228,15 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     verbose_spec = _process_verbose_param(verbose)
+
+    # `stage_limiter`/`step_limiter` are solver-level options stored in `opts`: the
+    # stage limiter is threaded through `opts` and applied per stage inside
+    # `perform_step!`, while the step limiter is applied centrally on each accepted
+    # step from the loop footer. The per-algorithm `stage_limiter!`/`step_limiter!`
+    # constructor fields are deprecated in favor of these keywords.
+    stage_limiter!, step_limiter! = resolve_stage_step_limiters(
+        alg, stage_limiter, step_limiter, verbose_spec
+    )
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
             # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
@@ -552,7 +610,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(save_idxs),
         typeof(maxiters), typeof(_tstops_cache),
         typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
-        typeof(delta),
+        typeof(delta), typeof(stage_limiter!), typeof(step_limiter!),
     }(
         maxiters, save_everystep,
         adaptive, abstol_internal,
@@ -572,7 +630,7 @@ Base.@constprop :aggressive function _ode_init(
         progress_message,
         progress_id,
         timeseries_errors,
-        dense_errors, delta, dense,
+        dense_errors, delta, stage_limiter!, step_limiter!, dense,
         save_on, save_start,
         save_end, save_noise, save_discretes, save_end_user,
         callbacks_internal,

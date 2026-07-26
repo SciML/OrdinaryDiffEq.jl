@@ -66,6 +66,8 @@ function SciMLBase.__init(
         initializealg = DDEDefaultInit(),
         delta = nothing,
         save_noise = false,
+        stage_limiter = OrdinaryDiffEqCore.trivial_limiter!,
+        step_limiter = OrdinaryDiffEqCore.trivial_limiter!,
         kwargs...
     )
     is_stochastic = prob isa AbstractSDDEProblem
@@ -337,6 +339,12 @@ function SciMLBase.__init(
         delta = convert(recursive_unitless_bottom_eltype(u), 1 // 1)
     end
 
+    # Resolve solve-level limiters, honoring (with a deprecation warning) a
+    # non-trivial `stage_limiter!`/`step_limiter!` field on the underlying method.
+    stage_limiter, step_limiter = OrdinaryDiffEqCore.resolve_stage_step_limiters(
+        alg.alg, stage_limiter, step_limiter, verbose_spec
+    )
+
     # Construct DEOptions
     opts = OrdinaryDiffEqCore.DEOptions{
         typeof(abstol_internal), typeof(reltol_internal),
@@ -351,7 +359,7 @@ function SciMLBase.__init(
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
         typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
-        typeof(delta),
+        typeof(delta), typeof(stage_limiter), typeof(step_limiter),
     }(
         maxiters,
         save_everystep,
@@ -379,6 +387,8 @@ function SciMLBase.__init(
         timeseries_errors,
         dense_errors,
         delta,
+        stage_limiter,
+        step_limiter,
         dense,
         save_on,
         save_start,

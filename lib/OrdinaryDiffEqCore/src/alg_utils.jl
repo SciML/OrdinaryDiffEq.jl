@@ -126,6 +126,26 @@ Return whether `alg` provides a special interpolant for its stiff branch
 """
 has_stiff_interpolation(alg) = false
 
+"""
+    OrdinaryDiffEqCore.has_stage_limiter(alg)
+
+Trait declaring whether `alg`'s `perform_step!` applies a stage limiter, i.e.
+whether it calls `integrator.opts.stage_limiter!` on each stage value. Defaults
+to `false`; a method that implements stage limiting must opt in with
+
+```julia
+OrdinaryDiffEqCore.has_stage_limiter(::MyAlg) = true
+```
+
+Passing a non-trivial `stage_limiter` keyword to `solve`/`init` for an algorithm
+whose `has_stage_limiter` returns `false` triggers the `stage_limiter_unused`
+verbosity toggle, which defaults to `ErrorLevel` (it errors, rather than silently
+ignoring the limiter) and can be lowered to `WarnLevel`/`Silent` via `verbose`.
+(The `step_limiter` keyword is applied centrally on every accepted step for every
+method and needs no such opt-in.)
+"""
+has_stage_limiter(alg) = false
+
 # evaluates f(t[i])
 _eval_index(f::F, t::Tuple{A}, _) where {F, A} = f(t[1])
 function _eval_index(f::F, t::Tuple{A, Vararg}, i) where {F, A}

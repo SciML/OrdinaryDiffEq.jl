@@ -71,6 +71,93 @@ function default_nlsolve(
     )
 end
 
+# A `SciMLBase.HomotopyProblem` is initialized by continuation, not by a Newton
+# polyalgorithm: build a `HomotopyPolyAlgorithm` (sweep, then pseudo-arclength) that sweeps
+# λ from the `simplified` form to the target. The `autodiff` signal is honored by threading
+# it into the continuation's *inner corrector* — that is the differentiation the sweep and
+# the (secant-predictor) arclength stage actually use, and it is where a finite-diff
+# initialization must avoid dual-numbering a residual that is not ForwardDiff-safe. A high
+# level `autodiff` knob on `HomotopyPolyAlgorithm` itself cannot do this: it lives in
+# NonlinearSolveBase, which cannot construct the concrete inner solver, so the AD rides on
+# the inner `FastShortcutNonlinearPolyalg` built here.
+#
+# This is exactly `NonlinearSolve.FastShortcutHomotopyPolyalg(; autodiff)`
+# (SciML/NonlinearSolve.jl#1105, released in NonlinearSolve 4.23). Collapsing this body to a
+# call to it is blocked, though: 4.23 pulls NonlinearSolveBase 2.37 → LinearSolve 5, while
+# OrdinaryDiffEq is capped at LinearSolve "3.75.0, 4" (so it is currently pinned to
+# NonlinearSolve ≤ 4.21). The collapse waits on the OrdinaryDiffEq LinearSolve-5 migration;
+# until then this hand-rolled equivalent (valid on NonlinearSolveBase 2.35) stays.
+function _homotopy_init_alg(u, autodiff, chunksize)
+    inner = FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    )
+    return HomotopyPolyAlgorithm((HomotopySweep(; inner), ArcLengthContinuation(; inner)))
+end
+function default_nlsolve(
+        ::Nothing, ::Val{true}, u, ::SciMLBase.HomotopyProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return _homotopy_init_alg(u, autodiff, chunksize)
+end
+function default_nlsolve(
+        ::Nothing, ::Val{false}, u, ::SciMLBase.HomotopyProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return _homotopy_init_alg(u, autodiff, chunksize)
+end
+function default_nlsolve(
+        ::Nothing, ::Val{false}, u::StaticArray, ::SciMLBase.HomotopyProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return _homotopy_init_alg(u, autodiff, chunksize)
+end
+
+# An `SCCNonlinearProblem` that contains `HomotopyProblem` blocks must be solved with
+# `nothing` so each block picks its own default: its `HomotopyProblem` blocks continue (via
+# `solve(::HomotopyProblem, ::Nothing)`) while the plain blocks use the standard nonlinear
+# default. A pure-`NonlinearProblem` SCC keeps the `FastShortcutNonlinearPolyalg` default.
+#
+# NOTE (autodiff): unlike the whole-system `HomotopyProblem` branch above, the `autodiff`
+# signal is NOT threaded here — with `nothing` each block picks its own default, so the
+# continuation runs its default inner corrector rather than the requested AD backend.
+# SciML/NonlinearSolve.jl#1104 (SCCNonlinearSolve 1.14) makes `SCCNonlinearSolve` route by
+# block type (continuation for homotopy blocks, the block algorithm applied directly
+# otherwise) with that algorithm threaded in as the inner corrector, which would let these
+# methods return `FastShortcutNonlinearPolyalg(; autodiff)` to honor `autodiff` per block.
+# That flip is blocked on two counts: (1) SCCNonlinearSolve 1.14 → NonlinearSolveBase 2.37 →
+# LinearSolve 5, incompatible with OrdinaryDiffEq's LinearSolve "3.75.0, 4" cap; and (2)
+# SCCNonlinearSolve is a *reverse* dependency of NonlinearSolve, so its per-block routing is
+# not loaded by `using NonlinearSolve` — a direct SCCNonlinearSolve dep would be needed too.
+# Both wait on the OrdinaryDiffEq LinearSolve-5 migration. Until then, returning `nothing`
+# keeps the homotopy blocks on continuation (correct branch) at their ForwardDiff defaults.
+function default_nlsolve(
+        ::Nothing, isinplace::Val{true}, u, prob::SciMLBase.SCCNonlinearProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
+    return FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    )
+end
+function default_nlsolve(
+        ::Nothing, isinplace::Val{false}, u, prob::SciMLBase.SCCNonlinearProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
+    return FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    )
+end
+function default_nlsolve(
+        ::Nothing, isinplace::Val{false}, u::StaticArray, prob::SciMLBase.SCCNonlinearProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
+    return SimpleTrustRegion(
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    )
+end
+
 ## ShampineCollocationInit
 
 #=

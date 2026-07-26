@@ -173,6 +173,16 @@ function apply_step!(integrator)
     return nothing
 end
 
+# `step_limiter` is applied centrally, once per accepted step, for every method
+# (stage limiters are applied per stage inside `perform_step!`). Applying it here
+# rather than inside each `perform_step!` keeps a single application point and
+# avoids double application when a method borrows another's `perform_step!` (e.g.
+# multistep startup steps).
+@inline function apply_solve_step_limiter!(integrator, t)
+    integrator.opts.step_limiter!(integrator.u, integrator, integrator.p, t)
+    return nothing
+end
+
 function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
             first_discontinuity(integrator) == integrator.tdir * integrator.t
@@ -569,6 +579,7 @@ function _loopfooter!(integrator)
         integrator.accept_step = false
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
+        apply_solve_step_limiter!(integrator, ttmp)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
         integrator.accept_step = (
             !integrator.isout &&
@@ -608,6 +619,7 @@ function _loopfooter!(integrator)
         end
     elseif !integrator.opts.adaptive #Not adaptive
         increment_accept!(integrator.stats)
+        apply_solve_step_limiter!(integrator, ttmp)
         integrator.tprev = integrator.t
         integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
         integrator.last_stepfail = false

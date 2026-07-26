@@ -2,13 +2,16 @@ using SciMLTesting, OrdinaryDiffEqBDF, Test
 
 run_qa(
     OrdinaryDiffEqBDF;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
         all_qualified_accesses_are_public = (;
             ignore = (
                 # Precompile-workload test problems in OrdinaryDiffEqCore, kept
                 # non-public on purpose (test fixtures, not solver-author API).
-                :lorenz, :lorenz_oop,
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
             ),
         ),
         all_explicit_imports_are_public = (;

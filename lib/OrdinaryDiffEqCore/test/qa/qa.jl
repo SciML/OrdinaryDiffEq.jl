@@ -4,8 +4,13 @@ using SciMLTesting, OrdinaryDiffEqCore, Test
 # ExplicitImports cannot statically analyze; allow it to be unanalyzable.
 const UNANALYZABLE = (OrdinaryDiffEqCore.Predictor,)
 
+@static if VERSION >= v"1.11.0-DEV.469"
+    @test Base.ispublic(OrdinaryDiffEqCore, :isdiscretecache)
+end
+
 run_qa(
     OrdinaryDiffEqCore;
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (; piracies = false, unbound_args = false),
     explicit_imports = true,
     ei_kwargs = (;
@@ -64,6 +69,7 @@ run_qa(
         ),
     ),
     api_docs_kwargs = (;
+        rendered = false,
         # Reexported upstream SciMLOperators names are documented at their owner.
         ignore = (:StaticWOperator, :has_concretization),
     ),

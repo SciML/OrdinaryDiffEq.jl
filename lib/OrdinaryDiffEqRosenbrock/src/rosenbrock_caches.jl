@@ -408,7 +408,7 @@ end
 _get_step_limiter(alg) = trivial_limiter!
 _get_stage_limiter(alg) = trivial_limiter!
 for Alg in (
-        :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas23W, :Rodas3P,
+        :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas3d, :Rodas23W, :Rodas3P,
         :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas4PW, :Rodas5,
         :Rodas5P, :Rodas5Pe, :Rodas5Pr, :Rodas6P,
     )
@@ -431,6 +431,7 @@ tabtype(::Rodas6P) = Rodas6PTableau
 # Consolidated methods: tableau type dispatch
 tabtype(::ROS3P) = ROS3PRodasTableau
 tabtype(::Rodas3) = Rodas3RodasTableau
+tabtype(::Rodas3d) = Rodas3dRodasTableau
 tabtype(::Rodas3P) = Rodas3PRodasTableau
 tabtype(::Rodas23W) = Rodas23WRodasTableau
 tabtype(::ROS2) = ROS2RodasTableau
@@ -459,7 +460,7 @@ tabtype(::RosenbrockW6S4OS) = RosenbrockW6S4OSRodasTableau
 const RodasTableauAlgorithms = Union{
     Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas4PW,
     Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
-    ROS3P, Rodas3, Rodas3P, Rodas23W,
+    ROS3P, Rodas3, Rodas3d, Rodas3P, Rodas23W,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
     ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3,
     ROS34PRw, ROS3PRL, ROS3PRL2, ROK4a,

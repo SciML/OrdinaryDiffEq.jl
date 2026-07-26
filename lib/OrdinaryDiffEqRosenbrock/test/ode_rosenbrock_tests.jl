@@ -1,4 +1,5 @@
 using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
+using RecursiveArrayTools: ArrayPartition
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
     prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -158,6 +159,38 @@ end
         @test SciMLBase.successful_retcode(sol)
     end
 
+
+    println("Rodas3d")
+
+    # Rodas3d's damping parameter γ = 0.57281606 is a root of the 4th-order
+    # linear order condition (an endpoint of the L-stability interval in
+    # Hairer & Wanner Table 6.4), so the method superconverges at order 4 on
+    # linear problems; the design order 3 is checked on a nonlinear problem below.
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas3d())
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+
+    sol = solve(prob, Rodas3d())
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas3d())
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+
+    sol = solve(prob, Rodas3d())
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = ODEProblem(
+        (u, p, t) -> [-2u[1] + u[2]^2, -u[2] + sin(u[1]) + 0.1t],
+        [1.0, 0.5], (0.0, 1.0)
+    )
+    test_setup = Dict(:alg => Rodas4(), :reltol => 1.0e-13, :abstol => 1.0e-13)
+    sim = analyticless_test_convergence((1 / 2) .^ (7:-1:4), prob, Rodas3d(), test_setup)
+    @test sim.𝒪est[:final] ≈ 3 atol = testTol
 
     println("Rodas5P")
 
@@ -418,7 +451,7 @@ end
     # interpolation errors orders of magnitude larger than the knot errors.
     for (method, expected_interp) in (
             (Rodas4P, 1.0e-10), (ROS34PW2, 5.0e-2),
-            (ROS34PW3, 5.0e-2), (Rodas3, 5.0e-2),
+            (ROS34PW3, 5.0e-2), (Rodas3, 5.0e-2), (Rodas3d, 5.0e-2),
         )
         sol = solve(prob, method(); dense = true, reltol = 1.0e-4, abstol = 1.0e-4)
         err_knot = maximum(abs.(sol[1, :] .- anasol(sol.t, p)))
@@ -497,5 +530,31 @@ using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
         )
         @test SciMLBase.successful_retcode(sol_rodas)
         @test norm(sol_rodas.u[end] - ref.u[end]) < 1.0e-4
+    end
+end
+
+# Regression test for issue #3962 (and #1263): out-of-place Rosenbrock/Rodas steps
+# previously used `_reshape(W \ _vec(...), axes(uprev))`, which collapses the
+# ArrayPartition state behind SecondOrderODEProblem/DynamicalODEFunction down to a
+# bare Vector. The next `f(u,p,t)` then failed with `type Array has no field x`.
+# Stages now use `ArrayInterface.restructure(uprev, ...)` so the wrapper is kept.
+@testset "OOP SecondOrderODEProblem preserves ArrayPartition (#3962)" begin
+    # u'' = -u  ⇒  position = [cos t, sin t], velocity = [-sin t, cos t]
+    ho_iip(ddu, du, u, p, t) = (@. ddu = -u)
+    ho_oop(du, u, p, t) = -u
+    u0 = [1.0, 0.0]
+    du0 = [0.0, 1.0]
+    tspan = (0.0, 1.0)
+    prob_iip = SecondOrderODEProblem(ho_iip, du0, u0, tspan)
+    prob_oop = SecondOrderODEProblem(ho_oop, du0, u0, tspan)
+
+    for alg in (Rosenbrock23(), Rodas5P(), Rodas4(), Rodas5())
+        ref = solve(prob_iip, alg, abstol = 1.0e-10, reltol = 1.0e-10)
+        sol = solve(prob_oop, alg, abstol = 1.0e-10, reltol = 1.0e-10)
+        @test SciMLBase.successful_retcode(sol)
+        # Wrapper must survive the out-of-place stages.
+        @test sol.u[end] isa ArrayPartition
+        # And the answer must match the in-place reference, not merely not-error.
+        @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
     end
 end

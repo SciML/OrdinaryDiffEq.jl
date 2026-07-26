@@ -56,7 +56,11 @@ pages = [
     "Misc Solvers" => [
         "misc.md",
     ],
+    "Global Error Control" => [
+        "globalerrorcontrol/GlobalDiffEq.md",
+    ],
     "APIs" => [
+        "api/common_interface.md",
         "api/diffeqbase.md",
         "api/ordinarydiffeqcore.md",
         "api/controllers.md",
