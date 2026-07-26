@@ -800,3 +800,124 @@ function alg_cache(
         iters_from_event, dense, alg.step_limiter!, fd_weights, stald
     )
 end
+
+############################################ NordsieckBDF
+# ================================================================= caches
+@cache mutable struct NordsieckBDFCache{
+        MO, N, rateType, uNoUnitsType, uType, tType, coeffType, staldType, StepLimiter,
+    } <: BDFMutableCache
+    fsalfirst::rateType
+    nlsolver::N
+    zn::Vector{uType}
+    ypred::uType
+    acor::uType
+    tempv::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    l::coeffType
+    tau::coeffType
+    tq::coeffType
+    order::Int
+    qprime::Int
+    qwait::Int
+    nst::Int
+    nef::Int
+    ncf::Int
+    indx_acor::Int
+    max_order::Val{MO}
+    max_order_int::Int
+    hscale::tType
+    eta::tType
+    etamax::tType
+    etaq::tType
+    etaqm1::tType
+    etaqp1::tType
+    saved_tq5::tType
+    predicted::Bool
+    stald::staldType
+    step_limiter!::StepLimiter
+end
+
+@truncate_stacktrace NordsieckBDFCache 1
+
+mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldType} <:
+    OrdinaryDiffEqConstantCache
+    nlsolver::N
+    zn::Vector{uType}
+    ypred::uType
+    acor::uType
+    l::coeffType
+    tau::coeffType
+    tq::coeffType
+    order::Int
+    qprime::Int
+    qwait::Int
+    nst::Int
+    nef::Int
+    ncf::Int
+    indx_acor::Int
+    max_order::Val{MO}
+    max_order_int::Int
+    hscale::tType
+    eta::tType
+    etamax::tType
+    etaq::tType
+    etaqm1::tType
+    etaqp1::tType
+    saved_tq5::tType
+    predicted::Bool
+    stald::staldType
+end
+
+# DAE caches carry `u₀` because `get_dae_uprev` uses it as the predictor the
+# correction `z` is measured against.
+
+function alg_cache(
+        alg::NordsieckBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{true}, verbose
+    ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    zn = [zero(u) for _ in 1:(MO + 1)]
+    coeffs() = zeros(typeof(t), MO + 3)
+    tq = zeros(typeof(t), 6)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    return NordsieckBDFCache{
+        MO, typeof(nlsolver), typeof(rate_prototype),
+        typeof(similar(u, uEltypeNoUnits)), typeof(u), typeof(t),
+        typeof(coeffs()), typeof(stald), typeof(alg.step_limiter!),
+    }(
+        zero(rate_prototype), nlsolver, zn, zero(u), zero(u), zero(u), zero(u),
+        similar(u, uEltypeNoUnits), coeffs(), coeffs(), tq,
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
+        zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
+        zero(t), false, stald, alg.step_limiter!
+    )
+end
+
+function alg_cache(
+        alg::NordsieckBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{false}, verbose
+    ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    zn = [zero(u) for _ in 1:(MO + 1)]
+    coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    return NordsieckBDFConstantCache{
+        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()), typeof(stald),
+    }(
+        nlsolver, zn, zero(u), zero(u), coeffs(), coeffs(), zeros(typeof(t), 6),
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
+        zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
+        zero(t), false, stald
+    )
+end

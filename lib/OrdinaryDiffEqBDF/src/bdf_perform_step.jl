@@ -1516,3 +1516,160 @@ function perform_step!(
     end
     return nothing
 end
+
+############################################ NordsieckBDF
+# ================================================================= perform_step!
+function initialize!(integrator, cache::NordsieckBDFCache)
+    integrator.kshortsize = cache.max_order_int + 1
+    resize!(integrator.k, integrator.kshortsize)
+    @inbounds for i in 1:(integrator.kshortsize)
+        integrator.k[i] = zero(integrator.u)
+    end
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
+end
+
+function initialize!(integrator, cache::NordsieckBDFConstantCache)
+    integrator.kshortsize = cache.max_order_int + 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    @inbounds for i in 1:(integrator.kshortsize)
+        integrator.k[i] = zero(integrator.u)
+    end
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return nothing
+end
+
+# Store the Nordsieck columns for dense output. Unused columns stay zero, so the
+# interpolant can sum all of them without knowing the order at evaluation time.
+@inline function _nordsieck_store_k!(integrator, cache, ::Val{true})
+    @inbounds for j in 0:(cache.max_order_int)
+        if j <= cache.order
+            copyto!(integrator.k[j + 1], cache.zn[j + 1])
+        else
+            fill!(integrator.k[j + 1], zero(eltype(integrator.u)))
+        end
+    end
+    return nothing
+end
+@inline function _nordsieck_store_k!(integrator, cache, ::Val{false})
+    @inbounds for j in 0:(cache.max_order_int)
+        integrator.k[j + 1] = j <= cache.order ? cache.zn[j + 1] : zero(integrator.u)
+    end
+    return nothing
+end
+
+function perform_step!(integrator, cache::NordsieckBDFCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    iip = Val(true)
+    nlsolver = cache.nlsolver
+    nordsieck_needs_start(integrator, cache) && nordsieck_start!(integrator, cache, iip)
+
+    nordsieck_prepare!(integrator, cache, iip)
+    nordsieck_predict!(cache, iip)
+    nordsieck_set_coeffs!(cache, dt)
+
+    zn = cache.zn
+    copyto!(cache.ypred, zn[1])
+    l1 = cache.l[2]
+
+    # (l1/dt) M u - f(u) = (l1*ypred - zn[1])/dt  =>  gamma = 1/l1, alpha = 1
+    mass_matrix = f.mass_matrix
+    @.. broadcast = false cache.tmp = (l1 * cache.ypred - zn[2]) / dt
+    if mass_matrix === I
+        copyto!(nlsolver.tmp, cache.tmp)
+    else
+        mul!(nlsolver.tmp, mass_matrix, cache.tmp)
+    end
+    markfirststage!(nlsolver)
+    copyto!(nlsolver.z, cache.ypred)
+    nlsolver.γ = inv(l1)
+    nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    @.. broadcast = false u = z
+    cache.step_limiter!(u, integrator, p, t + dt)
+
+    @.. broadcast = false cache.acor = u - cache.ypred
+    if integrator.opts.adaptive
+        OrdinaryDiffEqCore.set_EEst!(
+            integrator,
+            cache.tq[2] * _nord_wrms(integrator, cache, cache.acor, uprev, u)
+        )
+    end
+
+    # zn[1] is h*f(u) exactly once the corrector has converged, so fsallast is free
+    @.. broadcast = false integrator.fsallast = (zn[2] + l1 * cache.acor) / dt
+    _nordsieck_finish_fixed!(integrator, cache, iip)
+    return nothing
+end
+
+function perform_step!(integrator, cache::NordsieckBDFConstantCache, repeat_step = false)
+    (; t, dt, uprev, f, p) = integrator
+    iip = Val(false)
+    nlsolver = cache.nlsolver
+    nordsieck_needs_start(integrator, cache) && nordsieck_start!(integrator, cache, iip)
+
+    nordsieck_prepare!(integrator, cache, iip)
+    nordsieck_predict!(cache, iip)
+    nordsieck_set_coeffs!(cache, dt)
+
+    zn = cache.zn
+    cache.ypred = zn[1]
+    l1 = cache.l[2]
+
+    mass_matrix = f.mass_matrix
+    tmp = @.. (l1 * cache.ypred - zn[2]) / dt
+    nlsolver.tmp = mass_matrix === I ? tmp : mass_matrix * tmp
+    markfirststage!(nlsolver)
+    nlsolver.z = cache.ypred
+    nlsolver.γ = inv(l1)
+    nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    u = z
+
+    cache.acor = @.. u - cache.ypred
+    if integrator.opts.adaptive
+        OrdinaryDiffEqCore.set_EEst!(
+            integrator,
+            cache.tq[2] * _nord_wrms(integrator, cache, cache.acor, uprev, u)
+        )
+    end
+    integrator.fsallast = @.. (zn[2] + l1 * cache.acor) / dt
+    integrator.u = u
+    _nordsieck_finish_fixed!(integrator, cache, iip)
+    return nothing
+end
+
+"""
+    nordsieck_stald!(cache, integrator, u, uprev, dsm)
+
+CVODE `cvBDFStab`: feed the stability-limit detector the scaled derivative norms
+
+    sqm2 = (q-1)! * ‖zn[q-1]‖,  sqm1 = (q-1)! * q * ‖zn[q]‖,
+    sq   = (q-1)! * q * (q+1) * acnrm / tq[5]
+
+and return whether the order must be reduced. BDF orders 3–5 are only α-stable, so
+eigenvalues near the imaginary axis can destabilise the integration at high order;
+this detects that from the history and drops the order. Off by default, as in CVODE.
+"""
+function nordsieck_stald!(cache, integrator, u, uprev, dsm)
+    cache.stald.enabled || return false
+    q = cache.order
+    q < 3 && return false
+    T = typeof(cache.eta)
+    fact = one(T)
+    for i in 1:(q - 1)
+        fact *= i
+    end
+    acnrm = dsm / max(cache.tq[2], eps(T))
+    sq = fact * q * (q + 1) * acnrm / max(cache.tq[5], eps(T))
+    sqm1 = fact * q * _nord_wrms(integrator, cache, cache.zn[q + 1], uprev, u)
+    sqm2 = fact * _nord_wrms(integrator, cache, cache.zn[q], uprev, u)
+    stald_collect_data!(cache.stald, q, sqm2, sqm1, sq)
+    return stald_check!(cache.stald, q)
+end

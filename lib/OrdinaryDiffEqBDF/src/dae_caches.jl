@@ -297,3 +297,130 @@ function alg_cache(
         iters_from_event, dense, fd_weights
     )
 end
+
+############################################ DNordsieckBDF
+@cache mutable struct DNordsieckBDFCache{
+        MO, N, rateType, uNoUnitsType, uType, tType, coeffType, staldType,
+    } <: BDFMutableCache
+    fsalfirst::rateType
+    nlsolver::N
+    zn::Vector{uType}
+    u₀::uType
+    ypred::uType
+    acor::uType
+    tempv::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    l::coeffType
+    tau::coeffType
+    tq::coeffType
+    order::Int
+    qprime::Int
+    qwait::Int
+    nst::Int
+    nef::Int
+    ncf::Int
+    indx_acor::Int
+    max_order::Val{MO}
+    max_order_int::Int
+    hscale::tType
+    eta::tType
+    etamax::tType
+    etaq::tType
+    etaqm1::tType
+    etaqp1::tType
+    saved_tq5::tType
+    predicted::Bool
+    stald::staldType
+end
+
+@truncate_stacktrace DNordsieckBDFCache 1
+
+mutable struct DNordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldType} <:
+    OrdinaryDiffEqConstantCache
+    nlsolver::N
+    zn::Vector{uType}
+    u₀::uType
+    ypred::uType
+    acor::uType
+    l::coeffType
+    tau::coeffType
+    tq::coeffType
+    order::Int
+    qprime::Int
+    qwait::Int
+    nst::Int
+    nef::Int
+    ncf::Int
+    indx_acor::Int
+    max_order::Val{MO}
+    max_order_int::Int
+    hscale::tType
+    eta::tType
+    etamax::tType
+    etaq::tType
+    etaqm1::tType
+    etaqp1::tType
+    saved_tq5::tType
+    predicted::Bool
+    stald::staldType
+end
+
+const NordsieckCaches = Union{
+    NordsieckBDFCache, NordsieckBDFConstantCache,
+    DNordsieckBDFCache, DNordsieckBDFConstantCache,
+}
+
+function alg_cache(
+        alg::DNordsieckBDF{MO}, du, u, res_prototype, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true}, verbose
+    ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    zn = [zero(u) for _ in 1:(MO + 1)]
+    coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    return DNordsieckBDFCache{
+        MO, typeof(nlsolver), typeof(rate_prototype),
+        typeof(similar(u, uEltypeNoUnits)), typeof(u), typeof(t), typeof(coeffs()),
+        typeof(stald),
+    }(
+        zero(rate_prototype), nlsolver, zn, zero(u), zero(u), zero(u), zero(u),
+        zero(u), similar(u, uEltypeNoUnits), coeffs(), coeffs(), zeros(typeof(t), 6),
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
+        zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
+        zero(t), false, stald
+    )
+end
+
+function alg_cache(
+        alg::DNordsieckBDF{MO}, du, u, res_prototype, rate_prototype,
+        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}, verbose
+    ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    zn = [zero(u) for _ in 1:(MO + 1)]
+    coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    return DNordsieckBDFConstantCache{
+        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()), typeof(stald),
+    }(
+        nlsolver, zn, zero(u), zero(u), zero(u), coeffs(), coeffs(),
+        zeros(typeof(t), 6), 1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
+        zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
+        zero(t), false, stald
+    )
+end
+
+# With `adaptive = false` the integrator never calls `step_accept_controller!`, so
+# the array has to be committed here instead. The order still ramps up to
+# `max_order` through the usual `qwait` countdown, which keeps the saved
+# correction column valid for the order increase.
