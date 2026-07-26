@@ -275,6 +275,14 @@ end
 # passed through as an operator `jac_prototype` (applied via `mul!`, Krylov); a concrete W
 # reused via an analytic `WReuseJac`. Used at build time and after `resize!` so the inner
 # `NonlinearFunction`'s concrete type is preserved.
+# Termination mode for the inner solve. The tolerances above are zero, so no criterion can
+# ever fire — the integrator decides convergence. NonlinearSolve's default
+# (`AbsNormSafeBestTerminationMode`) would nonetheless run its full per-iteration bookkeeping:
+# best-objective tracking with a state copy, a circular objective trace, and — because it
+# defaults to `max_stalled_steps = 32` — a state-difference buffer and a second norm. All of it
+# is dead weight here, so ask for the plain absolute-norm mode instead.
+_inner_termination() = NonlinearSolveBase.AbsNormTerminationMode(Base.Fix1(maximum, abs))
+
 # Tolerances for the inner NonlinearSolve. `nlsolve!` drives that cache one `step!` at a time
 # and decides convergence itself with the integrator's weighted `κ`/`η` test, exactly as it does
 # for `NLNewton`, so the inner solver must never terminate on its own first: its default is an
@@ -475,6 +483,7 @@ function build_nlsolver(
             cache = init(
                 prob, inner_alg; verbose = verbose.nonlinear_verbosity,
                 abstol = zero(uTolType), reltol = zero(uTolType),
+                termination_condition = _inner_termination(),
                 linsolve_kwargs = (;
                     abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
                 )
@@ -649,6 +658,7 @@ function build_nlsolver(
             cache = init(
                 prob, inner_alg; verbose = verbose.nonlinear_verbosity,
                 abstol = zero(uTolType), reltol = zero(uTolType),
+                termination_condition = _inner_termination(),
                 linsolve_kwargs = (;
                     abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
                 )
