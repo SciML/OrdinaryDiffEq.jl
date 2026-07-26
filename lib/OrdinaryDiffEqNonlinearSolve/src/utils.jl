@@ -278,12 +278,13 @@ end
 function reuse_jac_kwargs(W)
     Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
         W._concrete_form : W
-    # `copy`, not `similar`: the buffer is handed to the inner solver at construction and is
-    # read before `WReuseJac` first fills it (the linear solve inspects its values when
-    # setting up), and `similar` leaves them undefined — in practice reachable garbage,
-    # including `NaN`. Starting from `W` keeps that inspection deterministic and meaningful.
+    # Zero-filled, not `similar` alone: the buffer is handed to the inner solver at
+    # construction and is read before `WReuseJac` first fills it (the linear solve inspects
+    # its values while setting up), and `similar` leaves them undefined — in practice
+    # reachable garbage, `NaN` included. `fill!` keeps the stored sparsity pattern (unlike
+    # `zero`, which drops it) while making the contents defined.
     return Wr isa AbstractSciMLOperator ? (; jac_prototype = Wr) :
-        (; jac = WReuseJac(Ref(Wr)), jac_prototype = copy(Wr))
+        (; jac = WReuseJac(Ref(Wr)), jac_prototype = (Z = similar(Wr); fill!(Z, 0); Z))
 end
 
 """
