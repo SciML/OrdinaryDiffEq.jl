@@ -10,6 +10,7 @@ using OrdinaryDiffEqCore: default_controller, resolve_basic,
 using OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
+using StochasticDiffEqLevyArea
 
 # Register the re-exported bindings with the umbrella module for Documenter.
 for (name, owner) in (
@@ -129,6 +130,7 @@ makedocs(
         OrdinaryDiffEqVerner,
         OrdinaryDiffEqAMF,
         ImplicitDiscreteSolve,
+        StochasticDiffEqLevyArea,
         DiffEqDevTools,
         GlobalDiffEq,
     ],
