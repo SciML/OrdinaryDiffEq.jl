@@ -279,7 +279,7 @@ function reuse_jac_kwargs(W)
     Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
         W._concrete_form : W
     return Wr isa AbstractSciMLOperator ? (; jac_prototype = Wr) :
-        (; jac = WReuseJac(Ref(Wr)), jac_prototype = similar(Wr))
+        (; jac = WReuseJac(Ref(Wr)), jac_prototype = (Z = similar(Wr); fill!(Z, 0); Z))
 end
 
 """
