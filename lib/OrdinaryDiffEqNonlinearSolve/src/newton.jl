@@ -106,8 +106,10 @@ function initialize!(
             # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
             # Jacobian evaluation is not).
             new_jac = first_call || alg.always_new || nlsolver.status === Divergence
+            # `oftype`: `new_W_dt_cutoff` defaults to a `Rational`, and comparing a `Float64`
+            # against one goes through the slow mixed-type path on every stage.
             new_w = new_jac ||
-                abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
+                abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
             if new_w
                 _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
                 cache.new_W = true
@@ -132,9 +134,16 @@ function initialize!(
                 SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
             end
             cache.prob = new_prob
+            # Same tolerances and termination mode as `build_nlsolver`: the integrator owns
+            # convergence, so the inner criterion must stay inert here too (otherwise a resized
+            # cache could terminate on its own again), and the mode is part of the cache's type,
+            # so rebuilding with a different one would not even be assignable.
+            uT = real(eltype(z))
             cache.cache = init(
                 new_prob, cache.cache.alg;
-                verbose = integrator.opts.verbose.nonlinear_verbosity
+                verbose = integrator.opts.verbose.nonlinear_verbosity,
+                abstol = zero(uT), reltol = zero(uT),
+                termination_condition = _inner_termination()
             )
             # re-point the estimator linsolve alias at the rebuilt inner cache
             cache.linsolve = cache.W !== nothing ? get_linear_cache(cache.cache) : nothing
