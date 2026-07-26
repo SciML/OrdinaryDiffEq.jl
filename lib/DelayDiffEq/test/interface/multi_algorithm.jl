@@ -9,6 +9,7 @@ using SciMLBase: ReturnCode
 using Test
 
 @testset "Constant delays" begin
+    # #3648: SDIRK2 IIP MethodOfSteps must keep the same t-grid as scalar.
     prob = DDEProblemLibrary.prob_dde_constant_2delays_ip
     prob_scalar = DDEProblemLibrary.prob_dde_constant_2delays_scalar
     # disable reuse
