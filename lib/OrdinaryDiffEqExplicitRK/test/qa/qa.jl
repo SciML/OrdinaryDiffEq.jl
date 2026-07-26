@@ -2,6 +2,7 @@ using SciMLTesting, OrdinaryDiffEqExplicitRK, Test
 
 run_qa(
     OrdinaryDiffEqExplicitRK;
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;
         all_explicit_imports_are_public = (;
@@ -20,6 +21,7 @@ run_qa(
         ),
     ),
     api_docs_kwargs = (;
+        rendered = false,
         # Reexported upstream SciMLOperators names are documented at their owner.
         ignore = (:StaticWOperator, :has_concretization),
     ),

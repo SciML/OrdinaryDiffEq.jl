@@ -2,6 +2,8 @@ using SciMLTesting, OrdinaryDiffEqNonlinearSolve, Test
 
 run_qa(
     OrdinaryDiffEqNonlinearSolve;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,
     ei_kwargs = (;

@@ -10,6 +10,7 @@ end
 
 run_qa(
     OrdinaryDiffEqCore;
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (; piracies = false, unbound_args = false),
     explicit_imports = true,
     ei_kwargs = (;
@@ -68,6 +69,7 @@ run_qa(
         ),
     ),
     api_docs_kwargs = (;
+        rendered = false,
         # Reexported upstream SciMLOperators names are documented at their owner.
         ignore = (:StaticWOperator, :has_concretization),
     ),

@@ -2,6 +2,9 @@ using SciMLTesting, OrdinaryDiffEqIMEXMultistep, Test
 
 run_qa(
     OrdinaryDiffEqIMEXMultistep;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;
         # `@reexport using SciMLBase` brings the `SciMLBase` module name into scope
