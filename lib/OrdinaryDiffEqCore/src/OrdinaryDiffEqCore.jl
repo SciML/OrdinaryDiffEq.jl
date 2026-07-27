@@ -479,7 +479,7 @@ include("precompilation_setup.jl")
             :set_discontinuity, :resolve_basic,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
-            :is_noise_saveable,
+            :is_noise_saveable, :resync_noise!,
             # Docstring builder used by solver sublibs.
             :differentiation_rk_docstring,
             # SDE/RODE abstract cache hierarchy. The SDE analogue of the already-public

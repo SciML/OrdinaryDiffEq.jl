@@ -36,3 +36,24 @@ for (i, tdir) in enumerate([-1.0; 1.0])
         @test tstop ∈ integrator.sol.t
     end
 end
+
+# SciML/OrdinaryDiffEq.jl#3175 / StochasticDiffEq.jl#413:
+# late add_tstop! after init must shorten the first EM step to the tstop.
+f3175(u, p, t) = 1.0
+g3175(u, p, t) = 0.1
+prob3175 = SDEProblem(f3175, g3175, [1.0], (0.0, 1.0))
+
+i_em = init(prob3175, EM(); dt = 0.02)
+add_tstop!(i_em, 0.01)
+step!(i_em)
+@test i_em.t == 0.01
+
+i_lamba = init(prob3175, LambaEM(); dt = 0.02)
+add_tstop!(i_lamba, 0.01)
+step!(i_lamba)
+@test i_lamba.t == 0.01
+
+# Past-time add_tstop! is rejected for both fixed-step and adaptive EM.
+i_past = init(prob3175, EM(); dt = 0.02)
+step!(i_past)
+@test_throws ErrorException add_tstop!(i_past, 0.01)

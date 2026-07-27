@@ -18,7 +18,7 @@ const ODEC_INTERNAL = (
     :_initialize_dae!, :_ode_init, :accept_noise!, :concrete_jac, :get_chunksize,
     :handle_callback_modifiers!, :has_autodiff, :is_noise_saveable, :noise_curt,
     :ode_determine_initdt, :qsteady_max_default, :qsteady_min_default,
-    :reinit_noise!, :reject_noise!, :save_noise!, :standardtag,
+    :reinit_noise!, :reject_noise!, :resync_noise!, :save_noise!, :standardtag,
 )
 
 # Still-internal SciMLBase interface names (pending SciMLBase#1412 round-5
@@ -70,6 +70,7 @@ const ODEC_STOCHASTIC_SURFACE = (
     OrdinaryDiffEqCore.noise_curt,
     OrdinaryDiffEqCore.reinit_noise!,
     OrdinaryDiffEqCore.reject_noise!,
+    OrdinaryDiffEqCore.resync_noise!,
     OrdinaryDiffEqCore.save_noise!,
 )
 

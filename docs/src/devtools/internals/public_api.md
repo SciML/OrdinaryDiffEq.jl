@@ -295,6 +295,7 @@ Used by SDE/RODE solver sublibraries; no-ops for pure ODEs.
 ```@docs
 OrdinaryDiffEqCore.accept_noise!
 OrdinaryDiffEqCore.reject_noise!
+OrdinaryDiffEqCore.resync_noise!
 OrdinaryDiffEqCore.save_noise!
 OrdinaryDiffEqCore.reinit_noise!
 OrdinaryDiffEqCore.noise_curt

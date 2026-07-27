@@ -80,6 +80,13 @@ function OrdinaryDiffEqCore.accept_noise!(W::SciMLBase.AbstractNoiseProcess, dt,
     return DiffEqNoiseProcess.accept_step!(W, dt, u, p, setup)
 end
 
+function OrdinaryDiffEqCore.resync_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p)
+    W.dt = dt
+    DiffEqNoiseProcess.accept_step!(W, dt, u, p, false)
+    DiffEqNoiseProcess.setup_next_step!(W, u, p)
+    return nothing
+end
+
 function OrdinaryDiffEqCore.reject_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p)
     return DiffEqNoiseProcess.reject_step!(W, dt, u, p)
 end

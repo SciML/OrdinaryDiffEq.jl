@@ -44,11 +44,34 @@ Reset the noise process `W` to its initial state for a fresh integration with st
 `dt` (used by `reinit!`). No-op when `W` is `nothing`.
 """
 reinit_noise!(::Nothing, dt) = nothing
+"""
+    resync_noise!(W, dt, u, p)
+
+Re-align the noise process `W` to a newly shortened integrator `dt` (typically
+after `modify_dt_for_tstops!`) and resample the pending increment without
+advancing the noise clock. No-op when `W` is `nothing`. Extended by
+StochasticDiffEq for `NoiseProcess` types.
+"""
+resync_noise!(::Nothing, args...) = nothing
 
 # Noise field accessors — safe for any integrator type.
 # ODEIntegrator has W/P/sqdt; other integrators (DDEIntegrator) don't.
 @inline _get_W(integrator) = hasfield(typeof(integrator), :W) ? getfield(integrator, :W) : nothing
 @inline _get_P(integrator) = hasfield(typeof(integrator), :P) ? getfield(integrator, :P) : nothing
+
+# After `modify_dt_for_tstops!` shortens `dt`, the pending `W.dW` may still match
+# the previous step size. Resample so the forthcoming `perform_step!` uses a
+# consistent increment (needed for late `add_tstop!` on fixed-step SDE methods).
+function resync_noise_to_integrator_dt!(integrator)
+    W = _get_W(integrator)
+    isnothing(W) && return nothing
+    if W.dt != integrator.dt
+        resync_noise!(W, integrator.dt, integrator.u, integrator.p)
+        resync_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+    end
+    return nothing
+end
 
 # Trait: does the integrator+solution support dense output k-array storage?
 # True for ODEIntegrator (has integrator.k and sol.k), false for SDEIntegrator
@@ -95,6 +118,7 @@ function loopheader!(integrator)
     choose_algorithm!(integrator, integrator.cache)
     fix_dt_at_bounds!(integrator)
     modify_dt_for_tstops!(integrator)
+    resync_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
     return nothing
 end
@@ -166,7 +190,15 @@ function apply_step!(integrator)
     accept_noise!(W, integrator.dt, integrator.u, integrator.p, true)
     accept_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p, true)
     if !isnothing(W)
-        integrator.dt = W.dt  # RSWM readback
+        # RSWM may propose a new dt via W.dt, but must not expand past a pending
+        # tstop that already shortened integrator.dt (SciML/OrdinaryDiffEq.jl#3175).
+        if has_tstop(integrator)
+            W.dt = integrator.dt
+            P = _get_P(integrator)
+            !isnothing(P) && (P.dt = integrator.dt)
+        else
+            integrator.dt = W.dt  # RSWM readback
+        end
         integrator.sqdt = @fastmath integrator.tdir * sqrt(abs(integrator.dt))
     end
 
