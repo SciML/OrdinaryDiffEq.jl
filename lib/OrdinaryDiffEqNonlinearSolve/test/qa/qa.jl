@@ -1,10 +1,13 @@
 using SciMLTesting, OrdinaryDiffEqNonlinearSolve, Test
+using Aqua
 
+# Ambiguities are checked below over this package's own methods instead of Aqua's default
+# `[pkg, Base, Core]` module set; see the `Aqua.test_ambiguities` call.
 run_qa(
     OrdinaryDiffEqNonlinearSolve;
     # No docs/ tree here; the umbrella manual renders this package's API.
     api_docs_kwargs = (; rendered = false),
-    aqua_kwargs = (; piracies = false),
+    aqua_kwargs = (; piracies = false, ambiguities = false),
     explicit_imports = true,
     ei_kwargs = (;
         # Imported into this namespace for dependent sublibraries; ExplicitImports
@@ -66,3 +69,14 @@ run_qa(
         ),
     ),
 )
+
+# `Aqua.test_all` scans `[pkg, Base, Core]`, which reports every ambiguity between a Base
+# method and any loaded package — for this dependency tree, ForwardDiff's `Dual`
+# constructors, `convert`, `==`, `^` and `log` against Base, none of which involve a method
+# defined here or can be resolved from here. `detect_ambiguities` keeps only pairs with a
+# method defined in the listed modules, so scanning this package alone still catches every
+# ambiguity this package is responsible for — including ones against Base or a dependency —
+# while dropping the ForwardDiff/Base noise.
+@testset "Method ambiguity (own methods)" begin
+    Aqua.test_ambiguities(OrdinaryDiffEqNonlinearSolve)
+end
