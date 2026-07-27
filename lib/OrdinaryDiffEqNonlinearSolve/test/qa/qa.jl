@@ -7,6 +7,9 @@ run_qa(
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,
     ei_kwargs = (;
+        # Imported into this namespace for dependent sublibraries; ExplicitImports
+        # cannot see that cross-package use and reports them as stale.
+        no_stale_explicit_imports = (; ignore = (:MatrixOperator, :_reshape)),
         # Names imported from a re-exporter rather than their defining package.
         # `@SciMLMessage` is owned by SciMLLogging but reached through OrdinaryDiffEqCore
         # (SciMLLogging is not a direct dependency); `WOperator`/`StaticWOperator` are the
@@ -20,6 +23,12 @@ run_qa(
         # name `public`/exports it. Tracked in SciML/OrdinaryDiffEq.jl#3776.
         all_explicit_imports_are_public = (;
             ignore = (
+                # Base — owner-internal, no public alternative
+                :RefValue,
+                # NonlinearSolveBase — owner-internal, no public alternative
+                :not_terminated,
+                # OrdinaryDiffEqDifferentiation — owner-internal, no public alternative
+                :default_krylov_warm_start,
                 # `@SciMLMessage` reached through OrdinaryDiffEqCore (owner SciMLLogging).
                 Symbol("@SciMLMessage"),
                 # SciMLBase internals (owner of these names but not public).
@@ -42,6 +51,12 @@ run_qa(
         # Qualified `Module.name` accesses to non-public names with no public alternative.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # Base — owner-internal, no public alternative
+                :RefValue,
+                # NonlinearSolveBase — owner-internal, no public alternative
+                :not_terminated,
+                # OrdinaryDiffEqDifferentiation — owner-internal, no public alternative
+                :default_krylov_warm_start,
                 # SciMLBase internals.
                 :value, :anyeltypedual, :forwarddiff_chunksize,
                 :has_Wfact, :has_Wfact_t, :has_jac_u, :has_jac_du, :postamble!,

@@ -14,6 +14,8 @@ run_qa(
         # Qualified accesses to names that are not (yet) declared public by their owners.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # SciMLBase internals (not public on registered SciMLBase 3.30.x)
                 :has_lazy_interpolation,
                 # OrdinaryDiffEqCore test-only helpers (deliberately kept non-public)
@@ -23,6 +25,8 @@ run_qa(
         # Explicit imports of names not (yet) declared public by their owners.
         all_explicit_imports_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # OrdinaryDiffEqCore owner-internal names (private codegen macros +
                 # cache/interpolation internals deliberately not part of the public
                 # solver-author API declared in PHASE A)

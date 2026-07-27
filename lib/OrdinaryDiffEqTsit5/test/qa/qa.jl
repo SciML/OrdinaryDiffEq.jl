@@ -14,12 +14,16 @@ run_qa(
         # remains are owner-internal names with no public alternative.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # OrdinaryDiffEqCore — precompile-workload test functions (internal)
                 :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
             ),
         ),
         all_explicit_imports_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # OrdinaryDiffEqCore — private codegen macros / limiter kept
                 # non-public in PHASE A (owner-internal, no public alternative)
                 Symbol("@fold"), Symbol("@OnDemandTableauExtract"),
