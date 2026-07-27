@@ -24,7 +24,7 @@ run_qa(
             allow_unanalyzable = UNANALYZABLE,
             ignore = (
                 :BrownFullBasicInit, :ShampineCollocationInit, :DEVerbosity,
-                :Minimal, :_vec, :_reshape, :unwrap_cache,
+                :Minimal, :_vec, :_reshape, :unwrap_cache, :_unwrap_val,
                 :calculate_residuals, :calculate_residuals!,
             ),
         ),
@@ -32,6 +32,8 @@ run_qa(
         # genuinely needs and that have no public replacement yet.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # DiffEqBase — owner-internal, no public alternative
+                :NAN_CHECK,
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
                 # SciMLOperators internal
@@ -51,6 +53,8 @@ run_qa(
         # Internal (non-`public`) names imported from upstream packages.
         all_explicit_imports_are_public = (;
             ignore = (
+                # DiffEqBase — owner-internal, no public alternative
+                :NAN_CHECK,
                 # TruncatedStacktraces internals
                 Symbol("@truncate_stacktrace"), :VERBOSE_MSG,
                 # FunctionWrappers internal

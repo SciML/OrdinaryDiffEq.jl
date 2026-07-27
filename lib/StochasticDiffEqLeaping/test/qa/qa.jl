@@ -19,6 +19,8 @@ run_qa(
         all_qualified_accesses_via_owners = (; ignore = (:pois_rand,)),
         all_explicit_imports_are_public = (;
             ignore = (
+                # OrdinaryDiffEqNonlinearSolve — owner-internal, no public alternative
+                :build_nlsolver, :markfirststage!, :nlsolve!, :nlsolvefail,
                 # FastBroadcast fused-broadcast macro, re-exported via DiffEqBase.
                 Symbol("@.."),
                 # StochasticDiffEqCore internal cache-alloc macro (non-public).
@@ -27,6 +29,8 @@ run_qa(
         ),
         all_qualified_accesses_are_public = (;
             ignore = (
+                # OrdinaryDiffEqNonlinearSolve — owner-internal, no public alternative
+                :build_nlsolver, :markfirststage!, :nlsolve!, :nlsolvefail,
                 # OrdinaryDiffEqCore internal a-posteriori error-estimate predicate
                 # (non-public).
                 :isaposteriori,

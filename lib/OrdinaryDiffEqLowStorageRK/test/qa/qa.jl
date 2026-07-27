@@ -12,6 +12,8 @@ run_qa(
         # `public`, so those ignores were dropped.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # OrdinaryDiffEqCore precompile-workload probes (owner-internal)
                 :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
                 # Base.Broadcast internals used in ArrayFuse copyto!/materialize!
@@ -20,6 +22,8 @@ run_qa(
         ),
         all_explicit_imports_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # OrdinaryDiffEqCore default no-op limiter (owner-internal)
                 :trivial_limiter!,
             ),
