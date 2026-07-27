@@ -161,7 +161,27 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             h / q
         end
     end
-    return is_disco ? min((integrator.disco_checkpoint - integrator.t) / 4, new_dt) : new_dt
+    if is_disco
+        return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
+    end
+    return new_dt
+end
+
+"""
+    bdf_restart_estimates!(cache)
+
+Restart the order and constant-step estimates for a step that straddles a derivative
+discontinuity, where the history behind it and the solution ahead belong to different
+regimes. We do this because the BDF step-size and order logic is based on the history of the solution, 
+and we have effectively entered a new regime where old estimates no longer apply.
+"""
+function bdf_restart_estimates!(cache)
+    cache.order = 1
+    cache.nconsteps = 0
+    if hasfield(typeof(cache), :qwait)
+        cache.qwait = 3
+    end
+    return nothing
 end
 
 function bdf_step_reject_controller!(integrator, cache, EEst1)
@@ -438,7 +458,11 @@ function step_accept_controller!(
         cache.qwait -= 1 # countdown
     end
     new_dt = integrator.dt / q
-    return is_disco ? min((integrator.disco_checkpoint - integrator.t) / 4, new_dt) : new_dt
+    if is_disco
+        bdf_restart_estimates!(cache)
+        return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
+    end
+    return new_dt
 end
 
 function step_reject_controller!(integrator, alg::DFBDF)
@@ -607,5 +631,9 @@ function step_accept_controller!(
         cache.qwait -= 1 # countdown
     end
     new_dt = integrator.dt / q
-    return is_disco ? min((integrator.disco_checkpoint - integrator.t) / 4, new_dt) : new_dt
+    if is_disco
+        bdf_restart_estimates!(cache)
+        return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
+    end
+    return new_dt
 end

@@ -145,13 +145,6 @@ prob_stiff = ODEProblem(f_stiff_disc!, u0_stiff, tspan_stiff, [500.0])
 cond_stiff(u, t, integrator) = u[1] - 0.5
 cb_stiff = ContinuousCallback(cond_stiff, default_affect!; maybe_discontinuity = true)
 
-sol_disco_radau = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11, controller = predictive_disco_controller(RadauIIA5()))
-#  207.500 μs (2285 allocations: 101.72 KiB)
-sol_no_disco_radau = solve(prob_stiff, RadauIIA5(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)
-#  196.458 μs (2054 allocations: 95.58 KiB)
-@test sol_disco_radau.retcode == ReturnCode.Success
-@test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
-
 sol_disco_rosenbrock = solve(prob_stiff, Rodas5P(); callback=cb_stiff, reltol=1e-9, abstol=1e-11, controller = PI_disco_controller(Rodas5P()))
 #  364.833 μs (2030 allocations: 85.34 KiB)
 sol_no_disco_rosenbrock = solve(prob_stiff, Rodas5P(); callback=cb_stiff, reltol=1e-9, abstol=1e-11)

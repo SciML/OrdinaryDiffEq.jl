@@ -24,6 +24,7 @@ function find_discontinuity(integrator)
     dt = integrator.dt
     u = integrator.u
     uprev = integrator.uprev
+    integrator.is_disco_step = false
     cb === nothing && return one(dt)
     isempty(cb.continuous_callbacks) && return one(dt)
     p = integrator.p
