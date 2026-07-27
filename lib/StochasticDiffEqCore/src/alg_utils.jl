@@ -121,6 +121,19 @@ function qmin_default(alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODE
     return isadaptive(alg) ? 1 // 5 : 0
 end
 
+"""
+    delta_default(alg) -> Real
+
+Default value of the `delta` option for `alg`.
+
+`delta` is the SDE-specific mixing parameter of the adaptive error estimate: it
+weighs the drift (deterministic) error contribution against the diffusion
+(stochastic) one when the two are combined into a single `EEst`. A value of `1`
+uses the drift estimate at full strength.
+
+Solver subpackages override this for algorithms whose published adaptivity scheme
+prescribes a different weighting.
+"""
 delta_default(alg) = 1 // 1
 
 function OrdinaryDiffEqCore.gamma_default(
@@ -161,6 +174,16 @@ function alg_order(
     )
     return maximum(alg_order.(alg.algs))
 end
+"""
+    get_current_alg_order(alg, cache) -> Real
+
+Strong order of the algorithm that is currently being stepped with.
+
+For a plain algorithm this is just `alg_order(alg)`. For a
+`StochasticCompositeAlgorithm` it is the order of the member algorithm selected by
+`cache.current`, so that adaptivity uses the order of the method that actually took
+the step rather than the order of the composite as a whole.
+"""
 get_current_alg_order(alg::StochasticDiffEqAlgorithm, cache) = alg_order(alg)
 get_current_alg_order(alg::StochasticDiffEqRODEAlgorithm, cache) = alg_order(alg)
 function get_current_alg_order(
@@ -187,7 +210,24 @@ function SciMLBase.alg_interpretation(alg::StochasticDiffEqAlgorithm)
     return SciMLBase.AlgorithmInterpretation.Ito
 end
 
-# Default alg_compatible — false for abstract SDE type, true for RODE
+"""
+    alg_compatible(prob, alg) -> Bool
+
+Whether `alg` can solve `prob`.
+
+`solve` consults this trait before setting up an integrator and errors with a
+descriptive message when it returns `false`. Solver subpackages add methods for the
+problem classes their algorithm supports, for example a Milstein-type method that
+requires diagonal noise:
+
+```julia
+alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::RKMil) = is_diagonal_noise(prob)
+```
+
+For a `StochasticCompositeAlgorithm` the result is the maximum over its members, and
+for a `JumpProblem` compatibility additionally requires that the algorithm
+[`supports_regular_jumps`](@ref) whenever the problem carries a `RegularJump`.
+"""
 function alg_compatible(
         prob, alg::Union{
             StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
@@ -206,8 +246,17 @@ function alg_compatible(
     return max((alg_compatible(prob, a) for a in alg.algs)...)
 end
 
-# Trait: whether an algorithm supports regular jumps in a JumpProblem.
-# Default is false; EM and ImplicitEM override to true in their subpackages.
+"""
+    supports_regular_jumps(alg) -> Bool
+
+Whether `alg` can integrate a `JumpProblem` that carries a `RegularJump`.
+
+Regular jumps are leaped over with a Poisson count per step rather than simulated
+one event at a time, which only some SDE integrators implement. The default is
+`false`; `EM` and `ImplicitEM` override it to `true` in their subpackages.
+[`alg_compatible`](@ref) uses this trait to reject a `RegularJump` problem paired
+with an algorithm that cannot handle it.
+"""
 supports_regular_jumps(alg) = false
 
 # JumpProblem compatibility defaults
@@ -224,6 +273,20 @@ function alg_compatible(
     return prob.prob isa DiscreteProblem
 end
 
+"""
+    alg_needs_extra_process(alg) -> Bool
+
+Whether `alg` needs a second noise process `ΔZ` alongside the Brownian increment `ΔW`.
+
+Higher order schemes (for example the Rößler SRA/SRI families) require an auxiliary
+independent process to approximate the extra stochastic integrals appearing in their
+order conditions. When this trait is `true` the integrator allocates and resizes the
+`Z` process in addition to `W`, so solver subpackages must set it for any algorithm
+that reads `integrator.W.dZ`.
+
+For a `StochasticCompositeAlgorithm` the result is the maximum over its members, so
+the extra process is present if any member needs it.
+"""
 function alg_needs_extra_process(
         alg::Union{
             StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm,
@@ -275,8 +338,28 @@ OrdinaryDiffEqCore.concrete_jac(
     }
 ) = alg.concrete_jac
 
+"""
+    alg_mass_matrix_compatible(alg) -> Bool
+
+Whether `alg` can solve a problem with a non-identity mass matrix.
+
+`solve` errors when a mass matrix is supplied to an algorithm for which this is
+`false`. The implicit theta-method solvers accept a mass matrix only in the
+configurations for which the discretization stays consistent (symplectic, or
+`theta == 1`) and throw a descriptive error otherwise.
+"""
 alg_mass_matrix_compatible(alg::StochasticDiffEqAlgorithm) = false
 alg_mass_matrix_compatible(alg::StochasticDiffEqRODEAlgorithm) = false
+
+"""
+    alg_can_repeat_jac(alg) -> Bool
+
+Whether `alg` may reuse a Jacobian across a rejected-and-repeated step.
+
+When `true` the integrator keeps the factorized `W` matrix after a step rejection
+instead of recomputing it, which is the common case. Algorithms whose stage
+structure changes between attempts must override this to `false`.
+"""
 alg_can_repeat_jac(alg::StochasticDiffEqAlgorithm) = true
 
 function alg_mass_matrix_compatible(
@@ -293,12 +376,46 @@ function alg_mass_matrix_compatible(
     end
 end
 
+"""
+    is_split_step(alg) -> Bool
+
+Whether `alg` is a split-step method, i.e. one that advances the drift to an
+intermediate state before applying the diffusion rather than adding both
+contributions to the same base point.
+
+The split-step solvers (`ISSEM`, `ISSEulerHeun`) override this to `true`; the
+integrator uses it to select the matching residual and error-estimate paths.
+"""
 is_split_step(::StochasticDiffEqAlgorithm) = false
 
+"""
+    alg_stability_size(alg) -> Real
+
+Radius of the (deterministic) stability region of `alg` along the negative real axis.
+
+This is the scale used by the automatic stiffness detection of
+[`AutoSwitch`](@ref): the stiffness ratio is `abs(eigen_est * dt / alg_stability_size(alg))`,
+so an algorithm participating in a stiffness-switching composite must report a
+nonzero value. The default of `0` means "not characterized", and is overridden per
+algorithm in the solver subpackages.
+"""
 alg_stability_size(alg::StochasticDiffEqAlgorithm) = 0 # default, overridden per-alg
 
 # is_composite_algorithm trait is defined in OrdinaryDiffEqCore and extended in
 # integrator_utils.jl for SDE composite algorithm types.
+"""
+    unwrap_alg(integrator, is_nlsolve) -> alg
+
+The concrete algorithm that `integrator` should use for the current step.
+
+For a plain algorithm this is `integrator.alg` itself. For a
+`StochasticCompositeAlgorithm` it is the currently selected member: the stiff member
+when `is_nlsolve` is `true` under [`AutoSwitch`](@ref)-style stiffness switching, and
+the member indicated by `integrator.cache.current` otherwise.
+
+`perform_step!` implementations call this instead of reading `integrator.alg`
+directly so that they work unchanged inside a composite algorithm.
+"""
 function unwrap_alg(integrator, is_nlsolve)
     alg = integrator.alg
     if !is_composite_algorithm(alg)
@@ -323,5 +440,15 @@ function unwrap_alg(integrator, is_nlsolve)
     end
 end
 
+"""
+    alg_control_rate(alg) -> Bool
+
+Whether the adaptive step-size controller of `alg` acts on the jump/leap rate rather
+than on the usual solution error estimate.
+
+Tau-leaping methods choose `dt` from how much the propensities are allowed to change
+over a step, so they override this to `true` and the integrator routes step-size
+control through the leap-specific controller instead of the standard `EEst` path.
+"""
 alg_control_rate(::StochasticDiffEqAlgorithm) = false
 alg_control_rate(::StochasticDiffEqRODEAlgorithm) = false
