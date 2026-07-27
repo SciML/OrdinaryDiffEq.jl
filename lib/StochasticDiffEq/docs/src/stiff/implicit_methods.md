@@ -44,6 +44,23 @@ ISSEM
 ISSEulerHeun
 ```
 
+## Theta-Method Variants
+
+`STrapezoid` and `SImplicitMidpoint` are convenience constructors for particular
+members of the `ImplicitEM` family.
+
+### STrapezoid - Stochastic Trapezoidal Rule
+
+```@docs
+STrapezoid
+```
+
+### SImplicitMidpoint - Stochastic Implicit Midpoint Rule
+
+```@docs
+SImplicitMidpoint
+```
+
 ## Method Selection Guide
 
 ### Problem Classification:
