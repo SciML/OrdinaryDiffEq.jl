@@ -45,7 +45,8 @@ end
     # interpolation. Without B_interp, the default Hermite addsteps suffices.
     isnothing(cache.tab.B_interp) && return nothing
 
-    (; kk, tmp, tab) = cache
+    (; kk, tab) = cache
+    (; tmp) = cache.tmp_cache
     (; A, c, stages) = tab
 
     if length(k) < stages || always_calc_begin

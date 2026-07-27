@@ -11,7 +11,8 @@ import OrdinaryDiffEqCore: qmax_default, qmin_default, beta2_default,
     CompiledFloats,
     get_fsalfirstlast,
     unwrap_alg, _ode_interpolant, _ode_interpolant!,
-    DerivativeOrderNotPossibleError, full_cache, isdp8
+    DerivativeOrderNotPossibleError, full_cache, isdp8,
+    TmpCache, build_tmp_cache
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..

@@ -8,7 +8,8 @@ end
 
 @muladd function perform_step!(integrator, cache::NewmarkBetaCache, repeat_step = false)
     (; t, dt, u, f, p) = integrator
-    (; β, γ, thread, nlcache, atmp) = cache
+    (; β, γ, thread, nlcache) = cache
+    atmp = cache.tmp_cache.tmp2
 
     # Evaluate predictor
     vₙ, uₙ = integrator.uprev.x
@@ -127,7 +128,8 @@ end
 
 @muladd function perform_step!(integrator, cache::GeneralizedAlphaCache, repeat_step = false)
     (; t, dt, u, f, p) = integrator
-    (; αm, αf, β, γ, thread, nlcache, atmp) = cache
+    (; αm, αf, β, γ, thread, nlcache) = cache
+    atmp = cache.tmp_cache.tmp2
 
     vₙ, uₙ = integrator.uprev.x
     if integrator.derivative_discontinuity || !integrator.opts.adaptive

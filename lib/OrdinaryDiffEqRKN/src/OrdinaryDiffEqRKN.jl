@@ -1,6 +1,7 @@
 module OrdinaryDiffEqRKN
 
-import OrdinaryDiffEqCore: perform_step!,
+import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+    perform_step!,
     alg_extrapolates,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

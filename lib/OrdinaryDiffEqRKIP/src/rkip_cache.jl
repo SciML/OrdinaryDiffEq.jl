@@ -23,19 +23,19 @@ end
 mutable struct RKIPCache{
         expOpType <: AbstractSciMLOperator, cacheType <: AbstractExpCache{expOpType},
         tType <: Number, opType <: AbstractSciMLOperator, uType, iip,
+        TmpC <: TmpCache,
     } <:
     OrdinaryDiffEqMutableCache
     exp_cache::cacheType
     last_step::tType
     cached::Vector{Bool}
-    tmp::uType
-    utilde::uType
+    tmp_cache::TmpC
     kk::Vector{uType}
     c_unique::Vector{tType}
     c_mapping::Vector{Integer}
 end
 
-get_fsalfirstlast(cache::RKIPCache, u) = (zero(cache.tmp), zero(cache.tmp))
+get_fsalfirstlast(cache::RKIPCache, u) = (zero(cache.tmp_cache.tmp), zero(cache.tmp_cache.tmp))
 
 @inline function cache_exp!(
         cache::ExpCache{expOpType},

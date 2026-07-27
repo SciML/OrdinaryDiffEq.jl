@@ -62,7 +62,9 @@ end
     }
     (; t, dt, uprev, u, f, p, fsalfirst, fsallast, alg) = integrator
     (; c, α, αEEst, stages, A) = alg.tableau
-    (; kk, utilde, tmp) = cache
+    (; kk) = cache
+    (; tmp, tmp2) = cache.tmp_cache
+    utilde = tmp2
     (; adaptive, abstol, reltol, internalnorm) = integrator.opts
 
     Â::opType = f.f1.f # Linear Operator
@@ -84,7 +86,7 @@ end
         # if mutable/heaps type, assignment does nothing as the function is in-place,
         kk[i] = expmv_rkip_mip(cache, kk[i], dt, i, p, t_) # kᵢ = exp(Â * [dt * cᵢ])*kᵢ ➡ Change from interaction picture to "true" coordinate
 
-        kk[i] = nl_part_mip(cache.tmp, f.f2, kk[i], p, t_, iip) # kᵢ = f(u + Σⱼ dt*(Aᵢⱼ kⱼ), t + dt*cᵢ)
+        kk[i] = nl_part_mip(tmp, f.f2, kk[i], p, t_, iip) # kᵢ = f(u + Σⱼ dt*(Aᵢⱼ kⱼ), t + dt*cᵢ)
 
         kk[i] = expmv_rkip_mip(cache, kk[i], -dt, i, p, t_) # kᵢ = exp(-Â * [dt * cᵢ])*kᵢ ➡ Going back in interaction picture
 
@@ -112,7 +114,7 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(tmp, t))
     end
 
-    fsallast = f_mip!(fsallast, cache.tmp, Â, f.f2, u, p, t + dt, iip) # derivative estimation for interpolation
+    fsallast = f_mip!(fsallast, tmp, Â, f.f2, u, p, t + dt, iip) # derivative estimation for interpolation
     integrator.stats.nf += 1
     integrator.stats.nf2 += 1
     integrator.fsalfirst = fsalfirst
@@ -134,7 +136,7 @@ function initialize!(
     kshortsize = 2
     k = [zero(u) for _ in 1:kshortsize]
 
-    fsalfirst = f_mip!(fsalfirst, cache.tmp, f.f1.f, f.f2, u, p, t, iip) # first derivative for interpolation computation, maybe in place
+    fsalfirst = f_mip!(fsalfirst, cache.tmp_cache.tmp, f.f1.f, f.f2, u, p, t, iip) # first derivative for interpolation computation, maybe in place
     integrator.stats.nf += 1
     integrator.stats.nf2 += 1
 

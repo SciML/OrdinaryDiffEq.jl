@@ -1,15 +1,13 @@
 @cache struct ExplicitTaylor2Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        uType, rateType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
     k2::rateType
     k3::rateType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -24,12 +22,9 @@ function alg_cache(
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     return ExplicitTaylor2Cache(
-        u, uprev, k1, k2, k3, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -46,17 +41,15 @@ end
 get_fsalfirstlast(cache::ExplicitTaylor2Cache, u) = (cache.k1, cache.k1)
 
 @cache struct ExplicitTaylorCache{
-        P, tType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        P, tType, uType, taylorType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     order::Val{P}
     jet::FunctionWrapper{Nothing, Tuple{taylorType, uType, tType}}
     u::uType
     uprev::uType
     utaylor::taylorType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -71,12 +64,9 @@ function alg_cache(
     _, jet_iip = build_jet(f, p, alg.order, length(u))
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.order)
     jet_wrapped = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}(jet_iip)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     return ExplicitTaylorCache(
-        alg.order, jet_wrapped, u, uprev, utaylor, utilde, tmp, atmp,
+        alg.order, jet_wrapped, u, uprev, utaylor, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -106,8 +96,8 @@ end
 
 @cache struct ExplicitTaylorAdaptiveOrderCache{
         P, Q,
-        tType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        tType, uType, taylorType, StageLimiter, StepLimiter,
+        Thread, TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     min_order::Val{P}
     max_order::Val{Q}
@@ -117,9 +107,7 @@ end
     u::uType
     uprev::uType
     utaylor::taylorType
-    utilde::uType
-    tmp::uType
-    atmp::uNoUnitsType
+    tmp_cache::TmpC
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -138,15 +126,12 @@ function alg_cache(
         jet_iip = build_jet(f, p, Val(order), length(u))[2]
         push!(jets, jet_iip)
     end
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-    tmp = zero(u)
+    tmp_cache = build_tmp_cache(u, rate_prototype, uEltypeNoUnits)
     current_order = Ref(max_order_value - 1)
     order_history = Vector{Int}()
     return ExplicitTaylorAdaptiveOrderCache(
         alg.min_order, alg.max_order, current_order, order_history,
-        jets, u, uprev, utaylor, utilde, tmp, atmp,
+        jets, u, uprev, utaylor, tmp_cache,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end

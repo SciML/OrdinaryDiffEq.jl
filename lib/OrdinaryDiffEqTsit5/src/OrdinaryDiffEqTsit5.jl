@@ -9,7 +9,8 @@ import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
     CompiledFloats, @OnDemandTableauExtract,
     CompositeAlgorithm, _ode_addsteps!,
     AutoAlgSwitch, get_fsalfirstlast,
-    full_cache, DerivativeOrderNotPossibleError
+    full_cache, DerivativeOrderNotPossibleError,
+    TmpCache, build_tmp_cache
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..

@@ -120,7 +120,10 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract QPRK98Tableau T T2
-    (; fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, atmp, k, thread) = cache
+    (; fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, k, thread) = cache
+    (; tmp, atmp) = cache.tmp_cache
+    # `tmp2` is the embedded lower-order solution (was the inline `utilde` field).
+    utilde = cache.tmp_cache.tmp2
     stage_limiter! = integrator.opts.stage_limiter!
     k1 = fsalfirst
     f(k1, uprev, p, t)

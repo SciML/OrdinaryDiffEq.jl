@@ -1,6 +1,7 @@
 module OrdinaryDiffEqExplicitRK
 
-import OrdinaryDiffEqCore: alg_adaptive_order, alg_stability_size,
+import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+    alg_adaptive_order, alg_stability_size,
     OrdinaryDiffEqAdaptiveAlgorithm,
     @cache, alg_cache, OrdinaryDiffEqConstantCache,
     unwrap_alg,

@@ -34,7 +34,7 @@ function alg_cache(
 end
 
 @cache mutable struct ABDF2Cache{
-        uType, rateType, uNoUnitsType, N, dtType, StepLimiter, EC,
+        uType, rateType, N, dtType, StepLimiter, EC, TmpC <: TmpCache,
     } <: BDFMutableCache
     uₙ::uType
     uₙ₋₁::uType
@@ -42,7 +42,12 @@ end
     fsalfirst::rateType
     fsalfirstprev::rateType
     zₙ₋₁::uType
-    atmp::uNoUnitsType
+    # Unified scratch: only the cache-level `atmp` migrated here (the Newton
+    # buffers live on the nlsolver and are off limits). `tmp`/`tmp2`/`weight`
+    # are `nothing`; the rate slots stay opted out since ABDF2's positional
+    # constructor exposes no `preallocate_initdt_buffers` knob:
+    # `TmpCache{Nothing, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     nlsolver::N
     eulercache::EC
     dtₙ₋₁::dtType
@@ -81,8 +86,13 @@ function alg_cache(
     dtₙ₋₁ = one(dt)
     zₙ₋₁ = zero(u)
 
+    # `atmp` (shared with the bootstrap eulercache, preserving the historical
+    # aliasing) is the only migrated scratch field; everything else stays
+    # `nothing`, so the array count matches the historical cache exactly.
+    tmp_cache = TmpCache(nothing, nothing, atmp, nothing, nothing, nothing)
+
     return ABDF2Cache(
-        u, uprev, uprev2, fsalfirst, fsalfirstprev, zₙ₋₁, atmp,
+        u, uprev, uprev2, fsalfirst, fsalfirstprev, zₙ₋₁, tmp_cache,
         nlsolver, eulercache, dtₙ₋₁, alg.step_limiter!
     )
 end
@@ -202,7 +212,7 @@ end
 
 @cache mutable struct QNDF1Cache{
         uType, rateType, coefType, coefType1, coefType2,
-        uNoUnitsType, N, dtType, StepLimiter,
+        N, dtType, StepLimiter, TmpC <: TmpCache,
     } <: BDFMutableCache
     uprev2::uType
     fsalfirst::rateType
@@ -210,8 +220,13 @@ end
     D2::coefType2
     R::coefType
     U::coefType
-    atmp::uNoUnitsType
-    utilde::uType
+    # Unified scratch: `utilde` migrated into `tmp2` and `atmp` into `atmp`.
+    # The `tmp` slot donor-aliases `nlsolver.tmp` (recomputed write-first every
+    # step, dead between steps, never read by dense output — master's initdt
+    # already borrows it via `get_tmp_cache` for Newton algorithms). Rate slots
+    # stay opted out (no `preallocate_initdt_buffers` knob on QNDF1):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     nlsolver::N
     dtₙ₋₁::dtType
     step_limiter!::StepLimiter
@@ -273,8 +288,12 @@ function alg_cache(
     uprev2 = zero(u)
     dtₙ₋₁ = zero(dt)
 
+    # Migrated `utilde`/`atmp` plus the `nlsolver.tmp` donor alias — zero new
+    # arrays vs. the historical cache.
+    tmp_cache = TmpCache(nlsolver.tmp, utilde, atmp, nothing, nothing, nothing)
+
     return QNDF1Cache(
-        uprev2, fsalfirst, D, D2, R, U, atmp, utilde, nlsolver, dtₙ₋₁, alg.step_limiter!
+        uprev2, fsalfirst, D, D2, R, U, tmp_cache, nlsolver, dtₙ₋₁, alg.step_limiter!
     )
 end
 
@@ -301,7 +320,7 @@ end
 
 @cache mutable struct QNDF2Cache{
         uType, rateType, coefType, coefType1, coefType2,
-        uNoUnitsType, N, dtType, StepLimiter,
+        N, dtType, StepLimiter, TmpC <: TmpCache,
     } <: BDFMutableCache
     uprev2::uType
     uprev3::uType
@@ -310,8 +329,13 @@ end
     D2::coefType2
     R::coefType
     U::coefType
-    atmp::uNoUnitsType
-    utilde::uType
+    # Unified scratch: `utilde` migrated into `tmp2` and `atmp` into `atmp`.
+    # The `tmp` slot donor-aliases `nlsolver.tmp` (recomputed write-first every
+    # step, dead between steps, never read by dense output — master's initdt
+    # already borrows it via `get_tmp_cache` for Newton algorithms). Rate slots
+    # stay opted out (no `preallocate_initdt_buffers` knob on QNDF2):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     nlsolver::N
     dtₙ₋₁::dtType
     dtₙ₋₂::dtType
@@ -379,9 +403,13 @@ function alg_cache(
     dtₙ₋₁ = zero(dt)
     dtₙ₋₂ = zero(dt)
 
+    # Migrated `utilde`/`atmp` plus the `nlsolver.tmp` donor alias — zero new
+    # arrays vs. the historical cache.
+    tmp_cache = TmpCache(nlsolver.tmp, utilde, atmp, nothing, nothing, nothing)
+
     return QNDF2Cache(
-        uprev2, uprev3, fsalfirst, D, D2, R, U, atmp,
-        utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!
+        uprev2, uprev3, fsalfirst, D, D2, R, U, tmp_cache,
+        nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!
     )
 end
 
@@ -457,14 +485,13 @@ end
 
 @cache mutable struct QNDFCache{
         MO, UType, RUType, rateType, N, coefType, dtType, EEstType,
-        gammaType, uType, uNoUnitsType, StepLimiter,
+        gammaType, uType, uNoUnitsType, StepLimiter, TmpC <: TmpCache,
     } <:
     BDFMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     dd::uType
-    utilde::uType
     utildem1::uType
     utildep1::uType
     ϕ::uType
@@ -475,7 +502,13 @@ end
     RU::RUType
     D::coefType
     Dtmp::coefType
-    tmp2::uType
+    # Unified scratch: the former inline `tmp2` (state scratch, mass-matrix
+    # branch) lives in the `tmp` slot, `utilde` in `tmp2`, and `atmp` in
+    # `atmp`. The k±1 error buffers (`utildem1`/`utildep1`,
+    # `atmpm1`/`atmpp1`) keep their dedicated fields. Rate slots stay opted
+    # out (no `preallocate_initdt_buffers` knob on QNDF):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     prevD::coefType
     order::Int
     prevorder::Int
@@ -486,7 +519,6 @@ end
     EEst1::EEstType #Error Estimator for k-1 order
     EEst2::EEstType #Error Estimator for k+1 order
     γₖ::gammaType
-    atmp::uNoUnitsType
     atmpm1::uNoUnitsType
     atmpp1::uNoUnitsType
     dense::Vector{uType}
@@ -541,14 +573,18 @@ function alg_cache(
 
     dense = [zero(u) for _ in 1:max_order]
 
+    # Migrated fields only (`tmp2` → tmp, `utilde` → tmp2, `atmp` → atmp) —
+    # the array count matches the historical cache exactly.
+    tmp_cache = TmpCache(tmp2, utilde, atmp, nothing, nothing, nothing)
+
     return QNDFCache(
-        u, uprev, fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU,
-        D, Dtmp, tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
+        u, uprev, fsalfirst, dd, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU, D, Dtmp,
+        tmp_cache, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ,
         atmpm1, atmpp1, dense, alg.step_limiter!
     )
 end
 
-@cache mutable struct MEBDF2Cache{uType, rateType, uNoUnitsType, N} <:
+@cache mutable struct MEBDF2Cache{uType, rateType, N, TmpC <: TmpCache} <:
     BDFMutableCache
     u::uType
     uprev::uType
@@ -556,8 +592,12 @@ end
     fsalfirst::rateType
     z₁::uType
     z₂::uType
-    tmp2::uType
-    atmp::uNoUnitsType
+    # Unified scratch: the former inline `tmp2` (stage-3 state scratch) lives
+    # in the `tmp` slot and `atmp` in `atmp`; no `utilde` existed so `tmp2`
+    # stays `nothing`. Rate slots stay opted out (no
+    # `preallocate_initdt_buffers` knob on MEBDF2):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     nlsolver::N
 end
 
@@ -581,7 +621,11 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    return MEBDF2Cache(u, uprev, uprev2, fsalfirst, z₁, z₂, tmp2, atmp, nlsolver)
+    # Migrated fields only (`tmp2` → tmp, `atmp` → atmp) — the array count
+    # matches the historical cache exactly.
+    tmp_cache = TmpCache(tmp2, nothing, atmp, nothing, nothing, nothing)
+
+    return MEBDF2Cache(u, uprev, uprev2, fsalfirst, z₁, z₂, tmp_cache, nlsolver)
 end
 
 mutable struct MEBDF2ConstantCache{N} <: OrdinaryDiffEqConstantCache
@@ -693,8 +737,9 @@ function alg_cache(
 end
 
 @cache mutable struct FBDFCache{
-        MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
+        MO, N, rateType, tsType, tType, uType, uuType,
         coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType, staldType,
+        TmpC <: TmpCache,
     } <:
     BDFMutableCache
     fsalfirst::rateType
@@ -712,8 +757,13 @@ end
     nconsteps::Int # consecutive success steps
     consfailcnt::Int #consecutive failed step counts
     qwait::Int # countdown to next order change consideration (CVODE-style)
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: the former inline `tmp` (corrector RHS, write-first
+    # every step) lives in the `tmp` slot and `atmp` in `atmp`; no `utilde`
+    # existed so `tmp2` stays `nothing`. The error-estimate buffers
+    # `terk_tmp`/`terkp1_tmp` keep their dedicated fields. Rate slots stay
+    # opted out (no `preallocate_initdt_buffers` knob on FBDF):
+    # `TmpCache{uType, Nothing, uNoUnitsType, Nothing}`.
+    tmp_cache::TmpC
     terkm2::EEstType
     terkm1::EEstType
     terk::EEstType #terk corresponds to hᵏyᵏ(tₙ₊₁)
@@ -793,9 +843,13 @@ function alg_cache(
         tiny = alg.stald_tiny,
     )
 
+    # Migrated fields only (`tmp` → tmp, `atmp` → atmp) — the array count
+    # matches the historical cache exactly.
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, nothing, nothing)
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
-        u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
+        u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp_cache,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
         iters_from_event, dense, alg.step_limiter!, fd_weights, stald
     )

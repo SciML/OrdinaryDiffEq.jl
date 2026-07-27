@@ -50,7 +50,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ExplicitTaylor2Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
-    (; k1, k2, k3, utilde, tmp) = cache
+    (; k1, k2, k3) = cache
     # Unwrap FunctionWrappers since TaylorDiff types don't match wrapper signatures
     f = unwrapped_f(integrator.f)
 
@@ -108,7 +108,9 @@ end
         integrator, cache::ExplicitTaylorCache{P}, repeat_step = false
     ) where {P}
     (; t, dt, uprev, u, f, p) = integrator
-    (; jet, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jet, utaylor, thread) = cache
+    (; atmp) = cache.tmp_cache
+    utilde = cache.tmp_cache.tmp2
 
     jet(utaylor, uprev, t)
     for i in eachindex(utaylor)
@@ -140,7 +142,9 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jets, current_order, min_order, max_order, utaylor, thread) = cache
+    (; atmp) = cache.tmp_cache
+    utilde = cache.tmp_cache.tmp2
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)

@@ -112,7 +112,8 @@ end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, uprev2, differential_vars) = integrator
-    (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
+    (; z, l, m, c_LTE, dts, ratetmp, tsit5cache) = cache
+    (; tmp, atmp) = cache.tmp_cache
     # handle callbacks, rewind back to order one.
     if integrator.derivative_discontinuity
         cache.order = 1
@@ -280,7 +281,8 @@ end
 
 @muladd function perform_step!(integrator, cache::JVODECache, repeat_step = false)
     (; t, dt, uprev, u, f, p, uprev2, differential_vars) = integrator
-    (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
+    (; z, l, m, c_LTE, dts, ratetmp, tsit5cache) = cache
+    (; atmp) = cache.tmp_cache
     # handle callbacks, rewind back to order one.
     if integrator.derivative_discontinuity || integrator.iter == 1
         cache.order = 1

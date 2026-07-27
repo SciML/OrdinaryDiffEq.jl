@@ -1,6 +1,7 @@
 module OrdinaryDiffEqFeagin
 
-import OrdinaryDiffEqCore: perform_step!,
+import OrdinaryDiffEqCore: TmpCache,
+    perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats,
     alg_cache, @cache, full_cache,

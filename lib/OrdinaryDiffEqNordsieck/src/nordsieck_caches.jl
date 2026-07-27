@@ -36,16 +36,19 @@ function alg_cache(
     return AN5ConstantCache(z, l, m, c_LTE, c_conv, dts, Δ, tsit5tab, 1)
 end
 
-mutable struct AN5Cache{uType, dType, rateType, zType, lType, dtsType, tsit5Type} <:
-    OrdinaryDiffEqMutableCache
+mutable struct AN5Cache{
+        uType, dType, rateType, zType, lType, dtsType, tsit5Type, TmpC <: TmpCache,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
     Δ::dType
-    # Error estimation
-    atmp::dType
     fsalfirst::rateType
     ratetmp::rateType
+    # Unified scratch (`tmp`, `tmp2` = the starter's `utilde`, `atmp` for error
+    # norms). The SAME instance is carried by the inner Tsit5 starter cache, so
+    # the historical buffer aliasing between AN5 and its starter is preserved.
+    # The rate slots donor-alias `ratetmp`/`fsalfirst` (see `alg_cache`).
+    tmp_cache::TmpC
     # `z` is the Nordsieck vector
     z::zType
     # `l` is used for the corrector iteration
@@ -82,8 +85,19 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
+    fsalfirst = zero(rate_prototype)
+    ratetmp = zero(rate_prototype)
+    # Wrap the existing scratch in a TmpCache so the inner Tsit5 starter cache
+    # shares these exact buffers (preserving the previous aliasing behavior),
+    # and the outer AN5Cache carries the same instance instead of inline
+    # `tmp`/`atmp` fields. The rate slots donor-alias `ratetmp` (dead between
+    # steps; first write of every functional iteration) and `fsalfirst` (the
+    # integrator's fsal pointers come from the starter's `k1`/`k7`, so this
+    # buffer is never read), making `initdt` allocation-free with zero new
+    # arrays.
+    tmp_cache = TmpCache(tmp, utilde, atmp, nothing, ratetmp, fsalfirst)
     tsit5cache = Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         trivial_limiter!, trivial_limiter!, Serial()
     )
     #################################################
@@ -94,15 +108,13 @@ function alg_cache(
     m = zero(l)
     c_LTE = c_conv = zero(tTypeNoUnits)
     dts = fill(zero(dt), 6)
-    fsalfirst = zero(rate_prototype)
     z = [zero(rate_prototype) for i in 1:(N + 1)]
     for i in 1:(N + 1)
         z[i] = zero(rate_prototype)
     end
-    ratetmp = zero(rate_prototype)
 
     return AN5Cache(
-        u, uprev, tmp, Δ, atmp, fsalfirst, ratetmp,
+        u, uprev, Δ, fsalfirst, ratetmp, tmp_cache,
         z, l, m, c_LTE, c_conv, dts,
         tsit5cache, 1
     )
@@ -179,12 +191,17 @@ mutable struct JVODECache{
         dType,
         etaType,
         tsit5Type,
+        TmpC <: TmpCache,
     } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
     fsalfirst::rateType
     ratetmp::rateType
+    # Unified scratch (`tmp`, `tmp2` = the starter's `utilde`, `atmp` for error
+    # norms). The SAME instance is carried by the inner Tsit5 starter cache, so
+    # the historical buffer aliasing between JVODE and its starter is preserved.
+    # The rate slots donor-alias `ratetmp`/`fsalfirst` (see `alg_cache`).
+    tmp_cache::TmpC
     # `z` is the Nordsieck vector
     z::zType
     # `l` is used for the corrector iteration
@@ -206,8 +223,6 @@ mutable struct JVODECache{
     dts::dtsType
     # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
     Δ::dType
-    # Error estimation
-    atmp::dType
     # `Tsit5` for the first step
     tsit5cache::tsit5Type
     L::Int
@@ -245,12 +260,22 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
+    fsalfirst = zero(rate_prototype)
+    ratetmp = zero(rate_prototype)
+    # Wrap the existing scratch in a TmpCache so the inner Tsit5 starter cache
+    # shares these exact buffers (preserving the previous aliasing behavior),
+    # and the outer JVODECache carries the same instance instead of inline
+    # `tmp`/`atmp` fields. The rate slots donor-alias `ratetmp` (dead between
+    # steps; first write of every functional iteration) and `fsalfirst` (the
+    # integrator's fsal pointers come from the starter's `k1`/`k7`, so this
+    # buffer is never read), making `initdt` allocation-free with zero new
+    # arrays.
+    tmp_cache = TmpCache(tmp, utilde, atmp, nothing, ratetmp, fsalfirst)
     tsit5cache = Tsit5Cache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp_cache,
         trivial_limiter!, trivial_limiter!, Serial()
     )
     #################################################
-    fsalfirst = zero(rate_prototype)
     N = 12
     z = [zero(rate_prototype) for i in 1:(N + 1)]
     Δ = similar(u, uEltypeNoUnits)
@@ -275,13 +300,12 @@ function alg_cache(
     z[11] = zero(rate_prototype)
     z[12] = zero(rate_prototype)
     z[13] = zero(rate_prototype)
-    ratetmp = zero(rate_prototype)
     #################################################
     return JVODECache(
-        u, uprev, tmp, fsalfirst, ratetmp,
+        u, uprev, fsalfirst, ratetmp, tmp_cache,
         z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η
+        dts, Δ, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η
     )
 end
 

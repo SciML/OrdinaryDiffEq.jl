@@ -53,7 +53,8 @@ end
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{T, T2, E}
     ) where {T, T2, E}
     (; t, dt, uprev, u, p) = integrator
-    (; zs, ks, atmp, nlsolver) = cache
+    (; zs, ks, nlsolver) = cache
+    (; atmp) = cache.tmp_cache
     (; tmp) = nlsolver
     Ai = tab.Ai
     bi = tab.bi
@@ -2419,7 +2420,8 @@ end
         tab::ESDIRKIMEXTableau{T, T2, :trap_dd3}, t
     ) where {T, T2}
     (; uprev, u, dt) = integrator
-    (; atmp, nlsolver) = cache
+    (; nlsolver) = cache
+    (; atmp) = cache.tmp_cache
     (; tmp) = nlsolver
     if integrator.opts.adaptive
         if integrator.iter > 2
@@ -2508,7 +2510,8 @@ end
         integrator, cache, repeat_step, tab::ESDIRKIMEXTableau{T, T2, :trap_dd3}
     ) where {T, T2}
     (; t, dt, uprev, u, p) = integrator
-    (; atmp, nlsolver) = cache
+    (; nlsolver) = cache
+    (; atmp) = cache.tmp_cache
     (; z, tmp) = nlsolver
     f = integrator.f
     mass_matrix = f.mass_matrix

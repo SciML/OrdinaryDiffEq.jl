@@ -402,7 +402,10 @@ end
 function stepsize_η₊₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     atmp = ratetmp = integrator.uprev  # Initialize for JET
-    isconstcache || ((; atmp, ratetmp) = cache)
+    if !isconstcache
+        (; ratetmp) = cache
+        atmp = cache.tmp_cache.atmp
+    end
     (; uprev, t, u) = integrator
     (; z, c_LTE₊₁, dts, c_𝒟) = cache
     bias3 = integrator.alg.bias3
@@ -437,7 +440,7 @@ end
 function stepsize_η₋₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     atmp = integrator.uprev  # Initialize for JET
-    isconstcache || (atmp = cache.atmp)
+    isconstcache || (atmp = cache.tmp_cache.atmp)
     (; uprev, t, u) = integrator
     (; z, c_LTE₋₁) = cache
     bias1 = integrator.alg.bias1

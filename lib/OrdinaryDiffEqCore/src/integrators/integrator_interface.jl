@@ -204,14 +204,33 @@ end
         integrator, alg::OrdinaryDiffEqAlgorithm,
         cache::OrdinaryDiffEqMutableCache
     )
-    return (cache.tmp,)
+    # Caches migrated to the unified `TmpCache` expose their scratch through a
+    # `tmp_cache` field; the rest still carry an inline `tmp`. `hasfield` on the
+    # concrete cache type is a compile-time constant, so this branch folds away
+    # and adds no runtime cost to either path. Either way the historical
+    # positional contract holds: a plain tuple whose `first(...)`/`[1]` is the
+    # primary state scratch. Shared code that wants the full unified scratch
+    # goes through `initdt_tmp_cache(cache)` instead.
+    if hasfield(typeof(cache), :tmp_cache)
+        return (cache.tmp_cache.tmp,)
+    else
+        return (cache.tmp,)
+    end
 end
+# Resolve the unit-less error scratch generically: caches migrated to the
+# unified `TmpCache` hold it in `tmp_cache.atmp`; the rest still carry an inline
+# `atmp`. `hasfield` on a concrete cache type is a compile-time constant, so the
+# branch folds away. Used by the get_tmp_cache overloads below whose second
+# returned buffer is the cache's `atmp`.
+@inline _get_tmp_cache_atmp(cache) =
+    hasfield(typeof(cache), :tmp_cache) ? cache.tmp_cache.atmp : cache.atmp
+
 @inline function SciMLBase.get_tmp_cache(
         integrator,
         alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
         cache::OrdinaryDiffEqMutableCache
     )
-    return (cache.nlsolver.tmp, cache.atmp)
+    return (cache.nlsolver.tmp, _get_tmp_cache_atmp(cache))
 end
 @inline function SciMLBase.get_tmp_cache(
         integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
@@ -279,7 +298,7 @@ end
         integrator, alg::DAEAlgorithm,
         cache::OrdinaryDiffEqMutableCache
     )
-    return (cache.nlsolver.cache.dz, cache.atmp)
+    return (cache.nlsolver.cache.dz, _get_tmp_cache_atmp(cache))
 end
 
 # SDE cache fallbacks — mirror ODE's pattern for SDE types
@@ -358,7 +377,9 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     (; cache) = integrator
 
     for c in full_cache(cache)
-        resize!(c, i)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && resize!(c, i)
     end
     !isnothing(integrator.fsalfirst) && resize!(integrator.fsalfirst, i)
     !isnothing(integrator.fsallast) && resize!(integrator.fsallast, i)
@@ -428,14 +449,18 @@ end
 
 function deleteat!(integrator::ODEIntegrator, idxs)
     for c in full_cache(integrator)
-        deleteat!(c, idxs)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && deleteat!(c, idxs)
     end
     return deleteat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
 function addat!(integrator::ODEIntegrator, idxs)
     for c in full_cache(integrator)
-        addat!(c, idxs)
+        # Skip nothings which may exist in the cache (e.g. opted-out TmpCache
+        # slots, or extra variables required for things like units).
+        c !== nothing && addat!(c, idxs)
     end
     return addat_non_user_cache!(integrator, integrator.cache, idxs)
 end

@@ -38,7 +38,7 @@ end
 get_fsalfirstlast(cache::LowStorageRK2NCache, u) = (nothing, nothing)
 
 function initialize!(integrator, cache::LowStorageRK2NCache)
-    (; k, tmp, williamson_condition) = cache
+    (; k, williamson_condition) = cache
     integrator.kshortsize = 1
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = k
@@ -48,7 +48,8 @@ end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2NCache, repeat_step = false)
     (; t, dt, u, f, p) = integrator
-    (; k, tmp, williamson_condition, thread) = cache
+    (; k, williamson_condition, thread) = cache
+    tmp = cache.tmp_cache.tmp
     stage_limiter! = integrator.opts.stage_limiter!
     (; A2end, B1, B2end, c2end) = cache.tab
 

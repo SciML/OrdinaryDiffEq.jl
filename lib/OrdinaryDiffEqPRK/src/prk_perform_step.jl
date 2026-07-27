@@ -75,7 +75,8 @@ end
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; k, k1, k2, k3, k4, k5_6, fsalfirst, tmp) = cache
+    (; k, k1, k2, k3, k4, k5_6, fsalfirst) = cache
+    (; tmp) = cache.tmp_cache
     (; α21, α31, α32, α41, α42, α43, α5_6) = cache.tab
     (; β1, β3, β5, β6, c2, c3, c4, c5_6) = cache.tab
 

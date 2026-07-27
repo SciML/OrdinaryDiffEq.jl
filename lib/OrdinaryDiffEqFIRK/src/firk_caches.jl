@@ -36,8 +36,8 @@ function alg_cache(
 end
 
 mutable struct RadauIIA3Cache{
-        uType, cuType, uNoUnitsType, rateType, JType, W1Type, UF, JC,
-        F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+        uType, cuType, rateType, JType, W1Type, UF, JC,
+        F1, Tab, Tol, Dt, rTol, aTol, StepLimiter, TmpC <: TmpCache,
     } <: FIRKMutableCache
     u::uType
     uprev::uType
@@ -60,8 +60,10 @@ mutable struct RadauIIA3Cache{
     κ::Tol
     ηold::Tol
     iter::Int
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` and `atmp` migrated into the slots of the same
+    # name; `tmp2`/`weight` opted out (`Nothing`). The rate slots are `Nothing`
+    # unless `preallocate_initdt_buffers(alg)` opts them in.
+    tmp_cache::TmpC
     jac_config::JC
     linsolve::F1
     rtol::rTol
@@ -104,6 +106,15 @@ function alg_cache(
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    # `tmp`/`atmp` migrate into the unified scratch struct (same arrays, so the
+    # cache footprint matches the historical layout exactly). No safe rate
+    # donors exist here (`du1` is captured by `jac_config`, the `k`s feed the
+    # interpolant), so the initdt rate slots are allocated only on explicit
+    # opt-in via `preallocate_initdt_buffers` (always `false` for RadauIIA3,
+    # which has no such field) and are `nothing` otherwise.
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -129,7 +140,7 @@ function alg_cache(
         du1, fsalfirst, k, k2, fw1, fw2,
         J, W1,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
+        tmp_cache, jac_config, linsolve, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!
     )
 end
@@ -170,8 +181,8 @@ function alg_cache(
 end
 
 mutable struct RadauIIA5Cache{
-        uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+        uType, cuType, rateType, JType, W1Type, W2Type,
+        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter, TmpC <: TmpCache,
     } <:
     FIRKMutableCache
     u::uType
@@ -203,8 +214,10 @@ mutable struct RadauIIA5Cache{
     κ::Tol
     ηold::Tol
     iter::Int
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` and `atmp` migrated into the slots of the same
+    # name; `tmp2`/`weight` opted out (`Nothing`). The rate slots are `Nothing`
+    # unless `preallocate_initdt_buffers(alg)` opts them in.
+    tmp_cache::TmpC
     jac_config::JC
     linsolve1::F1
     linsolve2::F2
@@ -255,6 +268,15 @@ function alg_cache(
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    # `tmp`/`atmp` migrate into the unified scratch struct (same arrays, so the
+    # cache footprint matches the historical layout exactly). No safe rate
+    # donors exist (`du1` is captured by `jac_config`, the `k`s feed the
+    # interpolant), so the initdt rate slots are allocated only on explicit
+    # opt-in via `preallocate_initdt_buffers` (always `false` for RadauIIA5,
+    # which has no such field) and are `nothing` otherwise.
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -289,7 +311,7 @@ function alg_cache(
         du1, fsalfirst, k, k1, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
+        tmp_cache, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!
     )
 end
@@ -332,8 +354,8 @@ function alg_cache(
 end
 
 mutable struct RadauIIA9Cache{
-        uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+        uType, cuType, rateType, JType, W1Type, W2Type,
+        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter, TmpC <: TmpCache,
     } <:
     FIRKMutableCache
     u::uType
@@ -376,7 +398,6 @@ mutable struct RadauIIA9Cache{
     κ::Tol
     ηold::Tol
     iter::Int
-    tmp::uType
     tmp2::uType
     tmp3::uType
     tmp4::uType
@@ -386,7 +407,11 @@ mutable struct RadauIIA9Cache{
     tmp8::uType
     tmp9::uType
     tmp10::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` and `atmp` migrated into the slots of the same
+    # name; the `tmp2` slot and `weight` are opted out (`Nothing`) — `tmp2` up
+    # to `tmp10` remain inline derivative scratch. The rate slots are `Nothing`
+    # unless `preallocate_initdt_buffers(alg)` opts them in.
+    tmp_cache::TmpC
     jac_config::JC
     linsolve1::F1
     linsolve2::F2
@@ -459,6 +484,16 @@ function alg_cache(
     tmp10 = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    # `tmp`/`atmp` migrate into the unified scratch struct (same arrays, so the
+    # cache footprint matches the historical layout exactly); `tmp2..tmp10`
+    # stay inline. No safe rate donors exist (`du1` is captured by
+    # `jac_config`, the `k`s feed the interpolant), so the initdt rate slots
+    # are allocated only on explicit opt-in via `preallocate_initdt_buffers`
+    # (always `false` for RadauIIA9, which has no such field) and are
+    # `nothing` otherwise.
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -502,7 +537,7 @@ function alg_cache(
         du1, fsalfirst, k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
         J, W1, W2, W3,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
+        tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, tmp_cache, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!
     )
@@ -566,8 +601,8 @@ function alg_cache(
 end
 
 mutable struct AdaptiveRadauCache{
-        uType, cuType, tType, uNoUnitsType, rateType, JType, W1Type, W2Type,
-        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+        uType, cuType, tType, rateType, JType, W1Type, W2Type,
+        UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter, TmpC <: TmpCache,
     } <:
     FIRKMutableCache
     u::uType
@@ -596,8 +631,10 @@ mutable struct AdaptiveRadauCache{
     κ::Tol
     ηold::Tol
     iter::Int
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` and `atmp` migrated into the slots of the same
+    # name; `tmp2`/`weight` opted out (`Nothing`). The rate slots are `Nothing`
+    # unless `preallocate_initdt_buffers(alg)` opts them in.
+    tmp_cache::TmpC
     jac_config::JC
     linsolve1::F1 #real
     linsolve2::Vector{F2} #complex
@@ -682,6 +719,16 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
+    # `tmp`/`atmp` migrate into the unified scratch struct (same arrays, so the
+    # cache footprint matches the historical layout exactly). No safe rate
+    # donors exist (`du1` is captured by `jac_config`, the `ks` feed the
+    # interpolant), so the initdt rate slots are allocated only on explicit
+    # opt-in via `preallocate_initdt_buffers` (always `false` for
+    # AdaptiveRadau, which has no such field) and are `nothing` otherwise.
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
+
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, zero(u), dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -717,8 +764,8 @@ function alg_cache(
         z, w, c_prime, αdt, βdt, dw1, ubuff, dw2, cubuff, dw, derivatives,
         du1, fsalfirst, ks, k, fw,
         J, W1, W2,
-        uf, tabs, κ, one(uToltype), 10000, tmp,
-        atmp, jac_config,
+        uf, tabs, κ, one(uToltype), 10000,
+        tmp_cache, jac_config,
         linsolve1, linsolve2, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!, num_stages, 1, 0.0, index
     )
@@ -763,8 +810,8 @@ end
 
 
 mutable struct GaussLegendreCache{
-        uType, uNoUnitsType, rateType, JType, WType, Buff,
-        UF, JC, F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
+        uType, rateType, JType, WType, Buff,
+        UF, JC, F1, Tab, Tol, Dt, rTol, aTol, StepLimiter, TmpC <: TmpCache,
     } <: FIRKMutableCache
     u::uType
     uprev::uType
@@ -787,8 +834,10 @@ mutable struct GaussLegendreCache{
     κ::Tol
     ηold::Tol
     iter::Int
-    tmp::uType
-    atmp::uNoUnitsType
+    # Unified scratch: `tmp` and `atmp` migrated into the slots of the same
+    # name; `tmp2`/`weight` opted out (`Nothing`). The rate slots are `Nothing`
+    # unless `preallocate_initdt_buffers(alg)` opts them in.
+    tmp_cache::TmpC
     jac_config::JC
     linsolve::F1
     rtol::rTol
@@ -831,6 +880,15 @@ function alg_cache(
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    # `tmp`/`atmp` migrate into the unified scratch struct (same arrays, so the
+    # cache footprint matches the historical layout exactly). No safe rate
+    # donors exist (`du1` is captured by `jac_config`, `k`/`ks` are stage
+    # rates), so the initdt rate slots are allocated only on explicit opt-in
+    # via `preallocate_initdt_buffers` (always `false` for GaussLegendre,
+    # which has no such field) and are `nothing` otherwise.
+    rate_tmp = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    rate_tmp2 = preallocate_initdt_buffers(alg) ? zero(rate_prototype) : nothing
+    tmp_cache = TmpCache(tmp, nothing, atmp, nothing, rate_tmp, rate_tmp2)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw[1])
 
     J, _ = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
@@ -858,7 +916,7 @@ function alg_cache(
         du1, fsalfirst, k, ks, fw,
         J, W,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
+        tmp_cache, jac_config, linsolve, rtol, atol, dt, dt,
         Convergence, alg.step_limiter!, num_stages
     )
 end

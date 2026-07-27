@@ -20,7 +20,7 @@ solve!(i)
 
 i = init(prob, ImplicitEuler())
 resize!(i, 5)
-@test length(i.cache.atmp) == 5
+@test length(i.cache.tmp_cache.atmp) == 5
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
@@ -48,7 +48,7 @@ solve!(i)
 
 i = init(prob, ImplicitEuler(; autodiff = AutoFiniteDiff()))
 resize!(i, 5)
-@test length(i.cache.atmp) == 5
+@test length(i.cache.tmp_cache.atmp) == 5
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
@@ -86,10 +86,10 @@ resize!(i, 5)
 @test length(i.cache.fsalfirst) == 5
 @test length(i.cache.fsallast) == 5
 @test length(i.cache.dT) == 5
-@test length(i.cache.tmp) == 5
+@test length(i.cache.tmp_cache.rate_tmp) == 5
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
-@test length(i.cache.linsolve_tmp) == 5
+@test length(i.cache.tmp_cache.rate_tmp2) == 5
 @test all(
     size(
         DI.jacobian(
@@ -114,10 +114,10 @@ resize!(i, 5)
 @test length(i.cache.fsalfirst) == 5
 @test length(i.cache.fsallast) == 5
 @test length(i.cache.dT) == 5
-@test length(i.cache.tmp) == 5
+@test length(i.cache.tmp_cache.rate_tmp) == 5
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
-@test length(i.cache.linsolve_tmp) == 5
+@test length(i.cache.tmp_cache.rate_tmp2) == 5
 solve!(i)
 
 i = init(prob, Rosenbrock23(; autodiff = AutoFiniteDiff()))
@@ -133,10 +133,10 @@ resize!(i, 5)
 @test length(i.cache.fsalfirst) == 5
 @test length(i.cache.fsallast) == 5
 @test length(i.cache.dT) == 5
-@test length(i.cache.tmp) == 5
+@test length(i.cache.tmp_cache.rate_tmp) == 5
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
-@test length(i.cache.linsolve_tmp) == 5
+@test length(i.cache.tmp_cache.rate_tmp2) == 5
 @test all(
     size(
         DI.jacobian(
@@ -238,4 +238,26 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     @test_nowarn step!(integrator)
     @test_nowarn resize!(integrator, 2)
     @test_nowarn step!(integrator)
+end
+
+# Regression: caches migrated to the unified `TmpCache` expose opted-out slots
+# as `nothing` in `full_cache` (e.g. Tsit5/BS3 carry `weight === nothing`). The
+# `deleteat!`/`addat!` integrator methods iterate `full_cache` and must skip
+# those, exactly like `resize!` does. Before the guard was added they called
+# `deleteat!(nothing, idxs)` / `addat!(nothing, idxs)`, which has no method and
+# threw a MethodError for any migrated cache.
+@testset "deleteat!/addat! skip nothing TmpCache slots ($(nameof(typeof(alg))))" for alg in
+    (
+        Tsit5(), BS3(),
+    )
+    fda(du, u, p, t) = du .= u
+    probda = ODEProblem{true, SciMLBase.FullSpecialize}(fda, ones(5), (0.0, 1.0))
+    integrator = init(probda, alg)
+    # Guard against silent drift: the regression only bites if a `nothing` is
+    # actually present in the iterated cache.
+    @test any(isnothing, collect(SciMLBase.full_cache(integrator)))
+    @test_nowarn SciMLBase.deleteat!(integrator, 3)
+    @test length(integrator.u) == 4
+    @test_nowarn SciMLBase.addat!(integrator, 5)
+    @test length(integrator.u) == 5
 end

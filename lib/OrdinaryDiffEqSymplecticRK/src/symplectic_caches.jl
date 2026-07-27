@@ -1,10 +1,15 @@
 abstract type HamiltonMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type HamiltonConstantCache <: OrdinaryDiffEqConstantCache end
 
-@cache struct SymplecticEulerCache{uType, rateType} <: HamiltonMutableCache
+@cache struct SymplecticEulerCache{uType, rateType, TmpC <: TmpCache} <: HamiltonMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    # `TmpCache{uType, Nothing, Nothing, Nothing}`: non-adaptive, so no
+    # `atmp`/`weight`; no `utilde`, so `tmp2` is opted out. The symplectic
+    # algorithm structs are plain singletons (no `preallocate_initdt_buffers`
+    # field), so the rate slots are permanently opted out as well — `k` and
+    # `fsalfirst` feed the interpolation `k`s and are not legal donors.
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
 end
@@ -15,7 +20,10 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return SymplecticEulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
+    # The migrated `tmp` (was an inline field) is the only scratch this cache
+    # carries; the array count matches the historical cache exactly.
+    tmp_cache = TmpCache(zero(u), nothing, nothing, nothing, nothing, nothing)
+    return SymplecticEulerCache(u, uprev, tmp_cache, zero(rate_prototype), zero(rate_prototype))
 end
 
 struct SymplecticEulerConstantCache <: HamiltonConstantCache end
@@ -29,11 +37,13 @@ function alg_cache(
     return SymplecticEulerConstantCache()
 end
 
-@cache struct VelocityVerletCache{uType, rateType, uEltypeNoUnits} <:
+@cache struct VelocityVerletCache{uType, rateType, uEltypeNoUnits, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    # `TmpCache{*, Nothing, Nothing, Nothing}` — see SymplecticEulerCache for
+    # the slot layout rationale (shared by all caches in this file).
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
     half::uEltypeNoUnits
@@ -53,7 +63,9 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     half = uEltypeNoUnits(1 // 2)
-    return VelocityVerletCache(u, uprev, k, tmp, fsalfirst, half)
+    # Migrated `tmp` only (was inline); array count unchanged.
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, nothing, nothing)
+    return VelocityVerletCache(u, uprev, tmp_cache, k, fsalfirst, half)
 end
 
 function alg_cache(
@@ -65,11 +77,12 @@ function alg_cache(
     return VelocityVerletConstantCache(uEltypeNoUnits(1 // 2))
 end
 
-@cache struct LeapfrogDriftKickDriftCache{uType, rateType, uEltypeNoUnits} <:
+@cache struct LeapfrogDriftKickDriftCache{uType, rateType, uEltypeNoUnits, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    # `TmpCache{*, Nothing, Nothing, Nothing}` — see SymplecticEulerCache.
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
     half::uEltypeNoUnits
@@ -89,7 +102,9 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     half = uEltypeNoUnits(1 // 2)
-    return LeapfrogDriftKickDriftCache(u, uprev, k, tmp, fsalfirst, half)
+    # Migrated `tmp` only (was inline); array count unchanged.
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, nothing, nothing)
+    return LeapfrogDriftKickDriftCache(u, uprev, tmp_cache, k, fsalfirst, half)
 end
 
 function alg_cache(
@@ -101,11 +116,12 @@ function alg_cache(
     return LeapfrogDriftKickDriftConstantCache(uEltypeNoUnits(1 // 2))
 end
 
-@cache struct VerletLeapfrogCache{uType, rateType, uEltypeNoUnits} <:
+@cache struct VerletLeapfrogCache{uType, rateType, uEltypeNoUnits, TmpC <: TmpCache} <:
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    # `TmpCache{*, Nothing, Nothing, Nothing}` — see SymplecticEulerCache.
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
     half::uEltypeNoUnits
@@ -121,11 +137,15 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
+    # Historically the constructor call swapped the `tmp`/`k` locals, so the
+    # `tmp` field held the `zero(rate_prototype)` buffer and `k` held `zero(u)`;
+    # that mapping is preserved here. Migrated `tmp` only; array count unchanged.
+    tmp = zero(rate_prototype)
+    k = zero(u)
     fsalfirst = zero(rate_prototype)
     half = uEltypeNoUnits(1 // 2)
-    return VerletLeapfrogCache(u, uprev, k, tmp, fsalfirst, half)
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, nothing, nothing)
+    return VerletLeapfrogCache(u, uprev, tmp_cache, k, fsalfirst, half)
 end
 
 function alg_cache(
@@ -139,10 +159,11 @@ end
 
 # ===== Generic symplectic cache for drift-kick methods =====
 
-@cache struct SymplecticGenericCache{uType, rateType, tableauType} <: HamiltonMutableCache
+@cache struct SymplecticGenericCache{uType, rateType, tableauType, TmpC <: TmpCache} <: HamiltonMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    # `TmpCache{*, Nothing, Nothing, Nothing}` — see SymplecticEulerCache.
+    tmp_cache::TmpC
     k::rateType
     fsalfirst::rateType
     tab::tableauType
@@ -175,13 +196,17 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
+    # Historically the constructor call swapped the `tmp`/`k` locals, so the
+    # `tmp` field held the `zero(rate_prototype)` buffer and `k` held `zero(u)`;
+    # that mapping is preserved here. Migrated `tmp` only; array count unchanged.
+    tmp = zero(rate_prototype)
+    k = zero(u)
     fsalfirst = zero(rate_prototype)
     tab = _symplectic_tableau(
         alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
-    return SymplecticGenericCache(u, uprev, k, tmp, fsalfirst, tab)
+    tmp_cache = TmpCache(tmp, nothing, nothing, nothing, nothing, nothing)
+    return SymplecticGenericCache(u, uprev, tmp_cache, k, fsalfirst, tab)
 end
 
 function alg_cache(

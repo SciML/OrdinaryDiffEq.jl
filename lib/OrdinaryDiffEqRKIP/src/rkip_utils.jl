@@ -20,7 +20,7 @@ Same principle of operation as `_safe_matvec_prod` for mutability/in-place handl
     if !(h ≈ tType(0.0))
         c = cache.c_mapping[stage_index]
         exp_cache = cache.exp_cache
-        tmp = cache.tmp
+        tmp = cache.tmp_cache.tmp
         return _expmv_rkip_mip(exp_cache, tmp, v, c, h > tType(0.0), iip, p, t)
     end
     return v

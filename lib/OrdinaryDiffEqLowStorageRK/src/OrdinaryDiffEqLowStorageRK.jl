@@ -1,6 +1,7 @@
 module OrdinaryDiffEqLowStorageRK
 
-import OrdinaryDiffEqCore: perform_step!,
+import OrdinaryDiffEqCore: TmpCache, preallocate_initdt_buffers,
+    perform_step!,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,

@@ -1,6 +1,7 @@
 module OrdinaryDiffEqVerner
 
-import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
+import OrdinaryDiffEqCore: TmpCache, build_tmp_cache,
+    perform_step!, unwrap_alg,
     alg_stability_size,
     CompositeAlgorithm, accept_step_controller,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
