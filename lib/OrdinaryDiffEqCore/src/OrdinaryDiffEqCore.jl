@@ -482,6 +482,11 @@ include("precompilation_setup.jl")
             :is_noise_saveable,
             # Docstring builder used by solver sublibs.
             :differentiation_rk_docstring,
+            # SDE/RODE abstract cache hierarchy. The SDE analogue of the already-public
+            # OrdinaryDiffEqCache trio: every StochasticDiffEq solver cache subtypes one
+            # of these, so they are a required solver-author extension point.
+            :StochasticDiffEqCache, :StochasticDiffEqConstantCache,
+            :StochasticDiffEqMutableCache,
         )
     )
 end
