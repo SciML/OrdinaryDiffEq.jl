@@ -111,6 +111,22 @@ function default_nlsolve(
     )
     return _homotopy_init_alg(u, autodiff, chunksize)
 end
+# A stateless `initializeprob` (`state_values(...) === nothing`) needs no solver at all;
+# OrdinaryDiffEqCore answers `nothing` for every `AbstractNonlinearProblem` with `u::Nothing`.
+# That method is more specific in `u` while the ones above are more specific in the problem
+# type, so the pair is ambiguous unless the intersection is spelled out here.
+function default_nlsolve(
+        ::Nothing, ::Val{true}, u::Nothing, ::SciMLBase.HomotopyProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return nothing
+end
+function default_nlsolve(
+        ::Nothing, ::Val{false}, u::Nothing, ::SciMLBase.HomotopyProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return nothing
+end
 
 # An `SCCNonlinearProblem` that contains `HomotopyProblem` blocks must be solved with
 # `nothing` so each block picks its own default: its `HomotopyProblem` blocks continue (via
@@ -156,6 +172,20 @@ function default_nlsolve(
     return SimpleTrustRegion(
         autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
     )
+end
+# Disambiguates against OrdinaryDiffEqCore's `u::Nothing` methods, as for `HomotopyProblem`
+# above.
+function default_nlsolve(
+        ::Nothing, isinplace::Val{true}, u::Nothing, ::SciMLBase.SCCNonlinearProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return nothing
+end
+function default_nlsolve(
+        ::Nothing, isinplace::Val{false}, u::Nothing, ::SciMLBase.SCCNonlinearProblem,
+        autodiff = false, chunksize = Val(1)
+    )
+    return nothing
 end
 
 ## ShampineCollocationInit
