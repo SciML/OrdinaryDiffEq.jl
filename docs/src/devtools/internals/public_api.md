@@ -10,8 +10,9 @@ documented under the API section.
     Do not build application code against these hooks. They exist so solver
     packages can extend common traits, controllers, interpolation hooks, and
     initialization protocols without depending on undocumented implementation
-    details. Cache types and low-level nonlinear solve helper functions are not
-    public API.
+    details. Concrete per-algorithm cache types and low-level nonlinear solve
+    helper functions are not public API; only the abstract cache supertypes a
+    solver package subtypes are.
 
 ## DiffEqBase solver hooks
 
@@ -238,10 +239,16 @@ The cache hierarchy and `@cache` macro are developer API for solver packages
 that implement new algorithms. They define internal solver storage, not
 application-facing cache objects.
 
+The `StochasticDiffEq*Cache` trio is the SDE/RODE analogue, subtyped by the
+StochasticDiffEq.jl solver sublibraries.
+
 ```@docs
 OrdinaryDiffEqCore.OrdinaryDiffEqCache
 OrdinaryDiffEqCore.OrdinaryDiffEqConstantCache
 OrdinaryDiffEqCore.OrdinaryDiffEqMutableCache
+OrdinaryDiffEqCore.StochasticDiffEqCache
+OrdinaryDiffEqCore.StochasticDiffEqConstantCache
+OrdinaryDiffEqCore.StochasticDiffEqMutableCache
 OrdinaryDiffEqCore.@cache
 OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast

@@ -7,6 +7,11 @@ run_qa(
     OrdinaryDiffEqNonlinearSolve;
     # No docs/ tree here; the umbrella manual renders this package's API.
     api_docs_kwargs = (; rendered = false),
+    # `BrownFullBasicInit`/`ShampineCollocationInit` are the user-facing DAE
+    # initialization algorithms. DiffEqBase owns, exports, and documents them; this
+    # package implements their solver-side methods and re-exports the names so
+    # `using OrdinaryDiffEq` keeps surfacing them unqualified.
+    reexports_allow = (:BrownFullBasicInit, :ShampineCollocationInit),
     aqua_kwargs = (; piracies = false, ambiguities = false),
     explicit_imports = true,
     ei_kwargs = (;

@@ -20,6 +20,10 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
 import DiffEqBase: @.., SplitSDEFunction, initialize!
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+# Without these imports the cache accessors below would define a *new* local
+# `u_cache`/`du_cache` that shadows the SciMLBase interface function rather than
+# extending it, so `resize!` would never see them.
+import DiffEqBase: u_cache, du_cache
 
 import MuladdMacro: @muladd
 import SciMLBase

@@ -40,7 +40,16 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
-# Make it easy to grab the RODEProblem/SDEProblem/DiscreteProblem from the keyword arguments
+"""
+    concrete_prob(prob) -> prob
+
+The underlying differential equation problem carried by `prob`.
+
+For an `SDEProblem`, `RODEProblem`, or `DiscreteProblem` this is `prob` itself; for a
+`JumpProblem` it is the wrapped `prob.prob`. Setup code that needs to inspect the
+problem's `f`, `u0`, or `tspan` goes through this so it works uniformly with and
+without a jump wrapper.
+"""
 concrete_prob(prob) = prob
 concrete_prob(prob::JumpProblem) = prob.prob
 
@@ -107,6 +116,21 @@ function SciMLBase.__init(
     return _sde_init(_prob, alg; kwargs...)
 end
 
+"""
+    _sde_init(prob, alg; kwargs...) -> SDEIntegrator
+
+Build the [`SDEIntegrator`](@ref) for `prob` and `alg`.
+
+This is the body of `SciMLBase.__init` for SDE, RODE, and jump problems: it resolves
+the options and the RNG, allocates the solution object, the algorithm cache
+([`alg_cache`](@ref)) and the noise process, and returns the integrator positioned at
+the initial condition. `solve` is `init` followed by `solve!`, so every documented
+`solve` keyword is accepted here.
+
+It is exposed separately from `__init` so that downstream packages which build on the
+SDE integrator (for example StochasticDelayDiffEq) can construct one without going
+through `SciMLBase.__init` dispatch.
+"""
 function _sde_init(
         _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
