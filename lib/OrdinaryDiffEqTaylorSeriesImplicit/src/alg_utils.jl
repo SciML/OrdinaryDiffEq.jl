@@ -7,6 +7,8 @@ is_mu_taylor(::ImplicitTaylor{P, Q}) where {P, Q} = Q == 0
 
 is_taylor_pade(::ImplicitTaylor{P, Q}) where {P, Q} = Q != 0
 
+is_purely_backward(::ImplicitTaylor{P, Q}) where {P, Q} = P == 0
+
 function alg_order(alg::ImplicitTaylor{P, Q}) where {P, Q}
     if is_mu_taylor(alg) # μ-Taylor method
         μ = alg.μ

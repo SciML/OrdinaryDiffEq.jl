@@ -4,16 +4,12 @@ using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
 Random.seed!(100)
 
-
-f_2dlinear = (du, u, p, t) -> (@. du = p * u)
-f_2dlinear_analytic = (u0, p, t) -> @. u0 * exp(p * t)
-prob_ode_2Dlinear = ODEProblem(
-    ODEFunction(f_2dlinear, analytic = f_2dlinear_analytic),
-    rand(2), (0.0, 1.0), 1.01
-)
-
-## Convergence Testing
-testTol = 0.2
+@testset "Adaptive Tests" begin
+    prob_stiff = ODEProblemLibrary.prob_ode_hires
+    sol = solve(prob_stiff, ImplicitTaylor(order = Val(3), μ = 0.5))
+    @test length(sol) < 1000
+    @test SciMLBase.successful_retcode(sol)
+end
 
 @testset "Implicit Solver Convergence Tests" begin # ($(["out-of-place", "in-place"][i]))" for i in 1:2
     # skip linear problems for now, since it can be misleading for stiff solvers
@@ -43,7 +39,8 @@ testTol = 0.2
 
     prob_stiff = ODEProblemLibrary.prob_ode_hires
     dts = 2. .^ (-8:-5)
-    ref_setup = Dict(:alg => Rodas5P(), :reltol => 1e-16, :abstol => 1e-16)
+    testTol = 0.2
+    ref_setup = Dict(:alg => Rodas5P(), :reltol => 1e-14, :abstol => 1e-14)
 
     # Taylor-Gauss
     sim1v1 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(1)), ref_setup)

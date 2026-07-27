@@ -93,7 +93,7 @@ end
 
     # Stage 1: explicit step.
     # if the method is Taylor-Padé, we need to compute a rhs; else, set rhs to be current u
-    if is_taylor_pade(alg)
+    if is_taylor_pade(alg) && !is_purely_backward(alg)
         polynomial_explicit(rhs, uprev, t, dt)
     else
         rhs .= uprev
@@ -181,8 +181,14 @@ end
     #OrdinaryDiffEqCore.step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
-        if is_mu_taylor(alg) # haven't implemented
-            OrdinaryDiffEqCore.set_EEst!(integrator, 1)
+        if is_mu_taylor(alg)
+            polynomial_A1(tmp, uintermediate, tc, dt)
+            calculate_residuals!(
+                atmp, tmp, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            println("norm(tmp) = $(internalnorm(tmp, t)), norm(u) = $(internalnorm(u, t)), EEst = $(integrator.EEst)")
         else
             polynomial_A1(utilde, uprev, t, dt)
             polynomial_B1(tmp, u, t + dt, dt)

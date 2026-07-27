@@ -42,7 +42,11 @@ function alg_cache(
         _, polynomial = polynomial_all
         _, d_polynomial = d_polynomial_all
         polynomial_explicit = polynomial
-        polynomial_A1 = polynomial
+        # Embedded method
+        embedded_factor = abs(alg.μ)^P + abs(1 - alg.μ)^P
+        embedded_coeffs = tuple(ntuple(_ -> 0.0, alg.order)..., embedded_factor)
+        polynomial_A1_all, _ = build_polynomial(f, p, embedded_coeffs, length(u))
+        _, polynomial_A1 = polynomial_A1_all
         polynomial_B1 = polynomial
     else
         vector_A, vector_B = normalized_pade(P, Q)
