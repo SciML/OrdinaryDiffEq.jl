@@ -141,7 +141,7 @@ Passing a non-trivial `stage_limiter` keyword to `solve`/`init` for an algorithm
 whose `has_stage_limiter` returns `false` triggers the `stage_limiter_unused`
 verbosity toggle, which defaults to `ErrorLevel` (it errors, rather than silently
 ignoring the limiter) and can be lowered to `WarnLevel`/`Silent` via `verbose`.
-(The `step_limiter` keyword is applied centrally on every accepted step for every
+(The `step_limiter` keyword is applied centrally on every attempted step for every
 method and needs no such opt-in.)
 """
 has_stage_limiter(alg) = false
