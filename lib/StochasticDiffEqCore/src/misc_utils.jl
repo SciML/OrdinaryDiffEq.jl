@@ -1,5 +1,32 @@
+"""
+    DiffEqNLSolveTag
+
+ForwardDiff tag type used for the Jacobians of the nonlinear solves inside the SDE
+integrators.
+
+Tagging the duals keeps derivatives taken by the integrator distinguishable from
+derivatives a user takes through `solve`, which is what allows nested
+differentiation to work (see the ForwardDiff.jl documentation on tags).
+"""
 struct DiffEqNLSolveTag end
 
+"""
+    DiffCache(u)
+    DiffCache(u, nlsolve)
+    DiffCache(u, ::Type{Val{chunk_size}})
+    DiffCache(T, size, ::Type{Val{chunk_size}})
+
+Dual-buffered cache holding both a plain array and a `ForwardDiff.Dual` array of the
+same shape.
+
+An in-place function that must work both on ordinary numbers and on duals cannot use
+a single preallocated buffer, because the element types differ. `DiffCache` stores
+one buffer of each and [`get_du`](@ref) picks the right one from the element type at
+the call site.
+
+The chunk size defaults to `ForwardDiff.pickchunksize(length(u))`, or is taken from
+the nonlinear solver via [`get_chunksize`](@ref) when one is supplied.
+"""
 struct DiffCache{T <: AbstractArray, S <: AbstractArray}
     du::T
     dual_du::S
@@ -23,6 +50,16 @@ get_du(dc::DiffCache, T) = dc.du
 
 # Default nlsolve behavior, should be removed
 
+"""
+    determine_chunksize(u, alg) -> Int
+    determine_chunksize(u, CS) -> Int
+
+ForwardDiff chunk size to use when differentiating with respect to a state like `u`.
+
+A nonzero explicitly configured chunk size `CS` (or the one reported by
+[`get_chunksize`](@ref) for `alg`) is used as-is; `0` means "not configured" and
+falls back to `ForwardDiff.pickchunksize(length(u))`.
+"""
 Base.@pure determine_chunksize(u, alg::AbstractDEAlgorithm) = determine_chunksize(u, get_chunksize(alg))
 Base.@pure function determine_chunksize(u, CS)
     if CS != 0
@@ -32,12 +69,36 @@ Base.@pure function determine_chunksize(u, CS)
     end
 end
 
+"""
+    NLSOLVEJL_SETUP(; autodiff = AutoForwardDiff())
+
+Nonlinear-solver setup used by the IIF (implicit integrating factor) methods.
+
+The name is historical — the solve is no longer performed by NLsolve.jl but by
+`SimpleTrustRegion` from SimpleNonlinearSolve.jl. A setup object is callable in two
+ways: `setup(Val{:init}, f, u0_prototype)` wraps `f` in an
+[`IIFNLSolveFunc`](@ref), and `setup(wrapped_f, u0)` solves `f(resid, u) = 0`
+starting from `u0` and returns the root.
+
+## Keyword Arguments
+
+  - `autodiff`: ADTypes.jl backend used for the Jacobian of the inner solve
+    (default: `AutoForwardDiff()`).
+"""
 struct NLSOLVEJL_SETUP{AD}
     autodiff::AD
 end
 NLSOLVEJL_SETUP(; autodiff = ADTypes.AutoForwardDiff()) = NLSOLVEJL_SETUP(autodiff)
 
-# Wrapper to store the function for use with SimpleNonlinearSolve
+"""
+    IIFNLSolveFunc(f)
+
+Wrapper holding the residual function `f` of an IIF nonlinear solve.
+
+[`NLSOLVEJL_SETUP`](@ref) returns one of these from its `Val{:init}` call so that the
+in-place residual `f(resid, u)` can later be turned into a `NonlinearProblem` without
+recapturing the surrounding cache.
+"""
 struct IIFNLSolveFunc{F}
     f::F
 end
@@ -58,9 +119,39 @@ function (p::NLSOLVEJL_SETUP)(::Type{Val{:init}}, f, u0_prototype)
     return IIFNLSolveFunc(f)
 end
 
+"""
+    get_chunksize(x) -> Int
+
+ForwardDiff chunk size configured on `x`, or `0` when `x` does not configure one.
+
+`0` is the "unset" sentinel that makes [`determine_chunksize`](@ref) fall back to
+`ForwardDiff.pickchunksize`.
+"""
 get_chunksize(x) = 0
 get_chunksize(x::NLSOLVEJL_SETUP) = OrdinaryDiffEqCore._get_fwd_chunksize_int(x.autodiff)
 
+"""
+    @cache struct MyAlgCache{...} <: StochasticDiffEqMutableCache
+        ...
+    end
+
+Define an SDE solver cache and generate its buffer accessors.
+
+`resize!` on an integrator has to grow or shrink every buffer a cache holds, and the
+noise machinery has to know which of them are noise-shaped rather than state-shaped.
+Rather than writing those accessors by hand for each cache, `@cache` emits them from
+the declared field types:
+
+  - `full_cache` — fields typed `uType`, `rateType`, `kType`, or `uNoUnitsType`, plus
+    the `du`/`dual_du` pair of a `DiffCacheType` field and the duals of `JCType` and
+    `GCType` fields.
+  - `rand_cache` — fields typed `randType`.
+  - `ratenoise_cache` — fields typed `rateNoiseType` or `rateNoiseCollectionType`.
+  - `jac_iter` — fields typed `JType` or `WType`.
+
+Fields whose type parameter is none of the above are left out of all four accessors,
+which is the correct behavior for scalars, tableaus, and nonlinear solver objects.
+"""
 macro cache(expr)
     name = expr.args[2].args[1].args[1]
     fields = expr.args[3].args[2:2:end]

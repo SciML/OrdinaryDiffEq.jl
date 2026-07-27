@@ -78,6 +78,35 @@ for (Alg, Description, Ref) in [
     end
 end
 
+"""
+    ETD1(; krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
+           concrete_jac = nothing, step_limiter = trivial_limiter!)
+
+**ETD1: First Order Exponential Time Differencing (Semilinear ODE Solver)**
+
+Alias for [`NorsettEuler`](@ref): `ETD1 === NorsettEuler`. `ETD1` is the name this
+method carries in the exponential time differencing literature, `NorsettEuler` the
+name from the exponential-Runge-Kutta literature.
+
+The linear part of a semilinear problem `u' = Au + f(u,t)` is integrated exactly with
+the matrix exponential, and the nonlinear part with a first order quadrature.
+
+## Method Properties
+
+  - **Order**: 1
+  - **Time stepping**: Fixed
+  - **Problem type**: Semilinear ODEs (`SplitODEProblem`, or a supplied Jacobian)
+
+## Keyword Arguments
+
+Identical to [`NorsettEuler`](@ref); `krylov`, `m`, and `iop` control whether and how
+the matrix exponential actions are approximated in a Krylov subspace.
+
+## References
+
+  - Hochbruck, Marlis, and Alexander Ostermann. "Exponential Integrators." Acta
+    Numerica 19 (2010): 209–286. doi:10.1017/S0962492910000048.
+"""
 const ETD1 = NorsettEuler # alias
 
 REF2 = """
@@ -147,14 +176,20 @@ Tokman, M., Loffeld, J., & Tranquilli, P. (2012). New Adaptive Exponential Propa
 """
 
 for (Alg, Description, Ref) in [
-        (:Exp4, "4th order EPIRK scheme.", REF3)
+        (
+            :Exp4,
+            "4th order EPIRK scheme. Integrates the linear part of the semilinear problem `u' = Au + f(u,t)` exactly via the matrix exponential.",
+            REF3,
+        )
         (
             :EPIRK4s3A,
-            "4th order EPIRK scheme with stiff order 4.", REF4,
+            "4th order EPIRK scheme with stiff order 4, i.e. its order is retained uniformly in the stiffness of the linear part.",
+            REF4,
         )
         (
             :EPIRK4s3B,
-            "4th order EPIRK scheme with stiff order 4.", REF4,
+            "4th order EPIRK scheme with stiff order 4. A companion of `EPIRK4s3A` from the same family, differing in the choice of free coefficients.",
+            REF4,
         )
         (
             :EPIRK5s3,
@@ -163,11 +198,22 @@ for (Alg, Description, Ref) in [
         )
         (
             :EXPRB53s3,
-            "5th order EPIRK scheme with stiff order 5.", REF4,
+            "5th order EPIRK scheme with stiff order 5, built in the exponential Rosenbrock (EXPRB) form with three stages.",
+            REF4,
         )
-        (:EPIRK5P1, "5th order EPIRK scheme", REF5)
-        (:EPIRK5P2, "5th order EPIRK scheme", REF5)
+        (
+            :EPIRK5P1,
+            "5th order EPIRK scheme from the adaptive-Krylov EPIRK family of Tokman, Loffeld and Tranquilli.",
+            REF5,
+        )
+        (
+            :EPIRK5P2,
+            "5th order EPIRK scheme, a companion of `EPIRK5P1` from the same family using a different set of coefficients.",
+            REF5,
+        )
     ]
+    # NOTE: `@doc <expr>` must be immediately followed by the documented expression;
+    # a blank line in between silently detaches the docstring.
     @eval begin
         @doc generic_solver_docstring(
             $Description,
@@ -177,8 +223,8 @@ for (Alg, Description, Ref) in [
             """
             - `adaptive_krylov`: Determines if the adaptive Krylov algorithm with timestepping of Neisen & Wright is used.
             - `m`: Controls the size of Krylov subspace.
-                    - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
-                        Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.
+            - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
+                Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.
             """,
             """
             adaptive_krylov = true,
@@ -186,7 +232,6 @@ for (Alg, Description, Ref) in [
             iop = 0,
             """
         )
-
         struct $Alg{StepLimiter, AD, CJ} <:
             OrdinaryDiffEqExponentialAlgorithm
             step_limiter!::StepLimiter
