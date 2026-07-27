@@ -6,7 +6,7 @@ versions = ["lts", "1", "pre"]
 # compute_affected_sublibraries.jl.
 [SROCKC2WeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 240
 local_only = true
 

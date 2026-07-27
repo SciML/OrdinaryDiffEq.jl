@@ -1,5 +1,11 @@
 [Core]
 versions = ["lts", "1", "pre"]
+# Peaks at ~7.6 GiB RSS (the 1e5-trajectory ensemble WorkPrecisionSets in
+# analyticless_stochastic_wp.jl), which does not fit the 4 vCPU / 8 GB pool that
+# answers the default `ubuntu-latest`; the runner agent gets reclaimed mid-run
+# and the job reports "the self-hosted runner lost communication with the
+# server". Pin the 8 vCPU / 16 GB pool instead.
+runner = ["self-hosted", "Linux", "X64"]
 
 [QA]
 versions = ["lts", "1"]

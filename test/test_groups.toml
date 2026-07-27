@@ -34,4 +34,8 @@ versions = ["lts"]
 [GPU]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "gpu"]
-timeout = 60
+# The `gpu` label is answered by both a V100 and a T4 pool, and the T4 is ~1.76x
+# slower on this suite (measured on identical warmup blocks). The V100 finishes
+# in ~48 min, so the T4 needs ~85 min: a 60 min cap cancelled every T4-scheduled
+# run and hid whatever the tests actually reported.
+timeout = 120

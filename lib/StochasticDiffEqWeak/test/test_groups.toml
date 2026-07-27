@@ -13,7 +13,7 @@ local_only = true
 
 [WeakConvergence2]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
@@ -23,7 +23,7 @@ local_only = true
 
 [WeakConvergence3]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
@@ -33,19 +33,19 @@ local_only = true
 
 [WeakConvergence4]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 420
 local_only = true
 
 [WeakConvergence5]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
 [WeakConvergence6]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 

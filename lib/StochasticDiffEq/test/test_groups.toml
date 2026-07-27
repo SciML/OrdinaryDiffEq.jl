@@ -10,9 +10,14 @@ versions = ["lts", "1", "pre"]
 [AlgConvergence]
 versions = ["1"]
 
+# `["self-hosted", "Linux", "X64"]` is the largest pool the SciML fleet actually
+# answers (8 vCPU / 16 GB). No runner carries a `high-memory` label, so asking
+# for one parks the job in the queue until GitHub expires it at 24h -- and this
+# group is not local_only, so it is in nearly every Sublibrary CI matrix and
+# hangs the whole workflow run with it.
 [NoncommutativeConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 240
 
 [AlgConvergence2]
@@ -33,13 +38,13 @@ local_only = true
 
 [OOPWeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
 [IIPWeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
