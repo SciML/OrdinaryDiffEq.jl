@@ -35,8 +35,6 @@ run_qa(
                 :RefValue,
                 # NonlinearSolveBase — owner-internal, no public alternative
                 :not_terminated,
-                # OrdinaryDiffEqDifferentiation — owner-internal, no public alternative
-                :default_krylov_warm_start,
                 # `@SciMLMessage` reached through OrdinaryDiffEqCore (owner SciMLLogging).
                 Symbol("@SciMLMessage"),
                 # SciMLBase internals (owner of these names but not public).
@@ -63,8 +61,6 @@ run_qa(
                 :RefValue,
                 # NonlinearSolveBase — owner-internal, no public alternative
                 :not_terminated,
-                # OrdinaryDiffEqDifferentiation — owner-internal, no public alternative
-                :default_krylov_warm_start,
                 # SciMLBase internals.
                 :value, :anyeltypedual, :forwarddiff_chunksize,
                 :has_Wfact, :has_Wfact_t, :has_jac_u, :has_jac_du, :postamble!,

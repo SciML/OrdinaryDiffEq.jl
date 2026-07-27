@@ -470,7 +470,7 @@ function build_nlsolver(
             end
             inner_alg = _nlalg_with_linsolve(
                 nlalg.alg,
-                wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight)
+                wrapprecs(alg.linsolve, W, weight)
             )
             # The integrator owns the convergence decision, exactly as it does for `NLNewton`:
             # `nlsolve!` drives this cache one `step!` at a time and stops on its own weighted
@@ -508,7 +508,7 @@ function build_nlsolver(
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolve = init(
-                linprob, wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight),
+                linprob, wrapprecs(alg.linsolve, W, weight),
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
