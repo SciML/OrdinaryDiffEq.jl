@@ -185,6 +185,33 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     return nothing
 end
 
+"""
+    rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+
+Apply the stale-`W` correction of `compute_step!(::NLSolver{<:NLNewton, true}, ...)` to a
+`NonlinearSolveAlg` step: when the reused `W` was assembled at a different `γΔt` than the
+current step needs, the Newton direction it produces is off by that ratio.
+
+`NLNewton` scales the increment it just computed. `NonlinearSolveAlg` cannot: the inner
+solver computes *and* applies the increment inside `step!`. Scaling the right-hand side
+beforehand is equivalent for the Newton descent `δu = -W \\ fu`, and unlike rewriting
+`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent — the
+inner solver re-evaluates `fu` at the end of `step!`, so the scaling does not persist.
+"""
+function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+    cache = nlsolver.cache
+    # `W` is only reused on the plain path; otherwise the inner solver refreshes its own
+    # Jacobian at every stage and there is nothing stale to correct.
+    (cache.W === nothing || nlstep_data !== nothing) && return nothing
+    W_γdt = cache.W_γdt
+    iszero(W_γdt) && return nothing
+    isdae = nlsolve_f(integrator) isa DAEFunction
+    γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
+    W_γdt ≈ γdt && return nothing
+    rmul!(nlcache.fu, 2 / (1 + γdt / W_γdt))
+    return nothing
+end
+
 ## compute_step!
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, false}, integrator)
@@ -237,6 +264,7 @@ end
             !SciMLBase.successful_retcode(nlcache.retcode)
         return convert(eltype(atmp), Inf)
     end
+    rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
