@@ -105,8 +105,14 @@ sim5 = analyticless_test_convergence(
 )
 @test abs(sim5.𝒪est[:final] - 0.5) < 0.2
 test_dt_mil = 1 / 2^(12)
+# Do not pass `p = true, dt = test_dt_mil` here. That selects the Kloeden-Platen
+# Fourier truncation rule p = 1/dt (= 4097), but RKMilGeneral approximates the Levy
+# area with MronRoe, which needs only terms_needed(m, dt, dt^(3/2)) = 12 terms. The
+# truncation sizes the saved dZ at norv(m, p) = 32786 floats per step, and
+# analyticless_test_convergence retains each trajectory's reference noise grid for the
+# whole study, so p = 1/dt costs 0.54 GiB per trajectory -- 270 GiB over 500. See #4036.
 sim6 = analyticless_test_convergence(
-    dts, prob2, RKMilGeneral(p = true, dt = test_dt_mil),
+    dts, prob2, RKMilGeneral(),
     test_dt_mil, trajectories = 500, use_noise_grid = false
 )
 @test abs(sim6.𝒪est[:final] - 1.0) < 0.2
