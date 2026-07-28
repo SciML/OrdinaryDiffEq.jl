@@ -122,8 +122,11 @@ function initialize!(
             # Mirror the legacy do_newJW split: a fresh Jacobian is only needed when the
             # iteration failed or on first use, while a dt/gamma change merely requires
             # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
-            # Jacobian evaluation is not).
-            new_jac = first_call || alg.always_new || nlsolver.status === Divergence
+            # Jacobian evaluation is not). Without adaptivity there is no error test to
+            # catch the step a stale Jacobian degrades and no way to pull it back, so
+            # `do_newJW` refuses to freeze `J` there and this must too.
+            new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
+                !integrator.opts.adaptive
             # `oftype`: `new_W_dt_cutoff` defaults to a `Rational`, and comparing a `Float64`
             # against one goes through the slow mixed-type path on every stage.
             new_w = new_jac ||
