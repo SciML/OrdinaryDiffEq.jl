@@ -41,6 +41,7 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "NonlinearSolveAlg Sparse Jacobian Tests" include("nsa_sparse_tests.jl")
     @time @safetestset "NonlinearSolveAlg Matrix-Free WOperator Tests" include("nsa_matrixfree_tests.jl")
     @time @safetestset "NonlinearSolveAlg Smoothed Error Estimate Tests" include("nsa_smooth_est_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Stats Tests" include("nsa_stats_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)

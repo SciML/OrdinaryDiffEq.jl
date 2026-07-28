@@ -42,8 +42,17 @@ function initialize!(
 
     (; ustep, tstep, k, invγdt) = cache
     if SciMLBase.has_stats(integrator)
-        integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.njacs += cache.cache.stats.njacs
+        # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
+        # inner cache's counters, so that evaluation is never visible in
+        # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
+        integrator.stats.nf += cache.cache.stats.nf + 1
+        # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
+        # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
+        # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
+        # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
+        if cache.W === nothing
+            integrator.stats.njacs += cache.cache.stats.njacs
+        end
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
     if f isa DAEFunction
@@ -77,8 +86,17 @@ function initialize!(
     (; ustep, atmp, tstep, k, invγdt) = cache
 
     if SciMLBase.has_stats(integrator)
-        integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.njacs += cache.cache.stats.njacs
+        # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
+        # inner cache's counters, so that evaluation is never visible in
+        # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
+        integrator.stats.nf += cache.cache.stats.nf + 1
+        # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
+        # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
+        # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
+        # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
+        if cache.W === nothing
+            integrator.stats.njacs += cache.cache.stats.njacs
+        end
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
 
@@ -175,6 +193,9 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
                 end
                 jacobian!(J, uf, uprev, du1, integrator, jac_config)
             end
+            # `calc_J!` is bypassed here, so this is the only place the reused-`W`
+            # path can record a Jacobian evaluation.
+            integrator.stats.njacs += 1
         end
         jacobian2W!(W, mass_matrix, dtgamma, J)
     end
