@@ -538,6 +538,20 @@ function SciMLBase.reinit!(
     integrator.t = t0
     integrator.tprev = t0
 
+    # Initialization changes the ImplicitDiscrete start state, so run it before
+    # save_start and preserve any InitialFailure instead of resetting it below.
+    implicit_discrete = integrator.sol.prob isa SciMLBase.ImplicitDiscreteProblem
+    if reinit_dae && implicit_discrete
+        if reinit_retcode
+            integrator.sol = SciMLBase.solution_new_retcode(
+                integrator.sol, ReturnCode.Default
+            )
+        end
+        SciMLBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
+        u0 = integrator.u
+    end
+
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
     reinit_tstops!(
@@ -593,7 +607,7 @@ function SciMLBase.reinit!(
         auto_dt_reset!(integrator)
     end
 
-    if reinit_dae &&
+    if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
         SciMLBase.initialize_dae!(integrator)
         update_uprev!(integrator)
@@ -607,7 +621,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reinit_retcode
+    if reinit_retcode && !(reinit_dae && implicit_discrete)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 

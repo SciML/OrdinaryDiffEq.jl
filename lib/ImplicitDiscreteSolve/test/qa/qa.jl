@@ -11,9 +11,6 @@ run_qa(
                 # OrdinaryDiffEqCore controller-resolution internal (owner-internal,
                 # deliberately kept non-public in the make-public extension surface).
                 :_resolved_QT,
-                # NonlinearSolveBase solver internals (external, not public).
-                :get_fu, :get_u, :not_terminated,
-                :update_from_termination_cache!, :update_trace!,
                 # SciMLBase initialization-problem predicate (external, not public).
                 :has_initializeprob,
             ),
