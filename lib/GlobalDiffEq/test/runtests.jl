@@ -3,7 +3,7 @@ using Test
 using SciMLTesting
 
 run_tests(;
-    env = "ODEDIFFEQ_TEST_GROUP",
+    env = "GROUP",
     core = function ()
         @safetestset "Basic functionality" begin
             include("basic_functionality_tests.jl")
