@@ -11,6 +11,7 @@ using OrdinaryDiffEqAdamsBashforthMoulton
 using OrdinaryDiffEqExtrapolation
 using OrdinaryDiffEqFIRK: AdaptiveRadau, RadauIIA9, RadauIIA5, RadauIIA3
 using LinearAlgebra
+using SciMLOperators: MatrixOperator
 
 # define the counting variable
 const STEP_LIMITER_VAR = Ref(0)
