@@ -30,6 +30,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @testset "Analyticless Stochastic WP" begin
         include("analyticless_stochastic_wp.jl")
     end
+    @time @testset "Convergence retain_solutions" begin
+        include("retain_solutions_tests.jl")
+    end
     @time @testset "Stability Region Tests" begin
         include("stability_region_test.jl")
     end

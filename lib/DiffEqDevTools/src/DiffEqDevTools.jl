@@ -57,7 +57,7 @@ include("test_solution.jl")
 include("ode_tableaus.jl")
 include("tableau_info.jl")
 
-export ConvergenceSimulation, Shootout, ShootoutSet, TestSolution
+export ConvergenceSimulation, ConvergenceTrajectory, Shootout, ShootoutSet, TestSolution
 
 #Benchmark Functions
 export Shootout, ShootoutSet, WorkPrecision, WorkPrecisionSet
