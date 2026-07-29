@@ -510,6 +510,8 @@ function DiffEqBase.reinit!(
     integrator.iter = 0
     integrator.success_iter = 0
     integrator.derivative_discontinuity = false
+    integrator.is_disco_step = false
+    integrator.disco_checkpoint = zero(integrator.t)
 
     # full re-initialize the controller in timestepping
     OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)

@@ -455,6 +455,8 @@ function SciMLBase.__init(
     success_iter = 0
     erracc = QT(1)
     dtacc = tType(1)
+    is_disco_step = false
+    disco_checkpoint = zero(t0)
 
     fsalfirst, fsallast = OrdinaryDiffEqCore.get_fsalfirstlast(cache, rate_prototype)
     OrdinaryDiffEqCore.set_EEst!(controller_cache, EEst)
@@ -525,6 +527,7 @@ function SciMLBase.__init(
         differential_vars,
         controller_cache,
         ode_integrator, fsalfirst, fsallast, initializealg,
+        is_disco_step, disco_checkpoint,
         W, P, sqdt, nothing,
     )
 
