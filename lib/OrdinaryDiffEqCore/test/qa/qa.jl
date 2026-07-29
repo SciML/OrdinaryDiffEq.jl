@@ -5,7 +5,13 @@ using SciMLTesting, OrdinaryDiffEqCore, Test
 const UNANALYZABLE = (OrdinaryDiffEqCore.Predictor,)
 
 @static if VERSION >= v"1.11.0-DEV.469"
-    @test Base.ispublic(OrdinaryDiffEqCore, :isdiscretecache)
+    for name in (
+            :AbstractNLSolverCache, :AutoSwitchCache, :DefaultCache,
+            :handle_callback_modifiers!, :isdiscretecache,
+            :resolve_stage_step_limiters, :trivial_limiter!,
+        )
+        @test Base.ispublic(OrdinaryDiffEqCore, name)
+    end
 end
 
 run_qa(
