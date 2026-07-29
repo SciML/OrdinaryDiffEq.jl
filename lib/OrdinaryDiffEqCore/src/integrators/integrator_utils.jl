@@ -707,6 +707,88 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     )
 end
 
+"""
+    error_estimate_residuals(cache)
+
+Return the per-component weighted residuals `atmp` behind the scalar error
+estimate, or `nothing` when the cache does not retain them.
+
+Out-of-place caches build the residuals in a local and drop them, so only
+mutable caches can report a breakdown after the fact.
+"""
+error_estimate_residuals(cache) = hasfield(typeof(cache), :atmp) ? getfield(cache, :atmp) : nothing
+error_estimate_residuals(cache::CompositeCache) =
+    error_estimate_residuals(@inbounds cache.caches[cache.current])
+function error_estimate_residuals(cache::DefaultCache)
+    current = cache.current
+    # Constituent caches are initialized lazily, so an inactive slot can be undefined.
+    for (i, name) in enumerate((:cache1, :cache2, :cache3, :cache4, :cache5, :cache6))
+        if i == current
+            return isdefined(cache, name) ?
+                error_estimate_residuals(getfield(cache, name)) : nothing
+        end
+    end
+    return nothing
+end
+
+# Number of worst-offending state components reported in the exit diagnostic.
+const N_ERROR_CONTRIBUTORS = 3
+
+_diagnostic_value(x) = _format_diagnostic_value(SciMLBase.value(x))
+_format_diagnostic_value(x) = x
+_format_diagnostic_value(x::AbstractFloat) = isfinite(x) ? @sprintf("%.4g", x) : x
+
+# NaN residuals are the most interesting ones, so they sort alongside Inf rather
+# than poisoning the comparisons.
+_contributor_weight(x) = (v = abs(SciMLBase.value(x)); isnan(v) ? typemax(v) : v)
+
+"""
+    top_error_contributors(atmp, n)
+
+Return the indices of the `n` components of `atmp` with the largest magnitude,
+largest first.
+"""
+function top_error_contributors(atmp, n)
+    idxs = collect(eachindex(atmp))
+    n = min(n, length(idxs))
+    partialsort!(idxs, 1:n, by = i -> _contributor_weight(atmp[i]), rev = true)
+    return idxs[1:n]
+end
+
+function SciMLBase.log_error_estimate(integrator::ODEIntegrator)
+    integrator.opts.adaptive || return ""
+    EEst = _diagnostic_value(get_EEst(integrator))
+    stats = integrator.stats
+    lines = [
+        "step error estimate EEst = $EEst (a step is accepted when EEst <= 1) after $(stats.naccept) accepted and $(stats.nreject) rejected steps",
+    ]
+
+    atmp = error_estimate_residuals(integrator.cache)
+    if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
+        nonfinite = count(!isfinite ∘ SciMLBase.value, atmp)
+        nonfinite > 0 && push!(
+            lines,
+            "$nonfinite of $(length(atmp)) weighted residuals are non-finite (NaN/Inf)"
+        )
+        u = integrator.u
+        uprev = integrator.uprev
+        contributors = [
+            "  atmp[$i] = $(_diagnostic_value(atmp[i]))" *
+                (
+                    u isa AbstractArray && eachindex(u) == eachindex(atmp) ?
+                    ", u[$i] = $(_diagnostic_value(u[i])), uprev[$i] = $(_diagnostic_value(uprev[i]))" : ""
+                )
+                for i in top_error_contributors(atmp, N_ERROR_CONTRIBUTORS)
+        ]
+        push!(
+            lines,
+            "largest contributors to EEst = internalnorm(atmp), where atmp is the tolerance-weighted local error per state component:\n" *
+                join(contributors, "\n")
+        )
+    end
+    return "\n\nError estimate diagnostics:\n" * join(lines, "\n\n")
+end
+
 function fixed_t_for_tstop_error!(integrator, ttmp)
     if _get_next_step_tstop(integrator)
         _set_tstop_flag!(integrator, false)
