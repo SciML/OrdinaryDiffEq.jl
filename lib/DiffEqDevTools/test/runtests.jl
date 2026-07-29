@@ -27,6 +27,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @testset "Analyticless Convergence Tests" begin
         include("analyticless_convergence_tests.jl")
     end
+    @time @testset "Retain Solutions Tests" begin
+        include("retain_solutions_tests.jl")
+    end
     @time @testset "Analyticless Stochastic WP" begin
         include("analyticless_stochastic_wp.jl")
     end

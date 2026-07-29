@@ -55,6 +55,26 @@ function ConvergenceSimulation(
 end
 
 """
+    drop_trajectories(sim::EnsembleTestSolution) -> EnsembleTestSolution
+
+Discard every trajectory but the first, keeping the error statistics computed from the
+full ensemble.
+
+`calculate_ensemble_errors` has already reduced the ensemble to the error dictionaries
+that a [`ConvergenceSimulation`](@ref) reads, so for a Monte-Carlo study the retained
+trajectories are dead weight — an SROCK ensemble at 3e6 trajectories holds tens of GiB
+of them. One trajectory is kept rather than none because the `ConvergenceSimulation`
+constructor inspects `solutions[1].u[1]` for its element type.
+"""
+function drop_trajectories(sim::SciMLBase.EnsembleTestSolution{T, N}) where {T, N}
+    u = sim.u[1:min(1, length(sim.u))]
+    return SciMLBase.EnsembleTestSolution{T, N, typeof(u)}(
+        u, sim.errors, sim.weak_errors, sim.error_means, sim.error_medians,
+        sim.elapsedTime, sim.converged
+    )
+end
+
+"""
     test_convergence(dts, prob, alg[, ensemblealg]; kwargs...)
     test_convergence(probs, convergence_axis, alg; kwargs...)
     test_convergence(setup::ConvergenceSetup, alg; kwargs...)
@@ -66,6 +86,12 @@ is passed to the solver as `dt`. Remaining keyword arguments are forwarded to `s
 The computed solutions must contain error measurements, usually obtained from an
 analytic solution. Use [`analyticless_test_convergence`](@ref) when only a numerical
 reference solution is available.
+
+Set `retain_solutions = false` for large Monte-Carlo studies. The returned
+`ConvergenceSimulation` then holds each step size's error summary but only one
+representative trajectory instead of all of them, which bounds the memory by a single
+step size's ensemble rather than the whole study. The error statistics are identical
+either way; only `sim.solutions[i].u` is shortened.
 """
 function test_convergence(
         dts::AbstractArray,
@@ -77,7 +103,7 @@ function test_convergence(
         trajectories, save_start = true, save_everystep = true,
         timeseries_errors = save_everystep, adaptive = false,
         weak_timeseries_errors = false, weak_dense_errors = false,
-        expected_value = nothing, kwargs...
+        expected_value = nothing, retain_solutions = true, kwargs...
     )
     N = length(dts)
 
@@ -86,6 +112,10 @@ function test_convergence(
     else
         ensemble_prob = EnsembleProblem(prob)
     end
+
+    # Reducing each step size's ensemble as soon as it is solved keeps only one of them
+    # alive at a time; deferring to the loop below would hold every step size at once.
+    reduce_eagerly = !retain_solutions && expected_value === nothing
 
     _solutions = Array{Any}(undef, length(dts))
     for i in 1:length(dts)
@@ -98,20 +128,30 @@ function test_convergence(
             kwargs...
         )
         @info "dt: $(dts[i]) ($i/$N)"
+        if reduce_eagerly
+            sol = drop_trajectories(
+                SciMLBase.calculate_ensemble_errors(
+                    sol;
+                    weak_timeseries_errors = weak_timeseries_errors,
+                    weak_dense_errors = weak_dense_errors
+                )
+            )
+        end
         _solutions[i] = sol
     end
 
     auxdata = Dict("dts" => dts)
 
     if expected_value == nothing
-        solutions = [
-            SciMLBase.calculate_ensemble_errors(
+        solutions = reduce_eagerly ? _solutions :
+            [
+                SciMLBase.calculate_ensemble_errors(
                     sim;
                     weak_timeseries_errors = weak_timeseries_errors,
                     weak_dense_errors = weak_dense_errors
                 )
                 for sim in _solutions
-        ]
+            ]
         # Now Calculate Weak Errors
         additional_errors = Dict()
         for k in keys(solutions[1].weak_errors)

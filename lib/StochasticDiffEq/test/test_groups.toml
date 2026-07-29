@@ -32,13 +32,13 @@ local_only = true
 
 [OOPWeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
 [IIPWeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
