@@ -116,7 +116,8 @@ function regression_i()
     @time @safetestset "Special Interp Tests" include("Regression_I/special_interps.jl")
     @time @safetestset "Inplace Tests" include("Regression_I/ode_inplace_tests.jl")
     @time @safetestset "Adaptive Tests" include("Regression_I/ode_adaptive_tests.jl")
-    return @time @safetestset "Hard DAE Tests" include("Regression_I/hard_dae.jl")
+    @time @safetestset "Hard DAE Tests" include("Regression_I/hard_dae.jl")
+    return @time @safetestset "Newton-Krylov Round-off Tests" include("Regression_I/newton_krylov_roundoff.jl")
 end
 
 function regression_ii()
