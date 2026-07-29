@@ -167,6 +167,7 @@ end
 function downstream_group()
     is_APPVEYOR && return
     activate_downstream_env()
+    @time @safetestset "DelayDiffEq Compatibility" include("Downstream/delaydiffeq_compatibility.jl")
     @time @safetestset "Measurements Tests" include("Downstream/measurements.jl")
     @time @safetestset "Time derivative Tests" include("Downstream/time_derivative_test.jl")
     return @time @safetestset "DynamicQuantities + Measurements Tests" include("Downstream/dynamicquantities_measurements.jl")

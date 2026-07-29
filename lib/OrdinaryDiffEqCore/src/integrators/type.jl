@@ -104,6 +104,44 @@ function DEOptions{
     )
 end
 
+function DEOptions{
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, DType,
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        failfactor, dtmax, dtmin, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors, delta,
+        dense, save_on, save_start, save_end, save_noise, save_discretes,
+        save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    ) where {
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, DType,
+    }
+    return DEOptions{
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, DType, typeof(trivial_limiter!),
+        typeof(trivial_limiter!),
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        failfactor, dtmax, dtmin, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors, delta,
+        trivial_limiter!, trivial_limiter!, dense, save_on, save_start, save_end,
+        save_noise, save_discretes, save_end_user, callback, isoutofdomain,
+        unstable_check, verbose, calck, force_dtmin, advance_to_tstop,
+        stop_at_next_tstop,
+    )
+end
+
 """
     ODEIntegrator
 

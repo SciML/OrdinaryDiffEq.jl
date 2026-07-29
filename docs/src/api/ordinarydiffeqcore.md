@@ -7,6 +7,7 @@ own page, and solver-author hooks are documented separately in the
 ## Integrator objects
 
 ```@docs
+OrdinaryDiffEqCore.DEOptions
 OrdinaryDiffEqCore.ODEIntegrator
 ```
 
