@@ -760,7 +760,7 @@ Base.@constprop :aggressive function _ode_init(
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
 
     is_disco_step = false
-    disco_checkpoint = zero(tType)
+    disco_checkpoint = zero(t)
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
