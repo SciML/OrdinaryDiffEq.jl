@@ -279,6 +279,9 @@ end
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
     else
+        # Julia 1.10 does not resolve root [sources], so develop local sublibraries explicitly.
+        develop_sources!(dirname(@__DIR__))
+
         # Root-package group dispatch. `run_tests` owns the All / Interface /
         # Integrators / Regression / QA / functional-group routing that the old
         # hand-written `if GROUP == ...` ladder expressed. The group bodies

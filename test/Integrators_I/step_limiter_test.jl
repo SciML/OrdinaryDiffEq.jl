@@ -12,6 +12,13 @@ using OrdinaryDiffEqExtrapolation
 using OrdinaryDiffEqFIRK: AdaptiveRadau, RadauIIA9, RadauIIA5, RadauIIA3
 using LinearAlgebra
 
+@testset "Tests use local monorepo sources" begin
+    repo = normpath(joinpath(@__DIR__, "..", ".."))
+    @test pkgdir(OrdinaryDiffEqCore) == joinpath(repo, "lib", "OrdinaryDiffEqCore")
+    @test pkgdir(OrdinaryDiffEqLowOrderRK) == joinpath(repo, "lib", "OrdinaryDiffEqLowOrderRK")
+    @test pkgdir(OrdinaryDiffEqSSPRK) == joinpath(repo, "lib", "OrdinaryDiffEqSSPRK")
+end
+
 # define the counting variable
 const STEP_LIMITER_VAR = Ref(0)
 # define the step_limiter! function which just counts the number of step_limiter calls
