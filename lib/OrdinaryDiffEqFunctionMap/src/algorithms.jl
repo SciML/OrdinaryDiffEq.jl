@@ -17,15 +17,16 @@ FunctionMap{scale_by_time}() where {scale_by_time} = FunctionMap{scale_by_time, 
     trivial_limiter!
 )
 function FunctionMap(; scale_by_time = false, step_limiter = trivial_limiter!, kwargs...)
+    kwargs_nt = values(kwargs)
     old_kw = Symbol("step_limiter!")
-    if haskey(kwargs, old_kw)
+    if haskey(kwargs_nt, old_kw)
         if step_limiter === trivial_limiter!
-            step_limiter = get(kwargs, old_kw, trivial_limiter!)
+            step_limiter = get(kwargs_nt, old_kw, trivial_limiter!)
         end
     end
-    unsupported_kwargs = filter(!=(old_kw), keys(kwargs))
-    if !isempty(unsupported_kwargs)
-        throw(ArgumentError("Unsupported keyword argument(s): $(unsupported_kwargs)"))
+    extra_kwargs = Base.structdiff(kwargs_nt, NamedTuple{(old_kw,)})
+    if !isempty(extra_kwargs)
+        throw(ArgumentError("Unsupported keyword argument(s): $(keys(extra_kwargs))"))
     end
 
     return FunctionMap{scale_by_time, typeof(step_limiter)}(step_limiter)
