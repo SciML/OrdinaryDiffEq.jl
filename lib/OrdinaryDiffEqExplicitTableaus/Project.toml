@@ -27,7 +27,7 @@ OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 [compat]
 SciMLTesting = "2.1"
 DiffEqBase = "7"
-DiffEqDevTools = "3"
+DiffEqDevTools = "4"
 ODEProblemLibrary = "1"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqExplicitRK = "2"

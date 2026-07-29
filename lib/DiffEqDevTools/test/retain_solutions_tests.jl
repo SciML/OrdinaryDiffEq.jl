@@ -1,8 +1,9 @@
 using DiffEqDevTools, StochasticDiffEq, Random, Test
 
-# `retain_solutions = false` exists so that large Monte-Carlo studies do not hold every
-# trajectory of every step size at once. It must change only what is kept, never what is
-# measured, so compare the statistics against the retaining path exactly.
+# The Monte-Carlo `test_convergence` summarises by default so that large studies do not
+# hold every trajectory of every step size at once. That must change only what is kept,
+# never what is measured, so compare the statistics against `retain_solutions = true`
+# exactly. It also pins the default, which is the breaking half of the change.
 
 linear_analytic(u0, p, t, W) = @.(u0 * exp(0.63155t + 0.87W))
 f_linear(du, u, p, t) = @.(du = 1.01 * u)
@@ -24,6 +25,13 @@ end
 
 kept = run(true)
 dropped = run(false)
+defaulted = let
+    Random.seed!(100)
+    test_convergence(
+        dts, prob, EM(), EnsembleSerial(); save_everystep = false,
+        trajectories = trajectories, weak_timeseries_errors = false
+    )
+end
 
 @testset "retain_solutions preserves the statistics" begin
     @test keys(kept.𝒪est) == keys(dropped.𝒪est)
@@ -38,6 +46,16 @@ dropped = run(false)
         @test kept.solutions[i].weak_errors == dropped.solutions[i].weak_errors
         @test kept.solutions[i].error_means == dropped.solutions[i].error_means
         @test kept.solutions[i].errors == dropped.solutions[i].errors
+    end
+end
+
+@testset "summarising is the default" begin
+    for i in eachindex(dts)
+        @test length(defaulted.solutions[i].u) == 1
+        @test defaulted.solutions[i].errors == kept.solutions[i].errors
+    end
+    for k in keys(kept.𝒪est)
+        @test defaulted.𝒪est[k] == kept.𝒪est[k]
     end
 end
 

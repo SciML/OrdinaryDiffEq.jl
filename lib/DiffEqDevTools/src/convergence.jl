@@ -87,11 +87,18 @@ The computed solutions must contain error measurements, usually obtained from an
 analytic solution. Use [`analyticless_test_convergence`](@ref) when only a numerical
 reference solution is available.
 
-Set `retain_solutions = false` for large Monte-Carlo studies. The returned
-`ConvergenceSimulation` then holds each step size's error summary but only one
-representative trajectory instead of all of them, which bounds the memory by a single
-step size's ensemble rather than the whole study. The error statistics are identical
-either way; only `sim.solutions[i].u` is shortened.
+`retain_solutions` controls whether the trajectories survive in the returned
+`ConvergenceSimulation`. It defaults to `false`: each step size's ensemble is reduced to
+its error summary as soon as it is solved and then stripped to one representative
+trajectory, so the memory is bounded by a single step size's ensemble rather than by the
+whole study. A Monte-Carlo study at 5e5 trajectories over 8 step sizes is otherwise
+tens of GiB of solutions kept only to compute a mean.
+
+The error statistics are computed from the full ensemble either way, so `errors`,
+`weak_errors`, `error_means` and `𝒪est` are unaffected — the difference is only that
+`sim.solutions[i].u` holds one trajectory rather than `trajectories` of them. Pass
+`retain_solutions = true` when the trajectories themselves are the point, for instance
+to compare two algorithms path by path.
 """
 function test_convergence(
         dts::AbstractArray,
@@ -103,7 +110,7 @@ function test_convergence(
         trajectories, save_start = true, save_everystep = true,
         timeseries_errors = save_everystep, adaptive = false,
         weak_timeseries_errors = false, weak_dense_errors = false,
-        expected_value = nothing, retain_solutions = true, kwargs...
+        expected_value = nothing, retain_solutions = false, kwargs...
     )
     N = length(dts)
 

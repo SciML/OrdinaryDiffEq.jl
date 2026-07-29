@@ -80,7 +80,7 @@ StochasticDiffEqLevyArea = {path = "../lib/StochasticDiffEqLevyArea"}
 
 [compat]
 DiffEqBase = "7.6.1"
-DiffEqDevTools = "3, 4.0"
+DiffEqDevTools = "4"
 Documenter = "0.27, 1"
 GlobalDiffEq = "1.2.1"
 ImplicitDiscreteSolve = "2"

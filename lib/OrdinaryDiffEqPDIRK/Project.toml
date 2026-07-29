@@ -31,7 +31,7 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 SciMLTesting = "2.1"
 ADTypes = "1.22.0"
 DiffEqBase = "7"
-DiffEqDevTools = "3"
+DiffEqDevTools = "4"
 FastBroadcast = "1.3"
 MuladdMacro = "0.2.4"
 ODEProblemLibrary = "1"

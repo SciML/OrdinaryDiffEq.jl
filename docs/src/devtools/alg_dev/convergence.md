@@ -20,7 +20,10 @@ A type which holds the data from a convergence simulation.
 
 ### Fields
 
-  - `solutions::Array{<:DESolution}`: Holds all the PdeSolutions.
+  - `solutions::Array{<:DESolution}`: Holds the solutions. For the Monte-Carlo method of
+    `test_convergence` this holds one representative trajectory per convergence-axis
+    point rather than every trajectory, since the error statistics have already been
+    computed from the full ensemble; pass `retain_solutions = true` to keep them all.
 
   - `errors`: Dictionary of the error calculations. Can contain:
     
