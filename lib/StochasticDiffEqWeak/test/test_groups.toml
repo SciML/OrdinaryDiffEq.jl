@@ -23,7 +23,7 @@ local_only = true
 
 [WeakConvergence3]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
+runner = ["self-hosted", "Linux", "X64"]
 timeout = 300
 local_only = true
 
