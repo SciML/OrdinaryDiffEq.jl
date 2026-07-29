@@ -19,6 +19,13 @@ get_disco_probs(cache::AbstractControllerCache) = cache.controller.basic.disco_p
 get_disco_probs(cache::DummyControllerCache) = cache.disco_probs
 get_disco_probs(cache::CompositeControllerCache) = get_disco_probs(first(cache.caches))
 
+_discontinuity_detection_enabled(cache::AbstractControllerCache) =
+    cache.controller.basic.discontinuity_detection
+_discontinuity_detection_enabled(cache::DummyControllerCache) =
+    cache.discontinuity_detection
+_discontinuity_detection_enabled(cache::CompositeControllerCache) =
+    _discontinuity_detection_enabled(first(cache.caches))
+
 function find_discontinuity(integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
