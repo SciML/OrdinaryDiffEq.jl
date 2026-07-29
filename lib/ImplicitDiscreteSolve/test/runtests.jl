@@ -7,7 +7,7 @@ using SciMLBase
 using SafeTestsets
 using SciMLTesting
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])

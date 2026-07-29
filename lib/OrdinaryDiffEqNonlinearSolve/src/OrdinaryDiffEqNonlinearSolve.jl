@@ -4,9 +4,10 @@ using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
 
 import SciMLBase
 import SciMLBase: init, solve, remake
+using SciMLOperators: update_coefficients!
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
-    update_coefficients!, get_tmp_cache, ReturnCode,
+    get_tmp_cache, ReturnCode,
     AbstractNonlinearProblem, LinearAliasSpecifier,
     _vec, _reshape, postamble!, alg_order, isadaptive
 import DiffEqBase
