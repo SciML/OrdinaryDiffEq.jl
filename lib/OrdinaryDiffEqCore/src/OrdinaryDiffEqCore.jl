@@ -94,7 +94,7 @@ using CommonSolve: solve
 
 import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 
-import SciMLBase: islinear
+import SciMLOperators: islinear
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
