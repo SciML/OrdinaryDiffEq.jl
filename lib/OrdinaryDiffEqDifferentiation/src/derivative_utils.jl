@@ -1227,6 +1227,10 @@ function build_J_W(
         if is_sparse(J)
             set_all_nzval!(J, one(eltype(J)))
             set_all_nzval!(W, one(eltype(W)))
+        elseif J isa Union{AbstractTriangular, UpperHessenberg} ||
+                ArrayInterface.isstructured(J) || ArrayInterface.has_sparsestruct(J)
+            fill_structural_nonzeros!(J, one(eltype(J)))
+            fill_structural_nonzeros!(W, one(eltype(W)))
         else
             fill!(J, one(eltype(J)))
             fill!(W, one(eltype(W)))

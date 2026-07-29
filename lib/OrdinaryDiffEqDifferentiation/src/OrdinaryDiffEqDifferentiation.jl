@@ -11,7 +11,8 @@ import FunctionWrappersWrappers
 import DiffEqBase
 
 import LinearAlgebra
-import LinearAlgebra: Diagonal, I, UniformScaling, diagind, opnorm
+import LinearAlgebra: AbstractTriangular, Diagonal, I, SymTridiagonal, UniformScaling,
+    UpperHessenberg, diagind, opnorm
 import LinearAlgebra: LowerTriangular
 import ArrayInterface
 
@@ -70,6 +71,27 @@ nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays
 spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+
+function fill_structural_nonzeros!(A, value)
+    storage = parent(A)
+    if storage !== A
+        fill!(storage, value)
+        return A
+    end
+
+    rows, cols = ArrayInterface.findstructralnz(A)
+    for i in 1:length(rows)
+        ArrayInterface.allowed_setindex!(A, value, rows[i], cols[i])
+    end
+    return A
+end
+
+# SymTridiagonal does not permit off-diagonal setindex!, even at stored positions.
+function fill_structural_nonzeros!(A::SymTridiagonal, value)
+    n = size(A, 1)
+    source = SymTridiagonal(fill(value, n), fill(value, max(n - 1, 0)))
+    return copyto!(A, source)
+end
 
 include("alg_utils.jl")
 include("linsolve_utils.jl")
