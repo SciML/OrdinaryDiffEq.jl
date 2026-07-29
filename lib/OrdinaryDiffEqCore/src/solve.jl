@@ -843,9 +843,19 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     if !(_tstops_cache isa AbstractArray || _tstops_cache isa Tuple || _tstops_cache isa Number)
+        # Match initialize_tstops / reinit_tstops!: drop endpoints so a callable
+        # that returns tspan[1] cannot zero dt via the SDE init modify_dt_for_tstops!
+        # path (SciML/OrdinaryDiffEq.jl#3165).
+        t0, tf = prob.tspan
+        tdir = sign(tf - t0)
+        tdir_t0 = tdir * t0
+        tdir_tf = tdir * tf
         tstops = _tstops_cache(parameter_values(integrator), prob.tspan)
         for tstop in tstops
-            add_tstop!(integrator, tstop)
+            tdir_t = tdir * tstop
+            if tdir_t0 < tdir_t < tdir_tf
+                add_tstop!(integrator, tstop)
+            end
         end
     end
 
