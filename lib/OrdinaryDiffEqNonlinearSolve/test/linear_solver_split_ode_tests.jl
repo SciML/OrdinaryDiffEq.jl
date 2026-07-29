@@ -1,6 +1,7 @@
 using Test
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
 using LinearAlgebra, LinearSolve
+using SciMLOperators: MatrixOperator
 
 n = 8
 dt = 1 / 1000

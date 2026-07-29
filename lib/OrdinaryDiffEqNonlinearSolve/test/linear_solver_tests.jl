@@ -1,6 +1,7 @@
 using Test, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF
 using SparseArrays, LinearSolve
 using LinearAlgebra, Random, StaticArrays
+using SciMLOperators: MatrixOperator
 N = 30
 AA = sprand(MersenneTwister(12), N, N, 0.5)
 mm = sprand(MersenneTwister(123), N, N, 0.5)
