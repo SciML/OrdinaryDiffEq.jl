@@ -147,3 +147,23 @@ end
     # The solver should handle the discontinuities correctly
     @test integrator.sol.retcode == ReturnCode.Success
 end
+
+@testset "reinit with null u0 (no state variables)" begin
+    # Systems with only observed/algebraic variables (e.g. MTK models that
+    # structurally simplify to zero dynamical states) have `prob.u0 === nothing`.
+    # `init` coerces that to an empty working state, but `reinit!` used to feed the
+    # raw `nothing` into `recursivecopy!`/`copyat_or_push!`. A callback forces the
+    # real ODEIntegrator path rather than the NullODEIntegrator shortcut.
+    prob = ODEProblem((du, u, p, t) -> nothing, nothing, (0.0, 1.0))
+    cb = DiscreteCallback((u, t, integrator) -> false, integrator -> nothing)
+
+    integrator = init(prob, Tsit5(); callback = cb)
+    @test integrator.u == Float64[]
+    solve!(integrator)
+    @test integrator.sol.retcode == ReturnCode.Success
+
+    reinit!(integrator)
+    @test integrator.u == Float64[]
+    solve!(integrator)
+    @test integrator.sol.retcode == ReturnCode.Success
+end

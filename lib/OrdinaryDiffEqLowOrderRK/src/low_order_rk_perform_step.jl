@@ -47,7 +47,8 @@ end
 
 @muladd function perform_step!(integrator, cache::BS3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k2, k3, k4, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k2, k3, k4, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a32, a41, a42, a43, c1, c2, btilde1, btilde2, btilde3, btilde4) = cache.tab
     # k1 = cache.fsalfirst
     k1 = integrator.fsalfirst
@@ -61,7 +62,6 @@ end
     f(k3, tmp, p, t + c2 * dt)
     @.. broadcast = false thread = thread u = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k4, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     if integrator.opts.adaptive
@@ -137,7 +137,8 @@ end
 
 @muladd function perform_step!(integrator, cache::OwrenZen3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k1, k2, k3, k4, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, c1, c2, btilde1, btilde2, btilde3) = cache.tab
     a1 = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a1 * k1
@@ -148,7 +149,6 @@ end
     f(k3, tmp, p, t + c2 * dt)
     @.. broadcast = false thread = thread u = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k4, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     if integrator.opts.adaptive
@@ -229,7 +229,8 @@ end
 
 @muladd function perform_step!(integrator, cache::OwrenZen4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k1, k2, k3, k4, k5, k6, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4, btilde1, btilde3, btilde4, btilde5) = cache.tab
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -248,7 +249,6 @@ end
     @.. broadcast = false thread = thread u = uprev +
         dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k6, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     if integrator.opts.adaptive
@@ -347,7 +347,8 @@ end
 
 @muladd function perform_step!(integrator, cache::OwrenZen5Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7) = cache.tab
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -385,7 +386,6 @@ end
             a86 * k6 + a87 * k7
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k8, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     if integrator.opts.adaptive
@@ -542,7 +542,8 @@ end
 
 @muladd function perform_step!(integrator, cache::BS5Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, bhat1, bhat3, bhat4, bhat5, bhat6, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8) = cache.tab
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
@@ -580,7 +581,6 @@ end
             a86 * k6 + a87 * k7
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k8, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     if integrator.opts.adaptive
@@ -726,7 +726,8 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract DP5ConstantCacheActual T T2
-    (; k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
     stage_limiter!(tmp, integrator, p, t + c1 * dt)
@@ -752,7 +753,6 @@ end
         a76 * k6
     @.. broadcast = false thread = thread u = uprev + dt * update
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
@@ -857,7 +857,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKO65Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, k, k1, k2, k3, k4, k5, k6, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, k, k1, k2, k3, k4, k5, k6, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; α21, α31, α41, α51, α32, α42, α52, α62, α43, α53, α63, α54, α64, α65, β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6) = cache.tab
     #println("L221: tmp", tmp)
     f(k1, uprev, p, t + c1 * dt)
@@ -887,7 +888,6 @@ end
         dt *
         (β2 * k2 + β3 * k3 + β4 * k4 + β5 * k5 + β6 * k6)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     #println("L238: tmp/u", tmp, u)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
 
@@ -996,7 +996,8 @@ end
 
 @muladd function perform_step!(integrator, cache::FRK65Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11) = cache.tab
     alg = unwrap_alg(integrator, false)
 
@@ -1047,7 +1048,6 @@ end
             β8 * k8
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k9, u, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
@@ -1129,7 +1129,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKMCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k, k1, k2, k3, k4, k5, k6, stage_limiter!, step_limiter!, thread) = cache
+    (; tmp, fsalfirst, k, k1, k2, k3, k4, k5, k6, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6) = cache.tab
 
     @.. broadcast = false thread = thread tmp = uprev + α2 * dt * k1
@@ -1151,7 +1152,6 @@ end
         dt *
         (β1 * k1 + β2 * k2 + β3 * k3 + β4 * k4 + β6 * k6)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     return nothing
@@ -1215,7 +1215,8 @@ function initialize!(integrator, cache::PSRK4p7q6Cache)
 end
 
 function perform_step!(integrator, cache::PSRK4p7q6Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, k6, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, b6, c2, c3, c4, c5, c6) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1247,7 +1248,6 @@ function perform_step!(integrator, cache::PSRK4p7q6Cache, repeat_step = false)
             b6 * k6
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     integrator.fsallast = k6
     return nothing
@@ -1306,7 +1306,8 @@ function initialize!(integrator, cache::PSRK3p6q5Cache)
 end
 
 function perform_step!(integrator, cache::PSRK3p6q5Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, c2, c3, c4, c5) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1328,7 +1329,6 @@ function perform_step!(integrator, cache::PSRK3p6q5Cache, repeat_step = false)
         dt *
         (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
     integrator.fsallast = k5
     return nothing
@@ -1384,7 +1384,8 @@ function initialize!(integrator, cache::PSRK3p5q4Cache)
 end
 
 function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
-    (; k1, k2, k3, k4, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, c2, c3, c4) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1402,7 +1403,6 @@ function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
         dt *
         (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
     integrator.fsallast = k4
@@ -1481,7 +1481,8 @@ function initialize!(integrator, cache::MSRK5Cache)
 end
 
 function perform_step!(integrator, cache::MSRK5Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, b1, b4, b5, b6, b7, b8, c2, c3, c4, c5, c6, c7, c8) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1524,7 +1525,6 @@ function perform_step!(integrator, cache::MSRK5Cache, repeat_step = false)
             b8 * k8
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k9, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     integrator.fsallast = k9
@@ -1604,7 +1604,8 @@ function initialize!(integrator, cache::MSRK6Cache)
 end
 
 function perform_step!(integrator, cache::MSRK6Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, b1, b4, b5, b6, b7, b8, c2, c3, c4, c5, c6, c7, c8) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1646,7 +1647,6 @@ function perform_step!(integrator, cache::MSRK6Cache, repeat_step = false)
             b8 * k8
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k9, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     integrator.fsallast = k9
@@ -1732,7 +1732,8 @@ function initialize!(integrator, cache::Stepanov5Cache)
 end
 
 function perform_step!(integrator, cache::Stepanov5Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, k6, k7, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b3, b4, b5, b6, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1760,7 +1761,6 @@ function perform_step!(integrator, cache::Stepanov5Cache, repeat_step = false)
         dt *
         (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5 + b6 * k6)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     integrator.fsallast = k7
@@ -1864,7 +1864,8 @@ function initialize!(integrator, cache::SIR54Cache)
 end
 
 function perform_step!(integrator, cache::SIR54Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, b1, b2, b3, b4, b5, b6, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6, c7) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1902,7 +1903,6 @@ function perform_step!(integrator, cache::SIR54Cache, repeat_step = false)
             b6 * k6
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k8, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     integrator.fsallast = k8
@@ -1978,7 +1978,8 @@ function initialize!(integrator, cache::Alshina2Cache)
 end
 
 function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
-    (; k1, k2, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, b1, b2, b1tilde, c2) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -1990,7 +1991,6 @@ function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
     @.. broadcast = false thread = thread u = uprev +
         dt * (b1 * k1 + b2 * k2)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (b1tilde * k1)
@@ -2064,7 +2064,8 @@ function initialize!(integrator, cache::Alshina3Cache)
 end
 
 function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
-    (; k1, k2, k3, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a32, b1, b2, b3, b2tilde, c2, c3) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
@@ -2078,7 +2079,6 @@ function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
     @.. broadcast = false thread = thread u = uprev +
         dt * (b1 * k1 + b2 * k2 + b3 * k3)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (b2tilde * k2)
         calculate_residuals!(
@@ -2165,7 +2165,8 @@ function initialize!(integrator, cache::Alshina6Cache)
 end
 
 function perform_step!(integrator, cache::Alshina6Cache, repeat_step = false)
-    (; k1, k2, k3, k4, k5, k6, k7, tmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, tmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (;
         a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
         b1, b5, b6, b7, c2, c3, c4, c5, c6, c7,
@@ -2204,7 +2205,6 @@ function perform_step!(integrator, cache::Alshina6Cache, repeat_step = false)
         dt *
         (b1 * k1 + b5 * k5 + b6 * k6 + b7 * k7)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
     integrator.fsallast = k7
     return nothing
@@ -2253,7 +2253,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Ralston4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; fsalfirst, k2, k3, k4, k, tmp, tab, stage_limiter!, step_limiter!, thread) = cache
+    (; fsalfirst, k2, k3, k4, k, tmp, tab, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; a21, a31, a32, a41, a42, a43, c2, c3, b1, b2, b3, b4) = tab
     k1 = fsalfirst
     @.. broadcast = false thread = thread tmp = uprev + dt * a21 * k1
@@ -2267,7 +2268,6 @@ end
     f(k4, tmp, p, t + dt)
     @.. broadcast = false thread = thread u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
     return nothing

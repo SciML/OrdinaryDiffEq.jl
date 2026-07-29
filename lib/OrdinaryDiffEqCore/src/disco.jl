@@ -1,3 +1,10 @@
+"""
+    set_discontinuity(u, uprev, integrator) -> dt
+
+Return the sub-step `Δt` at which a continuous callback's root lies within the
+current step (a discontinuity to stop at), or a negative value if there is none in
+`(0, 1)·dt`.
+"""
 function set_discontinuity(u, uprev, integrator)
     breakpointθ = find_discontinuity(u, uprev, integrator)
     dt = integrator.dt

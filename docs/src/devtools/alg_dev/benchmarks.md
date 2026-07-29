@@ -77,3 +77,13 @@ wp_set = WorkPrecisionSet(prob, abstols, reltols, setups; dt = 1 / 2^4, numruns 
 
 Both of these types have a plot recipe to produce a work-precision diagram,
 and a print which will show some relevant information.
+
+## API
+
+```@docs
+DiffEqDevTools.Shootout
+DiffEqDevTools.ShootoutSet
+DiffEqDevTools.WorkPrecision
+DiffEqDevTools.WorkPrecisionSet
+DiffEqDevTools.get_sample_errors
+```

@@ -40,7 +40,16 @@ function SciMLBase.__solve(
     return integrator.sol
 end
 
-# Make it easy to grab the RODEProblem/SDEProblem/DiscreteProblem from the keyword arguments
+"""
+    concrete_prob(prob) -> prob
+
+The underlying differential equation problem carried by `prob`.
+
+For an `SDEProblem`, `RODEProblem`, or `DiscreteProblem` this is `prob` itself; for a
+`JumpProblem` it is the wrapped `prob.prob`. Setup code that needs to inspect the
+problem's `f`, `u0`, or `tspan` goes through this so it works uniformly with and
+without a jump wrapper.
+"""
 concrete_prob(prob) = prob
 concrete_prob(prob::JumpProblem) = prob.prob
 
@@ -99,6 +108,25 @@ function _z_prototype(alg, rand_prototype, iip::Bool)
     return rand_prototype
 end
 
+"""
+    _z_prototype(alg, rand_prototype, iip::Bool, dt) -> rand_prototype2
+
+Step-size aware form of [`_z_prototype`](@ref), used when the size of the Z process
+depends on the step size — as it does for Lévy area truncations, where the number of
+retained series terms is chosen from the accuracy the step size demands.
+
+`dt` is the initial step size as passed to `solve`, which is zero when the caller left
+it to be determined automatically. Since the Z prototype must be built before the
+initial step size is known, an algorithm that sizes from `dt` needs a fallback for
+that case.
+
+Defaults to the three-argument form, so an override only has to be added by
+algorithms that actually need the step size.
+"""
+function _z_prototype(alg, rand_prototype, iip::Bool, dt)
+    return _z_prototype(alg, rand_prototype, iip)
+end
+
 function SciMLBase.__init(
         _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
@@ -107,6 +135,21 @@ function SciMLBase.__init(
     return _sde_init(_prob, alg; kwargs...)
 end
 
+"""
+    _sde_init(prob, alg; kwargs...) -> SDEIntegrator
+
+Build the [`SDEIntegrator`](@ref) for `prob` and `alg`.
+
+This is the body of `SciMLBase.__init` for SDE, RODE, and jump problems: it resolves
+the options and the RNG, allocates the solution object, the algorithm cache
+([`alg_cache`](@ref)) and the noise process, and returns the integrator positioned at
+the initial condition. `solve` is `init` followed by `solve!`, so every documented
+`solve` keyword is accepted here.
+
+It is exposed separately from `__init` so that downstream packages which build on the
+SDE integrator (for example StochasticDelayDiffEq) can construct one without going
+through `SciMLBase.__init` dispatch.
+"""
 function _sde_init(
         _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
@@ -191,7 +234,7 @@ function _sde_init(
     # ── JumpProblem reset ────────────────────────────────────────────────
     if _prob isa JumpProblem
         alias_jumps = isnothing(aliases.alias_jumps) ? Threads.threadid() == 1 :
-            aliases.alias_jumps
+            aliases.alias_jumps === true
         _jump_seed = _rng_provided ? nothing : _seed
         if !alias_jumps
             _prob = JumpProcesses.resetted_jump_problem(_prob, _jump_seed)
@@ -246,19 +289,23 @@ function _sde_init(
     end
 
     # ── f/p/u aliasing (needed before cache construction) ────────────────
-    if isnothing(aliases.alias_f) || aliases.alias_f
+    alias_f = aliases.alias_f !== false
+    alias_p = aliases.alias_p !== false
+    alias_u0 = aliases.alias_u0 === true
+
+    if alias_f
         f = prob.f
     else
         f = deepcopy(prob.f)
     end
 
-    if isnothing(aliases.alias_p) || aliases.alias_p
+    if alias_p
         p = prob.p
     else
         p = recursivecopy(prob.p)
     end
 
-    if !isnothing(aliases.alias_u0) && aliases.alias_u0
+    if alias_u0
         u = prob.u0
     else
         u = recursivecopy(prob.u0)
@@ -376,7 +423,7 @@ function _sde_init(
         rswm = isadaptive(alg) ? RSWM(adaptivealg = :RSwM3) : RSWM(adaptivealg = :RSwM1)
         if isinplace(prob)
             if alg_needs_extra_process(alg)
-                rand_prototype2 = _z_prototype(alg, rand_prototype, true)
+                rand_prototype2 = _z_prototype(alg, rand_prototype, true, dt)
                 W = WienerProcess!(
                     t, rand_prototype, rand_prototype2,
                     save_everystep = save_noise,
@@ -391,7 +438,7 @@ function _sde_init(
             end
         else
             if alg_needs_extra_process(alg)
-                rand_prototype2 = _z_prototype(alg, rand_prototype, false)
+                rand_prototype2 = _z_prototype(alg, rand_prototype, false, dt)
                 W = WienerProcess(
                     t, rand_prototype, rand_prototype2,
                     save_everystep = save_noise,

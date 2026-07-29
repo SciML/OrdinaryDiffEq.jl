@@ -6,7 +6,8 @@ import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default, OrdinaryDiffEqA
     alg_cache, @cache, _ode_addsteps!, _ode_interpolant!,
     _ode_interpolant, get_fsalfirstlast,
     OrdinaryDiffEqConstantCache, dt_required,
-    isdiscretecache, isdiscretealg, full_cache
+    isdiscretecache, isdiscretealg, full_cache,
+    trivial_limiter!
 using DiffEqBase: DiffEqBase
 import DiffEqBase: initialize!
 import RecursiveArrayTools: recursivecopy!

@@ -42,6 +42,13 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
     return bool
 end
 
+"""
+    default_autoswitch(AS::AutoSwitchCache, integrator) -> Int
+
+Choose, for the automatic default solver, the index of the algorithm to use next
+given the auto-switch state `AS` and the current `integrator`. Extended by the
+default-solver sublibrary; the generic method is only a stub.
+"""
 function default_autoswitch end
 
 function (AS::AutoSwitchCache)(integrator)
@@ -83,6 +90,15 @@ function (AS::AutoSwitchCache)(integrator)
     return AS.current
 end
 
+"""
+    AutoAlgSwitch(nonstiffalg, stiffalg; kwargs...)
+    AutoAlgSwitch(nonstiffalgs::Tuple, stiffalgs::Tuple; kwargs...)
+
+Build a [`CompositeAlgorithm`](@ref) whose choice function is an
+[`AutoSwitch`](@ref), i.e. an algorithm that automatically switches between a
+nonstiff and a stiff solver based on runtime stiffness detection. Keyword
+arguments are forwarded to [`AutoSwitch`](@ref).
+"""
 function AutoAlgSwitch(
         nonstiffalg::OrdinaryDiffEqAlgorithm, stiffalg::OrdinaryDiffEqAlgorithm; kwargs...
     )

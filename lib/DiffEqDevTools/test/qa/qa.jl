@@ -2,11 +2,16 @@ using SciMLTesting, DiffEqDevTools, Test
 
 run_qa(
     DiffEqDevTools;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
     aqua_kwargs = (;
         ambiguities = false, piracies = false, unbound_args = false, stale_deps = false,
         deps_compat = (; check_extras = false),
     ),
     explicit_imports = true,
+    # residual_order_condition is owned by RootedTrees; DiffEqDevTools reexports it
+    # after extending it for ODERKTableau (tableau_info.jl).
+    reexports_allow = (:residual_order_condition,),
     ei_kwargs = (;
         # SciMLBase-owned solver-interface predicates accessed via SciMLBase (their
         # owner) but not declared `public` in the registered SciMLBase release.

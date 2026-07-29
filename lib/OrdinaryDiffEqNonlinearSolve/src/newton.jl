@@ -42,8 +42,17 @@ function initialize!(
 
     (; ustep, tstep, k, invγdt) = cache
     if SciMLBase.has_stats(integrator)
-        integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.njacs += cache.cache.stats.njacs
+        # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
+        # inner cache's counters, so that evaluation is never visible in
+        # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
+        integrator.stats.nf += cache.cache.stats.nf + 1
+        # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
+        # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
+        # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
+        # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
+        if cache.W === nothing
+            integrator.stats.njacs += cache.cache.stats.njacs
+        end
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
     if f isa DAEFunction
@@ -77,8 +86,17 @@ function initialize!(
     (; ustep, atmp, tstep, k, invγdt) = cache
 
     if SciMLBase.has_stats(integrator)
-        integrator.stats.nf += cache.cache.stats.nf
-        integrator.stats.njacs += cache.cache.stats.njacs
+        # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
+        # inner cache's counters, so that evaluation is never visible in
+        # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
+        integrator.stats.nf += cache.cache.stats.nf + 1
+        # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
+        # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
+        # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
+        # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
+        if cache.W === nothing
+            integrator.stats.njacs += cache.cache.stats.njacs
+        end
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
 
@@ -106,8 +124,10 @@ function initialize!(
             # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
             # Jacobian evaluation is not).
             new_jac = first_call || alg.always_new || nlsolver.status === Divergence
+            # `oftype`: `new_W_dt_cutoff` defaults to a `Rational`, and comparing a `Float64`
+            # against one goes through the slow mixed-type path on every stage.
             new_w = new_jac ||
-                abs(inv(dtgamma) / inv(W_γdt) - 1) > alg.new_W_dt_cutoff
+                abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
             if new_w
                 _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
                 cache.new_W = true
@@ -121,9 +141,30 @@ function initialize!(
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
         if length(cache.cache.u) != length(z)
-            new_prob = SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            new_prob = if cache.W !== nothing
+                # W-reuse: re-point the inner jacobian at the resized W via the same mapping
+                # used at build time. Only array sizes change, so the jac's concrete type —
+                # and hence `cache.prob`'s concrete type — is preserved and `init` stays
+                # type-stable.
+                new_f = SciMLBase.remake(cache.prob.f; reuse_jac_kwargs(cache.W)...)
+                SciMLBase.remake(cache.prob; f = new_f, u0 = copy(z), p = nlp_params)
+            else
+                SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
+            end
             cache.prob = new_prob
-            cache.cache = init(new_prob, cache.cache.alg)
+            # Same tolerances and termination mode as `build_nlsolver`: the integrator owns
+            # convergence, so the inner criterion must stay inert here too (otherwise a resized
+            # cache could terminate on its own again), and the mode is part of the cache's type,
+            # so rebuilding with a different one would not even be assignable.
+            uT = real(eltype(z))
+            cache.cache = init(
+                new_prob, cache.cache.alg;
+                verbose = integrator.opts.verbose.nonlinear_verbosity,
+                abstol = zero(uT), reltol = zero(uT),
+                termination_condition = _inner_termination()
+            )
+            # re-point the estimator linsolve alias at the rebuilt inner cache
+            cache.linsolve = cache.W !== nothing ? get_linear_cache(cache.cache) : nothing
         else
             SciMLBase.reinit!(cache.cache, z, p = nlp_params)
         end
@@ -135,21 +176,60 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if new_jac
-        if SciMLBase.has_jac(f)
-            f.jac(J, uprev, p, tstep)
-        elseif uf !== nothing
-            uf.f = nlsolve_f(f, alg)
-            uf.t = tstep
-            if !(p isa SciMLBase.NullParameters)
-                uf.p = p
+    if W isa AbstractSciMLOperator
+        # Matrix-free reused W: refresh its state and gamma in place; its own `mul!`
+        # supplies the Jacobian action to the inner (Krylov) solve, so there is no
+        # concrete J to reassemble.
+        update_coefficients!(W, uprev, p, tstep; gamma = dtgamma)
+    else
+        if new_jac
+            if SciMLBase.has_jac(f)
+                f.jac(J, uprev, p, tstep)
+            elseif uf !== nothing
+                uf.f = nlsolve_f(f, alg)
+                uf.t = tstep
+                if !(p isa SciMLBase.NullParameters)
+                    uf.p = p
+                end
+                jacobian!(J, uf, uprev, du1, integrator, jac_config)
             end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
+            # `calc_J!` is bypassed here, so this is the only place the reused-`W`
+            # path can record a Jacobian evaluation.
+            integrator.stats.njacs += 1
         end
+        jacobian2W!(W, mass_matrix, dtgamma, J)
     end
-    jacobian2W!(W, mass_matrix, dtgamma, J)
+    # No estimator refresh needed: the smoothed estimate reuses the inner solver's own W
+    # factorization, which the inner Newton re-factorizes itself when it refreshes W.
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
+    return nothing
+end
+
+"""
+    rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+
+Apply the stale-`W` correction of `compute_step!(::NLSolver{<:NLNewton, true}, ...)` to a
+`NonlinearSolveAlg` step: when the reused `W` was assembled at a different `γΔt` than the
+current step needs, the Newton direction it produces is off by that ratio.
+
+`NLNewton` scales the increment it just computed. `NonlinearSolveAlg` cannot: the inner
+solver computes *and* applies the increment inside `step!`. Scaling the right-hand side
+beforehand is equivalent for the Newton descent `δu = -W \\ fu`, and unlike rewriting
+`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent — the
+inner solver re-evaluates `fu` at the end of `step!`, so the scaling does not persist.
+"""
+function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+    cache = nlsolver.cache
+    # `W` is only reused on the plain path; otherwise the inner solver refreshes its own
+    # Jacobian at every stage and there is nothing stale to correct.
+    (cache.W === nothing || nlstep_data !== nothing) && return nothing
+    W_γdt = cache.W_γdt
+    iszero(W_γdt) && return nothing
+    isdae = nlsolve_f(integrator) isa DAEFunction
+    γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
+    W_γdt ≈ γdt && return nothing
+    rmul!(nlcache.fu, 2 / (1 + γdt / W_γdt))
     return nothing
 end
 
@@ -162,6 +242,15 @@ end
 
     nlcache = nlsolver.cache.cache
     recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+    # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
+    # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
+    # path (the inner solve converged before the integrator's own test was satisfied); any
+    # other terminal state is a genuine failure and must reach the step controller, so report
+    # it the way `NLNewton` reports a failed linear solve.
+    if !NonlinearSolveBase.not_terminated(nlcache) &&
+            !SciMLBase.successful_retcode(nlcache.retcode)
+        return convert(eltype(z), Inf)
+    end
     step!(nlcache; recompute_jacobian)
     nlsolver.ztmp = nlcache.u
 
@@ -187,6 +276,16 @@ end
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
     recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+    # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
+    # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
+    # path (the inner solve converged before the integrator's own test was satisfied); any
+    # other terminal state is a genuine failure and must reach the step controller, so report
+    # it the way `NLNewton` reports a failed linear solve.
+    if !NonlinearSolveBase.not_terminated(nlcache) &&
+            !SciMLBase.successful_retcode(nlcache.retcode)
+        return convert(eltype(atmp), Inf)
+    end
+    rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
@@ -275,7 +374,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
                 "Use the in-place form (define f!(du, u, p, t)) or supply a concrete jac_prototype."
         )
     end
-    dz = _reshape(W \ _vec(ztmp), axes(ztmp))
+    dz = _restructure_state(ztmp, W \ _vec(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
@@ -349,8 +448,6 @@ end
             linres.retcode != SciMLBase.ReturnCode.Default
         return convert(eltype(atmp), Inf)
     end
-
-    cache.linsolve = linres.cache
 
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
@@ -700,8 +797,11 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.atmp === nothing || resize!(nlcache.atmp, i)
     nlcache.du1 === nothing || resize!(nlcache.du1, i)
     nlcache.weight === nothing || resize!(nlcache.weight, i)
+    nlcache.dz === nothing || resize!(nlcache.dz, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
     nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    # `nlcache.linsolve` is re-pointed by `initialize!` when it rebuilds the inner cache on the
+    # next length mismatch, before any estimator solve — nothing to rebuild here.
     nlcache.W_γdt = zero(nlcache.W_γdt)
     nlcache.new_W = true
     return nothing

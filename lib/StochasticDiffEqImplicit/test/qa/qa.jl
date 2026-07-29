@@ -3,6 +3,9 @@ using JET
 
 run_qa(
     StochasticDiffEqImplicit;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(StochasticDiffEqCore), (:StochasticDiffEqCore,)),
     # Scope JET to this package in `:typo` mode, matching the OrdinaryDiffEq* solver
     # sublibraries. The deprecated `target_defined_modules = true` also reported
     # `nlsolve!`/`get_W`/`set_new_W!` "no matching method" cross-package false
@@ -17,6 +20,8 @@ run_qa(
         all_explicit_imports_via_owners = (; ignore = (Symbol("@.."),)),
         all_explicit_imports_are_public = (;
             ignore = (
+                # OrdinaryDiffEqNonlinearSolve — owner-internal, no public alternative
+                :build_nlsolver, :markfirststage!, :nlsolve!, :nlsolvefail,
                 # `@..` (FastBroadcast macro re-exported via DiffEqBase) is not `public` there.
                 Symbol("@.."),
                 # StochasticDiffEqCore internal codegen macro (owner-internal).
@@ -25,6 +30,7 @@ run_qa(
                 :current_extrapolant!, :isnewton, :_fixup_ad,
                 # SciMLBase internals (not yet `public` on registered SciMLBase).
                 :has_Wfact, :_vec, :_reshape, :_unwrap_val,
-            )),
+            ),
+        ),
     ),
 )

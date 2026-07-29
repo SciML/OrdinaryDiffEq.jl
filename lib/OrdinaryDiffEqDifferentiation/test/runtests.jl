@@ -1,7 +1,8 @@
 using SafeTestsets
 using Pkg
+using SciMLTesting
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_sparse_env()
     Pkg.activate(joinpath(@__DIR__, "sparse"))
@@ -16,8 +17,7 @@ function activate_modelingtoolkit_env()
 end
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run QA tests (JET, Aqua)
@@ -29,10 +29,15 @@ end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
+    @time @safetestset "DAE jacobian2W sparse" include("dae_jacobian2w_sparse_tests.jl")
+    @time @safetestset "nzval helpers" include("nzval_helpers_tests.jl")
+    @time @safetestset "prepare_sparse_jac!" include("prepare_sparse_jac_tests.jl")
     @time @safetestset "OOP J_t Tracking" include("oop_jt_tracking_test.jl")
     @time @safetestset "Differentiation Trait Tests" include("differentiation_traits_tests.jl")
     @time @safetestset "Autodiff Error Tests" include("autodiff_error_tests.jl")
     @time @safetestset "No Jac Tests" include("nojac_tests.jl")
+    @time @safetestset "Stale W Linear Operator Tests" include("stale_w_linear_operator_tests.jl")
+    @time @safetestset "Krylov warm_start default" include("warm_start_default_tests.jl")
 end
 
 # Run sparse tests (separate environment due to ComponentArrays dep conflicts)

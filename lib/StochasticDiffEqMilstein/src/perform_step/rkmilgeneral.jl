@@ -44,9 +44,13 @@ Compute Stratonovich iterated integrals J. Strategy:
 
 4. **Fallback**: Return nothing → legacy path for diagonal/scalar noise.
 """
-function _compute_iterated_I(dt, dW, dZ, W_noise, alg)
-    # Only for non-diagonal vector noise (dW must be a Vector, not Matrix or Number)
+function _compute_iterated_I(dt, dW, dZ, W_noise, alg, is_diagonal)
+    # Only for non-diagonal vector noise (dW must be a Vector, not Matrix or Number).
+    # Diagonal noise also has a vector dW, but the diagonal perform_step! branch treats
+    # J as an element-wise m-vector (½ dW²), not the full m×m matrix returned here, so
+    # defer to the legacy diagonal path — which is exact for diagonal noise anyway.
     dW isa AbstractVector || return nothing
+    is_diagonal && return nothing
 
     m = length(dW)
 
@@ -257,7 +261,9 @@ end
     dW = W.dW
 
     # Try coefficient-based computation first (handles adaptivity + consistency)
-    J = _compute_iterated_I(dt, dW, W.dZ, W, integrator.alg)
+    J = _compute_iterated_I(
+        dt, dW, W.dZ, W, integrator.alg, is_diagonal_noise(integrator.sol.prob)
+    )
     if J === nothing
         # Fallback: legacy LevyArea path (scalar/diagonal/commutative noise)
         J = get_iterated_I(
@@ -332,7 +338,9 @@ end
     Jalg = cache.Jalg
 
     # Try coefficient-based computation first
-    J_coeffs = _compute_iterated_I(dt, dW, W.dZ, W, integrator.alg)
+    J_coeffs = _compute_iterated_I(
+        dt, dW, W.dZ, W, integrator.alg, is_diagonal_noise(integrator.sol.prob)
+    )
     if J_coeffs !== nothing
         Jalg.J .= J_coeffs
     else

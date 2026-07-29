@@ -823,3 +823,11 @@ Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        CarpenterKennedy2N54, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F, NDBLSRK124,
+        NDBLSRK134, NDBLSRK144, ORK256, RDPK3Sp35, RDPK3Sp49, RDPK3Sp510, RDPK3SpFSAL35,
+        RDPK3SpFSAL49, RDPK3SpFSAL510, RK46NL, SHLDDRK52, SHLDDRK64, SHLDDRK_2N,
+    },
+) = true

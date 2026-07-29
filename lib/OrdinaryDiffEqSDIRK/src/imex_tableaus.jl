@@ -2608,6 +2608,13 @@ function ImplicitMidpointESDIRKIMEXTableau(T, T2)
     )
 end
 
+"""
+    ImplicitEulerESDIRKIMEXTableau(T, T2)
+
+Construct the single-stage ESDIRK-IMEX Butcher tableau whose implicit part is the
+implicit Euler method (element types `T` for coefficients, `T2` for abscissae).
+Used as the base tableau for the implicit-Euler IMEX splitting scheme.
+"""
 function ImplicitEulerESDIRKIMEXTableau(T, T2)
     s = 1
     Ai = fill(one(T), 1, 1)

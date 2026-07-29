@@ -4,7 +4,7 @@ include("rosenbrock_tableaus.jl")
 
 export RodasTableau, Rodas5Tableau,
     Rodas4Tableau, Rodas42Tableau, Rodas4PTableau, Rodas4P2Tableau,
-    ROS3PRodasTableau, Rodas3RodasTableau, Rodas3PRodasTableau,
+    ROS3PRodasTableau, Rodas3RodasTableau, Rodas3dRodasTableau, Rodas3PRodasTableau,
     RosShamp4RodasTableau, Veldd4RodasTableau, Velds4RodasTableau,
     GRK4TRodasTableau, GRK4ARodasTableau, Ros4LStabRodasTableau,
     ROS2RodasTableau, ROS2PRRodasTableau, ROS2SRodasTableau,

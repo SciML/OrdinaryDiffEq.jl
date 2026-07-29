@@ -67,11 +67,11 @@ function SciMLBase.reeval_internals_due_to_modification!(
     if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if SciMLBase.has_lazy_interpolation(alg)
-            ode_addsteps!(integrator, integrator.f, true, false, !_unwrap_val(alg.lazy))
-        else
-            ode_addsteps!(integrator, integrator.f, true, false)
-        end
+        # A non-lazy interpolant keeps its extra stages inside kshortsize, so the
+        # resize! above cannot drop them and they stay stale for the shortened dt.
+        # Force them to be recomputed; lazy interpolants build them on demand.
+        force_calc_end = !SciMLBase.has_lazy_interpolation(alg)
+        ode_addsteps!(integrator, integrator.f, true, false, force_calc_end)
     end
 
     integrator.derivative_discontinuity = false
@@ -511,6 +511,14 @@ function SciMLBase.reinit!(
             integrator.sol = sol
         end
     end
+    # Null u0 (e.g., MTK systems with only observed/algebraic variables and no state).
+    # `init` coerces such a `nothing` to the working state (`Float64[]`), but `prob.u0`
+    # (the default here) and `late_binding_update_u0_p` can still hand back `nothing`.
+    # There is no state to reinitialize, so fall back to the integrator's current `u`,
+    # which downstream copying/saving can handle uniformly.
+    if u0 === nothing
+        u0 = integrator.u
+    end
     if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.u, u0)
         recursivecopy!(integrator.uprev, integrator.u)
@@ -529,6 +537,20 @@ function SciMLBase.reinit!(
 
     integrator.t = t0
     integrator.tprev = t0
+
+    # Initialization changes the ImplicitDiscrete start state, so run it before
+    # save_start and preserve any InitialFailure instead of resetting it below.
+    implicit_discrete = integrator.sol.prob isa SciMLBase.ImplicitDiscreteProblem
+    if reinit_dae && implicit_discrete
+        if reinit_retcode
+            integrator.sol = SciMLBase.solution_new_retcode(
+                integrator.sol, ReturnCode.Default
+            )
+        end
+        SciMLBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
+        u0 = integrator.u
+    end
 
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
@@ -585,7 +607,7 @@ function SciMLBase.reinit!(
         auto_dt_reset!(integrator)
     end
 
-    if reinit_dae &&
+    if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
         SciMLBase.initialize_dae!(integrator)
         update_uprev!(integrator)
@@ -599,7 +621,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reinit_retcode
+    if reinit_retcode && !(reinit_dae && implicit_discrete)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 
@@ -613,6 +635,12 @@ end
 
 # Extensible initdt hook: ODE defaults to ode_determine_initdt.
 # SDE extends this in StochasticDiffEq to pass the stochastic order.
+"""
+    _determine_initdt(integrator) -> dt
+
+Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
+`integrator` (state, tolerances, norm, problem).
+"""
 function _determine_initdt(integrator)
     return ode_determine_initdt(
         integrator.u, integrator.t,
@@ -629,6 +657,11 @@ function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
     return increment_nf!(integrator.stats, 2)
 end
 
+"""
+    increment_nf!(stats, amt = 1)
+
+Increment the RHS-evaluation counter `stats.nf` by `amt`.
+"""
 function increment_nf!(stats, amt = 1)
     return stats.nf += amt
 end

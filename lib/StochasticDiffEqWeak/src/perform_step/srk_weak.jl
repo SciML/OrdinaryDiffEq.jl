@@ -582,9 +582,9 @@ end
     if W.dW isa Number
         H12 = uprev + b121 * g1 * _dW
     elseif is_diagonal_noise(integrator.sol.prob)
-        H12 = Vector{typeof(uprev)}[uprev .+ b121 * g1[k] * _dW[k] for k in 1:m]
+        H12 = [uprev .+ b121 * g1[k] * _dW[k] for k in 1:m]
     else
-        H12 = Vector{typeof(uprev)}[uprev .+ b121 * g1[:, k] * _dW[k] for k in 1:m]
+        H12 = [uprev .+ b121 * g1[:, k] * _dW[k] for k in 1:m]
     end
 
     if W.dW isa Number
@@ -597,18 +597,18 @@ end
     if W.dW isa Number
         H13 = uprev + a131 * k1 * dt + b131 * g1 * _dW + b132 * g2 * _dW
     else
-        H13 = [zero(typeof(uprev)) for k in 1:m]
+        H13 = [zero(uprev) for k in 1:m]
         for k in 1:m
             H13[k] += uprev .+ a131 * k1 * dt
             if is_diagonal_noise(integrator.sol.prob)
                 H13[k] += b131 * g1[k] * _dW[k] .+ b132 * g2[k] * _dW[k]
                 for l in 1:m
                     if l != k
-                        H13[k] += b331 * g1[l] * _dW[l] .+ b332 * g2[l][l] * _dW[l]
+                        H13[k] += b331 * g1[l] * _dW[l] .+ b332 * g2[l] * _dW[l]
                     end
                 end
             else
-                H13 += b131 * g1[:, k] * _dW[k] .+ b132 * g2[k][:, k] * _dW[k]
+                H13[k] += b131 * g1[:, k] * _dW[k] .+ b132 * g2[k][:, k] * _dW[k]
                 for l in 1:m
                     if l != k
                         H13[k] += b331 * g1[:, l] * _dW[l] .+ b332 * g2[l][:, l] * _dW[l]
@@ -627,18 +627,18 @@ end
     if W.dW isa Number
         H14 = uprev + a141 * k1 * dt + b141 * g1 * _dW + b142 * g2 * _dW + b143 * g3 * _dW
     else
-        H14 = [zero(typeof(uprev)) for k in 1:m]
+        H14 = [zero(uprev) for k in 1:m]
         for k in 1:m
             H14[k] += uprev .+ a141 * k1 * dt
             if is_diagonal_noise(integrator.sol.prob)
                 H14[k] += b141 * g1[k] * _dW[k] .+ b142 * g2[k] * _dW[k] .+ b143 * g3[k] * _dW[k]
                 for l in 1:m
                     if l != k
-                        H14[k] += b341 * g1[l] * _dW[l] .+ b342 * g2[l][l] * _dW[l]
+                        H14[k] += b341 * g1[l] * _dW[l] .+ b342 * g2[l] * _dW[l]
                     end
                 end
             else
-                H14 += b141 * g1[:, k] * _dW[k] .+ b142 * g2[k][:, k] * _dW[k] .+
+                H14[k] += b141 * g1[:, k] * _dW[k] .+ b142 * g2[k][:, k] * _dW[k] .+
                     b143 * g3[k][:, k] * _dW[k]
                 for l in 1:m
                     if l != k
@@ -671,7 +671,7 @@ end
     else
         H03 += b031 * g1 .* _dW
         for k in 1:m
-            H03 += b032 * g2[k][k] * _dW[k]
+            H03 = H03 .+ b032 * g2[k][k] * _dW[k]
         end
     end
 
@@ -685,8 +685,8 @@ end
     # H^_2^(k) # H^_3^(k)
 
     if !(W.dW isa Number)
-        H22 = [uprev for k in 1:m]
-        H23 = [uprev for k in 1:m]
+        H22 = [copy(uprev) for k in 1:m]
+        H23 = [copy(uprev) for k in 1:m]
         # add inbounds for speed if working properly
         for k in 1:m
             for l in 1:m
@@ -887,8 +887,8 @@ end
 
     if (!(W.dW isa Number) || (m != 1))
         for k in 1:m
-            H22[k] = uprev
-            H23[k] = uprev
+            @.. H22[k] = uprev
+            @.. H23[k] = uprev
         end
         for k in 1:m
             for l in 1:m
@@ -969,11 +969,11 @@ end
             Yp = uprev + k1 * dt + g1 * integrator.sqdt
             Ym = uprev + k1 * dt - g1 * integrator.sqdt
         else
-            Yp = Vector{typeof(uprev)}[
+            Yp = [
                 uprev .+ k1 * dt .+ g1[:, k] * integrator.sqdt
                     for k in 1:m
             ]
-            Ym = Vector{typeof(uprev)}[
+            Ym = [
                 uprev .+ k1 * dt .- g1[:, k] * integrator.sqdt
                     for k in 1:m
             ]
@@ -1102,7 +1102,7 @@ end
     if W.dW isa Number
         integrator.f.g(tmpg1, Yp, p, t)
         integrator.f.g(tmpg2, Ym, p, t)
-        @.. u = u + 1 // 4 * (tmpg1 + tmpg2 + 2 * g1) * _dW + 1 // 4 * (tmpg1 - tmpg2) * chi1[k] / integrator.sqdt #(1.1)
+        @.. u = u + 1 // 4 * (tmpg1 + tmpg2 + 2 * g1) * _dW + (tmpg1 - tmpg2) * chi1 / integrator.sqdt #(1.1)
     else
         if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
             # non-diag noise

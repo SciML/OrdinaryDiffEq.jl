@@ -75,6 +75,23 @@ PrecompileTools.@compile_workload begin
         )
     end
 
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
+        push!(
+            prob_list,
+            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+            )
+        )
+    end
+
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
         push!(
             prob_list,

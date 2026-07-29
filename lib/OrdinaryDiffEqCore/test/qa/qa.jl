@@ -4,8 +4,21 @@ using SciMLTesting, OrdinaryDiffEqCore, Test
 # ExplicitImports cannot statically analyze; allow it to be unanalyzable.
 const UNANALYZABLE = (OrdinaryDiffEqCore.Predictor,)
 
+@static if VERSION >= v"1.11.0-DEV.469"
+    @test Base.ispublic(OrdinaryDiffEqCore, :isdiscretecache)
+end
+
 run_qa(
     OrdinaryDiffEqCore;
+    reexports_allow = union(
+        public_api_names(SciMLBase), (:SciMLBase,),
+        # `last_step_failed`/`postamble!` are SciMLBase-owned generic functions that
+        # OrdinaryDiffEqCore imports, extends, and re-declares `public` as part of the
+        # documented solver-author surface (docs/src/devtools/internals/public_api.md).
+        # SciMLBase has not declared them `public` yet, so `public_reexports` sees them
+        # as owned outside this package; drop these once SciMLBase marks them public.
+        (:last_step_failed, :postamble!),
+    ),
     aqua_kwargs = (; piracies = false, unbound_args = false),
     explicit_imports = true,
     ei_kwargs = (;
@@ -19,21 +32,18 @@ run_qa(
             allow_unanalyzable = UNANALYZABLE,
             ignore = (
                 :BrownFullBasicInit, :ShampineCollocationInit, :DEVerbosity,
-                :Minimal, :_vec, :_reshape, :unwrap_cache,
+                :Minimal, :_vec, :_reshape, :unwrap_cache, :_unwrap_val,
                 :calculate_residuals, :calculate_residuals!,
             ),
         ),
-        # `constructorof` is owned by ConstructionBase but reached through SciMLBase
-        # (not a direct dependency); accessing it via SciMLBase is intentional.
-        all_qualified_accesses_via_owners = (; ignore = (:constructorof,)),
         # Internal (non-`public`) names of upstream packages that OrdinaryDiffEqCore
         # genuinely needs and that have no public replacement yet.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # DiffEqBase — owner-internal, no public alternative
+                :NAN_CHECK,
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
-                # ConstructionBase (owned there, accessed via SciMLBase)
-                :constructorof,
                 # SciMLOperators internal
                 :AbstractSciMLOperator,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
@@ -51,6 +61,8 @@ run_qa(
         # Internal (non-`public`) names imported from upstream packages.
         all_explicit_imports_are_public = (;
             ignore = (
+                # DiffEqBase — owner-internal, no public alternative
+                :NAN_CHECK,
                 # TruncatedStacktraces internals
                 Symbol("@truncate_stacktrace"), :VERBOSE_MSG,
                 # FunctionWrappers internal
@@ -67,5 +79,10 @@ run_qa(
                 :_vec, :_reshape, :unwrap_cache,
             ),
         ),
+    ),
+    api_docs_kwargs = (;
+        rendered = false,
+        # Reexported upstream SciMLOperators names are documented at their owner.
+        ignore = (:StaticWOperator, :has_concretization),
     ),
 )

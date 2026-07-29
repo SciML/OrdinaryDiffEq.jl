@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using NonlinearSolve: NewtonRaphson
@@ -47,4 +47,21 @@ refsol = solve(prob, FBDF(); reltol = 1.0e-12, abstol = 1.0e-14)
         @test JAC_CALLS[] < sol.stats.nw / 3
         @test JAC_CALLS[] >= 1
     end
+end
+
+@testset "stale-W Newton directions are rescaled" begin
+    # `W` is reused while `γΔt` drifts within `new_W_dt_cutoff`, which leaves the Newton
+    # direction it produces scaled wrong; `NLNewton` corrects for that. Reproducing it
+    # needs `dt` to range over many orders of magnitude, hence the long tspan, and an
+    # AD Jacobian rather than the analytic one used above.
+    staleprob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e11), [0.04, 3.0e7, 1.0e4])
+    tight = solve(staleprob, Rodas5P(); reltol = 1.0e-13, abstol = 1.0e-15)
+    err(sol) = maximum(abs.(sol.u[end] .- tight.u[end]))
+
+    ref = solve(staleprob, KenCarp4(); reltol = 1.0e-9, abstol = 1.0e-12)
+    sol = solve(staleprob, KenCarp4(nlsolve = nsa); reltol = 1.0e-9, abstol = 1.0e-12)
+    @test SciMLBase.successful_retcode(sol)
+    # Uncorrected directions cost ~1.5x NLNewton's steps for ~9x its error here.
+    @test err(sol) < 3 * err(ref)
+    @test sol.stats.naccept < 1.25 * ref.stats.naccept
 end

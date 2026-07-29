@@ -318,13 +318,7 @@ end
     (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
     (; c1, c2, α, β, e1, e2) = cache.tab
     (; κ) = cache
-    (;
-        z1, z2, w1, w2,
-        dw12, cubuff,
-        k, k2, fw1, fw2,
-        J, W1,
-        tmp, atmp, jac_config, rtol, atol, step_limiter!,
-    ) = cache
+    (; z1, z2, w1, w2, dw12, cubuff, k, k2, fw1, fw2, J, W1, tmp, atmp, jac_config, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -412,8 +406,6 @@ end
             )
         end
 
-        cache.linsolve = linres.cache
-
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -461,7 +453,6 @@ end
     cache.iter = iter
 
     @. u = uprev + z2
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -694,13 +685,7 @@ end
     (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
     (; κ) = cache
     linres1 = nothing
-    (;
-        z1, z2, z3, w1, w2, w3,
-        dw1, ubuff, dw23, cubuff,
-        k, k1, k2, k3, fw1, fw2, fw3,
-        J, W1, W2,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
-    ) = cache
+    (; z1, z2, z3, w1, w2, w3, dw1, ubuff, dw23, cubuff, k, k1, k2, k3, fw1, fw2, fw3, J, W1, W2, tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -823,8 +808,6 @@ end
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff = complex(
             fw2 - αdt * Mw2 + βdt * Mw3,
             fw3 - βdt * Mw2 - αdt * Mw3
@@ -843,8 +826,6 @@ end
                 linu = _vec(dw23)
             )
         end
-
-        cache.linsolve2 = linres2.cache
 
         integrator.stats.nsolve += 2
         dw2 = z2
@@ -901,7 +882,6 @@ end
     cache.iter = iter
 
     @.. u = uprev + z3
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -912,10 +892,9 @@ end
 
         if alg.smooth_est
             linres1 = dolinsolve(
-                integrator, linres1.cache; b = _vec(ubuff),
+                integrator, cache.linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
-            cache.linsolve1 = linres1.cache
             integrator.stats.nsolve += 1
         end
 
@@ -933,10 +912,9 @@ end
 
             if alg.smooth_est
                 linres1 = dolinsolve(
-                    integrator, linres1.cache; b = _vec(ubuff),
+                    integrator, cache.linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
-                cache.linsolve1 = linres1.cache
                 integrator.stats.nsolve += 1
             end
 
@@ -1273,10 +1251,7 @@ end
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
     (; k, k1, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
-    (;
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
-        linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
-    ) = cache
+    (; tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config, linsolve1, linsolve2, linsolve3, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1484,8 +1459,6 @@ end
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff1 = complex(
             fw2 - α1dt * Mw2 + β1dt * Mw3, fw3 - β1dt * Mw2 - α1dt * Mw3
         )
@@ -1502,8 +1475,6 @@ end
             )
         end
 
-        cache.linsolve2 = linres2.cache
-
         @.. cubuff2 = complex(
             fw4 - α2dt * Mw4 + β2dt * Mw5, fw5 - β2dt * Mw4 - α2dt * Mw5
         )
@@ -1519,8 +1490,6 @@ end
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
-
-        cache.linsolve3 = linres3.cache
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1591,7 +1560,6 @@ end
 
     @.. u = uprev + z5
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -1602,10 +1570,9 @@ end
 
         if alg.smooth_est
             linres1 = dolinsolve(
-                integrator, linres1.cache; b = _vec(ubuff),
+                integrator, cache.linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
-            cache.linsolve1 = linres1.cache
             integrator.stats.nsolve += 1
         end
 
@@ -1623,10 +1590,9 @@ end
 
             if alg.smooth_est
                 linres1 = dolinsolve(
-                    integrator, linres1.cache; b = _vec(ubuff),
+                    integrator, cache.linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
-                cache.linsolve1 = linres1.cache
                 integrator.stats.nsolve += 1
             end
 
@@ -1916,7 +1882,7 @@ end
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -2061,13 +2027,13 @@ end
         needfactor = iter == 1 && new_W
 
         if needfactor
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         else
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         end
 
         if !isthreaded(alg.threading)
@@ -2077,15 +2043,15 @@ end
                     fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                 )
                 if needfactor
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = W2[i],
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 else
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = nothing,
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 end
             end
         else
@@ -2099,15 +2065,15 @@ end
                         fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                     )
                     if needfactor
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = W2[i],
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     else
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = nothing,
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     end
                 end
             end
@@ -2182,7 +2148,6 @@ end
 
     @.. u = uprev + z[num_stages]
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w[2]
@@ -2195,10 +2160,10 @@ end
         @.. ubuff = integrator.fsalfirst + tmp
 
         if alg.smooth_est
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
-            ).cache
+            )
             integrator.stats.nsolve += 1
         end
 
@@ -2216,10 +2181,10 @@ end
             @.. ubuff = fsallast + tmp
 
             if alg.smooth_est
-                cache.linsolve1 = dolinsolve(
+                dolinsolve(
                     integrator, linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
-                ).cache
+                )
                 integrator.stats.nsolve += 1
             end
 
@@ -2536,8 +2501,7 @@ end
         if needfactor
             LinearSolve.reinit!(linsolve; A = W)
         end
-        linres = LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
-        cache.linsolve = linres.cache
+        LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
         integrator.stats.nsolve += 1
 
         for i in 1:num_stages
@@ -2594,10 +2558,7 @@ end
 
 @muladd function perform_step!(integrator, cache::GaussLegendreCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsallast) = integrator
-    (;
-        atmp, J, z, z_last, u_full, u_half, rtol, atol,
-        step_limiter!, num_stages,
-    ) = cache
+    (; atmp, J, z, z_last, u_full, u_half, rtol, atol, num_stages) = cache
     (; internalnorm, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
 
@@ -2634,7 +2595,6 @@ end
             return
         end
 
-        step_limiter!(u, integrator, p, t + dt)
 
         p_order = 2 * num_stages
         denom = 2^p_order - 1
@@ -2651,7 +2611,6 @@ end
         for i in 1:num_stages
             @.. z_last[i] = z[i]
         end
-        step_limiter!(u, integrator, p, t + dt)
     end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))

@@ -15,6 +15,6 @@ jobs:
   sublibrary-ci:
     uses: "SciML/.github/.github/workflows/sublibrary-project-tests.yml@v1"
     with:
-      group-env-name: ODEDIFFEQ_TEST_GROUP
+      group-env-name: GROUP
       check-bounds: auto
     secrets: "inherit"

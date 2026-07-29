@@ -1,7 +1,8 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
+using RecursiveArrayTools: ArrayPartition
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -195,4 +196,26 @@ end
     # the solver gives up cleanly (Unstable) instead of overflowing the stack.
     @test sol.retcode != ReturnCode.Success
     @test sol.retcode != ReturnCode.Default
+end
+
+# Regression test for issue #3962: the out-of-place Newton step used
+# `_reshape(W \ _vec(ztmp), axes(ztmp))`, which collapses the ArrayPartition state
+# behind SecondOrderODEProblem/DynamicalODEFunction down to a bare Vector. Storing
+# `z .- dz` back into the ArrayPartition-typed nlsolver fields then failed with
+# `Cannot convert Vector to ArrayPartition`.
+@testset "OOP SecondOrderODEProblem with FBDF preserves ArrayPartition (#3962)" begin
+    # u'' = -u  ⇒  position = [cos t, sin t], velocity = [-sin t, cos t]
+    ho_iip(ddu, du, u, p, t) = (@. ddu = -u)
+    ho_oop(du, u, p, t) = -u
+    u0 = [1.0, 0.0]
+    du0 = [0.0, 1.0]
+    tspan = (0.0, 1.0)
+    prob_iip = SecondOrderODEProblem(ho_iip, du0, u0, tspan)
+    prob_oop = SecondOrderODEProblem(ho_oop, du0, u0, tspan)
+
+    ref = solve(prob_iip, FBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
+    sol = solve(prob_oop, FBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[end] isa ArrayPartition
+    @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
 end

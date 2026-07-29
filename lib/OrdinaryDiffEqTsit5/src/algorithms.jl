@@ -31,3 +31,7 @@ To gain access to stiff algorithms you might have to install additional librarie
 such as `OrdinaryDiffEqRosenbrock`.
 """
 AutoTsit5(stiff_alg; kwargs...) = AutoAlgSwitch(Tsit5(), stiff_alg; kwargs...)
+
+# Methods whose `perform_step!` applies the solve-level stage limiter opt into
+# `has_stage_limiter`; see the enforcement test in the OrdinaryDiffEq test suite.
+OrdinaryDiffEqCore.has_stage_limiter(::Tsit5) = true

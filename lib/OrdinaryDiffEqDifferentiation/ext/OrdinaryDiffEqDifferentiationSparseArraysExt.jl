@@ -13,7 +13,7 @@ OrdinaryDiffEqDifferentiation.nonzeros(A::AbstractSparseMatrix) = nonzeros(A)
 OrdinaryDiffEqDifferentiation.spzeros(T::Type, m::Integer, n::Integer) = spzeros(T, m, n)
 
 # Helper functions for accessing sparse matrix internals
-OrdinaryDiffEqDifferentiation.get_nzval(A::SparseMatrixCSC) = A.nzval
-OrdinaryDiffEqDifferentiation.set_all_nzval!(A::SparseMatrixCSC, val) = (A.nzval .= val; A)
+OrdinaryDiffEqDifferentiation.get_nzval(A::AbstractSparseMatrix) = nonzeros(A)
+OrdinaryDiffEqDifferentiation.set_all_nzval!(A::AbstractSparseMatrix, val) = (nonzeros(A) .= val; A)
 
 end

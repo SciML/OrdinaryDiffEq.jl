@@ -15,6 +15,7 @@ While completely independent and usable on its own, users wanting the full ODE s
 - `Rosenbrock32`
 - `RosShamp4`
 - `Rodas3`
+- `Rodas3d`
 - `Rodas4`
 - `Rodas4P`
 - `Rodas5`

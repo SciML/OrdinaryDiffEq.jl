@@ -164,3 +164,5 @@ Base.@kwdef struct RKV76IIa{StageLimiter, StepLimiter, Thread, L} <:
     lazy::L = Val{true}()
 end
 @truncate_stacktrace RKV76IIa 3
+
+OrdinaryDiffEqCore.has_stage_limiter(::Union{Vern6, Vern7, Vern8, Vern9}) = true

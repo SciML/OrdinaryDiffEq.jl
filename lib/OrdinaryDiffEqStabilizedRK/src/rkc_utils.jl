@@ -179,6 +179,33 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     end
     return false
 end
+
+"""
+    maybe_maxeig!(integrator, cache, alg) -> nothing
+
+Update `integrator.eigen_est`. Uses `alg.eigen_est` when provided; otherwise
+runs the power iteration (`maxeig!`), skipping it when the previous estimate is
+still fresh: with `alg.eigen_est_interval > 1` the estimate is only recomputed
+every `eigen_est_interval` steps, plus always on the first step, after step
+rejections, and at discontinuities.
+"""
+function maybe_maxeig!(integrator, cache, alg)
+    if alg.eigen_est !== nothing
+        alg.eigen_est(integrator)
+        return nothing
+    end
+    ccache = cache isa OrdinaryDiffEqConstantCache ? cache : cache.constantcache
+    EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+    if ccache.eig_age >= alg.eigen_est_interval || integrator.iter <= 1 ||
+            integrator.derivative_discontinuity || EEst > one(EEst)
+        maxeig!(integrator, cache)
+        ccache.eig_age = 1
+    else
+        ccache.eig_age += 1
+    end
+    return nothing
+end
+
 """
     choosedeg!(cache) -> nothing
 
