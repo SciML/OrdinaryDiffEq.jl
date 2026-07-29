@@ -149,6 +149,7 @@ methods.
     Tableau        # tableau-derived predictor (α / const_stage_guess)
 end
 export Predictor
+export set_discontinuity
 
 """
     CompiledFloats
@@ -476,7 +477,7 @@ include("precompilation_setup.jl")
             # Integrator step / cache / initialization hooks.
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
             :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
-            :set_discontinuity, :resolve_basic,
+            :resolve_basic,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
             :is_noise_saveable,

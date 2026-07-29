@@ -96,7 +96,8 @@ function integrators_i()
     @time @safetestset "Event Detection Tests" include("Integrators_I/event_detection_tests.jl")
     @time @safetestset "Event Repetition Detection Tests" include("Integrators_I/event_repeat_tests.jl")
     @time @safetestset "Multi-VCC Mask Tests" include("Integrators_I/multi_vcc_mask_tests.jl")
-    return @time @safetestset "Step Limiter Tests" include("Integrators_I/step_limiter_test.jl")
+    @time @safetestset "Step Limiter Tests" include("Integrators_I/step_limiter_test.jl")
+    return @time @safetestset "Discontinuity Detection Tests" include("Integrators_I/disco_tests.jl")
 end
 
 function integrators_ii()
