@@ -130,13 +130,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
     (; c1, c2, α, β, e1, e2) = cache.tab
     (; κ) = cache
-    (;
-        z1, z2, w1, w2,
-        dw12, cubuff,
-        k, k2, fw1, fw2,
-        J, W1,
-        tmp, atmp, jac_config, rtol, atol, step_limiter!,
-    ) = cache
+    (; z1, z2, w1, w2, dw12, cubuff, k, k2, fw1, fw2, J, W1, tmp, atmp, jac_config, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -222,8 +216,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve = linres.cache
-
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -271,7 +263,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     cache.iter = iter
 
     @. u = uprev + z2
-    step_limiter!(u, integrator, p, t + dt)
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
@@ -450,13 +441,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     ) = cache.tab
     (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
     (; κ) = cache
-    (;
-        z1, z2, z3, w1, w2, w3,
-        dw1, ubuff, dw23, cubuff,
-        k, k2, k3, fw1, fw2, fw3,
-        J, W1, W2,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!,
-    ) = cache
+    (; z1, z2, z3, w1, w2, w3, dw1, ubuff, dw23, cubuff, k, k2, k3, fw1, fw2, fw3, J, W1, W2, tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -570,8 +555,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff = complex(
             fw2 - αdt * Mw2 + βdt * Mw3,
             fw3 - βdt * Mw2 - αdt * Mw3
@@ -590,8 +573,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
                 linu = _vec(dw23)
             )
         end
-
-        cache.linsolve2 = linres2.cache
 
         integrator.stats.nsolve += 2
         dw2 = z2
@@ -648,7 +629,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     cache.iter = iter
 
     @.. u = uprev + z3
-    step_limiter!(u, integrator, p, t + dt)
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
@@ -945,10 +925,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     (; dw1, ubuff, dw23, dw45, cubuff1, cubuff2) = cache
     (; k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5) = cache
     (; J, W1, W2, W3) = cache
-    (;
-        tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
-        linsolve1, linsolve2, linsolve3, rtol, atol, step_limiter!,
-    ) = cache
+    (; tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config, linsolve1, linsolve2, linsolve3, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1138,8 +1115,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve1 = linres1.cache
-
         @.. cubuff1 = complex(
             fw2 - α1dt * Mw2 + β1dt * Mw3, fw3 - β1dt * Mw2 - α1dt * Mw3
         )
@@ -1156,8 +1131,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
             )
         end
 
-        cache.linsolve2 = linres2.cache
-
         @.. cubuff2 = complex(
             fw4 - α2dt * Mw4 + β2dt * Mw5, fw5 - β2dt * Mw4 - α2dt * Mw5
         )
@@ -1173,8 +1146,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
-
-        cache.linsolve3 = linres3.cache
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1245,7 +1216,6 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
 
     @.. u = uprev + z5
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if alg.extrapolant != :constant
         integrator.k[3] = (z4 - z5) / c4m1 # first derivative on [c4, 1]
@@ -1499,7 +1469,7 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, k, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter!) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -1626,13 +1596,13 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
         needfactor = iter == 1 && new_W
 
         if needfactor
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         else
-            cache.linsolve1 = dolinsolve(
+            dolinsolve(
                 integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1)
-            ).cache
+            )
         end
 
         if !isthreaded(alg.threading)
@@ -1642,15 +1612,15 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
                     fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                 )
                 if needfactor
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = W2[i],
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 else
-                    cache.linsolve2[i] = dolinsolve(
+                    dolinsolve(
                         integrator, linsolve2[i]; A = nothing,
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                    ).cache
+                    )
                 end
             end
         else
@@ -1664,15 +1634,15 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
                         fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                     )
                     if needfactor
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = W2[i],
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     else
-                        cache.linsolve2[i] = dolinsolve(
+                        dolinsolve(
                             integrator, linsolve2[i]; A = nothing,
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
-                        ).cache
+                        )
                     end
                 end
             end
@@ -1747,7 +1717,6 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
 
     @.. u = uprev + z[num_stages]
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt

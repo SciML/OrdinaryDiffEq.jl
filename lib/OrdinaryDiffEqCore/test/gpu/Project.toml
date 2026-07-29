@@ -15,11 +15,11 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [sources.OrdinaryDiffEq]
 path = "../../../.."
 
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
-
 [sources.DiffEqBase]
 path = "../../../DiffEqBase"
+
+[sources.OrdinaryDiffEqCore]
+path = "../.."
 
 [compat]
 ADTypes = "1"

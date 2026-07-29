@@ -1,3 +1,9 @@
+"""
+    OrdinaryDiffEqTag
+
+Tag type used by DiffEqBase's no-recompile wrappers for OrdinaryDiffEq-family
+solver dispatch.
+"""
 struct OrdinaryDiffEqTag end
 
 const NORECOMPILE_ARGUMENT_MESSAGE = """

@@ -225,9 +225,9 @@ function cond!(out, u, t, i)
     return nothing
 end
 function terminate_affect!(int, events)
-    return any(!iszero, events) && terminate!(int)
+    return any(isone, events) && terminate!(int)
 end
-cb = VectorContinuousCallback(cond!, terminate_affect!, nothing, 1)
+cb = VectorContinuousCallback(cond!, terminate_affect!, 1)
 
 u0 = [0.0, 0.0, 1.0]
 prob = ODEProblem(f!, u0, (0.0, 10.0); callback = cb)

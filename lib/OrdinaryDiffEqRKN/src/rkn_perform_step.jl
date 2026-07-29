@@ -4,6 +4,68 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
+"""
+    RKNFirstDerivativeSentinel
+
+Singleton placed in the velocity (`u'`) slot during a one-time probe of `f.f1` performed
+when a *velocity-independent* RKN/Nyström method (DPRKN, ERKN, Nyström*VelocityIndependent,
+IRKN, …) is initialized.
+
+These methods require a second-order ODE of the form `u'' = f(u, p, t)` that does not depend
+on the first derivative `u'`; internally they hold the velocity constant across all stages.
+If handed a velocity-dependent right-hand side they used to *silently* integrate it at order
+one instead of erroring (SciML/OrdinaryDiffEq.jl#3961). Any arithmetic, indexing, or
+broadcast that touches this sentinel throws [`RKNVelocityDependenceError`](@ref), turning
+that silent inaccuracy into a clear error. A correct (velocity-independent) `f.f1` never
+touches its velocity argument, so the probe is a no-op.
+"""
+struct RKNFirstDerivativeSentinel end
+
+struct RKNVelocityDependenceError <: Exception end
+
+function Base.showerror(io::IO, ::RKNVelocityDependenceError)
+    return print(
+        io,
+        "This RKN/Nyström method requires a second-order ODE of the form u'' = f(u, p, t) " *
+            "that does not depend on the first derivative u' (the velocity). The provided " *
+            "acceleration function `f.f1` accesses u', so this method would silently " *
+            "integrate the problem at order 1. Use a method that supports velocity " *
+            "dependence instead — e.g. Nystrom4, FineRKN4, FineRKN5, or RKN4 — or reformulate " *
+            "the problem as a first-order ODE."
+    )
+end
+
+@inline _rkn_velocity_dependence_error() = throw(RKNVelocityDependenceError())
+
+Base.getindex(::RKNFirstDerivativeSentinel, ::Any...) = _rkn_velocity_dependence_error()
+Base.broadcastable(s::RKNFirstDerivativeSentinel) = Ref(s)
+Base.:-(::RKNFirstDerivativeSentinel) = _rkn_velocity_dependence_error()
+Base.:+(::RKNFirstDerivativeSentinel) = _rkn_velocity_dependence_error()
+for op in (:+, :-, :*, :/, :\, :^)
+    for T in (:Number, :AbstractArray)
+        @eval Base.$op(::RKNFirstDerivativeSentinel, ::$T) = _rkn_velocity_dependence_error()
+        @eval Base.$op(::$T, ::RKNFirstDerivativeSentinel) = _rkn_velocity_dependence_error()
+    end
+    @eval Base.$op(::RKNFirstDerivativeSentinel, ::RKNFirstDerivativeSentinel) = _rkn_velocity_dependence_error()
+end
+
+# One-time check (out-of-place `f.f1`) that the acceleration does not depend on u'.
+# Velocity-independent RKN/Nyström methods hold u' constant across stages; a velocity-
+# dependent f.f1 is otherwise silently integrated at order 1 (SciML/OrdinaryDiffEq.jl#3961).
+function _probe_rkn_velocity_independence(integrator)
+    _, uprev = integrator.uprev.x
+    integrator.f.f1(RKNFirstDerivativeSentinel(), uprev, integrator.p, integrator.t)
+    return nothing
+end
+
+# One-time check (in-place `f.f1`). Only the velocity input is the sentinel; the output is
+# written into a throwaway scratch of the real derivative type.
+function _probe_rkn_velocity_independence!(integrator, scratch)
+    _, uprev = integrator.uprev.x
+    integrator.f.f1(scratch, RKNFirstDerivativeSentinel(), uprev, integrator.p, integrator.t)
+    return nothing
+end
+
 const NystromCCDefaultInitialization = Union{
     Nystrom4VelocityIndependentConstantCache,
     IRKN3ConstantCache, IRKN4ConstantCache,
@@ -14,6 +76,7 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     duprev, uprev = integrator.uprev.x
+    _probe_rkn_velocity_independence(integrator)
     kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
     ku = integrator.f.f2(duprev, uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -33,6 +96,7 @@ function initialize!(integrator, cache::NystromDefaultInitialization)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    _probe_rkn_velocity_independence!(integrator, zero(integrator.k[1].x[1]))
     integrator.f.f1(integrator.k[1].x[1], duprev, uprev, integrator.p, integrator.t)
     integrator.f.f2(integrator.k[1].x[2], duprev, uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -291,6 +355,7 @@ function initialize!(integrator, cache::NystromVIConstantCache)
     integrator.kshortsize = cache.tab.kshortsize
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     duprev, uprev = integrator.uprev.x
+    _probe_rkn_velocity_independence(integrator)
     kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
     ku = integrator.f.f2(duprev, uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -307,6 +372,7 @@ end
 
 function initialize!(integrator, cache::NystromVICache)
     duprev, uprev = integrator.uprev.x
+    _probe_rkn_velocity_independence!(integrator, zero(integrator.fsalfirst.x[1]))
     integrator.f.f1(integrator.fsalfirst.x[1], duprev, uprev, integrator.p, integrator.t)
     integrator.f.f2(integrator.fsalfirst.x[2], duprev, uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)

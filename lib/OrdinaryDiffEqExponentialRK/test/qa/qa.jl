@@ -2,15 +2,25 @@ using SciMLTesting, OrdinaryDiffEqExponentialRK, Test
 
 run_qa(
     OrdinaryDiffEqExponentialRK;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
+        all_qualified_accesses_are_public = (;
+            # Base — owner-internal, no public alternative
+            ignore = (:structdiff,),
+        ),
         all_explicit_imports_are_public = (;
             ignore = (
+                # Base — owner-internal, no public alternative
+                :structdiff,
                 # OrdinaryDiffEqCore owner-internal helpers (deliberately not in the
                 # solver-author public API surface declared upstream).
-                :_fixup_ad, :fsal_typeof,
+                :_fixup_ad, :fsal_typeof, :trivial_limiter!,
                 # SciMLBase internal; pending a `public` declaration (SciMLBase#1412).
                 :_unwrap_val,
-            )),
+            ),
+        ),
     ),
 )

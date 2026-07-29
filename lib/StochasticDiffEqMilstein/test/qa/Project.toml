@@ -21,15 +21,12 @@ path = "../../../StochasticDiffEqCore"
 [sources.StochasticDiffEqLevyArea]
 path = "../../../StochasticDiffEqLevyArea"
 
-[sources.StochasticDiffEqMilstein]
-path = "../.."
-
 [compat]
 Aqua = "0.8"
 DiffEqBase = "7"
 JET = "0.9, 0.10, 0.11"
 OrdinaryDiffEqCore = "4"
-SciMLTesting = "1.7"
+SciMLTesting = "2.1"
 StochasticDiffEqCore = "2"
 StochasticDiffEqLevyArea = "2"
 StochasticDiffEqMilstein = "2"

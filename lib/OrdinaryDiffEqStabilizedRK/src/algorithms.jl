@@ -12,20 +12,30 @@
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities, so a
+        stale estimate that under-resolves the stability region self-corrects through a
+        rejection. The default of 25 matches the classical RKC/ROCK Fortran codes and is a
+        good choice for parabolic problems whose spectral radius varies slowly; set it to 1
+        to recompute every step (more robust when the dominant eigenvalue changes rapidly,
+        at the cost of a few extra function evaluations per step).
     """,
     """
     min_stages = 0,
     max_stages = 200,
     eigen_est = nothing,
+    eigen_est_interval = 25,
     """
 )
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
+    eigen_est_interval::Int
 end
-function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
-    return ROCK2(min_stages, max_stages, eigen_est)
+function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing, eigen_est_interval = 25)
+    return ROCK2(min_stages, max_stages, eigen_est, eigen_est_interval)
 end
 
 @doc generic_solver_docstring(
@@ -43,25 +53,35 @@ end
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities, so a
+        stale estimate that under-resolves the stability region self-corrects through a
+        rejection. The default of 25 matches the classical RKC/ROCK Fortran codes and is a
+        good choice for parabolic problems whose spectral radius varies slowly; set it to 1
+        to recompute every step (more robust when the dominant eigenvalue changes rapidly,
+        at the cost of a few extra function evaluations per step).
     """,
     """
     min_stages = 0,
     max_stages = 152,
     eigen_est = nothing,
+    eigen_est_interval = 25,
     """
 )
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
+    eigen_est_interval::Int
 end
-function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing)
-    return ROCK4(min_stages, max_stages, eigen_est)
+function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing, eigen_est_interval = 25)
+    return ROCK4(min_stages, max_stages, eigen_est, eigen_est_interval)
 end
 
 # SERK methods
 
-for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC2, :TSRKC3]
+for Alg in [:ESERK4, :ESERK5, :TSRKC2, :TSRKC3]
     @eval begin
         struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
             eigen_est::E
@@ -69,6 +89,12 @@ for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC2, :TSRKC3]
         $Alg(; eigen_est = nothing) = $Alg(eigen_est)
     end
 end
+
+struct RKC{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    eigen_est::E
+    eigen_est_interval::Int
+end
+RKC(; eigen_est = nothing, eigen_est_interval = 25) = RKC(eigen_est, eigen_est_interval)
 
 @doc generic_solver_docstring(
     """Second order method. Exhibits high stability for real eigenvalues.""",
@@ -82,9 +108,18 @@ end
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities, so a
+        stale estimate that under-resolves the stability region self-corrects through a
+        rejection. The default of 25 matches the classical RKC/ROCK Fortran codes and is a
+        good choice for parabolic problems whose spectral radius varies slowly; set it to 1
+        to recompute every step (more robust when the dominant eigenvalue changes rapidly,
+        at the cost of a few extra function evaluations per step).
     """,
     """
     eigen_est = nothing,
+    eigen_est_interval = 25,
     """
 )
 function RKC end

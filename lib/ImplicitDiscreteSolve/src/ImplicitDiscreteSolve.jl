@@ -6,9 +6,10 @@ using SciMLBase: SciMLBase, ImplicitDiscreteProblem, NonlinearFunction,
 import SciMLBase: alg_order, isadaptive
 using NonlinearSolveBase: NonlinearSolveBase
 using NonlinearSolveFirstOrder: NewtonRaphson
-using CommonSolve: init, solve, step!
+using CommonSolve: init
 using DiffEqBase: DefaultInit
 import DiffEqBase: initialize!
+using SymbolicIndexingInterface: state_values
 using OrdinaryDiffEqCore: OrdinaryDiffEqCore, OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, AbstractController, AbstractControllerCache
 import OrdinaryDiffEqCore: alg_cache, get_fsalfirstlast, isfsal, perform_step!,

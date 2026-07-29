@@ -1,12 +1,13 @@
 name = "OrdinaryDiffEqImplicitTableaus"
 uuid = "75f66a49-58fc-43e3-9173-2340726368f7"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.2"
+version = "2.1.1"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [extras]
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -18,6 +19,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 path = "../DiffEqDevTools"
 
 [compat]
+SciMLTesting = "2.1"
 DiffEqBase = "7"
 DiffEqDevTools = "3"
 Pkg = "1"
@@ -25,4 +27,4 @@ Test = "<0.0.1, 1"
 julia = "1.10"
 
 [targets]
-test = ["DiffEqDevTools", "Pkg", "Test"]
+test = ["DiffEqDevTools", "Pkg", "Test", "SciMLTesting"]

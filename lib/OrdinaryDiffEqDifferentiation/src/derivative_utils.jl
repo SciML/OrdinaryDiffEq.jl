@@ -93,8 +93,8 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     # constraint derivatives must remain accurate. See Steinebach (2024).
     naccept = integrator.stats.naccept
     if integrator.f.mass_matrix !== I
-        if naccept > jac_reuse.last_naccept 
-           jac_reuse.last_naccept = naccept
+        if naccept > jac_reuse.last_naccept
+            jac_reuse.last_naccept = naccept
             return (true, true)
         else
             return (false, true)
@@ -170,6 +170,14 @@ function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
     return (false, true)
 end
 
+"""
+    calc_tderivative!(integrator, cache, dtd1, repeat_step)
+
+Compute the time derivative `dT = ∂f/∂t` in place (using the analytic `tgrad` when
+available, else autodiff/finite differences) and store the Rosenbrock right-hand
+side `linsolve_tmp = fsalfirst + dtd1·dT` on the cache. Skipped when `repeat_step`
+is `true`.
+"""
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     return @inbounds begin
         (; t, dt, uprev, u, f, p) = integrator
@@ -218,6 +226,12 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     end
 end
 
+"""
+    calc_tderivative(integrator, cache) -> dT
+
+Out-of-place counterpart of [`calc_tderivative!`](@ref): compute and return the
+time derivative `∂f/∂t` at the current step.
+"""
 function calc_tderivative(integrator, cache)
     (; t, dt, uprev, u, f, p, alg) = integrator
 
@@ -248,6 +262,34 @@ function calc_tderivative(integrator, cache)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     return dT
+end
+
+"""
+    prepare_sparse_jac!(J, jac_prototype)
+
+Give `J` the sparsity structure of `jac_prototype` with all stored values zeroed,
+ready for a user-supplied `f.jac` to write into.
+
+`f.jac` only assigns into already-stored entries, so `J`'s structure is invariant
+across the solve and the (O(nnz), allocating) structural rebuild is only needed when
+`J` does not already match the prototype — in practice just the first call. Skipping it
+otherwise saves a sparse broadcast on *every* Jacobian evaluation, which matters most for
+strict Rosenbrock methods (e.g. `Rodas5P`) that re-evaluate `J` every step.
+
+See https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653 for why the structure must
+track `jac_prototype` rather than whatever `f.jac` happens to fill in.
+"""
+function prepare_sparse_jac!(J, jac_prototype)
+    if ArrayInterface.same_sparsity_structure(J, jac_prototype)
+        set_all_nzval!(J, false)
+    else
+        # `jac_prototype`'s stored values must be made nonzero first: the broadcast
+        # below prunes numerical zeros, which would drop those entries from `J`.
+        set_all_nzval!(jac_prototype, true)
+        J .= true .* jac_prototype
+        set_all_nzval!(J, false)
+    end
+    return J
 end
 
 """
@@ -334,20 +376,13 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         if SciMLBase.has_jac(f)
             duprev = integrator.duprev
             uf = cache.uf
-            # need to do some jank here to account for sparsity pattern of W
+            # J's structure must track jac_prototype's, not whatever f.jac fills in
             # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
-
-            # we need to set all nzval to a non-zero number
-            # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
                     is_sparse_csc(integrator.f.jac_prototype)
-                set_all_nzval!(integrator.f.jac_prototype, true)
-                J .= true .* integrator.f.jac_prototype
-                set_all_nzval!(J, false)
-                f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
-            else
-                f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+                prepare_sparse_jac!(J, integrator.f.jac_prototype)
             end
+            f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
         else
             (; du1, uf, jac_config) = cache
             # using `dz` as temporary array
@@ -358,20 +393,13 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         end
     else
         if SciMLBase.has_jac(f)
-            # need to do some jank here to account for sparsity pattern of W
+            # J's structure must track jac_prototype's, not whatever f.jac fills in
             # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653
-
-            # we need to set all nzval to a non-zero number
-            # otherwise in the following line any zero gets interpreted as a structural zero
             if !isnothing(integrator.f.jac_prototype) &&
                     is_sparse_csc(integrator.f.jac_prototype)
-                set_all_nzval!(integrator.f.jac_prototype, true)
-                J .= true .* integrator.f.jac_prototype
-                set_all_nzval!(J, false)
-                f.jac(J, uprev, p, t)
-            else
-                f.jac(J, uprev, p, t)
+                prepare_sparse_jac!(J, integrator.f.jac_prototype)
             end
+            f.jac(J, uprev, p, t)
         else
             (; du1, uf, jac_config) = cache
             uf.f = nlsolve_f(f, alg)
@@ -414,13 +442,10 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
 
         if !isnothing(integrator.f.jac_prototype) &&
                 is_sparse_csc(integrator.f.jac_prototype)
-            set_all_nzval!(integrator.f.jac_prototype, true)
-            J_u .= true .* integrator.f.jac_prototype
-            set_all_nzval!(J_u, false)
+            prepare_sparse_jac!(J_u, integrator.f.jac_prototype)
             f.jac(J_u, duprev, uprev, p, cj_zero, t)
 
-            J_du .= true .* integrator.f.jac_prototype
-            set_all_nzval!(J_du, false)
+            prepare_sparse_jac!(J_du, integrator.f.jac_prototype)
             f.jac(J_du, duprev, uprev, p, cj_one, t)
         else
             f.jac(J_u, duprev, uprev, p, cj_zero, t)
@@ -497,7 +522,17 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     integrator.iter <= 1 && return true, true # at least one JW eval at the start
     repeat_step && return false, false
     islin, _ = islinearfunction(integrator)
-    islin && return false, false # no further JW eval when it's linear
+    if islin
+        # J is constant for a linear function, but W = J - M/(γdt) still depends
+        # on γdt: W must be rebuilt/refactorized when the step size has drifted
+        # past the cutoff, otherwise concrete-A linear solvers keep a stale
+        # factorization from the first step's (possibly tiny) dt.
+        isnewton(nlsolver) || return false, true
+        W_iγdt = inv(nlsolver.cache.W_γdt)
+        iγdt = inv(nlsolver.γ * integrator.dt)
+        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+        return false, !smallstepchange
+    end
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
     errorfail = OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
     # TODO: add `isJcurrent` support for Rosenbrock solvers
@@ -553,6 +588,22 @@ end
     throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 end
 
+
+# Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting into
+# W, so they need the allocating build path. All cuSPARSE matrix types subtype
+# AbstractSparseMatrix (is_sparse true); their `nonzeros` storage is a GPU array,
+# which is not fast_scalar_indexing, whereas CPU sparse storage is.
+@inline _use_allocating_sparse_W_path(W) =
+    is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
+
+
+"""
+    jacobian2W!(W, mass_matrix, dtgamma, J) -> nothing
+
+Form the linear-system matrix `W = M/dtgamma - J` in place from the Jacobian `J`
+and mass matrix `M` (with `M = I` handled specially), using scalar-indexed,
+broadcast, or allocating paths depending on the array type (dense, sparse, GPU).
+"""
 function jacobian2W!(
         W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix
     )::Nothing
@@ -575,11 +626,9 @@ function jacobian2W!(
             else
                 @.. broadcast = false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
             end
-        elseif is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
-            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting.
-            # ArrayInterface.fast_scalar_indexing is not specialized for AbstractGPUSparseArray,
-            # so we detect them by checking if the underlying nonzeros storage is a GPU array.
-            # we then fall back to allocating matrix arithmetic
+        elseif _use_allocating_sparse_W_path(W)
+            # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support broadcasting
+            # into W, so fall back to allocating matrix arithmetic.
             copyto!(W, J - invdtgamma * mass_matrix)
         else
             @.. broadcast = false W = muladd(-mass_matrix, invdtgamma, J)
@@ -640,7 +689,13 @@ function dae_jacobian2W!(
     )::Nothing
     @boundscheck axes(W) == axes(J_u) == axes(J_du) ||
         throw(DimensionMismatch("W, J_u, J_du must have matching axes"))
-    @.. broadcast = false W = muladd(cj, J_du, J_u)
+    if _use_allocating_sparse_W_path(W)
+        # Sparse GPU arrays (e.g. CuSparseMatrixCSC/CSR) don't support
+        # broadcasting into W. Same path as jacobian2W!: allocate then copyto!.
+        copyto!(W, J_u + convert(eltype(W), cj) * J_du)
+    else
+        @.. broadcast = false W = muladd(cj, J_du, J_u)
+    end
     return nothing
 end
 
@@ -658,6 +713,9 @@ end
 function dae_jacobian2W(
         J_u::AbstractMatrix, J_du::AbstractMatrix, cj::Number
     )
+    if _use_allocating_sparse_W_path(J_u)
+        return J_u + convert(eltype(J_u), cj) * J_du
+    end
     return @. muladd(cj, J_du, J_u)
 end
 
@@ -666,6 +724,13 @@ function dae_jacobian2W(J_u::Number, J_du::Number, cj::Number)
     return muladd(cj, J_du, J_u)
 end
 
+"""
+    is_always_new(alg) -> Bool
+
+Return whether `alg` (or its nonlinear-solver algorithm) requests a fresh `W`
+computed on every solve, i.e. its `always_new` field is `true` (`false` when the
+field is absent).
+"""
 is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
 
 function calc_W!(
@@ -862,6 +927,13 @@ end
     return W
 end
 
+"""
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step) -> new_W
+
+Compute (in place) the Jacobian, the factorized `W = M/(dtgamma) - J`, and the
+time derivative needed by a Rosenbrock step, honoring Jacobian reuse for W-methods.
+Returns whether a fresh `W` was formed. Skips the work on a repeated step.
+"""
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
     nlsolver = nothing
     alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
@@ -964,6 +1036,14 @@ function calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step
 end
 
 # update W matrix (only used in Newton method)
+"""
+    update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
+    update_W!(nlsolver, integrator, cache, dtgamma, repeat_step, newJW = nothing)
+
+Recompute/refactorize the nonlinear solver's `W = M/dtgamma - J` when needed for a
+Newton solve, deciding whether the Jacobian and/or the factorization must be
+refreshed (`newJW` can force the decision). No-op for non-Newton solvers.
+"""
 function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
     return update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
 end
@@ -1095,6 +1175,16 @@ as-is.
 end
 @inline _dtgamma_prototype(t, dt, ::Type{T}) where {T} = promote(t, dt)[2]
 
+"""
+    build_J_W(alg, u, uprev, p, t, dt, f, jac_config, ::Type{uEltypeNoUnits}, ::Val{iip}) -> (J, W)
+
+Allocate and return the Jacobian `J` and the linear-system matrix
+`W = M/(γΔt) - J` (or their operator/factorization prototypes) for algorithm
+`alg`. Handles user-provided `jac_prototype` / `W_prototype` `SciMLOperator`s, the
+mass matrix `M`, and the linear vs nonlinear function case; the resulting `W`
+carries the eltype that `calc_W`/`calc_W!` will later produce. `Val{iip}` selects
+the in-place branch.
+"""
 function build_J_W(
         alg, u, uprev, p, t, dt, f::F, jac_config, ::Type{uEltypeNoUnits},
         ::Val{IIP}
@@ -1136,6 +1226,13 @@ function build_J_W(
         # If factorization, then just use the jac_prototype
         J = similar(f.jac_prototype)
         W = similar(J)
+        if is_sparse(J)
+            set_all_nzval!(J, one(eltype(J)))
+            set_all_nzval!(W, one(eltype(W)))
+        else
+            fill!(J, one(eltype(J)))
+            fill!(W, one(eltype(W)))
+        end
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
                 alg.linsolve !== nothing &&
@@ -1229,6 +1326,14 @@ function build_J_W(
     return J, W
 end
 
+"""
+    build_uf(alg, nf, t, p, ::Val{iip})
+
+Return the wrapper object used to differentiate the RHS `nf` with respect to the
+state: a `UJacobianWrapper` for the in-place case (`Val{true}`) or a
+`UDerivativeWrapper` for the out-of-place case (`Val{false}`). Carries the current
+`t` and `p`, which are updated before each Jacobian evaluation.
+"""
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)
 build_uf(alg, nf, t, p, ::Val{false}) = UDerivativeWrapper(nf, t, p)
 

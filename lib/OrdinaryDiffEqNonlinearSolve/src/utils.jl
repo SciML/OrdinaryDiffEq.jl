@@ -2,11 +2,25 @@
 # This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
 get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
 
+# Map a flat linear-solve result back onto the state container. Delegates to
+# ArrayInterface.restructure (which preserves ArrayPartition / other wrappers that
+# plain reshape collapses); Number states need a convert because restructure
+# relies on `similar`.
+@inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
+@inline _restructure_state(template::Number, x) = oftype(template, x)
+
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
 
+"""
+    nlsolvefail(nlsolver) -> Bool
+    nlsolvefail(status::NLStatus) -> Bool
+
+Return whether a nonlinear solve failed, i.e. whether the solver's
+[`NLStatus`](@ref) is non-positive (`SlowConvergence` or worse).
+"""
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
@@ -17,6 +31,12 @@ relax(_) = 0 // 1
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
+
+# Whether the solver can supply the W linear solve for the SDIRK/ESDIRK `smooth_est` estimate;
+# otherwise the caller falls back to the raw embedded estimate.
+can_smooth_est(nlsolver::AbstractNLSolver) = can_smooth_est(nlsolver.cache)
+can_smooth_est(cache::AbstractNLSolverCache) = isnewton(cache)
+can_smooth_est(cache::NonlinearSolveCache) = cache.linsolve !== nothing
 
 is_always_new(nlsolver::AbstractNLSolver) = is_always_new(nlsolver.alg)
 check_div(nlsolver::AbstractNLSolver) = check_div(nlsolver.alg)
@@ -30,6 +50,13 @@ function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, va
     return (nlcache.firststage = val)
 end
 setfirststage!(::Any, val::Bool) = nothing
+"""
+    markfirststage!(nlsolver)
+
+Mark the nonlinear solver as being on the first implicit stage of the current
+step (sets the cache's `firststage` flag to `true`). Used so predictor/`W`-reuse
+logic can distinguish the first stage from later ones.
+"""
 markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
 
 getnfails(_) = 0
@@ -55,6 +82,12 @@ du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
 du_cache(::AbstractNLSolverCache) = nothing
 du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCache}) = (nlcache.k,)
 
+"""
+    du_alias_or_new(nlsolver, rate_prototype)
+
+Return a derivative buffer for the nonlinear solve: reuse the solver cache's
+existing `du` buffer when it has one, otherwise allocate `zero(rate_prototype)`.
+"""
 function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     _du_cache = du_cache(nlsolver)
     return if _du_cache === nothing
@@ -228,6 +261,61 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
 end
 
+# Analytic jacobian that copies the reused ODE `W` into the inner solver's own buffer each
+# evaluation, so its factorization refreshes when the ODE rewrites `W`. A bare operator
+# `jac_prototype` aliasing `W` would instead leave that factorization stale (its
+# `update_coefficients!` is a no-op), silently converging the inner Newton on an out-of-date
+# factorization.
+struct WReuseJac{W} <: Function
+    W::Base.RefValue{W}
+end
+(j::WReuseJac)(J_out, z, p) = (copyto!(J_out, j.W[]); J_out)
+
+# The reused ODE `W` as the jacobian for the inner NonlinearSolve: a matrix-free `WOperator`
+# passed through as an operator `jac_prototype` (applied via `mul!`, Krylov); a concrete W
+# reused via an analytic `WReuseJac`. Used at build time and after `resize!` so the inner
+# `NonlinearFunction`'s concrete type is preserved.
+# Termination mode for the inner solve. The tolerances above are zero, so no criterion can
+# ever fire — the integrator decides convergence. NonlinearSolve's default
+# (`AbsNormSafeBestTerminationMode`) would nonetheless run its full per-iteration bookkeeping:
+# best-objective tracking with a state copy, a circular objective trace, and — because it
+# defaults to `max_stalled_steps = 32` — a state-difference buffer and a second norm. All of it
+# is dead weight here, so ask for the plain absolute-norm mode instead.
+_inner_termination() = NonlinearSolveBase.AbsNormTerminationMode(Base.Fix1(maximum, abs))
+
+# Tolerances for the inner NonlinearSolve. `nlsolve!` drives that cache one `step!` at a time
+# and decides convergence itself with the integrator's weighted `κ`/`η` test, exactly as it does
+# for `NLNewton`, so the inner solver must never terminate on its own first: its default is an
+# absolute residual bound unrelated to the integrator's tolerances, and the residual carries a
+# `1/(γ·dt)` factor, so once `dt` grows it is met immediately — after which `step!` becomes a
+# no-op, every later outer iteration sees a zero increment, and the outer test reads that as a
+# perfect solve and accepts an unconverged stage.
+#
+# Zeroing `abstol`/`reltol` disables that criterion, but those same values are forwarded to the
+# descent's linear solver, where zero is an unreachable target that costs an iterative (Krylov)
+# solve its Newton-direction accuracy. `linsolve_kwargs` is splatted after them, so it restores
+# a usable tolerance for the linear solve alone.
+_inner_lintol(::Type{T}) where {T} = eps(real(one(T)))^(4 // 5)
+
+function reuse_jac_kwargs(W)
+    Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
+        W._concrete_form : W
+    return Wr isa AbstractSciMLOperator ? (; jac_prototype = Wr) :
+        (; jac = WReuseJac(Ref(Wr)), jac_prototype = (Z = similar(Wr); fill!(Z, 0); Z))
+end
+
+"""
+    build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
+                   uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
+                   iip, verbose) -> AbstractNLSolver
+
+Construct the nonlinear solver object (an [`AbstractNLSolver`](@ref)) that an
+implicit algorithm `alg` uses to solve its stage equations. `γ` and `c` are the
+stage's diagonal coefficient and abscissa, `α` an optional scaling, `iip` the
+in-place flag; the nonlinear-solver algorithm defaults to `alg.nlsolve`. Allocates
+the appropriate cache (Newton `W`/factorization, functional/Anderson buffers, …)
+for the chosen `nlalg`.
+"""
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
@@ -268,7 +356,11 @@ function odenlf(ztmp, z, p)
 end
 
 function build_nlsolver(
-        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        alg,
+        nlalg::Union{
+            NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg,
+            HomotopyNonlinearSolveAlg,
+        },
         u, uprev, p, t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -297,7 +389,17 @@ function build_nlsolver(
     atmp .= false
     dz = zero(u)
 
-    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
+    if nlalg isa HomotopyNonlinearSolveAlg
+        isdae && throw(
+            ArgumentError(
+                "HomotopyNonlinearSolveAlg does not support DAE problems: the step-size " *
+                    "embedding degenerates the algebraic equations at λ = 0."
+            )
+        )
+        invγdt = inv(oneunit(t) * one(uTolType))
+        nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(homotopy_odenlf)
+        nlcache = HomotopyNonlinearSolveCache(ustep, tstep, k, invγdt, nlfunc, Ref(0))
+    elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
 
         # TODO: check if the solver is iterative
@@ -326,6 +428,10 @@ function build_nlsolver(
             γ = tTypeNoUnits(γ)
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
+            # A matrix-free W (a `WOperator` wrapping a `JVPCache`, built for a Krylov
+            # linear solver) is reused as an operator: NonlinearSolve applies it via
+            # `mul!` rather than rebuilding a residual-derived AD JVP.
+            matrixfree_W = W isa WOperator && W.J isa AbstractSciMLOperator
             W_for_reuse = if W isa WOperator && W.J !== nothing &&
                     !(W.J isa AbstractSciMLOperator)
                 W._concrete_form
@@ -333,8 +439,12 @@ function build_nlsolver(
                 W
             end
             use_w_reuse = !isdae && f.nlstep_data === nothing &&
-                W_for_reuse isa AbstractMatrix &&
-                !(W_for_reuse isa AbstractSciMLOperator)
+                (
+                (
+                    W_for_reuse isa AbstractMatrix &&
+                        !(W_for_reuse isa AbstractSciMLOperator)
+                ) || matrixfree_W
+            )
             prob = if f.nlstep_data !== nothing
                 f.nlstep_data.nlprob
             else
@@ -345,13 +455,9 @@ function build_nlsolver(
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
                 if use_w_reuse
-                    nlf_jac! = let W = W_for_reuse
-                        (J_out, z, p) -> (copyto!(J_out, W); J_out)
-                    end
                     NonlinearProblem(
                         NonlinearFunction{true, SciMLBase.FullSpecialize}(
-                            nlf;
-                            jac = nlf_jac!
+                            nlf; reuse_jac_kwargs(W)...
                         ),
                         ztmp, nlp_params
                     )
@@ -362,8 +468,30 @@ function build_nlsolver(
                     )
                 end
             end
-            inner_alg = _nlalg_with_linsolve(nlalg.alg, wrapprecs(alg.linsolve, W, weight))
-            cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
+            inner_alg = _nlalg_with_linsolve(
+                nlalg.alg,
+                wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight)
+            )
+            # The integrator owns the convergence decision, exactly as it does for `NLNewton`:
+            # `nlsolve!` drives this cache one `step!` at a time and stops on its own weighted
+            # `κ`/`η` test. Zero tolerances keep the inner solver's own criterion from ever
+            # firing first — otherwise it terminates on an absolute residual bound unrelated to
+            # the integrator's tolerances (and scaled by `1/(γ·dt)`, so it is trivially met once
+            # `dt` grows), after which `step!` becomes a no-op, every later outer iteration sees
+            # `ndz == 0`, and the outer test reads that as perfect convergence and accepts the
+            # step with an unconverged stage.
+            cache = init(
+                prob, inner_alg; verbose = verbose.nonlinear_verbosity,
+                abstol = zero(uTolType), reltol = zero(uTolType),
+                termination_condition = _inner_termination(),
+                linsolve_kwargs = (;
+                    abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
+                )
+            )
+            # Smoothed estimate `W \ tmp` reuses the inner solver's own W factorization (see
+            # NonlinearSolveCache); `nothing` when it exposes none (native scalar/StaticArray
+            # solve) falls back to the raw estimate.
+            est_linsolve = use_w_reuse ? get_linear_cache(cache) : nothing
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
                 use_w_reuse ? J : nothing,
@@ -372,13 +500,15 @@ function build_nlsolver(
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
                 weight,
+                use_w_reuse ? dz : nothing,
+                est_linsolve,
                 zero(tstep), true
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolve = init(
-                linprob, wrapprecs(alg.linsolve, W, weight),
+                linprob, wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight),
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
@@ -458,7 +588,11 @@ function oopodenlf(z, p)
 end
 
 function build_nlsolver(
-        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        alg,
+        nlalg::Union{
+            NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg,
+            HomotopyNonlinearSolveAlg,
+        },
         u, uprev, p,
         t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
@@ -483,7 +617,17 @@ function build_nlsolver(
     # build cache of non-linear solver
     tstep = zero(t)
 
-    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
+    if nlalg isa HomotopyNonlinearSolveAlg
+        isdae && throw(
+            ArgumentError(
+                "HomotopyNonlinearSolveAlg does not support DAE problems: the step-size " *
+                    "embedding degenerates the algebraic equations at λ = 0."
+            )
+        )
+        invγdt = inv(oneunit(t) * one(uTolType))
+        nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(homotopy_oopodenlf)
+        nlcache = HomotopyNonlinearSolveCache(nothing, tstep, nothing, invγdt, nlfunc, Ref(0))
+    elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae
             uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t)
@@ -510,10 +654,18 @@ function build_nlsolver(
                 copy(ztmp), nlp_params
             )
             inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
-            cache = init(prob, inner_alg, verbose = verbose.nonlinear_verbosity)
+            # Zero tolerances: the integrator owns convergence (see the in-place branch above).
+            cache = init(
+                prob, inner_alg; verbose = verbose.nonlinear_verbosity,
+                abstol = zero(uTolType), reltol = zero(uTolType),
+                termination_condition = _inner_termination(),
+                linsolve_kwargs = (;
+                    abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
+                )
+            )
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing, nothing,
+                nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,
                 zero(tstep), true
             )
         else

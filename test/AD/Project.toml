@@ -23,7 +23,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [sources]
-OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqFIRK = {path = "../../lib/OrdinaryDiffEqFIRK"}
 OrdinaryDiffEqLinear = {path = "../../lib/OrdinaryDiffEqLinear"}
@@ -38,7 +37,7 @@ DiffEqBase = {path = "../../lib/DiffEqBase"}
 ADTypes = "1.16"
 DiffEqBase = "7"
 DifferentiationInterface = "0.6.54, 0.7"
-Enzyme = "0.13"
+Enzyme = "0.13.180"
 FiniteDiff = "2.27"
 ForwardDiff = "0.10, 1"
 Mooncake = "0.4, 0.5"
@@ -52,6 +51,6 @@ OrdinaryDiffEqSDIRK = "2"
 OrdinaryDiffEqTsit5 = "2"
 SafeTestsets = "0.1, 1"
 SciMLSensitivity = "7.104"
-SciMLTesting = "1"
+SciMLTesting = "2.1"
 StaticArrays = "1"
 Zygote = "0.6.61, 0.7"

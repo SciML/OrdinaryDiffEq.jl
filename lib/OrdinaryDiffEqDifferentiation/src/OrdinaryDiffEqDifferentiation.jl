@@ -21,8 +21,9 @@ import StaticArraysCore: StaticArray, StaticMatrix
 # SciMLBase (OrdinaryDiffEqCore/DiffEqBase only re-export them), so import them
 # from the owner to satisfy `all_explicit_imports_via_owners`.
 using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
-import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
-import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
+import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, remake, solve!
+import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator,
+    islinear, isconstant
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
@@ -80,13 +81,17 @@ include("operators.jl")
 # differentiation-config hooks that downstream OrdinaryDiffEq solver sublibraries
 # build on. Codegen/perf internals are intentionally left non-public.
 @static if VERSION >= v"1.11.0-DEV.469"
-    eval(Expr(:public,
-        :build_J_W, :build_grad_config, :build_jac_config, :build_uf,
-        :calc_J, :calc_J!, :calc_tderivative, :calc_tderivative!,
-        :calc_rosenbrock_differentiation, :calc_rosenbrock_differentiation!,
-        :jacobian!, :jacobian2W!, :update_W!,
-        :resize_grad_config!, :resize_jac_config!,
-        :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W))
+    eval(
+        Expr(
+            :public,
+            :build_J_W, :build_grad_config, :build_jac_config, :build_uf,
+            :calc_J, :calc_J!, :calc_tderivative, :calc_tderivative!,
+            :calc_rosenbrock_differentiation, :calc_rosenbrock_differentiation!,
+            :jacobian!, :jacobian2W!, :update_W!,
+            :resize_grad_config!, :resize_jac_config!,
+            :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W
+        )
+    )
 end
 
 end

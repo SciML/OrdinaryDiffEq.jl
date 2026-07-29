@@ -34,9 +34,10 @@ pages = [
         "imex/StabilizedIRK.md",
         "imex/IMEXBDF.md",
     ],
-    "Dynamical ODE Explicit Solvers" => [
+    "Dynamical ODE Solvers" => [
         "dynamicalodeexplicit/RKN.md",
         "dynamicalodeexplicit/SymplecticRK.md",
+        "dynamicalodeexplicit/Newmark.md",
     ],
     "Semilinear ODE Solvers" => [
         "semilinear/ExponentialRK.md",
@@ -46,13 +47,22 @@ pages = [
         "massmatrixdae/Rosenbrock.md",
         "massmatrixdae/BDF.md",
     ],
+    "Stochastic Utilities" => [
+        "stochastic/LevyArea.md",
+    ],
     "Fully Implicit DAE Solvers" => [
         "fullyimplicitdae/BDF.md",
     ],
     "Misc Solvers" => [
         "misc.md",
     ],
+    "Global Error Control" => [
+        "globalerrorcontrol/GlobalDiffEq.md",
+    ],
     "APIs" => [
+        "api/common_interface.md",
+        "api/diffeqbase.md",
+        "api/ordinarydiffeqcore.md",
         "api/controllers.md",
     ],
     "Developer Documentation" => [
@@ -72,6 +82,7 @@ pages = [
         ],
         "Internal Documentation" => [
             "devtools/internals/notes_on_algorithms.md",
+            "devtools/internals/public_api.md",
             "devtools/internals/tableaus.md",
         ],
     ],

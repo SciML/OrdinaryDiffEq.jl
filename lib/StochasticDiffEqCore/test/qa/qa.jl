@@ -1,5 +1,6 @@
 using SciMLTesting, StochasticDiffEqCore, Test
 using JET
+import OrdinaryDiffEqCore
 
 # StochasticDiffEqCore extends OrdinaryDiffEqCore's solver loop and dispatches on
 # a handful of still-internal SciMLBase/DiffEqBase interface names. The base
@@ -43,8 +44,69 @@ const NONPUBLIC_IGNORE = (
     FORWARDDIFF_INTERNAL..., BASE_INTERNAL...,
 )
 
+const ODEC_STOCHASTIC_SURFACE = (
+    OrdinaryDiffEqCore.ODEIntegrator,
+    OrdinaryDiffEqCore.CompositeCache,
+    OrdinaryDiffEqCore.StochasticDiffEqAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqCompositeAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODEAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODEAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqRODECompositeAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqNewtonAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
+    OrdinaryDiffEqCore.StochasticDiffEqCache,
+    OrdinaryDiffEqCore.StochasticDiffEqConstantCache,
+    OrdinaryDiffEqCore.StochasticDiffEqMutableCache,
+    OrdinaryDiffEqCore._initialize_dae!,
+    OrdinaryDiffEqCore.accept_noise!,
+    OrdinaryDiffEqCore.is_noise_saveable,
+    OrdinaryDiffEqCore.noise_curt,
+    OrdinaryDiffEqCore.reinit_noise!,
+    OrdinaryDiffEqCore.reject_noise!,
+    OrdinaryDiffEqCore.save_noise!,
+)
+
+# Solver-author API owned and declared `public` by OrdinaryDiffEqCore (all documented in
+# docs/src/devtools/internals/public_api.md) that StochasticDiffEqCore re-exports so the
+# StochasticDiffEq solver sublibraries get the SDE extension surface from one package.
+const ODEC_PUBLIC_REEXPORTS = (
+    :StochasticDiffEqAlgorithm, :StochasticDiffEqAdaptiveAlgorithm,
+    :StochasticDiffEqCompositeAlgorithm,
+    :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODEAdaptiveAlgorithm,
+    :StochasticDiffEqRODECompositeAlgorithm,
+    :StochasticDiffEqNewtonAlgorithm, :StochasticDiffEqNewtonAdaptiveAlgorithm,
+    :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpAdaptiveAlgorithm,
+    :StochasticDiffEqJumpNewtonAdaptiveAlgorithm,
+    :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
+    :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm,
+    :StochasticDiffEqCache, :StochasticDiffEqConstantCache, :StochasticDiffEqMutableCache,
+    :issplit,
+)
+
+# `SDEIntegrator` and `SDEOptions` are StochasticDiffEqCore's own public API, but they are
+# `const` aliases of OrdinaryDiffEqCore types (`ODEIntegrator{<:SDEAlgTypes}` and
+# `DEOptions`), and `public_reexports` attributes an alias to the aliased type's module.
+const SDEC_TYPE_ALIASES = (:SDEIntegrator, :SDEOptions)
+
 run_qa(
     StochasticDiffEqCore;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    # `@reexport using DiffEqBase` pulls in DiffEqBase's own API plus its SciMLBase
+    # re-export. `names(DiffEqBase)` only propagates SciMLBase's *exports*, so SciMLBase's
+    # `public`-but-unexported API (`alg_order`, `isadaptive`) needs its own union entry.
+    reexports_allow = union(
+        public_api_names(DiffEqBase), public_api_names(SciMLBase),
+        (:DiffEqBase,), ODEC_PUBLIC_REEXPORTS, SDEC_TYPE_ALIASES,
+    ),
+    aqua_kwargs = (; piracies = (; treat_as_own = ODEC_STOCHASTIC_SURFACE)),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (;

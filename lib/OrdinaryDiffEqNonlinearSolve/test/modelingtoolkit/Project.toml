@@ -17,7 +17,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 ImplicitDiscreteSolve = {path = "../../../ImplicitDiscreteSolve"}
 OrdinaryDiffEq = {path = "../../../.."}
 OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
-OrdinaryDiffEqNonlinearSolve = {path = "../.."}
 OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 
@@ -25,7 +24,7 @@ OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
 DiffEqDevTools = "3"
 ImplicitDiscreteSolve = "2"
 IncompleteLU = "0.2"
-LinearSolve = "3, 4"
+LinearSolve = "5.1"
 ModelingToolkit = "10.10, 11"
 NonlinearSolve = "4.10"
 OrdinaryDiffEq = "7"

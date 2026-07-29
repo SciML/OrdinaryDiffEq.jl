@@ -71,6 +71,7 @@ const ROSENBROCK_ALGS_TO_TEST = (
     # several of them hit dtmin on this simple non-stiff problem under
     # nested ForwardDiff and that failure mode is not what we're testing.
     Rodas3(),
+    Rodas3d(),
     Rodas23W(),
     ROS3P(),
     Rodas4(),

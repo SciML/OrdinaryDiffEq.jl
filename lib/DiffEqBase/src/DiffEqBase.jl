@@ -43,6 +43,8 @@ using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityP
     MessageLevel, @verbosity_specifier, verbosity_to_bool
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
+using SciMLOperators: isconstant, islinear
+import SciMLOperators: update_coefficients, update_coefficients!
 
 using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractDiffEqInterpolation,
@@ -76,7 +78,7 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractODEIntegrator, AbstractSDEIntegrator, AbstractRODEIntegrator,
     AbstractDDEIntegrator, AbstractSDDEIntegrator,
     AbstractDAEIntegrator, unwrap_cache, has_reinit, reinit!,
-    postamble!, last_step_failed, islinear, has_stats,
+    postamble!, last_step_failed, has_stats,
     initialize_dae!, build_solution, solution_new_retcode,
     solution_new_tslocation, plot_indices, NonlinearAliasSpecifier,
     NullParameters, isinplace, AbstractADType, AbstractDiscretization,
@@ -87,13 +89,13 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     interp_summary, AbstractHistoryFunction, LinearInterpolation,
     ConstantInterpolation, HermiteInterpolation, SensitivityInterpolation,
     NoAD, @add_kwonly,
-    calculate_ensemble_errors, isconstant,
+    calculate_ensemble_errors,
     DEFAULT_REDUCTION, isautodifferentiable,
     isadaptive, isdiscrete, has_syms, AbstractAnalyticalSolution,
     wrap_sol
 
-import SciMLBase: solve, init, step!, solve!, __init, __solve, update_coefficients!,
-    update_coefficients, isadaptive, wrapfun_oop, wrapfun_iip,
+import SciMLBase: solve, init, step!, solve!, __init, __solve,
+    isadaptive, wrapfun_oop, wrapfun_iip,
     unwrap_fw, promote_tspan, set_u!, set_t!, set_ut!,
     extract_alg, checkkwargs, has_kwargs, _concrete_solve_adjoint, _concrete_solve_forward,
     eltypedual, get_updated_symbolic_problem, get_concrete_p, get_concrete_u0, promote_u0,
@@ -137,7 +139,11 @@ $(TYPEDEF)
 """
 abstract type DECostFunction end
 
-import SciMLBase: Void, unwrapped_f
+import SciMLBase: Void, unwrapped_f, AutoDePSpecialize
+
+import RespecializeParams
+
+include("opaque_void.jl")
 
 include("utils.jl")
 include("stats.jl")
@@ -154,6 +160,14 @@ include("integrator_accessors.jl")
 include("verbosity.jl")
 
 # This is only used for oop stiff solvers
+"""
+    default_factorize(A)
+
+Factorize matrix `A` for out-of-place stiff solver paths.
+
+The default implementation uses unchecked LU factorization and is intended as a
+solver-author extension hook.
+"""
 default_factorize(A) = lu(A; check = false)
 
 if isdefined(SciMLBase, :AbstractParameterizedFunction)
@@ -177,6 +191,8 @@ export DEVerbosity
 export initialize!, finalize!
 
 export SensitivityADPassThrough
+
+export AutoDePSpecialize
 
 # Declare DiffEqBase-owned, documented API names `public` so downstream packages can
 # drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is

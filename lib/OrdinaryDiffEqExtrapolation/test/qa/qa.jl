@@ -1,20 +1,20 @@
 using SciMLTesting, OrdinaryDiffEqExtrapolation, Test
 
-# After the solver-author extension API was declared `public` in OrdinaryDiffEqCore /
-# OrdinaryDiffEqDifferentiation / OrdinaryDiffEqNonlinearSolve / DiffEqBase, the only
-# remaining ExplicitImports public-API exceptions are the genuinely-internal names
-# below that have no public replacement: OrdinaryDiffEqCore's private `@threaded`
-# codegen macro and `_resolved_QT` controller helper, plus a handful of upstream
-# (SciMLBase / FastPower / Base.Threads) internals. Everything else is clean.
-# Tracked for a future make-public pass; see SciML/OrdinaryDiffEq.jl#3776.
 run_qa(
     OrdinaryDiffEqExtrapolation;
+    # No docs/ tree here; the umbrella manual renders this package's API.
+    api_docs_kwargs = (; rendered = false),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;
         all_explicit_imports_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore private codegen macro (deliberately kept non-public)
                 Symbol("@threaded"),
+                # OrdinaryDiffEqDifferentiation owner-internal cross-sublibrary hooks;
+                # no public wrapper exists.
+                :build_grad_config, :build_jac_config, :calc_J, :calc_J!,
+                :dolinsolve, :jacobian2W!,
                 # SciMLBase internals (reshaping / val-unwrap helpers, no public replacement)
                 :_reshape, :_unwrap_val, :_vec,
             ),

@@ -6,6 +6,14 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
+# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
+# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
+# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+@inline function _bool_equal(a, b)
+    r = a == b
+    return r isa Bool ? r : all(r)
+end
+
 @muladd function _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
@@ -242,8 +250,11 @@
 
     # Constant zone before callback
     # Just return first guess
-    # Avoids AD issues
-    length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+    # Avoids AD issues.
+    # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
+    # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
+    # Coerce array-valued equality so the boolean context always receives a Bool.
+    length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
@@ -287,6 +298,13 @@
 end
 
 # ODE iip entry point
+"""
+    ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, integrator) -> dt
+
+Compute an automatic initial step size for `prob` using the standard
+Hairer–Nørsett–Wanner heuristic (based on the norms of `f` and its derivative at
+`u0`), respecting `dtmax`, the tolerances, and the integration direction `tdir`.
+"""
 function ode_determine_initdt(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob::SciMLBase.AbstractODEProblem{uType, tType, true},
@@ -353,11 +371,15 @@ end
 
     f₀ = f(u0, p, t)
 
-    if any(x -> any(isnan, x), f₀)
+    # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
+    # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
+    # field types cannot sensibly overload (OrdinaryDiffEq #1404).
+    if DiffEqBase.NAN_CHECK(f₀)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
+        return tdir * dtmin
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
@@ -370,17 +392,27 @@ end
     g₀ = nothing
     if g !== nothing
         g₀ = 3g(u0, p, t)
-        if any(x -> any(isnan, x), g₀)
+        if DiffEqBase.NAN_CHECK(g₀)
             @SciMLMessage(
                 "First function call for g produced NaNs. Exiting.",
                 integrator.opts.verbose, :init_NaN
             )
+            return tdir * dtmin
         end
         d₁ = internalnorm(
             max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
         )
     else
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
+    end
+
+    # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
+    if isnan(d₁)
+        @SciMLMessage(
+            "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+            integrator.opts.verbose, :init_NaN
+        )
+        return tdir * dtmin
     end
 
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
@@ -396,8 +428,9 @@ end
 
     # Constant zone before callback
     # Just return first guess
-    # Avoids AD issues
-    f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+    # Avoids AD issues.
+    # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
+    _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
@@ -450,7 +483,9 @@ end
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])
     init_dt = isfinite(init_dt) ? init_dt : oneunit(_tType)
-    return convert(_tType, init_dt * 1 // 10^(6))
+    # Must include tdir so reversed tspans get a negative initial dt
+    # (DifferentialEquations.jl #908).
+    return convert(_tType, tdir * init_dt * 1 // 10^(6))
 end
 
 # RODE/SDE iip entry: folds noise terms into the Hairer-Wanner estimate

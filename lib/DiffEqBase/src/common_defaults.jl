@@ -179,6 +179,27 @@ function INFINITE_OR_GIANT(
     )
 end
 INFINITE_OR_GIANT(x::RecursiveArrayTools.ArrayPartition) = any(INFINITE_OR_GIANT, x.x)
+
+"""
+    ODE_DEFAULT_UNSTABLE_CHECK(dt, u, p, t) -> Bool
+
+Return whether the default ODE instability check considers the current state
+unstable.
+
+The generic fallback returns `false`. Numeric scalars, arrays, and
+`ArrayPartition`s return `true` when any state entry is infinite or non-finite.
+This is the default used by OrdinaryDiffEq solvers when no `unstable_check`
+callback is supplied.
+
+# Arguments
+- `dt`: Current step size.
+- `u`: Current state.
+- `p`: Problem parameters.
+- `t`: Current time.
+
+# Returns
+- `Bool`: `true` when the state should be treated as unstable.
+"""
 ODE_DEFAULT_UNSTABLE_CHECK(dt, u, p, t) = false
 function ODE_DEFAULT_UNSTABLE_CHECK(dt, u::Union{Number, AbstractArray{<:Number}}, p, t)
     return INFINITE_OR_GIANT(u)

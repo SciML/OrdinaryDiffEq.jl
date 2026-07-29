@@ -19,6 +19,26 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 @test isapprox(sol3, sol_analytic, rtol = 1.0e-10)
 @test isapprox(sol4, sol_analytic, rtol = 1.0e-8)
 
+# Adaptive LinearExponential must not require `opnorm` on the operator: it feeds
+# ExponentialUtilities an explicit abstol and initial tau instead. Wrap the
+# operator in a type whose `opnorm` throws to guard against regressions (some
+# operator types, e.g. sparse GPU matrices, do not support `opnorm`).
+struct BrokenOpnormMatrix{T, M <: AbstractMatrix{T}} <: AbstractMatrix{T}
+    A::M
+end
+Base.size(A::BrokenOpnormMatrix) = size(A.A)
+Base.getindex(A::BrokenOpnormMatrix, I...) = getindex(A.A, I...)
+LinearAlgebra.mul!(y::AbstractVecOrMat, A::BrokenOpnormMatrix, x::AbstractVecOrMat) =
+    mul!(y, A.A, x)
+LinearAlgebra.ishermitian(A::BrokenOpnormMatrix) = ishermitian(A.A)
+LinearAlgebra.opnorm(::BrokenOpnormMatrix, ::Real) =
+    error("opnorm intentionally unsupported")
+
+A_broken = MatrixOperator(BrokenOpnormMatrix([2.0 -1.0; -1.0 2.0]))
+prob_broken = ODEProblem(A_broken, copy(u0), (0.0, 1.0))
+sol_broken = solve(prob_broken, LinearExponential(krylov = :adaptive))(1.0)
+@test isapprox(sol_broken, sol_analytic, rtol = 1.0e-6)
+
 # u' = A(t)u solvers
 function update_func!(A, u, p, t)
     A[1, 1] = 0

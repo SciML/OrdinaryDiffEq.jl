@@ -26,7 +26,7 @@ versions = ["lts", "1", "pre"]
 versions = ["lts", "1", "pre"]
 continue_on_error = true
 [AD]
-versions = ["lts"]
+versions = ["lts", "1"]
 [QA]
 versions = ["lts", "1"]
 [ODEInterfaceRegression]

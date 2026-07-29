@@ -140,6 +140,14 @@ function ensure_behaving_adaptivity!(integrator, cache::Union{DefaultCache, Comp
     end
 end
 
+"""
+    perform_step!(integrator, cache, repeat_step = false)
+
+Advance the integrator by one step using algorithm `cache`, writing the proposed
+new state into `integrator.u` and the error estimate into `integrator.EEst`. This
+is the core routine each solver sublibrary implements for its cache type;
+`repeat_step` indicates the step is being retried after a rejection.
+"""
 function perform_step!(integrator, cache::DefaultCache, repeat_step = false)
     algs = integrator.alg.algs
     init_ith_default_cache(cache, algs, cache.current)

@@ -1,7 +1,8 @@
 using SafeTestsets
 using Pkg
+using SciMLTesting
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_modelingtoolkit_env()
     Pkg.activate(joinpath(@__DIR__, "modelingtoolkit"))
@@ -19,8 +20,7 @@ function activate_modelingtoolkit_env()
 end
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests
@@ -36,6 +36,12 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "CheckInit Tests" include("checkinit_tests.jl")
     @time @safetestset "Nested AD over NonlinearSolveAlg" include("nested_ad_nlsolvealg_tests.jl")
     @time @safetestset "NonlinearSolveAlg Jacobian Reuse Tests" include("nsa_jacobian_reuse_tests.jl")
+    @time @safetestset "Homotopy Nonlinear Solver Tests" include("homotopy_nlsolve_tests.jl")
+    @time @safetestset "Homotopy init default_nlsolve Tests" include("homotopy_default_nlsolve_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Sparse Jacobian Tests" include("nsa_sparse_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Matrix-Free WOperator Tests" include("nsa_matrixfree_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Smoothed Error Estimate Tests" include("nsa_smooth_est_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Stats Tests" include("nsa_stats_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)

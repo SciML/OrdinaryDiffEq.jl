@@ -1,7 +1,20 @@
+"""
+    DEOptions
+
+Mutable container holding the resolved common solver options for a running
+integrator, reachable as `integrator.opts`. Fields include the tolerances
+(`abstol`, `reltol`), the norm (`internalnorm`), step-size bounds
+(`dtmax`, `dtmin`, `failfactor`), the saving controls (`saveat`, `save_everystep`,
+`dense`, `save_start`, `save_end`, …), the `tstops`/`d_discontinuities` schedules
+and their caches, callback (`callback`), domain/stability checks
+(`isoutofdomain`, `unstable_check`), progress-logging options, and the
+`verbose`/`maxiters` settings. Mutating a field changes the solver behavior for
+subsequent steps.
+"""
 mutable struct DEOptions{
         absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType, DType,
+        disccache, verbType, DType, StageLimiter, StepLimiter,
     }
     maxiters::MI
     save_everystep::Bool
@@ -29,6 +42,8 @@ mutable struct DEOptions{
     timeseries_errors::Bool
     dense_errors::Bool
     delta::DType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     dense::Bool
     save_on::Bool
     save_start::Bool
@@ -47,8 +62,9 @@ mutable struct DEOptions{
 end
 
 # Legacy constructor for backwards compatibility with packages (e.g. DelayDiffEq)
-# that construct DEOptions without the delta and save_noise fields and without
-# the DType type parameter. Accepts 21 type params and 46 positional args.
+# that construct DEOptions without the delta, save_noise, stage_limiter!, and step_limiter!
+# fields and without the DType/StageLimiter/StepLimiter type parameters. Accepts 21 type
+# params and 46 positional args.
 function DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
@@ -72,7 +88,8 @@ function DEOptions{
     return DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType, typeof(nothing),
+        disccache, verbType, typeof(nothing), typeof(trivial_limiter!),
+        typeof(trivial_limiter!),
     }(
         maxiters, save_everystep, adaptive, abstol, reltol,
         gamma, qmax, qmin, qsteady_max, qsteady_min, qoldinit,
@@ -81,7 +98,7 @@ function DEOptions{
         tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
         progress, progress_steps, progress_name, progress_message, progress_id,
         timeseries_errors, dense_errors,
-        nothing, dense, save_on, save_start, save_end,
+        nothing, trivial_limiter!, trivial_limiter!, dense, save_on, save_start, save_end,
         false, save_discretes, save_end_user, callback, isoutofdomain, unstable_check,
         verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
     )

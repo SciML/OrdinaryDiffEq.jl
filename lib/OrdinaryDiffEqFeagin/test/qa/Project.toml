@@ -15,15 +15,12 @@ path = "../../../DiffEqBase"
 [sources.OrdinaryDiffEqCore]
 path = "../../../OrdinaryDiffEqCore"
 
-[sources.OrdinaryDiffEqFeagin]
-path = "../../"
-
 [compat]
 AllocCheck = "0.2"
 Aqua = "0.8.11"
 DiffEqBase = "7"
 JET = "0.9, 0.11"
-SciMLTesting = "1.7"
+SciMLTesting = "2.1"
 julia = "1.10"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqFeagin = "2"

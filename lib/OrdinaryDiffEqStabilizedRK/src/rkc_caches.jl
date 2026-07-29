@@ -12,6 +12,7 @@ mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     start::Int
     min_stage::Int
     max_stage::Int
+    eig_age::Int
 end
 @cache struct ROCK2Cache{uType, rateType, uNoUnitsType, C <: ROCK2ConstantCache} <:
     StabilizedRKMutableCache
@@ -66,6 +67,7 @@ mutable struct ROCK4ConstantCache{T, T2, T3, T4, zType} <: OrdinaryDiffEqConstan
     start::Int
     min_stage::Int
     max_stage::Int
+    eig_age::Int
 end
 
 @cache struct ROCK4Cache{uType, rateType, uNoUnitsType, C <: ROCK4ConstantCache} <:
@@ -116,6 +118,7 @@ end
 mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
     #to match the types to call maxeig!
     zprev::zType
+    eig_age::Int
 end
 @cache struct RKCCache{uType, rateType, uNoUnitsType, C <: RKCConstantCache} <:
     StabilizedRKMutableCache
@@ -135,7 +138,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = RKCConstantCache(copy(u))
+    constantcache = RKCConstantCache(copy(u), 0)
     gprev = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -151,7 +154,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RKCConstantCache(u)
+    return RKCConstantCache(u, 0)
 end
 
 mutable struct RKMC2ConstantCache{zType, T} <: OrdinaryDiffEqConstantCache

@@ -1,7 +1,7 @@
+# TODO we should add a consistency check using the string $name(; $keyword_default) against the standard console output of name()
 """
 Utility function to help generating consistent docstrings across the package.
 """
-# TODO we should add a consistency check using the string $name(; $keyword_default) against the standard console output of name()
 function generic_solver_docstring(
         description::String,
         name::String,
@@ -54,6 +54,14 @@ function generic_solver_docstring(
         "## References\n" * references
 end
 
+"""
+    explicit_rk_docstring(description, name; references = "", extra_keyword_description = "", extra_keyword_default = "") -> String
+
+Convenience wrapper over [`generic_solver_docstring`](@ref) for explicit
+Runge–Kutta methods. Prepends the standard `stage_limiter!` / `step_limiter!` /
+`thread` keywords (and any `extra_keyword_*`) and fills in the "Explicit
+Runge-Kutta Method" solver class.
+"""
 function explicit_rk_docstring(
         description::String,
         name::String;
@@ -62,14 +70,14 @@ function explicit_rk_docstring(
         extra_keyword_default::String = ""
     )
     keyword_default = """
-        stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-        step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+        stage_limiter = OrdinaryDiffEq.trivial_limiter!,
+        step_limiter = OrdinaryDiffEq.trivial_limiter!,
         thread = Serial(),
         """ * extra_keyword_default
 
     keyword_default_description = """
-        - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-        - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+        - `stage_limiter`: function of the form `limiter!(u, integrator, p, t)`
+        - `step_limiter`: function of the form `limiter!(u, integrator, p, t)`
         - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
         """ * extra_keyword_description
 
@@ -78,6 +86,14 @@ function explicit_rk_docstring(
         keyword_default_description, keyword_default
     )
 end
+"""
+    differentiation_rk_docstring(description, name, solver_class; references = "", extra_keyword_description = "", extra_keyword_default = "") -> String
+
+Convenience wrapper over [`generic_solver_docstring`](@ref) for implicit /
+Rosenbrock methods that take differentiation options. Prepends the standard
+`autodiff`, `concrete_jac`, and `linsolve` keywords (and any `extra_keyword_*`)
+with their descriptions.
+"""
 function differentiation_rk_docstring(
         description::String,
         name::String,

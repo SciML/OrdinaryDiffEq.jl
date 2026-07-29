@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra
+using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra, Test
 using OrdinaryDiffEqSDIRK
 using ComponentArrays
 
@@ -153,3 +153,21 @@ solve(odeprob, TRBDF2());
 solve(sparseodeprob, TRBDF2());
 solve(sparseodeprob, Rosenbrock23(linsolve = KLUFactorization()));
 solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
+
+@testset "Sparse Jacobian caches are initialized with stored values" begin
+    function sparse_cache_f!(du, u, p, t)
+        return du .= u
+    end
+
+    N = 8
+    jac_prototype = sparse(1:N, 1:N, ones(N), N, N)
+    prob = ODEProblem(
+        ODEFunction(sparse_cache_f!; jac_prototype),
+        ones(N),
+        (0.0, 1.0)
+    )
+    integ = init(prob, Rodas5P())
+
+    @test all(==(1), nonzeros(integ.cache.J))
+    @test all(==(1), nonzeros(integ.cache.W))
+end

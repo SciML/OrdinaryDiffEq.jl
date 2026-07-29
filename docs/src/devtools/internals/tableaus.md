@@ -113,6 +113,7 @@
 ```@docs
 DiffEqDevTools.stability_region
 DiffEqDevTools.imaginary_stability_interval
+DiffEqDevTools.check_tableau
 OrdinaryDiffEq.ODE_DEFAULT_TABLEAU
 ```
 

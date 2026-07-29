@@ -55,7 +55,7 @@ function DelayDiffEq._create_sdde_noise(
     if prob.noise === nothing
         if iip
             if needs_dZ
-                rand_prototype2 = _z_prototype(alg, rand_prototype, true)
+                rand_prototype2 = _z_prototype(alg, rand_prototype, true, dt)
                 W = WienerProcess!(
                     t0, rand_prototype, rand_prototype2,
                     save_everystep = save_noise, rng = _rng
@@ -68,7 +68,7 @@ function DelayDiffEq._create_sdde_noise(
             end
         else
             if needs_dZ
-                rand_prototype2 = _z_prototype(alg, rand_prototype, false)
+                rand_prototype2 = _z_prototype(alg, rand_prototype, false, dt)
                 W = WienerProcess(
                     t0, rand_prototype, rand_prototype2,
                     save_everystep = save_noise, rng = _rng

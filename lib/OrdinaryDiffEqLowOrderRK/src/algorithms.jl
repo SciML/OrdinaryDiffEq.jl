@@ -4,9 +4,20 @@
     "Explicit Runge-Kutta Method.",
     """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""", "", ""
+    Springer-Verlag.""",
+    """
+    - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    """
+    stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    """
 )
-struct Euler <: OrdinaryDiffEqAlgorithm end
+Base.@kwdef struct Euler{StageLimiter, StepLimiter} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 @doc generic_solver_docstring(
     "1st order fully explicit method for testing split accuracy",
@@ -499,3 +510,11 @@ Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEq
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        Alshina2, Alshina3, Alshina6, Anas5, BS3, BS5, DP5, Euler, FRK65, Heun,
+        MSRK5, MSRK6, Midpoint, OwrenZen3, OwrenZen4, OwrenZen5, PSRK3p5q4, PSRK3p6q5,
+        PSRK4p7q6, RK4, RKM, RKO65, Ralston, Ralston4, SIR54, Stepanov5,
+    },
+) = true

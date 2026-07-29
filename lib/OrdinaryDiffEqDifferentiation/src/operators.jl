@@ -27,6 +27,11 @@ end
 
 SciMLBase.isinplace(::JVPCache) = true
 ArrayInterface.can_setindex(::JVPCache) = false
+# A JVPCache is genuinely matrix-free: it only implements `mul!` (the DI pushforward), with
+# no `convert(AbstractMatrix, ·)`. Report that honestly so a `WOperator` wrapping one is
+# itself matrix-free and consumers (e.g. NonlinearSolve) route it to a matrix-free linear
+# solver instead of trying to factorize it.
+SciMLOperators.isconvertible(::JVPCache) = false
 function ArrayInterface.restructure(y::JVPCache, x::JVPCache)
     @assert size(y) == size(x) "cannot restructure operators. ensure their sizes match."
     return x
