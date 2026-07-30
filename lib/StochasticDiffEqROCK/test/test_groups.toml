@@ -9,5 +9,10 @@ versions = ["1"]
 timeout = 240
 local_only = true
 
+[SROCK2NonDiagonalConvergence]
+versions = ["1"]
+timeout = 240
+local_only = true
+
 [QA]
 versions = ["lts", "1"]
