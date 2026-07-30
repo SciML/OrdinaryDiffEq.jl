@@ -85,7 +85,7 @@ function key_to_label(key::Symbol)
     elseif key == :nnonlinconvfail
         return "Number of nonlinear solver convergence failures"
     elseif key == :ncondition
-        return "Number of rootfind condition calls"
+        return "Number of callback condition calls"
     elseif key == :naccept
         return "Number of accepted steps"
     elseif key == :nreject

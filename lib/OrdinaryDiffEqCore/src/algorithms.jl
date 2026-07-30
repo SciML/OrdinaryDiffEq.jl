@@ -334,6 +334,11 @@ end
 
 ################################################################################
 
+"""
+    trivial_limiter!(u, integrator, p, t)
+
+No-op stage/step limiter used when no solve-level limiter is supplied.
+"""
 @inline trivial_limiter!(u, integrator, p, t) = nothing
 
 ################################################################################
