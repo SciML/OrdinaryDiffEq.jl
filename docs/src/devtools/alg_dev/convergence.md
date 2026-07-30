@@ -20,7 +20,10 @@ A type which holds the data from a convergence simulation.
 
 ### Fields
 
-  - `solutions::Array{<:DESolution}`: Holds all the PdeSolutions.
+  - `solutions::Array{<:DESolution}`: Holds the solutions. For the Monte-Carlo method of
+    `test_convergence` these hold a single representative trajectory unless
+    `retain_solutions = true` is passed — see
+    [Memory use of Monte-Carlo studies](@ref).
 
   - `errors`: Dictionary of the error calculations. Can contain:
     
@@ -92,10 +95,34 @@ log2(error[i+1]/error[i])
 
 Returns the mean of the convergence estimates.
 
+## Memory use of Monte-Carlo studies
+
+For an SDE or RODE problem, `test_convergence` runs an ensemble per step size. A full
+solution per trajectory carries the solver cache, the noise process, the problem and its
+interpolation, so keeping them makes a study over many trajectories retain far more than
+the error estimates it reports — at hundreds of thousands of trajectories, tens of
+gigabytes.
+
+They are therefore **not** kept by default. Each trajectory is reduced to a
+[`ConvergenceTrajectory`](@ref) by the ensemble's `output_func` as it is solved, so the
+full solutions never coexist, and once the errors have been computed the ensemble is
+stripped to a single representative trajectory. `errors`, `weak_errors`, `error_means`
+and `𝒪est` come from the full ensemble and are unaffected — what changes is that
+`solutions[i].u` holds one entry rather than `trajectories` of them.
+
+Pass `retain_solutions = true` when the trajectories themselves are the point, such as
+comparing two algorithms path by path. `sim[i, j]` forwards into `solutions[i][j]`, so
+it too reaches only the representative trajectory unless the solutions are retained.
+
+The reduction is skipped where it cannot apply, and the solutions retained: when you
+supply your own `EnsembleProblem` (set its `output_func` instead), when `expected_value`
+is given, and when `weak_timeseries_errors` or `weak_dense_errors` is set.
+
 ## API
 
 ```@docs
 DiffEqDevTools.ConvergenceSimulation
+DiffEqDevTools.ConvergenceTrajectory
 DiffEqDevTools.test_convergence
 DiffEqDevTools.analyticless_test_convergence
 ```
