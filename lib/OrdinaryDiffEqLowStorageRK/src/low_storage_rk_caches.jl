@@ -47,81 +47,30 @@ function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(
-        alg::RK46NL, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
+function RK46NLConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
+    A2 = convert(T, -0.737101392796)
+    A3 = convert(T, -1.634740794343)
+    A4 = convert(T, -0.74473900378)
+    A5 = convert(T, -1.469897351522)
+    A6 = convert(T, -2.813971388035)
+    A2end = (A2, A3, A4, A5, A6)
 
-struct RK46NLConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
-    α2::T
-    α3::T
-    α4::T
-    α5::T
-    α6::T
-    β1::T
-    β2::T
-    β3::T
-    β4::T
-    β5::T
-    β6::T
-    c2::T2
-    c3::T2
-    c4::T2
-    c5::T2
-    c6::T2
+    B1 = convert(T, 0.032918605146)
+    B2 = convert(T, 0.8232569982)
+    B3 = convert(T, 0.3815309489)
+    B4 = convert(T, 0.200092213184)
+    B5 = convert(T, 1.718581042715)
+    B6 = convert(T, 0.27)
+    B2end = (B2, B3, B4, B5, B6)
 
-    function RK46NLConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
-        α2 = T(-0.737101392796)
-        α3 = T(-1.634740794343)
-        α4 = T(-0.74473900378)
-        α5 = T(-1.469897351522)
-        α6 = T(-2.813971388035)
-        β1 = T(0.032918605146)
-        β2 = T(0.8232569982)
-        β3 = T(0.3815309489)
-        β4 = T(0.200092213184)
-        β5 = T(1.718581042715)
-        β6 = T(0.27)
-        c2 = T2(0.032918605146)
-        c3 = T2(0.249351723343)
-        c4 = T2(0.466911705055)
-        c5 = T2(0.582030414044)
-        c6 = T2(0.847252983783)
-        return new{T, T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6)
-    end
-end
+    c2 = convert(T2, 0.032918605146)
+    c3 = convert(T2, 0.249351723343)
+    c4 = convert(T2, 0.466911705055)
+    c5 = convert(T2, 0.582030414044)
+    c6 = convert(T2, 0.847252983783)
+    c2end = (c2, c3, c4, c5, c6)
 
-function alg_cache(
-        alg::RK46NL, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return RK46NLCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread
-    )
-end
-
-@cache struct RK46NLCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-    LowStorageRKMutableCache
-    u::uType
-    uprev::uType
-    k::rateType
-    tmp::uType
-    fsalfirst::rateType
-    tab::TabType
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
+    return LowStorageRK2NConstantCache(A2end, B1, B2end, c2end)
 end
 
 function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -4357,11 +4306,12 @@ end
 
 # --- LowStorageRK2N ---
 const LowStorageRK2NAlgorithm = Union{
-    ORK256, CarpenterKennedy2N54, SHLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F,
+    ORK256, RK46NL, CarpenterKennedy2N54, SHLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F,
     NDBLSRK124, NDBLSRK134, NDBLSRK144,
 }
 
 _lowstorage_2n_tableau(::ORK256, ::Type{T}, ::Type{T2}) where {T, T2} = ORK256ConstantCache(T, T2)
+_lowstorage_2n_tableau(::RK46NL, ::Type{T}, ::Type{T2}) where {T, T2} = RK46NLConstantCache(T, T2)
 _lowstorage_2n_tableau(::CarpenterKennedy2N54, ::Type{T}, ::Type{T2}) where {T, T2} = CarpenterKennedy2N54ConstantCache(T, T2)
 _lowstorage_2n_tableau(::SHLDDRK64, ::Type{T}, ::Type{T2}) where {T, T2} = SHLDDRK64ConstantCache(T, T2)
 _lowstorage_2n_tableau(::DGLDDRK73_C, ::Type{T}, ::Type{T2}) where {T, T2} = DGLDDRK73_CConstantCache(T, T2)

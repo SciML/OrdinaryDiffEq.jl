@@ -195,12 +195,16 @@ end
 @doc explicit_rk_docstring(
     "6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
 Fixed timestep only.", "RK46NL",
-    references = "Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006. doi: https://doi.org/10.1016/j.compfluid.2005.04.003"
+    references = "Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006. doi: https://doi.org/10.1016/j.compfluid.2005.04.003",
+    extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
+    """,
+    extra_keyword_default = "williamson_condition = false"
 )
 Base.@kwdef struct RK46NL{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
+    williamson_condition::Bool = false
 end
 
 @doc explicit_rk_docstring(
