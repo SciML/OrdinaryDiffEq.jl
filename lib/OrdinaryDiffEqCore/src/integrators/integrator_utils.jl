@@ -746,7 +746,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
             hasproperty(integrator.cache.nlsolver.cache, :J)
         #BDF
         integrator.cache.nlsolver.cache.J
-    else
+    else #no jac to analyze
         nothing
     end
 
