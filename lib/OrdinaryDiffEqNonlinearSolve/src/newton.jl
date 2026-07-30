@@ -140,7 +140,7 @@ function initialize!(
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
-        if length(cache.cache.u) != length(z)
+        if length(get_u(cache.cache)) != length(z)
             new_prob = if cache.W !== nothing
                 # W-reuse: re-point the inner jacobian at the resized W via the same mapping
                 # used at build time. Only array sizes change, so the jac's concrete type —
@@ -229,7 +229,7 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     isdae = nlsolve_f(integrator) isa DAEFunction
     γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
     W_γdt ≈ γdt && return nothing
-    rmul!(nlcache.fu, 2 / (1 + γdt / W_γdt))
+    rmul!(get_fu(nlcache), 2 / (1 + γdt / W_γdt))
     return nothing
 end
 
@@ -252,11 +252,12 @@ end
         return convert(eltype(z), Inf)
     end
     step!(nlcache; recompute_jacobian)
-    nlsolver.ztmp = nlcache.u
+    active_u = get_u(nlcache)
+    nlsolver.ztmp = active_u
 
     ustep = compute_ustep(tmp, γ, z, method)
     atmp = calculate_residuals(
-        z .- nlcache.u, uprev, ustep, opts.abstol, opts.reltol,
+        z .- active_u, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
     )
     ndz = opts.internalnorm(atmp, t)
@@ -289,15 +290,18 @@ end
     step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
+        active_fu = get_fu(nlcache)
+        # No `trace` is attached: this solution only feeds `nlprobmap` right below, and
+        # polyalgorithm caches keep the trace on the active branch with no accessor for it.
         nlstepsol = SciMLBase.build_solution(
-            nlcache.prob, nlcache.alg, nlcache.u, nlcache.fu;
-            nlcache.retcode, nlcache.stats, nlcache.trace
+            nlcache.prob, nlcache.alg, get_u(nlcache), active_fu;
+            nlcache.retcode, nlcache.stats
         )
         nlstep_data.nlprobmap(ztmp, nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         atmp_sub = @view(atmp[nlstep_data.u0perm])
         calculate_residuals!(
-            atmp_sub, nlcache.fu,
+            atmp_sub, active_fu,
             @view(uprev[nlstep_data.u0perm]),
             @view(ustep[nlstep_data.u0perm]), opts.abstol,
             opts.reltol, opts.internalnorm, t
@@ -309,7 +313,8 @@ end
         # convergence check to declare success ~sqrt(n_full/n_sub) early.
         ndz = opts.internalnorm(atmp_sub, t)
     else
-        @.. broadcast = false ztmp = nlcache.u
+        active_u = get_u(nlcache)
+        @.. broadcast = false ztmp = active_u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         @.. broadcast = false atmp = z - ztmp
         calculate_residuals!(

@@ -40,7 +40,7 @@ run_qa(
                 # Base — owner-internal, no public alternative
                 :RefValue,
                 # NonlinearSolveBase — owner-internal, no public alternative
-                :not_terminated,
+                :not_terminated, :get_u, :get_fu,
                 # OrdinaryDiffEqDifferentiation — owner-internal, no public alternative
                 :default_krylov_warm_start,
                 # `@SciMLMessage` reached through OrdinaryDiffEqCore (owner SciMLLogging).
