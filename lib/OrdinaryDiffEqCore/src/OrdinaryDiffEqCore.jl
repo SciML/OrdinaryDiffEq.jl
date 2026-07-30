@@ -488,6 +488,12 @@ include("precompilation_setup.jl")
             # of these, so they are a required solver-author extension point.
             :StochasticDiffEqCache, :StochasticDiffEqConstantCache,
             :StochasticDiffEqMutableCache, :trivial_limiter!,
+            # Round 3: custom-integrator construction and stepping hooks. Packages that
+            # build their own integrator on top of the OrdinaryDiffEqCore machinery
+            # (DelayDiffEq, OrdinaryDiffEqOperatorSplitting) both call these and add
+            # methods to them for their own integrator types.
+            :fix_dt_at_bounds!, :handle_tstop!,
+            :initialize_tstops, :initialize_saveat, :initialize_d_discontinuities,
         )
     )
 end
