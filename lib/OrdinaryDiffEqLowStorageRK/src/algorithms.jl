@@ -350,14 +350,6 @@ Base.@kwdef struct AlJahdaliAdv3S42{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliAdv3S42(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S42{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -374,14 +366,6 @@ Base.@kwdef struct AlJahdaliAdv3S82{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliAdv3S82(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S82{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -400,14 +384,6 @@ Base.@kwdef struct AlJahdaliAdv3S53{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliAdv3S53(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S53{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -424,14 +400,6 @@ Base.@kwdef struct AlJahdaliAdv3S113{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliAdv3S113(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S113{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -450,14 +418,6 @@ Base.@kwdef struct AlJahdaliAdv3S64{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliAdv3S64(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S64{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -474,14 +434,6 @@ Base.@kwdef struct AlJahdaliAdv3S154{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliAdv3S154(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S154{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -500,14 +452,6 @@ Base.@kwdef struct AlJahdaliAdv3S85{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliAdv3S85(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S85{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -524,14 +468,6 @@ Base.@kwdef struct AlJahdaliAdv3S165{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliAdv3S165(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliAdv3S165{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 # Vortex-optimized schemes
@@ -552,14 +488,6 @@ Base.@kwdef struct AlJahdaliVor3S42{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliVor3S42(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S42{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -576,14 +504,6 @@ Base.@kwdef struct AlJahdaliVor3S82{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliVor3S82(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S82{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -602,14 +522,6 @@ Base.@kwdef struct AlJahdaliVor3S53{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliVor3S53(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S53{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -626,14 +538,6 @@ Base.@kwdef struct AlJahdaliVor3S113{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliVor3S113(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S113{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -652,14 +556,6 @@ Base.@kwdef struct AlJahdaliVor3S64{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliVor3S64(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S64{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -676,14 +572,6 @@ Base.@kwdef struct AlJahdaliVor3S154{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliVor3S154(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S154{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(
@@ -702,14 +590,6 @@ Base.@kwdef struct AlJahdaliVor3S85{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
-# for backwards compatibility
-function AlJahdaliVor3S85(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S85{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
-end
 
 @doc explicit_rk_docstring(
     "Low-Storage Method
@@ -726,14 +606,6 @@ Base.@kwdef struct AlJahdaliVor3S165{StageLimiter, StepLimiter, Thread} <:
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
-end
-# for backwards compatibility
-function AlJahdaliVor3S165(stage_limiter!, step_limiter! = trivial_limiter!)
-    return AlJahdaliVor3S165{typeof(stage_limiter!), typeof(step_limiter!), Serial}(
-        stage_limiter!,
-        step_limiter!,
-        Serial()
-    )
 end
 
 @doc explicit_rk_docstring(

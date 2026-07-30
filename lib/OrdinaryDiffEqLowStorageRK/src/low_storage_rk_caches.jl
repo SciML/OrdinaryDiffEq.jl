@@ -1383,7 +1383,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) wher
     return LowStorageRK3SConstantCache(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function AlJahdaliAdv3S42ConstantCache(T, T2)
+function AlJahdaliAdv3S42ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.0208274055987525e-1)
     γ103 = convert(T, 7.9458022449524823e-2)
     γ104 = convert(T, 4.1290159501443235e-1)
@@ -1418,42 +1418,7 @@ function AlJahdaliAdv3S42ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{3, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S42, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S42ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S42, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S42ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S82ConstantCache(T, T2)
+function AlJahdaliAdv3S82ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 2.5322572991616199e-1)
     γ103 = convert(T, -5.4279404179724544e-2)
     γ104 = convert(T, 5.67248175047529e-1)
@@ -1512,42 +1477,7 @@ function AlJahdaliAdv3S82ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{7, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S82, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S82ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S82, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S82ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S53ConstantCache(T, T2)
+function AlJahdaliAdv3S53ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 1.3531746611424111e-1)
     γ103 = convert(T, 2.2058757279065677e-1)
     γ104 = convert(T, 1.6808049525309503e+0)
@@ -1588,42 +1518,7 @@ function AlJahdaliAdv3S53ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{4, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S53, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S53ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S53, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S53ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S113ConstantCache(T, T2)
+function AlJahdaliAdv3S113ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -5.5538305691606271e-1)
     γ103 = convert(T, 6.6223258660215611e-2)
     γ104 = convert(T, -8.4326407359461908e-1)
@@ -1700,42 +1595,7 @@ function AlJahdaliAdv3S113ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{10, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S113, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S113ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S113, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S113ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S64ConstantCache(T, T2)
+function AlJahdaliAdv3S64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -8.1219688584336369e-2)
     γ103 = convert(T, 3.9163243734993465e+0)
     γ104 = convert(T, 1.3979544146387459e+0)
@@ -1782,42 +1642,7 @@ function AlJahdaliAdv3S64ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{5, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S64, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S64ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S64, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S64ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S154ConstantCache(T, T2)
+function AlJahdaliAdv3S154ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.158910395660701e-1)
     γ103 = convert(T, 8.6364131293968704e-1)
     γ104 = convert(T, -1.3307424292549141e-1)
@@ -1918,42 +1743,7 @@ function AlJahdaliAdv3S154ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{14, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S154, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S154ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S154, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S154ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S85ConstantCache(T, T2)
+function AlJahdaliAdv3S85ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 3.0756129640036023e-1)
     γ103 = convert(T, -8.8493175703616256e-2)
     γ104 = convert(T, -5.0992479102386508e+0)
@@ -2012,42 +1802,7 @@ function AlJahdaliAdv3S85ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{7, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S85, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S85ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S85, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S85ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliAdv3S165ConstantCache(T, T2)
+function AlJahdaliAdv3S165ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 6.2008554201750266e-1)
     γ103 = convert(T, -1.6524594063015821e+0)
     γ104 = convert(T, -7.933536221854306e-1)
@@ -2154,42 +1909,7 @@ function AlJahdaliAdv3S165ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{15, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliAdv3S165, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliAdv3S165ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliAdv3S165, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliAdv3S165ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S42ConstantCache(T, T2)
+function AlJahdaliVor3S42ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 2.3790115342551721e-1)
     γ103 = convert(T, 3.3056966895326279e-1)
     γ104 = convert(T, 2.2912720509526185e-1)
@@ -2224,42 +1944,7 @@ function AlJahdaliVor3S42ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{3, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S42, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S42ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S42, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S42ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S82ConstantCache(T, T2)
+function AlJahdaliVor3S82ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 5.0730039693425488e-1)
     γ103 = convert(T, 9.3723577048792361e-1)
     γ104 = convert(T, -9.4557089224619473e-2)
@@ -2318,42 +2003,7 @@ function AlJahdaliVor3S82ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{7, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S82, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S82ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S82, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S82ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S53ConstantCache(T, T2)
+function AlJahdaliVor3S53ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -4.0733194644117998e-1)
     γ103 = convert(T, 1.1227306818680416e-1)
     γ104 = convert(T, 4.1979779027566899e-1)
@@ -2394,42 +2044,7 @@ function AlJahdaliVor3S53ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{4, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S53, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S53ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S53, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S53ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S113ConstantCache(T, T2)
+function AlJahdaliVor3S113ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 3.0197276737152301e-1)
     γ103 = convert(T, 9.7136042160912084e-1)
     γ104 = convert(T, -1.1590565420717662e+0)
@@ -2506,42 +2121,7 @@ function AlJahdaliVor3S113ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{10, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S113, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S113ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S113, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S113ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S64ConstantCache(T, T2)
+function AlJahdaliVor3S64ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -4.3170460335922156e-1)
     γ103 = convert(T, 4.8860995097866278e-1)
     γ104 = convert(T, -1.0488100465602974e+1)
@@ -2588,42 +2168,7 @@ function AlJahdaliVor3S64ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{5, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S64, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S64ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S64, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S64ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S154ConstantCache(T, T2)
+function AlJahdaliVor3S154ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 5.0963610658972314e-1)
     γ103 = convert(T, -9.880728985068199e-3)
     γ104 = convert(T, -1.2036387798506543e-1)
@@ -2724,42 +2269,7 @@ function AlJahdaliVor3S154ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{14, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S154, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S154ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S154, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S154ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S85ConstantCache(T, T2)
+function AlJahdaliVor3S85ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, 4.3368025150049561e-1)
     γ103 = convert(T, -6.0174135245457219e+0)
     γ104 = convert(T, 5.3065326551466008e-1)
@@ -2818,42 +2328,7 @@ function AlJahdaliVor3S85ConstantCache(T, T2)
     return LowStorageRK3SConstantCache{7, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(
-        alg::AlJahdaliVor3S85, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S85ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S85, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S85ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-end
-
-function AlJahdaliVor3S165ConstantCache(T, T2)
+function AlJahdaliVor3S165ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     γ102 = convert(T, -6.823428531378033e-1)
     γ103 = convert(T, 4.1756026429975668e-2)
     γ104 = convert(T, -3.3535368449023539e-1)
@@ -2958,41 +2433,6 @@ function AlJahdaliVor3S165ConstantCache(T, T2)
     c2end = (c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15, c16)
 
     return LowStorageRK3SConstantCache{15, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S165, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(rate_prototype)
-    else
-        fsalfirst = k
-    end
-    tab = AlJahdaliVor3S165ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
-    return LowStorageRK3SCache(
-        u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread
-    )
-end
-
-function alg_cache(
-        alg::AlJahdaliVor3S165, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}, verbose
-    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return AlJahdaliVor3S165ConstantCache(
-        constvalue(uBottomEltypeNoUnits),
-        constvalue(tTypeNoUnits)
-    )
 end
 
 
@@ -5006,6 +4446,10 @@ const LowStorageRK3SAlgorithm = Union{
     ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
     ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
     ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+    AlJahdaliAdv3S42, AlJahdaliAdv3S82, AlJahdaliAdv3S53, AlJahdaliAdv3S113,
+    AlJahdaliAdv3S64, AlJahdaliAdv3S154, AlJahdaliAdv3S85, AlJahdaliAdv3S165,
+    AlJahdaliVor3S42, AlJahdaliVor3S82, AlJahdaliVor3S53, AlJahdaliVor3S113,
+    AlJahdaliVor3S64, AlJahdaliVor3S154, AlJahdaliVor3S85, AlJahdaliVor3S165,
 }
 
 _lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S32, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
@@ -5016,6 +4460,22 @@ _lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S94, ::Type{T}, ::Type{T2}) w
 _lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S184, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
 _lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S105, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
 _lowstorage_3s_tableau(::ParsaniKetchesonDeconinck3S205, ::Type{T}, ::Type{T2}) where {T, T2} = ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S42, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S42ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S82, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S82ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S53, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S53ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S113, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S113ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S64, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S64ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S154, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S154ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S85, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S85ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliAdv3S165, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliAdv3S165ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S42, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S42ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S82, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S82ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S53, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S53ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S113, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S113ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S64, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S64ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S154, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S154ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S85, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S85ConstantCache(T, T2)
+_lowstorage_3s_tableau(::AlJahdaliVor3S165, ::Type{T}, ::Type{T2}) where {T, T2} = AlJahdaliVor3S165ConstantCache(T, T2)
 
 function alg_cache(
         alg::LowStorageRK3SAlgorithm, u, rate_prototype,
