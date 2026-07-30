@@ -213,7 +213,8 @@ sim = test_convergence(
     dts, ensemble_prob, PL1WM(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 1.9494776704064192
@@ -223,7 +224,8 @@ sim1 = test_convergence(
     dts, ensemble_prob, PL1WMA(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim1.𝒪est[:weak_final] - 2) < 0.3 # order is PL1WMA:1.9494776704064316
@@ -253,7 +255,8 @@ sim = test_convergence(
     dts, ensemble_prob, PL1WM(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 1.9494776704064192
@@ -263,7 +266,8 @@ sim1 = test_convergence(
     dts, ensemble_prob, PL1WMA(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim1.𝒪est[:weak_final] - 2) < 0.3 # order is 1.9494776704064316

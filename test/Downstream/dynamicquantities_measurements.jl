@@ -10,7 +10,11 @@ using Test
     f(u, p, t) = u / (1u"s")
     prob = ODEProblem(f, u0, tspan)
 
-    sol = solve(prob, Tsit5(); abstol = 1.0e-9, reltol = 1.0e-9)
+    integrator = init(prob, Tsit5(); abstol = 1.0e-9, reltol = 1.0e-9)
+    @test integrator.disco_checkpoint == zero(first(tspan))
+    @test typeof(integrator.disco_checkpoint) == typeof(first(tspan))
+
+    sol = solve!(integrator)
 
     @test sol.u[end] isa typeof(u0)
     @test eltype(sol.u) == typeof(u0)

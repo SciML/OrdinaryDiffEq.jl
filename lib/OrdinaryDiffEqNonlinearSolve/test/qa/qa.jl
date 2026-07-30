@@ -1,6 +1,12 @@
 using SciMLTesting, OrdinaryDiffEqNonlinearSolve, Test
 using Aqua
 
+@static if VERSION >= v"1.11.0-DEV.469"
+    for name in (:anderson, :anderson!, :compute_step!, :initial_η, :nlsolve!, :nlsolvefail)
+        @test Base.ispublic(OrdinaryDiffEqNonlinearSolve, name)
+    end
+end
+
 # Ambiguities are checked below over this package's own methods instead of Aqua's default
 # `[pkg, Base, Core]` module set; see the `Aqua.test_ambiguities` call.
 run_qa(
@@ -45,9 +51,6 @@ run_qa(
                 :AbstractSciMLOperator,
                 # OrdinaryDiffEqDifferentiation W-operator types (attributed to SciMLOperators).
                 :WOperator, :StaticWOperator,
-                # Owner-internal cross-sublibrary hooks with no public wrapper.
-                # OrdinaryDiffEqCore:
-                :AbstractNLSolverCache,
                 # OrdinaryDiffEqDifferentiation:
                 :build_J_W, :build_jac_config, :build_uf, :dolinsolve,
                 :is_always_new, :jacobian!, :jacobian2W!, :resize_jac_config!,

@@ -73,15 +73,16 @@ include("initialize_dae.jl")
 
 export BrownFullBasicInit, ShampineCollocationInit
 
-# Nonlinear-solver algorithms accepted by OrdinaryDiffEq implicit methods. The
-# lower-level build/step/Anderson helpers are implementation details, not public API.
+# Nonlinear-solver algorithms accepted by OrdinaryDiffEq implicit methods and the
+# solver-author hooks extended by sibling integrator packages.
 # The `public` keyword is only parseable on Julia >= 1.11.0-DEV.469, so it is
 # gated to keep the 1.10 floor parsing.
 @static if VERSION >= v"1.11.0-DEV.469"
     eval(
         Expr(
             :public,
-            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg
+            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg,
+            :nlsolve!, :nlsolvefail, :compute_step!, :initial_η, :anderson, :anderson!
         )
     )
 end
