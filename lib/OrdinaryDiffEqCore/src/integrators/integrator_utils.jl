@@ -713,12 +713,21 @@ get_fresh_jacobian(integrator, cache) = cache.J
 
 SciMLBase.has_mtk_sys(integrator::ODEIntegrator) = hasproperty(integrator.sol.prob.f, :sys) && integrator.sol.prob.f.sys !== nothing
 
+#get atmp values by cache, for use in diagnostics
+error_estimate_residuals(cache) = hasfield(typeof(cache), :atmp) ? getfield(cache, :atmp) : nothing
+error_estimate_residuals(cache::CompositeCache) = error_estimate_residuals(@inbounds cache.caches[cache.current])
+function error_estimate_residuals(cache::DefaultCache)
+    1 <= cache.current <= 6 || return nothing
+    name = (:cache1, :cache2, :cache3, :cache4, :cache5, :cache6)[cache.current]
+    return isdefined(cache, name) ? error_estimate_residuals(getfield(cache, name)) : nothing
+end
+
 function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian_logging = true)
     W = _get_W(integrator)
     u = integrator.u
     u0 = integrator.sol.prob.u0
 
-    # state analysis: NaN/Inf components, and components that have blown up
+    # State analysis: NaN/Inf components, and components that have blown up
     nan_inf_idxs = findall(!isfinite, u)
     blown_idxs = Int[]
     if length(u) == length(u0)
@@ -735,7 +744,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     end
 
-    # jacobian analysis over rows and columns for large values
+    # Jacobian analysis: rows and columns holding non-finite or unusually large entries
     jac = if W !== nothing && hasproperty(W, :J)
         #rosenbrock
         W.J
@@ -783,40 +792,45 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         singularity_cols = sort!(collect(col_set))
     end
 
-    # trace diagnostics to symbolic system if present
+    # trace Jacobian rows/cols back to equations/variables
     f = integrator.sol.prob.f
     sys = (hasproperty(f, :sys) && f.sys !== nothing) ? f.sys : nothing
     sym_eqs = (sys !== nothing && hasfield(typeof(sys), :eqs)) ? getfield(sys, :eqs) : nothing
     sym_vars = (sys !== nothing && hasfield(typeof(sys), :unknowns)) ? getfield(sys, :unknowns) : nothing
 
-    # diagnostic message construction
-    diagnostic = String[]
+    # each analysis gets its own section
+    state_analysis = String[]
+    jacobian_analysis = String[]
+    error_analysis = String[]
+
+    # state diagnostics message
     if !isempty(nan_inf_idxs) #state vars
         if u isa AbstractArray
             n_nan = length(nan_inf_idxs)
             n_total = length(u)
             if n_nan == n_total
-                push!(diagnostic, "All $n_total state variables are non-finite (NaN/Inf)")
+                push!(state_analysis, "All $n_total state variables are non-finite (NaN/Inf)")
             elseif n_nan > 3
-                push!(diagnostic, "$n_nan of $n_total state variables are non-finite (NaN/Inf): indices $nan_inf_idxs")
+                push!(state_analysis, "$n_nan of $n_total state variables are non-finite (NaN/Inf): indices $nan_inf_idxs")
             else
                 for i in nan_inf_idxs
-                    push!(diagnostic, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
+                    push!(state_analysis, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
                 end
             end
         else
-            push!(diagnostic, "u = $u is non-finite (NaN/Inf)")
+            push!(state_analysis, "u = $u is non-finite (NaN/Inf)")
         end
     elseif !isempty(blown_idxs)
         if u isa AbstractArray
             for i in blown_idxs
-                push!(diagnostic, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
+                push!(state_analysis, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
             end
         else
-            push!(diagnostic, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
+            push!(state_analysis, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
         end
     end
 
+    # Jacobian diagnostics message
     if jacobian_logging && bad_entries !== nothing && !isempty(bad_entries)
         has_nonfinite = false
         has_large = false
@@ -835,21 +849,21 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         for (i, j, v) in first(bad_entries, 5)
             push!(example_strs, "J[$i,$j] = $(@sprintf("%.4g", v))")
         end
-        push!(diagnostic, "Jacobian row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
+        push!(jacobian_analysis, "row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
         if sym_eqs !== nothing
             for row in singularity_rows
                 if row <= length(sym_eqs)
-                    push!(diagnostic, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
+                    push!(jacobian_analysis, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
                 end
             end
         end
         # jac cols
         if !isempty(singularity_cols)
-            push!(diagnostic, "Jacobian column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
+            push!(jacobian_analysis, "column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
             if sym_vars !== nothing
                 for col in singularity_cols
                     if col <= length(sym_vars)
-                        push!(diagnostic, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
+                        push!(jacobian_analysis, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
                     end
                 end
             end
@@ -857,6 +871,46 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     end
 
     diagnostic = isempty(diagnostic) ? "" : "\n\nDiagnostics:\n" * join(diagnostic, "\n\n") * "."
+    # error estimate analysis
+    if integrator.opts.adaptive
+        push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", get_EEst(integrator))) (a step is accepted when EEst <= 1)")
+        atmp = error_estimate_residuals(integrator.cache)
+        if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
+            nonfinite = count(!isfinite, atmp)
+            nonfinite > 0 && push!(error_analysis, "$nonfinite of $(length(atmp)) weighted residuals are non-finite (NaN/Inf)")
+            idxs = collect(eachindex(atmp))
+            n = min(3, length(idxs))
+            # sort NaN residuals along Inf
+            partialsort!(idxs, 1:n, by = i -> (v = abs(atmp[i]); isnan(v) ? typemax(v) : v), rev = true)
+
+            with_state = u isa AbstractArray && eachindex(u) == eachindex(atmp)
+            contributors = String[]
+            for i in idxs[1:n]
+                line = "  atmp[$i] = $(@sprintf("%.4g", atmp[i]))"
+                if with_state
+                    line *= ", u[$i] = $(@sprintf("%.4g", u[i]))"
+                    line *= ", uprev[$i] = $(@sprintf("%.4g", integrator.uprev[i]))"
+                end
+                push!(contributors, line)
+            end
+            push!(error_analysis, "largest contributors to EEst = internalnorm(atmp), where atmp is the tolerance-weighted local error per state component:\n" * join(contributors, "\n"))
+        end
+    end
+
+    # assemble the message, one titled section per non-empty analysis
+    sections = (
+        ("State Analysis", state_analysis),
+        ("Jacobian Analysis", jacobian_analysis),
+        ("Error Analysis", error_analysis)
+    )
+    all(isempty(msgs) for (_, msgs) in sections) && return ""
+
+    diagnostic = "\n\nDiagnostics:"
+    for (title, msgs) in sections
+        isempty(msgs) && continue
+        body = join(("  " * replace(msg, "\n" => "\n  ") for msg in msgs), "\n")
+        diagnostic *= "\n\n$title:\n$body"
+    end
 
     return diagnostic
 end
