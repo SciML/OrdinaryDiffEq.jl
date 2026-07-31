@@ -400,7 +400,14 @@ function _sde_init(
                 rand_prototype = (u .- u) ./ sqrt(oneunit(t))
             end
         elseif prob isa SciMLBase.AbstractSDEProblem
-            if issparse(u)
+            if issparse(u) || issparse(noise_rate_prototype)
+                # Sparsity in g records which states a channel drives, not which
+                # channels are idle: every column still draws an increment, so dW has
+                # no structural zeros. A sparse dW also breaks caches that keep it and
+                # an unconditionally dense dZ in one field type, and it sends randn!
+                # through the generic AbstractArray loop, which consumes the RNG
+                # differently from the Array method and so changes the path drawn
+                # from a given seed.
                 rand_prototype = adapt(
                     SciMLBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))
                 )
