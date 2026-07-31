@@ -1,5 +1,19 @@
 @inline eps_around_one(θ::T) where {T} = 100sqrt(eps(one(θ)))
 
+# A globalized inner solver (TrustRegion and friends) can reject its trial step: `step!`
+# returns with the iterate exactly unmoved and the cache not terminated, having only shrunk
+# its trust region for the next attempt. The zero displacement such a `step!` leaves behind
+# is not convergence evidence — the convergence tests below would read it as a perfect solve
+# (`ndz < 1e-5` on the first iteration, `η·ndz = 0 < κ` on later ones) and accept the stage
+# with no correction applied (#3817). A cache that instead *terminated* at zero displacement
+# either converged exactly (which genuinely is convergence) or failed, and failures were
+# already turned into `Inf` by `compute_step!`, so termination is the discriminator between
+# "already at the root" and "has not decided anything yet".
+_rejected_trial_step(nlsolver, ndz) = false
+function _rejected_trial_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
+    return iszero(ndz) && NonlinearSolveBase.not_terminated(nlsolver.cache.cache)
+end
+
 """
     nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
@@ -68,6 +82,19 @@ function nlsolve!(
             nlsolver.status = Divergence
             nlsolver.nfails += 1
             break
+        end
+
+        if _rejected_trial_step(nlsolver, ndz)
+            @SciMLMessage(
+                lazy"Inner nonlinear solver rejected its trial step (iter = $(iter)); the unmoved iterate is not treated as convergence",
+                integrator.opts.verbose, :newton_convergence
+            )
+            # No new iterate exists to judge: skip the convergence and divergence
+            # bookkeeping (a zero `ndz` would also poison the next iteration's `θ`)
+            # and let the inner solver retry with its shrunken trust region. If it
+            # never moves, the loop runs out and the step fails as unconverged.
+            ndz = ndzprev
+            continue
         end
 
         has_prev_θ = hasfield(NL, :prev_θ)
