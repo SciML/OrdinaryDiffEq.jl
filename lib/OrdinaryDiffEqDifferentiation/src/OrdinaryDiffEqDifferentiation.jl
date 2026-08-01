@@ -58,6 +58,13 @@ import DiffEqBase: OrdinaryDiffEqTag
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
+# Seeding a sparsity pattern from the mass matrix uses `findall`/`getindex`, which a
+# SciMLOperator does not support. `convert` reads the operator's currently-cached array
+# rather than re-evaluating it, which is what is wanted here: only the structural
+# pattern matters, and this runs before `init`.
+concrete_mass_matrix(mm) = mm
+concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
+
 # These will error if called without the extension, but should never be called
 # on non-sparse types due to the is_sparse checks
 function nonzeros end

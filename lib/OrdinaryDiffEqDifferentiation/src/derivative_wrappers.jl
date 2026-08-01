@@ -295,8 +295,9 @@ function build_jac_config(
                 idxs = diagind(jac_prototype)
                 @. @view(jac_prototype[idxs]) = 1
             else
-                idxs = findall(!iszero, f.mass_matrix)
-                @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+                mm = concrete_mass_matrix(f.mass_matrix)
+                idxs = findall(!iszero, mm)
+                @. @view(jac_prototype[idxs]) = @view(mm[idxs])
             end
         end
 
@@ -480,8 +481,9 @@ function sparsity_colorvec(f::F, x) where {F}
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1
         else
-            idxs = findall(!iszero, f.mass_matrix)
-            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+            mm = concrete_mass_matrix(f.mass_matrix)
+            idxs = findall(!iszero, mm)
+            @. @view(sparsity[idxs]) = @view(mm[idxs])
         end
     end
 
