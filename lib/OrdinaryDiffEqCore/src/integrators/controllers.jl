@@ -571,7 +571,7 @@ for (accessor, default) in (
     end
 end
 
-# Discontinuity-detection helpers 
+# Discontinuity-detection helpers
 # Shared logic in every step_accept/reject_controller! below.
 
 function handle_disco_accept!(integrator, controller_basic, t, nominal_new_dt)
