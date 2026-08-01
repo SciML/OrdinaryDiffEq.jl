@@ -24,11 +24,21 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
     @time @safetestset "KomBurSROCK2 non-diagonal noise" begin
         include("kombursrock2_nondiag_tests.jl")
     end
+
+    @time @safetestset "SROCK non-diagonal noise regressions" begin
+        include("srock_nondiag_tests.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "SROCKC2WeakConvergence"
     @time @safetestset "SROCKC2 Weak Convergence Tests" begin
         include("weak_convergence/weak_srockc2.jl")
+    end
+end
+
+if TEST_GROUP == "ALL" || TEST_GROUP == "SROCK2NonDiagonalConvergence"
+    @time @safetestset "SROCK2 Non-Diagonal Weak Convergence Tests" begin
+        include("weak_convergence/weak_srock2_nondiag.jl")
     end
 end
 
