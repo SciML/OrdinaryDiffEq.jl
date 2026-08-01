@@ -20,7 +20,9 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, New
     HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
-using NonlinearSolveBase: get_linear_cache
+# `get_u`/`get_fu` are the only inner-state reads that hold for every inner cache type:
+# polyalgorithm caches keep `u`/`fu` on the active branch, not as top-level fields.
+using NonlinearSolveBase: get_linear_cache, get_u, get_fu
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
