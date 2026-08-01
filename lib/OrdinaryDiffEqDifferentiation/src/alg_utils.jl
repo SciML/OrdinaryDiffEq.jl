@@ -123,21 +123,22 @@ function prepare_user_sparsity(ad_alg, prob)
                     @. @view(jac_prototype[idxs]) = 1
                 end
             else
-                idxs = findall(!iszero, prob.f.mass_matrix)
+                mm = concrete_mass_matrix(prob.f.mass_matrix)
+                idxs = findall(!iszero, mm)
                 for idx in idxs
-                    sparsity[idx] = prob.f.mass_matrix[idx]
+                    sparsity[idx] = mm[idx]
                 end
 
                 if !isnothing(jac_prototype)
                     for idx in idxs
-                        jac_prototype[idx] = prob.f.mass_matrix[idx]
+                        jac_prototype[idx] = mm[idx]
                     end
                 end
             end
         end
 
         # KnownJacobianSparsityDetector needs an AbstractMatrix
-        sparsity = sparsity isa MatrixOperator ? sparsity.A : sparsity
+        sparsity = concrete_mass_matrix(sparsity)
 
         color_alg = SciMLBase.has_colorvec(prob.f) ?
             ConstantColoringAlgorithm(
