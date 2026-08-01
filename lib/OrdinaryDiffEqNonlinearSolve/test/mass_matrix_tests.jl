@@ -2,6 +2,7 @@ using OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, Ordinary
     OrdinaryDiffEqNonlinearSolve, Test, LinearAlgebra, Statistics
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
+using SciMLOperators: MatrixOperator, update_coefficients!
 using LinearAlgebra: Diagonal
 using ADTypes: AutoForwardDiff
 
