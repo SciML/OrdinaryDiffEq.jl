@@ -3,6 +3,7 @@ using OrdinaryDiffEq,
     SparseArrays,
     LinearAlgebra
 using OrdinaryDiffEqLinear, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
+using SciMLOperators: MatrixOperator
 
 f = function (u, p, t)
     return -u + sin(-t)
