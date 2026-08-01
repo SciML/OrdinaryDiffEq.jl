@@ -60,6 +60,7 @@ alg_order(alg::SHLDDRK_2N) = 4
 alg_order(alg::SHLDDRK52) = 2
 
 isfsal(alg::ORK256) = false
+isfsal(alg::RK46NL) = false
 isfsal(alg::CarpenterKennedy2N54) = false
 isfsal(alg::DGLDDRK84_F) = false
 isfsal(alg::DGLDDRK73_C) = false
@@ -73,6 +74,7 @@ isfsal(alg::NDBLSRK124) = false
 isfsal(alg::NDBLSRK144) = false
 
 uses_uprev(alg::ORK256, adaptive::Bool) = false
+uses_uprev(alg::RK46NL, adaptive::Bool) = false
 uses_uprev(alg::SHLDDRK64, adaptive::Bool) = false
 uses_uprev(alg::CarpenterKennedy2N54, adaptive::Bool) = false
 uses_uprev(alg::NDBLSRK124, adaptive::Bool) = false

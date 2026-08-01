@@ -143,6 +143,64 @@ end
     @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
+@testset "RK46NL" begin
+    alg = RK46NL(; williamson_condition = true)
+    alg2 = RK46NL(; williamson_condition = false)
+    dts = 1 ./ 2 .^ (7:-1:3)
+    for prob in test_problems_only_time
+        sim = test_convergence(dts, prob, alg)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        sim = test_convergence(dts, prob, alg2)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+    end
+    for prob in test_problems_linear
+        sim = test_convergence(dts, prob, alg)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        sim = test_convergence(dts, prob, alg2)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+    end
+    for prob in test_problems_nonlinear
+        sim = test_convergence(dts, prob, alg)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        sim = test_convergence(dts, prob, alg2)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+    end
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+    # test whether aliasing u0 is bad
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test sol_old.u[end] ≈ sol_new.u[end]
+end
+
 @testset "CarpenterKennedy2N54" begin
     alg = CarpenterKennedy2N54(; williamson_condition = true)
     alg2 = CarpenterKennedy2N54(; williamson_condition = false)
