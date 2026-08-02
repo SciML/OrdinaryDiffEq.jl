@@ -9,10 +9,19 @@ updates:
     directories:
       - "/"
       - "/docs"
-      - "/test"
+      - "/lib/*"
+      - "/test/AD"
+      - "/test/Downstream"
+      - "/test/ODEInterfaceRegression"
+      - "/test/gpu"
+      - "/test/modelingtoolkit"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 10
     groups:
       all-julia-packages:
+        # One PR per dependency spanning every directory, so a compat bump lands
+        # in all of the sublibraries at once rather than one package at a time.
+        group-by: dependency-name
         patterns:
           - "*"
