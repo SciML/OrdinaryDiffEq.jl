@@ -1,6 +1,7 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqCore: PIController
 using SciMLBase: ReturnCode
 using Test
 
@@ -60,6 +61,25 @@ end
             @test tracked.t ≈ disc.t && tracked.order == disc.order
         end
     end
+end
+
+@testset "autonomous discontinuity controller state" begin
+    alg = BS3()
+    controller = PIController(alg; discontinuity_detection = true)
+    integrator = init(prob, MethodOfSteps(alg); controller = controller, dt = 0.01)
+
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
+    @test typeof(integrator.disco_checkpoint) === typeof(integrator.t)
+
+    sol = solve!(integrator)
+    @test sol.retcode == ReturnCode.Success
+
+    integrator.is_disco_step = true
+    integrator.disco_checkpoint = integrator.t
+    reinit!(integrator)
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
 end
 
 # additional discontinuities
