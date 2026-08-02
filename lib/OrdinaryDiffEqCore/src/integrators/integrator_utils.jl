@@ -50,6 +50,25 @@ reinit_noise!(::Nothing, dt) = nothing
 @inline _get_W(integrator) = hasfield(typeof(integrator), :W) ? getfield(integrator, :W) : nothing
 @inline _get_P(integrator) = hasfield(typeof(integrator), :P) ? getfield(integrator, :P) : nothing
 
+# `fix_dt_at_bounds!`/`modify_dt_for_tstops!` can shorten `dt` after the pending
+# noise increment was already drawn for the longer step (e.g. `add_tstop!` called
+# between `init` and the first `step!`). Shrinking the step from the same start
+# time is exactly the situation a step rejection describes, so reuse the rejection
+# path: it bridges the drawn increment down to `dt` and keeps the remainder of the
+# path on the RSWM stack. Growing the step cannot be bridged, so the increment is
+# left alone; `perform_step!` then sees the noise the process was already
+# committed to.
+function shrink_noise_to_integrator_dt!(integrator)
+    W = _get_W(integrator)
+    isnothing(W) && return nothing
+    if abs(integrator.dt) < abs(W.dt)
+        reject_noise!(W, integrator.dt, integrator.u, integrator.p)
+        reject_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+    end
+    return nothing
+end
+
 # Trait: does the integrator+solution support dense output k-array storage?
 # True for ODEIntegrator (has integrator.k and sol.k), false for SDEIntegrator
 # (no integrator.k) and RODESolution/DAESolution (no sol.k).
@@ -95,6 +114,7 @@ function loopheader!(integrator)
     choose_algorithm!(integrator, integrator.cache)
     fix_dt_at_bounds!(integrator)
     modify_dt_for_tstops!(integrator)
+    shrink_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
     return nothing
 end
