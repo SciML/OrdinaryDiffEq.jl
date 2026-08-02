@@ -320,7 +320,7 @@ end
     nst::Int
     nef::Int
     ncf::Int
-    indx_acor::Int
+    index_acor::Int
     max_order::Val{MO}
     max_order_int::Int
     hscale::tType
@@ -352,7 +352,7 @@ mutable struct DNordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldT
     nst::Int
     nef::Int
     ncf::Int
-    indx_acor::Int
+    index_acor::Int
     max_order::Val{MO}
     max_order_int::Int
     hscale::tType

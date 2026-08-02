@@ -215,7 +215,7 @@ function nordsieck_complete!(cache, dt, acor, iip)
     if cache.qwait == 1 && q != cache.max_order_int
         _nord_setacor!(cache, acor, iip)
         cache.saved_tq5 = cache.tq[5]
-        cache.indx_acor = cache.max_order_int
+        cache.index_acor = cache.max_order_int
     end
     return nothing
 end
@@ -270,12 +270,12 @@ function nordsieck_increase!(cache, iip)
 end
 
 @inline function _nord_newcol!(cache, A1, ::Val{true})
-    src = cache.zn[cache.indx_acor + 1]
+    src = cache.zn[cache.index_acor + 1]
     @.. broadcast = false cache.zn[cache.order + 2] = A1 * src
     return nothing
 end
 @inline function _nord_newcol!(cache, A1, ::Val{false})
-    cache.zn[cache.order + 2] = A1 * cache.zn[cache.indx_acor + 1]
+    cache.zn[cache.order + 2] = A1 * cache.zn[cache.index_acor + 1]
     return nothing
 end
 
@@ -497,7 +497,7 @@ function _nordsieck_start_common!(cache, dt)
     cache.eta = one(cache.eta)
     cache.etamax = typeof(cache.etamax)(NORD_ETA_MAX_FS)
     cache.saved_tq5 = zero(cache.saved_tq5)
-    cache.indx_acor = cache.max_order_int
+    cache.index_acor = cache.max_order_int
     cache.predicted = false
     stald_reset!(cache.stald)
     fill!(cache.tau, zero(eltype(cache.tau)))
