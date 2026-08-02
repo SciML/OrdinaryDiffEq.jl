@@ -19,13 +19,39 @@ dts = 1 .// 2 .^ (8:-1:4)
 testTol = 0.3
 superduperbool = Vector{Bool}(undef, 2)
 
-for tab in [ET.Ralston4(Rational{BigInt}), ET.TsitourasPapakostas6(Rational{BigInt}), ET.DormandLockyerMcCorriganPrince6(Rational{BigInt})]
+for tab in [
+        ET.Ralston4(Rational{BigInt}),
+        ET.TsitourasPapakostas6(Rational{BigInt}),
+        ET.DormandLockyerMcCorriganPrince6(Rational{BigInt}),
+        ET.TanakaKasugaYamashitaYazaki6A(Rational{BigInt}),
+        ET.TanakaKasugaYamashitaYazaki6B(Rational{BigInt}),
+        ET.TanakaKasugaYamashitaYazaki6C(Rational{BigInt}),
+        ET.TanakaKasugaYamashitaYazaki6D(Rational{BigInt}),
+        ET.MikkawyEisa(Rational{BigInt}),
+    ]
     @test all(i -> residual_order_condition(tab, i, +, abs) < 10eps(1.0), 1:(tab.order))
     if tab.adaptiveorder != 0
+        @test !isempty(tab.αEEst)
         @test all(
             i -> residual_order_condition(tab, i, +, abs; embedded = true) < 10eps(1.0),
             tab.adaptiveorder
         )
+    end
+end
+
+# Regression for SciML/OrdinaryDiffEq.jl#3285: embedding weights must be wired through.
+let
+    for (tab, ao) in (
+            (ET.TanakaKasugaYamashitaYazaki6A(), 5),
+            (ET.TanakaKasugaYamashitaYazaki6B(), 5),
+            (ET.TanakaKasugaYamashitaYazaki6C(), 5),
+            (ET.TanakaKasugaYamashitaYazaki6D(), 5),
+            (ET.MikkawyEisa(), 4),
+        )
+        @test tab.order == 6
+        @test tab.adaptiveorder == ao
+        @test length(tab.αEEst) == tab.stages
+        @test !tab.fsal
     end
 end
 
