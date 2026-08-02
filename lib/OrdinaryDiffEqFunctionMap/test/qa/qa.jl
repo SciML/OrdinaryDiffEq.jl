@@ -12,9 +12,14 @@ run_qa(
             # OrdinaryDiffEqCore owner-internal no-op limiter (deliberately not public).
             ignore = (:trivial_limiter!,),
         ),
-        # SciMLBase-owned default-solve sentinels; non-public in SciMLBase.
         all_qualified_accesses_are_public = (;
-            ignore = (:DISCRETE_INPLACE_DEFAULT, :DISCRETE_OUTOFPLACE_DEFAULT),
+            ignore = (
+                # SciMLBase-owned default-solve sentinels; non-public in SciMLBase.
+                :DISCRETE_INPLACE_DEFAULT,
+                :DISCRETE_OUTOFPLACE_DEFAULT,
+                # Preserves the statically known NamedTuple type after field removal.
+                :structdiff,
+            ),
         ),
     ),
 )

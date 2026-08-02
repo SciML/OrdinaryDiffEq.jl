@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra, Test
 using OrdinaryDiffEqSDIRK
 using ComponentArrays
+using SciMLOperators: MatrixOperator
 
 function enclosethetimedifferential(parameters::NamedTuple)::Function
     @info "Enclosing the time differential"

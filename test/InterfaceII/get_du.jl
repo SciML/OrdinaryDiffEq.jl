@@ -23,6 +23,10 @@ res = copy(cache)
 for alg in [
         Vern6(), Vern7(), Vern8(), Vern9(), Rodas4(), Rodas4P(),
         Rodas5(), Rodas5P(), TRBDF2(), KenCarp4(), FBDF(), QNDF(),
+        # A CompositeAlgorithm must report the derivative of whichever
+        # sub-algorithm is currently active, not of the wrapper.
+        AutoTsit5(Rosenbrock23()), AutoTsit5(Rodas5P()),
+        AutoVern7(Rodas4()), AutoVern9(Rodas4()), AutoVern9(Rodas5P()),
     ]
     sol = solve(
         prob, alg, tstops = [0.2], callback = dusave, abstol = 1.0e-12, reltol = 1.0e-12

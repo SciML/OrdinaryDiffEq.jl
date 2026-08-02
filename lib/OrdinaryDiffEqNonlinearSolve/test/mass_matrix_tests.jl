@@ -2,6 +2,7 @@ using OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, Ordinary
     OrdinaryDiffEqNonlinearSolve, Test, LinearAlgebra, Statistics
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
+using SciMLOperators: MatrixOperator, update_coefficients!
 using LinearAlgebra: Diagonal
 using ADTypes: AutoForwardDiff
 
@@ -382,9 +383,12 @@ prob = ODEProblem(f, x0, tspan)
 foop = ODEFunction{false, SciMLBase.AutoSpecialize}(dynamics, mass_matrix = M)
 proboop = ODEProblem(f, x0, tspan)
 @test_broken sol = @inferred solve(prob, Rosenbrock23(autodiff = adalg))
-@test_broken sol = @inferred solve(prob, Rodas4(autodiff = adalg), initializealg = ShampineCollocationInit())
+# The Rodas4 + ShampineCollocationInit cases infer since get_differential_vars
+# got a statically resolvable Diagonal branch; keep @inferred so an inference
+# regression errors, but @test_broken would error ("non-Boolean") on success.
+@test (@inferred solve(prob, Rodas4(autodiff = adalg), initializealg = ShampineCollocationInit()); true)
 @test_broken sol = @inferred solve(proboop, Rodas5())
-@test_broken sol = @inferred solve(proboop, Rodas4(), initializealg = ShampineCollocationInit())
+@test (@inferred solve(proboop, Rodas4(), initializealg = ShampineCollocationInit()); true)
 
 # InitialFailure with chunksize matching ODE size (> alg vars), #3157
 @testset "Mass Matrix: less alg vars than ODE AD chunksize" begin
