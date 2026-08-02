@@ -1,0 +1,23 @@
+# Weak SDE solver API
+
+```@docs
+StochasticDiffEqWeak.DRI1
+StochasticDiffEqWeak.IRI1
+StochasticDiffEqWeak.KomoriNON2
+StochasticDiffEqWeak.constructDRI1
+StochasticDiffEqWeak.constructRI1
+StochasticDiffEqWeak.constructRI3
+StochasticDiffEqWeak.constructRI5
+StochasticDiffEqWeak.constructRI6
+StochasticDiffEqWeak.constructRDI1WM
+StochasticDiffEqWeak.constructRDI2WM
+StochasticDiffEqWeak.constructRDI3WM
+StochasticDiffEqWeak.constructRDI4WM
+StochasticDiffEqWeak.constructRS1
+StochasticDiffEqWeak.constructRS2
+StochasticDiffEqWeak.constructNON
+StochasticDiffEqWeak.constructNON2
+StochasticDiffEqWeak.checkRIOrder
+StochasticDiffEqWeak.checkRSOrder
+StochasticDiffEqWeak.checkNONOrder
+```

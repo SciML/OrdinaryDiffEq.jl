@@ -11,6 +11,7 @@ using OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
 using StochasticDiffEqLevyArea
+using StochasticDiffEqWeak
 
 # Register the re-exported bindings with the umbrella module for Documenter.
 for (name, owner) in (
@@ -131,6 +132,7 @@ makedocs(
         OrdinaryDiffEqAMF,
         ImplicitDiscreteSolve,
         StochasticDiffEqLevyArea,
+        StochasticDiffEqWeak,
         DiffEqDevTools,
         GlobalDiffEq,
     ],
