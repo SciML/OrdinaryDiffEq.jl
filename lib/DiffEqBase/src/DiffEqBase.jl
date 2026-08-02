@@ -211,7 +211,7 @@ export AutoDePSpecialize
             :max_vector_callback_length, :max_vector_callback_length_int, :get_condition,
             # Default-callback API (integrator defaults overridable via solver keywords)
             :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE,
-            :ODE_DEFAULT_UNSTABLE_CHECK,
+            :ODE_DEFAULT_UNSTABLE_CHECK, :NAN_CHECK,
             # Tableau extension supertypes downstream tableau packages subtype
             :Tableau, :ODERKTableau,
             # Error-estimate residual hooks solvers call/extend
