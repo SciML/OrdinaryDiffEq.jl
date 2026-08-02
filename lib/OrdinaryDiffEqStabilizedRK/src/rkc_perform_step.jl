@@ -1226,10 +1226,10 @@ end
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + dt * μs * k
+        th = μ * th1 + ν * th2 + μs
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs
             th2 = th1
             th1 = th
             z2 = z1
@@ -1486,10 +1486,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
+        th = μ * th1 + ν * th2 + μs * (T(1) - νs)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs * (T(1) - νs)
             th2 = th1
             th1 = th
             b2 = b1
