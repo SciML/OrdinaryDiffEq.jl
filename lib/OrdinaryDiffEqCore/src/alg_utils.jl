@@ -127,6 +127,15 @@ Return whether `alg` provides a special interpolant for its stiff branch
 has_stiff_interpolation(alg) = false
 
 """
+    get_current_has_stiff_interpolation(alg, cache) -> Bool
+
+`has_stiff_interpolation` for the algorithm that is currently active, which for a
+`CompositeAlgorithm` is the sub-algorithm selected by `cache.current` rather than
+the wrapper itself.
+"""
+get_current_has_stiff_interpolation(alg, cache) = has_stiff_interpolation(alg)
+
+"""
     OrdinaryDiffEqCore.has_stage_limiter(alg)
 
 Trait declaring whether `alg`'s `perform_step!` applies a stage limiter, i.e.
@@ -158,6 +167,10 @@ end
 
 function get_current_isfsal(alg::CompositeAlgorithm, cache)
     return _eval_index(isfsal, alg.algs, cache.current)::Bool
+end
+
+function get_current_has_stiff_interpolation(alg::CompositeAlgorithm, cache)
+    return _eval_index(has_stiff_interpolation, alg.algs, cache.current)::Bool
 end
 
 all_fsal(alg, cache) = isfsal(alg)
