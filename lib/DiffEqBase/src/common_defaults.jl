@@ -159,6 +159,25 @@ function ODE_DEFAULT_PROG_MESSAGE(dt, u, p, t)
     return "dt=" * string(dt) * "\nt=" * string(t) * "\nmax u=" * string(maximum(abs.(u)))
 end
 
+"""
+    NAN_CHECK(x)
+
+Recursively test whether `x` holds a `NaN`. The integrators use this to detect a step
+that produced `NaN` and reject it.
+
+Methods are provided for numbers, `AbstractArray`s, `RecursiveArrayTools.AbstractVectorOfArray`s
+and `RecursiveArrayTools.ArrayPartition`s; nested containers are descended into, so a state
+made of arrays of arrays reports `true` if any leaf is `NaN`. `Enum` values always report
+`false`, which keeps discrete components of a mixed state vector from being sent through
+`isnan`. Add a method to make the check reach the elements of a custom state type:
+
+```julia
+DiffEqBase.NAN_CHECK(x::MyStateType) = any(DiffEqBase.NAN_CHECK, x.parts)
+```
+
+`NaN` is only one of the ways a step can go bad; `Inf` and overflow are handled separately
+by [`ODE_DEFAULT_UNSTABLE_CHECK`](@ref).
+"""
 NAN_CHECK(x::Number) = isnan(x)
 NAN_CHECK(x::Enum) = false
 function NAN_CHECK(x::Union{AbstractArray, RecursiveArrayTools.AbstractVectorOfArray})
