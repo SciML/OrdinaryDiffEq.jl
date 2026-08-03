@@ -717,6 +717,7 @@ function increment_reject!(stats)
     return stats.nreject += 1
 end
 
+
 function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, tspan)
     t1, t2 = tspan
     return @logmsg(
@@ -725,6 +726,212 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
         message = progress_message(dt, u, p, t),
         progress = (t - t1) / (t2 - t1)
     )
+end
+
+# overrides this with a method that calls calc_J to get a fresh Jacobian.
+get_fresh_jacobian(integrator, cache) = cache.J
+
+SciMLBase.has_mtk_sys(integrator::ODEIntegrator) = hasproperty(integrator.sol.prob.f, :sys) && integrator.sol.prob.f.sys !== nothing
+
+#get atmp values by cache, for use in diagnostics
+error_estimate_residuals(cache) = hasfield(typeof(cache), :atmp) ? getfield(cache, :atmp) : nothing
+error_estimate_residuals(cache::CompositeCache) = error_estimate_residuals(@inbounds cache.caches[cache.current])
+function error_estimate_residuals(cache::DefaultCache)
+    1 <= cache.current <= 6 || return nothing
+    name = (:cache1, :cache2, :cache3, :cache4, :cache5, :cache6)[cache.current]
+    return isdefined(cache, name) ? error_estimate_residuals(getfield(cache, name)) : nothing
+end
+
+function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian_logging = true)
+    W = _get_W(integrator)
+    u = integrator.u
+    u0 = integrator.sol.prob.u0
+
+    # State analysis: NaN/Inf components, and components that have blown up
+    nan_inf_idxs = findall(!isfinite, u)
+    blown_idxs = Int[]
+    if length(u) == length(u0)
+        for i in eachindex(u)
+            ref = max(abs(u0[i]), oneunit(eltype(u)))
+            abs(u[i]) > 1.0e6 * ref && push!(blown_idxs, i)
+        end
+        # keep only components within 20 orders of magnitude of the largest
+        if !isempty(blown_idxs)
+            max_blown = maximum(abs(u[i]) for i in blown_idxs)
+            cutoff = max_blown * 1e-20
+            filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
+            sort!(blown_idxs, by = i -> abs(u[i]), rev = true)
+        end
+    end
+
+    # Jacobian analysis: rows and columns holding non-finite or unusually large entries
+    jac = if W !== nothing && hasproperty(W, :J)
+        #rosenbrock
+        W.J
+    elseif hasproperty(integrator.cache, :J)
+        #radau
+        get_fresh_jacobian(integrator, integrator.cache)
+    elseif hasproperty(integrator.cache, :nlsolver) &&
+            hasproperty(integrator.cache.nlsolver.cache, :J)
+        #BDF
+        integrator.cache.nlsolver.cache.J
+    else #no jac to analyze
+        nothing
+    end
+
+    bad_entries = nothing
+    singularity_rows = nothing
+    singularity_cols = nothing
+    if jac !== nothing
+        rows = Set{Int}()
+        cols = Set{Int}()
+        entries = Tuple{Int, Int, eltype(jac)}[]
+        _find_large_jac_entries!(rows, cols, entries, jac)
+
+        # keep only entries within 10 orders of magnitude of the largest finite entry,
+        # plus any non-finite entries. filters out large-but-normal model parameters 
+        max_finite = 0.0
+        for (_, _, v) in entries
+            if isfinite(v)
+                max_finite = max(max_finite, abs(v))
+            end
+        end
+        cutoff = max_finite * 1e-10
+        filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
+        sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
+
+        # derive rows and columns from remaining entries
+        row_set = Set{Int}()
+        col_set = Set{Int}()
+        for (i, j, _) in entries
+            push!(row_set, i)
+            push!(col_set, j)
+        end
+        bad_entries = entries
+        singularity_rows = sort!(collect(row_set))
+        singularity_cols = sort!(collect(col_set))
+    end
+
+    # trace Jacobian rows/cols back to equations/variables
+    f = integrator.sol.prob.f
+    sys = (hasproperty(f, :sys) && f.sys !== nothing) ? f.sys : nothing
+    sym_eqs = (sys !== nothing && hasfield(typeof(sys), :eqs)) ? getfield(sys, :eqs) : nothing
+    sym_vars = (sys !== nothing && hasfield(typeof(sys), :unknowns)) ? getfield(sys, :unknowns) : nothing
+
+    # each analysis gets its own section
+    state_analysis = String[]
+    jacobian_analysis = String[]
+    error_analysis = String[]
+
+    # state diagnostics message
+    if !isempty(nan_inf_idxs) #state vars
+        if u isa AbstractArray
+            n_nan = length(nan_inf_idxs)
+            n_total = length(u)
+            if n_nan == n_total
+                push!(state_analysis, "All $n_total state variables are non-finite (NaN/Inf)")
+            elseif n_nan > 3
+                push!(state_analysis, "$n_nan of $n_total state variables are non-finite (NaN/Inf): indices $nan_inf_idxs")
+            else
+                for i in nan_inf_idxs
+                    push!(state_analysis, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
+                end
+            end
+        else
+            push!(state_analysis, "u = $u is non-finite (NaN/Inf)")
+        end
+    elseif !isempty(blown_idxs)
+        if u isa AbstractArray
+            for i in blown_idxs
+                push!(state_analysis, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
+            end
+        else
+            push!(state_analysis, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
+        end
+    end
+
+    # Jacobian diagnostics message
+    if jacobian_logging && bad_entries !== nothing && !isempty(bad_entries)
+        has_nonfinite = false
+        has_large = false
+        for (_, _, v) in bad_entries
+            isfinite(v) ? (has_large = true) : (has_nonfinite = true)
+        end
+        entry_desc = if has_nonfinite && has_large
+            "non-finite and large"
+        elseif has_nonfinite
+            "non-finite"
+        else
+            "unusually large"
+        end
+
+        example_strs = String[]
+        for (i, j, v) in first(bad_entries, 5)
+            push!(example_strs, "J[$i,$j] = $(@sprintf("%.4g", v))")
+        end
+        push!(jacobian_analysis, "row(s) $singularity_rows have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
+        if sym_eqs !== nothing
+            for row in singularity_rows
+                if row <= length(sym_eqs)
+                    push!(jacobian_analysis, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
+                end
+            end
+        end
+        # jac cols
+        if !isempty(singularity_cols)
+            push!(jacobian_analysis, "column(s) $singularity_cols have $entry_desc entries, suggesting those state component(s) are diverging")
+            if sym_vars !== nothing
+                for col in singularity_cols
+                    if col <= length(sym_vars)
+                        push!(jacobian_analysis, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
+                    end
+                end
+            end
+        end
+    end
+
+    # error estimate analysis
+    if integrator.opts.adaptive
+        push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", get_EEst(integrator))) (a step is accepted when EEst <= 1)")
+        atmp = error_estimate_residuals(integrator.cache)
+        if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
+            nonfinite = count(!isfinite, atmp)
+            nonfinite > 0 && push!(error_analysis, "$nonfinite of $(length(atmp)) weighted residuals are non-finite (NaN/Inf)")
+            idxs = collect(eachindex(atmp))
+            n = min(3, length(idxs))
+            # sort NaN residuals along Inf
+            partialsort!(idxs, 1:n, by = i -> (v = abs(atmp[i]); isnan(v) ? typemax(v) : v), rev = true)
+
+            with_state = u isa AbstractArray && eachindex(u) == eachindex(atmp)
+            contributors = String[]
+            for i in idxs[1:n]
+                line = "  atmp[$i] = $(@sprintf("%.4g", atmp[i]))"
+                if with_state
+                    line *= ", u[$i] = $(@sprintf("%.4g", u[i]))"
+                    line *= ", uprev[$i] = $(@sprintf("%.4g", integrator.uprev[i]))"
+                end
+                push!(contributors, line)
+            end
+            push!(error_analysis, "largest contributors to EEst = internalnorm(atmp), where atmp is the tolerance-weighted local error per state component:\n" * join(contributors, "\n"))
+        end
+    end
+
+    # assemble the message, one titled section per non-empty analysis
+    sections = (
+        ("State Analysis", state_analysis),
+        ("Jacobian Analysis", jacobian_analysis),
+        ("Error Analysis", error_analysis)
+    )
+    all(isempty(msgs) for (_, msgs) in sections) && return ""
+
+    diagnostic = "\n\nDiagnostics:"
+    for (title, msgs) in sections
+        isempty(msgs) && continue
+        body = join(("  " * replace(msg, "\n" => "\n  ") for msg in msgs), "\n")
+        diagnostic *= "\n\n$title:\n$body"
+    end
+
+    return diagnostic
 end
 
 function fixed_t_for_tstop_error!(integrator, ttmp)
