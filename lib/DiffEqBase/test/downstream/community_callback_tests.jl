@@ -227,13 +227,6 @@ end
 function terminate_affect!(int, events)
     return any(!iszero, events) && terminate!(int)
 end
-# SciMLBase v3.10 removed the 4-arg `VectorContinuousCallback(cond, affect!,
-# affect_neg!, len)` form: `affect!` now fires on every crossing, and
-# `affect_neg! = nothing` no longer suppresses downcrossings. The condition is
-# u[3] = cos(t), so the solve now terminates at the first crossing pi/2 rather
-# than at the old expectation 3pi/2 (an upcrossing). The point of this #1528
-# regression test is that callback handling doesn't error on the constant-zero
-# condition element out[1].
 cb = VectorContinuousCallback(cond!, terminate_affect!, 1)
 
 u0 = [0.0, 0.0, 1.0]
