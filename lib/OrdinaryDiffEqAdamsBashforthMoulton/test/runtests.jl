@@ -17,6 +17,7 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "ABM Convergence Tests" include("abm_convergence_tests.jl")
     @time @safetestset "Adams Variable Coefficients Tests" include("adams_tests.jl")
+    @time @safetestset "ABM Discontinuity Restart Tests" include("abm_discontinuity_restart_tests.jl")
 end
 
 # Threaded tests require Polyester.jl (for FastBroadcast.Threaded() support).
