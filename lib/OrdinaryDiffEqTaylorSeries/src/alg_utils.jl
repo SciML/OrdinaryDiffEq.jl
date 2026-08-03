@@ -6,6 +6,12 @@ alg_stability_size(alg::ExplicitTaylor2) = 1
 alg_order(::ExplicitTaylor{P}) where {P} = P
 alg_stability_size(alg::ExplicitTaylor) = 1
 
+# These build each step from the Taylor jet rather than reusing the previous step's
+# last derivative, so they are not FSAL. Without this they inherit the `true` default,
+# which makes `ode_determine_initdt` write an extra `f` evaluation into `fsallast`.
+isfsal(::ExplicitTaylor) = false
+isfsal(::ExplicitTaylorAdaptiveOrder) = false
+
 alg_order(alg::ExplicitTaylorAdaptiveOrder) = get_value(alg.min_order)
 get_current_adaptive_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
 get_current_alg_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
