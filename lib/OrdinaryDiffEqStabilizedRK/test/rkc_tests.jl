@@ -317,6 +317,59 @@ end
     end
 end
 
+@testset "SERK2 non-autonomous convergence" begin
+    # Prothero-Robinson-type problem: uᵢ' = -λᵢ*(uᵢ - cos(t)) - sin(t), exact uᵢ = cos(t).
+    # Catches wrong or missing stage times, which autonomous problems cannot see.
+    lams = [1.0, 5.0, 20.0, 50.0]
+    f_na_oop(u, p, t) = @. -p * (u - cos(t)) - sin(t)
+    f_na_iip(du, u, p, t) = (@. du = -p * (u - cos(t)) - sin(t); nothing)
+    na_analytic(u0, p, t) = cos(t) .* ones(length(p))
+    prob_na_oop = ODEProblem(
+        ODEFunction{false}(f_na_oop, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    prob_na_iip = ODEProblem(
+        ODEFunction{true}(f_na_iip, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    # pure quadrature: u' = cos(t), any correct second-order method gets order 2
+    fq_oop(u, p, t) = fill(cos(t), 2)
+    fq_iip(du, u, p, t) = (du .= cos(t); nothing)
+    q_analytic(u0, p, t) = u0 .+ sin(t)
+    prob_q_oop = ODEProblem(
+        ODEFunction{false}(fq_oop, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+    prob_q_iip = ODEProblem(
+        ODEFunction{true}(fq_iip, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+
+    dts = 1 .// 2 .^ (10:-1:5)
+    testTol = 0.25
+    # fixed estimate exercises the classical dt -> 0 regime; the 1/dt-scaled
+    # estimate keeps the stage count constant (stiff regime)
+    fixed_eig = (integrator) -> integrator.eigen_est = 55.0
+    scaled_eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    for prob in [prob_na_oop, prob_na_iip, prob_q_oop, prob_q_iip],
+            eig in [fixed_eig, scaled_eig]
+
+        sim = test_convergence(dts, prob, SERK2(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+    end
+end
+
+@testset "SERK2 stage times are internally consistent" begin
+    # Each f evaluation must sit at the row-sum time of the stage it is evaluated
+    # at. Reconstruct the c vector by running the integrator on u' = 1, where the
+    # stage value directly reports its own row sum.
+    seen = Tuple{Float64, Float64}[]
+    f_probe(u, p, t) = (push!(seen, (u[1], t)); [one(u[1])])
+    prob = ODEProblem(ODEFunction{false}(f_probe), [0.0], (0.0, 1.0))
+    eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    solve(prob, SERK2(eigen_est = eig), dt = 1 // 32, adaptive = false)
+    @test length(seen) > 10
+    for (uval, tval) in seen
+        @test uval ≈ tval atol = 1.0e-10
+    end
+end
+
 @testset "eigen_est_interval" begin
     # Stiff parabolic problem solved with the internal power iteration. The default
     # sparse recompute interval (25) must stay accurate while spending fewer f
