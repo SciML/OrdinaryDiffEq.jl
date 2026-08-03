@@ -32,7 +32,7 @@ using SciMLLogging: SciMLLogging
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, @isoutofdomain
 
 # Import from OrdinaryDiffEqDefault
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
@@ -59,6 +59,8 @@ export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_propose
 
 # Specialization levels
 export AutoDePSpecialize
+
+export @isoutofdomain
 
 # ADTypes
 export AutoForwardDiff, AutoFiniteDiff, AutoSparse

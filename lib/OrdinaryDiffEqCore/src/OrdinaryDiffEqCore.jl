@@ -43,7 +43,12 @@ export AutoDePSpecialize
 import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
     ODE_DEFAULT_UNSTABLE_CHECK,
-    DEVerbosity, _process_verbose_param
+    DEVerbosity, _process_verbose_param,
+    DomainCheckedFunction, domain_checks_failing,
+    isoutofdomain_report
+
+import DiffEqBase: @isoutofdomain
+export @isoutofdomain
 
 import SciMLOperators: MatrixOperator, FunctionOperator,
     update_coefficients, update_coefficients!,

@@ -600,7 +600,7 @@ function _loopfooter!(integrator)
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
         apply_solve_step_limiter!(integrator, ttmp)
-        integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
+        integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp) || isnan(get_EEst(integrator)) || isinf(get_EEst(integrator))
         integrator.accept_step = (
             !integrator.isout &&
                 accept_step_controller(
@@ -821,6 +821,8 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     # each analysis gets its own section
     state_analysis = String[]
     jacobian_analysis = String[]
+    domain_analysis = String[]
+    iood_analysis = String[]
     error_analysis = String[]
 
     # state diagnostics message
@@ -890,6 +892,22 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     end
 
+    # domain checks diagnostics, find out which checks failed and report them
+    if hasproperty(integrator.f, :f) && integrator.f.f isa DomainCheckedFunction
+        failing = domain_checks_failing(integrator.f.f.pre_checks, u, integrator.p, integrator.t)
+        if failing !== nothing
+            push!(domain_analysis, "$(length(failing)) domain_checks predicate(s) failed:")
+            append!(domain_analysis, failing)
+        end
+    end
+
+    # isoutofdomain diagnostics, the other way a step is rejected for leaving a valid domain.
+    if integrator.opts.adaptive && integrator.opts.isoutofdomain(u, integrator.p, integrator.t)
+        push!(iood_analysis, "isoutofdomain predicate returned true for the proposed state, causing failure of the step")
+        # empty unless the predicate was built with `@isoutofdomain`
+        append!(iood_analysis, isoutofdomain_report(integrator.opts.isoutofdomain, u, integrator.p, integrator.t))
+    end
+
     # error estimate analysis
     if integrator.opts.adaptive
         push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", get_EEst(integrator))) (a step is accepted when EEst <= 1)")
@@ -920,6 +938,8 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     sections = (
         ("State Analysis", state_analysis),
         ("Jacobian Analysis", jacobian_analysis),
+        ("Domain Check Analysis: Gates inputs to function evaluations", domain_analysis),
+        ("Is Out of Domain: Gates results of integrator steps", iood_analysis),
         ("Error Analysis", error_analysis)
     )
     all(isempty(msgs) for (_, msgs) in sections) && return ""
