@@ -55,6 +55,7 @@ OrdinaryDiffEqVerner = {path = "../../lib/OrdinaryDiffEqVerner"}
 
 [compat]
 Adapt = "4"
+ArrayInterface = "7.28.1"
 CUDA = "6"
 CUDSS = "0.7, 0.8"
 ComponentArrays = "0.15"
