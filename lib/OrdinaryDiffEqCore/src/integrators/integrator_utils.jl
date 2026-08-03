@@ -870,7 +870,6 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     end
 
-    diagnostic = isempty(diagnostic) ? "" : "\n\nDiagnostics:\n" * join(diagnostic, "\n\n") * "."
     # error estimate analysis
     if integrator.opts.adaptive
         push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", get_EEst(integrator))) (a step is accepted when EEst <= 1)")
