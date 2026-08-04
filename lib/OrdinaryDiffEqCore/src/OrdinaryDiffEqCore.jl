@@ -495,6 +495,11 @@ include("precompilation_setup.jl")
             # methods to them for their own integrator types.
             :fix_dt_at_bounds!, :handle_tstop!,
             :initialize_tstops, :initialize_saveat, :initialize_d_discontinuities,
+            # The two per-algorithm controller defaults that were left out of the
+            # already-public rest of that family (qmin_default, qmax_default,
+            # gamma_default, qsteady_*_default, beta*_default); both are documented
+            # in docs/src/api/controllers.md and specialized by solver packages.
+            :failfactor_default, :qmax_first_step_default,
         )
     )
 end
