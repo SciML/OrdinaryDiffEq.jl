@@ -10,7 +10,7 @@
 const JULIA_VERSION_ALLOWS_ZYGOTE = VERSION < v"1.12" && isempty(VERSION.prerelease)
 
 using SciMLSensitivity
-using OrdinaryDiffEq, OrdinaryDiffEqCore, FiniteDiff, Test
+using OrdinaryDiffEq, OrdinaryDiffEqCore, Test
 using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: IController, PIController, PIDController
 using ADTypes
@@ -58,15 +58,20 @@ function test_f(p)
         save_everystep = false
     ).u[end]
 end
-findiff = FiniteDiff.finite_difference_jacobian(test_f, p)
-findiff
+# There is exactly one bounce on this interval, so the final-state Jacobian has
+# a closed form that avoids finite-difference noise from perturbing the root time.
+impact_speed = sqrt(2 * p[1])
+expected = [
+    (1 + p[2]) / impact_speed - 1 / 2 impact_speed - 2
+    (1 + p[2]) / impact_speed - 1 impact_speed
+]
 
 # Test jacobians with all available backends
 @testset "Jacobian tests" begin
     for backend in get_jacobian_backends()
         @testset "$(typeof(backend))" begin
             ad = DI.jacobian(test_f, backend, p)
-            @test ad ≈ findiff
+            @test ad ≈ expected
         end
     end
 end
@@ -75,7 +80,7 @@ end
 @testset "Enzyme callback limitation (jacobian)" begin
     @test_broken (
         ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
-        ad ≈ findiff
+        ad ≈ expected
     )
 end
 
@@ -129,20 +134,20 @@ end
         p
     )
 
-    @test g1 ≈ findiff[2, 1:2]
-    @test g2 ≈ findiff[2, 1:2]
-    @test g3 ≈ findiff[2, 1:2]
-    @test g4 ≈ findiff[2, 1:2]
-    @test g5 ≈ findiff[2, 1:2]
-    @test g6 ≈ findiff[2, 1:2]
-    @test_broken g7 ≈ findiff[2, 1:2]
+    @test g1 ≈ expected[2, 1:2]
+    @test g2 ≈ expected[2, 1:2]
+    @test g3 ≈ expected[2, 1:2]
+    @test g4 ≈ expected[2, 1:2]
+    @test g5 ≈ expected[2, 1:2]
+    @test g6 ≈ expected[2, 1:2]
+    @test_broken g7 ≈ expected[2, 1:2]
 end
 
 # Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
 @testset "Enzyme callback limitation (gradient)" begin
     @test (
         g = DI.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)), p);
-        g ≈ findiff[2, 1:2]
+        g ≈ expected[2, 1:2]
     )
 end
 
@@ -179,6 +184,6 @@ end
         backend,
         p
     )
-    @test g1 ≈ findiff[2, 1:2] rtol = 1.0e-5
-    @test g6 ≈ findiff[2, 1:2] rtol = 1.0e-5
+    @test g1 ≈ expected[2, 1:2] rtol = 1.0e-5
+    @test g6 ≈ expected[2, 1:2] rtol = 1.0e-5
 end

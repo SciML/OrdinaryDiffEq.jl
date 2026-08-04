@@ -4,7 +4,7 @@ using SciMLBase
 using Test
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
@@ -39,6 +39,43 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         sol = solve(prob_ode_linear, ExplicitTaylorAdaptiveOrder(min_order = Val(6), max_order = Val(10)))
         @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
+    end
+
+    # `get_fsalfirstlast` used to alias the FSAL buffer to `cache.u`, which is
+    # `integrator.u`. The auto-dt heuristic writes an extra `f` evaluation into
+    # `fsallast`, so the aliasing made that call `f(u, u, p, t)` and corrupted the
+    # state before the first step, for any RHS that reads `u` after writing `du`.
+    @testset "auto-dt must not write through the state buffer" begin
+        function f_alias!(du, u, p, t)
+            du[1] = 7.0
+            du[2] = 9.0
+            s = u[1] + u[2]
+            du[1] = -s
+            du[2] = s
+            return nothing
+        end
+        u0 = [1.0, 2.0]
+        for alg in (ExplicitTaylor(order = Val(4)), ExplicitTaylorAdaptiveOrder())
+            integ = init(
+                ODEProblem(f_alias!, copy(u0), (0.0, 1.0)), alg,
+                abstol = 1.0e-8, reltol = 1.0e-8
+            )
+            @test !OrdinaryDiffEqTaylorSeries.isfsal(alg)
+            @test integ.u == u0
+        end
+    end
+
+    # End-to-end: with the state corrupted, the auto-dt heuristic saw a NaN and
+    # collapsed `dt0` to `dtmin`, so the controller burned hundreds of steps
+    # climbing back out (905 before the fix, 587 after, at this tolerance).
+    @testset "Auto-dt on Pleiades does not collapse to dtmin" begin
+        sol = solve(
+            prob_ode_pleiades, ExplicitTaylor(order = Val(6)),
+            abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test all(isfinite, sol.u[end])
+        @test length(sol.t) < 700
     end
 
     # Test AutoSpecialize (default ODEProblem wraps in FunctionWrappers)

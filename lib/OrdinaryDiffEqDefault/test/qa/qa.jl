@@ -50,16 +50,6 @@ without_local_project_sources(OrdinaryDiffEqDefault) do
                 # stale because of the unanalyzable enum submodule above.
                 ignore = (:Tsit5, :Vern7, :Rosenbrock23, :Rodas5P, :FBDF),
             ),
-            all_explicit_imports_are_public = (;
-                # Internal monorepo extension point; `AutoSwitchCache` is not user API.
-                ignore = (:AutoSwitchCache,),
-            ),
-            all_qualified_accesses_are_public = (;
-                # `lorenz`/`lorenz_oop` are OrdinaryDiffEqCore precompile-workload
-                # test problems (defined in `precompilation_setup.jl`), deliberately
-                # not part of its public extension surface.
-                ignore = (:lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params),
-            ),
         ),
         api_docs_kwargs = (;
             rendered = false,

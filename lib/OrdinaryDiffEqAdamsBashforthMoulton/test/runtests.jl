@@ -2,7 +2,7 @@ using Pkg
 using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
@@ -17,10 +17,11 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "ABM Convergence Tests" include("abm_convergence_tests.jl")
     @time @safetestset "Adams Variable Coefficients Tests" include("adams_tests.jl")
+    @time @safetestset "ABM Discontinuity Restart Tests" include("abm_discontinuity_restart_tests.jl")
 end
 
 # Threaded tests require Polyester.jl (for FastBroadcast.Threaded() support).
-# Runs only on explicit `ODEDIFFEQ_TEST_GROUP=Threaded` — the SublibraryCI
+# Runs only on explicit `GROUP=Threaded` — the SublibraryCI
 # matrix (lib/OrdinaryDiffEqAdamsBashforthMoulton/test/test_groups.toml)
 # schedules this as its own Julia 1 / 2-thread job. Matches the GPU-group
 # convention in sibling sublibs (LowStorageRK, Rosenbrock, BDF).

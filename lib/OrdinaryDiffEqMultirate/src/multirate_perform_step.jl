@@ -547,8 +547,8 @@ end
 
 function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, atmp, z, fS, nlsolver, tab) = cache
-    (; Δc, W0, W1, γ0, q) = tab
+    (; tmp, atmp, z, fS, zemb, nlsolver, tab) = cache
+    (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
     alg = unwrap_alg(integrator, true)
     m = alg.m
     s = length(Δc)
@@ -585,7 +585,16 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
     @.. broadcast = false u = z[s + 1]
 
     return if integrator.opts.adaptive
-        @.. broadcast = false tmp = u - z[s]
+        if isempty(Wemb0)
+            @.. broadcast = false tmp = u - z[s]
+        else
+            w1emb = isempty(Wemb1) ? nothing : Wemb1
+            _mrigark_substage!(
+                zemb, z[s], cache, f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
+                Wemb0, w1emb, fS, s, stats
+            )
+            @.. broadcast = false tmp = u - zemb
+        end
         calculate_residuals!(
             atmp, tmp, uprev, u,
             integrator.opts.abstol, integrator.opts.reltol,
@@ -600,7 +609,7 @@ end
     )
     (; t, dt, uprev, f, p) = integrator
     (; nlsolver, tab) = cache
-    (; Δc, W0, W1, γ0, q) = tab
+    (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
     alg = unwrap_alg(integrator, true)
     m = alg.m
     s = length(Δc)
@@ -640,7 +649,16 @@ end
     integrator.u = z[s + 1]
 
     if integrator.opts.adaptive
-        utilde = @.. broadcast = false integrator.u - z[s]
+        utilde = if isempty(Wemb0)
+            @.. broadcast = false integrator.u - z[s]
+        else
+            w1emb = isempty(Wemb1) ? nothing : Wemb1
+            zemb = _mrigark_substage(
+                z[s], f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
+                Wemb0, w1emb, fS, s, stats
+            )
+            @.. broadcast = false integrator.u - zemb
+        end
         atmp = calculate_residuals(
             utilde, uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,

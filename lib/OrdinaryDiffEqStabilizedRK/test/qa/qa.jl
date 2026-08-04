@@ -11,8 +11,6 @@ run_qa(
             ignore = (
                 # SciMLBase-owned helpers not yet declared public (pending release).
                 :_vec, :value,
-                # OrdinaryDiffEqCore owner-internal no-op limiter (deliberately not public).
-                :trivial_limiter!,
             ),
         ),
     ),

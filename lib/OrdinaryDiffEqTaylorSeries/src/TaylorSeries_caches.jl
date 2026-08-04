@@ -81,7 +81,7 @@ function alg_cache(
     )
 end
 
-get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (cache.u, cache.u)
+get_fsalfirstlast(cache::ExplicitTaylorCache, u) = (nothing, nothing)
 
 struct ExplicitTaylorConstantCache{P, taylorType, uType, tType} <:
     OrdinaryDiffEqConstantCache
@@ -151,7 +151,7 @@ function alg_cache(
     )
 end
 
-get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (cache.u, cache.u)
+get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (nothing, nothing)
 
 struct ExplicitTaylorAdaptiveOrderConstantCache{P, Q, taylorType, uType, tType} <:
     OrdinaryDiffEqConstantCache

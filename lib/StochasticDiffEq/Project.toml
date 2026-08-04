@@ -1,6 +1,6 @@
 name = "StochasticDiffEq"
 uuid = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
-version = "7.1.2"
+version = "7.1.4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
@@ -46,6 +46,7 @@ StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 
 [compat]
 ADTypes = "1.22.0"
+AllocCheck = "0.2"
 DiffEqBase = "7"
 DiffEqNoiseProcess = "5.30.0"
 LinearAlgebra = "1.6"

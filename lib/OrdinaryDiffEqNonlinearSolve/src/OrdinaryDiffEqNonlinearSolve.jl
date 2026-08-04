@@ -4,9 +4,10 @@ using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
 
 import SciMLBase
 import SciMLBase: init, solve, remake
+using SciMLOperators: update_coefficients!
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
-    update_coefficients!, get_tmp_cache, ReturnCode,
+    get_tmp_cache, ReturnCode,
     AbstractNonlinearProblem, LinearAliasSpecifier,
     _vec, _reshape, postamble!, alg_order, isadaptive
 import DiffEqBase
@@ -19,7 +20,9 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, New
     HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
-using NonlinearSolveBase: get_linear_cache
+# `get_u`/`get_fu` are the only inner-state reads that hold for every inner cache type:
+# polyalgorithm caches keep `u`/`fu` on the active branch, not as top-level fields.
+using NonlinearSolveBase: get_linear_cache, get_u, get_fu
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
@@ -72,15 +75,16 @@ include("initialize_dae.jl")
 
 export BrownFullBasicInit, ShampineCollocationInit
 
-# Nonlinear-solver algorithms accepted by OrdinaryDiffEq implicit methods. The
-# lower-level build/step/Anderson helpers are implementation details, not public API.
+# Nonlinear-solver algorithms accepted by OrdinaryDiffEq implicit methods and the
+# solver-author hooks extended by sibling integrator packages.
 # The `public` keyword is only parseable on Julia >= 1.11.0-DEV.469, so it is
 # gated to keep the 1.10 floor parsing.
 @static if VERSION >= v"1.11.0-DEV.469"
     eval(
         Expr(
             :public,
-            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg
+            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg,
+            :nlsolve!, :nlsolvefail, :compute_step!, :initial_η, :anderson, :anderson!
         )
     )
 end

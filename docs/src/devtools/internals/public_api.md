@@ -10,9 +10,9 @@ documented under the API section.
     Do not build application code against these hooks. They exist so solver
     packages can extend common traits, controllers, interpolation hooks, and
     initialization protocols without depending on undocumented implementation
-    details. Concrete per-algorithm cache types and low-level nonlinear solve
-    helper functions are not public API; only the abstract cache supertypes a
-    solver package subtypes are.
+    details. Concrete per-algorithm caches and low-level nonlinear-solve helpers
+    remain internal unless listed below; the listed automatic-switch caches and
+    nonlinear-solver hooks are shared with sibling integrator packages.
 
 ## DiffEqBase solver hooks
 
@@ -99,6 +99,7 @@ OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm
 
 ```@docs
 OrdinaryDiffEqCore.CompositeAlgorithm
+OrdinaryDiffEqCore.AutoSwitchCache
 OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
@@ -193,6 +194,7 @@ extension points.
 ```@docs
 OrdinaryDiffEqCore.AbstractNLSolver
 OrdinaryDiffEqCore.AbstractNLSolverAlgorithm
+OrdinaryDiffEqCore.AbstractNLSolverCache
 OrdinaryDiffEqCore.nlsolve_f
 OrdinaryDiffEqCore.get_W
 OrdinaryDiffEqCore.set_new_W!
@@ -204,6 +206,12 @@ OrdinaryDiffEqCore.isJcurrent
 OrdinaryDiffEqCore.resize_J_W!
 OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
+OrdinaryDiffEqNonlinearSolve.nlsolve!
+OrdinaryDiffEqNonlinearSolve.nlsolvefail
+OrdinaryDiffEqNonlinearSolve.compute_step!
+OrdinaryDiffEqNonlinearSolve.initial_η
+OrdinaryDiffEqNonlinearSolve.anderson
+OrdinaryDiffEqNonlinearSolve.anderson!
 ```
 
 ## Jacobian / W-matrix / differentiation configuration
@@ -249,6 +257,7 @@ OrdinaryDiffEqCore.OrdinaryDiffEqMutableCache
 OrdinaryDiffEqCore.StochasticDiffEqCache
 OrdinaryDiffEqCore.StochasticDiffEqConstantCache
 OrdinaryDiffEqCore.StochasticDiffEqMutableCache
+OrdinaryDiffEqCore.DefaultCache
 OrdinaryDiffEqCore.@cache
 OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast
@@ -266,6 +275,9 @@ OrdinaryDiffEqCore._ode_init
 OrdinaryDiffEqCore._initialize_dae!
 OrdinaryDiffEqCore.find_algebraic_vars_eqs
 OrdinaryDiffEqCore.get_differential_vars
+OrdinaryDiffEqCore.handle_callback_modifiers!
+OrdinaryDiffEqCore.resolve_stage_step_limiters
+OrdinaryDiffEqCore.trivial_limiter!
 ```
 
 ## Dense output / interpolation

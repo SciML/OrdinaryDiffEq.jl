@@ -213,6 +213,12 @@ function get_differential_vars(f, u)
         elseif mm isa SciMLOperators.ScalarOperator
             # λ·I: every variable is algebraic when λ is zero.
             return iszero(mm.val) ? falses(size(u)) : nothing
+        elseif mm isa Diagonal
+            # Check only `mm.diag`: the generic paths below visit every (i, j)
+            # pair via scalar `getindex`, which is disallowed when `mm.diag` is
+            # GPU-backed (e.g. `Diagonal{Float64, <:CuVector}`), while a
+            # broadcast over `mm.diag` dispatches to a proper GPU kernel.
+            return reshape(mm.diag .!= 0, size(u))
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && _isdiag(mm)
@@ -229,6 +235,18 @@ end
 # Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
 _isdiag(A::AbstractMatrix) = isdiag(A)
 
+# Dense fallback to find large Jacobian entries. 
+# Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::AbstractMatrix)
+    for i in axes(jac, 1), j in axes(jac, 2)
+        val = jac[i, j]
+        if !isfinite(val) || abs(val) > 1e6
+            push!(rows, i)
+            push!(cols, j)
+            push!(entries, (i, j, val))
+        end
+    end
+end
 """
     find_algebraic_vars_eqs(M)
 

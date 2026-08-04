@@ -12,8 +12,7 @@ versions = ["1"]
 
 [NoncommutativeConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
-timeout = 240
+timeout = 60
 
 [AlgConvergence2]
 versions = ["1"]
@@ -33,13 +32,11 @@ local_only = true
 
 [OOPWeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
 local_only = true
 
 [IIPWeakConvergence]
 versions = ["1"]
-runner = ["self-hosted", "Linux", "X64", "high-memory"]
 timeout = 300
 local_only = true
 

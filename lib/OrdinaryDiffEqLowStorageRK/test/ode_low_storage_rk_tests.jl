@@ -143,6 +143,64 @@ end
     @test sol_old.u[end] ≈ sol_new.u[end]
 end
 
+@testset "RK46NL" begin
+    alg = RK46NL(; williamson_condition = true)
+    alg2 = RK46NL(; williamson_condition = false)
+    dts = 1 ./ 2 .^ (7:-1:3)
+    for prob in test_problems_only_time
+        sim = test_convergence(dts, prob, alg)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        sim = test_convergence(dts, prob, alg2)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+    end
+    for prob in test_problems_linear
+        sim = test_convergence(dts, prob, alg)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        sim = test_convergence(dts, prob, alg2)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+    end
+    for prob in test_problems_nonlinear
+        sim = test_convergence(dts, prob, alg)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        sim = test_convergence(dts, prob, alg2)
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+    end
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+    integ = init(
+        prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+    integ = init(
+        prob_ode_large, alg2, dt = 1.0e-2, save_start = false, save_end = false,
+        save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+    # test whether aliasing u0 is bad
+    new_prob_ode_nonlinear_inplace = ODEProblem(
+        prob_ode_nonlinear_inplace.f, [1.0],
+        (0.0, 0.5)
+    )
+    sol_old = solve(
+        prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false
+    )
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.0e-4, save_everystep = false,
+        save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test sol_old.u[end] ≈ sol_new.u[end]
+end
+
 @testset "CarpenterKennedy2N54" begin
     alg = CarpenterKennedy2N54(; williamson_condition = true)
     alg2 = CarpenterKennedy2N54(; williamson_condition = false)
@@ -1800,6 +1858,33 @@ end
         save_start = false, alias = ODEAliasSpecifier(alias_u0 = true)
     )
     @test sol_old.u[end] ≈ sol_new.u[end]
+end
+
+# Methods from Al Jahdali, Dalcin, Boukharfane, Nolasco, Keyes, Parsani (2022)
+
+@testset "AlJahdali 3S* methods" begin
+    aljahdali_algs = [
+        AlJahdaliAdv3S42(), AlJahdaliAdv3S82(), AlJahdaliAdv3S53(), AlJahdaliAdv3S113(),
+        AlJahdaliAdv3S64(), AlJahdaliAdv3S154(), AlJahdaliAdv3S85(), AlJahdaliAdv3S165(),
+        AlJahdaliVor3S42(), AlJahdaliVor3S82(), AlJahdaliVor3S53(), AlJahdaliVor3S113(),
+        AlJahdaliVor3S64(), AlJahdaliVor3S154(), AlJahdaliVor3S85(), AlJahdaliVor3S165(),
+    ]
+    for alg in aljahdali_algs
+        order = OrdinaryDiffEqLowStorageRK.alg_order(alg)
+        # order-5 methods saturate at machine precision on the fine end of the
+        # standard dts range (same effect documented for ParsaniKetchesonDeconinck3S105/205
+        # above), so they get the same coarser dts.
+        dts = order == 5 ? 1 ./ 1.95 .^ (5:-1:1) : 1 ./ 2 .^ (7:-1:3)
+        for prob in test_problems_only_time
+            sim = test_convergence(dts, prob, alg)
+            # atol = 1.25, not testTol: unlike ParsaniKetcheson3S*, these don't show a
+            # consistent +1 pure-quadrature bump (some do, some measure close to their
+            # claimed order, some land between) at this dts range, so a tight per-method
+            # fit isn't reliable here. This still catches an actually wrong coefficient
+            # set, which would land a full order or more off.
+            @test sim.𝒪est[:final] ≈ order atol = 1.25
+        end
+    end
 end
 
 # Methods from Ranocha, Dalcin, Parsani, Ketcheson (2021)

@@ -19,6 +19,8 @@ import DiffEqBase: full_cache, rand_cache, ratenoise_cache
 import MuladdMacro: @muladd
 import SciMLBase
 
+import Random
+
 using LinearAlgebra
 using StaticArrays
 using RecursiveArrayTools

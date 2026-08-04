@@ -22,7 +22,7 @@ using SciMLBase: SciMLBase,
     DAEProblem, DAEFunction, DAESolution, EnsembleProblem,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
-    remake, successful_retcode, reinit!,
+    remake, successful_retcode, reinit!, terminate!,
     derivative_discontinuity!, add_tstop!, ODEAliasSpecifier,
     AutoDePSpecialize
 
@@ -55,7 +55,7 @@ export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallba
 
 # Utilities
 export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
-export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!
+export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!, terminate!
 
 # Specialization levels
 export AutoDePSpecialize

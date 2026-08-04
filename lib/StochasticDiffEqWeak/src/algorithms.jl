@@ -1,3 +1,10 @@
+"""
+    DRI1()
+
+Adaptive Debrabant-Rößler method for weak approximation of Itô SDEs. `DRI1`
+has weak order 2 and deterministic order 3 and supports scalar, diagonal, and
+non-diagonal noise.
+"""
 struct DRI1 <: StochasticDiffEqAdaptiveAlgorithm end
 
 """
@@ -707,6 +714,15 @@ struct SMEB <: StochasticDiffEqAlgorithm end
 
 using ADTypes: AutoForwardDiff
 
+"""
+    IRI1(; autodiff=AutoForwardDiff(), concrete_jac=nothing, linsolve=nothing,
+         nlsolve=NLNewton(), extrapolant=:constant, theta=1,
+         new_jac_conv_bound=1e-3)
+
+Adaptive drift-implicit variant of the Rößler `RI1` method for weak
+approximation of Itô SDEs. The nonlinear and linear solves can be customized
+with `nlsolve` and `linsolve`; `autodiff` controls Jacobian differentiation.
+"""
 struct IRI1{AD, F, F2, T2, T3, CJ} <:
     StochasticDiffEqNewtonAdaptiveAlgorithm
     linsolve::F

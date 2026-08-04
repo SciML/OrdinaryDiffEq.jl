@@ -354,6 +354,8 @@ function calc_J(integrator, cache, next_step::Bool = false)
     return J
 end
 
+get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache) = calc_J(integrator, cache)
+
 """
     calc_J!(J, integrator, cache, next_step::Bool = false) -> J
 
@@ -578,6 +580,15 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     end
 end
 
+# `ScalarOperator` (λ·I) reports `axes(mm) == ()` like `UniformScaling`, but unlike
+# `UniformScaling` it isn't matched by `isa UniformScaling` -- treat both as the same
+# scalar-times-identity case rather than requiring `axes(mm) == axes(W)`.
+_is_scalar_massmatrix(mm) = false
+_is_scalar_massmatrix(::UniformScaling) = true
+_is_scalar_massmatrix(::ScalarOperator) = true
+_scalar_massmatrix_λ(mm::UniformScaling) = mm.λ
+_scalar_massmatrix_λ(mm::ScalarOperator) = convert(Number, mm)
+
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
 @noinline function _throwWMerror(W, mass_matrix)
     throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
@@ -608,14 +619,14 @@ function jacobian2W!(
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
-    mass_matrix isa UniformScaling ||
+    _is_scalar_massmatrix(mass_matrix) ||
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if mass_matrix isa UniformScaling
+        if _is_scalar_massmatrix(mass_matrix)
             copyto!(W, J)
             idxs = diagind(W)
-            λ = -mass_matrix.λ
+            λ = -_scalar_massmatrix_λ(mass_matrix)
             if ArrayInterface.fast_scalar_indexing(J) &&
                     ArrayInterface.fast_scalar_indexing(W)
                 @inbounds for i in 1:size(J, 1)
@@ -639,14 +650,14 @@ function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix)::Nothin
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
-    mass_matrix isa UniformScaling ||
+    _is_scalar_massmatrix(mass_matrix) ||
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if mass_matrix isa UniformScaling
+        if _is_scalar_massmatrix(mass_matrix)
             copyto!(W, J)
             idxs = diagind(W)
-            λ = -mass_matrix.λ
+            λ = -_scalar_massmatrix_λ(mass_matrix)
             @inbounds for i in 1:size(J, 1)
                 W[i, i] = muladd(λ, invdtgamma, J[i, i])
             end
@@ -661,12 +672,12 @@ end
 
 function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix)
     # check size and dimension
-    mass_matrix isa UniformScaling ||
+    _is_scalar_massmatrix(mass_matrix) ||
         @boundscheck axes(mass_matrix) == axes(J) || _throwJMerror(J, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if mass_matrix isa UniformScaling
-            λ = -mass_matrix.λ
+        if _is_scalar_massmatrix(mass_matrix)
+            λ = -_scalar_massmatrix_λ(mass_matrix)
             W = J + (λ * invdtgamma) * I
         else
             W = muladd(-mass_matrix, invdtgamma, J)

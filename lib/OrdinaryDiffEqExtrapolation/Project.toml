@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "2.4.0"
+version = "2.4.1"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -41,7 +41,7 @@ Random = "<0.0.1, 1"
 DiffEqDevTools = "3"
 MuladdMacro = "0.2.4"
 LinearSolve = "5.1"
-OrdinaryDiffEqDifferentiation = "3"
+OrdinaryDiffEqDifferentiation = "3.3"
 SciMLBase = "3.39"
 OrdinaryDiffEqCore = "4.4"
 julia = "1.10"

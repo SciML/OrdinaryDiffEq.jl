@@ -24,7 +24,6 @@ function ConvergenceSimulation(
         expected_value = nothing
     )
     N = size(solutions, 1)
-    uEltype = eltype(solutions[1].u[1])
     errors = Dict() #Should add type information
     if expected_value == nothing
         if isnothing(solutions[1].errors) || isempty(solutions[1].errors)
@@ -55,6 +54,66 @@ function ConvergenceSimulation(
 end
 
 """
+    ConvergenceTrajectory(t, u, u_analytic, errors)
+
+The part of a trajectory's solution that a convergence study actually consumes: its
+error measurements and the endpoint values the weak errors are formed from.
+
+[`test_convergence`](@ref) stores one of these per trajectory in place of the full
+solution unless `retain_solutions = true`, which is what keeps a Monte-Carlo study's
+memory proportional to the errors it reports rather than to the solver state it
+happened to allocate along the way.
+"""
+struct ConvergenceTrajectory{tType, uType, EType <: NamedTuple}
+    t::Tuple{tType}
+    u::Tuple{uType}
+    u_analytic::Tuple{uType}
+    errors::EType
+end
+
+"""
+    _convergence_output_func(sol, ctx) -> (ConvergenceTrajectory, false)
+
+`output_func` that reduces a trajectory to its errors and endpoints as soon as it is
+solved, so the ensemble never holds the full solutions at once.
+
+Only valid when the weak timeseries and dense errors are switched off, since those
+need the whole timeseries and the noise process; [`test_convergence`](@ref) checks
+that before installing this.
+"""
+function _convergence_output_func(sol, ctx)
+    # One-tuples rather than one-element vectors, and a NamedTuple rather than the
+    # solver's error `Dict`: `[end]` and key lookup work the same, but a `Dict` alone
+    # costs several hundred bytes per trajectory, which dominates everything else
+    # retained here once the study runs to millions of trajectories.
+    u_analytic = sol.u_analytic === nothing ? sol.u[end] : sol.u_analytic[end]
+    reduced = ConvergenceTrajectory(
+        (sol.t[end],), (sol.u[end],), (u_analytic,), NamedTuple(sol.errors)
+    )
+
+    return (reduced, false)
+end
+
+"""
+    _drop_trajectories(sim::EnsembleTestSolution) -> EnsembleTestSolution
+
+Discard every trajectory but the first, keeping the error statistics that were already
+computed from the full ensemble.
+
+Reducing at `output_func` bounds the peak, but the reduced trajectories still add up
+across step sizes, and once `calculate_ensemble_errors` has run they are dead weight —
+a [`ConvergenceSimulation`](@ref) reads only the error dictionaries. One is kept rather
+than none so that anything reaching for a representative trajectory still finds one.
+"""
+function _drop_trajectories(sim::SciMLBase.EnsembleTestSolution{T, N}) where {T, N}
+    u = sim.u[1:min(1, length(sim.u))]
+    return SciMLBase.EnsembleTestSolution{T, N, typeof(u)}(
+        u, sim.errors, sim.weak_errors, sim.error_means, sim.error_medians,
+        sim.elapsedTime, sim.converged
+    )
+end
+
+"""
     test_convergence(dts, prob, alg[, ensemblealg]; kwargs...)
     test_convergence(probs, convergence_axis, alg; kwargs...)
     test_convergence(setup::ConvergenceSetup, alg; kwargs...)
@@ -66,6 +125,31 @@ is passed to the solver as `dt`. Remaining keyword arguments are forwarded to `s
 The computed solutions must contain error measurements, usually obtained from an
 analytic solution. Use [`analyticless_test_convergence`](@ref) when only a numerical
 reference solution is available.
+
+## Keyword Arguments
+
+  - `retain_solutions`: whether `ConvergenceSimulation.solutions` keeps the trajectory
+    solutions (default `false`). A Monte-Carlo study over many trajectories otherwise
+    retains one complete solution object — solver cache, noise process, problem and
+    interpolation — per trajectory per step size, which for large `trajectories` is
+    orders of magnitude more memory than the error estimates it is computing, and is
+    what put the weak-convergence test groups past a 16 GB runner.
+
+    By default each trajectory is reduced to a [`ConvergenceTrajectory`](@ref) by the
+    ensemble's `output_func` as it is solved, so the full solutions never coexist, and
+    the reduced ensemble is stripped to one representative trajectory once the errors
+    have been computed from it. `errors`, `weak_errors`, `error_means` and `𝒪est` are
+    computed from the full ensemble either way and are unaffected; what changes is that
+    `solutions[i].u` holds one entry rather than `trajectories` of them.
+
+    Pass `true` when the trajectories themselves are the point, for example to compare
+    two algorithms path by path.
+
+    The reduction is skipped, and the solutions retained, where it cannot apply: when
+    you supply your own `EnsembleProblem` (set its `output_func` instead), when
+    `expected_value` is given (the weak error is formed from the trajectory values
+    directly), and when `weak_timeseries_errors` or `weak_dense_errors` is set (both
+    need the whole timeseries).
 """
 function test_convergence(
         dts::AbstractArray,
@@ -77,12 +161,19 @@ function test_convergence(
         trajectories, save_start = true, save_everystep = true,
         timeseries_errors = save_everystep, adaptive = false,
         weak_timeseries_errors = false, weak_dense_errors = false,
-        expected_value = nothing, kwargs...
+        expected_value = nothing, retain_solutions = false, kwargs...
     )
     N = length(dts)
 
+    reduce_trajectories = !retain_solutions &&
+        !(prob isa AbstractEnsembleProblem) &&
+        expected_value === nothing &&
+        !weak_timeseries_errors && !weak_dense_errors
+
     if prob isa AbstractEnsembleProblem
         ensemble_prob = prob
+    elseif reduce_trajectories
+        ensemble_prob = EnsembleProblem(prob; output_func = _convergence_output_func)
     else
         ensemble_prob = EnsembleProblem(prob)
     end
@@ -98,20 +189,24 @@ function test_convergence(
             kwargs...
         )
         @info "dt: $(dts[i]) ($i/$N)"
-        _solutions[i] = sol
+        # Summarise each ensemble before solving the next, so that only one step size's
+        # trajectories are ever reachable rather than the whole study's.
+        _solutions[i] = if expected_value === nothing
+            summarised = SciMLBase.calculate_ensemble_errors(
+                sol;
+                weak_timeseries_errors = weak_timeseries_errors,
+                weak_dense_errors = weak_dense_errors
+            )
+            reduce_trajectories ? _drop_trajectories(summarised) : summarised
+        else
+            sol
+        end
     end
 
     auxdata = Dict("dts" => dts)
 
     if expected_value == nothing
-        solutions = [
-            SciMLBase.calculate_ensemble_errors(
-                    sim;
-                    weak_timeseries_errors = weak_timeseries_errors,
-                    weak_dense_errors = weak_dense_errors
-                )
-                for sim in _solutions
-        ]
+        solutions = _solutions
         # Now Calculate Weak Errors
         additional_errors = Dict()
         for k in keys(solutions[1].weak_errors)

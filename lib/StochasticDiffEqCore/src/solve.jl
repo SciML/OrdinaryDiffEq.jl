@@ -108,6 +108,25 @@ function _z_prototype(alg, rand_prototype, iip::Bool)
     return rand_prototype
 end
 
+"""
+    _z_prototype(alg, rand_prototype, iip::Bool, dt) -> rand_prototype2
+
+Step-size aware form of [`_z_prototype`](@ref), used when the size of the Z process
+depends on the step size — as it does for Lévy area truncations, where the number of
+retained series terms is chosen from the accuracy the step size demands.
+
+`dt` is the initial step size as passed to `solve`, which is zero when the caller left
+it to be determined automatically. Since the Z prototype must be built before the
+initial step size is known, an algorithm that sizes from `dt` needs a fallback for
+that case.
+
+Defaults to the three-argument form, so an override only has to be added by
+algorithms that actually need the step size.
+"""
+function _z_prototype(alg, rand_prototype, iip::Bool, dt)
+    return _z_prototype(alg, rand_prototype, iip)
+end
+
 function SciMLBase.__init(
         _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
@@ -381,7 +400,14 @@ function _sde_init(
                 rand_prototype = (u .- u) ./ sqrt(oneunit(t))
             end
         elseif prob isa SciMLBase.AbstractSDEProblem
-            if issparse(u)
+            if issparse(u) || issparse(noise_rate_prototype)
+                # Sparsity in g records which states a channel drives, not which
+                # channels are idle: every column still draws an increment, so dW has
+                # no structural zeros. A sparse dW also breaks caches that keep it and
+                # an unconditionally dense dZ in one field type, and it sends randn!
+                # through the generic AbstractArray loop, which consumes the RNG
+                # differently from the Array method and so changes the path drawn
+                # from a given seed.
                 rand_prototype = adapt(
                     SciMLBase.parameterless_type(u), zeros(randElType, size(noise_rate_prototype, 2))
                 )
@@ -404,7 +430,7 @@ function _sde_init(
         rswm = isadaptive(alg) ? RSWM(adaptivealg = :RSwM3) : RSWM(adaptivealg = :RSwM1)
         if isinplace(prob)
             if alg_needs_extra_process(alg)
-                rand_prototype2 = _z_prototype(alg, rand_prototype, true)
+                rand_prototype2 = _z_prototype(alg, rand_prototype, true, dt)
                 W = WienerProcess!(
                     t, rand_prototype, rand_prototype2,
                     save_everystep = save_noise,
@@ -419,7 +445,7 @@ function _sde_init(
             end
         else
             if alg_needs_extra_process(alg)
-                rand_prototype2 = _z_prototype(alg, rand_prototype, false)
+                rand_prototype2 = _z_prototype(alg, rand_prototype, false, dt)
                 W = WienerProcess(
                     t, rand_prototype, rand_prototype2,
                     save_everystep = save_noise,

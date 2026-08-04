@@ -29,6 +29,16 @@ const probs = Dict(
         fpsolve = NLFunctional(; max_iter = 100)
     )
 
+    integrator = init(prob, alg)
+    @test typeof(integrator.disco_checkpoint) === typeof(integrator.t)
+    @test iszero(integrator.disco_checkpoint)
+
+    integrator.is_disco_step = true
+    integrator.disco_checkpoint = oneunit(integrator.t)
+    reinit!(integrator)
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
+
     # default
     sol1 = solve(prob, alg)
 

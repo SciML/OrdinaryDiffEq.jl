@@ -21,8 +21,9 @@ import StaticArraysCore: StaticArray, StaticMatrix
 # SciMLBase (OrdinaryDiffEqCore/DiffEqBase only re-export them), so import them
 # from the owner to satisfy `all_explicit_imports_via_owners`.
 using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
-import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, islinear, remake, solve!, isconstant
-import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator
+import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, remake, solve!
+import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator,
+    islinear, isconstant, ScalarOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
@@ -40,7 +41,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     TryAgain,
     Divergence, constvalue, @SciMLMessage
 
-import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff
+import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff, get_fresh_jacobian
 
 import ConstructionBase
 
@@ -56,6 +57,13 @@ import DiffEqBase: OrdinaryDiffEqTag
 # Default implementations return false/error for non-sparse types
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
+
+# Seeding a sparsity pattern from the mass matrix uses `findall`/`getindex`, which a
+# SciMLOperator does not support. `convert` reads the operator's currently-cached array
+# rather than re-evaluating it, which is what is wanted here: only the structural
+# pattern matters, and this runs before `init`.
+concrete_mass_matrix(mm) = mm
+concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
 
 # These will error if called without the extension, but should never be called
 # on non-sparse types due to the is_sparse checks

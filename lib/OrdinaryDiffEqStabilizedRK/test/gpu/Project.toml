@@ -13,6 +13,9 @@ path = "../../../.."
 [sources.OrdinaryDiffEqLowOrderRK]
 path = "../../../OrdinaryDiffEqLowOrderRK"
 
+[sources.OrdinaryDiffEqStabilizedRK]
+path = "../.."
+
 [compat]
 CUDA = "6"
 OrdinaryDiffEq = "7"

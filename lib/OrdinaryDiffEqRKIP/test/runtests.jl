@@ -2,7 +2,7 @@ using Pkg
 using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))

@@ -1352,7 +1352,12 @@ function TanakaKasugaYamashitaYazaki6D(::Type{T} = Float64, ::Type{T_time} = T) 
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 6, stability_size = 7.723403386984321))
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            stability_size = 7.723403386984321
+        )
+    )
 end
 
 """
@@ -1451,7 +1456,12 @@ function TanakaKasugaYamashitaYazaki6C(::Type{T} = Float64, ::Type{T_time} = T) 
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 6, stability_size = 9.727143096983585))
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            stability_size = 9.727143096983585
+        )
+    )
 end
 
 """
@@ -1535,7 +1545,12 @@ function TanakaKasugaYamashitaYazaki6B(::Type{T} = Float64, ::Type{T_time} = T) 
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 6, stability_size = 6.007860841958881))
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            stability_size = 6.007860841958881
+        )
+    )
 end
 
 """
@@ -1636,7 +1651,12 @@ function TanakaKasugaYamashitaYazaki6A(::Type{T} = Float64, ::Type{T_time} = T) 
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 6, stability_size = 4.730235594027788))
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            stability_size = 4.730235594027788
+        )
+    )
 end
 
 """
@@ -1700,7 +1720,12 @@ function MikkawyEisa(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 6, stability_size = 3.932606644665211))
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 6, adaptiveorder = 4, αEEst = αEEst,
+            stability_size = 3.932606644665211
+        )
+    )
 end
 
 """

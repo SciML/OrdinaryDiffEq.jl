@@ -50,6 +50,7 @@ import SciMLOperators: MatrixOperator, FunctionOperator,
     isconstant
 
 import Random
+import Printf: @sprintf
 
 import RecursiveArrayTools: recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
 
@@ -92,9 +93,9 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier, log_numerical_instability, has_mtk_sys
 
-import SciMLBase: islinear
+import SciMLOperators: islinear
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
@@ -149,6 +150,7 @@ methods.
     Tableau        # tableau-derived predictor (α / const_stage_guess)
 end
 export Predictor
+export set_discontinuity
 
 """
     CompiledFloats
@@ -428,12 +430,12 @@ include("precompilation_setup.jl")
     eval(
         Expr(
             :public,
-            :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractThreadingOption,
+            :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
             :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
-            :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :BaseThreads,
+            :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
             :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
             :CompositeController, :constvalue, :Convergence, :current_extrapolant,
-            :current_interpolant, :DAEAlgorithm, :default_autoswitch, :default_controller, :default_linear_interpolation,
+            :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
             :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
             :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
             :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
@@ -476,7 +478,7 @@ include("precompilation_setup.jl")
             # Integrator step / cache / initialization hooks.
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
             :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
-            :set_discontinuity, :resolve_basic,
+            :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
             :is_noise_saveable,
@@ -486,7 +488,18 @@ include("precompilation_setup.jl")
             # OrdinaryDiffEqCache trio: every StochasticDiffEq solver cache subtypes one
             # of these, so they are a required solver-author extension point.
             :StochasticDiffEqCache, :StochasticDiffEqConstantCache,
-            :StochasticDiffEqMutableCache,
+            :StochasticDiffEqMutableCache, :trivial_limiter!,
+            # Round 3: custom-integrator construction and stepping hooks. Packages that
+            # build their own integrator on top of the OrdinaryDiffEqCore machinery
+            # (DelayDiffEq, OrdinaryDiffEqOperatorSplitting) both call these and add
+            # methods to them for their own integrator types.
+            :fix_dt_at_bounds!, :handle_tstop!,
+            :initialize_tstops, :initialize_saveat, :initialize_d_discontinuities,
+            # The two per-algorithm controller defaults that were left out of the
+            # already-public rest of that family (qmin_default, qmax_default,
+            # gamma_default, qsteady_*_default, beta*_default); both are documented
+            # in docs/src/api/controllers.md and specialized by solver packages.
+            :failfactor_default, :qmax_first_step_default,
         )
     )
 end

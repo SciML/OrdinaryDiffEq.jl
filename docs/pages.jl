@@ -49,6 +49,7 @@ pages = [
     ],
     "Stochastic Utilities" => [
         "stochastic/LevyArea.md",
+        "stochastic/Weak.md",
     ],
     "Fully Implicit DAE Solvers" => [
         "fullyimplicitdae/BDF.md",
