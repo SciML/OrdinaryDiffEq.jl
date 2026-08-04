@@ -51,4 +51,33 @@ using Test
             end
         end
     end
+
+    mreil_solvers = [MREIL(), MREIL(m = 8, order = 3)]
+
+    @testset "MREIL perform_step! Static Analysis" begin
+        for solver in mreil_solvers
+            @testset "$(solver) perform_step! allocation check" begin
+                integrator = init(
+                    prob, solver, dt = 0.1, save_everystep = false, adaptive = false
+                )
+                step!(integrator)
+
+                cache = integrator.cache
+                allocs = check_allocs(
+                    OrdinaryDiffEqCore.perform_step!,
+                    (typeof(integrator), typeof(cache))
+                )
+
+                @test length(allocs) == 0 broken = true
+
+                if length(allocs) > 0
+                    println(
+                        "AllocCheck found $(length(allocs)) allocation sites in MREIL perform_step!"
+                    )
+                else
+                    println("MREIL perform_step! appears allocation-free with AllocCheck")
+                end
+            end
+        end
+    end
 end
