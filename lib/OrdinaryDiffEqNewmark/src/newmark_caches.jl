@@ -1,4 +1,4 @@
-@cache struct NewmarkBetaCache{uType, rateType, parameterType, N, Thread} <:
+@cache struct NewmarkBetaCache{uType, rateType, parameterType, N, EC, Thread} <:
     OrdinaryDiffEqMutableCache
     u::uType # Current solution
     uprev::uType # Previous solution
@@ -6,6 +6,7 @@
     β::parameterType # newmark parameter 1
     γ::parameterType # newmark parameter 2
     nlcache::N # Inner solver
+    evalcache::EC # Discretization state passed to the inner solver as its parameter
     tmp::uType # temporary, because it is required.
     atmp::uType
     thread::Thread
@@ -38,7 +39,7 @@ function alg_cache(
 
     tmp = zero(u)
     atmp = zero(u)
-    return NewmarkBetaCache(u, uprev, fsalfirst, β, γ, nlcache, tmp, atmp, thread)
+    return NewmarkBetaCache(u, uprev, fsalfirst, β, γ, nlcache, evalcache, tmp, atmp, thread)
 end
 
 @cache struct NewmarkBetaConstantCache{uType, rateType, parameterType, N, Thread} <:
@@ -63,32 +64,20 @@ function alg_cache(
     (; β, γ, thread) = alg
     fsalfirst = zero(rate_prototype)
 
-    # Temporary terms
-    aₙ = fsalfirst.x[1]
-    vₙ, uₙ = uprev.x
-    evalcache = NewmarkDiscretizationCache(
-        f, t, p,
-        dt, β, γ,
-        zero(β), zero(β),   # αm = αf = 0 recovers Newmark
-        aₙ, vₙ, uₙ,
-        nothing, nothing, nothing,
-    )
-
     tmp = zero(u)
     atmp = zero(u)
     return NewmarkBetaConstantCache(u, uprev, fsalfirst, β, γ, alg.nlsolve, tmp, atmp, thread)
 end
 
-@cache struct GeneralizedAlphaCache{uType, rateType, parameterType, N, Thread} <:
+@cache struct GeneralizedAlphaCache{uType, rateType, parameterType, N, EC, Thread} <:
     OrdinaryDiffEqMutableCache
     u::uType # Current solution
     uprev::uType # Previous solution
     fsalfirst::rateType
-    αm::parameterType # generalized alpha parameter 1
-    αf::parameterType # generalized alpha parameter 2
     β::parameterType # newmark parameter 1
     γ::parameterType # newmark parameter 2
     nlcache::N
+    evalcache::EC # Discretization state passed to the inner solver as its parameter
     tmp::uType
     atmp::uType
     thread::Thread
@@ -120,7 +109,9 @@ function alg_cache(
 
     tmp = zero(u)
     atmp = zero(u)
-    return GeneralizedAlphaCache(u, uprev, fsalfirst, αm, αf, β, γ, nlcache, tmp, atmp, thread)
+    return GeneralizedAlphaCache(
+        u, uprev, fsalfirst, β, γ, nlcache, evalcache, tmp, atmp, thread
+    )
 end
 
 @cache struct GeneralizedAlphaConstantCache{uType, rateType, parameterType, N, Thread} <:
@@ -146,16 +137,6 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     (; αm, αf, β, γ, thread) = alg
     fsalfirst = zero(rate_prototype)
-
-    aₙ = fsalfirst.x[1]
-    vₙ, uₙ = uprev.x
-    evalcache = NewmarkDiscretizationCache(
-        f, t, p,
-        dt, β, γ,
-        αm, αf,
-        aₙ, vₙ, uₙ,
-        nothing, nothing, nothing,
-    )
 
     tmp = zero(u)
     atmp = zero(u)
