@@ -25,8 +25,7 @@ function test_step_limiter(alg_type)
 
     sol = solve(prob, alg_type(), dt = 0.1; step_limiter = step_limiter!)
 
-    n = sol.stats.naccept + sol.stats.nreject
-    return @test n == STEP_LIMITER_VAR[]
+    return @test sol.stats.naccept == STEP_LIMITER_VAR[]
 end
 
 @testset "Step_limiter Test" begin
@@ -67,8 +66,13 @@ end
 
     STEP_LIMITER_VAR[] = 0
     prob = ODEProblem((du, u, p, t) -> du .= u, [1.0], (0.0, 1.0))
-    sol = solve(prob, Tsit5(), dt = 0.1; step_limiter = step_limiter!)
-    @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+    integrator = init(
+        prob, Tsit5(); dt = 1.0, abstol = 1.0e-12, reltol = 1.0e-12,
+        step_limiter = step_limiter!, save_everystep = false
+    )
+    step!(integrator)
+    @test integrator.stats.nreject > 0
+    @test integrator.stats.naccept == STEP_LIMITER_VAR[]
 
     # Supplying `stage_limiter` to a method that does not apply stage limiters
     # errors (by default) rather than silently dropping it.
@@ -96,7 +100,7 @@ end
     for alg in (AB3(), VCAB3(), AitkenNeville())
         STEP_LIMITER_VAR[] = 0
         sol = solve(prob, alg, dt = 0.1; step_limiter = step_limiter!)
-        @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+        @test sol.stats.naccept == STEP_LIMITER_VAR[]
     end
 end
 
@@ -165,7 +169,7 @@ end
         )
         STEP_LIMITER_VAR[] = 0
         sol = solve(split_prob, alg_type(), dt = 0.1; step_limiter = step_limiter!)
-        @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+        @test sol.stats.naccept == STEP_LIMITER_VAR[]
     end
 
     function clamp_split_endpoint!(u, integrator, p, t)
@@ -227,7 +231,7 @@ end
     for alg_type in (Exprb32, Exprb43)
         STEP_LIMITER_VAR[] = 0
         sol = solve(exprb_prob, alg_type(), dt = 0.1; step_limiter = step_limiter!)
-        @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+        @test sol.stats.naccept == STEP_LIMITER_VAR[]
     end
 end
 
@@ -235,11 +239,11 @@ end
     prob = ODEProblem((du, u, p, t) -> du .= u, [1.0], (0.0, 1.0))
 
     # A non-trivial `step_limiter!` field (old API) is routed into the solve-level
-    # path and still applied once per attempted step.
+    # path and still applied once per accepted step.
     STEP_LIMITER_VAR[] = 0
     sol = solve(prob, SSPRK43(; step_limiter! = step_limiter!), dt = 0.1)
     @test STEP_LIMITER_VAR[] > 0
-    @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+    @test sol.stats.naccept == STEP_LIMITER_VAR[]
 
     # A non-trivial `stage_limiter!` field (old API) is still applied.
     STEP_LIMITER_VAR[] = 0

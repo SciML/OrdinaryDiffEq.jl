@@ -173,7 +173,7 @@ function apply_step!(integrator)
     return nothing
 end
 
-# `step_limiter` is applied centrally, once per attempted step, for every method
+# `step_limiter` is applied centrally, once per accepted step, for every method
 # (stage limiters are applied per stage inside `perform_step!`). Applying it here
 # rather than inside each `perform_step!` keeps a single application point and
 # avoids double application when a method borrows another's `perform_step!` (e.g.
@@ -582,7 +582,6 @@ function _loopfooter!(integrator)
         integrator.accept_step = false
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
-        apply_solve_step_limiter!(integrator, ttmp)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
         integrator.accept_step = (
             !integrator.isout &&
@@ -597,6 +596,7 @@ function _loopfooter!(integrator)
         )
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
+            apply_solve_step_limiter!(integrator, ttmp)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
 

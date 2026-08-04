@@ -101,7 +101,7 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
                 "limiters (it does not opt into `OrdinaryDiffEqCore.has_stage_limiter`). This " *
                 "errors by default; set the `stage_limiter_unused` verbosity toggle to " *
                 "`WarnLevel()` or `Silent()` to allow it. Use `step_limiter` for a limiter " *
-                "applied once per attempted step, which every method supports.",
+                "applied once per accepted step, which every method supports.",
             verbose_spec, :stage_limiter_unused
         )
     end
