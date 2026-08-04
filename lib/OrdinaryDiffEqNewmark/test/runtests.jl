@@ -218,6 +218,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test_throws AssertionError GeneralizedAlpha(0.3, 0.1, 0.25, 0.5)
         @test_throws AssertionError GeneralizedAlpha(0.0, 0.6, 0.25, 0.5)
     end
+
+    @time @safetestset "Inner Nonlinear Solver Caches" include("nlsolve_cache_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET) - skip on pre-release Julia
