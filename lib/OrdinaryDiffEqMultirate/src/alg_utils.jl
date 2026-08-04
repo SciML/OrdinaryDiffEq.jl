@@ -5,6 +5,18 @@ function prepare_alg(alg::MREEF, u0::AbstractArray, p, prob)
     return alg
 end
 
+alg_order(alg::MREIL) = alg.order
+isfsal(::MREIL) = false
+
+# The linearly implicit base method differentiates the *fast* component, so the
+# shared `nlsolve_f`/`islinearfunction` machinery must resolve a SplitFunction to
+# `f1` rather than to the whole right-hand side.
+issplit(::MREIL) = true
+
+# Inherited from the Rosenbrock algorithm union, but the linearly implicit Euler
+# base method has no time-derivative term, so `t` is never differentiated through.
+SciMLBase.forwarddiffs_model_time(::MREIL) = false
+
 alg_order(alg::MRAB) = alg.k
 isfsal(::MRAB) = false
 
