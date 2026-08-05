@@ -111,6 +111,7 @@ end
     if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
         activate_modelingtoolkit_env()
         @time @safetestset "Null DE Handling" include("modelingtoolkit/null_de.jl")
+        @time @safetestset "ModelingToolkit events" include("modelingtoolkit/events.jl")
     end
 
     # Sundials tests — only run when DiffEqBase itself changes
