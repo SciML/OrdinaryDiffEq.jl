@@ -41,7 +41,7 @@ methods when stiffness is detected. It chooses among `Tsit5`, `Vern7`,
 `Rosenbrock23`, `Rodas5P`, and `FBDF`, using Krylov-based `FBDF` for larger stiff
 systems.
 
-# Keyword Arguments
+# Keywords
 
   - `lazy`: controls lazy tableau construction for `Vern7`.
   - `stiffalgfirst`: start on the stiff solver branch when `true`.
@@ -51,6 +51,7 @@ systems.
 
 ```julia
 using OrdinaryDiffEqDefault
+using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -u[1]
@@ -216,7 +217,7 @@ This is useful when a problem is expected to be stiff but can still benefit from
 automatic switching. The nonstiff branch contains `Tsit5` and `Vern7`; the stiff
 branch contains `Rosenbrock23`, `Rodas5P`, and `FBDF` variants.
 
-# Keyword Arguments
+# Keywords
 
   - `lazy`: controls lazy tableau construction for `Vern7`.
   - `stol`: stiffness-detection tolerance passed as `stifftol`.
@@ -227,6 +228,7 @@ branch contains `Rosenbrock23`, `Rodas5P`, and `FBDF` variants.
 
 ```julia
 using OrdinaryDiffEqDefault
+using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -1000u[1]
