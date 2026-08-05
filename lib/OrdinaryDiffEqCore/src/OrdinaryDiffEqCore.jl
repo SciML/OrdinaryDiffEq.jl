@@ -6,9 +6,6 @@ if isdefined(Base, :Experimental) &&
 end
 
 import DocStringExtensions
-import Reexport: @reexport
-using Reexport: @reexport
-@reexport using SciMLBase
 import DiffEqBase
 
 import Logging: @logmsg, LogLevel
@@ -35,9 +32,8 @@ import DiffEqBase: initialize!
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Specialization level owned by SciMLBase (declared `public` there, not
-# exported). Re-exported here so `using OrdinaryDiffEq` surfaces it unqualified.
+# exported). The umbrella package imports and exports it directly.
 import SciMLBase: AutoDePSpecialize
-export AutoDePSpecialize
 
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
@@ -473,7 +469,7 @@ include("precompilation_setup.jl")
             :error_constant, :unitfulvalue,
             # Integrator step / cache / initialization hooks.
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
-            :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
+            :find_algebraic_vars_eqs, :apply_step!, :reset_alg_dependent_opts!,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
             :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
             :initialize_saveat, :initialize_tstops,
