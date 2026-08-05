@@ -56,7 +56,6 @@ OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
 OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
 OrdinaryDiffEqFIRK = {path = "../lib/OrdinaryDiffEqFIRK"}
-OrdinaryDiffEqFeagin = {path = "../lib/OrdinaryDiffEqFeagin"}
 OrdinaryDiffEqHighOrderRK = {path = "../lib/OrdinaryDiffEqHighOrderRK"}
 OrdinaryDiffEqIMEXMultistep = {path = "../lib/OrdinaryDiffEqIMEXMultistep"}
 OrdinaryDiffEqLinear = {path = "../lib/OrdinaryDiffEqLinear"}
