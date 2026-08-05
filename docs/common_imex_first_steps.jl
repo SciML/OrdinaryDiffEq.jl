@@ -19,6 +19,7 @@ function imex_first_steps(name, solver)
 
         ```julia
         using $name
+        using SciMLBase: SplitODEProblem, solve
 
         # Example: A 1D reaction-diffusion system
         # du/dt = f₁(u,p,t) + f₂(u,p,t)
