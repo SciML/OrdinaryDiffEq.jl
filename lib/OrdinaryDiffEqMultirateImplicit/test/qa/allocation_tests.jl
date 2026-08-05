@@ -1,10 +1,10 @@
-using OrdinaryDiffEqMultirate
+using OrdinaryDiffEqMultirateImplicit
 using OrdinaryDiffEqCore
 using SciMLBase: FullSpecialize, SplitFunction, ODEFunction
 using AllocCheck
 using Test
 
-@testset "Multirate Allocation Tests" begin
+@testset "Multirate Implicit Allocation Tests" begin
     function f_fast!(du, u, p, t)
         du[1] = -0.9 * u[1]
         du[2] = -0.9 * u[2]
@@ -23,10 +23,10 @@ using Test
         [1.0, 1.0], (0.0, 1.0)
     )
 
-    mreef_solvers = [MREEF(), MREEF(m = 8, order = 3)]
+    mreil_solvers = [MREIL(), MREIL(m = 8, order = 3)]
 
-    @testset "MREEF perform_step! Static Analysis" begin
-        for solver in mreef_solvers
+    @testset "MREIL perform_step! Static Analysis" begin
+        for solver in mreil_solvers
             @testset "$(solver) perform_step! allocation check" begin
                 integrator = init(
                     prob, solver, dt = 0.1, save_everystep = false, adaptive = false
@@ -43,10 +43,10 @@ using Test
 
                 if length(allocs) > 0
                     println(
-                        "AllocCheck found $(length(allocs)) allocation sites in MREEF perform_step!"
+                        "AllocCheck found $(length(allocs)) allocation sites in MREIL perform_step!"
                     )
                 else
-                    println("MREEF perform_step! appears allocation-free with AllocCheck")
+                    println("MREIL perform_step! appears allocation-free with AllocCheck")
                 end
             end
         end

@@ -1,4 +1,5 @@
-using OrdinaryDiffEqMultirate, OrdinaryDiffEqLowOrderRK, DiffEqDevTools, Test, LinearAlgebra
+using OrdinaryDiffEqMultirateImplicit, OrdinaryDiffEqMultirate, OrdinaryDiffEqLowOrderRK,
+    DiffEqDevTools, Test, LinearAlgebra
 using SparseArrays, LinearSolve, SciMLOperators
 using ADTypes: AutoFiniteDiff
 
