@@ -2,10 +2,18 @@ using SciMLTesting, OrdinaryDiffEqNonlinearSolve, Test
 using Aqua
 
 @static if VERSION >= v"1.11.0-DEV.469"
-    for name in (:NLNewton, :NLFunctional, :NLAnderson, :NonlinearSolveAlg, :HomotopyNonlinearSolveAlg)
+    for name in (
+            :NLNewton, :NLFunctional, :NLAnderson, :NonlinearSolveAlg,
+            :HomotopyNonlinearSolveAlg, :build_nlsolver, :nlsolve!, :nlsolvefail,
+            :markfirststage!, :du_alias_or_new, :can_smooth_est, :compute_step!,
+            :initial_η, :anderson, :anderson!,
+        )
         @test Base.ispublic(OrdinaryDiffEqNonlinearSolve, name)
     end
-    for name in (:anderson, :anderson!, :compute_step!, :initial_η, :nlsolve!, :nlsolvefail)
+    for name in (
+            :NLSolver, :NLFunctionalCache, :NLAndersonCache, :NLNewtonCache,
+            :NonlinearSolveCache, :HomotopyNonlinearSolveCache,
+        )
         @test !Base.ispublic(OrdinaryDiffEqNonlinearSolve, name)
     end
 end

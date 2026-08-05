@@ -15,11 +15,23 @@ get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cu
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
 
 """
-    nlsolvefail(nlsolver) -> Bool
+    nlsolvefail(nlsolver::AbstractNLSolver) -> Bool
     nlsolvefail(status::NLStatus) -> Bool
 
-Return whether a nonlinear solve failed, i.e. whether the solver's
-[`NLStatus`](@ref) is non-positive (`SlowConvergence` or worse).
+Return whether a nonlinear solve failed.
+
+# Arguments
+
+  - `nlsolver`: a nonlinear solver whose current outcome is stored in its `status`
+    property.
+  - `status`: an [`OrdinaryDiffEqCore.NLStatus`](@ref) to classify directly.
+
+# Returns
+
+`true` for a non-positive status (`SlowConvergence`, `VerySlowConvergence`, or
+`Divergence`) and `false` for `Convergence` or `FastConvergence`. Sibling solver
+packages use this predicate after [`nlsolve!`](@ref) to decide whether to abandon
+the current integrator step.
 """
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
@@ -32,8 +44,16 @@ isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
 
-# Whether the solver can supply the W linear solve for the SDIRK/ESDIRK `smooth_est` estimate;
-# otherwise the caller falls back to the raw embedded estimate.
+"""
+    can_smooth_est(nlsolver::AbstractNLSolver) -> Bool
+
+Return whether `nlsolver` can reuse its current `W` linear solve for an implicit
+method's smoothed error estimate.
+
+This capability query does not expose the nonlinear solver's cache or
+factorization representation. A solver-author caller must use the ordinary
+embedded estimate when this function returns `false`.
+"""
 can_smooth_est(nlsolver::AbstractNLSolver) = can_smooth_est(nlsolver.cache)
 can_smooth_est(cache::AbstractNLSolverCache) = isnewton(cache)
 can_smooth_est(cache::NonlinearSolveCache) = cache.linsolve !== nothing
@@ -51,13 +71,20 @@ function setfirststage!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, va
 end
 setfirststage!(::Any, val::Bool) = nothing
 """
-    markfirststage!(nlsolver)
+    markfirststage!(nlsolver::AbstractNLSolver) -> Nothing
 
-Mark the nonlinear solver as being on the first implicit stage of the current
-step (sets the cache's `firststage` flag to `true`). Used so predictor/`W`-reuse
-logic can distinguish the first stage from later ones.
+Mark `nlsolver` as being on the first implicit stage of the current integrator
+step.
+
+This mutates the solver's stage state when its algorithm tracks one and is a
+no-op otherwise. Predictor and `W`-reuse logic may query the marker through
+[`OrdinaryDiffEqCore.isfirststage`](@ref). The marker is cleared by
+[`nlsolve!`](@ref)'s postamble after a solve.
 """
-markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
+function markfirststage!(nlsolver::AbstractNLSolver)
+    setfirststage!(nlsolver, true)
+    return nothing
+end
 
 getnfails(_) = 0
 getnfails(nlsolver::AbstractNLSolver) = nlsolver.nfails
@@ -83,10 +110,23 @@ du_cache(::AbstractNLSolverCache) = nothing
 du_cache(nlcache::Union{NLFunctionalCache, NLAndersonCache, NLNewtonCache}) = (nlcache.k,)
 
 """
-    du_alias_or_new(nlsolver, rate_prototype)
+    du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
 
-Return a derivative buffer for the nonlinear solve: reuse the solver cache's
-existing `du` buffer when it has one, otherwise allocate `zero(rate_prototype)`.
+Return a derivative buffer compatible with `rate_prototype`.
+
+# Arguments
+
+  - `nlsolver`: the nonlinear solver that may already own a reusable derivative
+    workspace.
+  - `rate_prototype`: the integrator's derivative prototype and the template for
+    a newly allocated buffer.
+
+# Returns
+
+The solver-owned derivative workspace when one is available; otherwise
+`zero(rate_prototype)`. The returned object is mutable solver workspace when it
+aliases an existing buffer, so callers may use it while constructing their
+integrator cache but must not retain it beyond the nonlinear solver's lifetime.
 """
 function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     _du_cache = du_cache(nlsolver)
@@ -309,12 +349,54 @@ end
                    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
                    iip, verbose) -> AbstractNLSolver
 
-Construct the nonlinear solver object (an [`AbstractNLSolver`](@ref)) that an
-implicit algorithm `alg` uses to solve its stage equations. `γ` and `c` are the
-stage's diagonal coefficient and abscissa, `α` an optional scaling, `iip` the
-in-place flag; the nonlinear-solver algorithm defaults to `alg.nlsolve`. Allocates
-the appropriate cache (Newton `W`/factorization, functional/Anderson buffers, …)
-for the chosen `nlalg`.
+Construct the nonlinear solver used by an implicit integrator algorithm.
+
+# Arguments
+
+  - `alg`: the implicit ODE, DAE, or stochastic integrator algorithm that owns
+    the stage equation and differentiation configuration.
+  - `nlalg`: optional nonlinear-solver algorithm. When omitted, `alg.nlsolve` is
+    used.
+  - `u`, `uprev`: current- and previous-state prototypes used to size solver
+    workspaces.
+  - `p`, `t`, `dt`: problem parameters, initial time, and initial step size.
+  - `f`: the ODE or DAE function used by the implicit stage equation.
+  - `rate_prototype`: derivative prototype used to size rate workspaces.
+  - `uEltypeNoUnits`, `uBottomEltypeNoUnits`, `tTypeNoUnits`: unitless scalar
+    types chosen by the integrator cache constructor.
+  - `γ`, `c`: diagonal stage coefficient and stage abscissa.
+  - `α`: optional stage scaling; defaults to `1`.
+  - `iip`: `Val(true)` for an in-place problem and `Val(false)` for an
+    out-of-place problem.
+  - `verbose`: the integrator's differential-equation verbosity configuration.
+
+# Returns
+
+An [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref). Its concrete type and cache are
+implementation details; solver packages should retain the returned object and
+operate on it through the documented nonlinear-solver interfaces. The factory
+may retain aliases to the supplied prototypes as solver-owned workspace.
+
+# Failure behavior
+
+Unsupported nonlinear-solver algorithms fail by dispatch. A homotopy nonlinear
+solver requested for a DAE throws `ArgumentError`; failures from Jacobian,
+linear-solver, or inner nonlinear-solver initialization propagate to the caller.
+
+# Solver-author usage
+
+Implicit algorithm cache constructors call this factory once with their real
+algorithm and problem prototypes, then pass the returned object to
+[`nlsolve!`](@ref) for each stage. For example, a DIRK cache constructor uses the
+form
+
+```julia
+nlsolver = build_nlsolver(
+    alg, u, uprev, p, t, dt, f, rate_prototype,
+    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits,
+    gamma, stage_abscissa, iip, verbose
+)
+```
 """
 function build_nlsolver(
         alg, u, uprev, p, t, dt, f::F, rate_prototype,
@@ -754,10 +836,18 @@ end
 ## Anderson acceleration
 
 """
-    anderson(z, cache)
+    anderson(z, cache) -> accelerated_z
 
-Return the next iterate of the fixed-point iteration `z = g(z)` by performing Anderson
-acceleration based on the current iterate `z` and the settings and history in the `cache`.
+Return an Anderson-accelerated iterate for the fixed-point iteration `z = g(z)`.
+
+`z` is the current iterate and `cache` is the Anderson workspace initialized by
+the calling nonlinear solver. The function updates the workspace's iteration
+history but returns the accelerated state rather than mutating `z`. Solver
+packages that reuse this helper own the workspace's construction and lifetime;
+no concrete Anderson cache type is part of this API.
+
+Linear-algebra failures while updating or solving the history least-squares
+system propagate to the caller.
 """
 @muladd function anderson(z, cache)
     (; dz, Δz₊s, z₊old, dzold, R, Q, γs, history, droptol) = cache
@@ -820,10 +910,15 @@ acceleration based on the current iterate `z` and the settings and history in th
 end
 
 """
-    anderson!(z, cache)
+    anderson!(z, cache) -> Nothing
 
-Update the current iterate `z` of the fixed-point iteration `z = g(z)` in-place
-by performing Anderson acceleration based on the settings and history in the `cache`.
+Update the current iterate `z` of the fixed-point iteration `z = g(z)` in place
+using Anderson acceleration.
+
+`cache` is the Anderson workspace initialized by the calling nonlinear solver.
+Both `z` and the workspace history are mutated. Solver packages that reuse this
+helper own the workspace's construction and lifetime; no concrete Anderson cache
+type is part of this API. Linear-algebra failures propagate to the caller.
 """
 @muladd function anderson!(z, cache)
     (; dz, z₊old, dzold, Δz₊s, γs, R, Q, history, droptol) = cache
