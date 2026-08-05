@@ -1,0 +1,230 @@
+@doc differentiation_rk_docstring(
+    "Multirate Richardson Extrapolation with linearly implicit Euler as the base
+method (MREIL).
+
+Solves a split ODE of the form `du/dt = f1(u,t) + f2(u,t)` where `f1` is the
+fast component and `f2` is the slow component (SciML convention). The slow rate
+`f2` is frozen over each macro interval and the fast rate `f1` is integrated
+with `m` linearly implicit Euler substeps
+
+```
+(M - h_fast * J) * Δ = h_fast * (f1 + f2_frozen),   u ← u + Δ
+```
+
+where `J` is the Jacobian of the fast component and `M` is the (constant) mass
+matrix of the split function. Aitken–Neville Richardson extrapolation over `order`
+base solutions is then applied to boost accuracy.
+
+Each substep costs one linear solve and no Newton iteration. `h_fast` depends only on
+the extrapolation column, so `W = J - M/h_fast` is built and factorized once per column
+and reused by every substep in it, and `J` itself is evaluated once per step.
+
+The advantage over the explicit `MREEF` is specific to a *dissipative* stiff fast
+subsystem, where `MREEF`'s step size is stability limited and MREIL's is not: on a fast
+block with eigenvalue `-1e4` at `reltol = abstol = 1e-6`, MREIL accepts 27 steps to
+`MREEF`'s 976 for the same accuracy.
+
+On the scalar test problem the base method reduces to implicit Euler, so `R(z)` is the
+Aitken–Neville extrapolation of `(1 - z/N_j)^(-N_j)` over the columns' substep counts
+`N_j`, giving `R(∞) = 0` at every order. A-stability, however, holds only at
+`order = 2`: with the default `m = 4` the maximum of `|R(z)|` over the closed left half
+plane is exactly 1 at order 2 and 1.000594, 1.001502 and 1.002282 at orders 3, 4 and 5,
+attained on the imaginary axis. MREIL is therefore L-stable at `order = 2` and, lacking
+A-stability, not L-stable above it.
+
+Neither side of that is safe for an undamped oscillation at fixed `dt`, and neither is
+reported. On `u' = iωu` at `order = 4`, 200 steps at `ω*dt = 2.5615`, where `|R|` peaks,
+return `Success` with `|u| = 1.35` against an exact `|u| = 1`, because the 1.0015
+per-step excursion compounds; 200 steps at `ω*dt = 100` return `Success` with `|u| = 0`.
+Adaptive stepping recovers both, to `|u|` within 2e-4 of 1.
+
+The slow rate is frozen over each macro interval. That is a first-order
+approximation of the base method that extrapolation does not remove, so while the fast
+state feeds the slow rate and the fast transient is unresolved, shrinking `dt` buys
+nothing: with a fast eigenvalue of `-1e4` the fixed-`dt` error is 7.1e-5 at `dt = 0.05`
+and still 6.9e-5 at `dt = 0.0125`, a plateau of order `1/λ`. Adaptive stepping resolves
+the transient and never sees the plateau.
+
+For a large fast subsystem, write `jac_prototype` (and `jac`, when available) on `f1`.
+Both are also read off the outer function when they are not on `f1`, and either
+placement gives the same answer, but only a prototype on `f1` reaches the sparsity
+pattern automatic differentiation colours with: `SplitFunction` copies `sparsity` from
+`f1.sparsity`, not from a `jac_prototype` passed alongside it.
+
+`linsolve` applies to the in-place path. A scalar or out-of-place problem always
+uses a direct factorization, as Rosenbrock's constant cache does.",
+    "MREIL",
+    "Multirate linearly implicit extrapolation method.",
+    references = """@article{constantinescu2013extrapolated,
+    title={Extrapolated multirate methods for differential equations with multiple time scales},
+    author={Constantinescu, Emil M and Sandu, Adrian},
+    journal={Journal of Scientific Computing},
+    volume={56},
+    number={1},
+    pages={28--44},
+    year={2013}}""",
+    extra_keyword_description = """
+    - `m`: number of fast substeps per macro interval. Default is `4`.
+    - `order`: extrapolation order (number of base solutions). Default is `4`.
+    - `seq`: subdivision sequence, `:harmonic` (default) or `:romberg`.
+    """,
+    extra_keyword_default = """
+    m = 4,
+    order = 4,
+    seq = :harmonic,
+    """
+)
+struct MREIL{AD, F, CJ} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+    m::Int
+    order::Int
+    seq::Symbol
+    linsolve::F
+    autodiff::AD
+    concrete_jac::CJ
+end
+
+function MREIL(;
+        m::Int = 4, order::Int = 4, seq::Symbol = :harmonic,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing
+    )
+    m >= 1 || throw(ArgumentError("MREIL: `m` must be ≥ 1"))
+    order >= 2 || throw(ArgumentError("MREIL: `order` must be ≥ 2"))
+    autodiff = _fixup_ad(autodiff)
+    return MREIL(m, order, seq, linsolve, autodiff, _unwrap_val(concrete_jac))
+end
+
+@doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — 2nd-order solve-decoupled implicit (MRI-GARK-IRK21a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). 2nd-order solve-decoupled
+implicit MRI-GARK method of Sandu 2019: the fast component is integrated over the
+step with `m` explicit-midpoint inner micro-steps and a frozen slow forcing, then
+a final `Δc = 0` stage applies an implicit trapezoidal correction that requires a
+nonlinear solve in the slow rate `f2`. Suited to problems whose slow component is
+itself stiff — the case explicit MRI-GARK cannot handle.",
+    "MRIGARKIRK21a",
+    "Multirate infinitesimal GARK solve-decoupled implicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner midpoint micro-steps for the fast stage.
+    """,
+    """
+    m::Int,
+    """
+)
+struct MRIGARKIRK21a{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    m::Int
+    linsolve::F
+    nlsolve::F2
+    autodiff::AD
+    concrete_jac::CJ
+end
+
+function MRIGARKIRK21a(;
+        m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton()
+    )
+    autodiff = _fixup_ad(autodiff)
+    return MRIGARKIRK21a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
+end
+
+@doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — 3rd-order solve-decoupled implicit (MRI-GARK-ESDIRK34a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). 6-stage, 3rd-order
+solve-decoupled implicit MRI-GARK method of Sandu 2019: the fast component is
+integrated over three sub-intervals with `m` explicit-RK3 inner micro-steps, each
+followed by a `Δc = 0` stage that applies an ESDIRK slow correction requiring a
+nonlinear solve in the slow rate `f2`. The three implicit stages share the common
+diagonal coefficient, so a single Jacobian/`W` is reused. Suited to problems whose
+slow component is itself stiff — the case explicit MRI-GARK cannot handle.",
+    "MRIGARKESDIRK34a",
+    "Multirate infinitesimal GARK solve-decoupled implicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner RK3 micro-steps per fast stage.
+    """,
+    """
+    m::Int,
+    """
+)
+struct MRIGARKESDIRK34a{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    m::Int
+    linsolve::F
+    nlsolve::F2
+    autodiff::AD
+    concrete_jac::CJ
+end
+
+function MRIGARKESDIRK34a(;
+        m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton()
+    )
+    autodiff = _fixup_ad(autodiff)
+    return MRIGARKESDIRK34a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
+end
+
+@doc generic_solver_docstring(
+    "Multirate Infinitesimal GARK — 4th-order solve-decoupled implicit (MRI-GARK-ESDIRK46a).
+
+Solves a SplitODE `du/dt = f1(u,t) + f2(u,t)` where `f1` is the fast component
+and `f2` is the slow component (SciML convention). 11-stage, 4th-order
+solve-decoupled implicit MRI-GARK method of Sandu 2019: the fast component is
+integrated over five sub-intervals with `m` explicit-RK4 inner micro-steps, each
+followed by a `Δc = 0` stage that applies an ESDIRK slow correction requiring a
+nonlinear solve in the slow rate `f2`. The five implicit stages share the common
+diagonal coefficient `1/4`, so a single Jacobian/`W` is reused. Unlike the lower
+order members of the family this method carries a 3rd-order embedded pair, giving
+a proper local error estimate for adaptive stepping.",
+    "MRIGARKESDIRK46a",
+    "Multirate infinitesimal GARK solve-decoupled implicit method.",
+    """@article{sandu2019class,
+    title={A class of multirate infinitesimal {GARK} methods},
+    author={Sandu, Adrian},
+    journal={SIAM Journal on Numerical Analysis},
+    volume={57},
+    number={5},
+    pages={2300--2327},
+    year={2019}}""",
+    """
+    - `m`: number of inner RK4 micro-steps per fast stage.
+    """,
+    """
+    m::Int,
+    """
+)
+struct MRIGARKESDIRK46a{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    m::Int
+    linsolve::F
+    nlsolve::F2
+    autodiff::AD
+    concrete_jac::CJ
+end
+
+function MRIGARKESDIRK46a(;
+        m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton()
+    )
+    autodiff = _fixup_ad(autodiff)
+    return MRIGARKESDIRK46a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
+end
+
+const MRIGARKImplicitAlg = Union{
+    MRIGARKIRK21a, MRIGARKESDIRK34a, MRIGARKESDIRK46a,
+}
