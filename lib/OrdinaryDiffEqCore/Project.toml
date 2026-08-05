@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqCore"
 uuid = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "4.13.0"
+version = "4.14.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -51,7 +51,7 @@ OrdinaryDiffEqCorePolyesterExt = "Polyester"
 OrdinaryDiffEqCoreSparseArraysExt = "SparseArrays"
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.4"
 ADTypes = "1.22.0"
 Accessors = "0.1.42"
 ConstructionBase = "1.5.8"
@@ -113,16 +113,3 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting"]
-
-[sources]
-DiffEqBase = {path = "../DiffEqBase"}
-DiffEqDevTools = {path = "../DiffEqDevTools"}
-
-[sources.OrdinaryDiffEqFIRK]
-path = "../OrdinaryDiffEqFIRK"
-
-[sources.OrdinaryDiffEqRosenbrock]
-path = "../OrdinaryDiffEqRosenbrock"
-
-[sources.OrdinaryDiffEqTsit5]
-path = "../OrdinaryDiffEqTsit5"

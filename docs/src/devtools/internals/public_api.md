@@ -43,6 +43,18 @@ DiffEqBase.stripunits
 DiffEqBase.timedepentdtmin
 ```
 
+## Solver code-generation utilities
+
+These macros are versioned for solver packages, not application code. Generated
+tableau bindings are local implementation details. Foldability and loop-policy
+annotations may only be applied when their documented effect assumptions hold.
+
+```@docs
+DiffEqBase.@tight_loop_macros
+OrdinaryDiffEqCore.@OnDemandTableauExtract
+OrdinaryDiffEqCore.@fold
+```
+
 ## Algorithm type hierarchy
 
 Every solver subtypes one of these abstract algorithm types.

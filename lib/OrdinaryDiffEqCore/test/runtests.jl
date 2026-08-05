@@ -6,11 +6,18 @@ const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
+    Pkg.develop(
+        [
+            PackageSpec(path = joinpath(@__DIR__, "..", "..", "..")),
+            PackageSpec(path = joinpath(@__DIR__, "..", "..", "DiffEqBase")),
+            PackageSpec(path = joinpath(@__DIR__, "..")),
+        ]
+    )
     return Pkg.instantiate()
 end
 
 function activate_qa_env()
-    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+    return activate_group_env(joinpath(@__DIR__, "qa"))
 end
 
 # Run GPU tests
@@ -33,6 +40,7 @@ end
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Developer Time Queue API" include("developer_time_queue_api_tests.jl")
+    @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
     @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
     @time @safetestset "Algebraic Vars Detection" include("algebraic_vars_detection_tests.jl")
     @time @safetestset "Interpolation Search Hint" include("interpolation_hint_tests.jl")

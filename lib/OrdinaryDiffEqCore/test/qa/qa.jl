@@ -17,7 +17,6 @@ end
 run_qa(
     OrdinaryDiffEqCore;
     aqua_kwargs = (; piracies = false, unbound_args = false),
-    explicit_imports = true,
     ei_kwargs = (;
         no_implicit_imports = (; allow_unanalyzable = UNANALYZABLE),
         # These names are not used by OrdinaryDiffEqCore itself, but are imported
@@ -41,8 +40,6 @@ run_qa(
                 :NAN_CHECK,
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
-                # SciMLOperators internal
-                :AbstractSciMLOperator,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
                 :EnzymeRules, :inactive_noinl,
                 # SciMLBase internals with no public replacement yet
@@ -67,7 +64,7 @@ run_qa(
                 # FastPower internal
                 :fastpower,
                 # SciMLBase internals
-                :SENSITIVITY_INTERP_MESSAGE, :_unwrap_val, :last_step_failed,
+                :SENSITIVITY_INTERP_MESSAGE, :last_step_failed,
                 :postamble!,
                 # DiffEqBase internal
                 :_process_verbose_param,
