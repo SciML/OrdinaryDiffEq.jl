@@ -13,9 +13,8 @@ import LinearSolve
 using LinearAlgebra: I
 using EnumX: EnumX
 
-using Reexport: Reexport, @reexport
-using SciMLBase: SciMLBase, ODEProblem, DAEProblem, solve
-@reexport using SciMLBase
+import SciMLBase
+using SciMLBase: ODEProblem, DAEProblem, solve
 
 include("default_alg.jl")
 

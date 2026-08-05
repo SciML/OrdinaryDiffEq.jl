@@ -69,6 +69,7 @@ OrdinaryDiffEq.AutoSparse
 
 ```@docs
 OrdinaryDiffEq.DefaultODEAlgorithm
+OrdinaryDiffEq.DefaultImplicitODEAlgorithm
 ```
 
 ## Interface modules
