@@ -11,7 +11,12 @@
 # "already at the root" and "has not decided anything yet".
 _rejected_trial_step(nlsolver, ndz) = false
 function _rejected_trial_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
-    return iszero(ndz) && NonlinearSolveBase.not_terminated(nlsolver.cache.cache)
+    nlcache = nlsolver.cache.cache
+    # A no-init cache is `solve!`-driven, so it has no trial-step state to reject (and no
+    # `force_stop`/`nsteps` for `not_terminated` to read): a zero `ndz` there means a
+    # complete inner solve returned the iterate unchanged, which is genuine convergence.
+    nlcache isa NonlinearSolveNoInitCache && return false
+    return iszero(ndz) && NonlinearSolveBase.not_terminated(nlcache)
 end
 
 """

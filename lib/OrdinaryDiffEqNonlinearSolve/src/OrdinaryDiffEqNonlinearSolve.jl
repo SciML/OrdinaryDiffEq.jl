@@ -22,8 +22,12 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, New
 import NonlinearSolveBase
 # `get_u`/`get_fu` are the only inner-state reads that hold for every inner cache type:
 # polyalgorithm caches keep `u`/`fu` on the active branch, not as top-level fields.
+# `NonlinearSolveNoInitCache` is the fallback cache for algorithms with no `__init` (every
+# SimpleNonlinearSolve algorithm): it holds no iteration state, so `step!`, `get_fu`,
+# `.stats` and `not_terminated` are all off-limits and it can only be driven by `solve!`.
 using NonlinearSolveBase:
     ArcLengthContinuation, HomotopyPolyAlgorithm, HomotopySweep, KantorovichHomotopy,
+    NonlinearSolveNoInitCache,
     get_linear_cache, get_u, get_fu
 using MuladdMacro: @muladd
 using FastBroadcast: @..

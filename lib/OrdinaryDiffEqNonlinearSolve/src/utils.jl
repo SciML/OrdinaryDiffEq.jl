@@ -502,6 +502,16 @@ function build_nlsolver(
                     abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
                 )
             )
+            if cache isa NonlinearSolveNoInitCache
+                # An inner algorithm with no `__init` (every SimpleNonlinearSolve algorithm)
+                # lands in this fallback cache, which only records the kwargs and splats them
+                # into a complete `solve` per outer iteration — it cannot be driven one
+                # `step!` at a time, so the integrator cannot own its convergence. The zeroed
+                # tolerances above would then make every inner solve run to `MaxIters`
+                # (except when the residual lands on exactly 0.0), so rebuild without them:
+                # the inner solver terminates on its own default (nonzero) tolerances.
+                cache = init(prob, inner_alg; verbose = verbose.nonlinear_verbosity)
+            end
             # Smoothed estimate `W \ tmp` reuses the inner solver's own W factorization (see
             # NonlinearSolveCache); `nothing` when it exposes none (native scalar/StaticArray
             # solve) falls back to the raw estimate.
@@ -692,6 +702,11 @@ function build_nlsolver(
                     abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
                 )
             )
+            if cache isa NonlinearSolveNoInitCache
+                # `solve!`-driven fallback cache: it must keep terminating on its own
+                # default (nonzero) tolerances (see the in-place branch above).
+                cache = init(prob, inner_alg; verbose = verbose.nonlinear_verbosity)
+            end
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
                 nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,

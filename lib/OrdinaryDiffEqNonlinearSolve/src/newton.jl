@@ -41,7 +41,11 @@ function initialize!(
     cache.tstep = integrator.t + nlsolver.c * dt
 
     (; ustep, tstep, k, invγdt) = cache
-    if SciMLBase.has_stats(integrator)
+    # A no-init cache has no `stats` (SimpleNonlinearSolve builds every solution with
+    # `stats === nothing`), and its `reinit!` only remakes the problem without evaluating
+    # the residual, so neither the copies below nor the `+1` apply: nothing is counted and
+    # nothing is invented.
+    if SciMLBase.has_stats(integrator) && !(cache.cache isa NonlinearSolveNoInitCache)
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
@@ -85,7 +89,12 @@ function initialize!(
 
     (; ustep, atmp, tstep, k, invγdt) = cache
 
-    if SciMLBase.has_stats(integrator)
+    # A no-init cache has no `stats` (SimpleNonlinearSolve builds every solution with
+    # `stats === nothing`), and its `reinit!` only remakes the problem without evaluating
+    # the residual, so neither the copies below nor the `+1` apply: nothing is counted and
+    # nothing is invented. `njacs`/`nw` for the reused `W` are still recorded by
+    # `_update_nlsolvealg_W!` — that assembly is the integrator's own work.
+    if SciMLBase.has_stats(integrator) && !(cache.cache isa NonlinearSolveNoInitCache)
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
@@ -152,21 +161,39 @@ function initialize!(
                 SciMLBase.remake(cache.prob; u0 = copy(z), p = nlp_params)
             end
             cache.prob = new_prob
-            # Same tolerances and termination mode as `build_nlsolver`: the integrator owns
-            # convergence, so the inner criterion must stay inert here too (otherwise a resized
-            # cache could terminate on its own again), and the mode is part of the cache's type,
-            # so rebuilding with a different one would not even be assignable.
-            uT = real(eltype(z))
-            cache.cache = init(
-                new_prob, cache.cache.alg;
-                verbose = integrator.opts.verbose.nonlinear_verbosity,
-                abstol = zero(uT), reltol = zero(uT),
-                termination_condition = _inner_termination()
-            )
+            if cache.cache isa NonlinearSolveNoInitCache
+                # A no-init cache is `solve!`-driven, so it must keep terminating on its own
+                # (nonzero, default) tolerances here exactly as on the build path: rebuilding
+                # it with the zeroed tolerances below would leave every complete inner solve
+                # returning `MaxIters`.
+                cache.cache = init(
+                    new_prob, cache.cache.alg;
+                    verbose = integrator.opts.verbose.nonlinear_verbosity
+                )
+            else
+                # Same tolerances and termination mode as `build_nlsolver`: the integrator owns
+                # convergence, so the inner criterion must stay inert here too (otherwise a resized
+                # cache could terminate on its own again), and the mode is part of the cache's type,
+                # so rebuilding with a different one would not even be assignable.
+                uT = real(eltype(z))
+                cache.cache = init(
+                    new_prob, cache.cache.alg;
+                    verbose = integrator.opts.verbose.nonlinear_verbosity,
+                    abstol = zero(uT), reltol = zero(uT),
+                    termination_condition = _inner_termination()
+                )
+            end
             # re-point the estimator linsolve alias at the rebuilt inner cache
             cache.linsolve = cache.W !== nothing ? get_linear_cache(cache.cache) : nothing
         else
-            SciMLBase.reinit!(cache.cache, z, p = nlp_params)
+            # A no-init cache's `reinit!` is `remake(prob; u0, p)`: it stores the array it is
+            # handed and `get_u` reads it straight back. Handing it `z` itself would alias
+            # them, so after `resize!` grows `z` in place the length-mismatch rebuild above
+            # could never fire and the inner problem would keep a stale `WReuseJac` over the
+            # old, smaller `W` — a `SingularException` here, a silently wrong Jacobian at
+            # other sizes. A no-init cache gets a copy of its own.
+            znew = cache.cache isa NonlinearSolveNoInitCache ? copy(z) : z
+            SciMLBase.reinit!(cache.cache, znew, p = nlp_params)
         end
     end
     return nothing
@@ -241,18 +268,32 @@ end
     (; tstep, invγdt) = cache
 
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
-    # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
-    # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
-    # path (the inner solve converged before the integrator's own test was satisfied); any
-    # other terminal state is a genuine failure and must reach the step controller, so report
-    # it the way `NLNewton` reports a failed linear solve.
-    if !NonlinearSolveBase.not_terminated(nlcache) &&
-            !SciMLBase.successful_retcode(nlcache.retcode)
-        return convert(eltype(z), Inf)
+    if nlcache isa NonlinearSolveNoInitCache
+        # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
+        # time: `solve!` runs the complete inner solve and its returned solution is the only
+        # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
+        # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
+        # inner solve; an unsuccessful one is a genuine failure and reaches the step
+        # controller the way `NLNewton` reports a failed linear solve.
+        innersol = solve!(nlcache)
+        if !SciMLBase.successful_retcode(innersol.retcode)
+            return convert(eltype(z), Inf)
+        end
+        active_u = innersol.u
+    else
+        recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+        # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
+        # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
+        # path (the inner solve converged before the integrator's own test was satisfied); any
+        # other terminal state is a genuine failure and must reach the step controller, so report
+        # it the way `NLNewton` reports a failed linear solve.
+        if !NonlinearSolveBase.not_terminated(nlcache) &&
+                !SciMLBase.successful_retcode(nlcache.retcode)
+            return convert(eltype(z), Inf)
+        end
+        step!(nlcache; recompute_jacobian)
+        active_u = get_u(nlcache)
     end
-    step!(nlcache; recompute_jacobian)
-    active_u = get_u(nlcache)
     nlsolver.ztmp = active_u
 
     ustep = compute_ustep(tmp, γ, z, method)
@@ -276,27 +317,52 @@ end
 
     nlstep_data = integrator.f.nlstep_data
     nlcache = nlsolver.cache.cache
-    recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
-    # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
-    # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
-    # path (the inner solve converged before the integrator's own test was satisfied); any
-    # other terminal state is a genuine failure and must reach the step controller, so report
-    # it the way `NLNewton` reports a failed linear solve.
-    if !NonlinearSolveBase.not_terminated(nlcache) &&
-            !SciMLBase.successful_retcode(nlcache.retcode)
-        return convert(eltype(atmp), Inf)
+    if nlcache isa NonlinearSolveNoInitCache
+        # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
+        # time: `solve!` runs the complete inner solve and its returned solution is the only
+        # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
+        # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
+        # inner solve; an unsuccessful one is a genuine failure and reaches the step
+        # controller the way `NLNewton` reports a failed linear solve. No stale-`W` rescale
+        # either: the reused `W` only serves as the inner Newton's Jacobian (`WReuseJac`),
+        # where staleness costs convergence rate, not the root the full solve lands on.
+        innersol = solve!(nlcache)
+        if !SciMLBase.successful_retcode(innersol.retcode)
+            return convert(eltype(atmp), Inf)
+        end
+    else
+        recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
+        # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
+        # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
+        # path (the inner solve converged before the integrator's own test was satisfied); any
+        # other terminal state is a genuine failure and must reach the step controller, so report
+        # it the way `NLNewton` reports a failed linear solve.
+        if !NonlinearSolveBase.not_terminated(nlcache) &&
+                !SciMLBase.successful_retcode(nlcache.retcode)
+            return convert(eltype(atmp), Inf)
+        end
+        rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+        step!(nlcache; recompute_jacobian)
     end
-    rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
-    step!(nlcache; recompute_jacobian)
 
     if nlstep_data !== nothing
-        active_fu = get_fu(nlcache)
-        # No `trace` is attached: this solution only feeds `nlprobmap` right below, and
-        # polyalgorithm caches keep the trace on the active branch with no accessor for it.
-        nlstepsol = SciMLBase.build_solution(
-            nlcache.prob, nlcache.alg, get_u(nlcache), active_fu;
-            nlcache.retcode, nlcache.stats
-        )
+        if nlcache isa NonlinearSolveNoInitCache
+            # `f.nlstep_data !== nothing` selects `f.nlstep_data.nlprob`, which is `init`ed
+            # with whatever inner algorithm was given, so a SimpleNonlinearSolve one lands
+            # in a no-init cache here too. The solution `solve!` already returned is used
+            # as-is instead of rebuilding one from `nlcache.retcode`/`nlcache.stats`/
+            # `get_fu`, none of which exist on this cache.
+            active_fu = innersol.resid
+            nlstepsol = innersol
+        else
+            active_fu = get_fu(nlcache)
+            # No `trace` is attached: this solution only feeds `nlprobmap` right below, and
+            # polyalgorithm caches keep the trace on the active branch with no accessor for it.
+            nlstepsol = SciMLBase.build_solution(
+                nlcache.prob, nlcache.alg, get_u(nlcache), active_fu;
+                nlcache.retcode, nlcache.stats
+            )
+        end
         nlstep_data.nlprobmap(ztmp, nlstepsol)
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         atmp_sub = @view(atmp[nlstep_data.u0perm])
@@ -313,7 +379,7 @@ end
         # convergence check to declare success ~sqrt(n_full/n_sub) early.
         ndz = opts.internalnorm(atmp_sub, t)
     else
-        active_u = get_u(nlcache)
+        active_u = nlcache isa NonlinearSolveNoInitCache ? innersol.u : get_u(nlcache)
         @.. broadcast = false ztmp = active_u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         @.. broadcast = false atmp = z - ztmp
