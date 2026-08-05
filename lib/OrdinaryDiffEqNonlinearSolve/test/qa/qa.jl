@@ -2,8 +2,11 @@ using SciMLTesting, OrdinaryDiffEqNonlinearSolve, Test
 using Aqua
 
 @static if VERSION >= v"1.11.0-DEV.469"
-    for name in (:anderson, :anderson!, :compute_step!, :initial_η, :nlsolve!, :nlsolvefail)
+    for name in (:NLNewton, :NLFunctional, :NLAnderson, :NonlinearSolveAlg, :HomotopyNonlinearSolveAlg)
         @test Base.ispublic(OrdinaryDiffEqNonlinearSolve, name)
+    end
+    for name in (:anderson, :anderson!, :compute_step!, :initial_η, :nlsolve!, :nlsolvefail)
+        @test !Base.ispublic(OrdinaryDiffEqNonlinearSolve, name)
     end
 end
 
@@ -11,8 +14,6 @@ end
 # `[pkg, Base, Core]` module set; see the `Aqua.test_ambiguities` call.
 run_qa(
     OrdinaryDiffEqNonlinearSolve;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
     # `BrownFullBasicInit`/`ShampineCollocationInit` are the user-facing DAE
     # initialization algorithms. DiffEqBase owns, exports, and documents them; this
     # package implements their solver-side methods and re-exports the names so

@@ -676,12 +676,27 @@ sub-caches for a composite algorithm.
 """
 is_composite_cache(cache) = cache isa CompositeCache
 
-# Trait: is this a composite algorithm? Override to include SDE composite algorithms.
 """
     is_composite_algorithm(alg) -> Bool
 
-Return whether `alg isa OrdinaryDiffEqCompositeAlgorithm`, i.e. whether it
-dispatches between several sub-algorithms at runtime.
+Return whether `alg` dispatches between several sub-algorithms at runtime.
+
+# Arguments
+
+- `alg`: An algorithm instance.
+
+# Returns
+
+`true` for an `OrdinaryDiffEqCompositeAlgorithm`, and `false` otherwise.
+
+# Rules
+
+Sibling solver packages with their own composite-algorithm type must extend this
+trait to return `true` for that type.
+
+!!! warning "Developer API"
+    This trait is for solver-package extensions; application code should not
+    dispatch on it.
 """
 is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 
@@ -758,7 +773,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         # keep only components within 20 orders of magnitude of the largest
         if !isempty(blown_idxs)
             max_blown = maximum(abs(u[i]) for i in blown_idxs)
-            cutoff = max_blown * 1e-20
+            cutoff = max_blown * 1.0e-20
             filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
             sort!(blown_idxs, by = i -> abs(u[i]), rev = true)
         end
@@ -789,14 +804,14 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         _find_large_jac_entries!(rows, cols, entries, jac)
 
         # keep only entries within 10 orders of magnitude of the largest finite entry,
-        # plus any non-finite entries. filters out large-but-normal model parameters 
+        # plus any non-finite entries. filters out large-but-normal model parameters
         max_finite = 0.0
         for (_, _, v) in entries
             if isfinite(v)
                 max_finite = max(max_finite, abs(v))
             end
         end
-        cutoff = max_finite * 1e-10
+        cutoff = max_finite * 1.0e-10
         filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
         sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
 
@@ -1139,6 +1154,37 @@ function calc_dt_propose!(integrator, dtnew)
     return nothing
 end
 
+"""
+    fix_dt_at_bounds!(integrator)
+
+Clamp `integrator.dt` to the active `dtmin` and `dtmax` bounds while preserving
+the integration direction.
+
+# Arguments
+
+- `integrator`: An OrdinaryDiffEq integrator with `dt`, `tdir`, and time-step bound options.
+
+# Returns
+
+- `nothing`
+
+# Rules
+
+- Call this from a solver-specific stepping or initialization path after modifying `dt`
+  directly.
+- The result lies between the active `dtmin` and `dtmax` bounds in the direction of
+  integration.
+
+!!! warning "Developer API, not user API"
+    Application code should configure `dtmin` and `dtmax` through `solve` or
+    `init`, rather than mutating an integrator's time step.
+
+# Example
+```julia
+integrator.dt = proposed_dt
+fix_dt_at_bounds!(integrator)
+```
+"""
 function fix_dt_at_bounds!(integrator)
     if integrator.tdir > 0
         integrator.dt = min(integrator.opts.dtmax, integrator.dt)
@@ -1154,6 +1200,38 @@ function fix_dt_at_bounds!(integrator)
     return nothing
 end
 
+"""
+    handle_tstop!(integrator)
+
+Process the current time stop after a solver step. This removes reached stops,
+sets `integrator.just_hit_tstop`, and handles a fixed-step integrator that
+crossed a stop by interpolating back to it.
+
+# Arguments
+
+- `integrator`: An OrdinaryDiffEq integrator that has just advanced its time state.
+
+# Returns
+
+- `nothing`
+
+# Rules
+
+- Solver authors that own a stepping loop should call this after advancing time.
+- Duplicate stops at the current time are consumed together.
+- A fixed-step integrator that crosses a stop is interpolated back to the stop; a
+  time-step-changeable integrator crossing a stop is an invariant violation.
+
+!!! warning "Developer API, not user API"
+    Application code should manage time stops with `add_tstop!` or the `tstops`
+    keyword, not call this hook.
+
+# Example
+```julia
+perform_step!(integrator, cache, false)
+handle_tstop!(integrator)
+```
+"""
 function handle_tstop!(integrator)
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t

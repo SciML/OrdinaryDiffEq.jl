@@ -1,4 +1,5 @@
 [deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -34,6 +35,7 @@ OrdinaryDiffEqSSPRK = "669c94d9-1f4b-4b64-b377-1aa079aa2388"
 OrdinaryDiffEqStabilizedIRK = "e3e12d00-db14-5390-b879-ac3dd2ef6296"
 OrdinaryDiffEqStabilizedRK = "358294b1-0aab-51c3-aafe-ad5ab194a2ad"
 OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
+OrdinaryDiffEqTaylorSeries = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
@@ -54,9 +56,7 @@ OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqDifferentiation = {path = "../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
-OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
 OrdinaryDiffEqFIRK = {path = "../lib/OrdinaryDiffEqFIRK"}
-OrdinaryDiffEqFeagin = {path = "../lib/OrdinaryDiffEqFeagin"}
 OrdinaryDiffEqHighOrderRK = {path = "../lib/OrdinaryDiffEqHighOrderRK"}
 OrdinaryDiffEqIMEXMultistep = {path = "../lib/OrdinaryDiffEqIMEXMultistep"}
 OrdinaryDiffEqLinear = {path = "../lib/OrdinaryDiffEqLinear"}
@@ -81,6 +81,7 @@ StochasticDiffEqLevyArea = {path = "../lib/StochasticDiffEqLevyArea"}
 StochasticDiffEqWeak = {path = "../lib/StochasticDiffEqWeak"}
 
 [compat]
+CommonSolve = "0.2.6"
 DiffEqBase = "7.6.1"
 DiffEqDevTools = "3, 4.0"
 Documenter = "0.27, 1"
@@ -116,6 +117,7 @@ OrdinaryDiffEqSSPRK = "2.0.0"
 OrdinaryDiffEqStabilizedIRK = "2.0.0"
 OrdinaryDiffEqStabilizedRK = "2.0.0"
 OrdinaryDiffEqSymplecticRK = "2.0.0"
+OrdinaryDiffEqTaylorSeries = "2.0.0"
 OrdinaryDiffEqTsit5 = "2.0.0"
 OrdinaryDiffEqVerner = "2.0.0"
 StochasticDiffEqLevyArea = "2"

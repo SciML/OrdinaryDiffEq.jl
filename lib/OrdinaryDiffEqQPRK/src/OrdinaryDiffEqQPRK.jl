@@ -1,7 +1,7 @@
 module OrdinaryDiffEqQPRK
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
-    explicit_rk_docstring, @cache,
+    @cache,
     OrdinaryDiffEqMutableCache,
     @fold, @OnDemandTableauExtract,
     trivial_limiter!, alg_cache,
@@ -13,10 +13,6 @@ using FastBroadcast: FastBroadcast, Serial, @..
 using MuladdMacro: MuladdMacro, @muladd
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
 import OrdinaryDiffEqCore
-
-using SciMLBase: SciMLBase
-using Reexport: Reexport, @reexport
-@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

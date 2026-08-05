@@ -104,6 +104,7 @@ OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
 OrdinaryDiffEqCore.isdefaultalg
+OrdinaryDiffEqCore.is_composite_algorithm
 ```
 
 ## Algorithm trait functions
@@ -206,12 +207,6 @@ OrdinaryDiffEqCore.isJcurrent
 OrdinaryDiffEqCore.resize_J_W!
 OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
-OrdinaryDiffEqNonlinearSolve.nlsolve!
-OrdinaryDiffEqNonlinearSolve.nlsolvefail
-OrdinaryDiffEqNonlinearSolve.compute_step!
-OrdinaryDiffEqNonlinearSolve.initial_η
-OrdinaryDiffEqNonlinearSolve.anderson
-OrdinaryDiffEqNonlinearSolve.anderson!
 ```
 
 ## Jacobian / W-matrix / differentiation configuration
@@ -263,8 +258,10 @@ OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast
 OrdinaryDiffEqCore.perform_step!
 OrdinaryDiffEqCore.apply_step!
-OrdinaryDiffEqCore.postamble!
-OrdinaryDiffEqCore.last_step_failed
+SciMLBase.postamble!
+SciMLBase.last_step_failed
+SciMLBase.check_error
+SciMLBase.check_error!
 OrdinaryDiffEqCore.set_discontinuity
 OrdinaryDiffEqCore.increment_accept!
 OrdinaryDiffEqCore.increment_reject!
@@ -278,6 +275,22 @@ OrdinaryDiffEqCore.get_differential_vars
 OrdinaryDiffEqCore.handle_callback_modifiers!
 OrdinaryDiffEqCore.resolve_stage_step_limiters
 OrdinaryDiffEqCore.trivial_limiter!
+OrdinaryDiffEqCore.DEOptions
+OrdinaryDiffEqCore.DummyController
+```
+
+### Time-stop and saving queues
+
+Custom integrator initialization and stepping loops use these hooks to preserve
+the standard `tstops`, `saveat`, derivative-discontinuity, and time-step-bound
+semantics. They are versioned developer API, not user-facing solver controls.
+
+```@docs
+OrdinaryDiffEqCore.initialize_tstops
+OrdinaryDiffEqCore.initialize_saveat
+OrdinaryDiffEqCore.initialize_d_discontinuities
+OrdinaryDiffEqCore.fix_dt_at_bounds!
+OrdinaryDiffEqCore.handle_tstop!
 ```
 
 ## Dense output / interpolation

@@ -47,7 +47,6 @@ update lives in the algorithm-specific `stepsize_controller!` /
 ```@docs
 OrdinaryDiffEqBDF.BDFController
 OrdinaryDiffEqNordsieck.JVODEController
-OrdinaryDiffEqExtrapolation.ExtrapolationController
 ImplicitDiscreteSolve.KantorovichTypeController
 ```
 

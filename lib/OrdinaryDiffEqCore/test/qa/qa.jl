@@ -16,15 +16,6 @@ end
 
 run_qa(
     OrdinaryDiffEqCore;
-    reexports_allow = union(
-        public_api_names(SciMLBase), (:SciMLBase,),
-        # `last_step_failed`/`postamble!` are SciMLBase-owned generic functions that
-        # OrdinaryDiffEqCore imports, extends, and re-declares `public` as part of the
-        # documented solver-author surface (docs/src/devtools/internals/public_api.md).
-        # SciMLBase has not declared them `public` yet, so `public_reexports` sees them
-        # as owned outside this package; drop these once SciMLBase marks them public.
-        (:last_step_failed, :postamble!),
-    ),
     aqua_kwargs = (; piracies = false, unbound_args = false),
     explicit_imports = true,
     ei_kwargs = (;
@@ -85,10 +76,5 @@ run_qa(
                 :_vec, :_reshape, :unwrap_cache,
             ),
         ),
-    ),
-    api_docs_kwargs = (;
-        rendered = false,
-        # Reexported upstream SciMLOperators names are documented at their owner.
-        ignore = (:StaticWOperator, :has_concretization),
     ),
 )

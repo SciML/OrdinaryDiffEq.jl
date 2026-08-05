@@ -1,15 +1,31 @@
 """
     DEOptions
 
-Mutable container holding the resolved common solver options for a running
-integrator, reachable as `integrator.opts`. Fields include the tolerances
-(`abstol`, `reltol`), the norm (`internalnorm`), step-size bounds
-(`dtmax`, `dtmin`, `failfactor`), the saving controls (`saveat`, `save_everystep`,
-`dense`, `save_start`, `save_end`, …), the `tstops`/`d_discontinuities` schedules
-and their caches, callback (`callback`), domain/stability checks
-(`isoutofdomain`, `unstable_check`), progress-logging options, and the
-`verbose`/`maxiters` settings. Mutating a field changes the solver behavior for
-subsequent steps.
+Mutable container of resolved common solver options, stored on a running
+integrator as `integrator.opts`.
+
+# Fields
+
+- `abstol`, `reltol`, `internalnorm`, and `internalopnorm` control error tests.
+- `dtmin`, `dtmax`, `failfactor`, `force_dtmin`, `advance_to_tstop`, and
+  `stop_at_next_tstop` control time-step selection.
+- `tstops`, `saveat`, `d_discontinuities`, and their corresponding caches manage
+  scheduled times.
+- `save_everystep`, `save_idxs`, `dense`, `save_on`, `save_start`, `save_end`,
+  `save_noise`, `save_discretes`, and `save_end_user` control output.
+- `callback`, `isoutofdomain`, and `unstable_check` configure step checks.
+- `maxiters`, `verbose`, and the `progress` fields configure reporting.
+
+# Rules
+
+Solver implementations may read or update these fields while stepping, but must
+preserve the queue invariants maintained by the initialization and time-stop
+hooks. Application code should configure these options through `solve` or
+`init`, rather than constructing `DEOptions` directly.
+
+!!! warning "Developer API"
+    `DEOptions` is a versioned interface for solver implementations. It is not a
+    user-facing solver configuration type.
 """
 mutable struct DEOptions{
         absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
