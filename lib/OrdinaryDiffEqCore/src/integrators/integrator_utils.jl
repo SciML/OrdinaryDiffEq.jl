@@ -773,7 +773,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         # keep only components within 20 orders of magnitude of the largest
         if !isempty(blown_idxs)
             max_blown = maximum(abs(u[i]) for i in blown_idxs)
-            cutoff = max_blown * 1e-20
+            cutoff = max_blown * 1.0e-20
             filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
             sort!(blown_idxs, by = i -> abs(u[i]), rev = true)
         end
@@ -804,14 +804,14 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         _find_large_jac_entries!(rows, cols, entries, jac)
 
         # keep only entries within 10 orders of magnitude of the largest finite entry,
-        # plus any non-finite entries. filters out large-but-normal model parameters 
+        # plus any non-finite entries. filters out large-but-normal model parameters
         max_finite = 0.0
         for (_, _, v) in entries
             if isfinite(v)
                 max_finite = max(max_finite, abs(v))
             end
         end
-        cutoff = max_finite * 1e-10
+        cutoff = max_finite * 1.0e-10
         filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
         sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
 
@@ -935,7 +935,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     sections = (
         ("State Analysis", state_analysis),
         ("Jacobian Analysis", jacobian_analysis),
-        ("Error Analysis", error_analysis)
+        ("Error Analysis", error_analysis),
     )
     all(isempty(msgs) for (_, msgs) in sections) && return ""
 
