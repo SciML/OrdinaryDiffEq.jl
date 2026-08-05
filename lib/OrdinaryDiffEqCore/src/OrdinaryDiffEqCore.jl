@@ -45,7 +45,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_UNSTABLE_CHECK,
     DEVerbosity, _process_verbose_param
 
-import SciMLOperators: MatrixOperator, FunctionOperator,
+import SciMLOperators: MatrixOperator,
     update_coefficients, update_coefficients!,
     isconstant
 
@@ -61,8 +61,8 @@ using ArrayInterface: ArrayInterface
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 # Integrator Interface
-import Base: resize!
-import SciMLBase: deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+import Base: resize!, deleteat!
+import SciMLBase: addat!, full_cache, user_cache, u_cache, du_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
     terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
     savevalues!,
