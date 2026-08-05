@@ -506,6 +506,16 @@ New code should prefer dedicated controllers like
 [`OrdinaryDiffEqBDF.BDFController`](@ref) or
 [`OrdinaryDiffEqNordsieck.JVODEController`](@ref), which expose the
 knobs as real, settable controller fields.
+
+# Rules
+
+Extend the controller dispatch hooks for an algorithm that owns its step-size
+logic. Do not select `DummyController` for new algorithms when a dedicated
+controller can represent their parameters.
+
+!!! warning "Developer API"
+    This transitional controller is intended for solver implementations, not
+    application code.
 """
 struct DummyController <: AbstractController
 end

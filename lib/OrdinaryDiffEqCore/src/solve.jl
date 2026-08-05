@@ -974,7 +974,40 @@ function handle_dt!(integrator, dt)
     end
 end
 
-# time stops
+"""
+    initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) -> BinaryHeap{T}
+
+Build the internal directional time-stop queue for a solver integrator.
+
+# Arguments
+
+- `T::Type`: Element type of the queue.
+- `tstops`: Iterable of requested stopping times.
+- `d_discontinuities`: Iterable of derivative-discontinuity times.
+- `tspan::Tuple`: Integration start and end times.
+
+# Returns
+
+- `BinaryHeap{T}`: Directional times strictly inside `tspan`, followed by the final time.
+
+# Rules
+
+- Times are stored multiplied by the integration direction, so `pop!` visits the next
+  physical time for both forward and reverse integrations.
+- Entries at or outside the initial and final bounds are discarded; the final bound is
+  inserted exactly once.
+- Solver authors implementing a custom `init` path must use this helper so `tstops`
+  and derivative discontinuities preserve the standard ordering semantics.
+
+!!! warning "Developer API, not user API"
+    Application code should pass `tstops` and `d_discontinuities` to `solve` or
+    `init`; it must not construct this queue directly.
+
+# Example
+```julia
+tstops_internal = initialize_tstops(Float64, (0.25, 0.75), (), (0.0, 1.0))
+```
+"""
 @inline function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where {T}
     tstops_internal = BinaryHeap{T}(FasterForward())
 
@@ -1026,7 +1059,37 @@ function reinit_tstops!(
     return push!(tstops_internal, tdir_tf)
 end
 
-# saving time points
+"""
+    initialize_saveat(::Type{T}, saveat, tspan) -> BinaryHeap{T}
+
+Build the internal directional queue of output times for a solver integrator.
+
+# Arguments
+
+- `T::Type`: Element type of the queue.
+- `saveat`: A positive output interval or iterable of requested output times.
+- `tspan::Tuple`: Integration start and end times.
+
+# Returns
+
+- `BinaryHeap{T}`: Directional output times accepted by the standard `saveat` rules.
+
+# Rules
+
+- A scalar `saveat` is treated as a positive interval in the integration direction.
+- An iterable `saveat` contributes only times strictly after the initial bound and at or
+  before the final bound.
+- Solver authors implementing a custom `init` path must use this helper to preserve
+  forward and reverse integration semantics.
+
+!!! warning "Developer API, not user API"
+    Application code should set the `saveat` keyword on `solve` or `init`.
+
+# Example
+```julia
+saveat_internal = initialize_saveat(Float64, 0.1, (0.0, 1.0))
+```
+"""
 function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     saveat_internal = BinaryHeap{T}(FasterForward())
 
@@ -1071,7 +1134,35 @@ function reinit_saveat!(::Type{T}, saveat_internal, saveat, tspan) where {T}
     end
 end
 
-# discontinuities
+"""
+    initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) -> BinaryHeap{T}
+
+Build the internal directional queue of derivative-discontinuity times.
+
+# Arguments
+
+- `T::Type`: Element type of the queue.
+- `d_discontinuities`: Iterable of derivative-discontinuity times.
+- `tspan::Tuple`: Integration start and end times; its direction determines queue order.
+
+# Returns
+
+- `BinaryHeap{T}`: All requested discontinuities stored in integration direction.
+
+# Rules
+
+- Unlike `initialize_tstops`, this helper does not filter times against `tspan`.
+- Solver authors use this queue only when their initialization path supports the
+  `d_discontinuities` solve keyword.
+
+!!! warning "Developer API, not user API"
+    Application code should supply `d_discontinuities` to `solve` or `init`.
+
+# Example
+```julia
+discontinuities = initialize_d_discontinuities(Float64, (0.5,), (0.0, 1.0))
+```
+"""
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where {T}
     d_discontinuities_internal = BinaryHeap{T}(FasterForward())
     sizehint!(d_discontinuities_internal, length(d_discontinuities))

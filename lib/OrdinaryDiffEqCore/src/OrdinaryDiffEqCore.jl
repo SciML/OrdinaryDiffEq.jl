@@ -45,9 +45,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_UNSTABLE_CHECK,
     DEVerbosity, _process_verbose_param
 
-import SciMLOperators: MatrixOperator, FunctionOperator,
-    update_coefficients, update_coefficients!,
-    isconstant
+import SciMLOperators: MatrixOperator
 
 import Random
 import Printf: @sprintf
@@ -61,8 +59,8 @@ using ArrayInterface: ArrayInterface
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 # Integrator Interface
-import Base: resize!
-import SciMLBase: deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+import Base: resize!, deleteat!
+import SciMLBase: addat!, full_cache, user_cache, u_cache, du_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
     terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
     savevalues!,
@@ -93,9 +91,7 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier, log_numerical_instability, has_mtk_sys
-
-import SciMLOperators: islinear
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
@@ -479,6 +475,8 @@ include("precompilation_setup.jl")
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
             :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
+            :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
+            :initialize_saveat, :initialize_tstops,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
             :is_noise_saveable,

@@ -86,9 +86,4 @@ run_qa(
             ),
         ),
     ),
-    api_docs_kwargs = (;
-        rendered = false,
-        # Reexported upstream SciMLOperators names are documented at their owner.
-        ignore = (:StaticWOperator, :has_concretization),
-    ),
 )
