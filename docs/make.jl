@@ -78,6 +78,7 @@ using OrdinaryDiffEqSSPRK
 using OrdinaryDiffEqStabilizedIRK
 using OrdinaryDiffEqStabilizedRK
 using OrdinaryDiffEqSymplecticRK
+import OrdinaryDiffEqTaylorSeries
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqVerner
 using GlobalDiffEq
@@ -127,6 +128,7 @@ makedocs(
         OrdinaryDiffEqStabilizedIRK,
         OrdinaryDiffEqStabilizedRK,
         OrdinaryDiffEqSymplecticRK,
+        OrdinaryDiffEqTaylorSeries,
         OrdinaryDiffEqTsit5,
         OrdinaryDiffEqVerner,
         OrdinaryDiffEqAMF,

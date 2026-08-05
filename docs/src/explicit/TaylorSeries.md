@@ -103,7 +103,10 @@ Pkg.add("OrdinaryDiffEqTaylorSeries")
 Then use the methods with:
 
 ```julia
-using OrdinaryDiffEqTaylorSeries
+using OrdinaryDiffEqTaylorSeries: ExplicitTaylor2, ExplicitTaylor,
+    ExplicitTaylorAdaptiveOrder
+using CommonSolve: solve
+using SciMLBase: ODEProblem
 
 # Example: Second-order Taylor method
 function f(u, p, t)
@@ -120,15 +123,22 @@ p = [10.0, 28.0, 8/3]
 prob = ODEProblem(f, u0, tspan, p)
 
 # Second-order Taylor method
-sol = solve(prob, ExplicitTaylor2())
+sol = solve(prob, ExplicitTaylor2(), dt = 0.01)
 
 # Arbitrary-order Taylor method (e.g., 8th order)
-sol = solve(prob, ExplicitTaylor(order = Val{8}()))
+sol = solve(prob, ExplicitTaylor(order = Val(8)))
+
+# Adaptive-order Taylor method (orders 4 through 7)
+sol = solve(
+    prob, ExplicitTaylorAdaptiveOrder(min_order = Val(4), max_order = Val(8)),
+    abstol = 1.0e-10, reltol = 1.0e-10,
+)
 ```
 
 ## Full list of solvers
 
 ```@docs
-ExplicitTaylor2
-ExplicitTaylor
+OrdinaryDiffEqTaylorSeries.ExplicitTaylor2
+OrdinaryDiffEqTaylorSeries.ExplicitTaylor
+OrdinaryDiffEqTaylorSeries.ExplicitTaylorAdaptiveOrder
 ```
