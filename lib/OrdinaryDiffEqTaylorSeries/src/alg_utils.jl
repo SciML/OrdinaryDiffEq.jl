@@ -41,7 +41,7 @@ JET_CACHE = IdDict()
 # Convert symbolic value to concrete numeric type
 # Uses Symbolics.value for proper evaluation to concrete numbers
 @inline function _sym_to_numeric(x::Symbolics.Num, ::Type{T}) where {T}
-    v = Symbolics.unwrap(x)
+    v = SymbolicUtils.unwrap(x)
     return v isa Number ? convert(T, v) : convert(T, Symbolics.value(x))
 end
 @inline function _sym_to_numeric(x::SymbolicUtils.BasicSymbolic, ::Type{T}) where {T}
