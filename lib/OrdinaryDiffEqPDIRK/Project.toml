@@ -12,7 +12,6 @@ OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
@@ -22,10 +21,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
-
-[sources]
-DiffEqBase = {path = "../DiffEqBase"}
-DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
 SciMLTesting = "2.1"
@@ -40,7 +35,6 @@ OrdinaryDiffEqDifferentiation = "3.3"
 OrdinaryDiffEqNonlinearSolve = "2"
 Pkg = "1"
 Random = "<0.0.1, 1"
-Reexport = "1.2.2"
 SciMLBase = "3.39"
 SafeTestsets = "0.1.0"
 Test = "<0.0.1, 1"
@@ -48,12 +42,3 @@ julia = "1.10"
 
 [targets]
 test = ["DiffEqDevTools", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg", "SciMLTesting"]
-
-[sources.OrdinaryDiffEqDifferentiation]
-path = "../OrdinaryDiffEqDifferentiation"
-
-[sources.OrdinaryDiffEqNonlinearSolve]
-path = "../OrdinaryDiffEqNonlinearSolve"
-
-[sources.OrdinaryDiffEqCore]
-path = "../OrdinaryDiffEqCore"
