@@ -676,12 +676,27 @@ sub-caches for a composite algorithm.
 """
 is_composite_cache(cache) = cache isa CompositeCache
 
-# Trait: is this a composite algorithm? Override to include SDE composite algorithms.
 """
     is_composite_algorithm(alg) -> Bool
 
-Return whether `alg isa OrdinaryDiffEqCompositeAlgorithm`, i.e. whether it
-dispatches between several sub-algorithms at runtime.
+Return whether `alg` dispatches between several sub-algorithms at runtime.
+
+# Arguments
+
+- `alg`: An algorithm instance.
+
+# Returns
+
+`true` for an `OrdinaryDiffEqCompositeAlgorithm`, and `false` otherwise.
+
+# Rules
+
+Sibling solver packages with their own composite-algorithm type must extend this
+trait to return `true` for that type.
+
+!!! warning "Developer API"
+    This trait is for solver-package extensions; application code should not
+    dispatch on it.
 """
 is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 

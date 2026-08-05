@@ -104,6 +104,7 @@ OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
 OrdinaryDiffEqCore.isdefaultalg
+OrdinaryDiffEqCore.is_composite_algorithm
 ```
 
 ## Algorithm trait functions
@@ -280,6 +281,8 @@ OrdinaryDiffEqCore.get_differential_vars
 OrdinaryDiffEqCore.handle_callback_modifiers!
 OrdinaryDiffEqCore.resolve_stage_step_limiters
 OrdinaryDiffEqCore.trivial_limiter!
+OrdinaryDiffEqCore.DEOptions
+OrdinaryDiffEqCore.DummyController
 ```
 
 ### Time-stop and saving queues

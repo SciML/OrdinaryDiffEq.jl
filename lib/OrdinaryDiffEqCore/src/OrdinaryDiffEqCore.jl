@@ -45,9 +45,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_UNSTABLE_CHECK,
     DEVerbosity, _process_verbose_param
 
-import SciMLOperators: MatrixOperator,
-    update_coefficients, update_coefficients!,
-    isconstant
+import SciMLOperators: MatrixOperator
 
 import Random
 import Printf: @sprintf
@@ -93,9 +91,7 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier, log_numerical_instability, has_mtk_sys
-
-import SciMLOperators: islinear
+import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
