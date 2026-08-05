@@ -77,6 +77,7 @@ For ultra-high precision, also consider:
 
 ```julia
 using OrdinaryDiffEqQPRK
+using SciMLBase: ODEProblem, solve
 # Ensure using Float128 for ultra-high precision
 u0 = Float128[1.0, 0.0]
 tspan = (Float128(0.0), Float128(10.0))
