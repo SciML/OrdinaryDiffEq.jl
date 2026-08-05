@@ -6,11 +6,21 @@ Functional (fixed-point) iteration solver for the implicit stage equations,
 `z ← g(z)`. No Jacobian/`W` is formed, so it is cheap per iteration but only
 converges for mildly stiff problems.
 
-# Keyword arguments
+# Keywords
 
   - `κ`: relative tolerance on the increment used in the convergence test.
   - `max_iter`: maximum number of fixed-point iterations per solve.
   - `fast_convergence_cutoff`: convergence-rate threshold for fast convergence.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLFunctional())
+sol = solve(prob, alg)
+```
 """
 struct NLFunctional{K, C} <: AbstractNLSolverAlgorithm
     κ::K
@@ -30,12 +40,22 @@ Anderson-accelerated fixed-point iteration for the implicit stage equations. Lik
 [`NLFunctional`](@ref) but mixes in `max_history` previous residuals via a
 least-squares update to accelerate convergence.
 
-# Keyword arguments
+# Keywords
 
   - `κ`, `max_iter`, `fast_convergence_cutoff`: as in [`NLFunctional`](@ref).
   - `max_history`: number of past iterates kept for the acceleration.
   - `aa_start`: iteration at which acceleration starts.
   - `droptol`: optional condition-number threshold for dropping history columns.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLAnderson())
+sol = solve(prob, alg)
+```
 """
 struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
     κ::K
@@ -61,7 +81,7 @@ Quasi-Newton nonlinear solver for the implicit stage equations. Uses the
 `W = M/(γΔt) - J` matrix (reused/refactorized across steps and stages when
 possible) to solve `g(z) = 0`.
 
-# Keyword arguments
+# Keywords
 
   - `κ`: relative tolerance on the Newton increment used in the convergence test.
   - `max_iter`: maximum number of Newton iterations per solve.
@@ -71,6 +91,16 @@ possible) to solve `g(z) = 0`.
   - `always_new`: force recomputation of `W` on every solve.
   - `check_div`: enable early divergence detection.
   - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLNewton())
+sol = solve(prob, alg)
+```
 """
 struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
     κ::K
@@ -97,6 +127,41 @@ function NLNewton(;
     )
 end
 
+"""
+    NonlinearSolveAlg(alg = NewtonRaphson(autodiff = AutoFiniteDiff());
+        κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5,
+        new_W_dt_cutoff = 1//5, always_new = false, check_div = true)
+
+Use a NonlinearSolve.jl algorithm for the nonlinear stage equations of an implicit
+OrdinaryDiffEq method. Pass this algorithm as the `nlsolve` keyword to an implicit
+solver constructor.
+
+# Arguments
+
+  - `alg`: a NonlinearSolve.jl algorithm. The default is finite-difference Newton.
+
+# Keywords
+
+  - `κ`: relative tolerance on the Newton increment used in the convergence test.
+  - `max_iter`: maximum number of nonlinear iterations per stage solve.
+  - `fast_convergence_cutoff`: convergence-rate threshold below which convergence is
+    considered fast and the `W` matrix may be reused.
+  - `new_W_dt_cutoff`: relative change in `γΔt` above which `W` is refactorized.
+  - `always_new`: force recomputation of `W` on every nonlinear solve.
+  - `check_div`: enable early divergence detection.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve, NonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(
+    nlsolve = OrdinaryDiffEqNonlinearSolve.NonlinearSolveAlg(NewtonRaphson())
+)
+sol = solve(prob, alg)
+```
+"""
 struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
@@ -153,7 +218,7 @@ solution branch of the stage equation turns back and no consistent solution at t
 retries with a smaller `dt` — exactly the semantically correct response to a fold in the
 step-size homotopy.
 
-# Positional arguments
+# Arguments
 
   - `alg`: the continuation algorithm used for the `HomotopyProblem`. Defaults to
     `HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()))`
@@ -163,7 +228,7 @@ step-size homotopy.
     autodiff: the stage residual closes over preallocated `Float64` buffers (the same
     restriction as `NonlinearSolveAlg`).
 
-# Keyword arguments
+# Keywords
 
   - `κ`, `max_iter`, `fast_convergence_cutoff`: kept for interface compatibility with the
     other nonlinear-solver algorithms; the continuation solve does not run the shared
@@ -179,6 +244,18 @@ step-size homotopy.
     DAE problems (`DAEFunction`s and singular mass matrices) are not supported: the
     λ-embedding scales the whole right-hand side, which degenerates the algebraic
     equations at `λ = 0`.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(
+    nlsolve = OrdinaryDiffEqNonlinearSolve.HomotopyNonlinearSolveAlg()
+)
+sol = solve(prob, alg)
+```
 """
 struct HomotopyNonlinearSolveAlg{K, C1, A, AT, RT} <: AbstractNLSolverAlgorithm
     κ::K
