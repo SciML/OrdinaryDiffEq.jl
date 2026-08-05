@@ -1118,6 +1118,37 @@ function calc_dt_propose!(integrator, dtnew)
     return nothing
 end
 
+"""
+    fix_dt_at_bounds!(integrator)
+
+Clamp `integrator.dt` to the active `dtmin` and `dtmax` bounds while preserving
+the integration direction.
+
+# Arguments
+
+- `integrator`: An OrdinaryDiffEq integrator with `dt`, `tdir`, and time-step bound options.
+
+# Returns
+
+- `nothing`
+
+# Rules
+
+- Call this from a solver-specific stepping or initialization path after modifying `dt`
+  directly.
+- The result lies between the active `dtmin` and `dtmax` bounds in the direction of
+  integration.
+
+!!! warning "Developer API, not user API"
+    Application code should configure `dtmin` and `dtmax` through `solve` or
+    `init`, rather than mutating an integrator's time step.
+
+# Example
+```julia
+integrator.dt = proposed_dt
+fix_dt_at_bounds!(integrator)
+```
+"""
 function fix_dt_at_bounds!(integrator)
     if integrator.tdir > 0
         integrator.dt = min(integrator.opts.dtmax, integrator.dt)
@@ -1133,6 +1164,38 @@ function fix_dt_at_bounds!(integrator)
     return nothing
 end
 
+"""
+    handle_tstop!(integrator)
+
+Process the current time stop after a solver step. This removes reached stops,
+sets `integrator.just_hit_tstop`, and handles a fixed-step integrator that
+crossed a stop by interpolating back to it.
+
+# Arguments
+
+- `integrator`: An OrdinaryDiffEq integrator that has just advanced its time state.
+
+# Returns
+
+- `nothing`
+
+# Rules
+
+- Solver authors that own a stepping loop should call this after advancing time.
+- Duplicate stops at the current time are consumed together.
+- A fixed-step integrator that crosses a stop is interpolated back to the stop; a
+  time-step-changeable integrator crossing a stop is an invariant violation.
+
+!!! warning "Developer API, not user API"
+    Application code should manage time stops with `add_tstop!` or the `tstops`
+    keyword, not call this hook.
+
+# Example
+```julia
+perform_step!(integrator, cache, false)
+handle_tstop!(integrator)
+```
+"""
 function handle_tstop!(integrator)
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t

@@ -479,6 +479,8 @@ include("precompilation_setup.jl")
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
             :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
+            :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
+            :initialize_saveat, :initialize_tstops,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
             :is_noise_saveable,
