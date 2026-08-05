@@ -130,12 +130,12 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    min_order_value, max_order_value = order_window(alg)
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order)
     jets = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}[]
-    min_order_value = get_value(alg.min_order)
-    max_order_value = get_value(alg.max_order)
+    # every order shares the single `max_order` buffer, so the jets have to fill it
     for order in min_order_value:max_order_value
-        jet_iip = build_jet(f, p, Val(order), length(u))[2]
+        jet_iip = build_jet(f, p, Val(order), length(u), alg.max_order)[2]
         push!(jets, jet_iip)
     end
     utilde = zero(u)
@@ -166,19 +166,19 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    min_order_value, max_order_value = order_window(alg)
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order) # not used, but needed for type
     jets = FunctionWrapper{typeof(utaylor), Tuple{typeof(u), typeof(t)}}[]
-    min_order_value = get_value(alg.min_order)
-    max_order_value = get_value(alg.max_order)
+    # the wrapper's return type is pinned at `max_order`, so the jets have to match it
     for order in min_order_value:max_order_value
         if u isa AbstractArray
-            jet, _ = build_jet(f, p, Val(order), length(u))
+            jet, _ = build_jet(f, p, Val(order), length(u), alg.max_order)
         else
-            jet = build_jet(f, p, Val(order))
+            jet = build_jet(f, p, Val(order), nothing, alg.max_order)
         end
         push!(jets, jet)
     end
-    current_order = Ref(min_order_value)
+    current_order = Ref(max_order_value - 1)
     return ExplicitTaylorAdaptiveOrderConstantCache(
         alg.min_order, alg.max_order, current_order, jets
     )
