@@ -9,6 +9,7 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "Extrapolation Utility Tests" include("utils_tests.jl")
     @time @safetestset "Extrapolation Tests" include("ode_extrapolation_tests.jl")
 end
 

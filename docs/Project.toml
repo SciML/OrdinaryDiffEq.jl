@@ -1,4 +1,5 @@
 [deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -55,7 +56,6 @@ OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqDifferentiation = {path = "../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
-OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
 OrdinaryDiffEqFIRK = {path = "../lib/OrdinaryDiffEqFIRK"}
 OrdinaryDiffEqHighOrderRK = {path = "../lib/OrdinaryDiffEqHighOrderRK"}
 OrdinaryDiffEqIMEXMultistep = {path = "../lib/OrdinaryDiffEqIMEXMultistep"}
@@ -81,6 +81,7 @@ StochasticDiffEqLevyArea = {path = "../lib/StochasticDiffEqLevyArea"}
 StochasticDiffEqWeak = {path = "../lib/StochasticDiffEqWeak"}
 
 [compat]
+CommonSolve = "0.2.6"
 DiffEqBase = "7.6.1"
 DiffEqDevTools = "3, 4.0"
 Documenter = "0.27, 1"
