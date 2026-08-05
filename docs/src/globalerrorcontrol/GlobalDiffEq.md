@@ -18,8 +18,16 @@ using GlobalDiffEq
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
 
+To *control* the endpoint global error to a tolerance `gtol`, wrap any
+adaptive solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint
+functionals; requires SciMLSensitivity and QuadGK to be loaded). It solves the
+problem, estimates the endpoint global error, and tightens the local
+tolerances until the requested global tolerance is met.
+
 ## Global error controlling wrappers
 
 ```@docs
 GlobalRichardson
+GlobalAdjoint
+adjoint_error_estimate
 ```
