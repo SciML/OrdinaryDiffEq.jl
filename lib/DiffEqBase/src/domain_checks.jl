@@ -32,7 +32,10 @@ falls into the NaN-detection in the adaptive step controller
 (`integrator.isout = ... || isnan(EEst) || isinf(EEst)`) straight into a
 shrink-and-retry.
 
-Constructed automatically from the `domain_checks` solver keyword.
+Constructed automatically from the `domain_checks` solver keyword, by
+[`apply_domain_checks`](@ref), as the outermost layer of `f.f` — outside any
+`FunctionWrappersWrapper` `promote_f` may have installed. [`strip_domain_checks`](@ref)
+removes it again for the code paths that must not see the checks.
 """
 struct DomainCheckedFunction{iip, F, C}
     f::F
@@ -42,6 +45,8 @@ end
 function DomainCheckedFunction{iip}(f::F, pre_checks::C) where {iip, F, C}
     return DomainCheckedFunction{iip, F, C}(f, pre_checks)
 end
+
+unwrapped_f(dcf::DomainCheckedFunction) = unwrapped_f(dcf.f)
 
 function (dcf::DomainCheckedFunction{true})(du, u, p, t)
     if domain_checks_failing(dcf.pre_checks, u, p, t) === nothing
@@ -56,6 +61,125 @@ function (dcf::DomainCheckedFunction{false})(u, p, t)
     domain_checks_failing(dcf.pre_checks, u, p, t) === nothing && return dcf.f(u, p, t)
     #maintain units of u
     return u .* (zero(eltype(u)) / zero(eltype(u)))
+end
+
+"""
+    strip_domain_checks(f)
+
+Remove a [`DomainCheckedFunction`](@ref) layer, returning `f` unchanged when there is none.
+Accepts either the inner callable or the `AbstractSciMLFunction` wrapping it.
+
+Checks gate *states* the integrator might accept — RK stages, Newton residuals — which all
+go through `integrator.f` and keep them. They must not gate *derivative probes*: the point
+`uprev ± ε eᵢ` a finite-difference Jacobian evaluates is not a state, `uprev` itself is
+in-domain, and only the stencil crossed the boundary. Poisoning that Jacobian column would
+reject a valid step unrecoverably, since `ε ≈ sqrt(eps) * |u|` does not scale with `dt`, so
+every retry probes the same point and the solve marches to `dtmin`, and only under
+`AutoFiniteDiff`, since `AutoForwardDiff` perturbs the dual part and leaves every predicate
+comparison in-domain.
+
+So the differentiation wrappers (`UJacobianWrapper`/`UDerivativeWrapper`/`TimeGradientWrapper`
+and their `jac_config`s) are built from a stripped `f`, and `islinearfunction` strips before
+asking `islinear`, since it hands `f.f` to the solver *as* the Jacobian.
+"""
+strip_domain_checks(dcf::DomainCheckedFunction) = dcf.f
+strip_domain_checks(f) = f
+function strip_domain_checks(f::SciMLBase.AbstractSciMLFunction)
+    hasfield(typeof(f), :f) || return f
+    inner = strip_domain_checks(f.f)
+    inner === f.f && return f
+    return @set f.f = inner
+end
+
+"""
+    find_domain_checks(f) -> checks or nothing
+
+Recover the `domain_checks` predicates carried by `f`, or `nothing` if it carries none.
+Used by failure diagnostics, which have only the integrator to work from. Kept separate
+from `f.f isa DomainCheckedFunction` so that the diagnostics do not silently go quiet if
+the layering around `f.f` ever changes.
+"""
+find_domain_checks(dcf::DomainCheckedFunction) = dcf.pre_checks
+find_domain_checks(::Any) = nothing
+function find_domain_checks(f::SciMLBase.AbstractSciMLFunction)
+    # See `strip_domain_checks`: not every `AbstractSciMLFunction` has a single `f`.
+    hasfield(typeof(f), :f) || return nothing
+    return find_domain_checks(f.f)
+end
+
+"""
+    supports_domain_checks(alg) -> Bool
+
+Whether `alg` implements the step-rejection recovery that the `domain_checks` keyword
+relies on. `false` by default: DiffEqBase installs the checks during problem
+concretization, which every solver package routes through, but only the solvers that turn
+a NaN right-hand-side into a smaller-`dt` retry can honor them. Passing `domain_checks` to
+any other solver is an error rather than a silently different meaning.
+"""
+supports_domain_checks(alg) = false
+
+"""
+    apply_domain_checks(f, domain_checks, alg; opaque_params = false) -> f
+
+Install the `domain_checks` predicates on `f` as the outermost layer of `f.f`, or return
+`f` unchanged when no checks were requested. Called from `get_concrete_problem`, i.e.
+before the cache, the nonlinear solver and the solution object are built, so that every
+consumer of `f` sees one consistent function.
+
+Rejects the combinations that cannot honor the checks instead of silently dropping them:
+right-hand-sides whose call signature is not `(du, u, p, t)`/`(u, p, t)` (split, DAE and
+second-order/partitioned forms, which would `MethodError`, or evaluate only one of several
+sub-functions), operator right-hand-sides (where the solver uses `f.f` itself as the
+Jacobian), and algorithms without the retry path.
+"""
+function apply_domain_checks(f, domain_checks, alg; opaque_params::Bool = false)
+    (domain_checks === nothing || isempty(domain_checks)) && return f
+
+    if !supports_domain_checks(alg)
+        throw(
+            ArgumentError(
+                "domain_checks is not supported for $(alg === nothing ? "this solver" : nameof(typeof(alg))). " *
+                    "The keyword relies on a failing predicate being converted into a step retry with a " *
+                    "smaller dt, which only the OrdinaryDiffEq.jl solvers implement."
+            )
+        )
+    end
+    if !(f isa ODEFunction)
+        throw(
+            ArgumentError(
+                "domain_checks is only supported for ODEFunction right-hand-sides, got " *
+                    "$(nameof(typeof(f))). Split (IMEX), DAE, and second-order/partitioned " *
+                    "right-hand-sides either take a different call signature or dispatch to several " *
+                    "sub-functions, so a single wrapped callable would miss evaluations rather than " *
+                    "gate them."
+            )
+        )
+    end
+
+    if f.f isa SciMLBase.AbstractSciMLOperator || islinear(f.f)
+        throw(
+            ArgumentError(
+                "domain_checks is not supported for operator or linear right-hand-sides. For a " *
+                    "linear `f.f` the solvers use it directly as the Jacobian (see " *
+                    "`islinearfunction`), which wrapping would silently replace with a " *
+                    "numerically-formed dense Jacobian."
+            )
+        )
+    end
+    if opaque_params
+        throw(
+            ArgumentError(
+                "domain_checks is not supported together with AutoDePSpecialize's opaque parameter " *
+                    "packing: the predicates sit outside the function wrapper that unpacks `p`, so they " *
+                    "would receive the opaque container rather than the problem's parameters."
+            )
+        )
+    end
+    # Idempotent: `get_concrete_problem` can run more than once on the same problem (e.g. a
+    # sensitivity adjoint re-concretizing), and the checks must not stack up.
+    find_domain_checks(f) === nothing || return f
+
+    return @set f.f = DomainCheckedFunction{isinplace(f)}(f.f, domain_checks)
 end
 
 

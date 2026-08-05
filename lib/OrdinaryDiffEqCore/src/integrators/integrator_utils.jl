@@ -892,9 +892,10 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     end
 
-    # domain checks diagnostics, find out which checks failed and report them
-    if hasproperty(integrator.f, :f) && integrator.f.f isa DomainCheckedFunction
-        failing = domain_checks_failing(integrator.f.f.pre_checks, u, integrator.p, integrator.t)
+    #domain checks diagnostics
+    domain_checks = find_domain_checks(integrator.f)
+    if domain_checks !== nothing
+        failing = domain_checks_failing(domain_checks, u, integrator.p, integrator.t)
         if failing !== nothing
             push!(domain_analysis, "$(length(failing)) domain_checks predicate(s) failed:")
             append!(domain_analysis, failing)

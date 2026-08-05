@@ -51,7 +51,7 @@ using FastBroadcast: @..
 
 using ConcreteStructs: @concrete
 
-import DiffEqBase: OrdinaryDiffEqTag
+import DiffEqBase: OrdinaryDiffEqTag, strip_domain_checks
 
 # Functions for sparse array handling - will be overloaded by extension
 # Default implementations return false/error for non-sparse types

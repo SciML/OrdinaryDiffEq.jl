@@ -44,7 +44,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
     ODE_DEFAULT_UNSTABLE_CHECK,
     DEVerbosity, _process_verbose_param,
-    DomainCheckedFunction, domain_checks_failing,
+    domain_checks_failing, find_domain_checks,
     isoutofdomain_report
 
 import DiffEqBase: @isoutofdomain

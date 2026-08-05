@@ -280,6 +280,27 @@ isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
 isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 """
+    supports_domain_checks(alg) -> Bool
+
+Opt in to the `domain_checks` solver keyword: these algorithms turn a `NaN` right-hand-side
+into a step rejection and a retry with a smaller `dt`, which is the recovery path a failing
+predicate relies on.
+
+Exponential and linear-exponential methods are excluded. They reach into the operator or
+the right-hand-side directly rather than calling through `integrator.f`, so a wrapped
+callable would be bypassed and the checks would silently do nothing.
+"""
+DiffEqBase.supports_domain_checks(::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
+function DiffEqBase.supports_domain_checks(
+        ::Union{ExponentialAlgorithm, OrdinaryDiffEqLinearExponentialAlgorithm}
+    )
+    return false
+end
+function DiffEqBase.supports_domain_checks(alg::CompositeAlgorithm)
+    return all(DiffEqBase.supports_domain_checks, alg.algs)
+end
+
+"""
     isdtchangeable(alg) -> Bool
 
 Return whether `alg` allows the step size `dt` to change between steps (`true` by

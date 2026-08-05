@@ -339,7 +339,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         else
             (; uf) = cache
 
-            uf.f = nlsolve_f(f, alg)
+            uf.f = strip_domain_checks(nlsolve_f(f, alg)) #use non-domain checks formulation
             uf.p = p
             uf.t = t
             J = jacobian(uf, uprev, integrator)
@@ -402,7 +402,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             f.jac(J, uprev, p, t)
         else
             (; du1, uf, jac_config) = cache
-            uf.f = nlsolve_f(f, alg)
+            uf.f = strip_domain_checks(nlsolve_f(f, alg))
             uf.t = t
             if !(p isa SciMLBase.NullParameters)
                 uf.p = p
@@ -513,8 +513,9 @@ islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
 function islinearfunction(f::F, alg)::Tuple{Bool, Bool} where {F}
-    isode = f isa ODEFunction && islinear(f.f)
-    islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
+    isode = f isa ODEFunction && islinear(strip_domain_checks(f.f)) #drop domain checks
+    islin = isode ||
+        (issplit(alg) && f isa SplitFunction && islinear(strip_domain_checks(f.f1.f)))
     return islin, isode
 end
 

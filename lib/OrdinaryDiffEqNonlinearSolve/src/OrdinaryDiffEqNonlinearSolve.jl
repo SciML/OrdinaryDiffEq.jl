@@ -12,7 +12,7 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     _vec, _reshape, postamble!, alg_order, isadaptive
 import DiffEqBase
 import DiffEqBase: OrdinaryDiffEqTag, calculate_residuals, calculate_residuals!,
-    BrownFullBasicInit, ShampineCollocationInit
+    BrownFullBasicInit, ShampineCollocationInit, strip_domain_checks
 import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton

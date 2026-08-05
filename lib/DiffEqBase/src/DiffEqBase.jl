@@ -226,7 +226,8 @@ export @isoutofdomain
             # Solver-author wrapper/tag types and convergence-testing entry type
             :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup,
             # Domain-violation mechanism (`domain_checks` solver keyword)
-            :DomainCheckedFunction, :domain_checks_failing,
+            :DomainCheckedFunction, :domain_checks_failing, :apply_domain_checks,
+            :strip_domain_checks, :find_domain_checks, :supports_domain_checks,
             # Source-retaining `isoutofdomain` predicates, for failure diagnostics
             :TracedPredicate, :TracedPredicateLeaf, :isoutofdomain_report
         )

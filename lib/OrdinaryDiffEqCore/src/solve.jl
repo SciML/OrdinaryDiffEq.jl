@@ -125,26 +125,6 @@ Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
 separated from `__init` so that SDE packages can call it directly, bypassing
 method dispatch (which would otherwise re-enter SDE's more specific `__init`).
 """
-# domain_checks only wraps a plain callable `f`; algorithms/functions that call
-# multiple sub-functions or an operator directly (rather than through a single
-# wrapped `f`) would silently miss the checks, so we reject them explicitly.
-function _validate_domain_checks_compatible(prob, alg)
-    f = prob.f
-    if f isa SplitFunction || f isa DynamicalODEFunction
-        msg = "domain_checks is not supported for $(nameof(typeof(f))) right-hand-sides " *
-            "(e.g. IMEX/symplectic partitioned problems), since these call multiple " *
-            "sub-functions directly rather than through a single wrapped callable."
-        throw(ArgumentError(msg))
-    end
-    if alg isa ExponentialAlgorithm
-        msg = "domain_checks is not supported for $(nameof(typeof(alg))), which accesses " *
-            "the operator/right-hand-side directly rather than calling through the " *
-            "wrapped function."
-        throw(ArgumentError(msg))
-    end
-    return nothing
-end
-
 Base.@constprop :aggressive function _ode_init(
         prob,
         alg,
@@ -584,18 +564,20 @@ Base.@constprop :aggressive function _ode_init(
     else
         dt
     end
+    #build cache state from stripped f 
+    cache_f = DiffEqBase.strip_domain_checks(f)
     if _cache !== nothing
         cache = _cache
     elseif prob isa DAEProblem
         cache = alg_cache(
             _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, cache_f, t, _dt,
             reltol_internal, p, calck, Val(isinplace(prob)), verbose_spec
         )
     else
         cache = alg_cache(
             _alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, _dt, reltol_internal, p, calck,
+            tTypeNoUnits, uprev, uprev2, cache_f, t, _dt, reltol_internal, p, calck,
             Val(isinplace(prob)), verbose_spec
         )
     end
@@ -708,14 +690,6 @@ Base.@constprop :aggressive function _ode_init(
         )
     end
     sol = SciMLBase.build_solution(prob, _alg, ts, timeseries; _sol_kwargs...)
-
-    # wrap `f` for domain_checks after `id`/`sol` are built above 
-    # so that the solution can be used in the domain check function (e.g. for interpolation)
-    if domain_checks !== nothing && !isempty(domain_checks)
-        _validate_domain_checks_compatible(prob, alg)
-        inner_f = DomainCheckedFunction{isinplace(prob)}(f.f, domain_checks)
-        @reset f.f = inner_f
-    end
 
     FType = typeof(f)
     SolType = typeof(sol)
