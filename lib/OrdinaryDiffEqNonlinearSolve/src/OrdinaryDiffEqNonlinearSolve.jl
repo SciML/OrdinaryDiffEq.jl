@@ -84,7 +84,7 @@ export BrownFullBasicInit, ShampineCollocationInit
         Expr(
             :public,
             :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg,
-            :nlsolve!, :nlsolvefail, :compute_step!, :initial_η, :anderson, :anderson!
+            :NonlinearSolveAlg
         )
     )
 end

@@ -207,12 +207,6 @@ OrdinaryDiffEqCore.isJcurrent
 OrdinaryDiffEqCore.resize_J_W!
 OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
-OrdinaryDiffEqNonlinearSolve.nlsolve!
-OrdinaryDiffEqNonlinearSolve.nlsolvefail
-OrdinaryDiffEqNonlinearSolve.compute_step!
-OrdinaryDiffEqNonlinearSolve.initial_η
-OrdinaryDiffEqNonlinearSolve.anderson
-OrdinaryDiffEqNonlinearSolve.anderson!
 ```
 
 ## Jacobian / W-matrix / differentiation configuration
