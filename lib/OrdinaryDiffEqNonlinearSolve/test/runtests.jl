@@ -20,7 +20,16 @@ function activate_modelingtoolkit_env()
 end
 
 function activate_qa_env()
-    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+    lib_dir = dirname(dirname(@__DIR__))
+    return activate_group_env(
+        joinpath(@__DIR__, "qa");
+        parent = [
+            dirname(@__DIR__),
+            joinpath(lib_dir, "OrdinaryDiffEqCore"),
+            joinpath(lib_dir, "OrdinaryDiffEqBDF"),
+            joinpath(lib_dir, "OrdinaryDiffEqRosenbrock"),
+        ],
+    )
 end
 
 # Run functional tests

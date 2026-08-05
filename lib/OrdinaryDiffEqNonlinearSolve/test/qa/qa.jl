@@ -28,7 +28,6 @@ run_qa(
     # `using OrdinaryDiffEq` keeps surfacing them unqualified.
     reexports_allow = (:BrownFullBasicInit, :ShampineCollocationInit),
     aqua_kwargs = (; piracies = false, ambiguities = false),
-    explicit_imports = true,
     ei_kwargs = (;
         # Imported into this namespace for dependent sublibraries; ExplicitImports
         # cannot see that cross-package use and reports them as stale.
