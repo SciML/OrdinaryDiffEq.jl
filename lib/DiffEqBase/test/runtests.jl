@@ -41,6 +41,7 @@ end
         @time @safetestset "Internal Euler" include("internal_euler_test.jl")
         @time @safetestset "Norm" include("norm.jl")
         @time @safetestset "Utils" include("utils.jl")
+        @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
         @time @safetestset "ForwardDiff Dual Detection" include("forwarddiff_dual_detection.jl")
         @time @safetestset "ODE default norm" include("ode_default_norm.jl")
         @time @safetestset "DynamicQuantities extension" include("dynamicquantities_ext.jl")

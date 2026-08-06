@@ -1,3 +1,43 @@
+"""
+    @tight_loop_macros loop_expr
+
+Apply the DiffEqBase loop policy to `loop_expr`. Solver packages use this macro
+around scalar stage loops so DiffEqBase can select common loop annotations without
+duplicating them in every solver implementation.
+
+# Arguments
+
+  - `loop_expr`: loop expression to emit in the caller's scope, normally a `for`
+    loop over state indices.
+
+# Returns
+
+The escaped loop expression with the current DiffEqBase loop policy applied. The
+current policy preserves the expression unchanged; solver packages must not rely
+on that implementation detail.
+
+# Developer contract
+
+The loop body must be valid under reordering and vectorization policies that a
+future DiffEqBase release may apply. Do not use the loop body for externally
+observable iteration ordering or cross-iteration dependencies. This is versioned
+solver-development API, not an application-facing loop macro.
+
+# Examples
+
+```julia
+using DiffEqBase: @tight_loop_macros
+
+function add_one!(out, x)
+    @tight_loop_macros for i in eachindex(out, x)
+        @inbounds out[i] = x[i] + 1
+    end
+    return out
+end
+
+add_one!(zeros(2), [1.0, 2.0]) == [2.0, 3.0]
+```
+"""
 macro tight_loop_macros(ex)
     return :($(esc(ex)))
 end

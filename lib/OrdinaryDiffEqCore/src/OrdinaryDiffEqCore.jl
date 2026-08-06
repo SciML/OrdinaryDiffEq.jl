@@ -56,13 +56,12 @@ import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 # Integrator Interface
 import Base: resize!, deleteat!
-import SciMLBase: addat!, full_cache, user_cache, u_cache, du_cache,
+import SciMLBase: addat!, full_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
-    terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
+    terminate!, get_proposed_dt, set_proposed_dt!,
     savevalues!,
     add_tstop!, has_tstop, first_tstop, pop_tstop!,
-    add_saveat!, set_reltol!,
-    set_abstol!, postamble!, last_step_failed
+    postamble!, last_step_failed
 import DiffEqBase: get_tstops, get_tstops_array
 
 # `check_error!` is owned by (and public in) SciMLBase, re-exported through DiffEqBase.
@@ -84,10 +83,11 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
     ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
     VectorContinuousCallback, auto_dt_reset!, derivative_discontinuity!,
     get_tmp_cache, isinplace, reinit!
+const LinearAliasSpecifier = SciMLBase.LinearAliasSpecifier
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
+import SciMLBase: AbstractNonlinearProblem, alg_order
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
@@ -416,8 +416,8 @@ include("precompilation_setup.jl")
 # that downstream OrdinaryDiffEq.jl / StochasticDiffEq.jl solver packages subtype,
 # extend, or call. They are made public (not exported) so that ExplicitImports'
 # public-API checks recognize them as the supported extension surface. Genuine
-# codegen/perf internals (@fold/@threaded/@OnDemandTableauExtract/@swap!) and
-# precompile-workload helpers are deliberately NOT included here.
+# package-local codegen internals (@threaded/@swap!) and precompile-workload
+# helpers are deliberately NOT included here.
 @static if VERSION >= v"1.11.0-DEV.469"
     eval(
         Expr(
@@ -425,7 +425,7 @@ include("precompilation_setup.jl")
             :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
             :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
             :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
-            :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
+            :beta1_default, :beta2_default, Symbol("@cache"), Symbol("@fold"), Symbol("@OnDemandTableauExtract"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
             :CompositeController, :constvalue, :Convergence, :current_extrapolant,
             :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
             :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,

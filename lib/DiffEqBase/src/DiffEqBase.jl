@@ -218,7 +218,7 @@ export AutoDePSpecialize
             :calculate_residuals, :calculate_residuals!,
             # Algorithm/dt setup hooks solvers specialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
-            :default_factorize, :stripunits,
+            :default_factorize, :stripunits, Symbol("@tight_loop_macros"),
             # Solver-author wrapper/tag types and convergence-testing entry type
             :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
         )
