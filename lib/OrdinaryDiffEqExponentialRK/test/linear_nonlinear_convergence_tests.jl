@@ -1,6 +1,7 @@
 using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEqVerner, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: alg_order
+using SciMLBase: successful_retcode
 
 @testset "Caching Out-of-place" begin
     println("Caching Out-of-place")
@@ -71,6 +72,27 @@ end
     sim = test_convergence(dts, prob, ETDRK4(), dense_errors = true)
     @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
     @test sim.𝒪est[:L2] ≈ 4 atol = 0.1
+end
+
+@testset "Matrix-free SciMLOperator split" begin
+    u0 = ComplexF64[1.0 + 0.5im, -0.5 + 0.25im, 0.75 - 0.125im, -0.25 - 0.5im]
+    λ = ComplexF64[-1.0, -2.0, -3.0, -4.0]
+    F = FunctionOperator(
+        (v, u, p, t) -> v, u0;
+        T = ComplexF64,
+        islinear = true,
+        op_inverse = (v, u, p, t) -> v,
+        opnorm = (_ -> 1.0)
+    )
+    L = cache_operator(F \ DiagonalOperator(λ) * F, u0)
+    @test !has_concretization(L)
+
+    prob = SplitODEProblem(L, (u, p, t) -> zero(u), u0, (0.0, 0.1))
+    sol = solve(prob, ETDRK4(), dt = 0.01, save_everystep = false)
+
+    @test successful_retcode(sol)
+    @test sol.alg.krylov
+    @test sol.u[end]≈exp.(0.1 .* λ) .* u0 rtol=1.0e-6
 end
 
 @info "CFNLIRK3() is broken"
