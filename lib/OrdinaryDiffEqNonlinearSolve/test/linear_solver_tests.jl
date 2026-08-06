@@ -2,6 +2,7 @@ using Test, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF
 using SparseArrays, LinearSolve
 using LinearAlgebra, Random, StaticArrays
 using SciMLOperators: MatrixOperator
+import DiffEqBase, SciMLLogging
 N = 30
 AA = sprand(MersenneTwister(12), N, N, 0.5)
 mm = sprand(MersenneTwister(123), N, N, 0.5)
@@ -11,7 +12,10 @@ u0 = ones(N)
 prob = ODEProblem(ODEFunction(A; mass_matrix = M), u0, (0.0, 1.0))
 
 for alg in [Rosenbrock23(), Rosenbrock23(linsolve = KLUFactorization())]
+    silent_sol = solve(prob, alg; verbose = DiffEqBase.DEVerbosity(SciMLLogging.None()))
     sol = solve(prob, alg)
+    @test sol.stats.nf == silent_sol.stats.nf
+    @test sol.stats.njacs == silent_sol.stats.njacs
     @test sol.stats.njacs == 0
     @test sol.stats.nw == 1
 end

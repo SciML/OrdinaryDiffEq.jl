@@ -354,7 +354,17 @@ function calc_J(integrator, cache, next_step::Bool = false)
     return J
 end
 
-get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache) = calc_J(integrator, cache)
+function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
+    nf = integrator.stats.nf
+    njacs = integrator.stats.njacs
+    try
+        return calc_J(integrator, cache)
+    finally
+        # Diagnostic work must not alter the returned solve statistics.
+        integrator.stats.nf = nf
+        integrator.stats.njacs = njacs
+    end
+end
 
 """
     calc_J!(J, integrator, cache, next_step::Bool = false) -> J
