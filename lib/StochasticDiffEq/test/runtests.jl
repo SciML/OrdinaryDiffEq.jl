@@ -60,6 +60,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Callable tstops Tests" begin
             include("callable_tstops_tests.jl")
         end
+        @time @safetestset "SDE stats nf Tests" begin
+            include("stats_tests.jl")
+        end
         @time @safetestset "Integrator RNG Tests" begin
             include("rng_integrator_tests.jl")
         end
