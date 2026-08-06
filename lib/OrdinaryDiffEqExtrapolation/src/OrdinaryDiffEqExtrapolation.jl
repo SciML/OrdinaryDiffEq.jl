@@ -15,15 +15,14 @@ import OrdinaryDiffEqCore: alg_maximum_order, get_current_adaptive_order,
     qmin_default,
     constvalue, PolyesterThreads,
     _fixup_ad,
-    get_fsalfirstlast,
-    LinearAliasSpecifier
+    get_fsalfirstlast
 import OrdinaryDiffEqCore: default_controller, AbstractControllerCache, setup_controller_cache,
     get_qmin, get_qmax
 import OrdinaryDiffEqCore
 
 # Owned by SciMLBase / DiffEqBase, re-exported through OrdinaryDiffEqCore /
 # OrdinaryDiffEqDifferentiation.
-import SciMLBase: alg_order,
+import SciMLBase: alg_order, LinearAliasSpecifier,
     TimeDerivativeWrapper, UDerivativeWrapper,
     TimeGradientWrapper, UJacobianWrapper
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timedepentdtmin

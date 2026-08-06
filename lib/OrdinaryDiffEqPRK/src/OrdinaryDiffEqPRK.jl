@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, constvalue, @cache,
     alg_cache, get_fsalfirstlast,
     unwrap_alg, perform_step!, @threaded, isthreaded
-import SciMLBase: alg_order, full_cache
+import SciMLBase: alg_order
 import DiffEqBase: initialize!
 import MuladdMacro: @muladd
 import FastBroadcast: @..

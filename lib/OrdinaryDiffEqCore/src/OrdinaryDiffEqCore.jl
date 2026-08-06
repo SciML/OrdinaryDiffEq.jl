@@ -56,13 +56,12 @@ import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 # Integrator Interface
 import Base: resize!, deleteat!
-import SciMLBase: addat!, full_cache, user_cache, u_cache, du_cache,
+import SciMLBase: addat!, full_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
-    terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
+    terminate!, get_proposed_dt, set_proposed_dt!,
     savevalues!,
     add_tstop!, has_tstop, first_tstop, pop_tstop!,
-    add_saveat!, set_reltol!,
-    set_abstol!, postamble!, last_step_failed
+    postamble!, last_step_failed
 import DiffEqBase: get_tstops, get_tstops_array
 
 # `check_error!` is owned by (and public in) SciMLBase, re-exported through DiffEqBase.
@@ -87,7 +86,7 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
+import SciMLBase: AbstractNonlinearProblem, alg_order
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
@@ -431,7 +430,7 @@ include("precompilation_setup.jl")
             :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
             :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
             :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
-            :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
+            :get_fresh_jacobian, :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
             :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController,
             :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
             :is_composite_algorithm, :isdefaultalg, :isdiscretecache, :isdtchangeable, :isfirstcall,
