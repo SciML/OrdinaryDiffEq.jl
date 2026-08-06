@@ -113,3 +113,16 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["DiffEqDevTools", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting"]
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+
+[sources.OrdinaryDiffEqFIRK]
+path = "../OrdinaryDiffEqFIRK"
+
+[sources.OrdinaryDiffEqRosenbrock]
+path = "../OrdinaryDiffEqRosenbrock"
+
+[sources.OrdinaryDiffEqTsit5]
+path = "../OrdinaryDiffEqTsit5"

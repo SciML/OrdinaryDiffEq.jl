@@ -12,6 +12,15 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[sources.OrdinaryDiffEq]
+path = "../../../.."
+
+[sources.DiffEqBase]
+path = "../../../DiffEqBase"
+
+[sources.OrdinaryDiffEqCore]
+path = "../.."
+
 [compat]
 ADTypes = "1"
 Adapt = "4"

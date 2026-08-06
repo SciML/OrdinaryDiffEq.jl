@@ -6,18 +6,11 @@ const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
-    Pkg.develop(
-        [
-            PackageSpec(path = joinpath(@__DIR__, "..", "..", "..")),
-            PackageSpec(path = joinpath(@__DIR__, "..", "..", "DiffEqBase")),
-            PackageSpec(path = joinpath(@__DIR__, "..")),
-        ]
-    )
     return Pkg.instantiate()
 end
 
 function activate_qa_env()
-    return activate_group_env(joinpath(@__DIR__, "qa"))
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run GPU tests
