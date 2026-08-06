@@ -15,7 +15,36 @@ function _rejected_trial_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
 end
 
 """
-    nlsolve!(nlsolver::AbstractNLSolver, integrator)
+    compute_step!(nlsolver, integrator[, γW]) -> residual_norm
+
+Compute one candidate nonlinear iteration and return its scaled residual or
+increment norm.
+
+# Arguments
+
+  - `nlsolver`: the nonlinear solver whose candidate iterate and workspace are
+    updated.
+  - `integrator`: the differential-equation integrator that supplies the current
+    state, tolerances, right-hand side, and statistics.
+  - `γW`: the current `γ * dt` scaling for Newton-type methods. Fixed-point
+    methods omit this argument.
+
+# Returns
+
+A finite, nonnegative norm when a candidate iteration was computed. Returning a
+non-finite value reports divergence to [`nlsolve!`](@ref). This function mutates
+the candidate iterate and its workspace and may update the integrator's nonlinear
+evaluation statistics. The shared driver calls
+[`OrdinaryDiffEqCore.apply_step!`](@ref) after accepting the candidate.
+
+Solver packages that subtype [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref) extend
+this function to participate in the shared [`nlsolve!`](@ref) convergence loop.
+"""
+function compute_step! end
+
+"""
+    nlsolve!(nlsolver::AbstractNLSolver, integrator, cache = nothing,
+             repeat_step = false)
 
 Solve
 
@@ -23,7 +52,42 @@ Solve
 dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 
-where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
+where `dt` is the step size and `γ` and `c` are stage constants.
+
+# Arguments
+
+  - `nlsolver`: a solver returned by [`build_nlsolver`](@ref), or another
+    [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref) implementation of this driver
+    contract.
+  - `integrator`: the current differential-equation integrator.
+  - `cache`: the owning implicit algorithm's cache. Newton-type solvers require
+    it for `W` updates; fixed-point solvers may leave it as `nothing`.
+  - `repeat_step`: whether this solve is retrying the same integrator step after
+    a rejection.
+
+# Mutation and return value
+
+The solve updates the nonlinear iterate, convergence estimate, status, failure
+counters, and solver workspace. It may update the integrator state while forming
+a new `W`, and its postamble updates integrator statistics and
+`force_stepfail`. The return value is the result of the solver's
+`SciMLBase.postamble!` method; the solvers constructed by [`build_nlsolver`](@ref)
+return the converged stage increment `z`.
+
+# Failure behavior
+
+Non-convergence is recorded in the solver status rather than thrown: inspect it
+with [`nlsolvefail`](@ref). A stale-Jacobian failure is retried once with a fresh
+Jacobian. Calling a Newton-type solver without `cache` throws `ArgumentError`,
+and exceptions raised by residual, Jacobian, or linear-solver evaluations
+propagate.
+
+# Extension contract
+
+Custom nonlinear solvers extend [`compute_step!`](@ref) and [`initial_η`](@ref),
+and provide the `AbstractNLSolver` state queried by the documented
+`OrdinaryDiffEqCore` nonlinear-solver hooks. Candidate acceptance and finalization
+are dispatched through `OrdinaryDiffEqCore.apply_step!` and `SciMLBase.postamble!`.
 
 Whether `innertmp` and `outertmp` is used for the evaluation is controlled by setting `nlsolver.method`.
 In both cases the variable name is actually `nlsolver.tmp`.
@@ -199,7 +263,13 @@ initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
 
 Return the initial convergence-rate estimate `η` for a fresh nonlinear solve.
 Functional/Anderson solvers reuse the previous `ηold`; the Newton solver method
-derives it from the tolerance. Consumed by [`nlsolve!`](@ref).
+derives it from the tolerance. The return value must be a finite nonnegative
+number compatible with the integrator tolerances.
+
+Solver packages that define an [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref)
+subtype extend this function when their initial estimate differs from the default
+tolerance-based rule. The function does not mutate the solver or integrator and
+is consumed by [`nlsolve!`](@ref).
 """
 function initial_η(nlsolver::NLSolver, integrator)
     return max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)

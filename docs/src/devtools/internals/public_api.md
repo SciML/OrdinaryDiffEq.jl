@@ -221,6 +221,30 @@ OrdinaryDiffEqCore.resize_nlsolver!
 OrdinaryDiffEqCore.default_nlsolve
 ```
 
+### OrdinaryDiffEqNonlinearSolve driver hooks
+
+These hooks are a version-controlled, developer-only contract for implicit
+solver packages. Cache constructors create an opaque nonlinear solver with
+`build_nlsolver`; step implementations mark stages, drive the solve, classify
+failure, and query optional workspace capabilities through the remaining
+functions. `compute_step!` and `initial_η` are extension points for sibling
+packages that implement an `AbstractNLSolver` subtype. The Anderson helpers are
+shared implementations, but their concrete workspace types and fields remain
+internal.
+
+```@docs
+OrdinaryDiffEqNonlinearSolve.build_nlsolver
+OrdinaryDiffEqNonlinearSolve.nlsolve!
+OrdinaryDiffEqNonlinearSolve.nlsolvefail
+OrdinaryDiffEqNonlinearSolve.markfirststage!
+OrdinaryDiffEqNonlinearSolve.du_alias_or_new
+OrdinaryDiffEqNonlinearSolve.can_smooth_est
+OrdinaryDiffEqNonlinearSolve.compute_step!
+OrdinaryDiffEqNonlinearSolve.initial_η
+OrdinaryDiffEqNonlinearSolve.anderson
+OrdinaryDiffEqNonlinearSolve.anderson!
+```
+
 ## Jacobian / W-matrix / differentiation configuration
 
 Provided by `OrdinaryDiffEqDifferentiation`.
