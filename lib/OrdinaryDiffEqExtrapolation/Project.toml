@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "2.4.1"
+version = "2.4.2"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
