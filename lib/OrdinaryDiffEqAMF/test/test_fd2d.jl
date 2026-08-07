@@ -2,6 +2,7 @@ using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqAMF
 using SciMLOperators
 using LinearAlgebra
+using LinearSolve
 using Test
 
 function setup_fd2d_problem(; A = 0.1, B = 0.1, C = 0.0, N = 40, final_t = 1.0)
@@ -29,6 +30,9 @@ function setup_fd2d_problem(; A = 0.1, B = 0.1, C = 0.0, N = 40, final_t = 1.0)
     u0 = [16 * (h * i) * (h * j) * (1 - h * i) * (1 - h * j) for i in 1:N for j in 1:N]
     tspan = (0.0, final_t)
 
+    # Operator jac_prototype: SciMLOperators WOperator convert MethodErrors for
+    # AddedOperator/tensor-product graphs under dense factorization (SciMLOperators#411
+    # / v1.24.5). Use KrylovJL for the dense reference until that floor is available.
     ref_func = ODEFunction{true, SciMLBase.FullSpecialize}(
         f!; jac_prototype = J_op, sparsity = convert(AbstractMatrix, J_op)
     )
@@ -54,11 +58,12 @@ end
 
 @testset "AMF finite-difference 2D regression" begin
     ref_prob, amf_prob, custom_amf_prob = setup_fd2d_problem()
+    ref_alg = ROS34PW1a(linsolve = KrylovJL())
 
-    solve(ref_prob, ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+    solve(ref_prob, ref_alg; abstol = 1.0e-10, reltol = 1.0e-10)
     solve(custom_amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
 
-    ref_time = @elapsed ref_sol = solve(ref_prob, ROS34PW1a(); abstol = 1.0e-10, reltol = 1.0e-10)
+    ref_time = @elapsed ref_sol = solve(ref_prob, ref_alg; abstol = 1.0e-10, reltol = 1.0e-10)
     amf_sol = solve(amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
     custom_time = @elapsed custom_amf_sol = solve(custom_amf_prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
 
