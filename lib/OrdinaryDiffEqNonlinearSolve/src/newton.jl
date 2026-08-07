@@ -44,21 +44,42 @@ function initialize!(
     # A no-init cache has no `stats` (SimpleNonlinearSolve builds every solution with
     # `stats === nothing`), and its `reinit!` only remakes the problem without evaluating
     # the residual, so neither the copies below nor the `+1` apply: nothing is counted and
-    # nothing is invented.
+    # nothing is invented. `njacs`/`nw` for a reused `W` are still recorded by
+    # `_update_nlsolvealg_W_oop!` — that assembly is the integrator's own work.
     if SciMLBase.has_stats(integrator) && !(cache.cache isa NonlinearSolveNoInitCache)
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
         integrator.stats.nf += cache.cache.stats.nf + 1
-        # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
-        # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
-        # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
-        # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
+        # Under `W` reuse the inner solver's "Jacobian" is the `W_ref` closure, which hands
+        # back the `W` assembled here rather than evaluating anything, so its `njacs` counts
+        # reads, not Jacobian evaluations; `calc_J` inside `_update_nlsolvealg_W_oop!`
+        # counts the real ones. Without reuse the inner solver owns the Jacobian and its
+        # count stands.
         if cache.W === nothing
             integrator.stats.njacs += cache.cache.stats.njacs
         end
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
+
+    if cache.W !== nothing
+        dtgamma = method === DIRK ? γ * dt : γ * dt / α
+        W_γdt = cache.W_γdt
+        first_call = iszero(W_γdt)
+        # No stored `J` on this path (`W` is rebuilt from a fresh Jacobian), so a
+        # dt/gamma drift past the cutoff costs a Jacobian evaluation, not just a
+        # reassembly as in the in-place `new_jac`/`new_w` split.
+        should_update = first_call || alg.always_new ||
+            nlsolver.status === Divergence ||
+            abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
+        if should_update
+            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma)
+            cache.new_W = true
+        else
+            cache.new_W = false
+        end
+    end
+
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
     else
@@ -263,6 +284,17 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     return nothing
 end
 
+function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma)
+    # Same construction as the `StaticWOperator` branch of `calc_W`: `calc_J` picks
+    # user `jac` vs differentiation through `nlcache.uf` and records the evaluation
+    # in `integrator.stats.njacs` — the only njacs the reused-`W` path can count.
+    J_new = calc_J(integrator, nlcache)
+    nlcache.W[] = J_new - integrator.f.mass_matrix * inv(dtgamma)
+    nlcache.W_γdt = dtgamma
+    integrator.stats.nw += 1
+    return nothing
+end
+
 ## compute_step!
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, false}, integrator)
@@ -277,12 +309,14 @@ end
         # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
         # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
         # inner solve; an unsuccessful one is a genuine failure and reaches the step
-        # controller the way `NLNewton` reports a failed linear solve.
+        # controller the way `NLNewton` reports a failed linear solve. The inner residual
+        # and linear-solve work is uncounted (no `stats`); `_update_nlsolvealg_W_oop!`
+        # counts the Jacobian and `W` assemblies, the integrator's own share of the work.
         innersol = solve!(nlcache)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
         end
-        active_u = innersol.u
+        znew = innersol.u
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
         # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
@@ -295,13 +329,13 @@ end
             return convert(eltype(z), Inf)
         end
         step!(nlcache; recompute_jacobian)
-        active_u = get_u(nlcache)
+        znew = get_u(nlcache)
     end
-    nlsolver.ztmp = active_u
+    nlsolver.ztmp = znew
 
     ustep = compute_ustep(tmp, γ, z, method)
     atmp = calculate_residuals(
-        z .- active_u, uprev, ustep, opts.abstol, opts.reltol,
+        z .- znew, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
     )
     ndz = opts.internalnorm(atmp, t)
@@ -873,7 +907,8 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.weight === nothing || resize!(nlcache.weight, i)
     nlcache.dz === nothing || resize!(nlcache.dz, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
-    nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    # The reused out-of-place `W` is a `Ref` over a static matrix, which has no `resize!`.
+    nlcache.W === nothing || nlcache.W isa Ref || resize_J_W!(nlcache, integrator, i)
     # `nlcache.linsolve` is re-pointed by `initialize!` when it rebuilds the inner cache on the
     # next length mismatch, before any estimator solve — nothing to rebuild here.
     nlcache.W_γdt = zero(nlcache.W_γdt)
