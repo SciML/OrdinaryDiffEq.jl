@@ -19,7 +19,7 @@ end
         prob, g, noise_prototype, order, integrator
     )
     _tType = eltype(t)
-    f = prob.f
+    f = DiffEqBase.strip_domain_checks(prob.f)
     p = integrator.p
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
@@ -348,7 +348,7 @@ end
         prob, g, order, integrator
     )
     _tType = eltype(t)
-    f = prob.f
+    f = DiffEqBase.strip_domain_checks(prob.f)
     p = prob.p
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax

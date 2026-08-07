@@ -164,6 +164,7 @@ Base.@constprop :aggressive function _ode_init(
         stage_limiter = trivial_limiter!,
         step_limiter = trivial_limiter!,
         isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+        domain_checks = nothing,
         unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
         verbose = Standard(),
         timeseries_errors = true,
@@ -563,18 +564,20 @@ Base.@constprop :aggressive function _ode_init(
     else
         dt
     end
+    #build cache state from stripped f 
+    cache_f = DiffEqBase.strip_domain_checks(f)
     if _cache !== nothing
         cache = _cache
     elseif prob isa DAEProblem
         cache = alg_cache(
             _alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, _dt,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, cache_f, t, _dt,
             reltol_internal, p, calck, Val(isinplace(prob)), verbose_spec
         )
     else
         cache = alg_cache(
             _alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, _dt, reltol_internal, p, calck,
+            tTypeNoUnits, uprev, uprev2, cache_f, t, _dt, reltol_internal, p, calck,
             Val(isinplace(prob)), verbose_spec
         )
     end

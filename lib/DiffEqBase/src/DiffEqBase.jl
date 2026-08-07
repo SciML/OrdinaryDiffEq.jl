@@ -153,6 +153,7 @@ include("dae_initialization.jl")
 
 include("callbacks.jl")
 include("common_defaults.jl")
+include("domain_checks.jl")
 include("solve.jl")
 include("internal_euler.jl")
 include("norecompile.jl")
@@ -194,6 +195,9 @@ export SensitivityADPassThrough
 
 export AutoDePSpecialize
 
+# written at `solve` call sites.
+export @isoutofdomain
+
 # Declare DiffEqBase-owned, documented API names `public` so downstream packages can
 # drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is
 # only parseable on Julia >= 1.11.0-DEV.469, so it is gated to keep the 1.10 floor parsing.
@@ -220,7 +224,12 @@ export AutoDePSpecialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
             :default_factorize, :stripunits, Symbol("@tight_loop_macros"),
             # Solver-author wrapper/tag types and convergence-testing entry type
-            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
+            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup,
+            # Domain-violation mechanism (`domain_checks` solver keyword)
+            :DomainCheckedFunction, :domain_checks_failing, :apply_domain_checks,
+            :strip_domain_checks, :find_domain_checks, :supports_domain_checks,
+            # Source-retaining `isoutofdomain` predicates, for failure diagnostics
+            :TracedPredicate, :TracedPredicateLeaf, :isoutofdomain_report
         )
     )
 end

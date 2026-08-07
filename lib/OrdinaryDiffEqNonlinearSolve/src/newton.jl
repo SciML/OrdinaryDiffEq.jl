@@ -216,7 +216,7 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
             if SciMLBase.has_jac(f)
                 f.jac(J, uprev, p, tstep)
             elseif uf !== nothing
-                uf.f = nlsolve_f(f, alg)
+                uf.f = strip_domain_checks(nlsolve_f(f, alg)) #strip domain checks
                 uf.t = tstep
                 if !(p isa SciMLBase.NullParameters)
                     uf.p = p

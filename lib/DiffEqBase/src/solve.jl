@@ -39,6 +39,10 @@ DiffEq's standard merging rules:
 - Passed kwargs take precedence (i.e., they override problem kwargs)
 - If `merge_callbacks=true` and both prob and kwargs have callbacks, they are
   merged into a `CallbackSet` rather than one overriding the other
+- If both prob and kwargs supply an `isoutofdomain` predicate, they are combined
+  with a logical OR. This lets a problem-carried predicate
+  (e.g. one compiled from ModelingToolkit variable bounds) coexist with a
+  user-supplied `isoutofdomain` passed to `solve`.
 
 Returns the merged kwargs as a Base.pairs.
 
@@ -66,6 +70,22 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
                 )
             )
             kwargs = merge(kwargs_temp, callbacks)
+        end
+        # Compose isoutofdomain predicates with OR instead of overwriting
+        #used when MTK hooks var bounds into isoutofdomain
+        if haskey(prob.kwargs, :isoutofdomain) && haskey(kwargs, :isoutofdomain)
+            prob_iood = prob.kwargs[:isoutofdomain]
+            user_iood = values(kwargs).isoutofdomain
+            kwargs_temp = NamedTuple{
+                Base.diff_names(
+                    Base._nt_names(values(kwargs)),
+                    (:isoutofdomain,)
+                ),
+            }(values(kwargs))
+            composed = NamedTuple{(:isoutofdomain,)}(
+                ((u, p, t) -> prob_iood(u, p, t) || user_iood(u, p, t),)
+            )
+            kwargs = merge(kwargs_temp, composed)
         end
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
@@ -532,6 +552,16 @@ explanations of the timestepping algorithms, see the
   for more details.
 * `isoutofdomain`: Specifies a function `isoutofdomain(u,p,t)` where, when it
   returns true, it will reject the timestep. Disabled by default.
+* `domain_checks`: Specifies a tuple of predicates, each `(u,p,t) -> Bool` or
+  `(u,p,t) -> Pair{Bool,<:AbstractString}` (to attach a custom message). Each is
+  checked against the state before every right-hand-side evaluation, including
+  intermediate stages and Newton iterations, where `isoutofdomain` only inspects the
+  state once per tentative step. A failing predicate rejects the step and retries with
+  a smaller `dt`, so it requires `adaptive = true`; under fixed steps the solve stops
+  with `ReturnCode.Unstable` instead. Requires an `ODEFunction` right-hand-side and an
+  OrdinaryDiffEq.jl solver — other combinations throw rather than silently ignore the
+  checks. A `Vector` of mixed predicate types works but dispatches dynamically on
+  every evaluation. Disabled by default.
 * `unstable_check`: Specifies a function `unstable_check(dt,u,p,t)` where, when
   it returns true, it will cause the solver to exit and throw a warning. Defaults
   to `any(isnan,u)`, i.e. checking if any value is a NaN.
@@ -709,6 +739,11 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
     )
+    #build domain checks early for coherent function wrapped state
+    f_promote = apply_domain_checks(
+        f_promote, get(kwargs, :domain_checks, nothing), alg;
+        opaque_params = p_promote !== p
+    )
     if isconcreteu0(prob, tspan[1], kwargs) && prob.u0 === u0 &&
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
@@ -742,6 +777,9 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
     )
+
+    f_promote = apply_domain_checks(f_promote, get(kwargs, :domain_checks, nothing), alg;opaque_params = p_promote !== p)
+
     if isconcreteu0(prob, tspan[1], kwargs) && typeof(u0_promote) === typeof(prob.u0) &&
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
@@ -773,6 +811,8 @@ function get_concrete_problem(prob::DDEProblem, isadapt; kwargs...)
 
     u0 = promote_u0(u0, p, tspan[1])
     tspan = promote_tspan(u0, p, tspan, prob, kwargs)
+
+    apply_domain_checks(prob.f, get(kwargs, :domain_checks, nothing), get(kwargs, :alg, nothing))
 
     return remake(prob; u0 = u0, tspan = tspan, p = p, constant_lags = constant_lags)
 end
