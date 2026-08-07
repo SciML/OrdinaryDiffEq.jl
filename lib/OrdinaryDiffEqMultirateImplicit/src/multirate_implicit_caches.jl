@@ -81,8 +81,9 @@ _mreil_jac_function(f, nf) = f
 # MREIL reproduces `MREEF`, so the user silently gets the explicit method they
 # were avoiding, together with its step size restriction — on a fast block with
 # `λ = 500` at `dt = 0.05` that is an error of 6.8e60 where the true `J` gives 7.1e-7.
-# `zeros(n, n)` is a natural way to write "a dense n-by-n buffer", so refuse it rather
-# than hand back a different method under MREIL's name.
+# The right way to request a dense Jacobian is no prototype at all, but when an
+# all-zero one is passed anyway, refuse it rather than hand back a different method
+# under MREIL's name.
 #
 # This looks at the outer `f`, because `prepare_user_sparsity` reads `prob.f.sparsity`;
 # `ODEFunction` and `SplitFunction` both default `sparsity` from `jac_prototype`. A user
