@@ -13,7 +13,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
     resize_non_user_cache!, _ode_addsteps!, full_cache,
     DerivativeOrderNotPossibleError, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
+    copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
     find_algebraic_vars_eqs
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
@@ -30,6 +30,7 @@ import ForwardDiff
 using FiniteDiff: FiniteDiff
 using LinearAlgebra: mul!, I, norm, lu, UniformScaling
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
+using SciMLBase: LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
 using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,

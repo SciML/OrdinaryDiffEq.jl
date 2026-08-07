@@ -14,11 +14,11 @@ import OrdinaryDiffEqCore: unwrap_alg,
     get_current_alg_order,
     isfirk,
     _fixup_ad, perform_step!,
-    LinearAliasSpecifier, set_discontinuity,
+    set_discontinuity,
     Convergence, FastConvergence, NLStatus,
     VerySlowConvergence, Divergence, get_new_W_γdt_cutoff
 import SciMLBase
-import SciMLBase: alg_order, _vec, _reshape, _unwrap_val,
+import SciMLBase: alg_order, _vec, _reshape, _unwrap_val, LinearAliasSpecifier,
     UDerivativeWrapper, UJacobianWrapper, value,
     LinearProblem, get_tmp_cache, init
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!

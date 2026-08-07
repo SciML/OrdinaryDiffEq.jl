@@ -743,7 +743,13 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     )
 end
 
-# overrides this with a method that calls calc_J to get a fresh Jacobian.
+"""
+    get_fresh_jacobian(integrator, cache)
+
+Return a Jacobian suitable for numerical-instability diagnostics. Cache-specific
+packages may specialize this hook when the stored Jacobian is unavailable or
+stale. Diagnostic evaluation must not increment solver work statistics.
+"""
 get_fresh_jacobian(integrator, cache) = cache.J
 
 SciMLBase.has_mtk_sys(integrator::ODEIntegrator) = hasproperty(integrator.sol.prob.f, :sys) && integrator.sol.prob.f.sys !== nothing

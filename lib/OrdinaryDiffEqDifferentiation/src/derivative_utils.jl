@@ -354,7 +354,12 @@ function calc_J(integrator, cache, next_step::Bool = false)
     return J
 end
 
-get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache) = calc_J(integrator, cache)
+function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
+    njacs = integrator.stats.njacs
+    J = calc_J(integrator, cache)
+    integrator.stats.njacs = njacs
+    return J
+end
 
 """
     calc_J!(J, integrator, cache, next_step::Bool = false) -> J

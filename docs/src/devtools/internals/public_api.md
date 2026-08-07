@@ -292,6 +292,7 @@ OrdinaryDiffEqCore.DefaultCache
 OrdinaryDiffEqCore.@cache
 OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast
+OrdinaryDiffEqCore.get_fresh_jacobian
 OrdinaryDiffEqCore.perform_step!
 OrdinaryDiffEqCore.apply_step!
 SciMLBase.postamble!
