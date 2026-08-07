@@ -765,3 +765,111 @@ end
 
     return out
 end
+
+############################################ NordsieckBDF / DNordsieckBDF
+# ================================================================= interpolation
+# Dense output is the Nordsieck polynomial itself:
+#     y(t_n + s*h) = sum_j zn[j] * s^j,   s = Θ - 1
+# `integrator.k` holds the columns (unused ones zeroed), so the order at
+# evaluation time is not needed.
+const NORDSIECK_CACHES = Union{
+    NordsieckBDFCache, NordsieckBDFConstantCache,
+    DNordsieckBDFCache, DNordsieckBDFConstantCache,
+}
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::NORDSIECK_CACHES,
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
+    s = Θ - one(Θ)
+    out = k[length(k)]
+    @inbounds for j in (length(k) - 1):-1:1
+        out = @.. out * s + k[j]
+    end
+    return out
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::NORDSIECK_CACHES,
+        idxs, T::Type{Val{0}}, differential_vars
+    )
+    s = Θ - one(Θ)
+    out = k[length(k)][idxs]
+    @inbounds for j in (length(k) - 1):-1:1
+        out = @.. out * s + k[j][idxs]
+    end
+    return out
+end
+
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache::NORDSIECK_CACHES,
+        idxs::Nothing, T::Type{Val{0}}, differential_vars
+    )
+    s = Θ - one(Θ)
+    copyto!(out, k[length(k)])
+    @inbounds for j in (length(k) - 1):-1:1
+        kj = k[j]
+        @.. broadcast = false out = out * s + kj
+    end
+    return out
+end
+
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache::NORDSIECK_CACHES,
+        idxs, T::Type{Val{0}}, differential_vars
+    )
+    s = Θ - one(Θ)
+    @views copyto!(out, k[length(k)][idxs])
+    @inbounds for j in (length(k) - 1):-1:1
+        kj = @view k[j][idxs]
+        @.. broadcast = false out = out * s + kj
+    end
+    return out
+end
+
+# derivatives: differentiate the same polynomial, d^m/dt^m = (1/dt^m) d^m/ds^m
+for (TV, m) in ((Val{1}, 1), (Val{2}, 2), (Val{3}, 3))
+    @eval @muladd function _ode_interpolant(
+            Θ, dt, y₀, y₁, k, cache::NORDSIECK_CACHES,
+            idxs::Nothing, T::Type{$TV}, differential_vars
+        )
+        s = Θ - one(Θ)
+        n = length(k)
+        out = zero(k[1])
+        @inbounds for j in n:-1:($m + 1)
+            c = one(Θ)
+            for r in 0:($m - 1)
+                c *= (j - 1 - r)
+            end
+            out = @.. out * s + c * k[j]
+        end
+        return @.. out / dt^$m
+    end
+
+    @eval @muladd function _ode_interpolant!(
+            out, Θ, dt, y₀, y₁, k, cache::NORDSIECK_CACHES,
+            idxs::Nothing, T::Type{$TV}, differential_vars
+        )
+        s = Θ - one(Θ)
+        n = length(k)
+        fill!(out, zero(eltype(out)))
+        @inbounds for j in n:-1:($m + 1)
+            c = one(Θ)
+            for r in 0:($m - 1)
+                c *= (j - 1 - r)
+            end
+            kj = k[j]
+            @.. broadcast = false out = out * s + c * kj
+        end
+        @.. broadcast = false out = out / dt^$m
+        return out
+    end
+end
+
+# `addsteps!` is a no-op: the interpolation data is written during the step.
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::NORDSIECK_CACHES,
+        always_calc_begin = false, allow_calc_end = true, force_calc_end = false
+    )
+    return nothing
+end
