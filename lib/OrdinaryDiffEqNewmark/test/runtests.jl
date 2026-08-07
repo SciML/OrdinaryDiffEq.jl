@@ -220,6 +220,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
 
     @time @safetestset "Inner Nonlinear Solver Caches" include("nlsolve_cache_tests.jl")
+    @time @safetestset "Adaptive Time Stepping" include("newmark_adaptive_tests.jl")
+    @time @safetestset "Co-loaded Sublibrary Remake" include("coload_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET) - skip on pre-release Julia
