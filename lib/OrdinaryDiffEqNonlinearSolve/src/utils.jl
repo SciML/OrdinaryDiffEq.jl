@@ -770,11 +770,11 @@ function build_nlsolver(
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
+            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
             prob = NonlinearProblem(
                 NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
                 copy(ztmp), nlp_params
             )
-            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
             # Zero tolerances: the integrator owns convergence (see the in-place branch above).
             cache = init(
                 prob, inner_alg; verbose = verbose.nonlinear_verbosity,
@@ -784,14 +784,34 @@ function build_nlsolver(
                     abstol = _inner_lintol(uTolType), reltol = _inner_lintol(uTolType),
                 )
             )
+            W_ref = nothing
             if cache isa NonlinearSolveNoInitCache
+                # This cache only records the arguments a `solve!` will forward, so
+                # building one is the cheapest way to ask whether the inner solver
+                # iterates, and the answer stays right as SimpleNonlinearSolve grows.
+                if !isdae && f.nlstep_data === nothing && W isa StaticWOperator
+                    # StaticWOperator stores inv(W) in its W field for n <= 7, so the
+                    # Ref holds the plain W matrix; initialize! rewrites it before the
+                    # first solve (W_γdt starts at zero).
+                    W_ref = Ref(W.W)
+                    nlf_jac = let W_ref = W_ref
+                        (z, p) -> W_ref[]
+                    end
+                    prob = NonlinearProblem(
+                        NonlinearFunction{false, SciMLBase.FullSpecialize}(
+                            nlf; jac = nlf_jac, jac_prototype = W.W
+                        ),
+                        copy(ztmp), nlp_params
+                    )
+                end
                 # `solve!`-driven fallback cache: it must keep terminating on its own
                 # default (nonzero) tolerances (see the in-place branch above).
                 cache = init(prob, inner_alg; verbose = verbose.nonlinear_verbosity)
             end
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,
+                nothing, W_ref, W_ref === nothing ? nothing : uf,
+                nothing, nothing, nothing, nothing, nothing,
                 zero(tstep), true
             )
         else

@@ -1,7 +1,8 @@
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, Test, Random,
-    LinearAlgebra, LinearSolve, ADTypes
+    LinearAlgebra, LinearSolve, ADTypes, SciMLBase
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using NonlinearSolve: NewtonRaphson
+using SimpleNonlinearSolve: SimpleNewtonRaphson, SimpleTrustRegion
 Random.seed!(123)
 
 A = 0.01 * rand(3, 3)
@@ -207,4 +208,32 @@ let integ = init(
     @test integ.cache.nlsolver.cache.weight !== nothing
     step!(integ)
     @test !iszero(integ.cache.nlsolver.cache.weight)
+end
+
+using StaticArrays
+vdp_static(u, p, t) = SVector(u[2], p[1] * ((1 - u[1]^2) * u[2] - u[1]))
+let
+    prob = ODEProblem(
+        vdp_static, SVector(2.0, 0.0), (0.0, 1.0), SVector(1.0e3)
+    )
+    solref = solve(prob, TRBDF2(); reltol = 1.0e-8, abstol = 1.0e-10)
+    for inner in (
+            SimpleNewtonRaphson(; autodiff = AutoForwardDiff()),
+            SimpleTrustRegion(; autodiff = AutoForwardDiff()),
+        )
+        integ = init(
+            prob,
+            TRBDF2(nlsolve = NonlinearSolveAlg(inner), concrete_jac = true);
+            reltol = 1.0e-8, abstol = 1.0e-10
+        )
+        @test integ.cache.nlsolver.cache.W isa Base.RefValue
+        sol = solve!(integ)
+        @test SciMLBase.successful_retcode(sol.retcode)
+        @test maximum(abs.(sol.u[end] .- solref.u[end])) < 1.0e-3
+        # These inner solvers report no counters of their own, so every Jacobian the
+        # integrator sees comes from the reused `W`: one evaluation per assembly, and
+        # fewer assemblies than nonlinear iterations because the `W` is held across them.
+        @test sol.stats.njacs == sol.stats.nw
+        @test 0 < sol.stats.nw < sol.stats.nnonliniter
+    end
 end
