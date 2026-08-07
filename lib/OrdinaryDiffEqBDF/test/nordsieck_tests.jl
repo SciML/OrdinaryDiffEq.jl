@@ -4,6 +4,12 @@ using SciMLBase: DAEProblem, ODEProblem, ODEFunction, successful_retcode, remake
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NonlinearSolveAlg
 using LinearAlgebra, Test
 
+@testset "NordsieckBDF / DNordsieckBDF: default max_iter matches CVODE MAXCOR" begin
+    @test NordsieckBDF().nlsolve.max_iter == 3
+    @test DNordsieckBDF().nlsolve.max_iter == 3
+    @test NordsieckBDF(nlsolve = NLNewton(max_iter = 10)).nlsolve.max_iter == 10
+end
+
 @testset "NordsieckBDF: adaptive accuracy" begin
     for (nm, prob) in (
             ("out-of-place", ODEProblemLibrary.prob_ode_linear),
