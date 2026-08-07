@@ -802,11 +802,15 @@ end
     - `nlsolve`: nonlinear solver for the implicit stage. Its `κ` acts as CVODE's
       NLSCOEF, i.e. the fraction of the local error budget the corrector is allowed
       to consume, because the increment norm is scaled by the test quantity `tq[2]`.
+      The default caps the corrector at 3 iterations, matching CVODE's `MAXCOR`:
+      past that it is cheaper to give up, refresh `W`, and re-converge than to keep
+      iterating with a stale Jacobian — a trade this method can take because
+      refactorizing is comparatively rare for it.
     - `max_order`: maximum BDF order (1–5).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`.
     """,
     """
-    nlsolve = NLNewton(),
+    nlsolve = NLNewton(max_iter = 3),
     extrapolant = :linear,
     max_order::Val{MO} = Val{5}(),
     step_limiter! = trivial_limiter!,
@@ -831,7 +835,7 @@ end
 function NordsieckBDF(;
         max_order::Val{MO} = Val{5}(),
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
-        linsolve = nothing, nlsolve = NLNewton(), tol = nothing,
+        linsolve = nothing, nlsolve = NLNewton(max_iter = 3), tol = nothing,
         extrapolant = :linear, step_limiter! = trivial_limiter!, stald = false,
         qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
     ) where {MO}
@@ -866,7 +870,7 @@ end
     - `max_order`: maximum BDF order (1–5).
     """,
     """
-    nlsolve = NLNewton(),
+    nlsolve = NLNewton(max_iter = 3),
     extrapolant = :linear,
     max_order::Val{MO} = Val{5}(),
     """
@@ -888,7 +892,7 @@ end
 function DNordsieckBDF(;
         max_order::Val{MO} = Val{5}(),
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
-        linsolve = nothing, nlsolve = NLNewton(), tol = nothing,
+        linsolve = nothing, nlsolve = NLNewton(max_iter = 3), tol = nothing,
         extrapolant = :linear, stald = false,
         qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
     ) where {MO}
