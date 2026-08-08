@@ -70,3 +70,40 @@ step!(int4)
 # Callback fires once → reeval_internals_due_to_modification! → initialize_dae! once
 # If double-init existed, this would be 2
 @test counter2.count[] == init_count_before + 1
+
+# Regression for #3932: after a successful step (iter > 0), manual
+# derivative_discontinuity! must still trigger DAE reinitialization. Previously
+# loopheader! only handled the flag when iter == 0, so a later modification was
+# silently accepted with broken algebraic constraints.
+@testset "derivative_discontinuity after first step (#3932)" begin
+    int5 = init(prob, DFBDF(), initializealg = DiffEqBase.CheckInit())
+    step!(int5)
+    @test int5.iter > 0
+    int5.u[1] = 2.0
+    derivative_discontinuity!(int5, true)
+    @test_throws SciMLBase.CheckInitFailureError step!(int5)
+
+    int6 = init(prob, DFBDF(), initializealg = BrownFullBasicInit())
+    step!(int6)
+    @test int6.iter > 0
+    int6.u[1] = 2.0
+    derivative_discontinuity!(int6, true)
+    step!(int6)
+    @test int6.u[1] + int6.u[2] + int6.u[3] ≈ 1.0 atol = 1.0e-10
+
+    # Callback path after the first step still reinitializes (and must not
+    # double-count in the following loopheader!).
+    counter3 = CountingInit(DiffEqBase.CheckInit(), Ref(0))
+    fired = Ref(false)
+    condition3(u, t, integrator) = fired[]  # arm after first step
+    affect3!(integrator) = (integrator.u .= integrator.u)
+    cb3 = DiscreteCallback(condition3, affect3!)
+    int7 = init(prob2, DFBDF(), initializealg = counter3, callback = cb3)
+    step!(int7)  # no callback fire yet
+    count_before_fire = counter3.count[]
+    fired[] = true
+    step!(int7)  # callback fires → exactly one initialize_dae!
+    @test counter3.count[] == count_before_fire + 1
+    step!(int7)  # fires again on next accept → +1 more, not +2 from loopheader
+    @test counter3.count[] == count_before_fire + 2
+end
