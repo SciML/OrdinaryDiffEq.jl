@@ -63,7 +63,25 @@ Gauss–Legendre methods use the roots of the Legendre polynomial directly as co
 ### System size considerations
 
   - **Systems < 200**: FIRK methods are competitive due to better multithreading
-  - **Systems > 200**: Consider SDIRK or BDF methods instead
+  - **Systems > 200**: Consider SDIRK or BDF methods instead, or keep a Radau method and
+    switch to a matrix-free linear solver (see below)
+
+## Matrix-free (Newton-Krylov) usage
+
+The RadauIIA methods and `AdaptiveRadau` accept a matrix-free `linsolve`, which avoids
+forming a Jacobian at all:
+
+```julia
+solve(prob, RadauIIA5(linsolve = KrylovJL_GMRES()))
+```
+
+The W-transform decouples each step into one real shifted solve and one shifted solve per
+complex-conjugate stage pair, and every one of them is applied through the same real
+Jacobian-vector product. `concrete_jac = true` keeps a concrete Jacobian alongside the
+matrix-free application, which is what a preconditioner needs.
+
+`GaussLegendre` has no matrix-free path: it solves a single coupled
+`num_stages * length(u)` block system rather than decoupled shifted systems.
 
 ## Performance Guidelines
 

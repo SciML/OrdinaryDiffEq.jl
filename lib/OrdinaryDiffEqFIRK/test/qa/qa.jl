@@ -27,5 +27,15 @@ run_qa(
                 :AbstractSciMLOperator,   # SciMLOperators
             ),
         ),
+        all_qualified_accesses_are_public = (;
+            ignore = (
+                # LinearSolve internal, and the only way to ask whether a linear solver
+                # can consume an operator `A`. `build_J_W` in
+                # OrdinaryDiffEqDifferentiation reaches for the same name and ignores it
+                # the same way; FIRK has to make the matching decision for its own
+                # shifted stage matrices. Make-public candidate upstream.
+                :needs_concrete_A,
+            ),
+        ),
     ),
 )
