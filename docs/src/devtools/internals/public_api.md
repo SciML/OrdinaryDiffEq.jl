@@ -314,6 +314,7 @@ OrdinaryDiffEqCore.resolve_stage_step_limiters
 OrdinaryDiffEqCore.trivial_limiter!
 OrdinaryDiffEqCore.DEOptions
 OrdinaryDiffEqCore.DummyController
+OrdinaryDiffEqCore.DummyControllerCache
 ```
 
 ### Time-stop and saving queues
