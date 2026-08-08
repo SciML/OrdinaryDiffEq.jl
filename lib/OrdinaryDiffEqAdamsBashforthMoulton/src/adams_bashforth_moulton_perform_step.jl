@@ -90,14 +90,14 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)        #Ralston Method
         if cnt == 1
-            cache.k3 .= k1
+            @.. broadcast = false thread = thread cache.k3 = k1
         else
-            cache.k2 .= k1
+            @.. broadcast = false thread = thread cache.k2 = k1
         end
     else
         @.. broadcast = false thread = thread u = uprev + (dt / 12) * (23 * k1 - 16 * k2 + 5 * k3)
         cache.k2, cache.k3 = k3, k2
-        cache.k2 .= k1
+        @.. broadcast = false thread = thread cache.k2 = k1
     end
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
