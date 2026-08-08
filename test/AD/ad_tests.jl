@@ -3,7 +3,8 @@ using OrdinaryDiffEq, OrdinaryDiffEqCore, ForwardDiff, FiniteDiff, LinearAlgebra
     StaticArrays
 using SciMLSensitivity  # Loaded so Mooncake can dispatch through SciMLSensitivityMooncakeExt
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqFIRK, OrdinaryDiffEqRosenbrock
-using OrdinaryDiffEqLinear: LinearExponential, MatrixOperator
+using OrdinaryDiffEqLinear: LinearExponential
+using SciMLOperators: MatrixOperator
 import DifferentiationInterface as DI
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 

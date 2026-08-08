@@ -1,6 +1,7 @@
 using OrdinaryDiffEqLinear, Test, DiffEqDevTools
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner, OrdinaryDiffEqTsit5
 using LinearAlgebra, Random
+using SciMLOperators: MatrixOperator
 
 # Linear exponential solvers
 A = MatrixOperator([2.0 -1.0; -1.0 2.0])

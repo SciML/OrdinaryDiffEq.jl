@@ -1,5 +1,6 @@
 using OrdinaryDiffEqLinear
 using OrdinaryDiffEqCore
+using SciMLOperators: MatrixOperator
 using AllocCheck
 using LinearAlgebra
 using Test
