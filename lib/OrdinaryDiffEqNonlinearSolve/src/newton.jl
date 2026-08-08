@@ -65,6 +65,8 @@ function initialize!(
         nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, f)
     end
 
+    refresh_stage_conditioners!(cache, tmp, γ, method, p)
+    z = apply_stage_predictor!!(nlsolver)
     SciMLBase.reinit!(cache.cache, z, p = nlp_params)
     return nothing
 end
@@ -152,6 +154,8 @@ function initialize!(
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
+        refresh_stage_conditioners!(cache, tmp, γ, method, p)
+        z = apply_stage_predictor!!(nlsolver)
         if length(get_u(cache.cache)) != length(z)
             new_prob = if cache.W !== nothing
                 # W-reuse: re-point the inner jacobian at the resized W via the same mapping
@@ -171,7 +175,8 @@ function initialize!(
                 # returning `MaxIters`.
                 cache.cache = init(
                     new_prob, cache.cache.alg;
-                    verbose = integrator.opts.verbose.nonlinear_verbosity
+                    verbose = integrator.opts.verbose.nonlinear_verbosity,
+                    conditioning_kwargs(cache)...
                 )
             else
                 # Same tolerances and termination mode as `build_nlsolver`: the integrator owns
@@ -183,7 +188,8 @@ function initialize!(
                     new_prob, cache.cache.alg;
                     verbose = integrator.opts.verbose.nonlinear_verbosity,
                     abstol = zero(uT), reltol = zero(uT),
-                    termination_condition = _inner_termination()
+                    termination_condition = _inner_termination(),
+                    conditioning_kwargs(cache)...
                 )
             end
             # re-point the estimator linsolve alias at the rebuilt inner cache
@@ -874,6 +880,8 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.dz === nothing || resize!(nlcache.dz, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
     nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    resize_conditioner!(nlcache.precondition, i)
+    resize_conditioner!(nlcache.postcondition, i)
     # `nlcache.linsolve` is re-pointed by `initialize!` when it rebuilds the inner cache on the
     # next length mismatch, before any estimator solve — nothing to rebuild here.
     nlcache.W_γdt = zero(nlcache.W_γdt)
