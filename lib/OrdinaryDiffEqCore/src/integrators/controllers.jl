@@ -495,7 +495,7 @@ end
 
 Placeholder controller for algorithms that manage step-size selection
 themselves (BDF, Nordsieck, Leaping, …). Selecting it makes
-[`setup_controller_cache`](@ref) hand back a [`DummyControllerCache`](@ref)
+[`setup_controller_cache`](@ref) hand back a `DummyControllerCache`
 whose dispatch methods fall through to the algorithm-level
 `stepsize_controller!` / `step_accept_controller!` / `step_reject_controller!`
 methods that own the actual logic. The per-knob accessors
