@@ -189,3 +189,16 @@ for iip in (true, false)
     @test length(sol.t) < 5000 # the error estimate is not very good
     @test SciMLBase.successful_retcode(sol)
 end
+
+@testset "AdaptiveRadau initializes every stage-value slot" begin
+    # `integrator.k[3:end]` holds one stage value per possible stage; the extrapolated
+    # initial guess reads all `num_stages` of them, so the slots above the starting stage
+    # count are read as soon as the controller raises the order. Leave dirty blocks in the
+    # allocator's free lists first, or an uninitialized slot can come back zeroed by luck.
+    poison() = sum(sum, [fill(NaN, 2) for _ in 1:50_000])
+    @test isnan(poison())
+    GC.gc(false)
+    vanstiff = ODEProblem(vanderpol_firk, [sqrt(3), 0.0], (0.0, 1.0), [1.0e6])
+    integ = init(vanstiff, AdaptiveRadau())
+    @test all(x -> all(iszero, x), integ.k[3:(integ.kshortsize)])
+end

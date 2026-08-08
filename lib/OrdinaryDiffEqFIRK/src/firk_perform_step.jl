@@ -166,8 +166,11 @@ function initialize!(integrator, cache::AdaptiveRadauCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    # zero, not `similar`: the stage-value slots above the starting `num_stages` are read
+    # by the extrapolated initial guess as soon as the controller raises the stage count,
+    # before anything has written them
     for i in 3:(max_stages + 2)
-        integrator.k[i] = similar(integrator.fsallast)
+        integrator.k[i] = zero(integrator.fsallast)
     end
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
