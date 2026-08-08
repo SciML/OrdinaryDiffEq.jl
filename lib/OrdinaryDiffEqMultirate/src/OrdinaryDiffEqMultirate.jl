@@ -6,7 +6,7 @@ import OrdinaryDiffEqCore: alg_order, isfsal,
     unwrap_alg, initialize!, perform_step!,
     calculate_residuals, calculate_residuals!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    @cache, alg_cache, full_cache, get_fsalfirstlast,
+    @cache, alg_cache, get_fsalfirstlast,
     nlsolve_f, issplit, _fixup_ad, _unwrap_val
 import OrdinaryDiffEqCore
 import FastBroadcast: @..
@@ -14,6 +14,7 @@ import MuladdMacro: @muladd
 import RecursiveArrayTools: recursivefill!
 import DiffEqBase: prepare_alg
 import LinearAlgebra
+import SciMLBase: full_cache
 using SciMLBase: SplitFunction
 using OrdinaryDiffEqNonlinearSolve: build_nlsolver, nlsolve!, nlsolvefail,
     markfirststage!, isnewton, set_new_W!, NLNewton
