@@ -54,6 +54,7 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "NonlinearSolveAlg Stats Tests" include("nsa_stats_tests.jl")
     @time @safetestset "NonlinearSolveAlg Polyalgorithm Inner Solver Tests" include("nsa_polyalg_tests.jl")
     @time @safetestset "NonlinearSolveAlg No-Init Inner Solver Tests" include("nsa_noinit_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Preconditioning Tests" include("nsa_conditioning_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)
