@@ -28,6 +28,7 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
@@ -54,6 +55,7 @@ LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "3.3"
 OrdinaryDiffEqSDIRK = "2"
 SciMLBase = "3.39"
+SciMLOperators = "1.24.3"
 OrdinaryDiffEqCore = "4"
 SparseArrays = "1.10"
 julia = "1.10"
@@ -64,4 +66,4 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg", "SciMLTesting"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg", "SciMLTesting", "SciMLOperators"]

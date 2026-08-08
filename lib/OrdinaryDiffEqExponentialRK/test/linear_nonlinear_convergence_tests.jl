@@ -1,6 +1,7 @@
 using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEqVerner, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: alg_order
+using SciMLOperators: MatrixOperator, ScalarOperator
 
 @testset "Caching Out-of-place" begin
     println("Caching Out-of-place")

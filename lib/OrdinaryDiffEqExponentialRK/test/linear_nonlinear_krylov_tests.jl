@@ -1,5 +1,6 @@
 using OrdinaryDiffEqExponentialRK, Test, Random, LinearAlgebra, SparseArrays
 using OrdinaryDiffEqTsit5
+using SciMLOperators: MatrixOperator
 
 let N = 20
     Random.seed!(0)
