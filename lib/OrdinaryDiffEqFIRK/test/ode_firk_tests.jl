@@ -189,3 +189,36 @@ for iip in (true, false)
     @test length(sol.t) < 5000 # the error estimate is not very good
     @test SciMLBase.successful_retcode(sol)
 end
+
+@testset "AdaptiveRadau initializes every integrator.k entry" begin
+    # Entries past the starting stage count are first read only after an upward order
+    # change. `n` is above the small-object pool and the matching frees below dirty the
+    # heap, so uninitialized entries show up as nonzero instead of incidentally zero.
+    n = 300
+    decay!(du, u, p, t) = (@. du = -u; nothing)
+    prob_decay = ODEProblem(decay!, ones(n), (0.0, 1.0))
+    let junk = [fill(NaN, n) for _ in 1:64]
+        junk[end][1] = NaN
+    end
+    GC.gc()
+    integ = init(prob_decay, AdaptiveRadau(); abstol = 1.0e-9, reltol = 1.0e-9)
+    @test all(i -> all(iszero, integ.k[i]), 3:(integ.kshortsize))
+end
+
+@testset "AdaptiveRadau is deterministic across repeated solves" begin
+    function rober_firk!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+        return nothing
+    end
+    prob_rober = ODEProblem(rober_firk!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    sols = [
+        solve(prob_rober, AdaptiveRadau(); abstol = 1.0e-9, reltol = 1.0e-9)
+            for _ in 1:25
+    ]
+    @test all(SciMLBase.successful_retcode, sols)
+    @test allequal(sol.u[end] for sol in sols)
+    @test allequal(sol.stats.naccept for sol in sols)
+end
