@@ -25,6 +25,7 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 using MuladdMacro: @muladd
 using RecursiveArrayTools: recursivefill!
 import Polyester
+import LinearAlgebra
 using LinearAlgebra: I, UniformScaling, mul!, lu, dot
 import LinearSolve
 import FastBroadcast: @..
@@ -35,6 +36,7 @@ import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: build_J_W, build_jac_config,
     calc_J!, dolinsolve, calc_J,
     islinearfunction
+import ADTypes
 import ADTypes: AutoForwardDiff
 import SciMLOperators
 import SciMLOperators: AbstractSciMLOperator
@@ -64,6 +66,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("controllers.jl")
 include("firk_caches.jl")
+include("firk_operators.jl")
 include("firk_tableaus.jl")
 include("firk_perform_step.jl")
 include("firk_interpolants.jl")
