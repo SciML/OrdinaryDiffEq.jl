@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSIMDRK, DiffEqDevTools, Test
+using SciMLBase: ODEFunction, ODEProblem
 
 function nonauto1(u, p, t)
     x, _ = u
