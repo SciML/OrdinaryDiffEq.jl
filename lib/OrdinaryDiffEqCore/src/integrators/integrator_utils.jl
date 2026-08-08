@@ -799,6 +799,8 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     else #no jac to analyze
         nothing
     end
+    # a scalar problem's "Jacobian" is a plain number, which has no structure to report
+    jac isa AbstractMatrix || (jac = nothing)
 
     bad_entries = nothing
     singularity_rows = nothing
@@ -911,9 +913,12 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     end
 
-    # error estimate analysis
-    if integrator.opts.adaptive
-        push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", get_EEst(integrator))) (a step is accepted when EEst <= 1)")
+    # error estimate analysis, only when the local error is what actually rejected the step.
+    EEst = get_EEst(integrator)
+    error_rejected = integrator.opts.adaptive && !integrator.accept_step &&
+        (!isfinite(EEst) || EEst > 1)
+    if error_rejected
+        push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", EEst)) (a step is accepted when EEst <= 1)")
         atmp = error_estimate_residuals(integrator.cache)
         if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
             nonfinite = count(!isfinite, atmp)
