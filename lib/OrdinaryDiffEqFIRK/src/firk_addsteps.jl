@@ -454,10 +454,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_update_W!(W1, W2, J, mass_matrix, γdt, αdt, βdt, uprev, p, t)
         integrator.stats.nw += 1
     end
 

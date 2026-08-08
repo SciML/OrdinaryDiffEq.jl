@@ -65,6 +65,21 @@ Gauss–Legendre methods use the roots of the Legendre polynomial directly as co
   - **Systems < 200**: FIRK methods are competitive due to better multithreading
   - **Systems > 200**: Consider SDIRK or BDF methods instead
 
+### Matrix-free (Krylov) linear solves
+
+`RadauIIA5` supports matrix-free linear solves, so large stiff systems can be handled
+without ever forming the Jacobian:
+
+```julia
+using LinearSolve
+solve(prob, RadauIIA5(linsolve = KrylovJL_GMRES()))
+```
+
+The W-transform splits the stage system into one real-shifted and one complex-shifted
+linear system per step, and both are applied lazily through Jacobian-vector products.
+`RadauIIA3`, `RadauIIA9`, `AdaptiveRadau` and `GaussLegendre` still require a Jacobian that
+can be materialized, and error if given a matrix-free `linsolve`.
+
 ## Performance Guidelines
 
   - **Best for tolerances ≤ 1e-9** where high accuracy justifies the cost

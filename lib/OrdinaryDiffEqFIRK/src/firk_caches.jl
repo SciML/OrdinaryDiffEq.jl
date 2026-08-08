@@ -107,6 +107,9 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
+    if J isa AbstractSciMLOperator || W1 isa WOperator
+        firk_matrixfree_unsupported("RadauIIA3")
+    end
     W1 = similar(J, Complex{eltype(W1)})
     recursivefill!(W1, false)
 
@@ -258,11 +261,14 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
+    if W1 isa WOperator
+        W2 = ComplexShiftOperator(
+            f.mass_matrix, complex(inv(dt)), matrixfree_jacobian(W1), u
+        )
+    else
+        W2 = similar(J, Complex{eltype(W1)})
+        recursivefill!(W2, false)
     end
-    W2 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
 
     linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
@@ -462,8 +468,8 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
+    if J isa AbstractSciMLOperator || W1 isa WOperator
+        firk_matrixfree_unsupported("RadauIIA9")
     end
     W2 = similar(J, Complex{eltype(W1)})
     W3 = similar(J, Complex{eltype(W1)})
@@ -685,8 +691,8 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, zero(u), dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
+    if J isa AbstractSciMLOperator || W1 isa WOperator
+        firk_matrixfree_unsupported("AdaptiveRadau")
     end
 
     W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
@@ -842,7 +848,7 @@ function alg_cache(
 
     J, _ = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
     if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by GaussLegendre.")
+        firk_matrixfree_unsupported("GaussLegendre")
     end
 
     W = similar(J, num_stages * n, num_stages * n)

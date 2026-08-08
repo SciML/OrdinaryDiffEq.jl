@@ -696,13 +696,12 @@ end
     c2m1 = c2 - 1
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
-    (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
+    if (new_jac = do_newJ(integrator, alg, cache, repeat_step))
+        J isa AbstractSciMLOperator || calc_J!(J, integrator, cache)
+        cache.W_γdt = dt
+    end
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_update_W!(W1, W2, J, mass_matrix, γdt, αdt, βdt, uprev, p, t)
         integrator.stats.nw += 1
     end
 

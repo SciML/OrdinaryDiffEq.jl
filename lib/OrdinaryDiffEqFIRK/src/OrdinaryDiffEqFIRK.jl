@@ -36,8 +36,9 @@ using OrdinaryDiffEqDifferentiation: build_J_W, build_jac_config,
     calc_J!, dolinsolve, calc_J,
     islinearfunction
 import ADTypes: AutoForwardDiff
+import LinearAlgebra
 import SciMLOperators
-import SciMLOperators: AbstractSciMLOperator
+import SciMLOperators: AbstractSciMLOperator, WOperator, update_coefficients!
 # Load-bearing runtime dependency: provides the nonlinear-solver machinery the FIRK
 # integrators dispatch into. The convergence-state names FIRK uses are owned by
 # OrdinaryDiffEqCore (imported above), so this is a module-only import to keep the
@@ -63,6 +64,7 @@ using Reexport: @reexport
 include("algorithms.jl")
 include("alg_utils.jl")
 include("controllers.jl")
+include("firk_operators.jl")
 include("firk_caches.jl")
 include("firk_tableaus.jl")
 include("firk_perform_step.jl")
