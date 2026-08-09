@@ -56,6 +56,13 @@ Newton nonlinear-solver path only; Rosenbrock/W-method integrators never call
 it, so their `Auto` solver stays a cold start (warm starting is unsafe there —
 no outer Newton iteration absorbs the within-tolerance stage-solve
 perturbation).
+
+Warm starting the Newton path is only sound because LinearSolve discards a
+Hegedüs guess that cannot reduce the residual (SciML/LinearSolve.jl#1123). The
+guess is a previous Newton increment, and those converge to round-off; without
+that check the rescaling amplified last-ulp input differences by ~1e13
+(SciML/OrdinaryDiffEq.jl#4034). The `[compat]` floor on LinearSolve is what
+guarantees the check is present.
 """
 function default_krylov_warm_start(linsolver)
     (
