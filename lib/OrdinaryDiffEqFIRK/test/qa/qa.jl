@@ -1,5 +1,9 @@
 using SciMLTesting, OrdinaryDiffEqFIRK, Test
 
+# `public` on a name another package owns counts as a public reexport to
+# SciMLTesting, so the threading options need approving here too.
+const THREADING_PUBLIC = (:Sequential, :BaseThreads, :PolyesterThreads)
+
 # The solver-author API of OrdinaryDiffEqCore / OrdinaryDiffEqDifferentiation /
 # OrdinaryDiffEqNonlinearSolve / DiffEqBase is now declared `public` on this branch,
 # so those names no longer need ignoring. The residual below is the genuine set of
@@ -10,7 +14,7 @@ run_qa(
     OrdinaryDiffEqFIRK;
     # No docs/ tree here; the umbrella manual renders this package's API.
     api_docs_kwargs = (; rendered = false),
-    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,), THREADING_PUBLIC),
     explicit_imports = true,
     ei_kwargs = (
         all_explicit_imports_are_public = (;

@@ -37,7 +37,7 @@ using DiffEqBase: DEVerbosity
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, Sequential, BaseThreads, PolyesterThreads
 
 # Import from OrdinaryDiffEqDefault
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
@@ -79,5 +79,10 @@ export Tsit5, AutoTsit5
 export Vern6, Vern7, Vern8, Vern9, AutoVern6, AutoVern7, AutoVern8, AutoVern9
 export Rosenbrock23, Rodas5P
 export FBDF
+
+# Reachable as `OrdinaryDiffEq.PolyesterThreads()`, the spelling v6 supported.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end # module

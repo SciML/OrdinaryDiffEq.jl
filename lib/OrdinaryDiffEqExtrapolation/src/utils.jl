@@ -19,7 +19,7 @@
 @inline _controller_scalar_type(overrides::NamedTuple) =
     _float_controller_type(promote_type(map(typeof, values(overrides))...))
 
-@inline function _threaded_foreach(f, ::Union{Bool, OrdinaryDiffEqCore.BaseThreads}, range)
+@inline function _threaded_foreach(f, ::Union{Bool, BaseThreads}, range)
     return Threads.@threads :static for i in range
         f(i)
     end
