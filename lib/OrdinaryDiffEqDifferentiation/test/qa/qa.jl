@@ -39,6 +39,9 @@ run_qa(
                 # LinearSolve internals
                 :DefaultLinearSolver, :InvPreconditioner, :LinearCache,
                 :init_cacheval, :needs_concrete_A,
+                # documented in the LinearSolve manual but not yet declared
+                # `public` there (SciML/LinearSolve.jl make-public follow-up)
+                Symbol("update_tolerances!"),
                 # ForwardDiff internals
                 :JacobianConfig, :Tag, :pickchunksize,
                 # OrdinaryDiffEqCore internal not yet in its public block

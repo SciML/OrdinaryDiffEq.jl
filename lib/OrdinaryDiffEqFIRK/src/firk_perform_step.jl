@@ -2532,7 +2532,8 @@ end
         if needfactor
             LinearSolve.reinit!(linsolve; A = W)
         end
-        LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
+        set_linear_reltol!(linsolve, integrator.opts.reltol)
+        LinearSolve.solve!(linsolve)
         integrator.stats.nsolve += 1
 
         for i in 1:num_stages
