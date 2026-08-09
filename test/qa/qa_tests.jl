@@ -42,6 +42,9 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
         public_api_names(SciMLBase),
         public_api_names(SciMLLogging),
         (:SciMLBase, :SciMLLogging),
+        # `public` on a Core-owned name counts as a public reexport; listed by
+        # name so the check still rejects the rest of Core's surface.
+        (:Sequential, :BaseThreads, :PolyesterThreads),
     ),
 )
 
