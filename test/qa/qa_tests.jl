@@ -52,6 +52,11 @@ run_qa(
     explicit_imports = true,
     check_reexports = true,
     reexports_allow = ORDINARYDIFFEQ_REEXPORTS,
+    # Julia resolves `Docs.Binding(OrdinaryDiffEq, :SciMLBase)` to `SciMLBase.SciMLBase`, so a
+    # docstring written here would be stored in SciMLBase's registry rather than this package's.
+    # Only a module docstring in SciMLBase.jl/SciMLLogging.jl can document these re-exports.
+    # Remove once SciML/SciMLTesting.jl#47 exempts foreign module bindings.
+    api_docs_kwargs = (; ignore = (:SciMLBase, :SciMLLogging)),
     ei_kwargs = (;
         no_implicit_imports = (; skip = (Base, Core, SciMLBase)),
     ),
