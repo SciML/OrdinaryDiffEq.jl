@@ -269,6 +269,92 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     return nothing
 end
 
+"""
+    inner_solve_failed(nlcache) -> Bool
+
+Whether the inner `NonlinearSolve` cache has stopped for a reason other than reaching its
+root. Stopping *successfully* is the normal path — the inner solve converged before the
+integrator's own weighted test was satisfied — while every other terminal state (a collapsed
+line search, an exhausted trust region, a stalled iteration) is a failure that must reach the
+step controller the way `NLNewton` reports a failed linear solve. A stopped cache also makes
+`step!` a no-op, so left unreported it would leave `ndz == 0` for the outer test to read as a
+perfect solve.
+"""
+function inner_solve_failed(nlcache)
+    return !NonlinearSolveBase.not_terminated(nlcache) &&
+        !SciMLBase.successful_retcode(nlcache.retcode)
+end
+
+"""
+    stage_unsolved(nlcache, γΔt) -> Bool
+
+Whether the residual still says the stage equation is unsolved. `γΔt · fu` carries the units
+of the iterate `u` it corrects, so `‖γΔt·fu‖ / max(‖u‖, ‖u + γΔt·fu‖)` is the relative residual
+of the stage equation — invariant to the problem's units, and independent of the inner solver's
+own tolerances, which `build_nlsolver` deliberately zeroes. At the cancellation floor of that
+subtraction there is nothing left to solve.
+"""
+function stage_unsolved(nlcache, γΔt)
+    fu = get_fu(nlcache)
+    u = get_u(nlcache)
+    resid = abs(γΔt) * maxabs(fu)
+    scale = max(maxabs_axpy(γΔt, u, fu), maxabs(u))
+    return resid > roundoff_level(typeof(resid)) * scale
+end
+
+# A step that moves the iterate by no more than a handful of ulps, and a residual that small
+# relative to the terms it is the difference of, are both indistinguishable from zero in the
+# arithmetic that produced them.
+@inline roundoff_level(::Type{T}) where {T} = 8 * eps(real(one(T)))
+
+maxabs(x::Number) = abs(x)
+maxabs(x) = maximum(abs, x)
+
+function maxabs_axpy(a, x, y)
+    m = abs(a * zero(eltype(y)) + zero(eltype(x)))
+    for (xi, yi) in zip(x, y)
+        m = max(m, abs(xi + a * yi))
+    end
+    return m
+end
+maxabs_axpy(a, x::Number, y::Number) = abs(x + a * y)
+
+"""
+    stalled_inner_step(nlcache, ndisp, nz, fnorm_prev, γΔt) -> Bool
+
+Whether the `step!` just taken produced no usable iterate: it moved the iterate by less than
+floating-point roundoff *and* failed to reduce the residual, while the residual itself says the
+stage equation is not yet solved.
+
+The outer convergence test reads a small displacement as proximity to the root. That inference
+is only sound for a step that solves the Newton system, where the displacement is `W⁻¹F` and so
+vanishes only with the residual. A globalized inner solver whose line search collapses instead
+returns a displacement orders of magnitude below roundoff with the residual bit-for-bit
+unchanged: `ndz` is then tiny for a reason that has nothing to do with the distance to the root.
+
+The residual has the last word. `γΔt · fu` carries the units of the iterate `u` it corrects, so
+`‖γΔt·fu‖ / max(‖u‖, ‖u + γΔt·fu‖)` is the relative residual of the stage equation — invariant
+to the problem's units, and independent of the inner solver's own tolerances, which
+`build_nlsolver` deliberately zeroes. Only when it sits at the cancellation floor of that
+subtraction is a motionless iterate genuine convergence rather than a stalled step.
+
+`ndisp` and `nz` are `‖u - u_before‖_∞` and `‖u_before‖_∞`, and `fnorm_prev` is `‖fu‖_∞` as it
+stood before the step.
+"""
+function stalled_inner_step(nlcache, ndisp, nz, fnorm_prev, γΔt)
+    ndisp > roundoff_level(typeof(ndisp)) * nz && return false
+    maxabs(get_fu(nlcache)) < fnorm_prev && return false
+    return stage_unsolved(nlcache, γΔt)
+end
+
+# Scale that carries the inner residual into the units of `z`: the stage equation is
+# `F(z) = 0` with `∂F/∂z = -W`, and `W` is assembled at this `γΔt` (see `initialize!`).
+function residual_to_z_scale(nlsolver, isdae)
+    (; α, cache, method) = nlsolver
+    return (isdae || method === COEFFICIENT_MULTISTEP) ? inv(α * cache.invγdt) :
+        inv(cache.invγdt)
+end
+
 ## compute_step!
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, false}, integrator)
@@ -283,25 +369,32 @@ end
         # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
         # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
         # inner solve; an unsuccessful one is a genuine failure and reaches the step
-        # controller the way `NLNewton` reports a failed linear solve.
+        # controller the way `NLNewton` reports a failed linear solve. A complete solve
+        # leaves no half-taken step behind, so there is nothing for the residual to veto.
         innersol = solve!(nlcache)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
         end
         active_u = innersol.u
+        cache.stalled = false
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
-        # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
-        # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
-        # path (the inner solve converged before the integrator's own test was satisfied); any
-        # other terminal state is a genuine failure and must reach the step controller, so report
-        # it the way `NLNewton` reports a failed linear solve.
-        if !NonlinearSolveBase.not_terminated(nlcache) &&
-                !SciMLBase.successful_retcode(nlcache.retcode)
-            return convert(eltype(z), Inf)
-        end
+        inner_solve_failed(nlcache) && return convert(eltype(z), Inf)
+        fnorm_prev = maxabs(get_fu(nlcache))
+        γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
         step!(nlcache; recompute_jacobian)
+        # `step!` can *land* in a terminal state as well as start in one. Checking only on
+        # entry defers a failed step to the next call, which never comes: the iterate it
+        # leaves behind is unmoved, so the outer displacement test accepts the stage first.
+        # An inner solver can also give up *because* there is nothing left to correct — a
+        # line search collapses on a stage that is already solved — so the residual, not the
+        # retcode alone, has the say.
+        inner_solve_failed(nlcache) && stage_unsolved(nlcache, γΔt) &&
+            return convert(eltype(z), Inf)
         active_u = get_u(nlcache)
+        cache.stalled = stalled_inner_step(
+            nlcache, maxabs(z .- active_u), maxabs(z), fnorm_prev, γΔt
+        )
     end
     nlsolver.ztmp = active_u
 
@@ -334,24 +427,31 @@ end
         # inner solve; an unsuccessful one is a genuine failure and reaches the step
         # controller the way `NLNewton` reports a failed linear solve. No stale-`W` rescale
         # either: the reused `W` only serves as the inner Newton's Jacobian (`WReuseJac`),
-        # where staleness costs convergence rate, not the root the full solve lands on.
+        # where staleness costs convergence rate, not the root the full solve lands on. A
+        # complete solve leaves no half-taken step behind, so nothing for the residual to veto.
         innersol = solve!(nlcache)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(atmp), Inf)
         end
+        cache.stalled = false
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
-        # A terminated inner cache makes `step!` a no-op, which would leave `ndz == 0` and read to
-        # the outer convergence test as a perfect solve. Terminating *successfully* is the normal
-        # path (the inner solve converged before the integrator's own test was satisfied); any
-        # other terminal state is a genuine failure and must reach the step controller, so report
-        # it the way `NLNewton` reports a failed linear solve.
-        if !NonlinearSolveBase.not_terminated(nlcache) &&
-                !SciMLBase.successful_retcode(nlcache.retcode)
-            return convert(eltype(atmp), Inf)
-        end
+        inner_solve_failed(nlcache) && return convert(eltype(atmp), Inf)
+        # Read before `rescale_stale_W_rhs!`, which rewrites `fu` in place: the unscaled
+        # residual is the one `step!` will produce again, so it is the like-for-like
+        # comparison.
+        fnorm_prev = maxabs(get_fu(nlcache))
+        γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
         rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
         step!(nlcache; recompute_jacobian)
+        # `step!` can *land* in a terminal state as well as start in one. Checking only on
+        # entry defers a failed step to the next call, which never comes: the iterate it
+        # leaves behind is unmoved, so the outer displacement test accepts the stage first.
+        # An inner solver can also give up *because* there is nothing left to correct — a
+        # line search collapses on a stage that is already solved — so the residual, not the
+        # retcode alone, has the say.
+        inner_solve_failed(nlcache) && stage_unsolved(nlcache, γΔt) &&
+            return convert(eltype(atmp), Inf)
     end
 
     if nlstep_data !== nothing
@@ -387,11 +487,19 @@ end
         # (e.g. `ODE_DEFAULT_NORM` divides by `length`), causing the Newton
         # convergence check to declare success ~sqrt(n_full/n_sub) early.
         ndz = opts.internalnorm(atmp_sub, t)
+        # This branch already measures the residual rather than a displacement, so there is
+        # no displacement to be misled by.
+        cache.stalled = false
     else
         active_u = nlcache isa NonlinearSolveNoInitCache ? innersol.u : get_u(nlcache)
         @.. broadcast = false ztmp = active_u
         ustep = compute_ustep!(ustep, tmp, γ, z, method)
         @.. broadcast = false atmp = z - ztmp
+        if !(nlcache isa NonlinearSolveNoInitCache)
+            cache.stalled = stalled_inner_step(
+                nlcache, maxabs(atmp), maxabs(z), fnorm_prev, γΔt
+            )
+        end
         calculate_residuals!(
             atmp, atmp, uprev, ustep, opts.abstol, opts.reltol,
             opts.internalnorm, t
