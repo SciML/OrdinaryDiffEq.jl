@@ -79,10 +79,14 @@ error_constant(integrator, order) = error_constant(integrator, integrator.alg, o
 """
     AbstractThreadingOption
 
-Abstract supertype for the `thread = …` option controlling internal broadcasting.
-The concrete choices are [`Sequential`](@ref), [`BaseThreads`](@ref), and
-[`PolyesterThreads`](@ref); [`isthreaded`](@ref) reports whether a given option
-enables multithreading.
+Abstract supertype for the `threading = …` option controlling how solvers that
+expose independent internal work (extrapolation columns, parallel Runge-Kutta
+stages) execute it. The concrete choices are [`Sequential`](@ref),
+[`BaseThreads`](@ref), and [`PolyesterThreads`](@ref); [`isthreaded`](@ref)
+reports whether a given option enables multithreading.
+
+This is distinct from the `thread = …` option of the FastBroadcast-based solvers,
+which takes `FastBroadcast.Serial()` or `FastBroadcast.Threaded()`.
 """
 abstract type AbstractThreadingOption end
 """

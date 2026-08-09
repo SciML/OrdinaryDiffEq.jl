@@ -414,7 +414,11 @@ All four removals are driven by TTFS.
 | **Polyester.jl** (direct dep) | Moved to weak dep `OrdinaryDiffEqCorePolyesterExt`; requires `using Polyester` to activate | Polyester loads a nontrivial amount of threading infrastructure. Users who don't enable Polyester-threaded solvers no longer pay for it |
 | **StaticArrays.jl** (direct dep) | `SVector`/`MVector` in tableaus replaced with `NTuple`/`Vector`; SA moved to test-only | Loading StaticArrays forces compilation of a large generated-function surface for every solver that mentions an `SVector`. Tableaus used them for constants, which `NTuple` expresses just as statically |
 
-The threading option types themselves also became less reachable: `Sequential`, `BaseThreads` and `PolyesterThreads` are public API of OrdinaryDiffEqCore but are not exported by it or by any umbrella package. v6 code naming them bare now raises an `UndefVarError`; write `OrdinaryDiffEqCore.PolyesterThreads()` or add `using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
+The threading option types also moved. In v6 `Sequential`, `BaseThreads` and `PolyesterThreads` were reachable as `OrdinaryDiffEq.PolyesterThreads()` — never bare, which is why v6's own test suite qualified them. When the umbrella stopped importing them that qualified form broke too, leaving only `OrdinaryDiffEqCore.PolyesterThreads()`.
+
+As of OrdinaryDiffEq 7.5.0 the v6 spelling works again: OrdinaryDiffEq and each sublibrary taking `threading` (Extrapolation, FIRK, PDIRK, PRK) import the names and declare them `public`, so `OrdinaryDiffEq.PolyesterThreads()` and `OrdinaryDiffEqExtrapolation.PolyesterThreads()` both resolve. They remain unexported, so bare `PolyesterThreads()` is still an `UndefVarError` — as it was in v6. Write them qualified, or `using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
+
+These are the values for the `threading` keyword. The unrelated `thread` keyword of the FastBroadcast-based solvers still takes `FastBroadcast.Serial()` / `FastBroadcast.Threaded()`.
 
 ---
 

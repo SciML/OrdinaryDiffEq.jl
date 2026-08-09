@@ -868,7 +868,7 @@ function build_nlsolver(
                 weight,
                 use_w_reuse ? dz : nothing,
                 est_linsolve,
-                zero(tstep), true, precondition, postcondition
+                zero(tstep), true, false, precondition, postcondition
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
@@ -1063,7 +1063,7 @@ function build_nlsolver(
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
                 nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, precondition, postcondition
+                zero(tstep), true, false, precondition, postcondition
             )
         else
             # Build separated DAE Jacobian cache if applicable

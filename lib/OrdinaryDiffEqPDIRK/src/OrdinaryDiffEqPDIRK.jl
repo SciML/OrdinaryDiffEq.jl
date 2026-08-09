@@ -5,6 +5,7 @@ import OrdinaryDiffEqCore: isfsal,
     OrdinaryDiffEqMutableCache, constvalue, alg_cache,
     unwrap_alg, @cache,
     @threaded, perform_step!, isthreaded,
+    Sequential, BaseThreads, PolyesterThreads,
     get_fsalfirstlast,
     _fixup_ad
 import SciMLBase: alg_order, _unwrap_val
@@ -26,5 +27,9 @@ include("pdirk_caches.jl")
 include("pdirk_perform_step.jl")
 
 export PDIRK44
+
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end

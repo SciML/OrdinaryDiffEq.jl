@@ -10,7 +10,7 @@ function evaluations are expensive and extended-precision accuracy is required.
 
   - `stage_limiter!`: function applied after every Runge-Kutta stage.
   - `step_limiter!`: function applied after every accepted step.
-  - `thread`: OrdinaryDiffEqCore threading option for independent stage work.
+  - `thread`: FastBroadcast threading mode used for the internal broadcasts.
 
 # Keywords
 
@@ -18,11 +18,10 @@ function evaluations are expensive and extended-precision accuracy is required.
     calling convention. Use this to enforce stage-wise constraints.
   - `step_limiter! = trivial_limiter!`: limiter applied to the completed step. Use this
     to enforce solution constraints after an accepted update.
-  - `thread = Serial()`: threading configuration. Use `OrdinaryDiffEqCore.BaseThreads()`
-    or `OrdinaryDiffEqCore.PolyesterThreads()` to enable the corresponding
-    OrdinaryDiffEqCore backend. These types are public but not exported, so they need
-    either the `OrdinaryDiffEqCore.` qualification shown here or a `using
-    OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
+  - `thread = Serial()`: FastBroadcast threading mode for the internal broadcasts.
+    Use `FastBroadcast.Threaded()` to multithread them. This keyword takes
+    FastBroadcast modes, not the OrdinaryDiffEqCore `threading` options
+    (`BaseThreads()` / `PolyesterThreads()`), which are not accepted here.
 
 # Examples
 

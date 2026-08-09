@@ -5,6 +5,7 @@ import OrdinaryDiffEqCore: unwrap_alg,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     alg_cache, @threaded, isthreaded,
+    Sequential, BaseThreads, PolyesterThreads,
     constvalue,
     differentiation_rk_docstring, trivial_limiter!,
     qmax_default, alg_adaptive_order,
@@ -74,5 +75,9 @@ include("firk_addsteps.jl")
 include("integrator_interface.jl")
 
 export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau, GaussLegendre
+
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end

@@ -13,7 +13,7 @@ import OrdinaryDiffEqCore: alg_maximum_order, get_current_adaptive_order,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
     alg_cache, CompiledFloats, stepsize_controller!,
     qmin_default,
-    constvalue, PolyesterThreads,
+    constvalue, Sequential, BaseThreads, PolyesterThreads,
     _fixup_ad,
     get_fsalfirstlast
 import OrdinaryDiffEqCore: default_controller, AbstractControllerCache, setup_controller_cache,
@@ -30,7 +30,7 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timed
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
-using LinearSolve: LinearSolve, RFLUFactorization
+using LinearSolve: LinearSolve, GenericLUFactorization
 using FastPower: fastpower
 using SciMLOperators: SciMLOperators, WOperator
 import SciMLLogging: @SciMLMessage
@@ -61,5 +61,9 @@ export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHaire
     ImplicitEulerExtrapolation,
     ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
     ImplicitEulerBarycentricExtrapolation
+
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end

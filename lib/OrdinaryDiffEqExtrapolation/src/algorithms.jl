@@ -116,7 +116,7 @@ function ImplicitEulerExtrapolation(;
             linsolve === nothing &&
             (threading == true || threading isa PolyesterThreads)
         ) ?
-        RFLUFactorization(; thread = Val(false)) : linsolve
+        GenericLUFactorization() : linsolve
 
     min_order = max(3, min_order)
     init_order = max(min_order + 1, init_order)
@@ -327,7 +327,7 @@ function ImplicitDeuflhardExtrapolation(;
             linsolve === nothing &&
             (threading == true || threading isa PolyesterThreads)
         ) ?
-        RFLUFactorization(; thread = Val(false)) : linsolve
+        GenericLUFactorization() : linsolve
 
     # Warn user if orders have been changed
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
@@ -539,7 +539,7 @@ function ImplicitHairerWannerExtrapolation(;
             linsolve === nothing &&
             (threading == true || threading isa PolyesterThreads)
         ) ?
-        RFLUFactorization(; thread = Val(false)) : linsolve
+        GenericLUFactorization() : linsolve
 
     # Warn user if orders have been changed
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
@@ -655,7 +655,7 @@ function ImplicitEulerBarycentricExtrapolation(;
             linsolve === nothing &&
             (threading == true || threading isa PolyesterThreads)
         ) ?
-        RFLUFactorization(; thread = Val(false)) : linsolve
+        GenericLUFactorization() : linsolve
 
     # Warn user if orders have been changed
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)

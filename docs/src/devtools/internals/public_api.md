@@ -267,6 +267,7 @@ OrdinaryDiffEqDifferentiation.resize_jac_config!
 OrdinaryDiffEqDifferentiation.resize_grad_config!
 OrdinaryDiffEqDifferentiation.dolinsolve
 OrdinaryDiffEqDifferentiation.wrapprecs
+OrdinaryDiffEqDifferentiation.default_krylov_warm_start
 OrdinaryDiffEqDifferentiation.is_always_new
 OrdinaryDiffEqDifferentiation.islinearfunction
 OrdinaryDiffEqDifferentiation.issuccess_W
@@ -314,7 +315,6 @@ OrdinaryDiffEqCore.resolve_stage_step_limiters
 OrdinaryDiffEqCore.trivial_limiter!
 OrdinaryDiffEqCore.DEOptions
 OrdinaryDiffEqCore.DummyController
-OrdinaryDiffEqCore.DummyControllerCache
 ```
 
 ### Time-stop and saving queues

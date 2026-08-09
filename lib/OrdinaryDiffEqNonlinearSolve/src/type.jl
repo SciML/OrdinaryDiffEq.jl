@@ -595,6 +595,8 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     linsolve::lsType
     W_γdt::tType
     new_W::Bool
+    # Whether the last `step!` produced no usable iterate (see `stalled_inner_step`).
+    stalled::Bool
     # Stage-coordinate adapters around the algorithm's `precondition`/`postcondition`
     # (see `StageConditioner`). `precondition` is composed into the inner problem's
     # residual by `init` and only kept here so the resize path can re-compose it;

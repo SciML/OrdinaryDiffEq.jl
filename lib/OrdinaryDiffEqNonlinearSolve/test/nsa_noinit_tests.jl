@@ -144,8 +144,8 @@ end
     @test nls.cache.cache isa NonlinearSolveBase.NonlinearSolveNoInitCache
     # A no-init cache has no trial-step state to reject: a zero displacement after a
     # complete `solve!` is genuine convergence, and `not_terminated` has nothing to read.
-    @test !OrdinaryDiffEqNonlinearSolve._rejected_trial_step(nls, 0.0)
-    @test !OrdinaryDiffEqNonlinearSolve._rejected_trial_step(nls, 1.0)
+    @test !OrdinaryDiffEqNonlinearSolve._uninformative_step(nls, 0.0)
+    @test !OrdinaryDiffEqNonlinearSolve._uninformative_step(nls, 1.0)
     # The stepped path keeps its #3817 discrimination untouched.
     integ_nr = init(
         prob_vdp, TRBDF2(nlsolve = NonlinearSolveAlg(NewtonRaphson()));
@@ -153,9 +153,9 @@ end
     )
     step!(integ_nr)
     nls_nr = integ_nr.cache.nlsolver
-    @test OrdinaryDiffEqNonlinearSolve._rejected_trial_step(nls_nr, 0.0) ==
-        NonlinearSolveBase.not_terminated(nls_nr.cache.cache)
-    @test !OrdinaryDiffEqNonlinearSolve._rejected_trial_step(nls_nr, 1.0)
+    @test OrdinaryDiffEqNonlinearSolve._uninformative_step(nls_nr, 0.0) ==
+        (NonlinearSolveBase.not_terminated(nls_nr.cache.cache) || nls_nr.cache.stalled)
+    @test !OrdinaryDiffEqNonlinearSolve._uninformative_step(nls_nr, 1.0)
     sol = solve(
         prob_vdp, TRBDF2(nlsolve = NonlinearSolveAlg(SimpleTrustRegion()));
         reltol = 1.0e-8, abstol = 1.0e-10
