@@ -212,6 +212,9 @@ end
 
 using StaticArrays
 vdp_static(u, p, t) = SVector(u[2], p[1] * ((1 - u[1]^2) * u[2] - u[1]))
+# Function barrier: measured over a concretely typed integrator, so the bytes counted are
+# the step's own, not the dynamic dispatch of a loop-local binding.
+step_allocs(integ) = @allocated step!(integ)
 let
     prob = ODEProblem(
         vdp_static, SVector(2.0, 0.0), (0.0, 1.0), SVector(1.0e3)
@@ -224,9 +227,20 @@ let
         integ = init(
             prob,
             TRBDF2(nlsolve = NonlinearSolveAlg(inner), concrete_jac = true);
-            reltol = 1.0e-8, abstol = 1.0e-10
+            # `save_everystep = false`: the measured step must not include the solution
+            # push!, which allocates by design. The final value is still saved for the
+            # accuracy check below.
+            reltol = 1.0e-8, abstol = 1.0e-10, save_everystep = false
         )
         @test integ.cache.nlsolver.cache.W isa Base.RefValue
+        # Steady-state stepping must be allocation-free: the no-init inner solve runs as a
+        # direct `solve` over a stack-allocated problem, and the reused `W` lives in a
+        # `Ref` whose `SMatrix` payload is re-pointed, never converted.
+        for _ in 1:50
+            step!(integ)
+        end
+        step_allocs(integ)  # compile the measurement wrapper itself
+        @test step_allocs(integ) == 0
         sol = solve!(integ)
         @test SciMLBase.successful_retcode(sol.retcode)
         @test maximum(abs.(sol.u[end] .- solref.u[end])) < 1.0e-3

@@ -80,6 +80,17 @@ function initialize!(
         end
     end
 
+    # A no-init cache is not stepped, so there is no inner state to prime, and its
+    # `reinit!` is pure heap traffic (a `remake` of the stored problem plus a re-merge of
+    # the `Any`-typed kwargs, ~1.7KB per stage) spent on fields `compute_step!` no longer
+    # reads: the stage problem is rebuilt there from live integrator state as a plain
+    # immutable that never escapes the inner solve, so it costs no allocation. The cache
+    # survives untouched as the carrier of `alg` and of `prob.f`, whose `jac` closure is
+    # the reused-`W` read.
+    if cache.cache isa NonlinearSolveNoInitCache
+        return nothing
+    end
+
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
     else
@@ -397,16 +408,26 @@ end
     nlcache = nlsolver.cache.cache
     if nlcache isa NonlinearSolveNoInitCache
         # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
-        # time: `solve!` runs the complete inner solve and its returned solution is the only
-        # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
-        # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
-        # inner solve; an unsuccessful one is a genuine failure and reaches the step
+        # time: each outer iteration costs one complete inner solve, and the returned
+        # solution is the only trustworthy record of it (`get_u` on the cache reads a stale
+        # iterate, and `.stats`/`get_fu` do not exist). The solve bypasses the cache:
+        # `solve!` on it splats `Any`-typed kwargs, a ~1KB dynamic call whose untyped
+        # return poisons the rest of the branch with boxing, while a freshly built
+        # problem (an immutable over the current iterate and parameter tuple) never
+        # escapes the call and dispatches statically, so the solve runs allocation-free.
+        # Solving from `z` also warm-starts iterations after the first at the latest outer
+        # iterate. An unsuccessful solve is a genuine failure and reaches the step
         # controller the way `NLNewton` reports a failed linear solve. A complete solve
         # leaves no half-taken step behind, so there is nothing for the residual to veto.
         # The inner residual and linear-solve work is uncounted (no `stats`);
         # `_update_nlsolvealg_W_oop!` counts the Jacobian and `W` assemblies, which are
         # the integrator's own share of the work.
-        innersol = solve!(nlcache)
+        if integrator.f isa DAEFunction
+            nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, integrator.f)
+        else
+            nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, integrator.f)
+        end
+        innersol = solve(NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
         end
