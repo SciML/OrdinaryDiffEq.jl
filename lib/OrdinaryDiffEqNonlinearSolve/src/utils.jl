@@ -1100,13 +1100,7 @@ function build_nlsolver(
             )
             W_ref = nothing
             if cache isa NonlinearSolveNoInitCache
-                # This cache only records the arguments a `solve!` will forward, so
-                # building one is the cheapest way to ask whether the inner solver
-                # iterates, and the answer stays right as SimpleNonlinearSolve grows.
                 if !isdae && f.nlstep_data === nothing && W isa StaticWOperator
-                    # StaticWOperator stores inv(W) in its W field for n <= 7, so the
-                    # Ref holds the plain W matrix; initialize! rewrites it before the
-                    # first solve (W_γdt starts at zero).
                     W_ref = Ref(W.W)
                     nlf_jac = let W_ref = W_ref
                         (z, p) -> W_ref[]

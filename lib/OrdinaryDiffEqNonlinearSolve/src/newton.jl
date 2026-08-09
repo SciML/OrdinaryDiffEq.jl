@@ -44,18 +44,11 @@ function initialize!(
     # A no-init cache has no `stats` (SimpleNonlinearSolve builds every solution with
     # `stats === nothing`), and its `reinit!` only remakes the problem without evaluating
     # the residual, so neither the copies below nor the `+1` apply: nothing is counted and
-    # nothing is invented. `njacs`/`nw` for a reused `W` are still recorded by
-    # `_update_nlsolvealg_W_oop!` — that assembly is the integrator's own work.
     if SciMLBase.has_stats(integrator) && !(cache.cache isa NonlinearSolveNoInitCache)
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
         integrator.stats.nf += cache.cache.stats.nf + 1
-        # Under `W` reuse the inner solver's "Jacobian" is the `W_ref` closure, which hands
-        # back the `W` assembled here rather than evaluating anything, so its `njacs` counts
-        # reads, not Jacobian evaluations; `calc_J` inside `_update_nlsolvealg_W_oop!`
-        # counts the real ones. Without reuse the inner solver owns the Jacobian and its
-        # count stands.
         if cache.W === nothing
             integrator.stats.njacs += cache.cache.stats.njacs
         end
@@ -66,9 +59,6 @@ function initialize!(
         dtgamma = method === DIRK ? γ * dt : γ * dt / α
         W_γdt = cache.W_γdt
         first_call = iszero(W_γdt)
-        # No stored `J` on this path (`W` is rebuilt from a fresh Jacobian), so a
-        # dt/gamma drift past the cutoff costs a Jacobian evaluation, not just a
-        # reassembly as in the in-place `new_jac`/`new_w` split.
         should_update = first_call || alg.always_new ||
             nlsolver.status === Divergence ||
             abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
@@ -78,6 +68,10 @@ function initialize!(
         else
             cache.new_W = false
         end
+    end
+
+    if cache.cache isa NonlinearSolveNoInitCache
+        return nothing
     end
 
     if f isa DAEFunction
@@ -462,9 +456,6 @@ function residual_to_z_scale(nlsolver, isdae)
 end
 
 function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma)
-    # Same construction as the `StaticWOperator` branch of `calc_W`: `calc_J` picks
-    # user `jac` vs differentiation through `nlcache.uf` and records the evaluation
-    # in `integrator.stats.njacs` — the only njacs the reused-`W` path can count.
     J_new = calc_J(integrator, nlcache)
     nlcache.W[] = J_new - integrator.f.mass_matrix * inv(dtgamma)
     nlcache.W_γdt = dtgamma
@@ -482,16 +473,14 @@ end
     nlcache = nlsolver.cache.cache
     if nlcache isa NonlinearSolveNoInitCache
         # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
-        # time: `solve!` runs the complete inner solve and its returned solution is the only
-        # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
-        # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
-        # inner solve; an unsuccessful one is a genuine failure and reaches the step
         # controller the way `NLNewton` reports a failed linear solve. A complete solve
         # leaves no half-taken step behind, so there is nothing for the residual to veto.
-        # The inner residual and linear-solve work is uncounted (no `stats`);
-        # `_update_nlsolvealg_W_oop!` counts the Jacobian and `W` assemblies, which are
-        # the integrator's own share of the work.
-        innersol = solve!(nlcache)
+        if integrator.f isa DAEFunction
+            nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, integrator.f)
+        else
+            nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, integrator.f)
+        end
+        innersol = solve(NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
         end
@@ -1141,7 +1130,6 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.weight === nothing || resize!(nlcache.weight, i)
     nlcache.dz === nothing || resize!(nlcache.dz, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
-    # The reused out-of-place `W` is a `Ref` over a static matrix, which has no `resize!`.
     nlcache.W === nothing || nlcache.W isa Ref || resize_J_W!(nlcache, integrator, i)
     resize_conditioner!(nlcache.precondition, i)
     resize_conditioner!(nlcache.postcondition, i)

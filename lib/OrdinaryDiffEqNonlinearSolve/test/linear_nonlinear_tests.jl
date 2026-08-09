@@ -212,6 +212,7 @@ end
 
 using StaticArrays
 vdp_static(u, p, t) = SVector(u[2], p[1] * ((1 - u[1]^2) * u[2] - u[1]))
+step_allocs(integ) = @allocated step!(integ)
 let
     prob = ODEProblem(
         vdp_static, SVector(2.0, 0.0), (0.0, 1.0), SVector(1.0e3)
@@ -224,15 +225,17 @@ let
         integ = init(
             prob,
             TRBDF2(nlsolve = NonlinearSolveAlg(inner), concrete_jac = true);
-            reltol = 1.0e-8, abstol = 1.0e-10
+            reltol = 1.0e-8, abstol = 1.0e-10, save_everystep = false
         )
         @test integ.cache.nlsolver.cache.W isa Base.RefValue
+        for _ in 1:50
+            step!(integ)
+        end
+        step_allocs(integ)  # compile the measurement wrapper itself
+        @test step_allocs(integ) == 0
         sol = solve!(integ)
         @test SciMLBase.successful_retcode(sol.retcode)
         @test maximum(abs.(sol.u[end] .- solref.u[end])) < 1.0e-3
-        # These inner solvers report no counters of their own, so every Jacobian the
-        # integrator sees comes from the reused `W`: one evaluation per assembly, and
-        # fewer assemblies than nonlinear iterations because the `W` is held across them.
         @test sol.stats.njacs == sol.stats.nw
         @test 0 < sol.stats.nw < sol.stats.nnonliniter
     end
