@@ -1,6 +1,6 @@
 name = "OrdinaryDiffEqNewmark"
 uuid = "d204908a-63b9-11ef-18f5-cfec7123a93b"
-version = "2.2.2"
+version = "2.3.0"
 authors = ["Dennis Ogiermann <termi-official@users.noreply.github.com>"]
 
 [deps]
@@ -23,6 +23,7 @@ TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
 
 [compat]
 SciMLTesting = "2.1"
@@ -38,6 +39,7 @@ MuladdMacro = "0.2.4"
 NonlinearSolve = "4.20.3"
 NonlinearSolveFirstOrder = "2.1.1"
 OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqSDIRK = "2.5"
 Pkg = "1"
 PreallocationTools = "1.1.2"
 Random = "<0.0.1, 1"
@@ -53,6 +55,7 @@ julia = "1.10"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
@@ -60,4 +63,4 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DiffEqDevTools", "NonlinearSolve", "Random", "SafeTestsets", "Test", "Pkg", "SciMLTesting"]
+test = ["DiffEqDevTools", "NonlinearSolve", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "Test", "Pkg", "SciMLTesting"]

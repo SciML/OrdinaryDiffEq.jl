@@ -13,6 +13,7 @@ import OrdinaryDiffEqCore: initialize!, perform_step!, unwrap_alg,
     trivial_limiter!, _ode_interpolant!,
     get_fsalfirstlast, generic_solver_docstring,
     OrdinaryDiffEqCore
+import DiffEqBase: calculate_residuals, calculate_residuals!
 import PreallocationTools: DiffCache, get_tmp
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import SciMLBase: full_cache
