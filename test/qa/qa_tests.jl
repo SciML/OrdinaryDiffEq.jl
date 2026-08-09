@@ -1,5 +1,5 @@
 using SciMLTesting, OrdinaryDiffEq
-using ADTypes, CommonSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
+using ADTypes, CommonSolve, DiffEqBase, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     SciMLBase, SciMLLogging
 using Test
@@ -33,6 +33,7 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
     union(
         public_api_names(ADTypes),
         public_api_names(CommonSolve),
+        public_api_names(DiffEqBase),
         public_api_names(OrdinaryDiffEqBDF),
         public_api_names(OrdinaryDiffEqDefault),
         public_api_names(OrdinaryDiffEqRosenbrock),

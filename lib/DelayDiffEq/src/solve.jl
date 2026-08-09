@@ -76,7 +76,18 @@ function SciMLBase.__init(
 
     # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
     if verbose isa Bool
-        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
+        throw(
+            ArgumentError(
+                """
+                Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7: `verbose` now takes a verbosity object.
+
+                    solve(prob, alg; verbose = DEVerbosity(SciMLLogging.None()))  # was verbose = false
+                    solve(prob, alg; verbose = DEVerbosity())                     # was verbose = true
+
+                `DEVerbosity` and `SciMLLogging` are both exported by OrdinaryDiffEq, so no extra `using` is needed; from another solver package add `using DiffEqBase, SciMLLogging`. Per-message control is documented at https://docs.sciml.ai/OrdinaryDiffEq/stable/verbosity/
+                """
+            )
+        )
     elseif verbose isa AbstractVerbosityPreset
         verbose_spec = DEVerbosity(verbose)
     else
