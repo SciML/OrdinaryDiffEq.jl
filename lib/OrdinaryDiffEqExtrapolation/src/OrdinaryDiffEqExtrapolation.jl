@@ -30,7 +30,7 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timed
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
-using LinearSolve: LinearSolve, RFLUFactorization
+using LinearSolve: LinearSolve, GenericLUFactorization
 using FastPower: fastpower
 using SciMLOperators: SciMLOperators, WOperator
 import SciMLLogging: @SciMLMessage
