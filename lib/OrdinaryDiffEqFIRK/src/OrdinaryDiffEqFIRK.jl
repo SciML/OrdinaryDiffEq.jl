@@ -35,8 +35,8 @@ import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, _ode_addsteps!,
 import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: build_J_W, build_jac_config,
     calc_J!, dolinsolve, calc_J,
-    islinearfunction
-import ADTypes
+    islinearfunction, drain_jvp_count!
+import OrdinaryDiffEqDifferentiation: jvp_counter
 import ADTypes: AutoForwardDiff
 import SciMLOperators
 import SciMLOperators: AbstractSciMLOperator

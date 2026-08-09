@@ -106,7 +106,8 @@ include("operators.jl")
             :calc_rosenbrock_differentiation, :calc_rosenbrock_differentiation!,
             :jacobian!, :jacobian2W!, :update_W!,
             :resize_grad_config!, :resize_jac_config!,
-            :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W
+            :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W,
+            :drain_jvp_count!, :jvp_counter
         )
     )
 end

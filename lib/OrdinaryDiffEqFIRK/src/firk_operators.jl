@@ -34,7 +34,6 @@ mutable struct ComplexWOperator{T, MMType, GType, JType, JVType, VType} <:
     _imv::VType
     _reJv::VType
     _imJv::VType
-    jvps::Int
 end
 
 function ComplexWOperator(mass_matrix, gamma::Number, J, u, jacvec = nothing)
@@ -44,7 +43,7 @@ function ComplexWOperator(mass_matrix, gamma::Number, J, u, jacvec = nothing)
         T, typeof(mass_matrix), T, typeof(J), typeof(jacvec), typeof(v),
     }(
         mass_matrix, convert(T, gamma), J, jacvec,
-        zero(v), zero(v), zero(v), zero(v), 0
+        zero(v), zero(v), zero(v), zero(v)
     )
 end
 
@@ -74,7 +73,6 @@ function LinearAlgebra.mul!(Y::AbstractVector, W::ComplexWOperator, B::AbstractV
     @. _imv = imag(B)
     mul!(_reJv, Jop, _rev)
     mul!(_imJv, Jop, _imv)
-    W.jvps += 2
     @. Y = complex(_reJv, _imJv)
     a = -inv(W.gamma)
     if W.mass_matrix isa UniformScaling
@@ -177,27 +175,6 @@ function firk_new_J!(J, W, integrator, cache)
     return nothing
 end
 
-"""
-    drain_jvp_count!(integrator, alg, W)
-
-Move the Jacobian-vector products a matrix-free complex stage solve has accumulated into
-the solver stats, and reset the operator's counter. `dolinsolve` only accounts for
-`WOperator`s, so the [`ComplexWOperator`](@ref) products go uncounted otherwise. The
-counter lives on the operator rather than being inferred from the Krylov iteration count
-so that `AdaptiveRadau`'s threaded stage solves each tally into their own operator.
-
-Only a genuinely matrix-free Jacobian costs RHS evaluations; a concretizable operator such
-as a user-supplied `MatrixOperator` does not.
-"""
-function drain_jvp_count!(integrator, alg, W::ComplexWOperator)
-    n = W.jvps
-    W.jvps = 0
-    (n == 0 || !(integrator isa SciMLBase.DEIntegrator)) && return nothing
-    Jop = _jacobian_operator(W)
-    (Jop isa AbstractSciMLOperator && !SciMLOperators.isconvertible(Jop)) || return nothing
-    ad = alg.autodiff isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg.autodiff) : alg.autodiff
-    per_jvp = (ad isa ADTypes.AutoFiniteDiff || ad isa ADTypes.AutoFiniteDifferences) ? 2 : 1
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, per_jvp * n)
-    return nothing
-end
-drain_jvp_count!(integrator, alg, W) = nothing
+# A `ComplexWOperator` applies the same real JVP operator its `W` does, so the products it
+# performs are already on that operator's tally and `drain_jvp_count!` needs nothing else.
+jvp_counter(W::ComplexWOperator) = jvp_counter(_jacobian_operator(W))

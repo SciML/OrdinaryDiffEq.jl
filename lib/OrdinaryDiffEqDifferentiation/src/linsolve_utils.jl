@@ -14,8 +14,8 @@ issuccess_W(::Any) = true
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
 resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerance
-`reltol`. Updates the RHS-evaluation count for matrix-free/iterative solvers and
-returns the LinearSolve result.
+`reltol`. Charges `stats.nf` for the Jacobian-vector products the solve applied
+(see `drain_jvp_count!`) and returns the LinearSolve result.
 """
 function dolinsolve(
         integrator, linsolve; A = nothing, linu = nothing, b = nothing,
@@ -37,17 +37,7 @@ function dolinsolve(
     linres = solve!(linsolve; reltol)
 
     # TODO: this ignores the add of the `f` count for add_steps!
-    if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
-            !LinearSolve.needs_concrete_A(_alg.linsolve) &&
-            linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator
-        ad = alg_autodiff(_alg) isa ADTypes.AutoSparse ? ADTypes.dense_ad(alg_autodiff(_alg)) :
-            alg_autodiff(_alg)
-        if ad isa ADTypes.AutoFiniteDiff || ad isa ADTypes.AutoFiniteDifferences
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2 * linres.iters)
-        else
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, linres.iters)
-        end
-    end
+    drain_jvp_count!(integrator, _alg, linsolve.A)
 
     return linres
 end
