@@ -40,6 +40,7 @@ if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
     @time @safetestset "No Jac Tests" include("nojac_tests.jl")
     @time @safetestset "Stale W Linear Operator Tests" include("stale_w_linear_operator_tests.jl")
     @time @safetestset "Krylov warm_start default" include("warm_start_default_tests.jl")
+    @time @safetestset "Krylov nf accounting" include("nf_accounting_tests.jl")
 end
 
 # Run sparse tests (separate environment due to ComponentArrays dep conflicts)
