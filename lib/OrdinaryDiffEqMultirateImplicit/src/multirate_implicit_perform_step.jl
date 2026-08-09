@@ -23,10 +23,11 @@ function _mreil_prepare_jac!(J::SparseMatrixCSC, jac_prototype::SparseMatrixCSC)
             size(J) == size(jac_prototype) && getcolptr(J) == getcolptr(jac_prototype) &&
                 rowvals(J) == rowvals(jac_prototype)
         )
-        # `jac_prototype`'s stored values must be made nonzero first: the broadcast below
-        # prunes numerical zeros, which would drop those entries from `J`.
-        nonzeros(jac_prototype) .= true
-        J .= true .* jac_prototype
+        # A structural copy, not a broadcast: broadcasting prunes numerical zeros, which
+        # would drop entries the prototype stores as zero — and working around that by
+        # writing nonzero values into `jac_prototype` first would corrupt the user's
+        # array, which `remake` shares across solves.
+        copyto!(J, jac_prototype)
     end
     nonzeros(J) .= false
     return nothing
@@ -85,7 +86,10 @@ end
 
 # Build W = J - M/h_fast for one extrapolation column. Mirrors `calc_W!`'s dispatch:
 # an operator W only needs its `gamma` (and its `(u, p, t)`, for a time-dependent
-# operator) updated, while a concrete W is written from the concrete J.
+# operator) updated, while a concrete W is written from the concrete J. `nw` counts as
+# `calc_W`'s does: every branch that produces a new W — lazy or concrete — except a
+# user-supplied `W_prototype` operator, where only its coefficients move and no W is
+# built at all.
 function _mreil_update_W!(integrator, cache, h_fast)
     (; uprev, p, t, f) = integrator
     W = cache.W
@@ -94,12 +98,13 @@ function _mreil_update_W!(integrator, cache, h_fast)
         if W.J isa AbstractMatrix
             jacobian2W!(W._concrete_form, f.mass_matrix, h_fast, W.J)
         end
+        integrator.stats.nw += 1
     elseif W isa AbstractSciMLOperator
         update_coefficients!(W, uprev, p, t; gamma = h_fast)
     else
         jacobian2W!(W, f.mass_matrix, h_fast, cache.J)
+        integrator.stats.nw += 1
     end
-    integrator.stats.nw += 1
     return nothing
 end
 
@@ -170,7 +175,7 @@ function perform_step!(integrator, cache::MREILCache, repeat_step = false)
     alg = unwrap_alg(integrator, true)
     m = alg.m
     order = alg.order
-    ns = _extrapolation_sequence(alg.seq, order)
+    ns = cache.ns
 
     # One Jacobian per macro step, taken at (uprev, t) and shared by every column
     # of the extrapolation table. The frozen J is part of the base method, so a
@@ -193,12 +198,10 @@ function perform_step!(integrator, cache::MREILCache, repeat_step = false)
 
         # h_fast depends only on the column index, so W is constant over the whole
         # column: build and factorize it once here, then every one of the nj*m
-        # solves below reuses that factorization (`dolinsolve` without `A`).
+        # solves below reuses that factorization (`dolinsolve` without `A`). W is a
+        # raw matrix or operator here — the factorization lives inside the LinearSolve
+        # cache — so singularity only surfaces through the solve's retcode below.
         _mreil_update_W!(integrator, cache, h_fast)
-        if !issuccess_W(W)
-            OrdinaryDiffEqCore.set_EEst!(integrator, 2)
-            return nothing
-        end
         refactorize = true
 
         Tj = T[j]
@@ -233,9 +236,21 @@ function perform_step!(integrator, cache::MREILCache, repeat_step = false)
                     dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
                 end
                 integrator.stats.nsolve += 1
-                if !SciMLBase.successful_retcode(linres.retcode) &&
-                        linres.retcode != SciMLBase.ReturnCode.Default
-                    OrdinaryDiffEqCore.set_EEst!(integrator, 2)
+                # LinearSolve's factorizations report a singular W as a `Failure`
+                # retcode, but an algorithm may leave the retcode at `Default`, where
+                # a failure is only visible through non-finite solution values. Either
+                # way it is a property of the linear solver at this h_fast, not of the
+                # step error, so fail the attempt the way `nlsolve!` does: `adaptive`
+                # then retries at a smaller dt, and a fixed-dt solve aborts loudly
+                # instead of accepting a `u` that was never written.
+                if !(
+                        SciMLBase.successful_retcode(linres.retcode) ||
+                            (
+                            linres.retcode == SciMLBase.ReturnCode.Default &&
+                                all(isfinite, linres.u)
+                        )
+                    )
+                    integrator.force_stepfail = true
                     return nothing
                 end
 
@@ -245,10 +260,12 @@ function perform_step!(integrator, cache::MREILCache, repeat_step = false)
         end
     end
 
-    # Aitken–Neville Richardson extrapolation (in-place, reverse-row order)
+    # Aitken–Neville Richardson extrapolation (in-place, reverse-row order). The
+    # ratio is kept exact as a `Rational` so the division below rounds once in the
+    # state's eltype — an Int/Int ratio would cap a BigFloat solve at Float64 accuracy.
     for k in 1:(order - 1)
         for j in order:-1:(k + 1)
-            ratio = ns[j] / ns[j - k]
+            ratio = ns[j] // ns[j - k]
             @.. broadcast = false tmp = (T[j] - T[j - 1]) / (ratio - 1)
             @.. broadcast = false T[j] = T[j] + tmp
         end
@@ -287,7 +304,7 @@ end
     alg = unwrap_alg(integrator, true)
     m = alg.m
     order = alg.order
-    ns = _extrapolation_sequence(alg.seq, order)
+    ns = cache.ns
     T = cache.T
     mass_matrix = f.mass_matrix
 
@@ -301,7 +318,11 @@ end
         W = _mreil_factorize(_mreil_W(mass_matrix, h_fast, J))
         integrator.stats.nw += 1
         if !issuccess_W(W)
-            OrdinaryDiffEqCore.set_EEst!(integrator, 2)
+            # A singular W is a property of this h_fast, not of the step error: fail
+            # the attempt the way `nlsolve!` does, so `adaptive` retries at a smaller
+            # dt and a fixed-dt solve aborts loudly instead of accepting a `u` that
+            # was never written.
+            integrator.force_stepfail = true
             return nothing
         end
 
@@ -332,10 +353,12 @@ end
         T[j] = u_cur
     end
 
-    # Aitken–Neville Richardson extrapolation
+    # Aitken–Neville Richardson extrapolation. The ratio is kept exact as a
+    # `Rational` so the division below rounds once in the state's eltype — an
+    # Int/Int ratio would cap a BigFloat solve at Float64 accuracy.
     for k in 1:(order - 1)
         for j in order:-1:(k + 1)
-            ratio = ns[j] / ns[j - k]
+            ratio = ns[j] // ns[j - k]
             T[j] = @.. broadcast = false T[j] + (T[j] - T[j - 1]) / (ratio - 1)
         end
     end
@@ -455,7 +478,7 @@ end
         integrator, cache::MRIGARKImplicitConstantCache, repeat_step = false
     )
     (; t, dt, uprev, f, p) = integrator
-    (; nlsolver, tab) = cache
+    (; nlsolver, tab, z, fS) = cache
     (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
     alg = unwrap_alg(integrator, true)
     m = alg.m
@@ -464,8 +487,6 @@ end
 
     markfirststage!(nlsolver)
 
-    z = Vector{typeof(uprev)}(undef, s + 1)
-    fS = Vector{typeof(f.f2(uprev, p, t))}(undef, s)
     z[1] = uprev
     cprev = zero(eltype(Δc))
     for i in 1:s

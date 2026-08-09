@@ -89,6 +89,9 @@ function MREIL(;
     )
     m >= 1 || throw(ArgumentError("MREIL: `m` must be ≥ 1"))
     order >= 2 || throw(ArgumentError("MREIL: `order` must be ≥ 2"))
+    seq in (:harmonic, :romberg) || throw(
+        ArgumentError("MREIL: unknown sequence `$seq`, choose :harmonic or :romberg")
+    )
     autodiff = _fixup_ad(autodiff)
     return MREIL(m, order, seq, linsolve, autodiff, _unwrap_val(concrete_jac))
 end
@@ -132,6 +135,7 @@ function MRIGARKIRK21a(;
         m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton()
     )
+    m >= 1 || throw(ArgumentError("MRIGARKIRK21a: `m` must be ≥ 1"))
     autodiff = _fixup_ad(autodiff)
     return MRIGARKIRK21a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
 end
@@ -176,6 +180,7 @@ function MRIGARKESDIRK34a(;
         m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton()
     )
+    m >= 1 || throw(ArgumentError("MRIGARKESDIRK34a: `m` must be ≥ 1"))
     autodiff = _fixup_ad(autodiff)
     return MRIGARKESDIRK34a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
 end
@@ -221,6 +226,7 @@ function MRIGARKESDIRK46a(;
         m::Int, autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton()
     )
+    m >= 1 || throw(ArgumentError("MRIGARKESDIRK46a: `m` must be ≥ 1"))
     autodiff = _fixup_ad(autodiff)
     return MRIGARKESDIRK46a(m, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac))
 end

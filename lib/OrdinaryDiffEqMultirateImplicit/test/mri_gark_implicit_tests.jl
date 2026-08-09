@@ -1,4 +1,7 @@
 using OrdinaryDiffEqMultirateImplicit, DiffEqDevTools, Test, LinearAlgebra
+using SparseArrays
+import ADTypes
+import DiffEqBase
 
 @testset "MRIGARKIRK21a" begin
     @testset "Construction" begin
@@ -183,5 +186,40 @@ end
         dts = 1 ./ 2 .^ (8:-1:4)
         sim = test_convergence(dts, prob, MRIGARKESDIRK46a(m = 8))
         @test sim.𝒪est[:l∞] ≈ 4 atol = 0.3
+    end
+end
+
+@testset "MRI-GARK implicit shared guards" begin
+    @testset "m is validated at construction" begin
+        # `m = 0` used to slip through for scalar problems — the old check lived in
+        # a `prepare_alg` method that only matched array states — and silently
+        # dropped the fast dynamics while reporting Success.
+        @test_throws ArgumentError MRIGARKIRK21a(m = 0)
+        @test_throws ArgumentError MRIGARKESDIRK34a(m = 0)
+        @test_throws ArgumentError MRIGARKESDIRK46a(m = 0)
+    end
+
+    @testset "generic prepare_alg is not shadowed" begin
+        # The removed `prepare_alg` method also shadowed the generic AD
+        # preparation, skipping `prepare_user_sparsity`: a problem carrying a
+        # sparsity pattern must come back with a sparse AD backend, and the solve
+        # must still go through.
+        f1!(du, u, p, t) = (du .= -2.0 .* u)
+        f2!(du, u, p, t) = (du[1] = -u[1]; du[2] = -u[2])
+        proto = sparse(1.0 * I, 2, 2)
+        prob = ODEProblem(
+            SplitFunction(
+                ODEFunction(f1!), ODEFunction(f2!);
+                jac_prototype = copy(proto), sparsity = copy(proto)
+            ),
+            [1.0, 2.0], (0.0, 1.0)
+        )
+        alg = MRIGARKIRK21a(m = 4)
+        prepped = DiffEqBase.prepare_alg(alg, prob.u0, prob.p, prob)
+        @test prepped.autodiff isa ADTypes.AutoSparse
+
+        sol = solve(prob, alg, dt = 0.05, adaptive = false)
+        @test SciMLBase.successful_retcode(sol)
+        @test norm(sol.u[end] - [1.0, 2.0] .* exp(-3.0)) < 1.0e-2
     end
 end

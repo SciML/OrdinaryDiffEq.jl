@@ -1,7 +1,5 @@
 [deps]
 AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
-DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqMultirate = "d4b830b4-ac80-426b-8507-16693d424963"
 OrdinaryDiffEqMultirateImplicit = "fd3f87d1-5955-4d40-9638-6d84dd605b32"

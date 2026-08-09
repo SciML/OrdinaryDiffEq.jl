@@ -692,4 +692,108 @@ end
             prob_bad, MREIL(m = 4, order = 4), dt = 0.05, adaptive = false
         )
     end
+
+    @testset "Singular W fails the step loudly" begin
+        # W = J - 1/h_fast = 40 - 1/(0.1/(1*4)) = 0 exactly in the first
+        # extrapolation column, so its solves never move T[1]. Accepting that at
+        # fixed dt froze the state at u0 with retcode Success — the truth is
+        # e^40 ≈ 2.4e17. The failed attempt must instead surface as
+        # `force_stepfail`, which a fixed-dt solve cannot retry.
+        prob = SplitODEProblem(
+            (u, p, t) -> 40.0 * u, (u, p, t) -> 0.0 * u, 1.0, (0.0, 1.0)
+        )
+        sol = solve(prob, MREIL(m = 4, order = 2), dt = 0.1, adaptive = false)
+        @test !SciMLBase.successful_retcode(sol)
+
+        # Under adaptive stepping the same failure is retried at a smaller dt,
+        # which moves W off the singularity.
+        sol_a = solve(prob, MREIL(m = 4, order = 2), reltol = 1.0e-8, abstol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol_a)
+        @test isapprox(sol_a.u[end], exp(40.0), rtol = 1.0e-4)
+
+        # In-place, W is a raw matrix and the factorization lives inside the
+        # LinearSolve cache, so the singularity is only visible through the solve's
+        # retcode: `LUFactorization` reports it as a `Failure`. (The default
+        # poly-algorithm instead falls back to a least-squares solve and reports
+        # `Success`, which no step-level check can tell apart from a real one.)
+        f1!(du, u, p, t) = (du .= 40.0 .* u)
+        f2!(du, u, p, t) = (du .= 0.0)
+        prob_ip = SplitODEProblem(f1!, f2!, [1.0, 1.0], (0.0, 1.0))
+        alg_ip = MREIL(m = 4, order = 2, linsolve = LUFactorization())
+        sol_ip = solve(prob_ip, alg_ip, dt = 0.1, adaptive = false)
+        @test !SciMLBase.successful_retcode(sol_ip)
+
+        sol_ip_a = solve(prob_ip, alg_ip, reltol = 1.0e-8, abstol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol_ip_a)
+        @test isapprox(sol_ip_a.u[end][1], exp(40.0), rtol = 1.0e-4)
+    end
+
+    @testset "BigFloat keeps full precision through the Neville ratios" begin
+        # One fixed step of u' = z*u with f2 = 0 lands exactly on the linear
+        # stability function: T_j = (1 - z/(n_j*m))^(-n_j*m) extrapolated with the
+        # exact rational Neville ratios. Computing 4/3 - 1 in Float64 instead of as
+        # 1//3 perturbs the result at ~1e-19, far above BigFloat resolution.
+        z = -BigFloat(1) / 2
+        m_val, order = 2, 4
+        ns = [1, 2, 3, 4]
+        T = [(1 - z / (n * m_val))^(-n * m_val) for n in ns]
+        for k in 1:(order - 1), j in order:-1:(k + 1)
+            T[j] = T[j] + (T[j] - T[j - 1]) / (ns[j] // ns[j - k] - 1)
+        end
+        Rexact = T[order]
+
+        prob = SplitODEProblem(
+            (u, p, t) -> z * u, (u, p, t) -> zero(u), BigFloat(1),
+            (BigFloat(0), BigFloat(1))
+        )
+        sol = solve(
+            prob, MREIL(m = m_val, order = order), dt = BigFloat(1), adaptive = false
+        )
+        @test abs(sol.u[end] - Rexact) < BigFloat(10)^(-40)
+    end
+
+    @testset "The user's sparse jac_prototype is never written" begin
+        # The structure-reset path used to make the prototype's stored values
+        # nonzero before broadcasting them into J, corrupting the user's array —
+        # which `remake` shares across solves. The reset must leave the prototype
+        # bit-identical, stored zeros included.
+        proto = SparseMatrixCSC(2, 2, [1, 2, 3], [1, 2], [5.0, 0.0])
+        vals = copy(nonzeros(proto))
+        J = sparse([1], [2], [1.0], 2, 2)
+        OrdinaryDiffEqMultirateImplicit._mreil_prepare_jac!(J, proto)
+        @test SparseArrays.getcolptr(J) == SparseArrays.getcolptr(proto)
+        @test rowvals(J) == rowvals(proto)
+        @test all(iszero, nonzeros(J))
+        @test nonzeros(proto) == vals
+
+        # End to end: the prototype handed to the problem comes back bit-identical.
+        N = 8
+        ffast!, fslow!, jac!, prototype, u0, tspan = banded_split_problem(N, (0.0, 0.05))
+        saved = copy(prototype)
+        prob = SplitODEProblem(
+            ODEFunction(ffast!; jac = jac!, jac_prototype = prototype), fslow!, u0, tspan
+        )
+        solve(prob, MREIL(m = 4, order = 4), dt = 0.005, adaptive = false)
+        @test prototype == saved
+        @test nonzeros(prototype) == nonzeros(saved)
+    end
+
+    @testset "Empty sparse jac_prototype is rejected" begin
+        # `spzeros(n, n)` has no stored entries, so it declares the same empty
+        # pattern an all-zero dense prototype does: the coloring would come back
+        # empty, J would stay identically zero, and the substeps would silently
+        # degrade to explicit Euler.
+        ffast!(du, u, p, t) = (du .= -1000.0 .* u)
+        fslow!(du, u, p, t) = (du .= -0.1 .* u)
+        prob = SplitODEProblem(
+            ODEFunction(ffast!; jac_prototype = spzeros(2, 2)), fslow!,
+            [1.0, 2.0], (0.0, 1.0)
+        )
+        @test_throws ArgumentError solve(prob, MREIL(), dt = 0.01, adaptive = false)
+    end
+
+    @testset "Sequence validation" begin
+        # An unknown `seq` must fail at construction, not on the first step.
+        @test_throws ArgumentError MREIL(seq = :geometric)
+    end
 end

@@ -1,6 +1,7 @@
 module OrdinaryDiffEqMultirateImplicit
 
 import OrdinaryDiffEqCore: alg_order, isfsal,
+    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
     generic_solver_docstring, differentiation_rk_docstring,
     unwrap_alg, initialize!, perform_step!,
@@ -14,10 +15,9 @@ import FastBroadcast: @..
 import MuladdMacro: @muladd
 import RecursiveArrayTools: recursivefill!
 import DiffEqBase
-import DiffEqBase: prepare_alg
 import LinearAlgebra: UniformScaling
 import LinearSolve
-import SparseArrays: SparseMatrixCSC, getcolptr, issparse, nonzeros, rowvals
+import SparseArrays: SparseMatrixCSC, getcolptr, issparse, nnz, nonzeros, rowvals
 using SciMLBase: SplitFunction, LinearProblem, init
 import SciMLBase
 import SciMLOperators: AbstractSciMLOperator, WOperator, update_coefficients!

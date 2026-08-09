@@ -2,6 +2,7 @@ struct MREILConstantCache{T, UF, JFType} <: OrdinaryDiffEqConstantCache
     T::T  # pre-allocated extrapolation table: Vector of length `order`
     uf::UF
     jac_f::JFType
+    ns::Vector{Int}  # extrapolation step counts, fixed by (alg.seq, alg.order)
 end
 
 @cache mutable struct MREILCache{
@@ -29,6 +30,7 @@ end
     J_iter::Int           # `integrator.iter` when J was taken …
     J_success_iter::Int   # … and `success_iter`, so a rejected attempt can reuse J
     J_isvalid::Bool
+    ns::Vector{Int}       # extrapolation step counts, fixed by (alg.seq, alg.order)
 end
 
 get_fsalfirstlast(cache::MREILCache, u) = (cache.fsalfirst, cache.k)
@@ -68,11 +70,13 @@ end
 _mreil_jac_function(f, nf) = f
 
 # A sparse matrix states its sparsity pattern through its stored structure, so a sparse
-# `jac_prototype` whose stored values are all zero still names a pattern. A dense matrix
-# has no structure to read, so the pattern has to come from the values, and an all-zero
-# dense one therefore says the Jacobian has no nonzeros anywhere:
-# `prepare_user_sparsity` builds a `KnownJacobianSparsityDetector` over it, the coloring
-# comes back empty, and AD fills in nothing — `J` stays identically zero.
+# `jac_prototype` whose stored values are all zero still names a pattern — as long as it
+# stores any entries at all: `spzeros(n, n)` has empty structure and so declares the
+# same empty pattern an all-zero dense matrix does. A dense matrix has no structure to
+# read, so the pattern has to come from the values, and an all-zero dense one therefore
+# says the Jacobian has no nonzeros anywhere. Either way `prepare_user_sparsity` builds
+# a `KnownJacobianSparsityDetector` over it, the coloring comes back empty, and AD fills
+# in nothing — `J` stays identically zero.
 #
 # What that costs is *stability*, not order. Extrapolated linearly implicit Euler is a
 # W-method: the Richardson order survives an arbitrary frozen `J`, measured at 2.00,
@@ -92,15 +96,17 @@ function _mreil_check_ad_sparsity(f)
     SciMLBase.has_jac(f) && return nothing
     hasproperty(f, :sparsity) || return nothing
     sparsity = f.sparsity
-    (sparsity isa AbstractMatrix && !issparse(sparsity)) || return nothing
-    all(iszero, sparsity) && throw(
+    sparsity isa AbstractMatrix || return nothing
+    empty_pattern = issparse(sparsity) ? nnz(sparsity) == 0 : all(iszero, sparsity)
+    empty_pattern && throw(
         ArgumentError(
-            "MREIL: the fast component's `jac_prototype`/`sparsity` is a dense " *
-                "all-zero matrix, which declares that the Jacobian has no nonzero " *
+            "MREIL: the fast component's `jac_prototype`/`sparsity` declares an " *
+                "empty sparsity pattern (a dense all-zero matrix, or a sparse matrix " *
+                "with no stored entries), i.e. that the Jacobian has no nonzero " *
                 "entries; automatic differentiation would then leave it identically " *
                 "zero and MREIL would silently degrade to explicit Euler substeps. " *
                 "Drop the prototype to get a dense AD Jacobian, or pass one whose " *
-                "nonzero entries are the actual sparsity pattern (`ones(n, n)` for a " *
+                "stored entries are the actual sparsity pattern (`ones(n, n)` for a " *
                 "dense Jacobian, a `SparseMatrixCSC` with the right structure " *
                 "otherwise), or supply `jac`."
         )
@@ -148,7 +154,8 @@ function alg_cache(
 
     return MREILCache(
         u, uprev, tmp, dz, atmp, weight, k_slow, k_fast, du1, linsolve_tmp,
-        T, J, W, uf, jac_config, linsolve, fsalfirst, k, jac_f, 0, 0, false
+        T, J, W, uf, jac_config, linsolve, fsalfirst, k, jac_f, 0, 0, false,
+        collect(_extrapolation_sequence(alg.seq, alg.order))
     )
 end
 
@@ -162,12 +169,18 @@ function alg_cache(
     T = Vector{typeof(u)}(undef, alg.order)
     nf = nlsolve_f(f, alg)
     uf = build_uf(alg, nf, t, p, Val(false))
-    return MREILConstantCache(T, uf, _mreil_jac_function(f, nf))
+    return MREILConstantCache(
+        T, uf, _mreil_jac_function(f, nf),
+        collect(_extrapolation_sequence(alg.seq, alg.order))
+    )
 end
 
-mutable struct MRIGARKImplicitConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
+mutable struct MRIGARKImplicitConstantCache{N, TabType, uType, rateType} <:
+    OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::TabType
+    z::Vector{uType}      # stage states; every entry is rewritten each step
+    fS::Vector{rateType}  # slow-rate stage evaluations, ditto
 end
 
 @cache mutable struct MRIGARKImplicitCache{uType, rateType, uNoUnitsType, N, TabType} <:
@@ -238,5 +251,8 @@ function alg_cache(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
     )
-    return MRIGARKImplicitConstantCache(nlsolver, tab)
+    s = length(tab.Δc)
+    z = Vector{typeof(u)}(undef, s + 1)
+    fS = Vector{typeof(rate_prototype)}(undef, s)
+    return MRIGARKImplicitConstantCache(nlsolver, tab, z, fS)
 end
