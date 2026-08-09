@@ -58,6 +58,23 @@ using OrdinaryDiffEq, SciMLBase
     @test record == [2, 2, 1, 2, 2, 1, 2, 2]
 end
 
+@testset "Discontinuity detection is opt-in" begin
+    prob = ODEProblem((u, p, t) -> u, 1.0, (0.0, 2.0))
+
+    function solve_with_callback(maybe_discontinuity)
+        callback = ContinuousCallback(
+            (u, t, integrator) -> t - 0.5,
+            integrator -> nothing;
+            maybe_discontinuity
+        )
+        return solve(prob, Tsit5(); callback)
+    end
+
+    sol_default = solve_with_callback(false)
+    sol_discontinuity_candidate = solve_with_callback(true)
+    @test sol_default.t == sol_discontinuity_candidate.t
+end
+
 @testset "Successive same event detection" begin
     @testset "affect_integrator: affect_integrator" for affect_integrator in [false, true]
         @testset "tdir: $tdir" for tdir in [1, -1]

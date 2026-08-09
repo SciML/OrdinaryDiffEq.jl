@@ -1046,7 +1046,8 @@ function handle_callbacks!(integrator)
                 idx,
                 continuous_callbacks
             )
-            if _fired_cb_maybe_discontinuity(idx, continuous_callbacks)
+            if _discontinuity_detection_enabled(integrator.controller_cache) &&
+                    _fired_cb_maybe_discontinuity(idx, continuous_callbacks)
                 reinit_controller!(integrator, integrator.controller_cache)
             end
         else
