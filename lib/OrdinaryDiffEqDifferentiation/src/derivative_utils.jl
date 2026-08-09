@@ -354,9 +354,19 @@ function calc_J(integrator, cache, next_step::Bool = false)
     return J
 end
 
-function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
+function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqConstantCache)
     njacs = integrator.stats.njacs
     J = calc_J(integrator, cache)
+    integrator.stats.njacs = njacs
+    return J
+end
+
+function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqMutableCache)
+    njacs = integrator.stats.njacs
+    # copy rather than similar: the scratch must keep the sparsity structure of cache.J,
+    # and the cache's own Jacobian must not be clobbered by the diagnostic
+    J = copy(cache.J)
+    calc_J!(J, integrator, cache)
     integrator.stats.njacs = njacs
     return J
 end

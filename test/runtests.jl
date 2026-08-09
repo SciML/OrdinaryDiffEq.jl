@@ -69,6 +69,7 @@ function interface_iii()
     @time @safetestset "No Index Tests" include("InterfaceIII/noindex_tests.jl")
     @time @safetestset "Events + DAE addsteps Tests" include("InterfaceIII/event_dae_addsteps.jl")
     @time @safetestset "Units Tests" include("InterfaceIII/units_tests.jl")
+    @time @safetestset "Instability Diagnostics Tests" include("InterfaceIII/instability_diagnostics.jl")
     return @time @safetestset "DEVerbosity Tests" include("InterfaceIII/verbosity.jl")
 end
 

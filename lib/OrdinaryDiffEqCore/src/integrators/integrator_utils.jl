@@ -778,6 +778,59 @@ function error_estimate_residuals(cache::DefaultCache)
     return isdefined(cache, name) ? error_estimate_residuals(getfield(cache, name)) : nothing
 end
 
+function _instability_jacobian(integrator, W)
+    if W !== nothing && hasproperty(W, :J)
+        #rosenbrock
+        return W.J
+    elseif hasproperty(integrator.cache, :J)
+        #radau
+        return get_fresh_jacobian(integrator, integrator.cache)
+    elseif hasproperty(integrator.cache, :nlsolver) &&
+            hasproperty(integrator.cache.nlsolver.cache, :J)
+        #BDF
+        return integrator.cache.nlsolver.cache.J
+    else #no jac to analyze
+        return nothing
+    end
+end
+
+"""
+    _analyze_instability_jacobian(integrator, W)
+
+Return `(bad_entries, singularity_rows, singularity_cols)` for the Jacobian available on
+`integrator`, or `(nothing, nothing, nothing)` when there is none to analyze.
+"""
+function _analyze_instability_jacobian(integrator, W)
+    jac = _instability_jacobian(integrator, W)
+    jac === nothing && return nothing, nothing, nothing
+
+    rows = Set{Int}()
+    cols = Set{Int}()
+    entries = Tuple{Int, Int, eltype(jac)}[]
+    _find_large_jac_entries!(rows, cols, entries, jac)
+
+    # keep only entries within 10 orders of magnitude of the largest finite entry,
+    # plus any non-finite entries. filters out large-but-normal model parameters
+    max_finite = 0.0
+    for (_, _, v) in entries
+        if isfinite(v)
+            max_finite = max(max_finite, abs(v))
+        end
+    end
+    cutoff = max_finite * 1.0e-10
+    filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
+    sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
+
+    # derive rows and columns from remaining entries
+    row_set = Set{Int}()
+    col_set = Set{Int}()
+    for (i, j, _) in entries
+        push!(row_set, i)
+        push!(col_set, j)
+    end
+    return entries, sort!(collect(row_set)), sort!(collect(col_set))
+end
+
 function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian_logging = true)
     W = _get_W(integrator)
     u = integrator.u
@@ -800,52 +853,18 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     end
 
-    # Jacobian analysis: rows and columns holding non-finite or unusually large entries
-    jac = if W !== nothing && hasproperty(W, :J)
-        #rosenbrock
-        W.J
-    elseif hasproperty(integrator.cache, :J)
-        #radau
-        get_fresh_jacobian(integrator, integrator.cache)
-    elseif hasproperty(integrator.cache, :nlsolver) &&
-            hasproperty(integrator.cache.nlsolver.cache, :J)
-        #BDF
-        integrator.cache.nlsolver.cache.J
-    else #no jac to analyze
-        nothing
-    end
-
+    # Jacobian analysis: rows and columns holding non-finite or unusually large entries.
+    # The solve has already failed here, so a failure of the diagnostic itself must
+    # degrade to a note rather than replace the instability report with an exception.
     bad_entries = nothing
     singularity_rows = nothing
     singularity_cols = nothing
-    if jac !== nothing
-        rows = Set{Int}()
-        cols = Set{Int}()
-        entries = Tuple{Int, Int, eltype(jac)}[]
-        _find_large_jac_entries!(rows, cols, entries, jac)
-
-        # keep only entries within 10 orders of magnitude of the largest finite entry,
-        # plus any non-finite entries. filters out large-but-normal model parameters
-        max_finite = 0.0
-        for (_, _, v) in entries
-            if isfinite(v)
-                max_finite = max(max_finite, abs(v))
-            end
-        end
-        cutoff = max_finite * 1.0e-10
-        filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
-        sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
-
-        # derive rows and columns from remaining entries
-        row_set = Set{Int}()
-        col_set = Set{Int}()
-        for (i, j, _) in entries
-            push!(row_set, i)
-            push!(col_set, j)
-        end
-        bad_entries = entries
-        singularity_rows = sort!(collect(row_set))
-        singularity_cols = sort!(collect(col_set))
+    jac_failure = nothing
+    try
+        bad_entries, singularity_rows, singularity_cols = _analyze_instability_jacobian(integrator, W)
+    catch err
+        err isa InterruptException && rethrow()
+        jac_failure = err
     end
 
     # trace Jacobian rows/cols back to equations/variables
@@ -887,7 +906,11 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     end
 
     # Jacobian diagnostics message
-    if jacobian_logging && bad_entries !== nothing && !isempty(bad_entries)
+    if jacobian_logging && jac_failure !== nothing
+        reason = sprint(showerror, jac_failure)
+        length(reason) > 200 && (reason = first(reason, 200) * "…")
+        push!(jacobian_analysis, "Jacobian analysis unavailable: $reason")
+    elseif jacobian_logging && bad_entries !== nothing && !isempty(bad_entries)
         has_nonfinite = false
         has_large = false
         for (_, _, v) in bad_entries

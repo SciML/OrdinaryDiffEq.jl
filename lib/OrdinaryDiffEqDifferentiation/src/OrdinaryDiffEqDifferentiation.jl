@@ -35,6 +35,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     OrdinaryDiffEqAdaptiveExponentialAlgorithm,
     AbstractNLSolver, nlsolve_f, issplit,
     concrete_jac, unwrap_alg, OrdinaryDiffEqCache,
+    OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
     isnewton,
     set_new_W!, set_W_γdt!, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
