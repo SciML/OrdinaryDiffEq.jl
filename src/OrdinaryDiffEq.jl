@@ -28,6 +28,11 @@ using SciMLBase: SciMLBase,
 
 using SciMLLogging: SciMLLogging
 
+# Verbosity specifier owned by DiffEqBase (exported there). The umbrella package
+# imports and exports it directly so `verbose = DEVerbosity(...)` is reachable from
+# a plain `using OrdinaryDiffEq`.
+using DiffEqBase: DEVerbosity
+
 # Import ADTypes for autodiff specification
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
@@ -56,6 +61,9 @@ export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallba
 # Utilities
 export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!, terminate!
+
+# Verbosity
+export DEVerbosity
 
 # Specialization levels
 export AutoDePSpecialize

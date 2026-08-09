@@ -8,13 +8,17 @@ to benefit from the available stage parallelism.
 # Fields
 
   - `threading`: threading configuration used for the parallel stages. It must be a
-    `Bool` or an OrdinaryDiffEqCore threading option such as `BaseThreads()`.
+    `Bool` or an OrdinaryDiffEqCore threading option such as
+    `OrdinaryDiffEqCore.BaseThreads()`.
 
 # Keywords
 
   - `threading = true`: threading configuration for the parallel stages. `true` uses
-    `Threads.@threads`, `false` is serial, and `BaseThreads()` or `PolyesterThreads()`
-    select the corresponding OrdinaryDiffEqCore backend.
+    `Threads.@threads`, `false` is serial, and `OrdinaryDiffEqCore.BaseThreads()` or
+    `OrdinaryDiffEqCore.PolyesterThreads()` select the corresponding OrdinaryDiffEqCore
+    backend. These types are public but not exported, so they need either the
+    `OrdinaryDiffEqCore.` qualification shown here or a `using OrdinaryDiffEqCore:
+    BaseThreads, PolyesterThreads`.
 
 # Examples
 

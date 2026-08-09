@@ -316,6 +316,8 @@ solve(prob, alg, verbose=DEVerbosity(SciMLLogging.None()))
 
 **Why:** same type-stability reason, plus `DEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
 
+`DEVerbosity` is owned by DiffEqBase and is exported by OrdinaryDiffEq (from v7.4.0) and StochasticDiffEq, alongside the `SciMLLogging` module that supplies the presets, so `using OrdinaryDiffEq` is enough for the line above. From a package that re-exports neither, add `using DiffEqBase, SciMLLogging`.
+
 ### alias: Bool no longer accepted
 
 ```julia
@@ -411,6 +413,8 @@ All four removals are driven by TTFS.
 | **StaticArrayInterface.jl** | `ArrayInterface.ismutable` | The only thing OrdinaryDiffEq actually used from StaticArrayInterface was the mutability query, which ArrayInterface already provides |
 | **Polyester.jl** (direct dep) | Moved to weak dep `OrdinaryDiffEqCorePolyesterExt`; requires `using Polyester` to activate | Polyester loads a nontrivial amount of threading infrastructure. Users who don't enable Polyester-threaded solvers no longer pay for it |
 | **StaticArrays.jl** (direct dep) | `SVector`/`MVector` in tableaus replaced with `NTuple`/`Vector`; SA moved to test-only | Loading StaticArrays forces compilation of a large generated-function surface for every solver that mentions an `SVector`. Tableaus used them for constants, which `NTuple` expresses just as statically |
+
+The threading option types themselves also became less reachable: `Sequential`, `BaseThreads` and `PolyesterThreads` are public API of OrdinaryDiffEqCore but are not exported by it or by any umbrella package. v6 code naming them bare now raises an `UndefVarError`; write `OrdinaryDiffEqCore.PolyesterThreads()` or add `using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
 
 ---
 

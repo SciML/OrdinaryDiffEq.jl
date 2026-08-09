@@ -18,8 +18,11 @@ function evaluations are expensive and extended-precision accuracy is required.
     calling convention. Use this to enforce stage-wise constraints.
   - `step_limiter! = trivial_limiter!`: limiter applied to the completed step. Use this
     to enforce solution constraints after an accepted update.
-  - `thread = Serial()`: threading configuration. Use `BaseThreads()` or
-    `PolyesterThreads()` to enable the corresponding OrdinaryDiffEqCore backend.
+  - `thread = Serial()`: threading configuration. Use `OrdinaryDiffEqCore.BaseThreads()`
+    or `OrdinaryDiffEqCore.PolyesterThreads()` to enable the corresponding
+    OrdinaryDiffEqCore backend. These types are public but not exported, so they need
+    either the `OrdinaryDiffEqCore.` qualification shown here or a `using
+    OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
 
 # Examples
 

@@ -12,6 +12,14 @@ OrdinaryDiffEqCore.ODEIntegrator
 
 ## Threading options
 
+These are the values accepted by the `thread` / `threading` keyword of the solvers
+that support it. They are public API but are not exported by OrdinaryDiffEqCore or by
+any umbrella package, so they must be written qualified as
+`OrdinaryDiffEqCore.PolyesterThreads()` (after `using OrdinaryDiffEqCore`) or brought
+into scope with `using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`. Naming them
+bare, as v6 code did, gives an `UndefVarError`. `PolyesterThreads` additionally
+requires `using Polyester`, which became a weak dependency in v7.
+
 ```@docs
 OrdinaryDiffEqCore.AbstractThreadingOption
 OrdinaryDiffEqCore.Sequential
