@@ -55,8 +55,8 @@ import Mooncake: rrule!!, frule!!, CoDual, Dual, zero_fcodual, @is_primitive,
 function _unsupported_promote_f_opaque_p()
     return error(
         "Mooncake differentiation through DiffEqBase.promote_f's AutoDePSpecialize/" *
-        "opaque-p branch is not yet supported: `p` is repacked via " *
-        "RespecializeParams.pack_auto, which has no derivative rule here.",
+            "opaque-p branch is not yet supported: `p` is repacked via " *
+            "RespecializeParams.pack_auto, which has no derivative rule here.",
     )
 end
 
