@@ -70,9 +70,9 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
 # is left unmarked since it's off this code path.
 #
 # Written by hand instead of via @zero_derivative: that macro's zero_tangent recurses into
-# the heap's valtree::Vector{T}, and building that under forward-mode _new_ hits a separate
-# Mooncake-core bug (Vector's :ref field lacks a PossiblyUninitTangent fallback). Plain
-# zeros(eltype(y.valtree), n) sidesteps it while still matching T (e.g. Float32 saveat).
+# the heap's valtree::Vector{T} and fails to build an empty array's placeholder under
+# forward-mode _new_. Plain zeros(eltype(y.valtree), n) sidesteps it while still matching T
+# (e.g. Float32 saveat).
 @is_primitive MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.initialize_saveat), Type, Any, Any,
 }
