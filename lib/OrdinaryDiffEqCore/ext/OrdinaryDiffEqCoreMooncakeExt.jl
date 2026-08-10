@@ -85,7 +85,7 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.initialize_saveat), Type, Any, Any,
 }
 
-_zero_saveat_tangent(y) = MutableTangent((ordering=NoTangent(), valtree=zeros(Float64, length(y.valtree))))
+_zero_saveat_tangent(y) = MutableTangent((ordering = NoTangent(), valtree = zeros(Float64, length(y.valtree))))
 
 function Mooncake.frule!!(
         ::Dual{typeof(OrdinaryDiffEqCore.initialize_saveat)}, T::Dual{<:Type},
