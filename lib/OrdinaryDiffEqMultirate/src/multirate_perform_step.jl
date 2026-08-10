@@ -1,12 +1,12 @@
-# ── MREEF: step-count sequence ────────────────────────────────────────────────
+# ── Extrapolated multirate methods: step-count sequence ───────────────────────
 
-@inline function _mreef_sequence(seq::Symbol, order::Int)
+@inline function _extrapolation_sequence(seq::Symbol, order::Int)
     if seq === :harmonic
         return ntuple(j -> j, order)
     elseif seq === :romberg
         return ntuple(j -> 1 << (j - 1), order)
     else
-        throw(ArgumentError("MREEF: unknown sequence `$seq`, choose :harmonic or :romberg"))
+        throw(ArgumentError("unknown sequence `$seq`, choose :harmonic or :romberg"))
     end
 end
 
@@ -53,7 +53,7 @@ function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
     alg = unwrap_alg(integrator, false)
     m = alg.m
     order = alg.order
-    ns = _mreef_sequence(alg.seq, order)
+    ns = _extrapolation_sequence(alg.seq, order)
 
     # Fill first tableau column: T[j] = base method with ns[j] macro intervals
     for j in 1:order
@@ -114,7 +114,7 @@ end
     alg = unwrap_alg(integrator, false)
     m = alg.m
     order = alg.order
-    ns = _mreef_sequence(alg.seq, order)
+    ns = _extrapolation_sequence(alg.seq, order)
     T = cache.T
 
     for j in 1:order
@@ -495,156 +495,6 @@ end
             view(W0, i, :), view(W1, i, :), fS, i, stats
         )
         cprev += Δc[i]
-    end
-    integrator.u = z[s + 1]
-
-    if integrator.opts.adaptive
-        utilde = if isempty(Wemb0)
-            @.. broadcast = false integrator.u - z[s]
-        else
-            w1emb = isempty(Wemb1) ? nothing : Wemb1
-            zemb = _mrigark_substage(
-                z[s], f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
-                Wemb0, w1emb, fS, s, stats
-            )
-            @.. broadcast = false integrator.u - zemb
-        end
-        atmp = calculate_residuals(
-            utilde, uprev, integrator.u,
-            integrator.opts.abstol, integrator.opts.reltol,
-            integrator.opts.internalnorm, t
-        )
-        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-    end
-end
-
-function initialize!(integrator, cache::MRIGARKImplicitCache)
-    integrator.kshortsize = 2
-    (; fsalfirst, k) = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.f.f1(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.f.f2(cache.tmp, integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.stats.nf2 += 1
-    return integrator.fsalfirst .+= cache.tmp
-end
-
-function initialize!(integrator, cache::MRIGARKImplicitConstantCache)
-    integrator.kshortsize = 2
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.p, integrator.t) +
-        integrator.f.f2(integrator.uprev, integrator.p, integrator.t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    integrator.stats.nf2 += 1
-    integrator.fsallast = zero(integrator.fsalfirst)
-    integrator.k[1] = integrator.fsalfirst
-    return integrator.k[2] = integrator.fsallast
-end
-
-function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = false)
-    (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, atmp, z, fS, zemb, nlsolver, tab) = cache
-    (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
-    alg = unwrap_alg(integrator, true)
-    m = alg.m
-    s = length(Δc)
-    stats = integrator.stats
-
-    markfirststage!(nlsolver)
-
-    @.. broadcast = false z[1] = uprev
-    cprev = zero(eltype(Δc))
-    for i in 1:s
-        f.f2(fS[i], z[i], p, t + cprev * dt)
-        stats.nf2 += 1
-        cnext = cprev + Δc[i]
-        if iszero(γ0[i])
-            _mrigark_substage!(
-                z[i + 1], z[i], cache, f, p, t, dt, Δc[i], cprev, m, q,
-                view(W0, i, :), view(W1, i, :), fS, i, stats
-            )
-        else
-            @.. broadcast = false nlsolver.tmp = z[i]
-            for j in 1:i
-                ω̄ = W0[i, j] + W1[i, j] / 2
-                iszero(ω̄) && continue
-                @.. broadcast = false nlsolver.tmp = nlsolver.tmp + dt * ω̄ * fS[j]
-            end
-            nlsolver.c = cnext
-            @.. broadcast = false nlsolver.z = dt * fS[i]
-            w = nlsolve!(nlsolver, integrator, cache, repeat_step)
-            nlsolvefail(nlsolver) && return
-            @.. broadcast = false z[i + 1] = nlsolver.tmp + nlsolver.γ * w
-        end
-        cprev = cnext
-    end
-    @.. broadcast = false u = z[s + 1]
-
-    return if integrator.opts.adaptive
-        if isempty(Wemb0)
-            @.. broadcast = false tmp = u - z[s]
-        else
-            w1emb = isempty(Wemb1) ? nothing : Wemb1
-            _mrigark_substage!(
-                zemb, z[s], cache, f, p, t, dt, Δc[s], cprev - Δc[s], m, q,
-                Wemb0, w1emb, fS, s, stats
-            )
-            @.. broadcast = false tmp = u - zemb
-        end
-        calculate_residuals!(
-            atmp, tmp, uprev, u,
-            integrator.opts.abstol, integrator.opts.reltol,
-            integrator.opts.internalnorm, t
-        )
-        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-    end
-end
-
-@muladd function perform_step!(
-        integrator, cache::MRIGARKImplicitConstantCache, repeat_step = false
-    )
-    (; t, dt, uprev, f, p) = integrator
-    (; nlsolver, tab) = cache
-    (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
-    alg = unwrap_alg(integrator, true)
-    m = alg.m
-    s = length(Δc)
-    stats = integrator.stats
-
-    markfirststage!(nlsolver)
-
-    z = Vector{typeof(uprev)}(undef, s + 1)
-    fS = Vector{typeof(f.f2(uprev, p, t))}(undef, s)
-    z[1] = uprev
-    cprev = zero(eltype(Δc))
-    for i in 1:s
-        fS[i] = f.f2(z[i], p, t + cprev * dt)
-        stats.nf2 += 1
-        cnext = cprev + Δc[i]
-        if iszero(γ0[i])
-            z[i + 1] = _mrigark_substage(
-                z[i], f, p, t, dt, Δc[i], cprev, m, q,
-                view(W0, i, :), view(W1, i, :), fS, i, stats
-            )
-        else
-            tmp = z[i]
-            for j in 1:i
-                ω̄ = W0[i, j] + W1[i, j] / 2
-                iszero(ω̄) && continue
-                tmp = @.. broadcast = false tmp + dt * ω̄ * fS[j]
-            end
-            nlsolver.tmp = tmp
-            nlsolver.c = cnext
-            nlsolver.z = dt * fS[i]
-            w = nlsolve!(nlsolver, integrator, cache, repeat_step)
-            nlsolvefail(nlsolver) && return
-            z[i + 1] = @.. broadcast = false nlsolver.tmp + nlsolver.γ * w
-        end
-        cprev = cnext
     end
     integrator.u = z[s + 1]
 
