@@ -63,29 +63,21 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.SciMLBase.check_error), Vararg,
 }
 
-# initialize_saveat computes the set of times to save the solution at from
-# `saveat`/`tspan`, using `TwicePrecision`-based ranges internally (no forward-mode
-# `lgetfield` rule exists for that yet, chalk-lab/Mooncake.jl -- SciML/SciMLSensitivity.jl
-# #1427). Unlike `fixed_t_for_tstop_error!` above, this is safe to zero: every actual use
-# of the returned heap (`isempty`, `length`, `in`, and the stepping loop's heap-top
-# comparisons in solve.jl) is pure control-flow/membership logic, never a value read that
-# flows into the solution or the loss. `reinit_saveat!` (used only when reinitializing an
-# existing integrator, not on this code path) is intentionally left unmarked -- not
-# verified here.
+# initialize_saveat builds its result from TwicePrecision ranges, and there's no
+# forward-mode getfield rule for that type yet (SciML/SciMLSensitivity.jl#1427). Safe to
+# zero here: the returned heap is only ever used for control flow (isempty/length/in,
+# heap-top comparisons), never a value that reaches the solution or loss. reinit_saveat!
+# is left unmarked since it's off this code path.
 #
-# Written by hand rather than via `@zero_derivative`: that macro's generated rule calls
-# `zero_tangent`/`zero_dual` on the *actual* returned `BinaryHeap`, which recursively needs
-# `zero_tangent` of its internal `valtree::Vector{Float64}` -- and building that under
-# forward-mode `_new_` hits a separate, genuine Mooncake-core gap (`Vector`'s `:ref` field
-# isn't marked `PossiblyUninitTangent`, so the placeholder-construction fallback tries a
-# nonexistent no-arg `MemoryRef{Float64}()`). Building the zero tangent by hand with
-# `zeros(Float64, n)` (plain array allocation, not Mooncake's `_new_`-based path) sidesteps
-# that bug entirely.
+# Written by hand instead of via @zero_derivative: that macro's zero_tangent recurses into
+# the heap's valtree::Vector{T}, and building that under forward-mode _new_ hits a separate
+# Mooncake-core bug (Vector's :ref field lacks a PossiblyUninitTangent fallback). Plain
+# zeros(eltype(y.valtree), n) sidesteps it while still matching T (e.g. Float32 saveat).
 @is_primitive MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.initialize_saveat), Type, Any, Any,
 }
 
-_zero_saveat_tangent(y) = MutableTangent((ordering = NoTangent(), valtree = zeros(Float64, length(y.valtree))))
+_zero_saveat_tangent(y) = MutableTangent((ordering = NoTangent(), valtree = zeros(eltype(y.valtree), length(y.valtree))))
 
 function Mooncake.frule!!(
         ::Dual{typeof(OrdinaryDiffEqCore.initialize_saveat)}, T::Dual{<:Type},
@@ -100,11 +92,9 @@ function Mooncake.rrule!!(
         saveat::CoDual, tspan::CoDual,
     )
     y = OrdinaryDiffEqCore.initialize_saveat(primal(T), primal(saveat), primal(tspan))
-    # `saveat`/`tspan` are ordinary Float64-like values, not structurally NoRData like the
-    # heap's own valtree -- their zero rdata must match their *own* type (e.g. `0.0`, not
-    # `NoRData()`), same reasoning as `promote_f`'s `t` argument fix above. Getting this
-    # wrong crashes accumulation whenever `saveat`/`tspan` alias a genuinely-differentiated
-    # value elsewhere (e.g. `saveat = p[1]`).
+    # saveat/tspan need their own-typed zero rdata (e.g. 0.0), not a hardcoded NoRData(),
+    # same as promote_f's t argument -- otherwise accumulation crashes if they alias a
+    # genuinely-differentiated value elsewhere (e.g. saveat = p[1]).
     lazy_pf, lazy_T, lazy_saveat, lazy_tspan = map(
         lazy_zero_rdata, (primal(pf), primal(T), primal(saveat), primal(tspan))
     )
