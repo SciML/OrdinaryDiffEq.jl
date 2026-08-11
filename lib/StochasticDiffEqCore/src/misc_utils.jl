@@ -21,7 +21,7 @@ same shape.
 
 An in-place function that must work both on ordinary numbers and on duals cannot use
 a single preallocated buffer, because the element types differ. `DiffCache` stores
-one buffer of each and [`get_du`](@ref) picks the right one from the element type at
+one buffer of each and `SciMLBase.get_du` picks the right one from the element type at
 the call site.
 
 The chunk size defaults to `ForwardDiff.pickchunksize(length(u))`, or is taken from

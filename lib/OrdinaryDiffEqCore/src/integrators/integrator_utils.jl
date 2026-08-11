@@ -682,6 +682,12 @@ end
 
 Return whether `cache isa CompositeCache`, i.e. whether it wraps several
 sub-caches for a composite algorithm.
+
+# Developer API
+
+This inspection trait is for solver implementations extending composite-cache
+machinery. End-user code should call `solve` and use solution APIs, rather than
+inspect cache constructors or fields.
 """
 is_composite_cache(cache) = cache isa CompositeCache
 

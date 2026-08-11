@@ -494,6 +494,8 @@ include("precompilation_setup.jl")
             # gamma_default, qsteady_*_default, beta*_default); both are documented
             # in docs/src/api/controllers.md and specialized by solver packages.
             :failfactor_default, :qmax_first_step_default,
+            # Composite-cache hooks extended by StochasticDiffEqCore.
+            :CompositeCache, :is_composite_cache, :is_constant_cache, :strip_cache,
         )
     )
 end

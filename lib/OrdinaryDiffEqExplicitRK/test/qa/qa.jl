@@ -2,6 +2,7 @@ using SciMLTesting, OrdinaryDiffEqExplicitRK, Test
 
 run_qa(
     OrdinaryDiffEqExplicitRK;
+    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqExplicitRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;
@@ -19,10 +20,5 @@ run_qa(
                 Symbol("@nexprs"), Symbol("@nif"),
             ),
         ),
-    ),
-    api_docs_kwargs = (;
-        rendered = false,
-        # Reexported upstream SciMLOperators names are documented at their owner.
-        ignore = (:StaticWOperator, :has_concretization),
     ),
 )

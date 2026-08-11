@@ -18,6 +18,7 @@ across all parameter struct types; recover the original payload from
 
 ```@docs
 OrdinaryDiffEq.AutoDePSpecialize
+SciMLBase.AutoRespecialize
 ```
 
 ## Default callback behavior

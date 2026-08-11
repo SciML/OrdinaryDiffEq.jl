@@ -32,7 +32,7 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [compat]
 Aqua = "0.8.11"
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Pkg = "1"
 OrdinaryDiffEqTsit5 = "2"
 Test = "<0.0.1, 1"

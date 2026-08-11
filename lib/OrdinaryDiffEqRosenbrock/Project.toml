@@ -33,7 +33,7 @@ OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRosenbrockTableaus = {path = "../OrdinaryDiffEqRosenbrockTableaus"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 ADTypes = "1.22.0"
 ArrayInterface = "7.28"
 DiffEqBase = "7"

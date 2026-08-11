@@ -40,7 +40,7 @@ OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Pkg = "1"
 OrdinaryDiffEqTsit5 = "2"
 Test = "<0.0.1, 1"

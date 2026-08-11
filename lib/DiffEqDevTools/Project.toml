@@ -47,7 +47,7 @@ StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 BVProblemLibrary = "0.1"
 BoundaryValueDiffEq = "5"
 CommonSolve = "0.2.6"

@@ -127,6 +127,12 @@ Return a lightweight copy of `cache` with all fields set to `nothing`, used by
 `SciMLBase.strip_interpolation` to drop the (potentially large) working buffers
 from a solution's interpolation object before serialization. Has a special path
 for [`DefaultCache`](@ref).
+
+# Developer API
+
+Solver extensions may specialize this hook for their cache types. End-user code
+should call `solve` and use solution APIs, rather than construct caches or
+depend on cache fields and their serialized representation.
 """
 function strip_cache(cache)
     if !(cache isa OrdinaryDiffEqCore.DefaultCache)

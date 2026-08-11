@@ -28,7 +28,7 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Pkg = "1"
 Test = "<0.0.1, 1"
 FastBroadcast = "1.3"

@@ -20,7 +20,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 julia = "1.10"
 Pkg = "1"
 OrdinaryDiffEqSDIRK = "2"
