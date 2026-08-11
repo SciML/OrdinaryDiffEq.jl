@@ -189,7 +189,7 @@ step advances through the tableau's outer stages; each stage solves a small
 modified fast ODE on `τ ∈ [0, d_i · dt]` whose right-hand side is the original
 fast rate `f1` plus a constant offset built from prior stages' slow tendencies
 and α/γ corrections. The inner ODE is approximated with `m · d_i` explicit
-midpoint (RK2) micro-steps. Embedded error estimate is `Y_s − Y_{s-1}`.
+midpoint (RK2) micro-steps. The embedded error estimate is `dt * sum(bhat_j * f2(Y_j))` with `bhat = b - btilde`, a first-order embedded solution.
 
 Currently provides the 2nd-order, 4-stage MIS2(4,2) tableau of
 Wensch–Knoth–Galant (BIT 2009).",
