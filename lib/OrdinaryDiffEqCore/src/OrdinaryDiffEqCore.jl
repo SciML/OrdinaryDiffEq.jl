@@ -33,7 +33,7 @@ import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Specialization level owned by SciMLBase (declared `public` there, not
 # exported). The umbrella package imports and exports it directly.
-import SciMLBase: AutoDespecialize, AutoDePSpecialize
+import SciMLBase: AutoDePSpecialize
 
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
