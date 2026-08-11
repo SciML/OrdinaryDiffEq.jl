@@ -49,6 +49,7 @@ OrdinaryDiffEq.VectorContinuousCallback
 ```@docs
 OrdinaryDiffEq.ReturnCode
 OrdinaryDiffEq.ODEAliasSpecifier
+SciMLBase.ODENLStepData
 OrdinaryDiffEq.add_tstop!
 OrdinaryDiffEq.derivative_discontinuity!
 OrdinaryDiffEq.reinit!
