@@ -88,6 +88,7 @@ OrdinaryDiffEqStabilizedRK = {path = "../lib/OrdinaryDiffEqStabilizedRK"}
 OrdinaryDiffEqSymplecticRK = {path = "../lib/OrdinaryDiffEqSymplecticRK"}
 OrdinaryDiffEqTsit5 = {path = "../lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
+StochasticDiffEqCore = {path = "../lib/StochasticDiffEqCore"}
 StochasticDiffEqLevyArea = {path = "../lib/StochasticDiffEqLevyArea"}
 StochasticDiffEqWeak = {path = "../lib/StochasticDiffEqWeak"}
 
