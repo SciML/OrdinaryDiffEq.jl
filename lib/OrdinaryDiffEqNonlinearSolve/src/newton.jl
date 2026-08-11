@@ -617,7 +617,7 @@ end
     if integrator.opts.adaptive
         reltol = integrator.opts.reltol
     else
-        reltol = eps(eltype(dz))
+        reltol = eps(real(one(eltype(dz))))
     end
 
     if is_always_new(nlsolver) || (iter == 1 && new_W)
