@@ -17,6 +17,7 @@ across all parameter struct types; recover the original payload from
 `sol.prob.p` with `RespecializeParams.unpack(sol.prob.p, typeof(p))`.
 
 ```@docs
+SciMLBase.AutoRespecialize
 OrdinaryDiffEq.AutoDePSpecialize
 ```
 
