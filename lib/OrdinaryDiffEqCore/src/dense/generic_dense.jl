@@ -796,7 +796,9 @@ function evaluate_interpolant(
         f::F, Θ, dt, timeseries, i₋, i₊, cache, idxs,
         deriv, ks, ts, id, p, differential_vars
     ) where {F}
-    if isdiscretecache(cache)
+    if i₋ == i₊ && deriv === Val{0}
+        return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+    elseif isdiscretecache(cache)
         return ode_interpolant(
             Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv, differential_vars
@@ -914,7 +916,20 @@ function ode_interpolation!(
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
-        if isdiscretecache(cache)
+        if i₋ == i₊ && deriv === Val{0}
+            if _vals_eltype(vals) <: AbstractArray
+                linear_interpolant!(
+                    _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv
+                )
+            else
+                _set_val!(
+                    vals, j,
+                    linear_interpolant(
+                        Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv
+                    )
+                )
+            end
+        elseif isdiscretecache(cache)
             if _vals_eltype(vals) <: AbstractArray
                 ode_interpolant!(
                     _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
@@ -1115,7 +1130,9 @@ function ode_interpolation(
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if isdiscretecache(cache)
+        if i₋ == i₊ && deriv === Val{0}
+            val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+        elseif isdiscretecache(cache)
             val = ode_interpolant(
                 Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars
@@ -1235,7 +1252,9 @@ function ode_interpolation!(
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if isdiscretecache(cache)
+        if i₋ == i₊ && deriv === Val{0}
+            linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+        elseif isdiscretecache(cache)
             ode_interpolant!(
                 out, Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars
