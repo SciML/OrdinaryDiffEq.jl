@@ -84,7 +84,7 @@ PreallocationTools = "1.1.2"
 DiffEqBase = "7.10"
 SafeTestsets = "0.1.0"
 SciMLOperators = "1.24.4"
-SciMLPublic = "1"
+SciMLPublic = "1.1.0"
 SparseConnectivityTracer = "1"
 ConstructionBase = "1.5.8"
 
