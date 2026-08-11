@@ -23,10 +23,33 @@ using SciMLBase: SciMLBase,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
     remake, successful_retcode, reinit!, terminate!,
-    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier,
-    AutoDePSpecialize
+    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 
 using SciMLLogging: SciMLLogging
+
+"""
+    AutoDespecialize
+
+Use a stable dynamic parameter container so compiled solver code can be shared across
+different concrete parameter layouts. The original parameter is recovered at the SciML
+function call barrier.
+"""
+const AutoDespecialize = SciMLBase.AutoDespecialize
+
+"""
+    AutoRespecialize
+
+Use the constrained non-dynamic parameter policy, which recovers the original concrete
+parameter type from an opaque container on supported solver paths.
+"""
+const AutoRespecialize = SciMLBase.AutoRespecialize
+
+"""
+    AutoDePSpecialize
+
+Deprecated alias for [`AutoRespecialize`](@ref).
+"""
+const AutoDePSpecialize = SciMLBase.AutoDePSpecialize
 
 # Verbosity specifier owned by DiffEqBase (exported there). The umbrella package
 # imports and exports it directly so `verbose = DEVerbosity(...)` is reachable from
@@ -66,7 +89,7 @@ export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_propose
 export DEVerbosity
 
 # Specialization levels
-export AutoDePSpecialize
+export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 # ADTypes
 export AutoForwardDiff, AutoFiniteDiff, AutoSparse

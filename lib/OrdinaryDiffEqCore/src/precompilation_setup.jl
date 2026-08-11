@@ -45,6 +45,9 @@ PrecompileTools.@compile_workload begin
         lorenz, [1.0; 0.0; 0.0],
         (0.0, 1.0), Float64[]
     )
+    ODEProblem{true, SciMLBase.AutoDespecialize}(
+        lorenz_p, [1.0; 0.0; 0.0], (0.0, 1.0), lorenz_p_params
+    )
     ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(
         lorenz, [1.0; 0.0; 0.0],
         (0.0, 1.0)

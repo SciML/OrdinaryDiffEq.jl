@@ -56,6 +56,7 @@ end
 function interface_ii()
     is_APPVEYOR && return
     #@time @safetestset "No Recompile Tests" include("shared/norecompile.jl") # doesn't work on CI?
+    @time @safetestset "Despecialized Parameters" include("InterfaceII/despecialized_parameters.jl")
     @time @safetestset "AutoSparse Detection Tests" include("InterfaceII/autosparse_detection_tests.jl")
     @time @safetestset "Enum Tests" include("InterfaceII/enums.jl")
     return @time @safetestset "Get du Tests" include("InterfaceII/get_du.jl")
