@@ -68,6 +68,15 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
 
 import PrecompileTools
 import Preferences
+
+function _lorenz_pref(du, u, p, t)
+    du[1] = p[1] * (u[2] - u[1])
+    du[2] = u[1] * (p[2] - u[3]) - u[2]
+    return du[3] = u[1] * u[2] - p[3] * u[3]
+end
+
+const _lorenz_pref_params = [10.0, 28.0, 8 / 3]
+
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
@@ -107,8 +116,8 @@ PrecompileTools.@compile_workload begin
         push!(
             prob_list,
             ODEProblem{true, SciMLBase.AutoDePSpecialize}(
-                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+                _lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), _lorenz_pref_params
             )
         )
     end

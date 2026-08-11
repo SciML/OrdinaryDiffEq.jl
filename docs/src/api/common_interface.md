@@ -18,6 +18,7 @@ OrdinaryDiffEq.step!
 ```@docs
 OrdinaryDiffEq.ODEProblem
 OrdinaryDiffEq.ODEFunction
+SciMLBase.ODENLStepData
 OrdinaryDiffEq.ODESolution
 OrdinaryDiffEq.SplitODEProblem
 OrdinaryDiffEq.SplitFunction

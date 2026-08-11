@@ -23,7 +23,7 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 CommonSolve = "0.2.6"
 DiffEqBase = "7"
 DiffEqDevTools = "3"

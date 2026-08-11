@@ -25,7 +25,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 CommonSolve = "0.2.6"
 Pkg = "1"
 Test = "1.10.0"

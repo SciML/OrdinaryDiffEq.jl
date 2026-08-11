@@ -35,7 +35,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 StochasticDiffEqLevyArea = {path = "../StochasticDiffEqLevyArea"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 ADTypes = "1.22.0"
 Adapt = "4.3.0"
 ArrayInterface = "7.28"

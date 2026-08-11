@@ -29,7 +29,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 DiffEqBase = "7"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
