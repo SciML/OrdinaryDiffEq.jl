@@ -158,7 +158,7 @@ include("internal_euler.jl")
 include("norecompile.jl")
 include("integrator_accessors.jl")
 include("verbosity.jl")
-include("check_error_messages.jl")
+include("check_error.jl")
 
 # This is only used for oop stiff solvers
 """
@@ -221,7 +221,9 @@ export AutoDePSpecialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
             :default_factorize, :stripunits,
             # Solver-author wrapper/tag types and convergence-testing entry type
-            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
+            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup,
+            # check_error diagnostic hook solvers may specialize per failure mode
+            :report_integrator_failure
         )
     )
 end
