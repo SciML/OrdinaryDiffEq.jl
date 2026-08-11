@@ -391,7 +391,6 @@ algorithm pages to select methods for `solve`.
 StochasticDiffEqCore.AbstractJ
 StochasticDiffEqCore.AbstractJCommute
 StochasticDiffEqCore.AbstractJDiagonal
-StochasticDiffEqCore.DiffCache
 StochasticDiffEqCore.DiffEqNLSolveTag
 StochasticDiffEqCore.IICommutative
 StochasticDiffEqCore.IIFNLSolveFunc
