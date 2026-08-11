@@ -6,17 +6,28 @@ in the [developer extension API](https://docs.sciml.ai/OrdinaryDiffEq/stable/dev
 
 ## Specialization levels
 
-DiffEqBase implements the ODE-path wrapping for the `AutoDePSpecialize`
-specialization level, which is owned and documented by
+DiffEqBase implements parameter-container specialization levels owned and documented by
 [SciMLBase](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/#specialization_levels).
-It is re-exported from OrdinaryDiffEq, so
-`ODEProblem{true, AutoDePSpecialize}(f!, u0, tspan, p)` works from a plain
-`using OrdinaryDiffEq`. It packs an `isbits` parameter into a
-`RespecializeParams.OpaqueParams` container so one precompiled solve is shared
-across all parameter struct types; recover the original payload from
-`sol.prob.p` with `RespecializeParams.unpack(sol.prob.p, typeof(p))`.
+They are re-exported from OrdinaryDiffEq for use with a plain `using OrdinaryDiffEq`.
+
+`AutoDespecialize` accepts arbitrary parameter objects. During solver concretization,
+DiffEqBase stores `p` in a `SciMLBase.DespecializedParameters` container with a stable
+outer type. SciML function calls recover the original concrete parameter at a dynamic
+function barrier, allowing precompiled solver code to be shared across parameter layouts.
+`AutoSpecialize` retains its existing behavior and does not select this container.
+
+`AutoRespecialize` is the constrained, non-dynamic policy formerly named
+`AutoDePSpecialize`. Supported paths pack compatible parameters into an opaque container
+and recover the original concrete type without dynamic dispatch. The deprecated
+`AutoDePSpecialize` name remains available as an alias.
+
+OrdinaryDiffEq re-exports `AutoDespecialize`, `AutoRespecialize`, and the deprecated
+`AutoDePSpecialize` alias. Their canonical API documentation is on the linked SciMLBase
+specialization-level page.
 
 ```@docs
+OrdinaryDiffEq.AutoDespecialize
+OrdinaryDiffEq.AutoRespecialize
 OrdinaryDiffEq.AutoDePSpecialize
 SciMLBase.AutoRespecialize
 ```

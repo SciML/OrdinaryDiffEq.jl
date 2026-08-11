@@ -48,6 +48,7 @@ end
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
         @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
+        @time @safetestset "Despecialized-p Hook" include("despecialized_p_test.jl")
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 

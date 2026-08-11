@@ -87,25 +87,34 @@ PrecompileTools.@compile_workload begin
     # Kept in their own list as well as `prob_list`: besides the usual
     # `solve(prob, solver)` sweep, these also drive the no-algorithm
     # `solve(prob)` entry below.
-    depspecialize_prob_list = []
+    parameter_generic_prob_list = []
+
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        prob = ODEProblem{true, SciMLBase.AutoDespecialize}(
+            _lorenz_p!, [1.0; 0.0; 0.0],
+            (0.0, 1.0), _lorenz_p_params
+        )
+        push!(parameter_generic_prob_list, prob)
+    end
 
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
         push!(
-            depspecialize_prob_list,
+            parameter_generic_prob_list,
             ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 _lorenz_p!, [1.0; 0.0; 0.0],
                 (0.0, 1.0), _lorenz_p_params
             )
         )
         push!(
-            depspecialize_prob_list,
+            parameter_generic_prob_list,
             ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 _lorenz_pref!, [1.0; 0.0; 0.0],
                 (0.0, 1.0), _lorenz_pref_params
             )
         )
-        append!(prob_list, depspecialize_prob_list)
     end
+
+    append!(prob_list, parameter_generic_prob_list)
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
         push!(
@@ -145,19 +154,16 @@ PrecompileTools.@compile_workload begin
         solve(prob, solver)(5.0)
     end
 
-    # `solve(prob)` (no algorithm) runs default algorithm *selection*, a
-    # separate entry point from `solve(prob, DefaultODEAlgorithm())` above and
-    # the one most user code and MTK tutorials actually write. Without this the
-    # opaque-p wins never reach it: measured 11.2s vs 0.42s for the explicit
-    # form on an AutoDePSpecialize problem.
-    for prob in depspecialize_prob_list
+    # `solve(prob)` runs default algorithm selection, a separate entry point from
+    # `solve(prob, DefaultODEAlgorithm())` above.
+    for prob in parameter_generic_prob_list
 
         solve(prob)(5.0)
     end
 
     prob_list = nothing
     solver_list = nothing
-    depspecialize_prob_list = nothing
+    parameter_generic_prob_list = nothing
 end
 
 export DefaultODEAlgorithm, DefaultImplicitODEAlgorithm
