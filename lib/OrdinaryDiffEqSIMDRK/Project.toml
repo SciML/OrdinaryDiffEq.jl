@@ -21,7 +21,7 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Pkg = "1"
 Test = "<0.0.1, 1"
 DiffEqDevTools = "3"

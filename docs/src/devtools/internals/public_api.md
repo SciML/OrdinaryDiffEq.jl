@@ -111,12 +111,15 @@ OrdinaryDiffEqCore.StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm
 
 ```@docs
 OrdinaryDiffEqCore.CompositeAlgorithm
+OrdinaryDiffEqCore.CompositeCache
 OrdinaryDiffEqCore.AutoSwitchCache
 OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
 OrdinaryDiffEqCore.isdefaultalg
 OrdinaryDiffEqCore.is_composite_algorithm
+OrdinaryDiffEqCore.is_composite_cache
+OrdinaryDiffEqCore.is_constant_cache
 ```
 
 ## Algorithm trait functions
@@ -271,6 +274,9 @@ OrdinaryDiffEqDifferentiation.default_krylov_warm_start
 OrdinaryDiffEqDifferentiation.is_always_new
 OrdinaryDiffEqDifferentiation.islinearfunction
 OrdinaryDiffEqDifferentiation.issuccess_W
+OrdinaryDiffEqDifferentiation.drain_jvp_count!
+OrdinaryDiffEqDifferentiation.jvp_counter
+OrdinaryDiffEqDifferentiation.set_linear_reltol!
 ```
 
 ## Integrator step, cache construction, and initialization hooks
@@ -290,6 +296,7 @@ OrdinaryDiffEqCore.StochasticDiffEqCache
 OrdinaryDiffEqCore.StochasticDiffEqConstantCache
 OrdinaryDiffEqCore.StochasticDiffEqMutableCache
 OrdinaryDiffEqCore.DefaultCache
+OrdinaryDiffEqCore.strip_cache
 OrdinaryDiffEqCore.@cache
 OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast
@@ -372,4 +379,110 @@ Helpers that build consistent algorithm docstrings.
 OrdinaryDiffEqCore.generic_solver_docstring
 OrdinaryDiffEqCore.explicit_rk_docstring
 OrdinaryDiffEqCore.differentiation_rk_docstring
+```
+
+## Stochastic solver extension API
+
+These names are a version-controlled contract for sibling stochastic solver
+packages. They are not application-facing solver API; use the stochastic
+algorithm pages to select methods for `solve`.
+
+```@docs
+StochasticDiffEqCore.AbstractJ
+StochasticDiffEqCore.AbstractJCommute
+StochasticDiffEqCore.AbstractJDiagonal
+StochasticDiffEqCore.DiffEqNLSolveTag
+StochasticDiffEqCore.IICommutative
+StochasticDiffEqCore.IIFNLSolveFunc
+StochasticDiffEqCore.IILevyArea
+StochasticDiffEqCore.Ihat2
+StochasticDiffEqCore.IteratedIntegralAlgorithm_iip
+StochasticDiffEqCore.IteratedIntegralApprox
+StochasticDiffEqCore.JCommute_iip
+StochasticDiffEqCore.JCommute_oop
+StochasticDiffEqCore.JDiagonal_iip
+StochasticDiffEqCore.JDiagonal_oop
+StochasticDiffEqCore.NLSOLVEJL_SETUP
+StochasticDiffEqCore.SDEAlgTypes
+StochasticDiffEqCore.SDEIntegrator
+StochasticDiffEqCore.StochasticCompositeAlgorithm
+StochasticDiffEqCore.StochasticCompositeCache
+StochasticDiffEqCore.TauLeapingDrift
+StochasticDiffEqCore._resolve_rng
+StochasticDiffEqCore._sde_init
+StochasticDiffEqCore._z_prototype
+StochasticDiffEqCore.addat_noise!
+StochasticDiffEqCore.alg_cache
+StochasticDiffEqCore.alg_compatible
+StochasticDiffEqCore.alg_control_rate
+StochasticDiffEqCore.alg_mass_matrix_compatible
+StochasticDiffEqCore.alg_needs_extra_process
+StochasticDiffEqCore.calc_threepoint_random
+StochasticDiffEqCore.calc_threepoint_random!
+StochasticDiffEqCore.calc_twopoint_random
+StochasticDiffEqCore.calc_twopoint_random!
+StochasticDiffEqCore.concrete_prob
+StochasticDiffEqCore.deleteat_noise!
+StochasticDiffEqCore.delta_default
+StochasticDiffEqCore.determine_chunksize
+StochasticDiffEqCore.fill_new_noise_caches!
+StochasticDiffEqCore.get_chunksize
+StochasticDiffEqCore.get_current_alg_order
+StochasticDiffEqCore.get_Jalg
+StochasticDiffEqCore.get_iterated_I
+StochasticDiffEqCore.get_iterated_I!
+StochasticDiffEqCore.is_split_step
+StochasticDiffEqCore.resize_noise!
+StochasticDiffEqCore.supports_regular_jumps
+StochasticDiffEqCore.AutoAlgSwitch
+StochasticDiffEqCore.AutoSwitch
+StochasticDiffEqCore.unwrap_alg
+```
+
+### High-order stochastic tableau construction
+
+```@docs
+StochasticDiffEqHighOrder.checkSRAOrder
+StochasticDiffEqHighOrder.checkSRIOrder
+StochasticDiffEqHighOrder.constructExplicitSKenCarp
+StochasticDiffEqHighOrder.constructSKenCarp
+StochasticDiffEqHighOrder.constructSOSRA
+StochasticDiffEqHighOrder.constructSOSRA2
+StochasticDiffEqHighOrder.constructSRA1
+StochasticDiffEqHighOrder.constructSRA2
+StochasticDiffEqHighOrder.constructSRA3
+StochasticDiffEqHighOrder.constructSRIOpt1
+StochasticDiffEqHighOrder.constructSRIOpt2
+StochasticDiffEqHighOrder.constructSRIW1
+StochasticDiffEqHighOrder.constructSRIW2
+StochasticDiffEqHighOrder.du_cache
+StochasticDiffEqHighOrder.u_cache
+StochasticDiffEqHighOrder.user_cache
+```
+
+### ESDIRK-IMEX implementation hooks
+
+The following types are developer API for sibling implicit solver packages.
+They are not stable application-facing cache layouts.
+
+```@docs
+OrdinaryDiffEqSDIRK.ESDIRKIMEXCache
+OrdinaryDiffEqSDIRK.ESDIRKIMEXConstantCache
+OrdinaryDiffEqSDIRK.ImplicitEulerESDIRKIMEXTableau
+```
+
+### Cross-sublibrary cache hooks
+
+These opaque cache types are developer-only extension contracts for sibling
+solver packages. Application code must construct algorithms and call `solve`,
+rather than depend on cache fields or constructors.
+
+```@docs
+OrdinaryDiffEqLowOrderRK.BS3Cache
+OrdinaryDiffEqLowOrderRK.BS3ConstantCache
+OrdinaryDiffEqLowOrderRK.RK4Cache
+OrdinaryDiffEqLowOrderRK.RK4ConstantCache
+OrdinaryDiffEqRosenbrock.RosenbrockMutableCache
+OrdinaryDiffEqTsit5.Tsit5Cache
+OrdinaryDiffEqTsit5.Tsit5ConstantCache
 ```

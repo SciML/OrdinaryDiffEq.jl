@@ -48,6 +48,7 @@ pages = [
         "massmatrixdae/BDF.md",
     ],
     "Stochastic Utilities" => [
+        "stochastic/Algorithms.md",
         "stochastic/LevyArea.md",
         "stochastic/Weak.md",
     ],
@@ -56,6 +57,7 @@ pages = [
     ],
     "Misc Solvers" => [
         "misc.md",
+        "misc/DelayDiffEq.md",
     ],
     "Global Error Control" => [
         "globalerrorcontrol/GlobalDiffEq.md",

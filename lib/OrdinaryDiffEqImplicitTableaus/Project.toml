@@ -19,7 +19,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 path = "../DiffEqDevTools"
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 DiffEqBase = "7"
 DiffEqDevTools = "3"
 Pkg = "1"

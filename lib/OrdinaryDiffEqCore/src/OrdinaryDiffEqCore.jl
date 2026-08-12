@@ -33,7 +33,7 @@ import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Specialization level owned by SciMLBase (declared `public` there, not
 # exported). The umbrella package imports and exports it directly.
-import SciMLBase: AutoDePSpecialize
+import SciMLBase: AutoDespecialize, AutoDePSpecialize
 
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
@@ -494,6 +494,8 @@ include("precompilation_setup.jl")
             # gamma_default, qsteady_*_default, beta*_default); both are documented
             # in docs/src/api/controllers.md and specialized by solver packages.
             :failfactor_default, :qmax_first_step_default,
+            # Composite-cache hooks extended by StochasticDiffEqCore.
+            :CompositeCache, :is_composite_cache, :is_constant_cache, :strip_cache,
         )
     )
 end

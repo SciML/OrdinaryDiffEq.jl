@@ -66,6 +66,16 @@ PrecompileTools.@compile_workload begin
         )
     end
 
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDespecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+    end
+
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
         push!(
             prob_list,

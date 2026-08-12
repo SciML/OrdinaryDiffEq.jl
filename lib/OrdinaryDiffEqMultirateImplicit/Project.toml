@@ -21,7 +21,7 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 ADTypes = "1.22.0"
 Aqua = "0.8.11"
 DiffEqBase = "7"

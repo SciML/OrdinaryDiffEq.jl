@@ -2,8 +2,7 @@ using SciMLTesting, DiffEqDevTools, Test
 
 run_qa(
     DiffEqDevTools;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
+    api_docs_kwargs = (; docs_src = joinpath(pkgdir(DiffEqDevTools), "..", "..", "docs", "src")),
     aqua_kwargs = (;
         ambiguities = false, piracies = false, unbound_args = false, stale_deps = false,
         deps_compat = (; check_extras = false),

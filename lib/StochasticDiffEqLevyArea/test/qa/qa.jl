@@ -3,8 +3,7 @@ using JET
 
 run_qa(
     StochasticDiffEqLevyArea;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
+    api_docs_kwargs = (; docs_src = joinpath(pkgdir(StochasticDiffEqLevyArea), "..", "..", "docs", "src")),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
 )

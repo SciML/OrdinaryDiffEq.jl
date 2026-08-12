@@ -2,6 +2,7 @@ using SciMLTesting, ImplicitDiscreteSolve, Test
 
 run_qa(
     ImplicitDiscreteSolve;
+    api_docs_kwargs = (; docs_src = joinpath(pkgdir(ImplicitDiscreteSolve), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,
@@ -15,10 +16,5 @@ run_qa(
                 :has_initializeprob,
             ),
         ),
-    ),
-    api_docs_kwargs = (;
-        docs_src = joinpath(pkgdir(ImplicitDiscreteSolve), "..", "..", "docs", "src"),
-        # SciMLBase owns its reexported API; this monorepo's manual renders IDSolve.
-        rendered_ignore = names(SciMLBase),
     ),
 )

@@ -1,4 +1,5 @@
 using Documenter, OrdinaryDiffEq, DiffEqDevTools
+using DelayDiffEq
 import SciMLBase, SciMLLogging
 using DiffEqBase
 using OrdinaryDiffEqCore
@@ -12,6 +13,15 @@ using OrdinaryDiffEqNonlinearSolve
 using ImplicitDiscreteSolve
 using StochasticDiffEqLevyArea
 using StochasticDiffEqWeak
+using StochasticDiffEqCore
+using StochasticDiffEqHighOrder
+using StochasticDiffEqIIF
+using StochasticDiffEqImplicit
+using StochasticDiffEqLeaping
+using StochasticDiffEqLowOrder
+using StochasticDiffEqMilstein
+using StochasticDiffEqROCK
+using StochasticDiffEqRODE
 
 # Register the re-exported bindings with the umbrella module for Documenter.
 for (name, owner) in (
@@ -73,6 +83,7 @@ using OrdinaryDiffEqQPRK
 using OrdinaryDiffEqNewmark
 using OrdinaryDiffEqRKN
 using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqRosenbrockTableaus
 using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqSSPRK
 using OrdinaryDiffEqStabilizedIRK
@@ -123,6 +134,7 @@ makedocs(
         OrdinaryDiffEqNewmark,
         OrdinaryDiffEqRKN,
         OrdinaryDiffEqRosenbrock,
+        OrdinaryDiffEqRosenbrockTableaus,
         OrdinaryDiffEqSDIRK,
         OrdinaryDiffEqSSPRK,
         OrdinaryDiffEqStabilizedIRK,
@@ -134,8 +146,18 @@ makedocs(
         OrdinaryDiffEqAMF,
         ImplicitDiscreteSolve,
         StochasticDiffEqLevyArea,
+        StochasticDiffEqCore,
+        StochasticDiffEqHighOrder,
+        StochasticDiffEqIIF,
+        StochasticDiffEqImplicit,
+        StochasticDiffEqLeaping,
+        StochasticDiffEqLowOrder,
+        StochasticDiffEqMilstein,
+        StochasticDiffEqROCK,
+        StochasticDiffEqRODE,
         StochasticDiffEqWeak,
         DiffEqDevTools,
+        DelayDiffEq,
         GlobalDiffEq,
     ],
     linkcheck_ignore = [r"https://github.com/JuliaDiff/ForwardDiff.jl"],
