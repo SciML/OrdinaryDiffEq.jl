@@ -11,9 +11,9 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     initialize!, perform_step!, get_fsalfirstlast,
     constvalue, only_diagonal_mass_matrix,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
-    resize_non_user_cache!, _ode_addsteps!, full_cache,
+    _ode_addsteps!,
     DerivativeOrderNotPossibleError, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
+    copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
     find_algebraic_vars_eqs
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
@@ -30,6 +30,7 @@ import ForwardDiff
 using FiniteDiff: FiniteDiff
 using LinearAlgebra: mul!, I, norm, lu, UniformScaling
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
+using SciMLBase: LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
 using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
@@ -54,7 +55,7 @@ using Reexport: Reexport, @reexport
 using SciMLBase: SciMLBase, LinearProblem, ODEProblem, init, solve,
     TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper
 # alg_order is owned by and public in SciMLBase; import (not using) so methods can be extended
-import SciMLBase: alg_order
+import SciMLBase: alg_order, full_cache, resize_non_user_cache!
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
@@ -173,17 +174,27 @@ PrecompileTools.@compile_workload begin
         )
     end
 
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDespecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+    end
+
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )

@@ -303,13 +303,13 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
 end
 
 # Interface for accessing and removing next time stops and discontinuities
-function OrdinaryDiffEqCore.has_tstop(integrator::DDEIntegrator)
+function SciMLBase.has_tstop(integrator::DDEIntegrator)
     return _has(integrator.opts.tstops, integrator.tstops_propagated)
 end
-function OrdinaryDiffEqCore.first_tstop(integrator::DDEIntegrator)
+function SciMLBase.first_tstop(integrator::DDEIntegrator)
     return _first(integrator.opts.tstops, integrator.tstops_propagated)
 end
-function OrdinaryDiffEqCore.pop_tstop!(integrator::DDEIntegrator)
+function SciMLBase.pop_tstop!(integrator::DDEIntegrator)
     return _pop!(integrator.opts.tstops, integrator.tstops_propagated)
 end
 

@@ -84,6 +84,15 @@ end
 function loopheader!(integrator)
     # Apply right after iterators / callbacks
 
+    # Manual derivative_discontinuity! (any iter, including after the first step)
+    # must reinit DAEs *before* accept/update_uprev, otherwise a broken u is
+    # committed into uprev (#3932). Callbacks already call initialize_dae! via
+    # reeval_internals_due_to_modification! and leave reeval_fsal=true; skip
+    # those so we do not double-init.
+    if integrator.derivative_discontinuity && !integrator.reeval_fsal
+        on_derivative_discontinuity_at_init!(integrator)
+    end
+
     # Accept or reject the step
     if integrator.iter > 0
         if (!integrator.force_stepfail) &&
@@ -106,8 +115,6 @@ function loopheader!(integrator)
             # REJECT
             handle_step_rejection!(integrator)
         end
-    elseif integrator.derivative_discontinuity # && integrator.iter == 0
-        on_derivative_discontinuity_at_init!(integrator)
     end
 
     integrator.iter += 1
@@ -145,8 +152,10 @@ end
 # Called after step rejection handling. Override for DDE discontinuity handling.
 post_step_reject!(integrator) = nothing
 
-# Called at iter==0 when u was modified by callbacks during init.
-# For SDE: isdae=false skips DAE re-init; isfsal=false makes update_fsal! a no-op.
+# Called when derivative_discontinuity! was set manually (not via a callback that
+# already ran reeval_internals_due_to_modification!). Runs for any iter, including
+# after the first step (#3932). For SDE: isdae=false skips DAE re-init;
+# isfsal=false makes update_fsal! a no-op.
 function on_derivative_discontinuity_at_init!(integrator)
     if integrator.isdae
         SciMLBase.initialize_dae!(integrator)
@@ -673,6 +682,12 @@ end
 
 Return whether `cache isa CompositeCache`, i.e. whether it wraps several
 sub-caches for a composite algorithm.
+
+# Developer API
+
+This inspection trait is for solver implementations extending composite-cache
+machinery. End-user code should call `solve` and use solution APIs, rather than
+inspect cache constructors or fields.
 """
 is_composite_cache(cache) = cache isa CompositeCache
 
@@ -743,7 +758,13 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     )
 end
 
-# overrides this with a method that calls calc_J to get a fresh Jacobian.
+"""
+    get_fresh_jacobian(integrator, cache)
+
+Return a Jacobian suitable for numerical-instability diagnostics. Cache-specific
+packages may specialize this hook when the stored Jacobian is unavailable or
+stale. Diagnostic evaluation must not increment solver work statistics.
+"""
 get_fresh_jacobian(integrator, cache) = cache.J
 
 SciMLBase.has_mtk_sys(integrator::ODEIntegrator) = hasproperty(integrator.sol.prob.f, :sys) && integrator.sol.prob.f.sys !== nothing
@@ -1064,7 +1085,8 @@ function handle_callbacks!(integrator)
                 idx,
                 continuous_callbacks
             )
-            if _fired_cb_maybe_discontinuity(idx, continuous_callbacks)
+            if _discontinuity_detection_enabled(integrator.controller_cache) &&
+                    _fired_cb_maybe_discontinuity(idx, continuous_callbacks)
                 reinit_controller!(integrator, integrator.controller_cache)
             end
         else

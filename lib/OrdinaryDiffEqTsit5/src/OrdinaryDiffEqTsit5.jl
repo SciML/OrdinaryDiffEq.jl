@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
     CompiledFloats, @OnDemandTableauExtract,
     CompositeAlgorithm, _ode_addsteps!,
     AutoAlgSwitch, get_fsalfirstlast,
-    full_cache, DerivativeOrderNotPossibleError
+    DerivativeOrderNotPossibleError
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..
@@ -17,7 +17,7 @@ import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype,
     copyat_or_push!
 import LinearAlgebra: norm
 using TruncatedStacktraces: @truncate_stacktrace
-import SciMLBase: alg_order, @def
+import SciMLBase: alg_order, @def, full_cache
 using DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: initialize!
 import OrdinaryDiffEqCore
@@ -66,17 +66,27 @@ PrecompileTools.@compile_workload begin
         )
     end
 
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDespecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+    end
+
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )

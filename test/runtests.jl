@@ -41,6 +41,8 @@ function interface_i()
     @time @safetestset "Stiffness Detection Tests" include("InterfaceI/stiffness_detection_test.jl")
     @time @safetestset "Composite Interpolation Tests" include("InterfaceI/composite_interpolation.jl")
     @time @safetestset "Export tests" include("InterfaceI/export_tests.jl")
+    @time @safetestset "Verbose Migration Tests" include("InterfaceI/verbose_migration_tests.jl")
+    @time @safetestset "Threading Option Public Tests" include("InterfaceI/threading_option_public_tests.jl")
     @time @safetestset "Type Handling Tests" include("InterfaceI/type_handling.jl")
     @time @safetestset "Controller Tests" include("InterfaceI/controllers.jl")
     @time @safetestset "Inplace Interpolation Tests" include("InterfaceI/inplace_interpolation.jl")
@@ -54,6 +56,7 @@ end
 function interface_ii()
     is_APPVEYOR && return
     #@time @safetestset "No Recompile Tests" include("shared/norecompile.jl") # doesn't work on CI?
+    @time @safetestset "Despecialized Parameters" include("InterfaceII/despecialized_parameters.jl")
     @time @safetestset "AutoSparse Detection Tests" include("InterfaceII/autosparse_detection_tests.jl")
     @time @safetestset "Enum Tests" include("InterfaceII/enums.jl")
     return @time @safetestset "Get du Tests" include("InterfaceII/get_du.jl")
@@ -117,7 +120,8 @@ function regression_i()
     @time @safetestset "Special Interp Tests" include("Regression_I/special_interps.jl")
     @time @safetestset "Inplace Tests" include("Regression_I/ode_inplace_tests.jl")
     @time @safetestset "Adaptive Tests" include("Regression_I/ode_adaptive_tests.jl")
-    return @time @safetestset "Hard DAE Tests" include("Regression_I/hard_dae.jl")
+    @time @safetestset "Hard DAE Tests" include("Regression_I/hard_dae.jl")
+    return @time @safetestset "Newton-Krylov Round-off Tests" include("Regression_I/newton_krylov_roundoff.jl")
 end
 
 function regression_ii()

@@ -46,5 +46,7 @@ which error estimate to use in the benchmarking (defaults to `:final`).
 ## Related Functions
 
 ```@docs
+DiffEqDevTools.TestSolution
 DiffEqDevTools.appxtrue
+DiffEqDevTools.deduce_Butcher_tableau
 ```

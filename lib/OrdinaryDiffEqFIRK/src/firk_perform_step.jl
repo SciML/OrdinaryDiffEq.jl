@@ -166,8 +166,11 @@ function initialize!(integrator, cache::AdaptiveRadauCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    # zero, not `similar`: the stage-value slots above the starting `num_stages` are read
+    # by the extrapolated initial guess as soon as the controller raises the stage count,
+    # before anything has written them
     for i in 3:(max_stages + 2)
-        integrator.k[i] = similar(integrator.fsallast)
+        integrator.k[i] = zero(integrator.fsallast)
     end
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -326,8 +329,12 @@ end
     # precalculations
     αdt, βdt = α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, αdt + βdt * im)
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
         end
@@ -406,6 +413,7 @@ end
             )
         end
 
+        drain_jvp_count!(integrator, alg, W1)
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -697,8 +705,13 @@ end
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, γdt)
+        set_W_gamma!(W2, αdt + βdt * im)
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
             W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
@@ -827,6 +840,7 @@ end
             )
         end
 
+        drain_jvp_count!(integrator, alg, W2)
         integrator.stats.nsolve += 2
         dw2 = z2
         dw3 = z3
@@ -1271,8 +1285,14 @@ end
 
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, γdt)
+        set_W_gamma!(W2, α1dt + β1dt * im)
+        set_W_gamma!(W3, α2dt + β2dt * im)
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
             W2[II] = -(α1dt + β1dt * im) * mass_matrix[Tuple(II)...] + J[II]
@@ -1490,6 +1510,8 @@ end
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
+        drain_jvp_count!(integrator, alg, W2)
+        drain_jvp_count!(integrator, alg, W3)
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1907,8 +1929,15 @@ end
     end
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, γdt)
+        for i in 1:((num_stages - 1) ÷ 2)
+            set_W_gamma!(W2[i], αdt[i] + βdt[i] * im)
+        end
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
         end
@@ -2079,6 +2108,9 @@ end
             end
         end
 
+        for i in 1:((num_stages - 1) ÷ 2)
+            drain_jvp_count!(integrator, alg, W2[i])
+        end
         integrator.stats.nsolve += (num_stages + 1) / 2
 
         for i in 1:((num_stages - 1) ÷ 2)
@@ -2500,7 +2532,8 @@ end
         if needfactor
             LinearSolve.reinit!(linsolve; A = W)
         end
-        LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
+        set_linear_reltol!(linsolve, integrator.opts.reltol)
+        LinearSolve.solve!(linsolve)
         integrator.stats.nsolve += 1
 
         for i in 1:num_stages

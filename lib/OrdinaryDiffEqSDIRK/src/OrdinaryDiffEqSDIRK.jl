@@ -4,7 +4,7 @@ module OrdinaryDiffEqSDIRK
 # they must be brought in with `import` (not `using`) to allow method definitions.
 import OrdinaryDiffEqCore: perform_step!,
     alg_extrapolates,
-    alg_cache, full_cache,
+    alg_cache,
     isesdirk, issplit,
     ssp_coefficient, get_fsalfirstlast
 # OrdinaryDiffEqCore names used (called/referenced) but not extended here.
@@ -26,7 +26,7 @@ using MacroTools: MacroTools
 using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
 # `alg_order` is owned by SciMLBase and extended here, so it needs `import`.
-import SciMLBase: alg_order
+import SciMLBase: alg_order, full_cache
 using SciMLBase: SciMLBase, SplitFunction, ODEProblem, _vec, _reshape, _unwrap_val
 # `initialize!` is owned by DiffEqBase and extended here, so it needs `import`;
 # `calculate_residuals`/`calculate_residuals!` are only called.
@@ -68,6 +68,15 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
 
 import PrecompileTools
 import Preferences
+
+function _lorenz_pref(du, u, p, t)
+    du[1] = p[1] * (u[2] - u[1])
+    du[2] = u[1] * (p[2] - u[3]) - u[2]
+    return du[3] = u[1] * u[2] - p[3] * u[3]
+end
+
+const _lorenz_pref_params = [10.0, 28.0, 8 / 3]
+
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
@@ -99,16 +108,16 @@ PrecompileTools.@compile_workload begin
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
-                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                _lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), _lorenz_pref_params
             )
         )
     end

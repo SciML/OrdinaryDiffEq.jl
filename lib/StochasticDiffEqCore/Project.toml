@@ -1,6 +1,6 @@
 name = "StochasticDiffEqCore"
 uuid = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
-version = "2.0.5"
+version = "2.0.6"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
@@ -35,7 +35,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 StochasticDiffEqLevyArea = {path = "../StochasticDiffEqLevyArea"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 ADTypes = "1.22.0"
 Adapt = "4.3.0"
 ArrayInterface = "7.28"

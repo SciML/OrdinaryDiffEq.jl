@@ -44,6 +44,18 @@ get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
 Cache used by [`CompositeAlgorithm`](@ref). Holds the tuple of sub-`caches`, the
 `choice_function` that selects the active algorithm, and the index `current` of
 the currently-active sub-cache.
+
+# Fields
+
+- `caches`: Tuple of caches for the component algorithms.
+- `choice_function`: Function selecting the active component algorithm.
+- `current`: Index of the active component cache.
+
+# Developer API
+
+This is a solver-developer extension type for shared composite-cache machinery.
+End-user code should call `solve` and use solution APIs, rather than construct
+`CompositeCache` values or access cache fields.
 """
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
@@ -121,10 +133,13 @@ Solver packages extend `alg_cache` for their algorithm type:
 ```julia
 import OrdinaryDiffEqCore: alg_cache
 
-function alg_cache(alg::MyAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::MyAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck, ::Val{iip}, verbose) where {
-        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, iip}
+        dt, reltol, p, calck, ::Val{iip}, verbose
+    ) where {
+        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, iip,
+    }
     return MyAlgorithmCache(u, rate_prototype)
 end
 ```

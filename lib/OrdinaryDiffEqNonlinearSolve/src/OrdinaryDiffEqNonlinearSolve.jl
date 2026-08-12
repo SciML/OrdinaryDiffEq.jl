@@ -18,12 +18,17 @@ import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson
+using SciMLPublic: @public
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
 # `get_u`/`get_fu` are the only inner-state reads that hold for every inner cache type:
 # polyalgorithm caches keep `u`/`fu` on the active branch, not as top-level fields.
+# `NonlinearSolveNoInitCache` is the fallback cache for algorithms with no `__init` (every
+# SimpleNonlinearSolve algorithm): it holds no iteration state, so `step!`, `get_fu`,
+# `.stats` and `not_terminated` are all off-limits and it can only be driven by `solve!`.
 using NonlinearSolveBase:
     ArcLengthContinuation, HomotopyPolyAlgorithm, HomotopySweep, KantorovichHomotopy,
+    NonlinearSolveNoInitCache,
     get_linear_cache, get_u, get_fu
 using MuladdMacro: @muladd
 using FastBroadcast: @..
@@ -77,18 +82,10 @@ include("initialize_dae.jl")
 
 export BrownFullBasicInit, ShampineCollocationInit
 
-# Nonlinear-solver algorithms accepted by OrdinaryDiffEq implicit methods and the
-# solver-author hooks extended by sibling integrator packages.
-# The `public` keyword is only parseable on Julia >= 1.11.0-DEV.469, so it is
-# gated to keep the 1.10 floor parsing.
-@static if VERSION >= v"1.11.0-DEV.469"
-    eval(
-        Expr(
-            :public,
-            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg,
-            :NonlinearSolveAlg
-        )
-    )
-end
+@public NLNewton, NLFunctional, NLAnderson, HomotopyNonlinearSolveAlg, NonlinearSolveAlg
+
+# Solver-author interface called or extended by sibling integrator packages.
+@public build_nlsolver, nlsolve!, nlsolvefail, markfirststage!, du_alias_or_new
+@public can_smooth_est, compute_step!, initial_η, anderson, anderson!
 
 end

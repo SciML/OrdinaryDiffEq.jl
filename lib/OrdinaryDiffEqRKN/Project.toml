@@ -26,7 +26,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Statistics = "<0.0.1, 1"
 Pkg = "1"
 Test = "<0.0.1, 1"

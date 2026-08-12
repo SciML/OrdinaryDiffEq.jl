@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
     PIDController,
-    alg_cache, @cache, isfsal, full_cache,
+    alg_cache, @cache, isfsal,
     constvalue,
     trivial_limiter!,
     explicit_rk_docstring, get_fsalfirstlast,
@@ -13,7 +13,7 @@ import OrdinaryDiffEqCore: perform_step!,
 import OrdinaryDiffEqCore
 # `alg_order` is owned by and public in SciMLBase; `initialize!` is owned by and
 # public in DiffEqBase. Import from the true public owners (not re-exporters).
-import SciMLBase: alg_order
+import SciMLBase: alg_order, full_cache
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 using FastBroadcast: FastBroadcast, @.., Serial
 using MuladdMacro: MuladdMacro, @muladd
@@ -78,14 +78,14 @@ PrecompileTools.@compile_workload begin
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )

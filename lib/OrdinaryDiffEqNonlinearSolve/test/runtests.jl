@@ -20,11 +20,21 @@ function activate_modelingtoolkit_env()
 end
 
 function activate_qa_env()
-    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+    lib_dir = dirname(dirname(@__DIR__))
+    return activate_group_env(
+        joinpath(@__DIR__, "qa");
+        parent = [
+            dirname(@__DIR__),
+            joinpath(lib_dir, "OrdinaryDiffEqCore"),
+            joinpath(lib_dir, "OrdinaryDiffEqBDF"),
+            joinpath(lib_dir, "OrdinaryDiffEqRosenbrock"),
+        ],
+    )
 end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "ModelingToolkit")
+    @time @safetestset "Developer API Tests" include("developer_api_tests.jl")
     @time @safetestset "Newton Tests" include("newton_tests.jl")
     @time @safetestset "Sparse DAE Initialization" include("sparse_dae_initialization_tests.jl")
     @time @safetestset "Linear Nonlinear Solver Tests" include("linear_nonlinear_tests.jl")
@@ -43,6 +53,9 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "NonlinearSolveAlg Smoothed Error Estimate Tests" include("nsa_smooth_est_tests.jl")
     @time @safetestset "NonlinearSolveAlg Stats Tests" include("nsa_stats_tests.jl")
     @time @safetestset "NonlinearSolveAlg Polyalgorithm Inner Solver Tests" include("nsa_polyalg_tests.jl")
+    @time @safetestset "NonlinearSolveAlg No-Init Inner Solver Tests" include("nsa_noinit_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Preconditioning Tests" include("nsa_conditioning_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Residual Convergence Tests" include("nsa_residual_convergence_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)

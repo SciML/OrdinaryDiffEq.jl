@@ -2,8 +2,7 @@ using SciMLTesting, OrdinaryDiffEqStabilizedRK, Test
 
 run_qa(
     OrdinaryDiffEqStabilizedRK;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
+    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqStabilizedRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (

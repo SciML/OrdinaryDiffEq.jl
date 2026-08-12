@@ -38,6 +38,12 @@ end
         @test eltype(sol.u[end]) == ComplexF64
     end
 
+    for alg in (ImplicitEM(autodiff = AutoFiniteDiff()), ISSEM(autodiff = AutoFiniteDiff()))
+        sol = solve(prob, alg; adaptive = false, dt = 0.01)
+        @test eltype(sol.t) == Float64
+        @test eltype(sol.u[end]) == ComplexF64
+    end
+
     # currently broken
     for alg in implicit_autodiff
         @test_throws OrdinaryDiffEqDifferentiation.FirstAutodiffJacError solve(prob, alg)

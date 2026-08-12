@@ -316,6 +316,8 @@ solve(prob, alg, verbose=DEVerbosity(SciMLLogging.None()))
 
 **Why:** same type-stability reason, plus `DEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
 
+`DEVerbosity` is owned by DiffEqBase and is exported by OrdinaryDiffEq (from v7.4.0) and StochasticDiffEq, alongside the `SciMLLogging` module that supplies the presets, so `using OrdinaryDiffEq` is enough for the line above. From a package that re-exports neither, add `using DiffEqBase, SciMLLogging`.
+
 ### alias: Bool no longer accepted
 
 ```julia
@@ -411,6 +413,12 @@ All four removals are driven by TTFS.
 | **StaticArrayInterface.jl** | `ArrayInterface.ismutable` | The only thing OrdinaryDiffEq actually used from StaticArrayInterface was the mutability query, which ArrayInterface already provides |
 | **Polyester.jl** (direct dep) | Moved to weak dep `OrdinaryDiffEqCorePolyesterExt`; requires `using Polyester` to activate | Polyester loads a nontrivial amount of threading infrastructure. Users who don't enable Polyester-threaded solvers no longer pay for it |
 | **StaticArrays.jl** (direct dep) | `SVector`/`MVector` in tableaus replaced with `NTuple`/`Vector`; SA moved to test-only | Loading StaticArrays forces compilation of a large generated-function surface for every solver that mentions an `SVector`. Tableaus used them for constants, which `NTuple` expresses just as statically |
+
+The threading option types also moved. In v6 `Sequential`, `BaseThreads` and `PolyesterThreads` were reachable as `OrdinaryDiffEq.PolyesterThreads()` — never bare, which is why v6's own test suite qualified them. When the umbrella stopped importing them that qualified form broke too, leaving only `OrdinaryDiffEqCore.PolyesterThreads()`.
+
+As of OrdinaryDiffEq 7.5.0 the v6 spelling works again: OrdinaryDiffEq and each sublibrary taking `threading` (Extrapolation, FIRK, PDIRK, PRK) import the names and declare them `public`, so `OrdinaryDiffEq.PolyesterThreads()` and `OrdinaryDiffEqExtrapolation.PolyesterThreads()` both resolve. They remain unexported, so bare `PolyesterThreads()` is still an `UndefVarError` — as it was in v6. Write them qualified, or `using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
+
+These are the values for the `threading` keyword. The unrelated `thread` keyword of the FastBroadcast-based solvers still takes `FastBroadcast.Serial()` / `FastBroadcast.Threaded()`.
 
 ---
 

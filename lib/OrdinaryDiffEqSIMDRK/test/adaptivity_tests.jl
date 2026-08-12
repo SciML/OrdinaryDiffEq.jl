@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSIMDRK, StaticArrays, Test
+using SciMLBase: ODEProblem, solve
 
 function lorenz(u, p, t)
     return SA[10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]

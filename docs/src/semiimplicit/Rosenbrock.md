@@ -83,6 +83,8 @@ Rodas5
 Rodas5P
 Rodas5Pe
 Rodas5Pr
+Rodas4PW
+Rodas6P
 RosenbrockW6S4OS
 ROS2
 ROS2PR

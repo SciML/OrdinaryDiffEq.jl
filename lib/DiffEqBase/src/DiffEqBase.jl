@@ -139,7 +139,7 @@ $(TYPEDEF)
 """
 abstract type DECostFunction end
 
-import SciMLBase: Void, unwrapped_f, AutoDePSpecialize
+import SciMLBase: Void, unwrapped_f, AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 import RespecializeParams
 
@@ -193,7 +193,7 @@ export initialize!, finalize!
 
 export SensitivityADPassThrough
 
-export AutoDePSpecialize
+export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 # Declare DiffEqBase-owned, documented API names `public` so downstream packages can
 # drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is
@@ -219,7 +219,7 @@ export AutoDePSpecialize
             :calculate_residuals, :calculate_residuals!,
             # Algorithm/dt setup hooks solvers specialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
-            :default_factorize, :stripunits,
+            :default_factorize, :stripunits, Symbol("@tight_loop_macros"),
             # Solver-author wrapper/tag types and convergence-testing entry type
             :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup,
             # check_error diagnostic hook solvers may specialize per failure mode

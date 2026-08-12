@@ -104,6 +104,26 @@ end
         [Discontinuity(0.3, 4), Discontinuity(0.6, 5)]
 end
 
+@testset "discontinuity at tspan[1]" begin
+    history(p, t) = zeros(1)
+    function f(du, u, h, p, t)
+        du[1] = t > 0.0 ? 1.0 : 0.0
+        return nothing
+    end
+    prob = DDEProblem(f, [0.0], history, (0.0, 2.0); constant_lags = (1.0,))
+    integrator = init(
+        prob, MethodOfSteps(Tsit5()); d_discontinuities = [prob.tspan[1]]
+    )
+
+    @test integrator.t == nextfloat(prob.tspan[1])
+    @test integrator.fsalfirst == [1.0]
+
+    sol = solve!(integrator)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == prob.tspan[2]
+    @test sol.u[end] ≈ [2.0]
+end
+
 # discontinuities induced by callbacks
 @testset "#190" begin
     cb = ContinuousCallback((u, t, integrator) -> 1, integrator -> nothing)

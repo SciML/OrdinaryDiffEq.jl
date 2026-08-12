@@ -1,5 +1,6 @@
 using OrdinaryDiffEqSIMDRK
 using OrdinaryDiffEqCore
+using SciMLBase: ODEProblem, init, step!
 using AllocCheck
 using Test
 

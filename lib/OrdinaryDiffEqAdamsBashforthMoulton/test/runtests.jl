@@ -9,8 +9,7 @@ function activate_qa_env()
 end
 
 function activate_threaded_env()
-    Pkg.activate(joinpath(@__DIR__, "threaded"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "threaded"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests

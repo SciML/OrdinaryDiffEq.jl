@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     OrdinaryDiffEqNewtonAlgorithm,
     AbstractController,
     alg_cache, @cache,
-    isfsal, full_cache,
+    isfsal,
     constvalue, error_constant,
     has_special_newton_error,
     trivial_limiter!,
@@ -28,7 +28,7 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
     DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
     find_algebraic_vars_eqs
-import SciMLBase: alg_order, isadaptive, _unwrap_val
+import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
@@ -66,6 +66,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("bdf_utils.jl")
 include("stald.jl")
+include("nordsieck_utils.jl")
 include("bdf_caches.jl")
 include("dae_caches.jl")
 include("controllers.jl")
@@ -90,7 +91,7 @@ end
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
-    solver_list = [FBDF()]
+    solver_list = [FBDF(), NordsieckBDF()]
     prob_list = []
 
     if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
@@ -126,14 +127,14 @@ PrecompileTools.@compile_workload begin
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )
@@ -182,6 +183,7 @@ end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
     SBDF, SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
-    DABDF2, DImplicitEuler, DFBDF
+    DABDF2, DImplicitEuler, DFBDF,
+    NordsieckBDF, DNordsieckBDF
 
 end

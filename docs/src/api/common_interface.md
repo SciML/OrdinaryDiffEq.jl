@@ -18,6 +18,7 @@ OrdinaryDiffEq.step!
 ```@docs
 OrdinaryDiffEq.ODEProblem
 OrdinaryDiffEq.ODEFunction
+SciMLBase.ODENLStepData
 OrdinaryDiffEq.ODESolution
 OrdinaryDiffEq.SplitODEProblem
 OrdinaryDiffEq.SplitFunction
@@ -49,6 +50,7 @@ OrdinaryDiffEq.VectorContinuousCallback
 ```@docs
 OrdinaryDiffEq.ReturnCode
 OrdinaryDiffEq.ODEAliasSpecifier
+SciMLBase.ODENLStepData
 OrdinaryDiffEq.add_tstop!
 OrdinaryDiffEq.derivative_discontinuity!
 OrdinaryDiffEq.reinit!

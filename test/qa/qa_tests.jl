@@ -1,5 +1,5 @@
 using SciMLTesting, OrdinaryDiffEq
-using ADTypes, CommonSolve, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
+using ADTypes, CommonSolve, DiffEqBase, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     SciMLBase, SciMLLogging
 using Test
@@ -17,7 +17,7 @@ using Test
             occursin(r"(?m)^OrdinaryDiffEqCore = ", project)
         has_muladdmacro && uses_core
     end
-    @test length(projects) == 39
+    @test length(projects) == 40
     for package in projects
         project = read(joinpath(lib_dir, package, "Project.toml"), String)
         floor_match = match(r"(?m)^MuladdMacro = \"([0-9]+\.[0-9]+\.[0-9]+)", project)
@@ -33,6 +33,7 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
     union(
         public_api_names(ADTypes),
         public_api_names(CommonSolve),
+        public_api_names(DiffEqBase),
         public_api_names(OrdinaryDiffEqBDF),
         public_api_names(OrdinaryDiffEqDefault),
         public_api_names(OrdinaryDiffEqRosenbrock),
@@ -41,6 +42,9 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
         public_api_names(SciMLBase),
         public_api_names(SciMLLogging),
         (:SciMLBase, :SciMLLogging),
+        # `public` on a Core-owned name counts as a public reexport; listed by
+        # name so the check still rejects the rest of Core's surface.
+        (:Sequential, :BaseThreads, :PolyesterThreads),
     ),
 )
 

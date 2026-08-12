@@ -5,12 +5,12 @@ OrdinaryDiffEqMultirate = "d4b830b4-ac80-426b-8507-16693d424963"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
-
 [compat]
 AllocCheck = "0.2"
 OrdinaryDiffEqCore = "4"
-OrdinaryDiffEqMultirate = "2"
+OrdinaryDiffEqMultirate = "3"
 SciMLBase = "3"
 julia = "1.10"
+
+[sources.OrdinaryDiffEqCore]
+path = "../../../OrdinaryDiffEqCore"

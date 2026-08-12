@@ -1,6 +1,7 @@
 using OrdinaryDiffEqFunctionMap
 using OrdinaryDiffEqCore
-using SciMLBase: FullSpecialize, DiscreteFunction
+using CommonSolve: init, step!
+using SciMLBase: DiscreteFunction, DiscreteProblem, FullSpecialize
 using AllocCheck
 using Test
 

@@ -13,13 +13,6 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-ImplicitDiscreteSolve = {path = "../../../ImplicitDiscreteSolve"}
-OrdinaryDiffEq = {path = "../../../.."}
-OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
-OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
-OrdinaryDiffEqSDIRK = {path = "../../../OrdinaryDiffEqSDIRK"}
-
 [compat]
 DiffEqDevTools = "3"
 ImplicitDiscreteSolve = "2"

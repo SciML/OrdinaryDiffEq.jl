@@ -31,7 +31,7 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 ADTypes = "1.22.0"
 DiffEqBase = "7"
 DiffEqNoiseProcess = "5.30.0"

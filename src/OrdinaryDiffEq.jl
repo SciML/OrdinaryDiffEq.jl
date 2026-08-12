@@ -23,16 +23,44 @@ using SciMLBase: SciMLBase,
     CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
     ReturnCode, set_proposed_dt!,
     remake, successful_retcode, reinit!, terminate!,
-    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier,
-    AutoDePSpecialize
+    derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 
 using SciMLLogging: SciMLLogging
+
+"""
+    AutoDespecialize
+
+Use a stable dynamic parameter container so compiled solver code can be shared across
+different concrete parameter layouts. The original parameter is recovered at the SciML
+function call barrier.
+"""
+const AutoDespecialize = SciMLBase.AutoDespecialize
+
+"""
+    AutoRespecialize
+
+Use the constrained non-dynamic parameter policy, which recovers the original concrete
+parameter type from an opaque container on supported solver paths.
+"""
+const AutoRespecialize = SciMLBase.AutoRespecialize
+
+"""
+    AutoDePSpecialize
+
+Deprecated alias for [`AutoRespecialize`](@ref).
+"""
+const AutoDePSpecialize = SciMLBase.AutoDePSpecialize
+
+# Verbosity specifier owned by DiffEqBase (exported there). The umbrella package
+# imports and exports it directly so `verbose = DEVerbosity(...)` is reachable from
+# a plain `using OrdinaryDiffEq`.
+using DiffEqBase: DEVerbosity
 
 # Import ADTypes for autodiff specification
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, Sequential, BaseThreads, PolyesterThreads
 
 # Import from OrdinaryDiffEqDefault
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
@@ -57,8 +85,11 @@ export CallbackSet, ContinuousCallback, DiscreteCallback, VectorContinuousCallba
 export ReturnCode, derivative_discontinuity!, add_tstop!, ODEAliasSpecifier
 export SciMLBase, SciMLLogging, remake, successful_retcode, reinit!, set_proposed_dt!, terminate!
 
+# Verbosity
+export DEVerbosity
+
 # Specialization levels
-export AutoDePSpecialize
+export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 # ADTypes
 export AutoForwardDiff, AutoFiniteDiff, AutoSparse
@@ -71,5 +102,10 @@ export Tsit5, AutoTsit5
 export Vern6, Vern7, Vern8, Vern9, AutoVern6, AutoVern7, AutoVern8, AutoVern9
 export Rosenbrock23, Rodas5P
 export FBDF
+
+# Reachable as `OrdinaryDiffEq.PolyesterThreads()`, the spelling v6 supported.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end # module
