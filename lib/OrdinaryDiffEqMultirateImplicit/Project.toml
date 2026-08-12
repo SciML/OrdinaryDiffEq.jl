@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqMultirateImplicit"
 uuid = "fd3f87d1-5955-4d40-9638-6d84dd605b32"
 authors = ["singhharsh1708 <hs1663531@gmail.com>"]
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
