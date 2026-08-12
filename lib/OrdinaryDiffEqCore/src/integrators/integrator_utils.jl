@@ -757,6 +757,9 @@ function error_estimate_residuals(cache::DefaultCache)
     return isdefined(cache, name) ? error_estimate_residuals(getfield(cache, name)) : nothing
 end
 
+#deal with GPU arrays in the analysis
+host_array(x) = ArrayInterface.fast_scalar_indexing(x) ? x : Array(x)
+
 function nonfinite_indices(u::AbstractArray)
     idxs = Int[]
     lin = LinearIndices(u)
@@ -785,8 +788,9 @@ function instability_jacobian(integrator)
     else #no jac to analyze
         nothing
     end
-    # a scalar problem's "Jacobian" is a plain number, which has no structure to report
-    return jac isa AbstractMatrix ? jac : nothing
+    jac isa AbstractMatrix || return nothing
+    # device-backed J is not worth fetching
+    return ArrayInterface.fast_scalar_indexing(jac) ? jac : nothing
 end
 
 # Jacobian entries worth reporting, plus the rows and columns they touch
@@ -887,8 +891,8 @@ function residual_analysis!(error_analysis::Vector{String}, atmp::AbstractArray,
 end
 
 function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian_logging = true)
-    u = integrator.u
-    u0 = integrator.sol.prob.u0
+    u = host_array(integrator.u)
+    u0 = host_array(integrator.sol.prob.u0)
 
     # State analysis: NaN/Inf components, and components that have blown up
     nan_inf_idxs = nonfinite_indices(u)
@@ -956,7 +960,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", EEst)) (a step is accepted when EEst <= 1)")
         atmp = error_estimate_residuals(integrator.cache)
         if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
-            residual_analysis!(error_analysis, atmp, u, integrator.uprev)
+            residual_analysis!(error_analysis, host_array(atmp), u, host_array(integrator.uprev))
         end
     end
 
