@@ -1,5 +1,6 @@
 using DiffEqBase, Test
 using Distributions
+import SciMLBase
 
 @test DiffEqBase.promote_tspan((0.0, 1.0)) == (0.0, 1.0)
 @test DiffEqBase.promote_tspan((0, 1.0)) == (0.0, 1.0)
@@ -46,3 +47,22 @@ prob2 = DiffEqBase.get_concrete_problem(prob, true)
 @test prob2.u0 == 2.0
 @test prob2.tspan == (0.0, 3.0)
 @test prob2.constant_lags == [1.0]
+
+struct PreparedDefaultAlgorithm <: SciMLBase.AbstractODEAlgorithm end
+
+prepared_default_problem = ODEProblem((u, p, t) -> p * u, 1.0, (0.0, 1.0), 2.0)
+const PreparedDefaultProblem = typeof(prepared_default_problem)
+
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::PreparedDefaultProblem) =
+    PreparedDefaultAlgorithm()
+SciMLBase.__solve(prob::PreparedDefaultProblem, ::PreparedDefaultAlgorithm; kwargs...) =
+    (prob, :solve)
+SciMLBase.__init(prob::PreparedDefaultProblem, ::PreparedDefaultAlgorithm; kwargs...) =
+    (prob, :init)
+
+solved_problem, solve_stage = solve(prepared_default_problem; wrap = Val(false))
+initialized_problem, init_stage = init(prepared_default_problem)
+@test solved_problem === prepared_default_problem
+@test initialized_problem === prepared_default_problem
+@test solve_stage === :solve
+@test init_stage === :init

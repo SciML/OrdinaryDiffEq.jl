@@ -123,6 +123,9 @@ end
 
 Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
+    if isnothing(alg)
+        alg = prepare_alg(alg, u0, p, prob)
+    end
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
             prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
@@ -637,6 +640,9 @@ Base.@constprop :aggressive function solve_up(
         kwargs...
     )
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
+    if isnothing(alg)
+        alg = prepare_alg(alg, u0, p, prob)
+    end
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
             prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
