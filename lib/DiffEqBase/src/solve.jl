@@ -852,11 +852,30 @@ function _despecialize_auxiliary_functions(f)
             !(f.g isa ParameterDespecializationWrapper)
         f = @set f.g = ParameterDespecializationWrapper(f.g)
     end
-    return f
+    f = SciMLBase.widen_bounded_type_params(f)
+    return _widen_type_parameter(f, Val(:ID))
+end
+
+@generated function _widen_type_parameter(f::F, ::Val{name}) where {F, name}
+    wrapper = F.name.wrapper
+    typevars = TypeVar[]
+    body = wrapper
+    while body isa UnionAll
+        push!(typevars, body.var)
+        body = body.body
+    end
+    index = findfirst(typevar -> typevar.name === name, typevars)
+    index === nothing && return :(f)
+    typevars[index].ub === Any || return :(f)
+    params = collect(F.parameters)
+    params[index] = Any
+    NewType = wrapper{params...}
+    fields = [:(getfield(f, $i)) for i in 1:fieldcount(NewType)]
+    return :($NewType($(fields...)))
 end
 
 function _replace_dae_residual(f::DAEFunction{iip, specialize}, residual) where {iip, specialize}
-    return DAEFunction{iip, specialize}(
+    replaced = DAEFunction{iip, specialize}(
         residual;
         analytic = f.analytic,
         tgrad = f.tgrad,
@@ -876,6 +895,8 @@ function _replace_dae_residual(f::DAEFunction{iip, specialize}, residual) where 
         initialization_data = f.initialization_data,
         nlstep_data = f.nlstep_data
     )
+    replaced = SciMLBase.widen_bounded_type_params(replaced)
+    return _widen_type_parameter(replaced, Val(:ID))
 end
 
 _promote_parameters(::Val{SciMLBase.AutoDespecialize}, p) =
