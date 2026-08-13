@@ -71,6 +71,12 @@ function _check_promote_f_input_has_no_tangent(f_primal)
     )
 end
 
+_tuple_fdata(::Mooncake.NoFData, ::Mooncake.NoFData) = Mooncake.NoFData()
+_tuple_fdata(a, b) = (a, b)
+
+_tuple_tangent(::Mooncake.NoTangent, ::Mooncake.NoTangent) = Mooncake.NoTangent()
+_tuple_tangent(a, b) = (a, b)
+
 function rrule!!(
         pf::CoDual{typeof(DiffEqBase.promote_f)},
         f::CoDual, specialize::CoDual{<:Val}, u0::CoDual, p::CoDual, t::CoDual,
@@ -85,7 +91,7 @@ function rrule!!(
     f_out_is_identity = f_out === f_primal
     f_out_is_identity || _check_promote_f_input_has_no_tangent(f_primal)
     f_out_fdata = f_out_is_identity ? f.dx : fdata(zero_tangent(f_out))
-    y = CoDual((f_out, p_out), (f_out_fdata, p.dx))
+    y = CoDual((f_out, p_out), _tuple_fdata(f_out_fdata, p.dx))
 
     # Zero rdata for the argument slots that never reach the outputs (callee, the Val
     # args, and u0/t, whose types but not values matter here). Uses lazy_zero_rdata
@@ -134,7 +140,7 @@ function frule!!(
     f_out_is_identity = f_out === f_primal
     f_out_is_identity || _check_promote_f_input_has_no_tangent(f_primal)
     f_out_tangent = f_out_is_identity ? tangent(f) : zero_tangent(f_out)
-    return Dual((f_out, p_out), (f_out_tangent, tangent(p)))
+    return Dual((f_out, p_out), _tuple_tangent(f_out_tangent, tangent(p)))
 end
 
 end
