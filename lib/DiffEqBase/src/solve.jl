@@ -855,6 +855,29 @@ function _despecialize_auxiliary_functions(f)
     return f
 end
 
+function _replace_dae_residual(f::DAEFunction{iip, specialize}, residual) where {iip, specialize}
+    return DAEFunction{iip, specialize}(
+        residual;
+        analytic = f.analytic,
+        tgrad = f.tgrad,
+        jac = f.jac,
+        jac_u = f.jac_u,
+        jac_du = f.jac_du,
+        jvp = f.jvp,
+        vjp = f.vjp,
+        jac_prototype = f.jac_prototype,
+        sparsity = f.sparsity,
+        Wfact = f.Wfact,
+        Wfact_t = f.Wfact_t,
+        paramjac = f.paramjac,
+        observed = f.observed,
+        colorvec = f.colorvec,
+        sys = f.sys,
+        initialization_data = f.initialization_data,
+        nlstep_data = f.nlstep_data
+    )
+end
+
 _promote_parameters(::Val{SciMLBase.AutoDespecialize}, p) =
     SciMLBase.DespecializedParameters(p)
 _promote_parameters(::Val, p) = p
@@ -873,6 +896,18 @@ function promote_f(
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
     despecialize && (f = _despecialize_auxiliary_functions(f))
+
+    dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
+        !(f.f isa AbstractSciMLOperator) &&
+        !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) &&
+        !(u0 isa SubArray) && eltype(u0) !== Any &&
+        RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
+        one(t) === oneunit(t) && hasdualpromote(u0, t)
+    if dae_wrap_path
+        residual = ParameterDespecializationWrapper(f.f)
+        wrapped = wrapfun_dae_iip(residual, (u0, u0, u0, p_out, t), Val(CS))
+        return (_replace_dae_residual(f, wrapped), p_out)
+    end
 
     wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
         # Opt-out SubArrays since they would create type mismatches with the integrator's internal Arrays
@@ -1002,6 +1037,18 @@ function promote_f(
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
     despecialize && (f = _despecialize_auxiliary_functions(f))
+
+    dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
+        !(f.f isa AbstractSciMLOperator) &&
+        !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) &&
+        !(u0 isa SubArray) && eltype(u0) !== Any &&
+        RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
+        one(t) === oneunit(t)
+    if dae_wrap_path
+        residual = ParameterDespecializationWrapper(f.f)
+        wrapped = wrapfun_dae_iip(residual, (u0, u0, u0, p_out, t))
+        return (_replace_dae_residual(f, wrapped), p_out)
+    end
 
     wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
         f.mass_matrix isa UniformScaling &&

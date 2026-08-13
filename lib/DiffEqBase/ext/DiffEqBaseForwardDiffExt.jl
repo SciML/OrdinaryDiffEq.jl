@@ -5,7 +5,8 @@ using DiffEqBase.ArrayInterface
 using DiffEqBase: Void, FunctionWrappersWrappers, OrdinaryDiffEqTag,
     AbstractTimeseriesSolution,
     RecursiveArrayTools, _promote_tspan, has_continuous_callback
-import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, wrapfun_iip_opaque,
+import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, wrapfun_dae_iip,
+    wrapfun_iip_opaque,
     prob2dtmin, promote_tspan, ODE_DEFAULT_NORM
 import SciMLBase: isdualtype, DualEltypeChecker, sse, __sum
 import RespecializeParams
@@ -78,10 +79,36 @@ function _make_fww(
         FW{Nothing, A1}(vff), FW{Nothing, A2}(vff),
         FW{Nothing, A3}(vff), FW{Nothing, A4}(vff),
     )
+    return _make_fww(fwt)
+end
+
+function _make_fww(@nospecialize(vff), ::Type{A1}, ::Type{A2}) where {A1, A2}
+    FW = FunctionWrappersWrappers.FunctionWrappers.FunctionWrapper
+    fwt = (FW{Nothing, A1}(vff), FW{Nothing, A2}(vff))
+    return _make_fww(fwt)
+end
+
+function _make_fww(fwt::Tuple)
     cs = FunctionWrappersWrappers.SingleCacheStorage()
     return FunctionWrappersWrappers.FunctionWrappersWrapper{
         typeof(fwt), FunctionWrappersWrappers.AllowNonIsBits, typeof(cs),
     }(fwt, cs)
+end
+
+function wrapfun_dae_iip(
+        ff,
+        inputs::Tuple{T1, T2, T3, T4, T5},
+        ::Val{CS}
+    ) where {T1, T2, T3, T4, T5, CS}
+    dualT = dualgen(eltype(T3), Val(CS))
+    dualT1 = ArrayInterface.promote_eltype(T1, dualT)
+    dualT2 = ArrayInterface.promote_eltype(T2, dualT)
+    dualT3 = ArrayInterface.promote_eltype(T3, dualT)
+    return _make_fww(
+        Void(ff),
+        Tuple{T1, T2, T3, T4, T5},
+        Tuple{dualT1, dualT2, dualT3, T4, T5}
+    )
 end
 
 function wrapfun_iip(
