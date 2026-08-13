@@ -1,9 +1,46 @@
 using OrdinaryDiffEqBDF, LinearAlgebra, Test
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
+using SciMLBase: AutoDespecialize, DAEFunction, DAEProblem, successful_retcode
 import DifferentiationInterface as DI
 
 afd_cs3 = AutoForwardDiff(chunksize = 3)
+
+struct DespecializedDAEResidual{ID} end
+
+function (::DespecializedDAEResidual)(resid, du, u, p, t)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
+end
+
+function despecialized_dae_problem(model, p)
+    f = DAEFunction{true, AutoDespecialize}(model)
+    return DAEProblem(f, [-p.rate], [1.0], (0.0, 0.1), p)
+end
+
+@testset "AutoDespecialize reuses DFBDF caches" begin
+    problems = (
+        despecialized_dae_problem(
+            DespecializedDAEResidual{1}(), (rate = 0.5,)
+        ),
+        despecialized_dae_problem(
+            DespecializedDAEResidual{2}(), (rate = 0.5, unused = 1)
+        ),
+    )
+
+    for autodiff in (AutoForwardDiff(), AutoFiniteDiff())
+        alg = DFBDF(; autodiff)
+        integrators = map(prob -> init(prob, alg), problems)
+        @test typeof(integrators[1].sol.prob) === typeof(integrators[2].sol.prob)
+        @test typeof(integrators[1].cache) === typeof(integrators[2].cache)
+
+        for prob in problems
+            sol = solve(prob, alg)
+            @test successful_retcode(sol)
+            @test sol.u[end][1] ≈ exp(-0.05) rtol = 1.0e-3
+        end
+    end
+end
 
 function f(out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]

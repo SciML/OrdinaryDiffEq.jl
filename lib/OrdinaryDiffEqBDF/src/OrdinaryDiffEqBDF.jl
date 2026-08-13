@@ -59,7 +59,8 @@ import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport
 import SciMLBase
-using SciMLBase: ODEProblem, ODEFunction, derivative_discontinuity!, solve
+using SciMLBase: DAEFunction, DAEProblem, ODEProblem, ODEFunction,
+    derivative_discontinuity!, solve
 @reexport using SciMLBase
 
 include("algorithms.jl")
@@ -86,6 +87,11 @@ function precompile_mm_dae(du, u, p, t)
     du[1] = -0.04u[1] + 1.0e4 * u[2] * u[3]
     du[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3]
     return du[3] = u[1] + u[2] + u[3] - 1.0
+end
+
+function precompile_dae(resid, du, u, p, t)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
 end
 
 PrecompileTools.@compile_workload begin
@@ -139,6 +145,14 @@ PrecompileTools.@compile_workload begin
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )
         )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(precompile_dae)
+        dae_prob = DAEProblem(
+            dae_f, [-0.5], [1.0], (0.0, 0.1), (rate = 0.5,)
+        )
+        solve(dae_prob, DFBDF())
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
