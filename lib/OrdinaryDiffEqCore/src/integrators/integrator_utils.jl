@@ -794,8 +794,9 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         # keep only components within 20 orders of magnitude of the largest
         if !isempty(blown_idxs)
             max_blown = maximum(abs(u[i]) for i in blown_idxs)
-            cutoff = max_blown * 1.0e-20
-            filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
+            let cutoff = max_blown * 1.0e-20
+                filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
+            end
             sort!(blown_idxs, by = i -> abs(u[i]), rev = true)
         end
     end
@@ -832,8 +833,9 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
                 max_finite = max(max_finite, abs(v))
             end
         end
-        cutoff = max_finite * 1.0e-10
-        filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
+        let cutoff = max_finite * 1.0e-10
+            filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
+        end
         sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
 
         # derive rows and columns from remaining entries
