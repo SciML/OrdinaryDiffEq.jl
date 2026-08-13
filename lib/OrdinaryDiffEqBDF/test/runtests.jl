@@ -26,6 +26,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "DAE Event Tests" include("dae_event.jl")
     @time @safetestset "DAE derivative_discontinuity! Tests" include("dae_derivative_discontinuity_tests.jl")
     @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
+    @time @safetestset "DAE Nonlinear Solve Path Tests" include("dae_nlsolve_path_tests.jl")
 
     @time @safetestset "BDF Inference Tests" include("inference_tests.jl")
     @time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")

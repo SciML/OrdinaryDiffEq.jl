@@ -462,9 +462,10 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
         dae_jac = cache.dae_jacobians
         (; uf_u, uf_du, jac_config_u, jac_config_du) = dae_jac
         du1 = cache.du1
+        u_eval = uf_du !== nothing ? uf_du.u_fixed : uprev
 
-        # Compute J_u = dF/du at (du_fixed, uprev)
-        jacobian!(J_u, uf_u, uprev, du1, integrator, jac_config_u)
+        # Compute J_u = dF/du at (du_fixed, u_eval)
+        jacobian!(J_u, uf_u, u_eval, du1, integrator, jac_config_u)
 
         # Compute J_du = dF/d(du) at (du_eval, u_fixed)
         jacobian!(J_du, uf_du, uf_u.du_fixed, du1, integrator, jac_config_du)
@@ -497,7 +498,8 @@ function calc_J_dae(integrator, cache)
         J_du = J_combined - J_u
     else
         dae_jac = cache.dae_jacobians
-        J_u = jacobian(dae_jac.uf_u, uprev, integrator)
+        u_eval = dae_jac.uf_du !== nothing ? dae_jac.uf_du.u_fixed : uprev
+        J_u = jacobian(dae_jac.uf_u, u_eval, integrator)
         J_du = jacobian(dae_jac.uf_du, dae_jac.uf_u.du_fixed, integrator)
     end
 
@@ -691,6 +693,9 @@ function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix)
     return W
 end
 
+@inline dae_invγdt(nlsolver, integrator) = inv(nlsolver.γ * integrator.dt)
+@inline dae_cj(nlsolver, integrator) = nlsolver.α * dae_invγdt(nlsolver, integrator)
+
 """
     dae_jacobian2W!(W, J_u, J_du, cj)
 
@@ -791,25 +796,32 @@ function calc_W!(
     if new_jac && isnewton(lcache)
         lcache.J_t = t
         if isdae
+            invγdt = dae_invγdt(nlsolver, integrator)
             # Update the combined DAE wrapper (still used by NonlinearSolveAlg path)
             if lcache.uf !== nothing
                 lcache.uf.α = nlsolver.α
-                lcache.uf.invγdt = inv(dtgamma)
+                lcache.uf.invγdt = invγdt
                 lcache.uf.tmp = nlsolver.tmp
+                lcache.uf.method = nlsolver.method
             end
             # Update separated DAE Jacobian wrappers
             dae_jac = lcache.dae_jacobians
             if dae_jac !== nothing
-                invgdt = inv(dtgamma)
-                # du at z=0 evaluation point: du = tmp * invγdt
-                du_pred = nlsolver.tmp .* invgdt
+                if nlsolver.method === COEFFICIENT_MULTISTEP
+                    du_pred = @. (nlsolver.tmp + nlsolver.α * nlsolver.z) * invγdt
+                    u_eval = nlsolver.z
+                else
+                    # du at z=0 evaluation point: du = tmp * invγdt
+                    du_pred = nlsolver.tmp .* invγdt
+                    u_eval = uprev
+                end
                 if dae_jac.uf_u !== nothing
                     dae_jac.uf_u.du_fixed .= du_pred
                     dae_jac.uf_u.p = p
                     dae_jac.uf_u.t = t
                 end
                 if dae_jac.uf_du !== nothing
-                    dae_jac.uf_du.u_fixed .= uprev
+                    dae_jac.uf_du.u_fixed .= u_eval
                     dae_jac.uf_du.p = p
                     dae_jac.uf_du.t = t
                 end
@@ -842,7 +854,7 @@ function calc_W!(
                     calc_J_dae!(J, dae_jac.J_du, integrator, lcache)
                 end
                 if new_W
-                    cj = nlsolver.α * inv(dtgamma)
+                    cj = dae_cj(nlsolver, integrator)
                     dae_jacobian2W!(W, J, dae_jac.J_du, cj)
                 end
             else
@@ -864,7 +876,7 @@ function calc_W!(
         if isdae && new_W
             # For DAE, W_γdt stores cj = α/(γ*dt). Update whenever W is
             # reconstructed since it now has the exact current cj.
-            set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
+            set_W_γdt!(nlsolver, dae_cj(nlsolver, integrator))
         elseif !isdae && new_W
             set_W_γdt!(nlsolver, dtgamma)
         end
@@ -919,7 +931,7 @@ end
             cache.J = J_u
             dae_jac = typeof(dae_jac)(J_du, dae_jac.uf_u, dae_jac.uf_du)
             cache.dae_jacobians = dae_jac
-            cj = nlsolver.α * inv(dtgamma)
+            cj = dae_cj(nlsolver, integrator)
             W = dae_jacobian2W(J_u, J_du, cj)
             J = J_u
         elseif isdae
@@ -1097,25 +1109,32 @@ function update_W!(
         lcache = nlsolver.cache
         if isdae
             if new_jac
+                invγdt = dae_invγdt(nlsolver, integrator)
                 # Update combined DAE wrapper
                 if lcache.uf !== nothing
                     lcache.uf.α = nlsolver.α
-                    lcache.uf.invγdt = inv(dtgamma)
+                    lcache.uf.invγdt = invγdt
                     lcache.uf.tmp = @. nlsolver.tmp
                     lcache.uf.uprev = @. integrator.uprev
+                    lcache.uf.method = nlsolver.method
                 end
                 # Update separated wrappers and compute J_u, J_du
                 dae_jac = lcache.dae_jacobians
                 if dae_jac !== nothing
+                    if nlsolver.method === COEFFICIENT_MULTISTEP
+                        du_pred = @. (nlsolver.tmp + nlsolver.α * nlsolver.z) * invγdt
+                        u_eval = nlsolver.z
+                    else
+                        du_pred = @. nlsolver.tmp * invγdt
+                        u_eval = integrator.uprev
+                    end
                     if dae_jac.uf_u !== nothing
-                        invgdt = inv(dtgamma)
-                        du_pred = @. nlsolver.tmp * invgdt
                         dae_jac.uf_u.du_fixed = du_pred
                         dae_jac.uf_u.p = integrator.p
                         dae_jac.uf_u.t = integrator.t
                     end
                     if dae_jac.uf_du !== nothing
-                        dae_jac.uf_du.u_fixed = @. integrator.uprev
+                        dae_jac.uf_du.u_fixed = u_eval
                         dae_jac.uf_du.p = integrator.p
                         dae_jac.uf_du.t = integrator.t
                     end
@@ -1129,7 +1148,7 @@ function update_W!(
             if new_W
                 dae_jac = lcache.dae_jacobians
                 if dae_jac !== nothing
-                    cj = nlsolver.α * inv(dtgamma)
+                    cj = dae_cj(nlsolver, integrator)
                     if lcache.W isa StaticWOperator
                         W = StaticWOperator(
                             dae_jacobian2W(lcache.J, dae_jac.J_du, cj)
@@ -1160,7 +1179,7 @@ function update_W!(
         end
         set_new_W!(nlsolver, new_W)
         if isdae && new_W
-            set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
+            set_W_γdt!(nlsolver, dae_cj(nlsolver, integrator))
         elseif !isdae && new_W
             set_W_γdt!(nlsolver, dtgamma)
         end

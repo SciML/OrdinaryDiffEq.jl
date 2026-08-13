@@ -20,12 +20,13 @@ end
     (; t, dt, uprev, u, f, p) = integrator
     (; nlsolver) = cache
 
-    nlsolver.z = zero(u)
-    nlsolver.tmp = zero(u)
+    nlsolver.z = uprev
+    nlsolver.tmp = -uprev
     nlsolver.γ = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    u = uprev + z
+    u = z
 
     if integrator.opts.adaptive && integrator.success_iter > 0
         # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -65,13 +66,14 @@ end
     (; atmp, nlsolver) = cache
     (; tmp) = nlsolver
 
-    @. nlsolver.z = false
-    @. nlsolver.tmp = false
+    @.. broadcast = false nlsolver.z = uprev
+    @.. broadcast = false nlsolver.tmp = -uprev
     nlsolver.γ = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast = false u = uprev + z
-    @.. broadcast = false du = z * inv(dt)
+    @.. broadcast = false u = z
+    @.. broadcast = false du = (z - uprev) * inv(dt)
 
     if integrator.opts.adaptive && integrator.success_iter > 0
         # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -134,14 +136,14 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
 
-    nlsolver.z = zero(uₙ)
-
-    nlsolver.tmp = -c1 * uₙ₋₁ + c1 * uₙ₋₂
+    nlsolver.z = uₙ₋₁
+    nlsolver.tmp = -(1 + c1) * uₙ₋₁ + c1 * uₙ₋₂
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    uₙ = uₙ₋₁ + z
+    uₙ = z
     integrator.du = du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dtₙ)
     # fsallast is the BDF2 derivative duₙ (matching fsalfirst = duₙ₋₁), not the chord
     # slope z/dtₙ; the latter makes the LTE second-difference estimate inconsistent.
@@ -207,12 +209,13 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = Int64(1) // 1
-    @.. broadcast = false nlsolver.tmp = -c1 * uₙ₋₁ + c1 * uₙ₋₂
-    nlsolver.z .= zero(eltype(z))
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    @.. broadcast = false nlsolver.tmp = -(1 + c1) * uₙ₋₁ + c1 * uₙ₋₂
+    @.. broadcast = false nlsolver.z = uₙ₋₁
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    @.. broadcast = false uₙ = uₙ₋₁ + z
+    @.. broadcast = false uₙ = z
     @.. broadcast = false du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
     @.. broadcast = false integrator.fsallast = du
@@ -324,13 +327,14 @@ function perform_step!(
         end
     end
 
-    nlsolver.tmp = tmp + cache.u₀
-    nlsolver.z = zero(nlsolver.z)
+    nlsolver.tmp = tmp
+    nlsolver.z = cache.u₀
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    u = z + cache.u₀
+    u = z
 
     for j in 2:k
         r[j] = (1 - j)
@@ -339,7 +343,7 @@ function perform_step!(
         end
     end
 
-    terkp1 = z
+    terkp1 = z - cache.u₀
     for j in 1:(k + 1)
         terkp1 *= j * dt / (t + dt - ts[j])
     end
@@ -477,13 +481,14 @@ function perform_step!(
         @.. broadcast = false tmp += u_corrector[i] * bdf_coeffs[k, i + 2]
     end
 
-    @.. broadcast = false nlsolver.tmp = tmp + u₀
-    @.. broadcast = false nlsolver.z = zero(eltype(nlsolver.z))
+    @.. broadcast = false nlsolver.tmp = tmp
+    @.. broadcast = false nlsolver.z = u₀
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-    @.. broadcast = false u = z + u₀
+    @.. broadcast = false u = z
 
     for j in 2:k
         r[j] = (1 - j)
@@ -492,7 +497,7 @@ function perform_step!(
         end
     end
 
-    @.. broadcast = false terkp1_tmp = z
+    @.. broadcast = false terkp1_tmp = z - u₀
     for j in 1:(k + 1)
         @.. broadcast = false terkp1_tmp *= j * dt / (t + dt - ts[j])
     end
@@ -573,11 +578,10 @@ end
 
 ############################################ DNordsieckBDF
 # ================================================================= DAE stepping
-# The corrector solves  f((zn[1] + l1*acor)/dt, ypred + acor, p, t+dt) = 0.
-# `_compute_rhs!` for a `DAEFunction` forms `du = (tmp + α*z)*invγdt` and
-# `u = cache.u₀ + z`, so with α = 1, γ = 1/l1 (invγdt = l1/dt) it is enough to set
-# `tmp = zn[1]/l1` and `u₀ = ypred`; then `cj = l1/dt`, exactly IDA's leading
-# coefficient.
+# The corrector solves  f((zn[2] + l1*acor)/dt, ypred + acor, p, t+dt) = 0.
+# COEFFICIENT_MULTISTEP DAE residual: u = z, du = (tmp + α*z)*invγdt.
+# With α = 1, γ = 1/l1 (invγdt = l1/dt), tmp = zn[2]/l1 - ypred and z = ypred
+# give cj = l1/dt, exactly IDA's leading coefficient.
 function initialize!(integrator, cache::DNordsieckBDFCache)
     integrator.kshortsize = cache.max_order_int + 1
     resize!(integrator.k, integrator.kshortsize)
@@ -636,16 +640,17 @@ function perform_step!(integrator, cache::DNordsieckBDFCache, repeat_step = fals
     copyto!(cache.u₀, cache.ypred)
     l1 = cache.l[2]
 
-    @.. broadcast = false nlsolver.tmp = zn[2] / l1
+    @.. broadcast = false nlsolver.tmp = zn[2] / l1 - cache.ypred
     markfirststage!(nlsolver)
-    fill!(nlsolver.z, zero(eltype(nlsolver.z)))
+    copyto!(nlsolver.z, cache.ypred)
     nlsolver.γ = inv(l1)
     nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    @.. broadcast = false cache.acor = z
-    @.. broadcast = false u = cache.ypred + z
+    @.. broadcast = false cache.acor = z - cache.ypred
+    @.. broadcast = false u = z
     if integrator.opts.adaptive
         OrdinaryDiffEqCore.set_EEst!(
             integrator,
@@ -673,16 +678,17 @@ function perform_step!(integrator, cache::DNordsieckBDFConstantCache, repeat_ste
     cache.u₀ = cache.ypred
     l1 = cache.l[2]
 
-    nlsolver.tmp = @.. zn[2] / l1
+    nlsolver.tmp = @.. zn[2] / l1 - cache.ypred
     markfirststage!(nlsolver)
-    nlsolver.z = zero(cache.ypred)
+    nlsolver.z = cache.ypred
     nlsolver.γ = inv(l1)
     nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    cache.acor = z
-    u = @.. cache.ypred + z
+    cache.acor = @.. z - cache.ypred
+    u = z
     if integrator.opts.adaptive
         OrdinaryDiffEqCore.set_EEst!(
             integrator,

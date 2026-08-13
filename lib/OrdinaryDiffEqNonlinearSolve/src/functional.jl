@@ -113,7 +113,7 @@ end
 
     γdt = γ * dt
     if isdae
-        ustep = @.. broadcast = false uprev + z
+        ustep = compute_dae_ustep(uprev, z, nlsolver.method)
         invγdt = inv(γdt)
         dustep = @.. broadcast = false (tmp + α * z) * invγdt
         dz = f(dustep, ustep, p, t)
@@ -180,7 +180,7 @@ end
 
     γdt = γ * dt
     if isdae
-        @.. broadcast = false ustep = uprev + z
+        compute_dae_ustep!(ustep, uprev, z, nlsolver.method)
         @.. broadcast = false ztmp = (tmp + α * z) * inv(γdt)
         f(k, ztmp, ustep, p, tstep)
         @.. broadcast = false dz = k

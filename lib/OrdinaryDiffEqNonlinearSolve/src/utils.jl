@@ -151,7 +151,10 @@ mutable struct DAEResidualJacobianWrapper{
     tmp::tmpType
     uprev::uprevType
     t::tType
-    function DAEResidualJacobianWrapper(alg, f::F, p, α, invγdt, tmp, uprev, t) where {F}
+    method::MethodType
+    function DAEResidualJacobianWrapper(
+            alg, f::F, p, α, invγdt, tmp, uprev, t, method = DIRK
+        ) where {F}
         ad = ADTypes.dense_ad(alg_autodiff(alg))
         isautodiff = ad isa AutoForwardDiff
         if isautodiff
@@ -166,7 +169,7 @@ mutable struct DAEResidualJacobianWrapper{
             typeof(invγdt), typeof(tmp), typeof(uprev), typeof(t),
         }(
             f, p, tmp_du, tmp_u, α,
-            invγdt, tmp, uprev, t
+            invγdt, tmp, uprev, t, method
         )
     end
 end
@@ -189,7 +192,11 @@ function (m::DAEResidualJacobianWrapper)(out, x)
         tmp_u = m.tmp_u
     end
     @. tmp_du = (m.α * x + m.tmp) * m.invγdt
-    @. tmp_u = x + m.uprev
+    if m.method === COEFFICIENT_MULTISTEP
+        @. tmp_u = x
+    else
+        @. tmp_u = x + m.uprev
+    end
     return m.f(out, tmp_du, tmp_u, m.p, m.t)
 end
 
@@ -204,11 +211,12 @@ mutable struct DAEResidualDerivativeWrapper{
     tmp::tmpType
     uprev::uprevType
     t::tType
+    method::MethodType
 end
 
 function (m::DAEResidualDerivativeWrapper)(x)
     tmp_du = (m.α * x + m.tmp) * m.invγdt
-    tmp_u = x + m.uprev
+    tmp_u = m.method === COEFFICIENT_MULTISTEP ? x : x + m.uprev
     return m.f(tmp_du, tmp_u, m.p, m.t)
 end
 
@@ -1011,7 +1019,7 @@ function build_nlsolver(
     elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae
-            uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t)
+            uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t, DIRK)
         else
             uf = build_uf(alg, nf, t, p, Val(false))
         end
