@@ -47,6 +47,23 @@ import DiffEqBase
             ReturnCode.Success
     end
 
+    # Without an embedded coupling the estimate fell back to `u - z[s]`, which for this
+    # tableau is the last stage's slow correction: O(dt^2) for an order-3 method, so the
+    # controller was two orders too pessimistic and overshot the requested accuracy by
+    # three. This solve used to take 15892 steps and land at 8.9e-11 for a 1e-8 request.
+    @testset "Embedded estimate tracks the tolerance" begin
+        w, e = 50.0, 0.1
+        f1!(du, u, p, t) = (du[1] = -w * u[2]; du[2] = w * u[1]; nothing)
+        f2!(du, u, p, t) = (du .= -e .* u; nothing)
+        prob = SplitODEProblem(f1!, f2!, [1.0, 0.0], (0.0, 1.0))
+        exact = exp(-e) * [cos(w), sin(w)]
+
+        sol = solve(prob, MRIGARKESDIRK34a(m = 8); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.naccept < 4000
+        @test norm(sol.u[end] - exact) / norm(exact) < 1.0e-6
+    end
+
     @testset "Convergence" begin
         analytic(u0, p, t) = u0 * exp(-3t)
         prob = SplitODEProblem(

@@ -22,7 +22,16 @@ function MRIGARKESDIRK34aTableau(::Type{T}) where {T}
     W0[6, 1] = -β
     W1 = zeros(T, 6, 6)
     γ0 = T[0, β, 0, β, 0, β]
-    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], γ0, 3)
+    # Order-2 embedding. With f1 = 0 the method collapses to an implicit RK on the slow
+    # term whose weights are the running sums of W0 plus γ0 on the diagonal; that b
+    # satisfies the order conditions through b·c² = 1/3 and misses b·c³, i.e. order 3
+    # exactly. The last stage has Δc = 0, so the embedded substage is a pure slow
+    # quadrature and the embedded weights are b₅ + Wemb0, where b₅ is everything before
+    # the last stage. Putting the correction on fS₁ and fS₄ (c = 0 and c = 2/3) and
+    # solving the two order conditions gives ∓3β/2; the obvious support on c = 0 and
+    # c = 1 is degenerate, reproducing the real last stage so the difference vanishes.
+    Wemb0 = T[-3 * β / 2, 0, 0, 3 * β / 2, 0, 0]
+    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, T[], γ0, 3)
 end
 
 # Stage 11 carries an all-zero coupling row: the method is stiffly accurate, so the
