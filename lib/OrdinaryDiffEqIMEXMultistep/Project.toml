@@ -33,7 +33,7 @@ OrdinaryDiffEqCore = "4"
 julia = "1.10"
 ADTypes = "1.22.0"
 OrdinaryDiffEqNonlinearSolve = "2"
-DiffEqBase = "7"
+DiffEqBase = "7.5.7"
 SafeTestsets = "0.1.0"
 
 [targets]
