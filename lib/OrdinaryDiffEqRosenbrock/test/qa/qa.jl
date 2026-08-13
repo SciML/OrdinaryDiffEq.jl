@@ -11,11 +11,9 @@ using SciMLTesting, OrdinaryDiffEqRosenbrock, Test
 # Explicitly-imported names that are non-public in (and/or owned outside) the
 # module they are imported from.
 const ROSENBROCK_INTERNAL_EXPLICIT_IMPORTS = (
-    Symbol("@def"),                          # owner SciMLBase (MacroTools codegen macro), non-public
-    :_reshape, :_unwrap_val, :_vec,          # owner SciMLBase, non-public internals
+    :_unwrap_val, :_vec,                     # owner SciMLBase, non-public internals
     :calculate_residuals, :calculate_residuals!, :initialize!,  # owner DiffEqBase, non-public
     :copyat_or_push!,                        # owner RecursiveArrayTools, non-public
-    :WOperator,                              # owner SciMLOperators, non-public
     :trivial_limiter!,                       # OrdinaryDiffEqCore owner-internal, non-public
 )
 
@@ -23,7 +21,7 @@ const ROSENBROCK_INTERNAL_EXPLICIT_IMPORTS = (
 # module they are accessed through.
 const ROSENBROCK_INTERNAL_QUALIFIED_ACCESSES = (
     Symbol("@set"),        # owner Accessors, accessed via SciMLBase.@set, non-public
-    :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,  # OrdinaryDiffEqCore precompile-workload helpers, non-public
+    :Cartesian,            # Base's bounded unroll macro is required by the fused kernels.
     :setindex,             # Base internal, non-public
 )
 
@@ -33,6 +31,9 @@ run_qa(
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
+        # `@reexport using SciMLBase` makes this explicitly imported public macro
+        # appear implicit to ExplicitImports.
+        no_implicit_imports = (; ignore = (Symbol("@def"),)),
         all_explicit_imports_via_owners = (; ignore = ROSENBROCK_INTERNAL_EXPLICIT_IMPORTS),
         all_explicit_imports_are_public = (; ignore = ROSENBROCK_INTERNAL_EXPLICIT_IMPORTS),
         all_qualified_accesses_via_owners = (; ignore = ROSENBROCK_INTERNAL_QUALIFIED_ACCESSES),

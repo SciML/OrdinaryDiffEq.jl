@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     alg_cache, initialize!,
     calculate_residuals!, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
-    _vec, _reshape, perform_step!, trivial_limiter!,
+    _vec, perform_step!, trivial_limiter!,
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
     OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring,
     initialize!, perform_step!, get_fsalfirstlast,
@@ -23,21 +23,20 @@ using ArrayInterface: ArrayInterface
 # Map flat linear-solve results onto the state container (ArrayPartition-safe).
 @inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
 @inline _restructure_state(template::Number, x) = oftype(template, x)
-using DiffEqBase: @def
 import DifferentiationInterface as DI
 import LinearSolve
 import ForwardDiff
 using FiniteDiff: FiniteDiff
 using LinearAlgebra: mul!, I, norm, lu, UniformScaling
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
-using SciMLBase: LinearAliasSpecifier
+using SciMLBase: @def, LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
 using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
     calc_rosenbrock_differentiation!, build_J_W,
-    dolinsolve, WOperator
+    dolinsolve
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 
@@ -147,8 +146,28 @@ include("integrator_interface.jl")
 import PrecompileTools
 import Preferences
 PrecompileTools.@compile_workload begin
-    lorenz = OrdinaryDiffEqCore.lorenz
-    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    function lorenz(du, u, p, t)
+        du[1] = 10.0(u[2] - u[1])
+        du[2] = u[1] * (28.0 - u[3]) - u[2]
+        return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    end
+    lorenz_oop(u, p, t) = [
+        10.0(u[2] - u[1]),
+        u[1] * (28.0 - u[3]) - u[2],
+        u[1] * u[2] - (8 / 3) * u[3],
+    ]
+    function lorenz_p(du, u, p, t)
+        du[1] = p.σ * (u[2] - u[1])
+        du[2] = u[1] * (p.ρ - u[3]) - u[2]
+        return du[3] = u[1] * u[2] - p.β * u[3]
+    end
+    lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
+    function lorenz_pref(du, u, p, t)
+        du[1] = p[1] * (u[2] - u[1])
+        du[2] = u[1] * (p[2] - u[3]) - u[2]
+        return du[3] = u[1] * u[2] - p[3] * u[3]
+    end
+    lorenz_pref_params = [10.0, 28.0, 8 / 3]
     solver_list = [Rosenbrock23(), Rodas5P()]
     prob_list = []
 
@@ -178,8 +197,8 @@ PrecompileTools.@compile_workload begin
         push!(
             prob_list,
             ODEProblem{true, SciMLBase.AutoDespecialize}(
-                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+                lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_p_params
             )
         )
     end
@@ -188,15 +207,15 @@ PrecompileTools.@compile_workload begin
         push!(
             prob_list,
             ODEProblem{true, SciMLBase.AutoDePSpecialize}(
-                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+                lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_p_params
             )
         )
         push!(
             prob_list,
             ODEProblem{true, SciMLBase.AutoDePSpecialize}(
-                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+                lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_pref_params
             )
         )
     end
