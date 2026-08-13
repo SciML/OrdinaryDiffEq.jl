@@ -22,7 +22,8 @@ const dae_bdf_algs = (DImplicitEuler(), DABDF2(), DFBDF(), DNordsieckBDF())
                 step!(integrator)
                 nlsolver = integrator.cache.nlsolver
                 @test nlsolver.method === OrdinaryDiffEqCore.COEFFICIENT_MULTISTEP
-                @test nlsolver.z ≈ integrator.u
+                @test nlsolver.cache.W_γdt ≈
+                    nlsolver.α / (nlsolver.γ * integrator.dt)
             end
         end
     end

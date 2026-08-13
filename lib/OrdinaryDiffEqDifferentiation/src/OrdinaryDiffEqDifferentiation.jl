@@ -39,7 +39,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     set_new_W!, set_W_γdt!, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
     get_new_W_γdt_cutoff, isWmethod,
-    TryAgain, COEFFICIENT_MULTISTEP,
+    TryAgain,
     Divergence, constvalue, @SciMLMessage
 
 import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff, get_fresh_jacobian

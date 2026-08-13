@@ -544,7 +544,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     if f isa DAEFunction
         _uprev = get_dae_uprev(integrator, uprev)
-        ztmp, ustep = _compute_rhs(tmp, α, tstep, invγdt, p, _uprev, f, z, method)
+        ztmp, ustep = _compute_rhs(tmp, α, tstep, invγdt, p, _uprev, f, z)
     else
         ztmp, ustep = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, dt, f, z)
     end
@@ -599,9 +599,7 @@ end
 
     if isdae
         _uprev = get_dae_uprev(integrator, uprev)
-        b, ustep = _compute_rhs!(
-            tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f, z, method
-        )
+        b, ustep = _compute_rhs!(tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f, z)
     else
         b, ustep = _compute_rhs!(
             tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f, z
@@ -679,27 +677,8 @@ function get_dae_uprev(integrator, uprev)
     end
 end
 
-function compute_dae_ustep(uprev, z, method)
-    return if method === COEFFICIENT_MULTISTEP
-        z
-    else
-        @. uprev + z
-    end
-end
-
-function compute_dae_ustep!(ustep, uprev, z, method)
-    if method === COEFFICIENT_MULTISTEP
-        @.. ustep = z
-    else
-        @.. ustep = uprev + z
-    end
-    return ustep
-end
-
-function _compute_rhs(
-        tmp, α, tstep, invγdt, p, uprev, f::TF, z, method = DIRK
-    ) where {TF <: DAEFunction}
-    ustep = compute_dae_ustep(uprev, z, method)
+function _compute_rhs(tmp, α, tstep, invγdt, p, uprev, f::TF, z) where {TF <: DAEFunction}
+    ustep = @.. uprev + z
     dustep = @. (tmp + α * z) * invγdt
     ztmp = f(dustep, ustep, p, tstep)
     return ztmp, ustep
@@ -746,10 +725,10 @@ end
 
 function _compute_rhs!(
         tmp, ztmp, ustep, α, tstep, k,
-        invγdt, p, uprev, f::TF, z, method = DIRK
+        invγdt, p, uprev, f::TF, z
     ) where {TF <: DAEFunction}
     @.. broadcast = false ztmp = (tmp + α * z) * invγdt
-    ustep = compute_dae_ustep!(ustep, uprev, z, method)
+    @.. ustep = uprev + z
     f(k, ztmp, ustep, p, tstep)
     return _vec(k), ustep
 end
@@ -784,19 +763,13 @@ end
 
 function _compute_rhs!(
         tmp::Array, ztmp::Array, ustep::Array, α, tstep, k,
-        invγdt, p, uprev, f::TF, z, method = DIRK
+        invγdt, p, uprev, f::TF, z
     ) where {TF <: DAEFunction}
     @inbounds @simd ivdep for i in eachindex(z)
         ztmp[i] = (tmp[i] + α * z[i]) * invγdt
     end
-    if method === COEFFICIENT_MULTISTEP
-        @inbounds @simd ivdep for i in eachindex(z)
-            ustep[i] = z[i]
-        end
-    else
-        @inbounds @simd ivdep for i in eachindex(z)
-            ustep[i] = uprev[i] + z[i]
-        end
+    @inbounds @simd ivdep for i in eachindex(z)
+        ustep[i] = uprev[i] + z[i]
     end
     f(k, ztmp, ustep, p, tstep)
 
@@ -882,7 +855,7 @@ function relax!(
             if isdae
                 _uprev = get_dae_uprev(integrator, uprev)
                 b, ustep2 = _compute_rhs!(
-                    tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f::TF, z, method
+                    tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f::TF, z
                 )
             else
                 b, ustep2 = _compute_rhs!(
@@ -948,13 +921,13 @@ function relax(
             linesearch = linesearch
 
         (; uprev, t, p, dt, opts) = integrator
-        (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
+        (; z, tmp, ztmp, γ, iter, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt) = cache
         function resid(z)
             # recompute residual (rhs)
             if f isa DAEFunction
                 _uprev = get_dae_uprev(integrator, uprev)
-                ztmp, ustep2 = _compute_rhs(tmp, α, tstep, invγdt, p, _uprev, f, z, method)
+                ztmp, ustep2 = _compute_rhs(tmp, α, tstep, invγdt, p, dt, _uprev, f, z)
             else
                 ztmp, ustep2 = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, f, z)
             end
