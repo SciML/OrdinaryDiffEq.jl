@@ -17,6 +17,25 @@ struct DynamicSDEParameters
     sigma::Float64
 end
 
+struct DynamicDAEResidual{ID} end
+struct DynamicInitializationResidual{ID} end
+
+function (::DynamicDAEResidual)(resid, du, u, p, t)
+    seen_dae_parameter[] = typeof(p)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
+end
+
+function (::DynamicInitializationResidual)(resid, u, p)
+    resid[1] = u[1]
+    return nothing
+end
+
+function dynamic_initialization_data(::Val{ID}, p) where {ID}
+    initprob = NonlinearProblem{true}(DynamicInitializationResidual{ID}(), [0.0], p)
+    return SciMLBase.OverrideInitData(initprob, nothing, nothing, nothing)
+end
+
 const seen_rhs_parameter = Ref{DataType}()
 const seen_jac_parameter = Ref{DataType}()
 const seen_tgrad_parameter = Ref{DataType}()
@@ -140,15 +159,27 @@ end
 @testset "other differential equation functions use the dynamic path" begin
     p = DynamicP(0.5)
 
-    function dae_rhs!(resid, du, u, p, t)
-        seen_dae_parameter[] = typeof(p)
-        resid[1] = du[1] + p.rate * u[1]
-        return nothing
-    end
-    dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(dae_rhs!)
+    dae_initdata = dynamic_initialization_data(Val(1), p)
+    dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(
+        DynamicDAEResidual{1}(); initialization_data = dae_initdata
+    )
     dae_prob = DAEProblem(dae_f, [0.0], [1.0], (0.0, 1.0), p)
     dae_concrete = concretize(dae_prob)
+    other_p = OtherDynamicP(1.5, 1)
+    other_dae_initdata = dynamic_initialization_data(Val(2), other_p)
+    other_dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(
+        DynamicDAEResidual{2}(); initialization_data = other_dae_initdata
+    )
+    other_dae_prob = DAEProblem(
+        other_dae_f, [0.0], [1.0], (0.0, 1.0), other_p
+    )
+    other_dae_concrete = concretize(other_dae_prob)
     @test dae_concrete.p isa SciMLBase.DespecializedParameters
+    @test typeof(dae_concrete.f) === typeof(other_dae_concrete.f)
+    @test typeof(dae_concrete) === typeof(other_dae_concrete)
+    @test dae_concrete.f.initialization_data === dae_initdata
+    @test other_dae_concrete.f.initialization_data === other_dae_initdata
+    @test SciMLBase.unwrapped_f(dae_concrete.f.f) isa DynamicDAEResidual{1}
     resid = zeros(1)
     dae_concrete.f(resid, [0.0], [1.0], dae_concrete.p, 0.0)
     @test resid == [0.5]
