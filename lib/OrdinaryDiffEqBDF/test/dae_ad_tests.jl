@@ -18,7 +18,7 @@ function despecialized_dae_problem(model, p)
     return DAEProblem(f, [-p.rate], [1.0], (0.0, 0.1), p)
 end
 
-@testset "AutoDespecialize reuses DFBDF caches" begin
+@testset "AutoDespecialize reuses DAE solver caches" begin
     problems = (
         despecialized_dae_problem(
             DespecializedDAEResidual{1}(), (rate = 0.5,)
@@ -28,16 +28,18 @@ end
         ),
     )
 
-    for autodiff in (AutoForwardDiff(), AutoFiniteDiff())
-        alg = DFBDF(; autodiff)
-        integrators = map(prob -> init(prob, alg), problems)
-        @test typeof(integrators[1].sol.prob) === typeof(integrators[2].sol.prob)
-        @test typeof(integrators[1].cache) === typeof(integrators[2].cache)
+    for Alg in (DFBDF, DNordsieckBDF)
+        for autodiff in (AutoForwardDiff(), AutoFiniteDiff())
+            alg = Alg(; autodiff)
+            integrators = map(prob -> init(prob, alg), problems)
+            @test typeof(integrators[1].sol.prob) === typeof(integrators[2].sol.prob)
+            @test typeof(integrators[1].cache) === typeof(integrators[2].cache)
 
-        for prob in problems
-            sol = solve(prob, alg)
-            @test successful_retcode(sol)
-            @test sol.u[end][1] ≈ exp(-0.05) rtol = 1.0e-3
+            for prob in problems
+                sol = solve(prob, alg)
+                @test successful_retcode(sol)
+                @test sol.u[end][1] ≈ exp(-0.05) rtol = 1.0e-3
+            end
         end
     end
 end

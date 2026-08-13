@@ -153,6 +153,7 @@ PrecompileTools.@compile_workload begin
             dae_f, [-0.5], [1.0], (0.0, 0.1), (rate = 0.5,)
         )
         solve(dae_prob, DFBDF())
+        solve(dae_prob, DNordsieckBDF())
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
