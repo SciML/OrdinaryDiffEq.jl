@@ -267,3 +267,36 @@ end
     sim_iip = test_convergence(dts, prob_iip, Kvaerno4())
     @test sim_iip.𝒪est[:l∞] ≈ 4 atol = testTol
 end
+
+# An explicit first stage needs `dt * (M \\ f)`, and only the first step of a solve reads a
+# raw `f` out of `fsalfirst` (every later step gets a rate through FSAL). One bad step is
+# enough to drag the whole family down to order 1, so this checks the order under a
+# non-identity mass matrix against the same method under `M = I` (#4173).
+@testset "Mass matrix does not degrade ESDIRK order" begin
+    using LinearAlgebra: SymTridiagonal, norm, I
+
+    n = 8
+    K = SymTridiagonal(fill(-2.0, n), fill(1.0, n - 1)) * (n + 1)^2
+    Mfem = SymTridiagonal(fill(2 / 3, n), fill(1 / 6, n - 1))
+    u0 = [sinpi(i / (n + 1)) for i in 1:n]
+    tspan = (0.0, 0.05)
+
+    function observed_order(alg, M)
+        prob = ODEProblem(ODEFunction((u, p, t) -> K * u; mass_matrix = M), u0, tspan)
+        ref = exp(Matrix(M \ Matrix(K)) * tspan[2]) * u0
+        dts = [1 / 2^k for k in 6:9]
+        errs = [
+            norm(solve(prob, alg; dt = dt, adaptive = false).u[end] - ref) / norm(ref)
+                for dt in dts
+        ]
+        return log2(errs[end - 1] / errs[end])
+    end
+
+    for (alg, nominal) in (
+            (TRBDF2(), 2), (Kvaerno3(), 3), (KenCarp3(), 3), (KenCarp4(), 4),
+        )
+        @test observed_order(alg, Mfem) ≈ nominal atol = 0.35
+        # the identity-mass case was never broken; it pins the comparison
+        @test observed_order(alg, I(n) * 1.0) ≈ nominal atol = 0.35
+    end
+end
