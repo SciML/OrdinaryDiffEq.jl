@@ -1,71 +1,10 @@
-# The `DEIntegrator` implementations of `check_error`/`check_error!`. SciMLBase owns the
-# generic functions so that packages depending on it alone can still reference and extend
-# them, but the checks and the `DEVerbosity`-gated diagnostics are differential-equation
-# specific, so they live here.
-
-function SciMLBase.check_error(integrator::DEIntegrator)
-    if integrator.sol.retcode ∉ (ReturnCode.Success, ReturnCode.Default)
-        return integrator.sol.retcode
-    end
-    opts = integrator.opts
-    # This implementation is intended to be used for ODEIntegrator and
-    # SDEIntegrator.
-
-    if isnan(integrator.dt)
-        report_integrator_failure(integrator, Val(:dt_NaN))
-        return ReturnCode.DtNaN
-    end
-    if integrator.iter > opts.maxiters
-        report_integrator_failure(integrator, Val(:max_iters))
-        return ReturnCode.MaxIters
-    end
-
-    # The last part:
-    # Bail out if we take a step with dt less than the minimum value (which may be time dependent)
-    # except if we are successfully taking such a small timestep is to hit a tstop exactly
-    # We also exit if the ODE is unstable according to a user chosen callback
-    # but only if we accepted the step to prevent from bailing out as unstable
-    # when we just took way too big a step)
-    step_accepted = !hasproperty(integrator, :accept_step) || integrator.accept_step
-    if !opts.force_dtmin && opts.adaptive
-        if abs(integrator.dt) <= abs(opts.dtmin) &&
-                (
-                !step_accepted || (
-                    hasproperty(opts, :tstops) ?
-                        integrator.t + integrator.dt < integrator.tdir * first(opts.tstops) :
-                        true
-                )
-            )
-            report_integrator_failure(integrator, Val(:dt_min_unstable))
-            return ReturnCode.DtLessThanMin
-        elseif !step_accepted && integrator.t isa AbstractFloat && abs(integrator.dt) <= abs(eps(integrator.t))
-            report_integrator_failure(integrator, Val(:dt_epsilon))
-            return ReturnCode.Unstable
-        end
-    end
-    if step_accepted &&
-            opts.unstable_check(integrator.dt, integrator.u, integrator.p, integrator.t)
-        report_integrator_failure(integrator, Val(:instability))
-        return ReturnCode.Unstable
-    end
-    if last_step_failed(integrator)
-        report_integrator_failure(integrator, Val(:newton_convergence))
-        return ReturnCode.ConvergenceFailure
-    end
-    return ReturnCode.Success
-end
-
-function SciMLBase.check_error!(integrator::DEIntegrator)
-    code = SciMLBase.check_error(integrator)
-    integrator.sol = solution_new_retcode(integrator.sol, code)
-    if code != ReturnCode.Success
-        postamble!(integrator)
-    end
-    return code
-end
+# `check_error`/`check_error!` themselves stay in SciMLBase so that a DiffEqBase older than
+# this one still has working implementations. Only the wording of the diagnostics and the
+# `DEVerbosity` toggles that gate them are differential-equation specific, so those live
+# here, as methods of the `report_integrator_failure` hook SciMLBase calls.
 
 """
-    report_integrator_failure(integrator, ::Val{reason})
+    SciMLBase.report_integrator_failure(integrator::DEIntegrator, ::Val{reason})
 
 Emit the diagnostic for a failure mode detected by `SciMLBase.check_error`, gated by
 the `DEVerbosity` toggle named `reason`. `reason` is one of `:dt_NaN`, `:max_iters`,
@@ -78,7 +17,7 @@ their return value is ignored.
 `reason` is a static parameter rather than a runtime `Symbol` so the toggle lookup
 constant-folds and `check_error` stays allocation-free when nothing is emitted.
 """
-@inline function report_integrator_failure(integ::DEIntegrator, ::Val{reason}) where {reason}
+@inline function SciMLBase.report_integrator_failure(integ::DEIntegrator, ::Val{reason}) where {reason}
     @SciMLMessage(
         lazy"$(failure_message(integ, Val(reason)))$(instability_diagnostic(integ))",
         integ.opts.verbose, reason

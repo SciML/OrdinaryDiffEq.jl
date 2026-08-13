@@ -221,9 +221,7 @@ export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
             :default_factorize, :stripunits, Symbol("@tight_loop_macros"),
             # Solver-author wrapper/tag types and convergence-testing entry type
-            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup,
-            # check_error diagnostic hook solvers may specialize per failure mode
-            :report_integrator_failure
+            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
         )
     )
 end
