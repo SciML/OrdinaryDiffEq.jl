@@ -1,6 +1,7 @@
 using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, ADTypes
 using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
+import SciMLBase
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -191,11 +192,17 @@ function dae_rober!(out, du, u, p, t)
 end
 u0_dae = [1.0, 0.0, 0.0]
 du0_dae = [-0.04, 0.04, 0.0]
+dae_rober_despecialized = DAEFunction{true, SciMLBase.AutoDespecialize}(dae_rober!)
 prob_dae = DAEProblem(
-    dae_rober!, du0_dae, u0_dae, (0.0, 1.0e3); differential_vars = [true, true, false]
+    dae_rober_despecialized, du0_dae, u0_dae, (0.0, 1.0e3), (unused = 1,);
+    differential_vars = [true, true, false]
 )
 sol_dae_default = solve(prob_dae)
 sol_dae_dfbdf = solve(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
+init_dae_default = init(prob_dae)
+init_dae_dfbdf = init(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
 @test sol_dae_default.retcode == ReturnCode.Success
 @test sol_dae_default.t == sol_dae_dfbdf.t
 @test sol_dae_default.u == sol_dae_dfbdf.u
+@test typeof(init_dae_default.sol.prob) === typeof(init_dae_dfbdf.sol.prob)
+@test typeof(init_dae_default.cache) === typeof(init_dae_dfbdf.cache)

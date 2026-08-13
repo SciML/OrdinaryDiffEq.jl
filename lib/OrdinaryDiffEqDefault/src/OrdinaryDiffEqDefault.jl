@@ -9,6 +9,7 @@ using OrdinaryDiffEqBDF: FBDF, DFBDF
 
 import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
 import ADTypes: AutoFiniteDiff
+import DiffEqBase
 import LinearSolve
 using LinearAlgebra: I
 using EnumX: EnumX
