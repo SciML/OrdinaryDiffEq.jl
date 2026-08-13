@@ -1,3 +1,21 @@
+"""
+    _explicit_stage1_rate(mass_matrix, fsalfirst, isdae, linsolve)
+
+The stage derivative an explicit first stage needs for `zs[1] = dt * rate`. Under a mass
+matrix that is `M \\ f`, while `fsalfirst` holds the residual `f` on a step whose FSAL
+value does not already carry a rate, so the solve is done here through `LinearSolve` with
+the algorithm's own `linsolve`.
+
+A singular `M` (`isdae`) has no unique derivative to recover and keeps the residual.
+`UniformScaling` and the SciMLOperators mass matrices keep it too, so that
+`ScalarOperator(λ)` and `λ * I` agree on the same problem.
+"""
+_explicit_stage1_rate(mass_matrix, fsalfirst, isdae, linsolve) = fsalfirst
+function _explicit_stage1_rate(mass_matrix::AbstractMatrix, fsalfirst, isdae, linsolve)
+    isdae && return fsalfirst
+    return solve(LinearProblem(mass_matrix, fsalfirst), linsolve).u
+end
+
 function initialize!(integrator, cache::ESDIRKIMEXConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -87,13 +105,20 @@ end
     markfirststage!(nlsolver)
 
     # ---------------- Stage 1 ----------------
+    fsal_carries_rate = integrator.success_iter > 0 && !integrator.reeval_fsal &&
+        !tab.explicit_fsallast
     if tab.explicit_first_stage
         if is_imex && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
             f_impl(zs[1], integrator.uprev, p, integrator.t)
             zs[1] .*= dt
-        else
+        elseif fsal_carries_rate
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
+        else
+            rate1 = _explicit_stage1_rate(
+                integrator.f.mass_matrix, integrator.fsalfirst, integrator.isdae, alg.linsolve
+            )
+            @.. broadcast = false zs[1] = dt * rate1
         end
         if is_imex
             @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
@@ -1387,12 +1412,18 @@ end
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
+    fsal_carries_rate = integrator.success_iter > 0 && !integrator.reeval_fsal &&
+        !tab.explicit_fsallast
     if tab.explicit_first_stage
         if is_imex
             z1 = dt * f_impl(uprev, p, t)
             k1 = dt * integrator.fsalfirst - z1
-        else
+        elseif fsal_carries_rate
             z1 = dt * integrator.fsalfirst
+        else
+            z1 = dt * _explicit_stage1_rate(
+                integrator.f.mass_matrix, integrator.fsalfirst, integrator.isdae, alg.linsolve
+            )
         end
     else
         # See the matching branch in `_perform_step_iip!` above. `u` is immutable

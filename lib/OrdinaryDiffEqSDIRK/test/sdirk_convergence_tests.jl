@@ -282,3 +282,34 @@ end
         @test solve(prob, alg; dt = 0.1).retcode == ReturnCode.Success
     end
 end
+
+@testset "Mass matrix does not degrade ESDIRK order" begin
+    using LinearAlgebra: SymTridiagonal, norm, I, mul!
+
+    n = 8
+    K = SymTridiagonal(fill(-2.0, n), fill(1.0, n - 1)) * (n + 1)^2
+    Mfem = SymTridiagonal(fill(2 / 3, n), fill(1 / 6, n - 1))
+    u0 = [sinpi(i / (n + 1)) for i in 1:n]
+    tspan = (0.0, 0.05)
+
+    function observed_order(alg, M, iip)
+        f = iip ? (du, u, p, t) -> mul!(du, K, u) : (u, p, t) -> K * u
+        prob = ODEProblem{iip}(ODEFunction{iip}(f; mass_matrix = M), u0, tspan)
+        ref = exp(Matrix(M \ Matrix(K)) * tspan[2]) * u0
+        dts = [1 / 2^k for k in 6:9]
+        errs = [
+            norm(solve(prob, alg; dt = dt, adaptive = false).u[end] - ref) / norm(ref)
+                for dt in dts
+        ]
+        return log2(errs[end - 1] / errs[end])
+    end
+
+    for (alg, nominal) in (
+                (TRBDF2(), 2), (Kvaerno3(), 3), (KenCarp3(), 3), (KenCarp4(), 4),
+            ),
+            iip in (false, true)
+
+        @test observed_order(alg, Mfem, iip) ≈ nominal atol = 0.35
+        @test observed_order(alg, I(n) * 1.0, iip) ≈ nominal atol = 0.35
+    end
+end
