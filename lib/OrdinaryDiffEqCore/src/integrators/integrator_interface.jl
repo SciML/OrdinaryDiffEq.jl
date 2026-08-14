@@ -642,9 +642,13 @@ Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
 `integrator` (state, tolerances, norm, problem).
 """
 function _determine_initdt(integrator)
+    tdir = integrator.tdir
+    dtmax = tdir * min(
+        abs(integrator.opts.dtmax), abs(first_tstop(integrator) - tdir * integrator.t)
+    )
     return ode_determine_initdt(
         integrator.u, integrator.t,
-        integrator.tdir, integrator.opts.dtmax,
+        tdir, dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator
