@@ -1,5 +1,4 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5,
-    OrdinaryDiffEqVerner, Test
+using OrdinaryDiffEq, Test
 
 for (name, alg) in (
         "Rodas5P" => Rodas5P(),

@@ -23,7 +23,6 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "DAE Rosenbrock AD Tests" include("dae_rosenbrock_ad_tests.jl")
     @time @safetestset "Rosenbrock AD Tests" include("rosenbrock_ad_tests.jl")
-    @time @safetestset "Initial Interpolation Tests" include("initial_interpolation_tests.jl")
     @time @safetestset "Rosenbrock Convergence Tests" include("ode_rosenbrock_tests.jl")
 end
 
