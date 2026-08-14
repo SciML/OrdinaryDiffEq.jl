@@ -18,7 +18,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 SciMLTesting = "2.8"
 ADTypes = "1.22.0"
-DiffEqDevTools = "3"
+DiffEqDevTools = "4"
 Enzyme = "0.13.180"
 LinearAlgebra = "1.10"
 LinearSolve = "5.1"
