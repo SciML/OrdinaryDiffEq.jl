@@ -40,7 +40,7 @@ using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    MessageLevel, @verbosity_specifier, verbosity_to_bool
+    MessageLevel, @verbosity_specifier, verbosity_to_bool, @SciMLMessage
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 using SciMLOperators: isconstant, islinear
@@ -158,6 +158,7 @@ include("internal_euler.jl")
 include("norecompile.jl")
 include("integrator_accessors.jl")
 include("verbosity.jl")
+include("check_error.jl")
 
 # This is only used for oop stiff solvers
 """

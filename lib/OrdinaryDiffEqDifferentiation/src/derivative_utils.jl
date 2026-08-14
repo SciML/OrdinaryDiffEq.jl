@@ -355,9 +355,16 @@ function calc_J(integrator, cache, next_step::Bool = false)
 end
 
 function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
-    njacs = integrator.stats.njacs
-    J = calc_J(integrator, cache)
-    integrator.stats.njacs = njacs
+    (; stats) = integrator
+    njacs, nf = stats.njacs, stats.nf
+    J = if SciMLBase.isinplace(integrator.sol.prob)
+        Jfresh = zero(cache.J)
+        calc_J!(Jfresh, integrator, cache)
+        Jfresh
+    else
+        calc_J(integrator, cache)
+    end
+    stats.njacs, stats.nf = njacs, nf #fix stats after call
     return J
 end
 
