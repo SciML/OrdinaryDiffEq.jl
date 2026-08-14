@@ -3,26 +3,30 @@
 # `DEVerbosity` toggles that gate them are differential-equation specific, so those live
 # here, as methods of the `report_integrator_failure` hook SciMLBase calls.
 
-"""
-    SciMLBase.report_integrator_failure(integrator::DEIntegrator, ::Val{reason})
+if isdefined(SciMLBase, :report_integrator_failure)
+    """
+        SciMLBase.report_integrator_failure(integrator::DEIntegrator, ::Val{reason})
 
-Emit the diagnostic for a failure mode detected by `SciMLBase.check_error`, gated by
-the `DEVerbosity` toggle named `reason`. `reason` is one of `:dt_NaN`, `:max_iters`,
-`:dt_min_unstable`, `:dt_epsilon`, `:instability` or `:newton_convergence`.
+    Emit the diagnostic for a failure mode detected by `SciMLBase.check_error`, gated by
+    the `DEVerbosity` toggle named `reason`. `reason` is one of `:dt_NaN`, `:max_iters`,
+    `:dt_min_unstable`, `:dt_epsilon`, `:instability` or `:newton_convergence`.
 
-Dispatch is on the integrator type as well, so a solver package can replace the wording
-for one failure and inherit the rest. Implementations must not affect control flow and
-their return value is ignored.
+    Dispatch is on the integrator type as well, so a solver package can replace the wording
+    for one failure and inherit the rest. Implementations must not affect control flow and
+    their return value is ignored.
 
-`reason` is a static parameter rather than a runtime `Symbol` so the toggle lookup
-constant-folds and `check_error` stays allocation-free when nothing is emitted.
-"""
-@inline function SciMLBase.report_integrator_failure(integ::DEIntegrator, ::Val{reason}) where {reason}
-    @SciMLMessage(
-        lazy"$(failure_message(integ, Val(reason)))$(instability_diagnostic(integ))",
-        integ.opts.verbose, reason
-    )
-    return nothing
+    `reason` is a static parameter rather than a runtime `Symbol` so the toggle lookup
+    constant-folds and `check_error` stays allocation-free when nothing is emitted.
+    """
+    @inline function SciMLBase.report_integrator_failure(
+            integ::DEIntegrator, ::Val{reason}
+        ) where {reason}
+        @SciMLMessage(
+            lazy"$(failure_message(integ, Val(reason)))$(instability_diagnostic(integ))",
+            integ.opts.verbose, reason
+        )
+        return nothing
+    end
 end
 
 # Trailing symbolic/numeric detail appended to every failure message. Getting here already
