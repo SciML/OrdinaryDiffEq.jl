@@ -124,6 +124,20 @@ end
     @test sol.u[end] ≈ [2.0]
 end
 
+@testset "discontinuity before tspan[1]" begin
+    history(p, t) = ones(1)
+    function f(du, u, h, p, t)
+        du[1] = -h(p, t - 10.0)[1]
+        return nothing
+    end
+    prob = DDEProblem(f, [1.0], history, (0.0, 50.0); constant_lags = (10.0,))
+
+    sol = solve(prob, MethodOfSteps(Tsit5()); d_discontinuities = [-3.0])
+
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == prob.tspan[2]
+end
+
 # discontinuities induced by callbacks
 @testset "#190" begin
     cb = ContinuousCallback((u, t, integrator) -> 1, integrator -> nothing)

@@ -1157,11 +1157,13 @@ Build the internal directional queue of derivative-discontinuity times.
 
 # Returns
 
-- `BinaryHeap{T}`: All requested discontinuities stored in integration direction.
+- `BinaryHeap{T}`: Requested discontinuities at or after the initial time in the
+  integration direction, stored directionally.
 
 # Rules
 
-- Unlike `initialize_tstops`, this helper does not filter times against `tspan`.
+- Entries before the initial time in the integration direction are discarded. Entries
+  at the initial time and beyond the final time are retained.
 - Solver authors use this queue only when their initialization path supports the
   `d_discontinuities` solve keyword.
 
@@ -1176,14 +1178,7 @@ discontinuities = initialize_d_discontinuities(Float64, (0.5,), (0.0, 1.0))
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where {T}
     d_discontinuities_internal = BinaryHeap{T}(FasterForward())
     sizehint!(d_discontinuities_internal, length(d_discontinuities))
-
-    t0, tf = tspan
-    tdir = sign(tf - t0)
-
-    for t in d_discontinuities
-        push!(d_discontinuities_internal, tdir * t)
-    end
-
+    reinit_d_discontinuities!(T, d_discontinuities_internal, d_discontinuities, tspan)
     return d_discontinuities_internal
 end
 
@@ -1192,9 +1187,11 @@ function reinit_d_discontinuities!(::Type{T}, d_discontinuities_internal, d_disc
 
     t0, tf = tspan
     tdir = sign(tf - t0)
+    tdir_t0 = tdir * t0
 
     for t in d_discontinuities
-        push!(d_discontinuities_internal, tdir * t)
+        tdir_t = tdir * t
+        tdir_t0 ≤ tdir_t && push!(d_discontinuities_internal, tdir_t)
     end
     return
 end
