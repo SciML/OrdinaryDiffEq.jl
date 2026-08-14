@@ -81,6 +81,11 @@ end
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractODEProblem, ::Nothing) = true
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractDAEProblem, ::Nothing) = true
 
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::ODEProblem) =
+    DefaultODEAlgorithm(autodiff = AutoFiniteDiff())
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::DAEProblem) =
+    DFBDF(autodiff = AutoFiniteDiff())
+
 function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     return SciMLBase.__init(
         prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()),

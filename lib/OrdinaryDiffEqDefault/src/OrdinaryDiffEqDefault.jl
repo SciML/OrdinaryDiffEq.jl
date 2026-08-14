@@ -9,12 +9,13 @@ using OrdinaryDiffEqBDF: FBDF, DFBDF
 
 import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
 import ADTypes: AutoFiniteDiff
+import DiffEqBase
 import LinearSolve
 using LinearAlgebra: I
 using EnumX: EnumX
 
 import SciMLBase
-using SciMLBase: ODEProblem, DAEProblem, solve
+using SciMLBase: ODEProblem, DAEProblem, DAEFunction, solve
 
 include("default_alg.jl")
 
@@ -39,6 +40,11 @@ function _lorenz_pref!(du, u, p, t)
 end
 
 const _lorenz_pref_params = [10.0, 28.0, 8 / 3]
+
+function _dae_p!(resid, du, u, p, t)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
+end
 
 import PrecompileTools
 import Preferences
@@ -95,6 +101,10 @@ PrecompileTools.@compile_workload begin
             (0.0, 1.0), _lorenz_p_params
         )
         push!(parameter_generic_prob_list, prob)
+
+        dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(_dae_p!)
+        dae_prob = DAEProblem(dae_f, [-0.5], [1.0], (0.0, 0.1), (rate = 0.5,))
+        solve(dae_prob)
     end
 
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
