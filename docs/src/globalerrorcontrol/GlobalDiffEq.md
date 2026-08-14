@@ -22,6 +22,11 @@ per step. Solving with them produces a solution whose states are
 `ArrayPartition`s (`sol.u[i].x[1]` the solution, `sol.u[i].x[2]` the global
 error estimate); [`global_error_estimate`](@ref) extracts the estimates.
 
+[`GlobalDefectCorrection`](@ref) wraps any adaptive solver with global error
+estimation and `gtol`-based control by solving for the correction of the dense
+numerical solution (a nonlinear companion ODE requiring no Jacobian);
+[`global_error_estimate`](@ref)`(prob, alg)` exposes the standalone estimator.
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -56,4 +61,5 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalDefectCorrection
 ```
