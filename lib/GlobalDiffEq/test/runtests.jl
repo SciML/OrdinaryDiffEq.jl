@@ -3,13 +3,16 @@ using Test
 using SciMLTesting
 
 run_tests(;
-    env = "GROUP",
+    env = "ODEDIFFEQ_TEST_GROUP",
     core = function ()
         @safetestset "Basic functionality" begin
             include("basic_functionality_tests.jl")
         end
         @safetestset "Algorithm traits forwarding" begin
             include("algorithm_traits_tests.jl")
+        end
+        @safetestset "GLEE solvers" begin
+            include("glee_tests.jl")
         end
         return @safetestset "BigFloat support" begin
             include("bigfloat_tests.jl")
