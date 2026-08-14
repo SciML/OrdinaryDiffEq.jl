@@ -15,6 +15,7 @@ using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: IController, PIController, PIDController
 using ADTypes
 import DifferentiationInterface as DI
+import ReverseDiff
 using Enzyme
 using Mooncake  # Load Mooncake after DI to ensure extension is loaded
 
@@ -97,6 +98,24 @@ function test_f2(
 end
 
 @test test_f2(p) == test_f(p)[end]
+
+@testset "Out-of-place Rosenbrock23 with ReverseDiffAdjoint" begin
+    t_save = 0.0:0.05:0.1
+    oop_prob = ODEProblem{false}(
+        (u, p, t) -> [u[2], -p[1]], [1.0, 0.0], (0.0, 0.1), [9.81, 1.0]
+    )
+    alg = Rosenbrock23(autodiff = AutoFiniteDiff())
+
+    function oop_loss(p)
+        sol = solve(
+            oop_prob; p, alg, saveat = t_save, sensealg = ReverseDiffAdjoint(),
+            abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        return sum(sol[1, :])
+    end
+
+    @test ReverseDiff.gradient(oop_loss, [9.81, 1.0]) ≈ [-0.00625, 0.0]
+end
 
 # Test gradients with all available reverse-mode backends
 @testset "Gradient tests with $backend" for backend in get_gradient_backends()
