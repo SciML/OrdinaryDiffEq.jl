@@ -25,6 +25,11 @@ estimated global error of `sol.u[i]` at `sol.t[i]`, and
 [`SciMLBase.has_global_error`](@ref) is `true` for these algorithms.
 [`global_error_estimate`](@ref) returns `sol.global_error`.
 
+[`GlobalErrorTransport`](@ref) wraps any adaptive solver with global error
+estimation and `gtol`-based control by integrating the linearized
+error-transport equation driven by the dense-output defect;
+[`global_error_estimate`](@ref)`(prob, alg)` exposes the standalone estimator.
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -59,4 +64,5 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalErrorTransport
 ```
