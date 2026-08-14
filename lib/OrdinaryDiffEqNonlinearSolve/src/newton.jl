@@ -438,6 +438,7 @@ end
         sync_inner_residual!(nlcache)
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+        set_inner_linear_reltol!(nlcache, integrator)
         step_inner!(nlcache, recompute_jacobian, defers_residual(nlcache))
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
@@ -502,6 +503,7 @@ end
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
         rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+        set_inner_linear_reltol!(nlcache, integrator)
         # The `nlstep_data` branch below reads the residual on every iteration, so deferring
         # there would only move the same evaluation a few lines later.
         step_inner!(

@@ -337,6 +337,28 @@ _inner_termination() = NonlinearSolveBase.AbsNormTerminationMode(Base.Fix1(maxim
 # a usable tolerance for the linear solve alone.
 _inner_lintol(::Type{T}) where {T} = eps(real(one(T)))^(4 // 5)
 
+"""
+    set_inner_linear_reltol!(nlcache, integrator)
+
+Point the inner solver's iterative linear solve at the integrator's relative tolerance,
+the way `dolinsolve` does for `NLNewton`.
+
+The `linsolve_kwargs` tolerance above is a fixed `eps^(4//5)`, so a Krylov descent solve
+runs to ~1e-13 however loose the integrator is — at `reltol = 1e-3` that is ten orders
+tighter than the step can use, and it is paid in Jacobian-vector products. Direct solvers
+keep the fixed tolerance: `set_linear_reltol!` skips anything that needs a concrete `A`,
+for which there is no tolerance to set.
+"""
+function set_inner_linear_reltol!(nlcache, integrator)
+    lincache = get_linear_cache(nlcache)
+    lincache === nothing && return nothing
+    opts = integrator.opts
+    # A fixed-step run has no `reltol` to inherit; `NLNewton` uses `eps` there.
+    reltol = opts.adaptive ? opts.reltol : eps(real(eltype(get_u(nlcache))))
+    set_linear_reltol!(lincache, reltol)
+    return nothing
+end
+
 function reuse_jac_kwargs(W)
     Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
         W._concrete_form : W
