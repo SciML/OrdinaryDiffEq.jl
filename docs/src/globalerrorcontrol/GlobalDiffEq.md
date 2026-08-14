@@ -22,6 +22,11 @@ per step. Solving with them produces a solution whose states are
 `ArrayPartition`s (`sol.u[i].x[1]` the solution, `sol.u[i].x[2]` the global
 error estimate); [`global_error_estimate`](@ref) extracts the estimates.
 
+To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
+solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
+requires SciMLSensitivity and QuadGK to be loaded); [`adjoint_error_estimate`](@ref)
+exposes the standalone estimator.
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -56,4 +61,6 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalAdjoint
+adjoint_error_estimate
 ```
