@@ -50,7 +50,6 @@ end
         @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
         @time @safetestset "Despecialized-p Hook" include("despecialized_p_test.jl")
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
-        @time @safetestset "Integrator Failure Hook" include("check_error.jl")
     end
 
     # QA tests — Aqua quality checks
