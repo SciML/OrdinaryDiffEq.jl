@@ -130,3 +130,23 @@ end
     sol_ok = solve(ODEProblem(f_ok, [1.0], (0.0, 1.0)), Tsit5())
     @test SciMLBase.successful_retcode(sol_ok)
 end
+
+@testset "Initial dt probe respects the first tstop" begin
+    for (tspan, tstop) in (((0.0, 10.0), 1.0e-3), ((10.0, 0.0), 9.999))
+        tdir = sign(tspan[2] - tspan[1])
+        for stop_keyword in (:tstops, :d_discontinuities)
+            options = NamedTuple{(stop_keyword,)}(([tstop],))
+            for isinplace in (false, true)
+                evaluated = Float64[]
+                f = if isinplace
+                    (du, u, p, t) -> (push!(p, t); du .= -u)
+                else
+                    (u, p, t) -> (push!(p, t); -u)
+                end
+                prob = ODEProblem(f, [1.0], tspan, evaluated)
+                init(prob, Tsit5(); options...)
+                @test maximum(tdir .* (evaluated .- tstop)) <= 0
+            end
+        end
+    end
+end
