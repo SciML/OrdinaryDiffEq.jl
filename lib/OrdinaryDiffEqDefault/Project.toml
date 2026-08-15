@@ -53,7 +53,7 @@ JET = "0.9, 0.11"
 julia = "1.10"
 ADTypes = "1.22.0"
 OrdinaryDiffEqRosenbrock = "2"
-DiffEqBase = "7.14"
+DiffEqBase = "7.15"
 SafeTestsets = "0.1.0"
 
 [targets]
