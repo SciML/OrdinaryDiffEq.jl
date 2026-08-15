@@ -1,5 +1,5 @@
 using OrdinaryDiffEqBDF, LinearSolve, LinearAlgebra, SparseArrays, Test
-using OrdinaryDiffEqDifferentiation: build_J_W
+using SciMLOperators: WOperator, jacobian_version
 
 # `LHLFactorization` needs W left split as J plus a scalar shift so that a new dtgamma
 # costs O(n²).  These tests pin down that the split form is what the integrator builds,
@@ -26,7 +26,7 @@ const PROB = rober_like(4)
 @testset "W is kept split" begin
     integ = init(PROB, NordsieckBDF(linsolve = LHLFactorization()); abstol = 1.0e-8, reltol = 1.0e-8)
     W = integ.cache.nlsolver.cache.W
-    @test W isa LinearSolve.ShiftedJacobian
+    @test W isa WOperator
     @test W.J === integ.cache.nlsolver.cache.J
     integ2 = init(PROB, NordsieckBDF(linsolve = LUFactorization()); abstol = 1.0e-8, reltol = 1.0e-8)
     @test integ2.cache.nlsolver.cache.W isa Matrix
@@ -48,7 +48,9 @@ end
     @test integ.stats.nw > integ.stats.njacs
     ws = integ.cache.nlsolver.cache.linsolve.cacheval
     @test ws isa LinearSolve.LHLWorkspace
-    @test ws.jac_version == integ.cache.nlsolver.cache.W.jac_version
+    # The reduction is stamped with the Jacobian generation it was taken of.
+    @test ws.jac_version == jacobian_version(integ.cache.nlsolver.cache.W)
+    @test jacobian_version(integ.cache.nlsolver.cache.W) == integ.stats.njacs
 end
 
 @testset "unsupported combinations are rejected" begin

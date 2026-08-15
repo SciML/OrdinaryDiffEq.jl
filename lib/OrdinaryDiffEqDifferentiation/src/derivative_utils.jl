@@ -1,4 +1,4 @@
-using SciMLOperators: StaticWOperator, WOperator
+using SciMLOperators: StaticWOperator, WOperator, mark_jacobian_updated!
 
 """
     get_jac_reuse(cache)
@@ -685,15 +685,17 @@ function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix)::Nothin
 end
 
 """
-    _uses_shifted_jacobian(alg, f) -> Bool
+    _uses_split_W(alg, f) -> Bool
 
-Whether `alg`'s linear solver wants `W` left split as `J` plus a scalar shift (see
-`LinearSolve.ShiftedJacobian`) instead of assembled. True only for `LHLFactorization`,
-whose whole point is that a new `dtgamma` must not touch `J`, and only when the mass
-matrix is a multiple of `I` — a general one would need a Hessenberg–triangular reduction
-of the pencil, which is not implemented.
+Whether `alg`'s linear solver wants `W` left split as `J` and `gamma` (a `WOperator`)
+instead of assembled. True only for `LHLFactorization`, whose whole point is that a new
+`dtgamma` must not touch `J`, and only when the mass matrix is a multiple of `I` — a
+general one would need a Hessenberg–triangular reduction of the pencil, which is not
+implemented.
+
+Throws rather than degrading quietly on the combinations the reduction cannot serve.
 """
-function _uses_shifted_jacobian(alg, f)
+function _uses_split_W(alg, f)
     alg isa DAEAlgorithm && return false
     hasproperty(alg, :linsolve) || return false
     alg.linsolve isa LinearSolve.LHLFactorization || return false
@@ -714,13 +716,12 @@ function _uses_shifted_jacobian(alg, f)
     return true
 end
 
+# A split `W` needs no assembly: `update_coefficients!` writing `gamma` is the whole
+# update, and `J` is aliased so `calc_J!` has already refreshed it.
 function jacobian2W!(
-        W::LinearSolve.ShiftedJacobian, mass_matrix, dtgamma::Number, J::AbstractMatrix
+        W::WOperator, mass_matrix, dtgamma::Number, J::AbstractMatrix
     )::Nothing
-    W.J === J || copyto!(W.J, J)
-    T = eltype(W)
-    W.α = one(T)
-    W.β = convert(T, -_scalar_massmatrix_λ(mass_matrix) * inv(dtgamma))
+    update_coefficients!(W; gamma = dtgamma)
     return nothing
 end
 
@@ -883,7 +884,12 @@ function calc_W!(
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
                 (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
-            new_W && !isdae &&
+            # A linear solver caching a factorization of J across steps needs to know when
+            # J moved; `gamma` it can see for itself.
+            new_jac && mark_jacobian_updated!(W)
+            # Assembling `_concrete_form` is the O(n²) the split form exists to avoid, and
+            # a solver consuming the split never reads it.
+            new_W && !isdae && !_uses_split_W(alg, f) &&
                 jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J)
         end
     elseif W isa AbstractSciMLOperator && !(W isa StaticWOperator)
@@ -910,8 +916,6 @@ function calc_W!(
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
                 (new_jac && (calc_J!(J, integrator, lcache, next_step)))
-            # A split W caches a factorization of J across steps; tell it when J moved.
-            new_jac && LinearSolve.mark_jacobian_updated!(W)
             new_W && jacobian2W!(W, mass_matrix, dtgamma, J)
         end
     end
@@ -1290,16 +1294,12 @@ function build_J_W(
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
-    elseif IIP && _uses_shifted_jacobian(alg, f)
+    elseif IIP && _uses_split_W(alg, f)
         # `LHLFactorization` reduces J once and absorbs each new dtgamma in O(n²), so W is
-        # kept split as `J - (λ/dtgamma)I` rather than assembled.
+        # kept split as the `J - M/dtgamma` a `WOperator` already represents.
         J = f.jac_prototype === nothing ? ArrayInterface.zeromatrix(u) :
             deepcopy(f.jac_prototype)
-        λ = _scalar_massmatrix_λ(f.mass_matrix)
-        WT = promote_type(eltype(J), typeof(invdtgamma_prototype))
-        W = LinearSolve.ShiftedJacobian(
-            J, one(WT), convert(WT, -λ * invdtgamma_prototype)
-        )
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
             (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
 
