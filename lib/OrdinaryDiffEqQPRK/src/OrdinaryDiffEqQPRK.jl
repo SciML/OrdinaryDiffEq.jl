@@ -14,6 +14,12 @@ using MuladdMacro: MuladdMacro, @muladd
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
 import OrdinaryDiffEqCore
 
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!
+using SciMLBase: SciMLBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("qprk_caches.jl")

@@ -20,10 +20,15 @@ using TaylorDiff: TaylorDiff, TaylorArray, TaylorScalar
 using Symbolics: Symbolics, @variables, build_function
 using SymbolicUtils: SymbolicUtils
 import CommonSolve: solve
-import SciMLBase: SciMLBase, unwrapped_f, alg_order, ODEFunction, ODEProblem
+import SciMLBase: SciMLBase, unwrapped_f, alg_order
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore
 import FunctionWrappers: FunctionWrapper
+
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!
 
 include("algorithms.jl")
 include("alg_utils.jl")

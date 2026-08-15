@@ -5,8 +5,16 @@ using SciMLTesting, OrdinaryDiffEqTaylorSeries, Test
 # migrate to. The base solver-author API (perform_step!/alg_cache/controllers/
 # etc.) is now declared `public` in OrdinaryDiffEqCore, so those entries have
 # been dropped; only the genuine residual remains (see SciML/OrdinaryDiffEq.jl#3776).
+# SciMLBase names re-exported for ordinary ODE usage; everything else stays behind `SciMLBase.`.
+const SCIMLBASE_REEXPORTS = (
+    :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
+    :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+    :CallbackSet, :terminate!,
+)
+
 run_qa(
     OrdinaryDiffEqTaylorSeries;
+    reexports_allow = SCIMLBASE_REEXPORTS,
     aqua_kwargs = (;
         unbound_args = false, undefined_exports = false, stale_deps = false,
         ambiguities = false,
