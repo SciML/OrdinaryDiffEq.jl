@@ -588,9 +588,11 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     jac_config::jcType
     du1::du1Type
     weight::weightType
-    # Smoothed error estimate `W \ tmp` for the `smooth_est` option (into buffer `dz`).
-    # `linsolve` is not a second solver: it aliases the inner NonlinearSolve's own W
-    # factorization (`get_linear_cache`), or is `nothing` when none is reusable (→ raw estimate).
+    # `u`-sized scratch. Holds the smoothed error estimate `W \ tmp` for the `smooth_est`
+    # option, and is what `get_tmp_cache` hands DAE initialization, so the in-place cache
+    # allocates it whether or not `W` is reused. `linsolve` is not a second solver: it aliases
+    # the inner NonlinearSolve's own W factorization (`get_linear_cache`), or is `nothing`
+    # when none is reusable (→ raw estimate).
     dz::dzType
     linsolve::lsType
     W_γdt::tType
