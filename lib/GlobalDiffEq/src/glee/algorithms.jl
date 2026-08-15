@@ -6,13 +6,16 @@ OrdinaryDiffEqCore.OrdinaryDiffEqAdaptiveAlgorithm end
 const _GLEE_DOCS_SHARED = """
 GLEE methods propagate the solution `y` together with an asymptotically
 correct estimate `ε` of its global (accumulated) error, at the cost of a few
-extra stages per step. Solving any `ODEProblem` with a GLEE method produces a
-solution whose states are `ArrayPartition`s: `sol.u[i].x[1]` is the solution
-and `sol.u[i].x[2]` is the global error estimate at `sol.t[i]` (see
-[`global_error_estimate`](@ref)). The per-step increment of `ε` is an
-asymptotically correct local error estimate, which drives standard step-size
-adaptivity, so local tolerances behave exactly as for ordinary adaptive
-Runge-Kutta methods while the global error is estimated for free.
+extra stages per step. Solving any `ODEProblem` with a GLEE method returns an
+ordinary solution — `sol.u[i]` is the solution at `sol.t[i]` and `sol(t)`
+interpolates it at full order — with the global error estimate reported through
+the standard SciMLBase interface: [`SciMLBase.has_global_error`](@ref) is
+`true`, and `sol.global_error[i]` is the estimated global error of `sol.u[i]`
+(also available as [`global_error_estimate`](@ref)`(sol)`). The per-step
+increment of `ε` is an asymptotically correct local error estimate, which
+drives standard step-size adaptivity, so local tolerances behave exactly as for
+ordinary adaptive Runge-Kutta methods while the global error is estimated for
+free.
 
 Only explicit, mass-matrix-free ODEs are supported. The reference for the
 methods and their theory is:
@@ -80,6 +83,8 @@ SciMLBase.alg_order(::GLEE23) = 2
 SciMLBase.alg_order(::GLEE24) = 2
 SciMLBase.alg_order(::GLEE35) = 3
 SciMLBase.alg_order(::MM5GEE) = 5
+
+SciMLBase.has_global_error(::AbstractGLEEAlgorithm) = true
 
 OrdinaryDiffEqCore.alg_adaptive_order(alg::AbstractGLEEAlgorithm) =
     SciMLBase.alg_order(alg)
