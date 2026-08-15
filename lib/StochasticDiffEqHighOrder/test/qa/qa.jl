@@ -5,7 +5,6 @@ run_qa(
     StochasticDiffEqHighOrder;
     api_docs_kwargs = (; docs_src = joinpath(pkgdir(StochasticDiffEqHighOrder), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(StochasticDiffEqCore), (:StochasticDiffEqCore,)),
-    jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (
         # `@..` is owned by FastBroadcast but reexported through DiffEqBase, and
