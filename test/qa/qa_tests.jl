@@ -4,6 +4,20 @@ using ADTypes, CommonSolve, DiffEqBase, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault
     SciMLBase, SciMLLogging
 using Test
 
+@testset "QA JET target configuration" begin
+    lib_dir = joinpath(@__DIR__, "..", "..", "lib")
+    deprecated_overrides = String[]
+    for package in readdir(lib_dir)
+        qa_file = joinpath(lib_dir, package, "test", "qa", "qa.jl")
+        isfile(qa_file) || continue
+        occursin(
+            r"jet_kwargs\s*=\s*\(;\s*target_defined_modules\s*=\s*true\s*\)",
+            read(qa_file, String),
+        ) && push!(deprecated_overrides, qa_file)
+    end
+    @test isempty(deprecated_overrides)
+end
+
 @testset "PureKLU-compatible MuladdMacro floors" begin
     lib_dir = joinpath(@__DIR__, "..", "..", "lib")
     projects = filter(readdir(lib_dir)) do package
