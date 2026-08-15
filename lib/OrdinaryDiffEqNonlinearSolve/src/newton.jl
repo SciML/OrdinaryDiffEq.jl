@@ -60,7 +60,7 @@ function initialize!(
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
     if f isa DAEFunction
-        nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
+        nlp_params = (tmp, α, tstep, invγdt, p, get_dae_uprev(integrator, uprev), f)
     else
         nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, f)
     end
@@ -150,7 +150,10 @@ function initialize!(
             end
         end
         if f isa DAEFunction
-            nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            nlp_params = (
+                tmp, ustep, α, tstep, k, invγdt, p,
+                get_dae_uprev(integrator, uprev), f,
+            )
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
@@ -456,7 +459,11 @@ end
     end
     nlsolver.ztmp = active_u
 
-    ustep = compute_ustep(tmp, γ, z, method)
+    ustep = if nlsolve_f(integrator) isa DAEFunction
+        get_dae_uprev(integrator, uprev) .+ z
+    else
+        compute_ustep(tmp, γ, z, method)
+    end
     atmp = calculate_residuals(
         z .- active_u, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
@@ -558,7 +565,12 @@ end
     else
         active_u = nlcache isa NonlinearSolveNoInitCache ? innersol.u : get_u(nlcache)
         @.. broadcast = false ztmp = active_u
-        ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        ustep = if nlsolve_f(integrator) isa DAEFunction
+            _uprev = get_dae_uprev(integrator, uprev)
+            @.. broadcast = false ustep = _uprev + z
+        else
+            compute_ustep!(ustep, tmp, γ, z, method)
+        end
         @.. broadcast = false atmp = z - ztmp
         if !(nlcache isa NonlinearSolveNoInitCache)
             cache.stalled = stalled_inner_step(

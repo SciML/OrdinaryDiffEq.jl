@@ -425,9 +425,26 @@ function build_nlsolver(
     )
 end
 
-function daenlf(ztmp, z, p)
-    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
-    return _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+# A DAE stage never reuses `W`, so the inner solver differentiates this residual itself and a
+# dual-number backend calls it with a dual `z`; the cache's stage buffers hold the problem's
+# own element type and cannot take the duals.
+@inline function dae_stage_buffers(
+        ustep::AbstractArray{T}, dustep::AbstractArray{T}, ::AbstractArray{T}
+    ) where {T}
+    return ustep, dustep
+end
+@inline function dae_stage_buffers(ustep, dustep, resid)
+    R = eltype(resid)
+    return similar(ustep, R), similar(dustep, R)
+end
+
+# The DAE kernel writes `du` at the stage into its second argument and the residual into its
+# sixth, the reverse of the ODE kernel's single output: `dustep` is scratch, and the residual
+# goes to the buffer the inner solver owns.
+function daenlf(resid, z, p)
+    tmp, ustep, α, tstep, dustep, invγdt, _p, uprev, f = p
+    us, dus = dae_stage_buffers(ustep, dustep, resid)
+    return _compute_rhs!(tmp, dus, us, α, tstep, resid, invγdt, _p, uprev, f, z)[1]
 end
 
 function odenlf(ztmp, z, p)
@@ -802,7 +819,7 @@ function build_nlsolver(
             else
                 nlf = isdae ? daenlf : odenlf
                 nlp_params = if isdae
-                    (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                    (tmp, ustep, α, tstep, k, invγdt, p, uprev, f)
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
@@ -866,7 +883,7 @@ function build_nlsolver(
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
                 weight,
-                use_w_reuse ? dz : nothing,
+                dz,
                 est_linsolve,
                 zero(tstep), true, false, precondition, postcondition
             )
@@ -944,8 +961,8 @@ function build_nlsolver(
 end
 
 function oopdaenlf(z, p)
-    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
-    return _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+    tmp, α, tstep, invγdt, _p, uprev, f = p
+    return _compute_rhs(tmp, α, tstep, invγdt, _p, uprev, f, z)[1]
 end
 
 function oopodenlf(z, p)
@@ -1033,7 +1050,7 @@ function build_nlsolver(
             )
             nlf = isdae ? oopdaenlf : oopodenlf
             nlp_params = if isdae
-                (tmp, α, tstep, invγdt, p, dt, uprev, f)
+                (tmp, α, tstep, invγdt, p, uprev, f)
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
