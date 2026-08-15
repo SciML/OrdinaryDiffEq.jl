@@ -252,8 +252,12 @@ current step needs, the Newton direction it produces is off by that ratio.
 `NLNewton` scales the increment it just computed. `NonlinearSolveAlg` cannot: the inner
 solver computes *and* applies the increment inside `step!`. Scaling the right-hand side
 beforehand is equivalent for the Newton descent `δu = -W \\ fu`, and unlike rewriting
-`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent — the
-inner solver re-evaluates `fu` at the end of `step!`, so the scaling does not persist.
+`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent.
+
+The scaled residual belongs to the iterate the step starts from, so it must not outlive that
+step. Every reader calls `sync_inner_residual!` first, which re-evaluates at the current
+iterate whenever the step deferred its own evaluation, and the next `initialize!`
+reinitializes the cache in any case.
 """
 function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     cache = nlsolver.cache
@@ -266,6 +270,56 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
     W_γdt ≈ γdt && return nothing
     rmul!(get_fu(nlcache), 2 / (1 + γdt / W_γdt))
+    return nothing
+end
+
+"""
+    defers_residual(nlcache) -> Bool
+
+Whether the inner cache can end a `step!` without evaluating the residual at the iterate that
+step landed on.
+
+A stage that converges in `m` Newton iterations needs the residual at the `m` points its steps
+are taken *from*. `step!` evaluates it at the point each step lands *on*, so the last of the
+`m` evaluations has no reader: nothing in this file looks at it, and the next stage's `reinit!`
+overwrites it. Skipping it costs the stage one `f` call less than driving the solver naively.
+"""
+function defers_residual end
+
+"""
+    sync_inner_residual!(nlcache)
+
+Bring the inner cache's residual forward to its current iterate when a `step!` left it behind.
+A no-op unless an evaluation is actually outstanding, so it is cheap to call ahead of any read
+of `get_fu`.
+"""
+function sync_inner_residual! end
+
+# Shims: the `NonlinearSolveBase` API these forward to postdates this package's compat floor,
+# and without it the inner solver evaluates on every step as it always has.
+if isdefined(NonlinearSolveBase, :supports_deferred_residual)
+    defers_residual(nlcache) = NonlinearSolveBase.supports_deferred_residual(nlcache)
+    sync_inner_residual!(nlcache) = NonlinearSolveBase.refresh_residual!(nlcache)
+else
+    defers_residual(nlcache) = false
+    sync_inner_residual!(nlcache) = nothing
+end
+
+"""
+    step_inner!(nlcache, recompute_jacobian, defer_residual)
+
+Advance the inner cache by one Newton iteration, asking it to skip the residual evaluation
+that ends the step when `defer_residual` says [`sync_inner_residual!`](@ref) will supply it.
+
+The keyword only goes where it is understood: an older `NonlinearSolveBase` has no such
+keyword and would reject the call.
+"""
+function step_inner!(nlcache, recompute_jacobian, defer_residual)
+    if defer_residual
+        step!(nlcache; recompute_jacobian, evaluate_residual = false)
+    else
+        step!(nlcache; recompute_jacobian)
+    end
     return nothing
 end
 
@@ -343,6 +397,7 @@ stood before the step.
 """
 function stalled_inner_step(nlcache, ndisp, nz, fnorm_prev, γΔt)
     ndisp > roundoff_level(typeof(ndisp)) * nz && return false
+    sync_inner_residual!(nlcache)
     maxabs(get_fu(nlcache)) < fnorm_prev && return false
     return stage_unsolved(nlcache, γΔt)
 end
@@ -380,17 +435,20 @@ end
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
         inner_solve_failed(nlcache) && return convert(eltype(z), Inf)
+        sync_inner_residual!(nlcache)
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
-        step!(nlcache; recompute_jacobian)
+        step_inner!(nlcache, recompute_jacobian, defers_residual(nlcache))
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
         # An inner solver can also give up *because* there is nothing left to correct — a
         # line search collapses on a stage that is already solved — so the residual, not the
         # retcode alone, has the say.
-        inner_solve_failed(nlcache) && stage_unsolved(nlcache, γΔt) &&
-            return convert(eltype(z), Inf)
+        if inner_solve_failed(nlcache)
+            sync_inner_residual!(nlcache)
+            stage_unsolved(nlcache, γΔt) && return convert(eltype(z), Inf)
+        end
         active_u = get_u(nlcache)
         cache.stalled = stalled_inner_step(
             nlcache, maxabs(z .- active_u), maxabs(z), fnorm_prev, γΔt
@@ -437,21 +495,28 @@ end
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
         inner_solve_failed(nlcache) && return convert(eltype(atmp), Inf)
-        # Read before `rescale_stale_W_rhs!`, which rewrites `fu` in place: the unscaled
-        # residual is the one `step!` will produce again, so it is the like-for-like
-        # comparison.
+        # Both must precede `rescale_stale_W_rhs!`, which rewrites `fu` in place: a deferred
+        # evaluation settled after it would overwrite the rescaled residual, and the unscaled
+        # residual is the one `step!` will produce again, so it is the like-for-like read.
+        sync_inner_residual!(nlcache)
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
         rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
-        step!(nlcache; recompute_jacobian)
+        # The `nlstep_data` branch below reads the residual on every iteration, so deferring
+        # there would only move the same evaluation a few lines later.
+        step_inner!(
+            nlcache, recompute_jacobian, nlstep_data === nothing && defers_residual(nlcache)
+        )
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
         # An inner solver can also give up *because* there is nothing left to correct — a
         # line search collapses on a stage that is already solved — so the residual, not the
         # retcode alone, has the say.
-        inner_solve_failed(nlcache) && stage_unsolved(nlcache, γΔt) &&
-            return convert(eltype(atmp), Inf)
+        if inner_solve_failed(nlcache)
+            sync_inner_residual!(nlcache)
+            stage_unsolved(nlcache, γΔt) && return convert(eltype(atmp), Inf)
+        end
     end
 
     if nlstep_data !== nothing
