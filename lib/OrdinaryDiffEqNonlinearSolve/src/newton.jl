@@ -457,7 +457,12 @@ end
             nlcache, maxabs(z .- active_u), maxabs(z), fnorm_prev, γΔt
         )
     end
-    nlsolver.ztmp = active_u
+    # `active_u` is the inner cache's own iterate and `step!` updates it in place, so storing
+    # it here would leave `apply_step!` aliasing `nlsolver.z` to that buffer: from the next
+    # iteration on, `z .- active_u` below is identically zero however far the inner solver
+    # moved, and `_uninformative_step` reads that as "made no progress" until the stage runs
+    # out of iterations.
+    nlsolver.ztmp = copy(active_u)
 
     ustep = if nlsolve_f(integrator) isa DAEFunction
         get_dae_uprev(integrator, uprev) .+ z
