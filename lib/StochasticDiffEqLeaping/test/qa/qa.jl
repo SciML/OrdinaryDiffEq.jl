@@ -3,11 +3,7 @@ using JET
 
 run_qa(
     StochasticDiffEqLeaping;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(StochasticDiffEqLeaping), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(StochasticDiffEqCore), (:StochasticDiffEqCore,)),
-    # Scope JET to this package in `:typo` mode (the OrdinaryDiffEq* solver-sublibrary
-    # convention); `target_defined_modules = true` is deprecated in JET.
-    jet_kwargs = (; target_modules = (StochasticDiffEqLeaping,), mode = :typo),
     explicit_imports = true,
     ei_kwargs = (;
         # `@..` is the SciML fused-broadcast macro, owned by FastBroadcast and

@@ -8,7 +8,6 @@ using SciMLTesting, OrdinaryDiffEqDifferentiation, Test
 # tracked in SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqDifferentiation;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqDifferentiation), "..", "..", "docs", "src")),
     aqua_kwargs = (; piracies = false, ambiguities = false),
     explicit_imports = true,
     ei_kwargs = (;

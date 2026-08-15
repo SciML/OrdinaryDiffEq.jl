@@ -2,7 +2,6 @@ using SciMLTesting, OrdinaryDiffEqTsit5, Test
 
 run_qa(
     OrdinaryDiffEqTsit5;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqTsit5), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;

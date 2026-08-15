@@ -12,7 +12,6 @@ const THREADING_PUBLIC = (:Sequential, :BaseThreads, :PolyesterThreads)
 # See SciML/OrdinaryDiffEq.jl#3776.
 run_qa(
     OrdinaryDiffEqFIRK;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqFIRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,), THREADING_PUBLIC),
     explicit_imports = true,
     ei_kwargs = (
