@@ -7,6 +7,12 @@ function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
+@time @safetestset "SciMLBase reexport" begin
+    using OrdinaryDiffEqPRK, Test
+    @test Base.isexported(OrdinaryDiffEqPRK, :ODEProblem)
+    @test Base.isexported(OrdinaryDiffEqPRK, :solve)
+end
+
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.

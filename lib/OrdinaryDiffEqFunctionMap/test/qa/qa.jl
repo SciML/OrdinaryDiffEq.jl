@@ -1,7 +1,15 @@
 using SciMLTesting, OrdinaryDiffEqFunctionMap, Test
 
+# SciMLBase names re-exported for ordinary ODE usage; everything else stays behind `SciMLBase.`.
+const SCIMLBASE_REEXPORTS = (
+    :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
+    :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+    :CallbackSet, :terminate!, :DiscreteProblem, :DiscreteFunction,
+)
+
 run_qa(
     OrdinaryDiffEqFunctionMap;
+    reexports_allow = SCIMLBASE_REEXPORTS,
     aqua_kwargs = (; piracies = false),  # piracy is needed for default-algorithm dispatch
     explicit_imports = true,
     ei_kwargs = (;

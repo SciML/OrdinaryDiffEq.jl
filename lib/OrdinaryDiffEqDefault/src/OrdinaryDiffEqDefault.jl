@@ -15,7 +15,11 @@ using LinearAlgebra: I
 using EnumX: EnumX
 
 import SciMLBase
-using SciMLBase: ODEProblem, DAEProblem, DAEFunction, solve
+
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!, DAEProblem, DAEFunction
 
 include("default_alg.jl")
 

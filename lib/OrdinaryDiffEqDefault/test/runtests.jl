@@ -17,6 +17,11 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqDefault, Test
+        @test Base.isexported(OrdinaryDiffEqDefault, :ODEProblem)
+        @test Base.isexported(OrdinaryDiffEqDefault, :solve)
+    end
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
 end
 

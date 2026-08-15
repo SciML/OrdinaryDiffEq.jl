@@ -42,6 +42,11 @@ import ADTypes: AutoForwardDiff
 using CommonSolve: init
 using SciMLBase: SciMLBase, LinearProblem
 
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!
+
 include("utils.jl")
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -14,6 +14,12 @@ import RecursiveArrayTools: recursivefill!
 using DiffEqBase: @tight_loop_macros
 import OrdinaryDiffEqCore
 
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!
+using SciMLBase: SciMLBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("feagin_tableaus.jl")

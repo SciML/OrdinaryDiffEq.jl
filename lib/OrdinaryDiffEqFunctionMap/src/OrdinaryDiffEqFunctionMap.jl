@@ -18,6 +18,11 @@ import OrdinaryDiffEqCore
 import SciMLBase
 import SciMLBase: alg_order
 
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!, DiscreteProblem, DiscreteFunction
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("functionmap_caches.jl")

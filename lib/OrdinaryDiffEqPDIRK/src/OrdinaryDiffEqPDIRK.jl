@@ -21,6 +21,11 @@ using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvef
 
 import ADTypes: AutoForwardDiff
 
+using Reexport: Reexport, @reexport
+@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
+    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
+    CallbackSet, terminate!
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("pdirk_caches.jl")

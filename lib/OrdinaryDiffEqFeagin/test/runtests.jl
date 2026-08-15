@@ -9,6 +9,11 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqFeagin, Test
+        @test Base.isexported(OrdinaryDiffEqFeagin, :ODEProblem)
+        @test Base.isexported(OrdinaryDiffEqFeagin, :solve)
+    end
     @time @safetestset "Feagin Tests" include("ode_feagin_tests.jl")
 end
 

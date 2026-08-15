@@ -9,6 +9,11 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqQPRK, Test
+        @test Base.isexported(OrdinaryDiffEqQPRK, :ODEProblem)
+        @test Base.isexported(OrdinaryDiffEqQPRK, :solve)
+    end
     @time @safetestset "Quadruple Precision Tests" include("ode_quadruple_precision_tests.jl")
 end
 
