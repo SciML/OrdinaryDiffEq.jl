@@ -111,13 +111,31 @@ function initialize!(
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
 
-    nlstep_data = f.nlstep_data
+    nlstep_data = get_nlstep_data(f)
     if nlstep_data !== nothing
         atmp .= 0
-        if method === COEFFICIENT_MULTISTEP
-            nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
+        if f isa DAEFunction
+            # Fully implicit: `_compute_rhs!` states the stage residual as `F(du, u, p, t)`
+            # at `du = (tmp + α z) * invγdt` and `u = get_dae_uprev(integrator, uprev) + z`,
+            # so the coefficient lands on the derivative argument and the state argument
+            # carries the predictor base -- `cache.u₀` for a multistep method, not `uprev`.
+            # There is no `M z` term, so `γ₃` stays 1.
+            @.. broadcast = false ustep = tmp * invγdt
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (α * invγdt, one(t), one(t), tstep))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, get_dae_uprev(integrator, uprev))
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
+        elseif method === COEFFICIENT_MULTISTEP
+            # The multistep residual `tmp + f(z) - (α * invγdt) * M * z` is `O(z / dt)`, but
+            # the convergence check measures this residual against the solution scale, so at
+            # small `dt` it reads as divergence and the step is rejected -- which shrinks
+            # `dt`, inflates it further, and walks the solver to `dtmin`. Scale the stage
+            # system so the `M z` coefficient is 1, as in the branch below. The root is
+            # unchanged.
+            s = inv(α * invγdt)
+            @.. broadcast = false ustep = tmp * s
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (s, one(t), one(t), tstep))
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, atmp)
-            nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
         else
             nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t), tstep))
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
@@ -488,7 +506,7 @@ end
     (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
     (; tstep, invγdt, atmp, ustep) = cache
 
-    nlstep_data = integrator.f.nlstep_data
+    nlstep_data = get_nlstep_data(integrator.f)
     nlcache = nlsolver.cache.cache
     if nlcache isa NonlinearSolveNoInitCache
         # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a

@@ -2,6 +2,12 @@
 # This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
 get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
 
+# Not every `AbstractSciMLFunction` has an `nlstep_data` field: a `DynamicalODEFunction`
+# has none, so reading it outright threw before the first step. Mirrors the field check
+# `get_mass_matrix` already uses for `DiscreteFunction`; it constant-folds on a concrete
+# `f`, so the branch selecting `prob` stays resolved at compile time.
+get_nlstep_data(f) = hasfield(typeof(f), :nlstep_data) ? f.nlstep_data : nothing
+
 # Map a flat linear-solve result back onto the state container. Delegates to
 # ArrayInterface.restructure (which preserves ArrayPartition / other wrappers that
 # plain reshape collapses); Number states need a convert because restructure
@@ -828,7 +834,8 @@ function build_nlsolver(
             # `W` is the Jacobian of the *raw* stage residual, so handing it to the inner
             # solver as the Jacobian of a preconditioned one would be a lie; let the inner
             # solver differentiate the composition it actually solves.
-            use_w_reuse = !isdae && f.nlstep_data === nothing &&
+            nlstep_data = get_nlstep_data(f)
+            use_w_reuse = !isdae && nlstep_data === nothing &&
                 precondition === nothing &&
                 (
                 (
@@ -836,8 +843,8 @@ function build_nlsolver(
                         !(W_for_reuse isa AbstractSciMLOperator)
                 ) || matrixfree_W
             )
-            prob = if f.nlstep_data !== nothing
-                f.nlstep_data.nlprob
+            prob = if nlstep_data !== nothing
+                nlstep_data.nlprob
             else
                 nlf = isdae ? daenlf : odenlf
                 nlp_params = if isdae
