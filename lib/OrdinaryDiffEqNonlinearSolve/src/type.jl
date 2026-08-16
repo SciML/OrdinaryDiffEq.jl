@@ -597,6 +597,8 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     linsolve::lsType
     W_γdt::tType
     new_W::Bool
+    # `t` at which `J` was last evaluated; drives `isJcurrent` and hence the stale-Jacobian retry.
+    J_t::tType
     # Whether the last `step!` produced no usable iterate (see `stalled_inner_step`).
     stalled::Bool
     # Stage-coordinate adapters around the algorithm's `precondition`/`postcondition`
