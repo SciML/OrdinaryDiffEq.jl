@@ -77,10 +77,13 @@ using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val
     ODEAliasSpecifier
 
 # Names previously relied on implicitly through `@reexport using SciMLBase`.
+# `ODEFunction` and `DynamicalODEProblem` are also imported here for external
+# solver extensions such as TaylorIntegrationDiffEqExt, which intentionally
+# depends on OrdinaryDiffEqCore rather than the umbrella package.
 using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
-    DAESolution, DiscreteProblem, DynamicalODEFunction,
+    DAESolution, DiscreteProblem, DynamicalODEFunction, DynamicalODEProblem,
     IntervalNonlinearProblem, NonlinearLeastSquaresProblem,
-    ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
+    ODEFunction, ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
     VectorContinuousCallback, auto_dt_reset!, derivative_discontinuity!,
     get_tmp_cache, isinplace, reinit!
 const LinearAliasSpecifier = SciMLBase.LinearAliasSpecifier
