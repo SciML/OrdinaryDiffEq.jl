@@ -41,7 +41,10 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
         public_api_names(OrdinaryDiffEqVerner),
         public_api_names(SciMLBase),
         public_api_names(SciMLLogging),
-        (:SciMLBase, :SciMLLogging),
+        # `successful_retcode` is intentionally available from the umbrella
+        # package for the documented `solve` workflow, although older SciMLBase
+        # releases expose it through `public` rather than `export`.
+        (:SciMLBase, :SciMLLogging, :successful_retcode),
         # `public` on a Core-owned name counts as a public reexport; listed by
         # name so the check still rejects the rest of Core's surface.
         (:Sequential, :BaseThreads, :PolyesterThreads),
