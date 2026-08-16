@@ -33,6 +33,7 @@ LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
@@ -83,4 +84,4 @@ SafeTestsets = "0.1.0"
 StaticArrays = "1.9.18"
 
 [targets]
-test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "SciMLTesting", "OrdinaryDiffEqRosenbrock", "SparseArrays"]
+test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "SciMLTesting", "OrdinaryDiffEqRosenbrock", "SparseArrays", "OrdinaryDiffEqFIRK"]
