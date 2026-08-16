@@ -6,11 +6,6 @@ run_qa(
     GlobalDiffEq;
     reexports_allow = union(public_api_names(DiffEqBase), (:DiffEqBase,)),
     explicit_imports = true,
-    # GlobalDiffEq's rendered documentation lives in the monorepo docs, two
-    # directories up from the sublibrary root.
-    api_docs_kwargs = (;
-        docs_src = joinpath(dirname(dirname(pkgdir(GlobalDiffEq))), "docs", "src"),
-    ),
     ei_kwargs = (;
         all_qualified_accesses_are_public = (;
             # `SciMLBase.__solve` is SciMLBase's internal solve entry point (not

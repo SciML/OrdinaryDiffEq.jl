@@ -45,7 +45,6 @@ const EXPLICIT_INTERNAL = (
 
 run_qa(
     DelayDiffEq;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(DelayDiffEq), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (;
         ambiguities = (; recursive = false),

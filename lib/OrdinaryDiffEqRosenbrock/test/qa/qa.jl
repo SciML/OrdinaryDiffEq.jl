@@ -27,7 +27,6 @@ const ROSENBROCK_INTERNAL_QUALIFIED_ACCESSES = (
 
 run_qa(
     OrdinaryDiffEqRosenbrock;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqRosenbrock), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
