@@ -2,7 +2,6 @@ using SciMLTesting, OrdinaryDiffEqHighOrderRK, Test
 
 run_qa(
     OrdinaryDiffEqHighOrderRK;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqHighOrderRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (

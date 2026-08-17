@@ -3,7 +3,6 @@ using JET
 
 run_qa(
     StochasticDiffEqLowOrder;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(StochasticDiffEqLowOrder), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(StochasticDiffEqCore), (:StochasticDiffEqCore,)),
     jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,

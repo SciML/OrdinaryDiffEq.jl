@@ -2,7 +2,6 @@ using SciMLTesting, OrdinaryDiffEqAdamsBashforthMoulton, Test
 
 run_qa(
     OrdinaryDiffEqAdamsBashforthMoulton;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqAdamsBashforthMoulton), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (

@@ -3,7 +3,6 @@ using JET
 
 run_qa(
     StochasticDiffEqImplicit;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(StochasticDiffEqImplicit), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(StochasticDiffEqCore), (:StochasticDiffEqCore,)),
     # Scope JET to this package in `:typo` mode, matching the OrdinaryDiffEq* solver
     # sublibraries. The deprecated `target_defined_modules = true` also reported

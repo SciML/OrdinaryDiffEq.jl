@@ -97,7 +97,6 @@ const SDEC_TYPE_ALIASES = (:SDEIntegrator, :SDEOptions)
 
 run_qa(
     StochasticDiffEqCore;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(StochasticDiffEqCore), "..", "..", "docs", "src")),
     # `@reexport using DiffEqBase` pulls in DiffEqBase's own API plus its SciMLBase
     # re-export. `names(DiffEqBase)` only propagates SciMLBase's *exports*, so SciMLBase's
     # `public`-but-unexported API (`alg_order`, `isadaptive`) needs its own union entry.
