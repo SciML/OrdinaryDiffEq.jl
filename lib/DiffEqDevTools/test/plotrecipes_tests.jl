@@ -1,6 +1,10 @@
 using Test
 using OrdinaryDiffEq, StochasticDiffEq, DiffEqDevTools, Plots
 import SDEProblemLibrary: prob_sde_additivesystem
+import ODEProblemLibrary: prob_ode_linear
+using OrdinaryDiffEqLowOrderRK: Euler, Heun, BS3, DP5
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqRosenbrock: Rosenbrock23
 
 using Random
 Random.seed!(123)
@@ -85,6 +89,52 @@ gr()
     @test_nowarn plot(
         wp, view = :dt_convergence, color = :lightblue, title = "Δt Convergence"
     )
+end
+
+@testset "Tag-based plotting" begin
+    prob = prob_ode_linear
+    abstols = 1.0 ./ 10.0 .^ (3:6)
+    reltols = 1.0 ./ 10.0 .^ (3:6)
+
+    setups = [
+        Dict{Symbol, Any}(:alg => DP5(), :tags => [:rk, :fifth_order]),
+        Dict{Symbol, Any}(:alg => Tsit5(), :tags => [:rk, :fifth_order]),
+        Dict{Symbol, Any}(:alg => BS3(), :tags => [:rk, :third_order]),
+        Dict{Symbol, Any}(:alg => Rosenbrock23(), :tags => [:rosenbrock, :reference]),
+    ]
+    wp = WorkPrecisionSet(
+        prob, abstols, reltols, setups; numruns = 2, error_estimates = [:final, :l2]
+    )
+    @test available_errors(wp) == [:final, :l2]
+
+    labels(plt) = [series[:label] for series in plt.series_list]
+
+    @test labels(@test_nowarn plot(wp, tags = [:fifth_order])) == ["DP5", "Tsit5"]
+    @test labels(@test_nowarn plot(wp, exclude_tags = [:reference])) ==
+        ["DP5", "Tsit5", "BS3"]
+    @test labels(@test_nowarn plot(wp, tags = [:third_order], include_tags = [:reference])) ==
+        ["BS3", "Rosenbrock23"]
+    @test labels(@test_nowarn plot(wp, tags = :fifth_order)) == ["DP5", "Tsit5"]
+
+    @testset "reference styling" begin
+        plt = @test_nowarn plot(
+            wp, reference_tags = [:reference],
+            reference_style = (linestyle = :dot, linewidth = 2, alpha = 0.25)
+        )
+        # References are drawn first, in their own style
+        @test labels(plt) == ["Rosenbrock23", "DP5", "Tsit5", "BS3"]
+        @test plt[1][1][:linestyle] == :dot
+        @test plt[1][1][:linewidth] == 2
+        @test plt[1][1][:seriesalpha] == 0.25
+        @test plt[1][2][:linewidth] == 3
+        @test plt[1][1][:x] ≈ getproperty(wp[4].errors, wp[4].error_estimate)
+    end
+
+    # With nothing to contrast against, references are still drawn
+    @test labels(@test_nowarn plot(wp, tags = [:reference], reference_tags = [:reference])) ==
+        ["Rosenbrock23"]
+
+    @test labels(@test_nowarn plot(wp, x = :l2, tags = [:rk])) == ["DP5", "Tsit5", "BS3"]
 end
 
 @testset "SDE WorkPrecisionSet" begin
