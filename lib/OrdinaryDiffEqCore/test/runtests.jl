@@ -32,6 +32,13 @@ end
 
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase constructor bindings" begin
+        using OrdinaryDiffEqCore: DynamicalODEProblem, ODEFunction
+        using SciMLBase, Test
+
+        @test ODEFunction === SciMLBase.ODEFunction
+        @test DynamicalODEProblem === SciMLBase.DynamicalODEProblem
+    end
     @time @safetestset "Developer Time Queue API" include("developer_time_queue_api_tests.jl")
     @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
     @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
