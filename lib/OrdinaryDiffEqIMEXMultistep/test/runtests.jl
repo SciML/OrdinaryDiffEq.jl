@@ -11,14 +11,16 @@ end
 
 @time @safetestset "SciMLBase reexport" begin
     using OrdinaryDiffEqIMEXMultistep, Test
-    expected = (
-        :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
-        :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
-        :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
-        :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
-        :SplitODEProblem, :SplitFunction,
-    )
+    expected = (:SplitODEProblem, :solve)
     @test all(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), expected))
+    removed = (
+        :ODEProblem, :ODEFunction, :init, :solve!, :step!, :remake, :reinit!,
+        :ReturnCode, :ContinuousCallback, :DiscreteCallback,
+        :VectorContinuousCallback, :CallbackSet, :terminate!, :add_tstop!,
+        :derivative_discontinuity!, :set_proposed_dt!, :successful_retcode,
+        :ODEAliasSpecifier, :SplitFunction,
+    )
+    @test all(x -> !x, Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), removed))
     @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :EnsembleProblem)
     @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :get_du)
     @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :u_modified!)

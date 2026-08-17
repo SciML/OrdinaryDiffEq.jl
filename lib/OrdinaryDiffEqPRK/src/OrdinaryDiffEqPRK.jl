@@ -11,10 +11,11 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 
 using Reexport: Reexport, @reexport
-@reexport using SciMLBase: ODEProblem, ODEFunction, solve, init, solve!, step!, remake,
-    reinit!, ReturnCode, ContinuousCallback, DiscreteCallback, VectorContinuousCallback,
-    CallbackSet, terminate!, add_tstop!, derivative_discontinuity!, set_proposed_dt!,
+using SciMLBase: ODEFunction, init, solve!, step!, remake, reinit!, ReturnCode,
+    ContinuousCallback, DiscreteCallback, VectorContinuousCallback, CallbackSet,
+    terminate!, add_tstop!, derivative_discontinuity!, set_proposed_dt!,
     successful_retcode, ODEAliasSpecifier
+@reexport using SciMLBase: ODEProblem, solve
 using SciMLBase: SciMLBase
 
 include("algorithms.jl")

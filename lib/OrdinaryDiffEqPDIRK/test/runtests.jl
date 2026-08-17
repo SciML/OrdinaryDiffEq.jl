@@ -9,13 +9,15 @@ end
 
 @time @safetestset "SciMLBase reexport" begin
     using OrdinaryDiffEqPDIRK, Test
-    expected = (
-        :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
-        :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+    expected = (:ODEProblem, :solve)
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), expected))
+    removed = (
+        :ODEFunction, :init, :solve!, :step!, :remake, :reinit!, :ReturnCode,
+        :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
         :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
         :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
     )
-    @test all(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), expected))
+    @test all(x -> !x, Base.isexported.(Ref(OrdinaryDiffEqPDIRK), removed))
     @test !Base.isexported(OrdinaryDiffEqPDIRK, :EnsembleProblem)
     @test !Base.isexported(OrdinaryDiffEqPDIRK, :get_du)
     @test !Base.isexported(OrdinaryDiffEqPDIRK, :u_modified!)

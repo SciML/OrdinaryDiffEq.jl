@@ -11,14 +11,16 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SciMLBase reexport" begin
         using OrdinaryDiffEqFunctionMap, Test
-        expected = (
-            :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
-            :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
-            :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
-            :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
-            :DiscreteProblem, :DiscreteFunction,
-        )
+        expected = (:DiscreteProblem, :solve)
         @test all(Base.isexported.(Ref(OrdinaryDiffEqFunctionMap), expected))
+        removed = (
+            :ODEProblem, :ODEFunction, :init, :solve!, :step!, :remake, :reinit!,
+            :ReturnCode, :ContinuousCallback, :DiscreteCallback,
+            :VectorContinuousCallback, :CallbackSet, :terminate!, :add_tstop!,
+            :derivative_discontinuity!, :set_proposed_dt!, :successful_retcode,
+            :ODEAliasSpecifier, :DiscreteFunction,
+        )
+        @test all(x -> !x, Base.isexported.(Ref(OrdinaryDiffEqFunctionMap), removed))
         @test !Base.isexported(OrdinaryDiffEqFunctionMap, :EnsembleProblem)
         @test !Base.isexported(OrdinaryDiffEqFunctionMap, :get_du)
         @test !Base.isexported(OrdinaryDiffEqFunctionMap, :u_modified!)

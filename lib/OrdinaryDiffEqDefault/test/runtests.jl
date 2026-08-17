@@ -19,14 +19,16 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SciMLBase reexport" begin
         using OrdinaryDiffEqDefault, Test
-        expected = (
-            :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
-            :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+        expected = (:ODEProblem, :solve)
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqDefault), expected))
+        removed = (
+            :ODEFunction, :init, :solve!, :step!, :remake, :reinit!, :ReturnCode,
+            :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
             :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
             :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier, :DAEProblem,
             :DAEFunction,
         )
-        @test all(Base.isexported.(Ref(OrdinaryDiffEqDefault), expected))
+        @test all(x -> !x, Base.isexported.(Ref(OrdinaryDiffEqDefault), removed))
         @test !Base.isexported(OrdinaryDiffEqDefault, :EnsembleProblem)
         @test !Base.isexported(OrdinaryDiffEqDefault, :get_du)
         @test !Base.isexported(OrdinaryDiffEqDefault, :u_modified!)
