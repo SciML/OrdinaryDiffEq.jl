@@ -114,6 +114,11 @@ concretize(prob, alg = nothing) = DiffEqBase.get_concrete_problem(prob, true; al
     @test du == [-0.5]
     @test seen_rhs_parameter[] === DynamicP
 
+    barrier = DiffEqBase.ParameterDespecializationWrapper(dynamic_rhs!)
+    barrier(du, first_prob.u0, SciMLBase.unwrap_parameters(first_prob.p), 0.0)
+    @test du == [-0.5]
+    @test seen_rhs_parameter[] === DynamicP
+
     J = zeros(1, 1)
     first_prob.f.jac(J, first_prob.u0, first_prob.p, 0.0)
     @test J == [-0.5;;]
