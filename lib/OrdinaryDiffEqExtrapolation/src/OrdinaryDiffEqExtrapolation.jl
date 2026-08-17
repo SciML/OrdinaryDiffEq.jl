@@ -43,10 +43,6 @@ using CommonSolve: init
 using SciMLBase: SciMLBase, LinearProblem
 
 using Reexport: Reexport, @reexport
-using SciMLBase: ODEFunction, init, solve!, step!, remake, reinit!, ReturnCode,
-    ContinuousCallback, DiscreteCallback, VectorContinuousCallback, CallbackSet,
-    terminate!, add_tstop!, derivative_discontinuity!, set_proposed_dt!,
-    successful_retcode, ODEAliasSpecifier
 @reexport using SciMLBase: ODEProblem, solve
 
 include("utils.jl")
