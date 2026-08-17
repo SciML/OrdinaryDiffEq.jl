@@ -1,13 +1,7 @@
 using SciMLTesting, OrdinaryDiffEqFunctionMap, Test
 
 # SciMLBase names re-exported for ordinary ODE usage; everything else stays behind `SciMLBase.`.
-const SCIMLBASE_REEXPORTS = (
-    :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
-    :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
-    :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
-    :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
-    :DiscreteProblem, :DiscreteFunction,
-)
+const SCIMLBASE_REEXPORTS = (:DiscreteProblem, :solve)
 
 run_qa(
     OrdinaryDiffEqFunctionMap;
