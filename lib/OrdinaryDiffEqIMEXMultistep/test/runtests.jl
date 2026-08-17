@@ -11,8 +11,17 @@ end
 
 @time @safetestset "SciMLBase reexport" begin
     using OrdinaryDiffEqIMEXMultistep, Test
-    @test Base.isexported(OrdinaryDiffEqIMEXMultistep, :ODEProblem)
-    @test Base.isexported(OrdinaryDiffEqIMEXMultistep, :solve)
+    expected = (
+        :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
+        :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+        :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
+        :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
+        :SplitODEProblem, :SplitFunction,
+    )
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), expected))
+    @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :EnsembleProblem)
+    @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :get_du)
+    @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :u_modified!)
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

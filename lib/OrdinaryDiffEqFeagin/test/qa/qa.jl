@@ -4,7 +4,8 @@ using SciMLTesting, OrdinaryDiffEqFeagin, Test
 const SCIMLBASE_REEXPORTS = (
     :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
     :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
-    :CallbackSet, :terminate!,
+    :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
+    :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
 )
 
 run_qa(
