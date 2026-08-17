@@ -26,10 +26,7 @@ import OrdinaryDiffEqCore
 import FunctionWrappers: FunctionWrapper
 
 using Reexport: Reexport, @reexport
-using SciMLBase: ODEFunction, init, solve!, step!, remake, reinit!, ReturnCode,
-    ContinuousCallback, DiscreteCallback, VectorContinuousCallback, CallbackSet,
-    terminate!, add_tstop!, derivative_discontinuity!, set_proposed_dt!,
-    successful_retcode, ODEAliasSpecifier
+using SciMLBase: ODEFunction
 @reexport using SciMLBase: ODEProblem, solve
 
 include("algorithms.jl")

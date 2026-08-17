@@ -17,10 +17,7 @@ using EnumX: EnumX
 import SciMLBase
 
 using Reexport: Reexport, @reexport
-using SciMLBase: ODEFunction, init, solve!, step!, remake, reinit!, ReturnCode,
-    ContinuousCallback, DiscreteCallback, VectorContinuousCallback, CallbackSet,
-    terminate!, add_tstop!, derivative_discontinuity!, set_proposed_dt!,
-    successful_retcode, ODEAliasSpecifier, DAEProblem, DAEFunction
+using SciMLBase: DAEProblem, DAEFunction
 @reexport using SciMLBase: ODEProblem, solve
 
 include("default_alg.jl")
