@@ -7,6 +7,25 @@ the more specific abstract types below (adaptive / implicit / exponential / …)
 rather than this root directly. Trait functions such as [`isadaptive`](@ref),
 [`isimplicit`](@ref), [`isfsal`](@ref), and [`alg_order`](@ref) dispatch on this
 hierarchy.
+
+# Extension contract
+
+A solver subtype must provide an `alg_cache` method and matching
+[`initialize!`](@ref) and [`perform_step!`](@ref) methods. It should also define
+[`alg_order`](@ref) and override only the traits whose behavior differs from the
+defaults. The cache type must be either an
+[`OrdinaryDiffEqConstantCache`](@ref) or an
+[`OrdinaryDiffEqMutableCache`](@ref).
+
+# Example
+
+```julia
+using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm
+
+struct MyEuler <: OrdinaryDiffEqAlgorithm end
+OrdinaryDiffEqCore.alg_order(::MyEuler) = 1
+OrdinaryDiffEqCore.isfsal(::MyEuler) = false
+```
 """
 abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 """
@@ -15,6 +34,21 @@ abstract type OrdinaryDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 Abstract supertype for explicit ODE algorithms that support adaptive step-size
 control (they carry an embedded error estimate). Subtyping this makes
 [`isadaptive`](@ref) return `true`.
+
+An adaptive algorithm must also provide an error estimate in
+[`perform_step!`](@ref) and a controller-compatible [`alg_order`](@ref). Use
+[`OrdinaryDiffEqAdaptiveImplicitAlgorithm`](@ref) instead when each step solves
+a nonlinear system.
+
+# Example
+
+```julia
+using OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm
+
+struct MyAdaptive <: OrdinaryDiffEqAdaptiveAlgorithm end
+OrdinaryDiffEqCore.alg_order(::MyAdaptive) = 4
+@assert OrdinaryDiffEqCore.isadaptive(MyAdaptive())
+```
 """
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 """
@@ -175,6 +209,22 @@ OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 
 Abstract supertype for implicit ODE algorithms (those that solve a nonlinear
 system each step). Subtyping this makes [`isimplicit`](@ref) return `true`.
+
+An implicit algorithm must provide the nonlinear-solver cache and stage methods
+expected by [`alg_cache`](@ref), [`initialize!`](@ref), and
+[`perform_step!`](@ref). Its package should document the accepted `nlsolve` and
+linear-solver options and whether Jacobian reuse is supported by
+[`alg_can_repeat_jac`](@ref).
+
+# Example
+
+```julia
+using OrdinaryDiffEqCore: OrdinaryDiffEqImplicitAlgorithm
+
+struct MyImplicit <: OrdinaryDiffEqImplicitAlgorithm end
+OrdinaryDiffEqCore.alg_order(::MyImplicit) = 2
+@assert OrdinaryDiffEqCore.isimplicit(MyImplicit())
+```
 """
 abstract type OrdinaryDiffEqImplicitAlgorithm <:
 OrdinaryDiffEqAlgorithm end
