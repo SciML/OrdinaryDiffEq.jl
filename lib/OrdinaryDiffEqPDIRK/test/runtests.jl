@@ -9,8 +9,16 @@ end
 
 @time @safetestset "SciMLBase reexport" begin
     using OrdinaryDiffEqPDIRK, Test
-    @test Base.isexported(OrdinaryDiffEqPDIRK, :ODEProblem)
-    @test Base.isexported(OrdinaryDiffEqPDIRK, :solve)
+    expected = (
+        :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
+        :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+        :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
+        :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
+    )
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), expected))
+    @test !Base.isexported(OrdinaryDiffEqPDIRK, :EnsembleProblem)
+    @test !Base.isexported(OrdinaryDiffEqPDIRK, :get_du)
+    @test !Base.isexported(OrdinaryDiffEqPDIRK, :u_modified!)
 end
 
 # Run QA tests (AllocCheck, JET) - skip on pre-release Julia

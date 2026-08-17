@@ -11,8 +11,17 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SciMLBase reexport" begin
         using OrdinaryDiffEqFunctionMap, Test
-        @test Base.isexported(OrdinaryDiffEqFunctionMap, :ODEProblem)
-        @test Base.isexported(OrdinaryDiffEqFunctionMap, :solve)
+        expected = (
+            :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
+            :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+            :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
+            :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
+            :DiscreteProblem, :DiscreteFunction,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqFunctionMap), expected))
+        @test !Base.isexported(OrdinaryDiffEqFunctionMap, :EnsembleProblem)
+        @test !Base.isexported(OrdinaryDiffEqFunctionMap, :get_du)
+        @test !Base.isexported(OrdinaryDiffEqFunctionMap, :u_modified!)
     end
     @time @safetestset "DiscreteProblem Defaults" include("discrete_problem_defaults.jl")
     @time @safetestset "Discrete Algorithm Tests" include("discrete_algorithm_test.jl")

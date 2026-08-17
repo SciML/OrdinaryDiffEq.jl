@@ -14,8 +14,16 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SciMLBase reexport" begin
         using OrdinaryDiffEqTaylorSeries, Test
-        @test Base.isexported(OrdinaryDiffEqTaylorSeries, :ODEProblem)
-        @test Base.isexported(OrdinaryDiffEqTaylorSeries, :solve)
+        expected = (
+            :ODEProblem, :ODEFunction, :solve, :init, :solve!, :step!, :remake, :reinit!,
+            :ReturnCode, :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
+            :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
+            :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), expected))
+        @test !Base.isexported(OrdinaryDiffEqTaylorSeries, :EnsembleProblem)
+        @test !Base.isexported(OrdinaryDiffEqTaylorSeries, :get_du)
+        @test !Base.isexported(OrdinaryDiffEqTaylorSeries, :u_modified!)
     end
     @testset "ExplicitTaylor2 Convergence Tests" begin
         # Test convergence
