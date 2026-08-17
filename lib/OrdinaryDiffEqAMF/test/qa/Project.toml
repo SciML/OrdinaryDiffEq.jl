@@ -4,6 +4,7 @@ OrdinaryDiffEqAMF = "08082164-f6a1-4363-b3df-3aa6fcf571ad"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources.OrdinaryDiffEqCore]
@@ -15,4 +16,5 @@ OrdinaryDiffEqAMF = "2"
 OrdinaryDiffEqCore = "4"
 SciMLBase = "3"
 SciMLOperators = "1"
+SciMLTesting = "2.10"
 julia = "1.10"

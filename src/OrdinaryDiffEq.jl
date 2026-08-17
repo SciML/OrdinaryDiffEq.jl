@@ -60,7 +60,32 @@ using DiffEqBase: DEVerbosity
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore, Sequential, BaseThreads, PolyesterThreads
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
+
+"""
+    Sequential() <: OrdinaryDiffEqCore.AbstractThreadingOption
+
+Use one thread for solver work that can otherwise be executed in parallel.
+This is the default threading option for deterministic execution.
+"""
+const Sequential = OrdinaryDiffEqCore.Sequential
+
+"""
+    BaseThreads() <: OrdinaryDiffEqCore.AbstractThreadingOption
+
+Use Julia's built-in `Threads.@threads` for solver work that can be executed in
+parallel. The active Julia process must have more than one thread for this to
+provide parallelism.
+"""
+const BaseThreads = OrdinaryDiffEqCore.BaseThreads
+
+"""
+    PolyesterThreads() <: OrdinaryDiffEqCore.AbstractThreadingOption
+
+Use Polyester.jl's low-overhead threaded execution for solver work that can be
+executed in parallel. Load `Polyester` before selecting this option.
+"""
+const PolyesterThreads = OrdinaryDiffEqCore.PolyesterThreads
 
 # Import from OrdinaryDiffEqDefault
 using OrdinaryDiffEqDefault: DefaultODEAlgorithm
