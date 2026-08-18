@@ -839,8 +839,11 @@ Base.@inline @generated function _invoke_parameter_despecialization(
         f, args::Tuple{Vararg{Any, N}}
     ) where {N}
     parameter_indices = findall(T -> T <: SciMLBase.DespecializedParameters, args.parameters)
-    length(parameter_indices) == 1 ||
-        error("a parameter-despecialization barrier requires exactly one parameter wrapper")
+    length(parameter_indices) <= 1 ||
+        error("a parameter-despecialization barrier requires at most one parameter wrapper")
+    # Nested AutoDespecialize calls can re-enter after an inner NonlinearFunction has
+    # already unwrapped the parameters.
+    isempty(parameter_indices) && return :(_invoke_parameter_despecialization(f, args...))
     parameter_index = only(parameter_indices)
     call_args = [
         i == parameter_index ? :(SciMLBase.unwrap_parameters(args[$i])) : :(args[$i])
