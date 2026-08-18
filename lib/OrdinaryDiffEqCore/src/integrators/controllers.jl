@@ -855,9 +855,11 @@ end
 
 # PID step size controller
 """
-    PIDController(beta1, beta2, beta3=zero(beta1);
-                  limiter=default_dt_factor_limiter,
-                  accept_safety=0.81)
+    PIDController(
+        beta1, beta2, beta3 = zero(beta1);
+        limiter = default_dt_factor_limiter,
+        accept_safety = 0.81
+    )
 
 The proportional-integral-derivative (PID) controller is a generalization of the
 [`PIController`](@ref) and can have improved stability and efficiency properties.
@@ -1094,9 +1096,11 @@ for algorithms like the (E)SDIRK methods.
 (; qmin, qmax, gamma) = controller
 qmax = get_current_qmax(integrator, qmax)
 niters = integrator.cache.nlsolver.iter
-fac = min(gamma,
+fac = min(
+    gamma,
     (1 + 2 * integrator.cache.nlsolver.maxiters) * gamma /
-    (niters + 2 * integrator.cache.nlsolver.maxiters))
+        (niters + 2 * integrator.cache.nlsolver.maxiters)
+)
 expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
 qtmp = fastpower(get_EEst(integrator), expo) / fac
 @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
@@ -1126,7 +1130,7 @@ if qsteady_min <= qacc <= qsteady_max
     qacc = one(qacc)
 end
 cache.dtacc = integrator.dt
-cache.erracc = max(1e-2, get_EEst(integrator))
+cache.erracc = max(1.0e-2, get_EEst(integrator))
 integrator.dt / qacc
 ```
 

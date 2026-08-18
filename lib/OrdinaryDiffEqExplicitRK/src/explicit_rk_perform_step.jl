@@ -351,7 +351,7 @@ coeffs[j] is the coefficient of Θ^(j-1).
 end
 
 """
-    generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
+    generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
 
 Generic interpolation for Runge-Kutta methods using the B_interp coefficient matrix.
 """

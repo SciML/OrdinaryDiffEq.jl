@@ -1,5 +1,5 @@
 """
-    RKMilGeneral(; interpretation=Ito, ii_approx=IILevyArea(), c=1, p=nothing, dt=nothing)
+    RKMilGeneral(; interpretation = Ito, ii_approx = IILevyArea(), c = 1, p = nothing, dt = nothing)
 
 **RKMilGeneral: Generalized Runge-Kutta Milstein Method**
 

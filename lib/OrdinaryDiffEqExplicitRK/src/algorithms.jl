@@ -93,7 +93,7 @@ end
 construct_tsit5_interp_matrix() = construct_tsit5_interp_matrix(Float64)
 
 """
-    construct_tsit5_interp_matrix(::Type{T}) where T
+    construct_tsit5_interp_matrix(::Type{T}) where {T}
 
 High-precision version for BigFloat and other arbitrary-precision types.
 """

@@ -2,10 +2,12 @@ using ADTypes: AutoForwardDiff
 using OrdinaryDiffEqCore: _fixup_ad
 
 """
-    ImplicitEM(; theta = 1, symplectic = false, linsolve = nothing,
-                 nlsolve = NLNewton(), extrapolant = :constant,
-                 new_jac_conv_bound = 1e-3,
-                 autodiff = AutoForwardDiff(), concrete_jac = nothing)
+    ImplicitEM(;
+        theta = 1, symplectic = false, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant,
+        new_jac_conv_bound = 1.0e-3,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing
+    )
 
 **ImplicitEM: Drift-Implicit Euler-Maruyama (Stiff)**
 
@@ -160,10 +162,12 @@ that `theta` is fixed to `1/2` and `symplectic` is fixed to `true`.
 SImplicitMidpoint(; kwargs...) = ImplicitEM(; theta = 1 / 2, symplectic = true, kwargs...)
 
 """
-    ImplicitEulerHeun(; theta = 1, symplectic = false, linsolve = nothing,
-                        nlsolve = NLNewton(), extrapolant = :constant,
-                        new_jac_conv_bound = 1e-3,
-                        autodiff = AutoForwardDiff(), concrete_jac = nothing)
+    ImplicitEulerHeun(;
+        theta = 1, symplectic = false, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant,
+        new_jac_conv_bound = 1.0e-3,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing
+    )
 
 **ImplicitEulerHeun: Drift-Implicit Euler-Heun (Stiff, Stratonovich)**
 
@@ -239,11 +243,13 @@ function ImplicitEulerHeun(;
 end
 
 """
-    ImplicitRKMil(; theta = 1, symplectic = false, linsolve = nothing,
-                    nlsolve = NLNewton(), extrapolant = :constant,
-                    new_jac_conv_bound = 1e-3,
-                    interpretation = AlgorithmInterpretation.Ito,
-                    autodiff = AutoForwardDiff(), concrete_jac = nothing)
+    ImplicitRKMil(;
+        theta = 1, symplectic = false, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant,
+        new_jac_conv_bound = 1.0e-3,
+        interpretation = AlgorithmInterpretation.Ito,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing
+    )
 
 **ImplicitRKMil: Drift-Implicit Runge-Kutta Milstein (Stiff)**
 
@@ -327,10 +333,12 @@ function ImplicitRKMil(;
 end
 
 """
-    ISSEM(; theta = 1, symplectic = false, linsolve = nothing,
-            nlsolve = NLNewton(), extrapolant = :constant,
-            new_jac_conv_bound = 1e-3,
-            autodiff = AutoForwardDiff(), concrete_jac = nothing)
+    ISSEM(;
+        theta = 1, symplectic = false, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant,
+        new_jac_conv_bound = 1.0e-3,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing
+    )
 
 **ISSEM: Implicit Split-Step Euler-Maruyama (Fully Stiff)**
 
@@ -419,10 +427,12 @@ function ISSEM(;
 end
 
 """
-    ISSEulerHeun(; theta = 1, symplectic = false, linsolve = nothing,
-                   nlsolve = NLNewton(), extrapolant = :constant,
-                   new_jac_conv_bound = 1e-3,
-                   autodiff = AutoForwardDiff(), concrete_jac = nothing)
+    ISSEulerHeun(;
+        theta = 1, symplectic = false, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant,
+        new_jac_conv_bound = 1.0e-3,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing
+    )
 
 **ISSEulerHeun: Implicit Split-Step Euler-Heun (Fully Stiff, Stratonovich)**
 
@@ -497,10 +507,12 @@ function ISSEulerHeun(;
 end
 
 """
-    SKenCarp(; linsolve = nothing, nlsolve = NLNewton(),
-               smooth_est = true, extrapolant = :min_correct,
-               new_jac_conv_bound = 1e-3, ode_error_est = true,
-               autodiff = AutoForwardDiff(), concrete_jac = nothing)
+    SKenCarp(;
+        linsolve = nothing, nlsolve = NLNewton(),
+        smooth_est = true, extrapolant = :min_correct,
+        new_jac_conv_bound = 1.0e-3, ode_error_est = true,
+        autodiff = AutoForwardDiff(), concrete_jac = nothing
+    )
 
 **SKenCarp: Stochastic KenCarp for Additive Noise (Stiff, Recommended)**
 

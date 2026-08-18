@@ -1,6 +1,7 @@
 """
-    BDFController(; qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step,
-                  failfactor)
+    BDFController(;
+        qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step, failfactor
+    )
 
 Step-size controller for the variable-order BDF family (`QNDF`, `FBDF`,
 `DFBDF`). Composes the standard step-size knobs via [`CommonControllerOptions`](@ref);

@@ -81,13 +81,13 @@ function setup_fd2d_problem(; A = 0.1, B = 0.1, N = 40, final_t = 1.0)
     h = 1 / (N + 1)
 
     # 1D Laplacian with Dirichlet zero BCs, as a SciMLOperator.
-    D    = (1 / h^2) * Tridiagonal(ones(N - 1), -2 * ones(N), ones(N - 1))
+    D = (1 / h^2) * Tridiagonal(ones(N - 1), -2 * ones(N), ones(N - 1))
     D_op = MatrixOperator(D)
 
     # 2D Jacobian pieces: diffusion in x and in y, via Kronecker products.
     Jx_op = A * Base.kron(D_op, IdentityOperator(N))
     Jy_op = B * Base.kron(IdentityOperator(N), D_op)
-    J_op  = cache_operator(Jx_op + Jy_op, zeros(N^2))
+    J_op = cache_operator(Jx_op + Jy_op, zeros(N^2))
 
     # Nonlinear reaction term.
     g!(du, u, p, t) = (@. du += u^2 * (1 - u) + exp(t); return nothing)
@@ -109,7 +109,7 @@ function setup_fd2d_problem(; A = 0.1, B = 0.1, N = 40, final_t = 1.0)
 end
 
 prob = setup_fd2d_problem()
-sol  = solve(prob, AMF(ROS34PW1a); abstol = 1e-8, reltol = 1e-8)
+sol = solve(prob, AMF(ROS34PW1a); abstol = 1.0e-8, reltol = 1.0e-8)
 ```
 
 For this 1600-unknown problem the AMF stage solve is substantially faster than the dense equivalent, and the speedup grows with `N` because the dense `W` solve is `O(N⁶)` while the two Kronecker-structured AMF solves are `O(N³)` total. A regression test inside the package (`lib/OrdinaryDiffEqAMF/test/test_fd2d.jl`) measures the speedup on the same problem against a baseline `solve(..., ROS34PW1a())` without AMF.
@@ -123,8 +123,8 @@ using SciMLOperators: ScalarOperator
 
 gamma_op = ScalarOperator(
     1.0;
-    update_func       = (old, u, p, t; gamma = 1.0) -> gamma,
-    accepted_kwargs   = Val((:gamma,)),
+    update_func = (old, u, p, t; gamma = 1.0) -> gamma,
+    accepted_kwargs = Val((:gamma,)),
 )
 
 # Each factor is (I − γ Jᵢ), pre-assembled as a Kronecker-structured operator.
@@ -135,12 +135,12 @@ custom_factors = (
 
 amf_func = build_amf_function(
     f!;
-    jac         = J_op,
-    split       = (Jx_op, Jy_op),
+    jac = J_op,
+    split = (Jx_op, Jy_op),
     amf_factors = custom_factors,
 )
 
-sol = solve(ODEProblem(amf_func, u0, (0.0, 1.0)), AMF(ROS34PW1a); reltol = 1e-8)
+sol = solve(ODEProblem(amf_func, u0, (0.0, 1.0)), AMF(ROS34PW1a); reltol = 1.0e-8)
 ```
 
 `split` and `amf_factors` must contain the same number of operators: the split is used to propagate Jacobian updates, and the factors determine the actual `W_prototype` that the linear solver sees.

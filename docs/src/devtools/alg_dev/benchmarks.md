@@ -20,13 +20,15 @@ Then you call `Shootout` on that setup. The code is as follows:
 
 ```julia
 using OrdinaryDiffEq, DiffEqProblemLibrary.ODEProblemLibrary, DiffEqDevTools, ODE,
-      ODEInterface, ODEInterfaceDiffEq
+    ODEInterface, ODEInterfaceDiffEq
 
 ODEProblemLibrary.importodeproblems()
 prob = ODEProblemLibrary.prob_ode_2Dlinear
-setups = [Dict(:alg => DP5())
-          Dict(:abstol => 1e-3, :reltol => 1e-6, :alg => ode45()) # Fix ODE to be normal
-          Dict(:alg => dopri5())]
+setups = [
+    Dict(:alg => DP5())
+    Dict(:abstol => 1.0e-3, :reltol => 1.0e-6, :alg => ode45()) # Fix ODE to be normal
+    Dict(:alg => dopri5())
+]
 names = ["DifferentialEquations"; "ODE"; "ODEInterface"]
 shoot = Shootout(prob, setups; dt = 1 / 2^(10), names = names)
 ```
@@ -70,8 +72,10 @@ into the function as well:
 
 ```julia
 wp_set = WorkPrecisionSet(prob, tspan, abstols, reltols, setups; numruns = 2)
-setups = [Dict(:alg => RK4()); Dict(:alg => Euler()); Dict(:alg => BS3());
-          Dict(:alg => Midpoint()); Dict(:alg => BS5()); Dict(:alg => DP5())]
+setups = [
+    Dict(:alg => RK4()); Dict(:alg => Euler()); Dict(:alg => BS3());
+    Dict(:alg => Midpoint()); Dict(:alg => BS5()); Dict(:alg => DP5())
+]
 wp_set = WorkPrecisionSet(prob, abstols, reltols, setups; dt = 1 / 2^4, numruns = 2)
 ```
 

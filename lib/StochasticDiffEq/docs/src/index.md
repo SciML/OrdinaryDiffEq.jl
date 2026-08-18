@@ -21,10 +21,12 @@ using StochasticDiffEq
 # Define the drift and diffusion functions
 function drift!(du, u, p, t)
     du[1] = 1.01 * u[1]
+    return
 end
 
 function diffusion!(du, u, p, t)
     du[1] = 0.87 * u[1]
+    return
 end
 
 # Initial condition and time span

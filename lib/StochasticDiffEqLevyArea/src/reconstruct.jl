@@ -39,8 +39,10 @@ function reconstruct_path(
 end
 
 """
-    iterated_integrals_subinterval(dW, h, coeffs, t_start, t_end;
-        n_quadrature=64, ito_correction=true)
+    iterated_integrals_subinterval(
+        dW, h, coeffs, t_start, t_end;
+        n_quadrature = 64, ito_correction = true
+    )
 
 Compute iterated Stratonovich integrals over the sub-interval [t_start, t_end] ⊂ [0, h]
 by reconstructing the Brownian path from Fourier coefficients and computing via

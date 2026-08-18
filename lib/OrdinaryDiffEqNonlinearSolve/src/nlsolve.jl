@@ -51,8 +51,10 @@ this function to participate in the shared [`nlsolve!`](@ref) convergence loop.
 function compute_step! end
 
 """
-    nlsolve!(nlsolver::AbstractNLSolver, integrator, cache = nothing,
-             repeat_step = false)
+    nlsolve!(
+        nlsolver::AbstractNLSolver, integrator, cache = nothing,
+        repeat_step = false
+    )
 
 Solve
 

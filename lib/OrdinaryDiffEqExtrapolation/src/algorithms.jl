@@ -3,8 +3,10 @@ OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm <:
 OrdinaryDiffEqAdaptiveImplicitAlgorithm end
 """
-    AitkenNeville(; max_order = 10, min_order = 1, init_order = 5,
-        threading = false) -> AitkenNeville
+    AitkenNeville(;
+            max_order = 10, min_order = 1, init_order = 5,
+            threading = false
+        ) -> AitkenNeville
 
 Adaptive explicit Euler extrapolation using the Aitken-Neville scheme and a Romberg
 subdivision sequence. The method varies both its step size and extrapolation order and
@@ -47,9 +49,11 @@ Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarSt
 end
 
 """
-    ImplicitEulerExtrapolation(; autodiff = AutoForwardDiff(), concrete_jac = nothing,
-        linsolve = nothing, max_order = 12, min_order = 3, init_order = 5,
-        threading = false, sequence = :harmonic) -> ImplicitEulerExtrapolation
+    ImplicitEulerExtrapolation(;
+            autodiff = AutoForwardDiff(), concrete_jac = nothing,
+            linsolve = nothing, max_order = 12, min_order = 3, init_order = 5,
+            threading = false, sequence = :harmonic
+        ) -> ImplicitEulerExtrapolation
 
 Adaptive implicit Euler extrapolation, similar to SEULEX. It is intended for stiff
 problems and varies both its step size and extrapolation order.
@@ -151,9 +155,11 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 
 """
-    ExtrapolationMidpointDeuflhard(; min_order = 1, init_order = 5,
-        max_order = 10, sequence = :harmonic, threading = true,
-        sequence_factor = 2) -> ExtrapolationMidpointDeuflhard
+    ExtrapolationMidpointDeuflhard(;
+            min_order = 1, init_order = 5,
+            max_order = 10, sequence = :harmonic, threading = true,
+            sequence_factor = 2
+        ) -> ExtrapolationMidpointDeuflhard
 
 Adaptive explicit midpoint extrapolation with Deuflhard's order and step-size
 selection. Barycentric extrapolation combines the midpoint approximations. The
@@ -250,10 +256,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 
 """
-    ImplicitDeuflhardExtrapolation(; autodiff = AutoForwardDiff(),
-        concrete_jac = nothing, linsolve = nothing, min_order = 1,
-        init_order = 5, max_order = 10, sequence = :harmonic,
-        threading = false) -> ImplicitDeuflhardExtrapolation
+    ImplicitDeuflhardExtrapolation(;
+            autodiff = AutoForwardDiff(),
+            concrete_jac = nothing, linsolve = nothing, min_order = 1,
+            init_order = 5, max_order = 10, sequence = :harmonic,
+            threading = false
+        ) -> ImplicitDeuflhardExtrapolation
 
 Adaptive implicit midpoint extrapolation with Deuflhard's order and step-size
 selection. It targets stiff problems and uses barycentric extrapolation of the
@@ -360,9 +368,11 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 
 """
-    ExtrapolationMidpointHairerWanner(; min_order = 2, init_order = 5,
-        max_order = 10, sequence = :harmonic, threading = true,
-        sequence_factor = 2) -> ExtrapolationMidpointHairerWanner
+    ExtrapolationMidpointHairerWanner(;
+            min_order = 2, init_order = 5,
+            max_order = 10, sequence = :harmonic, threading = true,
+            sequence_factor = 2
+        ) -> ExtrapolationMidpointHairerWanner
 
 Adaptive explicit midpoint extrapolation with the order and step-size controller from
 Hairer and Wanner's ODEX algorithm. Barycentric extrapolation combines the midpoint
@@ -460,10 +470,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 
 """
-    ImplicitHairerWannerExtrapolation(; autodiff = AutoForwardDiff(),
-        concrete_jac = nothing, linsolve = nothing, min_order = 2,
-        init_order = 5, max_order = 10, sequence = :harmonic,
-        threading = false) -> ImplicitHairerWannerExtrapolation
+    ImplicitHairerWannerExtrapolation(;
+            autodiff = AutoForwardDiff(),
+            concrete_jac = nothing, linsolve = nothing, min_order = 2,
+            init_order = 5, max_order = 10, sequence = :harmonic,
+            threading = false
+        ) -> ImplicitHairerWannerExtrapolation
 
 Adaptive implicit midpoint extrapolation with the order and step-size controller from
 Hairer and Wanner's SODEX algorithm. It is intended for stiff problems and supports
@@ -573,10 +585,12 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 
 """
-    ImplicitEulerBarycentricExtrapolation(; autodiff = AutoForwardDiff(),
-        concrete_jac = nothing, linsolve = nothing, min_order = 3,
-        init_order = 5, max_order = 12, sequence = :harmonic,
-        threading = false, sequence_factor = 2) -> ImplicitEulerBarycentricExtrapolation
+    ImplicitEulerBarycentricExtrapolation(;
+            autodiff = AutoForwardDiff(),
+            concrete_jac = nothing, linsolve = nothing, min_order = 3,
+            init_order = 5, max_order = 12, sequence = :harmonic,
+            threading = false, sequence_factor = 2
+        ) -> ImplicitEulerBarycentricExtrapolation
 
 Adaptive implicit Euler extrapolation using barycentric coordinates and the
 Hairer-Wanner order and step-size strategy. It targets stiff problems and can evaluate

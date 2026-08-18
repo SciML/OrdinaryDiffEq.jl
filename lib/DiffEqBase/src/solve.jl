@@ -286,7 +286,7 @@ end
 
 """
 ```julia
-solve(prob::AbstractDEProblem, alg::Union{AbstractDEAlgorithm,Nothing}; kwargs...)
+solve(prob::AbstractDEProblem, alg::Union{AbstractDEAlgorithm, Nothing}; kwargs...)
 ```
 
 ## Arguments

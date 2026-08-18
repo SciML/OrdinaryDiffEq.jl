@@ -18,7 +18,7 @@ does not have a `jac_reuse` field.
 end
 
 """
-    _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}
+    _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2, Bool}
 
 Decide whether to recompute the Jacobian and/or W matrix for Rosenbrock methods.
 All Rosenbrock/W-method J/W logic lives here — no delegation to `do_newJW`.
@@ -513,14 +513,14 @@ function calc_J_dae(integrator, cache)
 end
 
 """
-    islinearfunction(integrator) -> Tuple{Bool,Bool}
+    islinearfunction(integrator) -> Tuple{Bool, Bool}
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
 islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 
 """
-    islinearfunction(f, alg) -> Tuple{Bool,Bool}
+    islinearfunction(f, alg) -> Tuple{Bool, Bool}
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
