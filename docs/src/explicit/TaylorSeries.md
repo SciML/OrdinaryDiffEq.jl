@@ -114,12 +114,12 @@ function f(u, p, t)
     du1 = σ * (u[2] - u[1])
     du2 = u[1] * (ρ - u[3]) - u[2]
     du3 = u[1] * u[2] - β * u[3]
-    [du1, du2, du3]
+    return [du1, du2, du3]
 end
 
 u0 = [1.0, 0.0, 0.0]
 tspan = (0.0, 10.0)
-p = [10.0, 28.0, 8/3]
+p = [10.0, 28.0, 8 / 3]
 prob = ODEProblem(f, u0, tspan, p)
 
 # Second-order Taylor method

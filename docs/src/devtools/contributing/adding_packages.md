@@ -47,11 +47,12 @@ function DiffEqBase.__solve{uType, duType, tType, isinplace, LinearSolver}(
         alg::DASKRDAEAlgorithm{LinearSolver},
         timeseries = [], ts = [], ks = []; verbose = true,
         callback = nothing, abstol = 1 / 10^6, reltol = 1 / 10^3,
-        saveat = Float64[], adaptive = true, maxiters = Int(1e5),
+        saveat = Float64[], adaptive = true, maxiters = 10^5,
         timeseries_errors = true, save_everystep = isempty(saveat), dense = save_everystep,
         save_start = true, save_timeseries = nothing,
         userdata = nothing,
-        kwargs...)
+        kwargs...
+    )
     # do something
 end
 ```
@@ -68,11 +69,13 @@ In `solve` you do option handling and call your solver. At the end, you return
 the solution via:
 
 ```julia
-build_solution(prob, alg, ts, timeseries,
+build_solution(
+    prob, alg, ts, timeseries,
     du = dures,
     dense = dense,
     timeseries_errors = timeseries_errors,
-    retcode = :Success)
+    retcode = :Success
+)
 ```
 
 Giving `du` is only currently allowed for DAEs and is optional. The errors

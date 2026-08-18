@@ -715,9 +715,11 @@ struct SMEB <: StochasticDiffEqAlgorithm end
 using ADTypes: AutoForwardDiff
 
 """
-    IRI1(; autodiff=AutoForwardDiff(), concrete_jac=nothing, linsolve=nothing,
-         nlsolve=NLNewton(), extrapolant=:constant, theta=1,
-         new_jac_conv_bound=1e-3)
+    IRI1(;
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant, theta = 1,
+        new_jac_conv_bound = 1.0e-3
+    )
 
 Adaptive drift-implicit variant of the Rößler `RI1` method for weak
 approximation of Itô SDEs. The nonlinear and linear solves can be customized

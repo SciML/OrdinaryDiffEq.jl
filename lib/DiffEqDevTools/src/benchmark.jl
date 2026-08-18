@@ -12,8 +12,10 @@ __default_name(alg) = string(nameof(typeof(alg)))
 ## Shootouts
 
 """
-    Shootout(prob, setups; appxsol = nothing, names = nothing,
-        error_estimate = :final, numruns = 20, seconds = 2, kwargs...)
+    Shootout(
+        prob, setups; appxsol = nothing, names = nothing,
+        error_estimate = :final, numruns = 20, seconds = 2, kwargs...
+    )
 
 Benchmark multiple solver configurations on one problem. Each entry of `setups` is a
 dictionary containing an `:alg` and any solver-specific keyword arguments. The result
@@ -37,8 +39,10 @@ mutable struct Shootout
 end
 
 """
-    ShootoutSet(probs, setups; probaux = nothing, names = nothing,
-        print_names = false, kwargs...)
+    ShootoutSet(
+        probs, setups; probaux = nothing, names = nothing,
+        print_names = false, kwargs...
+    )
 
 Run a [`Shootout`](@ref) for every problem in `probs`. `probaux` may contain one
 dictionary of per-problem keyword arguments for each problem; other keyword arguments
@@ -186,9 +190,11 @@ Base.lastindex(shoot::ShootoutSet) = lastindex(shoot.shootouts)
 ## WorkPrecisions
 
 """
-    WorkPrecision(prob, alg, abstols, reltols, dts = nothing;
+    WorkPrecision(
+        prob, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, kwargs...)
+        numruns = 20, seconds = 2, kwargs...
+    )
 
 Measure error and execution time for `alg` at corresponding absolute and relative
 tolerances. When `dts` is provided, its entries select a fixed time step for each
@@ -931,9 +937,11 @@ function WorkPrecisionSet(
 end
 
 """
-    get_sample_errors(prob::AbstractRODEProblem, setup, test_dt = nothing;
+    get_sample_errors(
+        prob::AbstractRODEProblem, setup, test_dt = nothing;
         numruns, solution_runs, appxsol_setup = nothing,
-        sample_error_runs = 10^7, parallel_type = :none, kwargs...)
+        sample_error_runs = 10^7, parallel_type = :none, kwargs...
+    )
 
 Estimate an approximate 95% confidence half-width for the sampling error of an RODE
 solver setup. `numruns` may be one sample count or a collection of counts; the return

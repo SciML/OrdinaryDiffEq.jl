@@ -18,7 +18,7 @@
 # original payload with `RespecializeParams.unpack(sol.prob.p, P)`.
 
 """
-    should_opaque_p(p) :: Bool
+    should_opaque_p(p)::Bool
 
 Policy for whether the [`AutoDePSpecialize`](@ref) path de-specializes `p`.
 `isbits` structs are packed into a `RespecializeParams.OpaqueParams` (byte copy)

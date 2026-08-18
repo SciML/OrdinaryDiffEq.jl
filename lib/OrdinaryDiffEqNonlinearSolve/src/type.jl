@@ -29,7 +29,7 @@ function reject_conditioning(T, precondition, postcondition)
 end
 
 """
-    NLFunctional(; κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5)
+    NLFunctional(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5)
 
 Functional (fixed-point) iteration solver for the implicit stage equations,
 `z ← g(z)`. No Jacobian/`W` is formed, so it is cheap per iteration but only
@@ -66,8 +66,10 @@ function NLFunctional(;
 end
 
 """
-    NLAnderson(; κ = 1//100, max_iter = 10, max_history = 5, aa_start = 1,
-               droptol = nothing, fast_convergence_cutoff = 1//5)
+    NLAnderson(;
+        κ = 1 // 100, max_iter = 10, max_history = 5, aa_start = 1,
+        droptol = nothing, fast_convergence_cutoff = 1 // 5
+    )
 
 Anderson-accelerated fixed-point iteration for the implicit stage equations. Like
 [`NLFunctional`](@ref) but mixes in `max_history` previous residuals via a
@@ -109,8 +111,10 @@ function NLAnderson(;
 end
 
 """
-    NLNewton(; κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5,
-             new_W_dt_cutoff = 1//5, always_new = false, check_div = true, relax = nothing)
+    NLNewton(;
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true, relax = nothing
+    )
 
 Quasi-Newton nonlinear solver for the implicit stage equations. Uses the
 `W = M/(γΔt) - J` matrix (reused/refactorized across steps and stages when
@@ -164,10 +168,12 @@ function NLNewton(;
 end
 
 """
-    NonlinearSolveAlg(alg = NewtonRaphson(autodiff = AutoFiniteDiff());
-        κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5,
-        new_W_dt_cutoff = 1//5, always_new = false, check_div = true,
-        precondition = nothing, postcondition = nothing)
+    NonlinearSolveAlg(
+        alg = NewtonRaphson(autodiff = AutoFiniteDiff());
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
+        precondition = nothing, postcondition = nothing
+    )
 
 Use a NonlinearSolve.jl algorithm for the nonlinear stage equations of an implicit
 OrdinaryDiffEq method. Pass this algorithm as the `nlsolve` keyword to an implicit
@@ -299,9 +305,11 @@ function NonlinearSolveAlg(
 end
 
 """
-    HomotopyNonlinearSolveAlg(alg = HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()));
-        κ = 1//100, max_iter = 10, fast_convergence_cutoff = 1//5,
-        abstol = nothing, reltol = nothing)
+    HomotopyNonlinearSolveAlg(
+        alg = HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()));
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        abstol = nothing, reltol = nothing
+    )
 
 Solve the implicit stage equations by homotopy continuation in the step size instead of
 a plain Newton iteration. The stage equation

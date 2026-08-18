@@ -6,7 +6,7 @@ get_fsalfirstlast(cache::ExpRKCache, u) = (zero(cache.rtmp), zero(cache.rtmp))
 
 # Precomputation of exponential-like operators
 """
-    expRK_operators(alg,dt,A) -> ops
+    expRK_operators(alg, dt, A) -> ops
 
 Compute operator(s) for an ExpRK algorithm. `dt` is the time step and `A` is
 the matrix form of the linear operator (from either a linear problem or a
@@ -103,7 +103,7 @@ for (Alg, Cache) in [
 end
 
 """
-    alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
+    alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t, dt, p, du1, tmp, dz, plist)
 
 Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 
@@ -823,7 +823,7 @@ end
 
 ## Mutable caches
 """
-    alg_cache_exprb(alg,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist)
+    alg_cache_exprb(alg, uEltypeNoUnits, uprev, f, t, p, du1, tmp, dz, plist)
 
 Construct the non-standard caches (not uType or rateType) for Exprb integrators.
 

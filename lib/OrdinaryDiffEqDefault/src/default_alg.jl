@@ -55,6 +55,7 @@ using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -u[1]
+    return
 end
 
 prob = ODEProblem(f!, [1.0], (0.0, 1.0))
@@ -237,6 +238,7 @@ using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -1000u[1]
+    return
 end
 
 prob = ODEProblem(f!, [1.0], (0.0, 1.0))

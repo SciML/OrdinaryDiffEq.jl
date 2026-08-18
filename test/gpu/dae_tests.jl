@@ -419,7 +419,7 @@ end
 # ── Convenience for interactive debugging ────────────────────────────────────
 
 """
-    debug_case(solver; jac="none", mass="diag_cu")
+    debug_case(solver; jac = "none", mass = "diag_cu")
 
 Run a single case interactively. Throws instead of catching so you can inspect
 the stack trace.

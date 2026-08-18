@@ -15,9 +15,11 @@ mutable struct StochasticCompositeCache{T, F} <: StochasticDiffEqCache
 end
 
 """
-    alg_cache(alg, prob, u, ΔW, ΔZ, p, rate_prototype, noise_rate_prototype,
-              jump_rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-              ::Type{tTypeNoUnits}, uprev, f, t, dt, ::Type{Val{iip}}, verbose)
+    alg_cache(
+        alg, prob, u, ΔW, ΔZ, p, rate_prototype, noise_rate_prototype,
+        jump_rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, f, t, dt, ::Type{Val{iip}}, verbose
+    )
 
 Construct the per-algorithm cache used by `perform_step!`.
 

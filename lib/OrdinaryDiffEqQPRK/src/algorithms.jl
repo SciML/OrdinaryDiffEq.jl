@@ -1,6 +1,8 @@
 """
-    QPRK98(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = Serial())
+    QPRK98(;
+        stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+        thread = Serial()
+    )
 
 Ninth-order explicit embedded Runge-Kutta pair with an eighth-order error estimate,
 designed for quadruple-precision computations. Its parallel tableau is most useful when

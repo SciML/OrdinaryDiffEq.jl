@@ -1,8 +1,10 @@
 # IMEX Multistep methods
 
 """
-    CNAB2(; autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
-        nlsolve = NLNewton(), extrapolant = :linear)
+    CNAB2(;
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :linear
+    )
 
 Second-order Crank-Nicolson Adams-Bashforth IMEX multistep method. The first
 component of a `SplitODEProblem` is treated implicitly with Crank-Nicolson, while
@@ -79,8 +81,10 @@ function CNAB2(;
 end
 
 """
-    CNLF2(; autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
-        nlsolve = NLNewton(), extrapolant = :linear)
+    CNLF2(;
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :linear
+    )
 
 Second-order Crank-Nicolson Leapfrog IMEX multistep method. The first component of
 a `SplitODEProblem` is treated implicitly with Crank-Nicolson, while the second

@@ -182,7 +182,7 @@ function SBDF(;
 end
 
 """
-    SBDF2(;kwargs...)
+    SBDF2(; kwargs...)
 
 The two-step version of the IMEX multistep methods of
 
@@ -197,7 +197,7 @@ See also `SBDF`.
 SBDF2(; kwargs...) = SBDF(2; kwargs...)
 
 """
-    SBDF3(;kwargs...)
+    SBDF3(; kwargs...)
 
 The three-step version of the IMEX multistep methods of
 
@@ -212,7 +212,7 @@ See also `SBDF`.
 SBDF3(; kwargs...) = SBDF(3; kwargs...)
 
 """
-    SBDF4(;kwargs...)
+    SBDF4(; kwargs...)
 
 The four-step version of the IMEX multistep methods of
 
@@ -575,7 +575,7 @@ An alias of `QNDF` with κ=0.
 QBDF(; kwargs...) = QNDF(; kappa = tuple(0 // 1, 0 // 1, 0 // 1, 0 // 1, 0 // 1), kwargs...)
 
 """
-    IMEXEuler(;kwargs...)
+    IMEXEuler(; kwargs...)
 
 The one-step version of the IMEX multistep methods of
 
@@ -602,7 +602,7 @@ See also `SBDF`, `IMEXEulerARK`.
 IMEXEuler(; kwargs...) = SBDF(1; kwargs...)
 
 """
-    IMEXEulerARK(;kwargs...)
+    IMEXEulerARK(; kwargs...)
 
 The one-step version of the IMEX multistep methods of
 

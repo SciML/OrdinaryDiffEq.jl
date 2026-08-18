@@ -119,7 +119,7 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
 end
 
 """
-    _ode_init(prob, alg, timeseries_init=(), ts_init=(), ks_init=(); kwargs...)
+    _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
 Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
 separated from `__init` so that SDE packages can call it directly, bypassing

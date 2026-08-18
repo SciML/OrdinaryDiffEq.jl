@@ -1,6 +1,8 @@
 """
-    ConvergenceSimulation(solutions, convergence_axis;
-        auxdata = nothing, additional_errors = nothing, expected_value = nothing)
+    ConvergenceSimulation(
+        solutions, convergence_axis;
+        auxdata = nothing, additional_errors = nothing, expected_value = nothing
+    )
 
 Collect solutions and error series from a convergence experiment. The constructor
 combines the error measurements from `solutions` with `additional_errors` and estimates

@@ -79,8 +79,10 @@ for (Alg, Description, Ref) in [
 end
 
 """
-    ETD1(; krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-           concrete_jac = nothing, step_limiter = trivial_limiter!)
+    ETD1(;
+        krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
+        concrete_jac = nothing, step_limiter = trivial_limiter!
+    )
 
 **ETD1: First Order Exponential Time Differencing (Semilinear ODE Solver)**
 

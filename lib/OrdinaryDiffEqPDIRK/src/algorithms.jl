@@ -1,6 +1,8 @@
 """
-    PDIRK44(; autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
-        nlsolve = NLNewton(), extrapolant = :constant, threading = true)
+    PDIRK44(;
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :constant, threading = true
+    )
 
 Fourth-order, parallel diagonally implicit Runge-Kutta method. It evaluates the
 independent diagonal stages concurrently when `threading = true`, making it useful

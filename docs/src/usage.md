@@ -8,10 +8,12 @@ f(u, p, t) = 1.01 * u
 u0 = 1 / 2
 tspan = (0.0, 1.0)
 prob = ODEProblem(f, u0, tspan)
-sol = solve(prob, Tsit5(), reltol = 1e-8, abstol = 1e-8)
+sol = solve(prob, Tsit5(), reltol = 1.0e-8, abstol = 1.0e-8)
 using Plots
-plot(sol, linewidth = 5, title = "Solution to the linear ODE with a thick line",
-    xaxis = "Time (t)", yaxis = "u(t) (in μm)", label = "My Thick Line!") # legend=false
+plot(
+    sol, linewidth = 5, title = "Solution to the linear ODE with a thick line",
+    xaxis = "Time (t)", yaxis = "u(t) (in μm)", label = "My Thick Line!", # legend = false
+)
 plot!(sol.t, t -> 0.5 * exp(1.01 * t), lw = 3, ls = :dash, label = "True Solution!")
 ```
 `Tsit5()` is a good default choice for many non-stiff ODEs. For stiff problems,
@@ -25,6 +27,7 @@ function lorenz!(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
     du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -39,7 +42,7 @@ Very fast static array versions can be specifically compiled to the size of your
 ```julia
 using OrdinaryDiffEq, StaticArrays
 function lorenz(u, p, t)
-    SA[10.0 * (u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
+    return SA[10.0 * (u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
 end
 u0 = SA[1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -52,9 +55,9 @@ For “refined ODEs”, like dynamical equations and `SecondOrderODEProblem`s, r
 ```julia
 function HH_acceleration!(dv, v, u, p, t)
     x, y = u
-    dx, dy = dv
-    dv[1] = -x - 2 * x * y
-    dv[2] = y^2 - y - x^2
+    dv[1] = dx = -x - 2 * x * y
+    dv[2] = dy = y^2 - y - x^2
+    return
 end
 initial_positions = [0.0, 0.1]
 initial_velocities = [0.5, 0.0]

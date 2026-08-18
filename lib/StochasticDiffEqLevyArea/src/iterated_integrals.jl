@@ -1,5 +1,5 @@
 """
-    ito_correction!(I, h=1)
+    ito_correction!(I, h = 1)
 
 Subtract h/2 from every diagonal element of I (Itô correction).
 """

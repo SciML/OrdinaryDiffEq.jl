@@ -30,7 +30,7 @@ end
 ## compute_step!
 
 """
-    compute_step!(nlsolver::NLSolver{<:Union{NLFunctional,NLAnderson}}, integrator)
+    compute_step!(nlsolver::NLSolver{<:Union{NLFunctional, NLAnderson}}, integrator)
 
 Compute the next step of the fixed-point iteration
 
