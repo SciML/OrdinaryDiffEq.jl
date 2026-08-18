@@ -100,7 +100,7 @@ function rober(du, u, p, t)
     return nothing
 end
 prob1 = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4, true))
-sol1 = solve(prob1, TRBDF2(autodiff = AutoForwardDiff(chunksize = chunksize)))
+sol1 = solve(prob1, TRBDF2(autodiff = AutoForwardDiff(; chunksize)))
 prob = ODEProblem(rober, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4, false))
 sol = solve(prob, TRBDF2())
 @test sol.u[end] == sol1.u[end]

@@ -42,7 +42,7 @@ prob = SDEProblem(f, g, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(sol.u[end]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 sim = test_convergence(
@@ -119,7 +119,7 @@ prob = SDEProblem(f!, g!, [u₀], tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 sim = test_convergence(
@@ -213,7 +213,7 @@ prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(5.0e5)

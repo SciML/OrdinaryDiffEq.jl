@@ -21,11 +21,11 @@ end
 
 callback = ContinuousCallback(condition, affect!)
 
-sol = solve(prob, Tsit5(), callback = callback)
+sol = solve(prob, Tsit5(); callback)
 @test length(sol.t) < 20
 
 # Force integrator to step on event
-sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+sol = solve(prob, Tsit5(); callback, tstops = [-2.95])
 @test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
@@ -45,10 +45,10 @@ end
 
 callback = VectorContinuousCallback(condition, affect!, 1)
 
-sol = solve(prob, Tsit5(), callback = callback)
+sol = solve(prob, Tsit5(); callback)
 
 # Force integrator to step on event
-sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
+sol = solve(prob, Tsit5(); callback, tstops = [-2.95])
 @test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
 
 f = function (du, u, p, t)
@@ -68,10 +68,10 @@ end
 
 callback = ContinuousCallback(condition, affect!)
 
-sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6)
+sol = solve(prob, Tsit5(); callback, abstol = 1.0e-8, reltol = 1.0e-6)
 
 # Force integrator to step on event
-sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6, tstops = [2.95])
+sol = solve(prob, Tsit5(); callback, abstol = 1.0e-8, reltol = 1.0e-6, tstops = [2.95])
 @test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
@@ -91,10 +91,10 @@ end
 
 callback = VectorContinuousCallback(condition, affect!, 1)
 
-sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6)
+sol = solve(prob, Tsit5(); callback, abstol = 1.0e-8, reltol = 1.0e-6)
 
 # Force integrator to step on event
-sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6, tstops = [2.95])
+sol = solve(prob, Tsit5(); callback, abstol = 1.0e-8, reltol = 1.0e-6, tstops = [2.95])
 @test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 f = function (du, u, p, t)
@@ -118,7 +118,7 @@ u0 = [50.0, 0.0]
 tspan = (0.0, 15.0)
 prob = ODEProblem(f, u0, tspan)
 
-sol = solve(prob, Tsit5(), callback = callback, adaptive = false, dt = 1 / 4)
+sol = solve(prob, Tsit5(); callback, adaptive = false, dt = 1 / 4)
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
     out[1] = u[1]
@@ -202,17 +202,17 @@ sol = solve(prob, Tsit5(), callback = callback_single, saveat = t - eps(t))
 @test sol(t, continuity = :right)[2] > 0
 @test sol(t, continuity = :left)[2] < 0
 
-sol = solve(prob, Vern6(), callback = callback)
+sol = solve(prob, Vern6(); callback)
 sol = solve(prob, Vern6(), callback = vcb)
 #plot(sol,denseplot=true)
 sol = solve(prob, BS3(), callback = vcb)
-sol = solve(prob, BS3(), callback = callback)
+sol = solve(prob, BS3(); callback)
 
-sol33 = solve(prob, Vern7(), callback = callback)
+sol33 = solve(prob, Vern7(); callback)
 sol33 = solve(prob, Vern7(), callback = vcb)
 
 bounced = ODEProblem(f, sol.u[end - 1], (0.0, 1.0))
-sol_bounced = solve(bounced, Vern6(), callback = callback, dt = sol.t[end] - sol.t[end - 1])
+sol_bounced = solve(bounced, Vern6(); callback, dt = sol.t[end] - sol.t[end - 1])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
 @test maximum(
@@ -225,7 +225,7 @@ sol_bounced(0.04) # Complete density
 ) ==
     0
 
-sol2 = solve(prob, Vern6(), callback = callback, adaptive = false, dt = 1 / 2^4)
+sol2 = solve(prob, Vern6(); callback, adaptive = false, dt = 1 / 2^4)
 #plot(sol2)
 
 sol2 = solve(prob, Vern6())
@@ -240,7 +240,7 @@ end
 affect! = function (integrator) end
 
 save_positions = (true, false)
-saving_callback = DiscreteCallback(condition, affect!, save_positions = save_positions)
+saving_callback = DiscreteCallback(condition, affect!; save_positions)
 
 sol4 = solve(prob, Tsit5(), callback = saving_callback)
 
@@ -249,7 +249,7 @@ sol4 = solve(prob, Tsit5(), callback = saving_callback)
 affect! = function (integrator)
     return derivative_discontinuity!(integrator, false)
 end
-saving_callback2 = DiscreteCallback(condition, affect!, save_positions = save_positions)
+saving_callback2 = DiscreteCallback(condition, affect!; save_positions)
 sol4 = solve(prob, Tsit5(), callback = saving_callback2)
 
 cbs = CallbackSet(saving_callback, saving_callback2)
@@ -410,7 +410,7 @@ prob = ODEProblem(f, u0, (0, 10.0))
 condition = (u, t, integrator) -> t in tstop
 affect! = (integrator) -> integrator.u .= 1.0
 save_positions = (true, true)
-cb = DiscreteCallback(condition, affect!, save_positions = save_positions)
+cb = DiscreteCallback(condition, affect!; save_positions)
 sol1 = solve(prob, Tsit5(), callback = cb, tstops = tstop, saveat = tstop)
 @test count(x -> x == tstop[1], sol1.t) == 2
 @test count(x -> x == tstop[2], sol1.t) == 2
@@ -436,7 +436,7 @@ affect! = function (integrator, events)
     return
 end
 callback = VectorContinuousCallback(condition, affect!, 1)
-sol = solve(prob, Tsit5(), callback = callback)
+sol = solve(prob, Tsit5(); callback)
 @test n == 1
 
 # case of immutable partitioned state
@@ -458,7 +458,7 @@ u0 = ArrayPartition(SVector{1}(50.0), SVector{1}(0.0))
 tspan = (0.0, 15.0)
 prob = ODEProblem(f, u0, tspan)
 
-sol = solve(prob, Tsit5(), callback = callback, adaptive = false, dt = 1 / 4)
+sol = solve(prob, Tsit5(); callback, adaptive = false, dt = 1 / 4)
 
 # check that multiple discrete callbacks with save_everystep do not double save
 # https://github.com/SciML/DifferentialEquations.jl/issues/711

@@ -79,8 +79,8 @@ function Shootout(
     end
     for i in eachindex(setups)
         sol = solve(
-            prob, setups[i][:alg]; timeseries_errors = timeseries_errors,
-            dense_errors = dense_errors, kwargs..., setups[i]...
+            prob, setups[i][:alg]; timeseries_errors,
+            dense_errors, kwargs..., setups[i]...
         )
 
         if :prob_choice ∈ keys(setups[i])
@@ -161,7 +161,7 @@ function ShootoutSet(
     end
     for i in eachindex(probs)
         print_names && println(names[i])
-        shootouts[i] = Shootout(probs[i], setups; names = names, kwargs..., probaux[i]...)
+        shootouts[i] = Shootout(probs[i], setups; names, kwargs..., probaux[i]...)
         winners[i] = shootouts[i].winner
     end
     return ShootoutSet(shootouts, probs, probaux, N, winners)
@@ -265,15 +265,15 @@ function WorkPrecision(
             if dts === nothing
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
-                    reltol = reltols[i], timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    reltol = reltols[i], timeseries_errors,
+                    dense_errors
                 )
             else
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
                     reltol = reltols[i], dt = dts[i],
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    timeseries_errors,
+                    dense_errors
                 )
             end
 
@@ -396,15 +396,15 @@ function WorkPrecision(
             if dts === nothing
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
-                    reltol = reltols[i], timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    reltol = reltols[i], timeseries_errors,
+                    dense_errors
                 )
             else
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
                     reltol = reltols[i], dt = dts[i],
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    timeseries_errors,
+                    dense_errors
                 )
             end
 
@@ -582,8 +582,8 @@ function WorkPrecisionSet(
 
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
-            appxsol = appxsol,
-            error_estimate = error_estimate,
+            appxsol,
+            error_estimate,
             name = names[i], kwargs..., filtered_setup...
         )
     end
@@ -645,8 +645,8 @@ end
             _prob, setups[k][:alg];
             kwargs..., filtered_setup..., abstol = _abstols[j],
             reltol = _reltols[j], dt = _dts[j],
-            timeseries_errors = timeseries_errors,
-            dense_errors = dense_errors
+            timeseries_errors,
+            dense_errors
         )
         SciMLBase.has_analytic(prob.f) ? err_sol = sol : err_sol = appxtrue(sol, true_sol)
         tmp_solutions[i, j, k] = err_sol
@@ -696,8 +696,8 @@ function WorkPrecisionSet(
         [
                 SciMLBase.calculate_ensemble_errors(
                     sim;
-                    weak_timeseries_errors = weak_timeseries_errors,
-                    weak_dense_errors = weak_dense_errors
+                    weak_timeseries_errors,
+                    weak_dense_errors
                 )
                 for sim in sol_k
             ] for sol_k in _solutions_k
@@ -925,8 +925,8 @@ function WorkPrecisionSet(
 
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
-            appxsol = appxsol,
-            error_estimate = error_estimate,
+            appxsol,
+            error_estimate,
             name = names[i], kwargs..., filtered_setup...
         )
     end

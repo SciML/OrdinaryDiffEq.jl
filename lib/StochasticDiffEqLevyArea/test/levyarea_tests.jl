@@ -23,7 +23,7 @@ Random.seed!(638278)
         h = 0.0001
         ε = h^(3 / 2)
         W = √h * randn(m)
-        Ints = iterated_integrals(W, h, ε; alg = alg)
+        Ints = iterated_integrals(W, h, ε; alg)
         @test diag(Ints) ≈ 0.5 * W .^ 2 .- 0.5h
     end
 
@@ -36,13 +36,13 @@ Random.seed!(638278)
         # Same RNG seed → same result
         rng1 = Xoshiro(42)
         rng2 = Xoshiro(42)
-        I1 = iterated_integrals(W, h, ε; alg = alg, rng = rng1)
-        I2 = iterated_integrals(W, h, ε; alg = alg, rng = rng2)
+        I1 = iterated_integrals(W, h, ε; alg, rng = rng1)
+        I2 = iterated_integrals(W, h, ε; alg, rng = rng2)
         @test I1 == I2
 
         # Different seed → different result
         rng3 = Xoshiro(99)
-        I3 = iterated_integrals(W, h, ε; alg = alg, rng = rng3)
+        I3 = iterated_integrals(W, h, ε; alg, rng = rng3)
         @test I3 != I1
     end
 
@@ -59,8 +59,8 @@ Random.seed!(638278)
         coeffs = generate_coefficients(m, n, alg, rng)
 
         # Compute from coefficients (deterministic)
-        I1 = iterated_integrals(W, h, coeffs; alg = alg)
-        I2 = iterated_integrals(W, h, coeffs; alg = alg)
+        I1 = iterated_integrals(W, h, coeffs; alg)
+        I2 = iterated_integrals(W, h, coeffs; alg)
         @test I1 == I2
 
         # Diagonal identity still holds
@@ -204,7 +204,7 @@ Random.seed!(638278)
 
         # Verify iterated_integrals output is stable
         rng_la = StableRNG(200)
-        I_new = iterated_integrals(W_ref, h, h^(3 / 2); alg = alg, rng = rng_la)
+        I_new = iterated_integrals(W_ref, h, h^(3 / 2); alg, rng = rng_la)
         @test I_new ≈ I_ref atol = 1.0e-14
     end
 end

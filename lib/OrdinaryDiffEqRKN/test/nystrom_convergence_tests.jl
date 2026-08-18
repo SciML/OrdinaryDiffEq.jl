@@ -374,8 +374,8 @@ end
         alg = Nystrom4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, dt = dt)
-        sol_o = solve(ode_o, alg, dt = dt)
+        sol_i = solve(ode_i, alg; dt)
+        sol_o = solve(ode_o, alg; dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -389,8 +389,8 @@ end
         alg = RKN4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, dt = dt)
-        sol_o = solve(ode_o, alg, dt = dt)
+        sol_i = solve(ode_i, alg; dt)
+        sol_o = solve(ode_o, alg; dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -403,8 +403,8 @@ end
         alg = FineRKN4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        sol_i = solve(ode_i, alg; adaptive = false, dt)
+        sol_o = solve(ode_o, alg; adaptive = false, dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -427,8 +427,8 @@ end
         alg = FineRKN5()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        sol_i = solve(ode_i, alg; adaptive = false, dt)
+        sol_o = solve(ode_o, alg; adaptive = false, dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf

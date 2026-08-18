@@ -282,7 +282,7 @@ sol2 = solve(prob, KenCarp4(); dt = 0.5, saveat = times)
 
 # Enzyme fails on SplitODEProblem jacobians (mixed activity for jl_new_struct)
 function difffunc(p)
-    tmp_prob = remake(prob, p = p)
+    tmp_prob = remake(prob; p)
     return vec(solve(tmp_prob, KenCarp4(), saveat = times))
 end
 DI.jacobian(difffunc, AutoForwardDiff(), ones(5))
@@ -388,7 +388,7 @@ end
 #least squares objective function
 function objfun(x, prob, data, solver, reltol, abstol)
     prob = remake(prob, p = x)
-    sol = solve(prob, solver, reltol = reltol, abstol = abstol)
+    sol = solve(prob, solver; reltol, abstol)
     ofv = 0.0
     if !SciMLBase.successful_retcode(sol)
         ofv = 1.0e12
@@ -404,8 +404,8 @@ u0 = 2 * ones(4)
 saveat = 0.0:0.01:1.0
 reltol = 1.0e-14
 abstol = 1.0e-14
-prob = ODEProblem{true}(foo!, u0, tspan, p0, saveat = saveat)
-data = solve(prob, Tsit5(), reltol = reltol, abstol = abstol)
+prob = ODEProblem{true}(foo!, u0, tspan, p0; saveat)
+data = solve(prob, Tsit5(); reltol, abstol)
 fn(x, solver) = objfun(x, prob, data, solver, reltol, abstol)
 
 @test norm(DI.gradient(x -> fn(x, Tsit5()), AutoForwardDiff(), p0)) < 1.0e-9

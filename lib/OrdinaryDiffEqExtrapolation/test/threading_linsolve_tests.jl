@@ -26,7 +26,7 @@ algs = [
         @test SciMLBase.successful_retcode(reference)
 
         @testset "threading = $threading" for threading in (true, PolyesterThreads())
-            alg = Alg(threading = threading)
+            alg = Alg(; threading)
             @test alg.linsolve isa GenericLUFactorization
             sol = solve(prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
             @test SciMLBase.successful_retcode(sol)

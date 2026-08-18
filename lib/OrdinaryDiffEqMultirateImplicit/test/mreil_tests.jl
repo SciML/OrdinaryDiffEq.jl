@@ -14,7 +14,7 @@ function stiff_split_problem(λ, u0, tspan)
         return [(u0[1] - c) * exp(-λ * t) + c * exp(-t), u0[2] * exp(-t)]
     end
     return SplitODEProblem(
-            ODEFunction(ffast!; analytic = analytic), fslow!, u0, tspan
+            ODEFunction(ffast!; analytic), fslow!, u0, tspan
         ), analytic
 end
 
@@ -27,7 +27,7 @@ function manufactured_split_problem()
     fslow!(du, u, p, t) = (du[1] = 0.0; du[2] = cos(t) - exp(-t) * sin(t))
     analytic(u0, p, t) = [exp(-t), sin(t)]
     return SplitODEProblem(
-        ODEFunction(ffast!; analytic = analytic), fslow!, [1.0, 0.0], (0.0, 1.0)
+        ODEFunction(ffast!; analytic), fslow!, [1.0, 0.0], (0.0, 1.0)
     )
 end
 
@@ -135,7 +135,7 @@ end
 
         for seq in (:harmonic, :romberg), target_order in [2, 3, 4]
             sim = test_convergence(
-                dts, prob, MREIL(m = 4, order = target_order, seq = seq),
+                dts, prob, MREIL(; m = 4, order = target_order, seq),
                 adaptive = false
             )
             @test sim.𝒪est[:final] ≈ target_order atol = testTol
@@ -161,7 +161,7 @@ end
 
         # …and the interpolant converges at the method's order, not at order 1.
         errs = map((1 // 16, 1 // 32)) do dt
-            s = solve(prob, MREIL(m = 4, order = 4), dt = dt, adaptive = false)
+            s = solve(prob, MREIL(m = 4, order = 4); dt, adaptive = false)
             maximum(abs(s(t)[1] - exp(-t)) for t in range(0.0, 1.0, length = 1001))
         end
         @test log2(errs[1] / errs[2]) > 3.5
@@ -209,7 +209,7 @@ end
         # Fixed dt: halving `dt` does not help once the fast transient is
         # unresolved, and the residual error tracks 1/λ.
         errs = map((0.05, 0.025)) do dt
-            s = solve(prob, MREIL(m = 4, order = 4), dt = dt, adaptive = false)
+            s = solve(prob, MREIL(m = 4, order = 4); dt, adaptive = false)
             norm(s.u[end] - ref.u[end])
         end
         @test all(e -> e < 10 / λ, errs)
@@ -250,7 +250,7 @@ end
         )
         m_val, order = 5, 3
         sol = solve(
-            prob, MREIL(m = m_val, order = order), dt = 0.1, adaptive = false
+            prob, MREIL(; m = m_val, order), dt = 0.1, adaptive = false
         )
         nsteps = sol.stats.naccept
 
@@ -272,7 +272,7 @@ end
         )
         prob = SplitODEProblem(ffast!, fslow!, [1.0, 0.0, 0.0], (0.0, 1.0))
         order = 4
-        sol = solve(prob, MREIL(m = 4, order = order), reltol = 1.0e-6, abstol = 1.0e-8)
+        sol = solve(prob, MREIL(; m = 4, order), reltol = 1.0e-6, abstol = 1.0e-8)
 
         @test sol.stats.nreject > 0
         @test sol.stats.njacs == sol.stats.naccept
@@ -445,11 +445,11 @@ end
             solve(on_f1, alg, dt = 0.01, adaptive = false).u[end]
 
         on_outer_oop = ODEProblem(
-            SplitFunction(ODEFunction{false}(ffast), ODEFunction{false}(fslow); jac = jac),
+            SplitFunction(ODEFunction{false}(ffast), ODEFunction{false}(fslow); jac),
             u0, tspan
         )
         on_f1_oop = SplitODEProblem(
-            ODEFunction{false}(ffast; jac = jac), ODEFunction{false}(fslow), u0, tspan
+            ODEFunction{false}(ffast; jac), ODEFunction{false}(fslow), u0, tspan
         )
         @test solve(on_outer_oop, alg, dt = 0.01, adaptive = false).u[end] ==
             solve(on_f1_oop, alg, dt = 0.01, adaptive = false).u[end]
@@ -572,8 +572,8 @@ end
         # fixed-dt run has to converge at the extrapolation order.
         errs = map((1 // 100, 1 // 200)) do dt
             s = solve(
-                prob, MREIL(m = 4, order = 4, linsolve = LUFactorization()),
-                dt = dt, adaptive = false
+                prob, MREIL(m = 4, order = 4, linsolve = LUFactorization());
+                dt, adaptive = false
             )
             norm(s.u[end] - exact) / norm(exact)
         end
@@ -604,7 +604,7 @@ end
                 [1.0, 0.0], (0.0, 1.0)
             )
             integ = init(
-                prob, MREIL(m = m, order = order), dt = 1.0,
+                prob, MREIL(; m, order), dt = 1.0,
                 adaptive = false, save_everystep = false
             )
             step!(integ)
@@ -747,7 +747,7 @@ end
             (BigFloat(0), BigFloat(1))
         )
         sol = solve(
-            prob, MREIL(m = m_val, order = order), dt = BigFloat(1), adaptive = false
+            prob, MREIL(; m = m_val, order), dt = BigFloat(1), adaptive = false
         )
         @test abs(sol.u[end] - Rexact) < BigFloat(10)^(-40)
     end

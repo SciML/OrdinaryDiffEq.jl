@@ -53,7 +53,7 @@ u₀ = [1.0, 0, 0]
 du₀ = [-0.04, 0.04, 0.0]
 tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
-prob = DAEProblem(f2, du₀, u₀, tspan, differential_vars = differential_vars)
+prob = DAEProblem(f2, du₀, u₀, tspan; differential_vars)
 sol = solve(prob, DFBDF())
 ```
 

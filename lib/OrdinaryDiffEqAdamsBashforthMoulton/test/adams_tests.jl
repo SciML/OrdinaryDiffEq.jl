@@ -17,7 +17,7 @@ end
 for i in 1:2
     prob = probArr[i]
     dt = 1 // 256
-    integrator = init(prob, VCAB3(), dt = dt, adaptive = false)
+    integrator = init(prob, VCAB3(); dt, adaptive = false)
     for i in 1:3
         step!(integrator)
     end

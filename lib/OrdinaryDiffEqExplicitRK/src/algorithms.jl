@@ -30,7 +30,7 @@ function constructDormandPrince(::Type{T} = Float64, ::Type{T_time} = T) where {
     c = map(T_time, c)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             fsal = true, stability_size = 3.3066
         )
     )
@@ -178,12 +178,12 @@ function constructTsit5ExplicitRK(::Type{T}) where {T <: Union{Float32, Float64}
     B_interp = construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(
-        A, c, α, 5,
-        αEEst = αEEst,
+        A, c, α, 5;
+        αEEst,
         adaptiveorder = 4,
         fsal = true,
         stability_size = 2.9,
-        B_interp = B_interp
+        B_interp
     )
 end
 
@@ -241,12 +241,12 @@ function constructTsit5ExplicitRK(::Type{T}, ::Type{T_time} = T) where {T, T_tim
     B_interp = construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(
-        A, c, α, 5,
-        αEEst = αEEst,
+        A, c, α, 5;
+        αEEst,
         adaptiveorder = 4,
         fsal = true,
         stability_size = 2.9,
-        B_interp = B_interp
+        B_interp
     )
 end
 

@@ -124,7 +124,7 @@ jump_iipprob_theta = JumpProblem(iip_prob_theta, Direct(), rj_iip)
 # Test with different theta values
 for theta in [0.25, 0.5, 0.75]
     @time sol = solve(
-        jump_iipprob_theta, ThetaTrapezoidalTauLeaping(; theta = theta);
+        jump_iipprob_theta, ThetaTrapezoidalTauLeaping(; theta);
         dt = 1.0, adaptive = false
     )
     @test length(sol.t) > 0

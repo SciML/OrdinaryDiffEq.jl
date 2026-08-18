@@ -153,7 +153,7 @@ end
         abstol = 1.0e-9
         sol = solve(
             prob_ode_linear, GaussLegendre(num_stages = s);
-            reltol = reltol, abstol = abstol
+            reltol, abstol
         )
         @test SciMLBase.successful_retcode(sol)
         exact = prob_ode_linear.u0 * exp(1.01 * (sol.t[end] - sol.t[1]))

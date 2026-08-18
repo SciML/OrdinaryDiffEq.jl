@@ -37,7 +37,7 @@ tspan = (0.0f0, 100.0f0)
 p = [1.9f0, 0.1f0]
 
 prob = SDEProblem(brusselator_f!, scalar_noise!, u0, tspan, p, noise = W)
-ensembleprob = EnsembleProblem(prob, prob_func = prob_func)
+ensembleprob = EnsembleProblem(prob; prob_func)
 
 @info "Brusselator"
 

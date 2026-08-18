@@ -15,7 +15,7 @@ function prob_func(prob, ctx)
     prob.u0[1] = initial_conditions[i]
     return prob
 end
-ensemble_prob = EnsembleProblem(prob, prob_func = prob_func)
+ensemble_prob = EnsembleProblem(prob; prob_func)
 sim_1 = solve(
     ensemble_prob, Tsit5(), EnsembleThreads(),
     trajectories = 100

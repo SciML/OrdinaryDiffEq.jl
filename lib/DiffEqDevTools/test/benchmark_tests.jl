@@ -206,7 +206,7 @@ end
         tspan = (0.0, 100000.0)
 
         differential_vars = [true, true, false]
-        prob2 = DAEProblem(dae_rober, du₀, u₀, tspan, differential_vars = differential_vars)
+        prob2 = DAEProblem(dae_rober, du₀, u₀, tspan; differential_vars)
 
         dae_ref_sol = solve(prob2, DFBDF(), abstol = 1 / 10^14, reltol = 1 / 10^14)
 

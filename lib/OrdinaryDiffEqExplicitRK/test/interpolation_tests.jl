@@ -120,7 +120,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         push!(errors, compute_midstep_error(sol, exact_scalar))
     end
@@ -147,7 +147,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv_vec, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv_vec, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         err = compute_midstep_error(sol, exact_vector)
         push!(errors, err)

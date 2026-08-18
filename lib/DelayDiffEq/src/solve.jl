@@ -156,8 +156,8 @@ function SciMLBase.__init(
     end
 
     # get absolute and relative tolerances
-    abstol_internal = get_abstol(u0, tspan, alg.alg; abstol = abstol)
-    reltol_internal = get_reltol(u0, tspan, alg.alg; reltol = reltol)
+    abstol_internal = get_abstol(u0, tspan, alg.alg; abstol)
+    reltol_internal = get_reltol(u0, tspan, alg.alg; reltol)
 
     # get rate prototype
     rate_prototype = rate_prototype_of(u0, tspan)
@@ -180,10 +180,10 @@ function SciMLBase.__init(
     u, uprev,
         uprev2 = u_uprev_uprev2(
         u0, alg;
-        alias_u0 = alias_u0,
-        adaptive = adaptive,
-        allow_extrapolation = allow_extrapolation,
-        calck = calck
+        alias_u0,
+        adaptive,
+        allow_extrapolation,
+        calck
     )
     uEltypeNoUnits = recursive_unitless_eltype(u)
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
@@ -201,8 +201,8 @@ function SciMLBase.__init(
     history = build_history_function(
         prob, alg, rate_prototype, reltol_internal,
         differential_vars;
-        dt = dt, dtmin = dtmin, calck = false,
-        adaptive = adaptive, internalnorm = internalnorm
+        dt, dtmin, calck = false,
+        adaptive, internalnorm
     )
     f_with_history = if is_stochastic
         SDEFunctionWrapper(f, history)
@@ -228,12 +228,12 @@ function SciMLBase.__init(
     ts, timeseries,
         ks = solution_arrays(
         u, tspan, rate_prototype;
-        timeseries_init = timeseries_init,
-        ts_init = ts_init,
-        ks_init = ks_init,
-        save_idxs = save_idxs,
-        save_start = save_start,
-        is_stochastic = is_stochastic
+        timeseries_init,
+        ts_init,
+        ks_init,
+        save_idxs,
+        save_start,
+        is_stochastic
     )
 
     # build cache
@@ -271,16 +271,16 @@ function SciMLBase.__init(
     sol = if is_stochastic
         SciMLBase.build_solution(
             prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats, W = W
+            dense, k = ks, interp = id, saved_subsystem,
+            id.alg_choice, calculate_error = false,
+            stats, W,
         )
     else
         SciMLBase.build_solution(
             prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats
+            dense, k = ks, interp = id, saved_subsystem,
+            id.alg_choice, calculate_error = false,
+            stats,
         )
     end
 
@@ -315,8 +315,8 @@ function SciMLBase.__init(
     # reserve capacity for the solution
     _sizehint_solution!(
         sol, alg, tspan, tstops_internal, saveat_internal;
-        save_everystep = save_everystep, adaptive = adaptive, dt = tType(dt),
-        dtmin = dtmin, internalnorm = internalnorm
+        save_everystep, adaptive, dt = tType(dt),
+        dtmin, internalnorm
     )
 
     # create array of tracked discontinuities
@@ -606,8 +606,8 @@ function DiffEqBase.solve!(integrator::DDEIntegrator)
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
             sol;
-            timeseries_errors = opts.timeseries_errors,
-            dense_errors = opts.dense_errors
+            opts.timeseries_errors,
+            opts.dense_errors
         )
     end
     sol.retcode == ReturnCode.Default || return sol

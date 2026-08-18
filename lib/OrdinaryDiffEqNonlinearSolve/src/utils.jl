@@ -304,7 +304,7 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     descent = inner_alg.descent
     !hasfield(typeof(descent), :linsolve) && return inner_alg
     descent.linsolve !== nothing && return inner_alg
-    return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
+    return remake(inner_alg; descent = remake(descent; linsolve))
 end
 
 # Analytic jacobian that copies the reused ODE `W` into the inner solver's own buffer each

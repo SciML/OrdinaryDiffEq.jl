@@ -14,7 +14,7 @@ function glee_convergence(prob, alg, dts)
     errs = Float64[]
     est_errs = Float64[]
     for dt in dts
-        sol = solve(prob, alg; dt = dt, adaptive = false)
+        sol = solve(prob, alg; dt, adaptive = false)
         err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
         est = global_error_estimate(sol, length(sol.u))[1]
         push!(errs, abs(err))

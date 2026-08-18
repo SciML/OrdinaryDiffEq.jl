@@ -16,7 +16,7 @@ cp(
 # Keep pages.jl separate so DiffEqDocs.jl can include it when aggregating these docs.
 include("pages.jl")
 
-makedocs(
+makedocs(;
     sitename = "StochasticDiffEq.jl",
     authors = "Chris Rackauckas et al.",
     clean = true,
@@ -32,7 +32,7 @@ makedocs(
         assets = ["assets/favicon.ico"],
         canonical = "https://docs.sciml.ai/StochasticDiffEq/stable/"
     ),
-    pages = pages
+    pages,
 )
 
 # Note: these pages are aggregated into the unified SciML docs by DiffEqDocs.jl

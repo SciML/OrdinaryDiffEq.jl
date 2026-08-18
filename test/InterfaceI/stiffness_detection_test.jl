@@ -29,7 +29,7 @@ prob3 = ODEProblem(_van, [2.0, 0.0], (0.0, 6), [inv(0.003)])
 probArr = [prob1, prob2, prob3]
 
 for prob in [prob2, prob3], u0 in [prob.u0, Dual.(prob.u0, prob.u0)]
-    prob′ = remake(prob3, u0 = u0)
+    prob′ = remake(prob3; u0)
     @test_nowarn solve(prob′, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())))
 end
 

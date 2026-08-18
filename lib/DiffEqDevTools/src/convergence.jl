@@ -183,11 +183,11 @@ function test_convergence(
     _solutions = Array{Any}(undef, length(dts))
     for i in 1:length(dts)
         sol = solve(
-            ensemble_prob, alg, ensemblealg; dt = dts[i], adaptive = adaptive,
-            save_start = save_start, save_everystep = save_everystep,
-            timeseries_errors = timeseries_errors,
-            weak_timeseries_errors = weak_timeseries_errors,
-            weak_dense_errors = weak_dense_errors, trajectories = Int(trajectories),
+            ensemble_prob, alg, ensemblealg; dt = dts[i], adaptive,
+            save_start, save_everystep,
+            timeseries_errors,
+            weak_timeseries_errors,
+            weak_dense_errors, trajectories = Int(trajectories),
             kwargs...
         )
         @info "dt: $(dts[i]) ($i/$N)"
@@ -196,8 +196,8 @@ function test_convergence(
         _solutions[i] = if expected_value === nothing
             summarised = SciMLBase.calculate_ensemble_errors(
                 sol;
-                weak_timeseries_errors = weak_timeseries_errors,
-                weak_dense_errors = weak_dense_errors
+                weak_timeseries_errors,
+                weak_dense_errors
             )
             reduce_trajectories ? _drop_trajectories(summarised) : summarised
         else
@@ -235,9 +235,9 @@ function test_convergence(
     end
 
     return ConvergenceSimulation(
-        solutions, dts, auxdata = auxdata,
-        additional_errors = additional_errors,
-        expected_value = expected_value
+        solutions, dts; auxdata,
+        additional_errors,
+        expected_value
     )
 end
 
@@ -317,34 +317,34 @@ function analyticless_test_convergence(
 
             if prob isa AbstractSDDEProblem
                 _prob = SDDEProblem(
-                    prob.f, prob.g, prob.u0, prob.h, prob.tspan, prob.p,
+                    prob.f, prob.g, prob.u0, prob.h, prob.tspan, prob.p;
                     noise = np,
-                    noise_rate_prototype = prob.noise_rate_prototype,
-                    constant_lags = prob.constant_lags,
-                    dependent_lags = prob.dependent_lags,
-                    neutral = prob.neutral,
-                    order_discontinuity_t0 = prob.order_discontinuity_t0,
+                    prob.noise_rate_prototype,
+                    prob.constant_lags,
+                    prob.dependent_lags,
+                    prob.neutral,
+                    prob.order_discontinuity_t0,
                     prob.kwargs...
                 )
             else
                 _prob = SDEProblem(
-                    prob.f, prob.g, prob.u0, prob.tspan, prob.p,
+                    prob.f, prob.g, prob.u0, prob.tspan, prob.p;
                     noise = np,
-                    noise_rate_prototype = prob.noise_rate_prototype
+                    prob.noise_rate_prototype
                 )
             end
 
-            true_sol = solve(_prob, alg; adaptive = adaptive, dt = test_dt)
+            true_sol = solve(_prob, alg; adaptive, dt = test_dt)
 
             for i in 1:length(dts)
-                sol = solve(_prob, alg; dt = dts[i], adaptive = adaptive)
+                sol = solve(_prob, alg; dt = dts[i], adaptive)
                 err_sol = appxtrue(sol, true_sol)
                 tmp_solutions[j, i] = err_sol
             end
         else
             # using NoiseWrapper doesn't lead to constant true_sol
             true_sol = solve(
-                prob, alg; adaptive = adaptive, dt = test_dt,
+                prob, alg; adaptive, dt = test_dt,
                 save_noise = true
             )
             _sol = deepcopy(true_sol)
@@ -358,10 +358,10 @@ function analyticless_test_convergence(
             for i in 1:length(dts)
                 W1 = NoiseWrapper(_sol.W)
                 _prob = remake(
-                    prob, u0 = prob.u0, p = prob.p, tspan = prob.tspan,
-                    noise = W1, noise_rate_prototype = prob.noise_rate_prototype
+                    prob; prob.u0, prob.p, prob.tspan,
+                    noise = W1, prob.noise_rate_prototype
                 )
-                sol = solve(_prob, alg; dt = dts[i], adaptive = adaptive)
+                sol = solve(_prob, alg; dt = dts[i], adaptive)
                 err_sol = appxtrue(sol, true_sol)
                 tmp_solutions[j, i] = err_sol
             end
@@ -371,8 +371,8 @@ function analyticless_test_convergence(
     solutions = [
         SciMLBase.calculate_ensemble_errors(
                 sim;
-                weak_timeseries_errors = weak_timeseries_errors,
-                weak_dense_errors = weak_dense_errors
+                weak_timeseries_errors,
+                weak_dense_errors
             )
             for sim in _solutions
     ]
@@ -383,8 +383,8 @@ function analyticless_test_convergence(
         additional_errors[k] = [sol.weak_errors[k] for sol in solutions]
     end
     return ConvergenceSimulation(
-        solutions, dts, auxdata = auxdata,
-        additional_errors = additional_errors
+        solutions, dts; auxdata,
+        additional_errors
     )
 end
 
@@ -396,12 +396,12 @@ function test_convergence(
     N = length(dts)
     solutions = [
         solve(
-                prob, alg; dt = dts[i], save_everystep = save_everystep,
-                adaptive = adaptive, kwargs...
+                prob, alg; dt = dts[i], save_everystep,
+                adaptive, kwargs...
             ) for i in 1:N
     ]
     auxdata = Dict(:dts => dts)
-    return ConvergenceSimulation(solutions, dts, auxdata = auxdata)
+    return ConvergenceSimulation(solutions, dts; auxdata)
 end
 
 function analyticless_test_convergence(
@@ -413,13 +413,13 @@ function analyticless_test_convergence(
     N = length(dts)
     _solutions = [
         solve(
-                prob, alg; dt = dts[i], save_everystep = save_everystep,
-                adaptive = adaptive, kwargs...
+                prob, alg; dt = dts[i], save_everystep,
+                adaptive, kwargs...
             ) for i in 1:N
     ]
     solutions = [appxtrue(sol, true_sol) for sol in _solutions]
     auxdata = Dict(:dts => dts)
-    return ConvergenceSimulation(solutions, dts, auxdata = auxdata)
+    return ConvergenceSimulation(solutions, dts; auxdata)
 end
 
 function test_convergence(probs, convergence_axis, alg; kwargs...)

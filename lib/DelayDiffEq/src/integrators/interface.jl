@@ -409,7 +409,7 @@ function DiffEqBase.reinit!(
         reinit_cache = true
     )
     # reinit history
-    reinit!(integrator.integrator, u0; t0 = t0, tf = tf, erase_sol = true)
+    reinit!(integrator.integrator, u0; t0, tf, erase_sol = true)
 
     # reinit initial values of the integrator
     if isinplace(integrator.sol.prob)

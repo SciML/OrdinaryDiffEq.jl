@@ -180,7 +180,7 @@ end
     rv = ref(prob.tspan[2])
     for κ in (1 // 100, 1 // 30, 1 // 10)
         sol = solve(
-            prob, NordsieckBDF(nlsolve = NLNewton(κ = κ)),
+            prob, NordsieckBDF(nlsolve = NLNewton(; κ)),
             abstol = 1.0e-8, reltol = 1.0e-6, save_everystep = false
         )
         @test successful_retcode(sol)

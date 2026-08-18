@@ -128,8 +128,8 @@ Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, 
     end
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
         init_call(_prob, args...; kwargs...)
     else
@@ -141,7 +141,7 @@ Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, 
                 !SciMLBase.allows_late_binding_tstops(alg)
             throw(LateBindingTstopsNotSupportedError())
         end
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
         _alg = prepare_alg(alg, _prob.u0, _prob.p, _prob)
         check_prob_alg_pairing(_prob, alg) # alg for improved inference
         if length(args) > 1
@@ -645,8 +645,8 @@ Base.@constprop :aggressive function solve_up(
     end
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
         solve_call(_prob, args...; kwargs...)
     else
@@ -658,7 +658,7 @@ Base.@constprop :aggressive function solve_up(
                 !SciMLBase.allows_late_binding_tstops(alg)
             throw(LateBindingTstopsNotSupportedError())
         end
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
         _alg = prepare_alg(alg, _prob.u0, _prob.p, _prob)
         check_prob_alg_pairing(_prob, alg) # use alg for improved inference
         if length(args) > 1
@@ -788,7 +788,7 @@ function get_concrete_problem(prob::DDEProblem, isadapt; kwargs...)
     tspan = promote_tspan(u0, p, tspan, prob, kwargs)
 
     p = _promote_parameters(Val(SciMLBase.specialization(prob.f)), p)
-    return remake(prob; u0 = u0, tspan = tspan, p = p, constant_lags = constant_lags)
+    return remake(prob; u0, tspan, p, constant_lags)
 end
 
 # Most are extensions
@@ -883,23 +883,23 @@ end
 function _replace_dae_residual(f::DAEFunction{iip, specialize}, residual) where {iip, specialize}
     replaced = DAEFunction{iip, specialize}(
         residual;
-        analytic = f.analytic,
-        tgrad = f.tgrad,
-        jac = f.jac,
-        jac_u = f.jac_u,
-        jac_du = f.jac_du,
-        jvp = f.jvp,
-        vjp = f.vjp,
-        jac_prototype = f.jac_prototype,
-        sparsity = f.sparsity,
-        Wfact = f.Wfact,
-        Wfact_t = f.Wfact_t,
-        paramjac = f.paramjac,
-        observed = f.observed,
-        colorvec = f.colorvec,
-        sys = f.sys,
-        initialization_data = f.initialization_data,
-        nlstep_data = f.nlstep_data
+        f.analytic,
+        f.tgrad,
+        f.jac,
+        f.jac_u,
+        f.jac_du,
+        f.jvp,
+        f.vjp,
+        f.jac_prototype,
+        f.sparsity,
+        f.Wfact,
+        f.Wfact_t,
+        f.paramjac,
+        f.observed,
+        f.colorvec,
+        f.sys,
+        f.initialization_data,
+        f.nlstep_data
     )
     replaced = SciMLBase.widen_bounded_type_params(replaced)
     return _widen_type_parameter(replaced, Val(:ID))
@@ -1319,11 +1319,11 @@ function _solve_adjoint(
     alg = extract_alg(args, kwargs, prob.kwargs)
     if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
     else
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
     end
 
     # Merge problem kwargs with passed kwargs
@@ -1346,11 +1346,11 @@ function _solve_forward(
     alg = extract_alg(args, kwargs, prob.kwargs)
     if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
     else
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
     end
 
     # Merge problem kwargs with passed kwargs

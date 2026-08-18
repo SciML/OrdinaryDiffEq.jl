@@ -34,7 +34,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
         analytic(u0, p, t) = u0 * exp(-t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u; analytic = analytic
+                (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u; analytic
             ),
             1.0, (0.0, 1.0)
         )

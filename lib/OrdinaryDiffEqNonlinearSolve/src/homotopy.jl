@@ -24,7 +24,7 @@ function _init_homotopy_nonlinear_cache(prob, alg, abstol, verbose)
     if alg.reltol === nothing
         return init(prob, alg.alg; abstol, verbose)
     end
-    return init(prob, alg.alg; abstol, reltol = alg.reltol, verbose)
+    return init(prob, alg.alg; abstol, alg.reltol, verbose)
 end
 
 function homotopy_odenlf(ztmp, z, p, λ)
@@ -139,17 +139,17 @@ function nlsolve!(
     # natural convergence scale; κ tightens it like the Newton κ⋅tol criterion.
     abstol = alg.abstol === nothing ?
         nlsolver.κ * _scalar_tol(integrator.opts.abstol) : alg.abstol
-    kwargs = (; abstol = abstol)
-    alg.reltol === nothing || (kwargs = merge(kwargs, (; reltol = alg.reltol)))
+    kwargs = (; abstol)
+    alg.reltol === nothing || (kwargs = merge(kwargs, (; alg.reltol)))
     if nlcache.needs_rebuild
-        prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan = λspan)
+        prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan)
         nlcache.continuation_cache = _init_homotopy_nonlinear_cache(
             prob, alg, abstol, nlcache.verbose
         )
         nlcache.needs_rebuild = false
     end
     sol = if nlcache.continuation_cache === nothing
-        prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan = λspan)
+        prob = SciMLBase.HomotopyProblem{iip}(nlfunc, u0, nlp_params; λspan)
         solve(prob, alg.alg; kwargs...)
     else
         SciMLBase.reinit!(nlcache.continuation_cache, u0; p = nlp_params, kwargs...)

@@ -25,15 +25,15 @@ u0 = [50.0, 0.0]
 tspan = (0.0, 15.0)
 prob = SDEProblem(f, g, u0, tspan)
 
-sol = solve(prob, SRIW1(), callback = callback, adaptive = false, dt = 3 / 4)
+sol = solve(prob, SRIW1(); callback, adaptive = false, dt = 3 / 4)
 
 @test minimum([u[1] for u in sol.u]) > -1.0e-12 && minimum([u[1] for u in sol.u]) < 1.0e-12
 
-sol = solve(prob, SRIW1(), callback = callback, save_everystep = false)
+sol = solve(prob, SRIW1(); callback, save_everystep = false)
 t = sol.t[end ÷ 2] # this is the callback time point
-sol = solve(prob, SRIW1(), callback = callback, saveat = t)
+sol = solve(prob, SRIW1(); callback, saveat = t)
 @test count(x -> x == t, sol.t) == 2
-sol = solve(prob, SRIW1(), callback = callback, saveat = t - eps(t))
+sol = solve(prob, SRIW1(); callback, saveat = t - eps(t))
 @test count(x -> x == t, sol.t) == 2
 
 function g(du, u, p, t)
@@ -43,9 +43,9 @@ end
 
 prob = SDEProblem(f, g, u0, tspan)
 
-sol = solve(prob, SRIW1(), callback = callback)
+sol = solve(prob, SRIW1(); callback)
 
-sol = solve(prob, EM(), callback = callback, dt = 1 / 4)
+sol = solve(prob, EM(); callback, dt = 1 / 4)
 
 # Discrete callback
 tstop = [5.0; 8.0]
@@ -54,7 +54,7 @@ affect!_dc = (integrator) -> integrator.u .= 1.0
 save_positions = (true, true)
 times_finalize_called = 0
 callback_dc = DiscreteCallback(
-    condition_dc, affect!_dc, save_positions = save_positions,
+    condition_dc, affect!_dc; save_positions,
     finalize = (args...) -> global times_finalize_called += 1
 )
 sol = solve(prob, SRIW1(), callback = callback_dc, tstops = tstop, saveat = tstop)

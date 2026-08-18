@@ -95,7 +95,7 @@ end
 # RSwM1 hands a stack chunk back through W.dt, so the tstop shortening has to
 # bridge that chunk rather than relabel it.
 for adaptivealg in (:RSwM1, :RSwM2, :RSwM3)
-    W1 = WienerProcess(0.0, 0.0; rswm = RSWM(adaptivealg = adaptivealg))
+    W1 = WienerProcess(0.0, 0.0; rswm = RSWM(; adaptivealg))
     prob1 = SDEProblem(fexact, gexact, 0.0, (0.0, 1.0), noise = W1)
     i = init(prob1, LambaEM(); dt = 0.02, tstops = [0.331], save_noise = true)
     add_tstop!(i, 0.01)

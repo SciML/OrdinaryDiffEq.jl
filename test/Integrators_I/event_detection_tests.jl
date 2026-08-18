@@ -173,7 +173,7 @@ callback = ContinuousCallback(
     (integrator) -> nothing
 )
 
-prob = ODEProblem(du!, [0], (0.0, 1.0), callback = callback)
+prob = ODEProblem(du!, [0], (0.0, 1.0); callback)
 
 solve(prob, Tsit5())
 solve(prob, RadauIIA3())
@@ -181,7 +181,7 @@ solve(prob, RadauIIA5())
 
 du(u, p, t) = [1.0]
 
-prob = ODEProblem(du, [0], (0.0, 1.0), callback = callback)
+prob = ODEProblem(du, [0], (0.0, 1.0); callback)
 
 solve(prob, Tsit5())
 solve(prob, RadauIIA3())
