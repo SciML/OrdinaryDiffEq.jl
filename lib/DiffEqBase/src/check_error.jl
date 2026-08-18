@@ -21,8 +21,9 @@ if isdefined(SciMLBase, :report_integrator_failure)
     @inline function SciMLBase.report_integrator_failure(
             integ::DEIntegrator, ::Val{reason}
         ) where {reason}
+        # emit_message never calls the closure for silent toggle
         @SciMLMessage(
-            lazy"$(failure_message(integ, Val(reason)))$(instability_diagnostic(integ))",
+            () -> "$(failure_message(integ, Val(reason)))$(instability_diagnostic(integ))",
             integ.opts.verbose, reason
         )
         return nothing

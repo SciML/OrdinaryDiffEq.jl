@@ -791,8 +791,14 @@ function nonfinite_indices(u::AbstractArray)
 end
 nonfinite_indices(u) = isfinite(u) ? Int[] : Int[1]
 
-# keeps the array show machinery out of the caller
-@noinline format_indices(idxs::Vector{Int})::String = string(idxs)
+# %g formats any real, complex values have to show themselves
+format_value(v::Real) = @sprintf("%.4g", v)
+format_value(v::Number) = string(v)
+
+@noinline function format_indices(idxs::Vector{Int})::String
+    length(idxs) <= 10 && return string(idxs) #only keep 10 for display, remainder hidden
+    return chop(string(first(idxs, 10))) * ", and $(length(idxs) - 10) more]"
+end
 
 function instability_jacobian(integrator)
     W = _get_W(integrator)
@@ -809,6 +815,8 @@ function instability_jacobian(integrator)
     else #no jac to analyze
         nothing
     end
+    # a scalar problem stores a scalar Jacobian, handled on its own below
+    jac isa Number && return jac
     jac isa AbstractMatrix || return nothing
     # device-backed J is not worth fetching
     return ArrayInterface.fast_scalar_indexing(jac) ? jac : nothing
@@ -847,6 +855,13 @@ end
 function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
     jac = instability_jacobian(integrator)
     jac === nothing && return msgs
+    # a scalar state has no rows or columns to point at, just the one derivative
+    if jac isa Number
+        (!isfinite(jac) || abs(jac) > 1.0e6) || return msgs
+        desc = isfinite(jac) ? "unusually large" : "non-finite"
+        push!(msgs, "the Jacobian df/du = $(format_value(jac)) is $desc, suggesting a singularity in the equation")
+        return msgs
+    end
     bad_entries, singularity_rows, singularity_cols = jacobian_outliers(jac)
     isempty(bad_entries) && return msgs
 
@@ -865,11 +880,11 @@ function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
 
     example_strs = String[]
     for (i, j, v) in first(bad_entries, 5)
-        push!(example_strs, "J[$i,$j] = $(@sprintf("%.4g", v))")
+        push!(example_strs, "J[$i,$j] = $(format_value(v))")
     end
     push!(msgs, "row(s) $(format_indices(singularity_rows)) have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
     if sym_eqs !== nothing
-        for row in singularity_rows
+        for row in first(singularity_rows, 10)
             if row <= length(sym_eqs)
                 push!(msgs, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
             end
@@ -879,7 +894,7 @@ function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
     if !isempty(singularity_cols)
         push!(msgs, "column(s) $(format_indices(singularity_cols)) have $entry_desc entries, suggesting those state component(s) are diverging")
         if sym_vars !== nothing
-            for col in singularity_cols
+            for col in first(singularity_cols, 10)
                 if col <= length(sym_vars)
                     push!(msgs, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
                 end
@@ -900,10 +915,10 @@ function residual_analysis!(error_analysis::Vector{String}, atmp::AbstractArray,
     with_state = u isa AbstractArray && eachindex(u) == eachindex(atmp)
     contributors = String[]
     for i in idxs[1:n]
-        line = "  atmp[$i] = $(@sprintf("%.4g", atmp[i]))"
+        line = "  atmp[$i] = $(format_value(atmp[i]))"
         if with_state
-            line *= ", u[$i] = $(@sprintf("%.4g", u[i]))"
-            line *= ", uprev[$i] = $(@sprintf("%.4g", uprev[i]))"
+            line *= ", u[$i] = $(format_value(u[i]))"
+            line *= ", uprev[$i] = $(format_value(uprev[i]))"
         end
         push!(contributors, line)
     end
@@ -919,8 +934,10 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     nan_inf_idxs = nonfinite_indices(u)
     blown_idxs = Int[]
     if length(u) == length(u0)
+        # a complex state compares by magnitude, so the floor is a magnitude too
+        floor_mag = abs(oneunit(eltype(u)))
         for i in eachindex(u)
-            ref = max(abs(u0[i]), oneunit(eltype(u)))
+            ref = max(abs(u0[i]), floor_mag)
             abs(u[i]) > 1.0e6 * ref && push!(blown_idxs, i)
         end
         # keep only components within 20 orders of magnitude of the largest
@@ -962,11 +979,13 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
         end
     elseif !isempty(blown_idxs)
         if u isa AbstractArray
-            for i in blown_idxs
-                push!(state_analysis, "u[$i] = $(@sprintf("%.4g", u[i])) has grown >1e6× its initial value")
+            for i in first(blown_idxs, 10)
+                push!(state_analysis, "u[$i] = $(format_value(u[i])) has grown >1e6× its initial value")
             end
+            length(blown_idxs) > 10 && push!(state_analysis,
+                "and $(length(blown_idxs) - 10) further state variable(s) have grown >1e6× their initial value")
         else
-            push!(state_analysis, "u = $(@sprintf("%.4g", u)) has grown >1e6× its initial value")
+            push!(state_analysis, "u = $(format_value(u)) has grown >1e6× its initial value")
         end
     end
 
@@ -978,7 +997,7 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     error_rejected = integrator.opts.adaptive && !integrator.accept_step &&
         (!isfinite(EEst) || EEst > 1)
     if error_rejected
-        push!(error_analysis, "step error estimate EEst = $(@sprintf("%.4g", EEst)) (a step is accepted when EEst <= 1)")
+        push!(error_analysis, "step error estimate EEst = $(format_value(EEst)) (a step is accepted when EEst <= 1)")
         atmp = error_estimate_residuals(integrator.cache)
         if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
             residual_analysis!(error_analysis, host_array(atmp), u, host_array(integrator.uprev))
