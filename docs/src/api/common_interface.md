@@ -57,6 +57,7 @@ OrdinaryDiffEq.reinit!
 OrdinaryDiffEq.remake
 OrdinaryDiffEq.set_proposed_dt!
 OrdinaryDiffEq.successful_retcode
+SciMLBase.has_global_error
 ```
 
 ## Automatic differentiation
