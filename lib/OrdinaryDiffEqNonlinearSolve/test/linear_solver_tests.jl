@@ -239,7 +239,8 @@ function hires!(du, u, p, t)
     du[6] = T(-280.0) * u[6] * u[8] + T(0.69) * u[4] + T(1.71) * u[5] - T(0.43) * u[6] +
         T(0.69) * u[7]
     du[7] = T(280.0) * u[6] * u[8] - T(1.81) * u[7]
-    return du[8] = T(-280.0) * u[6] * u[8] + T(1.81) * u[7]
+    du[8] = T(-280.0) * u[6] * u[8] + T(1.81) * u[7]
+    return
 end
 
 function hires(u, p, t)

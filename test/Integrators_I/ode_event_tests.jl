@@ -29,7 +29,8 @@ sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
 @test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    return out[1] = -t - 2.95
+    out[1] = -t - 2.95
+    return
 end
 
 affect! = function (integrator, events)
@@ -51,7 +52,8 @@ sol = solve(prob, Tsit5(), callback = callback, tstops = [-2.95])
 @test sol(-2.95, continuity = :right) ≈ sol(-2.95, continuity = :left) + 2
 
 f = function (du, u, p, t)
-    return du[1] = -u[1] + sin(t)
+    du[1] = -u[1] + sin(t)
+    return
 end
 
 prob = ODEProblem(f, [1.0], (0.0, 10.0))
@@ -73,7 +75,8 @@ sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6
 @test sol(2.95, continuity = :right)[1] ≈ sol(2.95, continuity = :left)[1] + 2
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    return out[1] = t - 2.95
+    out[1] = t - 2.95
+    return
 end
 
 affect! = function (integrator, events)
@@ -96,7 +99,8 @@ sol = solve(prob, Tsit5(), callback = callback, abstol = 1.0e-8, reltol = 1.0e-6
 
 f = function (du, u, p, t)
     du[1] = u[2]
-    return du[2] = -9.81
+    du[2] = -9.81
+    return
 end
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
@@ -117,7 +121,8 @@ prob = ODEProblem(f, u0, tspan)
 sol = solve(prob, Tsit5(), callback = callback, adaptive = false, dt = 1 / 4)
 
 condition = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    return out[1] = u[1]
+    out[1] = u[1]
+    return
 end
 
 affect! = function (integrator, events)
@@ -168,7 +173,8 @@ sol = solve(prob, Tsit5(), callback = callback_single, saveat = t - eps(t))
 #plot(sol,denseplot=true)
 
 condition_single = function (out, u, t, integrator) # Event when event_f(u,t,k) == 0
-    return out[1] = u[1]
+    out[1] = u[1]
+    return
 end
 
 affect! = function (integrator, events)
@@ -256,7 +262,8 @@ condition = function (u, t, integrator)
 end
 
 vcondition = function (out, u, t, integrator)
-    return out[1] = u[1]
+    out[1] = u[1]
+    return
 end
 
 affect! = function (integrator, retcode = nothing)
@@ -393,7 +400,8 @@ sol1 = solve(ode, Tsit5(), callback = TerminateSteadyState())
 # DiscreteCallback
 f = function (du, u, p, t)
     du[1] = -0.5 * u[1] + 10
-    return du[2] = -0.5 * u[2]
+    du[2] = -0.5 * u[2]
+    return
 end
 
 u0 = [10, 10.0]
@@ -415,7 +423,8 @@ sol2 = solve(prob, Tsit5(), callback = cb, tstops = tstop, saveat = prevfloat.(t
 f = (u, p, t) -> -1.0im * u
 prob = ODEProblem(f, complex([1.0]), (0.0, 1.0))
 condition = function (out, u, t, integrator)
-    return out[1] = t - 0.5
+    out[1] = t - 0.5
+    return
 end
 n = 0
 affect! = function (integrator, events)

@@ -35,7 +35,8 @@ function g_nondiag_iip(du, u, p, t)
     du[1, 1] = σ_const * u[1]
     du[1, 2] = σ_const * u[1]
     du[2, 1] = σ_const * u[2]
-    return du[2, 2] = σ_const * u[2]
+    du[2, 2] = σ_const * u[2]
+    return
 end
 
 coeff = 2 * σ_const^2 #To not compute the same coefficient in the sde.
@@ -108,7 +109,8 @@ g_morenoise = function (du, u, p, t)
     du[2, 1] = 1.2u[1]
     du[2, 2] = 0.2u[2]
     du[2, 3] = 0.3u[2]
-    return du[2, 4] = 1.8u[2]
+    du[2, 4] = 1.8u[2]
+    return
 end
 prob = SDEProblem(
     f_morenoise, g_morenoise, ones(2), (0.0, 1.0),

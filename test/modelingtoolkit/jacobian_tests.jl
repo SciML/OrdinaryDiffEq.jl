@@ -1,11 +1,13 @@
 using OrdinaryDiffEq, ForwardDiff, Test, ADTypes
 
 function d_alembert(du, u, p, t)
-    return du[1] = p[1] - p[2] * u[1] + p[3] * t
+    du[1] = p[1] - p[2] * u[1] + p[3] * t
+    return
 end
 
 function d_alembert_jac(J, u, p, t)
-    return J[1] = -p[2]
+    J[1] = -p[2]
+    return
 end
 
 function d_alembert_analytic(u0, p, t::Number)
@@ -54,7 +56,8 @@ function lotka(du, u, p, t)
     x = u[1]
     y = u[2]
     du[1] = p[1] * x - p[2] * x * y
-    return du[2] = -p[3] * y + p[4] * x * y
+    du[2] = -p[3] * y + p[4] * x * y
+    return
 end
 
 prob = ODEProblem(lotka, [1.0, 1.0], (0.0, 1.0), [1.5, 1.0, 3.0, 1.0])

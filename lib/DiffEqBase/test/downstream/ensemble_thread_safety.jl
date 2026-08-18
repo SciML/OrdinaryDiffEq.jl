@@ -1,7 +1,8 @@
 using OrdinaryDiffEq
 using SciMLBase: EnsembleProblem, EnsembleThreads, EnsembleDistributed, EnsembleAnalysis
 function f(du, u, p, t)
-    return du[1] = 1.01 * u[1]
+    du[1] = 1.01 * u[1]
+    return
 end
 u0 = [0.0, 0.0]
 tspan = (0.0, 1.0)

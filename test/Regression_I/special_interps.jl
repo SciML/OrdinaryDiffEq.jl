@@ -3,7 +3,8 @@ using OrdinaryDiffEqHighOrderRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbr
 
 function f(du, u, p, t)
     du[1] = dx = p[1] * u[1] - p[2] * u[1] * u[2]
-    return du[2] = dy = -p[3] * u[2] + p[4] * u[1] * u[2]
+    du[2] = dy = -p[3] * u[2] + p[4] * u[1] * u[2]
+    return
 end
 function foop(u, p, t)
     dx = p[1] * u[1] - p[2] * u[1] * u[2]

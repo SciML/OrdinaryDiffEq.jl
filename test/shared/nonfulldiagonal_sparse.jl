@@ -93,7 +93,8 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         du[end - 1] = dcc_dt
 
         dcb_dt = (Q_l / V_b) * c_c + C / V_b
-        return du[end] = dcb_dt
+        du[end] = dcb_dt
+        return
     end
 
     return timedifferentialclosure!

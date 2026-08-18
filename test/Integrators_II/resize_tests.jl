@@ -182,7 +182,8 @@ solve!(i)
 function dsdt(ds, s, _, t)
     # state looks like x1,v1, x2,v2, x3,v3,...
     ds[1:2:end] .= s[2:2:end] # velocity changes position
-    return ds[2:2:end] .= -1.0 # (constant downward acceleration)
+    ds[2:2:end] .= -1.0 # (constant downward acceleration)
+    return
 end
 
 function splitCheck(s, t, intgr)
@@ -209,7 +210,8 @@ function splitMod!(intgr)
     # comment out these lines and it will work with Rosenbrock32.
     resize!(intgr, length(s) + 2) # (resizes s -> intgr.u)
     s[end - 1] = rand() # new position
-    return s[end] = rand() # new velocity
+    s[end] = rand() # new velocity
+    return
 end
 
 function runSim(method)

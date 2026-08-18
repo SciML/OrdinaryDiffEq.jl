@@ -38,7 +38,8 @@ end
 
 function f(du, u, p, t)
     du[1] = -p[1]
-    return du[2] = p[2]
+    du[2] = p[2]
+    return
 end
 
 # Callback tests with mutable closures
@@ -98,7 +99,8 @@ end
 
 function f2(du, u, p, t)
     du[1] = -u[2]
-    return du[2] = p[2]
+    du[2] = p[2]
+    return
 end
 
 # Callback tests with mutable closures (f2 variant)
@@ -160,7 +162,8 @@ for x in 1.0:0.001:2.5
         x, y = u
         α, β, δ, γ = p
         du[1] = dx = α * x - β * x * y
-        return du[2] = dy = -δ * y + γ * x * y
+        du[2] = dy = -δ * y + γ * x * y
+        return
     end
     u0 = [1.0, 1.0]
     tspan = (0.0, 10.0)
@@ -287,7 +290,8 @@ DI.jacobian(difffunc, AutoForwardDiff(), ones(5))
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1221
 
 f_a = function (du, u, p, t)
-    return du[1] = -p[1] * u[1] + exp(-t)
+    du[1] = -p[1] * u[1] + exp(-t)
+    return
 end
 
 # Enzyme fails on this due to ODEProblem construction inside differentiated function
@@ -560,7 +564,8 @@ end
 @testset "Ensemble AD" begin
     function lv!(du, u, p, t)
         du[1] = p[1] * u[1] - p[2] * u[1] * u[2]
-        return du[2] = -p[3] * u[2] + p[4] * u[1] * u[2]
+        du[2] = -p[3] * u[2] + p[4] * u[1] * u[2]
+        return
     end
 
     p_lv = [1.5, 1.0, 3.0, 1.0]

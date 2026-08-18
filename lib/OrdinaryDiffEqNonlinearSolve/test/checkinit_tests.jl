@@ -46,7 +46,8 @@ end
 f = function (resid, du, u, p, t)
     resid[1] = -0.04u[1] + 1.0e4 * u[2] * u[3] - du[1]
     resid[2] = +0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3] - du[2]
-    return resid[3] = u[1] + u[2] + u[3] - 1.0
+    resid[3] = u[1] + u[2] + u[3] - 1.0
+    return
 end
 
 u₀ = [1.0, 0, 0.2]

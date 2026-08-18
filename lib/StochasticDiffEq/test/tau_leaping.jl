@@ -3,7 +3,8 @@ using Test, LinearAlgebra
 
 function regular_rate(out, u, p, t)
     out[1] = (0.1 / 1000.0) * u[1] * u[2]
-    return out[2] = 0.01u[2]
+    out[2] = 0.01u[2]
+    return
 end
 
 const dc = zeros(3, 2)
@@ -97,7 +98,8 @@ meanX = mean([sol.u[i][end, end] for i in 1:1_000])
 # Test in-place version with fixed dt
 function regular_rate_iip(out, u, p, t)
     out[1] = (0.1 / 1000.0) * u[1] * u[2]
-    return out[2] = 0.01u[2]
+    out[2] = 0.01u[2]
+    return
 end
 
 const dc_iip = zeros(3, 2)

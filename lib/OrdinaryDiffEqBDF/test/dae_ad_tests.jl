@@ -47,7 +47,8 @@ end
 function f(out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]
     out[2] = +p[1] * u[1] - p[2] * u[2]^2 - p[3] * u[2] * u[3] - du[2]
-    return out[3] = u[1] + u[2] + u[3] - 1.0
+    out[3] = u[1] + u[2] + u[3] - 1.0
+    return
 end
 function f(du, u, p, t)
     return [

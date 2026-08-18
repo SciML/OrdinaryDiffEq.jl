@@ -75,7 +75,8 @@ function motionfuncDirect1(dv, v, u, p, t)
     # 1:Electron, 2: Be
     ω_1, ω_2, γ, m_1, m_2, η, ω_d = p
     dv[1] = -ω_1^2 * u[1] * (1 + η * cos(ω_d * t)) - γ * u[2] / m_1
-    return dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
+    dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
+    return
 end
 
 function motionfuncDirect1(v, u, p, t)

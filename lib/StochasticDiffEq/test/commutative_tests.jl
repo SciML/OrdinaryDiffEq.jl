@@ -32,7 +32,8 @@ function σ(du, u, p, t)
     du[1, 3] = σ_const * u[1]
     du[2, 3] = σ_const * u[2]
     du[1, 4] = σ_const * u[1]
-    return du[2, 4] = σ_const * u[2]
+    du[2, 4] = σ_const * u[2]
+    return
 end
 
 function σ_oop(u, p, t)

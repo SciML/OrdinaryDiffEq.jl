@@ -56,7 +56,8 @@ function vanderpol_firk(du, u, p, t)
     x, y = u[1], u[2]
     μ = p[1]
     du[1] = y                           # dx/dt = y
-    return du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    return
 end
 
 function vanderpol_firk(u, p, t)

@@ -1,7 +1,8 @@
 using StochasticDiffEq, Test
 function f(du, u, p, t)
     du[1] = u[2]
-    return du[2] = -9.81
+    du[2] = -9.81
+    return
 end
 
 function g(du, u, p, t)
@@ -36,7 +37,8 @@ sol = solve(prob, SRIW1(), callback = callback, saveat = t - eps(t))
 @test count(x -> x == t, sol.t) == 2
 
 function g(du, u, p, t)
-    return du[2] = 0.125 * u[2]
+    du[2] = 0.125 * u[2]
+    return
 end
 
 prob = SDEProblem(f, g, u0, tspan)
@@ -82,14 +84,16 @@ function HM_neuron!(du, u, Params, t)
     du[3] = Params.r * (val - u[3])
 
     # Synapse
-    return du[4] = -u[4] / Params.syntau
+    du[4] = -u[4] / Params.syntau
+    return
 end
 
 function HM_noise!(du, u, Params, t)
     du[1] = 0.1
     du[2] = 0.0
     du[3] = 0.0
-    return du[4] = 0.0
+    du[4] = 0.0
+    return
 end
 
 tvals = range(0.0, stop = 1999.9, length = 20000);
@@ -114,11 +118,13 @@ sol = solve(prob, SKenCarp(), reltol = 1.0e-4, abstol = 1.0e-6, dense = true, ca
 using DiffEqCallbacks
 
 function f(du, u, p, t)
-    return du[1] = p[1] - u[1]
+    du[1] = p[1] - u[1]
+    return
 end
 
 function g(du, u, p, t)
-    return du[1] = p[2]
+    du[1] = p[2]
+    return
 end
 
 sprob = SDEProblem(f, g, [1.0], (0.0, 10.0), [1.0, 0.1])

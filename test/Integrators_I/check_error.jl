@@ -45,7 +45,8 @@ end
 
 let
     function f!(out, u, _, t)
-        return out[1] = u[1] + 1 - sin(t)
+        out[1] = u[1] + 1 - sin(t)
+        return
     end
     mprob = ODEProblem(ODEFunction(f!, mass_matrix = [0.0;;]), [0.0], (0, 2.0))
     @test solve(mprob, Rosenbrock23(); initializealg = BrownFullBasicInit()).retcode == ReturnCode.Success

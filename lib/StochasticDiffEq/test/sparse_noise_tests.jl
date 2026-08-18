@@ -9,7 +9,8 @@ end
 
 function g_sparse!(du, u, p, t)
     du[1, 1] = 0.1 * u[1]
-    return du[3, 2] = 0.1 * u[3]
+    du[3, 2] = 0.1 * u[3]
+    return
 end
 
 u0 = ones(4)

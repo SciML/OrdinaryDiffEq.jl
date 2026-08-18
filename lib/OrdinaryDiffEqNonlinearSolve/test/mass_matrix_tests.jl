@@ -56,7 +56,8 @@ function update_func1!(A, u, p, t)
     A[3, 2] = sin(t) * u[2]
     A[1, 3] = sin(t)
     A[2, 3] = t^2
-    return A[3, 3] = t * cos(t) + 1
+    A[3, 3] = t * cos(t) + 1
+    return
 end
 
 function update_func1(A, u, p, t)
@@ -74,7 +75,8 @@ function update_func2!(A, u, p, t)
     A[3, 2] = sin(t)
     A[1, 3] = sin(t)
     A[2, 3] = t^2
-    return A[3, 3] = t * cos(t) + 1
+    A[3, 3] = t * cos(t) + 1
+    return
 end
 
 function update_func2(A, u, p, t)

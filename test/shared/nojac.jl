@@ -137,7 +137,8 @@ function pollu(dy, y, p, t)
     dy[17] = -r20
     dy[18] = r20
     dy[19] = -r21 - r22 - r24 + r23 + r25
-    return dy[20] = -r25 + r24
+    dy[20] = -r25 + r24
+    return
 end
 
 function fjac(J, y, p, t)

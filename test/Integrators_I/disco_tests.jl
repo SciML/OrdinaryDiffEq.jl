@@ -189,7 +189,8 @@ sol_no_disco_rosenbrock = solve(prob_dae, Rodas5P(); callback = cb_dae, reltol =
 function f_vec_disc!(du, u, p, t)
     du[1] = u[1] < 1.5 ? 2.0 * u[1] : -u[1] + 5.25
     du[2] = u[2] < 0.5 ? 3.0 * u[2] : -2.0 * u[2] + 2.5
-    return du[3] = 4.0 * u[1] - u[2]
+    du[3] = 4.0 * u[1] - u[2]
+    return
 end
 
 u0_vec = [0.1, 0.05, -0.1]
@@ -198,7 +199,8 @@ prob_vec = ODEProblem(f_vec_disc!, u0_vec, tspan_vec)
 
 function condition_vec!(out, u, t, integrator)
     out[1] = u[1] - 1.5
-    return out[2] = u[2] - 0.5
+    out[2] = u[2] - 0.5
+    return
 end
 default_affect_vec!(integrator, idx) = nothing
 cb_vec = VectorContinuousCallback(condition_vec!, default_affect_vec!, 2; maybe_discontinuity = true)

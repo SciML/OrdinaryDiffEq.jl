@@ -150,11 +150,13 @@ println("SMEB:", sim.𝒪est[:weak_final])
 u₀ = [0.1, 0.1]
 function f3!(du, u, p, t)
     du[1] = 3 // 2 * u[1]
-    return du[2] = 3 // 2 * u[2]
+    du[2] = 3 // 2 * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (5:-1:1)
 tspan = (0.0, 1.0)
