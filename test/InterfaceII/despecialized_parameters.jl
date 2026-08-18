@@ -16,7 +16,8 @@ struct SecondParameterLayout
 end
 
 function despecialized_decay!(du, u, p, t)
-    return du[1] = -p.rate * u[1]
+    du[1] = -p.rate * u[1]
+    return
 end
 
 function despecialized_problem(p)

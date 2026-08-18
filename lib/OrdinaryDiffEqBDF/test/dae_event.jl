@@ -4,7 +4,8 @@ using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 f = function (out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]
     out[2] = +p[1] * u[1] - p[2] * u[2]^2 - p[3] * u[2] * u[3] - du[2]
-    return out[3] = u[1] + u[2] + u[3] - p[4]
+    out[3] = u[1] + u[2] + u[3] - p[4]
+    return
 end
 u₀ = [1.0, 0, 0]
 du₀ = [0.0, 0.0, 0.0]

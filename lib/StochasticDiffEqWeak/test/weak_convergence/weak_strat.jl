@@ -196,11 +196,13 @@ println("COM:", sim.𝒪est[:weak_final])
 u₀ = [0.1, 0.1]
 function f3!(du, u, p, t)
     du[1] = 299 // 200 * u[1]
-    return du[2] = 299 // 200 * u[2]
+    du[2] = 299 // 200 * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (4:-1:0)
 tspan = (0.0, 1.0)

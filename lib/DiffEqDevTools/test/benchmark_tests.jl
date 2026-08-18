@@ -41,7 +41,8 @@ test_sol_2Dlinear = TestSolution(
 prob_lotka = begin
     function lotka(du, u, p, t)
         du[1] = 1.5 * u[1] - u[1] * u[2]
-        return du[2] = -3 * u[2] + u[1] * u[2]
+        du[2] = -3 * u[2] + u[1] * u[2]
+        return
     end
     ODEProblem(lotka, [1.0; 1.0], (0.0, 10.0))
 end

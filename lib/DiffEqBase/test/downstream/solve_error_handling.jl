@@ -58,7 +58,8 @@ function g(du, u, p, t)
     du[2, 1] = 1.2u[2]
     du[2, 2] = 0.2u[2]
     du[2, 3] = 0.3u[2]
-    return du[2, 4] = 1.8u[2]
+    du[2, 4] = 1.8u[2]
+    return
 end
 
 prob = SDEProblem(
@@ -73,7 +74,8 @@ prob = SDEProblem(
 
 function g!(du, u, p, t)
     du[1] .= u[1] + ones(3, 3)
-    return du[2] .= ones(3, 3)
+    du[2] .= ones(3, 3)
+    return
 end
 u0 = [zeros(3, 3), zeros(3, 3)]
 prob = ODEProblem(g!, u0, (0, 1.0))

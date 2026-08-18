@@ -45,7 +45,8 @@ function update_func!(A, u, p, t)
     A[1, 1] = 0
     A[2, 1] = sin(u[1])
     A[1, 2] = -1
-    return A[2, 2] = 0
+    A[2, 2] = 0
+    return
 end
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (10, 50.0))
@@ -105,7 +106,8 @@ function update_func!(A, u, p, t)
     A[1, 1] = 0
     A[2, 1] = 1
     A[1, 2] = -2 * (1 - cos(u[2]) - u[2] * sin(u[2]))
-    return A[2, 2] = 0
+    A[2, 2] = 0
+    return
 end
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (30, 150.0))
@@ -118,7 +120,8 @@ function update_func!(A, u, p, t)
     A[1, 1] = cos(t)
     A[2, 1] = sin(t)
     A[1, 2] = -sin(t)
-    return A[2, 2] = cos(t)
+    A[2, 2] = cos(t)
+    return
 end
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 5.0))

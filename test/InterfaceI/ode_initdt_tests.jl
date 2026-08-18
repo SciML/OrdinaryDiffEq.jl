@@ -54,7 +54,8 @@ using LinearAlgebra
 function f(du, u, p, t)
     du[1] = -p[1] * u[1] + p[2] * u[2] * u[3]
     du[2] = p[1] * u[1] - p[2] * u[2] * u[3] - p[3] * u[2] * u[2]
-    return du[3] = u[1] + u[2] + u[3] - 1.0
+    du[3] = u[1] + u[2] + u[3] - 1.0
+    return
 end
 M = Diagonal([1, 1, 0])
 p = [0.04, 10^4, 3.0e7]

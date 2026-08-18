@@ -34,7 +34,8 @@ get_jacobian_backends() = [AutoForwardDiff()]
 
 function f(du, u, p, t)
     du[1] = u[2]
-    return du[2] = -p[1]
+    du[2] = -p[1]
+    return
 end
 
 function condition(u, t, integrator) # Event when event_f(u,t) == 0
@@ -44,7 +45,8 @@ end
 function affect!(integrator)
     @show integrator.t
     println("bounced.")
-    return integrator.u[2] = -integrator.p[2] * integrator.u[2]
+    integrator.u[2] = -integrator.p[2] * integrator.u[2]
+    return
 end
 
 cb = ContinuousCallback(condition, affect!)

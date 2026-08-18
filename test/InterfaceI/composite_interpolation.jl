@@ -11,7 +11,8 @@ function f(du, u, p, t)
     du[1] = dGut
     du[2] = dCent
     du[3] = dPeriph
-    return du[4] = dResp
+    du[4] = dResp
+    return
 end
 
 p = (

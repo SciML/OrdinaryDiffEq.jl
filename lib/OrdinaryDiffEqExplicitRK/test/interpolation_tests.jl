@@ -17,7 +17,8 @@ prob_ode_linear = ODEProblem(
 
 function f_2Dlinear!(du, u, p, t)
     du[1] = 1.01 * u[1]
-    return du[2] = 1.01 * u[2]
+    du[2] = 1.01 * u[2]
+    return
 end
 prob_ode_2Dlinear = ODEProblem(
     ODEFunction(f_2Dlinear!; analytic = (u0, p, t) -> u0 .* exp(1.01t)),

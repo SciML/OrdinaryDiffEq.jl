@@ -164,11 +164,13 @@ println("W2Ito1:", sim.𝒪est[:weak_final])
 u₀ = [0.1, 0.1]
 function f2!(du, u, p, t)
     du[1] = 3 // 2 * u[1]
-    return du[2] = 3 // 2 * u[2]
+    du[2] = 3 // 2 * u[2]
+    return
 end
 function g2!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (3:-1:0)
 tspan = (0.0, 1.0)
@@ -200,13 +202,15 @@ println("W2Ito1:", sim.𝒪est[:weak_final])
 u₀ = [1.0, 1.0]
 function f3!(du, u, p, t)
     du[1] = -273 // 512 * u[1]
-    return du[2] = -1 // 160 * u[1] - (-785 // 512 + sqrt(2) / 8) * u[2]
+    du[2] = -1 // 160 * u[1] - (-785 // 512 + sqrt(2) / 8) * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1, 1] = 1 // 4 * u[1]
     du[1, 2] = 1 // 16 * u[1]
     du[2, 1] = (1 - 2 * sqrt(2)) / 4 * u[1]
-    return du[2, 2] = 1 // 10 * u[1] + 1 // 16 * u[2]
+    du[2, 2] = 1 // 10 * u[1] + 1 // 16 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (3:-1:0)
 tspan = (0.0, 3.0)
