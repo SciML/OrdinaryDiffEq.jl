@@ -616,6 +616,30 @@ end
 end
 
 """
+    newton_linear_reltol(reltol, uT) -> reltol
+
+Relative tolerance for the iterative linear solve that produces the modified Newton
+direction.
+
+The correction has to be more accurate than the tolerance it is being used to reach.
+Solving the stage system only to the integrator's own `reltol` gives a direction good to
+`reltol`, so the stage never converges there, `dt` collapses and the step controller gives
+up. That is SciML/OrdinaryDiffEq.jl#4293: the `Hairer4` and `Hairer42` runs in
+`test/Regression_I/newton_krylov_roundoff.jl` call `solve` with no tolerances, so the
+Krylov solve inherits the default `reltol` of 1e-3 and both return `Unstable`.
+
+The floor is `sqrt(eps)`, which is where LinearSolve's own default sat before the linear
+tolerance became integrator-driven, so a looser integrator behaves as it did before and a
+tighter one still gets the tighter linear solve.
+
+This is about Newton directions specifically. A Rosenbrock stage is a single linear solve
+whose accuracy caps the stage directly instead of feeding an iteration, and
+`NonlinearSolveAlg`'s inner descent carries its own convergence handling, so neither is
+floored here.
+"""
+newton_linear_reltol(reltol, uT) = reltol isa Number ? min(reltol, sqrt(eps(uT))) : reltol
+
+"""
     compute_step!(nlsolver::NLSolver{<:NLNewton}, integrator)
 
 Compute next iterate of numerically stable modified Newton iteration
@@ -717,7 +741,7 @@ end
     end
 
     if integrator.opts.adaptive
-        reltol = integrator.opts.reltol
+        reltol = newton_linear_reltol(integrator.opts.reltol, real(one(eltype(dz))))
     else
         reltol = eps(real(one(eltype(dz))))
     end

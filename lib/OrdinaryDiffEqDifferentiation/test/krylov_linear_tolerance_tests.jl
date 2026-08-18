@@ -21,12 +21,15 @@ newton_cache(integrator) = integrator.cache.nlsolver.cache.linsolve
 @testset "integrator tolerance reaches the Krylov cache" begin
     # Newton path: `build_nlsolver` builds the `LinearCache` without tolerances, so
     # `dolinsolve` is the only thing that can put the integrator's `reltol` there.
+    # A Newton direction is floored at `sqrt(eps)` however loose the integrator is, because
+    # a correction solved only to `reltol` cannot drive the stage to `reltol` (#4293), so a
+    # looser tolerance clamps and a tighter one passes through unchanged.
     for tol in (1.0e-6, 1.0e-10)
         integrator = init(prob, FBDF(linsolve = KrylovJL_GMRES()); reltol = tol, abstol = tol)
         for _ in 1:5
             step!(integrator)
         end
-        @test newton_cache(integrator).reltol == tol
+        @test newton_cache(integrator).reltol == min(tol, sqrt(eps(Float64)))
     end
 
     integrator = init(prob, KenCarp4(linsolve = KrylovJL_GMRES()); reltol = 1.0e-7, abstol = 1.0e-7)
