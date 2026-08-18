@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqTaylorSeries"
 uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 authors = ["Songchen Tan <i@tansongchen.com>"]
-version = "2.1.2"
+version = "2.2.0"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
