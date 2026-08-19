@@ -64,6 +64,18 @@ REF6 = """
   publisher={Springer}
 }
 """
+REF7 = """
+@article{celledoni2003commutator,
+  title={Commutator-free Lie group methods},
+  author={Celledoni, Elena and Marthinsen, Arne and Owren, Brynjulf},
+  journal={Future Generation Computer Systems},
+  volume={19},
+  number={3},
+  pages={341--352},
+  year={2003},
+  publisher={Elsevier}
+}
+"""
 
 for (Alg, Description, Ref) in [
         (
@@ -103,6 +115,8 @@ for (Alg, Description, Ref) in [
         (:RKMK2, "Second order Runge–Kutta–Munthe-Kaas method.", REF1),
         (:RKMK4, "Fourth order Runge–Kutta–Munthe-Kaas method.", REF1),
         (:LieRK4, "Fourth order Lie Runge-Kutta method.", REF1),
+        (:CFLie3, "Third order commutator-free Lie group method.", REF7),
+        (:CFLie4, "Fourth order commutator-free Lie group method.", REF7),
         (:CG2, "Second order Crouch–Grossman method.", REF1),
         (:CG3, "Third order Crouch-Grossman method.", REF2),
         (:CG4a, " Fourth order Crouch-Grossman method.", REF6),
