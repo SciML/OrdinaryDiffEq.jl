@@ -1,6 +1,8 @@
 using OrdinaryDiffEqExponentialRK, Test, Random, LinearAlgebra, SparseArrays
 using OrdinaryDiffEqTsit5
 using SciMLOperators: MatrixOperator
+using SciMLBase: successful_retcode
+using OrdinaryDiffEqExponentialRK: _cached_ishermitian, _arnoldi_kwargs
 
 let N = 20
     Random.seed!(0)
@@ -141,4 +143,56 @@ end
     prob = ODEProblem(exp_fun, u0, (0.0, 1.0))
     sol = solve(prob, LawsonEuler(krylov = true, m = N); dt = 0.1)
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)
+end
+
+@testset "Cached ishermitian flag" begin
+    # `arnoldi!` takes `ishermitian` as a default keyword argument, so it re-derives the
+    # property on every call -- five times per ETDRK4 step, and for a symmetric sparse
+    # operator that is a full O(nnz) scan. A SplitFunction's linear part is fixed for the
+    # whole solve, so `alg_cache_expRK` evaluates it once and `_arnoldi_kwargs` threads it
+    # through. These problems are split, unlike the ODEProblem fixtures above.
+    Random.seed!(0)
+    N = 32
+    g!(du, u, p, t) = (@. du = u - u^3)
+    split_prob(A) = SplitODEProblem(MatrixOperator(sparse(A)), g!,
+                                    normalize(randn(N)), (0.0, 0.1))
+
+    sym = split_prob(begin                       # periodic Laplacian => symmetric
+            A = diagm(-1 => ones(N - 1), 0 => -2ones(N), 1 => ones(N - 1)) .* 50.0
+            A[1, N] = A[N, 1] = 50.0
+            A
+        end)
+    nonsym = split_prob(                         # upwind-biased => not symmetric
+        diagm(-1 => 3ones(N - 1), 0 => -4ones(N), 1 => ones(N - 1)) .* 50.0)
+
+    # the three distinct outcomes
+    @test _cached_ishermitian(sym.f) === true
+    @test _cached_ishermitian(nonsym.f) === false
+    @test _cached_ishermitian(ODEProblem((du, u, p, t) -> (@. du = -u), [1.0],
+        (0.0, 1.0)).f) === nothing
+
+    # when nothing was cached, the fallback must derive the same value, with the same
+    # NamedTuple shape so the call sites stay type-stable
+    let A = sym.f.f1.f, integ = (; opts = (; internalopnorm = opnorm)),
+        alg = ETDRK4(krylov = true, m = 15)
+
+        @test _arnoldi_kwargs(alg, A, integ, true).ishermitian ===
+              _arnoldi_kwargs(alg, A, integ, nothing).ishermitian === true
+        @test keys(_arnoldi_kwargs(alg, A, integ, true)) ===
+              keys(_arnoldi_kwargs(alg, A, integ, nothing))
+    end
+
+    # the flag must reach every cache. Checked per algorithm on purpose: ETDRK2 builds its
+    # `arnoldi!` keywords inline rather than via the shared bundle, so one representative
+    # method would not catch a missed call site.
+    for prob in (sym, nonsym), Alg in (ETDRK2, ETDRK3, ETDRK4, HochOst4)
+        cache = init(prob, Alg(krylov = true, m = 15); dt = 1.0e-3).cache
+        @test cache.KsCache[4] == ishermitian(prob.f.f1.f)
+    end
+
+    # smoke: the split path still integrates (the fixtures above are all non-split)
+    for prob in (sym, nonsym)
+        @test successful_retcode(solve(prob, ETDRK4(krylov = true, m = 15);
+            dt = 1.0e-3, save_everystep = false))
+    end
 end
