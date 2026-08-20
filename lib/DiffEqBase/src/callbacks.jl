@@ -90,8 +90,10 @@ has_continuous_callback(cb::VectorContinuousCallback) = true
 has_continuous_callback(cb::CallbackSet) = !isempty(cb.continuous_callbacks)
 has_continuous_callback(cb::Nothing) = false
 
-_despecialize_callbacks(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
-function _despecialize_callbacks(callback)
+function _erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}})
+    return CallbackSet(copy(cb.continuous_callbacks), copy(cb.discrete_callbacks))
+end
+function _erase_callback_types(callback)
     Base.@nospecialize callback
     callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
     return CallbackSet(
