@@ -1,4 +1,5 @@
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -18,6 +19,7 @@ OrdinaryDiffEqExponentialRK = "e0540318-69ee-4070-8777-9e2de6de23de"
 OrdinaryDiffEqExtrapolation = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 OrdinaryDiffEqFeagin = "101fe9f7-ebb6-4678-b671-3a81e7194747"
+OrdinaryDiffEqFunctionMap = "d3585ca7-f5d3-4ba6-8057-292ed1abd90f"
 OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
 OrdinaryDiffEqIMEXMultistep = "9f002381-b378-40b7-97a6-27a27c83f129"
 OrdinaryDiffEqLinear = "521117fe-8c41-49f8-b3b6-30780b3f0fb5"
@@ -40,25 +42,27 @@ OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 OrdinaryDiffEqTaylorSeries = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
-StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 StochasticDiffEqHighOrder = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
 StochasticDiffEqIIF = "ebf54054-c36b-4494-9aba-657e36df524f"
 StochasticDiffEqImplicit = "5080b986-4c76-4669-b5dc-373a41579d5b"
 StochasticDiffEqLeaping = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
+StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
 StochasticDiffEqLowOrder = "d15fe365-ce7f-450a-828a-7985bd5b681b"
 StochasticDiffEqMilstein = "8c95a807-c8e7-4581-8419-890d001af53e"
 StochasticDiffEqROCK = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
 StochasticDiffEqRODE = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
 StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
-SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
 
 [sources]
 DiffEqBase = {path = "../lib/DiffEqBase"}
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
 GlobalDiffEq = {path = "../lib/GlobalDiffEq"}
 ImplicitDiscreteSolve = {path = "../lib/ImplicitDiscreteSolve"}
+OrdinaryDiffEq = {path = "/home/runner/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"}
 OrdinaryDiffEqAMF = {path = "../lib/OrdinaryDiffEqAMF"}
 OrdinaryDiffEqAdamsBashforthMoulton = {path = "../lib/OrdinaryDiffEqAdamsBashforthMoulton"}
 OrdinaryDiffEqBDF = {path = "../lib/OrdinaryDiffEqBDF"}
@@ -67,7 +71,10 @@ OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqDifferentiation = {path = "../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
+OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
 OrdinaryDiffEqFIRK = {path = "../lib/OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqFeagin = {path = "../lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqFunctionMap = {path = "../lib/OrdinaryDiffEqFunctionMap"}
 OrdinaryDiffEqHighOrderRK = {path = "../lib/OrdinaryDiffEqHighOrderRK"}
 OrdinaryDiffEqIMEXMultistep = {path = "../lib/OrdinaryDiffEqIMEXMultistep"}
 OrdinaryDiffEqLinear = {path = "../lib/OrdinaryDiffEqLinear"}
@@ -81,17 +88,29 @@ OrdinaryDiffEqPRK = {path = "../lib/OrdinaryDiffEqPRK"}
 OrdinaryDiffEqQPRK = {path = "../lib/OrdinaryDiffEqQPRK"}
 OrdinaryDiffEqRKN = {path = "../lib/OrdinaryDiffEqRKN"}
 OrdinaryDiffEqRosenbrock = {path = "../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqRosenbrockTableaus = {path = "../lib/OrdinaryDiffEqRosenbrockTableaus"}
 OrdinaryDiffEqSDIRK = {path = "../lib/OrdinaryDiffEqSDIRK"}
 OrdinaryDiffEqSSPRK = {path = "../lib/OrdinaryDiffEqSSPRK"}
 OrdinaryDiffEqStabilizedIRK = {path = "../lib/OrdinaryDiffEqStabilizedIRK"}
 OrdinaryDiffEqStabilizedRK = {path = "../lib/OrdinaryDiffEqStabilizedRK"}
 OrdinaryDiffEqSymplecticRK = {path = "../lib/OrdinaryDiffEqSymplecticRK"}
+OrdinaryDiffEqTaylorSeries = {path = "../lib/OrdinaryDiffEqTaylorSeries"}
 OrdinaryDiffEqTsit5 = {path = "../lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
+StochasticDiffEqCore = {path = "../lib/StochasticDiffEqCore"}
+StochasticDiffEqHighOrder = {path = "../lib/StochasticDiffEqHighOrder"}
+StochasticDiffEqIIF = {path = "../lib/StochasticDiffEqIIF"}
+StochasticDiffEqImplicit = {path = "../lib/StochasticDiffEqImplicit"}
+StochasticDiffEqLeaping = {path = "../lib/StochasticDiffEqLeaping"}
 StochasticDiffEqLevyArea = {path = "../lib/StochasticDiffEqLevyArea"}
+StochasticDiffEqLowOrder = {path = "../lib/StochasticDiffEqLowOrder"}
+StochasticDiffEqMilstein = {path = "../lib/StochasticDiffEqMilstein"}
+StochasticDiffEqROCK = {path = "../lib/StochasticDiffEqROCK"}
+StochasticDiffEqRODE = {path = "../lib/StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../lib/StochasticDiffEqWeak"}
 
 [compat]
+ADTypes = "1.22"
 CommonSolve = "0.2.6"
 DelayDiffEq = "6"
 DiffEqBase = "7.6.1"
@@ -111,6 +130,7 @@ OrdinaryDiffEqExponentialRK = "2.0.0"
 OrdinaryDiffEqExtrapolation = "2.0.0"
 OrdinaryDiffEqFIRK = "2.0.0"
 OrdinaryDiffEqFeagin = "2.0.0"
+OrdinaryDiffEqFunctionMap = "2"
 OrdinaryDiffEqHighOrderRK = "2.0.0"
 OrdinaryDiffEqIMEXMultistep = "2.0.0"
 OrdinaryDiffEqLinear = "2.0.0"
@@ -133,16 +153,17 @@ OrdinaryDiffEqSymplecticRK = "2.0.0"
 OrdinaryDiffEqTaylorSeries = "2.0.0"
 OrdinaryDiffEqTsit5 = "2.0.0"
 OrdinaryDiffEqVerner = "2.0.0"
-StochasticDiffEqLevyArea = "2"
+SciMLBase = "3.39"
+SciMLLogging = "2.0.0"
+SciMLOperators = "1.24"
 StochasticDiffEqCore = "2"
 StochasticDiffEqHighOrder = "2"
 StochasticDiffEqIIF = "2"
 StochasticDiffEqImplicit = "2"
 StochasticDiffEqLeaping = "2"
+StochasticDiffEqLevyArea = "2"
 StochasticDiffEqLowOrder = "2"
 StochasticDiffEqMilstein = "2"
 StochasticDiffEqROCK = "2"
 StochasticDiffEqRODE = "2"
 StochasticDiffEqWeak = "2"
-SciMLBase = "3.39"
-SciMLLogging = "2.0.0"

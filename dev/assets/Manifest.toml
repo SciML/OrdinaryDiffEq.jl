@@ -2,7 +2,7 @@
 
 julia_version = "1.12.7"
 manifest_format = "2.0"
-project_hash = "8bbbc068bd2a0c3ca5c527dd3aac5132ee63d972"
+project_hash = "b441a49146804df6f196d46f17af07c109a5ca80"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "5970c86505ae9c07bf5bc521ef2bbbb3849e8b7b"
@@ -1362,10 +1362,14 @@ uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
 version = "2.3.0"
 
 [[deps.OrdinaryDiffEqExtrapolation]]
-deps = ["ADTypes", "DiffEqBase", "FastBroadcast", "FastPower", "LinearSolve", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators"]
-git-tree-sha1 = "8e6bd48cf456891e03216e3026d5d4b7ceed0e3f"
+deps = ["ADTypes", "CommonSolve", "DiffEqBase", "FastBroadcast", "FastPower", "LinearSolve", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "RecursiveArrayTools", "SciMLBase", "SciMLLogging", "SciMLOperators"]
+path = "../lib/OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
-version = "2.4.1"
+version = "2.5.1"
+weakdeps = ["Polyester"]
+
+    [deps.OrdinaryDiffEqExtrapolation.extensions]
+    OrdinaryDiffEqExtrapolationPolyesterExt = "Polyester"
 
 [[deps.OrdinaryDiffEqFIRK]]
 deps = ["ADTypes", "DiffEqBase", "FastBroadcast", "FastGaussQuadrature", "FastPower", "LinearAlgebra", "LinearSolve", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqNonlinearSolve", "Polyester", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators"]
@@ -1375,13 +1379,13 @@ version = "2.7.0"
 
 [[deps.OrdinaryDiffEqFeagin]]
 deps = ["DiffEqBase", "FastBroadcast", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "SciMLBase"]
-git-tree-sha1 = "3dec09c8593cd8519ba3afb8fc8f401431dc21a1"
+path = "../lib/OrdinaryDiffEqFeagin"
 uuid = "101fe9f7-ebb6-4678-b671-3a81e7194747"
 version = "2.2.1"
 
 [[deps.OrdinaryDiffEqFunctionMap]]
 deps = ["DiffEqBase", "FastBroadcast", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "SciMLBase"]
-git-tree-sha1 = "39d84832aa9776a6224c1330e0f8f086bb7e31b0"
+path = "../lib/OrdinaryDiffEqFunctionMap"
 uuid = "d3585ca7-f5d3-4ba6-8057-292ed1abd90f"
 version = "2.2.1"
 
@@ -1464,7 +1468,7 @@ uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
 version = "2.6.6"
 
 [[deps.OrdinaryDiffEqRosenbrockTableaus]]
-git-tree-sha1 = "0ecd1c905c82963f8748e82b6d2bf16d2b1bdf2b"
+path = "../lib/OrdinaryDiffEqRosenbrockTableaus"
 uuid = "b4bd8bb3-f80f-41d2-9b21-73a655b304b9"
 version = "2.4.1"
 
@@ -1500,9 +1504,9 @@ version = "2.2.1"
 
 [[deps.OrdinaryDiffEqTaylorSeries]]
 deps = ["CommonSolve", "DiffEqBase", "FastBroadcast", "FunctionWrappers", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "PrecompileTools", "Preferences", "RecursiveArrayTools", "SciMLBase", "SymbolicUtils", "Symbolics", "TaylorDiff", "TruncatedStacktraces"]
-git-tree-sha1 = "5d9b18561cb987c5136104a088da4a26303da062"
+path = "../lib/OrdinaryDiffEqTaylorSeries"
 uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
-version = "2.1.2"
+version = "2.2.0"
 
 [[deps.OrdinaryDiffEqTsit5]]
 deps = ["CommonSolve", "DiffEqBase", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "TruncatedStacktraces"]
@@ -2082,31 +2086,31 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
 
 [[deps.StochasticDiffEqCore]]
 deps = ["ADTypes", "Adapt", "ArrayInterface", "CommonSolve", "DiffEqBase", "DiffEqNoiseProcess", "FastPower", "FiniteDiff", "ForwardDiff", "JumpProcesses", "LinearAlgebra", "Logging", "MuladdMacro", "OrdinaryDiffEqCore", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "SimpleNonlinearSolve", "SparseArrays", "StaticArrays", "StochasticDiffEqLevyArea"]
-git-tree-sha1 = "a181aba6b9ef1688200c0456d7e3f4f6bf46b30e"
+path = "../lib/StochasticDiffEqCore"
 uuid = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
 version = "2.1.0"
 
 [[deps.StochasticDiffEqHighOrder]]
 deps = ["DiffEqBase", "DiffEqNoiseProcess", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
-git-tree-sha1 = "b358d8aed9c1448e9d0ebe168104d985784b8f88"
+path = "../lib/StochasticDiffEqHighOrder"
 uuid = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
 version = "2.2.0"
 
 [[deps.StochasticDiffEqIIF]]
 deps = ["DiffEqBase", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "Reexport", "SciMLBase", "StochasticDiffEqCore"]
-git-tree-sha1 = "368102847deae1d2e94a7a256849bae2f1312a69"
+path = "../lib/StochasticDiffEqIIF"
 uuid = "ebf54054-c36b-4494-9aba-657e36df524f"
 version = "2.1.0"
 
 [[deps.StochasticDiffEqImplicit]]
 deps = ["ADTypes", "DiffEqBase", "DiffEqNoiseProcess", "FiniteDiff", "ForwardDiff", "JumpProcesses", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqNonlinearSolve", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
-git-tree-sha1 = "ce652938cc55dba94187abcc9b007a015a38a6db"
+path = "../lib/StochasticDiffEqImplicit"
 uuid = "5080b986-4c76-4669-b5dc-373a41579d5b"
 version = "2.2.0"
 
 [[deps.StochasticDiffEqLeaping]]
 deps = ["ADTypes", "DiffEqBase", "FiniteDiff", "ForwardDiff", "JumpProcesses", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqNonlinearSolve", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
-git-tree-sha1 = "253198f8c44b44f3112c5ec4f5a3b180f1c77155"
+path = "../lib/StochasticDiffEqLeaping"
 uuid = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
 version = "2.1.0"
 
@@ -2118,27 +2122,27 @@ version = "2.1.0"
 
 [[deps.StochasticDiffEqLowOrder]]
 deps = ["DiffEqBase", "DiffEqNoiseProcess", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
-git-tree-sha1 = "9f05cd348e97e8132a1587d8c804bdcda0dc7f63"
+path = "../lib/StochasticDiffEqLowOrder"
 uuid = "d15fe365-ce7f-450a-828a-7985bd5b681b"
 version = "2.0.4"
 
 [[deps.StochasticDiffEqMilstein]]
 deps = ["DiffEqBase", "DiffEqNoiseProcess", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore", "StochasticDiffEqLevyArea"]
-git-tree-sha1 = "2327401681ac23d0c81eb7a66a2571f10891f37a"
+path = "../lib/StochasticDiffEqMilstein"
 uuid = "8c95a807-c8e7-4581-8419-890d001af53e"
 version = "2.1.0"
 
 [[deps.StochasticDiffEqROCK]]
 deps = ["DiffEqBase", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
-git-tree-sha1 = "9a4463f0a85c1e2d919bd8625e6ec84764f6b5ee"
+path = "../lib/StochasticDiffEqROCK"
 uuid = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
-version = "2.0.3"
+version = "2.1.0"
 
 [[deps.StochasticDiffEqRODE]]
 deps = ["DiffEqBase", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
-git-tree-sha1 = "ff8d42c9e7844ed91c9363e760230f3ecd09db4d"
+path = "../lib/StochasticDiffEqRODE"
 uuid = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
-version = "2.0.3"
+version = "2.1.0"
 
 [[deps.StochasticDiffEqWeak]]
 deps = ["ADTypes", "DiffEqBase", "DiffEqNoiseProcess", "FiniteDiff", "ForwardDiff", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqNonlinearSolve", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
