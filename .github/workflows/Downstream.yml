@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    name: ${{ matrix.package.repo }}/${{ matrix.package.group }}/${{ matrix.julia-version }}
+    name: ${{ matrix.package.repo }}/${{ matrix.package.group }}/${{ matrix.package.julia || matrix.julia-version }}
     runs-on: ${{ matrix.os }}
     env:
       GROUP: ${{ matrix.package.group }}
@@ -31,14 +31,14 @@ jobs:
           - {user: SciML, repo: ModelingToolkit.jl, group: InterfaceII}
           - {user: SciML, repo: ModelingToolkit.jl, group: Initialization}
           - {user: SciML, repo: ModelingToolkit.jl, group: SymbolicIndexingInterface}
-          - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
+          - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream, julia: '1.12'}
           - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
 
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
-          version: ${{ matrix.julia-version }}
+          version: ${{ matrix.package.julia || matrix.julia-version }}
           arch: x64
       - name: Clone Downstream
         uses: actions/checkout@v7
