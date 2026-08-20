@@ -357,10 +357,12 @@ end
 function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
     (; stats) = integrator
     njacs, nf = stats.njacs, stats.nf
-    J = if SciMLBase.isinplace(integrator.sol.prob)
+    J = if SciMLBase.isinplace(integrator.sol.prob) && cache.J isa AbstractMatrix
         Jfresh = zero(cache.J)
         calc_J!(Jfresh, integrator, cache)
         Jfresh
+    elseif SciMLBase.isinplace(integrator.sol.prob)
+        nothing
     else
         calc_J(integrator, cache)
     end
