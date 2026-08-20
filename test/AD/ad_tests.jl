@@ -485,6 +485,12 @@ end ≈ [6.765310476296564]
     # in-place ODE with default sensealg dispatch).
     grad_mc = DI.gradient(loss_fn, AutoMooncake(; config = nothing), p_test)
     @test grad_mc ≈ ref_grad rtol = 1.0e-6
+
+    cache = Mooncake.prepare_derivative_cache(
+        loss_fn, p_test; config = Mooncake.Config(enable_nfwd = false)
+    )
+    _, gradients_forward_mc = Mooncake.value_and_gradient!!(cache, loss_fn, p_test)
+    @test last(gradients_forward_mc) ≈ ref_grad rtol = 1.0e-6
 end
 
 # Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
