@@ -508,6 +508,9 @@ end
 
     nlstep_data = get_nlstep_data(integrator.f)
     nlcache = nlsolver.cache.cache
+    innersol = nothing
+    fnorm_prev = nothing
+    γΔt = nothing
     if nlcache isa NonlinearSolveNoInitCache
         # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
         # time: `solve!` runs the complete inner solve and its returned solution is the only
@@ -558,8 +561,9 @@ end
             # in a no-init cache here too. The solution `solve!` already returned is used
             # as-is instead of rebuilding one from `nlcache.retcode`/`nlcache.stats`/
             # `get_fu`, none of which exist on this cache.
-            active_fu = innersol.resid
-            nlstepsol = innersol
+            inner_solution = something(innersol)
+            active_fu = inner_solution.resid
+            nlstepsol = inner_solution
         else
             active_fu = get_fu(nlcache)
             # No `trace` is attached: this solution only feeds `nlprobmap` right below, and
@@ -588,7 +592,11 @@ end
         # no displacement to be misled by.
         cache.stalled = false
     else
-        active_u = nlcache isa NonlinearSolveNoInitCache ? innersol.u : get_u(nlcache)
+        active_u = if nlcache isa NonlinearSolveNoInitCache
+            something(innersol).u
+        else
+            get_u(nlcache)
+        end
         @.. broadcast = false ztmp = active_u
         ustep = if nlsolve_f(integrator) isa DAEFunction
             _uprev = get_dae_uprev(integrator, uprev)
@@ -599,7 +607,7 @@ end
         @.. broadcast = false atmp = z - ztmp
         if !(nlcache isa NonlinearSolveNoInitCache)
             cache.stalled = stalled_inner_step(
-                nlcache, maxabs(atmp), maxabs(z), fnorm_prev, γΔt
+                nlcache, maxabs(atmp), maxabs(z), something(fnorm_prev), something(γΔt)
             )
         end
         calculate_residuals!(
