@@ -334,10 +334,21 @@ OrdinaryDiffEqCore.get_fsalfirstlast
 OrdinaryDiffEqCore.get_fresh_jacobian
 OrdinaryDiffEqCore.perform_step!
 OrdinaryDiffEqCore.apply_step!
-SciMLBase.postamble!
-SciMLBase.last_step_failed
-SciMLBase.check_error
-SciMLBase.check_error!
+```
+
+```@autodocs
+Modules = [SciMLBase]
+Public = true
+Private = false
+Filter = x -> x in [
+    SciMLBase.postamble!,
+    SciMLBase.last_step_failed,
+    SciMLBase.check_error,
+    SciMLBase.check_error!
+]
+```
+
+```@docs
 OrdinaryDiffEqCore.set_discontinuity
 OrdinaryDiffEqCore.increment_accept!
 OrdinaryDiffEqCore.increment_reject!
@@ -436,6 +447,9 @@ StochasticDiffEqCore.JDiagonal_oop
 StochasticDiffEqCore.NLSOLVEJL_SETUP
 StochasticDiffEqCore.SDEAlgTypes
 StochasticDiffEqCore.SDEIntegrator
+StochasticDiffEqCore.SDEOptions
+StochasticDiffEqCore.DiffCache
+StochasticDiffEqCore.@cache
 StochasticDiffEqCore.StochasticCompositeAlgorithm
 StochasticDiffEqCore.StochasticCompositeCache
 StochasticDiffEqCore.TauLeapingDrift
@@ -447,6 +461,8 @@ StochasticDiffEqCore.alg_cache
 StochasticDiffEqCore.alg_compatible
 StochasticDiffEqCore.alg_control_rate
 StochasticDiffEqCore.alg_mass_matrix_compatible
+StochasticDiffEqCore.alg_stability_size
+StochasticDiffEqCore.alg_can_repeat_jac
 StochasticDiffEqCore.alg_needs_extra_process
 StochasticDiffEqCore.calc_threepoint_random
 StochasticDiffEqCore.calc_threepoint_random!

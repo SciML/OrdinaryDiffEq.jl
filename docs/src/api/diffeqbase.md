@@ -29,7 +29,13 @@ specialization-level page.
 OrdinaryDiffEq.AutoDespecialize
 OrdinaryDiffEq.AutoRespecialize
 OrdinaryDiffEq.AutoDePSpecialize
-SciMLBase.AutoRespecialize
+```
+
+```@autodocs
+Modules = [SciMLBase]
+Public = true
+Private = false
+Filter = x -> x === SciMLBase.AutoRespecialize
 ```
 
 ## Default callback behavior

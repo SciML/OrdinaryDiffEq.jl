@@ -51,7 +51,7 @@ OrdinaryDiffEqCore.isthreaded
 The umbrella package exposes the same documented threading options as qualified
 public names:
 
-```@docs; canonical=false
+```@docs
 OrdinaryDiffEq.Sequential
 OrdinaryDiffEq.BaseThreads
 OrdinaryDiffEq.PolyesterThreads
