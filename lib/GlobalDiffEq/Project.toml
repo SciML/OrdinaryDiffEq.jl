@@ -35,7 +35,7 @@ Reexport = "0.2, 1.0"
 Richardson = "1.2"
 SafeTestsets = "0.0.1, 0.1"
 SciMLBase = "3"
-SciMLTesting = "2.1"
+SciMLTesting = "2.4"
 Test = "1"
 julia = "1.10"
 
