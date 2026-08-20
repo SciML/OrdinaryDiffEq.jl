@@ -1,4 +1,5 @@
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -14,6 +15,7 @@ OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
+OrdinaryDiffEqFunctionMap = "d3585ca7-f5d3-4ba6-8057-292ed1abd90f"
 OrdinaryDiffEqExponentialRK = "e0540318-69ee-4070-8777-9e2de6de23de"
 OrdinaryDiffEqExtrapolation = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
@@ -53,8 +55,10 @@ StochasticDiffEqRODE = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
 StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [sources]
+OrdinaryDiffEq = {path = ".."}
 DiffEqBase = {path = "../lib/DiffEqBase"}
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
 GlobalDiffEq = {path = "../lib/GlobalDiffEq"}
@@ -66,6 +70,9 @@ OrdinaryDiffEqCore = {path = "../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqDifferentiation = {path = "../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
+OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
+OrdinaryDiffEqFeagin = {path = "../lib/OrdinaryDiffEqFeagin"}
+OrdinaryDiffEqFunctionMap = {path = "../lib/OrdinaryDiffEqFunctionMap"}
 OrdinaryDiffEqExponentialRK = {path = "../lib/OrdinaryDiffEqExponentialRK"}
 OrdinaryDiffEqFIRK = {path = "../lib/OrdinaryDiffEqFIRK"}
 OrdinaryDiffEqHighOrderRK = {path = "../lib/OrdinaryDiffEqHighOrderRK"}
@@ -81,17 +88,29 @@ OrdinaryDiffEqPRK = {path = "../lib/OrdinaryDiffEqPRK"}
 OrdinaryDiffEqQPRK = {path = "../lib/OrdinaryDiffEqQPRK"}
 OrdinaryDiffEqRKN = {path = "../lib/OrdinaryDiffEqRKN"}
 OrdinaryDiffEqRosenbrock = {path = "../lib/OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqRosenbrockTableaus = {path = "../lib/OrdinaryDiffEqRosenbrockTableaus"}
 OrdinaryDiffEqSDIRK = {path = "../lib/OrdinaryDiffEqSDIRK"}
 OrdinaryDiffEqSSPRK = {path = "../lib/OrdinaryDiffEqSSPRK"}
 OrdinaryDiffEqStabilizedIRK = {path = "../lib/OrdinaryDiffEqStabilizedIRK"}
 OrdinaryDiffEqStabilizedRK = {path = "../lib/OrdinaryDiffEqStabilizedRK"}
 OrdinaryDiffEqSymplecticRK = {path = "../lib/OrdinaryDiffEqSymplecticRK"}
+OrdinaryDiffEqTaylorSeries = {path = "../lib/OrdinaryDiffEqTaylorSeries"}
 OrdinaryDiffEqTsit5 = {path = "../lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
+StochasticDiffEqCore = {path = "../lib/StochasticDiffEqCore"}
+StochasticDiffEqHighOrder = {path = "../lib/StochasticDiffEqHighOrder"}
+StochasticDiffEqIIF = {path = "../lib/StochasticDiffEqIIF"}
+StochasticDiffEqImplicit = {path = "../lib/StochasticDiffEqImplicit"}
+StochasticDiffEqLeaping = {path = "../lib/StochasticDiffEqLeaping"}
 StochasticDiffEqLevyArea = {path = "../lib/StochasticDiffEqLevyArea"}
+StochasticDiffEqLowOrder = {path = "../lib/StochasticDiffEqLowOrder"}
+StochasticDiffEqMilstein = {path = "../lib/StochasticDiffEqMilstein"}
+StochasticDiffEqROCK = {path = "../lib/StochasticDiffEqROCK"}
+StochasticDiffEqRODE = {path = "../lib/StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../lib/StochasticDiffEqWeak"}
 
 [compat]
+ADTypes = "1.22"
 CommonSolve = "0.2.6"
 DelayDiffEq = "6"
 DiffEqBase = "7.6.1"
@@ -107,6 +126,7 @@ OrdinaryDiffEqCore = "4.1"
 OrdinaryDiffEqDefault = "2.0.0"
 OrdinaryDiffEqDifferentiation = "3.3"
 OrdinaryDiffEqExplicitRK = "2.0.0"
+OrdinaryDiffEqFunctionMap = "2"
 OrdinaryDiffEqExponentialRK = "2.0.0"
 OrdinaryDiffEqExtrapolation = "2.0.0"
 OrdinaryDiffEqFIRK = "2.0.0"
@@ -146,3 +166,4 @@ StochasticDiffEqRODE = "2"
 StochasticDiffEqWeak = "2"
 SciMLBase = "3.39"
 SciMLLogging = "2.0.0"
+SciMLOperators = "1.24"

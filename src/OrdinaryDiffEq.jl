@@ -1,9 +1,15 @@
 """
-$(DocStringExtensions.README)
+    OrdinaryDiffEq
+
+OrdinaryDiffEq.jl provides ordinary differential-equation solvers and the
+common SciML interfaces needed to construct and solve ODE, DAE, and ensemble
+problems. Solver-author extension points are documented separately in the
+developer API.
+
+See the package documentation for installation instructions, solver selection,
+and the user-facing API.
 """
 module OrdinaryDiffEq
-
-import DocStringExtensions
 
 # Load packages (no blanket @reexport)
 

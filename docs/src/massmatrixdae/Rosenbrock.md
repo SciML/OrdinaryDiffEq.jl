@@ -164,3 +164,8 @@ Ros4LStab
 HybridExplicitImplicitRK
 Tsit5DA
 ```
+
+```@docs
+OrdinaryDiffEqRosenbrock.HybridExplicitImplicitRK
+OrdinaryDiffEqRosenbrock.Tsit5DA
+```
