@@ -17,7 +17,7 @@ using Test
             occursin(r"(?m)^OrdinaryDiffEqCore = ", project)
         has_muladdmacro && uses_core
     end
-    @test length(projects) == 40
+    @test length(projects) == 41
     for package in projects
         project = read(joinpath(lib_dir, package, "Project.toml"), String)
         floor_match = match(r"(?m)^MuladdMacro = \"([0-9]+\.[0-9]+\.[0-9]+)", project)
