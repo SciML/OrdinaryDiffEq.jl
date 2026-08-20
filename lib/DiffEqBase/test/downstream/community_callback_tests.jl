@@ -226,7 +226,7 @@ function cond!(out, u, t, i)
     return nothing
 end
 function terminate_affect!(int, events)
-    return any(isone, events) && terminate!(int)
+    return any(!iszero, events) && terminate!(int)
 end
 cb = VectorContinuousCallback(cond!, terminate_affect!, 1)
 
