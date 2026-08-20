@@ -7,6 +7,7 @@ tableau utilities.
 
 ```@docs
 DiffEqDevTools.ConvergenceSimulation
+DiffEqDevTools.ConvergenceTrajectory
 DiffEqDevTools.test_convergence
 DiffEqDevTools.analyticless_test_convergence
 DiffEqDevTools.appxtrue
