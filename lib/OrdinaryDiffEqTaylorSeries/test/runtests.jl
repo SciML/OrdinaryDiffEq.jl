@@ -68,7 +68,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         # that many nonzero coefficients on top of the value
         for (i, jet) in enumerate(cache.jets)
             fill!(cache.utaylor, zero(eltype(cache.utaylor)))
-            jet(cache.utaylor, integ.uprev, integ.t)
+            jet(cache.utaylor, cache.coeffs[i], integ.uprev, integ.t)
             @test count(!iszero, TaylorDiff.flatten(cache.utaylor[1])) == i + 2
         end
     end
