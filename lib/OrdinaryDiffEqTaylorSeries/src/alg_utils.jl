@@ -78,6 +78,12 @@ end
 # `TaylorScalar` there is a copy that the compiler does not always elide.
 @inline set_taylor_order(t::TaylorScalar{T, Q}, ::Val{Q}) where {T, Q} = t
 
+@inline function taylor_from_coefficients(coeffs, i, ::Val{P}, buffer_order) where {P}
+    offset = (i - 1) * (P + 1)
+    taylor = TaylorScalar(ntuple(j -> coeffs[offset + j], Val(P + 1)))
+    return set_taylor_order(taylor, buffer_order)
+end
+
 function build_jet(
         f::ODEFunction{iip}, p, order, length = nothing, buffer_order = order
     ) where {iip}
@@ -123,34 +129,28 @@ function build_jet(
     if u isa TaylorScalar
         # Scalar case: build function for array of coefficients
         coeffs = collect(TaylorDiff.flatten(u))
-        jet_coeffs = build_function(coeffs, u0, t0; expression = Val(false), cse = true)
+        scalar_jet_coeffs = build_function(
+            coeffs, u0, t0; expression = Val(false), cse = true
+        )
         # Wrap to return TaylorScalar
         jet = (u0_val, t0_val) -> set_taylor_order(
-            TaylorScalar(Tuple(jet_coeffs[1](u0_val, t0_val))), buffer_order
+            TaylorScalar(Tuple(scalar_jet_coeffs[1](u0_val, t0_val))), buffer_order
         )
     elseif u isa AbstractArray && eltype(u) <: TaylorScalar
-        # Array case: build function for matrix of coefficients
-        # Each row is the coefficients of one TaylorScalar
         n = Base.length(u)
-        coeffs_matrix = [TaylorDiff.flatten(u[i])[j] for i in 1:n, j in 1:(P + 1)]
-        jet_coeffs = build_function(coeffs_matrix, u0, t0; expression = Val(false), cse = true)
-        # Wrap to return array of TaylorScalars
+        coeffs = [TaylorDiff.flatten(u[i])[j] for i in 1:n for j in 1:(P + 1)]
+        array_jet_coeffs = build_function(
+            coeffs, u0, t0; expression = Val(false), cse = true
+        )
         jet = (
             (u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[1](u0_val, t0_val)
-                return [
-                    set_taylor_order(TaylorScalar(Tuple(coeffs_out[i, :])), buffer_order)
-                        for i in 1:n
-                ]
+                coeffs_out = array_jet_coeffs[1](u0_val, t0_val)
+                return [taylor_from_coefficients(coeffs_out, i, order, buffer_order) for i in 1:n]
             end,
-            (out, u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[2](
-                    similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val
-                )
+            (out, coeffs_out, u0_val, t0_val) -> begin
+                array_jet_coeffs[2](coeffs_out, u0_val, t0_val)
                 for i in 1:n
-                    out[i] = set_taylor_order(
-                        TaylorScalar(Tuple(coeffs_out[i, :])), buffer_order
-                    )
+                    out[i] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
                 end
                 return out
             end,
