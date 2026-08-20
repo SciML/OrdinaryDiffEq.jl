@@ -70,7 +70,33 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
 
+
+    if _despecializes_callbacks(prob)
+        callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
+        kwargs = merge(
+            (; kwargs...),
+            (; callback = _despecialize_callbacks(callback))
+        )
+    end
+
     return kwargs
+end
+
+
+function _despecializes_callbacks(prob)
+    hasfield(typeof(prob), :f) || return false
+    specialize = SciMLBase.specialization(prob.f)
+    return specialize === SciMLBase.AutoDespecialize ||
+        specialize === SciMLBase.NoSpecialize
+end
+
+function _despecialize_problem_callbacks(prob)
+    if !_despecializes_callbacks(prob) || !has_kwargs(prob)
+        return prob
+    end
+    callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
+    callback = _despecialize_callbacks(callback)
+    return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
 const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
@@ -705,6 +731,7 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     if prob !== oldprob
         kwargs = (; kwargs..., u0 = SII.state_values(prob), p = SII.parameter_values(prob))
     end
+    prob = _despecialize_problem_callbacks(prob)
     p = get_concrete_p(prob, kwargs)
     tspan = get_concrete_tspan(prob, isadapt, kwargs, p)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
@@ -741,6 +768,7 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
     if prob !== oldprob
         kwargs = (; kwargs..., u0 = SII.state_values(prob), p = SII.parameter_values(prob))
     end
+    prob = _despecialize_problem_callbacks(prob)
     p = get_concrete_p(prob, kwargs)
     tspan = get_concrete_tspan(prob, isadapt, kwargs, p)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)

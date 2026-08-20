@@ -1045,6 +1045,10 @@ end
     return ex
 end
 
+function _fired_cb_maybe_discontinuity(cb_idx, callbacks::AbstractVector)
+    return callbacks[cb_idx].maybe_discontinuity
+end
+
 # Use a generated function to call apply_callback! in a type-stable way
 @generated function apply_ith_callback!(
         integrator,
@@ -1078,6 +1082,15 @@ end
     return ex
 end
 
+function apply_ith_callback!(
+        integrator, time, upcrossing, event_idx, cb_idx,
+        callbacks::AbstractVector
+    )
+    return DiffEqBase.apply_callback!(
+        integrator, callbacks[cb_idx], time, upcrossing, event_idx
+    )
+end
+
 function handle_callbacks!(integrator)
     discrete_callbacks = integrator.opts.callback.discrete_callbacks
     continuous_callbacks = integrator.opts.callback.continuous_callbacks
@@ -1086,15 +1099,13 @@ function handle_callbacks!(integrator)
     continuous_modified = false
     discrete_modified = false
     saved_in_cb = false
-    if !(continuous_callbacks isa Tuple{})
-        time, upcrossing,
-            event_occurred,
-            event_idx,
-            idx,
-            counter = DiffEqBase.find_first_continuous_callback(
-            integrator,
-            continuous_callbacks...
-        )
+    if !isempty(continuous_callbacks)
+        time, upcrossing, event_occurred, event_idx, idx, counter =
+        if continuous_callbacks isa AbstractVector
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks)
+        else
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks...)
+        end
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
@@ -1115,12 +1126,12 @@ function handle_callbacks!(integrator)
             integrator.vector_event_last_time = 1
         end
     end
-    if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
-        discrete_modified,
-            saved_in_cb = DiffEqBase.apply_discrete_callback!(
-            integrator,
-            discrete_callbacks...
-        )
+    if !integrator.force_stepfail && !isempty(discrete_callbacks)
+        discrete_modified, saved_in_cb = if discrete_callbacks isa AbstractVector
+            DiffEqBase.apply_discrete_callback!(integrator, discrete_callbacks)
+        else
+            DiffEqBase.apply_discrete_callback!(integrator, discrete_callbacks...)
+        end
     end
     if !saved_in_cb
         savevalues!(integrator)
