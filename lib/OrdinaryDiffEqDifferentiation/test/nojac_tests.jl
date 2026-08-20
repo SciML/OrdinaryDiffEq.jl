@@ -1,5 +1,7 @@
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock, RecursiveFactorization, LinearSolve,
     Test, ADTypes
+using OrdinaryDiffEqCore: get_fresh_jacobian
+using SparseArrays: sparse
 
 const N = 32
 const xyd_brusselator = range(0, stop = 1, length = N)
@@ -259,6 +261,19 @@ prob = ODEProblem(ODEFunction(pollu, jac = fjac), u0, (0.0, 60.0))
 
 integ = init(prob, Rosenbrock23(), abstol = 1.0e-6, reltol = 1.0e-6)
 @test integ.cache.jac_config === (nothing, nothing)
+
+@testset "Matrix-free diagnostic Jacobian" begin
+    f = ODEFunction(
+        (du, u, p, t) -> (du .= -u);
+        jac_prototype = sparse([1.0 0.0; 0.0 1.0])
+    )
+    prob = ODEProblem(f, ones(2), (0.0, 1.0))
+    integrator = init(prob, Rosenbrock23(linsolve = KrylovJL_GMRES()))
+    work = (integrator.stats.nf, integrator.stats.njacs)
+
+    @test get_fresh_jacobian(integrator, integrator.cache) === nothing
+    @test (integrator.stats.nf, integrator.stats.njacs) == work
+end
 integ = init(
     prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1.0e-6,
     reltol = 1.0e-6
