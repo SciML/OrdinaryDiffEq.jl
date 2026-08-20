@@ -142,7 +142,13 @@ function initialize!(
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, atmp)
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlstep_data.nlprob.p)
+        nlprob_p = if SciMLBase.specialization(nlstep_data.nlprob.f) ===
+                SciMLBase.AutoDespecialize
+            SciMLBase.DespecializedParameters(nlstep_data.nlprob.p)
+        else
+            nlstep_data.nlprob.p
+        end
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlprob_p)
     else
         if cache.W !== nothing
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
