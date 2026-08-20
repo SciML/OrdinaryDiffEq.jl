@@ -194,7 +194,7 @@ function Verner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 3.9541297306311853
         )
     )
@@ -271,7 +271,7 @@ function DormandPrince6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_tim
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 3.954129730631186
         )
     )
@@ -358,7 +358,7 @@ function SharpVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst, fsal = true,
+            A, c, α, 6; adaptiveorder = 5, αEEst, fsal = true,
             stability_size = 4.470828492062036
         )
     )
@@ -445,7 +445,7 @@ function Verner9162(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 4.239991338165166
         )
     )
@@ -533,7 +533,7 @@ function Verner916(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 4.250607671658528
         )
     )
@@ -617,7 +617,7 @@ function VernerRobust6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 4.3240258134292215
         )
     )
@@ -706,7 +706,7 @@ function VernerEfficient6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_t
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst, fsal = true,
+            A, c, α, 6; adaptiveorder = 5, αEEst, fsal = true,
             stability_size = 4.8552743145651425
         )
     )
@@ -800,7 +800,7 @@ function Verner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, adaptiveorder = 6, αEEst = αEEst,
+            A, c, α, 7; adaptiveorder = 6, αEEst,
             stability_size = 4.640024335337557
         )
     )
@@ -942,7 +942,7 @@ function Verner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 8, adaptiveorder = 7, αEEst = αEEst,
+            A, c, α, 8; adaptiveorder = 7, αEEst,
             stability_size = 5.864113239353444
         )
     )
@@ -1029,7 +1029,7 @@ function Papakostas6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst, fsal = true,
+            A, c, α, 6; adaptiveorder = 5, αEEst, fsal = true,
             stability_size = 4.449984142037165
         )
     )
@@ -1159,7 +1159,7 @@ function TsitourasPapakostas6(::Type{T} = Float64, ::Type{T_time} = T) where {T,
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 3.954129730631186
         )
     )
@@ -1247,7 +1247,7 @@ function DormandLockyerMcCorriganPrince6(::Type{T} = Float64, ::Type{T_time} = T
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst, fsal = true,
+            A, c, α, 6; adaptiveorder = 5, αEEst, fsal = true,
             stability_size = 4.371949555657634
         )
     )
@@ -1354,7 +1354,7 @@ function TanakaKasugaYamashitaYazaki6D(::Type{T} = Float64, ::Type{T_time} = T) 
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 7.723403386984321
         )
     )
@@ -1458,7 +1458,7 @@ function TanakaKasugaYamashitaYazaki6C(::Type{T} = Float64, ::Type{T_time} = T) 
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 9.727143096983585
         )
     )
@@ -1547,7 +1547,7 @@ function TanakaKasugaYamashitaYazaki6B(::Type{T} = Float64, ::Type{T_time} = T) 
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 6.007860841958881
         )
     )
@@ -1653,7 +1653,7 @@ function TanakaKasugaYamashitaYazaki6A(::Type{T} = Float64, ::Type{T_time} = T) 
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 5, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 5, αEEst,
             stability_size = 4.730235594027788
         )
     )
@@ -1722,7 +1722,7 @@ function MikkawyEisa(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, adaptiveorder = 4, αEEst = αEEst,
+            A, c, α, 6; adaptiveorder = 4, αEEst,
             stability_size = 3.932606644665211
         )
     )

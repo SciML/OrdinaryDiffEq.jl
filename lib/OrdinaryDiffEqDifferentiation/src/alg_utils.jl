@@ -54,7 +54,7 @@ function DiffEqBase.prepare_alg(
         autodiff = sparse_prepped_AD
     end
 
-    return remake(alg, autodiff = autodiff)
+    return remake(alg; autodiff)
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
@@ -148,7 +148,7 @@ function prepare_user_sparsity(ad_alg, prob)
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
 
         return AutoSparse(
-            ad_alg, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg
+            ad_alg; sparsity_detector, coloring_algorithm = color_alg
         )
     else
         return ad_alg

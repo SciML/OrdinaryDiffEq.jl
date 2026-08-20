@@ -677,13 +677,13 @@ Base.@constprop :aggressive function _ode_init(
 
     _sol_kwargs = if !isnothing(W)
         (;
-            W = W, seed = seed, interp = id, dense = dense, alg_choice = alg_choice,
-            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+            W, seed, interp = id, dense, alg_choice,
+            calculate_error = false, stats, saved_subsystem,
         )
     else
         (;
-            dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+            dense, k = ks, interp = id, alg_choice,
+            calculate_error = false, stats, saved_subsystem,
         )
     end
     sol = SciMLBase.build_solution(prob, _alg, ts, timeseries; _sol_kwargs...)
@@ -935,8 +935,8 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
             integrator.sol;
-            timeseries_errors = integrator.opts.timeseries_errors,
-            dense_errors = integrator.opts.dense_errors
+            integrator.opts.timeseries_errors,
+            integrator.opts.dense_errors
         )
     end
     if integrator.sol.retcode != ReturnCode.Default

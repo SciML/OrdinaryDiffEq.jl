@@ -64,9 +64,9 @@ function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
     # `QNDF(qmax = 20)` keeps working (qmax = 20 ends up on the controller).
     return BDFController(
         QT, alg;
-        qmax = alg.qmax,
-        qsteady_min = alg.qsteady_min,
-        qsteady_max = alg.qsteady_max,
+        alg.qmax,
+        alg.qsteady_min,
+        alg.qsteady_max
     )
 end
 
@@ -173,7 +173,7 @@ end
 
 Restart the order and constant-step estimates for a step that straddles a derivative
 discontinuity, where the history behind it and the solution ahead belong to different
-regimes. We do this because the BDF step-size and order logic is based on the history of the solution, 
+regimes. We do this because the BDF step-size and order logic is based on the history of the solution,
 and we have effectively entered a new regime where old estimates no longer apply.
 """
 function bdf_restart_estimates!(cache)
@@ -763,8 +763,8 @@ gamma_default(::NordsieckBDFAlgs) = 1 // 1
 
 function default_controller(QT, alg::NordsieckBDFAlgs)
     return BDFController(
-        QT, alg; qmax = alg.qmax,
-        qsteady_min = alg.qsteady_min, qsteady_max = alg.qsteady_max
+        QT, alg; alg.qmax,
+        alg.qsteady_min, alg.qsteady_max
     )
 end
 

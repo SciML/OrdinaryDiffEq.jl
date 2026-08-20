@@ -32,9 +32,9 @@ function (f::HistoryFunction)(
         elseif idxs === nothing
             return f.h(p, t, Val{deriv})
         elseif deriv == 0
-            return f.h(p, t; idxs = idxs)
+            return f.h(p, t; idxs)
         else
-            return f.h(p, t, Val{deriv}; idxs = idxs)
+            return f.h(p, t, Val{deriv}; idxs)
         end
     end
 
@@ -57,7 +57,7 @@ function (f::HistoryFunction)(
         # handle extrapolations at initial time point
         return constant_extrapolant(t, integrator, idxs, Val{deriv})
     else
-        return integrator(t, Val{deriv}; idxs = idxs)
+        return integrator(t, Val{deriv}; idxs)
     end
 end
 
@@ -76,9 +76,9 @@ function (f::HistoryFunction)(
         elseif idxs === nothing
             return f.h(val, p, t, Val{deriv})
         elseif deriv == 0
-            return f.h(val, p, t; idxs = idxs)
+            return f.h(val, p, t; idxs)
         else
-            return f.h(val, p, t, Val{deriv}; idxs = idxs)
+            return f.h(val, p, t, Val{deriv}; idxs)
         end
     end
 
@@ -101,6 +101,6 @@ function (f::HistoryFunction)(
         # handle extrapolations at initial time point
         return constant_extrapolant!(val, t, integrator, idxs, Val{deriv})
     else
-        return integrator(val, t, Val{deriv}; idxs = idxs)
+        return integrator(val, t, Val{deriv}; idxs)
     end
 end

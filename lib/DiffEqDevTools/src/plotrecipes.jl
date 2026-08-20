@@ -176,11 +176,11 @@ end
 
     if order_star
         f = (u, v) -> abs(
-            stability_region(u + v * im, tab; embedded = embedded) /
+            stability_region(u + v * im, tab; embedded) /
                 exp(u + v * im)
         ) < 1
     else
-        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded = embedded)) < 1
+        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded)) < 1
     end
     seriestype --> :contour
     fill --> true

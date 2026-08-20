@@ -130,7 +130,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         for prob in (prob_ode_linear, prob_ode_2Dlinear)
             exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
             errors = map(dts) do dt
-                integrator = init(prob, alg; dt = dt, adaptive = false)
+                integrator = init(prob, alg; dt, adaptive = false)
                 integrator.cache.current_order[] = 3
                 solve!(integrator)
                 maximum(abs.(integrator.sol.u[end] .- exact))

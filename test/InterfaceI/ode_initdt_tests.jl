@@ -25,11 +25,11 @@ T = Float32
 u0 = T.([1.0; 0.0; 0.0])
 
 tspan = T.((0, 70))
-prob = remake(prob, u0 = u0, tspan = tspan)
+prob = remake(prob; u0, tspan)
 @test_nowarn solve(prob, Euler(); dt = T(0.0001))
 
 tspan = T.((2000, 2100))
-prob = remake(prob, tspan = tspan)
+prob = remake(prob; tspan)
 # set maxiters to prevent infinite loop on test failure
 @test solve(prob, Euler(); dt = T(0.0001), maxiters = 10).retcode ==
     SciMLBase.ReturnCode.MaxIters

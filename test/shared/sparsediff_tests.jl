@@ -72,7 +72,7 @@ for f in [f_oop, f_ip]
     for ad in adchoices, linsolve in [nothing, LinearSolve.KrylovJL_GMRES()]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4, FBDF]
             for tol in [nothing, 1.0e-10]
-                sol_std = solve(prob_std, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
+                sol_std = solve(prob_std, Solver(; autodiff = ad, linsolve), reltol = tol, abstol = tol)
                 @test sol_std.retcode == ReturnCode.Success
                 for (i, prob) in enumerate(
                         map(
@@ -94,7 +94,7 @@ for f in [f_oop, f_ip]
                             ]
                         )
                     )
-                    sol = solve(prob, Solver(autodiff = ad, linsolve = linsolve), reltol = tol, abstol = tol)
+                    sol = solve(prob, Solver(; autodiff = ad, linsolve), reltol = tol, abstol = tol)
                     @test sol.retcode == ReturnCode.Success
                     if tol != nothing
                         @test sol_std.u[end] ≈ sol.u[end] atol = tol

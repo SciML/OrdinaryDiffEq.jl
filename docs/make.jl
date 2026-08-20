@@ -100,7 +100,7 @@ cp(joinpath(@__DIR__, "Project.toml"), joinpath(@__DIR__, "src", "assets", "Proj
 # Keep pages.jl separate for the DiffEqDocs.jl build
 include("pages.jl")
 
-makedocs(
+makedocs(;
     sitename = "OrdinaryDiffEq.jl",
     authors = "Chris Rackauckas et al.",
     clean = true,
@@ -172,7 +172,7 @@ makedocs(
             joinpath("devtools", "internals", "public_api.md"),
         ]
     ),
-    pages = pages
+    pages
 )
 
 deploydocs(

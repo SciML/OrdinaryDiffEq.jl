@@ -20,8 +20,8 @@ let N = 20
     # f = ODEFunction(_f; jac=_jac)
     # f_ip = ODEFunction(_f_ip; jac=_jac_ip!, jac_prototype=zeros(N,N))
     jac_prototype = MatrixOperator(zeros(N, N); update_func! = _jac_ip!, update_func = _jac)
-    f = ODEFunction(_f; jac_prototype = jac_prototype)
-    f_ip = ODEFunction(_f_ip; jac_prototype = jac_prototype)
+    f = ODEFunction(_f; jac_prototype)
+    f_ip = ODEFunction(_f_ip; jac_prototype)
     prob = ODEProblem(f, u0, (0.0, 1.0))
     prob_ip = ODEProblem(f_ip, u0, (0.0, 1.0))
 
@@ -30,11 +30,11 @@ let N = 20
         tol = 1.0e-3
         Algs = [LawsonEuler, NorsettEuler, ETDRK2]
         for Alg in Algs
-            sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
+            sol = solve(prob, Alg(krylov = true, m = 20); dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
             @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
-            sol = solve(prob_ip, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
+            sol = solve(prob_ip, Alg(krylov = true, m = 20); dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
             @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
@@ -47,11 +47,11 @@ let N = 20
         tol = 1.0e-5
         Algs = [ETDRK3, ETDRK4, HochOst4]
         for Alg in Algs
-            sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
+            sol = solve(prob, Alg(krylov = true, m = 20); dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
             @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
-            sol = solve(prob_ip, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
+            sol = solve(prob_ip, Alg(krylov = true, m = 20); dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
             @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
@@ -64,21 +64,21 @@ let N = 20
         tol = 1.0e-5
         Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
         for Alg in Algs
-            sol = solve(prob, Alg(); dt = dt, reltol = tol)
+            sol = solve(prob, Alg(); dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
             @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
-            sol = solve(prob_ip, Alg(); dt = dt, reltol = tol)
+            sol = solve(prob_ip, Alg(); dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
             @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
             println(Alg) # prevent Travis hanging
         end
 
-        sol = solve(prob, EPIRK5s3(); dt = dt, reltol = tol)
+        sol = solve(prob, EPIRK5s3(); dt, reltol = tol)
         sol_ref = solve(prob, Tsit5(); reltol = tol)
         @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
-        sol = solve(prob_ip, EPIRK5s3(); dt = dt, reltol = tol)
+        sol = solve(prob_ip, EPIRK5s3(); dt, reltol = tol)
         sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
         @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
         println(EPIRK5s3) # prevent Travis hanging
@@ -137,7 +137,7 @@ end
     A = diagm(-1 => du, 0 => dd, 1 => du)
     f = (du, u, p, t) -> mul!(du, A, u)
     jac = (J, u, p, t) -> (J .= A; nothing)
-    exp_fun = ODEFunction(f; jac = jac, analytic = (u, p, t) -> exp(t * A) * u)
+    exp_fun = ODEFunction(f; jac, analytic = (u, p, t) -> exp(t * A) * u)
     prob = ODEProblem(exp_fun, u0, (0.0, 1.0))
     sol = solve(prob, LawsonEuler(krylov = true, m = N); dt = 0.1)
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)

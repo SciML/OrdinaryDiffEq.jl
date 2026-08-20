@@ -77,8 +77,8 @@ du₀ = [-0.04, 0.04, 0.0]
 tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
 M = Diagonal([1.0, 1.0, 0.0])
-prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
-prob_oop = DAEProblem{false}(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
+prob = DAEProblem(f, du₀, u₀, tspan, p; differential_vars)
+prob_oop = DAEProblem{false}(f, du₀, u₀, tspan, p; differential_vars)
 f_mm = ODEFunction{true}(f_ode, mass_matrix = M)
 prob_mm = ODEProblem(f_mm, u₀, tspan, p)
 f_mm_oop = ODEFunction{false}(f_ode, mass_matrix = M)
@@ -106,7 +106,7 @@ end
     alg = (_prob isa DAEProblem) ? DFBDF(; autodiff) : FBDF(; autodiff)
     function f_loss(p)
         sol = solve(
-            remake(_prob, p = p), alg, abstol = 1.0e-14,
+            remake(_prob; p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
         sum(sum, sol.u)

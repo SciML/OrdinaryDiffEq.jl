@@ -37,7 +37,7 @@ import DiffEqBase
         analytic(u0, p, t) = u0 * exp(-51t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -u, (u, p, t) -> -50u; analytic = analytic
+                (u, p, t) -> -u, (u, p, t) -> -50u; analytic
             ),
             1.0, (0.0, 1.0)
         )
@@ -51,7 +51,7 @@ import DiffEqBase
         analytic(u0, p, t) = u0 * exp(-3t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                (u, p, t) -> -2u, (u, p, t) -> -u; analytic
             ),
             1.0, (0.0, 1.0)
         )
@@ -95,7 +95,7 @@ end
         analytic(u0, p, t) = u0 * exp(-51t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -u, (u, p, t) -> -50u; analytic = analytic
+                (u, p, t) -> -u, (u, p, t) -> -50u; analytic
             ),
             1.0, (0.0, 1.0)
         )
@@ -109,7 +109,7 @@ end
         analytic(u0, p, t) = u0 * exp(-3t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                (u, p, t) -> -2u, (u, p, t) -> -u; analytic
             ),
             1.0, (0.0, 1.0)
         )
@@ -153,7 +153,7 @@ end
         analytic(u0, p, t) = u0 * exp(-51t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -u, (u, p, t) -> -50u; analytic = analytic
+                (u, p, t) -> -u, (u, p, t) -> -50u; analytic
             ),
             1.0, (0.0, 1.0)
         )
@@ -179,7 +179,7 @@ end
         analytic(u0, p, t) = u0 * exp(-3t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                (u, p, t) -> -2u, (u, p, t) -> -u; analytic
             ),
             1.0, (0.0, 1.0)
         )

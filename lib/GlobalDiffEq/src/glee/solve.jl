@@ -43,7 +43,7 @@ function _glee_extended_problem(prob)
     rhs = GLEEExtendedRHS{iip, typeof(prob.f)}(prob.f)
     extended_f = SciMLBase.ODEFunction{iip, SciMLBase.FullSpecialize}(rhs)
     u0 = RecursiveArrayTools.ArrayPartition(copy(prob.u0), zero(prob.u0))
-    return SciMLBase.remake(prob; f = extended_f, u0 = u0)
+    return SciMLBase.remake(prob; f = extended_f, u0)
 end
 
 _is_glee_extended(prob) = prob.f.f isa GLEEExtendedRHS

@@ -70,10 +70,10 @@ the solution via:
 
 ```julia
 build_solution(
-    prob, alg, ts, timeseries,
+    prob, alg, ts, timeseries;
     du = dures,
-    dense = dense,
-    timeseries_errors = timeseries_errors,
+    dense,
+    timeseries_errors,
     retcode = :Success
 )
 ```

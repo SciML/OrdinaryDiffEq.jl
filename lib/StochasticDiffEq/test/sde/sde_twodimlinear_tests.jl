@@ -109,7 +109,7 @@ print(".")
 
 Random.seed!(100)
 eigen_est = (integrator) -> integrator.eigen_est = 10.0
-for Alg in [SROCK1, SROCK2], alg in [Alg(), Alg(eigen_est = eigen_est)]
+for Alg in [SROCK1, SROCK2], alg in [Alg(), Alg(; eigen_est)]
 
     local sim2
     sim2 = test_convergence(dts, prob, alg, trajectories = 150)
@@ -123,17 +123,17 @@ sim2 = test_convergence(dts, prob, SROCKEM(strong_order_1 = false), trajectories
 sim2 = test_convergence(dts, prob, SROCKEM(), trajectories = 100)
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 
-sim2 = test_convergence(dts, prob, SROCKEM(eigen_est = eigen_est), trajectories = 100)
+sim2 = test_convergence(dts, prob, SROCKEM(; eigen_est), trajectories = 100)
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 
 sim2 = test_convergence(dts, prob, SKSROCK(), trajectories = 500)
 @test abs(sim2.𝒪est[:l∞] - 0.5) < 0.2
-sim2 = test_convergence(dts, prob, SKSROCK(eigen_est = eigen_est), trajectories = 500)
+sim2 = test_convergence(dts, prob, SKSROCK(; eigen_est), trajectories = 500)
 @test abs(sim2.𝒪est[:l∞] - 0.5) < 0.2
 
 sim2 = test_convergence(dts, prob, SROCKC2(), trajectories = 100)
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
-sim2 = test_convergence(dts, prob, SROCKC2(eigen_est = eigen_est), trajectories = 100)
+sim2 = test_convergence(dts, prob, SROCKC2(; eigen_est), trajectories = 100)
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 
 # #omitting tests for incomplete methods

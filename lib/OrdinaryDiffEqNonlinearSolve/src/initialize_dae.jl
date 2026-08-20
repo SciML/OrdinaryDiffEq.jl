@@ -299,8 +299,8 @@ function _initialize_dae!(
 
         nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
             nlequation!;
-            jac_prototype = f.jac_prototype,
-            jac = jac
+            f.jac_prototype,
+            jac
         )
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
         nlsolve = default_nlsolve(
@@ -308,8 +308,8 @@ function _initialize_dae!(
             SciMLBase.forwarddiff_chunksize(integrator.alg)
         )
         nlsol = solve(
-            nlprob, nlsolve; abstol = integrator.opts.abstol,
-            reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+            nlprob, nlsolve; integrator.opts.abstol,
+            integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
         )
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
@@ -390,8 +390,8 @@ function _initialize_dae!(
 
         nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
             nlequation_oop;
-            jac_prototype = f.jac_prototype,
-            jac = jac
+            f.jac_prototype,
+            jac
         )
         nlprob = NonlinearProblem(nlfunc, u0)
         isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
@@ -401,8 +401,8 @@ function _initialize_dae!(
         )
 
         nlsol = solve(
-            nlprob, nlsolve; abstol = integrator.opts.abstol,
-            reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+            nlprob, nlsolve; integrator.opts.abstol,
+            integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
         )
         integrator.u = nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
@@ -486,8 +486,8 @@ function _initialize_dae!(
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!;
-        jac_prototype = f.jac_prototype,
-        jac = jac
+        f.jac_prototype,
+        jac
     )
     nlprob = NonlinearProblem(nlfunc, u0, p)
     nlsolve = default_nlsolve(
@@ -495,8 +495,8 @@ function _initialize_dae!(
         SciMLBase.forwarddiff_chunksize(integrator.alg)
     )
     nlsol = solve(
-        nlprob, nlsolve; abstol = integrator.opts.abstol,
-        reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+        nlprob, nlsolve; integrator.opts.abstol, integrator.opts.reltol,
+        verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
     integrator.u = nlsol.u
@@ -544,8 +544,8 @@ function _initialize_dae!(
         end
     end
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
-        nlequation; jac_prototype = f.jac_prototype,
-        jac = jac
+        nlequation; f.jac_prototype,
+        jac
     )
     nlprob = NonlinearProblem(nlfunc, u0)
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
@@ -555,12 +555,12 @@ function _initialize_dae!(
     )
 
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
-        nlequation; jac_prototype = f.jac_prototype
+        nlequation; f.jac_prototype
     )
     nlprob = NonlinearProblem(nlfunc, u0)
     nlsol = solve(
-        nlprob, nlsolve; abstol = integrator.opts.abstol,
-        reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+        nlprob, nlsolve; integrator.opts.abstol,
+        integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
     integrator.u = nlsol.u
@@ -670,7 +670,7 @@ function _initialize_dae!(
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
-        nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
+        nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
     alg_u .= nlsol.u
@@ -835,11 +835,11 @@ function _initialize_dae!(
     end
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
-        nlequation!; jac_prototype = f.jac_prototype
+        nlequation!; f.jac_prototype
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     nlsol = solve(
-        nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
+        nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
@@ -891,7 +891,7 @@ function _initialize_dae!(
     end
 
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
-        nlequation; jac_prototype = f.jac_prototype
+        nlequation; f.jac_prototype
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
