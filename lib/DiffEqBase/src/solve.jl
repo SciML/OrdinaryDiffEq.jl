@@ -71,11 +71,11 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     end
 
 
-    if _despecializes_callbacks(prob)
+    if _erases_callback_types(prob)
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
         kwargs = merge(
             (; kwargs...),
-            (; callback = _despecialize_callbacks(callback))
+            (; callback = _erase_callback_types(callback))
         )
     end
 
@@ -83,19 +83,20 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
 end
 
 
-function _despecializes_callbacks(prob)
+function _erases_callback_types(prob)
     hasfield(typeof(prob), :f) || return false
     specialize = SciMLBase.specialization(prob.f)
-    return specialize === SciMLBase.AutoDespecialize ||
+    return specialize === SciMLBase.AutoSpecialize ||
+        specialize === SciMLBase.AutoDespecialize ||
         specialize === SciMLBase.NoSpecialize
 end
 
-function _despecialize_problem_callbacks(prob)
-    if !_despecializes_callbacks(prob) || !has_kwargs(prob)
+function _erase_problem_callback_types(prob)
+    if !_erases_callback_types(prob) || !has_kwargs(prob)
         return prob
     end
     callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
-    callback = _despecialize_callbacks(callback)
+    callback = _erase_callback_types(callback)
     return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
@@ -731,7 +732,7 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     if prob !== oldprob
         kwargs = (; kwargs..., u0 = SII.state_values(prob), p = SII.parameter_values(prob))
     end
-    prob = _despecialize_problem_callbacks(prob)
+    prob = _erase_problem_callback_types(prob)
     p = get_concrete_p(prob, kwargs)
     tspan = get_concrete_tspan(prob, isadapt, kwargs, p)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
@@ -768,7 +769,7 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
     if prob !== oldprob
         kwargs = (; kwargs..., u0 = SII.state_values(prob), p = SII.parameter_values(prob))
     end
-    prob = _despecialize_problem_callbacks(prob)
+    prob = _erase_problem_callback_types(prob)
     p = get_concrete_p(prob, kwargs)
     tspan = get_concrete_tspan(prob, isadapt, kwargs, p)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
