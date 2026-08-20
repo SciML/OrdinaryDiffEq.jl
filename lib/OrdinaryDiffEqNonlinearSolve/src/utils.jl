@@ -16,6 +16,14 @@ get_nlstep_data(f) = hasfield(typeof(f), :nlstep_data) ? f.nlstep_data : nothing
 @inline _restructure_state(template::Number, x) = oftype(template, x)
 
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
+
+# Whether the error test rejected the step this one is retrying. `EEst` is written once per
+# step, in the footer, so every stage of a step reads the same value.
+function errorfail(integrator)
+    eest = OrdinaryDiffEqCore.get_EEst(integrator)
+    return eest > one(eest)
+end
+
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
@@ -49,6 +57,12 @@ relax(_) = 0 // 1
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
+
+# Whether the cache records the `t` at which `J` was taken, so `isJcurrent` is meaningful and
+# a diverged solve can be retried with a fresh Jacobian.
+tracks_J_age(nlsolver::AbstractNLSolver) = tracks_J_age(nlsolver.cache)
+tracks_J_age(cache::AbstractNLSolverCache) = isnewton(cache)
+tracks_J_age(cache::NonlinearSolveCache) = cache.W !== nothing
 
 """
     can_smooth_est(nlsolver::AbstractNLSolver) -> Bool
@@ -914,7 +928,7 @@ function build_nlsolver(
                 weight,
                 dz,
                 est_linsolve,
-                zero(tstep), true, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
@@ -1109,7 +1123,7 @@ function build_nlsolver(
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
                 nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition
             )
         else
             # Build separated DAE Jacobian cache if applicable

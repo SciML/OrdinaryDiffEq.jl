@@ -249,7 +249,7 @@ function nlsolve!(
         end
     end
 
-    if isnewton(nlsolver) && nlsolver.status == Divergence &&
+    if tracks_J_age(nlsolver) && nlsolver.status == Divergence &&
             !isJcurrent(nlsolver, integrator)
         @SciMLMessage(
             lazy"Newton iteration failed with stale Jacobian, retrying with fresh Jacobian",
