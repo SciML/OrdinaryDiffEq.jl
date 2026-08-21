@@ -37,7 +37,12 @@ function MRIGARKERK22aTableau(::Type{T}) where {T}
     Δc = T[1 // 2, 1 // 2]
     W0 = T[1 // 2 0; -1 // 2 1]
     W1 = zeros(T, 2, 2)
-    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], zeros(T, 2), 2)
+    # Order-1 embedding: the last stage carries only fS[1], so the total slow
+    # quadrature over the step becomes dt·f2(uprev) (explicit Euler) instead of
+    # the order-2 midpoint rule dt·f2(z₂). Internal consistency still holds,
+    # Σⱼ ωᵉᵐᵇⱼ = 1/2 = Δc₂, so the difference is O(dt²).
+    Wemb0 = T[1 // 2, 0]
+    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, T[], zeros(T, 2), 2)
 end
 
 function MRIGARKERK22bTableau(::Type{T}) where {T}
@@ -96,6 +101,20 @@ struct MISTableau{T}
     d::Vector{T}   # inner-interval lengths, d_i = Σ_j β[i,j]
     c::Vector{T}   # stage abscissae, (I − α − γ)⁻¹ d
     ctilde::Vector{T}  # inner start abscissae, α c
+    bhat::Vector{T}    # b − b̃, slow-quadrature weights of the error estimate
+end
+
+# With f1 ≡ 0 the inner IVPs integrate a constant, and the stage relation
+# collapses to Y = uprev + (α+γ)(Y − uprev) + dt·β·f2(Y), i.e. an explicit RK on
+# the slow term with A = (I − α − γ)⁻¹β, b = A[s,:] and c = A·1. Differencing
+# that b against the order-1 weights b̃ = e₁ (explicit Euler on the slow term)
+# gives an embedded pair: Σⱼ(bⱼ − b̃ⱼ) = 0, so dt·Σⱼ(bⱼ − b̃ⱼ)·f2(Yⱼ) is O(dt²)
+# and estimates the error of the order-1 companion.
+function mis_bhat(α, β, γ, ::Type{T}) where {T}
+    A = (LinearAlgebra.I(size(β, 1)) - α - γ) \ β
+    bhat = Vector{T}(A[end, :])
+    bhat[1] -= one(T)
+    return bhat
 end
 
 function MIS2Tableau(::Type{T}) where {T}
@@ -120,5 +139,5 @@ function MIS2Tableau(::Type{T}) where {T}
     d = T[sum(@view β[i, :]) for i in axes(β, 1)]
     c = (LinearAlgebra.I(length(d)) - α - γ) \ d
     ctilde = α * c
-    return MISTableau{T}(α, β, γ, d, c, ctilde)
+    return MISTableau{T}(α, β, γ, d, c, ctilde, mis_bhat(α, β, γ, T))
 end
