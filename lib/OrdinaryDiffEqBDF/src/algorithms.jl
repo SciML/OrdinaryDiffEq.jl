@@ -522,6 +522,7 @@ struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
     qmax::QT
     qsteady_min::QT
     qsteady_max::QT
+    time_filter::Bool
 end
 
 function FBDF(;
@@ -538,6 +539,7 @@ function FBDF(;
         stald_rrtol = 1.0e-2,
         stald_tiny = 1.0e-90,
         qsteady_min = 9 // 10, qsteady_max = 2 // 1, qmax = 10 // 1,
+        time_filter = false,
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
 
@@ -548,6 +550,7 @@ function FBDF(;
         Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny),
         _unwrap_val(concrete_jac),
         qmax, qsteady_min, qsteady_max,
+        time_filter,
     )
 end
 
