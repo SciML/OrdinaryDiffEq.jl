@@ -1,7 +1,19 @@
 using Test
 # Load SparseArrays first to trigger the extension
 using SparseArrays
-using OrdinaryDiffEqCore: _isdiag
+using SciMLOperators: MatrixOperator
+using OrdinaryDiffEqCore: _find_large_jac_entries!, _isdiag
+
+@testset "MatrixOperator numerical instability entries" begin
+    jac = MatrixOperator(sparse([1, 2], [1, 2], [1.0e7, Inf]))
+    rows = Set{Int}()
+    cols = Set{Int}()
+    entries = Tuple{Int, Int, Float64}[]
+    _find_large_jac_entries!(rows, cols, entries, jac)
+    @test rows == Set([1, 2])
+    @test cols == Set([1, 2])
+    @test entries == [(1, 1, 1.0e7), (2, 2, Inf)]
+end
 
 @testset "Sparse isdiag Performance" begin
     # Test 1: Correctness - _isdiag should correctly identify diagonal matrices

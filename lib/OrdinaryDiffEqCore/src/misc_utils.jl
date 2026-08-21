@@ -336,6 +336,10 @@ function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vecto
     end
     return
 end
+
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::MatrixOperator)
+    return _find_large_jac_entries!(rows, cols, entries, jac.A)
+end
 """
     find_algebraic_vars_eqs(M)
 
