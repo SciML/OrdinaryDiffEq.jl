@@ -10,20 +10,21 @@ end
 @time @safetestset "Discontinuity restart" include("imex_discontinuity_restart_tests.jl")
 
 @time @safetestset "SciMLBase reexport" begin
+    # docs/src/api/reexports.md defines this surface; test/qa/qa_tests.jl checks the
+    # full list repo-wide. Here, spot-check that the common interface is usable and
+    # that solver-author API stayed behind the `SciMLBase.` qualifier.
     using OrdinaryDiffEqIMEXMultistep, Test
-    expected = (:SplitODEProblem, :solve)
-    @test all(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), expected))
-    removed = (
-        :ODEProblem, :ODEFunction, :init, :solve!, :step!, :remake, :reinit!,
-        :ReturnCode, :ContinuousCallback, :DiscreteCallback,
-        :VectorContinuousCallback, :CallbackSet, :terminate!, :add_tstop!,
-        :derivative_discontinuity!, :set_proposed_dt!, :successful_retcode,
-        :ODEAliasSpecifier, :SplitFunction,
+    exported = (
+        :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+        :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+        :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
     )
-    @test all(x -> !x, Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), removed))
-    @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :EnsembleProblem)
-    @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :get_du)
-    @test !Base.isexported(OrdinaryDiffEqIMEXMultistep, :u_modified!)
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), exported))
+    internal = (
+        :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+        :StandardODEProblem, :UJacobianWrapper,
+    )
+    @test !any(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), internal))
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

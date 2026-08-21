@@ -1,11 +1,10 @@
-using SciMLTesting, OrdinaryDiffEqFunctionMap, Test
-
-# SciMLBase names re-exported for ordinary ODE usage; everything else stays behind `SciMLBase.`.
-const SCIMLBASE_REEXPORTS = (:DiscreteProblem, :solve)
+using SciMLTesting, OrdinaryDiffEqFunctionMap, SciMLBase, Test
 
 run_qa(
     OrdinaryDiffEqFunctionMap;
-    reexports_allow = SCIMLBASE_REEXPORTS,
+    # Approve the SciMLBase names this package re-exports. The list itself and the rule
+    # behind it are checked repo-wide by test/qa/qa_tests.jl against docs/src/api/reexports.md.
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqFunctionMap)),
     aqua_kwargs = (; piracies = false),  # piracy is needed for default-algorithm dispatch
     explicit_imports = true,
     ei_kwargs = (;

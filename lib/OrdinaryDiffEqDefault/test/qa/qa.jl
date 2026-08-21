@@ -1,4 +1,4 @@
-using SciMLTesting, OrdinaryDiffEqDefault, Test
+using SciMLTesting, OrdinaryDiffEqDefault, SciMLBase, Test
 
 # `DefaultSolverChoice` is an `EnumX.@enumx`-generated submodule that
 # ExplicitImports cannot statically analyze. Its members (`Tsit5`, `Vern7`,
@@ -7,12 +7,11 @@ using SciMLTesting, OrdinaryDiffEqDefault, Test
 # mis-attributes those still-used imports as unused.
 const ENUM_SUBMODULE = (OrdinaryDiffEqDefault.DefaultSolverChoice,)
 
-# SciMLBase names re-exported for ordinary ODE usage; everything else stays behind `SciMLBase.`.
-const SCIMLBASE_REEXPORTS = (:ODEProblem, :solve)
-
 run_qa(
     OrdinaryDiffEqDefault;
-    reexports_allow = SCIMLBASE_REEXPORTS,
+    # Approve the SciMLBase names this package re-exports. The list itself and the rule
+    # behind it are checked repo-wide by test/qa/qa_tests.jl against docs/src/api/reexports.md.
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqDefault)),
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,
     ei_kwargs = (;

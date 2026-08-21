@@ -8,19 +8,21 @@ function activate_qa_env()
 end
 
 @time @safetestset "SciMLBase reexport" begin
+    # docs/src/api/reexports.md defines this surface; test/qa/qa_tests.jl checks the
+    # full list repo-wide. Here, spot-check that the common interface is usable and
+    # that solver-author API stayed behind the `SciMLBase.` qualifier.
     using OrdinaryDiffEqPDIRK, Test
-    expected = (:ODEProblem, :solve)
-    @test all(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), expected))
-    removed = (
-        :ODEFunction, :init, :solve!, :step!, :remake, :reinit!, :ReturnCode,
-        :ContinuousCallback, :DiscreteCallback, :VectorContinuousCallback,
-        :CallbackSet, :terminate!, :add_tstop!, :derivative_discontinuity!,
-        :set_proposed_dt!, :successful_retcode, :ODEAliasSpecifier,
+    exported = (
+        :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+        :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+        :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
     )
-    @test all(x -> !x, Base.isexported.(Ref(OrdinaryDiffEqPDIRK), removed))
-    @test !Base.isexported(OrdinaryDiffEqPDIRK, :EnsembleProblem)
-    @test !Base.isexported(OrdinaryDiffEqPDIRK, :get_du)
-    @test !Base.isexported(OrdinaryDiffEqPDIRK, :u_modified!)
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), exported))
+    internal = (
+        :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+        :StandardODEProblem, :UJacobianWrapper,
+    )
+    @test !any(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), internal))
 end
 
 # Run QA tests (AllocCheck, JET) - skip on pre-release Julia
