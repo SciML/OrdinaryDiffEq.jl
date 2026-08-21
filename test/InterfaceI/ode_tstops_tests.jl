@@ -18,7 +18,7 @@ Random.seed!(100)
         prob, RK4(), dt = 1 // 3, tstops = [1 / 2],
         d_discontinuities = [-1 / 2, 1 / 2, 3 / 2], adaptive = false
     )
-    @test sol.t == [0, 1 / 3, 1 / 2, 1 / 3 + 1 / 2, 1]
+    @test sol.t == [0, 1 / 3, 1 / 2, nextfloat(1 / 2) + 1 / 3, 1]
 
     # TODO
     integrator = init(
