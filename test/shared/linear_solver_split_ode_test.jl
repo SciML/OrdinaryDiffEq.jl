@@ -26,7 +26,7 @@ for algname in (
         alg0 = @eval $algname()
         alg1 = @eval $algname(linsolve = LUFactorization())
 
-        kwargs = (dt = dt,)
+        kwargs = (; dt)
 
         solve(prob, alg0; kwargs...)
         @test SciMLBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success
@@ -46,7 +46,7 @@ for algname in (
     @testset "$algname" begin
         alg0 = @eval $algname()
 
-        kwargs = (dt = dt,)
+        kwargs = (; dt)
 
         solve(prob, alg0; kwargs...)
         @test SciMLBase.__solve(prob, alg0; kwargs...).retcode == ReturnCode.Success

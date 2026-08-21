@@ -988,15 +988,17 @@ end
     uᵢ₋₁ = uprev
     uᵢ₋₂ = uprev
     Sᵢ = Bᵢ[start] * uprev
+    # the recurrence places the stage produced at index j of block i at
+    # t + (j² + (i-1)·internal_deg²)·α·dt, so f must be evaluated one stage back
     for i in 1:10
-        k = f(uᵢ₋₁, p, t + (1 + (i - 1) * internal_deg^2) * α * dt)
+        k = f(uᵢ₋₁, p, t + ((i - 1) * internal_deg^2) * α * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = uᵢ₋₁ + α * dt * k
         Sᵢ = Sᵢ + Bᵢ[start + (i - 1) * internal_deg + 1] * u
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
         for j in 2:internal_deg
-            k = f(uᵢ₋₁, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
+            k = f(uᵢ₋₁, p, t + ((j - 1)^2 + (i - 1) * internal_deg^2) * α * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             u = 2 * uᵢ₋₁ - uᵢ₋₂ + 2 * α * dt * k
             Sᵢ = Sᵢ + Bᵢ[start + j + (i - 1) * internal_deg] * u
@@ -1054,15 +1056,17 @@ end
     @.. broadcast = false uᵢ₋₁ = uprev
     @.. broadcast = false tmp = uprev
     @.. broadcast = false Sᵢ = Bᵢ[start] * uprev
+    # the recurrence places the stage produced at index j of block i at
+    # t + (j² + (i-1)·internal_deg²)·α·dt, so f must be evaluated one stage back
     for i in 1:10
-        f(k, uᵢ₋₁, p, t + (1 + (i - 1) * internal_deg^2) * α * dt)
+        f(k, uᵢ₋₁, p, t + ((i - 1) * internal_deg^2) * α * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = uᵢ₋₁ + α * dt * k
         @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + (i - 1) * internal_deg + 1] * u
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         for j in 2:internal_deg
-            f(k, uᵢ₋₁, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
+            f(k, uᵢ₋₁, p, t + ((j - 1)^2 + (i - 1) * internal_deg^2) * α * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. broadcast = false u = 2 * uᵢ₋₁ - tmp + 2 * α * dt * k
             @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + j + (i - 1) * internal_deg] * u
@@ -1226,10 +1230,10 @@ end
         f(k, gprev, p, t + dt * th1)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + dt * μs * k
+        th = μ * th1 + ν * th2 + μs
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs
             th2 = th1
             th1 = th
             z2 = z1
@@ -1486,10 +1490,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
+        th = μ * th1 + ν * th2 + μs * (T(1) - νs)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
-            th = μ * th1 + ν * th2 + μs * (T(1) - νs)
             th2 = th1
             th1 = th
             b2 = b1

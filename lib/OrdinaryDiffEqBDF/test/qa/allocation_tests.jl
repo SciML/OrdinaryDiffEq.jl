@@ -32,7 +32,7 @@ using Test
     du0 = zeros(2)
     differential_vars = [true, false]
     dae_prob = DAEProblem(
-        dae_f!, du0, [1.0, 1.0], (0.0, 1.0), differential_vars = differential_vars
+        dae_f!, du0, [1.0, 1.0], (0.0, 1.0); differential_vars
     )
 
     # Runtime allocation tests run FIRST, before AllocCheck static analysis
@@ -64,8 +64,8 @@ using Test
 
     @testset "DFBDF step!(save_everystep=false) Runtime Allocation Check" begin
         long_dae_prob = DAEProblem(
-            dae_f!, du0, [1.0, 1.0], (0.0, 100.0),
-            differential_vars = differential_vars
+            dae_f!, du0, [1.0, 1.0], (0.0, 100.0);
+            differential_vars
         )
         integrator = init(
             long_dae_prob, DFBDF(), dt = 0.1, save_everystep = false,
@@ -101,7 +101,7 @@ using Test
     )
     fs_dae_prob = DAEProblem(
         DAEFunction{true, FullSpecialize}(dae_f!),
-        du0, [1.0, 1.0], (0.0, 1.0), differential_vars = differential_vars
+        du0, [1.0, 1.0], (0.0, 1.0); differential_vars
     )
 
     # Test all exported BDF solvers for allocation-free behavior

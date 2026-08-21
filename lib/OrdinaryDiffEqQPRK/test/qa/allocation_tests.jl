@@ -1,6 +1,7 @@
 using OrdinaryDiffEqQPRK
 using OrdinaryDiffEqCore
-using SciMLBase: FullSpecialize
+using CommonSolve: init, step!
+using SciMLBase: FullSpecialize, ODEProblem
 using AllocCheck
 using Test
 

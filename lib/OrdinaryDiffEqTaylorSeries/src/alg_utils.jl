@@ -6,9 +6,32 @@ alg_stability_size(alg::ExplicitTaylor2) = 1
 alg_order(::ExplicitTaylor{P}) where {P} = P
 alg_stability_size(alg::ExplicitTaylor) = 1
 
+# These build each step from the Taylor jet rather than reusing the previous step's
+# last derivative, so they are not FSAL. Without this they inherit the `true` default,
+# which makes `ode_determine_initdt` write an extra `f` evaluation into `fsallast`.
+isfsal(::ExplicitTaylor) = false
+isfsal(::ExplicitTaylorAdaptiveOrder) = false
+
 alg_order(alg::ExplicitTaylorAdaptiveOrder) = get_value(alg.min_order)
 get_current_adaptive_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
 get_current_alg_order(::ExplicitTaylorAdaptiveOrder, cache) = cache.current_order[]
+
+# A step at `current_order` is jetted one order higher, so `current_order` has to
+# stay below `max_order`. With an empty window the order loop never runs and the
+# step is accepted on a stale error estimate.
+function order_window(alg::ExplicitTaylorAdaptiveOrder)
+    min_order_value = get_value(alg.min_order)
+    max_order_value = get_value(alg.max_order)
+    if max_order_value <= min_order_value
+        throw(
+            ArgumentError(
+                "ExplicitTaylorAdaptiveOrder requires max_order > min_order, got " *
+                    "min_order = $min_order_value, max_order = $max_order_value"
+            )
+        )
+    end
+    return min_order_value, max_order_value
+end
 
 JET_CACHE = IdDict()
 
@@ -18,7 +41,7 @@ JET_CACHE = IdDict()
 # Convert symbolic value to concrete numeric type
 # Uses Symbolics.value for proper evaluation to concrete numbers
 @inline function _sym_to_numeric(x::Symbolics.Num, ::Type{T}) where {T}
-    v = Symbolics.unwrap(x)
+    v = SymbolicUtils.unwrap(x)
     return v isa Number ? convert(T, v) : convert(T, Symbolics.value(x))
 end
 @inline function _sym_to_numeric(x::SymbolicUtils.BasicSymbolic, ::Type{T}) where {T}
@@ -43,18 +66,41 @@ end
 # Fallback for other types (e.g., already-concrete values)
 @inline sym_unwrap_taylor(x, ::Type{T}) where {T} = x
 
-function build_jet(f::ODEFunction{iip}, p, order, length = nothing) where {iip}
-    # Unwrap FunctionWrappers since TaylorDiff/Symbolics types don't match wrapper signatures
-    f = unwrapped_f(f)
-    return build_jet(f, Val{iip}(), p, order, length)
+# A jet of order `P` does not always fill a Taylor buffer of the same order:
+# `ExplicitTaylorAdaptiveOrder` sizes one buffer at `max_order` and runs every
+# order through it. Assigning a `TaylorScalar{T, P}` where a `TaylorScalar{T, Q}`
+# is expected goes through TaylorDiff's number-promotion constructor, which keeps
+# the constant term and silently drops every derivative, so widen through the
+# order-changing constructor instead. It zero-pads coefficients above `P`, which
+# is exactly the polynomial the order-`P` jet represents.
+@inline set_taylor_order(t::TaylorScalar, ::Val{Q}) where {Q} = TaylorScalar{Q}(t)
+# `ExplicitTaylor` always jets straight into a buffer of its own order; rebuilding the
+# `TaylorScalar` there is a copy that the compiler does not always elide.
+@inline set_taylor_order(t::TaylorScalar{T, Q}, ::Val{Q}) where {T, Q} = t
+
+@inline function taylor_from_coefficients(coeffs, i, ::Val{P}, buffer_order) where {P}
+    offset = (i - 1) * (P + 1)
+    taylor = TaylorScalar(ntuple(j -> coeffs[offset + j], Val(P + 1)))
+    return set_taylor_order(taylor, buffer_order)
 end
 
-# cache format: Dict{typeof(f), Vector{Tuple{order, p, jet}}}
-function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, iip}
+function build_jet(
+        f::ODEFunction{iip}, p, order, length = nothing, buffer_order = order
+    ) where {iip}
+    # Unwrap FunctionWrappers since TaylorDiff/Symbolics types don't match wrapper signatures
+    f = unwrapped_f(f)
+    return build_jet(f, Val{iip}(), p, order, length, buffer_order)
+end
+
+# cache format: Dict{typeof(f), Vector{Tuple{order, p, buffer_order, jet}}}
+function build_jet(
+        f, ::Val{iip}, p, order::Val{P}, length = nothing,
+        buffer_order::Val{Q} = order
+    ) where {P, Q, iip}
     if haskey(JET_CACHE, f)
         list = JET_CACHE[f]
-        index = findfirst(x -> x[1] == order && x[2] == p, list)
-        index !== nothing && return list[index][3]
+        index = findfirst(x -> x[1] == order && x[2] == p && x[3] == buffer_order, list)
+        index !== nothing && return list[index][4]
     end
     @variables t0::Real
     u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
@@ -83,27 +129,28 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
     if u isa TaylorScalar
         # Scalar case: build function for array of coefficients
         coeffs = collect(TaylorDiff.flatten(u))
-        jet_coeffs = build_function(coeffs, u0, t0; expression = Val(false), cse = true)
+        scalar_jet_coeffs = build_function(
+            coeffs, u0, t0; expression = Val(false), cse = true
+        )
         # Wrap to return TaylorScalar
-        jet = (u0_val, t0_val) -> TaylorScalar(Tuple(jet_coeffs[1](u0_val, t0_val)))
+        jet = (u0_val, t0_val) -> set_taylor_order(
+            TaylorScalar(Tuple(scalar_jet_coeffs[1](u0_val, t0_val))), buffer_order
+        )
     elseif u isa AbstractArray && eltype(u) <: TaylorScalar
-        # Array case: build function for matrix of coefficients
-        # Each row is the coefficients of one TaylorScalar
         n = Base.length(u)
-        coeffs_matrix = [TaylorDiff.flatten(u[i])[j] for i in 1:n, j in 1:(P + 1)]
-        jet_coeffs = build_function(coeffs_matrix, u0, t0; expression = Val(false), cse = true)
-        # Wrap to return array of TaylorScalars
+        coeffs = [TaylorDiff.flatten(u[i])[j] for i in 1:n for j in 1:(P + 1)]
+        array_jet_coeffs = build_function(
+            coeffs, u0, t0; expression = Val(false), cse = true
+        )
         jet = (
             (u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[1](u0_val, t0_val)
-                return [TaylorScalar(Tuple(coeffs_out[i, :])) for i in 1:n]
+                coeffs_out = array_jet_coeffs[1](u0_val, t0_val)
+                return [taylor_from_coefficients(coeffs_out, i, order, buffer_order) for i in 1:n]
             end,
-            (out, u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[2](
-                    similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val
-                )
+            (out, coeffs_out, u0_val, t0_val) -> begin
+                array_jet_coeffs[2](coeffs_out, u0_val, t0_val)
                 for i in 1:n
-                    out[i] = TaylorScalar(Tuple(coeffs_out[i, :]))
+                    out[i] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
                 end
                 return out
             end,
@@ -116,7 +163,7 @@ function build_jet(f, ::Val{iip}, p, order::Val{P}, length = nothing) where {P, 
     if !haskey(JET_CACHE, f)
         JET_CACHE[f] = []
     end
-    push!(JET_CACHE[f], (order, p, jet))
+    push!(JET_CACHE[f], (order, p, buffer_order, jet))
     return jet
 end
 

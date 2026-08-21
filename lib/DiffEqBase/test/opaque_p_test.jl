@@ -30,7 +30,7 @@ deprob(u0, p) = ODEProblem{true, DiffEqBase.AutoDePSpecialize}(
 
 # Trigger the same code path the high-level `solve(...)` does, without
 # requiring a concrete integrator package as a test dep.
-concretize(prob, alg = nothing) = DiffEqBase.get_concrete_problem(prob, true; alg = alg)
+concretize(prob, alg = nothing) = DiffEqBase.get_concrete_problem(prob, true; alg)
 
 @testset "opaque-p hook" begin
     @testset "AutoDePSpecialize opaque-ifies isbits p" begin

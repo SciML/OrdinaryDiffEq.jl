@@ -1,6 +1,7 @@
 using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEqVerner, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: alg_order
+using SciMLOperators: MatrixOperator, ScalarOperator
 
 @testset "Caching Out-of-place" begin
     println("Caching Out-of-place")
@@ -81,7 +82,7 @@ end
     A = [-2.0 1.0; 1.0 -2.0]
     f = (u, p, t) -> A * u - u .^ 3
     jac = (u, p, t) -> A - [3u[1]^2 0.0; 0.0 3u[2]^2]
-    fun = ODEFunction(f; jac = jac)
+    fun = ODEFunction(f; jac)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -111,7 +112,7 @@ end
     f = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
     jac_update! = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
     jac_prototype = MatrixOperator(zeros(2, 2); update_func! = jac_update!)
-    fun = ODEFunction(f; jac_prototype = jac_prototype)
+    fun = ODEFunction(f; jac_prototype)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -173,7 +174,7 @@ end
     A = [-2.0 1.0; 1.0 -2.0]
     f = (u, p, t) -> A * u - u .^ 3
     jac = (u, p, t) -> A - [3u[1]^2 0.0; 0.0 3u[2]^2]
-    fun = ODEFunction(f; jac = jac)
+    fun = ODEFunction(f; jac)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -196,7 +197,7 @@ end
     f = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
     jac_update! = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
     jac_prototype = MatrixOperator(zeros(2, 2); update_func! = jac_update!)
-    fun = ODEFunction(f; jac_prototype = jac_prototype)
+    fun = ODEFunction(f; jac_prototype)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)

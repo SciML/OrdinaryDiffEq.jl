@@ -1,3 +1,27 @@
+"""
+    SROCK1(;
+        interpretation = SciMLBase.AlgorithmInterpretation.Ito,
+        eigen_est = nothing
+    )
+
+Select the first-order stabilized Runge-Kutta Chebyshev method for a mildly
+stiff SDE.
+
+# Keywords
+
+- `interpretation = SciMLBase.AlgorithmInterpretation.Ito`: Stochastic
+  interpretation used by the method.
+- `eigen_est = nothing`: Optional estimate of the stiff eigenvalues.
+
+# Examples
+
+```julia
+sol = solve(prob, SROCK1(); dt = 0.01)
+```
+
+Set `eigen_est` when a problem-specific estimate of the stiff eigenvalues is
+available.
+"""
 struct SROCK1{interpretation, E} <: StochasticDiffEqAlgorithm
     eigen_est::E
 end
@@ -17,7 +41,7 @@ for Alg in [:SROCK2, :KomBurSROCK2, :SROCKC2]
 end
 
 @doc """
-    SROCK2(;eigen_est=nothing)
+    SROCK2(; eigen_est = nothing)
 
 **SROCK2: Second-Order Stabilized Runge-Kutta Chebyshev Method**
 
@@ -39,7 +63,7 @@ Second-order stabilized explicit method with weak order 2.0 for mildly stiff SDE
 """ SROCK2
 
 @doc """
-    KomBurSROCK2(;eigen_est=nothing)
+    KomBurSROCK2(; eigen_est = nothing)
 
 **KomBurSROCK2: Komori-Burrage Second-Order SROCK Method**
 
@@ -61,7 +85,7 @@ Alternative second-order stabilized method with different coefficients and stabi
 """ KomBurSROCK2
 
 @doc """
-    SROCKC2(;eigen_est=nothing)
+    SROCKC2(; eigen_est = nothing)
 
 **SROCKC2: Conservative Second-Order SROCK Method**
 
@@ -84,7 +108,7 @@ Conservative second-order stabilized method designed for robust performance.
 
 # ROCK stabilization for EM
 """
-    SROCKEM(;strong_order_1=true, eigen_est=nothing)
+    SROCKEM(; strong_order_1 = true, eigen_est = nothing)
 
 **SROCKEM: ROCK-Stabilized Euler-Maruyama Method**
 
@@ -126,7 +150,7 @@ struct SROCKEM{E} <: StochasticDiffEqAlgorithm
 end
 SROCKEM(; strong_order_1 = true, eigen_est = nothing) = SROCKEM(strong_order_1, eigen_est)
 """
-    SKSROCK(;post_processing=false, eigen_est=nothing)
+    SKSROCK(; post_processing = false, eigen_est = nothing)
 
 **SKSROCK: SK-SROCK Stabilized Method**
 
@@ -178,7 +202,7 @@ function SKSROCK(; post_processing = false, eigen_est = nothing)
     return SKSROCK(post_processing, eigen_est)
 end
 """
-    TangXiaoSROCK2(;version_num=5, eigen_est=nothing)
+    TangXiaoSROCK2(; version_num = 5, eigen_est = nothing)
 
 **TangXiaoSROCK2: Tang-Xiao Second-Order SROCK Method**
 

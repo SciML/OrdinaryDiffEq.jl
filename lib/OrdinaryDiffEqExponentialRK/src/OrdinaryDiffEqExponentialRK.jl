@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, ismultistep,
     perform_step!, unwrap_alg,
     OrdinaryDiffEqAdaptiveExponentialAlgorithm,
     ExponentialAlgorithm, fsal_typeof, isdtchangeable,
-    full_cache, get_fsalfirstlast,
+    get_fsalfirstlast,
     generic_solver_docstring, _fixup_ad, trivial_limiter!
 import OrdinaryDiffEqCore
 using RecursiveArrayTools: RecursiveArrayTools
@@ -23,7 +23,8 @@ using ExponentialUtilities: ExponentialUtilities, ExpvCache, KrylovSubspace,
     phiv, phiv!, phiv_timestep, phiv_timestep!
 # alg_order / _unwrap_val are owned by SciMLBase (re-exported through OrdinaryDiffEqCore);
 # import from the owner to satisfy ExplicitImports' via-owners check.
-import SciMLBase: alg_order, _unwrap_val, UJacobianWrapper, UDerivativeWrapper
+import SciMLBase: alg_order, _unwrap_val, UJacobianWrapper, UDerivativeWrapper,
+    full_cache
 using OrdinaryDiffEqDifferentiation: build_jac_config, calc_J, calc_J!
 import ADTypes: AutoForwardDiff
 

@@ -45,7 +45,8 @@ end
 function test_callback_adaptive_multistep(alg; kwargs...)
     function f(du, u, p, t)
         du[1] = u[2]
-        return du[2] = -p
+        du[2] = -p
+        return
     end
     function condition(u, t, integrator) # Event when event_f(u,t) == 0
         return u[1]

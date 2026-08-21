@@ -1,6 +1,6 @@
 module OrdinaryDiffEqTaylorSeries
 
-import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: alg_stability_size,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
     alg_cache,
     OrdinaryDiffEqConstantCache, trivial_limiter!,
@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
     _ode_interpolant, _ode_interpolant!,
     OrdinaryDiffEqAlgorithm,
     _ode_addsteps!,
-    get_fsalfirstlast,
+    get_fsalfirstlast, isfsal,
     DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
     stepsize_controller!, get_current_adaptive_order, get_current_alg_order
 using FastBroadcast: Serial
@@ -19,13 +19,11 @@ using TruncatedStacktraces: @truncate_stacktrace
 using TaylorDiff: TaylorDiff, TaylorArray, TaylorScalar
 using Symbolics: Symbolics, @variables, build_function
 using SymbolicUtils: SymbolicUtils
-import SciMLBase: SciMLBase, unwrapped_f, alg_order, ODEFunction, ODEProblem, solve
+import CommonSolve: solve
+import SciMLBase: SciMLBase, unwrapped_f, alg_order, ODEFunction, ODEProblem
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore
 import FunctionWrappers: FunctionWrapper
-
-using Reexport: @reexport
-@reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

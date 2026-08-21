@@ -16,15 +16,15 @@ trajectories = 100
 println("Convergence Test on Linear")
 dts = (1 // 2) .^ (9:-1:4) #14->7 good plot with higher num Monte
 
-sim = test_convergence(dts, prob, EM(), trajectories = trajectories)
+sim = test_convergence(dts, prob, EM(); trajectories)
 
-sim2 = test_convergence(dts, prob, RKMil(), trajectories = trajectories)
+sim2 = test_convergence(dts, prob, RKMil(); trajectories)
 
-sim21 = test_convergence(dts, prob, RKMilGeneral(), trajectories = trajectories)
+sim21 = test_convergence(dts, prob, RKMilGeneral(); trajectories)
 
-sim22 = test_convergence(dts, prob, RKMilCommute(), trajectories = trajectories)
+sim22 = test_convergence(dts, prob, RKMilCommute(); trajectories)
 
-sim3 = test_convergence(dts, prob, SRI(), trajectories = trajectories)
+sim3 = test_convergence(dts, prob, SRI(); trajectories)
 
 #TEST_PLOT && plot(plot(sim),plot(sim2),plot(sim3),layout=@layout([a b c]),size=(1200,600))
 

@@ -9,7 +9,8 @@ using Test
 
     function pendulum!(du, u, p, t)
         du[1] = u[2]                    # θ'(t) = ω(t)
-        return du[2] = -3g / (2l) * sin(u[1]) + 3 / (m * l^2) * p(t) # ω'(t) = -3g/(2l) sin θ(t) + 3/(ml^2)M(t)
+        du[2] = -3g / (2l) * sin(u[1]) + 3 / (m * l^2) * p(t) # ω'(t) = -3g/(2l) sin θ(t) + 3/(ml^2)M(t)
+        return
     end
 
     θ₀ = 0.01                           # initial angular deflection [rad]

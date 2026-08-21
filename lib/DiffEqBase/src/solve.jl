@@ -123,10 +123,13 @@ end
 
 Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, u0, p, args...; kwargs...)
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
+    if isnothing(alg)
+        alg = prepare_alg(alg, u0, p, prob)
+    end
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
         init_call(_prob, args...; kwargs...)
     else
@@ -138,7 +141,7 @@ Base.@constprop :aggressive function init_up(prob::AbstractDEProblem, sensealg, 
                 !SciMLBase.allows_late_binding_tstops(alg)
             throw(LateBindingTstopsNotSupportedError())
         end
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
         _alg = prepare_alg(alg, _prob.u0, _prob.p, _prob)
         check_prob_alg_pairing(_prob, alg) # alg for improved inference
         if length(args) > 1
@@ -283,7 +286,7 @@ end
 
 """
 ```julia
-solve(prob::AbstractDEProblem, alg::Union{AbstractDEAlgorithm,Nothing}; kwargs...)
+solve(prob::AbstractDEProblem, alg::Union{AbstractDEAlgorithm, Nothing}; kwargs...)
 ```
 
 ## Arguments
@@ -637,10 +640,13 @@ Base.@constprop :aggressive function solve_up(
         kwargs...
     )
     alg = extract_alg(args, kwargs, has_kwargs(prob) ? prob.kwargs : kwargs)
+    if isnothing(alg)
+        alg = prepare_alg(alg, u0, p, prob)
+    end
     return if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
         solve_call(_prob, args...; kwargs...)
     else
@@ -652,7 +658,7 @@ Base.@constprop :aggressive function solve_up(
                 !SciMLBase.allows_late_binding_tstops(alg)
             throw(LateBindingTstopsNotSupportedError())
         end
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
         _alg = prepare_alg(alg, _prob.u0, _prob.p, _prob)
         check_prob_alg_pairing(_prob, alg) # use alg for improved inference
         if length(args) > 1
@@ -715,11 +721,18 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
             p === prob.p && p_promote === prob.p && f_promote === prob.f
         return prob
     else
-        return remake(
-            prob; f = f_promote, u0 = u0_promote, p = p_promote,
-            tspan = tspan_promote
+        return _remake_with_promoted_function(
+            prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
         )
     end
+end
+
+function _remake_with_promoted_function(prob, f; kwargs...)
+    return remake(prob; f, kwargs...)
+end
+
+function _remake_with_promoted_function(prob::Union{SDEProblem, SDDEProblem}, f; kwargs...)
+    return remake(prob; f, g = f.g, kwargs...)
 end
 
 function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs...)
@@ -774,7 +787,8 @@ function get_concrete_problem(prob::DDEProblem, isadapt; kwargs...)
     u0 = promote_u0(u0, p, tspan[1])
     tspan = promote_tspan(u0, p, tspan, prob, kwargs)
 
-    return remake(prob; u0 = u0, tspan = tspan, p = p, constant_lags = constant_lags)
+    p = _promote_parameters(Val(SciMLBase.specialization(prob.f)), p)
+    return remake(prob; u0, tspan, p, constant_lags)
 end
 
 # Most are extensions
@@ -812,6 +826,92 @@ function _uses_forwarddiff(alg)
     return false
 end
 
+struct ParameterDespecializationWrapper{F}
+    f::F
+end
+
+SciMLBase.unwrapped_f(wrapper::ParameterDespecializationWrapper) =
+    SciMLBase.unwrapped_f(wrapper.f)
+
+Base.@noinline _invoke_parameter_despecialization(f, args...) = f(args...)
+
+Base.@inline @generated function _invoke_parameter_despecialization(
+        f, args::Tuple{Vararg{Any, N}}
+    ) where {N}
+    parameter_indices = findall(T -> T <: SciMLBase.DespecializedParameters, args.parameters)
+    length(parameter_indices) <= 1 ||
+        error("a parameter-despecialization barrier requires at most one parameter wrapper")
+    # Nested AutoDespecialize calls can re-enter after an inner NonlinearFunction has
+    # already unwrapped the parameters.
+    isempty(parameter_indices) && return :(_invoke_parameter_despecialization(f, args...))
+    parameter_index = only(parameter_indices)
+    call_args = [
+        i == parameter_index ? :(SciMLBase.unwrap_parameters(args[$i])) : :(args[$i])
+            for i in 1:N
+    ]
+    return :(_invoke_parameter_despecialization(f, $(call_args...)))
+end
+
+function (wrapper::ParameterDespecializationWrapper)(args...)
+    return _invoke_parameter_despecialization(wrapper.f, args)
+end
+
+function _despecialize_auxiliary_functions(f)
+    if isdefined(f, :g) && f.g !== nothing &&
+            !(f.g isa ParameterDespecializationWrapper)
+        f = @set f.g = ParameterDespecializationWrapper(f.g)
+    end
+    f = SciMLBase.widen_bounded_type_params(f)
+    return _widen_type_parameter(f, Val(:ID))
+end
+
+@generated function _widen_type_parameter(f::F, ::Val{name}) where {F, name}
+    wrapper = F.name.wrapper
+    typevars = TypeVar[]
+    body = wrapper
+    while body isa UnionAll
+        push!(typevars, body.var)
+        body = body.body
+    end
+    index = findfirst(typevar -> typevar.name === name, typevars)
+    index === nothing && return :(f)
+    typevars[index].ub === Any || return :(f)
+    params = collect(F.parameters)
+    params[index] = Any
+    NewType = wrapper{params...}
+    fields = [:(getfield(f, $i)) for i in 1:fieldcount(NewType)]
+    return :($NewType($(fields...)))
+end
+
+function _replace_dae_residual(f::DAEFunction{iip, specialize}, residual) where {iip, specialize}
+    replaced = DAEFunction{iip, specialize}(
+        residual;
+        f.analytic,
+        f.tgrad,
+        f.jac,
+        f.jac_u,
+        f.jac_du,
+        f.jvp,
+        f.vjp,
+        f.jac_prototype,
+        f.sparsity,
+        f.Wfact,
+        f.Wfact_t,
+        f.paramjac,
+        f.observed,
+        f.colorvec,
+        f.sys,
+        f.initialization_data,
+        f.nlstep_data
+    )
+    replaced = SciMLBase.widen_bounded_type_params(replaced)
+    return _widen_type_parameter(replaced, Val(:ID))
+end
+
+_promote_parameters(::Val{SciMLBase.AutoDespecialize}, p) =
+    SciMLBase.DespecializedParameters(p)
+_promote_parameters(::Val, p) = p
+
 # Full path for algorithms that use ForwardDiff internally (e.g. Rosenbrock).
 # These algorithms precompile AFTER the ForwardDiff extension loads, so
 # backedges to hasdualpromote/wrapfun_iip don't cause invalidation issues.
@@ -819,9 +919,24 @@ function promote_f(
         f::F, ::Val{specialize}, u0, p, t, ::Val{true},
         ::Val{CS} = Val(1)
     ) where {F, specialize, CS}
+    despecialize = specialize === SciMLBase.AutoDespecialize
+    p_out = _promote_parameters(Val(specialize), p)
     uElType = u0 === nothing ? Float64 : eltype(u0)
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
+    end
+    despecialize && (f = _despecialize_auxiliary_functions(f))
+
+    dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
+        !(f.f isa AbstractSciMLOperator) &&
+        !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) &&
+        !(u0 isa SubArray) && eltype(u0) !== Any &&
+        RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
+        one(t) === oneunit(t) && hasdualpromote(u0, t)
+    if dae_wrap_path
+        residual = ParameterDespecializationWrapper(f.f)
+        wrapped = wrapfun_dae_iip(residual, (u0, u0, u0, p_out, t), Val(CS))
+        return (_replace_dae_residual(f, wrapped), p_out)
     end
 
     wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
@@ -829,7 +944,11 @@ function promote_f(
         !(u0 isa SubArray) &&
         (
         (
-            (specialize === SciMLBase.AutoSpecialize || specialize === AutoDePSpecialize) &&
+            (
+                specialize === SciMLBase.AutoSpecialize ||
+                    specialize === SciMLBase.AutoDespecialize ||
+                    specialize === AutoDePSpecialize
+            ) &&
                 eltype(u0) !== Any &&
                 RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
                 one(t) === oneunit(t) &&
@@ -841,8 +960,9 @@ function promote_f(
         )
     )
 
-    if !wrap_path
-        return (f, p)
+    if !wrap_path ||
+            (despecialize && f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        return (f, p_out)
     end
 
     # Opaque-p path (AutoDePSpecialize only): when p is an isbits
@@ -862,7 +982,7 @@ function promote_f(
         !SciMLBase.has_sys(f) &&
         !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
     P = typeof(p)
-    sig_p = opaque ? RespecializeParams.opaque_container_type(P) : P
+    sig_p = opaque ? RespecializeParams.opaque_container_type(P) : typeof(p_out)
 
     # tgrad: same (dT, u, p, t) shape as the RHS.
     if f.tgrad !== nothing && !(f.tgrad isa FunctionWrappersWrappers.FunctionWrappersWrapper)
@@ -870,7 +990,8 @@ function promote_f(
             tgrad_sig = Tuple{typeof(u0), typeof(u0), RespecializeParams.OpaqueParams, typeof(t)}
             f = @set f.tgrad = RespecializeParams.wrap_void_opaque(f.tgrad, P, (tgrad_sig,))
         else
-            f = @set f.tgrad = wrapfun_jac_iip(f.tgrad, (u0, u0, p, t))
+            tgrad = despecialize ? ParameterDespecializationWrapper(f.tgrad) : f.tgrad
+            f = @set f.tgrad = wrapfun_jac_iip(tgrad, (u0, u0, p_out, t))
         end
     end
 
@@ -882,8 +1003,9 @@ function promote_f(
             f = if opaque
                 @set f.jac = RespecializeParams.wrap_void_opaque(f.jac, P, (sig,))
             else
+                jac = despecialize ? ParameterDespecializationWrapper(f.jac) : f.jac
                 @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
-                    Void(f.jac), (sig,), (Nothing,)
+                    Void(jac), (sig,), (Nothing,)
                 )
             end
         elseif isdefined(f, :sparsity) && f.sparsity isa AbstractMatrix &&
@@ -896,8 +1018,9 @@ function promote_f(
             f = if opaque
                 @set f.jac = RespecializeParams.wrap_void_opaque(f.jac, P, (dense_sig, sparse_sig))
             else
+                jac = despecialize ? ParameterDespecializationWrapper(f.jac) : f.jac
                 @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
-                    Void(f.jac),
+                    Void(jac),
                     (dense_sig, sparse_sig),
                     (Nothing, Nothing)
                 )
@@ -911,18 +1034,22 @@ function promote_f(
             f = if opaque
                 @set f.jac = RespecializeParams.wrap_void_opaque(f.jac, P, (sig,))
             else
+                jac = despecialize ? ParameterDespecializationWrapper(f.jac) : f.jac
                 @set f.jac = FunctionWrappersWrappers.FunctionWrappersWrapper(
-                    Void(f.jac), (sig,), (Nothing,)
+                    Void(jac), (sig,), (Nothing,)
                 )
             end
         end
     end
 
-    wrapped_iip = opaque ?
-        wrapfun_iip_opaque(f.f, P, (u0, u0, p, t), Val(CS)) :
-        wrapfun_iip(f.f, (u0, u0, p, t), Val(CS))
-    p_out = opaque ? RespecializeParams.pack_auto(p) : p
-    return (unwrapped_f(f, wrapped_iip), p_out)
+    wrapped_iip = if opaque
+        wrapfun_iip_opaque(f.f, P, (u0, u0, p, t), Val(CS))
+    else
+        rhs = despecialize ? ParameterDespecializationWrapper(f.f) : f.f
+        wrapfun_iip(rhs, (u0, u0, p_out, t), Val(CS))
+    end
+    promoted_p = opaque ? RespecializeParams.pack_auto(p) : p_out
+    return (unwrapped_f(f, wrapped_iip), promoted_p)
 end
 
 # Simple path for algorithms that do NOT use ForwardDiff internally (e.g. Tsit5, Verner).
@@ -933,9 +1060,24 @@ function promote_f(
         f::F, ::Val{specialize}, u0, p, t, ::Val{false},
         ::Val{CS} = Val(1)
     ) where {F, specialize, CS}
+    despecialize = specialize === SciMLBase.AutoDespecialize
+    p_out = _promote_parameters(Val(specialize), p)
     uElType = u0 === nothing ? Float64 : eltype(u0)
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
+    end
+    despecialize && (f = _despecialize_auxiliary_functions(f))
+
+    dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
+        !(f.f isa AbstractSciMLOperator) &&
+        !(f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper) &&
+        !(u0 isa SubArray) && eltype(u0) !== Any &&
+        RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
+        one(t) === oneunit(t)
+    if dae_wrap_path
+        residual = ParameterDespecializationWrapper(f.f)
+        wrapped = wrapfun_dae_iip(residual, (u0, u0, u0, p_out, t))
+        return (_replace_dae_residual(f, wrapped), p_out)
     end
 
     wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
@@ -944,7 +1086,11 @@ function promote_f(
         !(u0 isa SubArray) &&
         (
         (
-            (specialize === SciMLBase.AutoSpecialize || specialize === AutoDePSpecialize) &&
+            (
+                specialize === SciMLBase.AutoSpecialize ||
+                    specialize === SciMLBase.AutoDespecialize ||
+                    specialize === AutoDePSpecialize
+            ) &&
                 eltype(u0) !== Any &&
                 RecursiveArrayTools.recursive_unitless_eltype(u0) === eltype(u0) &&
                 one(t) === oneunit(t)
@@ -955,8 +1101,9 @@ function promote_f(
         )
     )
 
-    if !wrap_path
-        return (f, p)
+    if !wrap_path ||
+            (despecialize && f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        return (f, p_out)
     end
 
     if specialize === AutoDePSpecialize && should_opaque_p(p) &&
@@ -968,10 +1115,11 @@ function promote_f(
         return (unwrapped_f(f, wrapped), RespecializeParams.pack_auto(p))
     end
 
+    rhs = despecialize ? ParameterDespecializationWrapper(f.f) : f.f
     wrapped = FunctionWrappersWrappers.FunctionWrappersWrapper(
-        Void(f.f), (typeof((u0, u0, p, t)),), (Nothing,)
+        Void(rhs), (typeof((u0, u0, p_out, t)),), (Nothing,)
     )
-    return (unwrapped_f(f, wrapped), p)
+    return (unwrapped_f(f, wrapped), p_out)
 end
 
 hasdualpromote(u0, t) = true
@@ -986,7 +1134,7 @@ function promote_f(
         # Copy the cache to ensure it's properly initialized
         remake(f, _func_cache = copy(f._func_cache))
     end
-    return (f_out, p)
+    return (f_out, _promote_parameters(Val(specialize), p))
 end
 function promote_f(
         f::SplitFunction, ::Val{specialize}, u0, p, t, ::Val{false},
@@ -997,7 +1145,7 @@ function promote_f(
     else
         remake(f, _func_cache = copy(f._func_cache))
     end
-    return (f_out, p)
+    return (f_out, _promote_parameters(Val(specialize), p))
 end
 """
     prepare_alg(alg, u0, p, prob) -> alg
@@ -1174,11 +1322,11 @@ function _solve_adjoint(
     alg = extract_alg(args, kwargs, prob.kwargs)
     if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
     else
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
     end
 
     # Merge problem kwargs with passed kwargs
@@ -1201,11 +1349,11 @@ function _solve_forward(
     alg = extract_alg(args, kwargs, prob.kwargs)
     if isnothing(alg) || !(alg isa AbstractDEAlgorithm) # Default algorithm handling
         _prob = get_concrete_problem(
-            prob, !(prob isa DiscreteProblem); alg = alg, u0 = u0,
-            p = p, kwargs...
+            prob, !(prob isa DiscreteProblem); alg, u0,
+            p, kwargs...
         )
     else
-        _prob = get_concrete_problem(prob, isadaptive(alg); alg = alg, u0 = u0, p = p, kwargs...)
+        _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
     end
 
     # Merge problem kwargs with passed kwargs

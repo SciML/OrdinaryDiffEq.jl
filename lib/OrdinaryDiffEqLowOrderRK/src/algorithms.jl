@@ -215,6 +215,29 @@ Base.@kwdef struct DP5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     thread::Thread = Serial()
 end
 
+"""
+    AutoDP5(alg; kwargs...)
+
+Construct an automatic solver switch that starts with `DP5()` and changes to
+`alg` when the problem becomes stiff.
+
+# Arguments
+
+- `alg`: Stiff solver algorithm to use after the switch.
+
+# Keywords
+
+- `kwargs...`: Forwarded to [`AutoAlgSwitch`](@ref), including its switching
+  criterion and stiffness-detection options.
+
+# Examples
+
+```julia
+sol = solve(prob, AutoDP5(Rodas5P()))
+```
+
+See [`AutoAlgSwitch`](@ref) for the switching options accepted through `kwargs`.
+"""
 AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
 
 @doc explicit_rk_docstring(

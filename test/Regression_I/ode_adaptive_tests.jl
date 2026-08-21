@@ -46,7 +46,8 @@ sol = solve(prob, FBDF())
 function lorenz(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -61,13 +62,14 @@ sol = solve(prob, FBDF())
 function lorenz(out, du, u, p, t)
     out[1] = 10.0(u[2] - u[1]) - du[1]
     out[2] = u[1] * (28.0 - u[3]) - u[2] - du[2]
-    return out[3] = u[1] * u[2] - (8 / 3) * u[3] - du[3]
+    out[3] = u[1] * u[2] - (8 / 3) * u[3] - du[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
-prob = DAEProblem(lorenz, du0, u0, tspan, differential_vars = differential_vars)
+prob = DAEProblem(lorenz, du0, u0, tspan; differential_vars)
 sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
@@ -83,7 +85,7 @@ u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
-prob = DAEProblem{false}(lorenz, du0, u0, tspan, differential_vars = differential_vars)
+prob = DAEProblem{false}(lorenz, du0, u0, tspan; differential_vars)
 sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)

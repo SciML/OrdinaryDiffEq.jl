@@ -62,58 +62,58 @@ prob = ODEProblem(f, u0, tspan)
 
 println("Check for stochastic errors")
 for i in 1:10
-    @test_nowarn sol = solve(prob, Tsit5(), callback = callback)
+    @test_nowarn sol = solve(prob, Tsit5(); callback)
 end
 
 println("Check some other integrators")
-sol = solve(prob, Rosenbrock23(), callback = callback, dt = 1 / 2)
+sol = solve(prob, Rosenbrock23(); callback, dt = 1 / 2)
 @test length(sol.u[end]) > 1
-sol = solve(prob, Rosenbrock32(), callback = callback, dt = 1 / 2)
+sol = solve(prob, Rosenbrock32(); callback, dt = 1 / 2)
 @test length(sol.u[end]) > 1
-sol = solve(prob, KenCarp4(), callback = callback, dt = 1 / 2)
+sol = solve(prob, KenCarp4(); callback, dt = 1 / 2)
 @test length(sol.u[end]) > 1
-sol = solve(prob, TRBDF2(), callback = callback, dt = 1 / 2)
+sol = solve(prob, TRBDF2(); callback, dt = 1 / 2)
 @test length(sol.u[end]) > 1
 sol = solve(
-    prob, TRBDF2(linsolve = LinearSolve.KrylovJL_GMRES()),
-    callback = callback
+    prob, TRBDF2(linsolve = LinearSolve.KrylovJL_GMRES());
+    callback
 )
 @test length(sol.u[end]) > 1
 sol = solve(
-    prob, TRBDF2(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
-    callback = callback, dt = 1 / 2
+    prob, TRBDF2(nlsolve = NonlinearSolveAlg(NewtonRaphson()));
+    callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
 sol = solve(
-    prob, KenCarp4(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
-    callback = callback, dt = 1 / 2
+    prob, KenCarp4(nlsolve = NonlinearSolveAlg(NewtonRaphson()));
+    callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
 sol = solve(
-    prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson())),
-    callback = callback, dt = 1 / 2
+    prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(NewtonRaphson()));
+    callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
 
 for alg in CACHE_TEST_ALGS
     @show alg
-    local sol = solve(prob, alg, callback = callback, dt = 1 / 2)
+    local sol = solve(prob, alg; callback, dt = 1 / 2)
     @test length(sol.u[end]) > 1
 end
 
 for alg in broken_CACHE_TEST_ALGS
     @show alg
-    @test_broken length(solve(prob, alg, callback = callback, dt = 1 / 2)[end]) > 1
+    @test_broken length(solve(prob, alg; callback, dt = 1 / 2)[end]) > 1
 end
 
 sol = solve(
-    prob, Rodas4(autodiff = AutoForwardDiff(chunksize = 1)),
-    callback = callback, dt = 1 / 2
+    prob, Rodas4(autodiff = AutoForwardDiff(chunksize = 1));
+    callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
 sol = solve(
-    prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 1)),
-    callback = callback, dt = 1 / 2
+    prob, Rodas5(autodiff = AutoForwardDiff(chunksize = 1));
+    callback, dt = 1 / 2
 )
 @test length(sol.u[end]) > 1
 
@@ -222,5 +222,5 @@ callback = ContinuousCallback(condition2, affect2!)
 u0 = [0.2]
 tspan = (0.0, 20.0)
 prob = ODEProblem(f2, u0, tspan)
-sol = solve(prob, AutoTsit5(Rosenbrock23()), callback = callback)
+sol = solve(prob, AutoTsit5(Rosenbrock23()); callback)
 @test length(sol.u[end]) > 1

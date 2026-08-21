@@ -407,3 +407,8 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
     end
     return terk
 end
+
+# NordsieckBDF scales the Newton increment by the test quantity tq[2], which puts
+# it in the units of the local error test, so `NLNewton(κ = …)` means CVODE's
+# NLSCOEF.
+error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]

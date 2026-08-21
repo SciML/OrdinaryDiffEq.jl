@@ -13,7 +13,8 @@ testTol = 2.0
 
 # Custom ODE functions for testing
 function f!(du, u, p, t)
-    return du[1] = -u[1]
+    du[1] = -u[1]
+    return
 end
 
 function f(u, p, t)
@@ -139,7 +140,8 @@ println("Backward solve lazy interpolation")
 
 function backward_ode!(du, u, p, t)
     du[1] = -u[1]
-    return du[2] = -2 * u[2]
+    du[2] = -2 * u[2]
+    return
 end
 
 prob_back = ODEProblem(backward_ode!, [1.0, 1.0], (1.0, 0.0))

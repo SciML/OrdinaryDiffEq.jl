@@ -3,7 +3,8 @@ using OrdinaryDiffEqRosenbrock: Rodas5
 import SciMLBase
 
 function f(du, u, p, t)
-    return du[1] = u[1]
+    du[1] = u[1]
+    return
 end
 function g(du, u, p, t)
     return 0.0
@@ -36,7 +37,8 @@ sol_leh = solve(prob, LambaEulerHeun())
 function linear_decay!(du, u, p, t)
     λ = p
     du[1] = -λ * u[1]
-    return du[2] = -λ * u[2]
+    du[2] = -λ * u[2]
+    return
 end
 
 function zero_noise_linear!(du, u, p, t)

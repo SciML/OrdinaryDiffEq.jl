@@ -1622,7 +1622,8 @@ function initialize!(integrator, cache::RKV76IIaCache)
     k[7] = cache.k7
     k[8] = cache.k8
     k[9] = cache.k9
-    return k[10] = cache.k10
+    k[10] = cache.k10
+    return
 end
 
 @muladd function perform_step!(integrator, cache::RKV76IIaCache, repeat_step = false)

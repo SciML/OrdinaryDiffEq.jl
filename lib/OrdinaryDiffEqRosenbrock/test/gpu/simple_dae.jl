@@ -33,7 +33,7 @@ mass_matrix = Diagonal([1, 1, 0, 0])
 jac_prototype = sparse(map(x -> iszero(x) ? 0.0 : 1.0, p))
 
 u0 = [1.0, 1.0, 0.5, 0.5] # force init
-odef = ODEFunction(dae!, mass_matrix = mass_matrix, jac_prototype = jac_prototype)
+odef = ODEFunction(dae!; mass_matrix, jac_prototype)
 
 tspan = (0.0, 5.0)
 prob = ODEProblem(odef, u0, tspan, p)

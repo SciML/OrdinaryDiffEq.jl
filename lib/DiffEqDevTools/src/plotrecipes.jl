@@ -85,7 +85,7 @@ function key_to_label(key::Symbol)
     elseif key == :nnonlinconvfail
         return "Number of nonlinear solver convergence failures"
     elseif key == :ncondition
-        return "Number of rootfind condition calls"
+        return "Number of callback condition calls"
     elseif key == :naccept
         return "Number of accepted steps"
     elseif key == :nreject
@@ -176,11 +176,11 @@ end
 
     if order_star
         f = (u, v) -> abs(
-            stability_region(u + v * im, tab; embedded = embedded) /
+            stability_region(u + v * im, tab; embedded) /
                 exp(u + v * im)
         ) < 1
     else
-        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded = embedded)) < 1
+        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded)) < 1
     end
     seriestype --> :contour
     fill --> true

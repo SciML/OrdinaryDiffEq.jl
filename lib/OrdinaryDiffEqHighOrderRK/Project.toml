@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqHighOrderRK"
 uuid = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.1.1"
+version = "2.2.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -26,7 +26,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Pkg = "1"
 Test = "<0.0.1, 1"
 FastBroadcast = "1.3"

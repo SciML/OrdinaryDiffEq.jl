@@ -22,7 +22,7 @@ using SciMLOperators: MatrixOperator
     )
     integrator = init(
         ODEProblem(fun, u0, tspan), ImplicitEuler(); adaptive = false,
-        dt = dt
+        dt
     )
     W = calc_W(integrator, integrator.cache.nlsolver, dtgamma, false)
     @test convert(AbstractMatrix, W) == concrete_W
@@ -38,7 +38,7 @@ using SciMLOperators: MatrixOperator
     )
     integrator = init(
         ODEProblem(fun, u0, tspan), ImplicitEuler(); adaptive = false,
-        dt = dt
+        dt
     )
     updates_before_calc_W = jacobian_updates[]
     calc_W!(

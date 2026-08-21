@@ -23,6 +23,7 @@ end
     nlsolver.z = zero(u)
     nlsolver.tmp = zero(u)
     nlsolver.γ = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     u = uprev + z
@@ -68,6 +69,7 @@ end
     @. nlsolver.z = false
     @. nlsolver.tmp = false
     nlsolver.γ = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = uprev + z
@@ -134,6 +136,7 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
 
     nlsolver.z = zero(uₙ)
 
@@ -207,6 +210,7 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     @.. broadcast = false nlsolver.tmp = -c1 * uₙ₋₁ + c1 * uₙ₋₂
     nlsolver.z .= zero(eltype(z))
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -328,6 +332,7 @@ function perform_step!(
     nlsolver.z = zero(nlsolver.z)
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     u = z + cache.u₀
@@ -481,6 +486,7 @@ function perform_step!(
     @.. broadcast = false nlsolver.z = zero(eltype(nlsolver.z))
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = z + u₀
@@ -568,5 +574,131 @@ function perform_step!(
             fill!(integrator.k[j], zero(eltype(u)))
         end
     end
+    return nothing
+end
+
+############################################ DNordsieckBDF
+# ================================================================= DAE stepping
+# The corrector solves  f((zn[1] + l1*acor)/dt, ypred + acor, p, t+dt) = 0.
+# `_compute_rhs!` for a `DAEFunction` forms `du = (tmp + α*z)*invγdt` and
+# `u = cache.u₀ + z`, so with α = 1, γ = 1/l1 (invγdt = l1/dt) it is enough to set
+# `tmp = zn[1]/l1` and `u₀ = ypred`; then `cj = l1/dt`, exactly IDA's leading
+# coefficient.
+function initialize!(integrator, cache::DNordsieckBDFCache)
+    integrator.kshortsize = cache.max_order_int + 1
+    resize!(integrator.k, integrator.kshortsize)
+    @inbounds for i in 1:(integrator.kshortsize)
+        integrator.k[i] = zero(integrator.u)
+    end
+    copyto!(integrator.fsalfirst, integrator.du)
+    return nothing
+end
+
+function initialize!(integrator, cache::DNordsieckBDFConstantCache)
+    integrator.kshortsize = cache.max_order_int + 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    @inbounds for i in 1:(integrator.kshortsize)
+        integrator.k[i] = zero(integrator.u)
+    end
+    integrator.fsalfirst = integrator.du
+    return nothing
+end
+
+# For a DAE the derivative history comes from `integrator.du`, not from f.
+function nordsieck_start_dae!(integrator, cache, iip::Val{true})
+    (; uprev, dt) = integrator
+    zn = cache.zn
+    copyto!(zn[1], uprev)
+    @.. broadcast = false zn[2] = dt * integrator.du
+    @inbounds for j in 3:length(zn)
+        fill!(zn[j], zero(eltype(uprev)))
+    end
+    return _nordsieck_start_common!(cache, dt)
+end
+function nordsieck_start_dae!(integrator, cache, iip::Val{false})
+    (; uprev, dt) = integrator
+    zn = cache.zn
+    zn[1] = uprev
+    zn[2] = dt * integrator.du
+    @inbounds for j in 3:length(zn)
+        zn[j] = zero(uprev)
+    end
+    return _nordsieck_start_common!(cache, dt)
+end
+
+function perform_step!(integrator, cache::DNordsieckBDFCache, repeat_step = false)
+    (; t, dt, uprev, u, p) = integrator
+    iip = Val(true)
+    nlsolver = cache.nlsolver
+    nordsieck_needs_start(integrator, cache) &&
+        nordsieck_start_dae!(integrator, cache, iip)
+
+    nordsieck_prepare!(integrator, cache, iip)
+    nordsieck_predict!(cache, iip)
+    nordsieck_set_coeffs!(cache, dt)
+
+    zn = cache.zn
+    copyto!(cache.ypred, zn[1])
+    copyto!(cache.u₀, cache.ypred)
+    l1 = cache.l[2]
+
+    @.. broadcast = false nlsolver.tmp = zn[2] / l1
+    markfirststage!(nlsolver)
+    fill!(nlsolver.z, zero(eltype(nlsolver.z)))
+    nlsolver.γ = inv(l1)
+    nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    @.. broadcast = false cache.acor = z
+    @.. broadcast = false u = cache.ypred + z
+    if integrator.opts.adaptive
+        OrdinaryDiffEqCore.set_EEst!(
+            integrator,
+            cache.tq[2] * _nord_wrms(integrator, cache, cache.acor, uprev, u)
+        )
+    end
+    @.. broadcast = false integrator.fsallast = (zn[2] + l1 * cache.acor) / dt
+    _nordsieck_finish_fixed!(integrator, cache, iip)
+    return nothing
+end
+
+function perform_step!(integrator, cache::DNordsieckBDFConstantCache, repeat_step = false)
+    (; t, dt, uprev, p) = integrator
+    iip = Val(false)
+    nlsolver = cache.nlsolver
+    nordsieck_needs_start(integrator, cache) &&
+        nordsieck_start_dae!(integrator, cache, iip)
+
+    nordsieck_prepare!(integrator, cache, iip)
+    nordsieck_predict!(cache, iip)
+    nordsieck_set_coeffs!(cache, dt)
+
+    zn = cache.zn
+    cache.ypred = zn[1]
+    cache.u₀ = cache.ypred
+    l1 = cache.l[2]
+
+    nlsolver.tmp = @.. zn[2] / l1
+    markfirststage!(nlsolver)
+    nlsolver.z = zero(cache.ypred)
+    nlsolver.γ = inv(l1)
+    nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+
+    cache.acor = z
+    u = @.. cache.ypred + z
+    if integrator.opts.adaptive
+        OrdinaryDiffEqCore.set_EEst!(
+            integrator,
+            cache.tq[2] * _nord_wrms(integrator, cache, cache.acor, uprev, u)
+        )
+    end
+    integrator.fsallast = @.. (zn[2] + l1 * cache.acor) / dt
+    integrator.u = u
+    _nordsieck_finish_fixed!(integrator, cache, iip)
     return nothing
 end

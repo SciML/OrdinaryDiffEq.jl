@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra, Test
 using OrdinaryDiffEqSDIRK
 using ComponentArrays
+using SciMLOperators: MatrixOperator
 
 function enclosethetimedifferential(parameters::NamedTuple)::Function
     @info "Enclosing the time differential"
@@ -93,7 +94,8 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         du[end - 1] = dcc_dt
 
         dcb_dt = (Q_l / V_b) * c_c + C / V_b
-        return du[end] = dcb_dt
+        du[end] = dcb_dt
+        return
     end
 
     return timedifferentialclosure!
@@ -115,13 +117,13 @@ prior = ComponentArray(;
 )
 
 r_space = collect(range(0.0, 2.0, length = 15))
-computeparams = (
+computeparams = (;
     Δr = r_space[2],
-    r_space = r_space,
+    r_space,
     countorderapprox = 2,
 )
-parameters = (
-    prior = prior,
+parameters = (;
+    prior,
     compute = computeparams,
 )
 

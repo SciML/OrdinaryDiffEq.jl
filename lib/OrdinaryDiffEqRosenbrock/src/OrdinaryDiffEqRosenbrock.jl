@@ -5,15 +5,15 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     alg_cache, initialize!,
     calculate_residuals!, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
-    _vec, _reshape, perform_step!, trivial_limiter!,
+    _vec, perform_step!, trivial_limiter!,
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
     OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring,
     initialize!, perform_step!, get_fsalfirstlast,
     constvalue, only_diagonal_mass_matrix,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
-    resize_non_user_cache!, _ode_addsteps!, full_cache,
+    _ode_addsteps!,
     DerivativeOrderNotPossibleError, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
+    copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
     find_algebraic_vars_eqs
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
@@ -23,20 +23,20 @@ using ArrayInterface: ArrayInterface
 # Map flat linear-solve results onto the state container (ArrayPartition-safe).
 @inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
 @inline _restructure_state(template::Number, x) = oftype(template, x)
-using DiffEqBase: @def
 import DifferentiationInterface as DI
 import LinearSolve
 import ForwardDiff
 using FiniteDiff: FiniteDiff
 using LinearAlgebra: mul!, I, norm, lu, UniformScaling
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
+using SciMLBase: @def, LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
 using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
     calc_rosenbrock_differentiation!, build_J_W,
-    dolinsolve, WOperator
+    dolinsolve
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 
@@ -54,7 +54,7 @@ using Reexport: Reexport, @reexport
 using SciMLBase: SciMLBase, LinearProblem, ODEProblem, init, solve,
     TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper
 # alg_order is owned by and public in SciMLBase; import (not using) so methods can be extended
-import SciMLBase: alg_order
+import SciMLBase: alg_order, full_cache, resize_non_user_cache!
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
@@ -146,8 +146,31 @@ include("integrator_interface.jl")
 import PrecompileTools
 import Preferences
 PrecompileTools.@compile_workload begin
-    lorenz = OrdinaryDiffEqCore.lorenz
-    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    function lorenz(du, u, p, t)
+        du[1] = 10.0(u[2] - u[1])
+        du[2] = u[1] * (28.0 - u[3]) - u[2]
+        du[3] = u[1] * u[2] - (8 / 3) * u[3]
+        return
+    end
+    lorenz_oop(u, p, t) = [
+        10.0(u[2] - u[1]),
+        u[1] * (28.0 - u[3]) - u[2],
+        u[1] * u[2] - (8 / 3) * u[3],
+    ]
+    function lorenz_p(du, u, p, t)
+        du[1] = p.σ * (u[2] - u[1])
+        du[2] = u[1] * (p.ρ - u[3]) - u[2]
+        du[3] = u[1] * u[2] - p.β * u[3]
+        return
+    end
+    lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
+    function lorenz_pref(du, u, p, t)
+        du[1] = p[1] * (u[2] - u[1])
+        du[2] = u[1] * (p[2] - u[3]) - u[2]
+        du[3] = u[1] * u[2] - p[3] * u[3]
+        return
+    end
+    lorenz_pref_params = [10.0, 28.0, 8 / 3]
     solver_list = [Rosenbrock23(), Rodas5P()]
     prob_list = []
 
@@ -173,19 +196,29 @@ PrecompileTools.@compile_workload begin
         )
     end
 
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDespecialize}(
+                lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_p_params
+            )
+        )
+    end
+
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
-                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
-                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
-                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_pref_params
             )
         )
     end

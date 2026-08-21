@@ -12,9 +12,7 @@ using SciMLTesting, OrdinaryDiffEqSDIRK, Test
 #     `@truncate_stacktrace`).
 run_qa(
     OrdinaryDiffEqSDIRK;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
-    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
+    reexports_allow = union(public_api_names(SciMLBase), (:Predictor, :SciMLBase)),
     explicit_imports = true,
     ei_kwargs = (
         all_qualified_accesses_are_public = (;

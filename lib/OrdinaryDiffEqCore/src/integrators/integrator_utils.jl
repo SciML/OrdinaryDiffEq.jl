@@ -50,6 +50,25 @@ reinit_noise!(::Nothing, dt) = nothing
 @inline _get_W(integrator) = hasfield(typeof(integrator), :W) ? getfield(integrator, :W) : nothing
 @inline _get_P(integrator) = hasfield(typeof(integrator), :P) ? getfield(integrator, :P) : nothing
 
+# `fix_dt_at_bounds!`/`modify_dt_for_tstops!` can shorten `dt` after the pending
+# noise increment was already drawn for the longer step (e.g. `add_tstop!` called
+# between `init` and the first `step!`). Shrinking the step from the same start
+# time is exactly the situation a step rejection describes, so reuse the rejection
+# path: it bridges the drawn increment down to `dt` and keeps the remainder of the
+# path on the RSWM stack. Growing the step cannot be bridged, so the increment is
+# left alone; `perform_step!` then sees the noise the process was already
+# committed to.
+function shrink_noise_to_integrator_dt!(integrator)
+    W = _get_W(integrator)
+    isnothing(W) && return nothing
+    if abs(integrator.dt) < abs(W.dt)
+        reject_noise!(W, integrator.dt, integrator.u, integrator.p)
+        reject_noise!(_get_P(integrator), integrator.dt, integrator.u, integrator.p)
+        integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+    end
+    return nothing
+end
+
 # Trait: does the integrator+solution support dense output k-array storage?
 # True for ODEIntegrator (has integrator.k and sol.k), false for SDEIntegrator
 # (no integrator.k) and RODESolution/DAESolution (no sol.k).
@@ -64,6 +83,15 @@ end
 
 function loopheader!(integrator)
     # Apply right after iterators / callbacks
+
+    # Manual derivative_discontinuity! (any iter, including after the first step)
+    # must reinit DAEs *before* accept/update_uprev, otherwise a broken u is
+    # committed into uprev (#3932). Callbacks already call initialize_dae! via
+    # reeval_internals_due_to_modification! and leave reeval_fsal=true; skip
+    # those so we do not double-init.
+    if integrator.derivative_discontinuity && !integrator.reeval_fsal
+        on_derivative_discontinuity_at_init!(integrator)
+    end
 
     # Accept or reject the step
     if integrator.iter > 0
@@ -87,14 +115,13 @@ function loopheader!(integrator)
             # REJECT
             handle_step_rejection!(integrator)
         end
-    elseif integrator.derivative_discontinuity # && integrator.iter == 0
-        on_derivative_discontinuity_at_init!(integrator)
     end
 
     integrator.iter += 1
     choose_algorithm!(integrator, integrator.cache)
     fix_dt_at_bounds!(integrator)
     modify_dt_for_tstops!(integrator)
+    shrink_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
     return nothing
 end
@@ -125,8 +152,10 @@ end
 # Called after step rejection handling. Override for DDE discontinuity handling.
 post_step_reject!(integrator) = nothing
 
-# Called at iter==0 when u was modified by callbacks during init.
-# For SDE: isdae=false skips DAE re-init; isfsal=false makes update_fsal! a no-op.
+# Called when derivative_discontinuity! was set manually (not via a callback that
+# already ran reeval_internals_due_to_modification!). Runs for any iter, including
+# after the first step (#3932). For SDE: isdae=false skips DAE re-init;
+# isfsal=false makes update_fsal! a no-op.
 function on_derivative_discontinuity_at_init!(integrator)
     if integrator.isdae
         SciMLBase.initialize_dae!(integrator)
@@ -653,15 +682,36 @@ end
 
 Return whether `cache isa CompositeCache`, i.e. whether it wraps several
 sub-caches for a composite algorithm.
+
+# Developer API
+
+This inspection trait is for solver implementations extending composite-cache
+machinery. End-user code should call `solve` and use solution APIs, rather than
+inspect cache constructors or fields.
 """
 is_composite_cache(cache) = cache isa CompositeCache
 
-# Trait: is this a composite algorithm? Override to include SDE composite algorithms.
 """
     is_composite_algorithm(alg) -> Bool
 
-Return whether `alg isa OrdinaryDiffEqCompositeAlgorithm`, i.e. whether it
-dispatches between several sub-algorithms at runtime.
+Return whether `alg` dispatches between several sub-algorithms at runtime.
+
+# Arguments
+
+- `alg`: An algorithm instance.
+
+# Returns
+
+`true` for an `OrdinaryDiffEqCompositeAlgorithm`, and `false` otherwise.
+
+# Rules
+
+Sibling solver packages with their own composite-algorithm type must extend this
+trait to return `true` for that type.
+
+!!! warning "Developer API"
+    This trait is for solver-package extensions; application code should not
+    dispatch on it.
 """
 is_composite_algorithm(alg) = alg isa OrdinaryDiffEqCompositeAlgorithm
 
@@ -697,6 +747,7 @@ function increment_reject!(stats)
     return stats.nreject += 1
 end
 
+
 function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, tspan)
     t1, t2 = tspan
     return @logmsg(
@@ -707,6 +758,272 @@ function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, ts
     )
 end
 
+"""
+    get_fresh_jacobian(integrator, cache)
+
+Return a Jacobian suitable for numerical-instability diagnostics. Cache-specific
+packages may specialize this hook when the stored Jacobian is unavailable or
+stale. Diagnostic evaluation must not increment solver work statistics.
+"""
+get_fresh_jacobian(integrator, cache) = cache.J
+
+SciMLBase.has_mtk_sys(integrator::ODEIntegrator) = hasproperty(integrator.sol.prob.f, :sys) && integrator.sol.prob.f.sys !== nothing
+
+#get atmp values by cache, for use in diagnostics
+error_estimate_residuals(cache) = hasfield(typeof(cache), :atmp) ? getfield(cache, :atmp) : nothing
+error_estimate_residuals(cache::CompositeCache) = error_estimate_residuals(@inbounds cache.caches[cache.current])
+function error_estimate_residuals(cache::DefaultCache)
+    1 <= cache.current <= 6 || return nothing
+    name = (:cache1, :cache2, :cache3, :cache4, :cache5, :cache6)[cache.current]
+    return isdefined(cache, name) ? error_estimate_residuals(getfield(cache, name)) : nothing
+end
+
+#deal with GPU arrays in the analysis
+host_array(x) = ArrayInterface.fast_scalar_indexing(x) ? x : Array(x)
+
+function nonfinite_indices(u::AbstractArray)
+    idxs = Int[]
+    lin = LinearIndices(u)
+    for i in eachindex(u)
+        isfinite(u[i]) || push!(idxs, lin[i])
+    end
+    return idxs
+end
+nonfinite_indices(u) = isfinite(u) ? Int[] : Int[1]
+
+# %g formats any real, complex values have to show themselves
+format_value(v::Real) = @sprintf("%.4g", v)
+format_value(v::Number) = string(v)
+
+@noinline function format_indices(idxs::Vector{Int})::String
+    length(idxs) <= 10 && return string(idxs) #only keep 10 for display, remainder hidden
+    return chop(string(first(idxs, 10))) * ", and $(length(idxs) - 10) more]"
+end
+
+function instability_jacobian(integrator)
+    W = _get_W(integrator)
+    jac = if W !== nothing && hasproperty(W, :J)
+        #rosenbrock
+        W.J
+    elseif hasproperty(integrator.cache, :J)
+        #radau
+        get_fresh_jacobian(integrator, integrator.cache)
+    elseif hasproperty(integrator.cache, :nlsolver) &&
+            hasproperty(integrator.cache.nlsolver.cache, :J)
+        #BDF
+        integrator.cache.nlsolver.cache.J
+    else #no jac to analyze
+        nothing
+    end
+    # a scalar problem stores a scalar Jacobian, handled on its own below
+    jac isa Number && return jac
+    jac isa AbstractMatrix || return nothing
+    # device-backed J is not worth fetching
+    return ArrayInterface.fast_scalar_indexing(jac) ? jac : nothing
+end
+
+# Jacobian entries worth reporting, plus the rows and columns they touch
+function jacobian_outliers(jac::AbstractMatrix)
+    rows = Set{Int}()
+    cols = Set{Int}()
+    entries = Tuple{Int, Int, eltype(jac)}[]
+    _find_large_jac_entries!(rows, cols, entries, jac)
+
+    # keep only entries within 10 orders of magnitude of the largest finite entry,
+    # plus any non-finite entries. filters out large-but-normal model parameters
+    max_finite = 0.0
+    for (_, _, v) in entries
+        if isfinite(v)
+            max_finite = max(max_finite, abs(v))
+        end
+    end
+    cutoff = max_finite * 1.0e-10
+    filter!(t -> !isfinite(t[3]) || abs(t[3]) >= cutoff, entries) #only keep those vals within 1e10 of max or inf/nan
+    sort!(entries, by = t -> (!isfinite(t[3]), abs(t[3])), rev = true)
+
+    # refill the sets from whatever survived the filter
+    empty!(rows)
+    empty!(cols)
+    for (i, j, _) in entries
+        push!(rows, i)
+        push!(cols, j)
+    end
+    return entries, sort!(collect(rows)), sort!(collect(cols))
+end
+
+# rows and columns holding non-finite or unusually large Jacobian entries
+function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
+    jac = instability_jacobian(integrator)
+    jac === nothing && return msgs
+    # a scalar state has no rows or columns to point at, just the one derivative
+    if jac isa Number
+        (!isfinite(jac) || abs(jac) > 1.0e6) || return msgs
+        desc = isfinite(jac) ? "unusually large" : "non-finite"
+        push!(msgs, "the Jacobian df/du = $(format_value(jac)) is $desc, suggesting a singularity in the equation")
+        return msgs
+    end
+    bad_entries, singularity_rows, singularity_cols = jacobian_outliers(jac)
+    isempty(bad_entries) && return msgs
+
+    has_nonfinite = false
+    has_large = false
+    for (_, _, v) in bad_entries
+        isfinite(v) ? (has_large = true) : (has_nonfinite = true)
+    end
+    entry_desc = if has_nonfinite && has_large
+        "non-finite and large"
+    elseif has_nonfinite
+        "non-finite"
+    else
+        "unusually large"
+    end
+
+    example_strs = String[]
+    for (i, j, v) in first(bad_entries, 5)
+        push!(example_strs, "J[$i,$j] = $(format_value(v))")
+    end
+    push!(msgs, "row(s) $(format_indices(singularity_rows)) have $entry_desc entries (e.g. $(join(example_strs, ", "))), suggesting a singularity in those equation(s)")
+    if sym_eqs !== nothing
+        for row in first(singularity_rows, 10)
+            if row <= length(sym_eqs)
+                push!(msgs, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
+            end
+        end
+    end
+    # jac cols
+    if !isempty(singularity_cols)
+        push!(msgs, "column(s) $(format_indices(singularity_cols)) have $entry_desc entries, suggesting those state component(s) are diverging")
+        if sym_vars !== nothing
+            for col in first(singularity_cols, 10)
+                if col <= length(sym_vars)
+                    push!(msgs, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
+                end
+            end
+        end
+    end
+    return msgs
+end
+
+function residual_analysis!(error_analysis::Vector{String}, atmp::AbstractArray, u, uprev)
+    nonfinite = count(!isfinite, atmp)
+    nonfinite > 0 && push!(error_analysis, "$nonfinite of $(length(atmp)) weighted residuals are non-finite (NaN/Inf)")
+    idxs = collect(eachindex(atmp))
+    n = min(3, length(idxs))
+    # sort NaN residuals along Inf
+    partialsort!(idxs, 1:n, by = i -> (v = abs(atmp[i]); isnan(v) ? typemax(v) : v), rev = true)
+
+    with_state = u isa AbstractArray && eachindex(u) == eachindex(atmp)
+    contributors = String[]
+    for i in idxs[1:n]
+        line = "  atmp[$i] = $(format_value(atmp[i]))"
+        if with_state
+            line *= ", u[$i] = $(format_value(u[i]))"
+            line *= ", uprev[$i] = $(format_value(uprev[i]))"
+        end
+        push!(contributors, line)
+    end
+    push!(error_analysis, "largest contributors to EEst = internalnorm(atmp), where atmp is the tolerance-weighted local error per state component:\n" * join(contributors, "\n"))
+    return error_analysis
+end
+
+function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian_logging = true)
+    u = host_array(integrator.u)
+    u0 = host_array(integrator.sol.prob.u0)
+
+    # State analysis: NaN/Inf components, and components that have blown up
+    nan_inf_idxs = nonfinite_indices(u)
+    blown_idxs = Int[]
+    if length(u) == length(u0)
+        # a complex state compares by magnitude, so the floor is a magnitude too
+        floor_mag = abs(oneunit(eltype(u)))
+        for i in eachindex(u)
+            ref = max(abs(u0[i]), floor_mag)
+            abs(u[i]) > 1.0e6 * ref && push!(blown_idxs, i)
+        end
+        # keep only components within 20 orders of magnitude of the largest
+        if !isempty(blown_idxs)
+            max_blown = maximum(abs(u[i]) for i in blown_idxs)
+            cutoff = max_blown * 1.0e-20
+            filter!(i -> abs(u[i]) >= cutoff, blown_idxs)
+            sort!(blown_idxs, by = i -> abs(u[i]), rev = true)
+        end
+    end
+
+    # trace Jacobian rows/cols back to equations/variables
+    f = integrator.sol.prob.f
+    sys = (hasproperty(f, :sys) && f.sys !== nothing) ? f.sys : nothing
+    sym_eqs = (sys !== nothing && hasfield(typeof(sys), :eqs)) ? getfield(sys, :eqs) : nothing
+    sym_vars = (sys !== nothing && hasfield(typeof(sys), :unknowns)) ? getfield(sys, :unknowns) : nothing
+
+    # each analysis gets its own section
+    state_analysis = String[]
+    jacobian_analysis = String[]
+    error_analysis = String[]
+
+    # state diagnostics message
+    if !isempty(nan_inf_idxs) #state vars
+        if u isa AbstractArray
+            n_nan = length(nan_inf_idxs)
+            n_total = length(u)
+            if n_nan == n_total
+                push!(state_analysis, "All $n_total state variables are non-finite (NaN/Inf)")
+            elseif n_nan > 3
+                push!(state_analysis, "$n_nan of $n_total state variables are non-finite (NaN/Inf): indices $(format_indices(nan_inf_idxs))")
+            else
+                for i in nan_inf_idxs
+                    push!(state_analysis, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
+                end
+            end
+        else
+            push!(state_analysis, "u = $u is non-finite (NaN/Inf)")
+        end
+    elseif !isempty(blown_idxs)
+        if u isa AbstractArray
+            for i in first(blown_idxs, 10)
+                push!(state_analysis, "u[$i] = $(format_value(u[i])) has grown >1e6× its initial value")
+            end
+            length(blown_idxs) > 10 && push!(
+                state_analysis,
+                "and $(length(blown_idxs) - 10) further state variable(s) have grown >1e6× their initial value"
+            )
+        else
+            push!(state_analysis, "u = $(format_value(u)) has grown >1e6× its initial value")
+        end
+    end
+
+    # fetching the Jacobian can mean recomputing it, so skip when the symbolic half covered it
+    jacobian_logging && jacobian_analysis!(jacobian_analysis, integrator, sym_eqs, sym_vars)
+
+    # error estimate analysis, only when the local error is what actually rejected the step.
+    EEst = get_EEst(integrator)
+    error_rejected = integrator.opts.adaptive && !integrator.accept_step &&
+        (!isfinite(EEst) || EEst > 1)
+    if error_rejected
+        push!(error_analysis, "step error estimate EEst = $(format_value(EEst)) (a step is accepted when EEst <= 1)")
+        atmp = error_estimate_residuals(integrator.cache)
+        if atmp isa AbstractArray && !isempty(atmp) && eltype(atmp) <: Number
+            residual_analysis!(error_analysis, host_array(atmp), u, host_array(integrator.uprev))
+        end
+    end
+
+    # assemble the message, one titled section per non-empty analysis
+    sections = (
+        ("State Analysis", state_analysis),
+        ("Jacobian Analysis", jacobian_analysis),
+        ("Error Analysis", error_analysis),
+    )
+    all(isempty(msgs) for (_, msgs) in sections) && return ""
+
+    diagnostic = "\n\nDiagnostics:"
+    for (title, msgs) in sections
+        isempty(msgs) && continue
+        body = join(("  " * replace(msg, "\n" => "\n  ") for msg in msgs), "\n")
+        diagnostic *= "\n\n$title:\n$body"
+    end
+
+    return diagnostic
+end
+
 function fixed_t_for_tstop_error!(integrator, ttmp)
     if _get_next_step_tstop(integrator)
         _set_tstop_flag!(integrator, false)
@@ -714,6 +1031,18 @@ function fixed_t_for_tstop_error!(integrator, ttmp)
     else
         return ttmp
     end
+end
+
+# Type-stable check: did the callback that fired have maybe_discontinuity = true?
+@generated function _fired_cb_maybe_discontinuity(
+        cb_idx,
+        callbacks::NTuple{N, Union{ContinuousCallback, VectorContinuousCallback}}
+    ) where {N}
+    ex = :(false)
+    for i in N:-1:1
+        ex = :(cb_idx == $i ? callbacks[$i].maybe_discontinuity : $ex)
+    end
+    return ex
 end
 
 # Use a generated function to call apply_callback! in a type-stable way
@@ -777,6 +1106,10 @@ function handle_callbacks!(integrator)
                 idx,
                 continuous_callbacks
             )
+            if _discontinuity_detection_enabled(integrator.controller_cache) &&
+                    _fired_cb_maybe_discontinuity(idx, continuous_callbacks)
+                reinit_controller!(integrator, integrator.controller_cache)
+            end
         else
             integrator.event_last_time = 0
             integrator.vector_event_last_time = 1
@@ -876,6 +1209,37 @@ function calc_dt_propose!(integrator, dtnew)
     return nothing
 end
 
+"""
+    fix_dt_at_bounds!(integrator)
+
+Clamp `integrator.dt` to the active `dtmin` and `dtmax` bounds while preserving
+the integration direction.
+
+# Arguments
+
+- `integrator`: An OrdinaryDiffEq integrator with `dt`, `tdir`, and time-step bound options.
+
+# Returns
+
+- `nothing`
+
+# Rules
+
+- Call this from a solver-specific stepping or initialization path after modifying `dt`
+  directly.
+- The result lies between the active `dtmin` and `dtmax` bounds in the direction of
+  integration.
+
+!!! warning "Developer API, not user API"
+    Application code should configure `dtmin` and `dtmax` through `solve` or
+    `init`, rather than mutating an integrator's time step.
+
+# Example
+```julia
+integrator.dt = proposed_dt
+fix_dt_at_bounds!(integrator)
+```
+"""
 function fix_dt_at_bounds!(integrator)
     if integrator.tdir > 0
         integrator.dt = min(integrator.opts.dtmax, integrator.dt)
@@ -891,6 +1255,38 @@ function fix_dt_at_bounds!(integrator)
     return nothing
 end
 
+"""
+    handle_tstop!(integrator)
+
+Process the current time stop after a solver step. This removes reached stops,
+sets `integrator.just_hit_tstop`, and handles a fixed-step integrator that
+crossed a stop by interpolating back to it.
+
+# Arguments
+
+- `integrator`: An OrdinaryDiffEq integrator that has just advanced its time state.
+
+# Returns
+
+- `nothing`
+
+# Rules
+
+- Solver authors that own a stepping loop should call this after advancing time.
+- Duplicate stops at the current time are consumed together.
+- A fixed-step integrator that crosses a stop is interpolated back to the stop; a
+  time-step-changeable integrator crossing a stop is an invariant violation.
+
+!!! warning "Developer API, not user API"
+    Application code should manage time stops with `add_tstop!` or the `tstops`
+    keyword, not call this hook.
+
+# Example
+```julia
+perform_step!(integrator, cache, false)
+handle_tstop!(integrator)
+```
+"""
 function handle_tstop!(integrator)
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t

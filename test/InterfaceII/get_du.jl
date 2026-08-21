@@ -3,7 +3,8 @@ using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 3.0)
@@ -23,6 +24,10 @@ res = copy(cache)
 for alg in [
         Vern6(), Vern7(), Vern8(), Vern9(), Rodas4(), Rodas4P(),
         Rodas5(), Rodas5P(), TRBDF2(), KenCarp4(), FBDF(), QNDF(),
+        # A CompositeAlgorithm must report the derivative of whichever
+        # sub-algorithm is currently active, not of the wrapper.
+        AutoTsit5(Rosenbrock23()), AutoTsit5(Rodas5P()),
+        AutoVern7(Rodas4()), AutoVern9(Rodas4()), AutoVern9(Rodas5P()),
     ]
     sol = solve(
         prob, alg, tstops = [0.2], callback = dusave, abstol = 1.0e-12, reltol = 1.0e-12

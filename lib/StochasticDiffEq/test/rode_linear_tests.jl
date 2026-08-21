@@ -35,7 +35,8 @@ sol3 = solve(prob, RandomTamedEM(), dt = 1 / 100)
 
 function f(du, u, p, t, W)
     du[1] = 0.2u[1] * sin(W[1] - W[2])
-    return du[2] = -0.2u[2] * cos(W[1] + W[2])
+    du[2] = -0.2u[2] * cos(W[1] + W[2])
+    return
 end
 u0 = [1.0; 1.0]
 tspan = (0.0, 1.0)
@@ -49,7 +50,8 @@ sol3 = solve(prob, RandomTamedEM(), dt = 1 / 100)
 
 function f(du, u, p, t, W)
     du[1] = -0.2W[3] * u[1] * sin(W[1] - W[2])
-    return du[2] = -0.2u[2] * cos(W[1] + W[2])
+    du[2] = -0.2u[2] * cos(W[1] + W[2])
+    return
 end
 u0 = [1.0; 1.0]
 tspan = (0.0, 1.0)

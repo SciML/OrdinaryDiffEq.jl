@@ -40,9 +40,11 @@ using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    MessageLevel, @verbosity_specifier, verbosity_to_bool
+    MessageLevel, @verbosity_specifier, verbosity_to_bool, @SciMLMessage
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
+using SciMLOperators: isconstant, islinear
+import SciMLOperators: update_coefficients, update_coefficients!
 
 using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractDiffEqInterpolation,
@@ -76,7 +78,7 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractODEIntegrator, AbstractSDEIntegrator, AbstractRODEIntegrator,
     AbstractDDEIntegrator, AbstractSDDEIntegrator,
     AbstractDAEIntegrator, unwrap_cache, has_reinit, reinit!,
-    postamble!, last_step_failed, islinear, has_stats,
+    postamble!, last_step_failed, has_stats,
     initialize_dae!, build_solution, solution_new_retcode,
     solution_new_tslocation, plot_indices, NonlinearAliasSpecifier,
     NullParameters, isinplace, AbstractADType, AbstractDiscretization,
@@ -87,13 +89,13 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     interp_summary, AbstractHistoryFunction, LinearInterpolation,
     ConstantInterpolation, HermiteInterpolation, SensitivityInterpolation,
     NoAD, @add_kwonly,
-    calculate_ensemble_errors, isconstant,
+    calculate_ensemble_errors,
     DEFAULT_REDUCTION, isautodifferentiable,
     isadaptive, isdiscrete, has_syms, AbstractAnalyticalSolution,
     wrap_sol
 
-import SciMLBase: solve, init, step!, solve!, __init, __solve, update_coefficients!,
-    update_coefficients, isadaptive, wrapfun_oop, wrapfun_iip,
+import SciMLBase: solve, init, step!, solve!, __init, __solve,
+    isadaptive, wrapfun_oop, wrapfun_iip,
     unwrap_fw, promote_tspan, set_u!, set_t!, set_ut!,
     extract_alg, checkkwargs, has_kwargs, _concrete_solve_adjoint, _concrete_solve_forward,
     eltypedual, get_updated_symbolic_problem, get_concrete_p, get_concrete_u0, promote_u0,
@@ -137,7 +139,7 @@ $(TYPEDEF)
 """
 abstract type DECostFunction end
 
-import SciMLBase: Void, unwrapped_f, AutoDePSpecialize
+import SciMLBase: Void, unwrapped_f, AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 import RespecializeParams
 
@@ -156,6 +158,7 @@ include("internal_euler.jl")
 include("norecompile.jl")
 include("integrator_accessors.jl")
 include("verbosity.jl")
+include("check_error.jl")
 
 # This is only used for oop stiff solvers
 """
@@ -190,7 +193,7 @@ export initialize!, finalize!
 
 export SensitivityADPassThrough
 
-export AutoDePSpecialize
+export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 # Declare DiffEqBase-owned, documented API names `public` so downstream packages can
 # drop their `DiffEqBase.X` non-public ExplicitImports ignores. The `public` keyword is
@@ -209,14 +212,14 @@ export AutoDePSpecialize
             :max_vector_callback_length, :max_vector_callback_length_int, :get_condition,
             # Default-callback API (integrator defaults overridable via solver keywords)
             :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE,
-            :ODE_DEFAULT_UNSTABLE_CHECK,
+            :ODE_DEFAULT_UNSTABLE_CHECK, :NAN_CHECK,
             # Tableau extension supertypes downstream tableau packages subtype
             :Tableau, :ODERKTableau,
             # Error-estimate residual hooks solvers call/extend
             :calculate_residuals, :calculate_residuals!,
             # Algorithm/dt setup hooks solvers specialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
-            :default_factorize, :stripunits,
+            :default_factorize, :stripunits, Symbol("@tight_loop_macros"),
             # Solver-author wrapper/tag types and convergence-testing entry type
             :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
         )

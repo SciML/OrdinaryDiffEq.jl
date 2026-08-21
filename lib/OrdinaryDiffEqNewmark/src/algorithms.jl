@@ -4,6 +4,25 @@
 Classical Newmark-β method to solve second order ODEs, possibly in mass matrix form.
 Local truncation errors are estimated with the estimate of Zienkiewicz and Xie.
 
+## Adaptive time stepping
+
+The Zienkiewicz-Xie estimate monitors both solution components. The position
+channel uses the leading local error (β - 1/6)·dt²·(aₙ₊₁ - aₙ). The velocity
+channel uses (γ - 1/2)·dt·(aₙ₊₁ - aₙ) with the coefficient magnitude clamped
+at 1/100 from below: on and near the second-order family γ = 1/2 the true
+coefficient vanishes, and the channel falls back to the surrogate
+dt·(aₙ₊₁ - aₙ)/100, one order below the true velocity error there. This keeps
+the velocity error tracking the tolerance at all frequencies — measured on
+u'' = -ω²u for ω = 1..1000, tol = 1e-4..1e-10, the global error stays below
+2.5·nsteps·tol everywhere, where without the clamp the velocity error reached
+the full peak-to-peak range with a Success return at ω = 1000 — at the price
+of dt ~ tol^(1/2) instead of tol^(1/3) where the surrogate binds: step counts
+at ω = 1 grow by 1.05x (tol = 1e-4) up to 9.1x (tol = 1e-10). Combinations
+with β within 1/24 of 1/6 and γ within 1/100 of 1/2 are rejected in adaptive
+mode because neither leading error coefficient is measurable there; the
+linear-acceleration method β = 1/6, γ = 1/2 remains available with
+`adaptive = false`.
+
 ## References
 
 Newmark, Nathan (1959), "A method of computation for structural dynamics",
@@ -64,9 +83,9 @@ The method evaluates the equations of motion at interpolated states:
 
 where:
 
-    aₙ₊αₘ = (1 - αₘ)·aₙ₊₁ + αₘ·aₙ
-    uₙ₊αf = (1 - αf)·uₙ₊₁  + αf·uₙ
-    vₙ₊αf = (1 - αf)·vₙ₊₁  + αf·vₙ
+    aₙ₊αₘ = (1 - αₘ) · aₙ₊₁ + αₘ · aₙ
+    uₙ₊αf = (1 - αf) · uₙ₊₁ + αf · uₙ
+    vₙ₊αf = (1 - αf) · vₙ₊₁ + αf · vₙ
 
 with the standard Newmark update formulas for uₙ₊₁ and vₙ₊₁.
 
@@ -95,6 +114,26 @@ Parameters are set optimally (Chung & Hulbert 1993):
 
 Sets αₘ = 0, αf = -α, γ = (1 - 2α)/2, β = (1 - α)²/4.
 
+## Order and adaptive time stepping
+
+This implementation re-derives the acceleration from `f` at the accepted state
+on every step instead of carrying the algorithmic acceleration, so it is second
+order iff γ(1 - αf) = (1 - αm)/2, which for αₘ ≠ αf differs from the textbook
+condition γ = 1/2 - αₘ + αf; the ρ∞ and HHT parameterizations with damping
+therefore converge at first order with a small leading constant (measured
+fixed-step order 2.00 on the implementation locus).
+
+The Zienkiewicz-Xie estimate is extended with the coefficients β - 1/(6κ)
+(position) and γ - 1/(2κ) (velocity), κ = (1 - αf)/(1 - αm), the velocity
+coefficient magnitude clamped at 1/100 from below so that the velocity channel
+stays live on the family γ = 1/(2κ) where it otherwise vanishes. Large ρ∞
+sits inside that clamp (ρ∞ = 0.9 has γ - 1/(2κ) ≈ 0.0026, ρ∞ = 1 is exactly
+on the family); measured on u'' = -ω²u at ω = 100, ρ∞ = 0.9 holds the global
+error below 0.7·nsteps·tol for tol = 1e-4..1e-6. Parameter sets with β
+within 1/24 of 1/(6κ) and γ within 1/100 of 1/(2κ) are rejected in adaptive
+mode because neither leading error coefficient is measurable there; they
+remain available with `adaptive = false`.
+
 ## References
 
 Chung, J., and Hulbert, G. M. (1993), "A time integration algorithm for structural
@@ -120,8 +159,12 @@ struct GeneralizedAlpha{PT, F, AD, Thread, CJ} <:
 end
 
 # handles multiple ways the user can call the method: standard rho_inf, explicit 4 parameter construction, or the HHT-alpha convention
+# The four parameters are also accepted as keywords because remake (reached
+# through prepare_alg whenever a sublibrary with AD preparation is loaded
+# alongside) reconstructs the algorithm from its field names.
 function GeneralizedAlpha(
-        αm = nothing, αf = nothing, β = nothing, γ = nothing;
+        αm_arg = nothing, αf_arg = nothing, β_arg = nothing, γ_arg = nothing;
+        αm = αm_arg, αf = αf_arg, β = β_arg, γ = γ_arg,
         rho_inf = nothing,
         alpha_hht = nothing,
         autodiff = AutoForwardDiff(),

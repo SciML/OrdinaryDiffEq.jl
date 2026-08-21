@@ -351,9 +351,38 @@ coeffs[j] is the coefficient of Θ^(j-1).
 end
 
 """
-    generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
+    generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
 
-Generic interpolation for Runge-Kutta methods using the B_interp coefficient matrix.
+Evaluate the dense-output polynomial for an explicit Runge-Kutta method.
+`B_interp` contains one coefficient row per stage and `Θ` is the normalized
+time within the step.
+
+# Arguments
+
+- `Θ`: Normalized position in the step.
+- `dt`: Step size.
+- `y₀`: State at the beginning of the step.
+- `k`: Stage derivatives.
+- `B_interp`: Dense-output coefficient matrix.
+- `bi`: Precomputed interpolation data associated with the tableau.
+
+# Keywords
+
+- `idxs`: Optional component or index selection applied to `y₀` and `k`.
+- `order`: Derivative order to evaluate. `0` returns the interpolated state.
+
+# Returns
+
+The interpolated state, or the requested derivative, at `Θ`.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqExplicitRK
+
+# Solver internals call this with a method tableau and stage derivatives.
+generic_rk_interpolant(0.5, 0.1, y₀, k, B_interp, bi)
+```
 """
 function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, order = 0)
     if isnothing(B_interp)
@@ -396,11 +425,6 @@ function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, o
     end
 end
 
-"""
-    generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs=nothing, order=0)
-
-In-place version of generic interpolation for Runge-Kutta methods.
-"""
 # Single-pass in-place interpolant for a statically known stage count: the
 # stage contributions are summed inside one fused broadcast instead of one
 # broadcast per stage (which walked `out` `nstages` times).
@@ -450,6 +474,41 @@ end
     )
 end
 
+"""
+    generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi;
+        idxs = nothing, order = 0)
+
+Evaluate the dense-output polynomial for an explicit Runge-Kutta method into
+the preallocated `out` array.
+
+# Arguments
+
+- `out`: Destination array for the selected state components.
+- `Θ`: Normalized position in the step.
+- `dt`: Step size.
+- `y₀`: State at the beginning of the step.
+- `k`: Stage derivatives.
+- `B_interp`: Dense-output coefficient matrix.
+- `bi`: Precomputed interpolation data associated with the tableau.
+
+# Keywords
+
+- `idxs`: Optional component or index selection applied to `y₀` and `k`.
+- `order`: Derivative order to evaluate. `0` writes the interpolated state.
+
+# Returns
+
+The same `out` array after it has been populated.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqExplicitRK
+
+# Solver internals pass the preallocated output and interpolation workspace.
+generic_rk_interpolant!(out, 0.5, 0.1, y₀, k, B_interp, bi)
+```
+"""
 function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = nothing, order = 0)
     if isnothing(B_interp)
         throw(DerivativeOrderNotPossibleError())

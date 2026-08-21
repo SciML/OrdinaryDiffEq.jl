@@ -41,6 +41,9 @@ function interface_i()
     @time @safetestset "Stiffness Detection Tests" include("InterfaceI/stiffness_detection_test.jl")
     @time @safetestset "Composite Interpolation Tests" include("InterfaceI/composite_interpolation.jl")
     @time @safetestset "Export tests" include("InterfaceI/export_tests.jl")
+    @time @safetestset "Verbose Migration Tests" include("InterfaceI/verbose_migration_tests.jl")
+    @time @safetestset "Threading Option Public Tests" include("InterfaceI/threading_option_public_tests.jl")
+    @time @safetestset "Generic SciML Interface Tests" include("InterfaceI/generic_interface_tests.jl")
     @time @safetestset "Type Handling Tests" include("InterfaceI/type_handling.jl")
     @time @safetestset "Controller Tests" include("InterfaceI/controllers.jl")
     @time @safetestset "Inplace Interpolation Tests" include("InterfaceI/inplace_interpolation.jl")
@@ -54,6 +57,7 @@ end
 function interface_ii()
     is_APPVEYOR && return
     #@time @safetestset "No Recompile Tests" include("shared/norecompile.jl") # doesn't work on CI?
+    @time @safetestset "Despecialized Parameters" include("InterfaceII/despecialized_parameters.jl")
     @time @safetestset "AutoSparse Detection Tests" include("InterfaceII/autosparse_detection_tests.jl")
     @time @safetestset "Enum Tests" include("InterfaceII/enums.jl")
     return @time @safetestset "Get du Tests" include("InterfaceII/get_du.jl")
@@ -96,7 +100,8 @@ function integrators_i()
     @time @safetestset "Event Detection Tests" include("Integrators_I/event_detection_tests.jl")
     @time @safetestset "Event Repetition Detection Tests" include("Integrators_I/event_repeat_tests.jl")
     @time @safetestset "Multi-VCC Mask Tests" include("Integrators_I/multi_vcc_mask_tests.jl")
-    return @time @safetestset "Step Limiter Tests" include("Integrators_I/step_limiter_test.jl")
+    @time @safetestset "Step Limiter Tests" include("Integrators_I/step_limiter_test.jl")
+    return @time @safetestset "Discontinuity Detection Tests" include("Integrators_I/disco_tests.jl")
 end
 
 function integrators_ii()
@@ -116,7 +121,8 @@ function regression_i()
     @time @safetestset "Special Interp Tests" include("Regression_I/special_interps.jl")
     @time @safetestset "Inplace Tests" include("Regression_I/ode_inplace_tests.jl")
     @time @safetestset "Adaptive Tests" include("Regression_I/ode_adaptive_tests.jl")
-    return @time @safetestset "Hard DAE Tests" include("Regression_I/hard_dae.jl")
+    @time @safetestset "Hard DAE Tests" include("Regression_I/hard_dae.jl")
+    return @time @safetestset "Newton-Krylov Round-off Tests" include("Regression_I/newton_krylov_roundoff.jl")
 end
 
 function regression_ii()
@@ -219,7 +225,7 @@ end
 @time begin
     # Monorepo sublibrary routing. The root reads GROUP to pick a `lib/<sub>`
     # sublibrary, transitively develops its `[sources]` on Julia < 1.11, then
-    # `Pkg.test`s it with the sub-group handed off via ODEDIFFEQ_TEST_GROUP.
+    # `Pkg.test`s it with the sub-group handed off via GROUP.
     # This is kept as an explicit pre-step (rather than delegated to
     # `run_tests`'s built-in `lib_dir` path) so the sublibrary `Pkg.test`
     # invocation — `julia_args`, `force_latest_compatible_version = false`,
@@ -274,7 +280,7 @@ end
             # fail to find unregistered siblings.
             isempty(specs) || Pkg.develop(specs)
         end
-        withenv("ODEDIFFEQ_TEST_GROUP" => test_group) do
+        withenv("GROUP" => test_group) do
             Pkg.test(base_group, julia_args = ["--check-bounds=auto", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version = false, allow_reresolve = true)
         end
     else
@@ -327,11 +333,10 @@ end
                 "Integrators" => ["Integrators_I", "Integrators_II"],
                 "Regression" => ["Regression_I", "Regression_II"],
             ),
-            # Monorepo sublibrary handoff var: the root reads GROUP, but each
-            # sublibrary reads ODEDIFFEQ_TEST_GROUP for its sub-group. The
+            # The root and each sublibrary use GROUP for monorepo routing.
             # sublibrary Pkg.test is done explicitly above; sublib_env/lib_dir
             # are passed for completeness so the routing config is self-describing.
-            sublib_env = "ODEDIFFEQ_TEST_GROUP",
+            sublib_env = "GROUP",
             lib_dir = LIB_DIR,
         )
     end

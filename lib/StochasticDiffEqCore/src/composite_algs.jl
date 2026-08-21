@@ -13,6 +13,37 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
     switch_max::Int
 end
 
+"""
+    AutoSwitch(
+        nonstiffalg, stiffalg; maxstiffstep = 10, maxnonstiffstep = 3,
+        nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
+        stiffalgfirst = false, switch_max = 5
+    )
+
+Choice function that switches a [`StochasticCompositeAlgorithm`](@ref) between a
+nonstiff and a stiff method based on an online stiffness estimate.
+
+Each step the estimate `abs(eigen_est * dt / alg_stability_size(alg))` is compared
+against a tolerance. Consecutive verdicts are counted, and the algorithm is only
+switched once the count exceeds the corresponding threshold, which prevents
+thrashing on a borderline problem.
+
+## Keyword Arguments
+
+  - `maxstiffstep`: Number of consecutive stiff verdicts required before switching to
+    `stiffalg` (default: `10`).
+  - `maxnonstiffstep`: Number of consecutive nonstiff verdicts required before
+    switching back to `nonstiffalg` (default: `3`).
+  - `nonstifftol`, `stifftol`: Stiffness-ratio tolerances used while the nonstiff and
+    the stiff algorithm is active, respectively (default: `9//10` for both).
+  - `dtfac`: Factor applied to `dt` at a switch — `dt` is multiplied by it when moving
+    to the stiff method and divided by it when moving back (default: `2`).
+  - `stiffalgfirst`: Start with `stiffalg` instead of `nonstiffalg` (default: `false`).
+  - `switch_max`: Number of successive nonstiff verdicts after which the error check
+    is re-enabled (default: `5`).
+
+Use [`AutoAlgSwitch`](@ref) to build the composite algorithm directly.
+"""
 struct AutoSwitch{nAlg, sAlg, tolType, T}
     nonstiffalg::nAlg
     stiffalg::sAlg
@@ -73,6 +104,20 @@ function (AS::AutoSwitchCache)(integrator)
     return Int(AS.is_stiffalg) + 1
 end
 
+"""
+    AutoAlgSwitch(nonstiffalg, stiffalg; kwargs...) -> StochasticCompositeAlgorithm
+
+Build a stiffness-switching composite of `nonstiffalg` and `stiffalg`.
+
+This is the constructor behind the `Auto*` SDE solvers (for example `AutoSOSRI2`):
+it wraps the two algorithms in a [`StochasticCompositeAlgorithm`](@ref) whose choice
+function is an [`AutoSwitch`](@ref). All keyword arguments are forwarded to
+`AutoSwitch`.
+
+```julia
+alg = AutoAlgSwitch(SOSRI(), ImplicitEM(); maxstiffstep = 5)
+```
+"""
 function AutoAlgSwitch(nonstiffalg, stiffalg; kwargs...)
     AS = AutoSwitch(nonstiffalg, stiffalg; kwargs...)
     return StochasticCompositeAlgorithm((nonstiffalg, stiffalg), AS)

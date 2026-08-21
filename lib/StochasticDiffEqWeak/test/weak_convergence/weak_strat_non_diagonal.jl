@@ -29,13 +29,15 @@ end
 u₀ = [0.1, 0.1]
 function f2!(du, u, p, t)
     du[1] = 5 // 4 * u[2] - 5 // 4 * u[1]
-    return du[2] = 1 // 4 * u[1] - 1 // 4 * u[2]
+    du[2] = 1 // 4 * u[1] - 1 // 4 * u[2]
+    return
 end
 function g2!(du, u, p, t)
     du[1, 1] = sqrt(3) / 2 * (u[1] - u[2])
     du[1, 2] = 1 // 2 * (u[1] + u[2])
     #du[2,1] = 0
-    return du[2, 2] = u[1]
+    du[2, 2] = u[1]
+    return
 end
 dts = 1 .// 2 .^ (4:-1:1)
 tspan = (0.0, 1.0)
@@ -46,7 +48,7 @@ prob = SDEProblem(f2!, g2!, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h2(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e8)

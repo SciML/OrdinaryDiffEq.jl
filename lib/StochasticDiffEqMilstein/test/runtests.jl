@@ -1,7 +1,7 @@
 using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
@@ -41,8 +41,8 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         g_iip(du, u, p, t) = (du .= 0.87 .* u)
         prob_iip = SDEProblem(f_iip, g_iip, [0.5, 0.25], (0.0, 1.0))
         for seed in (UInt64(7), UInt64(42))
-            s_oop = solve(prob, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed = seed)
-            s_iip = solve(prob_iip, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed = seed)
+            s_oop = solve(prob, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed)
+            s_iip = solve(prob_iip, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed)
             @test SciMLBase.successful_retcode(s_oop)
             @test SciMLBase.successful_retcode(s_iip)
             @test s_oop.u[end] ≈ s_iip.u[end] rtol = 1.0e-10
@@ -58,7 +58,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
             total = 0.0
             for k in 1:ntraj
                 sol = solve(
-                    gbm, RKMilGeneral(); dt = dt, adaptive = false,
+                    gbm, RKMilGeneral(); dt, adaptive = false,
                     seed = UInt64(1000 + k), save_noise = true
                 )
                 WT = sol.W.W[end]

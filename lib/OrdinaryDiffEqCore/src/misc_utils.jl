@@ -79,10 +79,14 @@ error_constant(integrator, order) = error_constant(integrator, integrator.alg, o
 """
     AbstractThreadingOption
 
-Abstract supertype for the `thread = …` option controlling internal broadcasting.
-The concrete choices are [`Sequential`](@ref), [`BaseThreads`](@ref), and
-[`PolyesterThreads`](@ref); [`isthreaded`](@ref) reports whether a given option
-enables multithreading.
+Abstract supertype for the `threading = …` option controlling how solvers that
+expose independent internal work (extrapolation columns, parallel Runge-Kutta
+stages) execute it. The concrete choices are [`Sequential`](@ref),
+[`BaseThreads`](@ref), and [`PolyesterThreads`](@ref); [`isthreaded`](@ref)
+reports whether a given option enables multithreading.
+
+This is distinct from the `thread = …` option of the FastBroadcast-based solvers,
+which takes `FastBroadcast.Serial()` or `FastBroadcast.Threaded()`.
 """
 abstract type AbstractThreadingOption end
 """
@@ -157,6 +161,55 @@ macro threaded(option, ex)
     end
 end
 
+"""
+    @OnDemandTableauExtract TableauType T
+    @OnDemandTableauExtract TableauType T T2
+
+Construct `TableauType` from one or two scalar types and bind each field of the
+constructed tableau to a same-named local variable in the invocation scope.
+Solver implementations use this macro to expose coefficient fields to stage code
+without storing a runtime tableau object.
+
+# Arguments
+
+  - `TableauType`: concrete or parametric tableau type defined in the invoking
+    module. Its field names determine the generated local bindings.
+  - `T`: scalar type passed as the first constructor argument.
+  - `T2`: optional scalar type passed as the second constructor argument, commonly
+    used for time nodes.
+
+# Returns
+
+An expression that constructs the tableau once and assigns every field value to a
+local variable with the corresponding field name.
+
+# Developer contract
+
+`TableauType` must resolve in the invoking module and provide the selected
+constructor. Its field layout is part of the solver implementation using the
+macro. Invoke the macro inside a function before reading the generated names, and
+do not use those generated locals as application API.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqCore: @OnDemandTableauExtract
+
+struct ExampleTableau{T, T2}
+    weight::T
+    node::T2
+end
+ExampleTableau(::Type{T}, ::Type{T2}) where {T, T2} =
+    ExampleTableau(one(T), convert(T2, 1 // 2))
+
+function coefficients(T, T2)
+    @OnDemandTableauExtract ExampleTableau T T2
+    return weight, node
+end
+
+coefficients(Float64, Float64) == (1.0, 0.5)
+```
+"""
 macro OnDemandTableauExtract(S_T, T, T2)
     S = getproperty(__module__, S_T)
     s = gensym(:s)
@@ -182,6 +235,41 @@ macro OnDemandTableauExtract(S_T, T)
     return esc(q)
 end
 
+"""
+    @fold function_definition
+
+Declare `function_definition` foldable using `Base.@assume_effects :foldable`.
+OrdinaryDiffEq solver packages use this macro for deterministic tableau and
+coefficient constructors that the compiler may evaluate at compile time.
+
+# Arguments
+
+  - `function_definition`: a function definition whose result depends only on its
+    arguments and immutable global constants.
+
+# Returns
+
+The escaped function definition wrapped in the Julia foldability annotation.
+
+# Developer contract
+
+Only annotate functions that are deterministic, effect-free, and safe to evaluate
+or eliminate at compile time. Incorrect use can cause invalid compiler
+optimizations; functions that mutate external state, perform I/O, inspect mutable
+globals, or depend on task state must not use `@fold`.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqCore: @fold
+
+@fold function coefficient_pair(::Type{T}) where {T}
+    return convert(T, 1 // 2), one(T)
+end
+
+coefficient_pair(Float64) == (0.5, 1.0)
+```
+"""
 macro fold(arg)
     return esc(:(Base.@assume_effects :foldable $arg))
 end
@@ -213,6 +301,12 @@ function get_differential_vars(f, u)
         elseif mm isa SciMLOperators.ScalarOperator
             # λ·I: every variable is algebraic when λ is zero.
             return iszero(mm.val) ? falses(size(u)) : nothing
+        elseif mm isa Diagonal
+            # Check only `mm.diag`: the generic paths below visit every (i, j)
+            # pair via scalar `getindex`, which is disallowed when `mm.diag` is
+            # GPU-backed (e.g. `Diagonal{Float64, <:CuVector}`), while a
+            # broadcast over `mm.diag` dispatches to a proper GPU kernel.
+            return reshape(mm.diag .!= 0, size(u))
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && _isdiag(mm)
@@ -229,6 +323,19 @@ end
 # Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
 _isdiag(A::AbstractMatrix) = isdiag(A)
 
+# Dense fallback to find large Jacobian entries.
+# Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::AbstractMatrix)
+    for i in axes(jac, 1), j in axes(jac, 2)
+        val = jac[i, j]
+        if !isfinite(val) || abs(val) > 1.0e6
+            push!(rows, i)
+            push!(cols, j)
+            push!(entries, (i, j, val))
+        end
+    end
+    return
+end
 """
     find_algebraic_vars_eqs(M)
 
