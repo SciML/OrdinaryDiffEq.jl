@@ -17,6 +17,23 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        # docs/src/api/reexports.md defines this surface; test/qa/qa_tests.jl checks the
+        # full list repo-wide. Here, spot-check that the common interface is usable and
+        # that solver-author API stayed behind the `SciMLBase.` qualifier.
+        using OrdinaryDiffEqDefault, Test
+        exported = (
+            :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+            :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+            :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqDefault), exported))
+        internal = (
+            :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+            :StandardODEProblem, :UJacobianWrapper,
+        )
+        @test !any(Base.isexported.(Ref(OrdinaryDiffEqDefault), internal))
+    end
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
 end
 

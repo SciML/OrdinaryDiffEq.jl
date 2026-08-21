@@ -103,10 +103,8 @@ Pkg.add("OrdinaryDiffEqTaylorSeries")
 Then use the methods with:
 
 ```julia
-using OrdinaryDiffEqTaylorSeries: ExplicitTaylor2, ExplicitTaylor,
+using OrdinaryDiffEqTaylorSeries: ODEProblem, solve, ExplicitTaylor2, ExplicitTaylor,
     ExplicitTaylorAdaptiveOrder
-using CommonSolve: solve
-using SciMLBase: ODEProblem
 
 # Example: Second-order Taylor method
 function f(u, p, t)
