@@ -7,6 +7,7 @@ import LinearAlgebra, OrdinaryDiffEqCore, OrdinaryDiffEqTsit5,
     RecursiveArrayTools, Richardson, SciMLBase
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore: perform_step!, @cache
+import Accessors: @set
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using PrecompileTools: @setup_workload, @compile_workload

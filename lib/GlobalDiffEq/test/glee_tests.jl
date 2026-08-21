@@ -15,7 +15,7 @@ function glee_convergence(prob, alg, dts)
     est_errs = Float64[]
     for dt in dts
         sol = solve(prob, alg; dt, adaptive = false)
-        err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
+        err = prince_exact(prince_tspan[2]) - sol.u[end][1]
         est = global_error_estimate(sol, length(sol.u))[1]
         push!(errs, abs(err))
         push!(est_errs, abs(est - err))
@@ -48,11 +48,34 @@ end
     end
 end
 
+@testset "GLEE SciMLBase global-error interface" begin
+    prob = ODEProblem(f_prince!, [0.0], prince_tspan)
+    for alg in (GLEE23(), GLEE24(), GLEE35(), MM5GEE())
+        @test SciMLBase.has_global_error(alg)
+        sol = solve(prob, alg; dt = 1 / 64, adaptive = false)
+        # ordinary solution in `u`, global error estimate in `global_error`
+        @test !(sol.u[end] isa ArrayPartition)
+        @test eltype(sol.u) === Vector{Float64}
+        @test sol.global_error !== nothing
+        @test length(sol.global_error) == length(sol.u)
+        @test global_error_estimate(sol) === sol.global_error
+        # dense output projects onto the solution component at full order
+        for t in (0.3, 1.3, 2.0)
+            yt = sol(t)
+            @test !(yt isa ArrayPartition)
+            @test isapprox(yt[1], prince_exact(t); atol = 1.0e-2)
+        end
+        # vector-t dense output too
+        ys = sol([0.5, 1.5])
+        @test length(ys) == 2 && all(!(y isa ArrayPartition) for y in ys)
+    end
+end
+
 @testset "GLEE estimate tracks the true error" begin
     prob = ODEProblem(f_prince!, [0.0], prince_tspan)
     for alg in (GLEE23(), GLEE24(), GLEE35(), MM5GEE())
         sol = solve(prob, alg; dt = 1 / 128, adaptive = false)
-        err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
+        err = prince_exact(prince_tspan[2]) - sol.u[end][1]
         est = global_error_estimate(sol)[end][1]
         @test est / err ≈ 1 rtol = 0.1
     end
@@ -63,7 +86,7 @@ end
     for alg in (GLEE24(), MM5GEE())
         sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
         @test SciMLBase.successful_retcode(sol)
-        err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
+        err = prince_exact(prince_tspan[2]) - sol.u[end][1]
         est = global_error_estimate(sol)[end][1]
         @test isfinite(est)
         @test est / err ≈ 1 rtol = 0.6
@@ -72,12 +95,16 @@ end
 
 @testset "GLEE integrator interface" begin
     prob = ODEProblem(f_prince!, [0.0], prince_tspan)
+    # The low-level integrator carries the partitioned (y, ε) state internally.
     integrator = init(prob, GLEE24(); dt = 1 / 64, adaptive = false)
     @test integrator.u isa ArrayPartition
     solve!(integrator)
-    sol = integrator.sol
-    @test SciMLBase.successful_retcode(sol)
-    err = prince_exact(prince_tspan[2]) - sol.u[end].x[1][1]
+    @test SciMLBase.successful_retcode(integrator.sol)
+    # `solve` returns the split solution: ordinary `u`, error in `global_error`.
+    sol = solve(prob, GLEE24(); dt = 1 / 64, adaptive = false)
+    @test !(sol.u[end] isa ArrayPartition)
+    @test SciMLBase.has_global_error(GLEE24())
+    err = prince_exact(prince_tspan[2]) - sol.u[end][1]
     @test global_error_estimate(sol)[end][1] / err ≈ 1 rtol = 0.1
 end
 
