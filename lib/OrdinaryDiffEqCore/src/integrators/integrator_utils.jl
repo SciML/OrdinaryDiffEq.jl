@@ -206,9 +206,12 @@ end
 # (stage limiters are applied per stage inside `perform_step!`). Applying it here
 # rather than inside each `perform_step!` keeps a single application point and
 # avoids double application when a method borrows another's `perform_step!` (e.g.
-# multistep startup steps).
+# multistep startup steps). A non-trivial step limiter can modify the endpoint, so
+# the FSAL derivative must be refreshed before the next step.
 @inline function apply_solve_step_limiter!(integrator, t)
-    integrator.opts.step_limiter!(integrator.u, integrator, integrator.p, t)
+    step_limiter! = integrator.opts.step_limiter!
+    step_limiter!(integrator.u, integrator, integrator.p, t)
+    step_limiter! !== trivial_limiter! && (integrator.reeval_fsal = true)
     return nothing
 end
 
@@ -608,7 +611,6 @@ function _loopfooter!(integrator)
         integrator.accept_step = false
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
-        apply_solve_step_limiter!(integrator, ttmp)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
         integrator.accept_step = (
             !integrator.isout &&
@@ -623,6 +625,7 @@ function _loopfooter!(integrator)
         )
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
+            apply_solve_step_limiter!(integrator, ttmp)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
 
@@ -1322,7 +1325,9 @@ integrators that need to respond to callback-induced changes.
 """
 handle_callback_modifiers!(integrator::ODEIntegrator) = nothing
 
-function reset_fsal!(integrator)
+reset_fsal!(integrator) = reset_fsal!(integrator, integrator.cache)
+
+function reset_fsal!(integrator, _cache)
     # Under these conditions, these algorithms are not FSAL anymore
     increment_nf!(integrator.stats, 1)
 
