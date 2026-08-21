@@ -1786,9 +1786,9 @@ version = "2.26.0"
 
 [[deps.Roots]]
 deps = ["Accessors", "CommonSolve", "Printf"]
-git-tree-sha1 = "7fb25a964849d90a0446366cdefca822e0e84900"
+git-tree-sha1 = "13a9e0164267bb9ebc55c1c5d72fceea8f09555b"
 uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-version = "3.0.6"
+version = "3.0.7"
 
     [deps.Roots.extensions]
     RootsChainRulesCoreExt = "ChainRulesCore"
