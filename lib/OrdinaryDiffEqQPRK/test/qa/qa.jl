@@ -1,11 +1,10 @@
-using SciMLTesting, OrdinaryDiffEqQPRK, Test
-
-# SciMLBase names re-exported for ordinary ODE usage; everything else stays behind `SciMLBase.`.
-const SCIMLBASE_REEXPORTS = (:ODEProblem, :solve)
+using SciMLTesting, OrdinaryDiffEqQPRK, SciMLBase, Test
 
 run_qa(
     OrdinaryDiffEqQPRK;
-    reexports_allow = SCIMLBASE_REEXPORTS,
+    # Approve the SciMLBase names this package re-exports. The list itself and the rule
+    # behind it are checked repo-wide by test/qa/qa_tests.jl against docs/src/api/reexports.md.
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqQPRK)),
     explicit_imports = true,
     ei_kwargs = (
         all_explicit_imports_are_public = (

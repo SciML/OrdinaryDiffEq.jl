@@ -2,7 +2,9 @@
 
 OrdinaryDiffEq re-exports the common problem, callback, solve, and automatic
 differentiation interfaces needed to construct and solve ordinary differential
-equations.
+equations. The exact set of
+re-exported SciMLBase names, and the rule that decides it, are given in
+[Re-exported SciMLBase API](@ref).
 
 ## Solve interface
 
