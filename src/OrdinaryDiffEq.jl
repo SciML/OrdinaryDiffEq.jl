@@ -63,7 +63,7 @@ const AutoDePSpecialize = SciMLBase.AutoDePSpecialize
 using DiffEqBase: DEVerbosity
 
 # Import ADTypes for autodiff specification
-using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, AutoSparse
+using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff, NoAutoDiff, AutoSparse
 
 # Import from OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: OrdinaryDiffEqCore
@@ -123,7 +123,7 @@ export DEVerbosity
 export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
 
 # ADTypes
-export AutoForwardDiff, AutoFiniteDiff, AutoSparse
+export AutoForwardDiff, AutoFiniteDiff, NoAutoDiff, AutoSparse
 
 # Default algorithm
 export DefaultODEAlgorithm
