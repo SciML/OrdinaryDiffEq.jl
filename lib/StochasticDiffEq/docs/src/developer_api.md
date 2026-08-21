@@ -6,6 +6,33 @@ extend the stochastic solver infrastructure, but they are not general
 user-facing API. User code should prefer the documented solver constructors and
 the high-level `solve` interface.
 
+## Extension contract
+
+Solver subpackages extend this layer through a small set of generic dispatches:
+
+- An iterated-integral evaluator is selected with [`StochasticDiffEqCore.get_Jalg`](@ref).
+  Implementations must provide the matching out-of-place
+  [`StochasticDiffEqCore.get_iterated_I`](@ref) method, or the in-place
+  [`StochasticDiffEqCore.get_iterated_I!`](@ref) method that writes into the
+  evaluator's preallocated `J` field. Use `AbstractJDiagonal` only for diagonal
+  noise and `AbstractJCommute` only when the noise is commutative.
+- An SDE algorithm's cache is created through
+  [`StochasticDiffEqCore.alg_cache`](@ref). A solver package supplies one method
+  for its algorithm and returns the cache consumed by `perform_step!`; the
+  `Val{iip}` argument must select the matching in-place or out-of-place layout.
+  Cache accessors must preserve the resize and random-number-buffer conventions
+  used by the generic cache utilities.
+- Algorithm-selection methods such as
+  [`StochasticDiffEqCore.alg_compatible`](@ref),
+  [`StochasticDiffEqCore.alg_needs_extra_process`](@ref), and
+  [`StochasticDiffEqCore.alg_stability_size`](@ref) describe properties of the
+  algorithm, not the problem's user-facing solve interface. Add methods for a
+  new algorithm only when the generic solver calls them for that property.
+
+These methods are extension points between solver packages. They are versioned
+developer API, but applications should use the solver constructors and
+`solve(prob, alg)` rather than calling them directly.
+
 ```@docs
 StochasticDiffEqCore.AbstractJ
 StochasticDiffEqCore.AbstractJCommute
