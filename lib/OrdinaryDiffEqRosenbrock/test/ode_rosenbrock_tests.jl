@@ -1,9 +1,11 @@
 using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
+using ArrayInterface: aos_to_soa
 using RecursiveArrayTools: ArrayPartition
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
     prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 import LinearSolve
+import ReverseDiff
 
 if isempty(VERSION.prerelease)
     using Enzyme
@@ -557,4 +559,21 @@ end
         # And the answer must match the in-place reference, not merely not-error.
         @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
     end
+end
+
+@testset "OOP Rosenbrock preserves ReverseDiff tracked states" begin
+    tracked_f(u, p, t) = aos_to_soa([u[2], -p[1]])
+
+    function tracked_loss(x)
+        prob = ODEProblem{false}(tracked_f, x[1:2], (0.0, 0.2), x[3:3])
+        integrator = init(
+            prob, Rosenbrock23(autodiff = AutoFiniteDiff());
+            abstol = 1.0e-10, reltol = 1.0e-10, save_everystep = false
+        )
+        sol = solve!(integrator)
+        return sum(sol.u[end])
+    end
+
+    gradient = ReverseDiff.gradient(tracked_loss, [1.0, 0.0, 9.81])
+    @test gradient ≈ [1.0, 1.2, -0.22]
 end

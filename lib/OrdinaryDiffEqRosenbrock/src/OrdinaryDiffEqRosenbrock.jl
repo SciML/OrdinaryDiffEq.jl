@@ -20,8 +20,12 @@ using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
 using ArrayInterface: ArrayInterface
 
-# Map flat linear-solve results onto the state container (ArrayPartition-safe).
-@inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
+# Map flat linear-solve results onto the state container and restore AD storage wrappers.
+@inline function _restructure_state(template, x)
+    restructured = ArrayInterface.restructure(template, x)
+    restructured_soa = ArrayInterface.aos_to_soa(restructured)
+    return restructured_soa isa typeof(template) ? restructured_soa : restructured
+end
 @inline _restructure_state(template::Number, x) = oftype(template, x)
 import DifferentiationInterface as DI
 import LinearSolve
