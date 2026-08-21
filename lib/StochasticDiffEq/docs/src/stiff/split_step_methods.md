@@ -6,15 +6,7 @@ When both drift and diffusion terms are stiff, split-step methods treat both par
 
 ### ISSEM - Implicit Split-Step Euler-Maruyama
 
-```@docs
-ISSEM
-```
-
 ### ISSEulerHeun - Implicit Split-Step Euler-Heun
-
-```@docs
-ISSEulerHeun
-```
 
 ## When to Use Split-Step Methods
 
