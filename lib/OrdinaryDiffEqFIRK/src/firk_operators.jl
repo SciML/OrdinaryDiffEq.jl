@@ -123,35 +123,15 @@ set_W_gamma!(W::LazyW, γ) = (W.gamma = inv(γ); W)
 Stage matrix for the real FIRK stage. `build_J_W` returns a `WOperator` whenever a
 Jacobian-vector product is available, which includes `concrete_jac = true` with a
 factorization `linsolve`. FIRK assembles its own shifted matrices entrywise, so a lazy `W`
-over a concrete `J` is only useful when the linear solver is itself matrix-free; otherwise
-fall back to a concrete matrix.
+over a concrete `J` is only useful when the linear solver either is itself matrix-free or
+consumes the split form directly (`LHLFactorization`, which reduces `J` once and absorbs
+each stage shift in O(n²)); otherwise fall back to a concrete matrix.
 """
 function firk_real_W(alg, J, W)
     (is_lazy_W(W) && !(J isa AbstractSciMLOperator)) || return W
+    alg.linsolve isa LinearSolve.LHLFactorization && return W
     (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve)) || return W
-    _firk_reject_reduction_reuse(alg)
     return recursivefill!(similar(J), false)
-end
-
-"""
-    _firk_reject_reduction_reuse(alg)
-
-Refuse a linear solver whose whole value is reusing one factorization of `J` across many
-stage matrices, because FIRK assembles those stage matrices and cannot offer it that.
-
-A FIRK step forms a real stage matrix and a complex-conjugate pair from a single Jacobian,
-and this function is reached exactly where the split form is discarded for a concrete one.
-`LHLFactorization` would then re-reduce from scratch for every stage matrix — measured 5.2×
-slower than `LUFactorization` on a 128-unknown Brusselator, at identical step counts and
-error, with 279 stage-matrix updates against 3 Jacobians. That is precisely the workload it
-is built for, so the loss is a missing feature rather than a bad fit; see
-https://github.com/SciML/OrdinaryDiffEq.jl/issues/4281.
-"""
-function _firk_reject_reduction_reuse(alg)
-    alg.linsolve isa LinearSolve.LHLFactorization || return nothing
-    throw(
-        ArgumentError("$(nameof(typeof(alg))) cannot yet reuse an LHLFactorization reduction: it assembles a real and a complex stage matrix per step, so the reduction would be re-taken for each one — measurably slower than a plain LU. Use `linsolve = LUFactorization()` (or a Krylov solver for a matrix-free Jacobian). Reusing one reduction across both stage matrices is tracked in https://github.com/SciML/OrdinaryDiffEq.jl/issues/4281.")
-    )
 end
 
 """
@@ -163,6 +143,15 @@ real stage matrix `W1` is concrete, and a lazily-applied [`ComplexWOperator`](@r
 """
 function build_complex_W(alg, f, u, J, W1)
     is_lazy_W(W1) || return recursivefill!(similar(J, Complex{eltype(W1)}), false)
+    if alg.linsolve isa LinearSolve.LHLFactorization && !(J isa AbstractSciMLOperator)
+        # Same split `-MM/gamma + J` shape as the real stage, only with a complex `gamma`
+        # slot. The Jacobian object is shared with the real stage — one `calc_J!` serves
+        # every stage matrix — while inside the linear solver the reduction stays real and
+        # only the shift goes complex.
+        return SciMLOperators.WOperator{true}(
+            f.mass_matrix, complex(one(eltype(W1))), J, complex.(_vec(u))
+        )
+    end
     if alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve)
         error(
             "$(nameof(typeof(alg))) got a non-concrete (operator) Jacobian, which can only " *
@@ -176,6 +165,7 @@ function build_complex_W(alg, f, u, J, W1)
     return ComplexWOperator(f.mass_matrix, complex(one(eltype(W1))), J, u, jacvec)
 end
 
+
 """
     firk_new_J!(J, W, integrator, cache)
 
@@ -183,7 +173,7 @@ Refresh the Jacobian for a new step: recompute a concrete `J` in place, or move 
 matrix-free Jacobian's linearization point to `(uprev, p, t)`. `W` carries the
 Jacobian-vector-product operator when one exists alongside a concrete `J`.
 """
-function firk_new_J!(J, W, integrator, cache)
+function firk_new_J!(J, W, integrator, cache, extra_Ws...)
     (; uprev, p, t) = integrator
     if J isa AbstractSciMLOperator
         SciMLOperators.update_coefficients!(J, uprev, p, t)
@@ -194,8 +184,17 @@ function firk_new_J!(J, W, integrator, cache)
     if jacvec !== nothing && jacvec !== J
         SciMLOperators.update_coefficients!(jacvec, uprev, p, t)
     end
+    # Every stage matrix viewing this Jacobian must hear that it moved; a linear solver
+    # caching a factorization of `J` across steps (LHLFactorization) has no other way to
+    # tell an in-place refresh from the unchanged object.
+    _mark_J_moved!(W)
+    foreach(_mark_J_moved!, extra_Ws)
     return nothing
 end
+
+_mark_J_moved!(W::SciMLOperators.WOperator) = SciMLOperators.mark_jacobian_updated!(W)
+_mark_J_moved!(Ws::AbstractVector) = foreach(_mark_J_moved!, Ws)
+_mark_J_moved!(::Any) = nothing
 
 # A `ComplexWOperator` applies the same real JVP operator its `W` does, so the products it
 # performs are already on that operator's tally and `drain_jvp_count!` needs nothing else.
