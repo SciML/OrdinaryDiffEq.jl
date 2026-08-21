@@ -419,6 +419,16 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, z, fS, zemb, nlsolver, tab) = cache
     (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
+
+    # Left endpoint derivative for the Hermite interpolant (k[1]). These methods
+    # are not FSAL, so nothing refreshes k[1] between steps and it would otherwise
+    # keep the value initialize! gave it for the whole solve.
+    f.f1(integrator.fsalfirst, uprev, p, t)
+    f.f2(cache.f1eval, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsalfirst = integrator.fsalfirst + cache.f1eval
+
     alg = unwrap_alg(integrator, true)
     m = alg.m
     s = length(Δc)
@@ -454,7 +464,7 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
     end
     @.. broadcast = false u = z[s + 1]
 
-    return if integrator.opts.adaptive
+    if integrator.opts.adaptive
         if isempty(Wemb0)
             @.. broadcast = false tmp = u - z[s]
         else
@@ -472,6 +482,14 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    # Right endpoint derivative for the Hermite interpolant (k[2]).
+    f.f1(integrator.fsallast, u, p, t + dt)
+    f.f2(cache.f1eval, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsallast = integrator.fsallast + cache.f1eval
+    return nothing
 end
 
 @muladd function perform_step!(
@@ -480,6 +498,14 @@ end
     (; t, dt, uprev, f, p) = integrator
     (; nlsolver, tab, z, fS) = cache
     (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
+
+    # Left endpoint derivative for the Hermite interpolant (k[1]). These methods
+    # are not FSAL, so nothing refreshes k[1] between steps and it would otherwise
+    # keep the value initialize! gave it for the whole solve.
+    integrator.fsalfirst = f.f1(uprev, p, t) + f.f2(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+
     alg = unwrap_alg(integrator, true)
     m = alg.m
     s = length(Δc)
@@ -534,4 +560,12 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    # Right endpoint derivative for the Hermite interpolant (k[2]).
+    integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end
