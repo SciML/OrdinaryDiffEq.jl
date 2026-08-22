@@ -1,9 +1,10 @@
 name = "GlobalDiffEq"
 uuid = "1d72d19b-84cc-4cb7-a099-7cbdb9ccc67c"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com> and contributors"]
-version = "1.3.1"
+version = "1.4.0"
 
 [deps]
+Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -22,6 +23,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
 
 [compat]
+Accessors = "0.1.42"
 DiffEqBase = "7"
 FastBroadcast = "1.3"
 LinearAlgebra = "1"
@@ -34,7 +36,7 @@ RecursiveArrayTools = "4.2.0"
 Reexport = "0.2, 1.0"
 Richardson = "1.2"
 SafeTestsets = "0.0.1, 0.1"
-SciMLBase = "3"
+SciMLBase = "3.49"
 SciMLTesting = "2.4"
 Test = "1"
 julia = "1.10"

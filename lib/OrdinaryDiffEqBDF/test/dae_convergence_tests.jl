@@ -104,10 +104,7 @@ end
 
 f_dae_linear = (du, u, p, t) -> (@. du - u)
 function f_dae_linear_jac(du, u, p, gamma, t)
-    J = zeros(2, 2)
-    J[1, 1] = gamma - 1.0
-    J[2, 2] = gamma - 1.0
-    return
+    return gamma - 1.0
 end
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_oop = DAEProblem(
