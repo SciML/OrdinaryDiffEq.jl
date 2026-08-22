@@ -575,20 +575,19 @@ end
 # per-`Val{num_stages}` specializations, so no compile-time blowup) and the
 # inner term expansion unrolls statically so the sweep SIMD-vectorizes.
 # `Array` states take these; anything without fast scalar indexing (GPU etc.)
-# keeps the per-coefficient broadcast fallback.
-#
-# Stage-loop fusion is capped at 5 prior stages (`@nif 5`). Rodas4 / Rodas4P
-# (max nks = 5) stay on the fused path; Rodas5P stages 7–8 (nks = 6, 7) use
-# the broadcast fallback. The previous 8-term cap from #3935 caused Rodas5P
-# step-size collapse (accepted micro-steps, MaxIters) on stiff singular
-# mass-matrix DAEs where Rodas4 still succeeded — see #3974. Longer
-# `b` / `btilde` / dense-output sums still fuse up to 8 terms.
+# keeps the per-coefficient broadcast fallback. Beyond 8 fused terms (only
+# Rodas6P's late stages) the fallback path is used as well.
 
 @inline function _madd_terms(acc, idx, cs::Tuple, karrs::Tuple)
-    return _madd_terms(
-        muladd(first(cs), (@inbounds first(karrs)[idx]), acc),
-        idx, Base.tail(cs), Base.tail(karrs)
-    )
+    c = first(cs)
+    # Exact-zero coefficients (e.g. Rodas5P's btilde = [0,0,0,0,0,0,0,1]) must
+    # skip their term rather than multiply through: 0 * NaN/Inf is NaN, so a
+    # transient non-finite value in an unrelated, zero-weighted stage (from an
+    # ill-conditioned early-stage solve, e.g. right after a callback-driven
+    # parameter jump) would otherwise silently poison the whole accumulation
+    # even though the mathematically correct result never depends on that term.
+    newacc = iszero(c) ? acc : muladd(c, (@inbounds first(karrs)[idx]), acc)
+    return _madd_terms(newacc, idx, Base.tail(cs), Base.tail(karrs))
 end
 @inline _madd_terms(acc, idx, ::Tuple{}, ::Tuple{}) = acc
 
@@ -616,15 +615,14 @@ end
         out::Array, base::Array, A::AbstractMatrix, ks::Vector{<:Array}, stage::Int
     )
     nks = stage - 1
-    # Cap at 5 (#3974). Also avoid the ivdep fused kernel when out === base
-    # (mass-matrix RHS accumulates into du1 in place).
-    if out === base || nks > 5 || nks < 1
-        return _stage_accum_fallback!(out, base, A, ks, stage)
-    end
-    Base.Cartesian.@nif 5 n -> (nks == n) n -> begin
-        cs = Base.Cartesian.@ntuple n i -> A[stage, i]
-        ka = Base.Cartesian.@ntuple n i -> ks[i]
-        _fused_lincomb!(out, base, cs, ka)
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> A[stage, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(out, base, cs, ka)
+        end
+    else
+        _stage_accum_fallback!(out, base, A, ks, stage)
     end
     return nothing
 end
@@ -646,17 +644,18 @@ end
         ks::Vector{<:Array}, stage::Int
     )
     nks = stage - 1
-    if nks > 5 || nks < 1
-        return _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage)
-    end
-    Base.Cartesian.@nif 5 n -> (nks == n) n -> begin
-        cs = Base.Cartesian.@ntuple n i -> dtC[stage, i]
-        ka = Base.Cartesian.@ntuple n i -> ks[i]
-        @inbounds @simd ivdep for idx in eachindex(linsolve_tmp)
-            linsolve_tmp[idx] = _madd_terms(
-                muladd(dtd_s, dT[idx], du[idx]), idx, cs, ka
-            )
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> dtC[stage, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            @inbounds @simd ivdep for idx in eachindex(linsolve_tmp)
+                linsolve_tmp[idx] = _madd_terms(
+                    muladd(dtd_s, dT[idx], du[idx]), idx, cs, ka
+                )
+            end
         end
+    else
+        _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage)
     end
     return nothing
 end
