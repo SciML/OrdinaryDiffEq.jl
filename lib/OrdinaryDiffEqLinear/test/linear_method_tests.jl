@@ -93,14 +93,31 @@ test_setup = Dict(:alg => Vern6(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, CG3(), test_setup)
 @test sim.𝒪est[:l2] ≈ 3 atol = 0.2
 
-A = MatrixOperator(ones(2, 2); update_func!)
-prob = ODEProblem(A, ones(2), (0, 30.0))
-sol1 = solve(prob, Vern9(), dt = 1 / 4)
-sol2 = solve(prob, CG4a(), dt = 1 / 4)
-dts = (0.38) .^ (6:-1:1)
+# CG4a is a commutator-free Magnus method, derived for `u' = A(t) u`. It is fourth order
+# there, and this measures that on a non-commuting `A(t)`.
+function cg4a_time_dependent!(A, u, p, t)
+    A[1, 1] = 0
+    A[2, 1] = sin(t)
+    A[1, 2] = -1
+    A[2, 2] = 0
+    return
+end
+A = MatrixOperator(ones(2, 2); update_func! = cg4a_time_dependent!)
+prob = ODEProblem(A, ones(2), (0, 5.0))
+dts = 1 ./ 2 .^ (7:-1:2)
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, CG4a(), test_setup)
-@test sim.𝒪est[:l2] ≈ 4 atol = 0.28
+@test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+
+# On the state-dependent `A(u)` above it drops to third order, which is the usual order
+# reduction for a Lie group method outside the problem class it was derived for. This grid is
+# inside the asymptotic regime; the previous one reached dt = 0.38, where the error is 24 and
+# the least-squares slope is a fit to the pre-asymptotic tail rather than an order (#3466).
+A = MatrixOperator(ones(2, 2); update_func!)
+prob = ODEProblem(A, ones(2), (0, 30.0))
+dts = 1 ./ 2 .^ (11:-1:8)
+sim = analyticless_test_convergence(dts, prob, CG4a(), test_setup)
+@test sim.𝒪est[:l2] ≈ 3 atol = 0.1
 
 function update_func!(A, u, p, t)
     A[1, 1] = 0
