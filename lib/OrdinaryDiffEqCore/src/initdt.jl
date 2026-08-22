@@ -14,6 +14,17 @@
     return r isa Bool ? r : all(r)
 end
 
+# Keep exception-handling control flow out of callers differentiated in forward mode.
+Base.@noinline function _try_init_mass_matrix_solve!(integrator, ftmp, mass_matrix, f₀)
+    try
+        integrator.alg.linsolve(ftmp, copy(mass_matrix), f₀, true)
+        copyto!(f₀, ftmp)
+        return true
+    catch
+        return false
+    end
+end
+
 @muladd function _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
@@ -148,10 +159,7 @@ end
                 any(mm != I for mm in prob.f.mass_matrix)
         )
         ftmp = zero(f₀)
-        try
-            integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
-            copyto!(f₀, ftmp)
-        catch
+        if !_try_init_mass_matrix_solve!(integrator, ftmp, prob.f.mass_matrix, f₀)
             result_dt = tdir * max(smalldt, dtmin)
             @SciMLMessage(
                 lazy"Mass matrix appears singular, using default small timestep: dt = $(result_dt)",
