@@ -75,3 +75,39 @@ end
         @test all(isfinite, sol_grid.u[end])
     end
 end
+
+@testset "definite assignment paths" begin
+    f_oop(u, p, t) = -u
+    g_diag_oop(u, p, t) = 0.1u
+    g_full_oop(u, p, t) = [0.1u[1] 0.05u[2]; 0.05u[1] 0.1u[2]]
+    f_iip(du, u, p, t) = (du .= -u)
+    g_diag_iip(du, u, p, t) = (du .= 0.1 .* u)
+    function g_full_iip(du, u, p, t)
+        du[1, 1] = 0.1u[1]
+        du[1, 2] = 0.05u[2]
+        du[2, 1] = 0.05u[1]
+        du[2, 2] = 0.1u[2]
+        return nothing
+    end
+
+    u0 = [1.0, 0.5]
+    tspan = (0.0, 0.125)
+    nrp = zeros(2, 2)
+    problems = (
+        SDEProblem(f_oop, g_diag_oop, u0, tspan),
+        SDEProblem(f_iip, g_diag_iip, u0, tspan),
+        SDEProblem(f_oop, g_full_oop, u0, tspan; noise_rate_prototype = nrp),
+        SDEProblem(f_iip, g_full_iip, u0, tspan; noise_rate_prototype = nrp),
+    )
+
+    for alg in (SROCK1(), SKSROCK(post_processing = true), TangXiaoSROCK2())
+        @testset "$(nameof(typeof(alg)))" begin
+            for (i, prob) in enumerate(problems)
+                Random.seed!(100 + i)
+                sol = solve(prob, alg; dt = 1 / 64, adaptive = false)
+                @test SciMLBase.successful_retcode(sol)
+                @test all(isfinite, sol.u[end])
+            end
+        end
+    end
+end
