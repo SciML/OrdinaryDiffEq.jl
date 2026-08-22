@@ -15,7 +15,7 @@ end
 
 const LONGER_TESTS = false
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 
@@ -59,6 +59,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Callable tstops Tests" begin
             include("callable_tstops_tests.jl")
+        end
+        @time @safetestset "SDE stats nf Tests" begin
+            include("stats_tests.jl")
         end
         @time @safetestset "Integrator RNG Tests" begin
             include("rng_integrator_tests.jl")
@@ -131,6 +134,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Non-diagonal EulerHeun sparse alloc" begin
             include("nondiag_noise_eulerheun_test.jl")
+        end
+        @time @safetestset "Sparse noise_rate_prototype Tests" begin
+            include("sparse_noise_tests.jl")
         end
         @time @safetestset "No Index Tests" begin
             include("noindex_tests.jl")

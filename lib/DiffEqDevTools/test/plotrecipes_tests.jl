@@ -112,7 +112,7 @@ end
     names = ["SRIW1", "EM", "RKMil", "SRIW1 Fixed", "SRA1 Fixed", "SRA1"]
     wp = WorkPrecisionSet(
         prob, abstols, reltols, setups; numruns = 10,
-        names = names, maxiters = 1.0e7, error_estimate = :l2
+        names, maxiters = 1.0e7, error_estimate = :l2
     )
 
     plt = @test_nowarn plot(wp)

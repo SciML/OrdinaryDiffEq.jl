@@ -41,7 +41,7 @@ methods when stiffness is detected. It chooses among `Tsit5`, `Vern7`,
 `Rosenbrock23`, `Rodas5P`, and `FBDF`, using Krylov-based `FBDF` for larger stiff
 systems.
 
-# Keyword Arguments
+# Keywords
 
   - `lazy`: controls lazy tableau construction for `Vern7`.
   - `stiffalgfirst`: start on the stiff solver branch when `true`.
@@ -51,9 +51,11 @@ systems.
 
 ```julia
 using OrdinaryDiffEqDefault
+using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -u[1]
+    return
 end
 
 prob = ODEProblem(f!, [1.0], (0.0, 1.0))
@@ -61,7 +63,7 @@ sol = solve(prob, DefaultODEAlgorithm(); reltol = 1.0e-6, abstol = 1.0e-8)
 ```
 """
 function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
-    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    nonstiff = (Tsit5(), Vern7(; lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
         FBDF(; linsolve = LinearSolve.KrylovJL_GMRES(), kwargs...),
@@ -79,6 +81,11 @@ end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractODEProblem, ::Nothing) = true
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractDAEProblem, ::Nothing) = true
+
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::ODEProblem) =
+    DefaultODEAlgorithm(autodiff = AutoFiniteDiff())
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::DAEProblem) =
+    DFBDF(autodiff = AutoFiniteDiff())
 
 function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     return SciMLBase.__init(
@@ -216,7 +223,7 @@ This is useful when a problem is expected to be stiff but can still benefit from
 automatic switching. The nonstiff branch contains `Tsit5` and `Vern7`; the stiff
 branch contains `Rosenbrock23`, `Rodas5P`, and `FBDF` variants.
 
-# Keyword Arguments
+# Keywords
 
   - `lazy`: controls lazy tableau construction for `Vern7`.
   - `stol`: stiffness-detection tolerance passed as `stifftol`.
@@ -227,9 +234,11 @@ branch contains `Rosenbrock23`, `Rodas5P`, and `FBDF` variants.
 
 ```julia
 using OrdinaryDiffEqDefault
+using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -1000u[1]
+    return
 end
 
 prob = ODEProblem(f!, [1.0], (0.0, 1.0))
@@ -237,7 +246,7 @@ sol = solve(prob, DefaultImplicitODEAlgorithm(); reltol = 1.0e-8, abstol = 1.0e-
 ```
 """
 function DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
-    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    nonstiff = (Tsit5(), Vern7(; lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),
         FBDF(; kwargs...),

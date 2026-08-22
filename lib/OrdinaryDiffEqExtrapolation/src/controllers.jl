@@ -1,18 +1,47 @@
 """
-    ExtrapolationController(; qmin, qmax, gamma, qsteady_min, qsteady_max,
-                            qmax_first_step, failfactor)
-    ExtrapolationController(::Type{QT}, alg; kwargs...)
+    ExtrapolationController(; kwargs...) -> ExtrapolationController
+    ExtrapolationController(::Type{QT}, alg; kwargs...) -> ExtrapolationController
 
-Step-size controller for the extrapolation family
-(`ExtrapolationMidpointDeuflhard`, `ExtrapolationMidpointHairerWanner`,
-`ImplicitDeuflhardExtrapolation`, `ImplicitHairerWannerExtrapolation`,
-`ImplicitEulerExtrapolation`, `ImplicitEulerBarycentricExtrapolation`).
-Composes the standard step-size knobs via `CommonControllerOptions`; the
-per-step order-and-stepsize selection (Deuflhard / Hairer–Wanner style
-"work per step" minimization) lives in the algorithm-specific
-`stepsize_controller_internal!` / `step_accept_controller!` /
-`step_reject_controller!` methods, so the controller-cache dispatch falls
-through to alg-level logic.
+Internal step-size controller for the extrapolation algorithms. OrdinaryDiffEq selects
+this controller automatically; solver users should not construct or dispatch on it.
+
+!!! warning "Developer implementation"
+    This type is implementation machinery, not user-facing API. Its representation and
+    direct construction may change as the extrapolation controller evolves.
+
+# Arguments
+
+- `QT::Type`: scalar type used to resolve controller options.
+- `alg`: extrapolation algorithm whose default controller options are used.
+
+# Keywords
+
+- `qmin`: lower bound on the step-size reduction factor.
+- `qmax`: upper bound on the step-size growth factor.
+- `qmax_first_step`: upper growth bound after the first accepted step.
+- `gamma`: safety factor applied to a proposed step-size change.
+- `qsteady_min`: lower edge of the interval in which the step size is unchanged.
+- `qsteady_max`: upper edge of the interval in which the step size is unchanged.
+- `failfactor`: step-size reduction factor after a nonlinear-solver failure.
+- `discontinuity_detection`: enable autonomous discontinuity detection when `true`.
+
+Omitted keywords use the defaults associated with `alg` when the controller cache is
+created.
+
+# Returns
+
+- `ExtrapolationController`: unresolved controller when `QT` and `alg` are omitted, or
+  a controller whose common options have been resolved to `QT` otherwise.
+
+# Examples
+
+```julia
+import OrdinaryDiffEqExtrapolation
+using OrdinaryDiffEqExtrapolation: ExtrapolationMidpointDeuflhard
+
+alg = ExtrapolationMidpointDeuflhard()
+controller = OrdinaryDiffEqExtrapolation.ExtrapolationController(Float64, alg)
+```
 """
 struct ExtrapolationController{B <: Union{NamedTuple, OrdinaryDiffEqCore.CommonControllerOptions}} <: AbstractController
     basic::B
@@ -35,7 +64,7 @@ mutable struct ExtrapolationControllerCache{QT, E, NLPType} <: AbstractControlle
 end
 
 function setup_controller_cache(alg, cache, controller::ExtrapolationController, ::Type{E}, disco_probs) where {E}
-    QT = OrdinaryDiffEqCore._resolved_QT(controller.basic)
+    QT = _controller_scalar_type(controller.basic)
     basic = OrdinaryDiffEqCore.resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = ExtrapolationController(basic)
     T = QT
@@ -97,12 +126,12 @@ function stepsize_controller_internal!(
     else
         # Update gamma and beta1
         cache.beta1 = typeof(cache.beta1)(1 // (2integrator.cache.n_curr + 1))
-        cache.gamma = FastPower.fastpower(
+        cache.gamma = fastpower(
             typeof(cache.gamma)(1 // 4),
             cache.beta1
         )
         # Compute new stepsize scaling
-        qtmp = FastPower.fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
+        qtmp = fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
             cache.gamma
         @fastmath q = max(inv(get_qmax(integrator)), min(inv(get_qmin(integrator)), qtmp))
     end
@@ -132,14 +161,14 @@ function stepsize_predictor!(
         s_new = stage_number[n_new - alg.min_order + 1]
         # Update gamma and beta1
         cache.beta1 = typeof(cache.beta1)(1 // (2integrator.cache.n_curr + 1))
-        cache.gamma = FastPower.fastpower(
+        cache.gamma = fastpower(
             typeof(cache.gamma)(1 // 4),
             cache.beta1
         )
         # Compute new stepsize scaling
         qtmp = EEst *
-            FastPower.fastpower(
-            FastPower.fastpower(tol, (1.0 - s_curr / s_new)),
+            fastpower(
+            fastpower(tol, (1.0 - s_curr / s_new)),
             cache.beta1
         ) / cache.gamma
         @fastmath q = max(inv(get_qmax(integrator)), min(inv(get_qmin(integrator)), qtmp))
@@ -248,7 +277,7 @@ function stepsize_controller_internal!(
                         (integrator.cache.n_curr - 1)
                 )
             end
-            cache.gamma = FastPower.fastpower(
+            cache.gamma = fastpower(
                 typeof(cache.gamma)(
                     65 //
                         100
@@ -256,7 +285,7 @@ function stepsize_controller_internal!(
                 cache.beta1
             )
             # Compute new stepsize scaling
-            qtmp = FastPower.fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
+            qtmp = fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
                 (cache.gamma)
             @fastmath q = max(
                 inv(get_qmax(integrator)),
@@ -270,7 +299,7 @@ function stepsize_controller_internal!(
         else
             # Update gamma and beta1
             cache.beta1 = typeof(cache.beta1)(1 // (2integrator.cache.n_curr + 1))
-            cache.gamma = FastPower.fastpower(
+            cache.gamma = fastpower(
                 typeof(cache.gamma)(
                     65 //
                         100
@@ -278,7 +307,7 @@ function stepsize_controller_internal!(
                 cache.beta1
             )
             # Compute new stepsize scaling
-            qtmp = FastPower.fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
+            qtmp = fastpower(OrdinaryDiffEqCore.get_EEst(integrator), cache.beta1) /
                 cache.gamma
             @fastmath q = max(
                 inv(get_qmax(integrator)),

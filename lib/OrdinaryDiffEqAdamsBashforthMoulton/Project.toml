@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqAdamsBashforthMoulton"
 uuid = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.1.1"
+version = "2.2.0"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -29,7 +29,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 Pkg = "1"
 Test = "<0.0.1, 1"
 FastBroadcast = "1.3"

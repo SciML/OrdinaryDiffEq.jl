@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase, LinearSolve
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
+using PreallocationTools: get_tmp
 import OrdinaryDiffEqDifferentiation.DI
 
 f(du, u, p, t) = du .= u
@@ -182,7 +183,8 @@ solve!(i)
 function dsdt(ds, s, _, t)
     # state looks like x1,v1, x2,v2, x3,v3,...
     ds[1:2:end] .= s[2:2:end] # velocity changes position
-    return ds[2:2:end] .= -1.0 # (constant downward acceleration)
+    ds[2:2:end] .= -1.0 # (constant downward acceleration)
+    return
 end
 
 function splitCheck(s, t, intgr)
@@ -209,7 +211,8 @@ function splitMod!(intgr)
     # comment out these lines and it will work with Rosenbrock32.
     resize!(intgr, length(s) + 2) # (resizes s -> intgr.u)
     s[end - 1] = rand() # new position
-    return s[end] = rand() # new velocity
+    s[end] = rand() # new velocity
+    return
 end
 
 function runSim(method)
@@ -231,11 +234,23 @@ runSim(Rosenbrock23())
 runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1990
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/3972
 @testset "resize! with SplitODEProblem" begin
     f!(du, u, p, t) = du .= u
     ode = SplitODEProblem(f!, f!, [1.0], (0.0, 1.0))
     integrator = init(ode, Tsit5())
     @test_nowarn step!(integrator)
     @test_nowarn resize!(integrator, 2)
+    # #1990: SplitFunction scratch buffer must grow with the state
+    @test length(integrator.u) == 2
+    @test length(get_tmp(integrator.f._func_cache, integrator.u)) == 2
+    # Julia's resize! leaves new entries undefined. Tsit5's next step reads
+    # uprev (and fsalfirst), so undef/NaN garbage can collapse dt and make the
+    # following @test_nowarn flake. Initialize the new component (same pattern
+    # as splitMod! above) and mark u modified so FSAL is recomputed.
+    integrator.u[2] = 0.0
+    integrator.uprev[2] = 0.0
+    u_modified!(integrator, true)
     @test_nowarn step!(integrator)
+    @test length(integrator.u) == 2
 end

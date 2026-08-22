@@ -1,7 +1,7 @@
 using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
@@ -9,7 +9,9 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "Extrapolation Utility Tests" include("utils_tests.jl")
     @time @safetestset "Extrapolation Tests" include("ode_extrapolation_tests.jl")
+    @time @safetestset "Threading Linear Solver Tests" include("threading_linsolve_tests.jl")
 end
 
 if TEST_GROUP == "Multithreading"

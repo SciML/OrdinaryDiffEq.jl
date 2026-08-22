@@ -2,8 +2,6 @@ using SciMLTesting, OrdinaryDiffEqSSPRK, Test
 
 run_qa(
     OrdinaryDiffEqSSPRK;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
@@ -13,6 +11,8 @@ run_qa(
         # surface.
         all_explicit_imports_are_public = (;
             ignore = (
+                # OrdinaryDiffEqCore — owner-internal, no public alternative
+                :lorenz_pref, :lorenz_pref_params,
                 # SciMLBase private codegen macro (no public counterpart).
                 Symbol("@def"),
                 # OrdinaryDiffEqCore codegen/perf internals kept non-public on
@@ -24,7 +24,10 @@ run_qa(
         ),
         # OrdinaryDiffEqCore precompile-workload test problems (not public API).
         all_qualified_accesses_are_public = (;
-            ignore = (:lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params),
+            ignore = (
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
+                :lorenz_pref, :lorenz_pref_params,
+            ),
         ),
     ),
 )

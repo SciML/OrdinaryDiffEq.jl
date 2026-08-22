@@ -168,7 +168,7 @@ function _ode_addsteps!(
         linsolve = cache.linsolve
 
         linres = dolinsolve(
-            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol
+            cache, linsolve; A = W, b = _vec(linsolve_tmp), cache.reltol
         )
         @.. $(_vec(ks[1])) = -linres.u
         # Last stage affect's ks for Rodas5,5P,6P
@@ -194,7 +194,7 @@ function _ode_addsteps!(
             end
 
             linres = dolinsolve(
-                cache, linsolve; b = _vec(linsolve_tmp), reltol = cache.reltol
+                cache, linsolve; b = _vec(linsolve_tmp), cache.reltol
             )
             @.. $(_vec(ks[stage])) = -linres.u
         end

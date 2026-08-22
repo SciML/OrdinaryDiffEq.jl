@@ -1,27 +1,58 @@
 # IMEX Multistep methods
 
-@doc generic_solver_docstring(
-    "Crank-Nicolson Adams Bashforth Order 2 (fixed time step)",
-    "CNAB2",
-    "IMEX Multistep method.",
-    "@article{jorgenson2014unconditional,
-    title={Unconditional stability of a Crank-Nicolson Adams-Bashforth 2 numerical method},
-    author={JORGENSON, ANDREW D},
-    journal={A (A- C)},
-    volume={1},
-    number={2},
-    pages={1},
-    year={2014}}
-    @article{he2010numerical,
-    title={Numerical implementation of the Crank--Nicolson/Adams--Bashforth scheme for the time-dependent Navier--Stokes equations},
-    author={He, Yinnian and Li, Jian},
-    journal={International journal for numerical methods in fluids},
-    volume={62},
-    number={6},
-    pages={647--659},
-    year={2010},
-    publisher={Wiley Online Library}}", "", ""
-)
+"""
+    CNAB2(;
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :linear
+    )
+
+Second-order Crank-Nicolson Adams-Bashforth IMEX multistep method. The first
+component of a `SplitODEProblem` is treated implicitly with Crank-Nicolson, while
+the second component is treated explicitly with Adams-Bashforth.
+
+`CNAB2` uses fixed time steps. Supply `dt` when solving and do not enable adaptive
+time stepping.
+
+# Fields
+
+  - `linsolve`: optional linear solver configuration used by the implicit solve.
+  - `nlsolve`: nonlinear solver algorithm used for the implicit equation.
+  - `extrapolant`: strategy used to initialize the nonlinear solve.
+  - `autodiff`: automatic-differentiation backend used to construct Jacobians.
+  - `concrete_jac`: controls whether a concrete Jacobian is cached when supported.
+
+# Keywords
+
+  - `autodiff = AutoForwardDiff()`: ADTypes backend used for Jacobian construction.
+  - `concrete_jac = nothing`: retain the default Jacobian-concretization policy. Set a
+    boolean value to request or disable a concrete Jacobian where supported.
+  - `linsolve = nothing`: linear solver algorithm or configuration. `nothing` selects
+    the OrdinaryDiffEq default.
+  - `nlsolve = NLNewton()`: nonlinear solver used for the implicit equation.
+  - `extrapolant = :linear`: initial-guess strategy for the nonlinear solve.
+
+# Returns
+
+An algorithm object that can solve split ODE problems with fixed time steps.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqIMEXMultistep: CNAB2
+using SciMLBase: SplitODEProblem, solve
+
+f_implicit(u, p, t) = -9u
+f_explicit(u, p, t) = -u
+prob = SplitODEProblem(f_implicit, f_explicit, 1.0, (0.0, 1.0))
+sol = solve(prob, CNAB2(), dt = 0.05)
+```
+
+# References
+
+Y. He and J. Li, "Numerical implementation of the Crank-Nicolson/Adams-Bashforth
+scheme for the time-dependent Navier-Stokes equations," *International Journal for
+Numerical Methods in Fluids* 62 (2010), pp. 647-659.
+"""
 struct CNAB2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
@@ -49,27 +80,59 @@ function CNAB2(;
     )
 end
 
-@doc generic_solver_docstring(
-    "Crank-Nicholson Leapfrong 2.",
-    "CNLF2",
-    "IMEX Multistep method.",
-    "@article{han2020second,
-    title={A second order, linear, unconditionally stable, Crank--Nicolson--Leapfrog scheme for phase field models of two-phase incompressible flows},
-    author={Han, Daozhi and Jiang, Nan},
-    journal={Applied Mathematics Letters},
-    volume={108},
-    pages={106521},
-    year={2020},
-    publisher={Elsevier}}
-    @article{jiang2015crank,
-    title={A Crank--Nicolson Leapfrog stabilization: Unconditional stability and two applications},
-    author={Jiang, Nan and Kubacki, Michaela and Layton, William and Moraiti, Marina and Tran, Hoang},
-    journal={Journal of Computational and Applied Mathematics},
-    volume={281},
-    pages={263--276},
-    year={2015},
-    publisher={Elsevier}}", "", ""
-)
+"""
+    CNLF2(;
+        autodiff = AutoForwardDiff(), concrete_jac = nothing, linsolve = nothing,
+        nlsolve = NLNewton(), extrapolant = :linear
+    )
+
+Second-order Crank-Nicolson Leapfrog IMEX multistep method. The first component of
+a `SplitODEProblem` is treated implicitly with Crank-Nicolson, while the second
+component is advanced with an explicit leapfrog formula.
+
+`CNLF2` uses fixed time steps. Supply `dt` when solving and do not enable adaptive
+time stepping.
+
+# Fields
+
+  - `linsolve`: optional linear solver configuration used by the implicit solve.
+  - `nlsolve`: nonlinear solver algorithm used for the implicit equation.
+  - `extrapolant`: strategy used to initialize the nonlinear solve.
+  - `autodiff`: automatic-differentiation backend used to construct Jacobians.
+  - `concrete_jac`: controls whether a concrete Jacobian is cached when supported.
+
+# Keywords
+
+  - `autodiff = AutoForwardDiff()`: ADTypes backend used for Jacobian construction.
+  - `concrete_jac = nothing`: retain the default Jacobian-concretization policy. Set a
+    boolean value to request or disable a concrete Jacobian where supported.
+  - `linsolve = nothing`: linear solver algorithm or configuration. `nothing` selects
+    the OrdinaryDiffEq default.
+  - `nlsolve = NLNewton()`: nonlinear solver used for the implicit equation.
+  - `extrapolant = :linear`: initial-guess strategy for the nonlinear solve.
+
+# Returns
+
+An algorithm object that can solve split ODE problems with fixed time steps.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqIMEXMultistep: CNLF2
+using SciMLBase: SplitODEProblem, solve
+
+f_implicit(u, p, t) = -9u
+f_explicit(u, p, t) = -u
+prob = SplitODEProblem(f_implicit, f_explicit, 1.0, (0.0, 1.0))
+sol = solve(prob, CNLF2(), dt = 0.05)
+```
+
+# References
+
+N. Jiang, M. Kubacki, W. Layton, M. Moraiti, and H. Tran, "A Crank-Nicolson
+Leapfrog stabilization: Unconditional stability and two applications," *Journal of
+Computational and Applied Mathematics* 281 (2015), pp. 263-276.
+"""
 struct CNLF2{AD, F, F2, CJ} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F

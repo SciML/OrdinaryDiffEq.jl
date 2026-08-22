@@ -1,6 +1,8 @@
 """
-    ConvergenceSimulation(solutions, convergence_axis;
-        auxdata = nothing, additional_errors = nothing, expected_value = nothing)
+    ConvergenceSimulation(
+        solutions, convergence_axis;
+        auxdata = nothing, additional_errors = nothing, expected_value = nothing
+    )
 
 Collect solutions and error series from a convergence experiment. The constructor
 combines the error measurements from `solutions` with `additional_errors` and estimates
@@ -24,7 +26,6 @@ function ConvergenceSimulation(
         expected_value = nothing
     )
     N = size(solutions, 1)
-    uEltype = eltype(solutions[1].u[1])
     errors = Dict() #Should add type information
     if expected_value == nothing
         if isnothing(solutions[1].errors) || isempty(solutions[1].errors)
@@ -55,6 +56,66 @@ function ConvergenceSimulation(
 end
 
 """
+    ConvergenceTrajectory(t, u, u_analytic, errors)
+
+The part of a trajectory's solution that a convergence study actually consumes: its
+error measurements and the endpoint values the weak errors are formed from.
+
+[`test_convergence`](@ref) stores one of these per trajectory in place of the full
+solution unless `retain_solutions = true`, which is what keeps a Monte-Carlo study's
+memory proportional to the errors it reports rather than to the solver state it
+happened to allocate along the way.
+"""
+struct ConvergenceTrajectory{tType, uType, EType <: NamedTuple}
+    t::Tuple{tType}
+    u::Tuple{uType}
+    u_analytic::Tuple{uType}
+    errors::EType
+end
+
+"""
+    _convergence_output_func(sol, ctx) -> (ConvergenceTrajectory, false)
+
+`output_func` that reduces a trajectory to its errors and endpoints as soon as it is
+solved, so the ensemble never holds the full solutions at once.
+
+Only valid when the weak timeseries and dense errors are switched off, since those
+need the whole timeseries and the noise process; [`test_convergence`](@ref) checks
+that before installing this.
+"""
+function _convergence_output_func(sol, ctx)
+    # One-tuples rather than one-element vectors, and a NamedTuple rather than the
+    # solver's error `Dict`: `[end]` and key lookup work the same, but a `Dict` alone
+    # costs several hundred bytes per trajectory, which dominates everything else
+    # retained here once the study runs to millions of trajectories.
+    u_analytic = sol.u_analytic === nothing ? sol.u[end] : sol.u_analytic[end]
+    reduced = ConvergenceTrajectory(
+        (sol.t[end],), (sol.u[end],), (u_analytic,), NamedTuple(sol.errors)
+    )
+
+    return (reduced, false)
+end
+
+"""
+    _drop_trajectories(sim::EnsembleTestSolution) -> EnsembleTestSolution
+
+Discard every trajectory but the first, keeping the error statistics that were already
+computed from the full ensemble.
+
+Reducing at `output_func` bounds the peak, but the reduced trajectories still add up
+across step sizes, and once `calculate_ensemble_errors` has run they are dead weight —
+a [`ConvergenceSimulation`](@ref) reads only the error dictionaries. One is kept rather
+than none so that anything reaching for a representative trajectory still finds one.
+"""
+function _drop_trajectories(sim::SciMLBase.EnsembleTestSolution{T, N}) where {T, N}
+    u = sim.u[1:min(1, length(sim.u))]
+    return SciMLBase.EnsembleTestSolution{T, N, typeof(u)}(
+        u, sim.errors, sim.weak_errors, sim.error_means, sim.error_medians,
+        sim.elapsedTime, sim.converged
+    )
+end
+
+"""
     test_convergence(dts, prob, alg[, ensemblealg]; kwargs...)
     test_convergence(probs, convergence_axis, alg; kwargs...)
     test_convergence(setup::ConvergenceSetup, alg; kwargs...)
@@ -66,6 +127,31 @@ is passed to the solver as `dt`. Remaining keyword arguments are forwarded to `s
 The computed solutions must contain error measurements, usually obtained from an
 analytic solution. Use [`analyticless_test_convergence`](@ref) when only a numerical
 reference solution is available.
+
+## Keyword Arguments
+
+  - `retain_solutions`: whether `ConvergenceSimulation.solutions` keeps the trajectory
+    solutions (default `false`). A Monte-Carlo study over many trajectories otherwise
+    retains one complete solution object — solver cache, noise process, problem and
+    interpolation — per trajectory per step size, which for large `trajectories` is
+    orders of magnitude more memory than the error estimates it is computing, and is
+    what put the weak-convergence test groups past a 16 GB runner.
+
+    By default each trajectory is reduced to a [`ConvergenceTrajectory`](@ref) by the
+    ensemble's `output_func` as it is solved, so the full solutions never coexist, and
+    the reduced ensemble is stripped to one representative trajectory once the errors
+    have been computed from it. `errors`, `weak_errors`, `error_means` and `𝒪est` are
+    computed from the full ensemble either way and are unaffected; what changes is that
+    `solutions[i].u` holds one entry rather than `trajectories` of them.
+
+    Pass `true` when the trajectories themselves are the point, for example to compare
+    two algorithms path by path.
+
+    The reduction is skipped, and the solutions retained, where it cannot apply: when
+    you supply your own `EnsembleProblem` (set its `output_func` instead), when
+    `expected_value` is given (the weak error is formed from the trajectory values
+    directly), and when `weak_timeseries_errors` or `weak_dense_errors` is set (both
+    need the whole timeseries).
 """
 function test_convergence(
         dts::AbstractArray,
@@ -77,12 +163,19 @@ function test_convergence(
         trajectories, save_start = true, save_everystep = true,
         timeseries_errors = save_everystep, adaptive = false,
         weak_timeseries_errors = false, weak_dense_errors = false,
-        expected_value = nothing, kwargs...
+        expected_value = nothing, retain_solutions = false, kwargs...
     )
     N = length(dts)
 
+    reduce_trajectories = !retain_solutions &&
+        !(prob isa AbstractEnsembleProblem) &&
+        expected_value === nothing &&
+        !weak_timeseries_errors && !weak_dense_errors
+
     if prob isa AbstractEnsembleProblem
         ensemble_prob = prob
+    elseif reduce_trajectories
+        ensemble_prob = EnsembleProblem(prob; output_func = _convergence_output_func)
     else
         ensemble_prob = EnsembleProblem(prob)
     end
@@ -90,28 +183,32 @@ function test_convergence(
     _solutions = Array{Any}(undef, length(dts))
     for i in 1:length(dts)
         sol = solve(
-            ensemble_prob, alg, ensemblealg; dt = dts[i], adaptive = adaptive,
-            save_start = save_start, save_everystep = save_everystep,
-            timeseries_errors = timeseries_errors,
-            weak_timeseries_errors = weak_timeseries_errors,
-            weak_dense_errors = weak_dense_errors, trajectories = Int(trajectories),
+            ensemble_prob, alg, ensemblealg; dt = dts[i], adaptive,
+            save_start, save_everystep,
+            timeseries_errors,
+            weak_timeseries_errors,
+            weak_dense_errors, trajectories = Int(trajectories),
             kwargs...
         )
         @info "dt: $(dts[i]) ($i/$N)"
-        _solutions[i] = sol
+        # Summarise each ensemble before solving the next, so that only one step size's
+        # trajectories are ever reachable rather than the whole study's.
+        _solutions[i] = if expected_value === nothing
+            summarised = SciMLBase.calculate_ensemble_errors(
+                sol;
+                weak_timeseries_errors,
+                weak_dense_errors
+            )
+            reduce_trajectories ? _drop_trajectories(summarised) : summarised
+        else
+            sol
+        end
     end
 
     auxdata = Dict("dts" => dts)
 
     if expected_value == nothing
-        solutions = [
-            SciMLBase.calculate_ensemble_errors(
-                    sim;
-                    weak_timeseries_errors = weak_timeseries_errors,
-                    weak_dense_errors = weak_dense_errors
-                )
-                for sim in _solutions
-        ]
+        solutions = _solutions
         # Now Calculate Weak Errors
         additional_errors = Dict()
         for k in keys(solutions[1].weak_errors)
@@ -138,9 +235,9 @@ function test_convergence(
     end
 
     return ConvergenceSimulation(
-        solutions, dts, auxdata = auxdata,
-        additional_errors = additional_errors,
-        expected_value = expected_value
+        solutions, dts; auxdata,
+        additional_errors,
+        expected_value
     )
 end
 
@@ -220,34 +317,34 @@ function analyticless_test_convergence(
 
             if prob isa AbstractSDDEProblem
                 _prob = SDDEProblem(
-                    prob.f, prob.g, prob.u0, prob.h, prob.tspan, prob.p,
+                    prob.f, prob.g, prob.u0, prob.h, prob.tspan, prob.p;
                     noise = np,
-                    noise_rate_prototype = prob.noise_rate_prototype,
-                    constant_lags = prob.constant_lags,
-                    dependent_lags = prob.dependent_lags,
-                    neutral = prob.neutral,
-                    order_discontinuity_t0 = prob.order_discontinuity_t0,
+                    prob.noise_rate_prototype,
+                    prob.constant_lags,
+                    prob.dependent_lags,
+                    prob.neutral,
+                    prob.order_discontinuity_t0,
                     prob.kwargs...
                 )
             else
                 _prob = SDEProblem(
-                    prob.f, prob.g, prob.u0, prob.tspan, prob.p,
+                    prob.f, prob.g, prob.u0, prob.tspan, prob.p;
                     noise = np,
-                    noise_rate_prototype = prob.noise_rate_prototype
+                    prob.noise_rate_prototype
                 )
             end
 
-            true_sol = solve(_prob, alg; adaptive = adaptive, dt = test_dt)
+            true_sol = solve(_prob, alg; adaptive, dt = test_dt)
 
             for i in 1:length(dts)
-                sol = solve(_prob, alg; dt = dts[i], adaptive = adaptive)
+                sol = solve(_prob, alg; dt = dts[i], adaptive)
                 err_sol = appxtrue(sol, true_sol)
                 tmp_solutions[j, i] = err_sol
             end
         else
             # using NoiseWrapper doesn't lead to constant true_sol
             true_sol = solve(
-                prob, alg; adaptive = adaptive, dt = test_dt,
+                prob, alg; adaptive, dt = test_dt,
                 save_noise = true
             )
             _sol = deepcopy(true_sol)
@@ -261,10 +358,10 @@ function analyticless_test_convergence(
             for i in 1:length(dts)
                 W1 = NoiseWrapper(_sol.W)
                 _prob = remake(
-                    prob, u0 = prob.u0, p = prob.p, tspan = prob.tspan,
-                    noise = W1, noise_rate_prototype = prob.noise_rate_prototype
+                    prob; prob.u0, prob.p, prob.tspan,
+                    noise = W1, prob.noise_rate_prototype
                 )
-                sol = solve(_prob, alg; dt = dts[i], adaptive = adaptive)
+                sol = solve(_prob, alg; dt = dts[i], adaptive)
                 err_sol = appxtrue(sol, true_sol)
                 tmp_solutions[j, i] = err_sol
             end
@@ -274,8 +371,8 @@ function analyticless_test_convergence(
     solutions = [
         SciMLBase.calculate_ensemble_errors(
                 sim;
-                weak_timeseries_errors = weak_timeseries_errors,
-                weak_dense_errors = weak_dense_errors
+                weak_timeseries_errors,
+                weak_dense_errors
             )
             for sim in _solutions
     ]
@@ -286,8 +383,8 @@ function analyticless_test_convergence(
         additional_errors[k] = [sol.weak_errors[k] for sol in solutions]
     end
     return ConvergenceSimulation(
-        solutions, dts, auxdata = auxdata,
-        additional_errors = additional_errors
+        solutions, dts; auxdata,
+        additional_errors
     )
 end
 
@@ -299,12 +396,12 @@ function test_convergence(
     N = length(dts)
     solutions = [
         solve(
-                prob, alg; dt = dts[i], save_everystep = save_everystep,
-                adaptive = adaptive, kwargs...
+                prob, alg; dt = dts[i], save_everystep,
+                adaptive, kwargs...
             ) for i in 1:N
     ]
     auxdata = Dict(:dts => dts)
-    return ConvergenceSimulation(solutions, dts, auxdata = auxdata)
+    return ConvergenceSimulation(solutions, dts; auxdata)
 end
 
 function analyticless_test_convergence(
@@ -316,13 +413,13 @@ function analyticless_test_convergence(
     N = length(dts)
     _solutions = [
         solve(
-                prob, alg; dt = dts[i], save_everystep = save_everystep,
-                adaptive = adaptive, kwargs...
+                prob, alg; dt = dts[i], save_everystep,
+                adaptive, kwargs...
             ) for i in 1:N
     ]
     solutions = [appxtrue(sol, true_sol) for sol in _solutions]
     auxdata = Dict(:dts => dts)
-    return ConvergenceSimulation(solutions, dts, auxdata = auxdata)
+    return ConvergenceSimulation(solutions, dts; auxdata)
 end
 
 function test_convergence(probs, convergence_axis, alg; kwargs...)

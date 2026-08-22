@@ -107,13 +107,13 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    W1 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W1, false)
+    W1 = firk_real_W(alg, J, W1)
+    W1 = build_complex_W(alg, f, u, J, W1)
 
     linprob = LinearProblem(W1, _vec(cubuff), (nothing, u, p, t); u0 = _vec(dw12))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        linprob, alg.linsolve; alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
@@ -258,11 +258,8 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
-    end
-    W2 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
+    W1 = firk_real_W(alg, J, W1)
+    W2 = build_complex_W(alg, f, u, J, W1)
 
     linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
@@ -462,13 +459,9 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by RadauIIA5.")
-    end
-    W2 = similar(J, Complex{eltype(W1)})
-    W3 = similar(J, Complex{eltype(W1)})
-    recursivefill!(W2, false)
-    recursivefill!(W3, false)
+    W1 = firk_real_W(alg, J, W1)
+    W2 = build_complex_W(alg, f, u, J, W1)
+    W3 = build_complex_W(alg, f, u, J, W1)
 
     linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
@@ -685,12 +678,8 @@ function alg_cache(
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, zero(u), dw1)
 
     J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
-    if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by AdaptiveRadau.")
-    end
-
-    W2 = [similar(J, Complex{eltype(W1)}) for _ in 1:((max_stages - 1) ÷ 2)]
-    recursivefill!.(W2, false)
+    W1 = firk_real_W(alg, J, W1)
+    W2 = [build_complex_W(alg, f, u, J, W1) for _ in 1:((max_stages - 1) ÷ 2)]
 
     linprob = LinearProblem(W1, _vec(ubuff), (nothing, u, p, t); u0 = _vec(dw1))
     linsolve1 = init(
@@ -763,18 +752,18 @@ end
 
 
 mutable struct GaussLegendreCache{
-        uType, uNoUnitsType, rateType, JType, WType, Buff,
+        uType, tType, uNoUnitsType, rateType, JType, WType, Buff,
         UF, JC, F1, Tab, Tol, Dt, rTol, aTol, StepLimiter,
     } <: FIRKMutableCache
     u::uType
     uprev::uType
     z::Vector{uType}
-    z_last::Vector{uType}
     w::Vector{uType}
+    c_prime::Vector{tType}
     dw::Vector{uType}
     ubuff::Buff
-    u_full::uType
-    u_half::uType
+    utilde::uType
+    derivatives::Matrix{uType}
     du1::rateType
     fsalfirst::rateType
     k::rateType
@@ -813,14 +802,21 @@ function alg_cache(
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
     z = [zero(u) for _ in 1:num_stages]
-    z_last = [zero(u) for _ in 1:num_stages]
     w = [zero(u) for _ in 1:num_stages]
+    c_prime = Vector{typeof(t)}(undef, num_stages) #time stepping
+    for i in 1:num_stages
+        c_prime[i] = zero(t)
+    end
     dw = [zero(u) for _ in 1:num_stages]
     n = length(_vec(u))
     ubuff = similar(_vec(u), num_stages * n)
     recursivefill!(ubuff, false)
-    u_full = zero(u)
-    u_half = zero(u)
+    utilde = zero(u)
+
+    derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
+    for i in 1:num_stages, j in 1:num_stages
+        derivatives[i, j] = zero(u)
+    end
 
     fsalfirst = zero(rate_prototype)
     k = zero(rate_prototype)
@@ -835,7 +831,14 @@ function alg_cache(
 
     J, _ = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
     if J isa AbstractSciMLOperator
-        error("Non-concrete Jacobian not yet supported by GaussLegendre.")
+        error(
+            "GaussLegendre does not support a matrix-free Jacobian: unlike the Radau " *
+                "methods it solves a single coupled $(num_stages * n)-by-$(num_stages * n) " *
+                "system rather than decoupled shifted systems, and no operator form of that " *
+                "system is implemented. Use `RadauIIA3`, `RadauIIA5`, `RadauIIA9` or " *
+                "`AdaptiveRadau` with a Krylov `linsolve`, or set `concrete_jac = true` " *
+                "together with a factorization `linsolve`."
+        )
     end
 
     W = similar(J, num_stages * n, num_stages * n)
@@ -854,7 +857,7 @@ function alg_cache(
     atol = reltol isa Number ? reltol : zero(reltol)
 
     return GaussLegendreCache(
-        u, uprev, z, z_last, w, dw, ubuff, u_full, u_half,
+        u, uprev, z, w, c_prime, dw, ubuff, utilde, derivatives,
         du1, fsalfirst, k, ks, fw,
         J, W,
         uf, tab, κ, one(uToltype), 10000,

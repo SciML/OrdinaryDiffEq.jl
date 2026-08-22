@@ -17,7 +17,8 @@ prob_ode_linear = ODEProblem(
 
 function f_2Dlinear!(du, u, p, t)
     du[1] = 1.01 * u[1]
-    return du[2] = 1.01 * u[2]
+    du[2] = 1.01 * u[2]
+    return
 end
 prob_ode_2Dlinear = ODEProblem(
     ODEFunction(f_2Dlinear!; analytic = (u0, p, t) -> u0 .* exp(1.01t)),
@@ -119,7 +120,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         push!(errors, compute_midstep_error(sol, exact_scalar))
     end
@@ -146,7 +147,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv_vec, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv_vec, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         err = compute_midstep_error(sol, exact_vector)
         push!(errors, err)

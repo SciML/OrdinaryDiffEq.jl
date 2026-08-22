@@ -5,14 +5,18 @@ using SciMLTesting, OrdinaryDiffEqCore, Test
 const UNANALYZABLE = (OrdinaryDiffEqCore.Predictor,)
 
 @static if VERSION >= v"1.11.0-DEV.469"
-    @test Base.ispublic(OrdinaryDiffEqCore, :isdiscretecache)
+    for name in (
+            :AbstractNLSolverCache, :AutoSwitchCache, :DefaultCache,
+            :handle_callback_modifiers!, :isdiscretecache,
+            :resolve_stage_step_limiters, :trivial_limiter!,
+        )
+        @test Base.ispublic(OrdinaryDiffEqCore, name)
+    end
 end
 
 run_qa(
     OrdinaryDiffEqCore;
-    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     aqua_kwargs = (; piracies = false, unbound_args = false),
-    explicit_imports = true,
     ei_kwargs = (;
         no_implicit_imports = (; allow_unanalyzable = UNANALYZABLE),
         # These names are not used by OrdinaryDiffEqCore itself, but are imported
@@ -24,25 +28,27 @@ run_qa(
             allow_unanalyzable = UNANALYZABLE,
             ignore = (
                 :BrownFullBasicInit, :ShampineCollocationInit, :DEVerbosity,
-                :Minimal, :_vec, :_reshape, :unwrap_cache,
-                :calculate_residuals, :calculate_residuals!,
+                :Minimal, :_vec, :_reshape, :unwrap_cache, :_unwrap_val,
+                :calculate_residuals, :calculate_residuals!, :DynamicalODEProblem,
+                :ODEFunction,
             ),
         ),
         # Internal (non-`public`) names of upstream packages that OrdinaryDiffEqCore
         # genuinely needs and that have no public replacement yet.
         all_qualified_accesses_are_public = (;
             ignore = (
+                # DiffEqBase — owner-internal, no public alternative
+                :NAN_CHECK,
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
-                # SciMLOperators internal
-                :AbstractSciMLOperator,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
                 :EnzymeRules, :inactive_noinl,
                 # SciMLBase internals with no public replacement yet
                 :enable_interpolation_sensitivitymode,
                 :forwarddiff_chunksize, :get_root_indp,
                 :get_save_idxs_and_saved_subsystem, :has_initializeprob,
-                :has_lazy_interpolation, :late_binding_update_u0_p, :remaker_of,
+                :has_lazy_interpolation, :has_mtk_sys, :late_binding_update_u0_p,
+                :log_numerical_instability, :remaker_of,
                 :save_discretes_if_enabled!, :save_final_discretes!,
                 :strip_interpolation, :struct_as_namedtuple, :unitfulvalue,
                 :unwrap_cache, :value,
@@ -51,6 +57,8 @@ run_qa(
         # Internal (non-`public`) names imported from upstream packages.
         all_explicit_imports_are_public = (;
             ignore = (
+                # DiffEqBase — owner-internal, no public alternative
+                :NAN_CHECK,
                 # TruncatedStacktraces internals
                 Symbol("@truncate_stacktrace"), :VERBOSE_MSG,
                 # FunctionWrappers internal
@@ -58,7 +66,7 @@ run_qa(
                 # FastPower internal
                 :fastpower,
                 # SciMLBase internals
-                :SENSITIVITY_INTERP_MESSAGE, :_unwrap_val, :last_step_failed,
+                :SENSITIVITY_INTERP_MESSAGE, :last_step_failed,
                 :postamble!,
                 # DiffEqBase internal
                 :_process_verbose_param,
@@ -67,10 +75,5 @@ run_qa(
                 :_vec, :_reshape, :unwrap_cache,
             ),
         ),
-    ),
-    api_docs_kwargs = (;
-        rendered = false,
-        # Reexported upstream SciMLOperators names are documented at their owner.
-        ignore = (:StaticWOperator, :has_concretization),
     ),
 )

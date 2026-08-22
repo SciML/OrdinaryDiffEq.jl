@@ -50,7 +50,7 @@ end
     order = forward ? Base.Order.Forward : Base.Order.Reverse
     return max(
         lo,
-        searchsorted_first(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order = order)
+        searchsorted_first(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order)
     )
 end
 
@@ -58,7 +58,7 @@ end
     order = forward ? Base.Order.Forward : Base.Order.Reverse
     return max(
         lo - oftype(lo, 1),
-        searchsorted_last(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order = order)
+        searchsorted_last(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order)
     )
 end
 
@@ -74,7 +74,7 @@ end
     )
     maybe_reprobe_ts_hint!(hint)
     order = forward ? Base.Order.Forward : Base.Order.Reverse
-    i = searchsorted_first(hint.kind, v, x, ts_hint_start(hint, v); order = order)
+    i = searchsorted_first(hint.kind, v, x, ts_hint_start(hint, v); order)
     hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
     return max(lo, i)
 end
@@ -83,7 +83,7 @@ end
     )
     maybe_reprobe_ts_hint!(hint)
     order = forward ? Base.Order.Forward : Base.Order.Reverse
-    i = searchsorted_last(hint.kind, v, x, ts_hint_start(hint, v); order = order)
+    i = searchsorted_last(hint.kind, v, x, ts_hint_start(hint, v); order)
     hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
     return max(lo - oftype(lo, 1), i)
 end

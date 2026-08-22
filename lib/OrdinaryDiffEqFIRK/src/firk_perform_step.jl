@@ -166,8 +166,11 @@ function initialize!(integrator, cache::AdaptiveRadauCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    # zero, not `similar`: the stage-value slots above the starting `num_stages` are read
+    # by the extrapolated initial guess as soon as the controller raises the stage count,
+    # before anything has written them
     for i in 3:(max_stages + 2)
-        integrator.k[i] = similar(integrator.fsallast)
+        integrator.k[i] = zero(integrator.fsallast)
     end
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -326,8 +329,12 @@ end
     # precalculations
     αdt, βdt = α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, αdt + βdt * im)
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
         end
@@ -406,6 +413,7 @@ end
             )
         end
 
+        drain_jvp_count!(integrator, alg, W1)
         integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
@@ -697,8 +705,13 @@ end
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, γdt)
+        set_W_gamma!(W2, αdt + βdt * im)
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
             W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
@@ -827,6 +840,7 @@ end
             )
         end
 
+        drain_jvp_count!(integrator, alg, W2)
         integrator.stats.nsolve += 2
         dw2 = z2
         dw3 = z3
@@ -1271,8 +1285,14 @@ end
 
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, γdt)
+        set_W_gamma!(W2, α1dt + β1dt * im)
+        set_W_gamma!(W3, α2dt + β2dt * im)
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
             W2[II] = -(α1dt + β1dt * im) * mass_matrix[Tuple(II)...] + J[II]
@@ -1490,6 +1510,8 @@ end
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
+        drain_jvp_count!(integrator, alg, W2)
+        drain_jvp_count!(integrator, alg, W3)
         integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
@@ -1907,8 +1929,15 @@ end
     end
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (calc_J!(J, integrator, cache); cache.W_γdt = dt)
-    if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if is_lazy_W(W1)
+        set_W_gamma!(W1, γdt)
+        for i in 1:((num_stages - 1) ÷ 2)
+            set_W_gamma!(W2[i], αdt[i] + βdt[i] * im)
+        end
+        integrator.stats.nw += 1
+    elseif new_W
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
         end
@@ -2079,6 +2108,9 @@ end
             end
         end
 
+        for i in 1:((num_stages - 1) ÷ 2)
+            drain_jvp_count!(integrator, alg, W2[i])
+        end
         integrator.stats.nsolve += (num_stages + 1) / 2
 
         for i in 1:((num_stages - 1) ÷ 2)
@@ -2220,13 +2252,11 @@ function initialize!(integrator, cache::GaussLegendreConstantCache)
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 
-    # adaptive Richardson controller requires num_stages >= 2
+    # embeddedd error estimate requires num_stages >= 2
     if integrator.opts.adaptive && integrator.alg.num_stages < 2
         throw(
             ArgumentError(
-                "GaussLegendre with num_stages = $(integrator.alg.num_stages) " *
-                    "does not support adaptive stepping (Richardson controller " *
-                    "requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."
+                "GaussLegendre with num_stages = $(integrator.alg.num_stages) does not support adaptive stepping (embedded error estimate requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."
             )
         )
     end
@@ -2248,8 +2278,7 @@ function initialize!(integrator, cache::GaussLegendreCache)
             throw(
                 ArgumentError(
                     "GaussLegendre with num_stages = $(cache.num_stages) " *
-                        "does not support adaptive stepping (Richardson controller " *
-                        "requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."
+                        "does not support adaptive stepping (embedded error estimate requires num_stages ≥ 2). Use num_stages ≥ 2 or pass adaptive = false."
                 )
             )
         end
@@ -2265,12 +2294,12 @@ function initialize!(integrator, cache::GaussLegendreCache)
     return nothing
 end
 
-# Newton iteration helper for a single GaussLegendre sub-step
+# Newton iteration for one GaussLegendre step
 
 @muladd function _gausslegendre_substep_constant(
         integrator, cache::GaussLegendreConstantCache, alg,
         uprev_local, t_local, dt_local, J_local,
-        atol, rtol
+        atol, rtol, z
     )
     (; tab, κ, num_stages) = cache
     (; A, b, c) = tab
@@ -2283,13 +2312,11 @@ end
     LU_full = lu(W_full)
     integrator.stats.nw += 1
 
-    z = [map(zero, uprev_local) for _ in 1:num_stages]
-
     ndw = one(eltype(uprev_local))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
     success = false
     iter = 0
-    local ff
+    ff = [map(zero, uprev_local) for _ in 1:num_stages]
 
     while iter < maxiters
         iter += 1
@@ -2353,7 +2380,7 @@ end
     cache.iter = iter
 
     if !success
-        return (uprev_local, z, false)
+        return (uprev_local, z, ff, false)
     end
 
     ff_final = [f(uprev_local + z[i], p, t_local + c[i] * dt_local) for i in 1:num_stages]
@@ -2363,7 +2390,7 @@ end
         u_out = @.. u_out + dt_local * b[i] * ff_final[i]
     end
 
-    return (u_out, z, true)
+    return (u_out, z, ff_final, true)
 end
 
 @muladd function perform_step!(
@@ -2372,6 +2399,7 @@ end
     )
     (; t, dt, uprev, f, p) = integrator
     (; num_stages) = cache
+    (; c, e) = cache.tab
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
 
@@ -2380,63 +2408,72 @@ end
 
     J = calc_J(integrator, cache)
 
-    if adaptive && num_stages >= 2
-        # Richardson step-doubling: one full step at dt, two successive half-steps.
-        u_H, z_full, ok1 = _gausslegendre_substep_constant(
-            integrator, cache, alg, uprev, t, dt, J, atol, rtol
-        )
-        if !ok1
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
+    # TODO better initial guess
+    z = Vector{typeof(uprev)}(undef, num_stages)
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
+        cache.dtprev = one(cache.dtprev)
+        for i in 1:num_stages
+            z[i] = @.. map(zero, uprev)
+            integrator.k[i + 2] = map(zero, uprev)
         end
-
-        half_dt = dt / 2
-        u_h1, _, ok2 = _gausslegendre_substep_constant(
-            integrator, cache, alg, uprev, t, half_dt, J, atol, rtol
-        )
-        if !ok2
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
-        end
-
-        u_h, _, ok3 = _gausslegendre_substep_constant(
-            integrator, cache, alg, u_h1, t + half_dt, half_dt, J, atol, rtol
-        )
-        if !ok3
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
-        end
-
-        p_order = 2 * num_stages
-        utilde = @.. (u_h - u_H) / (2^p_order - 1)
-        OrdinaryDiffEqCore.set_EEst!(
-            integrator,
-            internalnorm(calculate_residuals(utilde, uprev, u_h, atol, rtol, internalnorm, t), t),
-        )
-
-        u = u_h
-        z_for_fsal = z_full
     else
-        u_out, z_out, ok = _gausslegendre_substep_constant(
-            integrator, cache, alg, uprev, t, dt, J, atol, rtol
-        )
-        if !ok
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
+        # Collocation polynomial through (0,0), (c_i, z_i)
+        c_prime = Vector{typeof(dt)}(undef, num_stages)
+        dt_ratio = dt / cache.dtprev
+        derivatives = Matrix{typeof(uprev)}(undef, num_stages, num_stages)
+        for i in 1:num_stages
+            z[i] = @.. integrator.k[i + 2]
+            c_prime[i] = c[i] * dt_ratio
         end
-        u = u_out
-        z_for_fsal = z_out
+        derivatives[1, 1] = @.. z[1] / c[1]
+        for j in 2:num_stages
+            derivatives[1, j] = @.. (z[j - 1] - z[j]) / (c[j - 1] - c[j])
+        end
+        for i in 2:num_stages
+            derivatives[i, i] = @.. (
+                derivatives[i - 1, i] -
+                    derivatives[i - 1, i - 1]
+            ) / c[i]
+            for j in (i + 1):num_stages
+                derivatives[i, j] = @.. (
+                    derivatives[i - 1, j - 1] -
+                        derivatives[i - 1, j]
+                ) / (c[j - i] - c[j])
+            end
+        end
+        for i in 1:num_stages
+            z[i] = @.. derivatives[num_stages, num_stages]
+            j = num_stages - 1
+            while j > 0
+                z[i] = @.. derivatives[j, j] + z[i] * (c_prime[i] - c[j])
+                j = j - 1
+            end
+            z[i] = @.. z[i] * c_prime[i]
+        end
+    end
+
+    u, z, ff, ok = _gausslegendre_substep_constant(integrator, cache, alg, uprev, t, dt, J, atol, rtol, z)
+    if !ok
+        integrator.force_stepfail = true
+        integrator.stats.nnonlinconvfail += 1
+        return
+    end
+
+    # Embedded error of the s stage method coming from the s-1 quadrature and the error estimate
+    if adaptive
+        utilde = @.. dt * e[1] * ff[1]
+        for i in 2:num_stages
+            utilde = @.. utilde + dt * e[i] * ff[i]
+        end
+        atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
     end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages
-                integrator.k[i + 2] = z_for_fsal[i]
+                integrator.k[i + 2] = z[i]
             end
         end
     end
@@ -2448,8 +2485,6 @@ end
     integrator.u = u
     return
 end
-
-# Mutable-cache Newton iteration helper
 
 @muladd function _gausslegendre_substep!(
         u_dest, uprev_local, t_local, dt_local, J_local,
@@ -2467,10 +2502,6 @@ end
 
     W .= kron(I(num_stages), I(n)) .- dt_local .* kron(A, J_local)
     integrator.stats.nw += 1
-
-    for i in 1:num_stages
-        @.. z[i] = zero(eltype(uprev_local))
-    end
 
     ndw = one(eltype(uprev_local))
     η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
@@ -2501,7 +2532,8 @@ end
         if needfactor
             LinearSolve.reinit!(linsolve; A = W)
         end
-        LinearSolve.solve!(linsolve; reltol = integrator.opts.reltol)
+        set_linear_reltol!(linsolve, integrator.opts.reltol)
+        LinearSolve.solve!(linsolve)
         integrator.stats.nsolve += 1
 
         for i in 1:num_stages
@@ -2558,66 +2590,78 @@ end
 
 @muladd function perform_step!(integrator, cache::GaussLegendreCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsallast) = integrator
-    (; atmp, J, z, z_last, u_full, u_half, rtol, atol, num_stages) = cache
+    (; atmp, J, z, w, c_prime, derivatives, utilde, ks, rtol, atol, num_stages) = cache
+    (; c, e) = cache.tab
     (; internalnorm, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
 
     new_jac = do_newJ(integrator, alg, cache, repeat_step)
     new_jac && (calc_J!(J, integrator, cache); cache.W_γdt = dt)
 
-    if adaptive && num_stages >= 2
-        # fll step at dt
-        ok1 = _gausslegendre_substep!(u_full, uprev, t, dt, J, cache, integrator, alg)
-        if !ok1
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
-        end
+    # TODO better initial guess
+    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
+        cache.dtprev = one(cache.dtprev)
         for i in 1:num_stages
-            @.. z_last[i] = z[i]
+            @.. z[i] = map(zero, u)
+            @.. w[i] = map(zero, u)
+            integrator.k[i + 2] = map(zero, u)
         end
-
-        half_dt = dt / 2
-
-        # first half step at dt/2
-        ok2 = _gausslegendre_substep!(u_half, uprev, t, half_dt, J, cache, integrator, alg)
-        if !ok2
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
-        end
-
-        # second half step at dt/2
-        ok3 = _gausslegendre_substep!(u, u_half, t + half_dt, half_dt, J, cache, integrator, alg)
-        if !ok3
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
-        end
-
-
-        p_order = 2 * num_stages
-        denom = 2^p_order - 1
-        @.. u_full = (u - u_full) / denom
-        calculate_residuals!(atmp, u_full, uprev, u, atol, rtol, internalnorm, t)
-        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
     else
-        ok = _gausslegendre_substep!(u, uprev, t, dt, J, cache, integrator, alg)
-        if !ok
-            integrator.force_stepfail = true
-            integrator.stats.nnonlinconvfail += 1
-            return
+        # Collocation polynomial through (0,0), (c_i, z_i)
+        dt_ratio = dt / cache.dtprev
+        for i in 1:num_stages
+            @.. z[i] = integrator.k[i + 2]
+            c_prime[i] = c[i] * dt_ratio
+        end
+        @.. derivatives[1, 1] = z[1] / c[1]
+        for j in 2:num_stages
+            @.. derivatives[1, j] = (z[j - 1] - z[j]) / (c[j - 1] - c[j])
+        end
+        for i in 2:num_stages
+            @.. derivatives[i, i] = (
+                derivatives[i - 1, i] -
+                    derivatives[i - 1, i - 1]
+            ) / c[i]
+            for j in (i + 1):num_stages
+                @.. derivatives[i, j] = (
+                    derivatives[i - 1, j - 1] -
+                        derivatives[i - 1, j]
+                ) / (c[j - i] - c[j])
+            end
         end
         for i in 1:num_stages
-            @.. z_last[i] = z[i]
+            @.. z[i] = derivatives[num_stages, num_stages]
+            j = num_stages - 1
+            while j > 0
+                @.. z[i] = derivatives[j, j] + z[i] * (c_prime[i] - c[j])
+                j = j - 1
+            end
+            @.. z[i] = z[i] * c_prime[i]
         end
+    end
+
+    ok = _gausslegendre_substep!(u, uprev, t, dt, J, cache, integrator, alg)
+    if !ok
+        integrator.force_stepfail = true
+        integrator.stats.nnonlinconvfail += 1
+        return
+    end
+
+    # Embedded error of the s stage method coming from the s-1 quadrature and the error estimate
+    if adaptive
+        @.. utilde = dt * e[1] * ks[1]
+        for i in 2:num_stages
+            @.. utilde = utilde + dt * e[i] * ks[i]
+        end
+        calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
     end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
             for i in 1:num_stages
-                integrator.k[i + 2] .= z_last[i]
+                integrator.k[i + 2] .= z[i]
             end
         end
     end

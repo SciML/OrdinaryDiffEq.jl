@@ -1,6 +1,7 @@
 using OrdinaryDiffEqExponentialRK
 using OrdinaryDiffEqCore
 using SciMLBase: FullSpecialize, SplitFunction, ODEFunction
+using SciMLOperators: MatrixOperator
 using AllocCheck
 using LinearAlgebra
 using Test

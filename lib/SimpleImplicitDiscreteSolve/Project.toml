@@ -1,7 +1,7 @@
 name = "SimpleImplicitDiscreteSolve"
 uuid = "8b67ef88-54bd-43ff-aca0-8be02588656a"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "2.0.2"
+version = "2.0.3"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -20,7 +20,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 julia = "1.10"
 Pkg = "1"
 OrdinaryDiffEqSDIRK = "2"

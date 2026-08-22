@@ -3,14 +3,26 @@ module GlobalDiffEq
 using Reexport: @reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqTsit5, Richardson, SciMLBase
+import LinearAlgebra, OrdinaryDiffEqCore, OrdinaryDiffEqTsit5,
+    RecursiveArrayTools, Richardson, SciMLBase
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
+import OrdinaryDiffEqCore: perform_step!, @cache
+import Accessors: @set
+using FastBroadcast: FastBroadcast, @..
+using MuladdMacro: MuladdMacro, @muladd
 using PrecompileTools: @setup_workload, @compile_workload
 
 abstract type GlobalDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 
 include("richardson.jl")
+include("glee/tableaus.jl")
+include("glee/algorithms.jl")
+include("glee/solve.jl")
+include("glee/caches.jl")
+include("glee/perform_step.jl")
 
 export GlobalRichardson
+export GLEE23, GLEE24, GLEE35, MM5GEE, global_error_estimate
 
 @setup_workload begin
     # Simple test ODE: exponential decay du/dt = -u

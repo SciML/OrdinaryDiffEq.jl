@@ -1,5 +1,5 @@
 """
-    initialize!(cb::CallbackSet,u,t,integrator::DEIntegrator)
+    initialize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
 
 Recursively apply `initialize!` and return whether any modified u
 """
@@ -26,7 +26,7 @@ function initialize!(
 end
 
 """
-    finalize!(cb::CallbackSet,u,t,integrator::DEIntegrator)
+    finalize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
 
 Recursively apply `finalize!` and return whether any modified u
 """

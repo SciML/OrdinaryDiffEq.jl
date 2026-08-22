@@ -59,7 +59,8 @@ sol = solve(
 
 f = function (du, u, p, t)
     du[1] = u[2]
-    return du[2] = -p[1]
+    du[2] = -p[1]
+    return
 end
 function condition(u, t, integrator) # Event when event_f(u,t) == 0
     return u[1]
@@ -88,7 +89,8 @@ function fball(du, u, p, t)
     du[1] = u[2]
     du[2] = -p
     du[3] = u[4]
-    return du[4] = 0.0
+    du[4] = 0.0
+    return
 end
 u0 = [50.0, 0.0, 0.0, 2.0]
 tspan = (0.0, 15.0)
@@ -101,7 +103,8 @@ z = Ref(0)
 
 function condition(out, u, t, integrator)
     out[1] = u[1]
-    return out[2] = (10.0 - u[3])u[3]
+    out[2] = (10.0 - u[3])u[3]
+    return
 end
 
 function affect!(integrator, events)
@@ -161,7 +164,8 @@ sol2 = solve(prob, Tsit5(), callback = cb2, dt = 1.0e-3, adaptive = false)
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1273
 
 function du!(du, u, p, t)
-    return du[1] = 1
+    du[1] = 1
+    return
 end
 
 callback = ContinuousCallback(
@@ -169,7 +173,7 @@ callback = ContinuousCallback(
     (integrator) -> nothing
 )
 
-prob = ODEProblem(du!, [0], (0.0, 1.0), callback = callback)
+prob = ODEProblem(du!, [0], (0.0, 1.0); callback)
 
 solve(prob, Tsit5())
 solve(prob, RadauIIA3())
@@ -177,7 +181,7 @@ solve(prob, RadauIIA5())
 
 du(u, p, t) = [1.0]
 
-prob = ODEProblem(du, [0], (0.0, 1.0), callback = callback)
+prob = ODEProblem(du, [0], (0.0, 1.0); callback)
 
 solve(prob, Tsit5())
 solve(prob, RadauIIA3())

@@ -12,8 +12,10 @@ __default_name(alg) = string(nameof(typeof(alg)))
 ## Shootouts
 
 """
-    Shootout(prob, setups; appxsol = nothing, names = nothing,
-        error_estimate = :final, numruns = 20, seconds = 2, kwargs...)
+    Shootout(
+        prob, setups; appxsol = nothing, names = nothing,
+        error_estimate = :final, numruns = 20, seconds = 2, kwargs...
+    )
 
 Benchmark multiple solver configurations on one problem. Each entry of `setups` is a
 dictionary containing an `:alg` and any solver-specific keyword arguments. The result
@@ -37,8 +39,10 @@ mutable struct Shootout
 end
 
 """
-    ShootoutSet(probs, setups; probaux = nothing, names = nothing,
-        print_names = false, kwargs...)
+    ShootoutSet(
+        probs, setups; probaux = nothing, names = nothing,
+        print_names = false, kwargs...
+    )
 
 Run a [`Shootout`](@ref) for every problem in `probs`. `probaux` may contain one
 dictionary of per-problem keyword arguments for each problem; other keyword arguments
@@ -75,8 +79,8 @@ function Shootout(
     end
     for i in eachindex(setups)
         sol = solve(
-            prob, setups[i][:alg]; timeseries_errors = timeseries_errors,
-            dense_errors = dense_errors, kwargs..., setups[i]...
+            prob, setups[i][:alg]; timeseries_errors,
+            dense_errors, kwargs..., setups[i]...
         )
 
         if :prob_choice ∈ keys(setups[i])
@@ -157,7 +161,7 @@ function ShootoutSet(
     end
     for i in eachindex(probs)
         print_names && println(names[i])
-        shootouts[i] = Shootout(probs[i], setups; names = names, kwargs..., probaux[i]...)
+        shootouts[i] = Shootout(probs[i], setups; names, kwargs..., probaux[i]...)
         winners[i] = shootouts[i].winner
     end
     return ShootoutSet(shootouts, probs, probaux, N, winners)
@@ -186,9 +190,11 @@ Base.lastindex(shoot::ShootoutSet) = lastindex(shoot.shootouts)
 ## WorkPrecisions
 
 """
-    WorkPrecision(prob, alg, abstols, reltols, dts = nothing;
+    WorkPrecision(
+        prob, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, kwargs...)
+        numruns = 20, seconds = 2, kwargs...
+    )
 
 Measure error and execution time for `alg` at corresponding absolute and relative
 tolerances. When `dts` is provided, its entries select a fixed time step for each
@@ -259,15 +265,15 @@ function WorkPrecision(
             if dts === nothing
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
-                    reltol = reltols[i], timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    reltol = reltols[i], timeseries_errors,
+                    dense_errors
                 )
             else
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
                     reltol = reltols[i], dt = dts[i],
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    timeseries_errors,
+                    dense_errors
                 )
             end
 
@@ -390,15 +396,15 @@ function WorkPrecision(
             if dts === nothing
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
-                    reltol = reltols[i], timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    reltol = reltols[i], timeseries_errors,
+                    dense_errors
                 )
             else
                 sol = solve(
                     _prob, alg; kwargs..., abstol = abstols[i],
                     reltol = reltols[i], dt = dts[i],
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors
+                    timeseries_errors,
+                    dense_errors
                 )
             end
 
@@ -576,8 +582,8 @@ function WorkPrecisionSet(
 
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
-            appxsol = appxsol,
-            error_estimate = error_estimate,
+            appxsol,
+            error_estimate,
             name = names[i], kwargs..., filtered_setup...
         )
     end
@@ -639,8 +645,8 @@ end
             _prob, setups[k][:alg];
             kwargs..., filtered_setup..., abstol = _abstols[j],
             reltol = _reltols[j], dt = _dts[j],
-            timeseries_errors = timeseries_errors,
-            dense_errors = dense_errors
+            timeseries_errors,
+            dense_errors
         )
         SciMLBase.has_analytic(prob.f) ? err_sol = sol : err_sol = appxtrue(sol, true_sol)
         tmp_solutions[i, j, k] = err_sol
@@ -690,8 +696,8 @@ function WorkPrecisionSet(
         [
                 SciMLBase.calculate_ensemble_errors(
                     sim;
-                    weak_timeseries_errors = weak_timeseries_errors,
-                    weak_dense_errors = weak_dense_errors
+                    weak_timeseries_errors,
+                    weak_dense_errors
                 )
                 for sim in sol_k
             ] for sol_k in _solutions_k
@@ -919,8 +925,8 @@ function WorkPrecisionSet(
 
         wps[i] = WorkPrecision(
             prob, setups[i][:alg], _abstols, _reltols, _dts;
-            appxsol = appxsol,
-            error_estimate = error_estimate,
+            appxsol,
+            error_estimate,
             name = names[i], kwargs..., filtered_setup...
         )
     end
@@ -931,9 +937,11 @@ function WorkPrecisionSet(
 end
 
 """
-    get_sample_errors(prob::AbstractRODEProblem, setup, test_dt = nothing;
+    get_sample_errors(
+        prob::AbstractRODEProblem, setup, test_dt = nothing;
         numruns, solution_runs, appxsol_setup = nothing,
-        sample_error_runs = 10^7, parallel_type = :none, kwargs...)
+        sample_error_runs = 10^7, parallel_type = :none, kwargs...
+    )
 
 Estimate an approximate 95% confidence half-width for the sampling error of an RODE
 solver setup. `numruns` may be one sample count or a collection of counts; the return

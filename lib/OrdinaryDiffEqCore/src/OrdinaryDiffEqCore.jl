@@ -6,9 +6,6 @@ if isdefined(Base, :Experimental) &&
 end
 
 import DocStringExtensions
-import Reexport: @reexport
-using Reexport: @reexport
-@reexport using SciMLBase
 import DiffEqBase
 
 import Logging: @logmsg, LogLevel
@@ -35,9 +32,8 @@ import DiffEqBase: initialize!
 import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Specialization level owned by SciMLBase (declared `public` there, not
-# exported). Re-exported here so `using OrdinaryDiffEq` surfaces it unqualified.
+# exported). The umbrella package imports and exports it directly.
 import SciMLBase: AutoDePSpecialize
-export AutoDePSpecialize
 
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
@@ -45,11 +41,10 @@ import DiffEqBase: ODE_DEFAULT_NORM,
     ODE_DEFAULT_UNSTABLE_CHECK,
     DEVerbosity, _process_verbose_param
 
-import SciMLOperators: MatrixOperator, FunctionOperator,
-    update_coefficients, update_coefficients!,
-    isconstant
+import SciMLOperators: MatrixOperator
 
 import Random
+import Printf: @sprintf
 
 import RecursiveArrayTools: recursivecopy!, recursivecopy, recursive_bottom_eltype, recursive_unitless_bottom_eltype, recursive_unitless_eltype, copyat_or_push!, DiffEqArray
 
@@ -60,14 +55,13 @@ using ArrayInterface: ArrayInterface
 import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
 
 # Integrator Interface
-import Base: resize!
-import SciMLBase: deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
+import Base: resize!, deleteat!
+import SciMLBase: addat!, full_cache,
     resize_non_user_cache!, deleteat_non_user_cache!, addat_non_user_cache!,
-    terminate!, get_du, get_dt, get_proposed_dt, set_proposed_dt!,
+    terminate!, get_proposed_dt, set_proposed_dt!,
     savevalues!,
     add_tstop!, has_tstop, first_tstop, pop_tstop!,
-    add_saveat!, set_reltol!,
-    set_abstol!, postamble!, last_step_failed
+    postamble!, last_step_failed
 import DiffEqBase: get_tstops, get_tstops_array
 
 # `check_error!` is owned by (and public in) SciMLBase, re-exported through DiffEqBase.
@@ -83,18 +77,20 @@ using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val
     ODEAliasSpecifier
 
 # Names previously relied on implicitly through `@reexport using SciMLBase`.
+# `ODEFunction` and `DynamicalODEProblem` are also imported here for external
+# solver extensions such as TaylorIntegrationDiffEqExt, which intentionally
+# depends on OrdinaryDiffEqCore rather than the umbrella package.
 using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
-    DAESolution, DiscreteProblem, DynamicalODEFunction,
+    DAESolution, DiscreteProblem, DynamicalODEFunction, DynamicalODEProblem,
     IntervalNonlinearProblem, NonlinearLeastSquaresProblem,
-    ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
+    ODEFunction, ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
     VectorContinuousCallback, auto_dt_reset!, derivative_discontinuity!,
     get_tmp_cache, isinplace, reinit!
+const LinearAliasSpecifier = SciMLBase.LinearAliasSpecifier
 using SciMLOperators: SciMLOperators
 using CommonSolve: solve
 
-import SciMLBase: AbstractNonlinearProblem, alg_order, LinearAliasSpecifier
-
-import SciMLBase: islinear
+import SciMLBase: AbstractNonlinearProblem, alg_order
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
 # dependent OrdinaryDiffEq.jl sublibraries that import them from this package.
 import DiffEqBase: timedepentdtmin, calculate_residuals, calculate_residuals!
@@ -149,6 +145,7 @@ methods.
     Tableau        # tableau-derived predictor (α / const_stage_guess)
 end
 export Predictor
+export set_discontinuity
 
 """
     CompiledFloats
@@ -422,22 +419,22 @@ include("precompilation_setup.jl")
 # that downstream OrdinaryDiffEq.jl / StochasticDiffEq.jl solver packages subtype,
 # extend, or call. They are made public (not exported) so that ExplicitImports'
 # public-API checks recognize them as the supported extension surface. Genuine
-# codegen/perf internals (@fold/@threaded/@OnDemandTableauExtract/@swap!) and
-# precompile-workload helpers are deliberately NOT included here.
+# package-local codegen internals (@threaded/@swap!) and precompile-workload
+# helpers are deliberately NOT included here.
 @static if VERSION >= v"1.11.0-DEV.469"
     eval(
         Expr(
             :public,
-            :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractThreadingOption,
+            :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
             :accept_step_controller, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
-            :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :BaseThreads,
-            :beta1_default, :beta2_default, Symbol("@cache"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
+            :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
+            :beta1_default, :beta2_default, Symbol("@cache"), Symbol("@fold"), Symbol("@OnDemandTableauExtract"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
             :CompositeController, :constvalue, :Convergence, :current_extrapolant,
-            :current_interpolant, :DAEAlgorithm, :default_autoswitch, :default_controller, :default_linear_interpolation,
+            :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
             :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
             :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
             :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
-            :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
+            :get_fresh_jacobian, :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
             :get_qsteady_min, :get_W, :GLM, :hermite_interpolant, :IController,
             :ImplicitSecondOrderAlgorithm, :increment_accept!, :increment_nf!, :increment_reject!, :InterpolationData, :isautoswitch,
             :is_composite_algorithm, :isdefaultalg, :isdiscretecache, :isdtchangeable, :isfirstcall,
@@ -475,13 +472,33 @@ include("precompilation_setup.jl")
             :error_constant, :unitfulvalue,
             # Integrator step / cache / initialization hooks.
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
-            :find_algebraic_vars_eqs, :postamble!, :apply_step!, :last_step_failed, :reset_alg_dependent_opts!,
-            :set_discontinuity, :resolve_basic,
+            :find_algebraic_vars_eqs, :apply_step!, :reset_alg_dependent_opts!,
+            :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
+            :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
+            :initialize_saveat, :initialize_tstops,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
             :is_noise_saveable,
             # Docstring builder used by solver sublibs.
             :differentiation_rk_docstring,
+            # SDE/RODE abstract cache hierarchy. The SDE analogue of the already-public
+            # OrdinaryDiffEqCache trio: every StochasticDiffEq solver cache subtypes one
+            # of these, so they are a required solver-author extension point.
+            :StochasticDiffEqCache, :StochasticDiffEqConstantCache,
+            :StochasticDiffEqMutableCache, :trivial_limiter!,
+            # Round 3: custom-integrator construction and stepping hooks. Packages that
+            # build their own integrator on top of the OrdinaryDiffEqCore machinery
+            # (DelayDiffEq, OrdinaryDiffEqOperatorSplitting) both call these and add
+            # methods to them for their own integrator types.
+            :fix_dt_at_bounds!, :handle_tstop!,
+            :initialize_tstops, :initialize_saveat, :initialize_d_discontinuities,
+            # The two per-algorithm controller defaults that were left out of the
+            # already-public rest of that family (qmin_default, qmax_default,
+            # gamma_default, qsteady_*_default, beta*_default); both are documented
+            # in docs/src/api/controllers.md and specialized by solver packages.
+            :failfactor_default, :qmax_first_step_default,
+            # Composite-cache hooks extended by StochasticDiffEqCore.
+            :CompositeCache, :is_composite_cache, :is_constant_cache, :strip_cache,
         )
     )
 end

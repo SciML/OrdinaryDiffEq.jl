@@ -114,12 +114,13 @@
 DiffEqDevTools.stability_region
 DiffEqDevTools.imaginary_stability_interval
 DiffEqDevTools.check_tableau
-OrdinaryDiffEq.ODE_DEFAULT_TABLEAU
+OrdinaryDiffEqExplicitRK.ODE_DEFAULT_TABLEAU
 ```
 
 ## Explicit Tableaus
 
-```@docs
+<!-- Historical constructor names are retained in the prose list above; they
+are not current exported or public bindings.
 DiffEqDevTools.constructEuler
 DiffEqDevTools.constructRalston
 DiffEqDevTools.constructHeun
@@ -205,12 +206,12 @@ DiffEqDevTools.constructFeagin12
 DiffEqDevTools.constructOno12
 DiffEqDevTools.constructFeagin12Tableau
 DiffEqDevTools.constructFeagin14
-DiffEqDevTools.constructFeagin14Tableau
-```
+-->
 
 ## Implicit Tableaus
 
-```@docs
+<!-- The current implicit solver constructors are documented on their
+corresponding algorithm pages.
 DiffEqDevTools.constructImplicitEuler
 DiffEqDevTools.constructMidpointRule
 DiffEqDevTools.constructTrapezoidalRule
@@ -229,5 +230,43 @@ DiffEqDevTools.constructGL6
 DiffEqDevTools.constructRadauIA3
 DiffEqDevTools.constructRadauIA5
 DiffEqDevTools.constructRadauIIA3
-DiffEqDevTools.constructRadauIIA5
+-->
+
+## Rosenbrock tableaus
+
+These coefficient-tableau types are developer API for OrdinaryDiffEq solver
+implementations. Application code should select the corresponding documented
+Rosenbrock algorithm instead.
+
+```@docs
+OrdinaryDiffEqRosenbrockTableaus.GRK4ARodasTableau
+OrdinaryDiffEqRosenbrockTableaus.GRK4TRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS2PRRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS2RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS2SRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS34PRwRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS34PW1aRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS34PW1bRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS34PW2RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS3PRL2RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS3PRLRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS3PRRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS3PRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.ROS3RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas3PRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas3RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas3dRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas42Tableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas4P2Tableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas4PTableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas4PWTableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas4Tableau
+OrdinaryDiffEqRosenbrockTableaus.Rodas5Tableau
+OrdinaryDiffEqRosenbrockTableaus.RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Ros4LStabRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.RosShamp4RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.RosenbrockW6S4OSRodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Scholz4_7RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Veldd4RodasTableau
+OrdinaryDiffEqRosenbrockTableaus.Velds4RodasTableau
 ```

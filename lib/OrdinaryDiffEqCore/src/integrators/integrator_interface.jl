@@ -81,8 +81,8 @@ end
 @inline function SciMLBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isfsal(integrator.alg) &&
-            !has_stiff_interpolation(integrator.alg)
+    return if get_current_isfsal(integrator.alg, integrator.cache) &&
+            !get_current_has_stiff_interpolation(integrator.alg, integrator.cache)
         # Special stiff interpolations do not store the
         # right value in fsallast
         integrator.fsallast
@@ -116,8 +116,8 @@ end
     if isdiscretecache(integrator.cache)
         out .= integrator.cache.tmp
     else
-        return if isfsal(integrator.alg) &&
-                !has_stiff_interpolation(integrator.alg)
+        return if get_current_isfsal(integrator.alg, integrator.cache) &&
+                !get_current_has_stiff_interpolation(integrator.alg, integrator.cache)
             # Special stiff interpolations do not store the
             # right value in fsallast
             out .= integrator.fsallast
@@ -538,6 +538,20 @@ function SciMLBase.reinit!(
     integrator.t = t0
     integrator.tprev = t0
 
+    # Initialization changes the ImplicitDiscrete start state, so run it before
+    # save_start and preserve any InitialFailure instead of resetting it below.
+    implicit_discrete = integrator.sol.prob isa SciMLBase.ImplicitDiscreteProblem
+    if reinit_dae && implicit_discrete
+        if reinit_retcode
+            integrator.sol = SciMLBase.solution_new_retcode(
+                integrator.sol, ReturnCode.Default
+            )
+        end
+        SciMLBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
+        u0 = integrator.u
+    end
+
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
     reinit_tstops!(
@@ -593,7 +607,7 @@ function SciMLBase.reinit!(
         auto_dt_reset!(integrator)
     end
 
-    if reinit_dae &&
+    if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
         SciMLBase.initialize_dae!(integrator)
         update_uprev!(integrator)
@@ -607,7 +621,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reinit_retcode
+    if reinit_retcode && !(reinit_dae && implicit_discrete)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 
@@ -628,9 +642,13 @@ Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
 `integrator` (state, tolerances, norm, problem).
 """
 function _determine_initdt(integrator)
+    tdir = integrator.tdir
+    dtmax = tdir * min(
+        abs(integrator.opts.dtmax), abs(first_tstop(integrator) - tdir * integrator.t)
+    )
     return ode_determine_initdt(
         integrator.u, integrator.t,
-        integrator.tdir, integrator.opts.dtmax,
+        tdir, dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator

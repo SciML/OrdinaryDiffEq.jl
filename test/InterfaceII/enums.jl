@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Random
 using OrdinaryDiffEqFunctionMap
+using SciMLBase: DiscreteProblem
 
 # Simple Poisson random number generator using Knuth's algorithm
 function pois_rand(λ::Float64)

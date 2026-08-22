@@ -8,7 +8,8 @@ adchoices = if isempty(VERSION.prerelease)
 end
 
 function time_derivative(du, u, p, t)
-    return du[1] = -t
+    du[1] = -t
+    return
 end
 function time_derivative_static(u, p, t)
     return SVector(-t)

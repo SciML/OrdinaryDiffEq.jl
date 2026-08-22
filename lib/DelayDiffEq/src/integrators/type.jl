@@ -100,6 +100,8 @@ mutable struct DDEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     initializealg::IA
+    is_disco_step::Bool
+    disco_checkpoint::tType
     # SDE/RODE noise fields: populated for SDDEProblem, Nothing for DDEProblem.
     W::WType
     P::PType

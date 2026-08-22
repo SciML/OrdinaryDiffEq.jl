@@ -5,6 +5,7 @@ import OrdinaryDiffEqCore: unwrap_alg,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     alg_cache, @threaded, isthreaded,
+    Sequential, BaseThreads, PolyesterThreads,
     constvalue,
     differentiation_rk_docstring, trivial_limiter!,
     qmax_default, alg_adaptive_order,
@@ -14,17 +15,18 @@ import OrdinaryDiffEqCore: unwrap_alg,
     get_current_alg_order,
     isfirk,
     _fixup_ad, perform_step!,
-    LinearAliasSpecifier, set_discontinuity,
+    set_discontinuity,
     Convergence, FastConvergence, NLStatus,
     VerySlowConvergence, Divergence, get_new_W_γdt_cutoff
 import SciMLBase
-import SciMLBase: alg_order, _vec, _reshape, _unwrap_val,
+import SciMLBase: alg_order, _vec, _reshape, _unwrap_val, LinearAliasSpecifier,
     UDerivativeWrapper, UJacobianWrapper, value,
     LinearProblem, get_tmp_cache, init
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 using MuladdMacro: @muladd
 using RecursiveArrayTools: recursivefill!
 import Polyester
+import LinearAlgebra
 using LinearAlgebra: I, UniformScaling, mul!, lu, dot
 import LinearSolve
 import FastBroadcast: @..
@@ -34,7 +36,8 @@ import OrdinaryDiffEqCore: _ode_interpolant, _ode_interpolant!, _ode_addsteps!,
 import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: build_J_W, build_jac_config,
     calc_J!, dolinsolve, calc_J,
-    islinearfunction
+    islinearfunction, drain_jvp_count!, set_linear_reltol!
+import OrdinaryDiffEqDifferentiation: jvp_counter
 import ADTypes: AutoForwardDiff
 import SciMLOperators
 import SciMLOperators: AbstractSciMLOperator
@@ -64,6 +67,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("controllers.jl")
 include("firk_caches.jl")
+include("firk_operators.jl")
 include("firk_tableaus.jl")
 include("firk_perform_step.jl")
 include("firk_interpolants.jl")
@@ -71,5 +75,9 @@ include("firk_addsteps.jl")
 include("integrator_interface.jl")
 
 export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau, GaussLegendre
+
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end

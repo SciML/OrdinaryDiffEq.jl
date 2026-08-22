@@ -5,7 +5,8 @@ import OrdinaryDiffEqCore: isfsal,
     OrdinaryDiffEqMutableCache, constvalue, alg_cache,
     unwrap_alg, @cache,
     @threaded, perform_step!, isthreaded,
-    full_cache, get_fsalfirstlast, differentiation_rk_docstring,
+    Sequential, BaseThreads, PolyesterThreads,
+    get_fsalfirstlast,
     _fixup_ad
 import SciMLBase: alg_order, _unwrap_val
 import DiffEqBase: initialize!
@@ -13,9 +14,7 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 
 
-using Reexport: Reexport, @reexport
-using SciMLBase: SciMLBase
-@reexport using SciMLBase
+import SciMLBase
 
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail,
     markfirststage!
@@ -28,5 +27,9 @@ include("pdirk_caches.jl")
 include("pdirk_perform_step.jl")
 
 export PDIRK44
+
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end

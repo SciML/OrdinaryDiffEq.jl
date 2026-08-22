@@ -25,11 +25,11 @@ T = Float32
 u0 = T.([1.0; 0.0; 0.0])
 
 tspan = T.((0, 70))
-prob = remake(prob, u0 = u0, tspan = tspan)
+prob = remake(prob; u0, tspan)
 @test_nowarn solve(prob, Euler(); dt = T(0.0001))
 
 tspan = T.((2000, 2100))
-prob = remake(prob, tspan = tspan)
+prob = remake(prob; tspan)
 # set maxiters to prevent infinite loop on test failure
 @test solve(prob, Euler(); dt = T(0.0001), maxiters = 10).retcode ==
     SciMLBase.ReturnCode.MaxIters
@@ -54,7 +54,8 @@ using LinearAlgebra
 function f(du, u, p, t)
     du[1] = -p[1] * u[1] + p[2] * u[2] * u[3]
     du[2] = p[1] * u[1] - p[2] * u[2] * u[3] - p[3] * u[2] * u[2]
-    return du[3] = u[1] + u[2] + u[3] - 1.0
+    du[3] = u[1] + u[2] + u[3] - 1.0
+    return
 end
 M = Diagonal([1, 1, 0])
 p = [0.04, 10^4, 3.0e7]
@@ -129,4 +130,24 @@ end
     f_ok(u, p, t) = -u
     sol_ok = solve(ODEProblem(f_ok, [1.0], (0.0, 1.0)), Tsit5())
     @test SciMLBase.successful_retcode(sol_ok)
+end
+
+@testset "Initial dt probe respects the first tstop" begin
+    for (tspan, tstop) in (((0.0, 10.0), 1.0e-3), ((10.0, 0.0), 9.999))
+        tdir = sign(tspan[2] - tspan[1])
+        for stop_keyword in (:tstops, :d_discontinuities)
+            options = NamedTuple{(stop_keyword,)}(([tstop],))
+            for isinplace in (false, true)
+                evaluated = Float64[]
+                f = if isinplace
+                    (du, u, p, t) -> (push!(p, t); du .= -u)
+                else
+                    (u, p, t) -> (push!(p, t); -u)
+                end
+                prob = ODEProblem(f, [1.0], tspan, evaluated)
+                init(prob, Tsit5(); options...)
+                @test maximum(tdir .* (evaluated .- tstop)) <= 0
+            end
+        end
+    end
 end

@@ -1,7 +1,7 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
-using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
-using NonlinearSolve: NewtonRaphson
+using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg, NLNewton
+using NonlinearSolve: NewtonRaphson, TrustRegion
 using ADTypes, LinearAlgebra, SciMLBase
 using Test
 
@@ -46,5 +46,71 @@ refsol = solve(prob, FBDF(); reltol = 1.0e-12, abstol = 1.0e-14)
         # stats.nw one-to-one.
         @test JAC_CALLS[] < sol.stats.nw / 3
         @test JAC_CALLS[] >= 1
+    end
+end
+
+@testset "stale-W Newton directions are rescaled" begin
+    # `W` is reused while `γΔt` drifts within `new_W_dt_cutoff`, which leaves the Newton
+    # direction it produces scaled wrong; `NLNewton` corrects for that. Reproducing it
+    # needs `dt` to range over many orders of magnitude, hence the long tspan, and an
+    # AD Jacobian rather than the analytic one used above.
+    staleprob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e11), [0.04, 3.0e7, 1.0e4])
+    tight = solve(staleprob, Rodas5P(); reltol = 1.0e-13, abstol = 1.0e-15)
+    err(sol) = maximum(abs.(sol.u[end] .- tight.u[end]))
+
+    ref = solve(staleprob, KenCarp4(); reltol = 1.0e-9, abstol = 1.0e-12)
+    sol = solve(staleprob, KenCarp4(nlsolve = nsa); reltol = 1.0e-9, abstol = 1.0e-12)
+    @test SciMLBase.successful_retcode(sol)
+    # Uncorrected directions cost ~1.5x NLNewton's steps for ~9x its error here.
+    @test err(sol) < 3 * err(ref)
+    @test sol.stats.naccept < 1.25 * ref.stats.naccept
+end
+
+@testset "globalized inner solver does not converge on a rejected step" begin
+    # A TrustRegion trial step that is rejected leaves the iterate exactly unmoved
+    # without terminating the inner cache; the outer displacement test alone reads
+    # that as convergence and accepts the stage with no correction applied (#3817).
+    # Driven at a dt far too coarse for the Robertson transient, so the inner solves
+    # genuinely cannot converge and the failure must be reported rather than
+    # silently absorbed.
+    nsa_tr = NonlinearSolveAlg(TrustRegion(; autodiff = AutoForwardDiff()))
+    nsa_nr = NonlinearSolveAlg(NewtonRaphson(; autodiff = AutoForwardDiff()))
+    hard = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e3), [0.04, 3.0e7, 1.0e4])
+
+    sol_tr = solve(hard, FBDF(nlsolve = nsa_tr); dt = 1.0, adaptive = false)
+    sol_nr = solve(hard, FBDF(nlsolve = nsa_nr); dt = 1.0, adaptive = false)
+
+    # The state must not be reported as a successful solve while frozen at u0.
+    @test !(SciMLBase.successful_retcode(sol_tr) && sol_tr.u[end] == hard.u0)
+    # TrustRegion must reach the same verdict as the non-globalized inner solver.
+    @test SciMLBase.successful_retcode(sol_tr) == SciMLBase.successful_retcode(sol_nr)
+end
+
+@testset "TrustRegion matches NewtonRaphson when the solves do converge" begin
+    nsa_tr = NonlinearSolveAlg(TrustRegion(; autodiff = AutoForwardDiff()))
+    sol = solve(prob, FBDF(nlsolve = nsa_tr); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test SciMLBase.successful_retcode(sol)
+    @test norm(sol.u[end] .- refsol.u[end]) / norm(refsol.u[end]) < 1.0e-4
+
+    # At default tolerances the rejected-step false convergence used to cost three
+    # orders of magnitude (relerr 1.7e-2, where NLNewton gives 2.1e-5); with rejected
+    # trial steps excluded from the convergence test it lands back at tolerance level
+    # (measured 1.8e-5).
+    sol_def = solve(prob, FBDF(nlsolve = nsa_tr))
+    @test SciMLBase.successful_retcode(sol_def)
+    @test norm(sol_def.u[end] .- refsol.u[end]) / norm(refsol.u[end]) < 1.0e-3
+end
+
+@testset "non-adaptive solves do not freeze the Jacobian" begin
+    # `do_newJW` returns `(true, true)` whenever `adaptive = false`: with a prescribed
+    # step sequence there is no error test to catch the step a stale Jacobian degrades
+    # and no way to pull it back. `NonlinearSolveAlg` has to make the same call —
+    # freezing `J` for the whole solve here would silently diverge from `NLNewton`.
+    fixedprob = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0), [0.04, 3.0e7, 1.0e4])
+    for nl in (NLNewton(), nsa)
+        JAC_CALLS[] = 0
+        sol = solve(fixedprob, TRBDF2(nlsolve = nl); dt = 1.0e-4, adaptive = false)
+        @test SciMLBase.successful_retcode(sol)
+        @test JAC_CALLS[] >= sol.stats.naccept
     end
 end

@@ -1,7 +1,8 @@
 module OrdinaryDiffEqCoreMooncakeExt
 
 using OrdinaryDiffEqCore, Mooncake
-using Mooncake: @zero_adjoint, MinimalCtx
+using Mooncake: @zero_adjoint, @is_primitive, MinimalCtx, CoDual, Dual, NoRData,
+    MutableTangent, NoTangent, primal, lazy_zero_rdata, instantiate
 
 # Most of these rules mirror the inactive_noinl rules in
 # OrdinaryDiffEqCoreEnzymeCoreExt. They cover bookkeeping/logging/error
@@ -61,5 +62,49 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
 Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.SciMLBase.check_error), Vararg,
 }
+
+# initialize_saveat builds its result from TwicePrecision ranges, and there's no
+# forward-mode getfield rule for that type yet (SciML/SciMLSensitivity.jl#1427). Safe to
+# zero here: the returned heap is only ever used for control flow (isempty/length/in,
+# heap-top comparisons), never a value that reaches the solution or loss. reinit_saveat!
+# is left unmarked since it's off this code path.
+#
+# Written by hand instead of via @zero_derivative: that macro's zero_tangent recurses into
+# the heap's valtree::Vector{T} and fails to build an empty array's placeholder under
+# forward-mode _new_. Plain zeros(eltype(y.valtree), n) sidesteps it while still matching T
+# (e.g. Float32 saveat).
+@is_primitive MinimalCtx Tuple{
+    typeof(OrdinaryDiffEqCore.initialize_saveat), Type, Any, Any,
+}
+
+_zero_saveat_tangent(y) = MutableTangent((ordering = NoTangent(), valtree = zeros(eltype(y.valtree), length(y.valtree))))
+
+function Mooncake.frule!!(
+        ::Dual{typeof(OrdinaryDiffEqCore.initialize_saveat)}, T::Dual{<:Type},
+        saveat::Dual, tspan::Dual,
+    )
+    y = OrdinaryDiffEqCore.initialize_saveat(primal(T), primal(saveat), primal(tspan))
+    return Dual(y, _zero_saveat_tangent(y))
+end
+
+function Mooncake.rrule!!(
+        pf::CoDual{typeof(OrdinaryDiffEqCore.initialize_saveat)}, T::CoDual{<:Type},
+        saveat::CoDual, tspan::CoDual,
+    )
+    y = OrdinaryDiffEqCore.initialize_saveat(primal(T), primal(saveat), primal(tspan))
+    # saveat/tspan need their own-typed zero rdata (e.g. 0.0), not a hardcoded NoRData(),
+    # same as promote_f's t argument -- otherwise accumulation crashes if they alias a
+    # genuinely-differentiated value elsewhere (e.g. saveat = p[1]).
+    lazy_pf, lazy_T, lazy_saveat, lazy_tspan = map(
+        lazy_zero_rdata, (primal(pf), primal(T), primal(saveat), primal(tspan))
+    )
+    function initialize_saveat_pb!!(::NoRData)
+        return (
+            instantiate(lazy_pf), instantiate(lazy_T), instantiate(lazy_saveat),
+            instantiate(lazy_tspan),
+        )
+    end
+    return CoDual(y, _zero_saveat_tangent(y)), initialize_saveat_pb!!
+end
 
 end

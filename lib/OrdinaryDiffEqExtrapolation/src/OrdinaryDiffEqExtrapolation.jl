@@ -11,21 +11,18 @@ import OrdinaryDiffEqCore: alg_maximum_order, get_current_adaptive_order,
     step_accept_controller!, step_reject_controller!,
     OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    alg_cache, CompiledFloats, @threaded, stepsize_controller!,
-    full_cache, qmin_default,
-    constvalue, PolyesterThreads,
+    alg_cache, CompiledFloats, stepsize_controller!,
+    qmin_default,
+    constvalue, Sequential, BaseThreads, PolyesterThreads,
     _fixup_ad,
-    get_fsalfirstlast, generic_solver_docstring,
-    differentiation_rk_docstring,
-    LinearAliasSpecifier
+    get_fsalfirstlast
 import OrdinaryDiffEqCore: default_controller, AbstractControllerCache, setup_controller_cache,
     get_qmin, get_qmax
 import OrdinaryDiffEqCore
 
-# Owned by SciMLBase / DiffEqBase / SciMLOperators, re-exported through
-# OrdinaryDiffEqCore / OrdinaryDiffEqDifferentiation — import from the owners directly so
-# ExplicitImports' owner check is satisfied.
-import SciMLBase: alg_order, _unwrap_val, _reshape, _vec,
+# Owned by SciMLBase / DiffEqBase, re-exported through OrdinaryDiffEqCore /
+# OrdinaryDiffEqDifferentiation.
+import SciMLBase: alg_order, LinearAliasSpecifier,
     TimeDerivativeWrapper, UDerivativeWrapper,
     TimeGradientWrapper, UJacobianWrapper
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timedepentdtmin
@@ -33,8 +30,8 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timed
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
-using LinearSolve: LinearSolve, RFLUFactorization
-import FastPower
+using LinearSolve: LinearSolve, GenericLUFactorization
+using FastPower: fastpower
 using SciMLOperators: SciMLOperators, WOperator
 import SciMLLogging: @SciMLMessage
 import OrdinaryDiffEqDifferentiation: calc_J,
@@ -42,10 +39,10 @@ import OrdinaryDiffEqDifferentiation: calc_J,
     build_jac_config, calc_J!, jacobian2W!, dolinsolve
 import ADTypes: AutoForwardDiff
 
-using Reexport: Reexport, @reexport
-@reexport using SciMLBase
-using SciMLBase: SciMLBase, LinearProblem, init
+using CommonSolve: init
+using SciMLBase: SciMLBase, LinearProblem
 
+include("utils.jl")
 include("algorithms.jl")
 include("alg_utils.jl")
 include("controllers.jl")
@@ -64,5 +61,9 @@ export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHaire
     ImplicitEulerExtrapolation,
     ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
     ImplicitEulerBarycentricExtrapolation
+
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :Sequential, :BaseThreads, :PolyesterThreads))
+end
 
 end

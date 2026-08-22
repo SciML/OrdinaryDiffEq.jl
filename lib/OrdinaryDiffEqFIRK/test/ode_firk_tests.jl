@@ -56,7 +56,8 @@ function vanderpol_firk(du, u, p, t)
     x, y = u[1], u[2]
     μ = p[1]
     du[1] = y                           # dx/dt = y
-    return du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    return
 end
 
 function vanderpol_firk(u, p, t)
@@ -152,7 +153,7 @@ end
         abstol = 1.0e-9
         sol = solve(
             prob_ode_linear, GaussLegendre(num_stages = s);
-            reltol = reltol, abstol = abstol
+            reltol, abstol
         )
         @test SciMLBase.successful_retcode(sol)
         exact = prob_ode_linear.u0 * exp(1.01 * (sol.t[end] - sol.t[1]))
@@ -160,7 +161,7 @@ end
     end
 end
 
-@testset "GaussLegendre Richardson tightens step count when tol tightens" begin
+@testset "GaussLegendre adaptive tightens step count when tol tightens" begin
     s = 3
     sol_loose = solve(
         prob_ode_linear, GaussLegendre(num_stages = s);
@@ -188,4 +189,17 @@ for iip in (true, false)
     end
     @test length(sol.t) < 5000 # the error estimate is not very good
     @test SciMLBase.successful_retcode(sol)
+end
+
+@testset "AdaptiveRadau initializes every stage-value slot" begin
+    # `integrator.k[3:end]` holds one stage value per possible stage; the extrapolated
+    # initial guess reads all `num_stages` of them, so the slots above the starting stage
+    # count are read as soon as the controller raises the order. Leave dirty blocks in the
+    # allocator's free lists first, or an uninitialized slot can come back zeroed by luck.
+    poison() = sum(sum, [fill(NaN, 2) for _ in 1:50_000])
+    @test isnan(poison())
+    GC.gc(false)
+    vanstiff = ODEProblem(vanderpol_firk, [sqrt(3), 0.0], (0.0, 1.0), [1.0e6])
+    integ = init(vanstiff, AdaptiveRadau())
+    @test all(x -> all(iszero, x), integ.k[3:(integ.kshortsize)])
 end

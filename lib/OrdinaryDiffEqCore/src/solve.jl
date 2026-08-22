@@ -16,7 +16,7 @@ determine_controller_datatype(u, internalnorm, ts::Tuple{<:Number, <:Number}) = 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(SciMLBase.value(internalnorm(u, ts[1]))), typeof(SciMLBase.value(internalnorm(u, ts[2]))), eltype(float.(SciMLBase.value(ts))))
 determine_controller_datatype(u, internalnorm, ts::Tuple{<:Integer, <:Integer}) = promote_type(typeof(float(SciMLBase.value(ts[1]))), typeof(float(SciMLBase.value(ts[2])))) # This seems to be an assumption implicitly taken somewhere
 
-mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, FunctionType, tType2, ParameterType}
+mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType, varsType, callbackType, outType, outCacheType, FunctionType, tType2, ParameterType}
     u₁::u1Type
     callback::callbackType
     dt::tType
@@ -28,8 +28,8 @@ mutable struct zero_func_struct{u1Type, uType, tType, kType, CacheType, idxsType
     differential_vars::varsType
     ind::Int
     out::outType
-    out_low::outType
-    out_high::outType
+    out_low::outCacheType
+    out_high::outCacheType
     f::FunctionType
     tprev::tType2
     p::ParameterType
@@ -38,7 +38,8 @@ end
 parameter_values(z::zero_func_struct) = z.p
 
 function (z::zero_func_struct)(θ, p)
-    _ode_addsteps!(z.k, z.tprev, z.uprev, z.u, z.dt, z.f, z.p, z.cache, false, true, false)
+    iszero(θ) && return z.out_low[z.ind]
+    isone(θ) && return z.out_high[z.ind]
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
     return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)
 end
@@ -118,7 +119,7 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
 end
 
 """
-    _ode_init(prob, alg, timeseries_init=(), ts_init=(), ks_init=(); kwargs...)
+    _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
 Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
 separated from `__init` so that SDE packages can call it directly, bypassing
@@ -676,13 +677,13 @@ Base.@constprop :aggressive function _ode_init(
 
     _sol_kwargs = if !isnothing(W)
         (;
-            W = W, seed = seed, interp = id, dense = dense, alg_choice = alg_choice,
-            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+            W, seed, interp = id, dense, alg_choice,
+            calculate_error = false, stats, saved_subsystem,
         )
     else
         (;
-            dense = dense, k = ks, interp = id, alg_choice = alg_choice,
-            calculate_error = false, stats = stats, saved_subsystem = saved_subsystem,
+            dense, k = ks, interp = id, alg_choice,
+            calculate_error = false, stats, saved_subsystem,
         )
     end
     sol = SciMLBase.build_solution(prob, _alg, ts, timeseries; _sol_kwargs...)
@@ -742,7 +743,7 @@ Base.@constprop :aggressive function _ode_init(
                 arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
                 arr, similar(arr), similar(arr)
             else
-                nothing, nothing, nothing
+                nothing, zeros(Float64, 1), zeros(Float64, 1)
             end
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
             zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, typeof(p)}}(zero_func)
@@ -758,6 +759,8 @@ Base.@constprop :aggressive function _ode_init(
 
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
 
+    is_disco_step = false
+    disco_checkpoint = zero(t)
     # Seed the initial EEst on the controller cache (was previously
     # `integrator.EEst = oneunit(EEstT)`).
     set_EEst!(controller_cache, EEst)
@@ -791,7 +794,7 @@ Base.@constprop :aggressive function _ode_init(
         isout, reeval_fsal,
         derivative_discontinuity, reinitialize, isdae,
         opts, stats, initializealg, differential_vars,
-        fsalfirst, fsallast, _rng,
+        fsalfirst, fsallast, _rng, is_disco_step, disco_checkpoint,
         W, P, sqdt,
         noise, c, rate_constants
     )
@@ -840,9 +843,19 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     if !(_tstops_cache isa AbstractArray || _tstops_cache isa Tuple || _tstops_cache isa Number)
+        # Match initialize_tstops / reinit_tstops!: drop endpoints so a callable
+        # that returns tspan[1] cannot zero dt via the SDE init modify_dt_for_tstops!
+        # path (SciML/OrdinaryDiffEq.jl#3165).
+        t0, tf = prob.tspan
+        tdir = sign(tf - t0)
+        tdir_t0 = tdir * t0
+        tdir_tf = tdir * tf
         tstops = _tstops_cache(parameter_values(integrator), prob.tspan)
         for tstop in tstops
-            add_tstop!(integrator, tstop)
+            tdir_t = tdir * tstop
+            if tdir_t0 < tdir_t < tdir_tf
+                add_tstop!(integrator, tstop)
+            end
         end
     end
 
@@ -922,8 +935,8 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
             integrator.sol;
-            timeseries_errors = integrator.opts.timeseries_errors,
-            dense_errors = integrator.opts.dense_errors
+            integrator.opts.timeseries_errors,
+            integrator.opts.dense_errors
         )
     end
     if integrator.sol.retcode != ReturnCode.Default
@@ -971,7 +984,40 @@ function handle_dt!(integrator, dt)
     end
 end
 
-# time stops
+"""
+    initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) -> BinaryHeap{T}
+
+Build the internal directional time-stop queue for a solver integrator.
+
+# Arguments
+
+- `T::Type`: Element type of the queue.
+- `tstops`: Iterable of requested stopping times.
+- `d_discontinuities`: Iterable of derivative-discontinuity times.
+- `tspan::Tuple`: Integration start and end times.
+
+# Returns
+
+- `BinaryHeap{T}`: Directional times strictly inside `tspan`, followed by the final time.
+
+# Rules
+
+- Times are stored multiplied by the integration direction, so `pop!` visits the next
+  physical time for both forward and reverse integrations.
+- Entries at or outside the initial and final bounds are discarded; the final bound is
+  inserted exactly once.
+- Solver authors implementing a custom `init` path must use this helper so `tstops`
+  and derivative discontinuities preserve the standard ordering semantics.
+
+!!! warning "Developer API, not user API"
+    Application code should pass `tstops` and `d_discontinuities` to `solve` or
+    `init`; it must not construct this queue directly.
+
+# Example
+```julia
+tstops_internal = initialize_tstops(Float64, (0.25, 0.75), (), (0.0, 1.0))
+```
+"""
 @inline function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where {T}
     tstops_internal = BinaryHeap{T}(FasterForward())
 
@@ -1023,7 +1069,37 @@ function reinit_tstops!(
     return push!(tstops_internal, tdir_tf)
 end
 
-# saving time points
+"""
+    initialize_saveat(::Type{T}, saveat, tspan) -> BinaryHeap{T}
+
+Build the internal directional queue of output times for a solver integrator.
+
+# Arguments
+
+- `T::Type`: Element type of the queue.
+- `saveat`: A positive output interval or iterable of requested output times.
+- `tspan::Tuple`: Integration start and end times.
+
+# Returns
+
+- `BinaryHeap{T}`: Directional output times accepted by the standard `saveat` rules.
+
+# Rules
+
+- A scalar `saveat` is treated as a positive interval in the integration direction.
+- An iterable `saveat` contributes only times strictly after the initial bound and at or
+  before the final bound.
+- Solver authors implementing a custom `init` path must use this helper to preserve
+  forward and reverse integration semantics.
+
+!!! warning "Developer API, not user API"
+    Application code should set the `saveat` keyword on `solve` or `init`.
+
+# Example
+```julia
+saveat_internal = initialize_saveat(Float64, 0.1, (0.0, 1.0))
+```
+"""
 function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     saveat_internal = BinaryHeap{T}(FasterForward())
 
@@ -1068,18 +1144,41 @@ function reinit_saveat!(::Type{T}, saveat_internal, saveat, tspan) where {T}
     end
 end
 
-# discontinuities
+"""
+    initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) -> BinaryHeap{T}
+
+Build the internal directional queue of derivative-discontinuity times.
+
+# Arguments
+
+- `T::Type`: Element type of the queue.
+- `d_discontinuities`: Iterable of derivative-discontinuity times.
+- `tspan::Tuple`: Integration start and end times; its direction determines queue order.
+
+# Returns
+
+- `BinaryHeap{T}`: Requested discontinuities at or after the initial time in the
+  integration direction, stored directionally.
+
+# Rules
+
+- Entries before the initial time in the integration direction are discarded. Entries
+  at the initial time and beyond the final time are retained.
+- Solver authors use this queue only when their initialization path supports the
+  `d_discontinuities` solve keyword.
+
+!!! warning "Developer API, not user API"
+    Application code should supply `d_discontinuities` to `solve` or `init`.
+
+# Example
+```julia
+discontinuities = initialize_d_discontinuities(Float64, (0.5,), (0.0, 1.0))
+```
+"""
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where {T}
     d_discontinuities_internal = BinaryHeap{T}(FasterForward())
     sizehint!(d_discontinuities_internal, length(d_discontinuities))
-
-    t0, tf = tspan
-    tdir = sign(tf - t0)
-
-    for t in d_discontinuities
-        push!(d_discontinuities_internal, tdir * t)
-    end
-
+    reinit_d_discontinuities!(T, d_discontinuities_internal, d_discontinuities, tspan)
     return d_discontinuities_internal
 end
 
@@ -1088,9 +1187,11 @@ function reinit_d_discontinuities!(::Type{T}, d_discontinuities_internal, d_disc
 
     t0, tf = tspan
     tdir = sign(tf - t0)
+    tdir_t0 = tdir * t0
 
     for t in d_discontinuities
-        push!(d_discontinuities_internal, tdir * t)
+        tdir_t = tdir * t
+        tdir_t0 ≤ tdir_t && push!(d_discontinuities_internal, tdir_t)
     end
     return
 end

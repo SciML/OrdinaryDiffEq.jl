@@ -1,7 +1,7 @@
 name = "StochasticDiffEqLeaping"
 uuid = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.2"
+version = "2.1.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -29,7 +29,7 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 ADTypes = "1.22.0"
 DiffEqBase = "7"
 FiniteDiff = "2.27.0"

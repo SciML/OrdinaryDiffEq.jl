@@ -53,3 +53,15 @@ end
     @test default_nlsolve(nothing, Val(false), u, scc_plain) !== nothing
     @test default_nlsolve(nothing, Val(true), u, scc_plain) !== nothing
 end
+
+@testset "stateless init problem selects no solver" begin
+    # `u === nothing` (an `initializeprob` with `state_values(...) === nothing`): the
+    # OrdinaryDiffEqCore method covering it is more specific in `u` while these are more
+    # specific in the problem type, so without an explicit intersection method the call is
+    # an ambiguity error rather than the `nothing` Core answers everywhere else.
+    scc = SCCNonlinearProblem((np, hp), (Returns(nothing), Returns(nothing)), nothing, Val(true))
+    for iip in (Val(true), Val(false))
+        @test default_nlsolve(nothing, iip, nothing, hp) === nothing
+        @test default_nlsolve(nothing, iip, nothing, scc) === nothing
+    end
+end

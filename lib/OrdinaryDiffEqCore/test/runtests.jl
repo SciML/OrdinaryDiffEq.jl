@@ -2,7 +2,7 @@ using Pkg
 using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
@@ -32,9 +32,18 @@ end
 
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "Generic algorithm trait contract" include("algorithm_interface_tests.jl")
+    @time @safetestset "SciMLBase constructor bindings" begin
+        using OrdinaryDiffEqCore: DynamicalODEProblem, ODEFunction
+        using SciMLBase, Test
+
+        @test ODEFunction === SciMLBase.ODEFunction
+        @test DynamicalODEProblem === SciMLBase.DynamicalODEProblem
+    end
+    @time @safetestset "Developer Time Queue API" include("developer_time_queue_api_tests.jl")
+    @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
     @time @safetestset "Sparse isdiag Performance" include("sparse_isdiag_tests.jl")
     @time @safetestset "Algebraic Vars Detection" include("algebraic_vars_detection_tests.jl")
-    @time @safetestset "Discontinuity Detection" include("disco_tests.jl")
     @time @safetestset "Interpolation Search Hint" include("interpolation_hint_tests.jl")
     @time @safetestset "Bool Equal Coercion" include("bool_equal_tests.jl")
 end

@@ -4,7 +4,8 @@ import SciMLBase
 
 # Simple DDE problem for testing
 function f!(du, u, h, p, t)
-    return du[1] = -h(p, t - 0.2)[1]
+    du[1] = -h(p, t - 0.2)[1]
+    return
 end
 
 h(p, t) = [0.0]
