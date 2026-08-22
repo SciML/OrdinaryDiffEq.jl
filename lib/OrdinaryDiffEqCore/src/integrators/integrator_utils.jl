@@ -811,6 +811,7 @@ function instability_jacobian(integrator)
         #radau
         get_fresh_jacobian(integrator, integrator.cache)
     elseif hasproperty(integrator.cache, :nlsolver) &&
+            hasproperty(integrator.cache.nlsolver, :cache) &&
             hasproperty(integrator.cache.nlsolver.cache, :J)
         #BDF
         integrator.cache.nlsolver.cache.J

@@ -10,6 +10,10 @@ end
 # Non-FSAL
 get_fsalfirstlast(cache::PDIRK44Cache, u) = (nothing, nothing)
 
+function SciMLBase.get_tmp_cache(integrator, ::PDIRK44, cache::PDIRK44Cache)
+    return (first(cache.nlsolver).tmp, first(cache.nlsolver).z)
+end
+
 struct PDIRK44ConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::TabType
