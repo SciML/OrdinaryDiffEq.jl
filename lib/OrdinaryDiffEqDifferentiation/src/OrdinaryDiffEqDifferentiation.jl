@@ -59,6 +59,26 @@ import DiffEqBase: OrdinaryDiffEqTag
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
+"""
+    _declares_no_nonzeros(S) -> Bool
+
+Whether `S`, used as a `jac_prototype`/`sparsity`, declares that the Jacobian has no
+structural nonzeros at all, so AD would leave it identically zero.
+
+The quantity that matters is what the colouring consumes, the count of *stored* entries,
+not whether the values are zero. A `SparseMatrixCSC` whose stored entries are all `0.0`
+still declares the right structure, and a `Tridiagonal` of zeros has real structure too;
+only a pattern with nothing stored leaves AD nothing to write. The structured and sparse
+cases need `nnz`, so they live in the SparseArrays extension alongside `is_sparse_csc`.
+
+An operator-valued prototype is deliberately not covered: it reaches `prepare_user_sparsity`
+but leaves by a different route than the matrix cases, and the check here does not take
+effect for it.
+"""
+_declares_no_nonzeros(::Any) = false
+_declares_no_nonzeros(S::StridedMatrix) = all(iszero, S)
+_declares_no_nonzeros(S::AbstractArray{Bool}) = !any(S)
+
 # Seeding a sparsity pattern from the mass matrix uses `findall`/`getindex`, which a
 # SciMLOperator does not support. `convert` reads the operator's currently-cached array
 # rather than re-evaluating it, which is what is wanted here: only the structural

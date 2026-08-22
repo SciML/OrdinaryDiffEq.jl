@@ -114,6 +114,28 @@ function prepare_user_sparsity(ad_alg, prob)
     sparsity = prob.f.sparsity
 
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
+        # Checked before the mass-matrix diagonal patch below, which writes stored entries
+        # into the prototype and destroys the evidence: after it an `spzeros` prototype has
+        # `nnz == n` and no longer looks empty on a second solve reusing the same
+        # `ODEFunction`. A pattern with nothing stored leaves AD nothing to write, so `J`
+        # stays identically zero and the solve is silently wrong rather than slow (#4140).
+        # An analytic `jac`/`Wfact` supplies the Jacobian itself, so the pattern does not
+        # matter there.
+        if !SciMLBase.has_jac(prob.f) && !SciMLBase.has_Wfact(prob.f) &&
+                !SciMLBase.has_Wfact_t(prob.f) && _declares_no_nonzeros(sparsity)
+            throw(
+                ArgumentError(
+                    "the `jac_prototype`/`sparsity` given for this problem declares no " *
+                        "structural nonzeros (a dense all-zero matrix, or a sparse " *
+                        "matrix with no stored entries), i.e. that the Jacobian is zero " *
+                        "everywhere. Automatic differentiation would leave it " *
+                        "identically zero and the solve would be silently wrong. Pass " *
+                        "`nothing`, the default, for a dense AD Jacobian, or a prototype " *
+                        "whose stored structure is the real sparsity pattern, or supply " *
+                        "`jac`."
+                )
+            )
+        end
         if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
             if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
