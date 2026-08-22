@@ -122,10 +122,10 @@ end
 # holds the error partition, and the interpolation projects onto the solution.
 function _split_global_error_solution(ext_sol, prob)
     us = [u.x[1] for u in ext_sol.u]
-    ges = [u.x[2] for u in ext_sol.u]
+    global_errors = [u.x[2] for u in ext_sol.u]
     sol = @set ext_sol.interp = GLEESolutionInterpolation(ext_sol.interp)
     sol = @set sol.prob = prob
-    sol = @set sol.global_error = ges
+    sol = @set sol.global_error = global_errors
     # Set `u` last: `setproperties` recomputes the solution's `T`/`N` type
     # parameters from the new (unpartitioned) `u`.
     return @set sol.u = us
