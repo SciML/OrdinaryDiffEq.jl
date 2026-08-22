@@ -17,10 +17,16 @@ then amplifies last-ulp input differences without bound. That is what
 SciML/OrdinaryDiffEq.jl#4034 measured: perturbing `u0[1]` by one ulp moved the
 `Hairer4` solution of this index-1 DAE by 3.7e-03.
 
-The gate is deliberately loose relative to the values it protects: a
-round-off-reproducible integration lands at 1e-15 … 1e-7 here (the step sequence
-itself is mildly chaotic), while the regression it catches sits at 5.7e-04
-(`Hairer42`) and 3.7e-03 (`Hairer4`).
+Both solves ask for a tolerance rather than taking the default. The linear solve
+inherits `reltol`, and at the default 1e-3 a Krylov solve returns a Newton
+direction accurate only to 1e-3, which cannot drive the stage to 1e-3: `dt`
+collapses and both methods return `Unstable` before this measures anything
+(SciML/OrdinaryDiffEq.jl#4293).
+
+The gate is deliberately loose relative to the values it protects: at 1e-12 a
+round-off-reproducible integration lands at 6.0e-07 (`Hairer4`) and 4.6e-07
+(`Hairer42`), the step sequence itself being mildly chaotic, while the regression
+it catches sits at 5.7e-04 (`Hairer42`) and 3.7e-03 (`Hairer4`).
 =#
 
 dae!(du, u, p, t) = mul!(du, p, u)
@@ -51,8 +57,14 @@ end
 @testset "Newton-Krylov round-off reproducibility ($(nameof(alg)))" for alg in (
         Hairer4, Hairer42,
     )
-    a = solve(dae_prob(U0), alg(linsolve = KrylovJL_GMRES()); maxiters = 10_000)
-    b = solve(dae_prob(U0_PERTURBED), alg(linsolve = KrylovJL_GMRES()); maxiters = 10_000)
+    a = solve(
+        dae_prob(U0), alg(linsolve = KrylovJL_GMRES());
+        reltol = 1.0e-12, abstol = 1.0e-12, maxiters = 10_000
+    )
+    b = solve(
+        dae_prob(U0_PERTURBED), alg(linsolve = KrylovJL_GMRES());
+        reltol = 1.0e-12, abstol = 1.0e-12, maxiters = 10_000
+    )
     @test successful_retcode(a)
     @test successful_retcode(b)
     drift = maximum(
