@@ -125,15 +125,18 @@ function initialize!(
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, get_dae_uprev(integrator, uprev))
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
         elseif method === COEFFICIENT_MULTISTEP
-            # The multistep residual `tmp + f(z) - (α * invγdt) * M * z` is `O(z / dt)`, but
-            # the convergence check measures this residual against the solution scale, so at
-            # small `dt` it reads as divergence and the step is rejected -- which shrinks
-            # `dt`, inflates it further, and walks the solver to `dtmin`. Scale the stage
-            # system so the `M z` coefficient is 1, as in the branch below. The root is
-            # unchanged.
-            s = inv(α * invγdt)
-            @.. broadcast = false ustep = tmp * s
-            nlstep_data.set_γ_c(nlstep_data.nlprob, (s, one(t), one(t), tstep))
+            # Adaptive rejection needs a solution-scaled residual; fixed-step convergence
+            # retains the raw scaling so nonlinear accuracy tightens with `dt`.
+            if opts.adaptive
+                s = inv(α * invγdt)
+                @.. broadcast = false ustep = tmp * s
+                nlstep_data.set_γ_c(nlstep_data.nlprob, (s, one(t), one(t), tstep))
+            else
+                @.. broadcast = false ustep = tmp
+                nlstep_data.set_γ_c(
+                    nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep)
+                )
+            end
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, atmp)
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
         else
