@@ -67,12 +67,17 @@ end
     reuse_W_at_stage2 = tab.reuse_W_at_stage2
     split_guess = tab.split_guess
     alg = unwrap_alg(integrator, true)
+    # Only an IMEX tableau has an explicit part to put `f2` in. A `SplitFunction` handed to a
+    # purely implicit method has `Ae`, `be` and `split_guess` empty, so none of the explicit
+    # machinery below may run: `f1 + f2` goes to the implicit solve instead, which is what a
+    # non-split solve of the same method does (#4149).
+    is_imex = integrator.f isa SplitFunction && issplit(alg)
     predictor = _predictor(alg)
     s = tab.s
     γ = Ai[s, s]
 
     f2 = nothing
-    if integrator.f isa SplitFunction
+    if is_imex
         f_impl = integrator.f.f1
         f2 = integrator.f.f2
     else
@@ -83,14 +88,14 @@ end
 
     # ---------------- Stage 1 ----------------
     if tab.explicit_first_stage
-        if integrator.f isa SplitFunction && issplit(alg) && tab.fsal &&
+        if is_imex && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
             f_impl(zs[1], integrator.uprev, p, integrator.t)
             zs[1] .*= dt
         else
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         end
-        if integrator.f isa SplitFunction && issplit(alg)
+        if is_imex
             @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
         end
     else
@@ -128,7 +133,7 @@ end
         isnewton(nlsolver) && set_new_W!(nlsolver, false)
         # Non-ESDIRK IMEX (e.g. IMEX-SSP, BHR): evaluate f2 at the solved stage-1
         # value uprev + γ·zs[1]. Stage 1's explicit abscissa is t (Ae[1,:] = 0).
-        if integrator.f isa SplitFunction && issplit(alg) && !isempty(ks)
+        if is_imex && !isempty(ks)
             @.. broadcast = false u = uprev + γ * zs[1]
             f2(ks[1], u, p, t)
             ks[1] .*= dt
@@ -140,10 +145,10 @@ end
 
     if s >= 2
         @.. broadcast = false tmp = uprev + Ai[2, 1] * zs[1]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[2, 1] * ks[1]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[2] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[2] > 0
             copyto!(zs[2], zs[split_guess[2]])
         else
             if predictor == Predictor.Trivial
@@ -221,7 +226,7 @@ end
         if reuse_W_at_stage2
             isnewton(nlsolver) && set_new_W!(nlsolver, false)
         end
-        if s > 2 && integrator.f isa SplitFunction
+        if s > 2 && is_imex
             @.. broadcast = false u = tmp + γ * zs[2]
             f2(ks[2], u, p, t + ce[2] * dt)
             ks[2] .*= dt
@@ -231,11 +236,11 @@ end
 
     if s >= 3
         @.. broadcast = false tmp = uprev + Ai[3, 1] * zs[1] + Ai[3, 2] * zs[2]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[3, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[3, 2] * ks[2]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[3] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[3] > 0
             copyto!(zs[3], zs[split_guess[3]])
         else
             if predictor == Predictor.Trivial
@@ -310,7 +315,7 @@ end
         nlsolver.c = c[3]
         zs[3] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 3 && integrator.f isa SplitFunction
+        if s > 3 && is_imex
             @.. broadcast = false u = tmp + γ * zs[3]
             f2(ks[3], u, p, t + ce[3] * dt)
             ks[3] .*= dt
@@ -320,12 +325,12 @@ end
 
     if s >= 4
         @.. broadcast = false tmp = uprev + Ai[4, 1] * zs[1] + Ai[4, 2] * zs[2] + Ai[4, 3] * zs[3]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[4, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[4, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[4, 3] * ks[3]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[4] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[4] > 0
             copyto!(zs[4], zs[split_guess[4]])
         else
             if predictor == Predictor.Trivial
@@ -400,7 +405,7 @@ end
         nlsolver.c = c[4]
         zs[4] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 4 && integrator.f isa SplitFunction
+        if s > 4 && is_imex
             @.. broadcast = false u = tmp + γ * zs[4]
             f2(ks[4], u, p, t + ce[4] * dt)
             ks[4] .*= dt
@@ -410,13 +415,13 @@ end
 
     if s >= 5
         @.. broadcast = false tmp = uprev + Ai[5, 1] * zs[1] + Ai[5, 2] * zs[2] + Ai[5, 3] * zs[3] + Ai[5, 4] * zs[4]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[5, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[5, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[5, 3] * ks[3]
             @.. broadcast = false tmp = tmp + Ae[5, 4] * ks[4]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[5] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[5] > 0
             copyto!(zs[5], zs[split_guess[5]])
         else
             if predictor == Predictor.Trivial
@@ -491,7 +496,7 @@ end
         nlsolver.c = c[5]
         zs[5] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 5 && integrator.f isa SplitFunction
+        if s > 5 && is_imex
             @.. broadcast = false u = tmp + γ * zs[5]
             f2(ks[5], u, p, t + ce[5] * dt)
             ks[5] .*= dt
@@ -501,14 +506,14 @@ end
 
     if s >= 6
         @.. broadcast = false tmp = uprev + Ai[6, 1] * zs[1] + Ai[6, 2] * zs[2] + Ai[6, 3] * zs[3] + Ai[6, 4] * zs[4] + Ai[6, 5] * zs[5]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[6, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[6, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[6, 3] * ks[3]
             @.. broadcast = false tmp = tmp + Ae[6, 4] * ks[4]
             @.. broadcast = false tmp = tmp + Ae[6, 5] * ks[5]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[6] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[6] > 0
             copyto!(zs[6], zs[split_guess[6]])
         else
             if predictor == Predictor.Trivial
@@ -583,7 +588,7 @@ end
         nlsolver.c = c[6]
         zs[6] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 6 && integrator.f isa SplitFunction
+        if s > 6 && is_imex
             @.. broadcast = false u = tmp + γ * zs[6]
             f2(ks[6], u, p, t + ce[6] * dt)
             ks[6] .*= dt
@@ -593,7 +598,7 @@ end
 
     if s >= 7
         @.. broadcast = false tmp = uprev + Ai[7, 1] * zs[1] + Ai[7, 2] * zs[2] + Ai[7, 3] * zs[3] + Ai[7, 4] * zs[4] + Ai[7, 5] * zs[5] + Ai[7, 6] * zs[6]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[7, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[7, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[7, 3] * ks[3]
@@ -601,7 +606,7 @@ end
             @.. broadcast = false tmp = tmp + Ae[7, 5] * ks[5]
             @.. broadcast = false tmp = tmp + Ae[7, 6] * ks[6]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[7] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[7] > 0
             copyto!(zs[7], zs[split_guess[7]])
         else
             if predictor == Predictor.Trivial
@@ -676,7 +681,7 @@ end
         nlsolver.c = c[7]
         zs[7] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 7 && integrator.f isa SplitFunction
+        if s > 7 && is_imex
             @.. broadcast = false u = tmp + γ * zs[7]
             f2(ks[7], u, p, t + ce[7] * dt)
             ks[7] .*= dt
@@ -686,7 +691,7 @@ end
 
     if s >= 8
         @.. broadcast = false tmp = uprev + Ai[8, 1] * zs[1] + Ai[8, 2] * zs[2] + Ai[8, 3] * zs[3] + Ai[8, 4] * zs[4] + Ai[8, 5] * zs[5] + Ai[8, 6] * zs[6] + Ai[8, 7] * zs[7]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[8, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[8, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[8, 3] * ks[3]
@@ -695,7 +700,7 @@ end
             @.. broadcast = false tmp = tmp + Ae[8, 6] * ks[6]
             @.. broadcast = false tmp = tmp + Ae[8, 7] * ks[7]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[8] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[8] > 0
             copyto!(zs[8], zs[split_guess[8]])
         else
             if predictor == Predictor.Trivial
@@ -770,7 +775,7 @@ end
         nlsolver.c = c[8]
         zs[8] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 8 && integrator.f isa SplitFunction
+        if s > 8 && is_imex
             @.. broadcast = false u = tmp + γ * zs[8]
             f2(ks[8], u, p, t + ce[8] * dt)
             ks[8] .*= dt
@@ -780,7 +785,7 @@ end
 
     if s >= 9
         @.. broadcast = false tmp = uprev + Ai[9, 1] * zs[1] + Ai[9, 2] * zs[2] + Ai[9, 3] * zs[3] + Ai[9, 4] * zs[4] + Ai[9, 5] * zs[5] + Ai[9, 6] * zs[6] + Ai[9, 7] * zs[7] + Ai[9, 8] * zs[8]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[9, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[9, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[9, 3] * ks[3]
@@ -790,7 +795,7 @@ end
             @.. broadcast = false tmp = tmp + Ae[9, 7] * ks[7]
             @.. broadcast = false tmp = tmp + Ae[9, 8] * ks[8]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[9] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[9] > 0
             copyto!(zs[9], zs[split_guess[9]])
         else
             if predictor == Predictor.Trivial
@@ -865,7 +870,7 @@ end
         nlsolver.c = c[9]
         zs[9] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 9 && integrator.f isa SplitFunction
+        if s > 9 && is_imex
             @.. broadcast = false u = tmp + γ * zs[9]
             f2(ks[9], u, p, t + ce[9] * dt)
             ks[9] .*= dt
@@ -875,7 +880,7 @@ end
 
     if s >= 10
         @.. broadcast = false tmp = uprev + Ai[10, 1] * zs[1] + Ai[10, 2] * zs[2] + Ai[10, 3] * zs[3] + Ai[10, 4] * zs[4] + Ai[10, 5] * zs[5] + Ai[10, 6] * zs[6] + Ai[10, 7] * zs[7] + Ai[10, 8] * zs[8] + Ai[10, 9] * zs[9]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[10, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[10, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[10, 3] * ks[3]
@@ -886,7 +891,7 @@ end
             @.. broadcast = false tmp = tmp + Ae[10, 8] * ks[8]
             @.. broadcast = false tmp = tmp + Ae[10, 9] * ks[9]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[10] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[10] > 0
             copyto!(zs[10], zs[split_guess[10]])
         else
             if predictor == Predictor.Trivial
@@ -961,7 +966,7 @@ end
         nlsolver.c = c[10]
         zs[10] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 10 && integrator.f isa SplitFunction
+        if s > 10 && is_imex
             @.. broadcast = false u = tmp + γ * zs[10]
             f2(ks[10], u, p, t + ce[10] * dt)
             ks[10] .*= dt
@@ -971,7 +976,7 @@ end
 
     if s >= 11
         @.. broadcast = false tmp = uprev + Ai[11, 1] * zs[1] + Ai[11, 2] * zs[2] + Ai[11, 3] * zs[3] + Ai[11, 4] * zs[4] + Ai[11, 5] * zs[5] + Ai[11, 6] * zs[6] + Ai[11, 7] * zs[7] + Ai[11, 8] * zs[8] + Ai[11, 9] * zs[9] + Ai[11, 10] * zs[10]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[11, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[11, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[11, 3] * ks[3]
@@ -983,7 +988,7 @@ end
             @.. broadcast = false tmp = tmp + Ae[11, 9] * ks[9]
             @.. broadcast = false tmp = tmp + Ae[11, 10] * ks[10]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[11] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[11] > 0
             copyto!(zs[11], zs[split_guess[11]])
         else
             if predictor == Predictor.Trivial
@@ -1058,7 +1063,7 @@ end
         nlsolver.c = c[11]
         zs[11] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 11 && integrator.f isa SplitFunction
+        if s > 11 && is_imex
             @.. broadcast = false u = tmp + γ * zs[11]
             f2(ks[11], u, p, t + ce[11] * dt)
             ks[11] .*= dt
@@ -1068,7 +1073,7 @@ end
 
     if s >= 12
         @.. broadcast = false tmp = uprev + Ai[12, 1] * zs[1] + Ai[12, 2] * zs[2] + Ai[12, 3] * zs[3] + Ai[12, 4] * zs[4] + Ai[12, 5] * zs[5] + Ai[12, 6] * zs[6] + Ai[12, 7] * zs[7] + Ai[12, 8] * zs[8] + Ai[12, 9] * zs[9] + Ai[12, 10] * zs[10] + Ai[12, 11] * zs[11]
-        if integrator.f isa SplitFunction
+        if is_imex
             @.. broadcast = false tmp = tmp + Ae[12, 1] * ks[1]
             @.. broadcast = false tmp = tmp + Ae[12, 2] * ks[2]
             @.. broadcast = false tmp = tmp + Ae[12, 3] * ks[3]
@@ -1081,7 +1086,7 @@ end
             @.. broadcast = false tmp = tmp + Ae[12, 10] * ks[10]
             @.. broadcast = false tmp = tmp + Ae[12, 11] * ks[11]
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction && split_guess[12] > 0
+        if tab.explicit_first_stage && is_imex && split_guess[12] > 0
             copyto!(zs[12], zs[split_guess[12]])
         else
             if predictor == Predictor.Trivial
@@ -1156,7 +1161,7 @@ end
         nlsolver.c = c[12]
         zs[12] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 12 && integrator.f isa SplitFunction
+        if s > 12 && is_imex
             @.. broadcast = false u = tmp + γ * zs[12]
             f2(ks[12], u, p, t + ce[12] * dt)
             ks[12] .*= dt
@@ -1166,7 +1171,7 @@ end
 
 
     # ---------------- Output u ----------------
-    if integrator.f isa SplitFunction
+    if is_imex
         @.. broadcast = false u = tmp + γ * zs[s]
         f2(ks[s], u, p, t + dt)
         ks[s] .*= dt
@@ -1255,7 +1260,7 @@ end
             elseif s == 12
                 @.. broadcast = false tmp = btilde[1] * zs[1] + btilde[2] * zs[2] + btilde[3] * zs[3] + btilde[4] * zs[4] + btilde[5] * zs[5] + btilde[6] * zs[6] + btilde[7] * zs[7] + btilde[8] * zs[8] + btilde[9] * zs[9] + btilde[10] * zs[10] + btilde[11] * zs[11] + btilde[12] * zs[12]
             end
-            if integrator.f isa SplitFunction && !isempty(ebtilde)
+            if is_imex && !isempty(ebtilde)
                 for j in 1:s
                     @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
@@ -1300,7 +1305,7 @@ end
     end
 
     # ---------------- fsallast ----------------
-    if integrator.f isa SplitFunction && issplit(alg)
+    if is_imex
         integrator.f(integrator.fsallast, u, p, t + dt)
     elseif tab.explicit_fsallast
         integrator.f(integrator.fsallast, u, p, t + tab.fsallast_c * dt)
@@ -1342,12 +1347,17 @@ end
     α = tab.α
     reuse_W_at_stage2 = tab.reuse_W_at_stage2
     alg = unwrap_alg(integrator, true)
+    # Only an IMEX tableau has an explicit part to put `f2` in. A `SplitFunction` handed to a
+    # purely implicit method has `Ae`, `be` and `split_guess` empty, so none of the explicit
+    # machinery below may run: `f1 + f2` goes to the implicit solve instead, which is what a
+    # non-split solve of the same method does (#4149).
+    is_imex = integrator.f isa SplitFunction && issplit(alg)
     predictor = _predictor(alg)
     s = tab.s
     γ = Ai[s, s]
 
     f2 = nothing
-    if integrator.f isa SplitFunction
+    if is_imex
         f_impl = integrator.f.f1
         f2 = integrator.f.f2
     else
@@ -1361,18 +1371,12 @@ end
     # output ladder, so the `local` declaration is enough — no allocation
     # cost for slots beyond runtime `s`.
     #
-    # The k_i story is messier: when `integrator.f isa SplitFunction` is true
-    # but `issplit(alg)` is false (e.g. Kvaerno4 fed a SplitODEProblem), the
-    # stage-1 setup never assigns k1, yet stages 2..s still enter the
-    # `tmp += Ae[i,j]*kj` accumulator (Ae is all zeros in that case, but Julia
-    # still needs k1 defined to evaluate `Ae[2,1] * k1`). Pre-allocating all
-    # k_i to `zero(u)` whenever f is a SplitFunction matches master's
-    # @generated behavior and costs at most 12 array zeros per step for the
-    # split path; for the common non-split path the `local` declaration
-    # leaves them un-allocated.
+    # The k_i are the explicit stage values, so they exist only on the IMEX path. Every
+    # read of them sits behind `is_imex`, which also gates their assignment, so the
+    # `local` declaration is enough for everything else and they stay un-allocated.
     local z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12
     local k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12
-    if integrator.f isa SplitFunction
+    if is_imex
         k1 = zero(u); k2 = zero(u); k3 = zero(u); k4 = zero(u)
         k5 = zero(u); k6 = zero(u); k7 = zero(u); k8 = zero(u)
         k9 = zero(u); k10 = zero(u); k11 = zero(u); k12 = zero(u)
@@ -1381,7 +1385,7 @@ end
 
     # ---------------- Stage 1 ----------------
     if tab.explicit_first_stage
-        if integrator.f isa SplitFunction && issplit(alg)
+        if is_imex
             z1 = dt * f_impl(uprev, p, t)
             k1 = dt * integrator.fsalfirst - z1
         else
@@ -1407,7 +1411,7 @@ end
         nlsolvefail(nlsolver) && return
         # Non-ESDIRK IMEX (e.g. IMEX-SSP, BHR): evaluate f2 at the solved stage-1
         # value uprev + γ·z1. Stage 1's explicit abscissa is t (Ae[1,:] = 0).
-        if integrator.f isa SplitFunction && issplit(alg)
+        if is_imex
             u_stage1 = uprev + γ * z1
             k1 = dt * f2(u_stage1, p, t)
             integrator.stats.nf2 += 1
@@ -1418,10 +1422,10 @@ end
 
     if s >= 2
         tmp = uprev + Ai[2, 1] * z1
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[2, 1] * k1
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1477,7 +1481,7 @@ end
         if reuse_W_at_stage2
             isnewton(nlsolver) && set_new_W!(nlsolver, false)
         end
-        if s > 2 && integrator.f isa SplitFunction
+        if s > 2 && is_imex
             u_stage = tmp + γ * z2
             k2 = dt * f2(u_stage, p, t + ce[2] * dt)
             integrator.stats.nf2 += 1
@@ -1486,10 +1490,10 @@ end
 
     if s >= 3
         tmp = uprev + Ai[3, 1] * z1 + Ai[3, 2] * z2
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[3, 1] * k1 + Ae[3, 2] * k2
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1542,7 +1546,7 @@ end
         nlsolver.c = c[3]
         z3 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 3 && integrator.f isa SplitFunction
+        if s > 3 && is_imex
             u_stage = tmp + γ * z3
             k3 = dt * f2(u_stage, p, t + ce[3] * dt)
             integrator.stats.nf2 += 1
@@ -1551,10 +1555,10 @@ end
 
     if s >= 4
         tmp = uprev + Ai[4, 1] * z1 + Ai[4, 2] * z2 + Ai[4, 3] * z3
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[4, 1] * k1 + Ae[4, 2] * k2 + Ae[4, 3] * k3
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1607,7 +1611,7 @@ end
         nlsolver.c = c[4]
         z4 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 4 && integrator.f isa SplitFunction
+        if s > 4 && is_imex
             u_stage = tmp + γ * z4
             k4 = dt * f2(u_stage, p, t + ce[4] * dt)
             integrator.stats.nf2 += 1
@@ -1616,10 +1620,10 @@ end
 
     if s >= 5
         tmp = uprev + Ai[5, 1] * z1 + Ai[5, 2] * z2 + Ai[5, 3] * z3 + Ai[5, 4] * z4
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[5, 1] * k1 + Ae[5, 2] * k2 + Ae[5, 3] * k3 + Ae[5, 4] * k4
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1672,7 +1676,7 @@ end
         nlsolver.c = c[5]
         z5 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 5 && integrator.f isa SplitFunction
+        if s > 5 && is_imex
             u_stage = tmp + γ * z5
             k5 = dt * f2(u_stage, p, t + ce[5] * dt)
             integrator.stats.nf2 += 1
@@ -1681,10 +1685,10 @@ end
 
     if s >= 6
         tmp = uprev + Ai[6, 1] * z1 + Ai[6, 2] * z2 + Ai[6, 3] * z3 + Ai[6, 4] * z4 + Ai[6, 5] * z5
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[6, 1] * k1 + Ae[6, 2] * k2 + Ae[6, 3] * k3 + Ae[6, 4] * k4 + Ae[6, 5] * k5
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1737,7 +1741,7 @@ end
         nlsolver.c = c[6]
         z6 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 6 && integrator.f isa SplitFunction
+        if s > 6 && is_imex
             u_stage = tmp + γ * z6
             k6 = dt * f2(u_stage, p, t + ce[6] * dt)
             integrator.stats.nf2 += 1
@@ -1746,10 +1750,10 @@ end
 
     if s >= 7
         tmp = uprev + Ai[7, 1] * z1 + Ai[7, 2] * z2 + Ai[7, 3] * z3 + Ai[7, 4] * z4 + Ai[7, 5] * z5 + Ai[7, 6] * z6
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[7, 1] * k1 + Ae[7, 2] * k2 + Ae[7, 3] * k3 + Ae[7, 4] * k4 + Ae[7, 5] * k5 + Ae[7, 6] * k6
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1802,7 +1806,7 @@ end
         nlsolver.c = c[7]
         z7 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 7 && integrator.f isa SplitFunction
+        if s > 7 && is_imex
             u_stage = tmp + γ * z7
             k7 = dt * f2(u_stage, p, t + ce[7] * dt)
             integrator.stats.nf2 += 1
@@ -1811,10 +1815,10 @@ end
 
     if s >= 8
         tmp = uprev + Ai[8, 1] * z1 + Ai[8, 2] * z2 + Ai[8, 3] * z3 + Ai[8, 4] * z4 + Ai[8, 5] * z5 + Ai[8, 6] * z6 + Ai[8, 7] * z7
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[8, 1] * k1 + Ae[8, 2] * k2 + Ae[8, 3] * k3 + Ae[8, 4] * k4 + Ae[8, 5] * k5 + Ae[8, 6] * k6 + Ae[8, 7] * k7
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1867,7 +1871,7 @@ end
         nlsolver.c = c[8]
         z8 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 8 && integrator.f isa SplitFunction
+        if s > 8 && is_imex
             u_stage = tmp + γ * z8
             k8 = dt * f2(u_stage, p, t + ce[8] * dt)
             integrator.stats.nf2 += 1
@@ -1876,10 +1880,10 @@ end
 
     if s >= 9
         tmp = uprev + Ai[9, 1] * z1 + Ai[9, 2] * z2 + Ai[9, 3] * z3 + Ai[9, 4] * z4 + Ai[9, 5] * z5 + Ai[9, 6] * z6 + Ai[9, 7] * z7 + Ai[9, 8] * z8
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[9, 1] * k1 + Ae[9, 2] * k2 + Ae[9, 3] * k3 + Ae[9, 4] * k4 + Ae[9, 5] * k5 + Ae[9, 6] * k6 + Ae[9, 7] * k7 + Ae[9, 8] * k8
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1932,7 +1936,7 @@ end
         nlsolver.c = c[9]
         z9 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 9 && integrator.f isa SplitFunction
+        if s > 9 && is_imex
             u_stage = tmp + γ * z9
             k9 = dt * f2(u_stage, p, t + ce[9] * dt)
             integrator.stats.nf2 += 1
@@ -1941,10 +1945,10 @@ end
 
     if s >= 10
         tmp = uprev + Ai[10, 1] * z1 + Ai[10, 2] * z2 + Ai[10, 3] * z3 + Ai[10, 4] * z4 + Ai[10, 5] * z5 + Ai[10, 6] * z6 + Ai[10, 7] * z7 + Ai[10, 8] * z8 + Ai[10, 9] * z9
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[10, 1] * k1 + Ae[10, 2] * k2 + Ae[10, 3] * k3 + Ae[10, 4] * k4 + Ae[10, 5] * k5 + Ae[10, 6] * k6 + Ae[10, 7] * k7 + Ae[10, 8] * k8 + Ae[10, 9] * k9
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -1997,7 +2001,7 @@ end
         nlsolver.c = c[10]
         z10 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 10 && integrator.f isa SplitFunction
+        if s > 10 && is_imex
             u_stage = tmp + γ * z10
             k10 = dt * f2(u_stage, p, t + ce[10] * dt)
             integrator.stats.nf2 += 1
@@ -2006,10 +2010,10 @@ end
 
     if s >= 11
         tmp = uprev + Ai[11, 1] * z1 + Ai[11, 2] * z2 + Ai[11, 3] * z3 + Ai[11, 4] * z4 + Ai[11, 5] * z5 + Ai[11, 6] * z6 + Ai[11, 7] * z7 + Ai[11, 8] * z8 + Ai[11, 9] * z9 + Ai[11, 10] * z10
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[11, 1] * k1 + Ae[11, 2] * k2 + Ae[11, 3] * k3 + Ae[11, 4] * k4 + Ae[11, 5] * k5 + Ae[11, 6] * k6 + Ae[11, 7] * k7 + Ae[11, 8] * k8 + Ae[11, 9] * k9 + Ae[11, 10] * k10
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -2062,7 +2066,7 @@ end
         nlsolver.c = c[11]
         z11 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 11 && integrator.f isa SplitFunction
+        if s > 11 && is_imex
             u_stage = tmp + γ * z11
             k11 = dt * f2(u_stage, p, t + ce[11] * dt)
             integrator.stats.nf2 += 1
@@ -2071,10 +2075,10 @@ end
 
     if s >= 12
         tmp = uprev + Ai[12, 1] * z1 + Ai[12, 2] * z2 + Ai[12, 3] * z3 + Ai[12, 4] * z4 + Ai[12, 5] * z5 + Ai[12, 6] * z6 + Ai[12, 7] * z7 + Ai[12, 8] * z8 + Ai[12, 9] * z9 + Ai[12, 10] * z10 + Ai[12, 11] * z11
-        if integrator.f isa SplitFunction
+        if is_imex
             tmp = tmp + Ae[12, 1] * k1 + Ae[12, 2] * k2 + Ae[12, 3] * k3 + Ae[12, 4] * k4 + Ae[12, 5] * k5 + Ae[12, 6] * k6 + Ae[12, 7] * k7 + Ae[12, 8] * k8 + Ae[12, 9] * k9 + Ae[12, 10] * k10 + Ae[12, 11] * k11
         end
-        if tab.explicit_first_stage && integrator.f isa SplitFunction
+        if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
             if predictor == Predictor.Trivial
@@ -2127,7 +2131,7 @@ end
         nlsolver.c = c[12]
         z12 = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
-        if s > 12 && integrator.f isa SplitFunction
+        if s > 12 && is_imex
             u_stage = tmp + γ * z12
             k12 = dt * f2(u_stage, p, t + ce[12] * dt)
             integrator.stats.nf2 += 1
@@ -2136,7 +2140,7 @@ end
 
 
     # ---------------- Output u ----------------
-    if integrator.f isa SplitFunction
+    if is_imex
         if s == 1
             u_last = tmp + γ * z1
             k1 = dt * f2(u_last, p, t + dt)
@@ -2283,7 +2287,7 @@ end
             elseif s == 12
                 tmp_est = btilde[1] * z1 + btilde[2] * z2 + btilde[3] * z3 + btilde[4] * z4 + btilde[5] * z5 + btilde[6] * z6 + btilde[7] * z7 + btilde[8] * z8 + btilde[9] * z9 + btilde[10] * z10 + btilde[11] * z11 + btilde[12] * z12
             end
-            if integrator.f isa SplitFunction && !isempty(ebtilde)
+            if is_imex && !isempty(ebtilde)
                 if s == 1
                     tmp_est = tmp_est + ebtilde[1] * k1
                 elseif s == 2
@@ -2345,7 +2349,7 @@ end
     end
 
     # ---------------- fsallast + k1/k2 ----------------
-    if integrator.f isa SplitFunction && issplit(alg)
+    if is_imex
         integrator.k[1] = integrator.fsalfirst
         integrator.fsallast = integrator.f(u, p, t + dt)
         integrator.k[2] = integrator.fsallast
