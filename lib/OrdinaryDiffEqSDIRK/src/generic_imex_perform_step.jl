@@ -1,3 +1,26 @@
+"""
+    _explicit_stage1_rate(mass_matrix, fsalfirst, isdae)
+
+`zs[1]` for an explicit first stage is `dt` times a stage *derivative*. Under a mass
+matrix the derivative is `M \\ f`, not the residual `f` that `fsalfirst` holds after a
+plain `f` evaluation, and using the residual costs one bad step per solve, which is
+enough to pin the whole ESDIRK family at order 1 (#4173).
+
+`\\` rather than a fixed factorization, so a structured mass matrix gets the right one:
+Cholesky for the symmetric positive definite mass matrix an FEM discretisation produces,
+the banded solve for a `Tridiagonal`, UMFPACK for a sparse one.
+
+`isdae` is the integrator's own flag, set once from `ArrayInterface.issingular`. A
+singular `M` has no unique derivative to recover, so the residual is kept, which is what
+the solver did before. `UniformScaling` and the SciMLOperators mass matrices keep it too:
+converting only some of them would make `ScalarOperator(λ)` and `λ * I` disagree.
+"""
+_explicit_stage1_rate(mass_matrix, fsalfirst, isdae) = fsalfirst
+function _explicit_stage1_rate(mass_matrix::AbstractMatrix, fsalfirst, isdae)
+    isdae && return fsalfirst
+    return mass_matrix \ fsalfirst
+end
+
 function initialize!(integrator, cache::ESDIRKIMEXConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -82,13 +105,22 @@ end
     markfirststage!(nlsolver)
 
     # ---------------- Stage 1 ----------------
+    # FSAL hands over `zs[s]/dt`, which is already a rate; a plain `f` evaluation is not.
+    # See `_explicit_stage1_rate`. Tableaux that rebuild `fsallast` from `f` never carry one.
+    fsal_carries_rate = integrator.success_iter > 0 && !integrator.reeval_fsal &&
+        !tab.explicit_fsallast
     if tab.explicit_first_stage
         if integrator.f isa SplitFunction && issplit(alg) && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
             f_impl(zs[1], integrator.uprev, p, integrator.t)
             zs[1] .*= dt
-        else
+        elseif fsal_carries_rate
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
+        else
+            rate1 = _explicit_stage1_rate(
+                integrator.f.mass_matrix, integrator.fsalfirst, integrator.isdae
+            )
+            @.. broadcast = false zs[1] = dt * rate1
         end
         if integrator.f isa SplitFunction && issplit(alg)
             @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
@@ -1380,12 +1412,20 @@ end
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
+    # FSAL hands over `zs[s]/dt`, which is already a rate; a plain `f` evaluation is not.
+    # See `_explicit_stage1_rate`. Tableaux that rebuild `fsallast` from `f` never carry one.
+    fsal_carries_rate = integrator.success_iter > 0 && !integrator.reeval_fsal &&
+        !tab.explicit_fsallast
     if tab.explicit_first_stage
         if integrator.f isa SplitFunction && issplit(alg)
             z1 = dt * f_impl(uprev, p, t)
             k1 = dt * integrator.fsalfirst - z1
-        else
+        elseif fsal_carries_rate
             z1 = dt * integrator.fsalfirst
+        else
+            z1 = dt * _explicit_stage1_rate(
+                integrator.f.mass_matrix, integrator.fsalfirst, integrator.isdae
+            )
         end
     else
         # See the matching branch in `_perform_step_iip!` above. `u` is immutable
