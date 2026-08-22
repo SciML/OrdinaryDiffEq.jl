@@ -18,3 +18,4 @@ if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
 end
 
 @time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")
+@time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
