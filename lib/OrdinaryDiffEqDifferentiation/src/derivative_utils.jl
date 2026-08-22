@@ -358,7 +358,11 @@ function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
     (; stats) = integrator
     njacs, nf = stats.njacs, stats.nf
     J = if SciMLBase.isinplace(integrator.sol.prob) && cache.J isa AbstractMatrix
-        Jfresh = zero(cache.J)
+        # `zero` on a `SparseMatrixCSC` returns a matrix with no stored entries, which
+        # drops the sparsity pattern `calc_J!` colours against and makes it throw
+        # `DimensionMismatch`. `fill!(similar(...))` keeps the pattern and still hands
+        # `calc_J!` a zeroed buffer, and is the same thing as `zero` for a dense `J`.
+        Jfresh = fill!(similar(cache.J), zero(eltype(cache.J)))
         calc_J!(Jfresh, integrator, cache)
         Jfresh
     elseif SciMLBase.isinplace(integrator.sol.prob)
