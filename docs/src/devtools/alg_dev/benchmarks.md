@@ -82,6 +82,48 @@ wp_set = WorkPrecisionSet(prob, abstols, reltols, setups; dt = 1 / 2^4, numruns 
 Both of these types have a plot recipe to produce a work-precision diagram,
 and a print which will show some relevant information.
 
+### Tags and comparison plots
+
+A benchmark usually wants several views of the same data: each family of methods on its
+own, then the best of each family against each other, with a couple of reference methods
+in every plot. Tagging the setups produces all of those from a single run. Add a `:tags`
+entry to each setup, request every error metric the plots need with `error_estimates`,
+and slice the result afterwards:
+
+```julia
+setups = [
+    Dict(:alg => Rosenbrock23(), :tags => [:rosenbrock, :second_order]),
+    Dict(:alg => Rodas5P(), :tags => [:rosenbrock, :fifth_order]),
+    Dict(:alg => TRBDF2(), :tags => [:sdirk, :second_order]),
+    Dict(:alg => KenCarp4(), :tags => [:sdirk, :fourth_order]),
+    Dict(:alg => RadauIIA5(), :tags => [:firk, :reference]),
+]
+wp_set = WorkPrecisionSet(
+    prob, abstols, reltols, setups;
+    error_estimates = [:final, :l2], appxsol = test_sol
+)
+
+plot(wp_set, tags = [:rosenbrock])                     # one family
+plot(best_of_families(wp_set, [:rosenbrock, :sdirk]))  # cross-family comparison
+plot(wp_set, x = :l2)                                  # a second error metric, no re-solve
+
+# a family against the baseline
+plot(
+    wp_set, tags = [:sdirk], include_tags = [:reference],
+    reference_tags = [:reference]
+)
+```
+
+`plot(wp_set; tags)` keeps the entries carrying all of `tags`, `include_tags` adds
+entries back regardless of that filter, and `exclude_tags` drops entries. Entries
+matching `reference_tags` are drawn in a separate, de-emphasized style controlled by
+`reference_style`. [`autoplot`](@ref) returns the whole standard collection of subsets
+at once, keyed by name.
+
+Slow configurations can be capped with `timeout` (seconds per tolerance): a solve is
+never interrupted, but once one exceeds the budget its repeated timing runs are skipped
+and the point is recorded as `NaN`, which the plot recipe drops.
+
 ## API
 
 ```@docs
@@ -90,4 +132,20 @@ DiffEqDevTools.ShootoutSet
 DiffEqDevTools.WorkPrecision
 DiffEqDevTools.WorkPrecisionSet
 DiffEqDevTools.get_sample_errors
+```
+
+### Tagging and comparison helpers
+
+```@docs
+DiffEqDevTools.get_tags
+DiffEqDevTools.unique_tags
+DiffEqDevTools.filter_by_tags
+DiffEqDevTools.exclude_by_tags
+DiffEqDevTools.merge_wp_sets
+DiffEqDevTools.available_errors
+DiffEqDevTools.wp_area
+DiffEqDevTools.best_by_tag
+DiffEqDevTools.best_of_families
+DiffEqDevTools.with_autodiff_variants
+DiffEqDevTools.autoplot
 ```
