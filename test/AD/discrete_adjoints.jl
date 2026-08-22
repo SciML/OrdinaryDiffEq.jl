@@ -41,11 +41,14 @@ function f_dt_sum(u0)
     return sum(sol[1, :])
 end
 
+f_dt_sum_scalar(x) = f_dt_sum([x, 0.0, 0.0])
+
 u0 = [1.0; 0.0; 0.0]
 
 # Reference jacobian and gradient using ForwardDiff
 fdj = DI.jacobian(f_dt, AutoForwardDiff(), u0)
 fdg = DI.gradient(f_dt_sum, AutoForwardDiff(), u0)
+fdd = DI.derivative(f_dt_sum_scalar, AutoForwardDiff(), 1.0)
 @testset "Discrete Adjoints" begin
     # Enzyme tests skipped - Enzyme segfaults on ODE solves which crashes the process
     # before @test_broken can catch it. See https://github.com/EnzymeAD/Enzyme.jl/issues/2699
@@ -54,7 +57,13 @@ fdg = DI.gradient(f_dt_sum, AutoForwardDiff(), u0)
     @testset "Mooncake" begin
         @testset "Gradient via SensitivityADPassThrough" begin
             mkg = DI.gradient(f_dt_sum, AutoMooncake(; config = nothing), u0)
+            @test mkg isa typeof(fdg)
             @test mkg ≈ fdg rtol = 1.0e-6
+        end
+        @testset "Derivative via SensitivityADPassThrough" begin
+            mkd = DI.derivative(f_dt_sum_scalar, AutoMooncake(; config = nothing), 1.0)
+            @test mkd isa typeof(fdd)
+            @test mkd ≈ fdd rtol = 1.0e-6
         end
     end
 end
