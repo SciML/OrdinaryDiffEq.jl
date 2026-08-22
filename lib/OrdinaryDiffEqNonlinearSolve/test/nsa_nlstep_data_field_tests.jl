@@ -105,7 +105,7 @@ end
 
     nlstep = SciMLBase.ODENLStepData(
         NonlinearProblem(
-            NonlinearFunction{true}(ode_stage!), zeros(1),
+            NonlinearFunction{true, SciMLBase.AutoDespecialize}(ode_stage!), zeros(1),
             StageParams(1.0, 1.0, 1.0, 0.0, zeros(1), zeros(1))
         ),
         1:1, set_γ_c!, set_outer!, set_inner!, (ztmp, sol) -> (ztmp .= sol.u)
