@@ -809,6 +809,10 @@ function instability_jacobian(integrator)
         #radau
         get_fresh_jacobian(integrator, integrator.cache)
     elseif hasproperty(integrator.cache, :nlsolver) &&
+            # Caches that run several nonlinear solves in parallel store a vector
+            # of solvers here (PDIRK44), so the property has to be checked before
+            # it is reached rather than after.
+            hasproperty(integrator.cache.nlsolver, :cache) &&
             hasproperty(integrator.cache.nlsolver.cache, :J)
         #BDF
         integrator.cache.nlsolver.cache.J
