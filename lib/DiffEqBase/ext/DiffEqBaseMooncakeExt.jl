@@ -102,21 +102,16 @@ function rrule!!(
     )
     lazy_f = f_out_is_identity ? nothing : lazy_zero_rdata(f_primal)
 
-    # dy's shape depends on whether f_out/p_out carry real rdata: mutable outputs (e.g.
-    # array p_out) get their gradient via fdata mutation instead, so dy collapses from a
-    # 2-tuple down to a single rdata, or a bare NoRData() if both sides are trivial.
-    RDf = Mooncake.rdata_type(Mooncake.tangent_type(typeof(f_out)))
-    RDp = Mooncake.rdata_type(Mooncake.tangent_type(typeof(p_out)))
+    # `rdata_type` on a tuple collapses to a bare `NoRData` only when *every* field has
+    # `NoRData`. With one differentiable field it keeps the full 2-tuple, e.g.
+    # `Tuple{NoRData, Float64}` for a scalar `p` alongside an array-carrying `f_out`. It
+    # never degrades a 2-tuple to a single bare rdata, so `dy` here is either `NoRData()`
+    # or a 2-tuple, and there is no third shape to unpack.
+    RDy = Mooncake.rdata_type(
+        Mooncake.tangent_type(Tuple{typeof(f_out), typeof(p_out)})
+    )
     function promote_f_pb!!(dy)
-        df_out, dp_out = if RDf === NoRData && RDp === NoRData
-            NoRData(), NoRData()
-        elseif RDf === NoRData
-            NoRData(), dy
-        elseif RDp === NoRData
-            dy, NoRData()
-        else
-            dy
-        end
+        df_out, dp_out = RDy === NoRData ? (NoRData(), NoRData()) : dy
         df = f_out_is_identity ? df_out : instantiate(lazy_f)
         return (
             instantiate(lazy_pf), df, instantiate(lazy_specialize), instantiate(lazy_u0),
