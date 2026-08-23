@@ -1047,11 +1047,10 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(k)
-    else
-        fsalfirst = k
-    end
+    # The `u6*` stage reads `f(uprev)` back out of `fsalfirst`, after six `f(k, ...)`
+    # calls have overwritten `k`. Aliasing the two when `calck` is false -- as the
+    # other SSPRK caches do -- silently drops this method to first order.
+    fsalfirst = zero(k)
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
