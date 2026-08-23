@@ -99,33 +99,36 @@ end
             @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
         end
     else
-        # Implicit first stage requires nlsolve; seed it from the requested
-        # predictor. The IE tableau (E === :ie_dd2) is the only configuration
-        # that reaches this branch — Trapezoid and the other Newton-SDIRKs set
-        # `explicit_first_stage = true` and take the `if` arm above.
+        # Implicit first stage (explicit_first_stage = false): SDIRK2, Cash4,
+        # Hairer4/42, ImplicitMidpoint, SSPSDIRK2, ImplicitEuler, etc.
         #
-        # `MaxOrder` extrapolates the previous step's interpolant, available only
-        # once a step has succeeded and outside an fsal reeval; `Linear` uses
-        # z = dt·f(uprev). BDF callers reuse this tableau as a first-step
-        # bootstrap (e.g. ABDF2 via `cache.eulercache`) without a `predictor`
-        # field of their own: `_predictor` reports `Trivial`, but
-        # `!hasproperty(alg, :predictor)` keeps them on the linear bootstrap seed
-        # from #3694 that preserves their convergence order under the loose
-        # NonlinearSolveAlg `iter==1 && ndz<1e-5` early-exit at small dt. A
-        # genuine `Trivial` request from a predictor-carrying alg falls through
-        # to the zero seed.
+        # MaxOrder seeding is IE-only (needs a prior accepted step interpolant).
+        # Linear seeding applies to any tableau with stage1_extrapolation, so
+        # PureSDIRK methods that default to Predictor.Linear (e.g. SDIRK2) are
+        # not forced onto a zero guess. BDF callers that reuse the IE tableau
+        # without a predictor field keep the #3694 linear bootstrap via the
+        # ie_dd2 && !hasproperty(alg, :predictor) arm. Explicit Predictor.Trivial
+        # still falls through to the zero seed.
+        #
+        # Always assign nlsolver.c = c[1]: later stages overwrite c (SDIRK2 sets
+        # c[2] = 0), and a stale c makes the next step's stage-1 Newton evaluate
+        # the DDE residual at the wrong time (#3648 / #3690).
         if E === :ie_dd2 && predictor == Predictor.MaxOrder &&
                 integrator.success_iter > 0 && !integrator.reeval_fsal
             current_extrapolant!(u, t + dt, integrator)
             @.. broadcast = false zs[1] = u - uprev
-        elseif E === :ie_dd2 && tab.stage1_extrapolation &&
-                (predictor == Predictor.Linear || !hasproperty(alg, :predictor))
+        elseif tab.stage1_extrapolation && (
+                predictor == Predictor.Linear ||
+                (E === :ie_dd2 && !hasproperty(alg, :predictor))
+            )
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
             zs[1] .= zero(eltype(zs[1]))
         end
         nlsolver.z = zs[1]
-        nlsolver.tmp = uprev
+        # Copy into the nlsolver scratch buffer rather than aliasing uprev.
+        copyto!(tmp, uprev)
+        nlsolver.tmp = tmp
         nlsolver.c = c[1]
         zs[1] = nlsolve!(nlsolver, integrator, cache, repeat_step)
         nlsolvefail(nlsolver) && return
@@ -1398,8 +1401,10 @@ end
         if E === :ie_dd2 && predictor == Predictor.MaxOrder &&
                 integrator.success_iter > 0 && !integrator.reeval_fsal
             z1 = current_extrapolant(t + dt, integrator) - uprev
-        elseif E === :ie_dd2 && tab.stage1_extrapolation &&
-                (predictor == Predictor.Linear || !hasproperty(alg, :predictor))
+        elseif tab.stage1_extrapolation && (
+                predictor == Predictor.Linear ||
+                (E === :ie_dd2 && !hasproperty(alg, :predictor))
+            )
             z1 = dt * integrator.fsalfirst
         else
             z1 = zero(u)
