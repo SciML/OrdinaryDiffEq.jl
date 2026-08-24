@@ -133,7 +133,9 @@ sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)
     prob_stiff = ODEProblem(rober_stiff!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
 
     for alg in (
+            AutoVern7(RadauIIA3(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
             AutoVern7(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
+            AutoVern7(RadauIIA9(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
             AutoTsit5(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
         )
         sol = solve(prob_stiff, alg)

@@ -1206,15 +1206,19 @@ end
             # not this branch's own cache (which is what `iter`/`nlsolver` live
             # on) -- resolve the currently active sub-cache the same way the
             # CompositeControllerCache dispatch above already selected `cache`
-            # and `alg` for this call.
-            alg_cache = integrator.cache isa CompositeCache ?
+            # and `alg` for this call. DefaultCache (DefaultODEAlgorithm) is
+            # deliberately not handled here: it holds cache1..cache6 rather
+            # than caches/current, but none of its members are FIRK or set
+            # fac_default_gamma(alg) == false, so this branch is unreachable
+            # for it today.
+            current_cache = integrator.cache isa CompositeCache ?
                 @inbounds(integrator.cache.caches[integrator.cache.current]) :
                 integrator.cache
             if isfirk(alg)
-                (; iter) = alg_cache
+                (; iter) = current_cache
                 (; maxiters) = alg
             else
-                (; iter, maxiters) = alg_cache.nlsolver
+                (; iter, maxiters) = current_cache.nlsolver
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
