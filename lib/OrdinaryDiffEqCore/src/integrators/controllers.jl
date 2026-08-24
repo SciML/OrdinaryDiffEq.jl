@@ -1202,11 +1202,19 @@ end
         if fac_default_gamma(alg)
             fac = gamma
         else
+            # For a CompositeAlgorithm, integrator.cache is the CompositeCache,
+            # not this branch's own cache (which is what `iter`/`nlsolver` live
+            # on) -- resolve the currently active sub-cache the same way the
+            # CompositeControllerCache dispatch above already selected `cache`
+            # and `alg` for this call.
+            alg_cache = integrator.cache isa CompositeCache ?
+                @inbounds(integrator.cache.caches[integrator.cache.current]) :
+                integrator.cache
             if isfirk(alg)
-                (; iter) = integrator.cache
+                (; iter) = alg_cache
                 (; maxiters) = alg
             else
-                (; iter, maxiters) = integrator.cache.nlsolver
+                (; iter, maxiters) = alg_cache.nlsolver
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end

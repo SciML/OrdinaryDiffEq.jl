@@ -2,6 +2,7 @@ using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools, ADTypes
 using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqFIRK
 import OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqCore: CompositeAlgorithm
 
@@ -114,3 +115,28 @@ cb = DiscreteCallback(
     (u, t, integrator) -> true, (integrator) -> derivative_discontinuity!(integrator, true)
 )
 sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4364
+# PredictiveControllerCache's `isfirk(alg)` branch destructured `integrator.cache`
+# directly for `iter`, which is the CompositeCache when the FIRK method is a
+# composite member (not the FIRK sub-cache the destructuring assumes) --
+# "type CompositeCache has no field iter". Every FIRK stiff member of an
+# AutoSwitch composite hit this once the switch reached the stiff branch.
+@testset "AutoSwitch composite with a FIRK stiff member (#4364)" begin
+    function rober_stiff!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+        return nothing
+    end
+    prob_stiff = ODEProblem(rober_stiff!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+
+    for alg in (
+            AutoVern7(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
+            AutoTsit5(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
+        )
+        sol = solve(prob_stiff, alg)
+        @test sol.retcode == ReturnCode.Success
+    end
+end
