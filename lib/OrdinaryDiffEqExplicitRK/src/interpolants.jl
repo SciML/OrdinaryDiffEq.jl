@@ -16,9 +16,13 @@ const ExplicitRKCacheTypes = Union{ExplicitRKCache, ExplicitRKConstantCache}
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
-    # Only compute all stage vectors when B_interp is available for generic RK
-    # interpolation. Without B_interp, the default Hermite addsteps suffices.
-    isnothing(cache.B_interp) && return nothing
+    if isnothing(cache.B_interp)
+        if length(k) < 2 || always_calc_begin
+            copyat_or_push!(k, 1, f(uprev, p, t))
+            copyat_or_push!(k, 2, f(u, p, t + dt))
+        end
+        return nothing
+    end
 
     (; A, c, stages) = cache
 
@@ -41,9 +45,15 @@ end
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
-    # Only compute all stage vectors when B_interp is available for generic RK
-    # interpolation. Without B_interp, the default Hermite addsteps suffices.
-    isnothing(cache.tab.B_interp) && return nothing
+    if isnothing(cache.tab.B_interp)
+        if length(k) < 2 || always_calc_begin
+            f(cache.kk[1], uprev, p, t)
+            copyat_or_push!(k, 1, cache.kk[1])
+            f(cache.kk[1], u, p, t + dt)
+            copyat_or_push!(k, 2, cache.kk[1])
+        end
+        return nothing
+    end
 
     (; kk, tmp, tab) = cache
     (; A, c, stages) = tab
