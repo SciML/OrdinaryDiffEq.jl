@@ -23,6 +23,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -41,6 +42,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
+OrdinaryDiffEqFIRK = {path = "../OrdinaryDiffEqFIRK"}
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
@@ -50,6 +52,7 @@ OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
 
 [compat]
+SciMLOperators = "1.25"
 SciMLTesting = "2.8"
 Pkg = "1"
 NonlinearSolve = "4.20.3"
@@ -84,4 +87,4 @@ SafeTestsets = "0.1.0"
 StaticArrays = "1.9.18"
 
 [targets]
-test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "SciMLTesting", "OrdinaryDiffEqRosenbrock", "SparseArrays", "OrdinaryDiffEqFIRK"]
+test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "SciMLTesting", "OrdinaryDiffEqRosenbrock", "SparseArrays", "OrdinaryDiffEqFIRK", "SciMLOperators"]
