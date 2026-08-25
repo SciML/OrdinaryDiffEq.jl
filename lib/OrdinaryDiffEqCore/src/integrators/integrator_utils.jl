@@ -793,8 +793,7 @@ nonfinite_indices(u) = isfinite(u) ? Int[] : Int[1]
 
 # %g formats any real, complex values have to show themselves
 format_value(v::Real) = @sprintf("%.4g", v)
-format_value(v::Number) = string(v)
-
+format_value(v) = DiffEqBase.truncate_str(v)
 @noinline function format_indices(idxs::Vector{Int})::String
     length(idxs) <= 10 && return string(idxs) #only keep 10 for display, remainder hidden
     return chop(string(first(idxs, 10))) * ", and $(length(idxs) - 10) more]"
@@ -886,7 +885,7 @@ function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
     if sym_eqs !== nothing
         for row in first(singularity_rows, 10)
             if row <= length(sym_eqs)
-                push!(msgs, "  row $row corresponds to equation: $(sym_eqs[row])") #trace rows back to symbolic eqs
+                push!(msgs, "  row $row corresponds to equation: $(DiffEqBase.truncate_str(sym_eqs[row]))") #trace rows back to symbolic eqs
             end
         end
     end
@@ -896,7 +895,7 @@ function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
         if sym_vars !== nothing
             for col in first(singularity_cols, 10)
                 if col <= length(sym_vars)
-                    push!(msgs, "  col $col corresponds to variable: $(sym_vars[col])") #trace cols back to symbolic vars
+                    push!(msgs, "  col $col corresponds to variable: $(DiffEqBase.truncate_str(sym_vars[col]))") #trace cols back to symbolic vars
                 end
             end
         end
@@ -971,11 +970,11 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
                 push!(state_analysis, "$n_nan of $n_total state variables are non-finite (NaN/Inf): indices $(format_indices(nan_inf_idxs))")
             else
                 for i in nan_inf_idxs
-                    push!(state_analysis, "u[$i] = $(u[i]) is non-finite (NaN/Inf)")
+                    push!(state_analysis, "u[$i] = $(format_value(u[i])) is non-finite (NaN/Inf)")
                 end
             end
         else
-            push!(state_analysis, "u = $u is non-finite (NaN/Inf)")
+            push!(state_analysis, "u = $(format_value(u)) is non-finite (NaN/Inf)")
         end
     elseif !isempty(blown_idxs)
         if u isa AbstractArray
