@@ -119,7 +119,7 @@ end
             @.. broadcast = false zs[1] = u - uprev
         elseif tab.stage1_extrapolation && (
                 predictor == Predictor.Linear ||
-                (E === :ie_dd2 && !hasproperty(alg, :predictor))
+                    (E === :ie_dd2 && !hasproperty(alg, :predictor))
             )
             @.. broadcast = false zs[1] = dt * integrator.fsalfirst
         else
@@ -1403,7 +1403,7 @@ end
             z1 = current_extrapolant(t + dt, integrator) - uprev
         elseif tab.stage1_extrapolation && (
                 predictor == Predictor.Linear ||
-                (E === :ie_dd2 && !hasproperty(alg, :predictor))
+                    (E === :ie_dd2 && !hasproperty(alg, :predictor))
             )
             z1 = dt * integrator.fsalfirst
         else

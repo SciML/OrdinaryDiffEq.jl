@@ -28,7 +28,7 @@ jobs:
           - {user: SciML, repo: ModelingToolkit.jl, group: SymbolicIndexingInterface}
           - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
           - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
-    uses: "SciML/.github/.github/workflows/downstream.yml@d5748d7f7e95749cb0a5acaed6e69162623be862"
+    uses: "SciML/.github/.github/workflows/downstream.yml@v1"
     with:
       owner: "${{ matrix.package.user }}"
       repo: "${{ matrix.package.repo }}"
