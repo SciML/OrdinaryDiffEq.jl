@@ -69,7 +69,7 @@ u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
-prob = DAEProblem(lorenz, du0, u0, tspan, differential_vars = differential_vars)
+prob = DAEProblem(lorenz, du0, u0, tspan; differential_vars)
 sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
@@ -85,7 +85,7 @@ u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
-prob = DAEProblem{false}(lorenz, du0, u0, tspan, differential_vars = differential_vars)
+prob = DAEProblem{false}(lorenz, du0, u0, tspan; differential_vars)
 sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)

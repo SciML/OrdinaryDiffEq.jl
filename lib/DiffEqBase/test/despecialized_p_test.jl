@@ -229,3 +229,18 @@ end
     @test seen_sdde_noise_parameter[] === DynamicSDEParameters
     @test SciMLBase.unwrapped_f(sdde_concrete.f.g) === dynamic_sdde_noise!
 end
+
+@testset "the barrier accepts already-unwrapped parameters" begin
+    p = DynamicP(0.5)
+    collect_args(args...) = args
+
+    wrapped = SciMLBase.DespecializedParameters(p)
+    @test DiffEqBase._invoke_parameter_despecialization(collect_args, (1, wrapped, 2)) ==
+        (1, p, 2)
+
+    @test DiffEqBase._invoke_parameter_despecialization(collect_args, (1, p, 2)) == (1, p, 2)
+
+    @test_throws "at most one parameter wrapper" DiffEqBase._invoke_parameter_despecialization(
+        collect_args, (wrapped, wrapped)
+    )
+end

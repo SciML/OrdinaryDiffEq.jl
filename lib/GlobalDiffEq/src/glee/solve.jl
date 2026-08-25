@@ -43,7 +43,7 @@ function _glee_extended_problem(prob)
     rhs = GLEEExtendedRHS{iip, typeof(prob.f)}(prob.f)
     extended_f = SciMLBase.ODEFunction{iip, SciMLBase.FullSpecialize}(rhs)
     u0 = RecursiveArrayTools.ArrayPartition(copy(prob.u0), zero(prob.u0))
-    return SciMLBase.remake(prob; f = extended_f, u0 = u0)
+    return SciMLBase.remake(prob; f = extended_f, u0)
 end
 
 _is_glee_extended(prob) = prob.f.f isa GLEEExtendedRHS
@@ -69,13 +69,66 @@ function SciMLBase.__init(
     )
 end
 
+# Wraps the interpolation of the extended (y, ε) solve and projects it onto the
+# solution partition, so `sol(t)` returns the ordinary solution at full
+# interpolation order while the global error estimate lives in
+# `sol.global_error`.
+struct GLEESolutionInterpolation{I} <: SciMLBase.AbstractDiffEqInterpolation
+    inner::I
+end
+
+_project_y(u::RecursiveArrayTools.ArrayPartition) = u.x[1]
+_project_y(u::AbstractVector) = map(_project_y, u)
+
+function _project_interpolated(full, idxs)
+    if full isa RecursiveArrayTools.AbstractDiffEqArray
+        projected = RecursiveArrayTools.DiffEqArray(map(_project_y, full.u), full.t)
+        return idxs === nothing ? projected : projected[idxs]
+    end
+    y = _project_y(full)
+    return idxs === nothing ? y : y[idxs]
+end
+
+# The extended interpolation is always queried with `idxs = nothing` (whole
+# partitioned state), then projected; user `idxs` index into the projected
+# solution component, never into the raw partition layout.
+function (interp::GLEESolutionInterpolation)(
+        tvals, idxs, deriv, p, continuity::Symbol = :left
+    )
+    full = interp.inner(tvals, nothing, deriv, p, continuity)
+    return _project_interpolated(full, idxs)
+end
+
+function (interp::GLEESolutionInterpolation)(
+        val, tvals, idxs, deriv, p, continuity::Symbol = :left
+    )
+    projected = interp(tvals, idxs, deriv, p, continuity)
+    val isa RecursiveArrayTools.AbstractDiffEqArray ? copyto!(val.u, projected) :
+        copyto!(val, projected)
+    return val
+end
+
 function SciMLBase.__solve(
         prob::SciMLBase.AbstractODEProblem, alg::AbstractGLEEAlgorithm, args...;
         kwargs...
     )
     integrator = SciMLBase.__init(prob, alg, args...; kwargs...)
     SciMLBase.solve!(integrator)
-    return integrator.sol
+    return _split_global_error_solution(integrator.sol, prob)
+end
+
+# Turn the extended (y, ε) ArrayPartition solution into an ordinary solution
+# over the user's problem: `u` holds the solution partition, `global_error`
+# holds the error partition, and the interpolation projects onto the solution.
+function _split_global_error_solution(ext_sol, prob)
+    us = [u.x[1] for u in ext_sol.u]
+    global_errors = [u.x[2] for u in ext_sol.u]
+    sol = @set ext_sol.interp = GLEESolutionInterpolation(ext_sol.interp)
+    sol = @set sol.prob = prob
+    sol = @set sol.global_error = global_errors
+    # Set `u` last: `setproperties` recomputes the solution's `T`/`N` type
+    # parameters from the new (unpartitioned) `u`.
+    return @set sol.u = us
 end
 
 """
@@ -83,24 +136,23 @@ end
     global_error_estimate(sol, i)
 
 Extract the global error estimate from a solution computed with a GLEE method
-([`GLEE23`](@ref), [`GLEE24`](@ref), [`GLEE35`](@ref)).
+([`GLEE23`](@ref), [`GLEE24`](@ref), [`GLEE35`](@ref), [`MM5GEE`](@ref)).
 
-GLEE solutions carry the partitioned state `(y, ε)`: `sol.u[i].x[1]` is the
-solution value and `sol.u[i].x[2]` the estimate of its global error at
-`sol.t[i]`. `global_error_estimate(sol, i)` returns the error estimate at the
-`i`-th saved time point and `global_error_estimate(sol)` returns the vector of
-estimates at every saved time point.
+These solvers report the global error through the standard SciMLBase interface:
+`sol.global_error` is a vector matching `sol.u`, with `sol.global_error[i]` the
+estimated global error of `sol.u[i]` at `sol.t[i]` (see
+[`SciMLBase.has_global_error`](@ref)). `global_error_estimate(sol)` returns that
+vector and `global_error_estimate(sol, i)` its `i`-th element.
 """
 function global_error_estimate(sol::SciMLBase.AbstractODESolution)
-    return [global_error_estimate(sol, i) for i in eachindex(sol.u)]
-end
-
-function global_error_estimate(sol::SciMLBase.AbstractODESolution, i::Integer)
-    u = sol.u[i]
-    u isa RecursiveArrayTools.ArrayPartition && length(u.x) == 2 || throw(
+    sol.global_error === nothing && throw(
         ArgumentError(
             "global_error_estimate expects a solution produced by a GLEE method"
         )
     )
-    return u.x[2]
+    return sol.global_error
+end
+
+function global_error_estimate(sol::SciMLBase.AbstractODESolution, i::Integer)
+    return global_error_estimate(sol)[i]
 end

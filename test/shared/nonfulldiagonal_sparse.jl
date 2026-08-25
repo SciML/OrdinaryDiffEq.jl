@@ -116,13 +116,13 @@ prior = ComponentArray(;
 )
 
 r_space = collect(range(0.0, 2.0, length = 15))
-computeparams = (
+computeparams = (;
     Δr = r_space[2],
-    r_space = r_space,
+    r_space,
     countorderapprox = 2,
 )
-parameters = (
-    prior = prior,
+parameters = (;
+    prior,
     compute = computeparams,
 )
 

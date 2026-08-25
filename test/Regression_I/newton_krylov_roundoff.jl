@@ -51,8 +51,14 @@ end
 @testset "Newton-Krylov round-off reproducibility ($(nameof(alg)))" for alg in (
         Hairer4, Hairer42,
     )
-    a = solve(dae_prob(U0), alg(linsolve = KrylovJL_GMRES()); maxiters = 10_000)
-    b = solve(dae_prob(U0_PERTURBED), alg(linsolve = KrylovJL_GMRES()); maxiters = 10_000)
+    a = solve(
+        dae_prob(U0), alg(linsolve = KrylovJL_GMRES());
+        reltol = 1.0e-8, abstol = 1.0e-6, maxiters = 10_000
+    )
+    b = solve(
+        dae_prob(U0_PERTURBED), alg(linsolve = KrylovJL_GMRES());
+        reltol = 1.0e-8, abstol = 1.0e-6, maxiters = 10_000
+    )
     @test successful_retcode(a)
     @test successful_retcode(b)
     drift = maximum(

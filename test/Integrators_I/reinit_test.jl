@@ -82,7 +82,7 @@ end
 @testset "set u0 with save_idxs" begin
     save_idxs = [1]
     prob = prob_ode_2Dlinear
-    integrator = init(prob, Tsit5(); save_idxs = save_idxs)
+    integrator = init(prob, Tsit5(); save_idxs)
     u0 = prob.u0 .+ 1  # just make it different
     @test u0 != prob.u0
     reinit!(integrator, u0)
@@ -96,7 +96,7 @@ end
     integrator = init(prob, Tsit5())
     t0 = prob.tspan[1] - 1  # just make it different
     @test t0 != prob.tspan[1]
-    reinit!(integrator; t0 = t0)
+    reinit!(integrator; t0)
     @test integrator.t == t0
     @test integrator.sol.t[1] == t0
     @test integrator.sol.interp.ts[1] == t0

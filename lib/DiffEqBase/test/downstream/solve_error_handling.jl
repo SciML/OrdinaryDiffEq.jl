@@ -18,6 +18,7 @@ sol = solve(prob, nothing, alg = Tsit5())
 sol = init(prob, nothing, alg = Tsit5())
 
 @test_throws SciMLBase.NonSolverError solve(prob, 5.0)
+@test_throws SciMLBase.NonSolverError init(prob, 5.0)
 
 prob = ODEProblem{false}(f_oop, u0, (nothing, nothing))
 @test_throws SciMLBase.NoTspanError solve(prob, Tsit5())

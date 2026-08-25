@@ -18,9 +18,12 @@ The global-error-estimating solvers [`GLEE24`](@ref), [`GLEE35`](@ref)
 (Constantinescu 2016), and the Dormand-Prince-based [`MM5GEE`](@ref) (Makazaga
 and Murua 2003) carry a running, asymptotically correct estimate of the
 solution's global error at every time point, at the cost of a few extra stages
-per step. Solving with them produces a solution whose states are
-`ArrayPartition`s (`sol.u[i].x[1]` the solution, `sol.u[i].x[2]` the global
-error estimate); [`global_error_estimate`](@ref) extracts the estimates.
+per step. They report it through the standard SciMLBase global-error interface:
+solving returns an ordinary solution (`sol.u` and `sol(t)` are the solution),
+with the estimate in `sol.global_error` — `sol.global_error[i]` is the
+estimated global error of `sol.u[i]` at `sol.t[i]`, and
+[`SciMLBase.has_global_error`](@ref) is `true` for these algorithms.
+[`global_error_estimate`](@ref) returns `sol.global_error`.
 
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global

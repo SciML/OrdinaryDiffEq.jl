@@ -66,7 +66,7 @@ end
 @testset "autonomous discontinuity controller state" begin
     alg = BS3()
     controller = PIController(alg; discontinuity_detection = true)
-    integrator = init(prob, MethodOfSteps(alg); controller = controller, dt = 0.01)
+    integrator = init(prob, MethodOfSteps(alg); controller, dt = 0.01)
 
     @test !integrator.is_disco_step
     @test iszero(integrator.disco_checkpoint)

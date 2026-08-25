@@ -110,7 +110,7 @@ This method is equivalent to `AutoAlgSwitch(Vern6(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern6(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern6(lazy = lazy), alg; kwargs...)
+AutoVern6(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern6(; lazy), alg; kwargs...)
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern7()` and `stiff_alg`.
 
@@ -120,7 +120,7 @@ This method is equivalent to `AutoAlgSwitch(Vern7(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern7(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern7(lazy = lazy), alg; kwargs...)
+AutoVern7(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern7(; lazy), alg; kwargs...)
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern8()` and `stiff_alg`.
 
@@ -130,7 +130,7 @@ This method is equivalent to `AutoAlgSwitch(Vern8(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern8(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern8(lazy = lazy), alg; kwargs...)
+AutoVern8(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern8(; lazy), alg; kwargs...)
 """
 Automatic switching algorithm that can switch between the (non-stiff) `Vern9()` and `stiff_alg`.
 
@@ -140,7 +140,7 @@ This method is equivalent to `AutoAlgSwitch(Vern9(), stiff_alg; kwargs...)`.
 To gain access to stiff algorithms you might have to install additional libraries,
 such as `OrdinaryDiffEqRosenbrock`.
 """
-AutoVern9(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; kwargs...)
+AutoVern9(alg; lazy = Val{true}(), kwargs...) = AutoAlgSwitch(Vern9(; lazy), alg; kwargs...)
 
 
 @doc explicit_rk_docstring(

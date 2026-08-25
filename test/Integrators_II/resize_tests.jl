@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase, LinearSolve
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
+using PreallocationTools: get_tmp
 import OrdinaryDiffEqDifferentiation.DI
 
 f(du, u, p, t) = du .= u
@@ -242,7 +243,7 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     @test_nowarn resize!(integrator, 2)
     # #1990: SplitFunction scratch buffer must grow with the state
     @test length(integrator.u) == 2
-    @test length(integrator.f._func_cache) == 2
+    @test length(get_tmp(integrator.f._func_cache, integrator.u)) == 2
     # Julia's resize! leaves new entries undefined. Tsit5's next step reads
     # uprev (and fsalfirst), so undef/NaN garbage can collapse dt and make the
     # following @test_nowarn flake. Initialize the new component (same pattern

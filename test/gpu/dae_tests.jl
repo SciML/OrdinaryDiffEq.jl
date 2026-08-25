@@ -68,7 +68,7 @@ SOLVE_KWARGS = (; maxiters = 10_000)
 make_odef(; mass_matrix, jac_prototype) =
     ODEFunction{true, FullSpecialize}(
     dae!;
-    mass_matrix = mass_matrix, jac_prototype = jac_prototype
+    mass_matrix, jac_prototype
 )
 
 # ── CPU reference ────────────────────────────────────────────────────────────
@@ -301,8 +301,8 @@ function run_case(case::TestCase)
     sol_gpu = nothing
     try
         odef_d = make_odef(;
-            mass_matrix = case.mass_matrix,
-            jac_prototype = case.jac_prototype
+            case.mass_matrix,
+            case.jac_prototype
         )
         prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
         sol_gpu = solve(prob_d, cpu_alg; SOLVE_KWARGS...)
@@ -440,8 +440,8 @@ function debug_case(solver::Type; jac = "none", mass = "diag_cu")
     @info "CPU retcode" sol_cpu.retcode
     @info "GPU solve"
     odef_d = make_odef(;
-        mass_matrix = case.mass_matrix,
-        jac_prototype = case.jac_prototype
+        case.mass_matrix,
+        case.jac_prototype
     )
     prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
     sol_gpu = solve(prob_d, case.solver(); SOLVE_KWARGS...)

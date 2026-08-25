@@ -97,7 +97,7 @@ end
 
             cb = ContinuousCallback(
                 (u, t, integrator) -> poly(tdir * t),
-                affect!; abstol = abstol
+                affect!; abstol
             )
 
             record = []
@@ -106,7 +106,7 @@ end
 
             vcb = VectorContinuousCallback(
                 (out, u, t, integrator) -> out .= (poly(tdir * t), poly(tdir * t - 0.1)),
-                affect!, 2; abstol = abstol
+                affect!, 2; abstol
             )
 
             record = []
@@ -117,7 +117,7 @@ end
 
             cb = ContinuousCallback(
                 (u, t, integrator) -> poly(t^2),
-                affect!; abstol = abstol
+                affect!; abstol
             )
 
             record = []
@@ -126,7 +126,7 @@ end
 
             vcb = VectorContinuousCallback(
                 (out, u, t, integrator) -> out .= (poly(t^2), poly(t^2 - 0.1)),
-                affect!, 2; abstol = abstol
+                affect!, 2; abstol
             )
 
             record = []

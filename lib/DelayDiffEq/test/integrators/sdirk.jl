@@ -7,7 +7,8 @@ const prob_ip = prob_dde_constant_1delay_ip
 const prob_scalar = prob_dde_constant_1delay_scalar
 const ts = 0:0.1:10
 
-# ODE algorithms
+# ODE algorithms.
+# #3648: IIP vs scalar MethodOfSteps grids must match for SDIRK2 / Cash4 / Hairer*.
 noreuse = NLNewton(fast_convergence_cutoff = 0)
 const working_algs = [
     ImplicitMidpoint(), SSPSDIRK2(), KenCarp5(nlsolve = noreuse),

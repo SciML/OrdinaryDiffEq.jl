@@ -40,7 +40,7 @@ prob = SDEProblem(f, g, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(asinh(sol.u[end])), false),
-    prob_func = prob_func
+    prob_func
 )
 
 sim = test_convergence(
@@ -70,7 +70,7 @@ prob = SDEProblem(f2, g2, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h2(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e5)
@@ -107,7 +107,7 @@ prob = SDEProblem(f3, g3, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e6)
@@ -143,7 +143,7 @@ prob = SDEProblem(f1!, g1!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(asinh(sol.u[end][1])), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e6)
@@ -181,7 +181,7 @@ prob = SDEProblem(f2!, g2!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h2(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e5)
@@ -221,7 +221,7 @@ prob = SDEProblem(f3!, g3!, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e6)

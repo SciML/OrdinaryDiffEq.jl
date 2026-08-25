@@ -68,7 +68,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         # that many nonzero coefficients on top of the value
         for (i, jet) in enumerate(cache.jets)
             fill!(cache.utaylor, zero(eltype(cache.utaylor)))
-            jet(cache.utaylor, integ.uprev, integ.t)
+            jet(cache.utaylor, cache.coeffs[i], integ.uprev, integ.t)
             @test count(!iszero, TaylorDiff.flatten(cache.utaylor[1])) == i + 2
         end
     end
@@ -130,7 +130,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         for prob in (prob_ode_linear, prob_ode_2Dlinear)
             exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
             errors = map(dts) do dt
-                integrator = init(prob, alg; dt = dt, adaptive = false)
+                integrator = init(prob, alg; dt, adaptive = false)
                 integrator.cache.current_order[] = 3
                 solve!(integrator)
                 maximum(abs.(integrator.sol.u[end] .- exact))

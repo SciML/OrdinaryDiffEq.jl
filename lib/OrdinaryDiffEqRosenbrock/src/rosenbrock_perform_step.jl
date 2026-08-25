@@ -579,10 +579,15 @@ end
 # Rodas6P's late stages) the fallback path is used as well.
 
 @inline function _madd_terms(acc, idx, cs::Tuple, karrs::Tuple)
-    return _madd_terms(
-        muladd(first(cs), (@inbounds first(karrs)[idx]), acc),
-        idx, Base.tail(cs), Base.tail(karrs)
-    )
+    c = first(cs)
+    # Exact-zero coefficients (e.g. Rodas5P's btilde = [0,0,0,0,0,0,0,1]) must
+    # skip their term rather than multiply through: 0 * NaN/Inf is NaN, so a
+    # transient non-finite value in an unrelated, zero-weighted stage (from an
+    # ill-conditioned early-stage solve, e.g. right after a callback-driven
+    # parameter jump) would otherwise silently poison the whole accumulation
+    # even though the mathematically correct result never depends on that term.
+    newacc = iszero(c) ? acc : muladd(c, (@inbounds first(karrs)[idx]), acc)
+    return _madd_terms(newacc, idx, Base.tail(cs), Base.tail(karrs))
 end
 @inline _madd_terms(acc, idx, ::Tuple{}, ::Tuple{}) = acc
 

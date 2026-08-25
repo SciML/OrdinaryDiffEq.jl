@@ -42,8 +42,8 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
 end
 
 function _norm_dsol(alg, prob, prob2, dt = 1 / 10)
-    sol = solve(prob, alg, dt = dt, adaptive = false)
-    sol2 = solve(prob2, alg, dt = dt, adaptive = false)
+    sol = solve(prob, alg; dt, adaptive = false)
+    sol2 = solve(prob2, alg; dt, adaptive = false)
     return norm(sol .- sol2)
 end
 
@@ -179,8 +179,8 @@ end
             ImplicitMidpoint(
                 extrapolant = :constant,
                 nlsolve = NLFunctional()
-            ), dt = 1 / 10, reltol = 1.0e-7,
-            abstol = 1.0e-10
+            ),
+            dt = 1 / 10, reltol = 1.0e-7, abstol = 1.0e-10
         )
         sol2 = solve(
             prob2,
@@ -328,8 +328,8 @@ end
             ImplicitMidpoint(
                 extrapolant = :constant,
                 nlsolve = NLFunctional()
-            ), dt = 1 / 10, reltol = 1.0e-7,
-            abstol = 1.0e-10
+            ),
+            dt = 1 / 10, reltol = 1.0e-7, abstol = 1.0e-10
         )
         sol2 = solve(
             prob2,

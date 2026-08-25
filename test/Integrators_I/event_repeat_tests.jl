@@ -12,7 +12,7 @@ function affect!(integrator)
 end
 cb = ContinuousCallback(cond, affect!)
 @info "Event Repeat Test 1"
-sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt = dt, save_everystep = false)
+sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt, save_everystep = false)
 @test c[] == 1
 
 function condition_v(out, u, t, integrator)
@@ -50,7 +50,7 @@ end
 
 cb = VectorContinuousCallback(condition_v, affect_v!, 5)
 @info "Event Repeat Test 2"
-sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt = dt, save_everystep = false)
+sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt, save_everystep = false)
 
 @test c1[] == 1
 @test c2[] == 1

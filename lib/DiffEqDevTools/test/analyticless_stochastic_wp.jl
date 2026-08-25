@@ -51,14 +51,14 @@ test_dt = 1 / 10^4
 appxsol_setup = Dict(:alg => SRIW1(), :abstol => 1.0e-4, :reltol => 1.0e-4)
 wp = WorkPrecisionSet(
     prob2, abstols, reltols, setups, test_dt;
-    appxsol_setup = appxsol_setup,
+    appxsol_setup,
     numruns = 5, names = _names, error_estimate = :weak_final
 )
 
 println("Get sample errors")
 
 se2 = get_sample_errors(
-    prob2, setups[1], test_dt, appxsol_setup = appxsol_setup,
+    prob2, setups[1], test_dt; appxsol_setup,
     numruns = [5, 10, 25, 50, 100], solution_runs = 20
 )
 
@@ -99,7 +99,7 @@ seeds = rand(UInt, numtraj)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h2(sol[1, end]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 reltols = 1.0 ./ 4.0 .^ (1:4)
@@ -117,7 +117,7 @@ wp1 = @time WorkPrecisionSet(
     ensemble_prob, abstols, reltols, setups, test_dt;
     maxiters = 1.0e7,
     verbose = None(), save_everystep = false, save_start = false,
-    appxsol_setup = appxsol_setup,
+    appxsol_setup,
     trajectories = numtraj, error_estimate = :weak_final
 )
 
@@ -126,7 +126,7 @@ wp2 = @time WorkPrecisionSet(
     ensemble_prob, abstols, reltols, setups, test_dt;
     maxiters = 1.0e7,
     verbose = None(), save_everystep = false, save_start = false,
-    appxsol_setup = appxsol_setup, expected_value = exp(-3.0),
+    appxsol_setup, expected_value = exp(-3.0),
     trajectories = numtraj, error_estimate = :weak_final
 )
 

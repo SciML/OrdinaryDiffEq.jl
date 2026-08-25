@@ -252,9 +252,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -307,9 +307,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -558,9 +558,9 @@ function alg_cache(
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
 
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -700,9 +700,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )

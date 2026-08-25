@@ -71,6 +71,12 @@ function _check_promote_f_input_has_no_tangent(f_primal)
     )
 end
 
+_tuple_fdata(::Mooncake.NoFData, ::Mooncake.NoFData) = Mooncake.NoFData()
+_tuple_fdata(a, b) = (a, b)
+
+_tuple_tangent(::Mooncake.NoTangent, ::Mooncake.NoTangent) = Mooncake.NoTangent()
+_tuple_tangent(a, b) = (a, b)
+
 function rrule!!(
         pf::CoDual{typeof(DiffEqBase.promote_f)},
         f::CoDual, specialize::CoDual{<:Val}, u0::CoDual, p::CoDual, t::CoDual,
@@ -85,7 +91,7 @@ function rrule!!(
     f_out_is_identity = f_out === f_primal
     f_out_is_identity || _check_promote_f_input_has_no_tangent(f_primal)
     f_out_fdata = f_out_is_identity ? f.dx : fdata(zero_tangent(f_out))
-    y = CoDual((f_out, p_out), (f_out_fdata, p.dx))
+    y = CoDual((f_out, p_out), _tuple_fdata(f_out_fdata, p.dx))
 
     # Zero rdata for the argument slots that never reach the outputs (callee, the Val
     # args, and u0/t, whose types but not values matter here). Uses lazy_zero_rdata
@@ -96,21 +102,16 @@ function rrule!!(
     )
     lazy_f = f_out_is_identity ? nothing : lazy_zero_rdata(f_primal)
 
-    # dy's shape depends on whether f_out/p_out carry real rdata: mutable outputs (e.g.
-    # array p_out) get their gradient via fdata mutation instead, so dy collapses from a
-    # 2-tuple down to a single rdata, or a bare NoRData() if both sides are trivial.
-    RDf = Mooncake.rdata_type(Mooncake.tangent_type(typeof(f_out)))
-    RDp = Mooncake.rdata_type(Mooncake.tangent_type(typeof(p_out)))
+    # `rdata_type` on a tuple collapses to a bare `NoRData` only when *every* field has
+    # `NoRData`. With one differentiable field it keeps the full 2-tuple, e.g.
+    # `Tuple{NoRData, Float64}` for a scalar `p` alongside an array-carrying `f_out`. It
+    # never degrades a 2-tuple to a single bare rdata, so `dy` here is either `NoRData()`
+    # or a 2-tuple, and there is no third shape to unpack.
+    RDy = Mooncake.rdata_type(
+        Mooncake.tangent_type(Tuple{typeof(f_out), typeof(p_out)})
+    )
     function promote_f_pb!!(dy)
-        df_out, dp_out = if RDf === NoRData && RDp === NoRData
-            NoRData(), NoRData()
-        elseif RDf === NoRData
-            NoRData(), dy
-        elseif RDp === NoRData
-            dy, NoRData()
-        else
-            dy
-        end
+        df_out, dp_out = RDy === NoRData ? (NoRData(), NoRData()) : dy
         df = f_out_is_identity ? df_out : instantiate(lazy_f)
         return (
             instantiate(lazy_pf), df, instantiate(lazy_specialize), instantiate(lazy_u0),
@@ -134,7 +135,7 @@ function frule!!(
     f_out_is_identity = f_out === f_primal
     f_out_is_identity || _check_promote_f_input_has_no_tangent(f_primal)
     f_out_tangent = f_out_is_identity ? tangent(f) : zero_tangent(f_out)
-    return Dual((f_out, p_out), (f_out_tangent, tangent(p)))
+    return Dual((f_out, p_out), _tuple_tangent(f_out_tangent, tangent(p)))
 end
 
 end

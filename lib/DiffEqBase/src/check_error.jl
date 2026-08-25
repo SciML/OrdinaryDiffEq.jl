@@ -80,3 +80,90 @@ failure_message(integ, ::Val{:instability}) = "Instability detected. Aborting."
 
 failure_message(integ, ::Val{:newton_convergence}) =
     "Newton steps could not converge and algorithm is not adaptive. Use a lower dt."
+
+"""
+    de_check_error(integrator::DEIntegrator)
+
+The `DEIntegrator` implementation of [`SciMLBase.check_error`](@ref): inspect `integrator`
+and return the `ReturnCode` describing whether integration may continue, reporting any
+failure through `SciMLBase.report_integrator_failure`. Does not mutate the solution.
+"""
+function de_check_error(integrator::DEIntegrator)
+    if integrator.sol.retcode ∉ (ReturnCode.Success, ReturnCode.Default)
+        return integrator.sol.retcode
+    end
+    opts = integrator.opts
+    # This implementation is intended to be used for ODEIntegrator and SDEIntegrator.
+
+    if isnan(integrator.dt)
+        SciMLBase.report_integrator_failure(integrator, Val(:dt_NaN))
+        return ReturnCode.DtNaN
+    end
+    if integrator.iter > opts.maxiters
+        SciMLBase.report_integrator_failure(integrator, Val(:max_iters))
+        return ReturnCode.MaxIters
+    end
+
+    # Bail out if we take a step with dt less than the minimum value (which may be time
+    # dependent), except when such a small timestep is successfully hitting a tstop exactly.
+    # We also exit if the ODE is unstable according to a user chosen callback, but only if we
+    # accepted the step, to avoid bailing out as unstable when we just took way too big a step.
+    step_accepted = !hasproperty(integrator, :accept_step) || integrator.accept_step
+    if !opts.force_dtmin && opts.adaptive
+        if abs(integrator.dt) <= abs(opts.dtmin) &&
+                (
+                !step_accepted || (
+                    hasproperty(opts, :tstops) ?
+                        integrator.t + integrator.dt < integrator.tdir * first(opts.tstops) :
+                        true
+                )
+            )
+            SciMLBase.report_integrator_failure(integrator, Val(:dt_min_unstable))
+            return ReturnCode.DtLessThanMin
+        elseif !step_accepted && integrator.t isa AbstractFloat &&
+                abs(integrator.dt) <= abs(eps(integrator.t))
+            SciMLBase.report_integrator_failure(integrator, Val(:dt_epsilon))
+            return ReturnCode.Unstable
+        end
+    end
+    if step_accepted &&
+            opts.unstable_check(integrator.dt, integrator.u, integrator.p, integrator.t)
+        SciMLBase.report_integrator_failure(integrator, Val(:instability))
+        return ReturnCode.Unstable
+    end
+    if last_step_failed(integrator)
+        SciMLBase.report_integrator_failure(integrator, Val(:newton_convergence))
+        return ReturnCode.ConvergenceFailure
+    end
+    return ReturnCode.Success
+end
+
+"""
+    de_check_error!(integrator::DEIntegrator)
+
+Run `SciMLBase.check_error`, store the code in `integrator.sol.retcode`, and return it,
+calling `postamble!` when the code is not `ReturnCode.Success`. Dispatching through
+`SciMLBase.check_error` rather than [`de_check_error`](@ref) keeps solver-specific
+`check_error` overrides in effect.
+"""
+function de_check_error!(integrator::DEIntegrator)
+    code = SciMLBase.check_error(integrator)
+    integrator.sol = solution_new_retcode(integrator.sol, code)
+    if code != ReturnCode.Success
+        postamble!(integrator)
+    end
+    return code
+end
+
+# Wire the implementations in only if SciMLBase stopped shipping its own, so DiffEqBase can
+# stand alone without overwriting SciMLBase's methods while they are still there. Defining
+# them unconditionally is a hard `Method overwriting is not permitted during Module
+# precompilation` error, not a warning, so these guards cannot simply be dropped -- they come
+# out only once SciMLBase stops shipping its `DEIntegrator` methods.
+#below will be removed once scimlbase stops shipping, but we keep it for now
+if !hasmethod(SciMLBase.check_error, Tuple{DEIntegrator})
+    SciMLBase.check_error(integrator::DEIntegrator) = de_check_error(integrator)
+end
+if !hasmethod(SciMLBase.check_error!, Tuple{DEIntegrator})
+    SciMLBase.check_error!(integrator::DEIntegrator) = de_check_error!(integrator)
+end

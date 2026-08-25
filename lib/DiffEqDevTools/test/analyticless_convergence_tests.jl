@@ -82,7 +82,7 @@ seeds = rand(UInt, numtraj)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h2(sol[1, end]), false),
-    prob_func = prob_func
+    prob_func
 )
 sim = test_convergence(
     dts, ensemble_prob, DRI1(), save_everystep = false,

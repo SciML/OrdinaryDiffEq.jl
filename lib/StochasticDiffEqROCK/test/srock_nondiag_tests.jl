@@ -47,15 +47,15 @@ end
     @testset "$(nameof(typeof(alg)))" for alg in (SROCK2(), KomBurSROCK2())
         Random.seed!(100)
         prob = SDEProblem(f_iip, g_iip, u0, tspan; noise_rate_prototype = zeros(2, 2))
-        sol = solve(prob, alg, dt = dt, adaptive = false, save_noise = true)
+        sol = solve(prob, alg; dt, adaptive = false, save_noise = true)
         @test SciMLBase.successful_retcode(sol)
 
         for noise in (NoiseWrapper(sol.W), NoiseWrapper(NoiseWrapper(sol.W)))
             prob_wrapped = SDEProblem(
                 f_iip, g_iip, u0, tspan;
-                noise = noise, noise_rate_prototype = zeros(2, 2)
+                noise, noise_rate_prototype = zeros(2, 2)
             )
-            sol_wrapped = solve(prob_wrapped, alg, dt = dt, adaptive = false)
+            sol_wrapped = solve(prob_wrapped, alg; dt, adaptive = false)
             @test SciMLBase.successful_retcode(sol_wrapped)
             @test all(isfinite, sol_wrapped.u[end])
         end
@@ -70,7 +70,7 @@ end
             f_iip, g_iip, u0, tspan;
             noise = NoiseGrid(ts, Ws), noise_rate_prototype = zeros(2, 2)
         )
-        sol_grid = solve(prob_grid, alg, dt = dt, adaptive = false)
+        sol_grid = solve(prob_grid, alg; dt, adaptive = false)
         @test SciMLBase.successful_retcode(sol_grid)
         @test all(isfinite, sol_grid.u[end])
     end

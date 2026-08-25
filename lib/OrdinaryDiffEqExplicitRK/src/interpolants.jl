@@ -123,7 +123,7 @@ for order in 0:3
                 )
             end
             bi = get_bi(cache)
-            return generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = idxs, order = $order)
+            return generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs, order = $order)
         end
 
         @muladd function _ode_interpolant!(
@@ -143,7 +143,7 @@ for order in 0:3
                 )
             end
             bi = get_bi(cache)
-            return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = idxs, order = $order)
+            return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs, order = $order)
         end
     end
 end

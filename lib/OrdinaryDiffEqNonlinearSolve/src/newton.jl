@@ -125,15 +125,18 @@ function initialize!(
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, get_dae_uprev(integrator, uprev))
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
         elseif method === COEFFICIENT_MULTISTEP
-            # The multistep residual `tmp + f(z) - (α * invγdt) * M * z` is `O(z / dt)`, but
-            # the convergence check measures this residual against the solution scale, so at
-            # small `dt` it reads as divergence and the step is rejected -- which shrinks
-            # `dt`, inflates it further, and walks the solver to `dtmin`. Scale the stage
-            # system so the `M z` coefficient is 1, as in the branch below. The root is
-            # unchanged.
-            s = inv(α * invγdt)
-            @.. broadcast = false ustep = tmp * s
-            nlstep_data.set_γ_c(nlstep_data.nlprob, (s, one(t), one(t), tstep))
+            # Adaptive rejection needs a solution-scaled residual; fixed-step convergence
+            # retains the raw scaling so nonlinear accuracy tightens with `dt`.
+            if opts.adaptive
+                s = inv(α * invγdt)
+                @.. broadcast = false ustep = tmp * s
+                nlstep_data.set_γ_c(nlstep_data.nlprob, (s, one(t), one(t), tstep))
+            else
+                @.. broadcast = false ustep = tmp
+                nlstep_data.set_γ_c(
+                    nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep)
+                )
+            end
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, atmp)
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
         else
@@ -142,7 +145,13 @@ function initialize!(
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, atmp)
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlstep_data.nlprob.p)
+        nlprob_p = if SciMLBase.specialization(nlstep_data.nlprob.f) ===
+                SciMLBase.AutoDespecialize
+            SciMLBase.DespecializedParameters(nlstep_data.nlprob.p)
+        else
+            nlstep_data.nlprob.p
+        end
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlprob_p)
     else
         if cache.W !== nothing
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
@@ -508,6 +517,9 @@ end
 
     nlstep_data = get_nlstep_data(integrator.f)
     nlcache = nlsolver.cache.cache
+    innersol = nothing
+    fnorm_prev = nothing
+    γΔt = nothing
     if nlcache isa NonlinearSolveNoInitCache
         # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
         # time: `solve!` runs the complete inner solve and its returned solution is the only
@@ -558,8 +570,9 @@ end
             # in a no-init cache here too. The solution `solve!` already returned is used
             # as-is instead of rebuilding one from `nlcache.retcode`/`nlcache.stats`/
             # `get_fu`, none of which exist on this cache.
-            active_fu = innersol.resid
-            nlstepsol = innersol
+            inner_solution = something(innersol)
+            active_fu = inner_solution.resid
+            nlstepsol = inner_solution
         else
             active_fu = get_fu(nlcache)
             # No `trace` is attached: this solution only feeds `nlprobmap` right below, and
@@ -588,7 +601,11 @@ end
         # no displacement to be misled by.
         cache.stalled = false
     else
-        active_u = nlcache isa NonlinearSolveNoInitCache ? innersol.u : get_u(nlcache)
+        active_u = if nlcache isa NonlinearSolveNoInitCache
+            something(innersol).u
+        else
+            get_u(nlcache)
+        end
         @.. broadcast = false ztmp = active_u
         ustep = if nlsolve_f(integrator) isa DAEFunction
             _uprev = get_dae_uprev(integrator, uprev)
@@ -599,7 +616,7 @@ end
         @.. broadcast = false atmp = z - ztmp
         if !(nlcache isa NonlinearSolveNoInitCache)
             cache.stalled = stalled_inner_step(
-                nlcache, maxabs(atmp), maxabs(z), fnorm_prev, γΔt
+                nlcache, maxabs(atmp), maxabs(z), something(fnorm_prev), something(γΔt)
             )
         end
         calculate_residuals!(
@@ -725,12 +742,12 @@ end
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-            reltol = reltol
+            reltol
         )
     else
         linres = dolinsolve(
             integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-            reltol = reltol
+            reltol
         )
     end
 

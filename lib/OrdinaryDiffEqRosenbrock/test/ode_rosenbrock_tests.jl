@@ -558,3 +558,63 @@ end
         @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
     end
 end
+
+# Regression for #3974: Rodas5P's btilde is the unit vector e_8 (zero for
+# stages 1-7, one for stage 8), and Rodas5P's b weights likewise have exact
+# zeros. The fused stage-loop kernels (#3935) multiplied every stage through
+# unconditionally, including zero-weighted ones. `0 * finite = 0` is harmless,
+# but `0 * NaN`/`0 * Inf` is NaN, so a transient non-finite value in an
+# earlier, zero-weighted stage (e.g. an ill-conditioned Newton solve right
+# after a callback-driven parameter jump on a singular mass-matrix DAE) would
+# silently poison the entire weighted sum -- corrupting the error estimate
+# (or the solution update) even though the mathematically correct result
+# never depends on that term. The old per-coefficient broadcast fallback
+# explicitly skipped zero-weighted terms and never had this failure mode.
+@testset "fused weighted-sum skips zero-weighted stages (#3974)" begin
+    _weighted_sum! = OrdinaryDiffEqRosenbrock._weighted_sum!
+    _weighted_sum_fallback! = OrdinaryDiffEqRosenbrock._weighted_sum_fallback!
+
+    # Rodas5P's actual btilde: zero everywhere except the last stage.
+    btilde = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    dim = 10
+
+    # A zero-weighted early stage is transiently non-finite; the only stage
+    # that should matter (weight 1) is perfectly finite.
+    ks = [fill(0.0, dim) for _ in 1:8]
+    ks[3] .= NaN
+    ks[8] .= 0.001
+
+    out_fused = zeros(dim)
+    _weighted_sum!(out_fused, nothing, btilde, ks)
+    @test out_fused == ks[8]
+    @test !any(isnan, out_fused)
+
+    out_fallback = zeros(dim)
+    _weighted_sum_fallback!(out_fallback, nothing, btilde, ks)
+    @test out_fused == out_fallback
+
+    # Sanity: an end-to-end solve stays well-behaved when Rodas5P's error
+    # estimate is computed via the fused path on an ordinary stiff
+    # mass-matrix DAE (ROBER with a singular diagonal mass matrix).
+    function rober!(du, u, p, t)
+        y1, y2, y3 = u
+        k1, k2, k3 = p
+        du[1] = -k1 * y1 + k3 * y2 * y3
+        du[2] = k1 * y1 - k3 * y2 * y3 - k2 * y2^2
+        du[3] = y1 + y2 + y3 - 1
+        return nothing
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    prob = ODEProblem(
+        ODEFunction(rober!; mass_matrix = M),
+        [1.0, 0.0, 0.0],
+        (0.0, 1.0e5),
+        (0.04, 3.0e7, 1.0e4),
+    )
+    sol = solve(
+        prob, Rodas5P();
+        abstol = 1.0e-8, reltol = 1.0e-8,
+        initializealg = BrownFullBasicInit(),
+    )
+    @test SciMLBase.successful_retcode(sol)
+end

@@ -54,8 +54,8 @@ u₀ = [1.0, 0, 0.2]
 du₀ = [0.0, 0.0, 0.0]
 tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
-prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-prob_oop = DAEProblem(f_oop, du₀, u₀, tspan, differential_vars = differential_vars)
+prob = DAEProblem(f, du₀, u₀, tspan; differential_vars)
+prob_oop = DAEProblem(f_oop, du₀, u₀, tspan; differential_vars)
 @test_throws SciMLBase.CheckInitFailureError solve(
     prob, DFBDF(), reltol = 1.0e-8, abstol = 1.0e-8, initializealg = SciMLBase.CheckInit()
 )

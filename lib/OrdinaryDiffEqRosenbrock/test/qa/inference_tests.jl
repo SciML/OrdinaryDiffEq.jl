@@ -45,7 +45,7 @@ using Test
     n = 25
     mass_matrix = Matrix(Diagonal([ones(n); zeros(n)]))
     dae_prob = ODEProblem(
-        ODEFunction{true, FullSpecialize}(dae_system!; mass_matrix = mass_matrix),
+        ODEFunction{true, FullSpecialize}(dae_system!; mass_matrix),
         ones(2n), (0.0, 1.0)
     )
 

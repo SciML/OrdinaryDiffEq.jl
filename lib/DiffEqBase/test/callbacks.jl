@@ -10,7 +10,7 @@ end
 
 rootfind = true
 save_positions = (true, true)
-callback = ContinuousCallback(condition, affect!; save_positions = save_positions)
+callback = ContinuousCallback(condition, affect!; save_positions)
 
 cbs = CallbackSet(nothing)
 @test typeof(cbs.discrete_callbacks) <: Tuple
@@ -27,7 +27,7 @@ condition = function (integrator)
 end
 affect! = function (integrator) end
 save_positions = (true, false)
-saving_callback = DiscreteCallback(condition, affect!; save_positions = save_positions)
+saving_callback = DiscreteCallback(condition, affect!; save_positions)
 
 cbs1 = CallbackSet(callback, saving_callback)
 

@@ -63,7 +63,7 @@ sol = solve(prob, DefaultODEAlgorithm(); reltol = 1.0e-6, abstol = 1.0e-8)
 ```
 """
 function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
-    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    nonstiff = (Tsit5(), Vern7(; lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
         FBDF(; linsolve = LinearSolve.KrylovJL_GMRES(), kwargs...),
@@ -246,7 +246,7 @@ sol = solve(prob, DefaultImplicitODEAlgorithm(); reltol = 1.0e-8, abstol = 1.0e-
 ```
 """
 function DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
-    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    nonstiff = (Tsit5(), Vern7(; lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),
         FBDF(; kwargs...),

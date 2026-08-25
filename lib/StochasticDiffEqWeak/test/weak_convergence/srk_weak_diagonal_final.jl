@@ -42,7 +42,7 @@ prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(5.0e6)

@@ -42,4 +42,16 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @testset "Plot Recipes (Nonlinearsolve WP-diagrams)" begin
         include("nonlinearsolve_wpdiagram_tests.jl")
     end
+    @time @testset "Tagging" begin
+        include("tagging_tests.jl")
+    end
+    @time @testset "Multiple Error Estimates" begin
+        include("multi_error_tests.jl")
+    end
+    @time @testset "Best-of-Family Selection" begin
+        include("wp_selection_tests.jl")
+    end
+    @time @testset "Timeout" begin
+        include("timeout_tests.jl")
+    end
 end

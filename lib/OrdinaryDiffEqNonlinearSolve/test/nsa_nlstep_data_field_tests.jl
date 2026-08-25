@@ -1,6 +1,6 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
-using NonlinearSolve: NewtonRaphson
+using NonlinearSolve: NewtonRaphson, TrustRegion
 using ADTypes, SciMLBase
 using Test
 
@@ -105,7 +105,7 @@ end
 
     nlstep = SciMLBase.ODENLStepData(
         NonlinearProblem(
-            NonlinearFunction{true}(ode_stage!), zeros(1),
+            NonlinearFunction{true, SciMLBase.AutoDespecialize}(ode_stage!), zeros(1),
             StageParams(1.0, 1.0, 1.0, 0.0, zeros(1), zeros(1))
         ),
         1:1, set_γ_c!, set_outer!, set_inner!, (ztmp, sol) -> (ztmp .= sol.u)
@@ -117,4 +117,15 @@ end
     @test SciMLBase.successful_retcode(sol)
     @test sol.u[end] ≈ ref.u[end] rtol = 1.0e-6
     @test sol.u[end] ≉ u0
+
+    fixed_alg = ABDF2(
+        nlsolve = NonlinearSolveAlg(TrustRegion(; autodiff = AutoFiniteDiff()))
+    )
+    exact(t) = sqrt(exp(-2t) / (2 - exp(-2t)))
+    fixed_errors = map(2.0 .^ (-12:-1:-14)) do dt
+        fixed_sol = solve(prob, fixed_alg; adaptive = false, dt, save_everystep = false)
+        abs(only(fixed_sol.u[end]) - exact(1))
+    end
+    fixed_orders = log2.(fixed_errors[1:(end - 1)] ./ fixed_errors[2:end])
+    @test minimum(fixed_orders) > 1.9
 end

@@ -981,8 +981,10 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
             for i in first(blown_idxs, 10)
                 push!(state_analysis, "u[$i] = $(format_value(u[i])) has grown >1e6× its initial value")
             end
-            length(blown_idxs) > 10 && push!(state_analysis,
-                "and $(length(blown_idxs) - 10) further state variable(s) have grown >1e6× their initial value")
+            length(blown_idxs) > 10 && push!(
+                state_analysis,
+                "and $(length(blown_idxs) - 10) further state variable(s) have grown >1e6× their initial value"
+            )
         else
             push!(state_analysis, "u = $(format_value(u)) has grown >1e6× its initial value")
         end

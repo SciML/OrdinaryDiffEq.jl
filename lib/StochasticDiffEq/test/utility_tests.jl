@@ -38,7 +38,7 @@ end
             jac = (u, p, t) -> A
         )
         prob = SDEProblem(fun, u0, tspan)
-        integrator = init(prob, ImplicitEM(theta = 1); adaptive = false, dt = dt)
+        integrator = init(prob, ImplicitEM(theta = 1); adaptive = false, dt)
         W = calc_W(integrator, integrator.cache.nlsolver, dtgamma, #=repeat_step=# false)
         @test convert(AbstractMatrix, W) ≈ concrete_W
         @test W \ u0 ≈ concrete_W \ u0
@@ -54,7 +54,7 @@ end
             jac_prototype = MatrixOperator(copy(A); update_func! = update_jacobian!)
         )
         prob = SDEProblem(fun, u0, tspan)
-        integrator = init(prob, ImplicitEM(theta = 1); adaptive = false, dt = dt)
+        integrator = init(prob, ImplicitEM(theta = 1); adaptive = false, dt)
         W = integrator.cache.nlsolver.cache.W
         updates_before_calc_W = jacobian_updates[]
         calc_W!(
@@ -92,7 +92,7 @@ end
             ) -> (J .= t .* A; J)
         )
         prob2_ip = SDEProblem(
-            SDEFunction(_f_ip, _g_ip; mass_matrix = mm, jac_prototype = jac_prototype), u0, tspan
+            SDEFunction(_f_ip, _g_ip; mass_matrix = mm, jac_prototype), u0, tspan
         )
 
         for Alg in [ImplicitEM, ISSEM]
@@ -115,7 +115,7 @@ end
         prob1 = SDEProblem(SDEFunction(_f, _g), u0, tspan)
         prob2 = SDEProblem(SDEFunction(_f, _g; jac = (u, p, t) -> t * A), u0, tspan)
         prob1_ip = SDEProblem(SDEFunction(_f_ip, _g_ip), u0, tspan)
-        prob2_ip = SDEProblem(SDEFunction(_f_ip, _g_ip; jac_prototype = jac_prototype), u0, tspan)
+        prob2_ip = SDEProblem(SDEFunction(_f_ip, _g_ip; jac_prototype), u0, tspan)
 
         println(SKenCarp)
         Random.seed!(0)

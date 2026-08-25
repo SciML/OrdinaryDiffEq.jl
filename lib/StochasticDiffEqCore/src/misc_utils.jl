@@ -109,7 +109,7 @@ function (p::NLSOLVEJL_SETUP)(f_wrapper::IIFNLSolveFunc, u0; kwargs...)
     # The IIF methods use f(resid, u) signature (in-place)
     nlf = NonlinearFunction{true}((resid, u, p) -> (f(resid, u); nothing))
     prob = NonlinearProblem(nlf, u0)
-    alg = SimpleTrustRegion(; autodiff = p.autodiff)
+    alg = SimpleTrustRegion(; p.autodiff)
     sol = solve(prob, alg)
     return sol.u
 end

@@ -66,10 +66,10 @@ IEM = solve(probiip, ISSEulerHeun())
 ## use BenchmarkTools to benchmark speed here if desired.
 dt = 0.002
 seed = 1
-# solEMiip = solve(probiip, EM(), dt=dt, seed=seed)
-# solRKMil = solve(probiip, RKMilCommute(), dt=dt, seed=seed)
-solPCEuler = solve(prob, PCEuler(ggprime), dt = dt, seed = seed)
-solPCEuleriip = solve(probiip, PCEuler(ggprime), dt = dt, seed = seed)
+# solEMiip = solve(probiip, EM(); dt, seed)
+# solRKMil = solve(probiip, RKMilCommute(); dt, seed)
+solPCEuler = solve(prob, PCEuler(ggprime); dt, seed)
+solPCEuleriip = solve(probiip, PCEuler(ggprime); dt, seed)
 
 @test solPCEuler.u ≈ solPCEuleriip.u atol = 1.0e-10
 
@@ -86,9 +86,9 @@ solPCEuleriip = solve(probiip, PCEuler(ggprime), dt = dt, seed = seed)
 ##
 dts = (1 / 2) .^ (10:-1:5) #14->7 good plot
 trajectories = 50
-simEM = test_convergence(dts, probiip, EM(), trajectories = trajectories)
-simPCEuler = test_convergence(dts, probiip, PCEuler(ggprime), trajectories = trajectories)
-#simRKMil = test_convergence(dts,probiip,RKMilCommute(),trajectories=trajectories)
+simEM = test_convergence(dts, probiip, EM(); trajectories)
+simPCEuler = test_convergence(dts, probiip, PCEuler(ggprime); trajectories)
+#simRKMil = test_convergence(dts, probiip, RKMilCommute(), trajectories)
 @test all(simPCEuler.errors[:l2] .< simEM.errors[:l2])
 
 ## Plotting script to see the order 1 scaling of PCEuler
@@ -155,7 +155,7 @@ tspan = (0.0, 1.0)
 prototype = zeros(2, 2)
 
 oop_prob = SDEProblem{false}(f, g, u0, tspan, noise_rate_prototype = prototype)
-oop_sol = solve(oop_prob, EM(), dt = dt)
+oop_sol = solve(oop_prob, EM(); dt)
 oop_sol = solve(oop_prob, SOSRA())
 sol = solve(oop_prob, dt = 1 / 2^(3), EM())
 sol = solve(oop_prob, dt = 1 / 2^(3), ISSEM())

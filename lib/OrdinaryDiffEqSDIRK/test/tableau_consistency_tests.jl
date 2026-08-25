@@ -23,3 +23,23 @@ all_algs = [
         end
     end
 end
+
+@testset "Non-IMEX methods solve a SplitODEProblem as f1 + f2" begin
+    # A method with no explicit part has nowhere to put `f2`, so it integrates the combined
+    # right-hand side, the way a non-split solve of the same method does. Before #4149 the
+    # explicit accumulator ran anyway and indexed the empty `Ae`/`be`/`split_guess`.
+    f1 = (du, u, p, t) -> (du .= -u)
+    f2 = (du, u, p, t) -> (du .= 0.1 .* u)
+    psplit = SplitODEProblem(f1, f2, [1.0], (0.0, 1.0))
+    pcomb = ODEProblem((du, u, p, t) -> (du .= -0.9 .* u), [1.0], (0.0, 1.0))
+
+    for alg in all_algs
+        SDIRK.issplit(alg) && continue
+        @testset "$(nameof(typeof(alg)))" begin
+            a = solve(psplit, alg; dt = 0.01, adaptive = false)
+            b = solve(pcomb, alg; dt = 0.01, adaptive = false)
+            @test SciMLBase.successful_retcode(a)
+            @test a.u[end] ≈ b.u[end] rtol = 1.0e-12
+        end
+    end
+end

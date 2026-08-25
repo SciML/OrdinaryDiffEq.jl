@@ -117,6 +117,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     @time @safetestset "Issue #3636: DDE tstop overshoot" begin
         include("regression/issue_3636_dde_tstop_overshoot.jl")
     end
+    @time @safetestset "DDE/SDIRK stage-1 tmp aliasing" begin
+        include("regression/dde_sdirk_stage1_tmp_aliasing.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "SDDE"

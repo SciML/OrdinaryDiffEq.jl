@@ -12,7 +12,7 @@ du₀ = [0.0, 0.0, 0.0]
 p = [0.04, 3.0e7, 1.0e4, 1.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, false]
-prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
+prob = DAEProblem(f, du₀, u₀, tspan, p; differential_vars)
 condition(u, t, integrator) = t in [50.0]
 affect!(integrator) = integrator.p[4] = 2.0
 cb = DiscreteCallback(condition, affect!)
@@ -24,10 +24,10 @@ sol = solve(prob, IDA(), callback=cb, tstops=[50.0],abstol=1e-14,reltol=1e-14)
 =#
 
 p = [0.04, 3.0e7, 1.0e4, 1.0]
-prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
+prob = DAEProblem(f, du₀, u₀, tspan, p; differential_vars)
 sol = solve(
-    prob, DFBDF(), callback = cb, tstops = [50.0], abstol = 1.0e-12, reltol = 1.0e-12,
-    initializealg = BrownFullBasicInit()
+    prob, DFBDF(), callback = cb, tstops = [50.0],
+    abstol = 1.0e-12, reltol = 1.0e-12, initializealg = BrownFullBasicInit()
 )
 @test sol.t[end] == 100.0
 @test sol.u[end][1] ≈ 0.686300529575259 atol = 1.0e-7
