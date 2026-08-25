@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqFIRK, LinearSolve, LinearAlgebra, SparseArrays, Test
+using OrdinaryDiffEqBDF, LinearSolve, LinearAlgebra, SparseArrays, Test
 using SciMLOperators: WOperator, jacobian_stale
 
 # `LHLFactorization` needs W left split as J plus a scalar shift so that a new dtgamma
@@ -53,18 +53,6 @@ end
     @test lc.ws.reduced
     @test lc.jac === integ.cache.nlsolver.cache.J
     @test !jacobian_stale(integ.cache.nlsolver.cache.W)
-end
-
-@testset "FIRK refuses a reduction it cannot reuse" begin
-    # RadauIIA assembles a real and a complex stage matrix per step, so an LHL reduction
-    # would be re-taken for each one rather than reused: measured 5.2x slower than LU on a
-    # 128-unknown Brusselator, at identical step counts and error, with 279 stage-matrix
-    # updates against 3 Jacobians. Refuse rather than silently pessimize; reusing one
-    # reduction across both is SciML/OrdinaryDiffEq.jl#4281.
-    @test_throws ArgumentError solve(PROB, RadauIIA5(linsolve = LHLFactorization()))
-    # The supported solvers are unaffected.
-    lu = solve(PROB, RadauIIA5(linsolve = LUFactorization()); abstol = 1.0e-10, reltol = 1.0e-10)
-    @test SciMLBase.successful_retcode(lu)
 end
 
 @testset "unsupported combinations are rejected" begin

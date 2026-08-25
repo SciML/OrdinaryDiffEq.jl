@@ -11,6 +11,7 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "FIRK Tests" include("ode_firk_tests.jl")
     @time @safetestset "FIRK Krylov Tests" include("firk_krylov_tests.jl")
+    @time @safetestset "FIRK LHL Factorization Tests" include("lhl_factorization_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
