@@ -130,10 +130,6 @@ println("RKV76IIa")
 dts = [2, 1, 0.5, 0.25]
 
 check_convergence(dts, prob_oop, RKV76IIa(), 7)
-# The in-place cache used to alias `k8` onto `k3` and `k10` onto `k4`, copying
-# `Vern7Cache`, whose tableau permits it. RKV76IIa's does not, and only the
-# out-of-place path was covered here, so the in-place method silently returned
-# garbage with `retcode = Success`.
 check_convergence(dts, prob_iip, RKV76IIa(), 7)
 
 let dt = 0.25
