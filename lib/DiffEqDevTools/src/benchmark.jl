@@ -1070,7 +1070,9 @@ function WorkPrecisionSet(
     stats = nothing
     wps = [
         WorkPrecision(
-                prob, _abstols[i], _reltols[i], errors[i], times[:, i],
+                prob, _abstols[i], _reltols[i],
+                _dicts_to_structarray([Dict(error_estimate => err) for err in errors[i]]),
+                times[:, i],
                 _dts[i], stats, names[i], error_estimate, N,
                 _combined_tags(
                     setups[i][:alg], _setup_tags(setups[i]),

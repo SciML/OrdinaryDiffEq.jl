@@ -130,7 +130,7 @@ wp2 = @time WorkPrecisionSet(
     trajectories = numtraj, error_estimate = :weak_final
 )
 
-err1 = [wp1.wps[i].errors for i in 1:length(setups)]
-err2 = [wp2.wps[i].errors for i in 1:length(setups)]
+err1 = [wp1.wps[i].errors.weak_final for i in 1:length(setups)]
+err2 = [wp2.wps[i].errors.weak_final for i in 1:length(setups)]
 
 @test isapprox(err1, err2, atol = 1.0e-3)
