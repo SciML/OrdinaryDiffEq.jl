@@ -205,13 +205,6 @@ end
     @test all(x -> all(iszero, x), integ.k[3:(integ.kshortsize)])
 end
 
-# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4367
-# `initialize!` read `integrator.alg.max_order`, which is the `CompositeAlgorithm`
-# when `AdaptiveRadau` is a composite member, so building the integrator threw
-# "type CompositeAlgorithm has no field max_order" before a single step was taken.
-# The bare algorithm was unaffected, which is why the convergence tests above never
-# saw it. `init` is the right granularity here: it runs `initialize!` and stops.
-# A full `solve` additionally needs the composite fixes tracked in #4364.
 @testset "AdaptiveRadau as a composite member (#4367)" begin
     f_comp = (du, u, p, t) -> (du[1] = -1000u[1] + u[2]; du[2] = u[1] - 2u[2]; nothing)
     prob_comp = ODEProblem(f_comp, [1.0, 1.0], (0.0, 1.0))
@@ -219,8 +212,6 @@ end
     integ = init(prob_comp, AutoTsit5(AdaptiveRadau(); stiffalgfirst = true))
     @test integ isa SciMLBase.DEIntegrator
 
-    # `kshortsize` is what the offending line was computing; check it came out of the
-    # AdaptiveRadau member rather than defaulting or erroring.
     bare = init(prob_comp, AdaptiveRadau())
     @test integ.kshortsize == bare.kshortsize
 end

@@ -29,11 +29,6 @@ using OrdinaryDiffEqStabilizedIRK: maxeig!
     end
 end
 
-# `f1ⱼ₋₂ = du₁` in the in-place `perform_step!` rebound the name onto `du₁`, so the
-# stage shift `@.. f1ⱼ₋₂ = f1ⱼ₋₁` wrote through to `du₁` -- which has to hold
-# `f1(uprev)` for the whole step. That cost the in-place method an order. The
-# out-of-place method does the same assignment safely, because there it is a value
-# copy, so the two paths disagreeing is the sharpest signal.
 @testset "IRKC in-place matches out-of-place" begin
     A1 = [-100.0 0.0; 0.0 -50.0]
     A2 = [0.0 1.0; -1.0 0.0]
@@ -56,10 +51,8 @@ end
     eiip = err(prob_iip)
     eoop = err(prob_oop)
 
-    # Same problem, same method: the two paths must agree closely.
     @test maximum(abs.(eiip .- eoop)) < 1.0e-10
 
-    # ...and the in-place path must show the method's order, not one less.
     orders = [log2(eiip[i] / eiip[i + 1]) for i in 1:(length(dts) - 1)]
     @test minimum(orders) > 1.5
 end
