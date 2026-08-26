@@ -37,7 +37,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 
 [compat]
-OrdinaryDiffEqTsit5 = "2"
+OrdinaryDiffEqTsit5 = "2.1.4"
 SciMLTesting = "2.8"
 Pkg = "1"
 Test = "<0.0.1, 1"
@@ -50,7 +50,7 @@ LinearSolve = "5.12"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "3.9"
 SciMLBase = "3.39"
-OrdinaryDiffEqCore = "4.12"
+OrdinaryDiffEqCore = "4.15.1"
 GenericSchur = "0.5"
 julia = "1.10"
 ADTypes = "1.22.0"
