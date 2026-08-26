@@ -265,10 +265,10 @@ function calc_tderivative(integrator, cache)
 end
 
 """
-    prepare_sparse_jac!(J, jac_prototype)
+    prepare_sparse_jac!(J, jac_prototype; nzval = false)
 
-Give `J` the sparsity structure of `jac_prototype` with all stored values zeroed,
-ready for a user-supplied `f.jac` to write into.
+Give `J` the sparsity structure of `jac_prototype` and fill its stored entries with
+`nzval`. By default, the entries are zeroed for a user-supplied `f.jac` to write into.
 
 `f.jac` only assigns into already-stored entries, so `J`'s structure is invariant
 across the solve and the (O(nnz), allocating) structural rebuild is only needed when
@@ -279,15 +279,15 @@ strict Rosenbrock methods (e.g. `Rodas5P`) that re-evaluate `J` every step.
 See https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653 for why the structure must
 track `jac_prototype` rather than whatever `f.jac` happens to fill in.
 """
-function prepare_sparse_jac!(J, jac_prototype)
+function prepare_sparse_jac!(J, jac_prototype; nzval = false)
     if ArrayInterface.same_sparsity_structure(J, jac_prototype)
-        set_all_nzval!(J, false)
+        set_all_nzval!(J, nzval)
     else
         # `jac_prototype`'s stored values must be made nonzero first: the broadcast
         # below prunes numerical zeros, which would drop those entries from `J`.
         set_all_nzval!(jac_prototype, true)
         J .= true .* jac_prototype
-        set_all_nzval!(J, false)
+        set_all_nzval!(J, nzval)
     end
     return J
 end
@@ -358,11 +358,13 @@ function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
     (; stats) = integrator
     njacs, nf = stats.njacs, stats.nf
     J = if SciMLBase.isinplace(integrator.sol.prob) && cache.J isa AbstractMatrix
-        # `zero` on a `SparseMatrixCSC` returns a matrix with no stored entries, which
-        # drops the sparsity pattern `calc_J!` colours against and makes it throw
-        # `DimensionMismatch`. `fill!(similar(...))` keeps the pattern and still hands
-        # `calc_J!` a zeroed buffer, and is the same thing as `zero` for a dense `J`.
-        Jfresh = fill!(similar(cache.J), zero(eltype(cache.J)))
+        Jfresh = if is_sparse(cache.J)
+            prepare_sparse_jac!(
+                similar(cache.J), cache.J; nzval = one(eltype(cache.J))
+            )
+        else
+            zero(cache.J)
+        end
         calc_J!(Jfresh, integrator, cache)
         Jfresh
     elseif SciMLBase.isinplace(integrator.sol.prob)
