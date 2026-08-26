@@ -27,6 +27,7 @@ DiffEqDevTools.get_sample_errors
 ## Tagging and comparison helpers
 
 ```@docs
+DiffEqDevTools.auto_tags
 DiffEqDevTools.get_tags
 DiffEqDevTools.unique_tags
 DiffEqDevTools.filter_by_tags
