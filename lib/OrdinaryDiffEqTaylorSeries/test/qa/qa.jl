@@ -7,8 +7,6 @@ using SciMLTesting, OrdinaryDiffEqTaylorSeries, SciMLBase, Test
 # been dropped; only the genuine residual remains (see SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqTaylorSeries;
-    # Approve the SciMLBase names this package re-exports. The list itself and the rule
-    # behind it are checked repo-wide by test/qa/qa_tests.jl against docs/src/api/reexports.md.
     reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqTaylorSeries)),
     aqua_kwargs = (;
         unbound_args = false, undefined_exports = false, stale_deps = false,

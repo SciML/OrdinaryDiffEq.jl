@@ -9,8 +9,6 @@ const ENUM_SUBMODULE = (OrdinaryDiffEqDefault.DefaultSolverChoice,)
 
 run_qa(
     OrdinaryDiffEqDefault;
-    # Approve the SciMLBase names this package re-exports. The list itself and the rule
-    # behind it are checked repo-wide by test/qa/qa_tests.jl against docs/src/api/reexports.md.
     reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqDefault)),
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,

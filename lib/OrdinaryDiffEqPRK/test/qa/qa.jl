@@ -6,8 +6,6 @@ const THREADING_PUBLIC = (:Sequential, :BaseThreads, :PolyesterThreads)
 
 run_qa(
     OrdinaryDiffEqPRK;
-    # Approve the SciMLBase names this package re-exports. The list itself and the rule
-    # behind it are checked repo-wide by test/qa/qa_tests.jl against docs/src/api/reexports.md.
     reexports_allow = vcat(intersect(names(SciMLBase), names(OrdinaryDiffEqPRK)), collect(THREADING_PUBLIC)),
     explicit_imports = true,
     ei_kwargs = (;

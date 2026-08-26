@@ -52,6 +52,8 @@ Filter = x -> x in [
     SciMLBase.DAEProblem,
     SciMLBase.DAEFunction,
     SciMLBase.DAESolution,
+    SciMLBase.DiscreteProblem,
+    SciMLBase.DiscreteFunction,
     SciMLBase.EnsembleProblem,
     SciMLBase.DynamicalODEFunction,
     SciMLBase.EnsembleContext

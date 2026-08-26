@@ -15,11 +15,11 @@ A SciMLBase name is re-exported if and only if it belongs to the **user-facing c
 interface** — the part of SciMLBase a user writes in a script. Concretely, a name is
 re-exported when it falls in one of these five closed categories:
 
-1. **Problem and function types** — every concrete `…Problem` and `…Function` type SciMLBase
-   exports. Membership is mechanical: the name ends in `Problem`/`Function`, the type is not
-   abstract, and it is not a dispatch tag (`Abstract…`, `Standard…`). Every problem that can be
-   *stated* through DifferentialEquations.jl can therefore be stated through any solver
-   sublibrary, whether or not that particular sublibrary can solve it.
+1. **Problem and function types** — the concrete SciMLBase types in the
+   [Common Interface API](@ref). This is the set OrdinaryDiffEq uses for ODEs, split ODEs,
+   second-order and dynamical ODEs, DAEs, discrete maps, and ensembles. Problem domains solved
+   by other libraries, such as optimization, nonlinear equations, SDEs, DDEs, and boundary
+   value problems, are not re-exported.
 2. **Solving and solution inspection** — `solve`, `solve!`, `init`, `step!`, `remake`,
    `ReturnCode`, `successful_retcode`, the statistics types, and the specialization and
    initialization options accepted by problem constructors and `solve`.
@@ -39,20 +39,22 @@ are categories, not case-by-case decisions:
     user calls.
   - **Internal dispatch tags** (`StandardODEProblem`, `…AliasSpecifier` internals, originator
     types).
+  - **Other problem domains** (`OptimizationProblem`, `NonlinearProblem`, `SDEProblem`, …) —
+    their solver packages own those interfaces.
 
 Two consequences worth stating explicitly, because they are the point of having a rule:
 
-  - **The list does not depend on history.** It is not "whatever this package happened to
-    export before"; a name is in or out purely by category. Re-deriving the list from a fresh
-    SciMLBase gives the same answer.
+  - **The list follows real usage.** It is not "whatever this package happened to export
+    before"; the problem and function types come from OrdinaryDiffEq's documented common
+    interface.
   - **The list is uniform.** Every solver sublibrary re-exports the same names. A name is never
     available from one sublibrary and missing from another, so moving a script between solver
     packages never produces an `UndefVarError`.
 
-The rule is enforced, not just described: `test/qa/qa_tests.jl` re-derives categories 1 from a
-live SciMLBase, checks the enumerated names in categories 2–5 are still exported by SciMLBase,
-and asserts that all sublibraries and this page list exactly the same names. Adding a problem
-type to SciMLBase therefore fails CI until the sublibraries re-export it.
+The rule is enforced, not just described: `test/qa/reexport_tests.jl` reads the Common
+Interface API and asserts that its concrete SciMLBase problem and function types exactly match
+this page. It also checks that the enumerated names are exported by SciMLBase and that every
+selective sublibrary uses exactly the same list.
 
 ## Do not rely on `using` for solver names
 
@@ -65,23 +67,9 @@ as `SciMLBase.name`.
 ### Problem and function types
 
 ```julia
-AnalyticalProblem, BVProblem, ConvexOptimizationProblem, DAEProblem,
-DDEProblem, DiscreteProblem, DynamicalDDEProblem, DynamicalODEProblem,
-DynamicalSDEProblem, EigenvalueProblem, EnsembleProblem, HomotopyProblem,
-ImmutableNonlinearProblem, ImmutableODEProblem, ImplicitDiscreteProblem, IncrementingODEProblem,
-IntegralProblem, IntervalNonlinearProblem, LinearProblem, NoiseProblem,
-NonlinearLeastSquaresProblem, NonlinearProblem, ODEProblem, OptimizationProblem,
-PDEProblem, RODEProblem, SCCNonlinearProblem, SDDEProblem,
-SDEProblem, SampledIntegralProblem, SecondOrderBVProblem, SecondOrderDDEProblem,
-SecondOrderODEProblem, SplitODEProblem, SplitSDEProblem, SteadyStateProblem,
-TwoPointBVProblem, TwoPointSecondOrderBVProblem, WeightedEnsembleProblem, BVPFunction,
-BatchIntegralFunction, DAEFunction, DDEFunction, DiscreteFunction,
-DynamicalBVPFunction, DynamicalDDEFunction, DynamicalODEFunction, DynamicalSDEFunction,
-HomotopyNonlinearFunction, ImplicitDiscreteFunction, IncrementingODEFunction, IntegralFunction,
-IntervalNonlinearFunction, MultiObjectiveOptimizationFunction, NonlinearFunction, ODEFunction,
-ODEInputFunction, OptimizationFunction, RODEFunction, SDDEFunction,
-SDEFunction, SplitFunction, SplitSDEFunction, TwoPointBVPFunction,
-TwoPointDynamicalBVPFunction
+DAEProblem, DiscreteProblem, DynamicalODEProblem, EnsembleProblem, ODEProblem,
+SecondOrderODEProblem, SplitODEProblem, DAEFunction, DiscreteFunction,
+DynamicalODEFunction, ODEFunction, SplitFunction
 ```
 
 ### Solving and solution inspection
@@ -118,4 +106,3 @@ set_ut!, terminate!, u_modified!
 EnsembleAnalysis, EnsembleDistributed, EnsembleSerial, EnsembleSplitThreads,
 EnsembleSummary, EnsembleThreads
 ```
-

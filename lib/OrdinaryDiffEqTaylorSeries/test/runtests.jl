@@ -13,9 +13,6 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SciMLBase reexport" begin
-        # docs/src/api/reexports.md defines this surface; test/qa/qa_tests.jl checks the
-        # full list repo-wide. Here, spot-check that the common interface is usable and
-        # that solver-author API stayed behind the `SciMLBase.` qualifier.
         using OrdinaryDiffEqTaylorSeries, Test
         exported = (
             :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
@@ -25,7 +22,8 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test all(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), exported))
         internal = (
             :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
-            :StandardODEProblem, :UJacobianWrapper,
+            :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+            :ConvexOptimizationProblem,
         )
         @test !any(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), internal))
     end
