@@ -507,8 +507,6 @@ integ = init(
     prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
     save_everystep = false
 )
-# One buffer more than the other SSPRK methods: `SSPRK932` needs `f(uprev)` at its
-# `u6*` stage, so unlike its siblings it cannot alias `fsalfirst` onto `k`.
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
 integ = init(
     prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
@@ -615,12 +613,6 @@ sol = solve(
     @test sol_SV.stats.naccept == sol_SA.stats.naccept
 end
 
-# Without dense output or intermediate saves the integrator sets `calck = false`, and
-# the in-place SSPRK caches then alias `fsalfirst` to `k` to save an allocation.
-# `SSPRK932` reads `f(uprev)` back out of `fsalfirst` at its `u6*` stage, after six
-# `f(k, ...)` calls have overwritten `k`, so that alias silently cost it two orders.
-# Every convergence test above runs with the default `calck = true`, which hides it.
-# `SSPRK33`/`SSPRK43` keep the alias and are here as controls.
 @testset "order is preserved when calck is false" begin
     for alg in (SSPRK932(), SSPRK33(), SSPRK43())
         for prob in test_problems_nonlinear
