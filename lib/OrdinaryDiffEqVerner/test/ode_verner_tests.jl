@@ -130,6 +130,13 @@ println("RKV76IIa")
 dts = [2, 1, 0.5, 0.25]
 
 check_convergence(dts, prob_oop, RKV76IIa(), 7)
+check_convergence(dts, prob_iip, RKV76IIa(), 7)
+
+let dt = 0.25
+    oop = solve(prob_oop, RKV76IIa(); dt = dt, adaptive = false)
+    iip = solve(prob_iip, RKV76IIa(); dt = dt, adaptive = false)
+    @test iip.u[end][1] ≈ oop.u[end] rtol = 1.0e-10
+end
 
 # -------------------------------------------------------------
 ### Backward solve lazy interpolation dt sign regression test
