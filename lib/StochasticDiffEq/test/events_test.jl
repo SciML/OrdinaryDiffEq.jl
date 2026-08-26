@@ -113,7 +113,9 @@ affect2!(integrator) = integrator.u[4] = integrator.u[4] - params.gSyn; # Inhibi
 cb = ContinuousCallback(condition2, affect2!, nothing);
 prob = SDEProblem(HM_neuron!, HM_noise!, x0, (0.0, 1999.9), params);
 sol = solve(prob, ImplicitEM(), reltol = 1.0e-4, abstol = 1.0e-6, dense = true, callback = cb);
+@test SciMLBase.successful_retcode(sol)
 sol = solve(prob, SKenCarp(), reltol = 1.0e-4, abstol = 1.0e-6, dense = true, callback = cb);
+@test SciMLBase.successful_retcode(sol)
 
 using DiffEqCallbacks
 
