@@ -70,8 +70,10 @@ end
     end
 
     @testset "auto-detected families" begin
-        # :rk is on 4/5 entries, :fifth_order on 2/5; a tag on every entry is dropped
-        @test DiffEqDevTools._auto_detect_families(wp_set) == unique_tags(wp_set)
+        # :rk is on 4/5 entries, :fifth_order on 2/5; :explicit is on every entry
+        # and is therefore dropped.
+        @test DiffEqDevTools._auto_detect_families(wp_set) ==
+            filter(!=(:explicit), unique_tags(wp_set))
         uniform = filter_by_tags(wp_set, :rk)
         @test :rk ∉ DiffEqDevTools._auto_detect_families(uniform)
         @test haskey(autoplot(wp_set), "family_fifth_order")
@@ -118,7 +120,10 @@ end
             ); numruns = 2
         )
         @test ad_set.names == ["Rosenbrock23", "Rosenbrock23 (FiniteDiff)"]
-        @test get_tags(ad_set) == [[:autodiff_default], [:autodiff_finitediff]]
+        @test get_tags(ad_set) == [
+            [:order_2, :adaptive, :implicit, :rosenbrock, :autodiff_default],
+            [:order_2, :adaptive, :implicit, :rosenbrock, :autodiff_finitediff],
+        ]
         @test ad_set.setups[2][:alg].autodiff isa AutoFiniteDiff
     end
 end

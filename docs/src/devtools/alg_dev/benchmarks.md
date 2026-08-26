@@ -86,17 +86,17 @@ and a print which will show some relevant information.
 
 A benchmark usually wants several views of the same data: each family of methods on its
 own, then the best of each family against each other, with a couple of reference methods
-in every plot. Tagging the setups produces all of those from a single run. Add a `:tags`
-entry to each setup, request every error metric the plots need with `error_estimates`,
-and slice the result afterwards:
+in every plot. Preset tags derived from algorithm traits and supertypes produce all of
+those from a single run. Add only benchmark-specific tags such as `:reference`, request
+every error metric the plots need with `error_estimates`, and slice the result afterwards:
 
 ```julia
 setups = [
-    Dict(:alg => Rosenbrock23(), :tags => [:rosenbrock, :second_order]),
-    Dict(:alg => Rodas5P(), :tags => [:rosenbrock, :fifth_order]),
-    Dict(:alg => TRBDF2(), :tags => [:sdirk, :second_order]),
-    Dict(:alg => KenCarp4(), :tags => [:sdirk, :fourth_order]),
-    Dict(:alg => RadauIIA5(), :tags => [:firk, :reference]),
+    Dict(:alg => Rosenbrock23()),
+    Dict(:alg => Rodas5P()),
+    Dict(:alg => TRBDF2()),
+    Dict(:alg => KenCarp4()),
+    Dict(:alg => RadauIIA5(), :tags => [:reference]),
 ]
 wp_set = WorkPrecisionSet(
     prob, abstols, reltols, setups;
@@ -113,6 +113,10 @@ plot(
     reference_tags = [:reference]
 )
 ```
+
+For example, `auto_tags(KenCarp4())` includes `:order_4`, `:adaptive`, `:implicit`,
+`:sdirk`, `:esdirk`, and `:split`. Explicit setup tags are appended without duplicates.
+Use `:auto_tags => false` when a setup needs only its manually supplied tags.
 
 `plot(wp_set; tags)` keeps the entries carrying all of `tags`, `include_tags` adds
 entries back regardless of that filter, and `exclude_tags` drops entries. Entries
@@ -137,6 +141,7 @@ DiffEqDevTools.get_sample_errors
 ### Tagging and comparison helpers
 
 ```@docs
+DiffEqDevTools.auto_tags
 DiffEqDevTools.get_tags
 DiffEqDevTools.unique_tags
 DiffEqDevTools.filter_by_tags

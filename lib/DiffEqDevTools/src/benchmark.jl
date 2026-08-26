@@ -6,6 +6,52 @@ _nan_errors() = Dict{Symbol, Float64}(:l∞ => NaN, :L2 => NaN, :final => NaN, :
 _setup_tags(setup) = Vector{Symbol}(get(setup, :tags, Symbol[]))
 _setup_name(setup) = get(setup, :name, _default_name(setup[:alg]))
 
+_preset_algorithm_tags(alg) = Symbol[]
+
+function _known_alg_order(alg)
+    applicable(SciMLBase.alg_order, alg) || return nothing
+    try
+        return SciMLBase.alg_order(alg)
+    catch err
+        if err isa ErrorException && err.msg == "Order is not defined for this algorithm"
+            return nothing
+        end
+        rethrow()
+    end
+end
+
+_order_tag(order) = Symbol("order_", replace(string(order), "//" => "_", "." => "_"))
+
+"""
+    auto_tags(alg) -> Vector{Symbol}
+
+Return preset metadata tags derived from the public traits and type hierarchy of `alg`.
+Differential-equation algorithms receive an order tag such as `:order_5` (or
+`:order_3_2` for order `3 // 2`) when their order is defined, plus `:adaptive` or
+`:fixed_step`. When OrdinaryDiffEqCore is loaded, the result also describes known
+implicitness, families, and structural traits such as `:rosenbrock`, `:firk`, `:sdirk`,
+`:split`, and `:multistep`.
+
+Algorithms without applicable traits return an empty vector. [`WorkPrecision`](@ref)
+and [`WorkPrecisionSet`](@ref) merge these presets with explicit tags by default.
+"""
+auto_tags(alg) = Symbol[]
+function auto_tags(alg::AbstractDEAlgorithm)
+    presets = _preset_algorithm_tags(alg)
+    tags = Symbol[]
+    order = :variable_order in presets ? nothing : _known_alg_order(alg)
+    order === nothing || push!(tags, _order_tag(order))
+    push!(tags, SciMLBase.isadaptive(alg) ? :adaptive : :fixed_step)
+    append!(tags, presets)
+    return unique!(tags)
+end
+
+function _combined_tags(alg, tags, include_auto_tags)
+    combined = include_auto_tags ? auto_tags(alg) : Symbol[]
+    append!(combined, tags)
+    return unique!(combined)
+end
+
 function _timed_out(timeout, solve_time, name, abstol)
     (timeout === nothing || solve_time <= timeout) && return false
     @warn "$name exceeded the $(timeout)s timeout at abstol=$abstol " *
@@ -219,7 +265,8 @@ Base.lastindex(shoot::ShootoutSet) = lastindex(shoot.shootouts)
     WorkPrecision(
         prob, alg, abstols, reltols, dts = nothing;
         name = nothing, appxsol = nothing, error_estimate = :final,
-        numruns = 20, seconds = 2, tags = Symbol[], timeout = nothing, kwargs...
+        numruns = 20, seconds = 2, tags = Symbol[], auto_tags = true,
+        timeout = nothing, kwargs...
     )
 
 Measure error and execution time for `alg` at corresponding absolute and relative
@@ -229,6 +276,7 @@ inputs for plotting a work-precision diagram.
 
 Use `appxsol` as a numerical reference when the problem has no analytic solution.
 `tags` attaches metadata symbols used by [`filter_by_tags`](@ref) and the plot recipe.
+They are merged with [`auto_tags(alg)`](@ref) unless `auto_tags = false`.
 `timeout` gives a per-tolerance wall-clock budget in seconds; see
 [`WorkPrecisionSet`](@ref). Additional keyword arguments are forwarded to `solve`.
 """
@@ -262,10 +310,11 @@ end
 Build one [`WorkPrecision`](@ref) result for each solver configuration in `setups` so
 their work-precision curves can be compared. Each setup is a dictionary containing an
 `:alg` and may override the shared tolerances or fixed step sizes with `:abstols`,
-`:reltols`, or `:dts`, or its legend entry with `:name`. A `:tags` entry attaches
-metadata symbols to that setup's curve, which [`filter_by_tags`](@ref),
-[`best_of_families`](@ref), [`autoplot`](@ref) and the plot recipe use to build family
-and cross-family comparisons.
+`:reltols`, or `:dts`, or its legend entry with `:name`. Preset tags from
+[`auto_tags`](@ref) are attached by default and merged with any `:tags` entry. Set
+`:auto_tags => false` in a setup to use only its explicit tags. The resulting metadata
+is used by [`filter_by_tags`](@ref), [`best_of_families`](@ref), [`autoplot`](@ref),
+and the plot recipe to build family and cross-family comparisons.
 
 `error_estimates` requests several error metrics from a single run (for example
 `[:final, :l2, :L2]`), so plots for each metric can be drawn without re-solving; the
@@ -316,7 +365,7 @@ function WorkPrecision(
         numruns = 20, seconds = 2, timeout = nothing,
         timeseries_errors::Union{Bool, Nothing} = nothing,
         dense_errors::Union{Bool, Nothing} = nothing,
-        tags::Vector{Symbol} = Symbol[], kwargs...
+        tags::Vector{Symbol} = Symbol[], auto_tags::Bool = true, kwargs...
     )
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
@@ -444,7 +493,8 @@ function WorkPrecision(
     end
     return WorkPrecision(
         prob, abstols, reltols, _dicts_to_structarray(errors),
-        times, dts, stats, name, error_estimate, N, tags
+        times, dts, stats, name, error_estimate, N,
+        _combined_tags(alg, tags, auto_tags)
     )
 end
 
@@ -455,7 +505,7 @@ function WorkPrecision(
         numruns = 20, seconds = 2, timeout = nothing,
         timeseries_errors::Union{Bool, Nothing} = nothing,
         dense_errors::Union{Bool, Nothing} = nothing,
-        tags::Vector{Symbol} = Symbol[], kwargs...
+        tags::Vector{Symbol} = Symbol[], auto_tags::Bool = true, kwargs...
     )
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
@@ -583,7 +633,8 @@ function WorkPrecision(
     end
     return WorkPrecision(
         prob, abstols, reltols, _dicts_to_structarray(errors),
-        times, dts, stats, name, error_estimate, N, tags
+        times, dts, stats, name, error_estimate, N,
+        _combined_tags(alg, tags, auto_tags)
     )
 end
 
@@ -591,7 +642,8 @@ end
 function WorkPrecision(
         prob::NonlinearProblem, alg, abstols, reltols, dts = nothing; name = nothing,
         appxsol = nothing, error_estimate = :l2, numruns = 20, seconds = 2,
-        timeout = nothing, tags::Vector{Symbol} = Symbol[], kwargs...
+        timeout = nothing, tags::Vector{Symbol} = Symbol[], auto_tags::Bool = true,
+        kwargs...
     )
     N = length(abstols)
     errors = Vector{Dict{Symbol, Float64}}(undef, N)
@@ -654,7 +706,8 @@ function WorkPrecision(
 
     return WorkPrecision(
         prob, abstols, reltols, _dicts_to_structarray(errors),
-        times, dts, stats, name, error_estimate, N, tags
+        times, dts, stats, name, error_estimate, N,
+        _combined_tags(alg, tags, auto_tags)
     )
 end
 
@@ -691,6 +744,7 @@ function WorkPrecisionSet(
             timeseries_errors,
             dense_errors,
             tags = _setup_tags(setups[i]),
+            auto_tags = get(setups[i], :auto_tags, true),
             name = names[i], kwargs..., filtered_setup...
         )
     end
@@ -863,7 +917,10 @@ function WorkPrecisionSet(
                 prob, _abstols[i], _reltols[i],
                 _dicts_to_structarray(errors[i]),
                 times[:, i], _dts[i], stats, names[i], error_estimate, N,
-                _setup_tags(setups[i])
+                _combined_tags(
+                    setups[i][:alg], _setup_tags(setups[i]),
+                    get(setups[i], :auto_tags, true)
+                )
             )
             for i in 1:N
     ]
@@ -1015,7 +1072,10 @@ function WorkPrecisionSet(
         WorkPrecision(
                 prob, _abstols[i], _reltols[i], errors[i], times[:, i],
                 _dts[i], stats, names[i], error_estimate, N,
-                _setup_tags(setups[i])
+                _combined_tags(
+                    setups[i][:alg], _setup_tags(setups[i]),
+                    get(setups[i], :auto_tags, true)
+                )
             )
             for i in 1:N
     ]
@@ -1059,6 +1119,7 @@ function WorkPrecisionSet(
             timeseries_errors,
             dense_errors,
             tags = _setup_tags(setups[i]),
+            auto_tags = get(setups[i], :auto_tags, true),
             name = names[i], kwargs..., filtered_setup...
         )
     end
