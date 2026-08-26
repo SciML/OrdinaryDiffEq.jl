@@ -144,7 +144,9 @@ function initialize!(integrator, cache::RadauIIA9Cache)
 end
 
 function initialize!(integrator, cache::AdaptiveRadauConstantCache)
-    max_stages = (integrator.alg.max_order - 1) ÷ 4 * 2 + 1
+    # `integrator.alg` is the `CompositeAlgorithm` when this method is a composite
+    # member, and that has no `max_order`.
+    max_stages = (unwrap_alg(integrator, true).max_order - 1) ÷ 4 * 2 + 1
     integrator.kshortsize = max_stages + 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -161,7 +163,8 @@ function initialize!(integrator, cache::AdaptiveRadauConstantCache)
 end
 
 function initialize!(integrator, cache::AdaptiveRadauCache)
-    max_stages = (integrator.alg.max_order - 1) ÷ 4 * 2 + 1
+    # See the constant-cache `initialize!` above: unwrap before reading `max_order`.
+    max_stages = (unwrap_alg(integrator, true).max_order - 1) ÷ 4 * 2 + 1
     integrator.kshortsize = max_stages + 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
