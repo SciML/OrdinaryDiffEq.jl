@@ -58,11 +58,6 @@ end
     f(k1, uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
-    # The value slot must not be `k1`: that is `u1`'s first-order partial, and an RHS
-    # that zeroes `du` before accumulating into it (`fill!(du, 0)`, or any `du .= 0`
-    # followed by `+=`) would wipe the Taylor seed it is being evaluated on, leaving
-    # `k2 == 0` and silently dropping the method to first order. `k3` is unused --
-    # the interpolant reads only `k[1]` and `k[2]` -- so this stays non-allocating.
     out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2
