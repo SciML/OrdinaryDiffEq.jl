@@ -45,28 +45,28 @@ function initialize!(integrator, cache::PDIRK44ConstantCache) end
         _nlsolver.γ = γs[1]
         _nlsolver.c = cs[1]
         markfirststage!(_nlsolver)
-        k11 = nlsolve!(_nlsolver, integrator, γs[1] * dt, repeat_step)
+        k11 = nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
         _nlsolver.z = zero(u)
         _nlsolver.tmp = uprev
         _nlsolver.γ = γs[2]
         _nlsolver.c = cs[2]
         markfirststage!(_nlsolver)
-        k12 = nlsolve!(_nlsolver, integrator, γs[2] * dt, repeat_step)
+        k12 = nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
         _nlsolver.z = zero(u)
         _nlsolver.tmp = uprev + α1[1] * k11 + α2[1] * k12
         _nlsolver.γ = γs[1]
         _nlsolver.c = cs[3]
         markfirststage!(_nlsolver)
-        k21 = nlsolve!(_nlsolver, integrator, γs[1] * dt, repeat_step)
+        k21 = nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
         _nlsolver.z = zero(u)
         _nlsolver.tmp = uprev + α1[2] * k11 + α2[2] * k12
         _nlsolver.γ = γs[2]
         _nlsolver.c = cs[4]
         markfirststage!(_nlsolver)
-        k22 = nlsolve!(_nlsolver, integrator, γs[2] * dt, repeat_step)
+        k22 = nlsolve!(_nlsolver, integrator, cache, repeat_step)
         nlsolvefail(_nlsolver) && return
         integrator.u = uprev + b1 * k11 + b2 * k21 + b3 * k12 + b4 * k22
     end
