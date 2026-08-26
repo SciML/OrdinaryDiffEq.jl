@@ -347,9 +347,6 @@ function alg_cache(
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
-    # `Vern7Cache` can alias its later stages because `a_i2 == 0` for `i >= 4` and
-    # `b2 == 0`. That does not carry over: RKV76IIa has `a93 = -459.7`, `a103 = -493.2`
-    # and `b4 != 0`, so `k8` and `k10` need storage of their own.
     k8 = zero(rate_prototype)
     k9 = zero(rate_prototype)
     k10 = zero(rate_prototype)
