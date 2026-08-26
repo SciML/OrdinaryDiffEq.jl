@@ -23,7 +23,7 @@ __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</co
   <span class="sgr90">[9286f039] </span>OrdinaryDiffEqExplicitRK v2.2.0 `../lib/OrdinaryDiffEqExplicitRK`
   <span class="sgr90">[e0540318] </span>OrdinaryDiffEqExponentialRK v2.3.0 `../lib/OrdinaryDiffEqExponentialRK`
   <span class="sgr90">[becaefa8] </span>OrdinaryDiffEqExtrapolation v2.5.0 `../lib/OrdinaryDiffEqExtrapolation`
-  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.0 `../lib/OrdinaryDiffEqFIRK`
+  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.1 `../lib/OrdinaryDiffEqFIRK`
   <span class="sgr90">[101fe9f7] </span>OrdinaryDiffEqFeagin v2.2.1 `../lib/OrdinaryDiffEqFeagin`
   <span class="sgr90">[d3585ca7] </span>OrdinaryDiffEqFunctionMap v2.2.1 `../lib/OrdinaryDiffEqFunctionMap`
   <span class="sgr90">[d28bc4f8] </span>OrdinaryDiffEqHighOrderRK v2.2.0 `../lib/OrdinaryDiffEqHighOrderRK`
@@ -42,10 +42,10 @@ __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</co
   <span class="sgr90">[b4bd8bb3] </span>OrdinaryDiffEqRosenbrockTableaus v2.4.1 `../lib/OrdinaryDiffEqRosenbrockTableaus`
   <span class="sgr90">[2d112036] </span>OrdinaryDiffEqSDIRK v2.9.0 `../lib/OrdinaryDiffEqSDIRK`
   <span class="sgr90">[669c94d9] </span>OrdinaryDiffEqSSPRK v2.3.0 `../lib/OrdinaryDiffEqSSPRK`
-  <span class="sgr90">[e3e12d00] </span>OrdinaryDiffEqStabilizedIRK v2.1.1 `../lib/OrdinaryDiffEqStabilizedIRK`
+  <span class="sgr90">[e3e12d00] </span>OrdinaryDiffEqStabilizedIRK v2.1.2 `../lib/OrdinaryDiffEqStabilizedIRK`
   <span class="sgr90">[358294b1] </span>OrdinaryDiffEqStabilizedRK v2.6.0 `../lib/OrdinaryDiffEqStabilizedRK`
   <span class="sgr90">[fa646aed] </span>OrdinaryDiffEqSymplecticRK v2.2.1 `../lib/OrdinaryDiffEqSymplecticRK`
-  <span class="sgr90">[9c7f1690] </span>OrdinaryDiffEqTaylorSeries v2.2.0 `../lib/OrdinaryDiffEqTaylorSeries`
+  <span class="sgr90">[9c7f1690] </span>OrdinaryDiffEqTaylorSeries v2.2.1 `../lib/OrdinaryDiffEqTaylorSeries`
   <span class="sgr90">[b1df2697] </span>OrdinaryDiffEqTsit5 v2.1.3 `../lib/OrdinaryDiffEqTsit5`
   <span class="sgr90">[79d7bb75] </span>OrdinaryDiffEqVerner v2.4.0 `../lib/OrdinaryDiffEqVerner`
   <span class="sgr90">[0bca4576] </span>SciMLBase v3.49.2
@@ -67,9 +67,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 128 × AMD EPYC 7513 32-Core Processor
+  CPU: 128 × AMD EPYC 9354 32-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)
 Environment:
@@ -89,7 +89,7 @@ Environment:
   <span class="sgr90">[e2ed5e7c] </span>Bijections v0.2.2
   <span class="sgr90">[b2a6c25c] </span>BinaryHeaps v1.1.0
   <span class="sgr90">[62783981] </span>BitTwiddlingConvenienceFunctions v0.1.6
-  <span class="sgr90">[70df07ce] </span>BracketingNonlinearSolve v1.12.5
+  <span class="sgr90">[70df07ce] </span>BracketingNonlinearSolve v1.12.6
   <span class="sgr90">[2a0fbf3d] </span>CPUSummary v0.2.7
   <span class="sgr90">[082447d4] </span>ChainRules v1.73.0
   <span class="sgr90">[d360d2e6] </span>ChainRulesCore v1.26.1
@@ -166,7 +166,7 @@ Environment:
   <span class="sgr90">[10f19ff3] </span>LayoutPointers v0.1.17
   <span class="sgr90">[0e77f7df] </span>LazilyInitializedFields v1.3.0
   <span class="sgr90">[87fe0de2] </span>LineSearch v0.1.16
-  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v5.13.0
+  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v5.13.1
   <span class="sgr90">[2ab3a3ac] </span>LogExpFunctions v1.0.1
   <span class="sgr90">[e6f89c97] </span>LoggingExtras v1.2.0
   <span class="sgr90">[1914dd2f] </span>MacroTools v0.5.16
@@ -184,7 +184,7 @@ Environment:
   <span class="sgr90">[be0214bd] </span>NonlinearSolveBase v2.47.0
   <span class="sgr90">[5959db7a] </span>NonlinearSolveFirstOrder v2.4.0
   <span class="sgr90">[9a2c21bd] </span>NonlinearSolveQuasiNewton v1.15.1
-  <span class="sgr90">[26075421] </span>NonlinearSolveSpectralMethods v1.8.0
+  <span class="sgr90">[26075421] </span>NonlinearSolveSpectralMethods v1.8.1
   <span class="sgr90">[bac558e1] </span>OrderedCollections v2.0.1
   <span class="sgr90">[1dea7af3] </span>OrdinaryDiffEq v7.7.0 `~/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl`
   <span class="sgr90">[08082164] </span>OrdinaryDiffEqAMF v2.3.0 `../lib/OrdinaryDiffEqAMF`
@@ -196,7 +196,7 @@ Environment:
   <span class="sgr90">[9286f039] </span>OrdinaryDiffEqExplicitRK v2.2.0 `../lib/OrdinaryDiffEqExplicitRK`
   <span class="sgr90">[e0540318] </span>OrdinaryDiffEqExponentialRK v2.3.0 `../lib/OrdinaryDiffEqExponentialRK`
   <span class="sgr90">[becaefa8] </span>OrdinaryDiffEqExtrapolation v2.5.0 `../lib/OrdinaryDiffEqExtrapolation`
-  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.0 `../lib/OrdinaryDiffEqFIRK`
+  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.1 `../lib/OrdinaryDiffEqFIRK`
   <span class="sgr90">[101fe9f7] </span>OrdinaryDiffEqFeagin v2.2.1 `../lib/OrdinaryDiffEqFeagin`
   <span class="sgr90">[d3585ca7] </span>OrdinaryDiffEqFunctionMap v2.2.1 `../lib/OrdinaryDiffEqFunctionMap`
   <span class="sgr90">[d28bc4f8] </span>OrdinaryDiffEqHighOrderRK v2.2.0 `../lib/OrdinaryDiffEqHighOrderRK`
@@ -215,10 +215,10 @@ Environment:
   <span class="sgr90">[b4bd8bb3] </span>OrdinaryDiffEqRosenbrockTableaus v2.4.1 `../lib/OrdinaryDiffEqRosenbrockTableaus`
   <span class="sgr90">[2d112036] </span>OrdinaryDiffEqSDIRK v2.9.0 `../lib/OrdinaryDiffEqSDIRK`
   <span class="sgr90">[669c94d9] </span>OrdinaryDiffEqSSPRK v2.3.0 `../lib/OrdinaryDiffEqSSPRK`
-  <span class="sgr90">[e3e12d00] </span>OrdinaryDiffEqStabilizedIRK v2.1.1 `../lib/OrdinaryDiffEqStabilizedIRK`
+  <span class="sgr90">[e3e12d00] </span>OrdinaryDiffEqStabilizedIRK v2.1.2 `../lib/OrdinaryDiffEqStabilizedIRK`
   <span class="sgr90">[358294b1] </span>OrdinaryDiffEqStabilizedRK v2.6.0 `../lib/OrdinaryDiffEqStabilizedRK`
   <span class="sgr90">[fa646aed] </span>OrdinaryDiffEqSymplecticRK v2.2.1 `../lib/OrdinaryDiffEqSymplecticRK`
-  <span class="sgr90">[9c7f1690] </span>OrdinaryDiffEqTaylorSeries v2.2.0 `../lib/OrdinaryDiffEqTaylorSeries`
+  <span class="sgr90">[9c7f1690] </span>OrdinaryDiffEqTaylorSeries v2.2.1 `../lib/OrdinaryDiffEqTaylorSeries`
   <span class="sgr90">[b1df2697] </span>OrdinaryDiffEqTsit5 v2.1.3 `../lib/OrdinaryDiffEqTsit5`
   <span class="sgr90">[79d7bb75] </span>OrdinaryDiffEqVerner v2.4.0 `../lib/OrdinaryDiffEqVerner`
   <span class="sgr90">[90014a1f] </span>PDMats v0.11.41
@@ -361,4 +361,4 @@ Environment:
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.64.0+1
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr33">⌅</span> have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.7.0/assets/Manifest.toml">manifest</a> and <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.7.0/assets/Project.toml">project</a> files.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 26 August 2026 05:33">Wednesday 26 August 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr33">⌅</span> have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.7.0/assets/Manifest.toml">manifest</a> and <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.7.0/assets/Project.toml">project</a> files.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 26 August 2026 05:47">Wednesday 26 August 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
