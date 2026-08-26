@@ -100,7 +100,14 @@ end
         SDEProblem(f_iip, g_full_iip, u0, tspan; noise_rate_prototype = nrp),
     )
 
-    for alg in (SROCK1(), SKSROCK(post_processing = true), TangXiaoSROCK2())
+    @test_throws ArgumentError SROCK1(interpretation = :unsupported)
+
+    for alg in (
+            SROCK1(),
+            SROCK1(interpretation = SciMLBase.AlgorithmInterpretation.Stratonovich),
+            SKSROCK(post_processing = true),
+            TangXiaoSROCK2(),
+        )
         @testset "$(nameof(typeof(alg)))" begin
             for (i, prob) in enumerate(problems)
                 Random.seed!(100 + i)
