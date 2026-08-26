@@ -169,11 +169,6 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     Bⱼ₋₁ = 1 / ω₀
 
     #stage-1
-    # Copy, not rebind: the cache's own `f1ⱼ₋₂` buffer is the target. Rebinding the
-    # name to `du₁` makes the in-place `@.. f1ⱼ₋₂ = f1ⱼ₋₁` below write through to
-    # `du₁`, which has to hold `f1(uprev)` for the whole step -- it is read again on
-    # every stage and after the loop. The out-of-place method rebinds safely because
-    # there the same assignment is a value copy.
     @.. broadcast = false f1ⱼ₋₂ = du₁
     @.. broadcast = false gprev2 = uprev
     μs = ω₁ * Bⱼ₋₁
