@@ -1271,15 +1271,15 @@ version = "2.48.0"
 
 [[deps.NonlinearSolveFirstOrder]]
 deps = ["ADTypes", "ArrayInterface", "CommonSolve", "ConcreteStructs", "FiniteDiff", "ForwardDiff", "LineSearch", "LinearAlgebra", "LinearSolve", "MaybeInplace", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLJacobianOperators", "SciMLLogging", "Setfield", "StaticArraysCore"]
-git-tree-sha1 = "73b85c08fdc2ee79526405d8e67b31a9d99873d5"
+git-tree-sha1 = "3f4ec9d04ba9e353aa14eb61c002b52fc025482e"
 uuid = "5959db7a-ea39-4486-b5fe-2dd0bf03d60d"
-version = "2.4.0"
+version = "2.4.1"
 
 [[deps.NonlinearSolveQuasiNewton]]
 deps = ["ArrayInterface", "CommonSolve", "ConcreteStructs", "LinearAlgebra", "LinearSolve", "MaybeInplace", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "StaticArraysCore"]
-git-tree-sha1 = "e6599aceb5fc5ca3de1978765003afc5593fe35c"
+git-tree-sha1 = "2db42e5f0c4e8345358ae3a2c323cab9ddd474f7"
 uuid = "9a2c21bd-3a47-402d-9113-8faf9a0ee114"
-version = "1.15.1"
+version = "1.15.2"
 weakdeps = ["ForwardDiff"]
 
     [deps.NonlinearSolveQuasiNewton.extensions]
@@ -1377,7 +1377,7 @@ version = "2.5.0"
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "ConstructionBase", "DiffEqBase", "DifferentiationInterface", "FastBroadcast", "FiniteDiff", "ForwardDiff", "FunctionWrappersWrappers", "LinearAlgebra", "LinearSolve", "OrdinaryDiffEqCore", "SciMLBase", "SciMLOperators", "SparseMatrixColorings", "StaticArraysCore"]
 path = "../lib/OrdinaryDiffEqDifferentiation"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
-version = "3.10.0"
+version = "3.10.1"
 weakdeps = ["SparseArrays"]
 
     [deps.OrdinaryDiffEqDifferentiation.extensions]
@@ -1907,9 +1907,9 @@ version = "3.49.2"
 
 [[deps.SciMLJacobianOperators]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "ConstructionBase", "DifferentiationInterface", "FastClosures", "LinearAlgebra", "SciMLBase", "SciMLOperators"]
-git-tree-sha1 = "ad167d716fc134c0873c76ba0469ede56a678732"
+git-tree-sha1 = "c944c1ad6bcf8d6999d55c7dcec26edefe4d93a0"
 uuid = "19f34311-ddf3-4b8b-af20-060888a46c0e"
-version = "0.1.17"
+version = "0.1.18"
 
 [[deps.SciMLLogging]]
 deps = ["Logging", "LoggingExtras", "PrecompileTools", "Preferences"]
@@ -1961,9 +1961,9 @@ version = "1.1.2"
 
 [[deps.SimpleNonlinearSolve]]
 deps = ["ADTypes", "ArrayInterface", "BracketingNonlinearSolve", "CommonSolve", "ConcreteStructs", "DifferentiationInterface", "FastClosures", "FiniteDiff", "ForwardDiff", "LineSearch", "LinearAlgebra", "MaybeInplace", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLLogging", "Setfield", "StaticArraysCore"]
-git-tree-sha1 = "bb811cd81991c786a590cc9d00a7add142f5a8b7"
+git-tree-sha1 = "72a05aa23361506d9574ff09f86d7d55b6f5af4c"
 uuid = "727e6d20-b764-4bd8-a329-72de5adea6c7"
-version = "2.14.0"
+version = "2.14.1"
 
     [deps.SimpleNonlinearSolve.extensions]
     SimpleNonlinearSolveChainRulesCoreExt = "ChainRulesCore"
