@@ -58,7 +58,7 @@ end
     f(k1, uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
-    out1 = make_taylor(k1, k2)
+    out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)

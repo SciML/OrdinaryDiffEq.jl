@@ -22,6 +22,33 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
     end
 
+    # The in-place step evaluates `f` into a Taylor buffer whose value slot used to be
+    # `k1` -- which is also the first-order partial of the input. An RHS that zeroes
+    # `du` before accumulating into it therefore wiped its own Taylor seed, leaving
+    # `k2 == 0` and dropping the method to first order. The library problems above
+    # assign `du` directly, so they never exercised it.
+    @testset "ExplicitTaylor2 with a zero-then-accumulate RHS" begin
+        dts = 2.0 .^ (-8:-4)
+        testTol = 0.2
+        analytic = (u0, p, t) -> u0 * exp(-t)
+
+        direct! = (du, u, p, t) -> (@. du = -u; nothing)
+        accumulate! = (du, u, p, t) -> (fill!(du, 0); @. du = du - u; nothing)
+
+        for rhs! in (direct!, accumulate!)
+            prob = ODEProblem(ODEFunction(rhs!; analytic = analytic), [1.0], (0.0, 1.0))
+            sim = test_convergence(dts, prob, ExplicitTaylor2())
+            @test sim.𝒪est[:final] ≈ 2 atol = testTol
+        end
+
+        # Both spellings are the same ODE, so they must give the same answer.
+        pd = ODEProblem(ODEFunction(direct!; analytic = analytic), [1.0], (0.0, 1.0))
+        pa = ODEProblem(ODEFunction(accumulate!; analytic = analytic), [1.0], (0.0, 1.0))
+        sd = solve(pd, ExplicitTaylor2(); dt = 2.0^-6, adaptive = false)
+        sa = solve(pa, ExplicitTaylor2(); dt = 2.0^-6, adaptive = false)
+        @test sd.u[end] ≈ sa.u[end] rtol = 1.0e-12
+    end
+
     @testset "ExplicitTaylorN Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)
