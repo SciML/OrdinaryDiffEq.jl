@@ -191,3 +191,63 @@ end
         @test_throws ErrorException solve(prob, alg, dt = 0.1; stage_limiter = slim!)
     end
 end
+
+# The stage limiter contract is `limiter!(u, integrator, p, t)`
+# (`OrdinaryDiffEqCore.trivial_limiter!`). The limiters above ignore their
+# arguments, so they accept whatever is handed to them; that is how `Tsit5` shipped
+# with the `ODEFunction` in the integrator slot, `Midpoint` with a stage buffer, and
+# `QPRK98` limiting `uprev`. These testsets pin down which objects get passed rather
+# than how many times the limiter is called.
+const LIMITER_ALGS = [
+    Euler, Heun, Ralston, Midpoint, RK4, BS3, OwrenZen3, DP5, Tsit5,
+    Vern6, Vern9, DP8, TanYam7, TsitPap8, QPRK98,
+    SSPRK22, SSPRK43, SSPRK104, SSPRK932,
+    CarpenterKennedy2N54, ORK256, RDPK3Sp35, NDBLSRK124,
+    Rosenbrock23, ROS3P, Rodas4, Rodas5P,
+]
+
+@testset "stage limiter receives the integrator" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [1.0, 1.0], (0.0, 1.0))
+    for A in LIMITER_ALGS
+        ok = Ref(true)
+        calls = Ref(0)
+        limiter! = function (u, integrator, p, t)
+            calls[] += 1
+            integrator isa SciMLBase.DEIntegrator || (ok[] = false)
+            return nothing
+        end
+        solve(prob, A(), dt = 0.1; stage_limiter = limiter!)
+        @test calls[] > 0
+        @test ok[]
+    end
+end
+
+# The limiter mutates whatever it is given, so handing it `uprev` corrupts every
+# later stage and the step update. `QPRK98` stage 5 did exactly that.
+@testset "stage limiter is never handed uprev" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [1.0, 1.0], (0.0, 1.0))
+    for A in LIMITER_ALGS
+        ok = Ref(true)
+        limiter! = function (u, integrator, p, t)
+            u === integrator.uprev && (ok[] = false)
+            return nothing
+        end
+        solve(prob, A(), dt = 0.1; stage_limiter = limiter!)
+        @test ok[]
+    end
+end
+
+# End-to-end: with `QPRK98` stage 5 clamping `uprev` in place, `uprev` changed
+# value partway through a single step.
+@testset "uprev is stable across one step" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [-1.0], (0.0, 0.1))
+    seen = Float64[]
+    positivity! = function (u, integrator, p, t)
+        push!(seen, integrator.uprev[1])
+        @. u = max(u, 0.0)
+        return nothing
+    end
+    solve(prob, QPRK98(), dt = 0.1, adaptive = false; stage_limiter = positivity!)
+    @test !isempty(seen)
+    @test all(==(seen[1]), seen)
+end
