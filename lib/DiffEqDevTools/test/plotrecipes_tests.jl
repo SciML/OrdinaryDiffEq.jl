@@ -171,3 +171,27 @@ end
         @test plt[1][i][:label] == names[i]
     end
 end
+
+@testset "Ensemble weak WorkPrecisionSet" begin
+    f!(du, u, p, t) = (du[1] = -u[1]; nothing)
+    g!(du, u, p, t) = (du[1] = u[1]; nothing)
+    prob = SDEProblem(f!, g!, [1.0], (0.0, 0.1))
+    seeds = rand(UInt, 4)
+    ensemble_prob = EnsembleProblem(
+        prob;
+        output_func = (sol, ctx) -> (sol.u[end][1], false),
+        prob_func = (prob, ctx) -> remake(prob; seed = seeds[ctx.sim_id])
+    )
+    tolerances = 1.0 ./ 4.0 .^ (1:2)
+    setups = [Dict(:alg => EM(), :dts => [0.05, 0.025], :adaptive => false)]
+    wp = WorkPrecisionSet(
+        ensemble_prob, tolerances, tolerances, setups;
+        numruns = 1, trajectories = 4, expected_value = exp(-0.1),
+        save_everystep = false, save_start = false, error_estimate = :weak_final,
+        ensemblealg = EnsembleSerial()
+    )
+
+    @test propertynames(wp[1].errors) == (:weak_final,)
+    plt = plot(wp)
+    @test plt[1][1][:x] == wp[1].errors.weak_final
+end
