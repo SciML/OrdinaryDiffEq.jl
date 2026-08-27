@@ -712,10 +712,13 @@ function _uses_split_W(alg, f)
             )
         )
     end
-    if !(f.jac_prototype === nothing || f.jac_prototype isa Matrix)
+    if !(
+            f.jac_prototype === nothing || f.jac_prototype isa Matrix ||
+                is_sparse_csc(f.jac_prototype)
+        )
         throw(
             ArgumentError(
-                "LHLFactorization needs a dense Jacobian; got a jac_prototype of type $(typeof(f.jac_prototype)). The Hessenberg reduction fills in, so a sparse Jacobian buys nothing — drop `jac_prototype`/`sparse` or choose a sparse linear solver."
+                "LHLFactorization needs a dense or `SparseMatrixCSC` Jacobian; got a jac_prototype of type $(typeof(f.jac_prototype))."
             )
         )
     end
