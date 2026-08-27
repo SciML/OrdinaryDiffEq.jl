@@ -5,7 +5,7 @@ using FastBroadcast: Serial
 using OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
     trivial_limiter!, calculate_residuals, constvalue
 import OrdinaryDiffEqCore: initialize!, perform_step!, alg_cache
-using SciMLBase: ODEFunction
+using SciMLBase: DespecializedParameters, ODEFunction, invoke_with_despecialized_parameters
 
 using Reexport: @reexport
 @reexport using OrdinaryDiffEqCore
