@@ -1,5 +1,6 @@
 using OrdinaryDiffEqDifferentiation
 using SparseArrays
+using LinearAlgebra
 using SciMLOperators
 using SciMLBase
 using ADTypes
@@ -84,4 +85,29 @@ end
 
     @test prob.f.sparsity === Jop
     @test OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob) === ad_alg
+end
+
+@testset "a prototype declaring no structural nonzeros is rejected" begin
+    ad_alg = AutoForwardDiff()
+    prob_with(P) = ODEProblem(ODEFunction(f!; jac_prototype = P), ones(2), (0.0, 1.0))
+
+    P = spzeros(2, 2)
+    @test OrdinaryDiffEqDifferentiation._declares_no_nonzeros(P)
+    @test_throws ArgumentError OrdinaryDiffEqDifferentiation.prepare_user_sparsity(
+        ad_alg, prob_with(P)
+    )
+
+    for P in (
+            zeros(2, 2), ones(2, 2), falses(2, 2), Diagonal(zeros(2)),
+            Symmetric(zeros(2, 2)), Tridiagonal(zeros(1), zeros(2), zeros(1)),
+            SparseMatrixCSC(2, 2, [1, 2, 4], [1, 1, 2], [0.0, 0.0, 0.0]),
+        )
+        @test !OrdinaryDiffEqDifferentiation._declares_no_nonzeros(P)
+        @test_nowarn OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob_with(P))
+    end
+
+    jacf = ODEFunction(f!; jac_prototype = spzeros(2, 2), jac = (J, u, p, t) -> (J .= 1))
+    @test_nowarn OrdinaryDiffEqDifferentiation.prepare_user_sparsity(
+        ad_alg, ODEProblem(jacf, ones(2), (0.0, 1.0))
+    )
 end

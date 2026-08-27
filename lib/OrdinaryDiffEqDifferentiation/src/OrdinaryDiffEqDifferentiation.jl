@@ -59,6 +59,18 @@ import DiffEqBase: OrdinaryDiffEqTag
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
+"""
+    _declares_no_nonzeros(S) -> Bool
+
+Whether `S`, used as a `jac_prototype`/`sparsity`, stores no entries at all, so the
+coloring is empty and AD writes nothing into the Jacobian.
+
+Only structural emptiness counts: a `SparseMatrixCSC` whose stored entries are all
+`0.0` still stores them. The test needs `nnz`, so it lives in the SparseArrays
+extension alongside `is_sparse_csc`.
+"""
+_declares_no_nonzeros(::Any) = false
+
 # Seeding a sparsity pattern from the mass matrix uses `findall`/`getindex`, which a
 # SciMLOperator does not support. `convert` reads the operator's currently-cached array
 # rather than re-evaluating it, which is what is wanted here: only the structural
