@@ -1,4 +1,4 @@
-using SciMLTesting, OrdinaryDiffEqExtrapolation, Test
+using SciMLTesting, OrdinaryDiffEqExtrapolation, SciMLBase, Test
 # Load Polyester so the extension exists and ExplicitImports analyzes it.
 using Polyester
 
@@ -8,7 +8,7 @@ const THREADING_PUBLIC = (:Sequential, :BaseThreads, :PolyesterThreads)
 
 run_qa(
     OrdinaryDiffEqExtrapolation;
-    reexports_allow = THREADING_PUBLIC,
+    reexports_allow = vcat(intersect(names(SciMLBase), names(OrdinaryDiffEqExtrapolation)), collect(THREADING_PUBLIC)),
     ei_kwargs = (;
         all_explicit_imports_are_public = (;
             # Package-internal hook the Polyester extension implements; deliberately not public.

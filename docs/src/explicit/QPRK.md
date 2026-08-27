@@ -76,8 +76,9 @@ For ultra-high precision, also consider:
 ## Usage Example
 
 ```julia
-using OrdinaryDiffEqQPRK
-using SciMLBase: ODEProblem, solve
+using OrdinaryDiffEqQPRK: ODEProblem, solve, QPRK98
+
+f(u, p, t) = [u[2], -u[1]]
 # Ensure using Float128 for ultra-high precision
 u0 = Float128[1.0, 0.0]
 tspan = (Float128(0.0), Float128(10.0))

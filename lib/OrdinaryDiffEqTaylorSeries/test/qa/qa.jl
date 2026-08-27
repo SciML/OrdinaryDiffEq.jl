@@ -1,4 +1,4 @@
-using SciMLTesting, OrdinaryDiffEqTaylorSeries, Test
+using SciMLTesting, OrdinaryDiffEqTaylorSeries, SciMLBase, Test
 
 # Every name in the ignore lists below is genuinely internal (not exported and
 # not declared `public`) in its OWNER package, so there is no public name to
@@ -7,6 +7,7 @@ using SciMLTesting, OrdinaryDiffEqTaylorSeries, Test
 # been dropped; only the genuine residual remains (see SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqTaylorSeries;
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqTaylorSeries)),
     aqua_kwargs = (;
         unbound_args = false, undefined_exports = false, stale_deps = false,
         ambiguities = false,

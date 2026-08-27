@@ -1,7 +1,8 @@
-using SciMLTesting, OrdinaryDiffEqFeagin, Test
+using SciMLTesting, OrdinaryDiffEqFeagin, SciMLBase, Test
 
 run_qa(
     OrdinaryDiffEqFeagin;
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqFeagin)),
     explicit_imports = true,
     ei_kwargs = (;
         all_explicit_imports_are_public = (;

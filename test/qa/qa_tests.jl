@@ -51,6 +51,8 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
     ),
 )
 
+include("reexport_tests.jl")
+
 # The umbrella package's QA lane historically ran only the ExplicitImports checks
 # (no Aqua/JET), so keep `aqua = false` to preserve that scope.
 run_qa(
