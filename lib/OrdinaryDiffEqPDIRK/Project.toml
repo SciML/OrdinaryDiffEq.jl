@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqPDIRK"
 uuid = "5dd0a6cf-3d4b-4314-aa06-06d4e299bc89"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.5.0"
+version = "2.5.1"
 
 [deps]
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
@@ -34,7 +34,7 @@ MuladdMacro = "0.2.4"
 ODEProblemLibrary = "1"
 OrdinaryDiffEqCore = "4.6"
 OrdinaryDiffEqDifferentiation = "3.3"
-OrdinaryDiffEqNonlinearSolve = "2"
+OrdinaryDiffEqNonlinearSolve = "2.9.1"
 Pkg = "1"
 Random = "<0.0.1, 1"
 SciMLBase = "3.39"
