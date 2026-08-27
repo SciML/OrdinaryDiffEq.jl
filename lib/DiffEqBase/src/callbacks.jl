@@ -519,6 +519,11 @@ function findall_events!(
     return any(isone, next_sign)
 end
 
+function findall_events!(next_sign, prev_sign)
+    map!((next, prev) -> prev != 0 && prev * next <= 0, next_sign, next_sign, prev_sign)
+    return any(isone, next_sign)
+end
+
 """
 Return `true` if an event occurred.
 """

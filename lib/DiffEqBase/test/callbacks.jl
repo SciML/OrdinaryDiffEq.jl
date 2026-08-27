@@ -1,5 +1,20 @@
 using DiffEqBase, Test
 
+struct GenericEventArray{T} <: AbstractVector{T}
+    data::Vector{T}
+end
+Base.size(array::GenericEventArray) = size(array.data)
+Base.getindex(array::GenericEventArray, index::Int) = array.data[index]
+Base.setindex!(array::GenericEventArray, value, index::Int) = array.data[index] = value
+
+@testset "generic vector callback event storage" begin
+    next_sign = GenericEventArray([1.0, -1.0, 1.0, -1.0])
+    prev_sign = GenericEventArray([-1.0, 1.0, 0.0, -1.0])
+
+    @test DiffEqBase.findall_events!(next_sign, prev_sign)
+    @test next_sign == [1.0, 1.0, 0.0, 0.0]
+end
+
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
     return t - 2.95
 end

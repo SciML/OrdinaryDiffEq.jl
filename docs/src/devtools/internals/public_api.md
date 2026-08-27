@@ -29,6 +29,7 @@ DiffEqBase.default_factorize
 DiffEqBase.finalize!
 DiffEqBase.find_callback_time
 DiffEqBase.find_first_continuous_callback
+DiffEqBase.findall_events!
 DiffEqBase.get_condition
 DiffEqBase.get_tstops
 DiffEqBase.get_tstops_array
