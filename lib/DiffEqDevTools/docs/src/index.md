@@ -28,6 +28,7 @@ DiffEqDevTools.get_sample_errors
 
 ```@docs
 DiffEqDevTools.auto_tags
+DiffEqDevTools.tag_kind
 DiffEqDevTools.get_tags
 DiffEqDevTools.unique_tags
 DiffEqDevTools.filter_by_tags

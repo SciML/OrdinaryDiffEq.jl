@@ -117,6 +117,10 @@ plot(
 For example, `auto_tags(KenCarp4())` includes `:order_4`, `:adaptive`, `:implicit`,
 `:sdirk`, `:esdirk`, and `:split`. Explicit setup tags are appended without duplicates.
 Use `:auto_tags => false` when a setup needs only its manually supplied tags.
+[`tag_kind`](@ref) distinguishes algorithm families from traits, benchmark roles,
+providers, variants, and problem domains. This lets `autoplot(wp_set)` discover family
+views without treating tags such as `:order_4` or `:reference` as families. Pass
+`families` explicitly for one-off custom family tags.
 
 `plot(wp_set; tags)` keeps the entries carrying all of `tags`, `include_tags` adds
 entries back regardless of that filter, and `exclude_tags` drops entries. Entries
@@ -142,6 +146,7 @@ DiffEqDevTools.get_sample_errors
 
 ```@docs
 DiffEqDevTools.auto_tags
+DiffEqDevTools.tag_kind
 DiffEqDevTools.get_tags
 DiffEqDevTools.unique_tags
 DiffEqDevTools.filter_by_tags

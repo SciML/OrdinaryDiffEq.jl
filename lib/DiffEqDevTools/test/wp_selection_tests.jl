@@ -70,13 +70,12 @@ end
     end
 
     @testset "auto-detected families" begin
-        # :rk is on 4/5 entries, :fifth_order on 2/5; :explicit is on every entry
-        # and is therefore dropped.
-        @test DiffEqDevTools._auto_detect_families(wp_set) ==
-            filter(!=(:explicit), unique_tags(wp_set))
+        @test DiffEqDevTools._auto_detect_families(wp_set) == [:rk]
         uniform = filter_by_tags(wp_set, :rk)
-        @test :rk ∉ DiffEqDevTools._auto_detect_families(uniform)
-        @test haskey(autoplot(wp_set), "family_fifth_order")
+        @test DiffEqDevTools._auto_detect_families(uniform) == [:rk]
+        @test haskey(autoplot(wp_set), "family_rk")
+        @test !haskey(autoplot(wp_set), "family_fifth_order")
+        @test !haskey(autoplot(wp_set), "family_reference")
     end
 
     @testset "families with no entries are skipped" begin

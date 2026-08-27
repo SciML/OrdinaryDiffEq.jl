@@ -42,6 +42,25 @@ wp_set = WorkPrecisionSet(prob, abstols, reltols, setups; dt = 1 / 2^4, numruns 
     end
 end
 
+DiffEqDevTools.tag_kind(::Val{:package_family}) = :family
+
+@testset "tag semantics" begin
+    for (tag, expected) in [
+            (:rk, :family),
+            (:rosenbrock, :family),
+            (:order_5, :trait),
+            (:adaptive, :trait),
+            (:reference, :role),
+            (:sundials, :provider),
+            (:dense_output, :variant),
+            (:stiff, :domain),
+            (:package_family, :family),
+            (:benchmark_specific, :unknown),
+        ]
+        @test tag_kind(tag) == expected
+    end
+end
+
 @testset "tags reach the WorkPrecision entries" begin
     @test get_tags(wp_set) == [
         [:order_4, :adaptive, :explicit, :rk, :fourth_order],
