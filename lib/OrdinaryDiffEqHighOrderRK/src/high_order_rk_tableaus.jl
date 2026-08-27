@@ -1482,6 +1482,7 @@ struct PFRK87ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
     β10tilde::T1
     β11tilde::T1
     β12tilde::T1
+    β13tilde::T1
 
     c2::T2
     c3::T2
@@ -1549,14 +1550,15 @@ function PFRK87ConstantCache(T1::Type, T2::Type)
     β12 = convert(T1, -528747749 // 2220607170)
     β13 = convert(T1, 1 // 4)
 
-    β1tilde = convert(T1, 13451932 // 455176623)
-    β6tilde = convert(T1, -808719846 // 976000145)
-    β7tilde = convert(T1, 1757004468 // 5645159321)
-    β8tilde = convert(T1, 656045339 // 265891186)
-    β9tilde = convert(T1, -3867574721 // 1518517206)
-    β10tilde = convert(T1, 465885868 // 322736535)
-    β11tilde = convert(T1, 53011238 // 667516719)
-    β12tilde = convert(T1, 2 // 45)
+    β1tilde = convert(T1, big(14005451) // 335480064 - 13451932 // 455176623)
+    β6tilde = convert(T1, big(-59238493) // 1068277825 + 808719846 // 976000145)
+    β7tilde = convert(T1, big(181606767) // 758867731 - 1757004468 // 5645159321)
+    β8tilde = convert(T1, big(561292985) // 797845732 - 656045339 // 265891186)
+    β9tilde = convert(T1, big(-1041891430) // 1371343529 + 3867574721 // 1518517206)
+    β10tilde = convert(T1, big(760417239) // 1151165299 - 465885868 // 322736535)
+    β11tilde = convert(T1, big(118820643) // 751138087 - 53011238 // 667516719)
+    β12tilde = convert(T1, big(-528747749) // 2220607170 - 2 // 45)
+    β13tilde = convert(T1, 1 // 4)
 
     c2 = convert(T2, 1 // 18)
     c3 = convert(T2, 1 // 12)
@@ -1577,6 +1579,6 @@ function PFRK87ConstantCache(T1::Type, T2::Type)
         α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310,
         α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde,
         β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde,
-        c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13
+        β13tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13
     )
 end
