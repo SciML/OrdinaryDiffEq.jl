@@ -468,6 +468,15 @@ end
 
 # caches
 
+struct _InverseWeightPreconditioner{T}
+    weight::T
+end
+
+Base.eltype(P::_InverseWeightPreconditioner) = eltype(P.weight)
+LinearAlgebra.ldiv!(P::_InverseWeightPreconditioner, x) = mul!(x, P.weight, x)
+LinearAlgebra.ldiv!(y, P::_InverseWeightPreconditioner, x) = mul!(y, P.weight, x)
+LinearAlgebra.mul!(y, P::_InverseWeightPreconditioner, x) = ldiv!(y, P.weight, x)
+
 mutable struct NLNewtonCache{
         uType,
         tType,

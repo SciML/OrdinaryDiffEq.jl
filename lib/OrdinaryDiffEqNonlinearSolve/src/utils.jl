@@ -919,8 +919,17 @@ function build_nlsolver(
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
+            linsolver = default_krylov_warm_start(alg.linsolve)
+            precs = if isnothing(linsolver)
+                Pl = _InverseWeightPreconditioner(LinearAlgebra.Diagonal(_vec(weight)))
+                Pr = LinearAlgebra.Diagonal(_vec(weight))
+                (; Pl, Pr)
+            else
+                (;)
+            end
             linsolve = init(
-                linprob, wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight),
+                linprob, wrapprecs(linsolver, W, weight);
+                precs...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
