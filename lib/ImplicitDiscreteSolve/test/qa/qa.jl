@@ -8,6 +8,7 @@ run_qa(
     ei_kwargs = (;
         all_qualified_accesses_are_public = (;
             ignore = (
+                :NonlinearSolvePolyAlgorithmCache, :NonlinearSolveNoInitCache,
                 # OrdinaryDiffEqCore controller-resolution internal (owner-internal,
                 # deliberately kept non-public in the make-public extension surface).
                 :_resolved_QT,
