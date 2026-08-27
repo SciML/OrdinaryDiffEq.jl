@@ -115,7 +115,11 @@ function nlsolve!(
         # Checking the type, not just `nothing`: passing something else entirely
         # in this slot went unnoticed because `update_W!` happens not to read it
         # on the out-of-place path.
-        cache isa Union{OrdinaryDiffEqCore.OrdinaryDiffEqCache, Nothing} ||
+        cache isa Union{
+            OrdinaryDiffEqCore.OrdinaryDiffEqCache,
+            OrdinaryDiffEqCore.StochasticDiffEqCache,
+            Nothing,
+        } ||
             throw(
             ArgumentError(
                 "`nlsolve!` expects the integrator cache in its third argument, got a " *

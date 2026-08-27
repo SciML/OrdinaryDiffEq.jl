@@ -21,6 +21,18 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test ISSEulerHeun() isa StochasticDiffEqNewtonAdaptiveAlgorithm
         @test SKenCarp() isa StochasticDiffEqNewtonAdaptiveAlgorithm
     end
+
+    @time @safetestset "ImplicitEM solve" begin
+        using SciMLBase: SDEProblem, successful_retcode
+        using StochasticDiffEqImplicit: ImplicitEM, solve
+        using Test
+
+        drift!(du, u, p, t) = (du .= -u; nothing)
+        diffusion!(du, u, p, t) = (du .= 0.1 .* u; nothing)
+        prob = SDEProblem(drift!, diffusion!, [1.0], (0.0, 0.1))
+        sol = solve(prob, ImplicitEM(); dt = 0.01, adaptive = false, seed = 1)
+        @test successful_retcode(sol)
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
