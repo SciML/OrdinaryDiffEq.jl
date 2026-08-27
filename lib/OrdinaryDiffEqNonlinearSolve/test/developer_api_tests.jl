@@ -67,6 +67,18 @@ const ExternalClient = ExternalNonlinearSolverClient
     @test ExternalClient.markfirststage!(newton) === nothing
     @test ExternalClient.isfirststage(newton)
 
+    oop_newton_integrator = ExternalClient.init(
+        oop_prob, ExternalClient.ImplicitEuler(); dt = 0.1, adaptive = false
+    )
+    oop_newton = ExternalClient.build_solver(
+        oop_prob, ExternalClient.NLNewton(), Val(false)
+    )
+    for invalid_cache in (0.5, nothing)
+        @test_throws ArgumentError ExternalClient.nlsolve!(
+            oop_newton, oop_newton_integrator, invalid_cache, false
+        )
+    end
+
     @test !ExternalClient.nlsolvefail(ExternalClient.FastConvergence)
     @test !ExternalClient.nlsolvefail(ExternalClient.Convergence)
     @test ExternalClient.nlsolvefail(ExternalClient.SlowConvergence)
