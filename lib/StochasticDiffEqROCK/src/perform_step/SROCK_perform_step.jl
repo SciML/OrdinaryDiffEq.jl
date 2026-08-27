@@ -1,3 +1,9 @@
+function _srock1_stratonovich_coefficients(mdeg, ω₀, cosh_inv)
+    α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
+    γ = 1 / (2 * α)
+    return α, γ, -γ
+end
+
 @muladd function perform_step!(integrator, cache::SROCK1ConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
 
@@ -13,13 +19,10 @@
     Sqrt_ω = sqrt(ωSq)
     cosh_inv = log(ω₀ + Sqrt_ω)             # arcosh(ω₀)
     ω₁ = (Sqrt_ω * cosh(mdeg * cosh_inv)) / (mdeg * sinh(mdeg * cosh_inv))
-
-    if SciMLBase.alg_interpretation(integrator.alg) ==
-            SciMLBase.AlgorithmInterpretation.Stratonovich
-        α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
-        γ = 1 / (2 * α)
-        β = -γ
-    end
+    interpretation = SciMLBase.alg_interpretation(integrator.alg)
+    stratonovich_coefficients = interpretation ==
+        SciMLBase.AlgorithmInterpretation.Stratonovich ?
+        _srock1_stratonovich_coefficients(mdeg, ω₀, cosh_inv) : nothing
 
     uᵢ₋₂ = copy(uprev)
     k = integrator.f(uprev, p, t)
@@ -43,9 +46,8 @@
         k = integrator.f(uᵢ₋₁, p, tᵢ₋₁)
 
         u = dt * μ * k + ν * uᵢ₋₁ + κ * uᵢ₋₂
-        if (i > mdeg - 2) &&
-                SciMLBase.alg_interpretation(integrator.alg) ==
-                SciMLBase.AlgorithmInterpretation.Stratonovich
+        if (i > mdeg - 2) && interpretation == SciMLBase.AlgorithmInterpretation.Stratonovich
+            α, γ, β = something(stratonovich_coefficients)
             if i == mdeg - 1
                 gₘ₋₂ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 if W.dW isa Number || !is_diagonal_noise(integrator.sol.prob)
@@ -61,9 +63,7 @@
                     u .+= (β .* gₘ₋₂ .+ γ .* gₘ₋₁) .* W.dW
                 end
             end
-        elseif (i == mdeg) &&
-                SciMLBase.alg_interpretation(integrator.alg) ==
-                SciMLBase.AlgorithmInterpretation.Ito
+        elseif (i == mdeg) && interpretation == SciMLBase.AlgorithmInterpretation.Ito
             if W.dW isa Number
                 gₘ₋₂ = integrator.f.g(uᵢ₋₁, p, tᵢ₋₁)
                 uᵢ₋₂ = uᵢ₋₁ + sqrt(abs(dt)) * gₘ₋₂
@@ -110,13 +110,10 @@ end
     Sqrt_ω = sqrt(ωSq)
     cosh_inv = log(ω₀ + Sqrt_ω)             # arcosh(ω₀)
     ω₁ = (Sqrt_ω * cosh(mdeg * cosh_inv)) / (mdeg * sinh(mdeg * cosh_inv))
-
-    if SciMLBase.alg_interpretation(integrator.alg) ==
-            SciMLBase.AlgorithmInterpretation.Stratonovich
-        α = cosh(mdeg * cosh_inv) / (2 * ω₀ * cosh((mdeg - 1) * cosh_inv))
-        γ = 1 / (2 * α)
-        β = -γ
-    end
+    interpretation = SciMLBase.alg_interpretation(integrator.alg)
+    stratonovich_coefficients = interpretation ==
+        SciMLBase.AlgorithmInterpretation.Stratonovich ?
+        _srock1_stratonovich_coefficients(mdeg, ω₀, cosh_inv) : nothing
 
     @.. uᵢ₋₂ = uprev
     Tᵢ₋₂ = oneunit(t)
@@ -139,9 +136,8 @@ end
         κ = - Tᵢ₋₂ / Tᵢ
         integrator.f(k, uᵢ₋₁, p, tᵢ₋₁)
         @.. u = dt * μ * k + ν * uᵢ₋₁ + κ * uᵢ₋₂
-        if (i > mdeg - 2) &&
-                SciMLBase.alg_interpretation(integrator.alg) ==
-                SciMLBase.AlgorithmInterpretation.Stratonovich
+        if (i > mdeg - 2) && interpretation == SciMLBase.AlgorithmInterpretation.Stratonovich
+            α, γ, β = something(stratonovich_coefficients)
             if i == mdeg - 1
                 integrator.f.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
                 if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
@@ -161,9 +157,7 @@ end
                     @.. u += γ * k
                 end
             end
-        elseif (i == mdeg) &&
-                SciMLBase.alg_interpretation(integrator.alg) ==
-                SciMLBase.AlgorithmInterpretation.Ito
+        elseif (i == mdeg) && interpretation == SciMLBase.AlgorithmInterpretation.Ito
             if W.dW isa Number || is_diagonal_noise(integrator.sol.prob)
                 integrator.f.g(gₘ₋₂, uᵢ₋₁, p, tᵢ₋₁)
                 @.. uᵢ₋₂ = uᵢ₋₁ + sqrt(abs(dt)) * gₘ₋₂
@@ -765,9 +759,9 @@ end
         end
         winc = rand() * 6
         if winc < 1
-            u -= (sqrt(3 * dt) * ccache.mc[mdeg - 1]) * uᵢ₋₁
+            u -= (sqrt(3 * dt) * cache.mc[mdeg - 1]) * uᵢ₋₁
         elseif winc < 2
-            u += (sqrt(3 * dt) * ccache.mc[mdeg - 1]) * uᵢ₋₁
+            u += (sqrt(3 * dt) * cache.mc[mdeg - 1]) * uᵢ₋₁
         end
     end
     integrator.u = u
@@ -928,7 +922,7 @@ end
     Û₂ = zero(u)
     t̂₁ = t̂₂ = zero(t)
     tᵢ = tᵢ₋₁ = tᵢ₋₂ = tₓ = t
-    uᵢ₋₂ = uprev
+    uᵢ = uᵢ₋₁ = uₓ = uᵢ₋₂ = uprev
 
     for i in 0:(mdeg + 1)
         if i == 1
@@ -1042,9 +1036,8 @@ end
 
         for i in 1:length(W.dW)
             for j in 1:length(W.dW)
-                (i > j) && (WikJ = (1 // 2) * (1 + η₂) * W.dW[j])
-                (i < j) && (WikJ = (1 // 2) * (1 - η₂) * W.dW[j])
-                (i == j) && (WikJ = (1 // 2) * (η₁ * sqrt_dt))
+                WikJ = i > j ? (1 // 2) * (1 + η₂) * W.dW[j] :
+                    i < j ? (1 // 2) * (1 - η₂) * W.dW[j] : (1 // 2) * (η₁ * sqrt_dt)
 
                 uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
@@ -1213,9 +1206,8 @@ end
 
         for i in 1:length(W.dW)
             for j in 1:length(W.dW)
-                (i > j) && (WikJ = (1 // 2) * (1 + η₂) * W.dW[j])
-                (i < j) && (WikJ = (1 // 2) * (1 - η₂) * W.dW[j])
-                (i == j) && (WikJ = (1 // 2) * (η₁ * sqrt_dt))
+                WikJ = i > j ? (1 // 2) * (1 + η₂) * W.dW[j] :
+                    i < j ? (1 // 2) * (1 - η₂) * W.dW[j] : (1 // 2) * (η₁ * sqrt_dt)
 
                 @.. uᵢ₋₁ += @view(Gₛ[:, j]) * WikJ
             end
