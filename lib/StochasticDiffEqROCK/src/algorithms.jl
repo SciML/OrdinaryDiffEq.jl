@@ -9,8 +9,8 @@ stiff SDE.
 
 # Keywords
 
-- `interpretation = SciMLBase.AlgorithmInterpretation.Ito`: Stochastic
-  interpretation used by the method.
+- `interpretation = SciMLBase.AlgorithmInterpretation.Ito`: Choose either the Itô or
+  Stratonovich interpretation.
 - `eigen_est = nothing`: Optional estimate of the stiff eigenvalues.
 
 # Examples
@@ -26,6 +26,10 @@ struct SROCK1{interpretation, E} <: StochasticDiffEqAlgorithm
     eigen_est::E
 end
 function SROCK1(; interpretation = SciMLBase.AlgorithmInterpretation.Ito, eigen_est = nothing)
+    if interpretation != SciMLBase.AlgorithmInterpretation.Ito &&
+            interpretation != SciMLBase.AlgorithmInterpretation.Stratonovich
+        throw(ArgumentError("SROCK1 only supports Itô and Stratonovich interpretations"))
+    end
     return SROCK1{interpretation, typeof(eigen_est)}(eigen_est)
 end
 

@@ -12,6 +12,21 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqTaylorSeries, Test
+        exported = (
+            :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+            :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+            :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), exported))
+        internal = (
+            :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+            :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+            :ConvexOptimizationProblem,
+        )
+        @test !any(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), internal))
+    end
     @testset "ExplicitTaylor2 Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)

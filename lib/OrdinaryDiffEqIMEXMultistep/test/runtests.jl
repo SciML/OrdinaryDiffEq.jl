@@ -9,6 +9,22 @@ end
 
 @time @safetestset "Discontinuity restart" include("imex_discontinuity_restart_tests.jl")
 
+@time @safetestset "SciMLBase reexport" begin
+    using OrdinaryDiffEqIMEXMultistep, Test
+    exported = (
+        :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+        :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+        :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+    )
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), exported))
+    internal = (
+        :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+        :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+        :ConvexOptimizationProblem,
+    )
+    @test !any(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), internal))
+end
+
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.

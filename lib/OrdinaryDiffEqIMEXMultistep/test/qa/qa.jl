@@ -1,7 +1,8 @@
-using SciMLTesting, OrdinaryDiffEqIMEXMultistep, Test
+using SciMLTesting, OrdinaryDiffEqIMEXMultistep, SciMLBase, Test
 
 run_qa(
     OrdinaryDiffEqIMEXMultistep;
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqIMEXMultistep)),
     explicit_imports = true,
     ei_kwargs = (;
         all_explicit_imports_are_public = (;

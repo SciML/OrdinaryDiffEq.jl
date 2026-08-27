@@ -1,9 +1,10 @@
 name = "OrdinaryDiffEqTaylorSeries"
 uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 authors = ["Songchen Tan <i@tansongchen.com>"]
-version = "2.2.1"
+version = "2.3.0"
 
 [deps]
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -32,6 +33,7 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+Reexport = "1.2.2"
 SciMLTesting = "2.4"
 CommonSolve = "0.2.6"
 DiffEqBase = "7"

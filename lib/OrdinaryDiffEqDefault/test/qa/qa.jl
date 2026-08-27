@@ -1,4 +1,4 @@
-using SciMLTesting, OrdinaryDiffEqDefault, Test
+using SciMLTesting, OrdinaryDiffEqDefault, SciMLBase, Test
 
 # `DefaultSolverChoice` is an `EnumX.@enumx`-generated submodule that
 # ExplicitImports cannot statically analyze. Its members (`Tsit5`, `Vern7`,
@@ -9,6 +9,7 @@ const ENUM_SUBMODULE = (OrdinaryDiffEqDefault.DefaultSolverChoice,)
 
 run_qa(
     OrdinaryDiffEqDefault;
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqDefault)),
     aqua_kwargs = (; piracies = false),
     explicit_imports = true,
     ei_kwargs = (;
