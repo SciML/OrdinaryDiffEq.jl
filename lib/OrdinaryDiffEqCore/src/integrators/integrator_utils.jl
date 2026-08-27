@@ -885,7 +885,7 @@ function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
     if sym_eqs !== nothing
         for row in first(singularity_rows, 10)
             if row <= length(sym_eqs)
-                push!(msgs, "  row $row corresponds to equation: $(DiffEqBase.truncate_str(sym_eqs[row]))") #trace rows back to symbolic eqs
+                push!(msgs, "  in equation #$row, $(DiffEqBase.truncate_str(sym_eqs[row]))") #trace rows back to symbolic eqs
             end
         end
     end
@@ -895,7 +895,7 @@ function jacobian_analysis!(msgs::Vector{String}, integrator, sym_eqs, sym_vars)
         if sym_vars !== nothing
             for col in first(singularity_cols, 10)
                 if col <= length(sym_vars)
-                    push!(msgs, "  col $col corresponds to variable: $(DiffEqBase.truncate_str(sym_vars[col]))") #trace cols back to symbolic vars
+                    push!(msgs, "  in variable #$col, $(DiffEqBase.truncate_str(sym_vars[col]))") #trace cols back to symbolic vars
                 end
             end
         end
