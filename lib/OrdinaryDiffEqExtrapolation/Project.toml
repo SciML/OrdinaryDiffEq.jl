@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExtrapolation"
 uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "2.5.0"
+version = "2.6.0"
 
 [deps]
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
