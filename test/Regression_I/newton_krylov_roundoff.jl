@@ -17,10 +17,12 @@ then amplifies last-ulp input differences without bound. That is what
 SciML/OrdinaryDiffEq.jl#4034 measured: perturbing `u0[1]` by one ulp moved the
 `Hairer4` solution of this index-1 DAE by 3.7e-03.
 
-The gate is deliberately loose relative to the values it protects: a
-round-off-reproducible integration lands at 1e-15 … 1e-7 here (the step sequence
-itself is mildly chaotic), while the regression it catches sits at 5.7e-04
-(`Hairer42`) and 3.7e-03 (`Hairer4`).
+The gate is deliberately loose relative to the values it protects. Different
+BLAS kernels can perturb the nonlinear solve enough to select different step
+sequences, so `Hairer4` can drift by 1.5e-04 while its direct-factorization
+control also crosses 1e-05. Its 5e-04 bound remains more than sevenfold below
+the 3.7e-03 regression, while the unchanged `Hairer42` bound remains more than
+fiftyfold below its 5.7e-04 regression.
 =#
 
 dae!(du, u, p, t) = mul!(du, p, u)
@@ -48,8 +50,8 @@ const U0_PERTURBED = let u = copy(U0)
     u
 end
 
-@testset "Newton-Krylov round-off reproducibility ($(nameof(alg)))" for alg in (
-        Hairer4, Hairer42,
+@testset "Newton-Krylov round-off reproducibility ($(nameof(alg)))" for (alg, drift_limit) in (
+        (Hairer4, 5.0e-4), (Hairer42, 1.0e-5),
     )
     a = solve(
         dae_prob(U0), alg(linsolve = KrylovJL_GMRES());
@@ -65,5 +67,5 @@ end
         maximum(abs.(a(t) .- b(t)))
             for t in DAE_TSPAN[1]:0.1:DAE_TSPAN[2]
     )
-    @test drift < 1.0e-5
+    @test drift < drift_limit
 end
