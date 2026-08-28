@@ -561,7 +561,7 @@ Base.@constprop :aggressive function _ode_init(
         isdiscretealg(alg) && isempty(tstops) ?
             eltype(prob.tspan)(1) : eltype(prob.tspan)(0)
     else
-        dt
+        tType(dt)
     end
     if _cache !== nothing
         cache = _cache
