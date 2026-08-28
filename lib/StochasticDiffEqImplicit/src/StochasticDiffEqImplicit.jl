@@ -1,8 +1,8 @@
 module StochasticDiffEqImplicit
 
 using Reexport: Reexport, @reexport
-@reexport using StochasticDiffEqCore
 import StochasticDiffEqCore
+@reexport using StochasticDiffEqCore
 import DiffEqBase
 
 import OrdinaryDiffEqCore
