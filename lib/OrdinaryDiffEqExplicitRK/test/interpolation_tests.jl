@@ -157,3 +157,21 @@ end
     avg_order = sum(orders) / length(orders)
     @test avg_order > 3.5
 end
+
+@testset "interpolating before the first step" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
+
+    integ = init(prob, ExplicitRK(); dt = 0.1)
+    @test integ.sol(0.0) ≈ [1.0, 2.0]
+
+    integ.sol(0.0, Val{1})
+    @test integ.sol.k[1][1] ≈ [-1.0, -2.0]
+    @test integ.sol.k[1][2] ≈ [-1.0, -2.0]
+
+    integ2 = init(prob, ExplicitRK(); dt = 0.1)
+    out = zeros(2)
+    integ2.sol(out, 0.0, Val{1})
+    @test integ2.sol.k[1][1] ≈ [-1.0, -2.0]
+    @test integ2.sol.k[1][2] ≈ [-1.0, -2.0]
+end
