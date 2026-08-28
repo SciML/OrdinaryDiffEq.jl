@@ -8,12 +8,29 @@ Base.getindex(array::GenericEventArray, index::Int) = array.data[index]
 Base.setindex!(array::GenericEventArray, value, index::Int) = array.data[index] = value
 
 @testset "generic vector callback event storage" begin
-    next_sign = GenericEventArray([1.0, -1.0, 1.0, -1.0])
-    prev_sign = GenericEventArray([-1.0, 1.0, 0.0, -1.0])
+    @test DiffEqBase.is_event_occurrence(-1.0, 1.0)
+    @test DiffEqBase.is_event_occurrence(1.0, -1.0)
+    @test DiffEqBase.is_event_occurrence(1.0, 0.0)
+    @test !DiffEqBase.is_event_occurrence(0.0, 1.0)
+    @test !DiffEqBase.is_event_occurrence(1.0, 1.0)
+    @test !DiffEqBase.is_event_occurrence(-1.0, -1.0)
 
-    @test DiffEqBase.findall_events!(next_sign, prev_sign)
-    @test next_sign == [1.0, 1.0, 0.0, 0.0]
+    next_generic = GenericEventArray([1.0, -1.0, 1.0, -1.0])
+    prev_generic = GenericEventArray([-1.0, 1.0, 0.0, -1.0])
+    @test DiffEqBase.findall_events!(next_generic, prev_generic)
+    @test next_generic == [1.0, 1.0, 0.0, 0.0]
+
+    next_array = [1.0, -1.0, 1.0, -1.0]
+    prev_array = [-1.0, 1.0, 0.0, -1.0]
+    @test DiffEqBase.findall_events!(next_array, prev_array)
+    @test next_array == [1.0, 1.0, 0.0, 0.0]
+
+    next_parent = [1.0, -1.0, 1.0, -1.0, 5.0]
+    prev_parent = [-1.0, 1.0, 0.0, -1.0, 1.0]
+    @test DiffEqBase.findall_events!(view(next_parent, 1:4), view(prev_parent, 1:4))
+    @test next_parent == [1.0, 1.0, 0.0, 0.0, 5.0]
 end
+
 
 condition = function (u, t, integrator) # Event when event_f(u,t,k) == 0
     return t - 2.95
