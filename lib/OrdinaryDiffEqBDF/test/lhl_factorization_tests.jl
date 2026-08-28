@@ -3,8 +3,8 @@ using SciMLOperators: WOperator, jacobian_stale
 
 # `LHLFactorization` needs W left split as J plus a scalar shift so that a new dtgamma
 # costs O(n²).  These tests pin down that the split form is what the integrator builds,
-# that it produces the same trajectory as an assembled W, and that the combinations the
-# reduction cannot serve are rejected rather than silently densified.
+# that it produces the same trajectory as an assembled W, and that unsupported mass
+# matrices are rejected rather than silently densified.
 
 function rober_like(n)
     # A stiff, strongly coupled system with a dense Jacobian and no sparsity to exploit.
@@ -55,11 +55,21 @@ end
     @test !jacobian_stale(integ.cache.nlsolver.cache.W)
 end
 
-@testset "unsupported combinations are rejected" begin
-    f = ODEFunction((du, u, p, t) -> (du .= -u); jac_prototype = spzeros(3, 3))
-    sprob = ODEProblem(f, ones(3), (0.0, 1.0))
-    @test_throws ArgumentError solve(sprob, NordsieckBDF(linsolve = LHLFactorization()))
+@testset "sparse Jacobian is kept split" begin
+    A = sparse([1, 2, 3, 2, 3, 1], [1, 2, 3, 1, 2, 3], [-4.0, -5.0, -6.0, 1.0, 1.0, 1.0], 3, 3)
+    f! = (du, u, p, t) -> mul!(du, A, u)
+    jac! = (J, u, p, t) -> copyto!(J, A)
+    prob = ODEProblem(ODEFunction(f!; jac = jac!, jac_prototype = copy(A)), ones(3), (0.0, 0.1))
+    integ = init(prob, FBDF(linsolve = LHLFactorization()); abstol = 1.0e-10, reltol = 1.0e-10)
 
+    @test integ.cache.nlsolver.cache.W isa WOperator
+    @test integ.cache.nlsolver.cache.W.J isa SparseMatrixCSC
+    sol = solve!(integ)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.u[end] ≈ exp(0.1 * Matrix(A)) * ones(3) rtol = 1.0e-7
+end
+
+@testset "unsupported mass matrix is rejected" begin
     fm = ODEFunction((du, u, p, t) -> (du .= -u); mass_matrix = Diagonal([1.0, 2.0, 3.0]))
     mprob = ODEProblem(fm, ones(3), (0.0, 1.0))
     @test_throws ArgumentError solve(mprob, NordsieckBDF(linsolve = LHLFactorization()))
