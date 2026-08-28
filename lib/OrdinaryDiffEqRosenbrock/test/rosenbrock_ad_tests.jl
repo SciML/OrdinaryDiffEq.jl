@@ -1,6 +1,7 @@
 using OrdinaryDiffEqRosenbrock, Test
-using SciMLBase: ODEProblem
+using SciMLBase: ODEProblem, ODEFunction, ContinuousCallback, terminate!
 using ForwardDiff
+using LinearAlgebra: Diagonal
 
 # Regression test for issue #3486 — nested ForwardDiff (hessian /
 # gradient-of-gradient) through a Rosenbrock solve used to error with:
@@ -94,4 +95,21 @@ const ROSENBROCK_ALGS_TO_TEST = (
     H = ForwardDiff.hessian(loss, [1.0, 1.0])
     @test all(isfinite, H)
     @test H ≈ [0.25 0.0; 0.0 0.25] atol = 1.0e-4
+end
+
+@testset "dt kwarg with a continuous callback under ForwardDiff (issue #4399)" begin
+    function rhs_massmatrix!(du, u, p, t)
+        du[1] = -p[1] * u[1]
+        du[2] = u[1] + u[2] - one(eltype(u))
+        return nothing
+    end
+    F = ODEFunction{true}(rhs_massmatrix!, mass_matrix = Diagonal([1.0, 0.0]))
+    cb = ContinuousCallback((u, t, i) -> u[1] - 1.0e-10, terminate!)
+
+    function loss_dt(k)
+        prob = ODEProblem(F, [1.0, 0.0], (0.0, 1.0), [k]; dt = 0.1, callback = cb)
+        return solve(prob, Rodas5P(); abstol = 1.0e-8, reltol = 1.0e-8).u[end][2]
+    end
+
+    @test ForwardDiff.derivative(loss_dt, 2.0) ≈ exp(-2.0) rtol = 1.0e-6
 end
