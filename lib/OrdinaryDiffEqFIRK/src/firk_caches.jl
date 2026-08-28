@@ -689,12 +689,12 @@ function alg_cache(
 
     linsolve2 = [
         init(
-                LinearProblem(W2[i], _vec(cubuff[i]), (nothing, u, p, t); u0 = _vec(dw2[i])),
-                alg.linsolve, alias = LinearAliasSpecifier(
-                    alias_A = true, alias_b = true
-                ),
-                assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-            )
+            LinearProblem(W2[i], _vec(cubuff[i]), (nothing, u, p, t); u0 = _vec(dw2[i])),
+            alg.linsolve, alias = LinearAliasSpecifier(
+                alias_A = true, alias_b = true
+            ),
+            assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+        )
             for i in 1:((max_stages - 1) ÷ 2)
     ]
 
