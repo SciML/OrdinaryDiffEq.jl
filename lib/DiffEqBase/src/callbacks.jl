@@ -496,26 +496,8 @@ Modifies `next_sign` to be an array of booleans for if there is a sign change
 in the interval between prev_sign and next_sign.
 Return `true` if any event occurred.
 """
-function findall_events!(
-        next_sign::Union{Array, SubArray},
-        prev_sign::Union{Array, SubArray}
-    )
-    # `VectorContinuousCallback` only has `affect!` (no `affect_neg!`) and
-    # `apply_callback!` invokes it with the `simultaneous_events` mask, so
-    # detection only needs to fire on any sign change away from a non-zero
-    # `prev_sign`.
-    #
-    # The `prev_sign[i] != 0` guard is load-bearing: state-machine
-    # callbacks (conditions of the form `(state == X) * (expr)`) snap
-    # other-state condition values to exactly 0 the instant the affect
-    # changes state. Without the guard, `prev_sign[i] * next_sign[i] <= 0`
-    # would fire on every subsequent step (0 * ±1 = 0 ≤ 0) and the
-    # rootfinder would re-fire the just-handled callback indefinitely —
-    # the scalar `is_event_occurrence` already excludes `prev_sign == 0`
-    # implicitly via its direction checks.
-    @inbounds for i in 1:length(prev_sign)
-        next_sign[i] = prev_sign[i] != 0 && prev_sign[i] * next_sign[i] <= 0
-    end
+function findall_events!(next_sign, prev_sign)
+    map!(is_event_occurrence, next_sign, prev_sign, next_sign)
     return any(isone, next_sign)
 end
 
@@ -527,6 +509,22 @@ function is_event_occurrence(prev_sign::Number, next_sign::Number, affect!::F1, 
         (prev_sign < 0 && affect! !== nothing) ||
             (prev_sign > 0 && affect_neg! !== nothing)
     ) && prev_sign * next_sign <= 0
+end
+
+# `VectorContinuousCallback` only has `affect!` (no `affect_neg!`) and
+# `apply_callback!` invokes it with the `simultaneous_events` mask, so
+# detection only needs to fire on any sign change away from a non-zero
+# `prev_sign`.
+#
+# The `prev_sign != 0` guard is load-bearing: state-machine callbacks
+# (conditions of the form `(state == X) * (expr)`) snap other-state
+# condition values to exactly 0 the instant the affect changes state.
+# Without the guard, `prev_sign * next_sign <= 0` would fire on every
+# subsequent step (0 * ±1 = 0 ≤ 0) and the rootfinder would re-fire the
+# just-handled callback indefinitely. The 4-argument method already
+# excludes `prev_sign == 0` via its direction checks.
+function is_event_occurrence(prev_sign::Number, next_sign::Number)
+    return prev_sign != 0 && prev_sign * next_sign <= 0
 end
 
 """
