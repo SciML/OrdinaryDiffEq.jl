@@ -8,6 +8,51 @@ _setup_name(setup) = get(setup, :name, _default_name(setup[:alg]))
 
 _preset_algorithm_tags(alg) = Symbol[]
 
+const _FAMILY_TAGS = Set(
+    [
+        :adams, :bdf, :esdirk, :exponential, :explicit_rk, :extrapolation, :firk, :imex,
+        :low_storage_rk, :multistep, :partitioned, :rk, :rkn, :rosenbrock, :sdirk,
+        :ssprk, :stabilized, :stabilized_rk, :symplectic,
+    ]
+)
+const _TRAIT_TAGS = Set(
+    [
+        :adaptive, :composite, :explicit, :fixed_step, :implicit, :split, :variable_order,
+    ]
+)
+const _ROLE_TAGS = Set([:recommended, :reference])
+const _PROVIDER_TAGS = Set([:external, :lsoda, :odeinterface, :ordinarydiffeq, :sundials])
+const _VARIANT_TAGS = Set(
+    [
+        :dae_residual, :dense, :dense_output, :dynamic, :endpoint, :mass_matrix,
+        :matrix_free, :sparse, :static, :timeseries,
+    ]
+)
+const _DOMAIN_TAGS = Set([:bv, :dae, :dde, :nonstiff, :ode, :pde, :rode, :sde, :stiff])
+
+"""
+    tag_kind(tag::Symbol) -> Symbol
+
+Return the semantic kind of a benchmark tag: `:family`, `:trait`, `:role`, `:provider`,
+`:variant`, `:domain`, or `:unknown`. Order tags such as `:order_5` are traits, and
+automatic-differentiation tags such as `:autodiff_forwarddiff` are variants.
+
+[`autoplot`](@ref) uses only `:family` tags for automatic family discovery. Pass its
+`families` keyword for one-off custom families. Packages defining a stable family tag
+can make it discoverable with a specialization such as
+`DiffEqDevTools.tag_kind(::Val{:my_family}) = :family`.
+"""
+tag_kind(tag::Symbol) = tag_kind(Val(tag))
+function tag_kind(::Val{tag}) where {tag}
+    tag in _FAMILY_TAGS && return :family
+    (tag in _TRAIT_TAGS || startswith(string(tag), "order_")) && return :trait
+    tag in _ROLE_TAGS && return :role
+    tag in _PROVIDER_TAGS && return :provider
+    (tag in _VARIANT_TAGS || startswith(string(tag), "autodiff_")) && return :variant
+    tag in _DOMAIN_TAGS && return :domain
+    return :unknown
+end
+
 function _known_alg_order(alg)
     applicable(SciMLBase.alg_order, alg) || return nothing
     try

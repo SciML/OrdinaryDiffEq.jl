@@ -12,8 +12,8 @@ plots, without re-solving anything:
   - `"all"`, the full input set
 
 Each value plots directly with `plot(subset)`. When `families` is not given it is taken
-from the tags in use, dropping tags carried by more than 80% of the entries, since those
-describe the benchmark as a whole (`:stiff`, `:nonstiff`) rather than a family.
+from tags for which [`tag_kind`](@ref) returns `:family`. Traits, roles, providers,
+variants, domains, and unknown custom tags are not mistaken for families.
 """
 function autoplot(
         wp_set::WorkPrecisionSet;
@@ -44,9 +44,5 @@ function autoplot(
 end
 
 function _auto_detect_families(wp_set::WorkPrecisionSet)
-    n_methods = length(wp_set.wps)
-    n_methods == 0 && return Symbol[]
-    return filter(unique_tags(wp_set)) do tag
-        count(wp -> tag in wp.tags, wp_set.wps) <= 0.8 * n_methods
-    end
+    return filter(tag -> tag_kind(tag) === :family, unique_tags(wp_set))
 end

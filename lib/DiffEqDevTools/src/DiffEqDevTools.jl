@@ -68,7 +68,8 @@ export test_convergence, analyticless_test_convergence, appxtrue
 export get_sample_errors
 
 #Tagging and filtering
-export auto_tags, filter_by_tags, exclude_by_tags, get_tags, unique_tags, merge_wp_sets
+export auto_tags, tag_kind, filter_by_tags, exclude_by_tags, get_tags, unique_tags,
+    merge_wp_sets
 
 #Multiple error estimates from one run
 export available_errors
