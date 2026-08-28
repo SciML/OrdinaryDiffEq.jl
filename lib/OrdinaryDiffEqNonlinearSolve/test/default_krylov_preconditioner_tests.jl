@@ -28,3 +28,11 @@ ldiv!(right, linsolve.Pr, ones(n))
 
 @test left ≈ weight
 @test right ≈ inv.(weight)
+
+weight[1] = 0
+ldiv!(left, linsolve.Pl, ones(n))
+ldiv!(right, linsolve.Pr, ones(n))
+expected_weight = copy(weight)
+expected_weight[1] = 1
+@test left ≈ expected_weight
+@test right ≈ inv.(expected_weight)
