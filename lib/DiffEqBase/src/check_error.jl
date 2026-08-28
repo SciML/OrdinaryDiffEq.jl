@@ -1,3 +1,20 @@
+# `check_error`/`check_error!` themselves stay in SciMLBase so that a DiffEqBase older than
+# this one still has working implementations. Only the wording of the diagnostics and the
+# `DEVerbosity` toggles that gate them are differential-equation specific, so those live
+# here, as methods of the `report_integrator_failure` hook SciMLBase calls.
+
+#cap diagnostic output to avoid OOM errors when printing large symbolic systems or user data
+const DIAGNOSTIC_OBJECT_CHARS = 160
+const DIAGNOSTIC_REPORT_CHARS = 4000
+
+@noinline function truncate_str(x, limit::Int = DIAGNOSTIC_OBJECT_CHARS)::String
+    buf = IOBuffer(maxsize = 4limit)
+    print(IOContext(buf, :limit => true, :displaysize => (10, limit)), x)
+    s = String(take!(buf))
+    length(s) <= limit && return s
+    return first(s, limit) * "… (truncated)"
+end
+
 if isdefined(SciMLBase, :report_integrator_failure)
     """
         SciMLBase.report_integrator_failure(integrator::DEIntegrator, ::Val{reason})
@@ -32,7 +49,11 @@ end
 function instability_diagnostic(integ)
     verbose = integ.opts.verbose
     symbolic = if SciMLBase.has_mtk_sys(integ) && verbosity_to_bool(verbose.symbolic_diagnostic)
-        SciMLBase.diagnose_symbolic_instability(integ.f.sys, integ.u, integ.uprev)
+        # the symbolic report embeds the model's equations, so it is the one unbounded half
+        truncate_str(
+            SciMLBase.diagnose_symbolic_instability(integ.f.sys, integ.u, integ.uprev),
+            DIAGNOSTIC_REPORT_CHARS
+        )
     else
         ""
     end
