@@ -406,7 +406,8 @@ function DiffEqBase.reinit!(
         reset_dt = iszero(integrator.dtcache) &&
             integrator.opts.adaptive,
         reinit_callbacks = true, initialize_save = true,
-        reinit_cache = true
+        reinit_cache = true,
+        reinit_controller = true
     )
     # reinit history
     reinit!(integrator.integrator, u0; t0, tf, erase_sol = true)
@@ -514,7 +515,9 @@ function DiffEqBase.reinit!(
     integrator.disco_checkpoint = zero(integrator.t)
 
     # full re-initialize the controller in timestepping
-    OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
+    if reinit_controller
+        OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
+    end
 
     if reset_dt
         DiffEqBase.auto_dt_reset!(integrator)
