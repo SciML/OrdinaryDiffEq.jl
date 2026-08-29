@@ -1012,3 +1012,23 @@ function alg_cache(
         Phi[2] + Phi[3], -Phi[3]
     )
 end
+
+function OrdinaryDiffEqCore.reset_fsal!(integrator, ::ETD2ConstantCache)
+    fsalfirst = integrator.fsalfirst
+    fsalfirst.nlprev = integrator.fsallast.nlprev
+    fsalfirst.lin = integrator.f.f1(integrator.u, integrator.p, integrator.t)
+    fsalfirst.nl = integrator.f.f2(integrator.u, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    return nothing
+end
+
+function OrdinaryDiffEqCore.reset_fsal!(integrator, ::ETD2Cache)
+    fsalfirst = integrator.fsalfirst
+    recursivecopy!(fsalfirst.nlprev, integrator.fsallast.nlprev)
+    integrator.f.f1(fsalfirst.lin, integrator.u, integrator.p, integrator.t)
+    integrator.f.f2(fsalfirst.nl, integrator.u, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    return nothing
+end

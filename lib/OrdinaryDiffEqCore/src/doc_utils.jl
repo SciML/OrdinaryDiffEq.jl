@@ -77,7 +77,7 @@ function explicit_rk_docstring(
 
     keyword_default_description = """
         - `stage_limiter`: function of the form `limiter!(u, integrator, p, t)`
-        - `step_limiter`: function of the form `limiter!(u, integrator, p, t)`
+        - `step_limiter`: function of the form `limiter!(u, integrator, p, t)`, applied once to each accepted endpoint after adaptive error and domain checks. For FSAL methods, a non-trivial limiter causes the derivative to be refreshed before the next step; dense interpolants between accepted endpoints are not limited.
         - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
         """ * extra_keyword_description
 
