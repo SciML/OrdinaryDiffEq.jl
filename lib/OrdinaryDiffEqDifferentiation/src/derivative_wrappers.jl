@@ -374,8 +374,8 @@ function resize_jac_config!(cache, integrator)
         cache.jac_config = (
             [
                 DI.prepare!_jacobian(
-                        uf, cache.du1, config, ad, integrator.u
-                    )
+                    uf, cache.du1, config, ad, integrator.u
+                )
                     for (ad, config) in zip(
                         (ad_right, ad_left), cache.jac_config
                     )
@@ -407,8 +407,8 @@ function resize_grad_config!(cache, integrator)
         cache.grad_config = (
             [
                 DI.prepare!_derivative(
-                        cache.tf, cache.du1, config, ad, integrator.t
-                    )
+                    cache.tf, cache.du1, config, ad, integrator.t
+                )
                     for (ad, config) in zip(
                         (ad_right, ad_left), cache.grad_config
                     )
