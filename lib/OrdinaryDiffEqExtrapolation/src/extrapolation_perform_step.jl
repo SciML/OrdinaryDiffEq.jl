@@ -67,7 +67,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
                 end
             end
         end
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)^max_order - 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2^max_order - 1)
     end
 
     # Richardson extrapolation
@@ -192,7 +192,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             end
         end
 
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)^max_order - 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2^max_order - 1)
     end
 
     # Richardson extrapolation
