@@ -901,13 +901,13 @@ function WorkPrecisionSet(
     ]
     solutions = [
         [
-                SciMLBase.calculate_ensemble_errors(
-                    sim;
-                    weak_timeseries_errors,
-                    weak_dense_errors
-                )
+            SciMLBase.calculate_ensemble_errors(
+                sim;
+                weak_timeseries_errors,
+                weak_dense_errors
+            )
                 for sim in sol_k
-            ] for sol_k in _solutions_k
+        ] for sol_k in _solutions_k
     ]
     if error_estimate ∈ WEAK_ERRORS
         errors = [[solutions[j][i].weak_errors for i in 1:M] for j in 1:N]
@@ -959,14 +959,14 @@ function WorkPrecisionSet(
     stats = nothing
     wps = [
         WorkPrecision(
-                prob, _abstols[i], _reltols[i],
-                _dicts_to_structarray(errors[i]),
-                times[:, i], _dts[i], stats, names[i], error_estimate, N,
-                _combined_tags(
-                    setups[i][:alg], _setup_tags(setups[i]),
-                    get(setups[i], :auto_tags, true)
-                )
+            prob, _abstols[i], _reltols[i],
+            _dicts_to_structarray(errors[i]),
+            times[:, i], _dts[i], stats, names[i], error_estimate, N,
+            _combined_tags(
+                setups[i][:alg], _setup_tags(setups[i]),
+                get(setups[i], :auto_tags, true)
             )
+        )
             for i in 1:N
     ]
     return WorkPrecisionSet(
@@ -1028,26 +1028,26 @@ function WorkPrecisionSet(
             if error_estimate == :weak_final
                 errors = [
                     [
-                            LinearAlgebra.norm(
-                                Statistics.mean(
-                                    solutions[i, j].u .-
+                        LinearAlgebra.norm(
+                            Statistics.mean(
+                                solutions[i, j].u .-
                                     expected_value
-                                )
                             )
+                        )
                             for i in 1:M
-                        ] for j in 1:N
+                    ] for j in 1:N
                 ]
             elseif error_estimate == :weak_l2
                 errors = [
                     [
-                            LinearAlgebra.norm(
-                                Statistics.mean(
-                                    solutions[i, j] .-
+                        LinearAlgebra.norm(
+                            Statistics.mean(
+                                solutions[i, j] .-
                                     expected_value
-                                )
                             )
+                        )
                             for i in 1:M
-                        ] for j in 1:N
+                    ] for j in 1:N
                 ]
             else
                 error("Error estimate $error_estimate is not implemented yet.")
@@ -1060,9 +1060,9 @@ function WorkPrecisionSet(
             )
             errors = [
                 [
-                        LinearAlgebra.norm(Statistics.mean(solutions[i, j].u .- sol.u))
+                    LinearAlgebra.norm(Statistics.mean(solutions[i, j].u .- sol.u))
                         for i in 1:M
-                    ] for j in 1:N
+                ] for j in 1:N
             ]
         end
     else
@@ -1115,15 +1115,15 @@ function WorkPrecisionSet(
     stats = nothing
     wps = [
         WorkPrecision(
-                prob, _abstols[i], _reltols[i],
-                _dicts_to_structarray([Dict(error_estimate => err) for err in errors[i]]),
-                times[:, i],
-                _dts[i], stats, names[i], error_estimate, N,
-                _combined_tags(
-                    setups[i][:alg], _setup_tags(setups[i]),
-                    get(setups[i], :auto_tags, true)
-                )
+            prob, _abstols[i], _reltols[i],
+            _dicts_to_structarray([Dict(error_estimate => err) for err in errors[i]]),
+            times[:, i],
+            _dts[i], stats, names[i], error_estimate, N,
+            _combined_tags(
+                setups[i][:alg], _setup_tags(setups[i]),
+                get(setups[i], :auto_tags, true)
             )
+        )
             for i in 1:N
     ]
     return WorkPrecisionSet(
@@ -1241,9 +1241,9 @@ function get_sample_errors(
         # Use the mean of the means as the analytical mean
         analytical_mean_end = mean(
             mean(
-                    tmp_solutions[i].u[end]
+                tmp_solutions[i].u[end]
                     for i in 1:length(tmp_solutions)
-                )
+            )
                 for tmp_solutions in tmp_solutions_full
         )
     end

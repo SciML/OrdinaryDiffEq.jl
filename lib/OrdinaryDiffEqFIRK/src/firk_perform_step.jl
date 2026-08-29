@@ -2351,9 +2351,9 @@ end
         ndwprev = ndw
         ndw = sum(
             internalnorm(
-                    calculate_residuals(dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local),
-                    t_local
-                )
+                calculate_residuals(dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local),
+                t_local
+            )
                 for i in 1:num_stages
         )
 
@@ -2546,9 +2546,9 @@ end
         ndwprev = ndw
         ndw = sum(
             begin
-                    calculate_residuals!(atmp, dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local)
-                    internalnorm(atmp, t_local)
-                end for i in 1:num_stages
+                calculate_residuals!(atmp, dw[i], uprev_local, uprev_local, atol, rtol, internalnorm, t_local)
+                internalnorm(atmp, t_local)
+            end for i in 1:num_stages
         )
 
         if iter > 1

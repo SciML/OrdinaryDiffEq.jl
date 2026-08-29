@@ -370,10 +370,10 @@ function analyticless_test_convergence(
     _solutions = [EnsembleSolution(tmp_solutions[:, i], 0.0, true) for i in 1:length(dts)]
     solutions = [
         SciMLBase.calculate_ensemble_errors(
-                sim;
-                weak_timeseries_errors,
-                weak_dense_errors
-            )
+            sim;
+            weak_timeseries_errors,
+            weak_dense_errors
+        )
             for sim in _solutions
     ]
     auxdata = Dict("dts" => dts)
@@ -396,9 +396,9 @@ function test_convergence(
     N = length(dts)
     solutions = [
         solve(
-                prob, alg; dt = dts[i], save_everystep,
-                adaptive, kwargs...
-            ) for i in 1:N
+            prob, alg; dt = dts[i], save_everystep,
+            adaptive, kwargs...
+        ) for i in 1:N
     ]
     auxdata = Dict(:dts => dts)
     return ConvergenceSimulation(solutions, dts; auxdata)
@@ -413,9 +413,9 @@ function analyticless_test_convergence(
     N = length(dts)
     _solutions = [
         solve(
-                prob, alg; dt = dts[i], save_everystep,
-                adaptive, kwargs...
-            ) for i in 1:N
+            prob, alg; dt = dts[i], save_everystep,
+            adaptive, kwargs...
+        ) for i in 1:N
     ]
     solutions = [appxtrue(sol, true_sol) for sol in _solutions]
     auxdata = Dict(:dts => dts)
