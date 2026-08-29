@@ -143,6 +143,13 @@ function initialize!(integrator, cache::RadauIIA9Cache)
     return nothing
 end
 
+
+function newton_tolerance(κ, rtol, num_stages)
+    r = rtol isa Number ? rtol : minimum(rtol)
+    fnewt = max(10 * eps(one(r)) / r, min(3 // 100, r^((num_stages - 1) / (num_stages + 1))))
+    return convert(typeof(κ), fnewt)
+end
+
 function initialize!(integrator, cache::AdaptiveRadauConstantCache)
     # `integrator.alg` is the `CompositeAlgorithm` when this method is a composite
     # member, and that has no `max_order`.
@@ -1659,6 +1666,9 @@ end
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
     rtol = @.. reltol^((num_stages + 1) / (num_stages * 2)) / 10
     atol = @.. rtol * (abstol / reltol)
+    if alg.κ === nothing
+        κ = newton_tolerance(κ, rtol, num_stages)
+    end
 
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
@@ -1810,7 +1820,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
-            η = θ / (1 - θ)
+            η = iszero(ndw) ? η : θ / (1 - θ)
         end
 
         for i in 1:num_stages
@@ -1929,6 +1939,10 @@ end
             @.. cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
         end
+        if alg.κ === nothing
+            cache.κ = newton_tolerance(cache.κ, cache.rtol, num_stages)
+        end
+        κ = cache.κ
     end
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
@@ -2140,7 +2154,7 @@ end
             if diverge || veryslowconvergence
                 break
             end
-            η = θ / (1 - θ)
+            η = iszero(ndw) ? η : θ / (1 - θ)
         end
 
         @.. w[1] = w[1] - dw1
