@@ -242,6 +242,13 @@ function build_cases(;
     return cases
 end
 
+function solve_kwargs(case::TestCase)
+    # These Hairer/Krylov cases amplify stage-predictor roundoff at default tolerances.
+    case.jac_name == "CSC" && case.solver ∈ (Hairer4, Hairer42) &&
+        return (; SOLVE_KWARGS..., reltol = 1.0e-8, abstol = 1.0e-6)
+    return SOLVE_KWARGS
+end
+
 function maxerrs(sol_a, sol_b)
     max_abs = 0.0
     max_rel = 0.0
@@ -285,10 +292,11 @@ function run_case(case::TestCase)
     cpu_alg = case.needs_krylov_cpu ?
         case.solver(linsolve = KrylovJL_GMRES()) :
         case.solver()
+    kwargs = solve_kwargs(case)
 
     sol_cpu = nothing
     try
-        sol_cpu = solve(PROB_CPU, cpu_alg; SOLVE_KWARGS...)
+        sol_cpu = solve(PROB_CPU, cpu_alg; kwargs...)
         result.cpu_retcode = sol_cpu.retcode
         if ok(sol_cpu.retcode)
             result.cpu_abs, result.cpu_rel = maxerrs(sol_cpu, ref)
@@ -305,7 +313,7 @@ function run_case(case::TestCase)
             case.jac_prototype
         )
         prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
-        sol_gpu = solve(prob_d, cpu_alg; SOLVE_KWARGS...)
+        sol_gpu = solve(prob_d, cpu_alg; kwargs...)
         result.gpu_retcode = sol_gpu.retcode
         if ok(sol_gpu.retcode) && sol_cpu !== nothing && ok(sol_cpu.retcode)
             result.gpu_abs, result.gpu_rel = maxerrs(sol_gpu, sol_cpu)
@@ -434,9 +442,10 @@ function debug_case(solver::Type; jac = "none", mass = "diag_cu")
     cpu_alg = case.needs_krylov_cpu ?
         case.solver(linsolve = KrylovJL_GMRES()) :
         case.solver()
+    kwargs = solve_kwargs(case)
 
     @info "CPU solve"
-    sol_cpu = solve(PROB_CPU, cpu_alg; SOLVE_KWARGS...)
+    sol_cpu = solve(PROB_CPU, cpu_alg; kwargs...)
     @info "CPU retcode" sol_cpu.retcode
     @info "GPU solve"
     odef_d = make_odef(;
@@ -444,7 +453,7 @@ function debug_case(solver::Type; jac = "none", mass = "diag_cu")
         case.jac_prototype
     )
     prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
-    sol_gpu = solve(prob_d, case.solver(); SOLVE_KWARGS...)
+    sol_gpu = solve(prob_d, case.solver(); kwargs...)
     @info "GPU retcode" sol_gpu.retcode
 
     cpu_abs, cpu_rel = maxerrs(sol_cpu, ref)
