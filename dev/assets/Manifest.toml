@@ -376,7 +376,7 @@ version = "4.19.3"
 deps = ["CommonSolve", "DiffEqBase", "DiffEqNoiseProcess", "Distributed", "LinearAlgebra", "Logging", "RecipesBase", "RecursiveArrayTools", "RootedTrees", "SciMLBase", "SimpleNonlinearSolve", "Statistics", "StructArrays"]
 path = "../lib/DiffEqDevTools"
 uuid = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
-version = "3.6.0"
+version = "3.6.1"
 weakdeps = ["OrdinaryDiffEqCore"]
 
     [deps.DiffEqDevTools.extensions]
