@@ -2131,7 +2131,7 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
 deps = ["ADTypes", "Adapt", "ArrayInterface", "CommonSolve", "DiffEqBase", "DiffEqNoiseProcess", "FastPower", "FiniteDiff", "ForwardDiff", "JumpProcesses", "LinearAlgebra", "Logging", "MuladdMacro", "OrdinaryDiffEqCore", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "SimpleNonlinearSolve", "SparseArrays", "StaticArrays", "StochasticDiffEqLevyArea"]
 path = "../lib/StochasticDiffEqCore"
 uuid = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
-version = "2.2.0"
+version = "2.2.1"
 
 [[deps.StochasticDiffEqHighOrder]]
 deps = ["DiffEqBase", "DiffEqNoiseProcess", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
