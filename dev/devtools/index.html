@@ -7,7 +7,7 @@
 __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</code> and <code>init</code> function which is in DiffEqBase.jl that handles distribution and function input (along with extra warnings) before sending the problems to the packages.</p><p>There is then an ecosystem of add-on components which use the common solver interface to add analysis tools for differential equations.</p><h3 id="Contributing-to-the-Ecosystem"><a class="docs-heading-anchor" href="#Contributing-to-the-Ecosystem">Contributing to the Ecosystem</a><a id="Contributing-to-the-Ecosystem-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing-to-the-Ecosystem" title="Permalink"></a></h3><p>There are many ways to help the ecosystem. One way you can contribute is to give pull requests (PRs) to existing packages. Another way to contribute is to add your own package to the ecosystem. Adding your own package to the ecosystem allows you to keep executive control and licensing over your methods, but allows users of DifferentialEquations.jl to use your methods via the common interface, and makes your package compatible with the add-on tools (sensitivity analysis, parameter estimation, etc). Note that, in order for the method to be used as a default, one is required to move their package to the SciML organization so that way common maintenance (such as fixing deprecation warnings, updating tests to newer versions, and emergency fixes / disabling) can be allowed by SciML members. However, the lead developer of the package maintains administrative control, and thus any change to the core algorithms by other SciML members will only be given through PRs.</p><p>Even if you don&#39;t have the time to contribute new solver algorithms or add-on tools, there&#39;s always ways to help! Improved plot recipes and new series recipes are always nice to add more default plots. It is always helpful to have benchmarks between different algorithms to see &quot;which is best&quot;. Adding examples IJulia notebooks to DiffEqTutorials.jl is a good way to share knowledge about DifferentialEquations.jl. Also, please feel free to comb through the solvers and look for ways to make them more efficient. Lastly, the documentation could always use improvements. If you have any questions on how to help, just ask them in the Gitter!</p><h3 id="Code-of-Conduct"><a class="docs-heading-anchor" href="#Code-of-Conduct">Code of Conduct</a><a id="Code-of-Conduct-1"></a><a class="docs-heading-anchor-permalink" href="#Code-of-Conduct" title="Permalink"></a></h3><p>All contributors must adhere to the <a href="https://numfocus.org/code-of-conduct">NumFOCUS Code of Conduct</a>. Treat everyone with respect. Failure to comply will result in individuals being banned from the community.</p><h3 id="Contributor-Guide"><a class="docs-heading-anchor" href="#Contributor-Guide">Contributor Guide</a><a id="Contributor-Guide-1"></a><a class="docs-heading-anchor-permalink" href="#Contributor-Guide" title="Permalink"></a></h3><ul><li><a href="contributing/ecosystem_overview/#Ecosystem-Overview">Ecosystem Overview</a></li><li><a href="contributing/adding_packages/#Adding-a-new-package-to-the-common-interface">Adding a new package to the common interface</a></li><li class="no-marker"><ul><li><a href="contributing/adding_packages/#Defining-the-types">Defining the types</a></li><li><a href="contributing/adding_packages/#Defining-the-overloads">Defining the overloads</a></li><li><a href="contributing/adding_packages/#Defining-the-solution">Defining the solution</a></li></ul></li><li><a href="contributing/adding_algorithms/#Adding-Algorithms">Adding Algorithms</a></li><li class="no-marker"><ul><li><a href="contributing/adding_algorithms/#Adding-new-algorithms-to-OrdinaryDiffEq">Adding new algorithms to OrdinaryDiffEq</a></li></ul></li><li><a href="contributing/defining_problems/#Developing-A-New-Problem">Developing A New Problem</a></li><li><a href="contributing/diffeq_internals/#The-DiffEq-Internals">The DiffEq Internals</a></li><li class="no-marker"><ul><li><a href="contributing/diffeq_internals/#Developing-New-Solver-Algorithms">Developing New Solver Algorithms</a></li><li><a href="contributing/diffeq_internals/#Extras">Extras</a></li></ul></li><li><a href="contributing/type_traits/#Type-Traits">Type Traits</a></li></ul><h3 id="Algorithm-Development-Tools"><a class="docs-heading-anchor" href="#Algorithm-Development-Tools">Algorithm Development Tools</a><a id="Algorithm-Development-Tools-1"></a><a class="docs-heading-anchor-permalink" href="#Algorithm-Development-Tools" title="Permalink"></a></h3><p>The following algorithm development tools are provided by DiffEqDevTools.jl</p><ul><li><a href="alg_dev/test_problems/#Test-Problems">Test Problems</a></li><li class="no-marker"><ul><li><a href="alg_dev/test_problems/#No-Analytical-Solution">No Analytical Solution</a></li><li><a href="alg_dev/test_problems/#Related-Functions">Related Functions</a></li></ul></li><li><a href="alg_dev/convergence/#Convergence-Simulations">Convergence Simulations</a></li><li class="no-marker"><ul><li><a href="alg_dev/convergence/#The-ConvergenceSimulation-Type">The ConvergenceSimulation Type</a></li><li><a href="alg_dev/convergence/#Plot-Functions">Plot Functions</a></li><li><a href="alg_dev/convergence/#ODE">ODE</a></li><li><a href="alg_dev/convergence/#SDE">SDE</a></li><li><a href="alg_dev/convergence/#Memory-use-of-Monte-Carlo-studies">Memory use of Monte-Carlo studies</a></li><li><a href="alg_dev/convergence/#API">API</a></li></ul></li><li><a href="alg_dev/benchmarks/#Benchmark-Suite">Benchmark Suite</a></li><li class="no-marker"><ul><li><a href="alg_dev/benchmarks/#API">API</a></li></ul></li></ul><h3 id="Internal-Documentation"><a class="docs-heading-anchor" href="#Internal-Documentation">Internal Documentation</a><a id="Internal-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Internal-Documentation" title="Permalink"></a></h3><ul><li><a href="internals/notes_on_algorithms/#Notes-on-Algorithms">Notes on Algorithms</a></li><li class="no-marker"><ul><li><a href="internals/notes_on_algorithms/#Explicit-Runge-Kutta-ODE-Algorithms">Explicit Runge-Kutta ODE Algorithms</a></li></ul></li><li><a href="internals/tableaus/#ODE-Tableaus">ODE Tableaus</a></li><li class="no-marker"><ul><li><a href="internals/tableaus/#Tableau-Methods">Tableau Methods</a></li><li><a href="internals/tableaus/#Explicit-Tableaus">Explicit Tableaus</a></li><li><a href="internals/tableaus/#Implicit-Tableaus">Implicit Tableaus</a></li><li><a href="internals/tableaus/#Rosenbrock-tableaus">Rosenbrock tableaus</a></li></ul></li></ul><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl/docs/Project.toml`
   <span class="sgr90">[47edcb42] </span>ADTypes v1.24.0
   <span class="sgr90">[38540f10] </span>CommonSolve v0.2.14
-  <span class="sgr90">[bcd4f6db] </span>DelayDiffEq v6.2.0
+  <span class="sgr90">[bcd4f6db] </span>DelayDiffEq v6.3.0
   <span class="sgr90">[2b5f629d] </span>DiffEqBase v7.20.0 `../lib/DiffEqBase`
   <span class="sgr90">[f3b72e0c] </span>DiffEqDevTools v3.6.1 `../lib/DiffEqDevTools`
   <span class="sgr90">[e30172f5] </span>Documenter v1.17.0
@@ -17,13 +17,13 @@ __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</co
   <span class="sgr90">[08082164] </span>OrdinaryDiffEqAMF v2.3.0 `../lib/OrdinaryDiffEqAMF`
   <span class="sgr90">[89bda076] </span>OrdinaryDiffEqAdamsBashforthMoulton v2.2.0 `../lib/OrdinaryDiffEqAdamsBashforthMoulton`
   <span class="sgr90">[6ad6398a] </span>OrdinaryDiffEqBDF v2.4.6 `../lib/OrdinaryDiffEqBDF`
-  <span class="sgr90">[bbf590c4] </span>OrdinaryDiffEqCore v4.16.0 `../lib/OrdinaryDiffEqCore`
+  <span class="sgr90">[bbf590c4] </span>OrdinaryDiffEqCore v4.16.1 `../lib/OrdinaryDiffEqCore`
   <span class="sgr90">[50262376] </span>OrdinaryDiffEqDefault v2.6.0 `../lib/OrdinaryDiffEqDefault`
   <span class="sgr90">[4302a76b] </span>OrdinaryDiffEqDifferentiation v3.11.1 `../lib/OrdinaryDiffEqDifferentiation`
   <span class="sgr90">[9286f039] </span>OrdinaryDiffEqExplicitRK v2.2.1 `../lib/OrdinaryDiffEqExplicitRK`
   <span class="sgr90">[e0540318] </span>OrdinaryDiffEqExponentialRK v2.3.1 `../lib/OrdinaryDiffEqExponentialRK`
   <span class="sgr90">[becaefa8] </span>OrdinaryDiffEqExtrapolation v2.6.1 `../lib/OrdinaryDiffEqExtrapolation`
-  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.2 `../lib/OrdinaryDiffEqFIRK`
+  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.3 `../lib/OrdinaryDiffEqFIRK`
   <span class="sgr90">[101fe9f7] </span>OrdinaryDiffEqFeagin v2.3.0 `../lib/OrdinaryDiffEqFeagin`
   <span class="sgr90">[d3585ca7] </span>OrdinaryDiffEqFunctionMap v2.3.0 `../lib/OrdinaryDiffEqFunctionMap`
   <span class="sgr90">[d28bc4f8] </span>OrdinaryDiffEqHighOrderRK v2.2.1 `../lib/OrdinaryDiffEqHighOrderRK`
@@ -48,7 +48,7 @@ __init(prob, alg; kwargs...)</code></pre><p>There is a top level <code>solve</co
   <span class="sgr90">[9c7f1690] </span>OrdinaryDiffEqTaylorSeries v2.3.0 `../lib/OrdinaryDiffEqTaylorSeries`
   <span class="sgr90">[b1df2697] </span>OrdinaryDiffEqTsit5 v2.1.4 `../lib/OrdinaryDiffEqTsit5`
   <span class="sgr90">[79d7bb75] </span>OrdinaryDiffEqVerner v2.4.1 `../lib/OrdinaryDiffEqVerner`
-  <span class="sgr90">[0bca4576] </span>SciMLBase v3.50.0
+  <span class="sgr90">[0bca4576] </span>SciMLBase v3.50.1
   <span class="sgr90">[a6db7da4] </span>SciMLLogging v2.1.0
   <span class="sgr90">[c0aeaf25] </span>SciMLOperators v1.30.0
   <span class="sgr90">[19c5a474] </span>StochasticDiffEqCore v2.2.1 `../lib/StochasticDiffEqCore`
@@ -109,7 +109,7 @@ Environment:
   <span class="sgr90">[9a962f9c] </span>DataAPI v1.16.0
   <span class="sgr90">[864edb3b] </span>DataStructures v0.19.6
   <span class="sgr90">[e2d170a0] </span>DataValueInterfaces v1.0.0
-  <span class="sgr90">[bcd4f6db] </span>DelayDiffEq v6.2.0
+  <span class="sgr90">[bcd4f6db] </span>DelayDiffEq v6.3.0
   <span class="sgr90">[2b5f629d] </span>DiffEqBase v7.20.0 `../lib/DiffEqBase`
   <span class="sgr90">[459566f4] </span>DiffEqCallbacks v4.19.3
   <span class="sgr90">[f3b72e0c] </span>DiffEqDevTools v3.6.1 `../lib/DiffEqDevTools`
@@ -166,7 +166,7 @@ Environment:
   <span class="sgr90">[10f19ff3] </span>LayoutPointers v0.1.17
   <span class="sgr90">[0e77f7df] </span>LazilyInitializedFields v1.3.0
   <span class="sgr90">[87fe0de2] </span>LineSearch v0.1.16
-  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v5.15.0
+  <span class="sgr90">[7ed4a6bd] </span>LinearSolve v5.15.1
   <span class="sgr90">[2ab3a3ac] </span>LogExpFunctions v1.0.1
   <span class="sgr90">[e6f89c97] </span>LoggingExtras v1.2.0
   <span class="sgr90">[1914dd2f] </span>MacroTools v0.5.16
@@ -181,22 +181,22 @@ Environment:
   <span class="sgr90">[d8a4904e] </span>MutableArithmetics v1.8.0
   <span class="sgr90">[77ba4419] </span>NaNMath v1.1.4
   <span class="sgr90">[8913a72c] </span>NonlinearSolve v4.29.0
-  <span class="sgr90">[be0214bd] </span>NonlinearSolveBase v2.49.0
-  <span class="sgr90">[5959db7a] </span>NonlinearSolveFirstOrder v2.4.1
-  <span class="sgr90">[9a2c21bd] </span>NonlinearSolveQuasiNewton v1.15.2
+  <span class="sgr90">[be0214bd] </span>NonlinearSolveBase v2.49.1
+  <span class="sgr90">[5959db7a] </span>NonlinearSolveFirstOrder v2.5.0
+  <span class="sgr90">[9a2c21bd] </span>NonlinearSolveQuasiNewton v1.15.3
   <span class="sgr90">[26075421] </span>NonlinearSolveSpectralMethods v1.8.1
   <span class="sgr90">[bac558e1] </span>OrderedCollections v2.0.1
   <span class="sgr90">[1dea7af3] </span>OrdinaryDiffEq v7.8.1 `~/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl`
   <span class="sgr90">[08082164] </span>OrdinaryDiffEqAMF v2.3.0 `../lib/OrdinaryDiffEqAMF`
   <span class="sgr90">[89bda076] </span>OrdinaryDiffEqAdamsBashforthMoulton v2.2.0 `../lib/OrdinaryDiffEqAdamsBashforthMoulton`
   <span class="sgr90">[6ad6398a] </span>OrdinaryDiffEqBDF v2.4.6 `../lib/OrdinaryDiffEqBDF`
-  <span class="sgr90">[bbf590c4] </span>OrdinaryDiffEqCore v4.16.0 `../lib/OrdinaryDiffEqCore`
+  <span class="sgr90">[bbf590c4] </span>OrdinaryDiffEqCore v4.16.1 `../lib/OrdinaryDiffEqCore`
   <span class="sgr90">[50262376] </span>OrdinaryDiffEqDefault v2.6.0 `../lib/OrdinaryDiffEqDefault`
   <span class="sgr90">[4302a76b] </span>OrdinaryDiffEqDifferentiation v3.11.1 `../lib/OrdinaryDiffEqDifferentiation`
   <span class="sgr90">[9286f039] </span>OrdinaryDiffEqExplicitRK v2.2.1 `../lib/OrdinaryDiffEqExplicitRK`
   <span class="sgr90">[e0540318] </span>OrdinaryDiffEqExponentialRK v2.3.1 `../lib/OrdinaryDiffEqExponentialRK`
   <span class="sgr90">[becaefa8] </span>OrdinaryDiffEqExtrapolation v2.6.1 `../lib/OrdinaryDiffEqExtrapolation`
-  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.2 `../lib/OrdinaryDiffEqFIRK`
+  <span class="sgr90">[5960d6e9] </span>OrdinaryDiffEqFIRK v2.8.3 `../lib/OrdinaryDiffEqFIRK`
   <span class="sgr90">[101fe9f7] </span>OrdinaryDiffEqFeagin v2.3.0 `../lib/OrdinaryDiffEqFeagin`
   <span class="sgr90">[d3585ca7] </span>OrdinaryDiffEqFunctionMap v2.3.0 `../lib/OrdinaryDiffEqFunctionMap`
   <span class="sgr90">[d28bc4f8] </span>OrdinaryDiffEqHighOrderRK v2.2.1 `../lib/OrdinaryDiffEqHighOrderRK`
@@ -250,7 +250,7 @@ Environment:
   <span class="sgr90">[f2b01f46] </span>Roots v3.0.7
   <span class="sgr90">[7e49a35a] </span>RuntimeGeneratedFunctions v0.5.25
   <span class="sgr90">[94e857df] </span>SIMDTypes v0.1.0
-  <span class="sgr90">[0bca4576] </span>SciMLBase v3.50.0
+  <span class="sgr90">[0bca4576] </span>SciMLBase v3.50.1
   <span class="sgr90">[19f34311] </span>SciMLJacobianOperators v0.1.18
   <span class="sgr90">[a6db7da4] </span>SciMLLogging v2.1.0
   <span class="sgr90">[c0aeaf25] </span>SciMLOperators v1.30.0
@@ -361,4 +361,4 @@ Environment:
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.64.0+1
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Manifest.toml">manifest</a> and <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Project.toml">project</a> files.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 30 August 2026 11:36">Sunday 30 August 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr32">⌃</span> and <span class="sgr33">⌅</span> have new versions available. Those with <span class="sgr32">⌃</span> may be upgradable, but those with <span class="sgr33">⌅</span> are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Manifest.toml">manifest</a> and <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Project.toml">project</a> files.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 30 August 2026 12:17">Sunday 30 August 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
