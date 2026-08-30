@@ -1,3 +1,28 @@
+# History (hence f) changed since the last inner step. This is not an ODE
+# rejected-step retry: `repeat_step=true` makes `do_newJW` skip `J`/`W`, and
+# Newton then spins in the linear solver (SciML/OrdinaryDiffEq.jl#4389).
+function recompute_history_step!(integrator::DDEIntegrator)
+    cache = integrator.cache
+    if iscomposite(integrator.alg)
+        cache = get_current_cache(cache, cache.current)
+    end
+    _mark_nlsolver_uncurrent!(cache)
+    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, false)
+    return nothing
+end
+
+function _mark_nlsolver_uncurrent!(cache)
+    hasproperty(cache, :nlsolver) || return nothing
+    isdefined(cache, :nlsolver) || return nothing
+    nlsolver = cache.nlsolver
+    nlsolver === nothing && return nothing
+    hasproperty(nlsolver, :cache) || return nothing
+    isdefined(nlsolver, :cache) || return nothing
+    nlcache = nlsolver.cache
+    hasproperty(nlcache, :firstcall) && (nlcache.firstcall = true)
+    return nothing
+end
+
 function OrdinaryDiffEqNonlinearSolve.compute_step!(
         fpsolver::FPSolver{<:NLFunctional},
         integrator::DDEIntegrator
@@ -85,8 +110,7 @@ function compute_step_fixedpoint!(
     (; cache) = fpsolver
     ode_integrator = integrator.integrator
 
-    # recompute next integration step
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, true)
+    recompute_history_step!(integrator)
 
     # compute residuals
     dz = integrator.u .- ode_integrator.u
@@ -116,8 +140,7 @@ function compute_step_fixedpoint!(
     (; dz, atmp) = cache
     ode_integrator = integrator.integrator
 
-    # recompute next integration step
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, true)
+    recompute_history_step!(integrator)
 
     # compute residuals
     @.. dz = integrator.u - ode_integrator.u

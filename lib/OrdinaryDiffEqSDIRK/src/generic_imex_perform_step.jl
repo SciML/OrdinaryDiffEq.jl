@@ -126,11 +126,16 @@ end
             zs[1] .= zero(eltype(zs[1]))
         end
         nlsolver.z = zs[1]
-        # Copy into the nlsolver scratch buffer rather than aliasing uprev.
-        copyto!(tmp, uprev)
-        nlsolver.tmp = tmp
+        # Stage-1 DIRK base is `uprev`. Bind it for the Newton solve, then
+        # restore the owned scratch so `get_tmp_cache` cannot write `uprev`,
+        # including after a failed first stage of a multi-stage method.
+        nlsolver.tmp = uprev
         nlsolver.c = c[1]
-        zs[1] = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        try
+            zs[1] = nlsolve!(nlsolver, integrator, cache, repeat_step)
+        finally
+            nlsolver.tmp = tmp
+        end
         nlsolvefail(nlsolver) && return
         # All implicit stages share γ on the diagonal; reuse the W from stage 1.
         isnewton(nlsolver) && set_new_W!(nlsolver, false)
