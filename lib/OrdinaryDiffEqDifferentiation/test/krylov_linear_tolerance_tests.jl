@@ -35,6 +35,12 @@ newton_cache(integrator) = integrator.cache.nlsolver.cache.linsolve
     end
     @test newton_cache(integrator).reltol == 1.0e-7
 
+    integrator = init(prob, KenCarp4(); reltol = 1.0e-5, abstol = 1.0e-5)
+    for _ in 1:5
+        step!(integrator)
+    end
+    @test newton_cache(integrator).reltol == 1.0e-5
+
     # Rosenbrock already sets both tolerances at `init`; nothing may undo that.
     integrator = init(prob, Rodas5P(linsolve = KrylovJL_GMRES()); reltol = 1.0e-7, abstol = 1.0e-7)
     for _ in 1:5

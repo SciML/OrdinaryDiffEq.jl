@@ -10,7 +10,7 @@ issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
 """
-    set_linear_reltol!(linsolve, reltol) -> linsolve
+    set_linear_reltol!(linsolve, reltol; default_algorithm = false) -> linsolve
 
 Point the LinearSolve.jl cache `linsolve` at relative tolerance `reltol`.
 
@@ -20,13 +20,15 @@ iterative solve keeps running at LinearSolve's `sqrt(eps)` default however tight
 the integrator is. `LinearSolve.update_tolerances!` is the entry point that does take
 effect.
 
-Solvers that need a concrete `A` are left alone: a factorization has no tolerance to set
-and `update_tolerances!` throws for one. A non-scalar `reltol` (per-component tolerances)
-is left alone too — `LinearCache` holds a single scalar tolerance and the iterative
-solvers compare against a scalar bound.
+Concrete factorization algorithms are left alone because they have no tolerance to set.
+When `default_algorithm` is true, the cache may select an iterative algorithm whose
+tolerance must be updated; factorization paths safely ignore it. A non-scalar `reltol`
+(per-component tolerances) is left alone too — `LinearCache` holds a single scalar
+tolerance and the iterative solvers compare against a scalar bound.
 """
-function set_linear_reltol!(linsolve, reltol)
-    if reltol isa Number && !LinearSolve.needs_concrete_A(linsolve.alg) &&
+function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
+    if reltol isa Number &&
+            (default_algorithm || !LinearSolve.needs_concrete_A(linsolve.alg)) &&
             linsolve.reltol != reltol
         LinearSolve.update_tolerances!(linsolve; reltol)
     end
@@ -59,7 +61,10 @@ function dolinsolve(
         LinearSolve.reinit!(linsolve; A)
     end
 
-    set_linear_reltol!(linsolve, reltol)
+    set_linear_reltol!(
+        linsolve, reltol;
+        default_algorithm = hasproperty(_alg, :linsolve) && isnothing(_alg.linsolve)
+    )
     linres = solve!(linsolve)
 
     # TODO: this ignores the add of the `f` count for add_steps!
