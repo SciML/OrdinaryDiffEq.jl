@@ -275,6 +275,27 @@ integ = init(prob, Rosenbrock23(), abstol = 1.0e-6, reltol = 1.0e-6)
     @test (integrator.stats.nf, integrator.stats.njacs) == work
 end
 
+# `ODEFunction` defaults `sparsity` to a matrix-free `jac_prototype`; that used to
+# crash in `prepare_user_sparsity` before any linear solve ran (#4302).
+@testset "Matrix-free FunctionOperator jac_prototype prepares" begin
+    using SciMLOperators: FunctionOperator
+    using LinearAlgebra: mul!, I
+    using Random: MersenneTwister
+    using DiffEqBase: prepare_alg
+
+    n = 40
+    A = randn(MersenneTwister(1), n, n) - 20I
+    rhs!(du, u, p, t) = mul!(du, A, u)
+    jv(v, u, p, t) = A * v
+    jv(w, v, u, p, t) = mul!(w, A, v)
+    Jop = FunctionOperator(jv, zeros(n), zeros(n); islinear = true)
+    prob = ODEProblem(ODEFunction(rhs!; jac_prototype = Jop), ones(n), (0.0, 1.0))
+
+    alg = prepare_alg(TRBDF2(linsolve = KrylovJL_GMRES()), ones(n), SciMLBase.NullParameters(), prob)
+    @test !(alg.autodiff isa AutoSparse)
+    @test_nowarn init(prob, TRBDF2(linsolve = KrylovJL_GMRES()); abstol = 1e-8, reltol = 1e-8)
+end
+
 @testset "get_fresh_jacobian keeps a sparse J's pattern" begin
     # `zero(::SparseMatrixCSC)` has no stored entries, so it drops the pattern `calc_J!`
     # colours against and the instability diagnostic threw `DimensionMismatch` instead of
