@@ -20,19 +20,40 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
 
     # nonlinear solve step
     SciMLBase.reinit!(nlcache, cache.z; p = state)
-    if !_solve_nonlinear!(nlcache, observer)
+    converged, znew = _solve_nonlinear!(nlcache, observer)
+    if !converged
         integrator.force_stepfail = true
         return
     end
 
     # Accept step
-    return u .= state_values(nlcache)
+    return u .= znew
 end
+
+"""
+    _can_observe_steps(nlcache) -> Bool
+
+Whether the nonlinear solve is driven step by step through `NonlinearSolveBase.solve_cache!`
+with the step observer, or run to completion with `solve!`.
+
+`NonlinearSolveNoInitCache` is NonlinearSolveBase's public marker for a solver without the
+iterator interface, so it takes the `solve!` path. A polyalgorithm cache does too, even
+though it can be stepped: observing it feeds every subsolver's iterations, including the
+ones that fail before the next subsolver takes over, to the step controller, which drives
+`dt` to zero on the first step.
+"""
+@inline _can_observe_steps(nlcache) = true
+@inline _can_observe_steps(::NonlinearSolveBase.NonlinearSolveNoInitCache) = false
+@inline _can_observe_steps(::NonlinearSolveBase.NonlinearSolvePolyAlgorithmCache) = false
 
 function _solve_nonlinear!(nlcache, observer)
     reset!(observer)
-    retcode = NonlinearSolveBase.solve_cache!(nlcache; step_observer = observer)
-    return retcode == ReturnCode.Success
+    if _can_observe_steps(nlcache)
+        retcode = NonlinearSolveBase.solve_cache!(nlcache; step_observer = observer)
+        return retcode == ReturnCode.Success, state_values(nlcache)
+    end
+    sol = solve!(nlcache)
+    return sol.retcode == ReturnCode.Success, sol.u
 end
 
 function initialize!(integrator, cache::IDSolveCache)
@@ -56,8 +77,9 @@ function _initialize_dae!(
         z .= u
         initstate = ImplicitDiscreteState(z, p, t)
         SciMLBase.reinit!(nlcache, u; p = initstate)
-        if _solve_nonlinear!(nlcache, observer)
-            integrator.u .= state_values(nlcache)
+        converged, unew = _solve_nonlinear!(nlcache, observer)
+        if converged
+            integrator.u .= unew
         else
             integrator.sol = SciMLBase.solution_new_retcode(
                 integrator.sol, ReturnCode.InitialFailure

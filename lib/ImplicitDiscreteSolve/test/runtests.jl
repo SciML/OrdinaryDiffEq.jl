@@ -3,6 +3,8 @@ using Test
 using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
+using NonlinearSolve
+using SimpleNonlinearSolve
 using SciMLBase
 using SafeTestsets
 using SciMLTesting
@@ -301,6 +303,27 @@ if TEST_GROUP != "QA"
         @test integ.cache.nlcache === nothing
         sol = solve(pr, IDSolve())
         @test SciMLBase.successful_retcode(sol)
+    end
+
+    @testset "nlsolve accepts polyalgorithms and SimpleNonlinearSolve" begin
+        function halving!(resid, u_next, u, p, t)
+            resid[1] = u_next[1] - u[1] / 2
+            return nothing
+        end
+        idprob = ImplicitDiscreteProblem(halving!, [1.0], (0, 5), nothing)
+
+        reference = solve(idprob, IDSolve())
+        @test SciMLBase.successful_retcode(reference)
+
+        for nlsolve in (
+                RobustMultiNewton(), FastShortcutNonlinearPolyalg(),
+                SimpleNewtonRaphson(), SimpleTrustRegion(),
+            )
+            sol = solve(idprob, IDSolve(nlsolve = nlsolve))
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t == reference.t
+            @test sol.u[end] ≈ reference.u[end]
+        end
     end
 
     @testset "InitialFailure thrown" begin
