@@ -889,7 +889,10 @@ function calc_W!(
         else
             update_coefficients!(W, uprev, p, t; gamma = dtgamma)
         end
-        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
+        if W.J isa AbstractSciMLOperator
+            # update_coefficients! moves J in place, so a solver caching its factorization cannot see the change.
+            mark_jacobian_updated!(W)
+        elseif W.J !== nothing
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
                 (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
