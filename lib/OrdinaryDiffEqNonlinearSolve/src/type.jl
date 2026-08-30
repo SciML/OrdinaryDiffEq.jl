@@ -468,19 +468,8 @@ end
 
 # caches
 
-struct _InverseWeightPreconditioner{T}
-    weight::T
-end
-
 # A rejected nonfinite step can produce a zero residual weight; leave that component unscaled.
 @inline _nonzero_weight(x) = iszero(x) ? one(x) : x
-
-Base.eltype(P::_InverseWeightPreconditioner) = eltype(P.weight)
-LinearAlgebra.ldiv!(P::_InverseWeightPreconditioner, x) = ldiv!(x, P, x)
-LinearAlgebra.ldiv!(y, P::_InverseWeightPreconditioner, x) =
-    (y .= _nonzero_weight.(P.weight) .* x)
-LinearAlgebra.mul!(y, P::_InverseWeightPreconditioner, x) =
-    (y .= x ./ _nonzero_weight.(P.weight))
 
 struct _WeightPreconditioner{T}
     weight::T

@@ -921,7 +921,7 @@ function build_nlsolver(
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolver = default_krylov_warm_start(alg.linsolve)
             precs = if isnothing(linsolver)
-                Pl = _InverseWeightPreconditioner(_vec(weight))
+                Pl = LinearSolve.InvPreconditioner(_WeightPreconditioner(_vec(weight)))
                 Pr = _WeightPreconditioner(_vec(weight))
                 (; Pl, Pr)
             else

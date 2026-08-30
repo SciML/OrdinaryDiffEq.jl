@@ -1,4 +1,5 @@
 using LinearAlgebra
+using LinearSolve: InvPreconditioner
 using OrdinaryDiffEqSDIRK
 using SciMLBase
 using SciMLOperators: MatrixOperator
@@ -18,6 +19,7 @@ u0 = cos.(2pi .* (0:(n - 1)) ./ n)
 prob = SplitODEProblem(MatrixOperator(A), nonlinear!, u0, (0.0, 1.0))
 integrator = init(prob, KenCarp4(); abstol = 1.0e-10, reltol = 1.0e-7)
 linsolve = integrator.cache.nlsolver.cache.linsolve
+@test linsolve.Pl isa InvPreconditioner
 weight = vec(integrator.cache.nlsolver.cache.weight)
 weight .= 2:(n + 1)
 left = similar(weight)
