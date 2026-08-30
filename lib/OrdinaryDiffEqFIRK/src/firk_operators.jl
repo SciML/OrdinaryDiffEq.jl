@@ -162,6 +162,12 @@ function build_complex_W(alg, f, u, J, W1)
         )
     end
     jacvec = W1 isa SciMLOperators.WOperator ? W1.jacvec : nothing
+    if alg isa AdaptiveRadau && isthreaded(alg.threading) && jacvec isa JVPCache
+        jacvec = JVPCache(
+            jacvec.f, copy(jacvec.du), jacvec.u, jacvec.p, jacvec.t;
+            autodiff = alg_autodiff(alg)
+        )
+    end
     return ComplexWOperator(f.mass_matrix, complex(one(eltype(W1))), J, u, jacvec)
 end
 
@@ -189,13 +195,23 @@ function firk_new_J!(J, W, integrator, cache, extra_Ws...)
     # tell an in-place refresh from the unchanged object.
     _mark_J_moved!(W)
     foreach(_mark_J_moved!, extra_Ws)
+    foreach(Ws -> _move_jacvec!(Ws, J, uprev, p, t), extra_Ws)
     return nothing
 end
+
+function _move_jacvec!(W::ComplexWOperator, J, u, p, t)
+    W.jacvec === nothing || W.jacvec === J ||
+        SciMLOperators.update_coefficients!(W.jacvec, u, p, t)
+    return nothing
+end
+_move_jacvec!(Ws::AbstractVector, J, u, p, t) = foreach(W -> _move_jacvec!(W, J, u, p, t), Ws)
+_move_jacvec!(::Any, J, u, p, t) = nothing
 
 _mark_J_moved!(W::SciMLOperators.WOperator) = SciMLOperators.mark_jacobian_updated!(W)
 _mark_J_moved!(Ws::AbstractVector) = foreach(_mark_J_moved!, Ws)
 _mark_J_moved!(::Any) = nothing
 
-# A `ComplexWOperator` applies the same real JVP operator its `W` does, so the products it
-# performs are already on that operator's tally and `drain_jvp_count!` needs nothing else.
+# A `ComplexWOperator` reports the JVP operator it applies: the one shared with `W1` on the
+# serial paths, its own copy on the threaded AdaptiveRadau path, so draining every stage
+# counts each product once.
 jvp_counter(W::ComplexWOperator) = jvp_counter(_jacobian_operator(W))

@@ -27,6 +27,9 @@ run_qa(
                 # Genuine external deps, non-public in their owner.
                 :fastpower,               # FastPower
                 :AbstractSciMLOperator,   # SciMLOperators
+                # OrdinaryDiffEqDifferentiation — matrix-free Jacobian operator,
+                # owner-internal like `jvp_counter`'s tally it carries.
+                :JVPCache,
             ),
         ),
         all_qualified_accesses_are_public = (;
