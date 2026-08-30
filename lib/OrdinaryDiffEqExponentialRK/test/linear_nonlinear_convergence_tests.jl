@@ -212,3 +212,15 @@ end
         @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
     end
 end
+
+@testset "Exprb methods with the default in-place problem specialization" begin
+    f! = (du, u, p, t) -> (du .= -u .+ u .^ 2 ./ 10)
+    prob = ODEProblem(f!, [1.0, 0.5], (0.0, 1.0))
+    prob_full = ODEProblem{true, SciMLBase.FullSpecialize}(f!, [1.0, 0.5], (0.0, 1.0))
+    for alg in (Exprb32(), Exprb43())
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        sol_full = solve(prob_full, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end] ≈ sol_full.u[end]
+    end
+end

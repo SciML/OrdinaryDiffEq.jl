@@ -32,6 +32,7 @@ function DiffEqBase.prepare_alg(
             OrdinaryDiffEqImplicitAlgorithm,
             DAEAlgorithm,
             OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         },
         u0::AbstractArray{T},
         p, prob

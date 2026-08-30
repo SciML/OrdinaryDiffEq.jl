@@ -30,7 +30,7 @@ function SciMLBase.__solve(
         merge_callbacks = true, kwargs...
     )
     kwargs = DiffEqBase.merge_problem_kwargs(prob; merge_callbacks, kwargs...)
-    integrator = SciMLBase.__init(prob, alg; kwargs...)
+    integrator = _sde_init(prob, alg; kwargs...)
     solve!(integrator)
     if concrete_prob(prob) isa SciMLBase.AbstractRODEProblem &&
             typeof(concrete_prob(prob).noise) == typeof(integrator.sol.W) &&
@@ -125,6 +125,14 @@ algorithms that actually need the step size.
 """
 function _z_prototype(alg, rand_prototype, iip::Bool, dt)
     return _z_prototype(alg, rand_prototype, iip)
+end
+
+function SciMLBase.__init(
+        _prob::JumpProblem,
+        alg::Union{StochasticDiffEqJumpAlgorithm, StochasticDiffEqJumpAdaptiveAlgorithm};
+        kwargs...
+    )
+    return _sde_init(_prob, alg; kwargs...)
 end
 
 function SciMLBase.__init(

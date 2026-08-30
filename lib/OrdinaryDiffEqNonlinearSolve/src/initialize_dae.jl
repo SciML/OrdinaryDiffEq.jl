@@ -16,6 +16,10 @@ end
     end
 end
 
+# A `jac_prototype` makes `prepare_alg` wrap the AD choice in `AutoSparse`, so ask the dense
+# type underneath whether the initialization residual will be called with Duals.
+_isforwarddiff_alg(alg) = ADTypes.dense_ad(alg_autodiff(alg)) isa AutoForwardDiff
+
 _tagged_autodiff(u, ::Val{nothing}) = _tagged_autodiff(u, Val(1))
 _tagged_autodiff(u, ::Val{0}) = _tagged_autodiff(u, Val(1))
 function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
@@ -259,8 +263,7 @@ function _initialize_dae!(
             tmp = copy(_u0)
         end
 
-        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff ||
-            typeof(u0) !== typeof(_u0)
+        isAD = _isforwarddiff_alg(integrator.alg) || typeof(u0) !== typeof(_u0)
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
             _tmp = DiffCache(tmp, chunk)
@@ -394,7 +397,7 @@ function _initialize_dae!(
             jac
         )
         nlprob = NonlinearProblem(nlfunc, u0)
-        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+        isAD = _isforwarddiff_alg(integrator.alg)
         nlsolve = default_nlsolve(
             alg.nlsolve, isinplace, u0, nlprob, isAD,
             SciMLBase.forwarddiff_chunksize(integrator.alg)
@@ -453,7 +456,7 @@ function _initialize_dae!(
         tmp = copy(_u0)
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u0) !== typeof(_u0)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = DiffCache(tmp, chunk)
@@ -548,7 +551,7 @@ function _initialize_dae!(
         jac
     )
     nlprob = NonlinearProblem(nlfunc, u0)
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = _isforwarddiff_alg(integrator.alg)
     nlsolve = default_nlsolve(
         alg.nlsolve, isinplace, u0, nlprob, isAD,
         SciMLBase.forwarddiff_chunksize(integrator.alg)
@@ -630,7 +633,7 @@ function _initialize_dae!(
         tmp = SciMLBase.value.(tmp)
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u) !== typeof(_u)
     if isAD
         # A larger chunksize, calibrated according to count(algebraic_vars),
         # would be more efficient but cannot be inferred from types
@@ -706,7 +709,7 @@ function _initialize_dae!(
 
     check_dae_tolerance(integrator, resid, alg.abstol, t, isinplace) && return
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = _isforwarddiff_alg(integrator.alg)
     if isAD
         # A larger chunksize, calibrated according to count(algebraic_vars),
         # would be more efficient but cannot be inferred from types
@@ -802,7 +805,7 @@ function _initialize_dae!(
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u) !== typeof(_u)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = DiffCache(tmp, chunk)
@@ -895,7 +898,7 @@ function _initialize_dae!(
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = _isforwarddiff_alg(integrator.alg)
     nlsolve = default_nlsolve(
         alg.nlsolve, isinplace, integrator.u, nlprob, isAD,
         SciMLBase.forwarddiff_chunksize(integrator.alg)

@@ -1,6 +1,6 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqTsit5: AutoTsit5
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
 
@@ -214,4 +214,16 @@ end
 
     bare = init(prob_comp, AdaptiveRadau())
     @test integ.kshortsize == bare.kshortsize
+end
+
+@testset "AdaptiveRadau Newton tolerance follows the stage count" begin
+    prob = prob_ode_rober
+    ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
+    for alg in (AdaptiveRadau(), AdaptiveRadau(; min_order = 13, max_order = 13))
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.naccept < 500
+        @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
+        @test abs(sum(sol.u[end]) - 1) < 1.0e-8
+    end
 end

@@ -74,6 +74,11 @@ function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
                 t_fast = t_mac + (i_fast - 1) * h_fast
                 f.f1(k_fast, T[j], p, t_fast)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+                if j == 1 && i_mac == 1 && i_fast == 1
+                    @.. broadcast = false integrator.fsalfirst = k_slow + k_fast
+                end
+
                 @.. broadcast = false T[j] = T[j] + h_fast * k_slow + h_fast * k_fast
             end
         end
@@ -91,7 +96,7 @@ function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
 
     @.. broadcast = false u = T[order]
 
-    return if integrator.opts.adaptive
+    if integrator.opts.adaptive
         @.. broadcast = false tmp = T[order] - T[order - 1]
         calculate_residuals!(
             atmp,
@@ -105,6 +110,13 @@ function perform_step!(integrator, cache::MREEFCache, repeat_step = false)
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    f.f1(integrator.fsallast, u, p, t + dt)
+    f.f2(k_slow, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsallast = integrator.fsallast + k_slow
+    return nothing
 end
 
 # ── MREEF perform_step! (out-of-place, ConstantCache) ─────────────────────────
@@ -131,6 +143,11 @@ end
                 t_fast = t_mac + (i_fast - 1) * h_fast
                 k_fast = f.f1(u_cur, p, t_fast)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+                if j == 1 && i_mac == 1 && i_fast == 1
+                    integrator.fsalfirst = @.. broadcast = false k_slow + k_fast
+                end
+
                 u_cur = @.. broadcast = false u_cur + h_fast * k_slow + h_fast * k_fast
             end
         end
@@ -160,6 +177,13 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end
 
 function initialize!(integrator, cache::MRABCache)
@@ -213,6 +237,10 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         @.. broadcast = false F_history[min(n_hist + 1, k)] = k_fast + k_slow
+
+        if ℓ == 1
+            @.. broadcast = false integrator.fsalfirst = F_history[min(n_hist + 1, k)]
+        end
         for j in min(n_hist + 1, k):-1:2
             F_history[j], F_history[j - 1] = F_history[j - 1], F_history[j]
         end
@@ -228,7 +256,7 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
     end
 
     # Error estimate (AB-k − AB-(k-1)) folds into one linear combination over F_history.
-    return if integrator.opts.adaptive && k >= 2
+    if integrator.opts.adaptive && k >= 2
         βs_low = β[k - 1]
         @.. broadcast = false tmp = h * (βs[1] - βs_low[1]) * F_history[1]
         for i in 2:(k - 1)
@@ -242,6 +270,13 @@ function perform_step!(integrator, cache::MRABCache, repeat_step = false)
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    f.f1(integrator.fsallast, u, p, t + dt)
+    f.f2(k_slow, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsallast = integrator.fsallast + k_slow
+    return nothing
 end
 
 # ── MRAB perform_step! (out-of-place, ConstantCache) ──────────────────────────
@@ -268,6 +303,10 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
         F = k_fast + k_slow
+
+        if ℓ == 1
+            integrator.fsalfirst = F
+        end
         n_hist = min(n_hist + 1, k)
         for j in n_hist:-1:2
             F_history[j] = F_history[j - 1]
@@ -299,6 +338,13 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end
 
 function initialize!(integrator, cache::MRIGARKCache)
@@ -387,6 +433,13 @@ function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, z, fS, zemb, tab) = cache
     (; Δc, W0, W1, Wemb0, Wemb1, q) = tab
+
+    f.f1(integrator.fsalfirst, uprev, p, t)
+    f.f2(cache.f1eval, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsalfirst = integrator.fsalfirst + cache.f1eval
+
     alg = unwrap_alg(integrator, false)
     m = alg.m
     s = length(Δc)
@@ -405,7 +458,7 @@ function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
     end
     @.. broadcast = false u = z[s + 1]
 
-    return if integrator.opts.adaptive
+    if integrator.opts.adaptive
         if isempty(Wemb0)
             @.. broadcast = false tmp = u - z[s]
         else
@@ -423,6 +476,13 @@ function perform_step!(integrator, cache::MRIGARKCache, repeat_step = false)
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    f.f1(integrator.fsallast, u, p, t + dt)
+    f.f2(cache.f1eval, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsallast = integrator.fsallast + cache.f1eval
+    return nothing
 end
 
 # Fast-IVP rate, out-of-place.
@@ -478,6 +538,11 @@ end
     )
     (; t, dt, uprev, f, p) = integrator
     (; Δc, W0, W1, Wemb0, Wemb1, q) = cache.tab
+
+    integrator.fsalfirst = f.f1(uprev, p, t) + f.f2(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+
     alg = unwrap_alg(integrator, false)
     m = alg.m
     s = length(Δc)
@@ -516,6 +581,13 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end
 
 # Stage 1 is identity (Y_1 = u_n); inner ODE active only for i ≥ 2.
@@ -551,6 +623,13 @@ function perform_step!(integrator, cache::MISCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, v, offset, k_fast, Y, fS, tab) = cache
     (; α, β, γ, d, c, ctilde) = tab
+
+    f.f1(integrator.fsalfirst, uprev, p, t)
+    f.f2(k_fast, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsalfirst = integrator.fsalfirst + k_fast
+
     alg = unwrap_alg(integrator, false)
     m = alg.m
     s = length(d)
@@ -601,7 +680,7 @@ function perform_step!(integrator, cache::MISCache, repeat_step = false)
 
     @.. broadcast = false u = Y[s]
 
-    return if integrator.opts.adaptive
+    if integrator.opts.adaptive
         @.. broadcast = false tmp = Y[s] - Y[s - 1]
         calculate_residuals!(
             atmp, tmp, uprev, u,
@@ -610,11 +689,23 @@ function perform_step!(integrator, cache::MISCache, repeat_step = false)
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    f.f1(integrator.fsallast, u, p, t + dt)
+    f.f2(k_fast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsallast = integrator.fsallast + k_fast
+    return nothing
 end
 
 @muladd function perform_step!(integrator, cache::MISConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
     (; α, β, γ, d, c, ctilde) = cache.tab
+
+    integrator.fsalfirst = f.f1(uprev, p, t) + f.f2(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+
     alg = unwrap_alg(integrator, false)
     m = alg.m
     s = length(d)
@@ -677,4 +768,11 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end

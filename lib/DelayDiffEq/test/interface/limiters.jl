@@ -13,12 +13,12 @@ prob = DDEProblem(f, [1.0], hist, (0.0, 3.0))
     LIMITER_CALLS[] = 0
     sol = solve(prob, MethodOfSteps(SSPRK43()), dt = 0.1; step_limiter = limiter!)
     @test LIMITER_CALLS[] > 0
-    @test sol.stats.naccept + sol.stats.nreject == LIMITER_CALLS[]
+    @test sol.stats.naccept == LIMITER_CALLS[]
 end
 
 @testset "deprecated per-algorithm step_limiter! field is honored" begin
     LIMITER_CALLS[] = 0
     sol = solve(prob, MethodOfSteps(SSPRK43(; step_limiter! = limiter!)), dt = 0.1)
     @test LIMITER_CALLS[] > 0
-    @test sol.stats.naccept + sol.stats.nreject == LIMITER_CALLS[]
+    @test sol.stats.naccept == LIMITER_CALLS[]
 end

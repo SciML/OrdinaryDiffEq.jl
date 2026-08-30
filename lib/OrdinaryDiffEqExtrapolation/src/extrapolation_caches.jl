@@ -89,7 +89,11 @@ function alg_cache(
     dtpropose = zero(dt)
     cur_order = max(alg.init_order, alg.min_order)
     T = Array{typeof(u), 2}(undef, alg.max_order, alg.max_order)
-    @.. broadcast = false T = u
+    for i in 1:(alg.max_order)
+        for j in 1:i
+            T[i, j] = zero(u)
+        end
+    end
     work = zero(dt)
     A = one(Int)
     step_no = zero(Int)

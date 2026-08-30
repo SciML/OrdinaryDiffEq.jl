@@ -35,3 +35,4 @@ end
 
 @time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")
 @time @safetestset "nlsolve! Arguments" include("nlsolve_argument_tests.jl")
+@time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
