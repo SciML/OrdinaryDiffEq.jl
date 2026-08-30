@@ -18,7 +18,7 @@ run_qa(
         all_explicit_imports_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore — owner-internal, no public alternative
-                :PredictiveControllerCache,
+                :PredictiveControllerCache, :_eval_index,
                 # OrdinaryDiffEqCore — private codegen macro / default no-op limiter,
                 # kept owner-internal (no public alternative).
                 Symbol("@threaded"), :trivial_limiter!,
