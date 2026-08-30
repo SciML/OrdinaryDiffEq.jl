@@ -2,6 +2,7 @@
 using OrdinaryDiffEqSDIRK, ODEProblemLibrary, DiffEqDevTools, ADTypes
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 Random.seed!(100)
 
 ## Convergence Testing
@@ -266,4 +267,18 @@ end
 
     sim_iip = test_convergence(dts, prob_iip, Kvaerno4())
     @test sim_iip.𝒪est[:l∞] ≈ 4 atol = testTol
+end
+
+@testset "IMEX methods without an embedded pair are not adaptive" begin
+    f1 = (u, p, t) -> -u
+    f2 = (u, p, t) -> 0.1 * u
+    prob = SplitODEProblem(f1, f2, 1.0, (0.0, 1.0))
+    for alg in (
+            ARS222(), ARS232(), ARS343(), ARS443(),
+            IMEXSSP222(), IMEXSSP2322(), IMEXSSP3332(), IMEXSSP3433(), BHR553(),
+        )
+        @test !OrdinaryDiffEqCore.isadaptive(alg)
+        @test_throws ArgumentError solve(prob, alg)
+        @test solve(prob, alg; dt = 0.1).retcode == ReturnCode.Success
+    end
 end

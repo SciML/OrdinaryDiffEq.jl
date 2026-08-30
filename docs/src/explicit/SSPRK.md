@@ -64,7 +64,7 @@ The SSP coefficient determines the maximum allowable timestep for stability pres
 
   - **`SSPRK432`**: Third-order with error control
   - **`SSPRK932`**: High-stage adaptive method
-  - **`SSPRKMSVS43`**: Multistep adaptive variant
+  - **`SSPRKMSVS43`**: Four-step multistep variant
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
