@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSSPRK, DiffEqDevTools, Test, Random
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 import OrdinaryDiffEqLowStorageRK
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
@@ -619,5 +620,14 @@ end
             sim = test_convergence(dts, prob, alg; save_everystep = false, dense = false)
             @test sim.𝒪est[:final] ≈ OrdinaryDiffEqSSPRK.alg_order(alg) atol = testTol
         end
+    end
+end
+
+@testset "SSP multistep methods are not adaptive" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    for alg in (SSPRKMSVS32(), SSPRKMSVS43())
+        @test !OrdinaryDiffEqCore.isadaptive(alg)
+        @test_throws ArgumentError solve(prob, alg)
+        @test solve(prob, alg; dt = 0.05).retcode == ReturnCode.Success
     end
 end
