@@ -1014,7 +1014,7 @@ end
 
 @muladd function perform_step!(integrator, cache::PFRK87ConstantCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) = cache
+    (; α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, β13tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) = cache
     alg = unwrap_alg(integrator, false)
     ν = alg.omega * dt
     νsq = ν^2
@@ -1126,7 +1126,7 @@ end
         utilde = dt *
             (
             β1tilde * k1 + β6tilde * k6 + β7tilde * k7 + β8tilde * k8 + β9tilde * k9 +
-                β10tilde * k10 + β11tilde * k11 + β12tilde * k12
+                β10tilde * k10 + β11tilde * k11 + β12tilde * k12 + β13tilde * k13
         )
         atmp = calculate_residuals(
             utilde, uprev, u, integrator.opts.abstol,
@@ -1152,7 +1152,7 @@ end
 
 @muladd function perform_step!(integrator, cache::PFRK87Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) = cache.tab
+    (; α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, β13tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) = cache.tab
     (; k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, atmp, k, thread) = cache
     stage_limiter! = integrator.opts.stage_limiter!
 
@@ -1292,7 +1292,7 @@ end
                 β7tilde * k7 +
                 β8tilde * k8 + β9tilde * k9 +
                 β10tilde * k10 +
-                β11tilde * k11 + β12tilde * k12
+                β11tilde * k11 + β12tilde * k12 + β13tilde * k13
         )
         calculate_residuals!(
             atmp, utilde, uprev, u, integrator.opts.abstol,
