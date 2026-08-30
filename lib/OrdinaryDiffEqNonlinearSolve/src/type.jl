@@ -514,6 +514,7 @@ mutable struct NLNewtonCache{
     new_W_γdt_cutoff::tType
     J_t::tType
     dae_jacobians::DC
+    stats_delta::Union{Nothing, StatsDelta}
 end
 
 mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC} <: AbstractNLSolverCache
@@ -529,6 +530,7 @@ mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC} <: Abstrac
     new_W_γdt_cutoff::tType
     J_t::tType
     dae_jacobians::DC
+    stats_delta::Union{Nothing, StatsDelta}
 end
 
 mutable struct NLFunctionalCache{uType, tType, rateType} <: AbstractNLSolverCache

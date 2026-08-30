@@ -37,6 +37,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     concrete_jac, unwrap_alg, OrdinaryDiffEqCache,
     isnewton,
     set_new_W!, set_W_γdt!, diffdir,
+    charge_nw!, charge_njacs!, charge_nf!, stats_sink, stats_owner,
     get_W, isfirstcall, isfirststage, isJcurrent,
     get_new_W_γdt_cutoff, isWmethod,
     TryAgain,

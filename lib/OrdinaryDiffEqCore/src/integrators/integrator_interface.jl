@@ -673,6 +673,121 @@ function increment_nf!(stats, amt = 1)
     return stats.nf += amt
 end
 
+"""
+    StatsDelta()
+
+Counters a nonlinear solve accumulates privately before folding them into
+`integrator.stats`.
+
+The counters on `integrator.stats` are plain `Int`s updated with `+=`. A solver
+that runs several nonlinear solves concurrently (`PDIRK44` today) has every one
+of those solves updating the same fields from a different task, which loses
+increments and makes the reported statistics differ from run to run. Buffering
+per solve moves the synchronisation from once per right-hand side evaluation to
+once per nonlinear solve, where it costs nothing measurable.
+"""
+mutable struct StatsDelta
+    nf::Int
+    nw::Int
+    nsolve::Int
+    njacs::Int
+    nnonliniter::Int
+    nnonlinconvfail::Int
+end
+StatsDelta() = StatsDelta(0, 0, 0, 0, 0, 0)
+
+"""Guards the fold of a [`StatsDelta`](@ref) into the shared `integrator.stats`."""
+const STATS_DELTA_LOCK = ReentrantLock()
+
+"""
+    stats_sink(cache)
+
+The [`StatsDelta`](@ref) a cache accumulates into, or `nothing` when its counts
+go straight to `integrator.stats`. `hasfield` is resolved at compile time, so
+caches without a buffer keep the direct path with no added work.
+"""
+@inline function stats_sink(cache)
+    return hasfield(typeof(cache), :stats_delta) ? getfield(cache, :stats_delta) : nothing
+end
+@inline stats_sink(::Nothing) = nothing
+@inline stats_sink(delta::StatsDelta) = delta
+
+"""
+    stats_owner(nlsolver)
+
+The object holding the [`StatsDelta`](@ref) for `nlsolver`. Callers pass an
+`NLSolver`, a solver cache, or `nothing`, so this unwraps one level when there is
+a `cache` field and otherwise hands back what it was given.
+"""
+@inline function stats_owner(nlsolver)
+    return hasfield(typeof(nlsolver), :cache) ? getfield(nlsolver, :cache) : nlsolver
+end
+
+for (name, field) in (
+        (:charge_nf!, :nf), (:charge_nw!, :nw),
+        (:charge_nsolve!, :nsolve), (:charge_njacs!, :njacs),
+        (:charge_nnonliniter!, :nnonliniter), (:charge_nnonlinconvfail!, :nnonlinconvfail),
+    )
+    doc = "    $name(integrator, cache, amt = 1)\n\nAdd `amt` to the `$field` counter, into the cache's " *
+        "[`StatsDelta`](@ref) when it has one and straight into `integrator.stats` otherwise."
+    @eval begin
+        @inline function $name(integrator, cache, amt = 1)
+            sink = stats_sink(cache)
+            if sink === nothing
+                SciMLBase.has_stats(integrator) &&
+                    setfield!(
+                    integrator.stats, $(QuoteNode(field)),
+                    getfield(integrator.stats, $(QuoteNode(field))) + amt
+                )
+            else
+                setfield!(
+                    sink, $(QuoteNode(field)),
+                    getfield(sink, $(QuoteNode(field))) + amt
+                )
+            end
+            return nothing
+        end
+    end
+    @eval @doc $doc $name
+end
+
+"""
+    drain_stats_delta!(integrator, cache)
+
+Fold a cache's buffered counts into `integrator.stats` and reset them. Called
+once per nonlinear solve, under a lock, so concurrent solves cannot lose
+increments.
+"""
+function drain_stats_delta!(integrator, cache)
+    sink = stats_sink(cache)
+    sink === nothing && return nothing
+    (
+        iszero(sink.nf) && iszero(sink.nw) && iszero(sink.nsolve) && iszero(sink.njacs) &&
+            iszero(sink.nnonliniter) && iszero(sink.nnonlinconvfail)
+    ) && return nothing
+    if SciMLBase.has_stats(integrator)
+        stats = integrator.stats
+        if Threads.nthreads() == 1
+            fold_stats_delta!(stats, sink)
+        else
+            lock(() -> fold_stats_delta!(stats, sink), STATS_DELTA_LOCK)
+        end
+    end
+    sink.nf = sink.nw = sink.nsolve = sink.njacs = 0
+    sink.nnonliniter = sink.nnonlinconvfail = 0
+    return nothing
+end
+
+function fold_stats_delta!(stats, sink)
+    stats.nf += sink.nf
+    stats.nw += sink.nw
+    stats.nsolve += sink.nsolve
+    stats.njacs += sink.njacs
+    stats.nnonliniter += sink.nnonliniter
+    stats.nnonlinconvfail += sink.nnonlinconvfail
+    return nothing
+end
+
 function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
     if integrator.opts.save_everystep
         error(

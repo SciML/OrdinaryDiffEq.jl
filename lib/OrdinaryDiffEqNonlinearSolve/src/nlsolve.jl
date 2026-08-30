@@ -309,13 +309,10 @@ function apply_step!(
 end
 
 function SciMLBase.postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nnonliniter += nlsolver.iter
-
-        if nlsolvefail(nlsolver)
-            integrator.stats.nnonlinconvfail += 1
-        end
-    end
+    charge_nnonliniter!(integrator, nlsolver.cache, nlsolver.iter)
+    nlsolvefail(nlsolver) && charge_nnonlinconvfail!(integrator, nlsolver.cache, 1)
+    # One synchronisation per solve rather than one per right-hand side evaluation.
+    drain_stats_delta!(integrator, nlsolver.cache)
     integrator.force_stepfail = nlsolvefail(nlsolver)
     setfirststage!(nlsolver, false)
     isnewton(nlsolver) && (nlsolver.cache.firstcall = false)
