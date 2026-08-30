@@ -1,7 +1,7 @@
 name = "GlobalDiffEq"
 uuid = "1d72d19b-84cc-4cb7-a099-7cbdb9ccc67c"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com> and contributors"]
-version = "1.4.0"
+version = "1.5.0"
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
