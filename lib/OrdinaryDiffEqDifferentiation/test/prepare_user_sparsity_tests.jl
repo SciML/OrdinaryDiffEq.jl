@@ -70,3 +70,19 @@ end
     OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob)
     @test Matrix(prob.f.jac_prototype) == Matrix(M)
 end
+
+# Matrix-free `jac_prototype` is copied into `sparsity` by `ODEFunction`; it is not a
+# sparsity pattern and must not enter the `KnownJacobianSparsityDetector` path (#4302).
+@testset "Matrix-free FunctionOperator jac_prototype skips sparsity prep" begin
+    using LinearAlgebra: mul!
+    A = [1.0 2.0; 0.0 1.0]
+    jv(v, u, p, t) = A * v
+    jv(w, v, u, p, t) = mul!(w, A, v)
+    Jop = FunctionOperator(jv, zeros(2), zeros(2); islinear = true)
+    odef = ODEFunction(f!; jac_prototype = Jop)
+    prob = ODEProblem(odef, ones(2), (0.0, 1.0))
+
+    @test prob.f.sparsity === Jop
+    @test OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob) === ad_alg
+end
+
