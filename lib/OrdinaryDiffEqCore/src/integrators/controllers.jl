@@ -1192,6 +1192,15 @@ function setup_controller_cache(alg, cache, controller::PredictiveController, ::
     )
 end
 
+current_newton_iter(cache) = cache.iter
+function current_newton_iter(cache::CompositeCache)
+    return _eval_index(current_newton_iter, cache.caches, cache.current)::Int
+end
+current_nlsolver_iters(cache) = (cache.nlsolver.iter, cache.nlsolver.maxiters)
+function current_nlsolver_iters(cache::CompositeCache)
+    return _eval_index(current_nlsolver_iters, cache.caches, cache.current)::Tuple{Int, Int}
+end
+
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
@@ -1203,10 +1212,10 @@ end
             fac = gamma
         else
             if isfirk(alg)
-                (; iter) = integrator.cache
+                iter = current_newton_iter(integrator.cache)
                 (; maxiters) = alg
             else
-                (; iter, maxiters) = integrator.cache.nlsolver
+                iter, maxiters = current_nlsolver_iters(integrator.cache)
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end

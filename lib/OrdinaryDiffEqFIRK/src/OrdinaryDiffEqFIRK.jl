@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: unwrap_alg,
     default_controller, PredictiveController, PIController,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    alg_cache, @threaded, isthreaded,
+    alg_cache, @threaded, isthreaded, CompositeCache,
     Sequential, BaseThreads, PolyesterThreads,
     constvalue,
     differentiation_rk_docstring, trivial_limiter!,
@@ -47,7 +47,7 @@ import SciMLOperators: AbstractSciMLOperator
 # dependency from registering as stale.
 import OrdinaryDiffEqNonlinearSolve
 
-import OrdinaryDiffEqCore: PredictiveControllerCache
+import OrdinaryDiffEqCore: PredictiveControllerCache, _eval_index
 
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
     @eval begin

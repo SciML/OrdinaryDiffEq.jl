@@ -155,13 +155,13 @@ method and needs no such opt-in.)
 """
 has_stage_limiter(alg) = false
 
-# evaluates f(t[i])
-_eval_index(f::F, t::Tuple{A}, _) where {F, A} = f(t[1])
-function _eval_index(f::F, t::Tuple{A, Vararg}, i) where {F, A}
+# evaluates f(t[i], args...)
+_eval_index(f::F, t::Tuple{A}, _, args...) where {F, A} = f(t[1], args...)
+function _eval_index(f::F, t::Tuple{A, Vararg}, i, args...) where {F, A}
     return if i == 1
-        f(t[1])
+        f(t[1], args...)
     else
-        _eval_index(f, Base.tail(t), i - 1)
+        _eval_index(f, Base.tail(t), i - 1, args...)
     end
 end
 

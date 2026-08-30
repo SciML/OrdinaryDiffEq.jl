@@ -2,6 +2,7 @@ using OrdinaryDiffEq, OrdinaryDiffEqCore, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools, ADTypes
 using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqFIRK
 import OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqCore: CompositeAlgorithm
 
@@ -114,3 +115,26 @@ cb = DiscreteCallback(
     (u, t, integrator) -> true, (integrator) -> derivative_discontinuity!(integrator, true)
 )
 sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)
+
+@testset "AutoSwitch composite with a FIRK stiff member (#4364)" begin
+    function rober_stiff!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+        return nothing
+    end
+    prob_stiff = ODEProblem(rober_stiff!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+
+    for alg in (
+            AutoVern7(RadauIIA3(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
+            AutoVern7(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
+            AutoTsit5(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true),
+        )
+        sol = solve(prob_stiff, alg)
+        @test sol.retcode == ReturnCode.Success
+    end
+
+    integ = init(prob_stiff, AutoTsit5(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true))
+    @test @inferred(OrdinaryDiffEqCore.current_newton_iter(integ.cache)) isa Int
+end

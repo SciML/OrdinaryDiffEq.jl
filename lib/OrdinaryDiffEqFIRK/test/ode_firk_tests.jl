@@ -1,5 +1,6 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using OrdinaryDiffEqTsit5: AutoTsit5
+using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
@@ -226,4 +227,32 @@ end
         @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
         @test abs(sum(sol.u[end]) - 1) < 1.0e-8
     end
+end
+
+@testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
+    function rober_firk!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+        return nothing
+    end
+    prob_rober = ODEProblem(rober_firk!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    reference = solve(prob_rober, RadauIIA5(); abstol = 1.0e-10, reltol = 1.0e-10).u[end]
+
+    for stiffalg in (
+            RadauIIA3(autodiff = AutoFiniteDiff()),
+            RadauIIA5(autodiff = AutoFiniteDiff()),
+            AdaptiveRadau(autodiff = AutoFiniteDiff()),
+        )
+        sol = solve(prob_rober, AutoTsit5(stiffalg); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test count(==(2), sol.alg_choice) > 0
+        @test sol.u[end] ≈ reference rtol = 1.0e-4
+    end
+
+    integ = init(
+        prob_rober, AutoTsit5(AdaptiveRadau(autodiff = AutoFiniteDiff()); stiffalgfirst = true)
+    )
+    @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end
