@@ -67,6 +67,28 @@ sol2 = solve(prob, KahanLi8(), dt = 1 / 10);
 
 Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 
+## Reactant compilation
+
+An explicit ODE solve can be part of a [`Reactant.@jit`](https://enzymead.github.io/Reactant.jl/stable/api/#Reactant.@jit) compiled function. Both adaptive and fixed-step solver loops are staged as device-side loops, so the compiled executable can be reused with new state and parameter values:
+
+```julia
+using OrdinaryDiffEq, Reactant
+
+f(u, p, t) = p .* u
+
+function compiled_solve(u, p)
+    prob = ODEProblem(f, u, (0.0f0, 1.0f0), p)
+    return solve(prob, Tsit5())
+end
+
+u0 = Reactant.to_rarray(Float32[1, 2])
+p = Reactant.to_rarray(Float32[-1])
+sol = Reactant.@jit compiled_solve(u0, p)
+Array(sol.u[end])
+```
+
+Reactant requires statically shaped outputs. A compiled solve therefore returns an endpoint-only `ODESolution`: `sol.u` and `sol.t` contain the final state and time, while `sol.prob`, `sol.stats`, and `sol.interp` are `nothing`. Adaptive solves currently require a `PIController`; the tested algorithms are the `Tsit5` and Verner explicit Runge–Kutta families. Implicit algorithms, saving intermediate or partial states (`saveat` or `save_idxs`), callbacks, user `tstops`, discontinuity handling, `force_dtmin`, progress reporting, custom domain or instability checks, and step limiters are not currently supported inside Reactant compilation and produce an `ArgumentError` instead of silently changing the solve.
+
 ## Available Solvers
 
 For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/), [Dynamical ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/dynamical_solve/), and the [Split ODE Solvers](https://docs.sciml.ai/DiffEqDocs/stable/solvers/split_ode_solve/) pages.

@@ -18,6 +18,11 @@ end
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
     )
+    if ReactantCore.within_compile() && g === nothing
+        return _traced_ode_initdt_iip(
+            u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, order, integrator
+        )
+    end
     _tType = eltype(t)
     f = prob.f
     p = integrator.p
@@ -347,6 +352,11 @@ end
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, order, integrator
     )
+    if ReactantCore.within_compile() && g === nothing
+        return _traced_ode_initdt_oop(
+            u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, order, integrator
+        )
+    end
     _tType = eltype(t)
     f = prob.f
     p = prob.p

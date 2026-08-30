@@ -7,8 +7,7 @@ Base.@constprop :aggressive function SciMLBase.__solve(
         kwargs...
     )
     integrator = SciMLBase.__init(prob, alg, args...; kwargs...)
-    solve!(integrator)
-    return integrator.sol
+    return ReactantCore.within_compile() ? solve!(integrator) : (solve!(integrator); integrator.sol)
 end
 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Number, <:Number}) = promote_type(typeof(SciMLBase.value(internalnorm(u, ts[1]))), typeof(SciMLBase.value(internalnorm(u, ts[2]))), eltype(SciMLBase.value.(ts)))
@@ -200,6 +199,30 @@ Base.@constprop :aggressive function _ode_init(
         seed = UInt64(0),
         kwargs...
     )
+    if ReactantCore.within_compile()
+        prob isa SciMLBase.AbstractODEProblem ||
+            throw(ArgumentError("only ODEProblem is supported inside Reactant compilation"))
+        isimplicit(alg) &&
+            throw(ArgumentError("implicit algorithms are not supported inside Reactant compilation"))
+        !adaptive && isnothing(dt) &&
+            throw(ArgumentError("dt is required for fixed-step solves inside Reactant compilation"))
+        isempty(saveat) || throw(ArgumentError("saveat is not supported inside Reactant compilation"))
+        isempty(tstops) || throw(ArgumentError("tstops are not supported inside Reactant compilation"))
+        isempty(d_discontinuities) || throw(ArgumentError("d_discontinuities are not supported inside Reactant compilation"))
+        isnothing(callback) || throw(ArgumentError("callbacks are not supported inside Reactant compilation"))
+        isnothing(save_idxs) || throw(ArgumentError("save_idxs is not supported inside Reactant compilation"))
+        isoutofdomain === ODE_DEFAULT_ISOUTOFDOMAIN ||
+            throw(ArgumentError("isoutofdomain is not supported inside Reactant compilation"))
+        unstable_check === ODE_DEFAULT_UNSTABLE_CHECK ||
+            throw(ArgumentError("unstable_check is not supported inside Reactant compilation"))
+        force_dtmin && throw(ArgumentError("force_dtmin is not supported inside Reactant compilation"))
+        progress && throw(ArgumentError("progress is not supported inside Reactant compilation"))
+        save_everystep = false
+        save_start = false
+        save_end = true
+        dense = false
+        calck = false
+    end
     # ODE/DAE-specific validation (skip for RODE/SDE problems)
     if !(prob isa SciMLBase.AbstractRODEProblem)
         if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -238,6 +261,9 @@ Base.@constprop :aggressive function _ode_init(
     stage_limiter!, step_limiter! = resolve_stage_step_limiters(
         alg, stage_limiter, step_limiter, verbose_spec
     )
+    if ReactantCore.within_compile() && step_limiter! !== trivial_limiter!
+        throw(ArgumentError("step_limiter is not supported inside Reactant compilation"))
+    end
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
             # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
@@ -695,9 +721,10 @@ Base.@constprop :aggressive function _ode_init(
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
     eigen_est = inv(one(tType))
+    t = _maybe_traced(t)
     tprev = t
-    dtcache = tType(_dt)
-    dtpropose = tType(_dt)
+    dtcache = _maybe_traced(tType(_dt))
+    dtpropose = _maybe_traced(tType(_dt))
     iter = 0
     kshortsize = 0
     reeval_fsal = false
@@ -767,7 +794,7 @@ Base.@constprop :aggressive function _ode_init(
 
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
-        tType, typeof(p), typeof(eigen_est),
+        typeof(t), typeof(p), typeof(eigen_est),
         typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
@@ -777,7 +804,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(W), typeof(P), typeof(sqdt),
         typeof(noise), typeof(c), typeof(rate_constants),
     }(
-        sol, u, du, k, t, tType(_dt), f, p,
+        sol, u, du, k, t, dtcache, f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est,
@@ -902,6 +929,11 @@ function handle_starting_time_discontinuity!(integrator)
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
+    if ReactantCore.within_compile()
+        return integrator.opts.adaptive ?
+            _traced_adaptive_solve!(integrator, integrator.controller_cache) :
+            _traced_fixed_step_solve!(integrator)
+    end
     @inbounds while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first_tstop
@@ -966,6 +998,10 @@ function handle_dt!(integrator)
     end
 end
 function handle_dt!(integrator, dt)
+    if ReactantCore.within_compile()
+        isnothing(dt) && integrator.opts.adaptive && auto_dt_reset!(integrator)
+        return nothing
+    end
     return if isnothing(dt) && iszero(integrator.dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
