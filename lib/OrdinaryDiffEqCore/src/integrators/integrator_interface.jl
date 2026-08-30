@@ -487,6 +487,7 @@ function SciMLBase.reinit!(
         reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
+        reinit_controller = true,
         reinit_retcode = true,
         rng = nothing
     )
@@ -597,7 +598,9 @@ function SciMLBase.reinit!(
     integrator.derivative_discontinuity = false
 
     # full re-initialize the controller in timestepping
-    reinit_controller!(integrator, integrator.controller_cache)
+    if reinit_controller
+        reinit_controller!(integrator, integrator.controller_cache)
+    end
 
     if rng !== nothing
         SciMLBase.set_rng!(integrator, rng)
@@ -683,7 +686,8 @@ function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
             t0 = t,
             reset_dt = false,
             reinit_callbacks = false,
-            reinit_cache = false
+            reinit_cache = false,
+            reinit_controller = false
         )
     else
         integrator.t = t
