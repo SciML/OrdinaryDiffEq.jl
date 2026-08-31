@@ -16,7 +16,7 @@ include("sdc_reference.jl")
                 @test tab.nodes ≈ case.nodes atol = 1.0e-13
                 @test tab.weights ≈ case.weights atol = 1.0e-13
                 @test tab.Q ≈ case.Q atol = 1.0e-13
-                @test tab.QΔ ≈ QDelta atol = 1.0e-13
+                @test first(tab.QΔ) ≈ QDelta atol = 1.0e-13
             end
         end
         @test sdc_collocation_order(case.M, case.node_type, case.quad_type) ==
@@ -40,8 +40,8 @@ end
                     @test tab.Q * (τ .^ n) ≈ (τ .^ (n + 1)) ./ (n + 1) atol = 1.0e-13
                     @test sum(tab.weights .* τ .^ n) ≈ 1 / (n + 1) atol = 1.0e-13
                 end
-                @test tab.QΔ ≈ LowerTriangular(tab.QΔ)
-                @test tab.QΔ * ones(M) ≈ τ atol = 1.0e-14
+                @test first(tab.QΔ) ≈ LowerTriangular(first(tab.QΔ))
+                @test first(tab.QΔ) * ones(M) ≈ τ atol = 1.0e-14
             end
         end
     end
@@ -51,20 +51,20 @@ end
     M = 4
     for sweeper in instances(SDCSweeper.T)
         tab = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, sweeper)
-        @test tab.QΔ ≈ LowerTriangular(tab.QΔ)
+        @test first(tab.QΔ) ≈ LowerTriangular(first(tab.QΔ))
         # The sweepers advertised as parallel-ready must actually be diagonal.
         if sweeper in OrdinaryDiffEqSDC.SDC_DIAGONAL_SWEEPERS
-            @test tab.QΔ ≈ Diagonal(tab.QΔ)
+            @test first(tab.QΔ) ≈ Diagonal(first(tab.QΔ))
         else
-            @test !(tab.QΔ ≈ Diagonal(tab.QΔ))
+            @test !(first(tab.QΔ) ≈ Diagonal(first(tab.QΔ)))
         end
         if sweeper === SDCSweeper.FE
-            @test all(iszero, diag(tab.QΔ))
+            @test all(iszero, diag(first(tab.QΔ)))
         end
     end
-    be = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.BE).QΔ
-    fe = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.FE).QΔ
-    tr = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.Trapezoid).QΔ
+    be = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.BE).QΔ |> first
+    fe = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.FE).QΔ |> first
+    tr = SDCTableau(Float64, M, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.Trapezoid).QΔ |> first
     @test tr ≈ (be .+ fe) ./ 2
 end
 
