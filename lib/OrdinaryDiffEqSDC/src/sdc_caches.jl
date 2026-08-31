@@ -15,13 +15,17 @@ end
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    ubuf::uType
     ulow::uType
     atmp::uNoUnitsType
-    k::rateType
+    # One entry per node so the sweep can run the nodes concurrently.
+    tmp::Vector{uType}
+    ubuf::Vector{uType}
+    k::Vector{rateType}
     z::Vector{uType}
     znew::Vector{uType}
+    # Per-node solve outcome, collected instead of returning from inside the loop.
+    failed::Vector{Bool}
+    nf::Vector{Int}
     nlsolvers::N
     tab::TabType
     solver_index::Vector{Int}
@@ -73,8 +77,11 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     return SDCCache(
-        u, uprev, zero(u), zero(u), zero(u), atmp, zero(rate_prototype),
+        u, uprev, zero(u), atmp,
         [zero(u) for _ in 1:M], [zero(u) for _ in 1:M],
+        [zero(rate_prototype) for _ in 1:M],
+        [zero(u) for _ in 1:M], [zero(u) for _ in 1:M],
+        fill(false, M), zeros(Int, M),
         nlsolvers, tab, solver_index
     )
 end
@@ -102,4 +109,5 @@ end
 
 # Needed because the generic `OrdinaryDiffEqNewtonAdaptiveAlgorithm` fallback
 # returns `(cache.nlsolver.tmp, cache.atmp)`, which assumes a single solver.
-SciMLBase.get_tmp_cache(integrator, ::SDC, cache::SDCCache) = (cache.tmp, cache.ubuf)
+SciMLBase.get_tmp_cache(integrator, ::SDC, cache::SDCCache) =
+    (first(cache.tmp), first(cache.ubuf))
