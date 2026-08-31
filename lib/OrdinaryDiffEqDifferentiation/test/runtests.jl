@@ -24,6 +24,7 @@ end
 if TEST_GROUP ∉ ("Core", "Sparse", "ModelingToolkit") && isempty(VERSION.prerelease)
     activate_qa_env()
     @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "W prototype aliasing" include("w_prototype_aliasing_tests.jl")
     @time @safetestset "Aqua" include("qa/qa.jl")
 end
 

@@ -568,6 +568,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.derivative_discontinuity
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     isdae = alg isa DAEAlgorithm
+    is_varying_mm = false
     if !isdae
         mm = integrator.f.mass_matrix
         is_varying_mm = !isconstant(mm)
@@ -1296,8 +1297,9 @@ function build_J_W(
         if !(f.jac_prototype isa AbstractSciMLOperator)
             error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
         end
-        W = f.W_prototype
-        J = f.jac_prototype
+        # One deepcopy of the pair keeps a `W_prototype` that references
+        # `jac_prototype` pointing at the copy of `J`, not the original.
+        W, J = deepcopy((f.W_prototype, f.jac_prototype))
     elseif f.jac_prototype isa AbstractSciMLOperator
         J = deepcopy(f.jac_prototype)
         if J isa AbstractMatrix
