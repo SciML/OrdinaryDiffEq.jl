@@ -60,6 +60,12 @@ iterates are already in the cache.",
     - `step_update`: how the step solution is formed from the node values,
         `SDCStepUpdate.Quadrature` (`u_n + Δt Σ_m w_m f_m`) or `.LastNode`
         (`u_M`, which requires the last node to be the right endpoint).
+    - `threading`: run the `M` node solves of each sweep concurrently on the
+        in-place path. `false` (the default) or `true`, or one of
+        `OrdinaryDiffEqCore`'s `Sequential()`, `BaseThreads()` and
+        `PolyesterThreads()` for control over the backend. Only valid for a
+        diagonal `sweeper`, since any other one couples the nodes within a
+        sweep. Out-of-place problems sweep serially whatever this is set to.
     """,
     """
     num_nodes = 3,
@@ -68,15 +74,17 @@ iterates are already in the cache.",
     num_sweeps = 3,
     sweeper = SDCSweeper.BE,
     step_update = SDCStepUpdate.Quadrature,
+    threading = false,
     """
 )
-struct SDC{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
+struct SDC{AD, F, F2, TO, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
     num_nodes::Int
     node_type::SDCNodes.T
     quad_type::SDCQuadrature.T
     num_sweeps::Int
     sweeper::SDCSweeper.T
     step_update::SDCStepUpdate.T
+    threading::TO
     linsolve::F
     nlsolve::F2
     autodiff::AD
@@ -90,13 +98,14 @@ function SDC(;
         num_sweeps::Int = 3,
         sweeper::SDCSweeper.T = SDCSweeper.BE,
         step_update::SDCStepUpdate.T = SDCStepUpdate.Quadrature,
+        threading = false,
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton()
     )
-    sdc_validate(num_nodes, quad_type, num_sweeps, step_update)
+    sdc_validate(num_nodes, quad_type, num_sweeps, step_update, sweeper, threading)
     autodiff = _fixup_ad(autodiff)
     return SDC(
         num_nodes, node_type, quad_type, num_sweeps, sweeper, step_update,
-        linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac)
+        threading, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac)
     )
 end

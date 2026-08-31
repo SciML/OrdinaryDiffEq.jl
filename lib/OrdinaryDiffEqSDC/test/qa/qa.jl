@@ -7,6 +7,9 @@ run_qa(
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
+        all_explicit_imports_are_public = (;
+            ignore = (Symbol("@threaded"),),
+        ),
         all_qualified_accesses_are_public = (;
             ignore = (
                 # non-public OrdinaryDiffEqCore precompile-workload fixtures
