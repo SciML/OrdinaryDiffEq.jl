@@ -87,7 +87,10 @@ end
 # These two gain more than one order per sweep on some node sets and no
 # closed-form predictor covers them, so they are gated as a lower bound.
 @testset "SDC high-efficiency sweepers reach at least the predicted order" begin
-    for sweeper in (SDCSweeper.LU, SDCSweeper.MIN_SR_NS), M in (3, 4), K in (1, 2, 3)
+    for sweeper in (
+                SDCSweeper.LU, SDCSweeper.MIN_SR_NS, SDCSweeper.MIN_SR_S,
+                SDCSweeper.MIN_SR_FLEX,
+            ), M in (3, 4), K in (1, 2, 3)
         alg = sdc_alg(M, SDCNodes.Legendre, SDCQuadrature.RadauRight, sweeper, K, SDCStepUpdate.Quadrature)
         expected = OrdinaryDiffEqSDC.alg_order(alg)
         order, residual = measured_order(alg, expected)
@@ -132,13 +135,13 @@ end
     # this moved too, the checks above would only be saying that the test notices
     # any change at all.
     diag_qd, diag_residual = measured_order(
-        alg, expected; perturb! = tab -> (tab.QΔ[2, 2] += 5.0e-2)
+        alg, expected; perturb! = tab -> (first(tab.QΔ)[2, 2] += 5.0e-2)
     )
     @test diag_residual < 0.05
     @test abs(diag_qd - expected) < 0.5
 
     lower_qd, lower_residual = measured_order(
-        alg, expected; perturb! = tab -> (tab.QΔ[2, 1] += 5.0e-2)
+        alg, expected; perturb! = tab -> (first(tab.QΔ)[2, 1] += 5.0e-2)
     )
     @test lower_residual < 0.05
     @test abs(lower_qd - expected) < 0.5

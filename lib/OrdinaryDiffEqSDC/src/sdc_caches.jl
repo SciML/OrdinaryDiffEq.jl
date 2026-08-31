@@ -36,12 +36,14 @@ Map each node to its position in the solver vector, or to `0` when the node is
 explicit because `QΔ[m, m]` vanishes. That happens for every node of a strictly
 lower triangular sweeper, and for the first node whenever `τ₁ = 0`.
 """
-function sdc_solver_index(QΔ::AbstractMatrix)
-    M = size(QΔ, 1)
+function sdc_solver_index(QΔ::AbstractVector{<:AbstractMatrix})
+    M = size(first(QΔ), 1)
     index = zeros(Int, M)
     implicit = 0
     for m in 1:M
-        if !iszero(QΔ[m, m])
+        # A sweep-dependent preconditioner only needs a solver for node m if some
+        # sweep actually makes it implicit.
+        if any(Q -> !iszero(Q[m, m]), QΔ)
             implicit += 1
             index[m] = implicit
         end
@@ -57,14 +59,14 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = SDCTableau(
         constvalue(uBottomEltypeNoUnits), alg.num_nodes, alg.node_type,
-        alg.quad_type, alg.sweeper
+        alg.quad_type, alg.sweeper, alg.num_sweeps
     )
     M = alg.num_nodes
     solver_index = sdc_solver_index(tab.QΔ)
     nlsolvers = [
         build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, tab.QΔ[m, m], tab.nodes[m],
+            uBottomEltypeNoUnits, tTypeNoUnits, first(tab.QΔ)[m, m], tab.nodes[m],
             Val(true), verbose
         ) for m in 1:M if !iszero(solver_index[m])
     ]
@@ -85,13 +87,13 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = SDCTableau(
         constvalue(uBottomEltypeNoUnits), alg.num_nodes, alg.node_type,
-        alg.quad_type, alg.sweeper
+        alg.quad_type, alg.sweeper, alg.num_sweeps
     )
     solver_index = sdc_solver_index(tab.QΔ)
     nlsolvers = [
         build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits, tTypeNoUnits, tab.QΔ[m, m], tab.nodes[m],
+            uBottomEltypeNoUnits, tTypeNoUnits, first(tab.QΔ)[m, m], tab.nodes[m],
             Val(false), verbose
         ) for m in 1:(alg.num_nodes) if !iszero(solver_index[m])
     ]
