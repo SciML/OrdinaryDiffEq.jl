@@ -25,6 +25,11 @@ estimated global error of `sol.u[i]` at `sol.t[i]`, and
 [`SciMLBase.has_global_error`](@ref) is `true` for these algorithms.
 [`global_error_estimate`](@ref) returns `sol.global_error`.
 
+To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
+solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
+requires SciMLSensitivity and QuadGK to be loaded); [`adjoint_error_estimate`](@ref)
+exposes the standalone estimator.
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -59,4 +64,6 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalAdjoint
+adjoint_error_estimate
 ```
