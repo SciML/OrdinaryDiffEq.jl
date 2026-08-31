@@ -47,73 +47,108 @@ function sdc_step_update(uprev, weights, z, ulast, step_update)
     return u
 end
 
+"""
+    sdc_node!(m, integrator, cache, QΔ, zk, zk1, repeat_step)
+
+One node of one sweep, writing only into slot `m` of the per-node buffers.
+
+Everything it reads is either shared and constant for the sweep (`zk`, `uprev`,
+the coefficients) or private to node `m`. The one exception is the strictly
+lower part of `QΔ`, which couples node `m` to nodes before it — that part is
+empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
+"""
+@muladd function sdc_node!(m, integrator, cache, QΔ, zk, zk1, repeat_step)
+    (; t, dt, uprev, f, p) = integrator
+    (; tmp, ubuf, k, nlsolvers, tab, solver_index) = cache
+    (; nodes, Q) = tab
+    M = length(nodes)
+
+    tmpm = tmp[m]
+    @.. broadcast = false tmpm = uprev
+    for j in 1:M
+        coeff = Q[m, j] - QΔ[m, j]
+        iszero(coeff) && continue
+        @.. broadcast = false tmpm = tmpm + coeff * zk[j]
+    end
+    for j in 1:(m - 1)
+        coeff = QΔ[m, j]
+        iszero(coeff) && continue
+        @.. broadcast = false tmpm = tmpm + coeff * zk1[j]
+    end
+
+    index = solver_index[m]
+    if iszero(index)
+        # QΔ[m,m] = 0, so the node is explicit and u_m is the right-hand side.
+        @.. broadcast = false ubuf[m] = tmpm
+        f(k[m], ubuf[m], p, t + nodes[m] * dt)
+        cache.nf[m] += 1
+        @.. broadcast = false zk1[m] = dt * k[m]
+    else
+        nls = nlsolvers[index]
+        @.. broadcast = false nls.tmp = tmpm
+        @.. broadcast = false nls.z = zk[m]
+        nls.γ = QΔ[m, m]
+        nls.c = nodes[m]
+        markfirststage!(nls)
+        znode = nlsolve!(nls, integrator, cache, repeat_step)
+        cache.failed[m] = nlsolvefail(nls)
+        @.. broadcast = false zk1[m] = znode
+        @.. broadcast = false ubuf[m] = tmpm + QΔ[m, m] * znode
+    end
+    return nothing
+end
+
 @muladd function perform_step!(integrator, cache::SDCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, ubuf, ulow, atmp, k, nlsolvers, tab, solver_index) = cache
-    (; nodes, weights, Q) = tab
+    (; ubuf, ulow, atmp, k, tab, failed) = cache
+    (; nodes, weights) = tab
     alg = unwrap_alg(integrator, true)
     M = length(nodes)
-    stats = integrator.stats
+    threading = alg.threading
 
-    # COPY initialisation: u⁰_m = u_n at every node, which is what the standard
-    # order predictions for SDC assume.
     for m in 1:M
-        f(k, uprev, p, t + nodes[m] * dt)
-        @.. broadcast = false cache.z[m] = dt * k
+        f(k[m], uprev, p, t + nodes[m] * dt)
+        @.. broadcast = false cache.z[m] = dt * k[m]
     end
-    OrdinaryDiffEqCore.increment_nf!(stats, M)
-    @.. broadcast = false ubuf = uprev
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, M)
+    @.. broadcast = false ubuf[M] = uprev
 
     zk, zk1 = cache.z, cache.znew
     adaptive = integrator.opts.adaptive
-    # The step update after sweep k-1 is the embedded solution, so it is formed
-    # every sweep and kept one behind.
-    adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
+    adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf[M], alg.step_update)
     for sweep in 1:(alg.num_sweeps)
         QΔ = sdc_qdelta_for(tab, sweep)
-        for m in 1:M
-            @.. broadcast = false tmp = uprev
-            for j in 1:M
-                coeff = Q[m, j] - QΔ[m, j]
-                iszero(coeff) && continue
-                @.. broadcast = false tmp = tmp + coeff * zk[j]
+        fill!(failed, false)
+        fill!(cache.nf, 0)
+        # `let` so the closure the threading macro builds captures the current
+        # sweep's arrays by value rather than boxing the rebound names.
+        let cache = cache, integrator = integrator, QΔ = QΔ, zk = zk, zk1 = zk1,
+                repeat_step = repeat_step
+
+            @threaded threading for m in 1:M
+                sdc_node!(m, integrator, cache, QΔ, zk, zk1, repeat_step)
             end
-            for j in 1:(m - 1)
-                coeff = QΔ[m, j]
-                iszero(coeff) && continue
-                @.. broadcast = false tmp = tmp + coeff * zk1[j]
-            end
-            index = solver_index[m]
-            if iszero(index)
-                # QΔ[m,m] = 0, so the node is explicit and u_m is the right-hand side.
-                @.. broadcast = false ubuf = tmp
-                f(k, ubuf, p, t + nodes[m] * dt)
-                OrdinaryDiffEqCore.increment_nf!(stats, 1)
-                @.. broadcast = false zk1[m] = dt * k
-            else
-                nls = nlsolvers[index]
-                @.. broadcast = false nls.tmp = tmp
-                @.. broadcast = false nls.z = zk[m]
-                nls.γ = QΔ[m, m]
-                nls.c = nodes[m]
-                markfirststage!(nls)
-                znode = nlsolve!(nls, integrator, cache, repeat_step)
-                nlsolvefail(nls) && return
-                @.. broadcast = false zk1[m] = znode
-                @.. broadcast = false ubuf = tmp + QΔ[m, m] * znode
-            end
+        end
+        # `nlsolve!` writes `integrator.force_stepfail` from every node, so a
+        # later success would erase an earlier failure. The per-node flags are
+        # the reliable record.
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, sum(cache.nf))
+        if any(failed)
+            integrator.force_stepfail = true
+            return nothing
         end
         zk, zk1 = zk1, zk
         adaptive && @.. broadcast = false ulow = u
-        adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
+        adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf[M], alg.step_update)
     end
 
-    adaptive || sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
+    adaptive || sdc_step_update!(u, uprev, weights, zk, ubuf[M], alg.step_update)
 
     if adaptive
-        @.. broadcast = false tmp = u - ulow
+        tmp1 = cache.tmp[1]
+        @.. broadcast = false tmp1 = u - ulow
         calculate_residuals!(
-            atmp, tmp, uprev, u, integrator.opts.abstol,
+            atmp, tmp1, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
