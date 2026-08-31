@@ -42,9 +42,16 @@ but not what it converges to.
   iteration matrix nilpotent and is usually the best serial choice.
 - `SDCSweeper.Picard` — `QΔ = 0`, the unpreconditioned iteration.
 - `SDCSweeper.BEpar` — `diag(τ)`, implicit Euler from the step start to each node.
-- `SDCSweeper.MIN_SR_NS` — `diag(τ)/M`.
+- `SDCSweeper.MIN_SR_NS` — `diag(τ)/M`, which makes the non-stiff iteration
+  matrix nilpotent, so the iteration terminates in `M` sweeps as `Δt → 0`.
+- `SDCSweeper.MIN_SR_S` — tabulated entries that make the stiff-limit iteration
+  matrix nilpotent instead, for stiff problems.
+- `SDCSweeper.MIN_SR_FLEX` — `diag(τ)/k` on sweep `k`, changing every sweep, and
+  falling back to `MIN_SR_S` past sweep `M`.
 
-The last two are diagonal, so their sweeps decouple across the nodes.
+The last five are diagonal, so their sweeps decouple across the nodes. The three
+`MIN_SR_*` families are from Čaklović, Lunet, Götschel and Ruprecht,
+SIAM J. Sci. Comput. 47 (2025) A430-A453.
 """
 @enumx SDCSweeper begin
     BE
@@ -54,6 +61,8 @@ The last two are diagonal, so their sweeps decouple across the nodes.
     Picard
     BEpar
     MIN_SR_NS
+    MIN_SR_S
+    MIN_SR_FLEX
 end
 
 """
@@ -70,7 +79,13 @@ last node to be the right endpoint and gives up one order.
 end
 
 # Diagonal `QΔ`: the sweep decouples across the nodes.
-const SDC_DIAGONAL_SWEEPERS = (SDCSweeper.Picard, SDCSweeper.BEpar, SDCSweeper.MIN_SR_NS)
+const SDC_DIAGONAL_SWEEPERS = (
+    SDCSweeper.Picard, SDCSweeper.BEpar, SDCSweeper.MIN_SR_NS,
+    SDCSweeper.MIN_SR_S, SDCSweeper.MIN_SR_FLEX,
+)
+
+# Sweepers whose `QΔ` changes from one sweep to the next.
+const SDC_SWEEP_DEPENDENT_SWEEPERS = (SDCSweeper.MIN_SR_FLEX,)
 
 # Sweepers that are second order accurate on their own, and therefore gain two
 # orders on the first sweep instead of one.
@@ -84,7 +99,17 @@ struct SDCTableau{T}
     nodes::Vector{T}
     weights::Vector{T}
     Q::Matrix{T}
-    QΔ::Matrix{T}
+    # One entry per sweep for `MIN_SR_FLEX`, one entry in total otherwise.
+    QΔ::Vector{Matrix{T}}
+end
+
+"""
+    sdc_qdelta_for(tab, k)
+
+The preconditioner for sweep `k`, counted from 1.
+"""
+@inline function sdc_qdelta_for(tab::SDCTableau, k::Int)
+    return @inbounds tab.QΔ[min(k, length(tab.QΔ))]
 end
 
 """
@@ -234,7 +259,8 @@ decouple into `M` successive `N`-sized solves; a diagonal `QΔ` decouples them
 completely, which is what parallel-across-the-nodes SDC exploits.
 """
 function sdc_qdelta(
-        ::Type{T}, sweeper::SDCSweeper.T, τ::Vector{BigFloat}, Q::Matrix{BigFloat}
+        ::Type{T}, sweeper::SDCSweeper.T, τ::Vector{BigFloat}, Q::Matrix{BigFloat},
+        node_type::SDCNodes.T, quad_type::SDCQuadrature.T, sweep::Int
     ) where {T}
     M = length(τ)
     QΔ = zeros(BigFloat, M, M)
@@ -273,6 +299,23 @@ function sdc_qdelta(
         for i in 1:M
             QΔ[i, i] = τ[i] / M
         end
+    elseif sweeper === SDCSweeper.MIN_SR_S
+        for (i, d) in enumerate(min_sr_s_coefficients(node_type, quad_type, M))
+            QΔ[i, i] = d
+        end
+    elseif sweeper === SDCSweeper.MIN_SR_FLEX
+        # Čaklović et al. Theorem 2.13: diag(τ)/k for the k-th sweep drives the
+        # product of the stiff-limit iteration matrices to exactly zero after M
+        # sweeps. Past that the theorem says nothing, so fall back to MIN-SR-S.
+        if sweep <= M
+            for i in 1:M
+                QΔ[i, i] = τ[i] / sweep
+            end
+        else
+            for (i, d) in enumerate(min_sr_s_coefficients(node_type, quad_type, M))
+                QΔ[i, i] = d
+            end
+        end
     else
         throw(ArgumentError("SDC: unknown sweeper $(sweeper)"))
     end
@@ -286,15 +329,34 @@ Build every coefficient array the sweep needs, in the element type `T`.
 """
 function SDCTableau(
         ::Type{T}, M::Int, node_type::SDCNodes.T, quad_type::SDCQuadrature.T,
-        sweeper::SDCSweeper.T
+        sweeper::SDCSweeper.T, num_sweeps::Int = 1
     ) where {T}
     return setprecision(BigFloat, SDC_COEFF_PRECISION) do
         τ = _sdc_nodes_big(M, node_type, quad_type)
         Q = _lagrange_integrals(τ, τ)
         weights = vec(_lagrange_integrals(τ, [one(BigFloat)]))
-        QΔ = sdc_qdelta(T, sweeper, τ, Q)
+        nsweeps = sweeper in SDC_SWEEP_DEPENDENT_SWEEPERS ? max(1, num_sweeps) : 1
+        QΔ = [
+            sdc_qdelta(T, sweeper, τ, Q, node_type, quad_type, k) for k in 1:nsweeps
+        ]
         SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ)
     end
+end
+
+"""
+    min_sr_s_coefficients(node_type, quad_type, M)
+
+Tabulated MIN-SR-S diagonal entries, or an error naming what is missing.
+"""
+function min_sr_s_coefficients(node_type::SDCNodes.T, quad_type::SDCQuadrature.T, M::Int)
+    coeffs = get(MIN_SR_S_COEFFICIENTS, (node_type, quad_type, M), nothing)
+    coeffs === nothing && throw(
+        ArgumentError(
+            "SDC: no tabulated MIN-SR-S coefficients for $(M) $(node_type)/$(quad_type) " *
+                "nodes; the available node counts are $(sort(unique(k[3] for k in keys(MIN_SR_S_COEFFICIENTS))))"
+        )
+    )
+    return coeffs
 end
 
 """

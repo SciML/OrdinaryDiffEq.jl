@@ -50,7 +50,7 @@ end
 @muladd function perform_step!(integrator, cache::SDCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, ubuf, ulow, atmp, k, nlsolvers, tab, solver_index) = cache
-    (; nodes, weights, Q, QΔ) = tab
+    (; nodes, weights, Q) = tab
     alg = unwrap_alg(integrator, true)
     M = length(nodes)
     stats = integrator.stats
@@ -69,7 +69,8 @@ end
     # The step update after sweep k-1 is the embedded solution, so it is formed
     # every sweep and kept one behind.
     adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
-    for _ in 1:(alg.num_sweeps)
+    for sweep in 1:(alg.num_sweeps)
+        QΔ = sdc_qdelta_for(tab, sweep)
         for m in 1:M
             @.. broadcast = false tmp = uprev
             for j in 1:M
@@ -123,7 +124,7 @@ end
 @muladd function perform_step!(integrator, cache::SDCConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
     (; nlsolvers, tab, solver_index) = cache
-    (; nodes, weights, Q, QΔ) = tab
+    (; nodes, weights, Q) = tab
     alg = unwrap_alg(integrator, true)
     M = length(nodes)
     stats = integrator.stats
@@ -136,7 +137,8 @@ end
     adaptive = integrator.opts.adaptive
     u = adaptive ? sdc_step_update(uprev, weights, zk, ulast, alg.step_update) : uprev
     ulow = u
-    for _ in 1:(alg.num_sweeps)
+    for sweep in 1:(alg.num_sweeps)
+        QΔ = sdc_qdelta_for(tab, sweep)
         for m in 1:M
             tmp = uprev
             for j in 1:M
