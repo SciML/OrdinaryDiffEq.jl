@@ -12,7 +12,12 @@ using SciMLBase, Test
     @test length(documented) > 50
 
     exported = setdiff(names(SciMLBase), [:SciMLBase])
-    @test isempty(setdiff(documented, exported))
+    is_scimlbase_api(name) = @static if isdefined(Base, :ispublic)
+        Base.ispublic(SciMLBase, name)
+    else
+        isdefined(SciMLBase, name)
+    end
+    @test all(is_scimlbase_api, documented)
 
     common_interface = read(
         joinpath(repo_dir, "docs", "src", "api", "common_interface.md"), String
