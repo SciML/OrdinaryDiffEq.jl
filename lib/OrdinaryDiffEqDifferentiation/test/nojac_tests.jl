@@ -293,7 +293,7 @@ end
 
     alg = prepare_alg(TRBDF2(linsolve = KrylovJL_GMRES()), ones(n), SciMLBase.NullParameters(), prob)
     @test !(alg.autodiff isa AutoSparse)
-    @test_nowarn init(prob, TRBDF2(linsolve = KrylovJL_GMRES()); abstol = 1e-8, reltol = 1e-8)
+    @test_nowarn init(prob, TRBDF2(linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = 1.0e-8)
 end
 
 @testset "get_fresh_jacobian keeps a sparse J's pattern" begin
