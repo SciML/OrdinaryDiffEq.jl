@@ -1,8 +1,14 @@
+using Pkg
 using SciMLTesting, OrdinaryDiffEq
 using ADTypes, CommonSolve, DiffEqBase, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     SciMLBase, SciMLLogging
 using Test
+
+@testset "GPU test group timeout" begin
+    groups = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "test_groups.toml"))
+    @test groups["GPU"]["timeout"] >= 120
+end
 
 @testset "PureKLU-compatible MuladdMacro floors" begin
     lib_dir = joinpath(@__DIR__, "..", "..", "lib")
