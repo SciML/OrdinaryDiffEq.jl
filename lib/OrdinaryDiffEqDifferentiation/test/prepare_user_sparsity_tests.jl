@@ -85,4 +85,3 @@ end
     @test prob.f.sparsity === Jop
     @test OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob) === ad_alg
 end
-
