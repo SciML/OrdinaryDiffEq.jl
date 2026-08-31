@@ -118,6 +118,68 @@ end
     @test_nowarn solve(prob, FBDF())
 end
 
+@testset "SBDF" begin
+    # Regression for #4329: SBDF2/3/4 silently ran below their nominal order.
+    # `measured_order` runs a fixed-dt, non-adaptive solve at two step sizes
+    # and infers the order from the error ratio (test_convergence's
+    # simulation machinery assumes a plain ODEProblem; SBDF is IMEX-only).
+    # Errors are reduced with `maximum(abs, ...)` so this works for both the
+    # scalar and vector (in-place) problems below.
+    exact(t) = exp(-t)
+    function measured_order(prob, alg, dts)
+        errs = [
+            maximum(abs, solve(prob, alg; dt, adaptive = false).u[end] .- exact(prob.tspan[2]))
+                for dt in dts
+        ]
+        return log(errs[1] / errs[2]) / log(dts[1] / dts[2])
+    end
+
+    @testset "pure-BDF equivalent (f2 ≡ 0), out-of-place" begin
+        prob = SplitODEProblem((u, p, t) -> -u, (u, p, t) -> 0.0, 1.0, (0.0, 1.0))
+        for (alg, order) in ((SBDF2(), 2), (SBDF3(), 2), (SBDF4(), 2))
+            # Capped at 2 regardless of alg.order: the first alg.order - 1
+            # steps bootstrap through the lower-order family members (no
+            # trusted multi-point history exists yet), and the first step's
+            # O(dt^2) local error survives in the global error for every
+            # later step -- this is expected multistep start-up behavior,
+            # not a defect (see #4329's "related observations").
+            @test measured_order(prob, alg, (1.0e-2, 1.0e-3)) ≈ order atol = 0.2
+        end
+    end
+
+    @testset "genuine IMEX split, out-of-place and in-place" begin
+        # The first step happens to be the trapezoidal rule on an equal
+        # split, so the start-up cap here is 3, not 2.
+        prob = SplitODEProblem((u, p, t) -> -0.5 * u, (u, p, t) -> -0.5 * u, 1.0, (0.0, 1.0))
+        prob_ip = SplitODEProblem(
+            (du, u, p, t) -> (du .= -0.5 .* u; nothing),
+            (du, u, p, t) -> (du .= -0.5 .* u; nothing),
+            [1.0], (0.0, 1.0)
+        )
+        for (p, order) in ((prob, 2), (prob_ip, 2))
+            @test measured_order(p, SBDF2(), (1.0e-2, 1.0e-3)) ≈ order atol = 0.2
+        end
+        for p in (prob, prob_ip)
+            @test measured_order(p, SBDF3(), (1.0e-2, 1.0e-3)) ≈ 3 atol = 0.2
+            @test measured_order(p, SBDF4(), (1.0e-2, 1.0e-3)) ≈ 3 atol = 0.2
+        end
+    end
+
+    @testset "step-size change does not corrupt the fixed-coefficient history" begin
+        # A clipped final step (dt landing just short of tspan[2]) must not
+        # pollute the result -- this reproduces the ~4200x error inflation
+        # from #4329 (defect 3) if unfixed.
+        prob = SplitODEProblem((u, p, t) -> -u, (u, p, t) -> 0.0, 1.0, (0.0, 2.0))
+        err_clipped = abs(
+            solve(prob, SBDF2(); dt = 1.0e-3, adaptive = false).u[end] - exact(2.0)
+        )
+        err_exact_binary = abs(
+            solve(prob, SBDF2(); dt = 2.0^-10, adaptive = false).u[end] - exact(2.0)
+        )
+        @test err_clipped < 5 * err_exact_binary
+    end
+end
+
 @testset "Static Array (SVector) Tests" begin
     f_oop(u, p, t) = -0.5 * u
     u0_sv = SVector(1.0, 2.0)
