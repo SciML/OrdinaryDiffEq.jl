@@ -28,6 +28,10 @@ function alg_order(alg::SDC)
     return max(1, min(sdc_iteration_order(alg), coll))
 end
 
+# The embedded solution is the step update formed one sweep earlier, so it is
+# one order lower until the collocation ceiling flattens both.
+alg_adaptive_order(alg::SDC) = max(1, alg_order(alg) - 1)
+
 """
     sdc_validate(num_nodes, quad_type, num_sweeps, step_update)
 
