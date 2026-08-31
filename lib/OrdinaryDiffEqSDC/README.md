@@ -59,16 +59,22 @@ using OrdinaryDiffEqSDC
 prob = ODEProblem((du, u, p, t) -> (du[1] = -u[2]; du[2] = u[1]), [1.0, 0.0], (0.0, 2π))
 
 # 4th order: 3 Radau-right nodes, 3 backward-Euler sweeps, quadrature update
-sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 3); dt = 0.1, adaptive = false)
+sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 3); abstol = 1e-8, reltol = 1e-8)
 
 # 7th order, and a much better preconditioner for stiff problems
 sol = solve(
     prob, SDC(num_nodes = 4, num_sweeps = 6, sweeper = :LU);
-    dt = 0.1, adaptive = false
+    abstol = 1e-10, reltol = 1e-10
 )
 ```
 
-Fixed step size only — pass `adaptive = false` and a `dt`.
+Adaptive. The embedded solution is the step update formed from the previous
+sweep, so the estimate costs a few `axpy`s. Because it measures how far the
+iteration is from the collocation solution rather than how far that solution is
+from the truth, a stiff problem needs enough sweeps for the iteration to
+converge before the step size becomes accuracy limited; too few sweeps and the
+estimate sets the step size instead. Pass `adaptive = false` with a `dt` for
+fixed steps.
 
 ## Sweepers
 

@@ -14,9 +14,42 @@
 
 function initialize!(integrator, cache::Union{SDCCache, SDCConstantCache}) end
 
+"""
+    sdc_step_update!(u, uprev, weights, z, ulast, step_update)
+
+Form the step solution from the current node rates, in place.
+"""
+function sdc_step_update!(u, uprev, weights, z, ulast, step_update)
+    if step_update === SDCStepUpdate.Quadrature
+        @.. broadcast = false u = uprev
+        for m in eachindex(weights)
+            iszero(weights[m]) && continue
+            @.. broadcast = false u = u + weights[m] * z[m]
+        end
+    else
+        @.. broadcast = false u = ulast
+    end
+    return u
+end
+
+"""
+    sdc_step_update(uprev, weights, z, ulast, step_update)
+
+Out-of-place counterpart of [`sdc_step_update!`](@ref).
+"""
+function sdc_step_update(uprev, weights, z, ulast, step_update)
+    step_update === SDCStepUpdate.Quadrature || return ulast
+    u = uprev
+    for m in eachindex(weights)
+        iszero(weights[m]) && continue
+        u = @.. broadcast = false u + weights[m] * z[m]
+    end
+    return u
+end
+
 @muladd function perform_step!(integrator, cache::SDCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, ubuf, k, nlsolvers, tab, solver_index) = cache
+    (; tmp, ubuf, ulow, atmp, k, nlsolvers, tab, solver_index) = cache
     (; nodes, weights, Q, QΔ) = tab
     alg = unwrap_alg(integrator, true)
     M = length(nodes)
@@ -32,6 +65,10 @@ function initialize!(integrator, cache::Union{SDCCache, SDCConstantCache}) end
     @.. broadcast = false ubuf = uprev
 
     zk, zk1 = cache.z, cache.znew
+    adaptive = integrator.opts.adaptive
+    # The step update after sweep k-1 is the embedded solution, so it is formed
+    # every sweep and kept one behind.
+    adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
     for _ in 1:(alg.num_sweeps)
         for m in 1:M
             @.. broadcast = false tmp = uprev
@@ -66,16 +103,19 @@ function initialize!(integrator, cache::Union{SDCCache, SDCConstantCache}) end
             end
         end
         zk, zk1 = zk1, zk
+        adaptive && @.. broadcast = false ulow = u
+        adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
     end
 
-    if alg.step_update === SDCStepUpdate.Quadrature
-        @.. broadcast = false u = uprev
-        for m in 1:M
-            iszero(weights[m]) && continue
-            @.. broadcast = false u = u + weights[m] * zk[m]
-        end
-    else
-        @.. broadcast = false u = ubuf
+    adaptive || sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
+
+    if adaptive
+        @.. broadcast = false tmp = u - ulow
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     return nothing
 end
@@ -93,6 +133,9 @@ end
     OrdinaryDiffEqCore.increment_nf!(stats, M)
     ulast = uprev
 
+    adaptive = integrator.opts.adaptive
+    u = adaptive ? sdc_step_update(uprev, weights, zk, ulast, alg.step_update) : uprev
+    ulow = u
     for _ in 1:(alg.num_sweeps)
         for m in 1:M
             tmp = uprev
@@ -125,17 +168,22 @@ end
             end
         end
         zk, zk1 = zk1, zk
+        if adaptive
+            ulow = u
+            u = sdc_step_update(uprev, weights, zk, ulast, alg.step_update)
+        end
     end
 
-    integrator.u = if alg.step_update === SDCStepUpdate.Quadrature
-        unew = uprev
-        for m in 1:M
-            iszero(weights[m]) && continue
-            unew = @.. broadcast = false unew + weights[m] * zk[m]
-        end
-        unew
-    else
-        ulast
+    adaptive || (u = sdc_step_update(uprev, weights, zk, ulast, alg.step_update))
+    integrator.u = u
+
+    if adaptive
+        utilde = @.. broadcast = false u - ulow
+        atmp = calculate_residuals(
+            utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     return nothing
 end
