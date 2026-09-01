@@ -219,3 +219,13 @@ end
     @test sol.u[end] isa ArrayPartition
     @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
 end
+
+@testset "QNDF2 step size control does not thrash (#4332)" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
+    for alg in (QNDF2(), QBDF2())
+        sol = solve(prob, alg, reltol = 1.0e-8, abstol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject < sol.stats.naccept / 10
+        @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
+end
