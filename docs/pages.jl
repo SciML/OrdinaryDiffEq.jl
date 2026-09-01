@@ -1,6 +1,7 @@
 pages = [
     "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
     "Usage" => "usage.md",
+    "Stiff PDEs on the GPU" => "gpu_sparse_jacobians.md",
     "Explicit Solvers" => [
         "explicit/Tsit5.md",
         "explicit/Verner.md",
