@@ -619,7 +619,10 @@ function apply_callback!(
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
                 if callback isa VectorContinuousCallback
-                    SciMLBase.save_discretes!(integrator, callback, event_idx)
+                    @inbounds for i in 1:callback.len
+                        iszero(integrator.callback_cache.simultaneous_events[i]) && continue
+                        SciMLBase.save_discretes!(integrator, callback, i)
+                    end
                 else
                     SciMLBase.save_discretes!(integrator, callback)
                 end
