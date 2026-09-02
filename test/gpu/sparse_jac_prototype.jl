@@ -6,6 +6,7 @@ using OrdinaryDiffEqRosenbrock: Rosenbrock23
 using OrdinaryDiffEqBDF: FBDF
 using LinearSolve: LUFactorization, KrylovJL_GMRES
 using SciMLBase: successful_retcode
+using OrdinaryDiffEqDifferentiation: jacobian2W!, _use_allocating_sparse_W_path
 
 #=
 A stiff ODE with a sparse GPU `jac_prototype`. `jacobian2W!` forms W = J - M/dtgamma;
@@ -76,4 +77,32 @@ reference = solve(
             @test norm(Array(sol.u[end]) - reference) / norm(reference) < 1.0e-2
         end
     end
+end
+
+# A prototype whose diagonal is not fully stored: `W = J - M/dtgamma` fills those
+# entries in, so the sum has more stored entries than the preallocated `W`. Both
+# patterns used above store the whole diagonal, so this case needs its own test.
+@testset "prototype with a structural zero on the diagonal (#4452)" begin
+    m = 6
+    Jcpu = sparse(
+        [1, 2, 3, 4, 5, 6, 1, 2], [1, 2, 4, 4, 5, 6, 2, 1],
+        [2.0, 3.0, 1.0, 4.0, 5.0, 6.0, 0.5, 0.7], m, m
+    )
+    stored = count(i -> Jcpu[i, i] != 0, 1:m)
+    @test stored < m          # the point of the test is that some are missing
+
+    dtgamma = 0.25
+    reference = Matrix(Jcpu) - inv(dtgamma) * Matrix(I, m, m)
+
+    Jgpu = CUSPARSE.CuSparseMatrixCSR(CUSPARSE.CuSparseMatrixCSC(Jcpu))
+    W = CUSPARSE.CuSparseMatrixCSR(CUSPARSE.CuSparseMatrixCSC(copy(Jcpu)))
+    @test _use_allocating_sparse_W_path(W)
+
+    jacobian2W!(W, I, dtgamma, Jgpu)
+
+    # Reading back is allowed to index scalars; it is the check, not the code
+    # under test. What matters is that the filled-in diagonal is present and right.
+    got = CUDA.@allowscalar Matrix(CUSPARSE.CuSparseMatrixCSC(W))
+    @test nnz(W) == nnz(Jcpu) + (m - stored)
+    @test got ≈ reference
 end
