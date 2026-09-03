@@ -19,8 +19,17 @@ callback = ContinuousCallback((u, t, integrator) -> t - 0.7, terminate!)
 
             @test sol.t[end] ≈ 0.7 atol = 1.0e-12
             @test sol.u[end] ≈ [exp(-0.7), 1-exp(-0.7)] atol = 1.0e-4
+            t_dense = range(0, stop=sol.t[end], length=101)
             @testset "Dense interpolation" begin
-                t_dense = range(0, stop=sol.t[end], length=101)
+                for ti in t_dense
+                    @test sol(ti) ≈ [exp.(-ti), 1 .- exp.(-ti)] atol = 1.0e-2
+                end
+            end
+
+            # With saveat:
+            t_dense = range(0, stop=0.7, length=101)
+            sol = solve(prob, alg; callback, initializealg = CheckInit(), saveat=t_dense)
+            @testset "Dense saveat" begin
                 for ti in t_dense
                     @test sol(ti) ≈ [exp.(-ti), 1 .- exp.(-ti)] atol = 1.0e-2
                 end
@@ -37,6 +46,14 @@ callback = ContinuousCallback((u, t, integrator) -> t - 0.7, terminate!)
             @test sol(tmiddle)[1] ≈ exp(tmiddle) rtol = 1.0e-2
             @testset "Dense interpolation" begin
                 t_dense = range(0, stop=sol.t[end], length=101)
+                for ti in t_dense
+                    @test sol(ti) ≈ [exp.(ti)] atol = 1.0e-2
+                end
+            end
+            # With saveat:
+            t_dense = range(0, stop=0.7, length=101)
+            sol = solve(prob, alg; callback, saveat=t_dense)
+            @testset "Dense saveat" begin
                 for ti in t_dense
                     @test sol(ti) ≈ [exp.(ti)] atol = 1.0e-2
                 end
