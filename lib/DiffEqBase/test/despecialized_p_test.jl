@@ -207,6 +207,10 @@ end
     sde_prob = SDEProblem(sde_f, [1.0], (0.0, 1.0), sde_p)
     sde_concrete = concretize(sde_prob)
     @test sde_concrete.p isa SciMLBase.DespecializedParameters
+    @test SciMLBase.specialization(sde_concrete.f) === SciMLBase.AutoDespecialize
+    sde_reconcrete = concretize(sde_concrete)
+    @test typeof(sde_reconcrete.f) === typeof(sde_concrete.f)
+    @test typeof(sde_reconcrete) === typeof(sde_concrete)
     sde_concrete.f(du, [1.0], sde_concrete.p, 0.0)
     @test du == [-0.5]
     @test seen_sde_drift_parameter[] === DynamicSDEParameters
