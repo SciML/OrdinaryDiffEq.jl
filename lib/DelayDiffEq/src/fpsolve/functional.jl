@@ -1,3 +1,14 @@
+function recompute_history_step!(integrator::DDEIntegrator)
+    was_discontinuous = integrator.derivative_discontinuity
+    SciMLBase.derivative_discontinuity!(integrator, true)
+    try
+        OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, false)
+    finally
+        SciMLBase.derivative_discontinuity!(integrator, was_discontinuous)
+    end
+    return nothing
+end
+
 function OrdinaryDiffEqNonlinearSolve.compute_step!(
         fpsolver::FPSolver{<:NLFunctional},
         integrator::DDEIntegrator
@@ -86,7 +97,7 @@ function compute_step_fixedpoint!(
     ode_integrator = integrator.integrator
 
     # recompute next integration step
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, true)
+    recompute_history_step!(integrator)
 
     # compute residuals
     dz = integrator.u .- ode_integrator.u
@@ -117,7 +128,7 @@ function compute_step_fixedpoint!(
     ode_integrator = integrator.integrator
 
     # recompute next integration step
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, true)
+    recompute_history_step!(integrator)
 
     # compute residuals
     @.. dz = integrator.u - ode_integrator.u

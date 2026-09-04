@@ -120,6 +120,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     @time @safetestset "DDE/SDIRK stage-1 tmp aliasing" begin
         include("regression/dde_sdirk_stage1_tmp_aliasing.jl")
     end
+    @time @safetestset "DDE/SDIRK history recomputation" begin
+        include("regression/dde_sdirk_history_recompute.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "SDDE"
