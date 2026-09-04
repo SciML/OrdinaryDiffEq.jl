@@ -920,7 +920,7 @@ function WorkPrecisionSet(
     # Now time it
     _abstols = [get(setups[k], :abstols, abstols) for k in 1:N]
     _reltols = [get(setups[k], :reltols, reltols) for k in 1:N]
-    _dts = [get(setups[k], :dts, zeros(length(_abstols))) for k in 1:N]
+    _dts = [get(setups[k], :dts, zeros(length(_abstols[k]))) for k in 1:N]
     for k in 1:N
         # precompile
         GC.gc()
@@ -1003,7 +1003,7 @@ function WorkPrecisionSet(
     # First calculate all of the errors
     _abstols = [get(setups[k], :abstols, abstols) for k in 1:N]
     _reltols = [get(setups[k], :reltols, reltols) for k in 1:N]
-    _dts = [get(setups[k], :dts, zeros(length(_abstols))) for k in 1:N]
+    _dts = [get(setups[k], :dts, zeros(length(_abstols[k]))) for k in 1:N]
     for k in 1:N
         filtered_setup = filter(p -> p.first in SciMLBase.allowedkeywords, setups[k])
 
