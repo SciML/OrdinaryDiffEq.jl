@@ -68,12 +68,16 @@ end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractSDEProblem, ::Nothing) = true
 
+# Avoid inferring every concrete problem through the default-algorithm forwarding path.
+const _default_sde_init_dispatch = Ref{Function}(DiffEqBase.__init)
+const _default_sde_solve_dispatch = Ref{Function}(DiffEqBase.__solve)
+
 # Dispatch for __init with Nothing algorithm - use default
 function DiffEqBase.__init(
         prob::SciMLBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
     )
     alg = default_algorithm(prob; kwargs...)
-    return DiffEqBase.__init(prob, alg, args...; kwargs...)
+    return _default_sde_init_dispatch[](prob, alg, args...; kwargs...)
 end
 
 # Dispatch for __solve with Nothing algorithm - use default
@@ -81,5 +85,5 @@ function DiffEqBase.__solve(
         prob::SciMLBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
     )
     alg = default_algorithm(prob; kwargs...)
-    return DiffEqBase.__solve(prob, alg, args...; kwargs...)
+    return _default_sde_solve_dispatch[](prob, alg, args...; kwargs...)
 end
