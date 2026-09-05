@@ -27,10 +27,10 @@ using Statistics: mean, std
 
 import Base: length
 
-# These problem/solution/algorithm abstracts and `@def` are owned by SciMLBase but
-# not yet declared `public` there; accessed via SciMLBase (their owner).
+# These problem/solution/algorithm abstracts are owned by SciMLBase but not yet declared
+# `public` there; accessed via SciMLBase (their owner).
 using SciMLBase: AbstractDDEAlgorithm, AbstractODESolution, AbstractRODEProblem,
-    AbstractSDDEProblem, AbstractBVProblem, @def
+    AbstractSDDEProblem, AbstractBVProblem
 # `ConvergenceSetup` and `ODERKTableau` are defined and owned only in DiffEqBase
 # (not re-exported by SciMLBase) and are not declared `public` there.
 using DiffEqBase: ConvergenceSetup, ODERKTableau
