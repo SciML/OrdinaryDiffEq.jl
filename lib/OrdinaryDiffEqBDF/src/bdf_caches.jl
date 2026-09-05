@@ -307,6 +307,7 @@ end
     uprev3::uType
     fsalfirst::rateType
     D::coefType1
+    Dtmp::coefType1
     D2::coefType2
     R::coefType
     U::coefType
@@ -359,12 +360,15 @@ function alg_cache(
     fsalfirst = zero(rate_prototype)
 
     D = Array{typeof(u)}(undef, 1, 2)
+    Dtmp = Array{typeof(u)}(undef, 1, 2)
     D2 = Array{typeof(u)}(undef, 1, 3)
     R = fill(zero(t), 2, 2)
     U = fill(zero(t), 2, 2)
 
     D[1] = zero(u)
     D[2] = zero(u)
+    Dtmp[1] = zero(u)
+    Dtmp[2] = zero(u)
     D2[1] = zero(u)
     D2[2] = zero(u)
     D2[3] = zero(u)
@@ -380,7 +384,7 @@ function alg_cache(
     dtₙ₋₂ = zero(dt)
 
     return QNDF2Cache(
-        uprev2, uprev3, fsalfirst, D, D2, R, U, atmp,
+        uprev2, uprev3, fsalfirst, D, Dtmp, D2, R, U, atmp,
         utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!
     )
 end
