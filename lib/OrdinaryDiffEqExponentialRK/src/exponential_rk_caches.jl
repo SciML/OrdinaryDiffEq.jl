@@ -103,6 +103,48 @@ for (Alg, Cache) in [
 end
 
 """
+    _cached_ishermitian(f) -> Union{Bool,Nothing}
+
+Symmetry of the ExpRK linear operator, or `nothing` when it cannot safely be cached.
+
+`arnoldi!` takes `ishermitian` as a keyword argument whose default is
+`LinearAlgebra.ishermitian(A)`, so the property is re-derived on *every* call -- five times per
+`ETDRK4` step. For a sparse symmetric operator that check is a full `O(nnz)` scan (it can only
+exit early on finding an asymmetry), costing roughly 10% of a Krylov build at `m = 15`.
+
+A `SplitFunction`'s linear part is fixed for the whole solve, so the answer can be computed
+once. Everything else returns `nothing`, and `arnoldi!` derives the flag itself as before.
+"""
+function _cached_ishermitian(f)
+    isa(f, SplitFunction) || return nothing
+    # `f.f1.f` is the same object handed to `arnoldi!` in `perform_step!`. It is usually a
+    # `MatrixOperator` rather than a bare `AbstractMatrix`, so do not require the latter --
+    # just ask whether `ishermitian` is defined for it, exactly as `arnoldi!` would.
+    A = f.f1.f
+    applicable(ishermitian, A) || return nothing
+    return ishermitian(A)
+end
+
+"""
+    _arnoldi_kwargs(alg, A, integrator, herm)
+
+Keyword bundle shared by the `arnoldi!` calls within one `perform_step!`.
+
+`herm` is the flag cached by [`_cached_ishermitian`](@ref), or `nothing` when it could not be
+cached, in which case it is derived here exactly as `arnoldi!` would have. The returned
+`NamedTuple` always has the same shape, so the call sites stay type-stable.
+"""
+@inline function _arnoldi_kwargs(alg, A, integrator, herm)
+    ish = herm === nothing ? ishermitian(A) : herm
+    return (
+        m = min(alg.m, size(A, 1)),
+        opnorm = integrator.opts.internalopnorm,
+        iop = alg.iop,
+        ishermitian = ish,
+    )
+end
+
+"""
     alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t, dt, p, du1, tmp, dz, plist)
 
 Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
@@ -139,7 +181,7 @@ function alg_cache_expRK(
         Ks = KrylovSubspace{T}(n, m)
         phiv_cache = PhivCache(u, m, maximum(plist))
         ws = [Matrix{T}(undef, n, plist[i] + 1) for i in 1:length(plist)]
-        KsCache = (Ks, phiv_cache, ws)
+        KsCache = (Ks, phiv_cache, ws, _cached_ishermitian(f))
     else
         KsCache = nothing
         # Precompute the operators
@@ -859,7 +901,9 @@ function alg_cache_exprb(
     Ks = KrylovSubspace{T}(n, m)
     phiv_cache = PhivCache(u, m, maximum(plist))
     ws = [Matrix{T}(undef, n, plist[i] + 1) for i in 1:length(plist)]
-    KsCache = (Ks, phiv_cache, ws)
+    # `nothing`: the exponential Rosenbrock methods rebuild the Jacobian every step, so its
+    # symmetry cannot be cached across the solve. `_arnoldi_kwargs` derives it per call.
+    KsCache = (Ks, phiv_cache, ws, nothing)
     return uf, jac_config, J, KsCache
 end
 
