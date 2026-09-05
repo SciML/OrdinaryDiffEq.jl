@@ -1,7 +1,14 @@
 using Random
 using StochasticDiffEq, DiffEqDevTools, Test
-using SDEProblemLibrary: prob_sde_additivesystem
+using SDEProblemLibrary: prob_sde_additivesystem, prob_sde_linear
 using SciMLLogging: None
+
+linear_prob = remake(prob_sde_linear, tspan = (0.0, 0.1))
+wp_default_dts = WorkPrecisionSet(
+    linear_prob, [1.0e-2, 1.0e-3], [1.0e-2, 1.0e-3], [Dict(:alg => SRIW1())];
+    numruns = 1, numruns_error = 1, error_estimate = :l2
+)
+@test wp_default_dts.wps[1].dts == zeros(2)
 
 prob = prob_sde_additivesystem
 prob = SDEProblem(prob.f, prob.g, prob.u0, (0.0, 0.1), prob.p)
