@@ -679,12 +679,7 @@ end
 Counters a nonlinear solve accumulates privately before folding them into
 `integrator.stats`.
 
-The counters on `integrator.stats` are plain `Int`s updated with `+=`. A solver
-that runs several nonlinear solves concurrently (`PDIRK44` today) has every one
-of those solves updating the same fields from a different task, which loses
-increments and makes the reported statistics differ from run to run. Buffering
-per solve moves the synchronisation from once per right-hand side evaluation to
-once per nonlinear solve, where it costs nothing measurable.
+The parent task merges these counters after all concurrent nonlinear solves join.
 """
 mutable struct StatsDelta
     nf::Int
@@ -695,9 +690,6 @@ mutable struct StatsDelta
     nnonlinconvfail::Int
 end
 StatsDelta() = StatsDelta(0, 0, 0, 0, 0, 0)
-
-"""Guards the fold of a [`StatsDelta`](@ref) into the shared `integrator.stats`."""
-const STATS_DELTA_LOCK = ReentrantLock()
 
 """
     stats_sink(cache)
@@ -731,20 +723,16 @@ for (name, field) in (
     doc = "    $name(integrator, cache, amt = 1)\n\nAdd `amt` to the `$field` counter, into the cache's " *
         "[`StatsDelta`](@ref) when it has one and straight into `integrator.stats` otherwise."
     @eval begin
-        @inline function $name(integrator, cache, amt = 1)
-            sink = stats_sink(cache)
-            if sink === nothing
-                SciMLBase.has_stats(integrator) &&
-                    setfield!(
-                    integrator.stats, $(QuoteNode(field)),
-                    getfield(integrator.stats, $(QuoteNode(field))) + amt
-                )
-            else
-                setfield!(
-                    sink, $(QuoteNode(field)),
-                    getfield(sink, $(QuoteNode(field))) + amt
-                )
-            end
+        @inline $name(integrator, cache, amt = 1) = $name(integrator, stats_sink(cache), amt)
+        @inline function $name(integrator, ::Nothing, amt = 1)
+            SciMLBase.has_stats(integrator) && setfield!(
+                integrator.stats, $(QuoteNode(field)),
+                getfield(integrator.stats, $(QuoteNode(field))) + amt
+            )
+            return nothing
+        end
+        @inline function $name(integrator, sink::StatsDelta, amt = 1)
+            setfield!(sink, $(QuoteNode(field)), getfield(sink, $(QuoteNode(field))) + amt)
             return nothing
         end
     end
@@ -752,39 +740,25 @@ for (name, field) in (
 end
 
 """
-    drain_stats_delta!(integrator, cache)
+    merge_stats_deltas!(stats, nlsolvers)
 
-Fold a cache's buffered counts into `integrator.stats` and reset them. Called
-once per nonlinear solve, under a lock, so concurrent solves cannot lose
-increments.
+Fold each nonlinear solver's private statistics into `stats` in iteration order,
+resetting the buffers. Only the parent task may call this, after all workers join,
+including when a nonlinear solve failed.
 """
-function drain_stats_delta!(integrator, cache)
-    sink = stats_sink(cache)
-    sink === nothing && return nothing
-    (
-        iszero(sink.nf) && iszero(sink.nw) && iszero(sink.nsolve) && iszero(sink.njacs) &&
-            iszero(sink.nnonliniter) && iszero(sink.nnonlinconvfail)
-    ) && return nothing
-    if SciMLBase.has_stats(integrator)
-        stats = integrator.stats
-        if Threads.nthreads() == 1
-            fold_stats_delta!(stats, sink)
-        else
-            lock(() -> fold_stats_delta!(stats, sink), STATS_DELTA_LOCK)
-        end
+function merge_stats_deltas!(stats, nlsolvers)
+    for nlsolver in nlsolvers
+        fold_stats_delta!(stats, stats_sink(stats_owner(nlsolver)))
     end
-    sink.nf = sink.nw = sink.nsolve = sink.njacs = 0
-    sink.nnonliniter = sink.nnonlinconvfail = 0
     return nothing
 end
 
-function fold_stats_delta!(stats, sink)
-    stats.nf += sink.nf
-    stats.nw += sink.nw
-    stats.nsolve += sink.nsolve
-    stats.njacs += sink.njacs
-    stats.nnonliniter += sink.nnonliniter
-    stats.nnonlinconvfail += sink.nnonlinconvfail
+fold_stats_delta!(stats, ::Nothing) = nothing
+function fold_stats_delta!(stats, sink::StatsDelta)
+    for field in fieldnames(StatsDelta)
+        setfield!(stats, field, getfield(stats, field) + getfield(sink, field))
+        setfield!(sink, field, 0)
+    end
     return nothing
 end
 

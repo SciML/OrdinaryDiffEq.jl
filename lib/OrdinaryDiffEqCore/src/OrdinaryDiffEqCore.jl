@@ -440,7 +440,7 @@ include("precompilation_setup.jl")
             :is_composite_algorithm, :isdefaultalg, :isdiscretecache, :isdtchangeable, :isfirstcall,
             :isfirststage, :isfsal, :isimplicit, :isJcurrent, :is_mass_matrix_alg, :ismultistep,
             :issplit, :isthreaded, :StatsDelta, :stats_sink, :stats_owner,
-            :charge_nf!, :charge_nw!, :charge_nsolve!, :charge_njacs!, :charge_nnonliniter!, :charge_nnonlinconvfail!, :drain_stats_delta!, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
+            :charge_nf!, :charge_nw!, :charge_nsolve!, :charge_njacs!, :charge_nnonliniter!, :charge_nnonlinconvfail!, :merge_stats_deltas!, :isWmethod, :MethodType, :NewtonAlgorithm, :nlsolve_f,
             :NLStatus, :NORDSIECK_MULTISTEP, :_ode_addsteps!, :ode_addsteps!, :ODEIntegrator, :_ode_interpolant,
             :OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, :OrdinaryDiffEqAdaptiveAlgorithm, :OrdinaryDiffEqAdaptiveExponentialAlgorithm, :OrdinaryDiffEqAdaptiveImplicitAlgorithm, :OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm, :OrdinaryDiffEqAdaptivePartitionedAlgorithm,
             :OrdinaryDiffEqAlgorithm, :OrdinaryDiffEqCache, :OrdinaryDiffEqCompositeAlgorithm, :OrdinaryDiffEqConstantCache, :OrdinaryDiffEqExponentialAlgorithm, :OrdinaryDiffEqImplicitAlgorithm,

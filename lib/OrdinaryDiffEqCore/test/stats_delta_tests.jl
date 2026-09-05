@@ -1,6 +1,6 @@
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: StatsDelta, stats_sink, charge_nf!, charge_nw!,
-    charge_nsolve!, charge_njacs!, drain_stats_delta!
+    charge_nsolve!, charge_njacs!, merge_stats_deltas!
 using SciMLBase
 using SciMLBase: DEStats
 using Test
@@ -38,13 +38,13 @@ end
     @test integrator.stats.nf == 0
     @test integrator.stats.nsolve == 0
 
-    drain_stats_delta!(integrator, cache)
+    merge_stats_deltas!(integrator.stats, (cache,))
     @test integrator.stats.nf == 5
     @test integrator.stats.nw == 2
     @test integrator.stats.nsolve == 7
     @test integrator.stats.njacs == 1
 
-    drain_stats_delta!(integrator, cache)
+    merge_stats_deltas!(integrator.stats, (cache,))
     @test integrator.stats.nf == 5
     @test integrator.stats.nsolve == 7
 end
@@ -58,16 +58,15 @@ end
     @test delta.nf == 4
 end
 
-@testset "concurrent drains do not lose counts" begin
+@testset "workers accumulate privately and the parent merges after joining" begin
     integrator = FakeIntegrator(zeroed())
     caches = [BufferedCache(StatsDelta()) for _ in 1:64]
-    for cache in caches
+    Threads.@threads for cache in caches
         charge_nf!(integrator, cache, 10)
         charge_nsolve!(integrator, cache, 1)
     end
-    Threads.@threads for cache in caches
-        drain_stats_delta!(integrator, cache)
-    end
+    @test integrator.stats.nf == 0
+    merge_stats_deltas!(integrator.stats, caches)
     @test integrator.stats.nf == 640
     @test integrator.stats.nsolve == 64
 end

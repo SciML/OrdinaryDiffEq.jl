@@ -48,11 +48,11 @@ function initialize!(
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
-        integrator.stats.nf += cache.cache.stats.nf + 1
+        charge_nf!(integrator, cache, cache.cache.stats.nf + 1)
         if cache.W === nothing
-            integrator.stats.njacs += cache.cache.stats.njacs
+            charge_njacs!(integrator, cache, cache.cache.stats.njacs)
         end
-        integrator.stats.nsolve += cache.cache.stats.nsolve
+        charge_nsolve!(integrator, cache, cache.cache.stats.nsolve)
     end
 
     if cache.W !== nothing
@@ -115,15 +115,15 @@ function initialize!(
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
-        integrator.stats.nf += cache.cache.stats.nf + 1
+        charge_nf!(integrator, cache, cache.cache.stats.nf + 1)
         # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
         # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
         # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
         # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
         if cache.W === nothing
-            integrator.stats.njacs += cache.cache.stats.njacs
+            charge_njacs!(integrator, cache, cache.cache.stats.njacs)
         end
-        integrator.stats.nsolve += cache.cache.stats.nsolve
+        charge_nsolve!(integrator, cache, cache.cache.stats.nsolve)
     end
 
     nlstep_data = get_nlstep_data(f)
@@ -272,18 +272,18 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
                 if !(p isa SciMLBase.NullParameters)
                     uf.p = p
                 end
-                jacobian!(J, uf, uprev, du1, integrator, jac_config)
+                jacobian!(J, uf, uprev, du1, integrator, jac_config; stats_sink = stats_sink(nlcache))
             end
             # `calc_J!` is bypassed here, so this is the only place the reused-`W`
             # path can record a Jacobian evaluation.
-            integrator.stats.njacs += 1
+            charge_njacs!(integrator, nlcache, 1)
         end
         jacobian2W!(W, mass_matrix, dtgamma, J)
     end
     # No estimator refresh needed: the smoothed estimate reuses the inner solver's own W
     # factorization, which the inner Newton re-factorizes itself when it refreshes W.
     nlcache.W_γdt = dtgamma
-    integrator.stats.nw += 1
+    charge_nw!(integrator, nlcache, 1)
     return nothing
 end
 
@@ -459,7 +459,7 @@ function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma)
     J_new = calc_J(integrator, nlcache)
     nlcache.W[] = J_new - integrator.f.mass_matrix * inv(dtgamma)
     nlcache.W_γdt = dtgamma
-    integrator.stats.nw += 1
+    charge_nw!(integrator, nlcache, 1)
     return nothing
 end
 

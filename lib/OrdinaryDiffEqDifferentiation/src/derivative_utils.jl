@@ -299,13 +299,14 @@ Return a new Jacobian object.
 
 If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
 either automatic or finite differencing will be used depending on the `uf` object of the
-cache. If `next_step`, then it will evaluate the Jacobian at the next step.
+cache. If `next_step`, evaluate the Jacobian at the next step using `next_u` (defaults
+to `integrator.u`). Concurrent callers can supply private state through `next_u`.
 """
-function calc_J(integrator, cache, next_step::Bool = false)
+function calc_J(integrator, cache, next_step::Bool = false; next_u = integrator.u)
     (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
-        uprev = integrator.u
+        uprev = next_u
     end
 
     method = if SciMLBase.has_jac(f)
@@ -383,13 +384,14 @@ Update the Jacobian object `J`.
 
 If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
 either automatic or finite differencing will be used depending on the `cache`.
-If `next_step`, then it will evaluate the Jacobian at the next step.
+If `next_step`, evaluate the Jacobian at the next step using `next_u` (defaults
+to `integrator.u`). Concurrent callers can supply private state through `next_u`.
 """
-function calc_J!(J, integrator, cache, next_step::Bool = false)
+function calc_J!(J, integrator, cache, next_step::Bool = false; next_u = integrator.u)
     (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
-        uprev = integrator.u
+        uprev = next_u
     end
 
     if alg isa DAEAlgorithm
@@ -817,14 +819,15 @@ is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
 
 function calc_W!(
         W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
-        repeat_step, newJW = nothing
+        repeat_step, newJW = nothing; next_u = integrator.u
     )
     (; t, dt, uprev, u, f, p) = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
     if next_step
         t = t + integrator.dt
-        uprev = integrator.u
+        uprev = next_u
+        u = next_u
     end
 
     (; J) = lcache
@@ -899,7 +902,7 @@ function calc_W!(
         elseif W.J !== nothing
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-                (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
+                (new_jac && (calc_J!(W.J, integrator, lcache, next_step; next_u)))
             # A linear solver caching a factorization of J across steps needs to know when
             # J moved; `gamma` it can see for itself.
             new_jac && mark_jacobian_updated!(W)
@@ -925,13 +928,13 @@ function calc_W!(
                 # Fallback: no separated Jacobians available
                 islin, isode = islinearfunction(integrator)
                 islin ? (J = isode ? f.f : f.f1.f) :
-                    (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+                    (new_jac && (calc_J!(J, integrator, lcache, next_step; next_u)))
                 new_W && copyto!(W, J)
             end
         else
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-                (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+                (new_jac && (calc_J!(J, integrator, lcache, next_step; next_u)))
             new_W && jacobian2W!(W, mass_matrix, dtgamma, J)
         end
     end
@@ -950,13 +953,13 @@ function calc_W!(
     return new_jac, new_W
 end
 
-@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step)
+@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step; next_u = integrator.u)
     (; t, uprev, p, f) = integrator
 
     next_step = is_always_new(nlsolver)
     if next_step
         t = t + integrator.dt
-        uprev = integrator.u
+        uprev = next_u
     end
     # Handle Rosenbrock has no nlsolver so passes cache directly
     cache = nlsolver isa OrdinaryDiffEqCache ? nlsolver : nlsolver.cache
@@ -975,14 +978,14 @@ end
     J = nothing
     if cache.W isa StaticWOperator
         charge_nw!(integrator, cache, 1)
-        J = calc_J(integrator, cache, next_step)
+        J = calc_J(integrator, cache, next_step; next_u)
         W = StaticWOperator(J - mass_matrix * inv(dtgamma))
     elseif cache.W isa WOperator
         charge_nw!(integrator, cache, 1)
         J = if islin
             isode ? f.f : f.f1.f
         else
-            calc_J(integrator, cache, next_step)
+            calc_J(integrator, cache, next_step; next_u)
         end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec)
     elseif cache.W isa AbstractSciMLOperator
@@ -999,10 +1002,10 @@ end
             W = dae_jacobian2W(J_u, J_du, cj)
             J = J_u
         elseif isdae
-            J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
+            J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step; next_u)
             W = J
         else
-            J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
+            J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step; next_u)
             W = J - mass_matrix * inv(dtgamma)
 
             if !isa(W, Number)
@@ -1133,20 +1136,22 @@ end
 Recompute/refactorize the nonlinear solver's `W = M/dtgamma - J` when needed for a
 Newton solve, deciding whether the Jacobian and/or the factorization must be
 refreshed (`newJW` can force the decision). No-op for non-Newton solvers.
+For an `always_new` solver, `next_u` supplies private Jacobian evaluation state
+in place of the default `integrator.u`.
 """
-function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
-    return update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
+function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing; next_u = integrator.u)
+    return update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW; next_u)
 end
 
 function update_W!(
         nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
-        repeat_step::Bool, newJW = nothing
+        repeat_step::Bool, newJW = nothing; next_u = integrator.u
     )
     if isnewton(nlsolver)
         new_jac, new_W = calc_W!(
             get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step,
-            newJW
+            newJW; next_u
         )
         if new_W
             @SciMLMessage(
@@ -1161,7 +1166,7 @@ end
 function update_W!(
         nlsolver::AbstractNLSolver,
         integrator::SciMLBase.DEIntegrator{<:Any, false}, cache, dtgamma,
-        repeat_step::Bool, newJW = nothing
+        repeat_step::Bool, newJW = nothing; next_u = integrator.u
     )
     if isnewton(nlsolver)
         isdae = integrator.alg isa DAEAlgorithm
@@ -1219,12 +1224,12 @@ function update_W!(
                     lcache.W = W
                     charge_nw!(integrator, lcache, 1)
                 else
-                    lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
+                    lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step; next_u)
                 end
             end
         else
             if new_W
-                lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
+                lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step; next_u)
             end
         end
         if isdae

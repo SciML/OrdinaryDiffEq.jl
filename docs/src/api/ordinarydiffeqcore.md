@@ -24,7 +24,7 @@ OrdinaryDiffEqCore.charge_nsolve!
 OrdinaryDiffEqCore.charge_njacs!
 OrdinaryDiffEqCore.charge_nnonliniter!
 OrdinaryDiffEqCore.charge_nnonlinconvfail!
-OrdinaryDiffEqCore.drain_stats_delta!
+OrdinaryDiffEqCore.merge_stats_deltas!
 ```
 
 ## Threading options

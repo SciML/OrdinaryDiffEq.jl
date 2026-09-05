@@ -141,12 +141,8 @@ function nlsolve!(
     ndz = one(η)
     for iter in 1:maxiters
         if always_new && isnewton(nlsolver)
-            if ArrayInterface.ismutable(integrator.u)
-                @.. integrator.u = integrator.uprev + nlsolver.γ * nlsolver.z
-            else
-                integrator.u = @.. integrator.uprev + nlsolver.γ * nlsolver.z
-            end
-            update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
+            next_u = newton_jacobian_state!(integrator, nlsolver)
+            update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true); next_u)
         end
         nlsolver.iter = iter
 
@@ -311,11 +307,22 @@ end
 function SciMLBase.postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
     charge_nnonliniter!(integrator, nlsolver.cache, nlsolver.iter)
     nlsolvefail(nlsolver) && charge_nnonlinconvfail!(integrator, nlsolver.cache, 1)
-    # One synchronisation per solve rather than one per right-hand side evaluation.
-    drain_stats_delta!(integrator, nlsolver.cache)
-    integrator.force_stepfail = nlsolvefail(nlsolver)
+    set_stepfail!(integrator, stats_sink(nlsolver.cache), nlsolvefail(nlsolver))
     setfirststage!(nlsolver, false)
     isnewton(nlsolver) && (nlsolver.cache.firstcall = false)
 
     return nlsolver.z
+end
+
+@inline set_stepfail!(integrator, ::Nothing, failed) = integrator.force_stepfail = failed
+@inline set_stepfail!(integrator, ::StatsDelta, failed) = nothing
+
+# Step history can alias integrator.u, so Jacobian iterations need private storage.
+function newton_jacobian_state!(integrator, nlsolver::NLSolver{<:NLNewton, true})
+    @.. nlsolver.cache.ustep = integrator.uprev + nlsolver.γ * nlsolver.z
+    return nlsolver.cache.ustep
+end
+
+function newton_jacobian_state!(integrator, nlsolver::NLSolver{<:NLNewton, false})
+    return @.. integrator.uprev + nlsolver.γ * nlsolver.z
 end
