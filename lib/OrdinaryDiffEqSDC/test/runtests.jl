@@ -14,6 +14,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SDC Tableau Tests" include("sdc_tableau_tests.jl")
     @time @safetestset "SDC Convergence Tests" include("sdc_convergence_tests.jl")
     @time @safetestset "SDC Stiff Tests" include("sdc_stiff_tests.jl")
+    @time @safetestset "SDC Diagonal Sweeper Tests" include("sdc_diagonal_sweeper_tests.jl")
+    @time @safetestset "SDC Adaptive Tests" include("sdc_adaptive_tests.jl")
+    @time @safetestset "SDC Threading Tests" include("sdc_threading_tests.jl")
 end
 
 # Allocation tests must run before JET: JET's static analysis invalidates
