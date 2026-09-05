@@ -237,7 +237,11 @@ function update_fsal!(integrator)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
             if isinplace(integrator.sol.prob)
-                fsalfirst, fsallast = get_fsalfirstlast(integrator.cache, integrator.u)
+                fsalfirst, fsallast = if ReactantCore.within_compile()
+                    get_fsalfirstlast(integrator.cache, integrator.u)
+                else
+                    integrator.fsalfirst, integrator.fsallast
+                end
                 recursivecopy!(fsalfirst, fsallast)
             else
                 integrator.fsalfirst = integrator.fsallast
