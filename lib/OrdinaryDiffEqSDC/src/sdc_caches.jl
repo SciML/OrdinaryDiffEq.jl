@@ -11,11 +11,14 @@ struct SDCConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
     solver_index::Vector{Int}
 end
 
-@cache mutable struct SDCCache{uType, rateType, N, TabType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SDCCache{uType, rateType, uNoUnitsType, N, TabType} <:
+    OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
     ubuf::uType
+    ulow::uType
+    atmp::uNoUnitsType
     k::rateType
     z::Vector{uType}
     znew::Vector{uType}
@@ -65,8 +68,10 @@ function alg_cache(
             Val(true), verbose
         ) for m in 1:M if !iszero(solver_index[m])
     ]
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
     return SDCCache(
-        u, uprev, zero(u), zero(u), zero(rate_prototype),
+        u, uprev, zero(u), zero(u), zero(u), atmp, zero(rate_prototype),
         [zero(u) for _ in 1:M], [zero(u) for _ in 1:M],
         nlsolvers, tab, solver_index
     )
@@ -93,6 +98,6 @@ function alg_cache(
     return SDCConstantCache(nlsolvers, tab, solver_index)
 end
 
-# Needed because the generic `OrdinaryDiffEqNewtonAlgorithm` fallback returns
-# `(cache.nlsolver.tmp, cache.nlsolver.z)`, which assumes a single solver.
+# Needed because the generic `OrdinaryDiffEqNewtonAdaptiveAlgorithm` fallback
+# returns `(cache.nlsolver.tmp, cache.atmp)`, which assumes a single solver.
 SciMLBase.get_tmp_cache(integrator, ::SDC, cache::SDCCache) = (cache.tmp, cache.ubuf)

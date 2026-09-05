@@ -23,7 +23,9 @@ Each sweep raises the order of the method by (at least) one until the order of
 the underlying collocation method is reached, so the accuracy is tuned by
 `num_sweeps` and `num_nodes` rather than by picking a different tableau.
 
-Fixed step size only: pass `adaptive = false` and a `dt`.",
+Adaptive. The embedded estimate is the difference between the step updates
+formed from the last two sweeps, which costs a handful of `axpy`s because both
+iterates are already in the cache.",
     "SDC",
     "Spectral Deferred Correction method.",
     """@article{dutt2000spectral,
@@ -68,7 +70,7 @@ Fixed step size only: pass `adaptive = false` and a `dt`.",
     step_update = SDCStepUpdate.Quadrature,
     """
 )
-struct SDC{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAlgorithm
+struct SDC{AD, F, F2, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
     num_nodes::Int
     node_type::SDCNodes.T
     quad_type::SDCQuadrature.T
