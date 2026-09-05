@@ -1,8 +1,14 @@
+using Pkg
 using SciMLTesting, OrdinaryDiffEq
 using ADTypes, CommonSolve, DiffEqBase, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     SciMLBase, SciMLLogging
 using Test
+
+@testset "GPU test group timeout" begin
+    groups = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "test_groups.toml"))
+    @test groups["GPU"]["timeout"] >= 120
+end
 
 @testset "PureKLU-compatible MuladdMacro floors" begin
     lib_dir = joinpath(@__DIR__, "..", "..", "lib")
@@ -17,7 +23,7 @@ using Test
             occursin(r"(?m)^OrdinaryDiffEqCore = ", project)
         has_muladdmacro && uses_core
     end
-    @test length(projects) == 41
+    @test length(projects) == 42
     for package in projects
         project = read(joinpath(lib_dir, package, "Project.toml"), String)
         floor_match = match(r"(?m)^MuladdMacro = \"([0-9]+\.[0-9]+\.[0-9]+)", project)

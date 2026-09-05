@@ -1,8 +1,22 @@
 using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF
-using NonlinearSolve, SciMLBase, Test
+using NonlinearSolve, NonlinearSolveBase, SciMLBase, Test
 using ADTypes: AutoFiniteDiff, AutoForwardDiff
+using StaticArrays
 
 const NSA = OrdinaryDiffEqNonlinearSolve.NonlinearSolveAlg
+
+struct NoInitPostconditionProbe{A, R} <: NonlinearSolveBase.AbstractNonlinearSolveAlgorithm
+    alg::A
+    seen::R
+end
+NonlinearSolveBase.supports_postcondition(::NoInitPostconditionProbe) = true
+function SciMLBase.__solve(
+        prob::NonlinearProblem, alg::NoInitPostconditionProbe, args...;
+        postcondition = nothing, kwargs...
+    )
+    alg.seen[] |= postcondition !== nothing
+    return solve(prob, alg.alg, args...; kwargs...)
+end
 
 # `u' = -k u` keeps the state inside `[exp(-1), 1]` over `tspan`, while the stage unknown
 # `z` stays within one step of zero. The two ranges do not overlap, which is what lets the
@@ -267,6 +281,18 @@ end
     @test all(v -> exp(-1.0) - 0.05 <= v[1] <= 1.05, seen_u)
 end
 
+@testset "postcondition reaches a no-init inner solve" begin
+    seen = Ref(false)
+    inner = NoInitPostconditionProbe(SimpleNewtonRaphson(), seen)
+    H(u, uprev, p, cache) = u
+    sol = solve(
+        scalar_prob(), ImplicitEuler(nlsolve = NSA(inner; postcondition = H));
+        dt = 0.1, adaptive = false
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test seen[]
+end
+
 @testset "in-place precondition rejects dual-based inner autodiff" begin
     # Dropping `W` reuse leaves the inner solver differentiating the in-place stage
     # residual, which writes through preallocated `Float64` buffers. Better an explanation
@@ -315,6 +341,21 @@ end
     )
     # A corrector does not change the residual, so `W` reuse stays valid.
     @test post.cache.nlsolver.cache.W !== nothing
+
+    static_prob = ODEProblem((u, p, t) -> -u, SVector(1.0), (0.0, 1.0))
+    inner = SimpleNewtonRaphson(autodiff = AutoFiniteDiff())
+    static_plain = init(
+        static_prob, ImplicitEuler(nlsolve = NSA(inner), concrete_jac = true); dt = 0.1
+    )
+    @test static_plain.cache.nlsolver.cache.W isa Ref
+    static_cond = init(
+        static_prob,
+        ImplicitEuler(
+            nlsolve = NSA(inner; precondition = (fu, u, p) -> 2fu), concrete_jac = true
+        );
+        dt = 0.1
+    )
+    @test static_cond.cache.nlsolver.cache.W === nothing
 end
 
 @testset "corrector survives a resize" begin

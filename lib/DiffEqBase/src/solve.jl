@@ -1081,7 +1081,6 @@ function promote_f(
     end
 
     wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
-        f.mass_matrix isa UniformScaling &&
         f.jac === nothing &&
         !(u0 isa SubArray) &&
         (

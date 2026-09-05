@@ -468,6 +468,20 @@ end
 
 # caches
 
+# A rejected nonfinite step can produce a zero residual weight; leave that component unscaled.
+@inline _nonzero_weight(x) = iszero(x) ? one(x) : x
+
+struct _WeightPreconditioner{T}
+    weight::T
+end
+
+Base.eltype(P::_WeightPreconditioner) = eltype(P.weight)
+LinearAlgebra.ldiv!(P::_WeightPreconditioner, x) = ldiv!(x, P, x)
+LinearAlgebra.ldiv!(y, P::_WeightPreconditioner, x) =
+    (y .= x ./ _nonzero_weight.(P.weight))
+LinearAlgebra.mul!(y, P::_WeightPreconditioner, x) =
+    (y .= _nonzero_weight.(P.weight) .* x)
+
 mutable struct NLNewtonCache{
         uType,
         tType,

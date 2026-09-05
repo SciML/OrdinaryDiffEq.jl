@@ -550,7 +550,9 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
         isnewton(nlsolver) || return false, true
         W_iγdt = inv(nlsolver.cache.W_γdt)
         iγdt = inv(nlsolver.γ * integrator.dt)
-        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+        cutoff = integrator.opts.adaptive && !_uses_split_W(alg, integrator.f) ?
+            get_new_W_γdt_cutoff(nlsolver) : zero(get_new_W_γdt_cutoff(nlsolver))
+        smallstepchange = abs(iγdt / W_iγdt - 1) <= cutoff
         return false, !smallstepchange
     end
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize

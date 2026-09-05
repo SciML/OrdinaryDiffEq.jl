@@ -6,30 +6,24 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
-# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
-# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
-# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+# PyCall wrappers may return arrays from `==` (https://github.com/JuliaPy/PyCall.jl/issues/900).
+# Reduce these arrays while preserving scalar Boolean types.
 @inline function _bool_equal(a, b)
     r = a == b
-    return r isa Bool ? r : all(r)
+    return r isa Number ? r : all(r)
 end
 
 @muladd function _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
     )
-    if ReactantCore.within_compile() && g === nothing
-        return _traced_ode_initdt_iip(
-            u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, order, integrator
-        )
-    end
     _tType = eltype(t)
     f = prob.f
     p = integrator.p
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
+    dtmin = _initial_dtmin(t, integrator.opts.dtmin)
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -194,7 +188,7 @@ end
     # Better than checking any(x->any(isnan, x), f₀)
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    if isnan(d₁)
+    if !ReactantCore.within_compile() && isnan(d₁)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
@@ -220,7 +214,7 @@ end
     # end
     dt₀ = min(dt₀, dtmax_tdir)
 
-    if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
+    if !ReactantCore.within_compile() && typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
         # This catches Andreas' non-singular example
         # should act like it's singular
         result_dt = tdir * max(smalldt, dtmin)
@@ -259,7 +253,7 @@ end
     # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
     # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
     # Coerce array-valued equality so the boolean context always receives a Bool.
-    length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
+    !ReactantCore.within_compile() && length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
@@ -288,7 +282,7 @@ end
     # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
 
     max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
+    ReactantCore.@trace track_numbers = false if max_d₁d₂ <= 1 // Int64(10)^(15)
         dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
     else
         dt₁ = convert(
@@ -299,7 +293,12 @@ end
             )
         )
     end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    result_dt = tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    if ReactantCore.within_compile()
+        result_dt = ifelse(_bool_equal(f₀, f₁), tdir * max(dtmin, 100dt₀), result_dt)
+        result_dt = ifelse(isnan(d₁), tdir * dtmin, result_dt)
+    end
+    return result_dt
 end
 
 # ODE iip entry point
@@ -352,18 +351,13 @@ end
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, order, integrator
     )
-    if ReactantCore.within_compile() && g === nothing
-        return _traced_ode_initdt_oop(
-            u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, order, integrator
-        )
-    end
     _tType = eltype(t)
     f = prob.f
     p = prob.p
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
+    dtmin = _initial_dtmin(t, integrator.opts.dtmin)
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -384,7 +378,7 @@ end
     # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
     # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
     # field types cannot sensibly overload (OrdinaryDiffEq #1404).
-    if DiffEqBase.NAN_CHECK(f₀)
+    if !ReactantCore.within_compile() && DiffEqBase.NAN_CHECK(f₀)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
@@ -417,7 +411,7 @@ end
     end
 
     # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
-    if isnan(d₁)
+    if !ReactantCore.within_compile() && isnan(d₁)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
@@ -425,7 +419,7 @@ end
         return tdir * dtmin
     end
 
-    if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
+    ReactantCore.@trace track_numbers = false if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
         dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
@@ -440,7 +434,7 @@ end
     # Just return first guess
     # Avoids AD issues.
     # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
-    _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
+    !ReactantCore.within_compile() && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
@@ -455,7 +449,7 @@ end
     end
 
     max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
+    ReactantCore.@trace track_numbers = false if max_d₁d₂ <= 1 // Int64(10)^(15)
         dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
     else
         dt₁ = _tType(
@@ -465,7 +459,12 @@ end
             )
         )
     end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    result_dt = tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    if ReactantCore.within_compile()
+        result_dt = ifelse(_bool_equal(f₀, f₁), tdir * max(dtmin, 100dt₀), result_dt)
+        result_dt = ifelse(isnan(d₁), tdir * dtmin, result_dt)
+    end
+    return result_dt
 end
 
 # ODE oop entry point
@@ -532,4 +531,12 @@ function ode_determine_initdt(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, effective_order, integrator
     )
+end
+
+function _initial_dtmin(t, dtmin)
+    T = eltype(t)
+    if ReactantCore.within_compile()
+        return max(dtmin, oneunit(t) * eps(T))
+    end
+    return nextfloat(max(dtmin, convert(T, oneunit(t) * eps(SciMLBase.value(t)))))
 end

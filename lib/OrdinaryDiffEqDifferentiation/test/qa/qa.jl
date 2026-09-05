@@ -35,7 +35,7 @@ run_qa(
                 Symbol("@set"),          # Accessors macro re-exported by SciMLBase
                 :AbstractSciMLOperator,  # SciMLOperators
                 # LinearSolve internals
-                :DefaultLinearSolver, :InvPreconditioner, :LinearCache,
+                :DefaultLinearSolver, :LinearCache,
                 :init_cacheval, :needs_concrete_A,
                 # documented in the LinearSolve manual but not yet declared
                 # `public` there (SciML/LinearSolve.jl make-public follow-up)

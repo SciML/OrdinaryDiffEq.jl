@@ -157,7 +157,7 @@ mutable struct ODEIntegrator{
         uType, duType, tType, pType, eigenType, tdirType,
         ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
         CallbackCacheType, IA, DV, CC, RNGType, WType, PType, SqdtType,
-        NoiseType, CType, RCType,
+        NoiseType, CType, RCType, CountType, FlagType,
     } <:
     SciMLBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
@@ -179,8 +179,8 @@ mutable struct ODEIntegrator{
     tdir::tdirType
     eigen_est::eigenType
     controller_cache::CC
-    success_iter::Int
-    iter::Int
+    success_iter::CountType
+    iter::CountType
     saveiter::Int
     saveiter_dense::Int
     cache::CacheType
@@ -195,7 +195,7 @@ mutable struct ODEIntegrator{
     event_last_time::Int
     vector_event_last_time::Int
     last_event_error::EventErrorType
-    accept_step::Bool
+    accept_step::FlagType
     isout::Bool
     reeval_fsal::Bool
     derivative_discontinuity::Bool

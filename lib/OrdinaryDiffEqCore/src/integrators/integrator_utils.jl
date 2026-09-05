@@ -94,27 +94,8 @@ function loopheader!(integrator)
     end
 
     # Accept or reject the step
-    if integrator.iter > 0
-        if (!integrator.force_stepfail) &&
-                (
-                !integrator.opts.adaptive || integrator.accept_step ||
-                    isaposteriori(integrator.alg)
-            )
-            # ACCEPT
-            @SciMLMessage(
-                lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(get_EEst(integrator))",
-                integrator.opts.verbose, :step_accepted
-            )
-            integrator.success_iter += 1
-            apply_step!(integrator)
-        elseif (
-                integrator.opts.adaptive && !integrator.accept_step &&
-                    !isaposteriori(integrator.alg)
-            ) ||
-                integrator.force_stepfail
-            # REJECT
-            handle_step_rejection!(integrator)
-        end
+    ReactantCore.@trace track_numbers = false if integrator.iter > 0
+        _accept_or_reject_step!(integrator)
     end
 
     integrator.iter += 1
@@ -123,6 +104,30 @@ function loopheader!(integrator)
     modify_dt_for_tstops!(integrator)
     shrink_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
+    return nothing
+end
+
+function _accept_or_reject_step!(integrator)
+    ReactantCore.@trace track_numbers = false if (!integrator.force_stepfail) &&
+            (
+            !integrator.opts.adaptive || integrator.accept_step ||
+                isaposteriori(integrator.alg)
+        )
+        # ACCEPT
+        @SciMLMessage(
+            lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(get_EEst(integrator))",
+            integrator.opts.verbose, :step_accepted
+        )
+        integrator.success_iter += 1
+        apply_step!(integrator)
+    elseif (
+            integrator.opts.adaptive && !integrator.accept_step &&
+                !isaposteriori(integrator.alg)
+        ) ||
+            integrator.force_stepfail
+        # REJECT
+        handle_step_rejection!(integrator)
+    end
     return nothing
 end
 
@@ -232,7 +237,8 @@ function update_fsal!(integrator)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
             if isinplace(integrator.sol.prob)
-                recursivecopy!(integrator.fsalfirst, integrator.fsallast)
+                fsalfirst, fsallast = get_fsalfirstlast(integrator.cache, integrator.u)
+                recursivecopy!(fsalfirst, fsallast)
             else
                 integrator.fsalfirst = integrator.fsallast
             end
@@ -269,6 +275,13 @@ _set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 
 function modify_dt_for_tstops!(integrator)
+    if ReactantCore.within_compile()
+        dt = integrator.opts.adaptive ? integrator.dt : integrator.dtcache
+        integrator.dt = integrator.tdir * min(
+            abs(dt), abs(first_tstop(integrator) - integrator.tdir * integrator.t)
+        )
+        return nothing
+    end
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
@@ -613,39 +626,18 @@ function _loopfooter!(integrator)
         q = stepsize_controller!(integrator, integrator.alg)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
         integrator.accept_step = (
-            !integrator.isout &&
+            !integrator.isout &
                 accept_step_controller(
                 integrator,
                 integrator.alg
             )
-        ) ||
+        ) |
             (
             integrator.opts.force_dtmin &&
                 abs(integrator.dt) <= timedepentdtmin(integrator)
         )
-        if integrator.accept_step # Accept
-            increment_accept!(integrator.stats)
-            apply_solve_step_limiter!(integrator, ttmp)
-            integrator.last_stepfail = false
-            integrator.tprev = integrator.t
-
-            if _get_next_step_tstop(integrator)
-                # Step controller dt is overly pessimistic, since dt = time to tstop.
-                # Restore the original dt so the controller proposes a reasonable next step.
-                integrator.dt = integrator.dtpropose
-            end
-            integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
-
-            dtnew = SciMLBase.value(
-                step_accept_controller!(
-                    integrator,
-                    integrator.alg,
-                    q
-                )
-            ) *
-                oneunit(integrator.dt)
-            calc_dt_propose!(integrator, dtnew)
-            handle_callbacks!(integrator)
+        ReactantCore.@trace track_numbers = false if integrator.accept_step # Accept
+            _accept_step!(integrator, q, ttmp)
         else # Reject
             increment_reject!(integrator.stats)
         end
@@ -676,6 +668,32 @@ function _loopfooter!(integrator)
         cur_eigen_est > integrator.stats.maxeig &&
             (integrator.stats.maxeig = cur_eigen_est)
     end
+    return nothing
+end
+
+function _accept_step!(integrator, q, ttmp)
+    increment_accept!(integrator.stats)
+    apply_solve_step_limiter!(integrator, ttmp)
+    integrator.last_stepfail = false
+    integrator.tprev = integrator.t
+
+    if _get_next_step_tstop(integrator)
+        # Step controller dt is overly pessimistic, since dt = time to tstop.
+        # Restore the original dt so the controller proposes a reasonable next step.
+        integrator.dt = integrator.dtpropose
+    end
+    integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
+
+    dtnew = SciMLBase.value(
+        step_accept_controller!(
+            integrator,
+            integrator.alg,
+            q
+        )
+    ) *
+        oneunit(integrator.dt)
+    calc_dt_propose!(integrator, dtnew)
+    handle_callbacks!(integrator)
     return nothing
 end
 

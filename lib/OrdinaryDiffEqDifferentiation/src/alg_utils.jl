@@ -114,6 +114,13 @@ function prepare_user_sparsity(ad_alg, prob)
     jac_prototype = prob.f.jac_prototype
     sparsity = prob.f.sparsity
 
+    # `ODEFunction` defaults `sparsity` to `jac_prototype`. A matrix-free operator
+    # carries no sparsity pattern, so `KnownJacobianSparsityDetector` must not see it
+    # (that path needs an `AbstractMatrix` via `concrete_mass_matrix`).
+    if sparsity isa AbstractSciMLOperator && !SciMLOperators.isconvertible(sparsity)
+        return ad_alg
+    end
+
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
         if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
             if prob.f.mass_matrix isa UniformScaling

@@ -286,10 +286,7 @@ on normal steps but 10^4 on the first step.
 See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 """
 @inline function get_current_qmax(integrator, qmax)
-    if integrator.success_iter == 0
-        return get_qmax_first_step(integrator)
-    end
-    return qmax
+    return ifelse(iszero(integrator.success_iter), get_qmax_first_step(integrator), qmax)
 end
 
 """
@@ -657,7 +654,7 @@ mutable struct IControllerCache{T, E, NLPType} <: AbstractControllerCache
 end
 
 function setup_controller_cache(alg, cache, controller::IController, ::Type{E}, disco_probs) where {E}
-    QT = _resolved_QT(controller.basic)
+    QT = typeof(_maybe_traced(zero(_resolved_QT(controller.basic))))
     resolved = IController(resolve_basic(controller.basic, alg, QT; disco_probs))
     T = QT
     return IControllerCache{T, E, eltype(disco_probs)}(resolved, T(1 // 10^4), oneunit(E))
@@ -668,10 +665,10 @@ end
     qmax = get_current_qmax(integrator, qmax)
     EEst = SciMLBase.value(get_EEst(integrator))
 
-    if iszero(EEst)
+    expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
+    ReactantCore.@trace track_numbers = false if iszero(EEst)
         q = inv(qmax)
     else
-        expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qtmp = fastpower(EEst, expo) / gamma
         @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
@@ -686,9 +683,7 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 
     t = integrator.t
     dt = integrator.dt
-    if qsteady_min <= q <= qsteady_max
-        q = one(q)
-    end
+    q = ifelse((qsteady_min <= q) & (q <= qsteady_max), one(q), q)
     return handle_disco_accept!(integrator, cache.controller.basic, t, dt / q)
 end
 
@@ -791,7 +786,7 @@ mutable struct PIControllerCache{T, E, NLPType} <: AbstractControllerCache
 end
 
 function setup_controller_cache(alg, cache, controller::PIController, ::Type{E}, disco_probs) where {E}
-    QT = _resolved_QT(controller.basic)
+    QT = typeof(_maybe_traced(zero(_resolved_QT(controller.basic))))
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIController{typeof(basic), QT}(
         basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit)
@@ -809,7 +804,7 @@ end
     (; beta1, beta2) = controller
     EEst = SciMLBase.value(get_EEst(integrator))
 
-    if iszero(EEst)
+    ReactantCore.@trace track_numbers = false if iszero(EEst)
         q = inv(qmax)
     else
         q11 = fastpower(EEst, beta1)
@@ -828,9 +823,7 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
 
     t = integrator.t
     dt = integrator.dt
-    if qsteady_min <= q <= qsteady_max
-        q = one(q)
-    end
+    q = ifelse((qsteady_min <= q) & (q <= qsteady_max), one(q), q)
     cache.errold = max(EEst, qoldinit)
     return handle_disco_accept!(integrator, controller.basic, t, dt / q)
 end
@@ -1192,6 +1185,15 @@ function setup_controller_cache(alg, cache, controller::PredictiveController, ::
     )
 end
 
+current_newton_iter(cache) = cache.iter
+function current_newton_iter(cache::CompositeCache)
+    return _eval_index(current_newton_iter, cache.caches, cache.current)::Int
+end
+current_nlsolver_iters(cache) = (cache.nlsolver.iter, cache.nlsolver.maxiters)
+function current_nlsolver_iters(cache::CompositeCache)
+    return _eval_index(current_nlsolver_iters, cache.caches, cache.current)::Tuple{Int, Int}
+end
+
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
@@ -1203,10 +1205,10 @@ end
             fac = gamma
         else
             if isfirk(alg)
-                (; iter) = integrator.cache
+                iter = current_newton_iter(integrator.cache)
                 (; maxiters) = alg
             else
-                (; iter, maxiters) = integrator.cache.nlsolver
+                iter, maxiters = current_nlsolver_iters(integrator.cache)
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end

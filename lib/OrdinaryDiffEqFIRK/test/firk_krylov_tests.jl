@@ -140,3 +140,21 @@ end
     @test SciMLBase.successful_retcode(sol)
     @test maximum(abs, sol.u[end] - ref) < 1.0e-8
 end
+
+@testset "Threaded AdaptiveRadau stages own their JVP operators" begin
+    n = 60
+    A = Tridiagonal(fill(1.0, n - 1), fill(-2.0, n), fill(1.0, n - 1)) .* (n + 1)^2
+    f! = (du, u, p, t) -> mul!(du, A, u)
+    u0 = [sin(pi * i / (n + 1)) for i in 1:n]
+    prob = ODEProblem(f!, u0, (0.0, 0.1))
+    kw = (; min_order = 9, max_order = 9, linsolve = KrylovJL_GMRES())
+    integ = init(prob, AdaptiveRadau(; threading = true, kw...); abstol = 1.0e-7, reltol = 1.0e-7)
+    W2 = integ.cache.W2
+    @test W2[1].jacvec !== W2[2].jacvec
+    @test W2[1].jacvec !== integ.cache.W1.jacvec
+    threaded = [solve(prob, AdaptiveRadau(; threading = true, kw...); abstol = 1.0e-7, reltol = 1.0e-7) for _ in 1:4]
+    serial = solve(prob, AdaptiveRadau(; threading = false, kw...); abstol = 1.0e-7, reltol = 1.0e-7)
+    @test all(sol -> sol.u[end] == threaded[1].u[end], threaded)
+    @test threaded[1].u[end] ≈ serial.u[end] rtol = 1.0e-6
+    @test threaded[1].stats.nf == serial.stats.nf
+end

@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: unwrap_alg,
     default_controller, PredictiveController, PIController,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    alg_cache, @threaded, isthreaded,
+    alg_cache, @threaded, isthreaded, CompositeCache, alg_autodiff,
     Sequential, BaseThreads, PolyesterThreads,
     constvalue,
     differentiation_rk_docstring, trivial_limiter!,
@@ -37,7 +37,7 @@ import FastPower: fastpower
 using OrdinaryDiffEqDifferentiation: build_J_W, build_jac_config,
     calc_J!, dolinsolve, calc_J,
     islinearfunction, drain_jvp_count!, set_linear_reltol!
-import OrdinaryDiffEqDifferentiation: jvp_counter
+import OrdinaryDiffEqDifferentiation: jvp_counter, JVPCache
 import ADTypes: AutoForwardDiff
 import SciMLOperators
 import SciMLOperators: AbstractSciMLOperator
@@ -47,7 +47,7 @@ import SciMLOperators: AbstractSciMLOperator
 # dependency from registering as stale.
 import OrdinaryDiffEqNonlinearSolve
 
-import OrdinaryDiffEqCore: PredictiveControllerCache
+import OrdinaryDiffEqCore: PredictiveControllerCache, _eval_index
 
 @static if Base.pkgversion(OrdinaryDiffEqCore) >= v"3.10"
     @eval begin

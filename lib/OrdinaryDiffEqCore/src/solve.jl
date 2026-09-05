@@ -217,6 +217,7 @@ Base.@constprop :aggressive function _ode_init(
             throw(ArgumentError("unstable_check is not supported inside Reactant compilation"))
         force_dtmin && throw(ArgumentError("force_dtmin is not supported inside Reactant compilation"))
         progress && throw(ArgumentError("progress is not supported inside Reactant compilation"))
+        save_on = false
         save_everystep = false
         save_start = false
         save_end = true
@@ -725,7 +726,7 @@ Base.@constprop :aggressive function _ode_init(
     tprev = t
     dtcache = _maybe_traced(tType(_dt))
     dtpropose = _maybe_traced(tType(_dt))
-    iter = 0
+    iter = _maybe_traced(0)
     kshortsize = 0
     reeval_fsal = false
     derivative_discontinuity = false
@@ -734,7 +735,7 @@ Base.@constprop :aggressive function _ode_init(
     next_step_tstop = false
     tstop_target = zero(t)
     isout = false
-    accept_step = false
+    accept_step = _maybe_traced(false)
     force_stepfail = false
     last_stepfail = false
     do_error_check = true
@@ -746,7 +747,7 @@ Base.@constprop :aggressive function _ode_init(
             0.0
         )
     dtchangeable = isdtchangeable(_alg)
-    success_iter = 0
+    success_iter = _maybe_traced(0)
     reinitialize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -785,6 +786,10 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
+    if ReactantCore.within_compile() && adaptive &&
+            !(controller_cache isa Union{IControllerCache, PIControllerCache})
+        throw(ArgumentError("only IController and PIController are supported inside Reactant compilation"))
+    end
 
     is_disco_step = false
     disco_checkpoint = zero(t)
@@ -802,7 +807,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants),
+        typeof(noise), typeof(c), typeof(rate_constants), typeof(iter), typeof(accept_step),
     }(
         sol, u, du, k, t, dtcache, f, p,
         uprev, uprev2, duprev, tprev,
@@ -929,33 +934,28 @@ function handle_starting_time_discontinuity!(integrator)
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
-    if ReactantCore.within_compile()
-        return integrator.opts.adaptive ?
-            _traced_adaptive_solve!(integrator, integrator.controller_cache) :
-            _traced_fixed_step_solve!(integrator)
-    end
     @inbounds while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
-        while integrator.tdir * integrator.t < first_tstop
-            loopheader!(integrator)
-            if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
-                return integrator.sol
-            end
-
-            # Use special tstop handling if flag is set, otherwise normal stepping
-            if integrator.next_step_tstop
-                handle_tstop_step!(integrator)
-            else
-                perform_step!(integrator, integrator.cache)
-            end
-
-            should_exit = integrator.next_step_tstop
-
-            loopfooter!(integrator)
-            if isempty(integrator.opts.tstops) || should_exit
-                break
-            end
+        stop = false
+        errored = false
+        maxiters = ReactantCore.within_compile() ? integrator.opts.maxiters : typemax(Int)
+        _dealias_traced!(integrator)
+        ReactantCore.@trace track_numbers = false while (integrator.tdir * integrator.t < first_tstop) & !stop &
+                (integrator.iter < maxiters)
+            stop, errored = _solve_step!(integrator)
+            _dealias_traced!(integrator)
         end
+        if ReactantCore.within_compile()
+            ReactantCore.@trace track_numbers = false if !integrator.accept_step
+                integrator.u = integrator.uprev
+            end
+            retcode = ifelse(
+                integrator.tdir * integrator.t >= first_tstop,
+                ReturnCode.Success, ReturnCode.MaxIters
+            )
+            return _traced_finalize_solution(integrator, retcode)
+        end
+        errored && return integrator.sol
         handle_tstop!(integrator)
     end
     postamble!(integrator)
@@ -975,6 +975,22 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
         return integrator.sol
     end
     return integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
+end
+
+function _solve_step!(integrator)
+    loopheader!(integrator)
+    if !ReactantCore.within_compile() && integrator.do_error_check &&
+            check_error!(integrator) != ReturnCode.Success
+        return true, true
+    end
+    if integrator.next_step_tstop
+        handle_tstop_step!(integrator)
+    else
+        perform_step!(integrator, integrator.cache)
+    end
+    should_exit = integrator.next_step_tstop
+    loopfooter!(integrator)
+    return isempty(integrator.opts.tstops) || should_exit, false
 end
 
 # Helpers
