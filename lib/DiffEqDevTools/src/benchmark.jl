@@ -799,7 +799,10 @@ function WorkPrecisionSet(
     )
 end
 
-@def error_calculation begin
+function _calculate_error!(
+        i, tmp_solutions, prob, setups, abstols, reltols, test_dt,
+        appxsol_setup, timeseries_errors, dense_errors, kwargs
+    )
     if !SciMLBase.has_analytic(prob.f)
         t = prob.tspan[1]:test_dt:prob.tspan[2]
         brownian_values = cumsum(
@@ -841,7 +844,7 @@ end
         dense_errors = false
     )
 
-    for j in 1:M, k in 1:N
+    for j in eachindex(abstols), k in eachindex(setups)
         _abstols = get(setups[k], :abstols, abstols)
         _reltols = get(setups[k], :reltols, reltols)
         _dts = get(setups[k], :dts, zeros(length(_abstols)))
@@ -857,6 +860,7 @@ end
         SciMLBase.has_analytic(prob.f) ? err_sol = sol : err_sol = appxtrue(sol, true_sol)
         tmp_solutions[i, j, k] = err_sol
     end
+    return nothing
 end
 
 function WorkPrecisionSet(
@@ -886,12 +890,18 @@ function WorkPrecisionSet(
     # First calculate all of the errors
     if parallel_type == :threads
         Threads.@threads for i in 1:numruns_error
-            @error_calculation
+            _calculate_error!(
+                i, tmp_solutions, prob, setups, abstols, reltols, test_dt,
+                appxsol_setup, timeseries_errors, dense_errors, kwargs
+            )
         end
     elseif parallel_type == :none
         for i in 1:numruns_error
             @info "Error calculation: $i/$numruns_error"
-            @error_calculation
+            _calculate_error!(
+                i, tmp_solutions, prob, setups, abstols, reltols, test_dt,
+                appxsol_setup, timeseries_errors, dense_errors, kwargs
+            )
         end
     end
 
@@ -1217,11 +1227,17 @@ function get_sample_errors(
         dense_errors = false
         if parallel_type == :threads
             Threads.@threads for i in 1:maxnumruns
-                @error_calculation
+                _calculate_error!(
+                    i, tmp_solutions, prob, setups, abstols, reltols, test_dt,
+                    appxsol_setup, timeseries_errors, dense_errors, kwargs
+                )
             end
         elseif parallel_type == :none
             for i in 1:maxnumruns
-                @error_calculation
+                _calculate_error!(
+                    i, tmp_solutions, prob, setups, abstols, reltols, test_dt,
+                    appxsol_setup, timeseries_errors, dense_errors, kwargs
+                )
             end
         end
         tmp_solutions = vec(tmp_solutions)
