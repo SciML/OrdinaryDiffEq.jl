@@ -1,4 +1,28 @@
 using Pkg
+
+# Julia 1.10 cannot develop revision-pinned `[sources]`, so keep the prerequisite
+# branches scoped to the Julia-1-only Reactant group.
+if get(ENV, "GROUP", "All") == "Reactant"
+    withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
+        Pkg.add(
+            [
+                PackageSpec(
+                    name = "Reactant", url = "https://github.com/ChrisRackauckas-Claude/Reactant.jl.git",
+                    rev = "traced-enums"
+                ),
+                PackageSpec(
+                    name = "ReactantCore", url = "https://github.com/ChrisRackauckas-Claude/Reactant.jl.git",
+                    rev = "traced-enums", subdir = "lib/ReactantCore"
+                ),
+                PackageSpec(
+                    name = "SciMLBase", url = "https://github.com/ChrisRackauckas-Claude/SciMLBase.jl.git",
+                    rev = "agent/parametric-ode-retcode"
+                ),
+            ]
+        )
+    end
+end
+
 using SafeTestsets, Test
 using SciMLTesting
 
@@ -200,6 +224,11 @@ function qa_group()
     return @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
 end
 
+function reactant_group()
+    is_APPVEYOR && return
+    return @time @safetestset "Reactant Tests" include("Reactant/reactant_tests.jl")
+end
+
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -311,6 +340,7 @@ end
                 "AD" => ad_group,
                 "ODEInterfaceRegression" => odeinterface_group,
                 "GPU" => gpu_group,
+                "Reactant" => reactant_group,
             ),
             # QA runs in the root test environment (no per-group Project.toml);
             # its body is the ExplicitImports testset, not the standard

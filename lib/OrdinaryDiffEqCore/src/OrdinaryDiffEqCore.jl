@@ -114,6 +114,7 @@ import SymbolicIndexingInterface: parameter_values
 using EnumX: @enumx
 
 import EnzymeCore
+using ReactantCore: ReactantCore
 
 """
     Predictor
@@ -407,6 +408,7 @@ include("disco.jl")
 include("dense/generic_dense.jl")
 
 include("iterator_interface.jl")
+include("reactant.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
