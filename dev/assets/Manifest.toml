@@ -377,7 +377,7 @@ version = "4.19.3"
 deps = ["CommonSolve", "DiffEqBase", "DiffEqNoiseProcess", "Distributed", "LinearAlgebra", "Logging", "RecipesBase", "RecursiveArrayTools", "RootedTrees", "SciMLBase", "SimpleNonlinearSolve", "Statistics", "StructArrays"]
 path = "../lib/DiffEqDevTools"
 uuid = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
-version = "3.6.1"
+version = "3.6.2"
 weakdeps = ["OrdinaryDiffEqCore"]
 
     [deps.DiffEqDevTools.extensions]
@@ -1338,7 +1338,7 @@ version = "2.0.1"
 
 [[deps.OrdinaryDiffEq]]
 deps = ["ADTypes", "CommonSolve", "DiffEqBase", "DocStringExtensions", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqDefault", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "SciMLBase", "SciMLLogging"]
-path = "/home/runner/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
+path = "/home/runner/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 version = "7.8.1"
 
