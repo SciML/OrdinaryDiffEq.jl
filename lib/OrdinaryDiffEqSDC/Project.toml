@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSDC"
 uuid = "aadddb15-010a-4799-93bd-652a57b90e34"
 authors = ["singhharsh1708 <hs1663531@gmail.com>"]
-version = "1.0.0"
+version = "1.2.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
