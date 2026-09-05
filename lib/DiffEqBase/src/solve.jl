@@ -710,8 +710,8 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
     u0_promote = promote_u0(u0, p, tspan[1])
     tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
-    f_promote, p_promote = promote_f(
-        prob.f, Val(SciMLBase.specialization(prob.f)), u0_promote, p,
+    f_promote, p_promote = _promote_f(
+        prob, prob.f, Val(SciMLBase.specialization(prob.f)), u0_promote, p,
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
     )
@@ -733,6 +733,19 @@ end
 
 function _remake_with_promoted_function(prob::Union{SDEProblem, SDDEProblem}, f; kwargs...)
     return remake(prob; f, g = f.g, kwargs...)
+end
+
+function _promote_f(prob, f, specialize, u0, p, t, uses_forwarddiff, chunksize)
+    return promote_f(f, specialize, u0, p, t, uses_forwarddiff, chunksize)
+end
+
+function _promote_f(
+        prob::SDEProblem, f, specialize, u0, p, t, uses_forwarddiff, chunksize
+    )
+    return promote_f(
+        f, specialize, u0, p, t, uses_forwarddiff, chunksize,
+        prob.noise_rate_prototype
+    )
 end
 
 function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs...)
@@ -865,6 +878,20 @@ function _despecialize_auxiliary_functions(f)
     return _widen_type_parameter(f, Val(:ID))
 end
 
+function _despecialize_auxiliary_functions(f::SDEFunction)
+    g = if f.g isa Union{
+            ParameterDespecializationWrapper,
+            FunctionWrappersWrappers.FunctionWrappersWrapper,
+        }
+        f.g
+    else
+        ParameterDespecializationWrapper(f.g)
+    end
+    f = unwrapped_f(f, f.f, g)
+    f = SciMLBase.widen_bounded_type_params(f)
+    return _widen_type_parameter(f, Val(:ID))
+end
+
 @generated function _widen_type_parameter(f::F, ::Val{name}) where {F, name}
     wrapper = F.name.wrapper
     typevars = TypeVar[]
@@ -917,7 +944,7 @@ _promote_parameters(::Val, p) = p
 # backedges to hasdualpromote/wrapfun_iip don't cause invalidation issues.
 function promote_f(
         f::F, ::Val{specialize}, u0, p, t, ::Val{true},
-        ::Val{CS} = Val(1)
+        ::Val{CS} = Val(1), noise_rate_prototype = nothing
     ) where {F, specialize, CS}
     despecialize = specialize === SciMLBase.AutoDespecialize
     p_out = _promote_parameters(Val(specialize), p)
@@ -926,6 +953,9 @@ function promote_f(
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
     despecialize && (f = _despecialize_auxiliary_functions(f))
+    # Stochastic implicit methods use function-derived ForwardDiff tags that cannot be
+    # represented by the fixed dual signatures installed below.
+    f isa SDEFunction && return (f, p_out)
 
     dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
         !(f.f isa AbstractSciMLOperator) &&
@@ -939,7 +969,8 @@ function promote_f(
         return (_replace_dae_residual(f, wrapped), p_out)
     end
 
-    wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
+    wrap_path = f isa Union{ODEFunction, SDEFunction} && isinplace(f) &&
+        !(f.f isa AbstractSciMLOperator) &&
         # Opt-out SubArrays since they would create type mismatches with the integrator's internal Arrays
         !(u0 isa SubArray) &&
         (
@@ -961,7 +992,15 @@ function promote_f(
     )
 
     if !wrap_path ||
-            (despecialize && f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+            (
+            despecialize && !(f isa SDEFunction) &&
+                f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+        ) ||
+            (
+            f isa SDEFunction &&
+                f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper &&
+                f.g isa FunctionWrappersWrappers.FunctionWrappersWrapper
+        )
         return (f, p_out)
     end
 
@@ -1049,6 +1088,17 @@ function promote_f(
         wrapfun_iip(rhs, (u0, u0, p_out, t), Val(CS))
     end
     promoted_p = opaque ? RespecializeParams.pack_auto(p) : p_out
+    if f isa SDEFunction
+        g_output = noise_rate_prototype === nothing ? u0 : noise_rate_prototype
+        wrapped_g = if opaque
+            wrapfun_iip_opaque(f.g, P, (g_output, u0, p, t), Val(CS))
+        else
+            diffusion = despecialize && !(f.g isa ParameterDespecializationWrapper) ?
+                ParameterDespecializationWrapper(f.g) : f.g
+            wrapfun_iip(diffusion, (g_output, u0, p_out, t), Val(CS))
+        end
+        return (unwrapped_f(f, wrapped_iip, wrapped_g), promoted_p)
+    end
     return (unwrapped_f(f, wrapped_iip), promoted_p)
 end
 
@@ -1058,7 +1108,7 @@ end
 # Uses a simple single-signature FunctionWrapper instead.
 function promote_f(
         f::F, ::Val{specialize}, u0, p, t, ::Val{false},
-        ::Val{CS} = Val(1)
+        ::Val{CS} = Val(1), noise_rate_prototype = nothing
     ) where {F, specialize, CS}
     despecialize = specialize === SciMLBase.AutoDespecialize
     p_out = _promote_parameters(Val(specialize), p)
@@ -1080,7 +1130,8 @@ function promote_f(
         return (_replace_dae_residual(f, wrapped), p_out)
     end
 
-    wrap_path = f isa ODEFunction && isinplace(f) && !(f.f isa AbstractSciMLOperator) &&
+    wrap_path = f isa Union{ODEFunction, SDEFunction} && isinplace(f) &&
+        !(f.f isa AbstractSciMLOperator) &&
         f.jac === nothing &&
         !(u0 isa SubArray) &&
         (
@@ -1101,7 +1152,15 @@ function promote_f(
     )
 
     if !wrap_path ||
-            (despecialize && f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+            (
+            despecialize && !(f isa SDEFunction) &&
+                f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+        ) ||
+            (
+            f isa SDEFunction &&
+                f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper &&
+                f.g isa FunctionWrappersWrappers.FunctionWrappersWrapper
+        )
         return (f, p_out)
     end
 
@@ -1111,6 +1170,14 @@ function promote_f(
         P = typeof(p)
         sig = Tuple{typeof(u0), typeof(u0), P, typeof(t)}
         wrapped = RespecializeParams.wrap_void_opaque(f.f, P, (sig,))
+        if f isa SDEFunction
+            g_output = noise_rate_prototype === nothing ? u0 : noise_rate_prototype
+            g_sig = Tuple{typeof(g_output), typeof(u0), P, typeof(t)}
+            wrapped_g = RespecializeParams.wrap_void_opaque(f.g, P, (g_sig,))
+            return (
+                unwrapped_f(f, wrapped, wrapped_g), RespecializeParams.pack_auto(p),
+            )
+        end
         return (unwrapped_f(f, wrapped), RespecializeParams.pack_auto(p))
     end
 
@@ -1118,6 +1185,15 @@ function promote_f(
     wrapped = FunctionWrappersWrappers.FunctionWrappersWrapper(
         Void(rhs), (typeof((u0, u0, p_out, t)),), (Nothing,)
     )
+    if f isa SDEFunction
+        g_output = noise_rate_prototype === nothing ? u0 : noise_rate_prototype
+        diffusion = despecialize && !(f.g isa ParameterDespecializationWrapper) ?
+            ParameterDespecializationWrapper(f.g) : f.g
+        wrapped_g = FunctionWrappersWrappers.FunctionWrappersWrapper(
+            Void(diffusion), (typeof((g_output, u0, p_out, t)),), (Nothing,)
+        )
+        return (unwrapped_f(f, wrapped, wrapped_g), p_out)
+    end
     return (unwrapped_f(f, wrapped), p_out)
 end
 
