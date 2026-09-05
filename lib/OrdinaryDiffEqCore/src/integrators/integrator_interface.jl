@@ -56,12 +56,12 @@ function SciMLBase.reeval_internals_due_to_modification!(
         callback_initializealg = nothing
     )
     if integrator.isdae
+        # Reinitialization changes the right endpoint; uprev must still describe tprev.
         SciMLBase.initialize_dae!(
             integrator,
             isnothing(callback_initializealg) ? integrator.initializealg :
                 callback_initializealg
         )
-        update_uprev!(integrator)
     end
 
     if continuous_modification && integrator.opts.calck
