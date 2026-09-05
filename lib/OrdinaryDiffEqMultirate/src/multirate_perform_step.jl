@@ -622,7 +622,7 @@ end
 function perform_step!(integrator, cache::MISCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, v, offset, k_fast, Y, fS, tab) = cache
-    (; α, β, γ, d, c, ctilde) = tab
+    (; α, β, γ, d, c, ctilde, bhat) = tab
 
     f.f1(integrator.fsalfirst, uprev, p, t)
     f.f2(k_fast, uprev, p, t)
@@ -681,7 +681,11 @@ function perform_step!(integrator, cache::MISCache, repeat_step = false)
     @.. broadcast = false u = Y[s]
 
     if integrator.opts.adaptive
-        @.. broadcast = false tmp = Y[s] - Y[s - 1]
+        @.. broadcast = false tmp = (dt * bhat[1]) * fS[1]
+        for j in 2:s
+            iszero(bhat[j]) && continue
+            @.. broadcast = false tmp = tmp + (dt * bhat[j]) * fS[j]
+        end
         calculate_residuals!(
             atmp, tmp, uprev, u,
             integrator.opts.abstol, integrator.opts.reltol,
@@ -700,7 +704,7 @@ end
 
 @muladd function perform_step!(integrator, cache::MISConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
-    (; α, β, γ, d, c, ctilde) = cache.tab
+    (; α, β, γ, d, c, ctilde, bhat) = cache.tab
 
     integrator.fsalfirst = f.f1(uprev, p, t) + f.f2(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -760,7 +764,11 @@ end
     integrator.u = Y[s]
 
     if integrator.opts.adaptive
-        utilde = @.. broadcast = false Y[s] - Y[s - 1]
+        utilde = @.. broadcast = false (dt * bhat[1]) * fS[1]
+        for j in 2:s
+            iszero(bhat[j]) && continue
+            utilde = @.. broadcast = false utilde + (dt * bhat[j]) * fS[j]
+        end
         atmp = calculate_residuals(
             utilde, uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,

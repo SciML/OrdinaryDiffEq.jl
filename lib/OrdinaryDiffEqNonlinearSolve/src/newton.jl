@@ -472,15 +472,16 @@ end
 
     nlcache = nlsolver.cache.cache
     if nlcache isa NonlinearSolveNoInitCache
-        # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
-        # controller the way `NLNewton` reports a failed linear solve. A complete solve
-        # leaves no half-taken step behind, so there is nothing for the residual to veto.
+        # A no-init cache can only run a complete inner solve.
         if integrator.f isa DAEFunction
             nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, integrator.f)
         else
             nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, integrator.f)
         end
-        innersol = solve(NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg)
+        innersol = solve(
+            NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg;
+            conditioning_kwargs(cache)...
+        )
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
         end

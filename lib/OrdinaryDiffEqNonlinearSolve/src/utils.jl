@@ -1109,7 +1109,8 @@ function build_nlsolver(
             )
             W_ref = nothing
             if cache isa NonlinearSolveNoInitCache
-                if !isdae && f.nlstep_data === nothing && W isa StaticWOperator
+                if !isdae && f.nlstep_data === nothing && precondition === nothing &&
+                        W isa StaticWOperator
                     W_ref = Ref(W.W)
                     nlf_jac = let W_ref = W_ref
                         (z, p) -> W_ref[]

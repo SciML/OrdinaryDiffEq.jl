@@ -230,9 +230,7 @@ end
 
 # obtain caches
 function DiffEqBase.get_tmp_cache(integrator::DDEIntegrator)
-    alg = integrator.alg
-    inner = alg isa AbstractMethodOfStepsAlgorithm ? alg.alg : alg
-    return get_tmp_cache(integrator, inner, integrator.cache)
+    return get_tmp_cache(integrator, integrator.alg, integrator.cache)
 end
 DiffEqBase.user_cache(integrator::DDEIntegrator) = user_cache(integrator.cache)
 DiffEqBase.u_cache(integrator::DDEIntegrator) = u_cache(integrator.cache)
