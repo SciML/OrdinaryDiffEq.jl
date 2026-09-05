@@ -372,6 +372,9 @@ function reuse_jac_kwargs(W)
         (; jac = WReuseJac(Ref(Wr)), jac_prototype = (Z = similar(Wr); fill!(Z, 0); Z))
 end
 
+stats_delta_for(alg) =
+    hasfield(typeof(alg), :threading) && isthreaded(alg.threading) ? StatsDelta() : nothing
+
 """
     build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
                    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
@@ -966,7 +969,7 @@ function build_nlsolver(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
                 linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians, stats_delta_for(alg)
             )
         end
     elseif nlalg isa NLFunctional
@@ -1157,7 +1160,7 @@ function build_nlsolver(
             nlcache = NLNewtonConstantCache(
                 tstep, J, W, true, true, true, tType(dt), uf,
                 invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians, stats_delta_for(alg)
             )
         end
     elseif nlalg isa NLFunctional
