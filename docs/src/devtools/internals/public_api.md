@@ -284,6 +284,10 @@ OrdinaryDiffEqNonlinearSolve.anderson!
 
 Provided by `OrdinaryDiffEqDifferentiation`.
 
+Concurrent nonlinear solves can pass private Jacobian evaluation state through the
+`next_u` keyword of `calc_J`, `calc_J!`, `calc_W`, `calc_W!`, and `update_W!`,
+whose default is `integrator.u`.
+
 ```@docs
 OrdinaryDiffEqDifferentiation.build_J_W
 OrdinaryDiffEqDifferentiation.build_uf
