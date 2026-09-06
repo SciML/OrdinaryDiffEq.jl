@@ -1363,10 +1363,25 @@ function nlsolve_f(integrator::ODEIntegrator)
     return nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 end
 
+"""
+    has_symbolic_idxs(idxs)
+
+Return whether `idxs` names quantities symbolically rather than by position in the state
+vector. Symbolic indexes may refer to observed equations, so they cannot be resolved by the
+dense-output interpolant alone.
+"""
+has_symbolic_idxs(idxs) = symbolic_type(idxs) !== NotSymbolic()
+function has_symbolic_idxs(idxs::Union{AbstractArray, Tuple})
+    return symbolic_type(idxs) !== NotSymbolic() || any(has_symbolic_idxs, idxs)
+end
+
 function (integrator::ODEIntegrator)(
         t, ::Type{deriv} = Val{0};
         idxs = nothing
     ) where {deriv}
+    if has_symbolic_idxs(idxs)
+        return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
+    end
     return current_interpolant(t, integrator, idxs, deriv)
 end
 
