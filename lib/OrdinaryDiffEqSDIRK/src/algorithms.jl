@@ -56,6 +56,8 @@ abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewton
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -64,11 +66,11 @@ abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewton
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitEuler{AD, F, F2, StepLimiter, CJ} <:
+struct ImplicitEuler{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -101,6 +103,8 @@ end
     publisher={Springer Berlin Heidelberg New York}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -109,11 +113,11 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ImplicitMidpoint{AD, F, F2, StepLimiter, CJ} <:
+struct ImplicitMidpoint{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -143,6 +147,8 @@ end
     references = "Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York, NY, USA.",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -151,11 +157,11 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Trapezoid{AD, F, F2, StepLimiter, CJ} <:
+struct Trapezoid{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -195,6 +201,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -204,12 +212,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct TRBDF2{AD, F, F2, StepLimiter, CJ} <:
+struct TRBDF2{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -248,6 +256,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -257,12 +267,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK2{AD, F, F2, StepLimiter, CJ} <:
+struct SDIRK2{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -296,6 +306,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -305,11 +317,11 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct SDIRK22{AD, F, F2, StepLimiter, CJ} <:
+struct SDIRK22{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -353,6 +365,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
@@ -360,12 +374,12 @@ end
     predictor = Predictor.Trivial,
     """
 )
-struct SSPSDIRK2{AD, F, F2, CJ} <:
+struct SSPSDIRK2{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm # Not adaptive
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -400,6 +414,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -409,12 +425,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno3{AD, F, F2, StepLimiter, CJ} <:
+struct Kvaerno3{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -446,6 +462,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -455,12 +473,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp3{AD, F, F2, StepLimiter, CJ} <:
+struct KenCarp3{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -495,17 +513,19 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
     predictor = Predictor.Linear,
     """
 )
-struct CFNLIRK3{AD, F, F2, CJ} <:
+struct CFNLIRK3{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -542,6 +562,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `embedding`: which embedded error estimate to use for step size control.
     """,
@@ -551,12 +573,12 @@ end
     embedding = 3,
     """
 )
-struct Cash4{AD, F, F2, CJ} <:
+struct Cash4{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     embedding::Int
     autodiff::AD
     concrete_jac::CJ
@@ -596,17 +618,19 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
     predictor = Predictor.Linear,
     """
 )
-struct SFSDIRK4{AD, F, F2, CJ} <:
+struct SFSDIRK4{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -642,17 +666,19 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
     predictor = Predictor.Linear,
     """
 )
-struct SFSDIRK5{AD, F, F2, CJ} <:
+struct SFSDIRK5{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -689,17 +715,19 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
     predictor = Predictor.Linear,
     """
 )
-struct SFSDIRK6{AD, F, F2, CJ} <:
+struct SFSDIRK6{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -736,17 +764,19 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
     predictor = Predictor.Linear,
     """
 )
-struct SFSDIRK7{AD, F, F2, CJ} <:
+struct SFSDIRK7{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -783,17 +813,19 @@ end
     publisher={Elsevier}}",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     """,
     extra_keyword_default = """
     predictor = Predictor.Linear,
     """
 )
-struct SFSDIRK8{AD, F, F2, CJ} <:
+struct SFSDIRK8{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -825,6 +857,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
@@ -832,12 +866,12 @@ end
     predictor = Predictor.Linear,
     """
 )
-struct Hairer4{AD, F, F2, CJ} <:
+struct Hairer4{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -865,6 +899,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
@@ -872,12 +908,12 @@ end
     predictor = Predictor.Linear,
     """
 )
-struct Hairer42{AD, F, F2, CJ} <:
+struct Hairer42{AD, F, F2, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     autodiff::AD
     concrete_jac::CJ
 end
@@ -911,6 +947,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -920,12 +958,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno4{AD, F, F2, StepLimiter, CJ} <:
+struct Kvaerno4{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -961,6 +999,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -970,12 +1010,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct Kvaerno5{AD, F, F2, StepLimiter, CJ} <:
+struct Kvaerno5{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1007,6 +1047,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1016,12 +1058,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp4{AD, F, F2, StepLimiter, CJ} <:
+struct KenCarp4{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1058,6 +1100,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
@@ -1065,12 +1109,12 @@ end
     predictor = Predictor.Linear,
     """
 )
-struct KenCarp47{AD, F, F2, StepLimiter, CJ} <:
+struct KenCarp47{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1102,6 +1146,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1111,12 +1157,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct KenCarp5{AD, F, F2, StepLimiter, CJ} <:
+struct KenCarp5{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1151,6 +1197,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
@@ -1158,12 +1206,12 @@ end
     predictor = Predictor.Linear,
     """
 )
-struct KenCarp58{AD, F, F2, StepLimiter, CJ} <:
+struct KenCarp58{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1200,18 +1248,20 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ} <:
+struct ESDIRK54I8L2SA{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1247,18 +1297,20 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ} <:
+struct ESDIRK436L2SA2{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1293,18 +1345,20 @@ end
     }""",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK325L2SA{AD, F, F2, StepLimiter, CJ} <:
+struct ESDIRK325L2SA{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1340,18 +1394,20 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ} <:
+struct ESDIRK437L2SA{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1387,18 +1443,20 @@ but are still being fully evaluated in context.",
     }""",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ} <:
+struct ESDIRK547L2SA2{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1436,18 +1494,20 @@ Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more deta
     }""",
     extra_keyword_description = """
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
         """,
     extra_keyword_default = """
     predictor = Predictor.StageExtrap,
     """
 )
-struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ} <:
+struct ESDIRK659L2SA{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1483,6 +1543,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1492,12 +1554,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ARS343{AD, F, F2, StepLimiter, CJ} <:
+struct ARS343{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1533,6 +1595,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1542,12 +1606,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ARS222{AD, F, F2, StepLimiter, CJ} <:
+struct ARS222{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1583,6 +1647,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1592,12 +1658,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ARS232{AD, F, F2, StepLimiter, CJ} <:
+struct ARS232{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1633,6 +1699,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1642,12 +1710,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct ARS443{AD, F, F2, StepLimiter, CJ} <:
+struct ARS443{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -1707,6 +1775,8 @@ for (name, desc) in (
             extra_keyword_description = """
             - `smooth_est`: whether to use a smoothed estimate for error control.
             - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+                or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+                out of place and `predictor(upred, uprev, p, t, dt)` in place
                 (`extrapolant` is deprecated).
             - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
             """,
@@ -1716,12 +1786,12 @@ for (name, desc) in (
             step_limiter! = trivial_limiter!,
             """
         )
-        struct $name{AD, F, F2, StepLimiter, CJ} <:
+        struct $name{AD, F, F2, StepLimiter, CJ, P} <:
             OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
             linsolve::F
             nlsolve::F2
             smooth_est::Bool
-            predictor::Predictor.T
+            predictor::P
             step_limiter!::StepLimiter
             autodiff::AD
             concrete_jac::CJ
@@ -1758,6 +1828,8 @@ end
     extra_keyword_description = """
     - `smooth_est`: whether to use a smoothed estimate for error control.
     - `predictor`: per-stage Newton initial-guess strategy, a `Predictor` enum value
+        or a callable returning a guess for the stage value, `predictor(uprev, p, t, dt)`
+        out of place and `predictor(upred, uprev, p, t, dt)` in place
         (`extrapolant` is deprecated).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     """,
@@ -1767,12 +1839,12 @@ end
     step_limiter! = trivial_limiter!,
     """
 )
-struct BHR553{AD, F, F2, StepLimiter, CJ} <:
+struct BHR553{AD, F, F2, StepLimiter, CJ, P} <:
     OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
-    predictor::Predictor.T
+    predictor::P
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ

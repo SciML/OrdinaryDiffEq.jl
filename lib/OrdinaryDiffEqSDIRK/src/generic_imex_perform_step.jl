@@ -113,7 +113,10 @@ end
         # Always assign nlsolver.c = c[1]: later stages overwrite c (SDIRK2 sets
         # c[2] = 0), and a stale c makes the next step's stage-1 Newton evaluate
         # the DDE residual at the wrong time (#3648 / #3690).
-        if E === :ie_dd2 && predictor == Predictor.MaxOrder &&
+        if _is_custom_predictor(predictor)
+            predictor(zs[1], uprev, p, t + c[1] * dt, dt)
+            @.. broadcast = false zs[1] = (zs[1] - uprev) * inv(γ)
+        elseif E === :ie_dd2 && predictor == Predictor.MaxOrder &&
                 integrator.success_iter > 0 && !integrator.reeval_fsal
             current_extrapolant!(u, t + dt, integrator)
             @.. broadcast = false zs[1] = u - uprev
@@ -154,7 +157,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[2] > 0
             copyto!(zs[2], zs[split_guess[2]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[2], uprev, p, t + c[2] * dt, dt)
+                @.. broadcast = false zs[2] = (zs[2] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[2], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[2], zs[1])
@@ -246,7 +252,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[3] > 0
             copyto!(zs[3], zs[split_guess[3]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[3], uprev, p, t + c[3] * dt, dt)
+                @.. broadcast = false zs[3] = (zs[3] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[3], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[3], zs[2])
@@ -336,7 +345,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[4] > 0
             copyto!(zs[4], zs[split_guess[4]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[4], uprev, p, t + c[4] * dt, dt)
+                @.. broadcast = false zs[4] = (zs[4] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[4], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[4], zs[3])
@@ -427,7 +439,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[5] > 0
             copyto!(zs[5], zs[split_guess[5]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[5], uprev, p, t + c[5] * dt, dt)
+                @.. broadcast = false zs[5] = (zs[5] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[5], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[5], zs[4])
@@ -519,7 +534,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[6] > 0
             copyto!(zs[6], zs[split_guess[6]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[6], uprev, p, t + c[6] * dt, dt)
+                @.. broadcast = false zs[6] = (zs[6] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[6], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[6], zs[5])
@@ -612,7 +630,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[7] > 0
             copyto!(zs[7], zs[split_guess[7]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[7], uprev, p, t + c[7] * dt, dt)
+                @.. broadcast = false zs[7] = (zs[7] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[7], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[7], zs[6])
@@ -706,7 +727,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[8] > 0
             copyto!(zs[8], zs[split_guess[8]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[8], uprev, p, t + c[8] * dt, dt)
+                @.. broadcast = false zs[8] = (zs[8] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[8], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[8], zs[7])
@@ -801,7 +825,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[9] > 0
             copyto!(zs[9], zs[split_guess[9]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[9], uprev, p, t + c[9] * dt, dt)
+                @.. broadcast = false zs[9] = (zs[9] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[9], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[9], zs[8])
@@ -897,7 +924,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[10] > 0
             copyto!(zs[10], zs[split_guess[10]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[10], uprev, p, t + c[10] * dt, dt)
+                @.. broadcast = false zs[10] = (zs[10] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[10], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[10], zs[9])
@@ -994,7 +1024,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[11] > 0
             copyto!(zs[11], zs[split_guess[11]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[11], uprev, p, t + c[11] * dt, dt)
+                @.. broadcast = false zs[11] = (zs[11] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[11], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[11], zs[10])
@@ -1092,7 +1125,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[12] > 0
             copyto!(zs[12], zs[split_guess[12]])
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                predictor(zs[12], uprev, p, t + c[12] * dt, dt)
+                @.. broadcast = false zs[12] = (zs[12] - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 fill!(zs[12], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[12], zs[11])
@@ -1398,7 +1434,9 @@ end
         # See the matching branch in `_perform_step_iip!` above. `u` is immutable
         # here (scalar / SVector out-of-place), so the MaxOrder seed uses the
         # allocating `current_extrapolant` rather than the in-place variant.
-        if E === :ie_dd2 && predictor == Predictor.MaxOrder &&
+        if _is_custom_predictor(predictor)
+            z1 = (predictor(uprev, p, t + c[1] * dt, dt) - uprev) * inv(γ)
+        elseif E === :ie_dd2 && predictor == Predictor.MaxOrder &&
                 integrator.success_iter > 0 && !integrator.reeval_fsal
             z1 = current_extrapolant(t + dt, integrator) - uprev
         elseif tab.stage1_extrapolation && (
@@ -1433,7 +1471,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[2] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z1
@@ -1501,7 +1541,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[3] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z2
@@ -1566,7 +1608,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[4] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z3
@@ -1631,7 +1675,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[5] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z4
@@ -1696,7 +1742,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[6] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z5
@@ -1761,7 +1809,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[7] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z6
@@ -1826,7 +1876,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[8] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z7
@@ -1891,7 +1943,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[9] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z8
@@ -1956,7 +2010,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[10] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z9
@@ -2021,7 +2077,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[11] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z10
@@ -2086,7 +2144,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if _is_custom_predictor(predictor)
+                z_guess = (predictor(uprev, p, t + c[12] * dt, dt) - tmp) * inv(γ)
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z11
