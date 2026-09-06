@@ -33,3 +33,30 @@ callback = ContinuousCallback((u, t, integrator) -> u[1] - 0.3, terminate!)
         end
     end
 end
+
+
+@testset "Adaptive DAE callback interpolation" begin
+    function exponential_dae!(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[2] + u[1] - 1
+        return nothing
+    end
+    exponential_dae(u, p, t) = [-u[1], u[2] + u[1] - 1]
+    exact(t) = [exp(-t), 1 - exp(-t)]
+
+    @testset "$(nameof(typeof(alg))), inplace=$(f === exponential_dae!), terminate=$stop, saveat=$(saveat !== ())" for
+        alg in (Rodas4(), Rodas4P(), Rodas5P()),
+            f in (exponential_dae!, exponential_dae), stop in (true, false),
+            saveat in ((), range(0.0, stop ? 0.7 : 1.0; length = 101))
+        affect! = stop ? terminate! : integrator -> nothing
+        callback = ContinuousCallback((u, t, integrator) -> t - 0.7, affect!)
+        prob = ODEProblem(ODEFunction(f; mass_matrix), [1.0, 0.0], (0.0, 1.0))
+        sol = solve(prob, alg; callback, initializealg = CheckInit(), saveat)
+        @test sol.retcode == (stop ? SciMLBase.ReturnCode.Terminated : SciMLBase.ReturnCode.Success)
+        @test sol.t[end] ≈ (stop ? 0.7 : 1.0) atol = 1.0e-12
+        @test sol.u[end] ≈ exact(sol.t[end]) atol = 1.0e-4
+        for t in range(0.0, sol.t[end]; length = 101)
+            @test sol(t) ≈ exact(t) atol = 1.0e-2
+        end
+    end
+end
