@@ -31,6 +31,7 @@ import ADTypes: AutoForwardDiff
 using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 using SciMLBase: SciMLBase, SplitFunction
+using SciMLOperators: isconstant
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -112,8 +112,23 @@ Symmetry of the ExpRK linear operator, or `nothing` when it cannot safely be cac
 `ETDRK4` step. For a sparse symmetric operator that check is a full `O(nnz)` scan (it can only
 exit early on finding an asymmetry), costing roughly 10% of a Krylov build at `m = 15`.
 
-A `SplitFunction`'s linear part is fixed for the whole solve, so the answer can be computed
-once. Everything else returns `nothing`, and `arnoldi!` derives the flag itself as before.
+Caching a *value* -- "are these entries symmetric?" -- is only accurate while the entries cannot
+change, so two conditions must hold. Anything else returns `nothing` and `arnoldi!` derives the
+flag itself on every call, exactly as before:
+
+  * `f isa SplitFunction`, so `A` is the fixed linear part rather than a Jacobian that
+    `calc_J!` rebuilds every step; and
+  * `isconstant(A)`, so the operator carries no `update_func` that `update_coefficients[!]`
+    could fire to replace its entries part-way through the solve.
+
+The second condition matters because the error is asymmetric. A stale `false` merely costs
+performance -- `arnoldi!` runs full Arnoldi. A stale `true` sends it to `lanczos!`, whose
+three-term recurrence is valid only for symmetric operators, and the result is *silently wrong*.
+
+Not covered: mutating the underlying array in place through a reference held outside the solver
+without going through `update_coefficients!`. That is outside the SciMLOperators contract and is
+already unsupported here -- the `krylov = false` path precomputes `expRK_operators(alg, dt, A)`
+once at cache construction and would ignore such a change entirely.
 """
 function _cached_ishermitian(f)
     isa(f, SplitFunction) || return nothing
@@ -121,6 +136,7 @@ function _cached_ishermitian(f)
     # `MatrixOperator` rather than a bare `AbstractMatrix`, so do not require the latter --
     # just ask whether `ishermitian` is defined for it, exactly as `arnoldi!` would.
     A = f.f1.f
+    isconstant(A) || return nothing
     applicable(ishermitian, A) || return nothing
     return ishermitian(A)
 end

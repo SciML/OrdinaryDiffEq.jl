@@ -199,11 +199,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
         F1 = integrator.fsalfirst
         Ks, phiv_cache, ws, herm = KsCache
         w1, w2 = ws
+        kwargs = _arnoldi_kwargs(alg, A, integrator, herm)
         # Krylov for F1
-        arnoldi!(
-            Ks, A, F1; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
-        )
+        arnoldi!(Ks, A, F1; kwargs...)
         phiv!(w1, dt, Ks, 2; cache = phiv_cache)
         # Krylov for F2
         @muladd @.. broadcast = false tmp = uprev + dt * @view(w1[:, 2])
@@ -214,10 +212,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
         F2 .+= mul!(rtmp, A, uprev)
-        arnoldi!(
-            Ks, A, F2; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
-        )
+        arnoldi!(Ks, A, F2; kwargs...)
         phiv!(w2, dt, Ks, 2; cache = phiv_cache)
         # Update u
         u .= uprev
