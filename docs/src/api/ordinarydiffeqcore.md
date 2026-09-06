@@ -10,6 +10,23 @@ own page, and solver-author hooks are documented separately in the
 OrdinaryDiffEqCore.ODEIntegrator
 ```
 
+## Solver statistics
+
+Counters a nonlinear solve accumulates before folding them into `integrator.stats`.
+
+```@docs
+OrdinaryDiffEqCore.StatsDelta
+OrdinaryDiffEqCore.stats_sink
+OrdinaryDiffEqCore.stats_owner
+OrdinaryDiffEqCore.charge_nf!
+OrdinaryDiffEqCore.charge_nw!
+OrdinaryDiffEqCore.charge_nsolve!
+OrdinaryDiffEqCore.charge_njacs!
+OrdinaryDiffEqCore.charge_nnonliniter!
+OrdinaryDiffEqCore.charge_nnonlinconvfail!
+OrdinaryDiffEqCore.drain_stats_delta!
+```
+
 ## Threading options
 
 These are the values accepted by the `threading` keyword of the solvers that expose

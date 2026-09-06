@@ -693,9 +693,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         ztmp, ustep = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, dt, f, z)
     end
 
-    if SciMLBase.has_stats(integrator)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
+    charge_nf!(integrator, cache, 1)
 
     # update W
     if W isa Union{WOperator, StaticWOperator}
@@ -708,9 +706,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
     dz = _restructure_state(ztmp, W \ _vec(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nsolve += 1
-    end
+    charge_nsolve!(integrator, cache, 1)
 
     atmp = calculate_residuals(
         dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -737,9 +733,7 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if SciMLBase.has_stats(integrator)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
+    charge_nf!(integrator, cache, 1)
 
     if isdae
         _uprev = get_dae_uprev(integrator, uprev)
@@ -781,9 +775,7 @@ end
         return convert(eltype(atmp), Inf)
     end
 
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nsolve += 1
-    end
+    charge_nsolve!(integrator, cache, 1)
 
     # relaxed Newton
     # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential

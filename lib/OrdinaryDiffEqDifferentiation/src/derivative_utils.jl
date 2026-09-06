@@ -331,7 +331,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         else
             (; uf) = cache
             x = zero(uprev)
-            J = jacobian(uf, x, integrator)
+            J = jacobian(uf, x, integrator; stats_sink = stats_sink(cache))
         end
     else
         if SciMLBase.has_jac(f)
@@ -342,7 +342,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
             uf.f = nlsolve_f(f, alg)
             uf.p = p
             uf.t = t
-            J = jacobian(uf, uprev, integrator)
+            J = jacobian(uf, uprev, integrator; stats_sink = stats_sink(cache))
         end
 
         if alg isa CompositeAlgorithm
@@ -350,7 +350,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         end
     end
 
-    integrator.stats.njacs += 1
+    charge_njacs!(integrator, cache, 1)
     return J
 end
 
@@ -409,7 +409,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             x = cache.dz
             uf.t = t
             fill!(x, zero(eltype(x)))
-            jacobian!(J, uf, x, du1, integrator, jac_config)
+            jacobian!(J, uf, x, du1, integrator, jac_config; stats_sink = stats_sink(cache))
         end
     else
         if SciMLBase.has_jac(f)
@@ -427,7 +427,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             if !(p isa SciMLBase.NullParameters)
                 uf.p = p
             end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
+            jacobian!(J, uf, uprev, du1, integrator, jac_config; stats_sink = stats_sink(cache))
         end
     end
 
@@ -435,7 +435,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         integrator.eigen_est = constvalue(opnorm(J, Inf))
     end
 
-    integrator.stats.njacs += 1
+    charge_njacs!(integrator, cache, 1)
     return nothing
 end
 
@@ -479,13 +479,13 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
         du1 = cache.du1
 
         # Compute J_u = dF/du at (du_fixed, uprev)
-        jacobian!(J_u, uf_u, uprev, du1, integrator, jac_config_u)
+        jacobian!(J_u, uf_u, uprev, du1, integrator, jac_config_u; stats_sink = stats_sink(cache))
 
         # Compute J_du = dF/d(du) at (du_eval, u_fixed)
-        jacobian!(J_du, uf_du, uf_u.du_fixed, du1, integrator, jac_config_du)
+        jacobian!(J_du, uf_du, uf_u.du_fixed, du1, integrator, jac_config_du; stats_sink = stats_sink(cache))
     end
 
-    integrator.stats.njacs += 1
+    charge_njacs!(integrator, cache, 1)
     return nothing
 end
 
@@ -512,11 +512,13 @@ function calc_J_dae(integrator, cache)
         J_du = J_combined - J_u
     else
         dae_jac = cache.dae_jacobians
-        J_u = jacobian(dae_jac.uf_u, uprev, integrator)
-        J_du = jacobian(dae_jac.uf_du, dae_jac.uf_u.du_fixed, integrator)
+        J_u = jacobian(dae_jac.uf_u, uprev, integrator; stats_sink = stats_sink(cache))
+        J_du = jacobian(
+            dae_jac.uf_du, dae_jac.uf_u.du_fixed, integrator; stats_sink = stats_sink(cache)
+        )
     end
 
-    integrator.stats.njacs += 1
+    charge_njacs!(integrator, cache, 1)
     return J_u, J_du
 end
 
@@ -944,7 +946,7 @@ function calc_W!(
         end
     end
 
-    new_W && (integrator.stats.nw += 1)
+    new_W && charge_nw!(integrator, stats_owner(nlsolver), 1)
     return new_jac, new_W
 end
 
@@ -972,11 +974,11 @@ end
 
     J = nothing
     if cache.W isa StaticWOperator
-        integrator.stats.nw += 1
+        charge_nw!(integrator, cache, 1)
         J = calc_J(integrator, cache, next_step)
         W = StaticWOperator(J - mass_matrix * inv(dtgamma))
     elseif cache.W isa WOperator
-        integrator.stats.nw += 1
+        charge_nw!(integrator, cache, 1)
         J = if islin
             isode ? f.f : f.f1.f
         else
@@ -986,7 +988,7 @@ end
     elseif cache.W isa AbstractSciMLOperator
         W = update_coefficients(cache.W, uprev, p, t; gamma = dtgamma)
     else
-        integrator.stats.nw += 1
+        charge_nw!(integrator, cache, 1)
         if isdae && cache.dae_jacobians !== nothing
             dae_jac = cache.dae_jacobians
             J_u, J_du = calc_J_dae(integrator, cache)
@@ -1215,7 +1217,7 @@ function update_W!(
                         end
                     end
                     lcache.W = W
-                    integrator.stats.nw += 1
+                    charge_nw!(integrator, lcache, 1)
                 else
                     lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
                 end
