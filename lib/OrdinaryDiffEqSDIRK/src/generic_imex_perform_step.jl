@@ -160,7 +160,10 @@ end
                 copyto!(zs[2], zs[1])
             elseif predictor == Predictor.StageExtrap
                 copyto!(zs[2], zs[1])
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
+                # A rejected attempt overwrites `integrator.k`, so after `last_stepfail`
+                # it no longer holds the interpolation data for [tprev, t] and the
+                # previous-step interpolant cannot seed the retry.
                 fill!(zs[2], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -252,7 +255,7 @@ end
                 copyto!(zs[3], zs[2])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[3] = zs[2] + (zs[2] - zs[1]) * ((c[3] - c[2]) / (c[2] - c[1]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[3], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -342,7 +345,7 @@ end
                 copyto!(zs[4], zs[3])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[4] = zs[3] + (zs[3] - zs[2]) * ((c[4] - c[3]) / (c[3] - c[2]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[4], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -433,7 +436,7 @@ end
                 copyto!(zs[5], zs[4])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[5] = zs[4] + (zs[4] - zs[3]) * ((c[5] - c[4]) / (c[4] - c[3]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[5], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -525,7 +528,7 @@ end
                 copyto!(zs[6], zs[5])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[6] = zs[5] + (zs[5] - zs[4]) * ((c[6] - c[5]) / (c[5] - c[4]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[6], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -618,7 +621,7 @@ end
                 copyto!(zs[7], zs[6])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[7] = zs[6] + (zs[6] - zs[5]) * ((c[7] - c[6]) / (c[6] - c[5]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[7], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -712,7 +715,7 @@ end
                 copyto!(zs[8], zs[7])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[8] = zs[7] + (zs[7] - zs[6]) * ((c[8] - c[7]) / (c[7] - c[6]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[8], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -807,7 +810,7 @@ end
                 copyto!(zs[9], zs[8])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[9] = zs[8] + (zs[8] - zs[7]) * ((c[9] - c[8]) / (c[8] - c[7]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[9], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -903,7 +906,7 @@ end
                 copyto!(zs[10], zs[9])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[10] = zs[9] + (zs[9] - zs[8]) * ((c[10] - c[9]) / (c[9] - c[8]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[10], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -1000,7 +1003,7 @@ end
                 copyto!(zs[11], zs[10])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[11] = zs[10] + (zs[10] - zs[9]) * ((c[11] - c[10]) / (c[10] - c[9]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[11], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -1098,7 +1101,7 @@ end
                 copyto!(zs[12], zs[11])
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[12] = zs[11] + (zs[11] - zs[10]) * ((c[12] - c[11]) / (c[11] - c[10]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 fill!(zs[12], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
@@ -1439,7 +1442,7 @@ end
                 z_guess = z1
             elseif predictor == Predictor.StageExtrap
                 z_guess = z1
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1507,7 +1510,7 @@ end
                 z_guess = z2
             elseif predictor == Predictor.StageExtrap
                 z_guess = z2 + (z2 - z1) * ((c[3] - c[2]) / (c[2] - c[1]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1572,7 +1575,7 @@ end
                 z_guess = z3
             elseif predictor == Predictor.StageExtrap
                 z_guess = z3 + (z3 - z2) * ((c[4] - c[3]) / (c[3] - c[2]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1637,7 +1640,7 @@ end
                 z_guess = z4
             elseif predictor == Predictor.StageExtrap
                 z_guess = z4 + (z4 - z3) * ((c[5] - c[4]) / (c[4] - c[3]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1702,7 +1705,7 @@ end
                 z_guess = z5
             elseif predictor == Predictor.StageExtrap
                 z_guess = z5 + (z5 - z4) * ((c[6] - c[5]) / (c[5] - c[4]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1767,7 +1770,7 @@ end
                 z_guess = z6
             elseif predictor == Predictor.StageExtrap
                 z_guess = z6 + (z6 - z5) * ((c[7] - c[6]) / (c[6] - c[5]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1832,7 +1835,7 @@ end
                 z_guess = z7
             elseif predictor == Predictor.StageExtrap
                 z_guess = z7 + (z7 - z6) * ((c[8] - c[7]) / (c[7] - c[6]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1897,7 +1900,7 @@ end
                 z_guess = z8
             elseif predictor == Predictor.StageExtrap
                 z_guess = z8 + (z8 - z7) * ((c[9] - c[8]) / (c[8] - c[7]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -1962,7 +1965,7 @@ end
                 z_guess = z9
             elseif predictor == Predictor.StageExtrap
                 z_guess = z9 + (z9 - z8) * ((c[10] - c[9]) / (c[9] - c[8]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -2027,7 +2030,7 @@ end
                 z_guess = z10
             elseif predictor == Predictor.StageExtrap
                 z_guess = z10 + (z10 - z9) * ((c[11] - c[10]) / (c[10] - c[9]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
@@ -2092,7 +2095,7 @@ end
                 z_guess = z11
             elseif predictor == Predictor.StageExtrap
                 z_guess = z11 + (z11 - z10) * ((c[12] - c[11]) / (c[11] - c[10]))
-            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal)
+            elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
