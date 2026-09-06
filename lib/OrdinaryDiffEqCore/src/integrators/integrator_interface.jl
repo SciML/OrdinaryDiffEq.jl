@@ -673,6 +673,95 @@ function increment_nf!(stats, amt = 1)
     return stats.nf += amt
 end
 
+"""
+    StatsDelta()
+
+Counters a nonlinear solve accumulates privately before folding them into
+`integrator.stats`.
+
+The parent task merges these counters after all concurrent nonlinear solves join.
+"""
+mutable struct StatsDelta
+    nf::Int
+    nw::Int
+    nsolve::Int
+    njacs::Int
+    nnonliniter::Int
+    nnonlinconvfail::Int
+end
+StatsDelta() = StatsDelta(0, 0, 0, 0, 0, 0)
+
+"""
+    stats_sink(cache)
+
+The [`StatsDelta`](@ref) a cache accumulates into, or `nothing` when its counts
+go straight to `integrator.stats`. `hasfield` is resolved at compile time, so
+caches without a buffer keep the direct path with no added work.
+"""
+@inline function stats_sink(cache)
+    return hasfield(typeof(cache), :stats_delta) ? getfield(cache, :stats_delta) : nothing
+end
+@inline stats_sink(::Nothing) = nothing
+@inline stats_sink(delta::StatsDelta) = delta
+
+"""
+    stats_owner(nlsolver)
+
+The object holding the [`StatsDelta`](@ref) for `nlsolver`. Callers pass an
+`NLSolver`, a solver cache, or `nothing`, so this unwraps one level when there is
+a `cache` field and otherwise hands back what it was given.
+"""
+@inline function stats_owner(nlsolver)
+    return hasfield(typeof(nlsolver), :cache) ? getfield(nlsolver, :cache) : nlsolver
+end
+
+for (name, field) in (
+        (:charge_nf!, :nf), (:charge_nw!, :nw),
+        (:charge_nsolve!, :nsolve), (:charge_njacs!, :njacs),
+        (:charge_nnonliniter!, :nnonliniter), (:charge_nnonlinconvfail!, :nnonlinconvfail),
+    )
+    doc = "    $name(integrator, cache, amt = 1)\n\nAdd `amt` to the `$field` counter, into the cache's " *
+        "[`StatsDelta`](@ref) when it has one and straight into `integrator.stats` otherwise."
+    @eval begin
+        @inline $name(integrator, cache, amt = 1) = $name(integrator, stats_sink(cache), amt)
+        @inline function $name(integrator, ::Nothing, amt = 1)
+            SciMLBase.has_stats(integrator) && setfield!(
+                integrator.stats, $(QuoteNode(field)),
+                getfield(integrator.stats, $(QuoteNode(field))) + amt
+            )
+            return nothing
+        end
+        @inline function $name(integrator, sink::StatsDelta, amt = 1)
+            setfield!(sink, $(QuoteNode(field)), getfield(sink, $(QuoteNode(field))) + amt)
+            return nothing
+        end
+    end
+    @eval @doc $doc $name
+end
+
+"""
+    merge_stats_deltas!(stats, nlsolvers)
+
+Fold each nonlinear solver's private statistics into `stats` in iteration order,
+resetting the buffers. Only the parent task may call this, after all workers join,
+including when a nonlinear solve failed.
+"""
+function merge_stats_deltas!(stats, nlsolvers)
+    for nlsolver in nlsolvers
+        fold_stats_delta!(stats, stats_sink(stats_owner(nlsolver)))
+    end
+    return nothing
+end
+
+fold_stats_delta!(stats, ::Nothing) = nothing
+function fold_stats_delta!(stats, sink::StatsDelta)
+    for field in fieldnames(StatsDelta)
+        setfield!(stats, field, getfield(stats, field) + getfield(sink, field))
+        setfield!(sink, field, 0)
+    end
+    return nothing
+end
+
 function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
     if integrator.opts.save_everystep
         error(

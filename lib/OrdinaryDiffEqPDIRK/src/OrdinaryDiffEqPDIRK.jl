@@ -4,8 +4,8 @@ import OrdinaryDiffEqCore: isfsal,
     OrdinaryDiffEqNewtonAlgorithm, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqMutableCache, constvalue, alg_cache,
     unwrap_alg, @cache,
-    @threaded, perform_step!, isthreaded,
-    Sequential, BaseThreads, PolyesterThreads,
+    @threaded, perform_step!,
+    Sequential, BaseThreads, PolyesterThreads, StatsDelta, merge_stats_deltas!,
     get_fsalfirstlast,
     _fixup_ad
 import SciMLBase: alg_order, _unwrap_val

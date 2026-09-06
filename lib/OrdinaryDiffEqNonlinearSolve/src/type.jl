@@ -493,6 +493,7 @@ mutable struct NLNewtonCache{
         jcType,
         lsType,
         DC,
+        S,
     } <: AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -514,9 +515,10 @@ mutable struct NLNewtonCache{
     new_W_γdt_cutoff::tType
     J_t::tType
     dae_jacobians::DC
+    stats_delta::S
 end
 
-mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC, S} <: AbstractNLSolverCache
     tstep::tType
     J::J
     W::W
@@ -529,21 +531,24 @@ mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC} <: Abstrac
     new_W_γdt_cutoff::tType
     J_t::tType
     dae_jacobians::DC
+    stats_delta::S
 end
 
-mutable struct NLFunctionalCache{uType, tType, rateType} <: AbstractNLSolverCache
+mutable struct NLFunctionalCache{uType, tType, rateType, S} <: AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType
     atmp::uType
     dz::uType
+    stats_delta::S
 end
 
-mutable struct NLFunctionalConstantCache{tType} <: AbstractNLSolverCache
+mutable struct NLFunctionalConstantCache{tType, S} <: AbstractNLSolverCache
     tstep::tType
+    stats_delta::S
 end
 
-mutable struct NLAndersonCache{uType, tType, rateType, uEltypeNoUnits} <:
+mutable struct NLAndersonCache{uType, tType, rateType, uEltypeNoUnits, S} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -561,9 +566,10 @@ mutable struct NLAndersonCache{uType, tType, rateType, uEltypeNoUnits} <:
     history::Int
     aa_start::Int
     droptol::Union{Nothing, tType}
+    stats_delta::S
 end
 
-mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
+mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits, S} <:
     AbstractNLSolverCache
     tstep::tType
     dz::uType
@@ -578,9 +584,10 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
     history::Int
     aa_start::Int
     droptol::Union{Nothing, tType}
+    stats_delta::S
 end
 
-mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R, V, C} <:
+mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R, V, C, S} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -593,9 +600,10 @@ mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R,
     verbose::V
     continuation_cache::C
     needs_rebuild::Bool
+    stats_delta::S
 end
 
-mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType, dzType, lsType, preType, postType} <:
+mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType, dzType, lsType, preType, postType, S} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -627,4 +635,5 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     # `postcondition` is additionally applied to the stage predictor in `initialize!`.
     precondition::preType
     postcondition::postType
+    stats_delta::S
 end

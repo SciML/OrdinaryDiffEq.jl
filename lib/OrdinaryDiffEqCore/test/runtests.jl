@@ -47,4 +47,5 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Interpolation Search Hint" include("interpolation_hint_tests.jl")
     @time @safetestset "Bool Equal Coercion" include("bool_equal_tests.jl")
     @time @safetestset "Instability Diagnostics" include("instability_diagnostics_tests.jl")
+    @time @safetestset "Threaded Stats Buffering" include("stats_delta_tests.jl")
 end
