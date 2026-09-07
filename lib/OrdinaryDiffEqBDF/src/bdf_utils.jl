@@ -408,6 +408,180 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
     return terk
 end
 
+####################################################################
+# Time and stability filters for FBDF
+# (DeCaria, Layton, McLaughlin, Rebholz; arXiv:1810.06670v1)
+#
+# A single BDF_k solve yields several embedded solutions by combining
+# the new value with divided differences of the history:
+#
+#   FBDF_{k+1}: y^{k+1} = y^k - η^{k+1} δ^{k+1} y^k          (order k+1)
+#   BDF3-Stab:  y²      = y³ + (µ / c[4, n]) δ³ y³   (k = 3, order 2)
+#
+# Each candidate carries its own local error estimate, so the step the
+# controller would allow for each can be compared and the most
+# permissive one taken.
+####################################################################
+
+"""
+    backdiff!(c, D, ts, n)
+
+Tabulate divided-difference coefficients for the ascending time points `ts[1:n]`.
+On return `c[q + 1, i]` is the coefficient of the solution value at `ts[i]` in the
+`q`-th divided difference over the newest `q + 1` points,
+
+    δ^q y = Σᵢ c[q + 1, i] * y(ts[i]),   q = 0, …, n - 1.
+
+`D` is an `n × n` workspace. Both `c` and `D` may be larger than `n × n`; only the
+leading block is touched.
+"""
+function backdiff!(c, D, ts, n)
+    T = eltype(c)
+    @inbounds for j in 1:n, i in 1:n
+        D[j, i] = ifelse(i == n + 1 - j, one(T), zero(T))
+    end
+    @inbounds for i in 1:n
+        c[1, i] = D[1, i]
+    end
+    @inbounds for q in 1:(n - 1)
+        for j in 1:(n - q)
+            denom = ts[n + 1 - j] - ts[n + 1 - j - q]
+            for i in 1:n
+                D[j, i] = (D[j, i] - D[j + 1, i]) / denom
+            end
+        end
+        for i in 1:n
+            c[q + 1, i] = D[1, i]
+        end
+    end
+    return c
+end
+
+"""
+    bdf_and_filt_coeff!(α_bar, c, D, ts, n, p) -> η
+
+Variable-stepsize BDF_p coefficients and the FBDF_{p+1} filter weight η^{p+1}
+(BDFANDFILTCOEFF of DeCaria et al., arXiv:1810.06670v1), for the ascending time
+points `ts[1:n]` whose last entry `ts[n]` is the point being solved for. Requires
+`n ≥ p + 2`.
+
+`α_bar[1:n]` is overwritten with the BDF_p coefficients, where `α_bar[i]`
+multiplies the value at `ts[i]` and the leading `α_bar[n]` belongs to the unknown,
+so a nonlinear solve would use `γ = 1 / α_bar[n]`. `c` and `D` are filled by
+[`backdiff!`](@ref).
+"""
+function bdf_and_filt_coeff!(α_bar, c, D, ts, n, p)
+    backdiff!(c, D, ts, n)
+    T = eltype(α_bar)
+    tm = ts[n]
+
+    num_η = one(T)
+    @inbounds for i in 1:p
+        num_η *= tm - ts[n - i]
+    end
+    den_η = zero(T)
+    @inbounds for j in 1:(p + 1)
+        den_η += one(T) / (tm - ts[n - j])
+    end
+
+    @inbounds for i in 1:n
+        α_bar[i] = zero(T)
+    end
+    # ᾱₖ = Σⱼ₌₁ᵖ [∏ᵢ₌₁ʲ⁻¹ (tm − ts[n−i])] · c[j+1, k]; only the p + 1 newest
+    # points are touched by BDF_p, the rest stay zero.
+    @inbounds for k in (n - p):n
+        prefactor = one(T)
+        for j in 1:p
+            α_bar[k] += prefactor * c[j + 1, k]
+            prefactor *= tm - ts[n - j]
+        end
+    end
+
+    return num_η / den_η
+end
+
+"""
+    bdf3stab_coeff(c, n, µ = 9 // 125)
+
+Weight of the BDF3-Stab filter step `y² = y³ + weight * δ³y³` (equation 3.16 of
+DeCaria et al., arXiv:1810.06670v1), given a divided-difference table `c` from
+[`backdiff!`](@ref) over `n ≥ 4` ascending time points.
+
+`µ = 9/125` is the G-stability-optimal constant of the paper, which makes the
+resulting order-2 method A-stable where BDF3 is only α-stable.
+"""
+bdf3stab_coeff(c, n, µ = 9 // 125) = µ / c[4, n]
+
+# ts_asc[1:n] = [ts[n-1], …, ts[1], tdt], i.e. the cache history in ascending
+# order with the point being solved for appended.
+function _filt_fill_ts_asc!(ts_asc, ts, tdt, n)
+    @inbounds for i in 1:(n - 1)
+        ts_asc[i] = ts[n - i]
+    end
+    @inbounds ts_asc[n] = tdt
+    return ts_asc
+end
+
+# δ = Σᵢ c[row, i] · y(ts_asc[i]), where `y` is the value at the newest point and
+# the older ones come from `u_history` (which is ordered newest-first).
+function _filt_divided_diff(c, row, n, y, u_history)
+    if y isa Number
+        δ = c[row, n] * y
+        for i in 1:(n - 1)
+            δ += c[row, i] * u_history[n - i]
+        end
+        return δ
+    end
+    δ = @.. broadcast = false c[row, n] * y
+    for i in 1:(n - 1)
+        δ = @.. broadcast = false δ + c[row, i] * u_history[n - i]
+    end
+    return δ
+end
+
+function _filt_divided_diff!(δ, c, row, n, y, u_history)
+    @.. broadcast = false δ = c[row, n] * y
+    for i in 1:(n - 1)
+        @.. broadcast = false δ = δ + c[row, i] * u_history[n - i]
+    end
+    return δ
+end
+
+# Residual of the BDF formula with coefficients `α_bar` at the candidate `y`,
+# whose derivative is `fy`. Dividing by the leading coefficient turns it into the
+# distance from `y` to the solution of that formula, i.e. a local error estimate.
+function _filt_bdf_residual(α_bar, n, y, u_history, fy)
+    if y isa Number
+        res = α_bar[n] * y
+        for i in 1:(n - 1)
+            res += α_bar[i] * u_history[n - i]
+        end
+        return res - fy
+    end
+    res = @.. broadcast = false α_bar[n] * y
+    for i in 1:(n - 1)
+        res = @.. broadcast = false res + α_bar[i] * u_history[n - i]
+    end
+    return @.. broadcast = false res - fy
+end
+
+function _filt_bdf_residual!(res, α_bar, n, y, u_history, fy)
+    @.. broadcast = false res = α_bar[n] * y
+    for i in 1:(n - 1)
+        @.. broadcast = false res = res + α_bar[i] * u_history[n - i]
+    end
+    @.. broadcast = false res = res - fy
+    return res
+end
+
+# Step ratio the controller would allow for an order-`p` candidate whose local
+# error estimate `est` is already normalised by the tolerance. Only the ordering
+# between candidates matters, so the common `dt` factor is dropped.
+@inline function _filt_step_ratio(est, p)
+    est > 0 || return oftype(est, 10)
+    return oftype(est, (oftype(est, 9 // 10) / est)^(1 / (p + 1)))
+end
+
 # NordsieckBDF scales the Newton increment by the test quantity tq[2], which puts
 # it in the units of the local error test, so `NLNewton(κ = …)` means CVODE's
 # NLSCOEF.
