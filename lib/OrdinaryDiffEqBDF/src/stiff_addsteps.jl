@@ -137,3 +137,62 @@ function _ode_addsteps!(
     end
     return nothing
 end
+
+####################################################################
+# MOOSE234: Rebuild Chebyshev-resampled interpolation data
+# Same approach as FBDF, using Lagrange interpolation through
+# u and u_history, resampled at fixed Chebyshev reference nodes.
+####################################################################
+
+# MOOSE234 ConstantCache: out-of-place k entries
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::MOOSE234ConstantCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    always_calc_begin || return nothing
+    (; u_history, ts, order) = cache
+    n = order + 1
+
+    thetas = Vector{typeof(t)}(undef, n)
+    thetas[1] = one(t)
+    for j in 1:order
+        thetas[1 + j] = (ts[j] - t) / dt
+    end
+
+    values = Vector{typeof(u)}(undef, n)
+    values[1] = u isa Number ? u : copy(u)
+    for j in 1:order
+        values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
+    end
+
+    _resample_at_chebyshev!(k, values, thetas, n)
+    for j in (n + 1):length(k)
+        k[j] = zero(u)
+    end
+    return nothing
+end
+
+# MOOSE234 Cache: in-place k entries
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::MOOSE234Cache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    always_calc_begin || return nothing
+    (; u_history, ts, order, equi_ts) = cache
+    n = order + 1
+
+    equi_ts[1] = one(eltype(equi_ts))
+    for j in 1:order
+        equi_ts[1 + j] = (ts[j] - t) / dt
+    end
+
+    _resample_at_chebyshev_direct_iip!(k, u, u_history, equi_ts, n)
+    for j in (n + 1):length(k)
+        fill!(k[j], zero(eltype(u)))
+    end
+    return nothing
+end
