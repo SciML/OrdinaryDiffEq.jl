@@ -54,6 +54,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     @time @safetestset "save_idxs Tests" begin
         include("interface/save_idxs.jl")
     end
+    @time @safetestset "Symbolic Interpolation Tests" begin
+        include("interface/symbolic_interpolation.jl")
+    end
     @time @safetestset "Unconstrained Time Steps Tests" begin
         include("interface/unconstrained.jl")
     end

@@ -108,7 +108,7 @@ import ConstructionBase
 # sublibraries that import it from this package.
 using SciMLLogging: SciMLLogging, @SciMLMessage, Standard, Minimal
 
-using SymbolicIndexingInterface: NotSymbolic, state_values, symbolic_type
+using SymbolicIndexingInterface: state_values
 import SymbolicIndexingInterface: parameter_values
 
 using EnumX: @enumx

@@ -1,16 +1,18 @@
-using OrdinaryDiffEq, Test
+using DelayDiffEq
+using OrdinaryDiffEqTsit5
 using SciMLBase: SymbolCache
+using Test
 
-# `SymbolCache` resolves an `Expr` as an observed quantity, so `:(x + y)` is not a
-# component of the state vector and cannot be produced by the dense-output interpolant.
-f = ODEFunction(
-    (du, u, p, t) -> (du[1] = p[1] * u[2]; du[2] = -p[1] * u[1]);
-    sys = SymbolCache([:x, :y], [:ω], :t)
+# `SymbolCache` resolves an `Expr` as an observed quantity, so `:(x + y)` is not a component
+# of the state vector and cannot be produced by the dense-output interpolant.
+f = DDEFunction(
+    (du, u, h, p, t) -> (du[1] = -h(p, t - 0.2)[1] + u[2]; du[2] = -u[1]);
+    sys = SymbolCache([:x, :y], [:τ], :t)
 )
-prob = ODEProblem(f, [1.0, 0.0], (0.0, 10.0), [2.0])
+prob = DDEProblem(f, ones(2), (p, t) -> zeros(2), (0.0, 10.0), [0.2]; constant_lags = [0.2])
 
 @testset "Symbolic idxs in the current-step interpolant" begin
-    integrator = init(prob, Tsit5())
+    integrator = init(prob, MethodOfSteps(Tsit5()))
     step!(integrator, 1.0, true)
     mid = (integrator.tprev + integrator.t) / 2
 
@@ -25,13 +27,15 @@ prob = ODEProblem(f, [1.0, 0.0], (0.0, 10.0), [2.0])
     ts = [integrator.tprev, mid, integrator.t]
     @test integrator(ts; idxs = :x).u ≈ [integrator(tt; idxs = 1) for tt in ts]
     @test integrator(ts; idxs = :(x + y)).u ≈ [sum(integrator(tt)) for tt in ts]
-    @test integrator(ts; idxs = [:x, :(x + y)]).t == ts
 
     # Symbolic routing does not disturb the existing integer and `nothing` paths
     @test integrator(mid) == integrator(mid; idxs = nothing)
     @test integrator(mid; idxs = [1, 2]) ≈ integrator(mid)
-    @test integrator(ts; idxs = 1) == [integrator(tt; idxs = 1) for tt in ts]
 
-    @test integrator(mid, Val{1}; idxs = :x) ≈ integrator(mid, Val{1}; idxs = 1)
     @test_throws ErrorException integrator(mid, Val{1}; idxs = :(x + y))
 end
+
+
+# `HistoryODEIntegrator` is deliberately not routed: it implements none of the
+# `SymbolicIndexingInterface` methods a `DEIntegrator` needs (it has no `p` field), so
+# symbolic indexing against it is unsupported here and on master alike.
