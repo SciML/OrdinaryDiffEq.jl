@@ -31,6 +31,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "BDF Inference Tests" include("inference_tests.jl")
     @time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")
     @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
+    @time @safetestset "FBDF Time Filter Tests" include("fbdf_time_filter_tests.jl")
     @time @safetestset "Nordsieck BDF Tests" include("nordsieck_tests.jl")
     @time @safetestset "LHL Factorization Tests" include("lhl_factorization_tests.jl")
 end
