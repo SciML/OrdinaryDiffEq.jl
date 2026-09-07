@@ -44,4 +44,5 @@ ETDRK2
 ETDRK3
 ETDRK4
 HochOst4
+Friedli
 ```
