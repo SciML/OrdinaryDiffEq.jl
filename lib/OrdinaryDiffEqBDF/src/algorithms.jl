@@ -484,6 +484,13 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     - `stald_sqtol`: STALD tolerance for quartic residual. Default: `1e-3`.
     - `stald_rrtol`: STALD tolerance for rr cross-verification. Default: `1e-2`.
     - `stald_tiny`: STALD tiny value to avoid division by zero. Default: `1e-90`.
+    - `time_filter`: Apply the time and stability filters of
+        [DeCaria et al.](https://arxiv.org/abs/1810.06670) to each step. The same
+        nonlinear solve then also yields the order `k+1` FBDF solution, and at order 3
+        the G-stable order 2 BDF3-Stab solution, and the step takes whichever of those
+        candidates its error estimate allows the largest next step for. This can
+        enlarge the steps on both accuracy- and stability-limited problems, at the
+        cost of extra `f` evaluations. Opt-in. Default: `false`.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -499,6 +506,7 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_sqtol = 1e-3,
     stald_rrtol = 1e-2,
     stald_tiny = 1e-90,
+    time_filter = false,
     """
 )
 struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
