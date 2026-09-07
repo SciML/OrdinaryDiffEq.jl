@@ -1,0 +1,12 @@
+[deps]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+
+[sources]
+DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
+
+[compat]
+DiffEqDevTools = "2"
+Documenter = "0.27, 1"
+OrdinaryDiffEq = "6"
