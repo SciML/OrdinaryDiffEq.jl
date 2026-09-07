@@ -1,3 +1,26 @@
+"""
+    nlsolve_tolerances(integrator) -> NamedTuple
+
+The `abstol`/`reltol` the step's nonlinear solve should be run at, taken from the tolerances
+the integrator was initialized with.
+
+An `ImplicitDiscreteProblem` carries no tolerances of its own, so `OrdinaryDiffEqCore`
+stores `false` for one that was not supplied; that maps to `nothing`, which restores the
+nonlinear solver's own default. A per-component tolerance array is reduced to its tightest
+entry, because the nonlinear solve takes a scalar.
+"""
+function nlsolve_tolerances(integrator)
+    return (;
+        abstol = nlsolve_tolerance(integrator.opts.abstol),
+        reltol = nlsolve_tolerance(integrator.opts.reltol),
+    )
+end
+
+nlsolve_tolerance(::Nothing) = nothing
+nlsolve_tolerance(::Bool) = nothing
+nlsolve_tolerance(tol::Number) = tol
+nlsolve_tolerance(tol::AbstractArray) = isempty(tol) ? nothing : minimum(tol)
+
 # u === nothing path: nothing to step. The integrator's state is unchanged
 # and the step trivially succeeds.
 function perform_step!(
@@ -19,7 +42,7 @@ function perform_step!(integrator, cache::IDSolveCache, repeat_step = false)
     state = ImplicitDiscreteState(cache.z, p, t + dt)
 
     # nonlinear solve step
-    SciMLBase.reinit!(nlcache, cache.z; p = state)
+    SciMLBase.reinit!(nlcache, cache.z; p = state, nlsolve_tolerances(integrator)...)
     converged, znew = _solve_nonlinear!(nlcache, observer)
     if !converged
         integrator.force_stepfail = true
@@ -76,7 +99,7 @@ function _initialize_dae!(
         (; z, nlcache, observer) = integrator.cache
         z .= u
         initstate = ImplicitDiscreteState(z, p, t)
-        SciMLBase.reinit!(nlcache, u; p = initstate)
+        SciMLBase.reinit!(nlcache, u; p = initstate, nlsolve_tolerances(integrator)...)
         converged, unew = _solve_nonlinear!(nlcache, observer)
         if converged
             integrator.u .= unew
