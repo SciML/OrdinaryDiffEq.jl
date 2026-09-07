@@ -291,11 +291,13 @@ function build_jac_config(
         jac_prototype = f.jac_prototype
 
         if is_sparse_csc(jac_prototype)
-            if f.mass_matrix isa UniformScaling
+            mass_matrix = mass_matrix_or_I(f)
+
+            if mass_matrix isa UniformScaling
                 idxs = diagind(jac_prototype)
                 @. @view(jac_prototype[idxs]) = 1
             else
-                mm = concrete_mass_matrix(f.mass_matrix)
+                mm = concrete_mass_matrix(mass_matrix)
                 idxs = findall(!iszero, mm)
                 @. @view(jac_prototype[idxs]) = @view(mm[idxs])
             end
@@ -477,11 +479,13 @@ function sparsity_colorvec(f::F, x) where {F}
     sparsity = f.sparsity
 
     if is_sparse_csc(sparsity)
-        if f.mass_matrix isa UniformScaling
+        mass_matrix = mass_matrix_or_I(f)
+
+        if mass_matrix isa UniformScaling
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1
         else
-            mm = concrete_mass_matrix(f.mass_matrix)
+            mm = concrete_mass_matrix(mass_matrix)
             idxs = findall(!iszero, mm)
             @. @view(sparsity[idxs]) = @view(mm[idxs])
         end
