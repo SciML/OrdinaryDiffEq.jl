@@ -1367,6 +1367,9 @@ function (integrator::ODEIntegrator)(
         t, ::Type{deriv} = Val{0};
         idxs = nothing
     ) where {deriv}
+    if SciMLBase.has_symbolic_idxs(idxs)
+        return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
+    end
     return current_interpolant(t, integrator, idxs, deriv)
 end
 

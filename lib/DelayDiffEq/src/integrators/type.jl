@@ -110,6 +110,9 @@ mutable struct DDEIntegrator{
 end
 
 function (integrator::DDEIntegrator)(t, deriv::Type = Val{0}; idxs = nothing)
+    if SciMLBase.has_symbolic_idxs(idxs)
+        return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
+    end
     return OrdinaryDiffEqCore.current_interpolant(t, integrator, idxs, deriv)
 end
 
