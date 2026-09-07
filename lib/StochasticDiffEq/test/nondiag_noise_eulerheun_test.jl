@@ -1,6 +1,7 @@
 using StochasticDiffEq, DiffEqNoiseProcess, SparseArrays, LinearAlgebra,
     AllocCheck
 using DiffEqBase: @..
+using SciMLBase: FullSpecialize
 
 @testset "EulerHeun sparse noise: no per-step alloc" begin
 
@@ -74,7 +75,8 @@ using DiffEqBase: @..
         A = sparse_proto(N)
         p = (; N)
         W = SimpleWienerProcess!(0.0, zeros(2N); save_everystep = false)
-        prob = SDEProblem(
+        # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise
+        prob = SDEProblem{true, FullSpecialize}(
             f!, g!, ones(2N), (0.0, 1.0), p; noise_rate_prototype = A, noise = W
         )
         integ = init(prob, EulerHeun(); dt = 0.01, adaptive = false, save_on = false)
