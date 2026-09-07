@@ -85,8 +85,8 @@ function compute_step_fixedpoint!(
     (; cache) = fpsolver
     ode_integrator = integrator.integrator
 
-    # recompute next integration step
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, true)
+    # A history update must allow Newton to refresh a stale Jacobian on failure.
+    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, false)
 
     # compute residuals
     dz = integrator.u .- ode_integrator.u
@@ -116,8 +116,8 @@ function compute_step_fixedpoint!(
     (; dz, atmp) = cache
     ode_integrator = integrator.integrator
 
-    # recompute next integration step
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, true)
+    # A history update must allow Newton to refresh a stale Jacobian on failure.
+    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, false)
 
     # compute residuals
     @.. dz = integrator.u - ode_integrator.u

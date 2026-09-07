@@ -68,6 +68,13 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag:
     return prepare_ADType(autodiff_alg, prob, u0, p, Val(standardtag))
 end
 
+# A residual wrapped by AutoSpecialize/AutoDespecialize carries only `Float64` and
+# one-chunk dual signatures, so it has to be differentiated with chunk size 1 whatever
+# `length(u)` is; that is also what keeps the integrator type independent of the model.
+_has_wrapped_f(f::Union{ODEFunction, DAEFunction}) =
+    f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+_has_wrapped_f(f) = false
+
 function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
     T = eltype(u0)
 
@@ -75,13 +82,8 @@ function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
 
     cs = fwd_cs == 0 ? nothing : fwd_cs
 
-    if (
-            (
-                prob.f isa ODEFunction &&
-                    prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
-            ) ||
-                (isbitstype(T) && sizeof(T) > 24)
-        ) && (cs == 0 || isnothing(cs))
+    if (_has_wrapped_f(prob.f) || (isbitstype(T) && sizeof(T) > 24)) &&
+            (cs == 0 || isnothing(cs))
         return AutoForwardDiff{1}(tag)
     else
         return AutoForwardDiff{cs}(tag)
@@ -100,10 +102,7 @@ end
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
     # and fdtype is complex, fdtype needs to change to something not complex
-    if alg.fdtype == Val{:complex}() && (
-            prob.f isa ODEFunction &&
-                prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
-        )
+    if alg.fdtype == Val{:complex}() && _has_wrapped_f(prob.f)
         @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
         return AutoFiniteDiff(fdtype = Val{:forward}())
     end
