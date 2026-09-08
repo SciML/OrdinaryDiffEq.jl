@@ -30,7 +30,7 @@ end
     @testset "Polynomial reproduction" begin
         for iip in (false, true), k in 1:4, spacing in (0.5, 1.0, 3.0, (0.5, 1.5, 0.75, 2.5, 1.25, 2.0)), h in (0.1, -0.1)
             integ = polynomial_history(k, h, spacing, iip)
-            OrdinaryDiffEqBDF.perform_step!(integ, integ.cache)
+            OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
             @test only(integ.u) ≈ h^(k + 1) rtol = 1.0e-9 atol = 1.0e-14
         end
     end
@@ -96,11 +96,11 @@ end
         err = errors[selected == k ? 1 : selected == k + 1 ? 2 : 3]
         @test OrdinaryDiffEqCore.get_EEst(integ) == err
         fill!(cache.stald.ssdat, 1)
-        q = OrdinaryDiffEqBDF.stepsize_controller!(integ, cache, integ.alg)
+        q = OrdinaryDiffEqCore.stepsize_controller!(integ, cache, integ.alg)
         @test q ≈ clamp(err^(1 / (selected + 1)) * 1.2, 0.1, 5.0)
         @test all(iszero, cache.stald.ssdat)
         @test cache.order == k
-        OrdinaryDiffEqBDF.step_accept_controller!(integ, cache, integ.alg, q)
+        OrdinaryDiffEqCore.step_accept_controller!(integ, cache, integ.alg, q)
         @test cache.order == max(k, expected)
         @test cache.nconsteps == (expected > k ? 1 : 43)
     end
@@ -110,10 +110,10 @@ end
     for iip in (false, true), k in 1:4, spacing in (0.5, 3.0)
         h = 0.1
         integ = polynomial_history(k, h, spacing, iip)
-        OrdinaryDiffEqBDF.perform_step!(integ, integ.cache)
+        OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
         @test only(integ.fsallast) ≈ (k + 1) * h^k
         for θ in (0.2, 0.5, 0.8)
-            y = OrdinaryDiffEqBDF._ode_interpolant(
+            y = OrdinaryDiffEqCore._ode_interpolant(
                 θ, h, integ.uprev, integ.u, integ.k, integ.cache, nothing, Val{0}, nothing
             )
             @test only(y) ≈ (θ * h)^(k + 1) rtol = 1.0e-8 atol = 1.0e-14
@@ -175,7 +175,7 @@ end
     for iip in (false, true), k in 1:4, spacing in (0.5, 1.0, 3.0, (0.5, 1.5, 0.75, 2.5, 1.25, 2.0))
         errors = map((0.2, 0.1)) do h
             integ = polynomial_history(k, h, spacing, iip; degree = k + 2)
-            OrdinaryDiffEqBDF.perform_step!(integ, integ.cache)
+            OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
             abs(only(integ.u) - h^(k + 2))
         end
         @test errors[1] / errors[2] ≈ 2^(k + 2) rtol = 1.0e-8
