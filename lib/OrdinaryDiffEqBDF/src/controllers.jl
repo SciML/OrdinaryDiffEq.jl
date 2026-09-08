@@ -185,7 +185,7 @@ function bdf_restart_estimates!(cache)
     return nothing
 end
 
-function bdf_step_reject_controller!(integrator, cache, EEst1)
+function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cache.order)
     k = cache.order
     h = integrator.dt
     cache.consfailcnt += 1
@@ -211,7 +211,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
         h = h / 2
     end
     zₛ = get_gamma(integrator)
-    expo = 1 / (k + 1)
+    expo = 1 / (error_order + 1)
     z = zₛ * ((OrdinaryDiffEqCore.get_EEst(integrator))^expo)
     F = inv(z)
     if z <= 10
@@ -266,6 +266,9 @@ function step_reject_controller!(integrator, alg::FBDF)
     return step_reject_controller!(integrator, integrator.cache, alg)
 end
 function step_reject_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, ::FBDF)
+    if cache.filter_order > 0
+        return bdf_step_reject_controller!(integrator, cache, oftype(cache.terkm1, Inf), cache.filter_order)
+    end
     return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
@@ -391,6 +394,11 @@ function stepsize_controller!(
         max_order,
     }
     cache.prev_order = cache.order
+    if cache.filter_order > 0
+        stald_reset!(cache.stald)
+        q = get_gamma(integrator) / _filt_step_ratio(OrdinaryDiffEqCore.get_EEst(integrator), cache.filter_order)
+        return clamp(q, inv(get_current_qmax(integrator, get_qmax(integrator))), inv(get_qmin(integrator)))
+    end
 
     # CVODE-style Stability Limit Detection (STALD)
     # Collect data and check BEFORE order selection, using the step's order and norms.
@@ -442,6 +450,10 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    if cache.filter_order > cache.order
+        cache.order = min(cache.filter_order, max_order)
+        cache.nconsteps = 0
+    end
     is_disco = integrator.is_disco_step
     if is_disco
         integrator.is_disco_step = false
