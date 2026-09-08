@@ -62,21 +62,15 @@ end
     @test SciMLBase.successful_retcode(sol)
     @test isapprox(sol.u[end], reference.u[end], rtol = 1.0e-5)
 
-    # mass matrix DAE form: the filter's residual-based error estimate does not
-    # apply, so this exercises the fallback estimate
-    function rober_mm!(du, u, p, t)
-        du[1] = -0.04 * u[1] + 1.0e4 * u[2] * u[3]
-        du[2] = 0.04 * u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3]
-        du[3] = u[1] + u[2] + u[3] - 1.0
-        return nothing
+    for iip in (false, true)
+        dae_f(u, p, t) = [-u[1], u[2] - u[1]^2]
+        dae_f!(du, u, p, t) = (du .= dae_f(u, p, t); nothing)
+        fun = iip ? ODEFunction(dae_f!; mass_matrix = Diagonal([1.0, 0.0])) :
+            ODEFunction(dae_f; mass_matrix = Diagonal([1.0, 0.0]))
+        dae = ODEProblem(fun, [1.0, 1.0], (0.0, 1.0))
+        @test_throws ArgumentError init(dae, FBDF(time_filter = true))
+        @test SciMLBase.successful_retcode(solve(dae, FBDF(time_filter = false)))
     end
-    rober_dae = ODEProblem(
-        ODEFunction(rober_mm!, mass_matrix = Diagonal([1.0, 1.0, 0.0])),
-        [1.0, 0.0, 0.0], (0.0, 1.0e5)
-    )
-    sol = solve(rober_dae, FBDF(time_filter = true), abstol = 1.0e-8, reltol = 1.0e-8)
-    @test SciMLBase.successful_retcode(sol)
-    @test isapprox(sol.u[end], reference.u[end], rtol = 1.0e-5)
 end
 
 @testset "time_filter respects max_order" begin

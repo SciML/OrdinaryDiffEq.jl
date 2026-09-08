@@ -630,6 +630,7 @@ end
     fd_weights::fdWeightsType
     stald::staldType
     time_filter::Bool
+    filter_order::Int
     ts_asc::tsType
     α_bar::tsType
     dd_c::fdWeightsType
@@ -690,9 +691,12 @@ function alg_cache(
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 
-    # Time filter workspace: the divided-difference tables span up to
-    # max_order + 3 points (the BDF_{k+1} residual estimate at k = max_order - 1).
-    n_filt = max_order + 3
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
     ts_asc = zeros(typeof(t), n_filt)
     α_bar = zeros(typeof(t), n_filt)
     dd_c = zeros(typeof(t), n_filt, n_filt)
@@ -702,7 +706,7 @@ function alg_cache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
         terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald,
-        alg.time_filter, ts_asc, α_bar, dd_c, dd_D
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 
@@ -743,6 +747,7 @@ end
     fd_weights::fdWeightsType
     stald::staldType
     time_filter::Bool
+    filter_order::Int
     ts_asc::tsType
     α_bar::tsType
     dd_c::fdWeightsType
@@ -812,9 +817,12 @@ function alg_cache(
         tiny = alg.stald_tiny,
     )
 
-    # Time filter workspace: the divided-difference tables span up to
-    # max_order + 3 points (the BDF_{k+1} residual estimate at k = max_order - 1).
-    n_filt = max_order + 3
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
     ts_asc = zeros(typeof(t), n_filt)
     α_bar = zeros(typeof(t), n_filt)
     dd_c = zeros(typeof(t), n_filt, n_filt)
@@ -825,7 +833,7 @@ function alg_cache(
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
         iters_from_event, dense, alg.step_limiter!, fd_weights, stald,
-        alg.time_filter, ts_asc, α_bar, dd_c, dd_D
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 

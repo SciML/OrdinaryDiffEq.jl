@@ -408,20 +408,7 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
     return terk
 end
 
-####################################################################
-# Time and stability filters for FBDF
-# (DeCaria, Layton, McLaughlin, Rebholz; arXiv:1810.06670v1)
-#
-# A single BDF_k solve yields several embedded solutions by combining
-# the new value with divided differences of the history:
-#
-#   FBDF_{k+1}: y^{k+1} = y^k - η^{k+1} δ^{k+1} y^k          (order k+1)
-#   BDF3-Stab:  y²      = y³ + (µ / c[4, n]) δ³ y³   (k = 3, order 2)
-#
-# Each candidate carries its own local error estimate, so the step the
-# controller would allow for each can be compared and the most
-# permissive one taken.
-####################################################################
+# Divided-difference filters and residual estimates (DeCaria et al., arXiv:1810.06670).
 
 """
     backdiff!(c, D, ts, n)
@@ -455,49 +442,6 @@ function backdiff!(c, D, ts, n)
         end
     end
     return c
-end
-
-"""
-    bdf_and_filt_coeff!(α_bar, c, D, ts, n, p) -> η
-
-Variable-stepsize BDF_p coefficients and the FBDF_{p+1} filter weight η^{p+1}
-(BDFANDFILTCOEFF of DeCaria et al., arXiv:1810.06670v1), for the ascending time
-points `ts[1:n]` whose last entry `ts[n]` is the point being solved for. Requires
-`n ≥ p + 2`.
-
-`α_bar[1:n]` is overwritten with the BDF_p coefficients, where `α_bar[i]`
-multiplies the value at `ts[i]` and the leading `α_bar[n]` belongs to the unknown,
-so a nonlinear solve would use `γ = 1 / α_bar[n]`. `c` and `D` are filled by
-[`backdiff!`](@ref).
-"""
-function bdf_and_filt_coeff!(α_bar, c, D, ts, n, p)
-    backdiff!(c, D, ts, n)
-    T = eltype(α_bar)
-    tm = ts[n]
-
-    num_η = one(T)
-    @inbounds for i in 1:p
-        num_η *= tm - ts[n - i]
-    end
-    den_η = zero(T)
-    @inbounds for j in 1:(p + 1)
-        den_η += one(T) / (tm - ts[n - j])
-    end
-
-    @inbounds for i in 1:n
-        α_bar[i] = zero(T)
-    end
-    # ᾱₖ = Σⱼ₌₁ᵖ [∏ᵢ₌₁ʲ⁻¹ (tm − ts[n−i])] · c[j+1, k]; only the p + 1 newest
-    # points are touched by BDF_p, the rest stay zero.
-    @inbounds for k in (n - p):n
-        prefactor = one(T)
-        for j in 1:p
-            α_bar[k] += prefactor * c[j + 1, k]
-            prefactor *= tm - ts[n - j]
-        end
-    end
-
-    return num_η / den_η
 end
 
 """
@@ -547,9 +491,8 @@ function _filt_divided_diff!(δ, c, row, n, y, u_history)
     return δ
 end
 
-# Residual of the BDF formula with coefficients `α_bar` at the candidate `y`,
-# whose derivative is `fy`. Dividing by the leading coefficient turns it into the
-# distance from `y` to the solution of that formula, i.e. a local error estimate.
+# Residual of the higher-order BDF formula, used as a defect estimate after
+# scaling by its leading coefficient.
 function _filt_bdf_residual(α_bar, n, y, u_history, fy)
     if y isa Number
         res = α_bar[n] * y
@@ -574,15 +517,70 @@ function _filt_bdf_residual!(res, α_bar, n, y, u_history, fy)
     return res
 end
 
-# Step ratio the controller would allow for an order-`p` candidate whose local
-# error estimate `est` is already normalised by the tolerance. Only the ordering
-# between candidates matters, so the common `dt` factor is dropped.
+# Cancel the fixed-coefficient solve's error on a monic polynomial of degree
+# k+1. Its history interpolant is θ^(k+1) - ∏ⱼ(θ-θⱼ), with θ=(t-tdt)/dt.
+function _fbdf_filter_weight(c, ts, n, k, dt, bdf_coeffs)
+    defect = zero(eltype(ts))
+    for i in 1:k
+        θ = -i
+        product = one(eltype(ts))
+        for j in 1:(n - 1)
+            product *= θ - (ts[j] - ts[n]) / dt
+        end
+        defect -= bdf_coeffs[k, i + 1] * (θ^(k + 1) - product)
+    end
+    error = defect * dt^(k + 1) / bdf_coeffs[k, 1]
+    return error / (1 + c[n, n] * error)
+end
+
+function _filt_bdf_coefficients!(α_bar, c, ts, n, p)
+    for i in 1:n
+        α_bar[i] = zero(eltype(α_bar))
+        prefactor = one(eltype(α_bar))
+        for j in 1:p
+            α_bar[i] += prefactor * c[j + 1, i]
+            prefactor *= ts[n] - ts[n - j]
+        end
+    end
+    return α_bar
+end
+
 @inline function _filt_step_ratio(est, p)
-    est > 0 || return oftype(est, 10)
-    return oftype(est, (oftype(est, 9 // 10) / est)^(1 / (p + 1)))
+    iszero(est) && return oftype(est, Inf)
+    isfinite(est) && est > 0 || return zero(est)
+    return est^(-1 / (p + 1))
+end
+
+function _fbdf_select_filter!(integrator, cache, k, max_order, err, err_hi, err_lo)
+    order = k
+    estimate = err
+    ratio = _filt_step_ratio(err, k)
+    if k == 3 && _filt_step_ratio(err_lo, 2) > ratio
+        order = 2
+        estimate = err_lo
+        ratio = _filt_step_ratio(err_lo, 2)
+    end
+    if k < max_order && cache.qwait == 0 && _filt_step_ratio(err_hi, k + 1) > ratio
+        order = k + 1
+        estimate = err_hi
+    end
+    cache.filter_order = order
+    OrdinaryDiffEqCore.set_EEst!(integrator, estimate)
+    return order
 end
 
 # NordsieckBDF scales the Newton increment by the test quantity tq[2], which puts
 # it in the units of the local error test, so `NLNewton(κ = …)` means CVODE's
 # NLSCOEF.
 error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
+
+function _fbdf_finish_fixed_step!(integrator, cache)
+    if cache.time_filter && !integrator.opts.adaptive
+        cache.prev_order = cache.order
+        cache.order = max(cache.order, cache.filter_order)
+        cache.iters_from_event += 1
+        cache.nconsteps += 1
+        cache.consfailcnt = 0
+    end
+    return nothing
+end
