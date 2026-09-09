@@ -433,8 +433,11 @@ function check_event_occurrence(integrator, callback, bottom_sign)
     if callback.interp_points != 0 && !isdiscrete(integrator.alg) &&
             any(iszero, event_idx)
         # Use the interpolants for safety checking
-        ts = range(integrator.tprev, stop = integrator.t,
-            length = Int64(callback.interp_points))  # Int64: avoid i686 _linspace InexactError
+        ts = range(
+            integrator.tprev,
+            stop = integrator.t,
+            length = Int64(callback.interp_points)
+        )  # Int64: avoid i686 _linspace InexactError
         for i in 2:length(ts)
             top_t = ts[i]
             event_occurred, event_idx, top_sign =
