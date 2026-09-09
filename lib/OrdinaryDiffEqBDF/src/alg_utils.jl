@@ -52,8 +52,12 @@ has_stiff_interpolation(::Union{QNDF, FBDF, DFBDF}) = true
 alg_order(alg::NordsieckBDF) = 1  # dummy: the running order lives in the cache
 alg_order(alg::DNordsieckBDF) = 1
 isadaptive(alg::DNordsieckBDF) = true
-get_current_alg_order(alg::NordsieckBDFAlgs, cache) = cache.order
-get_current_adaptive_order(alg::NordsieckBDFAlgs, cache) = cache.order
+get_current_alg_order(alg::NordsieckBDFAlgs, cache) =
+    hasproperty(cache, :filter_order) && cache.filter_order > 0 ? cache.filter_order :
+    cache.order
+get_current_adaptive_order(alg::NordsieckBDFAlgs, cache) =
+    hasproperty(cache, :filter_order) && cache.filter_order > 0 ? cache.filter_order :
+    cache.order
 has_stiff_interpolation(::NordsieckBDFAlgs) = true
 
 # The Newton increment norm is scaled by tq[2], which converts it into the units of

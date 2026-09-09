@@ -680,8 +680,40 @@ function step_accept_controller!(integrator, alg::NordsieckBDFAlgs, q)
     cache.ncf = 0
     # dense output data: the committed Nordsieck columns about t_{n+1}
     _nordsieck_store_k!(integrator, cache, iip)
+    if hasproperty(cache, :time_filter) && cache.time_filter
+        _nordsieck_filter_push_history!(cache, integrator.t + dt, u, iip)
+    end
 
-    if cache.etamax == one(T)
+    if hasproperty(cache, :time_filter) && cache.time_filter && cache.filter_order > 0
+        # Prefer the MOOSE candidate's order and rebuild eta from its EEst.
+        fo = cache.filter_order
+        cache.etaq = inv((NORD_BIAS2 * dsm)^(one(T) / (fo + 1)) + NORD_ADDON)
+        if fo > cache.order && cache.order < cache.max_order_int && cache.qwait == 0
+            cache.qprime = cache.order + 1
+            cache.eta = cache.etaq
+            _nord_setacor!(cache, acor, iip)
+            cache.qwait = 2
+        elseif fo < cache.order && fo >= 1
+            cache.qprime = fo
+            cache.eta = min(cache.etaq, one(T))
+            cache.qwait = 2
+        elseif cache.qwait != 0
+            cache.eta = cache.etaq
+            cache.qprime = cache.order
+            nordsieck_set_eta!(cache, integrator)
+        else
+            cache.qwait = 2
+            cache.etaqm1 = nordsieck_compute_etaqm1(cache, integrator, u, uprev)
+            cache.etaqp1 = nordsieck_compute_etaqp1(cache, integrator, u, uprev, acor, dt)
+            nordsieck_choose_eta!(cache, integrator, u, uprev, acor, dt, iip)
+            # Keep a MOOSE upgrade if choose_eta didn't already pick it
+            if fo > cache.order && cache.qprime <= cache.order
+                cache.qprime = cache.order + 1
+                _nord_setacor!(cache, acor, iip)
+            end
+            nordsieck_set_eta!(cache, integrator)
+        end
+    elseif cache.etamax == one(T)
         # a failure earlier in this step forbids growth (CVODE cvPrepareNextStep)
         cache.qwait = max(cache.qwait, 2)
         cache.qprime = cache.order

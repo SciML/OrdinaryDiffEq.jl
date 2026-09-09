@@ -34,6 +34,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "FBDF Time Filter Tests" include("fbdf_time_filter_tests.jl")
     @time @safetestset "FBDF Filter Regression Tests" include("fbdf_filter_regression_tests.jl")
     @time @safetestset "Nordsieck BDF Tests" include("nordsieck_tests.jl")
+    @time @safetestset "Nordsieck Time Filter Tests" include("nordsieck_time_filter_tests.jl")
     @time @safetestset "LHL Factorization Tests" include("lhl_factorization_tests.jl")
 end
 

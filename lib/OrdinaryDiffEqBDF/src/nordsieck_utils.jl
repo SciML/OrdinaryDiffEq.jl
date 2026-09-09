@@ -451,6 +451,15 @@ function _nordsieck_finish_fixed!(integrator, cache, iip)
     integrator.opts.adaptive && return nothing
     nordsieck_complete!(cache, integrator.dt, cache.acor, iip)
     _nordsieck_store_k!(integrator, cache, iip)
+    if hasproperty(cache, :time_filter) && cache.time_filter
+        _nordsieck_filter_push_history!(cache, integrator.t + integrator.dt, integrator.u, iip)
+        if cache.filter_order > cache.order && cache.order < cache.max_order_int
+            cache.qprime = cache.order + 1
+            _nord_setacor!(cache, cache.acor, iip)
+        elseif cache.filter_order > 0
+            cache.order = max(cache.order, cache.filter_order)
+        end
+    end
     if cache.qwait <= 0
         cache.qwait = 2
         if cache.order < cache.max_order_int
@@ -475,7 +484,9 @@ function nordsieck_start!(integrator, cache, iip::Val{true})
     @inbounds for j in 3:length(zn)
         fill!(zn[j], zero(eltype(uprev)))
     end
-    return _nordsieck_start_common!(cache, dt)
+    _nordsieck_start_common!(cache, dt)
+    _nordsieck_filter_seed_history!(integrator, cache, iip)
+    return nothing
 end
 function nordsieck_start!(integrator, cache, iip::Val{false})
     (; uprev, dt) = integrator
@@ -485,7 +496,9 @@ function nordsieck_start!(integrator, cache, iip::Val{false})
     @inbounds for j in 3:length(zn)
         zn[j] = zero(uprev)
     end
-    return _nordsieck_start_common!(cache, dt)
+    _nordsieck_start_common!(cache, dt)
+    _nordsieck_filter_seed_history!(integrator, cache, iip)
+    return nothing
 end
 function _nordsieck_start_common!(cache, dt)
     cache.order = 1
@@ -501,9 +514,246 @@ function _nordsieck_start_common!(cache, dt)
     cache.predicted = false
     stald_reset!(cache.stald)
     fill!(cache.tau, zero(eltype(cache.tau)))
+    if hasproperty(cache, :time_filter) && cache.time_filter
+        cache.filter_order = 0
+        cache.iters_from_event = 0
+        fill!(cache.ts, oftype(cache.ts[1], NaN))
+        if !isempty(cache.u_history)
+            h1 = first(cache.u_history)
+            if h1 isa Number
+                fill!(cache.u_history, zero(typeof(h1)))
+            elseif ArrayInterface.ismutable(h1)
+                for h in cache.u_history
+                    fill!(h, zero(eltype(h)))
+                end
+            end
+        end
+    end
     return nothing
 end
 
 @inline function nordsieck_needs_start(integrator, cache)
     return cache.nst == 0 || integrator.derivative_discontinuity
+end
+
+# ---------------------------------------------------------------- MOOSE time filter
+"""
+    _nordsieck_filter_reinit_history!(integrator, cache, iip)
+
+Mirror `reinitFBDF!`: keep a newest-first rolling `(t, uprev)` history so the
+MOOSE filter sees the same nodes the BDF corrector just used. Only shifts on a
+fresh attempt (`nef == ncf == 0`) so rejected retries do not duplicate nodes.
+"""
+function _nordsieck_filter_reinit_history!(integrator, cache, ::Val{true})
+    (hasproperty(cache, :time_filter) && cache.time_filter) || return nothing
+    n = length(cache.ts)
+    n == 0 && return nothing
+    (; t, uprev) = integrator
+    if integrator.derivative_discontinuity || cache.nst == 0
+        fill!(cache.ts, oftype(t, NaN))
+        cache.iters_from_event = 0
+        cache.ts[1] = t
+        copyto!(cache.u_history[1], uprev)
+        return nothing
+    end
+    if cache.iters_from_event == 0
+        cache.ts[1] = t
+        copyto!(cache.u_history[1], uprev)
+    elseif cache.iters_from_event == 1 && t != cache.ts[1]
+        cache.ts[2] = cache.ts[1]
+        cache.ts[1] = t
+        copyto!(cache.u_history[2], cache.u_history[1])
+        copyto!(cache.u_history[1], uprev)
+    elseif cache.nef == 0 && cache.ncf == 0 && t != cache.ts[1]
+        @inbounds for i in n:-1:2
+            cache.ts[i] = cache.ts[i - 1]
+            copyto!(cache.u_history[i], cache.u_history[i - 1])
+        end
+        cache.ts[1] = t
+        copyto!(cache.u_history[1], uprev)
+    end
+    return nothing
+end
+function _nordsieck_filter_reinit_history!(integrator, cache, ::Val{false})
+    (hasproperty(cache, :time_filter) && cache.time_filter) || return nothing
+    n = length(cache.ts)
+    n == 0 && return nothing
+    (; t, uprev) = integrator
+    if integrator.derivative_discontinuity || cache.nst == 0
+        fill!(cache.ts, oftype(t, NaN))
+        cache.iters_from_event = 0
+        cache.ts[1] = t
+        cache.u_history[1] = uprev
+        return nothing
+    end
+    if cache.iters_from_event == 0
+        cache.ts[1] = t
+        cache.u_history[1] = uprev
+    elseif cache.iters_from_event == 1 && t != cache.ts[1]
+        cache.ts[2] = cache.ts[1]
+        cache.ts[1] = t
+        cache.u_history[2] = cache.u_history[1]
+        cache.u_history[1] = uprev
+    elseif cache.nef == 0 && cache.ncf == 0 && t != cache.ts[1]
+        @inbounds for i in n:-1:2
+            cache.ts[i] = cache.ts[i - 1]
+            cache.u_history[i] = cache.u_history[i - 1]
+        end
+        cache.ts[1] = t
+        cache.u_history[1] = uprev
+    end
+    return nothing
+end
+
+# Keep seed helper as a thin alias used from cold start.
+_nordsieck_filter_seed_history!(integrator, cache, iip) =
+    _nordsieck_filter_reinit_history!(integrator, cache, iip)
+
+function _nordsieck_filter_push_history!(cache, t_new, u_new, iip)
+    # History is maintained at step start (FBDF-style); on accept we only
+    # advance the event counter that gates filter eligibility.
+    (hasproperty(cache, :time_filter) && cache.time_filter) || return nothing
+    cache.iters_from_event += 1
+    return nothing
+end
+
+"""
+Apply the MOOSE time filter to the corrected Nordsieck step (out-of-place).
+
+Returns `(u, fsallast, moved)`. When `moved`, `acor` must be recomputed as
+`u - ypred` so `nordsieck_complete!` commits the filtered solution.
+`fsallast === nothing` means the caller should keep the free Nordsieck FSAL.
+"""
+function _nordsieck_time_filter(integrator, cache, u_bdf, k)
+    (; ts, u_history, ts_asc, α_bar, dd_c, dd_D, bdf_coeffs) = cache
+    (; t, dt, f, p, uprev) = integrator
+    (; abstol, reltol, internalnorm, adaptive) = integrator.opts
+    max_order = cache.max_order_int
+    cache.filter_order = 0
+    k <= 4 && cache.iters_from_event >= k || return u_bdf, nothing, false
+    n = k + 2
+    @inbounds for i in 1:(n - 1)
+        isfinite(ts[i]) || return u_bdf, nothing, false
+    end
+    tdt = t + dt
+    _filt_fill_ts_asc!(ts_asc, ts, tdt, n)
+    backdiff!(dd_c, dd_D, ts_asc, n)
+    η = _fbdf_filter_weight(dd_c, ts_asc, n, k, dt, bdf_coeffs)
+    isfinite(η) || return u_bdf, nothing, false
+    δ = _filt_divided_diff(dd_c, n, n, u_bdf, u_history)
+    est = @.. broadcast = false -η * δ
+    y_hi = @.. broadcast = false u_bdf + est
+    if !adaptive
+        cache.filter_order = min(k + 1, max_order)
+        if k < max_order
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            return y_hi, f(y_hi, p, tdt), true
+        end
+        return u_bdf, nothing, false
+    end
+    err = internalnorm(
+        calculate_residuals(est, uprev, u_bdf, abstol, reltol, internalnorm, t), t
+    )
+    isfinite(err) || return u_bdf, nothing, false
+    f_hi = f(y_hi, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    _filt_bdf_coefficients!(α_bar, dd_c, ts_asc, n, k + 1)
+    abs(α_bar[n]) < eps(typeof(η)) && return u_bdf, nothing, false
+    res = _filt_bdf_residual(α_bar, n, y_hi, u_history, f_hi)
+    est_hi = @.. broadcast = false res / α_bar[n]
+    err_hi = internalnorm(
+        calculate_residuals(est_hi, uprev, y_hi, abstol, reltol, internalnorm, t), t
+    )
+    isfinite(err_hi) || (err_hi = oftype(err, Inf))
+    y_lo = u_bdf
+    err_lo = oftype(err, Inf)
+    if k == 3
+        w = bdf3stab_coeff(dd_c, n)
+        if isfinite(w)
+            δ3 = _filt_divided_diff(dd_c, 4, n, u_bdf, u_history)
+            est_lo = @.. broadcast = false w * δ3
+            y_lo = @.. broadcast = false u_bdf + est_lo
+            err_lo = internalnorm(
+                calculate_residuals(est_lo, uprev, y_lo, abstol, reltol, internalnorm, t), t
+            )
+            isfinite(err_lo) || (err_lo = oftype(err, Inf))
+        end
+    end
+    selected = _fbdf_select_filter!(integrator, cache, k, max_order, err, err_hi, err_lo)
+    selected == k + 1 && return y_hi, f_hi, true
+    if selected < k
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        return y_lo, f(y_lo, p, tdt), true
+    end
+    return u_bdf, nothing, false
+end
+
+"""
+In-place MOOSE filter. Returns `true` if `u` (and `fsallast`) were updated.
+"""
+function _nordsieck_time_filter!(integrator, cache, k)
+    (; ts, u_history, ts_asc, α_bar, dd_c, dd_D, atmp, bdf_coeffs) = cache
+    (; t, dt, u, f, p, uprev) = integrator
+    (; abstol, reltol, internalnorm, adaptive) = integrator.opts
+    max_order = cache.max_order_int
+    cache.filter_order = 0
+    k <= 4 && cache.iters_from_event >= k || return false
+    n = k + 2
+    @inbounds for i in 1:(n - 1)
+        isfinite(ts[i]) || return false
+    end
+    tdt = t + dt
+    y_lo = cache.ufilt
+    y_hi = cache.tempv
+    work = cache.tmp
+    _filt_fill_ts_asc!(ts_asc, ts, tdt, n)
+    backdiff!(dd_c, dd_D, ts_asc, n)
+    η = _fbdf_filter_weight(dd_c, ts_asc, n, k, dt, bdf_coeffs)
+    isfinite(η) || return false
+    _filt_divided_diff!(work, dd_c, n, n, u, u_history)
+    @.. broadcast = false work = -η * work
+    @.. broadcast = false y_hi = u + work
+    if !adaptive
+        cache.filter_order = min(k + 1, max_order)
+        k < max_order || return false
+        @.. broadcast = false u = y_hi
+        f(integrator.fsallast, u, p, tdt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        return true
+    end
+    calculate_residuals!(atmp, work, uprev, u, abstol, reltol, internalnorm, t)
+    err = internalnorm(atmp, t)
+    isfinite(err) || return false
+    f(integrator.fsallast, y_hi, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    _filt_bdf_coefficients!(α_bar, dd_c, ts_asc, n, k + 1)
+    abs(α_bar[n]) < eps(typeof(η)) && return false
+    _filt_bdf_residual!(work, α_bar, n, y_hi, u_history, integrator.fsallast)
+    @.. broadcast = false work = work / α_bar[n]
+    calculate_residuals!(atmp, work, uprev, y_hi, abstol, reltol, internalnorm, t)
+    err_hi = internalnorm(atmp, t)
+    isfinite(err_hi) || (err_hi = oftype(err, Inf))
+    err_lo = oftype(err, Inf)
+    if k == 3
+        w = bdf3stab_coeff(dd_c, n)
+        if isfinite(w)
+            _filt_divided_diff!(work, dd_c, 4, n, u, u_history)
+            @.. broadcast = false work = w * work
+            @.. broadcast = false y_lo = u + work
+            calculate_residuals!(atmp, work, uprev, y_lo, abstol, reltol, internalnorm, t)
+            err_lo = internalnorm(atmp, t)
+            isfinite(err_lo) || (err_lo = oftype(err, Inf))
+        end
+    end
+    selected = _fbdf_select_filter!(integrator, cache, k, max_order, err, err_hi, err_lo)
+    if selected == k + 1
+        @.. broadcast = false u = y_hi
+        return true
+    elseif selected < k
+        @.. broadcast = false u = y_lo
+        f(integrator.fsallast, u, p, tdt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        return true
+    end
+    return false
 end

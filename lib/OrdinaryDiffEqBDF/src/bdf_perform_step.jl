@@ -1686,6 +1686,7 @@ function perform_step!(integrator, cache::NordsieckBDFCache, repeat_step = false
     nordsieck_needs_start(integrator, cache) && nordsieck_start!(integrator, cache, iip)
 
     nordsieck_prepare!(integrator, cache, iip)
+    _nordsieck_filter_reinit_history!(integrator, cache, iip)
     nordsieck_predict!(cache, iip)
     nordsieck_set_coeffs!(cache, dt)
 
@@ -1719,8 +1720,13 @@ function perform_step!(integrator, cache::NordsieckBDFCache, repeat_step = false
         )
     end
 
-    # zn[1] is h*f(u) exactly once the corrector has converged, so fsallast is free
-    @.. broadcast = false integrator.fsallast = (zn[2] + l1 * cache.acor) / dt
+    # Free FSAL from the converged Newton residual; the MOOSE filter recomputes
+    # f whenever it moves `u`, since that identity no longer holds.
+    if cache.time_filter && _nordsieck_time_filter!(integrator, cache, cache.order)
+        @.. broadcast = false cache.acor = u - cache.ypred
+    else
+        @.. broadcast = false integrator.fsallast = (zn[2] + l1 * cache.acor) / dt
+    end
     _nordsieck_finish_fixed!(integrator, cache, iip)
     return nothing
 end
@@ -1732,6 +1738,7 @@ function perform_step!(integrator, cache::NordsieckBDFConstantCache, repeat_step
     nordsieck_needs_start(integrator, cache) && nordsieck_start!(integrator, cache, iip)
 
     nordsieck_prepare!(integrator, cache, iip)
+    _nordsieck_filter_reinit_history!(integrator, cache, iip)
     nordsieck_predict!(cache, iip)
     nordsieck_set_coeffs!(cache, dt)
 
@@ -1758,7 +1765,17 @@ function perform_step!(integrator, cache::NordsieckBDFConstantCache, repeat_step
             cache.tq[2] * _nord_wrms(integrator, cache, cache.acor, uprev, u)
         )
     end
-    integrator.fsallast = @.. (zn[2] + l1 * cache.acor) / dt
+    if cache.time_filter
+        u, fsal, moved = _nordsieck_time_filter(integrator, cache, u, cache.order)
+        if moved
+            cache.acor = @.. u - cache.ypred
+            integrator.fsallast = fsal
+        else
+            integrator.fsallast = @.. (zn[2] + l1 * cache.acor) / dt
+        end
+    else
+        integrator.fsallast = @.. (zn[2] + l1 * cache.acor) / dt
+    end
     integrator.u = u
     _nordsieck_finish_fixed!(integrator, cache, iip)
     return nothing

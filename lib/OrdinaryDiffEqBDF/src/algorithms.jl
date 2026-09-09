@@ -825,12 +825,23 @@ end
       refactorizing is comparatively rare for it.
     - `max_order`: maximum BDF order (1–5).
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`.
+    - `stald`: Enable Stability Limit Detection (STALD) for BDF orders 3-5.
+      Default: `false` (matches CVODE).
+    - `time_filter`: Apply optional MOOSE time filters
+      ([DeCaria et al.](https://arxiv.org/abs/1810.06670)) after the BDF corrector,
+      using a short rolling `(t, u)` history alongside the Nordsieck array. Same
+      candidate selection as `FBDF(time_filter=true)`: order `k+1` at base orders
+      1–4, and BDF3-Stab (order 2) at order 3. The filtered solution is committed
+      into the Nordsieck array via an updated `acor`. Requires the identity mass
+      matrix. Default: `false`.
     """,
     """
     nlsolve = NLNewton(max_iter = 3),
     extrapolant = :linear,
     max_order::Val{MO} = Val{5}(),
     step_limiter! = trivial_limiter!,
+    stald = false,
+    time_filter = false,
     """
 )
 struct NordsieckBDF{MO, AD, F, F2, T, StepLimiter, CJ, QT} <:
@@ -847,6 +858,7 @@ struct NordsieckBDF{MO, AD, F, F2, T, StepLimiter, CJ, QT} <:
     qmax::QT
     qsteady_min::QT
     qsteady_max::QT
+    time_filter::Bool
 end
 
 function NordsieckBDF(;
@@ -854,12 +866,14 @@ function NordsieckBDF(;
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton(max_iter = 3), tol = nothing,
         extrapolant = :linear, step_limiter! = trivial_limiter!, stald = false,
-        qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
+        qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1,
+        time_filter = false,
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
     return NordsieckBDF(
         max_order, linsolve, nlsolve, tol, extrapolant, step_limiter!,
-        autodiff, _unwrap_val(concrete_jac), stald, qmax, qsteady_min, qsteady_max
+        autodiff, _unwrap_val(concrete_jac), stald, qmax, qsteady_min, qsteady_max,
+        time_filter,
     )
 end
 

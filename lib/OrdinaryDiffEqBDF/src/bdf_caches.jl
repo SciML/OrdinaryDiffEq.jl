@@ -841,6 +841,7 @@ end
 # ================================================================= caches
 @cache mutable struct NordsieckBDFCache{
         MO, N, rateType, uNoUnitsType, uType, tType, coeffType, staldType, StepLimiter,
+        filtTsType, filtUHType, filtCoeffType, filtMatType,
     } <: BDFMutableCache
     fsalfirst::rateType
     nlsolver::N
@@ -850,6 +851,7 @@ end
     tempv::uType
     tmp::uType
     atmp::uNoUnitsType
+    ufilt::uType
     l::coeffType
     tau::coeffType
     tq::coeffType
@@ -872,11 +874,24 @@ end
     predicted::Bool
     stald::staldType
     step_limiter!::StepLimiter
+    time_filter::Bool
+    filter_order::Int
+    iters_from_event::Int
+    ts::filtTsType
+    u_history::filtUHType
+    bdf_coeffs::filtCoeffType
+    ts_asc::filtTsType
+    α_bar::filtTsType
+    dd_c::filtMatType
+    dd_D::filtMatType
 end
 
 @truncate_stacktrace NordsieckBDFCache 1
 
-mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldType} <:
+mutable struct NordsieckBDFConstantCache{
+        MO, N, uType, tType, coeffType, staldType,
+        filtTsType, filtUHType, filtCoeffType, filtMatType,
+    } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
     zn::Vector{uType}
@@ -903,16 +918,48 @@ mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldTy
     saved_tq5::tType
     predicted::Bool
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    iters_from_event::Int
+    ts::filtTsType
+    u_history::filtUHType
+    bdf_coeffs::filtCoeffType
+    ts_asc::filtTsType
+    α_bar::filtTsType
+    dd_c::filtMatType
+    dd_D::filtMatType
 end
 
 # DAE caches carry `u₀` because `get_dae_uprev` uses it as the predictor the
 # correction `z` is measured against.
+
+function _nordsieck_filter_workspace(alg, u, t, ::Val{MO}) where {MO}
+    n_filt = alg.time_filter ? MO + 2 : 0
+    T = typeof(t)
+    ts = fill(T(NaN), n_filt)
+    ts_asc = fill(T(NaN), n_filt)
+    α_bar = zeros(T, n_filt)
+    dd_c = zeros(T, n_filt, n_filt)
+    dd_D = zeros(T, n_filt, n_filt)
+    bdf_coeffs = alg.time_filter ? _make_bdf_coeffs_fbdf() : Matrix{Rational{Int64}}(undef, 0, 0)
+    if u isa Number
+        u_history = alg.time_filter ? zeros(eltype(u), n_filt) : eltype(u)[]
+    else
+        u_history = [zero(u) for _ in 1:n_filt]
+    end
+    return ts, u_history, bdf_coeffs, ts_asc, α_bar, dd_c, dd_D
+end
 
 function alg_cache(
         alg::NordsieckBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck, ::Val{true}, verbose
     ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "NordsieckBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
     γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
@@ -922,16 +969,21 @@ function alg_cache(
     coeffs() = zeros(typeof(t), MO + 3)
     tq = zeros(typeof(t), 6)
     stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    ts, u_history, bdf_coeffs, ts_asc, α_bar, dd_c, dd_D = _nordsieck_filter_workspace(
+        alg, u, t, Val(MO)
+    )
     return NordsieckBDFCache{
         MO, typeof(nlsolver), typeof(rate_prototype),
         typeof(similar(u, uEltypeNoUnits)), typeof(u), typeof(t),
         typeof(coeffs()), typeof(stald), typeof(alg.step_limiter!),
+        typeof(ts), typeof(u_history), typeof(bdf_coeffs), typeof(dd_c),
     }(
         zero(rate_prototype), nlsolver, zn, zero(u), zero(u), zero(u), zero(u),
-        similar(u, uEltypeNoUnits), coeffs(), coeffs(), tq,
+        similar(u, uEltypeNoUnits), zero(u), coeffs(), coeffs(), tq,
         1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
         zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
-        zero(t), false, stald, alg.step_limiter!
+        zero(t), false, stald, alg.step_limiter!,
+        alg.time_filter, 0, 0, ts, u_history, bdf_coeffs, ts_asc, α_bar, dd_c, dd_D
     )
 end
 
@@ -940,6 +992,11 @@ function alg_cache(
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck, ::Val{false}, verbose
     ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "NordsieckBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
     γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
@@ -948,12 +1005,17 @@ function alg_cache(
     zn = [zero(u) for _ in 1:(MO + 1)]
     coeffs() = zeros(typeof(t), MO + 3)
     stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    ts, u_history, bdf_coeffs, ts_asc, α_bar, dd_c, dd_D = _nordsieck_filter_workspace(
+        alg, u, t, Val(MO)
+    )
     return NordsieckBDFConstantCache{
         MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()), typeof(stald),
+        typeof(ts), typeof(u_history), typeof(bdf_coeffs), typeof(dd_c),
     }(
         nlsolver, zn, zero(u), zero(u), coeffs(), coeffs(), zeros(typeof(t), 6),
         1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
         zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
-        zero(t), false, stald
+        zero(t), false, stald,
+        alg.time_filter, 0, 0, ts, u_history, bdf_coeffs, ts_asc, α_bar, dd_c, dd_D
     )
 end
