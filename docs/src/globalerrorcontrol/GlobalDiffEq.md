@@ -25,6 +25,17 @@ estimated global error of `sol.u[i]` at `sol.t[i]`, and
 [`SciMLBase.has_global_error`](@ref) is `true` for these algorithms.
 [`global_error_estimate`](@ref) returns `sol.global_error`.
 
+[`GlobalErrorEstimation`](@ref) wraps any adaptive solver with global error
+estimation and `gtol`-based control by integrating a defect-driven companion
+equation. Two orthogonal choices configure it: [`GlobalErrorEquation`](@ref)
+selects the companion ODE — the nonlinear [`DefectCorrection`](@ref) (no Jacobian)
+or the linearized [`ErrorTransport`](@ref) (matrix-free Jacobian-vector products) —
+and [`GlobalErrorMode`](@ref) selects how it is integrated — [`InterpolatingMode`](@ref)
+(store the dense solution, integrate the companion in a second pass) or
+[`SimultaneousMode`](@ref) (advance the companion inline over each step for `O(1)`
+extra memory and no second solve). [`global_error_estimate`](@ref)`(prob, alg)`
+exposes the standalone estimator.
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -59,4 +70,11 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalErrorEstimation
+GlobalErrorEquation
+DefectCorrection
+ErrorTransport
+GlobalErrorMode
+InterpolatingMode
+SimultaneousMode
 ```
