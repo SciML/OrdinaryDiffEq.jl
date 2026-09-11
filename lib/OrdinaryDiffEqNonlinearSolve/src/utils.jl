@@ -1145,7 +1145,8 @@ function build_nlsolver(
             end
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, W_ref, W_ref === nothing ? nothing : uf,
+                W_ref === nothing ? nothing : J, W_ref,
+                W_ref === nothing ? nothing : uf,
                 nothing, nothing, nothing, nothing, nothing,
                 zero(tstep), true, t, false, precondition, postcondition
             )

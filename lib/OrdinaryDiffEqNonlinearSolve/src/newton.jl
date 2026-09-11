@@ -59,11 +59,17 @@ function initialize!(
         dtgamma = method === DIRK ? γ * dt : γ * dt / α
         W_γdt = cache.W_γdt
         first_call = iszero(W_γdt)
-        should_update = first_call || alg.always_new ||
-            nlsolver.status === Divergence ||
-            abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
-        if should_update
-            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma)
+        # Same `do_newJW` split as the in-place branch above: a fresh `J` only on first
+        # use, failure, retry, or non-adaptive integration, while a `γΔt` drift or an
+        # error-test rejection only reassembles `W` from the stored `J`. `TryAgain` must
+        # take a fresh `J` or the stale-Jacobian retry in `nlsolve!` would loop forever.
+        new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
+            nlsolver.status === TryAgain || !integrator.opts.adaptive
+        new_w = new_jac ||
+            abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff) ||
+            (errorfail(integrator) && !(W_γdt ≈ dtgamma))
+        if new_w
+            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma, new_jac)
             cache.new_W = true
         else
             cache.new_W = false
@@ -465,9 +471,12 @@ function residual_to_z_scale(nlsolver, isdae)
         inv(cache.invγdt)
 end
 
-function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma)
-    J_new = calc_J(integrator, nlcache)
-    nlcache.W[] = J_new - integrator.f.mass_matrix * inv(dtgamma)
+function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
+    if new_jac
+        nlcache.J = calc_J(integrator, nlcache)
+        nlcache.J_t = integrator.t
+    end
+    nlcache.W[] = nlcache.J - integrator.f.mass_matrix * inv(dtgamma)
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing
