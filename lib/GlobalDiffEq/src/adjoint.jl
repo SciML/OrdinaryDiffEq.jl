@@ -176,18 +176,6 @@ function _resolve_sensealg(alg::GlobalAdjoint)
     return alg.sensealg === nothing ? _default_adjoint_sensealg() : alg.sensealg
 end
 
-_positive_finite_real(value) = value isa Real && isfinite(value) && value > 0
-
-function _validate_tolerances(abstol, reltol, name)
-    abstol isa Real && isfinite(abstol) && abstol >= 0 ||
-        throw(ArgumentError("$(name)_abstol must be a nonnegative finite real number"))
-    reltol isa Real && isfinite(reltol) && reltol >= 0 ||
-        throw(ArgumentError("$(name)_reltol must be a nonnegative finite real number"))
-    iszero(abstol) && iszero(reltol) &&
-        throw(ArgumentError("$(name)_abstol and $(name)_reltol cannot both be zero"))
-    return nothing
-end
-
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
 SciMLBase.allowscomplex(::GlobalAdjoint) = false
 SciMLBase.isautodifferentiable(::GlobalAdjoint) = false
