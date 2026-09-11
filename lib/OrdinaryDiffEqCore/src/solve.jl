@@ -50,16 +50,6 @@ end
     return out[ind]
 end
 
-function _callback_condition_state(callback, u)
-    if callback.idxs === nothing
-        return u
-    elseif callback.idxs isa Number
-        return u[callback.idxs]
-    else
-        return @view u[callback.idxs]
-    end
-end
-
 function _callback_affect_wrapper(affect!, integrator)
     wrapped = let affect! = affect!
         integrator -> begin
@@ -71,26 +61,24 @@ function _callback_affect_wrapper(affect!, integrator)
 end
 _callback_affect_wrapper(::Nothing, integrator) = nothing
 
-function _vector_callback_affect_wrapper(affect!, integrator, event_indices)
+function _vector_callback_affect_wrapper(affect!, integrator)
     wrapped = let affect! = affect!
         (integrator, event_indices) -> begin
             affect!(integrator, event_indices)
             nothing
         end
     end
-    return FunctionWrapper{Nothing, Tuple{typeof(integrator), typeof(event_indices)}}(wrapped)
+    return FunctionWrapper{Nothing, Tuple{typeof(integrator), Any}}(wrapped)
 end
-_vector_callback_affect_wrapper(::Nothing, integrator, event_indices) = nothing
+_vector_callback_affect_wrapper(::Nothing, integrator) = nothing
 
-function _autospecialize_callback(callback::ContinuousCallback, integrator)
-    condition_state = _callback_condition_state(callback, integrator.u)
+function _wrap_callback(callback::ContinuousCallback, integrator)
     condition_type = typeof(integrator.t)
     condition = let condition = callback.condition, condition_type = condition_type
         (u, t, integrator) -> condition_type(condition(u, t, integrator))
     end
     wrapped_condition = FunctionWrapper{
-        condition_type,
-        Tuple{typeof(condition_state), typeof(integrator.t), typeof(integrator)},
+        condition_type, Tuple{Any, Any, typeof(integrator)},
     }(condition)
     wrapped_affect! = _callback_affect_wrapper(callback.affect!, integrator)
     wrapped_affect_neg! = callback.affect_neg! === nothing ? nothing :
@@ -105,10 +93,7 @@ function _autospecialize_callback(callback::ContinuousCallback, integrator)
     )
 end
 
-function _autospecialize_callback(callback::VectorContinuousCallback, integrator)
-    condition_state = _callback_condition_state(callback, integrator.u)
-    condition_out = @view integrator.callback_cache.tmp_condition[1:(callback.len)]
-    event_indices = @view integrator.callback_cache.simultaneous_events[1:(callback.len)]
+function _wrap_callback(callback::VectorContinuousCallback, integrator)
     condition = let condition = callback.condition
         (out, u, t, integrator) -> begin
             condition(out, u, t, integrator)
@@ -116,14 +101,9 @@ function _autospecialize_callback(callback::VectorContinuousCallback, integrator
         end
     end
     wrapped_condition = FunctionWrapper{
-        Nothing,
-        Tuple{
-            typeof(condition_out), typeof(condition_state), typeof(integrator.t),
-            typeof(integrator),
-        },
+        Nothing, Tuple{Any, Any, Any, typeof(integrator)},
     }(condition)
-    wrapped_affect! =
-        _vector_callback_affect_wrapper(callback.affect!, integrator, event_indices)
+    wrapped_affect! = _vector_callback_affect_wrapper(callback.affect!, integrator)
     return VectorContinuousCallback(
         wrapped_condition, wrapped_affect!, callback.len,
         callback.initialize, callback.finalize, callback.idxs, callback.rootfind,
@@ -134,13 +114,12 @@ function _autospecialize_callback(callback::VectorContinuousCallback, integrator
     )
 end
 
-function _autospecialize_callback(callback::SciMLBase.DiscreteCallback, integrator)
+function _wrap_callback(callback::SciMLBase.DiscreteCallback, integrator)
     condition = let condition = callback.condition
         (u, t, integrator) -> Bool(condition(u, t, integrator))
     end
     wrapped_condition = FunctionWrapper{
-        Bool,
-        Tuple{typeof(integrator.u), typeof(integrator.t), typeof(integrator)},
+        Bool, Tuple{Any, Any, typeof(integrator)},
     }(condition)
     wrapped_affect! = _callback_affect_wrapper(callback.affect!, integrator)
     return SciMLBase.DiscreteCallback(
@@ -150,7 +129,22 @@ function _autospecialize_callback(callback::SciMLBase.DiscreteCallback, integrat
     )
 end
 
-_autospecialize_callback(callback, integrator) = callback
+# A FunctionWrapper hides `affect!`'s fields, which custom initialize/finalize hooks
+# reach into (as DiffEqCallbacks' SavingCallback does), so only wrap callbacks without them.
+_has_default_callback_hooks(callback) = false
+function _has_default_callback_hooks(
+        callback::Union{
+            ContinuousCallback, VectorContinuousCallback, SciMLBase.DiscreteCallback,
+        }
+    )
+    return callback.initialize === SciMLBase.INITIALIZE_DEFAULT &&
+        callback.finalize === SciMLBase.FINALIZE_DEFAULT
+end
+
+function _autospecialize_callback(callback, integrator)
+    _has_default_callback_hooks(callback) || return callback
+    return _wrap_callback(callback, integrator)
+end
 
 function _autospecialize_callbacks!(integrator)
     SciMLBase.specialization(integrator.f) === SciMLBase.AutoSpecialize || return nothing
