@@ -92,11 +92,9 @@ controls each local-tolerance reduction. The `adjoint_abstol` and
 
 The adjoint machinery lives in a package extension: SciMLSensitivity must be
 loaded to solve with `GlobalAdjoint`. `sensealg` selects the adjoint sensitivity
-algorithm; the default (`nothing`) resolves to `InterpolatingAdjoint` with a
-ForwardDiff Jacobian (`autojacvec = false`). A ForwardDiff Jacobian is used
-rather than a vector-Jacobian product because the estimator differentiates a
-right-hand side that reads the forward solution's dense interpolant, which the
-VJP backends mishandle (see SciML/SciMLSensitivity.jl#1649). `adjoint_alg`
+algorithm and is passed straight through to `SciMLSensitivity.adjoint_sensitivities`:
+any adjoint method works, and the default (`nothing`) defers to that function's
+own default. `adjoint_alg`
 selects the solver for the reverse-time adjoint problems.
 
 This implementation supports forward-time, standard-mass-matrix ODEs with real
@@ -154,12 +152,11 @@ function GlobalAdjoint(
     )
 end
 
-# Extension hooks: GlobalDiffEqSciMLSensitivityExt adds methods for these when
+# Extension hook: GlobalDiffEqSciMLSensitivityExt adds a method for this when
 # SciMLSensitivity is loaded.
 function _adjoint_defect_projection end
-function _default_adjoint_sensealg end
 
-_adjoint_ext_loaded() = !isempty(methods(_default_adjoint_sensealg))
+_adjoint_ext_loaded() = !isempty(methods(_adjoint_defect_projection))
 
 function _require_adjoint_ext()
     _adjoint_ext_loaded() || throw(
@@ -173,7 +170,7 @@ end
 
 function _resolve_sensealg(alg::GlobalAdjoint)
     _require_adjoint_ext()
-    return alg.sensealg === nothing ? _default_adjoint_sensealg() : alg.sensealg
+    return alg.sensealg
 end
 
 _positive_finite_real(value) = value isa Real && isfinite(value) && value > 0

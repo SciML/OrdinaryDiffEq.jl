@@ -3,17 +3,6 @@ module GlobalDiffEqSciMLSensitivityExt
 import GlobalDiffEq, SciMLBase, SciMLSensitivity
 import Accessors: @set
 
-# The estimator's augmented RHS evaluates the forward interpolant `sol(t)`.
-# Differentiating that through a vector-Jacobian-product backend is unreliable:
-# ReverseDiff silently mis-evaluates the interpolant (a systematic error in the
-# quadrature-based adjoints) and Enzyme fails to compile `ode_interpolation`
-# outright. The ForwardDiff Jacobian (`autojacvec = false`) seeds the state and
-# parameter rather than time, so `sol(t)` is evaluated at a plain `t` and the
-# Jacobian is correct. See SciML/SciMLSensitivity.jl#1649.
-function GlobalDiffEq._default_adjoint_sensealg()
-    return SciMLSensitivity.InterpolatingAdjoint(autojacvec = false)
-end
-
 # Endpoint global-error projection along `direction`, computed entirely by the
 # adjoint system. The dual-weighted residual ∫ λ(t)ᵀ (f(P(t)) − P'(t)) dt is
 # obtained as the sensitivity of the discrete cost g = ⟨direction, u(T)⟩ to a
@@ -64,9 +53,13 @@ function GlobalDiffEq._adjoint_defect_projection(
             return nothing
         end
     end
+    # A `nothing` sensealg defers to `adjoint_sensitivities`' own default; any
+    # user-passed adjoint method is forwarded unchanged.
+    sensealg_kwargs = sensealg === nothing ? (;) : (; sensealg)
     _, defect_gradient = SciMLSensitivity.adjoint_sensitivities(
         forced_sol, adjoint_alg;
-        sensealg, t = [terminal_time], dgdu_discrete = terminal_gradient!,
+        sensealg_kwargs...,
+        t = [terminal_time], dgdu_discrete = terminal_gradient!,
         abstol, reltol
     )
     return only(defect_gradient)
