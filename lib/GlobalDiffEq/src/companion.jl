@@ -38,9 +38,11 @@ end
 # the method's defect and would silently corrupt the estimate, so require real
 # dense output rather than trusting the caller.
 function _has_dense_derivative(sol)
-    return sol.dense && !(sol.interp isa Union{
-        SciMLBase.ConstantInterpolation, SciMLBase.LinearInterpolation,
-    })
+    return sol.dense && !(
+        sol.interp isa Union{
+            SciMLBase.ConstantInterpolation, SciMLBase.LinearInterpolation,
+        }
+    )
 end
 
 function _validate_estimation_solution(sol, name)
@@ -307,21 +309,25 @@ function _companion_error_estimate_streaming(
 end
 
 # Solve the companion ODE ε' = rhs(ε, t), ε(t0) = 0, over the forward solution's
-# time span and return the endpoint error estimate ε(T).
+# time span and return the endpoint error estimate ε(T). The defect driving the
+# companion is only piecewise smooth, with kinks at the forward step nodes, so
+# the companion solver is made to land on them; a step straddling a node would
+# smooth over the kink and underestimate the local error (this is also what
+# keeps the estimate consistent with SimultaneousMode's per-step restarts).
 function _companion_endpoint(rhs, sol, companion_alg; abstol, reltol)
     return _advance_companion(
         rhs, zero(sol.prob.u0), sol.prob.tspan[1], sol.prob.tspan[2],
-        companion_alg; abstol, reltol
+        companion_alg; abstol, reltol, tstops = sol.t
     )
 end
 
 # Advance the companion ODE ε' = rhs(ε, t) from ε(t0) = ε0 over [t0, t1] and
 # return ε(t1).
-function _advance_companion(rhs, ε0, t0, t1, companion_alg; abstol, reltol)
+function _advance_companion(rhs, ε0, t0, t1, companion_alg; abstol, reltol, tstops = ())
     companion_prob = SciMLBase.ODEProblem{false}(rhs, ε0, (t0, t1))
     companion_sol = SciMLBase.solve(
         companion_prob, companion_alg;
-        abstol, reltol, dense = false, save_everystep = false,
+        abstol, reltol, tstops, dense = false, save_everystep = false,
         save_start = false, save_end = true
     )
     SciMLBase.successful_retcode(companion_sol) || throw(
