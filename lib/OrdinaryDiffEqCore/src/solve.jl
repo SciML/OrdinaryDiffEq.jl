@@ -217,13 +217,13 @@ Base.@constprop :aggressive function _ode_init(
         end
 
         if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
-            if any(mm != I for mm in prob.f.mass_matrix)
+            if any(!_is_identity_massmatrix, prob.f.mass_matrix)
                 error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
             end
         elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
                 !(prob isa SciMLBase.AbstractDAEProblem) &&
                 !is_mass_matrix_alg(alg) &&
-                prob.f.mass_matrix != I
+                !_is_identity_massmatrix(prob.f.mass_matrix)
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
     end
@@ -243,7 +243,7 @@ Base.@constprop :aggressive function _ode_init(
             # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
             !only_diagonal_mass_matrix(alg) &&
             prob.f.mass_matrix isa AbstractMatrix &&
-            all(isequal(0), prob.f.mass_matrix)
+            _is_zero_massmatrix(prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
         if (dense || !isempty(saveat))
             @SciMLMessage(
@@ -287,7 +287,7 @@ Base.@constprop :aggressive function _ode_init(
     else
         alg isa DAEAlgorithm || (
             !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-                prob.f.mass_matrix != I &&
+                !_is_identity_massmatrix(prob.f.mass_matrix) &&
                 !(prob.f.mass_matrix isa Tuple) &&
                 ArrayInterface.issingular(prob.f.mass_matrix)
         )

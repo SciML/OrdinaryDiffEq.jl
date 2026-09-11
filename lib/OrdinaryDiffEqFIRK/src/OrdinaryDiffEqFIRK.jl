@@ -17,7 +17,8 @@ import OrdinaryDiffEqCore: unwrap_alg,
     _fixup_ad, perform_step!,
     set_discontinuity,
     Convergence, FastConvergence, NLStatus,
-    VerySlowConvergence, Divergence, get_new_W_γdt_cutoff
+    VerySlowConvergence, Divergence, get_new_W_γdt_cutoff,
+    _is_identity_massmatrix
 import SciMLBase
 import SciMLBase: alg_order, _vec, _reshape, _unwrap_val, LinearAliasSpecifier,
     UDerivativeWrapper, UJacobianWrapper, value,
