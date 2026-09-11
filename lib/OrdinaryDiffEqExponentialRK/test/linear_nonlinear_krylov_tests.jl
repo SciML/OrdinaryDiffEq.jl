@@ -148,9 +148,9 @@ end
 @testset "Cached ishermitian flag" begin
     # `arnoldi!` takes `ishermitian` as a default keyword argument, so it re-derives the
     # property on every call -- five times per ETDRK4 step, and for a symmetric sparse
-    # operator that is a full O(nnz) scan. A SplitFunction's linear part is fixed for the
-    # whole solve, so `alg_cache_expRK` evaluates it once and `_arnoldi_kwargs` threads it
-    # through. These problems are split, unlike the ODEProblem fixtures above.
+    # operator that is a full O(nnz) scan. A *constant* linear part holds still for the whole
+    # solve, so `alg_cache_expRK` evaluates it once and `_arnoldi_kwargs` threads it through.
+    # These problems are split, unlike the ODEProblem fixtures above.
     Random.seed!(0)
     N = 32
     g!(du, u, p, t) = (@. du = u - u^3)
@@ -194,6 +194,18 @@ end
     # and the cache must actually hold `nothing`, not a stale snapshot
     @test init(varying, ETDRK4(krylov = true, m = 15); dt = 1.0e-3).cache.KsCache[4] ===
           nothing
+
+    # The operator really does stop being symmetric part-way through the solve -- evaluating
+    # the split right-hand side runs `update_coefficients!` on it -- so a snapshot taken at
+    # t=0 would be wrong, not merely stale. What reaches `arnoldi!` has to track the operator
+    # rather than the shape of the problem.
+    let alg = ETDRK4(krylov = true, m = 15), integ = init(varying, alg; dt = 1.0e-3)
+        step!(integ)
+        step!(integ)
+        A = integ.f.f1.f
+        @test ishermitian(A) === false
+        @test _arnoldi_kwargs(alg, A, integ, integ.cache.KsCache[4]).ishermitian === false
+    end
 
     # when nothing was cached, the fallback must derive the same value, with the same
     # NamedTuple shape so the call sites stay type-stable

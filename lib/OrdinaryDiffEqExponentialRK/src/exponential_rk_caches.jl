@@ -113,17 +113,18 @@ Symmetry of the ExpRK linear operator, or `nothing` when it cannot safely be cac
 exit early on finding an asymmetry), costing roughly 10% of a Krylov build at `m = 15`.
 
 Caching a *value* -- "are these entries symmetric?" -- is only accurate while the entries cannot
-change, so two conditions must hold. Anything else returns `nothing` and `arnoldi!` derives the
-flag itself on every call, exactly as before:
+change, and what licenses that is `isconstant(A)`, only that. Being split does not: a
+`SplitFunction`'s linear part is an operator like any other, free to depend on `u`, `p` and `t`,
+and evaluating the split right-hand side runs `update_coefficients!` on it, so its entries can
+change from one step to the next -- symmetric at `t = 0` and not afterwards, say. The
+`SplitFunction` test only picks out *which* object `A` is: `f.f1.f`, as against a Jacobian that
+`calc_J!` overwrites every step and that could never be cached at all.
 
-  * `f isa SplitFunction`, so `A` is the fixed linear part rather than a Jacobian that
-    `calc_J!` rebuilds every step; and
-  * `isconstant(A)`, so the operator carries no `update_func` that `update_coefficients[!]`
-    could fire to replace its entries part-way through the solve.
-
-The second condition matters because the error is asymmetric. A stale `false` merely costs
+The gate is conservative because the error is asymmetric. A stale `false` merely costs
 performance -- `arnoldi!` runs full Arnoldi. A stale `true` sends it to `lanczos!`, whose
 three-term recurrence is valid only for symmetric operators, and the result is *silently wrong*.
+So anything not `isconstant` returns `nothing`, and `arnoldi!` derives the flag itself on every
+call, exactly as before.
 
 Not covered: mutating the underlying array in place through a reference held outside the solver
 without going through `update_coefficients!`. That is outside the SciMLOperators contract and is
@@ -131,12 +132,12 @@ already unsupported here -- the `krylov = false` path precomputes `expRK_operato
 once at cache construction and would ignore such a change entirely.
 """
 function _cached_ishermitian(f)
+    # Not a fixedness test: it says `A` is `f.f1.f` rather than a per-step Jacobian.
     isa(f, SplitFunction) || return nothing
-    # `f.f1.f` is the same object handed to `arnoldi!` in `perform_step!`. It is usually a
-    # `MatrixOperator` rather than a bare `AbstractMatrix`, so do not require the latter --
-    # just ask whether `ishermitian` is defined for it, exactly as `arnoldi!` would.
     A = f.f1.f
     isconstant(A) || return nothing
+    # `A` is usually a `MatrixOperator` rather than a bare `AbstractMatrix`, so do not require
+    # the latter -- just ask whether `ishermitian` is defined for it, as `arnoldi!` would.
     applicable(ishermitian, A) || return nothing
     return ishermitian(A)
 end
