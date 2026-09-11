@@ -85,6 +85,7 @@ end
 function interface_v()
     is_APPVEYOR && return
     @time @safetestset "Interpolation Derivative Error Tests" include("InterfaceV/interpolation_derivative_error_tests.jl")
+    @time @safetestset "GPU DAE Mass Matrix Tests" include("InterfaceV/gpu_dae_mass_matrix_tests.jl")
     return @time @safetestset "GPU AutoDiff Interface Tests" include("InterfaceV/gpu_autodiff_interface_tests.jl")
 end
 

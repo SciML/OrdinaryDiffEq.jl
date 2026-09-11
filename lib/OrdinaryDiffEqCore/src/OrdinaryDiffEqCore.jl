@@ -473,6 +473,7 @@ include("precompilation_setup.jl")
             # Integrator step / cache / initialization hooks.
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
             :find_algebraic_vars_eqs, :apply_step!, :reset_alg_dependent_opts!,
+            :_is_identity_massmatrix, :_is_zero_massmatrix, :_diff_alg_vars,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
             :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
             :initialize_saveat, :initialize_tstops,

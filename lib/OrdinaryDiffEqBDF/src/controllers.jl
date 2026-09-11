@@ -187,7 +187,10 @@ end
 
 function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cache.order)
     k = cache.order
-    h = integrator.dt
+    # dt is negative for backward-in-time integration, so all step-size
+    # selection below is done on magnitudes and the direction is restored
+    # when writing back integrator.dt.
+    h = abs(integrator.dt)
     cache.consfailcnt += 1
     cache.nconsteps = 0
 
@@ -239,7 +242,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cac
     if kₙ == 1 && cache.consfailcnt > 3
         derivative_discontinuity!(integrator, true)
     end
-    integrator.dt = hₙ
+    integrator.dt = integrator.tdir * hₙ
     return cache.order = kₙ
 end
 

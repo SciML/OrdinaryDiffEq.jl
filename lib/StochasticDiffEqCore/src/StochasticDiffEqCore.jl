@@ -51,7 +51,7 @@ using SparseArrays: SparseArrays, issparse
 using DiffEqBase: DEVerbosity
 using SciMLLogging: AbstractVerbosityPreset, Standard
 
-using LinearAlgebra: LinearAlgebra, I, mul!
+using LinearAlgebra: LinearAlgebra, mul!
 using Random: Random
 
 import ForwardDiff.Dual
