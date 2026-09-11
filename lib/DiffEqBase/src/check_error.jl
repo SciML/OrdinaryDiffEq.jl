@@ -3,7 +3,7 @@
 # `DEVerbosity` toggles that gate them are differential-equation specific, so those live
 # here, as methods of the `report_integrator_failure` hook SciMLBase calls.
 
-#cap diagnostic output to avoid OOM errors when printing large symbolic systems or user data
+# Cap diagnostic output to avoid OOM errors when printing large symbolic systems or user data
 const DIAGNOSTIC_OBJECT_CHARS = 160
 const DIAGNOSTIC_REPORT_CHARS = 4000
 

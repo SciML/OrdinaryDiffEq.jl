@@ -7,7 +7,7 @@ function activate_qa_env()
 end
 
 # Run functional tests
-if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+if TEST_GROUP in ("Core", "ALL")
     include("core_tests.jl")
 end
 

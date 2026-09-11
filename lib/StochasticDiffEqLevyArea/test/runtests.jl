@@ -7,7 +7,7 @@ function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
+if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "StochasticDiffEqLevyArea tests" include("levyarea_tests.jl")
 end
 
