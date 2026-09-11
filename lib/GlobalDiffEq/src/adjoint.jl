@@ -92,11 +92,8 @@ controls each local-tolerance reduction. The `adjoint_abstol` and
 
 The adjoint machinery lives in a package extension: SciMLSensitivity must be
 loaded to solve with `GlobalAdjoint`. `sensealg` selects the adjoint sensitivity
-algorithm; the default (`nothing`) resolves to `InterpolatingAdjoint` with a
-ForwardDiff Jacobian (`autojacvec = false`). A ForwardDiff Jacobian is used
-rather than a vector-Jacobian product because the estimator differentiates a
-right-hand side that reads the forward solution's dense interpolant, which the
-VJP backends mishandle (see SciML/SciMLSensitivity.jl#1649). `adjoint_alg`
+algorithm; the default (`nothing`) resolves to `InterpolatingAdjoint` with the
+default vector-Jacobian product. `adjoint_alg`
 selects the solver for the reverse-time adjoint problems.
 
 This implementation supports forward-time, standard-mass-matrix ODEs with real

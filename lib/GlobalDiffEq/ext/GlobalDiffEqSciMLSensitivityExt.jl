@@ -3,15 +3,8 @@ module GlobalDiffEqSciMLSensitivityExt
 import GlobalDiffEq, SciMLBase, SciMLSensitivity
 import Accessors: @set
 
-# The estimator's augmented RHS evaluates the forward interpolant `sol(t)`.
-# Differentiating that through a vector-Jacobian-product backend is unreliable:
-# ReverseDiff silently mis-evaluates the interpolant (a systematic error in the
-# quadrature-based adjoints) and Enzyme fails to compile `ode_interpolation`
-# outright. The ForwardDiff Jacobian (`autojacvec = false`) seeds the state and
-# parameter rather than time, so `sol(t)` is evaluated at a plain `t` and the
-# Jacobian is correct. See SciML/SciMLSensitivity.jl#1649.
 function GlobalDiffEq._default_adjoint_sensealg()
-    return SciMLSensitivity.InterpolatingAdjoint(autojacvec = false)
+    return SciMLSensitivity.InterpolatingAdjoint()
 end
 
 # Endpoint global-error projection along `direction`, computed entirely by the
