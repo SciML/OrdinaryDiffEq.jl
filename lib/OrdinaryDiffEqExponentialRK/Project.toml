@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqExponentialRK"
 uuid = "e0540318-69ee-4070-8777-9e2de6de23de"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.3.1"
+version = "2.3.2"
 
 [deps]
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
@@ -15,6 +15,7 @@ ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -28,7 +29,6 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
-SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
@@ -66,4 +66,4 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg", "SciMLTesting", "SciMLOperators"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "OrdinaryDiffEqTsit5", "LinearSolve", "SparseArrays", "OrdinaryDiffEqVerner", "OrdinaryDiffEqSDIRK", "Pkg", "SciMLTesting"]

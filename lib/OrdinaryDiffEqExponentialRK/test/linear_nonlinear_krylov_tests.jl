@@ -1,6 +1,8 @@
 using OrdinaryDiffEqExponentialRK, Test, Random, LinearAlgebra, SparseArrays
 using OrdinaryDiffEqTsit5
-using SciMLOperators: MatrixOperator
+using SciMLOperators: MatrixOperator, isconstant
+using SciMLBase: successful_retcode
+using OrdinaryDiffEqExponentialRK: _cached_ishermitian, _arnoldi_kwargs
 
 let N = 20
     Random.seed!(0)
@@ -141,4 +143,151 @@ end
     prob = ODEProblem(exp_fun, u0, (0.0, 1.0))
     sol = solve(prob, LawsonEuler(krylov = true, m = N); dt = 0.1)
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)
+end
+
+# Counts how often the solver asks the linear part for its symmetry. `MatrixOperator` forwards
+# `ishermitian` to the wrapped array, so this sees exactly the calls `arnoldi!` makes when it is
+# left to derive the flag itself.
+mutable struct SymmetryCounter{T} <: AbstractMatrix{T}
+    A::SparseMatrixCSC{T, Int}
+    count::Int
+end
+SymmetryCounter(A::SparseMatrixCSC{T, Int}) where {T} = SymmetryCounter{T}(A, 0)
+Base.size(C::SymmetryCounter) = size(C.A)
+Base.getindex(C::SymmetryCounter, i::Int, j::Int) = C.A[i, j]
+LinearAlgebra.mul!(y::AbstractVector, C::SymmetryCounter, x::AbstractVector) = mul!(y, C.A, x)
+function LinearAlgebra.mul!(y::AbstractVector, C::SymmetryCounter, x::AbstractVector, a, b)
+    return mul!(y, C.A, x, a, b)
+end
+function LinearAlgebra.ishermitian(C::SymmetryCounter)
+    C.count += 1
+    return ishermitian(C.A)
+end
+
+@testset "Cached ishermitian flag" begin
+    # `arnoldi!` takes `ishermitian` as a default keyword argument, so it re-derives the
+    # property on every call -- five times per ETDRK4 step, and for a symmetric sparse
+    # operator that is a full O(nnz) scan. A *constant* linear part holds still for the whole
+    # solve, so `alg_cache_expRK` evaluates it once and `_arnoldi_kwargs` threads it through.
+    # These problems are split, unlike the ODEProblem fixtures above.
+    Random.seed!(0)
+    N = 32
+    g!(du, u, p, t) = (@. du = u - u^3)
+    split_prob(A) = SplitODEProblem(
+        MatrixOperator(sparse(A)), g!,
+        normalize(randn(N)), (0.0, 0.1)
+    )
+
+    sym = split_prob(
+        begin                       # periodic Laplacian => symmetric
+            A = diagm(-1 => ones(N - 1), 0 => -2ones(N), 1 => ones(N - 1)) .* 50.0
+            A[1, N] = A[N, 1] = 50.0
+            A
+        end
+    )
+    nonsym = split_prob(                         # upwind-biased => not symmetric
+        diagm(-1 => 3ones(N - 1), 0 => -4ones(N), 1 => ones(N - 1)) .* 50.0
+    )
+
+    # the three distinct outcomes
+    @test _cached_ishermitian(sym.f) === true
+    @test _cached_ishermitian(nonsym.f) === false
+    @test _cached_ishermitian(
+        ODEProblem(
+            (du, u, p, t) -> (@. du = -u), [1.0],
+            (0.0, 1.0)
+        ).f
+    ) === nothing
+
+    # An operator may be symmetric at t=0 and not afterwards. A Jacobian cannot reach here
+    # (the SplitFunction guard above sends it down the uncached path), but a SplitFunction
+    # whose linear part carries an `update_func` can have its entries replaced by
+    # `update_coefficients!`. Caching `true` there would send `arnoldi!` to `lanczos!`,
+    # whose three-term recurrence assumes symmetry -- silently wrong, not merely slow. So
+    # anything that is not `isconstant` must decline to cache and fall back per call.
+    varying = SplitODEProblem(
+        MatrixOperator(
+            sparse(sym.f.f1.f.A);
+            update_func = (A, u, p, t) -> (B = copy(A); B[1, 2] += t; B)
+        ),
+        g!, normalize(randn(N)), (0.0, 0.1)
+    )
+
+    @test ishermitian(varying.f.f1.f) === true    # symmetric at construction ...
+    @test isconstant(varying.f.f1.f) === false    # ... but free to stop being so
+    @test _cached_ishermitian(varying.f) === nothing
+
+    # having declined, the per-call fallback must still produce the right answer
+    @test _arnoldi_kwargs(
+        ETDRK4(krylov = true, m = 15), varying.f.f1.f,
+        (; opts = (; internalopnorm = opnorm)), nothing
+    ).ishermitian ===
+        ishermitian(varying.f.f1.f)
+
+    # and the cache must actually hold `nothing`, not a stale snapshot
+    @test init(varying, ETDRK4(krylov = true, m = 15); dt = 1.0e-3).cache.KsCache[4] ===
+        nothing
+
+    # The operator really does stop being symmetric part-way through the solve -- evaluating
+    # the split right-hand side runs `update_coefficients!` on it -- so a snapshot taken at
+    # t=0 would be wrong, not merely stale. What reaches `arnoldi!` has to track the operator
+    # rather than the shape of the problem.
+    let alg = ETDRK4(krylov = true, m = 15), integ = init(varying, alg; dt = 1.0e-3)
+        step!(integ)
+        step!(integ)
+        A = integ.f.f1.f
+        @test ishermitian(A) === false
+        @test _arnoldi_kwargs(alg, A, integ, integ.cache.KsCache[4]).ishermitian === false
+    end
+
+    # when nothing was cached, the fallback must derive the same value, with the same
+    # NamedTuple shape so the call sites stay type-stable
+    let A = sym.f.f1.f, integ = (; opts = (; internalopnorm = opnorm)),
+            alg = ETDRK4(krylov = true, m = 15)
+
+        @test _arnoldi_kwargs(alg, A, integ, true).ishermitian ===
+            _arnoldi_kwargs(alg, A, integ, nothing).ishermitian === true
+        @test keys(_arnoldi_kwargs(alg, A, integ, true)) ===
+            keys(_arnoldi_kwargs(alg, A, integ, nothing))
+    end
+
+    # The flag must reach every cache. Checked per algorithm rather than on one
+    # representative, since each `perform_step!` builds its own `arnoldi!` keywords.
+    # NOTE this asserts only that the flag is STORED: `alg_cache_expRK` populates
+    # `KsCache[4]` identically for all of them, so it cannot catch a `perform_step!` that
+    # receives the flag and then ignores it. All four in-place caches route through
+    # `_arnoldi_kwargs`; a new scheme that hand-rolls its keywords would pass this and
+    # still silently re-derive `ishermitian` on every build.
+    for prob in (sym, nonsym), Alg in (ETDRK2, ETDRK3, ETDRK4, HochOst4)
+        cache = init(prob, Alg(krylov = true, m = 15); dt = 1.0e-3).cache
+        @test cache.KsCache[4] == ishermitian(prob.f.f1.f)
+    end
+
+    # That loop asserts only that the flag is stored. This one counts what the operator is
+    # actually asked for: the symmetry check happens while the cache is built and never again,
+    # however many steps run. A `perform_step!` that drops the flag re-derives it per build.
+    for Alg in (NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4)
+        counter = SymmetryCounter(sparse(sym.f.f1.f.A))
+        integ = init(
+            SplitODEProblem(MatrixOperator(counter), g!, normalize(randn(N)), (0.0, 0.1)),
+            Alg(krylov = true, m = 15); dt = 1.0e-3
+        )
+        step!(integ)
+        built = counter.count
+        for _ in 1:4
+            step!(integ)
+        end
+        @test built > 0
+        @test counter.count == built
+    end
+
+    # smoke: the split path still integrates (the fixtures above are all non-split)
+    for prob in (sym, nonsym)
+        @test successful_retcode(
+            solve(
+                prob, ETDRK4(krylov = true, m = 15);
+                dt = 1.0e-3, save_everystep = false
+            )
+        )
+    end
 end

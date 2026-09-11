@@ -15,7 +15,7 @@ using RecursiveArrayTools: RecursiveArrayTools
 import RecursiveArrayTools: recursivecopy!
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
-using LinearAlgebra: axpy!, mul!
+using LinearAlgebra: axpy!, mul!, ishermitian
 import DiffEqBase
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using ExponentialUtilities: ExponentialUtilities, ExpvCache, KrylovSubspace,
@@ -31,6 +31,7 @@ import ADTypes: AutoForwardDiff
 using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 using SciMLBase: SciMLBase, SplitFunction
+using SciMLOperators: SciMLOperators, isconstant
 
 include("algorithms.jl")
 include("alg_utils.jl")
