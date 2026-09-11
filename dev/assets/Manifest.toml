@@ -715,10 +715,10 @@ version = "1.3.7"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
-git-tree-sha1 = "1b86cca764a61dcac4fef4c5e16e378e5ed6953c"
+git-tree-sha1 = "3b0f72e2ffef1a139ac450725c9ecd01c0a3c050"
 registries = "General"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "1.4.5"
+version = "1.4.6"
 weakdeps = ["StaticArrays"]
 
     [deps.ForwardDiff.extensions]
@@ -811,7 +811,7 @@ version = "2.55.0+0"
 deps = ["ADTypes", "Accessors", "DiffEqBase", "DifferentiationInterface", "FastBroadcast", "ForwardDiff", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqTsit5", "PrecompileTools", "Random", "RecursiveArrayTools", "Reexport", "Richardson", "SciMLBase"]
 path = "../lib/GlobalDiffEq"
 uuid = "1d72d19b-84cc-4cb7-a099-7cbdb9ccc67c"
-version = "1.6.0"
+version = "1.7.1"
 
     [deps.GlobalDiffEq.extensions]
     GlobalDiffEqSciMLSensitivityExt = "SciMLSensitivity"
@@ -1093,10 +1093,10 @@ version = "1.13.0"
 
 [[deps.LinearSolve]]
 deps = ["AMD", "ArrayInterface", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "LHLFactorization", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "OpenBLAS_jll", "PrecompileTools", "Preferences", "PureKLU", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "SciMLStructures", "Setfield", "SparseArrays", "SparseColumnPivotedQR", "StaticArraysCore"]
-git-tree-sha1 = "a9386c28a958d1e3606cd379a7fe60ab8d9a2595"
+git-tree-sha1 = "1a33cab210ded99d5f2c0e0698082418882e4d1d"
 registries = "General"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "5.17.1"
+version = "5.17.2"
 
     [deps.LinearSolve.extensions]
     LinearSolveAMDGPUExt = "AMDGPU"
