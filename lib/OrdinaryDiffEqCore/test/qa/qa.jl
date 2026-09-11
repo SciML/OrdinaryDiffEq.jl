@@ -42,7 +42,7 @@ run_qa(
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
-                :EnzymeRules, :inactive_noinl,
+                :EnzymeRules, :inactive_noinl, :inactive,
                 # SciMLBase internals with no public replacement yet
                 :enable_interpolation_sensitivitymode,
                 :forwarddiff_chunksize, :get_root_indp,
