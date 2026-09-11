@@ -36,6 +36,11 @@ and [`GlobalErrorMode`](@ref) selects how it is integrated — [`InterpolatingMo
 extra memory and no second solve). [`global_error_estimate`](@ref)`(prob, alg)`
 exposes the standalone estimator.
 
+To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
+solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
+requires SciMLSensitivity to be loaded); [`adjoint_error_estimate`](@ref)
+exposes the standalone estimator.
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -77,4 +82,6 @@ ErrorTransport
 GlobalErrorMode
 InterpolatingMode
 SimultaneousMode
+GlobalAdjoint
+adjoint_error_estimate
 ```
