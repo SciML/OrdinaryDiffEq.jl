@@ -173,22 +173,31 @@ end
     Random.seed!(0)
     N = 32
     g!(du, u, p, t) = (@. du = u - u^3)
-    split_prob(A) = SplitODEProblem(MatrixOperator(sparse(A)), g!,
-                                    normalize(randn(N)), (0.0, 0.1))
+    split_prob(A) = SplitODEProblem(
+        MatrixOperator(sparse(A)), g!,
+        normalize(randn(N)), (0.0, 0.1)
+    )
 
-    sym = split_prob(begin                       # periodic Laplacian => symmetric
+    sym = split_prob(
+        begin                       # periodic Laplacian => symmetric
             A = diagm(-1 => ones(N - 1), 0 => -2ones(N), 1 => ones(N - 1)) .* 50.0
             A[1, N] = A[N, 1] = 50.0
             A
-        end)
+        end
+    )
     nonsym = split_prob(                         # upwind-biased => not symmetric
-        diagm(-1 => 3ones(N - 1), 0 => -4ones(N), 1 => ones(N - 1)) .* 50.0)
+        diagm(-1 => 3ones(N - 1), 0 => -4ones(N), 1 => ones(N - 1)) .* 50.0
+    )
 
     # the three distinct outcomes
     @test _cached_ishermitian(sym.f) === true
     @test _cached_ishermitian(nonsym.f) === false
-    @test _cached_ishermitian(ODEProblem((du, u, p, t) -> (@. du = -u), [1.0],
-        (0.0, 1.0)).f) === nothing
+    @test _cached_ishermitian(
+        ODEProblem(
+            (du, u, p, t) -> (@. du = -u), [1.0],
+            (0.0, 1.0)
+        ).f
+    ) === nothing
 
     # An operator may be symmetric at t=0 and not afterwards. A Jacobian cannot reach here
     # (the SplitFunction guard above sends it down the uncached path), but a SplitFunction
@@ -197,22 +206,27 @@ end
     # whose three-term recurrence assumes symmetry -- silently wrong, not merely slow. So
     # anything that is not `isconstant` must decline to cache and fall back per call.
     varying = SplitODEProblem(
-        MatrixOperator(sparse(sym.f.f1.f.A);
-            update_func = (A, u, p, t) -> (B = copy(A); B[1, 2] += t; B)),
-        g!, normalize(randn(N)), (0.0, 0.1))
+        MatrixOperator(
+            sparse(sym.f.f1.f.A);
+            update_func = (A, u, p, t) -> (B = copy(A); B[1, 2] += t; B)
+        ),
+        g!, normalize(randn(N)), (0.0, 0.1)
+    )
 
     @test ishermitian(varying.f.f1.f) === true    # symmetric at construction ...
     @test isconstant(varying.f.f1.f) === false    # ... but free to stop being so
     @test _cached_ishermitian(varying.f) === nothing
 
     # having declined, the per-call fallback must still produce the right answer
-    @test _arnoldi_kwargs(ETDRK4(krylov = true, m = 15), varying.f.f1.f,
-        (; opts = (; internalopnorm = opnorm)), nothing).ishermitian ===
-          ishermitian(varying.f.f1.f)
+    @test _arnoldi_kwargs(
+        ETDRK4(krylov = true, m = 15), varying.f.f1.f,
+        (; opts = (; internalopnorm = opnorm)), nothing
+    ).ishermitian ===
+        ishermitian(varying.f.f1.f)
 
     # and the cache must actually hold `nothing`, not a stale snapshot
     @test init(varying, ETDRK4(krylov = true, m = 15); dt = 1.0e-3).cache.KsCache[4] ===
-          nothing
+        nothing
 
     # The operator really does stop being symmetric part-way through the solve -- evaluating
     # the split right-hand side runs `update_coefficients!` on it -- so a snapshot taken at
@@ -229,12 +243,12 @@ end
     # when nothing was cached, the fallback must derive the same value, with the same
     # NamedTuple shape so the call sites stay type-stable
     let A = sym.f.f1.f, integ = (; opts = (; internalopnorm = opnorm)),
-        alg = ETDRK4(krylov = true, m = 15)
+            alg = ETDRK4(krylov = true, m = 15)
 
         @test _arnoldi_kwargs(alg, A, integ, true).ishermitian ===
-              _arnoldi_kwargs(alg, A, integ, nothing).ishermitian === true
+            _arnoldi_kwargs(alg, A, integ, nothing).ishermitian === true
         @test keys(_arnoldi_kwargs(alg, A, integ, true)) ===
-              keys(_arnoldi_kwargs(alg, A, integ, nothing))
+            keys(_arnoldi_kwargs(alg, A, integ, nothing))
     end
 
     # The flag must reach every cache. Checked per algorithm rather than on one
@@ -269,7 +283,11 @@ end
 
     # smoke: the split path still integrates (the fixtures above are all non-split)
     for prob in (sym, nonsym)
-        @test successful_retcode(solve(prob, ETDRK4(krylov = true, m = 15);
-            dt = 1.0e-3, save_everystep = false))
+        @test successful_retcode(
+            solve(
+                prob, ETDRK4(krylov = true, m = 15);
+                dt = 1.0e-3, save_everystep = false
+            )
+        )
     end
 end
