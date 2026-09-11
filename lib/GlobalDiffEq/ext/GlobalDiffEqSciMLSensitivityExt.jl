@@ -3,10 +3,6 @@ module GlobalDiffEqSciMLSensitivityExt
 import GlobalDiffEq, SciMLBase, SciMLSensitivity
 import Accessors: @set
 
-function GlobalDiffEq._default_adjoint_sensealg()
-    return SciMLSensitivity.InterpolatingAdjoint()
-end
-
 # Endpoint global-error projection along `direction`, computed entirely by the
 # adjoint system. The dual-weighted residual ∫ λ(t)ᵀ (f(P(t)) − P'(t)) dt is
 # obtained as the sensitivity of the discrete cost g = ⟨direction, u(T)⟩ to a
@@ -57,9 +53,13 @@ function GlobalDiffEq._adjoint_defect_projection(
             return nothing
         end
     end
+    # A `nothing` sensealg defers to `adjoint_sensitivities`' own default; any
+    # user-passed adjoint method is forwarded unchanged.
+    sensealg_kwargs = sensealg === nothing ? (;) : (; sensealg)
     _, defect_gradient = SciMLSensitivity.adjoint_sensitivities(
         forced_sol, adjoint_alg;
-        sensealg, t = [terminal_time], dgdu_discrete = terminal_gradient!,
+        sensealg_kwargs...,
+        t = [terminal_time], dgdu_discrete = terminal_gradient!,
         abstol, reltol
     )
     return only(defect_gradient)
