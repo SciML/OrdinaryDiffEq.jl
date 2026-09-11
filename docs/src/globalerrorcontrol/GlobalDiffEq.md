@@ -39,7 +39,12 @@ exposes the standalone estimator.
 To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
 solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
 requires SciMLSensitivity to be loaded); [`adjoint_error_estimate`](@ref)
-exposes the standalone estimator.
+exposes the standalone estimator. Its [`GlobalAdjointScope`](@ref) selects whether
+the estimate is reported only at the endpoint ([`EndpointError`](@ref)) or along
+the whole trajectory ([`TrajectoryError`](@ref), filling `sol.global_error` at
+every saved time), and its [`GlobalAdjointControl`](@ref) selects whether `gtol`
+is met by tolerance tightening ([`ToleranceRefinement`](@ref)) or by re-solving
+non-adaptively on the accepted step grid ([`StepGridRefinement`](@ref)).
 
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
@@ -84,4 +89,10 @@ InterpolatingMode
 SimultaneousMode
 GlobalAdjoint
 adjoint_error_estimate
+GlobalAdjointScope
+EndpointError
+TrajectoryError
+GlobalAdjointControl
+ToleranceRefinement
+StepGridRefinement
 ```

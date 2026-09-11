@@ -23,7 +23,8 @@ end
 # on t, so `adjoint_sensitivities` returns that integral as the parameter
 # gradient — no separate adjoint solve or hand-rolled quadrature.
 function GlobalDiffEq._adjoint_defect_projection(
-        sol, sensealg, adjoint_alg, direction; abstol, reltol
+        sol, sensealg, adjoint_alg, direction;
+        abstol, reltol, terminal_time = sol.prob.tspan[2]
     )
     prob = sol.prob
     f_orig = SciMLBase.unwrapped_f(prob.f)
@@ -65,7 +66,7 @@ function GlobalDiffEq._adjoint_defect_projection(
     end
     _, defect_gradient = SciMLSensitivity.adjoint_sensitivities(
         forced_sol, adjoint_alg;
-        sensealg, t = [prob.tspan[2]], dgdu_discrete = terminal_gradient!,
+        sensealg, t = [terminal_time], dgdu_discrete = terminal_gradient!,
         abstol, reltol
     )
     return only(defect_gradient)

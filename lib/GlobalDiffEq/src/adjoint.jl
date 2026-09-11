@@ -1,6 +1,55 @@
 """
+    GlobalAdjointScope
+
+What [`GlobalAdjoint`](@ref) estimates and reports in `sol.global_error`. One of
+[`EndpointError`](@ref) or [`TrajectoryError`](@ref).
+"""
+@enum GlobalAdjointScope EndpointError TrajectoryError
+
+@doc """
+    EndpointError
+
+Estimate the global error 2-norm only at the final time: `sol.global_error[end]`
+holds it and earlier entries are zero. The default; one adjoint solve per sample.
+""" EndpointError
+
+@doc """
+    TrajectoryError
+
+Estimate the global error 2-norm at every saved time: `sol.global_error[i]` is the
+estimate at `sol.t[i]` (`sol.global_error[1] = 0`), filled along the whole
+trajectory. Costs one reverse-adjoint solve per saved time per sample, and the
+returned solution is dense and saved at every solver step.
+""" TrajectoryError
+
+"""
+    GlobalAdjointControl
+
+How [`GlobalAdjoint`](@ref) drives the solve to meet `gtol`. One of
+[`ToleranceRefinement`](@ref) or [`StepGridRefinement`](@ref).
+"""
+@enum GlobalAdjointControl ToleranceRefinement StepGridRefinement
+
+@doc """
+    ToleranceRefinement
+
+Tighten the solver's local `abstol`/`reltol` and re-solve adaptively until the
+estimated endpoint error is at most `gtol`. The default.
+""" ToleranceRefinement
+
+@doc """
+    StepGridRefinement
+
+Tighten tolerances the same way to find a step grid that meets `gtol`, then return
+a solution obtained by re-solving **non-adaptively on exactly that grid**
+(`adaptive = false`, stepping on the adjoint-informed `dt`s). Yields a
+reproducible fixed-step schedule rather than an adaptive solve.
+""" StepGridRefinement
+
+"""
     GlobalAdjoint(alg; gtol=nothing, adjoint_alg=alg, sensealg=nothing, samples=2,
-                  rng=Random.default_rng(), maxiters=6, safety=0.8,
+                  rng=Random.default_rng(), scope=EndpointError,
+                  control=ToleranceRefinement, maxiters=6, safety=0.8,
                   adjoint_abstol, adjoint_reltol)
 
 Wrap an ODE algorithm with adjoint-based global error estimation and control.
@@ -26,10 +75,15 @@ system itself (via `SciMLSensitivity.adjoint_sensitivities`), not by a
 hand-rolled quadrature: the defect is introduced as a scalar forcing whose
 sensitivity is exactly that integral.
 
-When solved with a `gtol`, the returned solution carries the endpoint estimate
-in its `global_error` field (`SciMLBase.has_global_error` is `true` for
-`GlobalAdjoint`); `sol.global_error[end]` is the estimated endpoint error
-2-norm.
+When solved with a `gtol`, the returned solution carries the estimate in its
+`global_error` field (`SciMLBase.has_global_error` is `true` for `GlobalAdjoint`).
+`scope` ([`GlobalAdjointScope`](@ref)) selects what is estimated:
+[`EndpointError`](@ref) (default) fills only `sol.global_error[end]`, while
+[`TrajectoryError`](@ref) fills `sol.global_error[i]` at every saved time.
+`control` ([`GlobalAdjointControl`](@ref)) selects how `gtol` is met:
+[`ToleranceRefinement`](@ref) (default) tightens tolerances and re-solves
+adaptively, while [`StepGridRefinement`](@ref) re-solves non-adaptively on the
+accepted step grid. Control always targets the endpoint error estimate.
 
 Omit `gtol` when using the algorithm only with [`adjoint_error_estimate`](@ref).
 `maxiters` limits the number of forward-solve refinements, while `safety`
@@ -61,6 +115,8 @@ struct GlobalAdjoint{A, AA, S, R, G, V} <: GlobalDiffEqAlgorithm
     sensealg::S
     samples::Int
     rng::R
+    scope::GlobalAdjointScope
+    control::GlobalAdjointControl
     gtol::G
     options::V
 end
@@ -71,6 +127,8 @@ function GlobalAdjoint(
         sensealg = nothing,
         samples = 2,
         rng = Random.default_rng(),
+        scope = EndpointError,
+        control = ToleranceRefinement,
         gtol = nothing,
         maxiters = 6,
         safety = 0.8,
@@ -79,6 +137,10 @@ function GlobalAdjoint(
     )
     samples isa Integer || throw(ArgumentError("samples must be an integer"))
     samples > 0 || throw(ArgumentError("samples must be positive"))
+    scope isa GlobalAdjointScope ||
+        throw(ArgumentError("scope must be EndpointError or TrajectoryError"))
+    control isa GlobalAdjointControl ||
+        throw(ArgumentError("control must be ToleranceRefinement or StepGridRefinement"))
     (gtol === nothing || _positive_finite_real(gtol)) ||
         throw(ArgumentError("gtol must be a positive finite real number"))
     maxiters isa Integer && maxiters > 0 ||
@@ -87,7 +149,9 @@ function GlobalAdjoint(
         throw(ArgumentError("safety must be between zero and one"))
     _validate_tolerances(adjoint_abstol, adjoint_reltol, "adjoint")
     options = (; maxiters = Int(maxiters), safety, adjoint_abstol, adjoint_reltol)
-    return GlobalAdjoint(alg, adjoint_alg, sensealg, Int(samples), rng, gtol, options)
+    return GlobalAdjoint(
+        alg, adjoint_alg, sensealg, Int(samples), rng, scope, control, gtol, options
+    )
 end
 
 # Extension hooks: GlobalDiffEqSciMLSensitivityExt adds methods for these when
@@ -189,12 +253,15 @@ function _sphere_projection_expectation(dimension, ::Type{T}) where {T}
     return expectation
 end
 
-function _adjoint_error_estimate(sol, alg, directions; adjoint_abstol, adjoint_reltol)
+function _adjoint_error_estimate(
+        sol, alg, directions;
+        adjoint_abstol, adjoint_reltol, terminal_time = sol.prob.tspan[2]
+    )
     sensealg = _resolve_sensealg(alg)
     projections = map(directions) do direction
         _adjoint_defect_projection(
             sol, sensealg, alg.adjoint_alg, direction;
-            abstol = adjoint_abstol, reltol = adjoint_reltol
+            abstol = adjoint_abstol, reltol = adjoint_reltol, terminal_time
         )
     end
     T = eltype(sol.prob.u0)
@@ -202,6 +269,41 @@ function _adjoint_error_estimate(sol, alg, directions; adjoint_abstol, adjoint_r
     factor = _sphere_projection_expectation(sample_count, T) /
         _sphere_projection_expectation(length(sol.prob.u0), T)
     return factor * LinearAlgebra.norm(projections)
+end
+
+# Per-time global error along the trajectory: the estimate at each saved time,
+# obtained by placing the adjoint's discrete cost at that time. `sol.t[1]` (the
+# initial time) carries no error.
+function _adjoint_trajectory_errors(sol, alg, directions; adjoint_abstol, adjoint_reltol)
+    errors = zeros(eltype(sol.prob.u0), length(sol.t))
+    for j in 2:length(sol.t)
+        errors[j] = _adjoint_error_estimate(
+            sol, alg, directions;
+            adjoint_abstol, adjoint_reltol, terminal_time = sol.t[j]
+        )
+    end
+    return errors
+end
+
+# Re-solve non-adaptively on exactly `grid`, stepping on its `dt`s. Produces a
+# dense solution saved at every grid point, matching the adaptive solve's steps.
+function _solve_on_grid(prob, inner_alg, grid, args...; abstol, reltol)
+    dts = diff(grid)
+    integrator = SciMLBase.init(
+        prob, inner_alg, args...;
+        adaptive = false, dt = dts[1], dense = true,
+        save_everystep = true, save_start = true, save_end = true,
+        abstol, reltol
+    )
+    for dt in dts
+        SciMLBase.set_proposed_dt!(integrator, dt)
+        SciMLBase.step!(integrator)
+    end
+    sol = integrator.sol
+    if !SciMLBase.successful_retcode(sol) && integrator.t >= grid[end]
+        sol = @set sol.retcode = SciMLBase.ReturnCode.Success
+    end
+    return sol
 end
 
 const _DENSE_SOLVE_KWARGS = (;
@@ -287,12 +389,36 @@ function SciMLBase.__solve(
             throw(ErrorException("the adjoint global error estimate is not finite"))
 
         if last_estimate <= gtol
-            final_sol = SciMLBase.solve(
-                prob, alg.alg, args...;
-                abstol = local_abstol, reltol = local_reltol, kwargs...
-            )
-            return @set final_sol.global_error =
+            # The final solution reproduces the accepted grid non-adaptively
+            # (StepGridRefinement) or re-solves adaptively with the user's saving
+            # options (ToleranceRefinement). TrajectoryError needs the dense,
+            # every-step solution to estimate along the whole path.
+            final_sol = if alg.control === StepGridRefinement
+                _solve_on_grid(
+                    prob, alg.alg, trial_sol.t, args...;
+                    abstol = local_abstol, reltol = local_reltol
+                )
+            elseif alg.scope === TrajectoryError
+                SciMLBase.solve(
+                    prob, alg.alg, args...;
+                    abstol = local_abstol, reltol = local_reltol, trial_kwargs...
+                )
+            else
+                SciMLBase.solve(
+                    prob, alg.alg, args...;
+                    abstol = local_abstol, reltol = local_reltol, kwargs...
+                )
+            end
+            global_error = if alg.scope === TrajectoryError
+                _adjoint_trajectory_errors(
+                    final_sol, alg, directions;
+                    adjoint_abstol = options.adjoint_abstol,
+                    adjoint_reltol = options.adjoint_reltol
+                )
+            else
                 _endpoint_global_error(final_sol, last_estimate)
+            end
+            return @set final_sol.global_error = global_error
         end
 
         tolerance_scale = min(0.5, options.safety * gtol / last_estimate)

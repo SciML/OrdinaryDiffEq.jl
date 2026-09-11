@@ -71,3 +71,50 @@ import SciMLBase
     @test isfinite(callback_estimate)
     @test callback_estimate >= 0
 end
+
+@testset "GlobalAdjoint scope and control modes" begin
+    linear!(du, u, p, t) = (du[1] = p * u[1]; nothing)
+    rate = 2.0
+    tspan = (0.0, 2.0)
+    linear_prob = ODEProblem(linear!, [1.0], tspan, rate)
+    exact(t) = exp(rate * t)
+    gtol = 1.0e-5
+
+    @test GlobalAdjoint(Tsit5()).scope === EndpointError
+    @test GlobalAdjoint(Tsit5()).control === ToleranceRefinement
+    @test GlobalAdjoint(Tsit5(); scope = TrajectoryError).scope === TrajectoryError
+    @test GlobalAdjoint(Tsit5(); control = StepGridRefinement).control === StepGridRefinement
+
+    # TrajectoryError fills global_error along the whole path; each entry tracks the
+    # true error wherever it is above the adjoint noise floor.
+    traj_sol = solve(
+        linear_prob,
+        GlobalAdjoint(Tsit5(); gtol, scope = TrajectoryError, samples = 1, rng = Xoshiro(11));
+        abstol = 1.0e-3, reltol = 1.0e-3
+    )
+    @test length(traj_sol.global_error) == length(traj_sol.t)
+    @test traj_sol.global_error[1] == 0
+    @test traj_sol.global_error[end] <= gtol
+    @test any(traj_sol.global_error[2:end] .> 0)
+    # Check the per-time estimate against the true error only where the error is
+    # well above the adjoint noise floor (a ratio of two ~1e-8 quantities is
+    # meaningless); the well-resolved upper decade below gtol must match.
+    checked = 0
+    for i in eachindex(traj_sol.t)
+        true_err = abs(traj_sol.u[i][1] - exact(traj_sol.t[i]))
+        true_err < gtol / 10 && continue
+        @test traj_sol.global_error[i] / true_err ≈ 1 rtol = 0.2
+        checked += 1
+    end
+    @test checked > 0
+
+    # StepGridRefinement meets gtol via a non-adaptive re-solve on the accepted grid
+    grid_sol = solve(
+        linear_prob,
+        GlobalAdjoint(Tsit5(); gtol, control = StepGridRefinement, samples = 1, rng = Xoshiro(22));
+        abstol = 1.0e-3, reltol = 1.0e-3
+    )
+    @test SciMLBase.successful_retcode(grid_sol)
+    @test abs(grid_sol.u[end][1] - exact(tspan[2])) <= gtol
+    @test grid_sol.global_error[end] <= gtol
+end
