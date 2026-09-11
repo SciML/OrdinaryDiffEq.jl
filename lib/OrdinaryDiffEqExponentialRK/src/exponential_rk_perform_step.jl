@@ -129,10 +129,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step = false
     if alg.krylov
         Ks, phiv_cache, ws, herm = KsCache
         w = ws[1]
-        arnoldi!(
-            Ks, A, integrator.fsalfirst; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
-        )
+        arnoldi!(Ks, A, integrator.fsalfirst; _arnoldi_kwargs(alg, A, integrator, herm)...)
         phiv!(w, dt, Ks, 1; cache = phiv_cache)
         @muladd @.. broadcast = false u = uprev + dt * @view(w[:, 2])
     else
@@ -1488,21 +1485,16 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     F1 = integrator.fsalfirst
     Ks, phiv_cache, ws, herm = KsCache
     w1, w2 = ws
+    kwargs = _arnoldi_kwargs(alg, J, integrator, herm)
     # Krylov for F1
-    arnoldi!(
-        Ks, J, F1; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop
-    )
+    arnoldi!(Ks, J, F1; kwargs...)
     phiv!(w1, dt, Ks, 3; cache = phiv_cache)
     # Krylov for F2
     @muladd @.. broadcast = false tmp = uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, J, rtmp)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     F2 .+= mul!(rtmp, J, uprev)
-    arnoldi!(
-        Ks, J, F2; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop
-    )
+    arnoldi!(Ks, J, F2; kwargs...)
     phiv!(w2, dt, Ks, 3; cache = phiv_cache)
     # Update u
     u .= uprev
@@ -1581,10 +1573,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
     halfdt = dt / 2
     Ks, phiv_cache, ws, herm = KsCache
     w1_half, w1, w2, w3 = ws
-    kwargs = (
-        m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
-        iop = alg.iop,
-    )
+    kwargs = _arnoldi_kwargs(alg, J, integrator, herm)
     # Krylov for F1
     arnoldi!(Ks, J, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache = phiv_cache)

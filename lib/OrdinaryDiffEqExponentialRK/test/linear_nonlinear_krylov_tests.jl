@@ -145,6 +145,25 @@ end
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)
 end
 
+# Counts how often the solver asks the linear part for its symmetry. `MatrixOperator` forwards
+# `ishermitian` to the wrapped array, so this sees exactly the calls `arnoldi!` makes when it is
+# left to derive the flag itself.
+mutable struct SymmetryCounter{T} <: AbstractMatrix{T}
+    A::SparseMatrixCSC{T, Int}
+    count::Int
+end
+SymmetryCounter(A::SparseMatrixCSC{T, Int}) where {T} = SymmetryCounter{T}(A, 0)
+Base.size(C::SymmetryCounter) = size(C.A)
+Base.getindex(C::SymmetryCounter, i::Int, j::Int) = C.A[i, j]
+LinearAlgebra.mul!(y::AbstractVector, C::SymmetryCounter, x::AbstractVector) = mul!(y, C.A, x)
+function LinearAlgebra.mul!(y::AbstractVector, C::SymmetryCounter, x::AbstractVector, a, b)
+    return mul!(y, C.A, x, a, b)
+end
+function LinearAlgebra.ishermitian(C::SymmetryCounter)
+    C.count += 1
+    return ishermitian(C.A)
+end
+
 @testset "Cached ishermitian flag" begin
     # `arnoldi!` takes `ishermitian` as a default keyword argument, so it re-derives the
     # property on every call -- five times per ETDRK4 step, and for a symmetric sparse
@@ -228,6 +247,24 @@ end
     for prob in (sym, nonsym), Alg in (ETDRK2, ETDRK3, ETDRK4, HochOst4)
         cache = init(prob, Alg(krylov = true, m = 15); dt = 1.0e-3).cache
         @test cache.KsCache[4] == ishermitian(prob.f.f1.f)
+    end
+
+    # That loop asserts only that the flag is stored. This one counts what the operator is
+    # actually asked for: the symmetry check happens while the cache is built and never again,
+    # however many steps run. A `perform_step!` that drops the flag re-derives it per build.
+    for Alg in (NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4)
+        counter = SymmetryCounter(sparse(sym.f.f1.f.A))
+        integ = init(
+            SplitODEProblem(MatrixOperator(counter), g!, normalize(randn(N)), (0.0, 0.1)),
+            Alg(krylov = true, m = 15); dt = 1.0e-3
+        )
+        step!(integ)
+        built = counter.count
+        for _ in 1:4
+            step!(integ)
+        end
+        @test built > 0
+        @test counter.count == built
     end
 
     # smoke: the split path still integrates (the fixtures above are all non-split)
