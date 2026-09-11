@@ -808,10 +808,16 @@ uuid = "f8c6e375-362e-5223-8a59-34ff63f689eb"
 version = "2.55.0+0"
 
 [[deps.GlobalDiffEq]]
-deps = ["ADTypes", "Accessors", "DiffEqBase", "DifferentiationInterface", "FastBroadcast", "ForwardDiff", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqTsit5", "PrecompileTools", "RecursiveArrayTools", "Reexport", "Richardson", "SciMLBase"]
+deps = ["ADTypes", "Accessors", "DiffEqBase", "DifferentiationInterface", "FastBroadcast", "ForwardDiff", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqTsit5", "PrecompileTools", "Random", "RecursiveArrayTools", "Reexport", "Richardson", "SciMLBase"]
 path = "../lib/GlobalDiffEq"
 uuid = "1d72d19b-84cc-4cb7-a099-7cbdb9ccc67c"
-version = "1.5.0"
+version = "1.6.0"
+
+    [deps.GlobalDiffEq.extensions]
+    GlobalDiffEqSciMLSensitivityExt = "SciMLSensitivity"
+
+    [deps.GlobalDiffEq.weakdeps]
+    SciMLSensitivity = "1ed8b502-d754-442c-8d5d-10ac956f44a1"
 
 [[deps.Graphs]]
 deps = ["ArnoldiMethod", "DataStructures", "Inflate", "LinearAlgebra", "Random", "SimpleTraits", "SparseArrays", "Statistics"]
@@ -1457,7 +1463,7 @@ version = "2.0.1"
 
 [[deps.OrdinaryDiffEq]]
 deps = ["ADTypes", "CommonSolve", "DiffEqBase", "DocStringExtensions", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqDefault", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "SciMLBase", "SciMLLogging"]
-path = "/home/runner/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
+path = "/home/runner/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 version = "7.8.1"
 
