@@ -59,10 +59,9 @@ function initialize!(
         dtgamma = method === DIRK ? γ * dt : γ * dt / α
         W_γdt = cache.W_γdt
         first_call = iszero(W_γdt)
-        # Same `do_newJW` split as the in-place branch above: a fresh `J` only on first
-        # use, failure, retry, or non-adaptive integration, while a `γΔt` drift or an
-        # error-test rejection only reassembles `W` from the stored `J`. `TryAgain` must
-        # take a fresh `J` or the stale-Jacobian retry in `nlsolve!` would loop forever.
+        # Same `do_newJW` split as the in-place `initialize!` below: a fresh `J` only on
+        # first use, failure, retry, or non-adaptive integration; a `γΔt` drift or an
+        # error-test rejection only reassembles `W` from the stored `J`.
         new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
             nlsolver.status === TryAgain || !integrator.opts.adaptive
         new_w = new_jac ||
