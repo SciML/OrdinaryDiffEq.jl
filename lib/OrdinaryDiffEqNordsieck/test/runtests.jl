@@ -10,6 +10,7 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Nordsieck Tests" include("nordsieck_tests.jl")
+    @time @safetestset "AN5 Startup Tests" include("an5_startup_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

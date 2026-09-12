@@ -28,15 +28,15 @@ end
         z[1] = integrator.uprev
         z[2] = integrator.k[1] * dt
         z[3] = ode_interpolant(
-            t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
+            zero(t), dt, nothing, nothing, integrator.k, tsit5tab, nothing,
             Val{2}, differential_vars
         ) * dt^2 / 2
         z[4] = ode_interpolant(
-            t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
+            zero(t), dt, nothing, nothing, integrator.k, tsit5tab, nothing,
             Val{3}, differential_vars
         ) * dt^3 / 6
         z[5] = ode_interpolant(
-            t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
+            zero(t), dt, nothing, nothing, integrator.k, tsit5tab, nothing,
             Val{4}, differential_vars
         ) * dt^4 / 24
         z[6] = zero(cache.z[6])
@@ -126,15 +126,15 @@ end
         @.. broadcast = false z[1] = integrator.uprev
         @.. broadcast = false z[2] = integrator.k[1] * dt
         ode_interpolant!(
-            z[3], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
+            z[3], zero(t), dt, nothing, nothing, integrator.k, tsit5cache, nothing,
             Val{2}, differential_vars
         )
         ode_interpolant!(
-            z[4], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
+            z[4], zero(t), dt, nothing, nothing, integrator.k, tsit5cache, nothing,
             Val{3}, differential_vars
         )
         ode_interpolant!(
-            z[5], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
+            z[5], zero(t), dt, nothing, nothing, integrator.k, tsit5cache, nothing,
             Val{4}, differential_vars
         )
         @.. broadcast = false z[3] = z[3] * dt^2 / 2
