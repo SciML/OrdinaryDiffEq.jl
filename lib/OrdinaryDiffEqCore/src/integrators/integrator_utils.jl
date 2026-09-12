@@ -1249,11 +1249,11 @@ function fix_dt_at_bounds!(integrator)
     else
         integrator.dt = max(integrator.opts.dtmax, integrator.dt)
     end
-    dtmin = timedepentdtmin(integrator)
+    dtmin = timedepentdtmin(integrator)  # always positive
     if integrator.tdir > 0
         integrator.dt = max(integrator.dt, dtmin)
     else
-        integrator.dt = min(integrator.dt, dtmin)
+        integrator.dt = min(integrator.dt, -dtmin)
     end
     return nothing
 end
