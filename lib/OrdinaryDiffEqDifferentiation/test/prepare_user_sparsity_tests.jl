@@ -85,3 +85,19 @@ end
     @test prob.f.sparsity === Jop
     @test OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob) === ad_alg
 end
+
+# A `DAEFunction` is fully implicit and has no `mass_matrix` field at all; the seeding must
+# treat it like an identity mass matrix rather than reaching for the missing field
+# (SciML/OrdinaryDiffEq.jl#1966).
+@testset "DAEFunction has no mass matrix" begin
+    dae_f!(res, du, u, p, t) = (res .= du .- u; nothing)
+    jac_prototype = sparse([0.0 1.0; 1.0 0.0])
+    daef = DAEFunction(dae_f!; jac_prototype)
+    prob = DAEProblem(daef, ones(2), ones(2), (0.0, 1.0))
+
+    prepped = OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob)
+    @test prepped isa ADTypes.AutoSparse
+    # `DAEFunction` aliases `sparsity` to `jac_prototype`, so both gain the diagonal that
+    # the `du` coefficients of the residual contribute.
+    @test Matrix(prob.f.jac_prototype) == [1.0 1.0; 1.0 1.0]
+end
