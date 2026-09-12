@@ -10,6 +10,7 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "FIRK Tests" include("ode_firk_tests.jl")
+    @time @safetestset "FIRK Time Reversal Tests" include("firk_time_reversal_tests.jl")
     @time @safetestset "FIRK Krylov Tests" include("firk_krylov_tests.jl")
     @time @safetestset "FIRK LHL Factorization Tests" include("lhl_factorization_tests.jl")
 end
