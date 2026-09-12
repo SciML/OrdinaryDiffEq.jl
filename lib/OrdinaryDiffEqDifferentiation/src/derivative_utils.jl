@@ -543,17 +543,15 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     repeat_step && return false, false
     islin, _ = islinearfunction(integrator)
     if islin
-        # J is constant for a linear function, but W = J - M/(γdt) still depends
-        # on γdt: W must be rebuilt/refactorized when the step size has drifted
-        # past the cutoff, otherwise concrete-A linear solvers keep a stale
-        # factorization from the first step's (possibly tiny) dt.
+        # J never changes for a linear function, so W = J - M/(γdt) has to track γdt and
+        # the rebuild is cheap: LHL, which `defaultalg` picks for this split W, absorbs a
+        # new γdt by re-shifting the Hessenberg form in O(n²) and leaves the reduction
+        # alone. Nothing is left for `new_W_dt_cutoff` to amortize (a pinned factorization
+        # pays its O(n³) instead).
         isnewton(nlsolver) || return false, true
         W_iγdt = inv(nlsolver.cache.W_γdt)
         iγdt = inv(nlsolver.γ * integrator.dt)
-        cutoff = integrator.opts.adaptive && !_uses_split_W(alg, integrator.f) ?
-            get_new_W_γdt_cutoff(nlsolver) : zero(get_new_W_γdt_cutoff(nlsolver))
-        smallstepchange = abs(iγdt / W_iγdt - 1) <= cutoff
-        return false, !smallstepchange
+        return false, iγdt != W_iγdt
     end
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
     errorfail = OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
