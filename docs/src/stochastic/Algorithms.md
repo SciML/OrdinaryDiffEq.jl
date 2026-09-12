@@ -113,12 +113,14 @@ using JumpProcesses, StochasticDiffEqLeaping
 
 jump = MassActionJump([0.1], [[1 => 1]], [[1 => -1, 2 => 1]])
 prob = JumpProblem(DiscreteProblem([1000.0, 0.0], (0.0, 1.0)), PureLeaping(), jump)
+tau_sol = solve(prob, TauLeaping())
 sol = solve(prob, ImplicitTauLeaping(); dt = 0.01, adaptive = false)
 ```
 
 For more general propensity functions and count-based updates, these methods
-also accept `RegularJump`. Combining it with a `MassActionJump` in the same
-leaping problem is not supported. These StochasticDiffEq solvers do not provide
+also accept `RegularJump`. Combining it with a `MassActionJump` in a
+`PureLeaping` problem is not supported. `RegularJump` leaps can still run alongside
+exactly aggregated mass-action jumps when using an SSA aggregator. These StochasticDiffEq solvers do not provide
 `EnsembleGPUKernel` implementations; see JumpProcesses for its supported GPU
 leaping algorithms.
 

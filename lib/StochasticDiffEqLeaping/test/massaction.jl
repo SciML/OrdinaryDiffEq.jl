@@ -111,3 +111,41 @@ end
         @test all(u -> sum(u) ≈ 100, sol.u)
     end
 end
+
+@testset "Exact mass-action jumps alongside regular leaps" begin
+    maj = MassActionJump([0.1], [[1 => 1]], [[1 => -1, 2 => 1]])
+    rate!(out, u, p, t) = (out[1] = 0.2 * u[1])
+    function change!(du, u, p, t, counts, mark)
+        du[1] = -counts[1]
+        du[2] = counts[1]
+    end
+    rj = RegularJump(rate!, change!, 1)
+    jp = JumpProblem(
+        DiscreteProblem([100.0, 0.0], (0.0, 0.05)), Direct(),
+        JumpSet(; massaction_jumps = maj, regular_jumps = rj)
+    )
+    for alg in regular_leaping_algs
+        data = jump_noise_data(alg, jp, jp.prob.u0, jp.prob.p, 0.0)
+        @test data.c === rj.c
+        sol = solve(jp, alg; dt = 0.001, adaptive = false, seed = 123)
+        @test successful_retcode(sol)
+        @test all(u -> sum(u) ≈ 100, sol.u)
+    end
+end
+
+@testset "Integer constants with fractional propensities" begin
+    maj = MassActionJump(
+        [2, 6], [Pair{Int, Int}[], [1 => 3]],
+        [[1 => 1], [1 => -3, 2 => 1]]
+    )
+    jp = JumpProblem(DiscreteProblem([5.5, 0.0], (0.0, 0.01)), PureLeaping(), maj)
+    for alg in regular_leaping_algs
+        data = jump_noise_data(alg, jp, jp.prob.u0, jp.prob.p, 0.0)
+        @test eltype(data.jump_prototype) <: AbstractFloat
+        rates = similar(data.jump_prototype)
+        data.rate(rates, jp.prob.u0, jp.prob.p, 0.0)
+        @test rates == [2.0, 86.625]
+        sol = solve(jp, alg; dt = 0.0001, adaptive = false, seed = 123)
+        @test successful_retcode(sol)
+    end
+end

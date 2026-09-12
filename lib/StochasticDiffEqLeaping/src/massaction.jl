@@ -14,13 +14,14 @@ function StochasticDiffEqCore.jump_noise_data(
         prob, u, p, t
     )
     if !(prob isa JumpProcesses.JumpProblem) ||
+            !(prob.aggregator isa JumpProcesses.PureLeaping) ||
             JumpProcesses.get_num_majumps(prob.massaction_jump) == 0
         return invoke(
             StochasticDiffEqCore.jump_noise_data,
             Tuple{Any, Any, Any, Any, Any}, alg, prob, u, p, t
         )
     end
-    prob.prob isa SciMLBase.DiscreteProblem && prob.aggregator isa JumpProcesses.PureLeaping ||
+    prob.prob isa SciMLBase.DiscreteProblem ||
         throw(ArgumentError("Mass-action leaping requires a DiscreteProblem with PureLeaping()"))
     prob.regular_jump === nothing || throw(
         ArgumentError(
@@ -33,8 +34,9 @@ function StochasticDiffEqCore.jump_noise_data(
         )
     )
     jump = prob.massaction_jump
+    rate_type = promote_type(float(eltype(u)), float(eltype(jump.scaled_rates)))
     return (;
-        jump_prototype = zero(jump.scaled_rates), c = jump,
+        jump_prototype = zeros(rate_type, JumpProcesses.get_num_majumps(jump)), c = jump,
         rate_constants = copy(jump.scaled_rates), rate = MassActionRates(jump),
         iip = SciMLBase.isinplace(prob),
     )
