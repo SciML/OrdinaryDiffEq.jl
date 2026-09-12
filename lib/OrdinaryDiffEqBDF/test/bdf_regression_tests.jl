@@ -219,3 +219,26 @@ end
     @test sol.u[end] isa ArrayPartition
     @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
 end
+
+@testset "backward-in-time step rejection shrinks |dt| (#4504)" begin
+    # Signed step comparisons must compare magnitudes: for tdir < 0 both h and
+    # hₖ₋₁ are negative, so `min(h, hₖ₋₁)` selects the larger |step| and |dt|
+    # can grow on rejection instead of shrinking until the error test passes.
+    prob = ODEProblem(fiip, [1.0], (1.0, 0.0), 1.0)
+    for (alg, set_estm1) in (
+            (FBDF(), (integ, v) -> (integ.cache.terkm1 = v)),
+            (QNDF(), (integ, v) -> (integ.cache.EEst1 = v)),
+        )
+        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        step!(integ)
+        c = integ.cache
+        c.order = 3
+        c.consfailcnt = 5
+        integ.dt = -1.0e-3
+        OrdinaryDiffEqCore.set_EEst!(integ, 1.5)
+        set_estm1(integ, 1.0e-3) # Fₖ₋₁ ≈ 7.7; signed min() would grow |dt| ~3.85×
+        OrdinaryDiffEqCore.step_reject_controller!(integ, integ.alg)
+        @test abs(integ.dt) <= 5.0e-4 # h was halved (cf > 1); |dt| must not exceed it
+        @test c.order == 2
+    end
+end
