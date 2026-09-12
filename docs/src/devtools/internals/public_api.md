@@ -457,6 +457,7 @@ StochasticDiffEqCore.@cache
 StochasticDiffEqCore.StochasticCompositeAlgorithm
 StochasticDiffEqCore.StochasticCompositeCache
 StochasticDiffEqCore.TauLeapingDrift
+StochasticDiffEqCore.jump_noise_data
 StochasticDiffEqCore._resolve_rng
 StochasticDiffEqCore._sde_init
 StochasticDiffEqCore._z_prototype

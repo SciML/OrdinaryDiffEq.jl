@@ -1,4 +1,5 @@
 [deps]
+JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
@@ -110,6 +111,7 @@ StochasticDiffEqRODE = {path = "../lib/StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../lib/StochasticDiffEqWeak"}
 
 [compat]
+JumpProcesses = "9.33"
 ADTypes = "1.22"
 CommonSolve = "0.2.6"
 DelayDiffEq = "6"
