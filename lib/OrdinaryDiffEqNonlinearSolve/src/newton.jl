@@ -59,11 +59,16 @@ function initialize!(
         dtgamma = method === DIRK ? γ * dt : γ * dt / α
         W_γdt = cache.W_γdt
         first_call = iszero(W_γdt)
-        should_update = first_call || alg.always_new ||
-            nlsolver.status === Divergence ||
-            abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
-        if should_update
-            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma)
+        # Same `do_newJW` split as the in-place `initialize!` below: a fresh `J` only on
+        # first use, failure, retry, or non-adaptive integration; a `γΔt` drift or an
+        # error-test rejection only reassembles `W` from the stored `J`.
+        new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
+            nlsolver.status === TryAgain || !integrator.opts.adaptive
+        new_w = new_jac ||
+            abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff) ||
+            (errorfail(integrator) && !(W_γdt ≈ dtgamma))
+        if new_w
+            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma, new_jac)
             cache.new_W = true
         else
             cache.new_W = false
@@ -177,13 +182,22 @@ function initialize!(
             # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
             # Jacobian evaluation is not). Without adaptivity there is no error test to
             # catch the step a stale Jacobian degrades and no way to pull it back, so
-            # `do_newJW` refuses to freeze `J` there and this must too.
+            # `do_newJW` refuses to freeze `J` there and this must too. `TryAgain` is
+            # `nlsolve!` re-entering to retry a stale-Jacobian divergence, which must get a
+            # fresh `J` — and hence a fresh `J_t` — or it would loop.
             new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
+                nlsolver.status === TryAgain ||
                 !integrator.opts.adaptive
             # `oftype`: `new_W_dt_cutoff` defaults to a `Rational`, and comparing a `Float64`
             # against one goes through the slow mixed-type path on every stage.
+            #
+            # `errorfail` is `do_newJW`'s: the `dt` cut after a rejected step usually moves
+            # `γΔt` too little to trip the cutoff but far enough to cost the chord iteration
+            # its convergence rate. The `γΔt` inequality stands in for `isfirststage` — later
+            # stages run at the `γΔt` `W` was just assembled at.
             new_w = new_jac ||
-                abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
+                abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff) ||
+                (errorfail(integrator) && !(W_γdt ≈ dtgamma))
             if new_w
                 _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
                 cache.new_W = true
@@ -283,6 +297,7 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     # No estimator refresh needed: the smoothed estimate reuses the inner solver's own W
     # factorization, which the inner Newton re-factorizes itself when it refreshes W.
     nlcache.W_γdt = dtgamma
+    new_jac && (nlcache.J_t = integrator.t)
     integrator.stats.nw += 1
     return nothing
 end
@@ -455,9 +470,12 @@ function residual_to_z_scale(nlsolver, isdae)
         inv(cache.invγdt)
 end
 
-function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma)
-    J_new = calc_J(integrator, nlcache)
-    nlcache.W[] = J_new - integrator.f.mass_matrix * inv(dtgamma)
+function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
+    if new_jac
+        nlcache.J = calc_J(integrator, nlcache)
+        nlcache.J_t = integrator.t
+    end
+    nlcache.W[] = nlcache.J - integrator.f.mass_matrix * inv(dtgamma)
     nlcache.W_γdt = dtgamma
     integrator.stats.nw += 1
     return nothing
@@ -1138,5 +1156,6 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     # next length mismatch, before any estimator solve — nothing to rebuild here.
     nlcache.W_γdt = zero(nlcache.W_γdt)
     nlcache.new_W = true
+    nlcache.J_t = zero(nlcache.J_t)
     return nothing
 end
