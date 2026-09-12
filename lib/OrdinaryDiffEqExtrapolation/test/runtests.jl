@@ -26,6 +26,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
     @time @safetestset "Extrapolation Utility Tests" include("utils_tests.jl")
     @time @safetestset "Extrapolation Tests" include("ode_extrapolation_tests.jl")
+    @time @safetestset "Extrapolation In-place Consistency Tests" include("extrapolation_inplace_consistency_tests.jl")
     @time @safetestset "Threading Linear Solver Tests" include("threading_linsolve_tests.jl")
 end
 
