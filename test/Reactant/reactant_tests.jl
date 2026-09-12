@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore: IController, PIController
+using OrdinaryDiffEqCore: IController, PIController, PIDController
 using OrdinaryDiffEq
 using Reactant
 using SciMLBase
@@ -42,6 +42,7 @@ fixed_solver_without_dt = CompiledODESolve(f, Tsit5(), (; adaptive = false))
 @test_throws ArgumentError Reactant.@jit fixed_solver_without_dt(u0, p0)
 
 solver_cases = (
+    ("PIDController Tsit5", CompiledODESolve(f, Tsit5(), (; controller = PIDController(0.7, -0.4), abstol = 1.0f-7, reltol = 1.0f-5))),
     ("adaptive Tsit5", CompiledODESolve(f, Tsit5(), (;))),
     ("fixed Tsit5", CompiledODESolve(f, Tsit5(), (; adaptive = false, dt = 0.1f0))),
     ("in-place adaptive Tsit5", CompiledODESolve(f!, Tsit5(), (;))),
@@ -66,4 +67,24 @@ solver_cases = (
         @test sol.stats === nothing
         @test sol.interp === nothing
     end
+end
+
+@testset "Fixed-step endpoint clipping" for rhs in (f, f!), direction in (1.0f0, -1.0f0)
+    function step_count(u, p)
+        integrator = init(
+            ODEProblem(rhs, u, (0.0f0, direction), p), Tsit5();
+            adaptive = false, dt = direction * 0.01f0, save_everystep = false
+        )
+        solve!(integrator)
+        return integrator.iter
+    end
+    @test Reactant.@jit(step_count(u0, p0)) == step_count(Float32[1, 2], Float32[-1])
+end
+
+@testset "Initial-step NaN fallback" for rhs in (f, f!)
+    function first_dt(u, p)
+        return init(ODEProblem(rhs, u, (0.0f0, 1.0f0), p), Tsit5(); dtmin = 1.0f-5).dt
+    end
+    nan_p = Reactant.to_rarray(Float32[NaN])
+    @test Reactant.@jit(first_dt(u0, nan_p)) == first_dt(Float32[1, 2], Float32[NaN])
 end

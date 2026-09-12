@@ -220,6 +220,10 @@ end
     return nothing
 end
 
+_fsal_buffers(integrator, cache) = get_fsalfirstlast(cache, integrator.u)
+_fsal_buffers(integrator, ::Union{CompositeCache, DefaultCache, OrdinaryDiffEqConstantCache}) =
+    (integrator.fsalfirst, integrator.fsallast)
+
 function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
             first_discontinuity(integrator) == integrator.tdir * integrator.t
@@ -237,11 +241,7 @@ function update_fsal!(integrator)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
             if isinplace(integrator.sol.prob)
-                fsalfirst, fsallast = if ReactantCore.within_compile()
-                    get_fsalfirstlast(integrator.cache, integrator.u)
-                else
-                    integrator.fsalfirst, integrator.fsallast
-                end
+                fsalfirst, fsallast = _fsal_buffers(integrator, integrator.cache)
                 recursivecopy!(fsalfirst, fsallast)
             else
                 integrator.fsalfirst = integrator.fsallast
@@ -267,25 +267,18 @@ end
 _get_next_step_tstop(integrator::ODEIntegrator) = integrator.next_step_tstop
 _get_next_step_tstop(integrator) = false
 
-function _set_tstop_flag!(integrator::ODEIntegrator, is_tstop::Bool, target = nothing)
+function _set_tstop_flag!(integrator::ODEIntegrator, is_tstop, target = nothing)
     integrator.next_step_tstop = is_tstop
-    if is_tstop && target !== nothing
-        integrator.tstop_target = target
+    if target !== nothing
+        integrator.tstop_target = ifelse(is_tstop, target, integrator.tstop_target)
     end
     return nothing
 end
-_set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
+_set_tstop_flag!(integrator, is_tstop, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 
 function modify_dt_for_tstops!(integrator)
-    if ReactantCore.within_compile()
-        dt = integrator.opts.adaptive ? integrator.dt : integrator.dtcache
-        integrator.dt = integrator.tdir * min(
-            abs(dt), abs(first_tstop(integrator) - integrator.tdir * integrator.t)
-        )
-        return nothing
-    end
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
@@ -294,46 +287,36 @@ function modify_dt_for_tstops!(integrator)
         # distance_to_tstop to within rounding still triggers the tstop
         # branch.  Without this, accumulated `t + dt + dt + …` can drift
         # just past the last tstop and produce a spurious micro-step.
-        tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
-                isfinite(integrator.t)
-            100 * eps(
-                float(
-                    max(abs(integrator.t), abs(tdir_tstop)) /
-                        oneunit(integrator.t)
-                )
-            ) * oneunit(integrator.t)
-        else
-            zero(distance_to_tstop)
+        tstop_tol = zero(distance_to_tstop)
+        if eltype(integrator.sol.prob.tspan) <: AbstractFloat
+            ReactantCore.@trace track_numbers = false if isfinite(tdir_tstop) & isfinite(integrator.t)
+                tstop_tol = 100 * eps(eltype(integrator.sol.prob.tspan)) *
+                    max(abs(integrator.t), abs(tdir_tstop))
+            end
         end
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
-            if original_dt + tstop_tol < distance_to_tstop
-                _set_tstop_flag!(integrator, false)
-            else
-                _set_tstop_flag!(
-                    integrator, true, integrator.tdir * tdir_tstop
-                )
-            end
-            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
-        elseif iszero(integrator.dtcache) && integrator.dtchangeable
-            integrator.dt = integrator.tdir * distance_to_tstop
             _set_tstop_flag!(
-                integrator, true, integrator.tdir * tdir_tstop
+                integrator, !(original_dt + tstop_tol < distance_to_tstop),
+                integrator.tdir * tdir_tstop
             )
-        elseif integrator.dtchangeable && !integrator.force_stepfail
-            # always try to step! with dtcache, but lower if a tstop
-            # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            if abs(integrator.dtcache) + tstop_tol < distance_to_tstop
-                _set_tstop_flag!(integrator, false)
-            else
-                _set_tstop_flag!(
-                    integrator, true, integrator.tdir * tdir_tstop
+            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
+        elseif integrator.dtchangeable
+            zero_dt = iszero(integrator.dtcache)
+            if integrator.force_stepfail
+                integrator.dt = ifelse(
+                    zero_dt, integrator.tdir * distance_to_tstop, integrator.dt
                 )
+                is_tstop = zero_dt
+            else
+                original_dt = ifelse(zero_dt, distance_to_tstop, abs(integrator.dtcache))
+                integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
+                is_tstop = !(original_dt + tstop_tol < distance_to_tstop)
             end
-            integrator.dt = integrator.tdir *
-                min(abs(integrator.dtcache), distance_to_tstop)
+            integrator.dtpropose = ifelse(zero_dt, integrator.dt, integrator.dtpropose)
+            _set_tstop_flag!(integrator, is_tstop, integrator.tdir * tdir_tstop)
         else
             _set_tstop_flag!(integrator, false)
         end
@@ -629,17 +612,14 @@ function _loopfooter!(integrator)
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
-        integrator.accept_step = (
-            !integrator.isout &
-                accept_step_controller(
-                integrator,
-                integrator.alg
-            )
-        ) |
-            (
-            integrator.opts.force_dtmin &&
-                abs(integrator.dt) <= timedepentdtmin(integrator)
-        )
+        ReactantCore.@trace track_numbers = false if !integrator.isout
+            integrator.accept_step = accept_step_controller(integrator, integrator.alg)
+        else
+            integrator.accept_step = false
+        end
+        if integrator.opts.force_dtmin
+            integrator.accept_step = integrator.accept_step | (abs(integrator.dt) <= timedepentdtmin(integrator))
+        end
         ReactantCore.@trace track_numbers = false if integrator.accept_step # Accept
             _accept_step!(integrator, q, ttmp)
         else # Reject
@@ -681,7 +661,7 @@ function _accept_step!(integrator, q, ttmp)
     integrator.last_stepfail = false
     integrator.tprev = integrator.t
 
-    if _get_next_step_tstop(integrator)
+    ReactantCore.@trace track_numbers = false if _get_next_step_tstop(integrator)
         # Step controller dt is overly pessimistic, since dt = time to tstop.
         # Restore the original dt so the controller proposes a reasonable next step.
         integrator.dt = integrator.dtpropose
@@ -1050,12 +1030,13 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
 end
 
 function fixed_t_for_tstop_error!(integrator, ttmp)
-    if _get_next_step_tstop(integrator)
+    ReactantCore.@trace track_numbers = false if _get_next_step_tstop(integrator)
         _set_tstop_flag!(integrator, false)
-        return _get_tstop_target(integrator)
+        target = _get_tstop_target(integrator)
     else
-        return ttmp
+        target = ttmp
     end
+    return target
 end
 
 # Type-stable check: did the callback that fired have maybe_discontinuity = true?
@@ -1389,6 +1370,9 @@ function (integrator::ODEIntegrator)(
         t, ::Type{deriv} = Val{0};
         idxs = nothing
     ) where {deriv}
+    if SciMLBase.has_symbolic_idxs(idxs)
+        return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
+    end
     return current_interpolant(t, integrator, idxs, deriv)
 end
 

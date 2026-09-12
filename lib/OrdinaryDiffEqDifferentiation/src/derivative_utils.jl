@@ -645,7 +645,15 @@ function jacobian2W!(
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if _is_scalar_massmatrix(mass_matrix)
+        if _is_scalar_massmatrix(mass_matrix) && _use_allocating_sparse_W_path(W)
+            # A sparse GPU `W` can be neither scalar-indexed nor broadcast into on its
+            # diagonal, so build the shifted matrix and copy it in. Without this the
+            # branch below reaches `@view(W[idxs])`, which falls back to
+            # `getindex(W, i, j)` and scalar-indexes the device storage.
+            # `dae_jacobian2W!` already guards its sparse-GPU case the same way.
+            λ = -_scalar_massmatrix_λ(mass_matrix)
+            copyto!(W, J + (λ * invdtgamma) * I)
+        elseif _is_scalar_massmatrix(mass_matrix)
             copyto!(W, J)
             idxs = diagind(W)
             λ = -_scalar_massmatrix_λ(mass_matrix)

@@ -219,3 +219,47 @@ end
     @test sol.u[end] isa ArrayPartition
     @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
 end
+
+@testset "backward-in-time step rejection shrinks |dt| (#4504)" begin
+    # Signed step comparisons must compare magnitudes: for tdir < 0 both h and
+    # hₖ₋₁ are negative, so `min(h, hₖ₋₁)` selects the larger |step| and |dt|
+    # can grow on rejection instead of shrinking until the error test passes.
+    prob = ODEProblem(fiip, [1.0], (1.0, 0.0), 1.0)
+    for (alg, set_estm1) in (
+            (FBDF(), (integ, v) -> (integ.cache.terkm1 = v)),
+            (QNDF(), (integ, v) -> (integ.cache.EEst1 = v)),
+        )
+        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        step!(integ)
+        c = integ.cache
+        c.order = 3
+        c.consfailcnt = 5
+        integ.dt = -1.0e-3
+        OrdinaryDiffEqCore.set_EEst!(integ, 1.5)
+        set_estm1(integ, 1.0e-3) # Fₖ₋₁ ≈ 7.7; signed min() would grow |dt| ~3.85×
+        OrdinaryDiffEqCore.step_reject_controller!(integ, integ.alg)
+        @test abs(integ.dt) <= 5.0e-4 # h was halved (cf > 1); |dt| must not exceed it
+        @test c.order == 2
+    end
+end
+  
+# Regression test for the backward-in-time step rejection path: for tdir < 0
+# (e.g. adjoint solves), `bdf_step_reject_controller!` must still shrink |dt|.
+# Previously `min(h, hₖ₋₁)`/`hₖ₋₁ > hₖ` compared signed (negative) step sizes,
+# picking the *larger* magnitude and letting dt hit a fixed point where
+# EEst > 1 forever, hanging the solver at maxiters.
+@testset "BDF step rejection shrinks |dt| for backward integration" begin
+    for (t0, t1) in ((0.0, 1.0), (1.0, 0.0))
+        prob = ODEProblem((u, p, t) -> -u, 1.0, (t0, t1))
+        integ = init(prob, FBDF(); abstol = 1.0e-8, reltol = 1.0e-8)
+        integ.cache.consfailcnt = 4
+        integ.cache.order = 3
+        OrdinaryDiffEqCore.set_EEst!(integ, 2.0)
+        # small k-1 estimate makes the lower-order candidate much larger
+        integ.cache.terkm1 = 0.01
+        dt0 = integ.dt
+        OrdinaryDiffEqCore.step_reject_controller!(integ, FBDF())
+        @test signbit(integ.dt) == signbit(dt0)
+        @test abs(integ.dt) <= abs(dt0) / 2
+    end
+end

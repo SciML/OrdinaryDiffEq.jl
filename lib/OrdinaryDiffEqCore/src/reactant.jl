@@ -1,9 +1,5 @@
 _maybe_traced(x) = ReactantCore.within_compile() ? ReactantCore.promote_to_traced(x) : x
 
-# Function wrappers hide types from Reactant and provide no compile-time reuse inside `@jit`.
-SciMLBase.specialization(::ODEFunction{iip, SciMLBase.AutoSpecialize}) where {iip} =
-    ReactantCore.within_compile() ? SciMLBase.FullSpecialize : SciMLBase.AutoSpecialize
-
 # Reactant requires every loop-carried path to own its traced value at the loop boundary.
 function _dealias_traced!(x)
     ReactantCore.within_compile() || return x

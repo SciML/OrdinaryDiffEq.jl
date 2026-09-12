@@ -109,6 +109,7 @@ end
 function interface_v()
     is_APPVEYOR && return
     @time @safetestset "Interpolation Derivative Error Tests" include("InterfaceV/interpolation_derivative_error_tests.jl")
+    @time @safetestset "GPU DAE Mass Matrix Tests" include("InterfaceV/gpu_dae_mass_matrix_tests.jl")
     return @time @safetestset "GPU AutoDiff Interface Tests" include("InterfaceV/gpu_autodiff_interface_tests.jl")
 end
 
@@ -121,6 +122,7 @@ function integrators_i()
     @time @safetestset "Callback Allocation Tests" include("Integrators_I/callback_allocation_tests.jl")
     @time @safetestset "Iterator Tests" include("Integrators_I/iterator_tests.jl")
     @time @safetestset "Integrator Interface Tests" include("Integrators_I/integrator_interface_tests.jl")
+    @time @safetestset "Integrator Symbolic Interpolation Tests" include("Integrators_I/symbolic_interpolation_tests.jl")
     @time @safetestset "Error Check Tests" include("Integrators_I/check_error.jl")
     @time @safetestset "Event Detection Tests" include("Integrators_I/event_detection_tests.jl")
     @time @safetestset "Event Repetition Detection Tests" include("Integrators_I/event_repeat_tests.jl")
@@ -155,6 +157,7 @@ function regression_ii()
     @time @safetestset "PSOS Energy Conservation Tests" include("Regression_II/psos_and_energy_conservation.jl")
     @time @safetestset "Unrolled Tests" include("Regression_II/ode_unrolled_comparison_tests.jl")
     @time @safetestset "IIP vs OOP Tests" include("Regression_II/iipvsoop_tests.jl")
+    @time @safetestset "Issue Regression Tests" include("Regression_II/issue_regression_tests.jl")
     return @time @safetestset "Inference Tests" include("Regression_II/inference.jl")
 end
 

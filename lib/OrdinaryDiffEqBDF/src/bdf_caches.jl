@@ -629,6 +629,12 @@ end
     iters_from_event::Int
     fd_weights::fdWeightsType
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    ts_asc::tsType
+    α_bar::tsType
+    dd_c::fdWeightsType
+    dd_D::fdWeightsType
 end
 
 function alg_cache(
@@ -685,10 +691,22 @@ function alg_cache(
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
+    ts_asc = zeros(typeof(t), n_filt)
+    α_bar = zeros(typeof(t), n_filt)
+    dd_c = zeros(typeof(t), n_filt, n_filt)
+    dd_D = zeros(typeof(t), n_filt, n_filt)
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald
+        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald,
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 
@@ -728,6 +746,12 @@ end
     step_limiter!::StepLimiter
     fd_weights::fdWeightsType
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    ts_asc::tsType
+    α_bar::tsType
+    dd_c::fdWeightsType
+    dd_D::fdWeightsType
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -793,11 +817,23 @@ function alg_cache(
         tiny = alg.stald_tiny,
     )
 
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
+    ts_asc = zeros(typeof(t), n_filt)
+    α_bar = zeros(typeof(t), n_filt)
+    dd_c = zeros(typeof(t), n_filt, n_filt)
+    dd_D = zeros(typeof(t), n_filt, n_filt)
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!, fd_weights, stald
+        iters_from_event, dense, alg.step_limiter!, fd_weights, stald,
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 

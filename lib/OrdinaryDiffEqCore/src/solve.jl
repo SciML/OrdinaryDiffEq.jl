@@ -241,13 +241,13 @@ Base.@constprop :aggressive function _ode_init(
         end
 
         if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
-            if any(mm != I for mm in prob.f.mass_matrix)
+            if any(!_is_identity_massmatrix, prob.f.mass_matrix)
                 error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
             end
         elseif !(prob isa SciMLBase.AbstractDiscreteProblem) &&
                 !(prob isa SciMLBase.AbstractDAEProblem) &&
                 !is_mass_matrix_alg(alg) &&
-                prob.f.mass_matrix != I
+                !_is_identity_massmatrix(prob.f.mass_matrix)
             error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
     end
@@ -270,7 +270,7 @@ Base.@constprop :aggressive function _ode_init(
             # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
             !only_diagonal_mass_matrix(alg) &&
             prob.f.mass_matrix isa AbstractMatrix &&
-            all(isequal(0), prob.f.mass_matrix)
+            _is_zero_massmatrix(prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
         if (dense || !isempty(saveat))
             @SciMLMessage(
@@ -314,7 +314,7 @@ Base.@constprop :aggressive function _ode_init(
     else
         alg isa DAEAlgorithm || (
             !(prob isa SciMLBase.AbstractDiscreteProblem) &&
-                prob.f.mass_matrix != I &&
+                !_is_identity_massmatrix(prob.f.mass_matrix) &&
                 !(prob.f.mass_matrix isa Tuple) &&
                 ArrayInterface.issingular(prob.f.mass_matrix)
         )
@@ -732,7 +732,7 @@ Base.@constprop :aggressive function _ode_init(
     derivative_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
-    next_step_tstop = false
+    next_step_tstop = _maybe_traced(false)
     tstop_target = zero(t)
     isout = false
     accept_step = _maybe_traced(false)
@@ -786,10 +786,6 @@ Base.@constprop :aggressive function _ode_init(
     end
 
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
-    if ReactantCore.within_compile() && adaptive &&
-            !(controller_cache isa Union{IControllerCache, PIControllerCache})
-        throw(ArgumentError("only IController and PIController are supported inside Reactant compilation"))
-    end
 
     is_disco_step = false
     disco_checkpoint = zero(t)
@@ -936,8 +932,8 @@ end
 function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
-        stop = false
-        errored = false
+        stop = _maybe_traced(false)
+        errored = _maybe_traced(false)
         maxiters = ReactantCore.within_compile() ? integrator.opts.maxiters : typemax(Int)
         _dealias_traced!(integrator)
         ReactantCore.@trace track_numbers = false while (integrator.tdir * integrator.t < first_tstop) & !stop &
@@ -983,14 +979,14 @@ function _solve_step!(integrator)
             check_error!(integrator) != ReturnCode.Success
         return true, true
     end
-    if integrator.next_step_tstop
+    ReactantCore.@trace track_numbers = false if integrator.next_step_tstop
         handle_tstop_step!(integrator)
     else
         perform_step!(integrator, integrator.cache)
     end
     should_exit = integrator.next_step_tstop
     loopfooter!(integrator)
-    return isempty(integrator.opts.tstops) || should_exit, false
+    return isempty(integrator.opts.tstops) | (should_exit & integrator.accept_step), false
 end
 
 # Helpers

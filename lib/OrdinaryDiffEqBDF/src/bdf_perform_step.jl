@@ -1149,6 +1149,54 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
+function _fbdf_time_filter(
+        integrator, cache::FBDFConstantCache{max_order}, u_bdf, k
+    ) where {max_order}
+    (; ts, u_history, ts_asc, α_bar, dd_c, dd_D) = cache
+    (; t, dt, f, p, uprev) = integrator
+    (; abstol, reltol, internalnorm, adaptive) = integrator.opts
+    cache.filter_order = 0
+    tdt = t + dt
+    if k <= 4 && cache.iters_from_event >= k
+        n = k + 2
+        _filt_fill_ts_asc!(ts_asc, ts, tdt, n)
+        backdiff!(dd_c, dd_D, ts_asc, n)
+        η = _fbdf_filter_weight(dd_c, ts_asc, n, k, dt, cache.bdf_coeffs)
+        δ = _filt_divided_diff(dd_c, n, n, u_bdf, u_history)
+        est = @.. broadcast = false -η * δ
+        y_hi = @.. broadcast = false u_bdf + est
+        if !adaptive
+            cache.filter_order = min(k + 1, max_order)
+            y = k < max_order ? y_hi : u_bdf
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            return y, f(y, p, tdt)
+        end
+        err = internalnorm(calculate_residuals(est, uprev, u_bdf, abstol, reltol, internalnorm, t), t)
+        f_hi = f(y_hi, p, tdt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        _filt_bdf_coefficients!(α_bar, dd_c, ts_asc, n, k + 1)
+        res = _filt_bdf_residual(α_bar, n, y_hi, u_history, f_hi)
+        est_hi = @.. broadcast = false res / α_bar[n]
+        err_hi = internalnorm(calculate_residuals(est_hi, uprev, y_hi, abstol, reltol, internalnorm, t), t)
+        y_lo = u_bdf
+        err_lo = oftype(err, Inf)
+        if k == 3
+            w = bdf3stab_coeff(dd_c, n)
+            δ3 = _filt_divided_diff(dd_c, 4, n, u_bdf, u_history)
+            est_lo = @.. broadcast = false w * δ3
+            y_lo = @.. broadcast = false u_bdf + est_lo
+            err_lo = internalnorm(calculate_residuals(est_lo, uprev, y_lo, abstol, reltol, internalnorm, t), t)
+        end
+        selected = _fbdf_select_filter!(integrator, cache, k, max_order, err, err_hi, err_lo)
+        selected == k + 1 && return y_hi, f_hi
+        y = selected < k ? y_lo : u_bdf
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        return y, f(y, p, tdt)
+    end
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return u_bdf, f(u_bdf, p, tdt)
+end
+
 function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max_order}
     integrator.kshortsize = max_order + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1171,6 +1219,7 @@ function perform_step!(
         integrator, cache::FBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
+    reinitFBDF!(integrator, cache)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -1179,7 +1228,6 @@ function perform_step!(
 
     tdt = t + dt
     k = order
-    reinitFBDF!(integrator, cache)
 
     # Predictor: evaluate Lagrange interpolant through u_history at Θ=1
     # using actual (variable) theta nodes. No need to fill integrator.k.
@@ -1322,19 +1370,24 @@ function perform_step!(
         end
     end
 
-    integrator.fsallast = f(u, p, tdt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if cache.time_filter
+        u, integrator.fsallast = _fbdf_time_filter(integrator, cache, u, k)
+    else
+        integrator.fsallast = f(u, p, tdt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
     if integrator.opts.calck
         # Store dense output: resample Lagrange interpolant at Chebyshev nodes
-        n = min(k + 1, max_order + 1)
+        dense_order = cache.time_filter ? max(k, cache.filter_order) : k
+        n = min(dense_order + 1, max_order + 1)
         calck_thetas = Vector{typeof(t)}(undef, n)
         calck_thetas[1] = one(t)
-        for j in 1:min(k, max_order)
+        for j in 1:min(dense_order, max_order)
             calck_thetas[1 + j] = (ts[j] - t) / dt
         end
         calck_values = Vector{typeof(u)}(undef, n)
         calck_values[1] = u isa Number ? u : copy(u)
-        for j in 1:min(k, max_order)
+        for j in 1:min(dense_order, max_order)
             calck_values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
         end
         _resample_at_chebyshev!(integrator.k, calck_values, calck_thetas, n)
@@ -1342,7 +1395,67 @@ function perform_step!(
             integrator.k[j] = zero(u)
         end
     end
+    _fbdf_finish_fixed_step!(integrator, cache)
     return integrator.u = u
+end
+
+function _fbdf_time_filter!(
+        integrator, cache::FBDFCache{max_order}, k
+    ) where {max_order}
+    (; ts, u_history, ts_asc, α_bar, dd_c, dd_D, atmp) = cache
+    (; t, dt, u, f, p, uprev) = integrator
+    (; abstol, reltol, internalnorm, adaptive) = integrator.opts
+    cache.filter_order = 0
+    k <= 4 && cache.iters_from_event >= k || return false
+    tdt = t + dt
+    # These error-estimation buffers are no longer live after the nonlinear solve.
+    y_lo = cache.u₀
+    y_hi = cache.terk_tmp
+    work = cache.terkp1_tmp
+    n = k + 2
+    _filt_fill_ts_asc!(ts_asc, ts, tdt, n)
+    backdiff!(dd_c, dd_D, ts_asc, n)
+    η = _fbdf_filter_weight(dd_c, ts_asc, n, k, dt, cache.bdf_coeffs)
+    _filt_divided_diff!(work, dd_c, n, n, u, u_history)
+    @.. broadcast = false work = -η * work
+    @.. broadcast = false y_hi = u + work
+    if !adaptive
+        cache.filter_order = min(k + 1, max_order)
+        k < max_order || return false
+        @.. broadcast = false u = y_hi
+        f(integrator.fsallast, u, p, tdt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        return true
+    end
+    calculate_residuals!(atmp, work, uprev, u, abstol, reltol, internalnorm, t)
+    err = internalnorm(atmp, t)
+    f(integrator.fsallast, y_hi, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    _filt_bdf_coefficients!(α_bar, dd_c, ts_asc, n, k + 1)
+    _filt_bdf_residual!(work, α_bar, n, y_hi, u_history, integrator.fsallast)
+    @.. broadcast = false work = work / α_bar[n]
+    calculate_residuals!(atmp, work, uprev, y_hi, abstol, reltol, internalnorm, t)
+    err_hi = internalnorm(atmp, t)
+    err_lo = oftype(err, Inf)
+    if k == 3
+        w = bdf3stab_coeff(dd_c, n)
+        _filt_divided_diff!(work, dd_c, 4, n, u, u_history)
+        @.. broadcast = false work = w * work
+        @.. broadcast = false y_lo = u + work
+        calculate_residuals!(atmp, work, uprev, y_lo, abstol, reltol, internalnorm, t)
+        err_lo = internalnorm(atmp, t)
+    end
+    selected = _fbdf_select_filter!(integrator, cache, k, max_order, err, err_hi, err_lo)
+    if selected == k + 1
+        @.. broadcast = false u = y_hi
+        return true
+    elseif selected < k
+        @.. broadcast = false u = y_lo
+        f(integrator.fsallast, u, p, tdt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        return true
+    end
+    return false
 end
 
 function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
@@ -1365,10 +1478,10 @@ function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
+    reinitFBDF!(integrator, cache)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
-    reinitFBDF!(integrator, cache)
     k = order
     tdt = t + dt
 
@@ -1487,26 +1600,31 @@ function perform_step!(
         end
     end
 
-    # Compute fsallast algebraically from NL solver convergence condition:
+    # The filter moves u off the nonlinear solution, so it has to evaluate f
+    # itself; otherwise fsallast follows algebraically from the NL solver
+    # convergence condition:
     #   f(u) = α*invγdt*u - nlsolver.tmp           (mass_matrix === I)
     #   f(u) = α*invγdt*(M*u) - nlsolver.tmp       (mass_matrix !== I)
     # This avoids calling f() through FunctionWrapper dispatch which can allocate.
-    invγdt = inv(nlsolver.γ * dt)
-    if mass_matrix === I
-        @.. integrator.fsallast =
-            nlsolver.α * invγdt * u - nlsolver.tmp
-    else
-        mul!(terkp1_tmp, mass_matrix, u)
-        @.. integrator.fsallast =
-            nlsolver.α * invγdt * terkp1_tmp - nlsolver.tmp
+    if !(cache.time_filter && _fbdf_time_filter!(integrator, cache, k))
+        invγdt = inv(nlsolver.γ * dt)
+        if mass_matrix === I
+            @.. integrator.fsallast =
+                nlsolver.α * invγdt * u - nlsolver.tmp
+        else
+            mul!(terkp1_tmp, mass_matrix, u)
+            @.. integrator.fsallast =
+                nlsolver.α * invγdt * terkp1_tmp - nlsolver.tmp
+        end
     end
     if integrator.opts.calck
         # Store dense output: resample Lagrange interpolant at Chebyshev nodes.
         # Use _resample_at_chebyshev_direct_iip! to read from u and u_history
         # directly, avoiding scratch buffer type mismatches during AD.
-        n = min(k + 1, max_order + 1)
+        dense_order = cache.time_filter ? max(k, cache.filter_order) : k
+        n = min(dense_order + 1, max_order + 1)
         equi_ts[1] = one(eltype(equi_ts))
-        for j in 1:min(k, max_order)
+        for j in 1:min(dense_order, max_order)
             equi_ts[1 + j] = (ts[j] - t) / dt
         end
         _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, n)
@@ -1514,6 +1632,7 @@ function perform_step!(
             fill!(integrator.k[j], zero(eltype(u)))
         end
     end
+    _fbdf_finish_fixed_step!(integrator, cache)
     return nothing
 end
 

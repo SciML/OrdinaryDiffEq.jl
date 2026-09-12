@@ -254,10 +254,11 @@ function _sde_init(
 
     # ── SDE-specific validation ──────────────────────────────────────────
     if typeof(prob.f) <: Tuple
-        if any(mm != I for mm in prob.f.mass_matrix)
+        if any(!OrdinaryDiffEqCore._is_identity_massmatrix, prob.f.mass_matrix)
             error("This solver is not able to use mass matrices.")
         end
-    elseif prob isa SciMLBase.AbstractRODEProblem && prob.f.mass_matrix != I &&
+    elseif prob isa SciMLBase.AbstractRODEProblem &&
+            !OrdinaryDiffEqCore._is_identity_massmatrix(prob.f.mass_matrix) &&
             !alg_mass_matrix_compatible(alg)
         error("This solver is not able to use mass matrices.")
     end
