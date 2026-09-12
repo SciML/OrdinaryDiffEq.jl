@@ -60,6 +60,20 @@ function expRK_operators(::HochOst4, dt, A)
     B5 = 4P[3] - 8P[4]
     return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
+function expRK_operators(::Friedli, dt, A)
+    P = phi(dt * A, 3)
+    Phalf = phi(dt / 2 * A, 2)
+    A21 = 0.5 * Phalf[2]
+    A31 = A21 - 0.5 * Phalf[3]
+    A32 = 0.5 * Phalf[3]
+    A41 = P[2] - 2 * P[3]
+    A42 = (-26 // 25) * P[2] + (2 // 25) * P[3]
+    A43 = (26 // 25) * P[2] + (48 // 25) * P[3]
+    B1 = P[2] - 3 * P[3] + 4 * P[4]
+    B3 = 4 * P[3] - 8 * P[4]
+    B4 = -P[3] + 4 * P[4]
+    return A21, A31, A32, A41, A42, A43, B1, B3, B4
+end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [
@@ -69,6 +83,7 @@ for (Alg, Cache) in [
         (:ETDRK3, :ETDRK3ConstantCache),
         (:ETDRK4, :ETDRK4ConstantCache),
         (:HochOst4, :HochOst4ConstantCache),
+        (:Friedli, :FriedliConstantCache),
     ]
     @eval struct $Cache{opType, FType} <: ExpRKConstantCache
         ops::opType # precomputed operators
@@ -454,6 +469,48 @@ function alg_cache(
     ) # other caches
     return HochOst4Cache(
         u, uprev, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, F5, du1, jac_config, uf,
+        J, ops, KsCache
+    )
+end
+
+@cache struct FriedliCache{uType, rateType, JCType, FType, JType, opType, KsType} <:
+    ExpRKCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    dz::uType
+    rtmp::rateType
+    rtmp2::rateType
+    Au::rateType
+    F2::rateType
+    F3::rateType
+    F4::rateType
+    du1::rateType
+    jac_config::JCType
+    uf::FType
+    J::JType
+    ops::opType
+    KsCache::KsType
+end
+
+function alg_cache(
+        alg::Friedli, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp, dz = (zero(u) for i in 1:2)                                        # uType caches
+    rtmp, rtmp2, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i in 1:7) # rateType caches
+    plist = (2, 2, 3, 2, 3, 3)
+    uf, jac_config,
+        J,
+        ops,
+        KsCache = alg_cache_expRK(
+        alg, u, uEltypeNoUnits, uprev, f, t,
+        dt, p, du1, tmp, dz, plist
+    ) # other caches
+    return FriedliCache(
+        u, uprev, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, du1, jac_config, uf,
         J, ops, KsCache
     )
 end

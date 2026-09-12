@@ -47,7 +47,7 @@ let N = 20
     @testset "Classical ExpRK - High Order" begin
         dt = 0.05
         tol = 1.0e-5
-        Algs = [ETDRK3, ETDRK4, HochOst4]
+        Algs = [ETDRK3, ETDRK4, HochOst4, Friedli]
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
