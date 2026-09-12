@@ -189,14 +189,18 @@ function initialize!(
                 nlsolver.status === TryAgain ||
                 !integrator.opts.adaptive
             # `oftype`: `new_W_dt_cutoff` defaults to a `Rational`, and comparing a `Float64`
-            # against one goes through the slow mixed-type path on every stage.
+            # against one goes through the slow mixed-type path on every stage. A split `W`
+            # takes every `γΔt` change, as in `do_newJW`: the update is a scalar write plus
+            # an O(n²) re-shift, so there is nothing to save by tolerating a stale one.
             #
             # `errorfail` is `do_newJW`'s: the `dt` cut after a rejected step usually moves
             # `γΔt` too little to trip the cutoff but far enough to cost the chord iteration
             # its convergence rate. The `γΔt` inequality stands in for `isfirststage` — later
             # stages run at the `γΔt` `W` was just assembled at.
+            cutoff = is_split_W(cache.W) ? zero(dtgamma) :
+                oftype(dtgamma, alg.new_W_dt_cutoff)
             new_w = new_jac ||
-                abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff) ||
+                abs(inv(dtgamma) / inv(W_γdt) - 1) > cutoff ||
                 (errorfail(integrator) && !(W_γdt ≈ dtgamma))
             if new_w
                 _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
@@ -271,12 +275,14 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if W isa AbstractSciMLOperator
+    if W isa AbstractSciMLOperator && !is_split_W(W)
         # Matrix-free reused W: refresh its state and gamma in place; its own `mul!`
         # supplies the Jacobian action to the inner (Krylov) solve, so there is no
         # concrete J to reassemble.
         update_coefficients!(W, uprev, p, tstep; gamma = dtgamma)
     else
+        # A split `W` reaches here too: `J` is its own `W.J`, and `jacobian2W!` on a
+        # `WOperator` only writes `gamma`.
         if new_jac
             if SciMLBase.has_jac(f)
                 f.jac(J, uprev, p, tstep)
@@ -291,6 +297,8 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
             # `calc_J!` is bypassed here, so this is the only place the reused-`W`
             # path can record a Jacobian evaluation.
             integrator.stats.njacs += 1
+            # A solver caching a reduction of `J` cannot see an in-place write.
+            mark_jacobian_updated!(W)
         end
         jacobian2W!(W, mass_matrix, dtgamma, J)
     end
