@@ -137,3 +137,76 @@ function _ode_addsteps!(
     end
     return nothing
 end
+
+####################################################################
+# NordsieckBDF / DNordsieckBDF: rebase the Nordsieck polynomial
+#
+# k[j] = zn[j] are the columns about the endpoint of the step h = hscale:
+#     p(t) = Σ_j k[j] s^(j-1),   s = (t - (tprev + h)) / h.
+# A callback shortening the step to dt evaluates the interpolant with
+# s' = (t - (tprev + dt)) / dt, and s = a + b s' with b = dt/h, a = b - 1.
+# Rebuild from zn (not k) so repeated calls stay idempotent.
+####################################################################
+
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::Union{NordsieckBDFConstantCache, DNordsieckBDFConstantCache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    always_calc_begin || return nothing
+    (; zn, order, hscale) = cache
+    iszero(hscale) && return nothing
+    b = dt / hscale
+    a = b - one(b)
+    n = length(k)
+    # constant caches alias k[j] to zn[j]; never mutate those in place
+    for j in 1:n
+        k[j] = j - 1 <= order ? zn[j] : zero(u)
+    end
+    for i in 1:(n - 1)
+        for j in (n - 1):-1:i
+            k[j] = @.. k[j] + a * k[j + 1]
+        end
+    end
+    scale = b
+    for j in 2:n
+        k[j] = @.. scale * k[j]
+        scale *= b
+    end
+    return nothing
+end
+
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::Union{NordsieckBDFCache, DNordsieckBDFCache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    always_calc_begin || return nothing
+    (; zn, order, hscale) = cache
+    iszero(hscale) && return nothing
+    b = dt / hscale
+    a = b - one(b)
+    n = length(k)
+    for j in 1:n
+        if j - 1 <= order
+            copyto!(k[j], zn[j])
+        else
+            fill!(k[j], zero(eltype(u)))
+        end
+    end
+    for i in 1:(n - 1)
+        for j in (n - 1):-1:i
+            kj, kj1 = k[j], k[j + 1]
+            @.. broadcast = false kj = kj + a * kj1
+        end
+    end
+    scale = b
+    for j in 2:n
+        kj = k[j]
+        @.. broadcast = false kj = scale * kj
+        scale *= b
+    end
+    return nothing
+end
