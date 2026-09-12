@@ -113,7 +113,8 @@ end
 """
     NLNewton(;
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
-        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true, relax = nothing
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true, relax = nothing,
+        predictor = nothing
     )
 
 Quasi-Newton nonlinear solver for the implicit stage equations. Uses the
@@ -130,6 +131,10 @@ possible) to solve `g(z) = 0`.
   - `always_new`: force recomputation of `W` on every solve.
   - `check_div`: enable early divergence detection.
   - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+  - `predictor`: optional initial guess for the state at each implicit stage, replacing
+    the method's own. Called as `predictor(uprev, p, t, dt)` out of place or
+    `predictor(upred, uprev, p, t, dt)` in place, where `t` is the stage time and `dt`
+    the time from `uprev` to it.
 
 # Examples
 
@@ -141,7 +146,7 @@ alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLNewton())
 sol = solve(prob, alg)
 ```
 """
-struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
+struct NLNewton{K, C1, C2, R, P} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
     fast_convergence_cutoff::C1
@@ -149,12 +154,14 @@ struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
     always_new::Bool
     check_div::Bool
     relax::R
+    predictor::P
 end
 
 function NLNewton(;
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        relax = nothing, precondition = nothing, postcondition = nothing
+        relax = nothing, precondition = nothing, postcondition = nothing,
+        predictor = nothing
     )
     reject_conditioning(NLNewton, precondition, postcondition)
     if relax isa Number && !(0 <= relax < 1)
@@ -163,7 +170,7 @@ function NLNewton(;
 
     return NLNewton(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        relax
+        relax, predictor
     )
 end
 
@@ -172,7 +179,7 @@ end
         alg = NewtonRaphson(autodiff = AutoFiniteDiff());
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        precondition = nothing, postcondition = nothing
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
 
 Use a NonlinearSolve.jl algorithm for the nonlinear stage equations of an implicit
@@ -194,6 +201,8 @@ solver constructor.
   - `check_div`: enable early divergence detection.
   - `precondition`, `postcondition`: NonlinearSolve.jl's nonlinear preconditioning
     options, applied to the stage solve. See the section below.
+  - `predictor`: optional initial guess for the state at each implicit stage, as for
+    [`NLNewton`](@ref).
 
 # Nonlinear preconditioning of the stage solve
 
@@ -280,7 +289,7 @@ alg = ImplicitEuler(
 )
 ```
 """
-struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST} <: AbstractNLSolverAlgorithm
+struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST, P} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
     fast_convergence_cutoff::C1
@@ -290,17 +299,18 @@ struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST} <: AbstractNLSolverAlgorithm
     alg::A
     precondition::PRE
     postcondition::POST
+    predictor::P
 end
 
 function NonlinearSolveAlg(
         alg = NewtonRaphson(autodiff = AutoFiniteDiff());
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        precondition = nothing, postcondition = nothing
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
     return NonlinearSolveAlg(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        alg, precondition, postcondition
+        alg, precondition, postcondition, predictor
     )
 end
 

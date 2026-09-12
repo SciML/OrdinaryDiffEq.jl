@@ -108,6 +108,7 @@ function nlsolve!(
     ) where {NL <: AbstractNLSolver}
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
+    apply_predictor!(nlsolver, integrator)
     @label REDO
     # Initialize γW for JET
     γW = one(integrator.dt)

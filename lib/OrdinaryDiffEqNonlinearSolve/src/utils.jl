@@ -685,6 +685,42 @@ function apply_stage_predictor!!(nlsolver)
     return z
 end
 
+stage_predictor(::AbstractNLSolverAlgorithm) = nothing
+stage_predictor(alg::Union{NLNewton, NonlinearSolveAlg}) = alg.predictor
+
+"""
+    apply_predictor!(nlsolver, integrator)
+
+Replace the stage iterate `nlsolver.z` with the one implied by the `predictor` of an
+[`NLNewton`](@ref) or [`NonlinearSolveAlg`](@ref), which returns a guess for the state at
+the stage time `t + c⋅dt` given the offset `c⋅dt` from `uprev`. That state is mapped back to
+the stage unknown the same way `compute_ustep` maps it forward.
+"""
+apply_predictor!(nlsolver, integrator) = nothing
+function apply_predictor!(nlsolver::NLSolver{<:Any, iip}, integrator) where {iip}
+    predictor = stage_predictor(nlsolver.alg)
+    predictor === nothing && return nothing
+    nlsolve_f(integrator) isa DAEFunction && throw(
+        ArgumentError("`predictor` is not supported for the stage solve of a `DAEProblem`.")
+    )
+    (; uprev, p, t, dt) = integrator
+    (; tmp, γ, method) = nlsolver
+    dtstage = nlsolver.c * dt
+    tstage = t + dtstage
+    if iip
+        predictor(nlsolver.ztmp, uprev, p, tstage, dtstage)
+        if method === COEFFICIENT_MULTISTEP
+            copyto!(nlsolver.z, nlsolver.ztmp)
+        else
+            @.. broadcast = false nlsolver.z = (nlsolver.ztmp - tmp) / γ
+        end
+    else
+        upred = predictor(uprev, p, tstage, dtstage)
+        nlsolver.z = method === COEFFICIENT_MULTISTEP ? upred : (upred - tmp) / γ
+    end
+    return nothing
+end
+
 # Keywords for the stage `init`. Splatting an empty NamedTuple when neither option is in
 # use keeps the untouched path byte-identical to before.
 function conditioning_kwargs(nlcache::NonlinearSolveCache)
