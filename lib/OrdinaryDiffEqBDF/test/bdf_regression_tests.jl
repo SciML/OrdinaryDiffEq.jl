@@ -242,7 +242,7 @@ end
         @test c.order == 2
     end
 end
-  
+
 # Regression test for the backward-in-time step rejection path: for tdir < 0
 # (e.g. adjoint solves), `bdf_step_reject_controller!` must still shrink |dt|.
 # Previously `min(h, hₖ₋₁)`/`hₖ₋₁ > hₖ` compared signed (negative) step sizes,
