@@ -543,9 +543,11 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     repeat_step && return false, false
     islin, _ = islinearfunction(integrator)
     if islin
-        # J is constant for a linear function, so rebuilding W = J - M/(γdt) is a
-        # refactorization with no Jacobian evaluation and there is nothing for
-        # `new_W_dt_cutoff` to amortize; a stale W only costs Newton iterations.
+        # J never changes for a linear function, so W = J - M/(γdt) has to track γdt and
+        # the rebuild is cheap: LHL, which `defaultalg` picks for this split W, absorbs a
+        # new γdt by re-shifting the Hessenberg form in O(n²) and leaves the reduction
+        # alone. Nothing is left for `new_W_dt_cutoff` to amortize (a pinned factorization
+        # pays its O(n³) instead).
         isnewton(nlsolver) || return false, true
         W_iγdt = inv(nlsolver.cache.W_γdt)
         iγdt = inv(nlsolver.γ * integrator.dt)
