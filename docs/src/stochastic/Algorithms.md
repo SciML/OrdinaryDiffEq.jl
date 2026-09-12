@@ -98,3 +98,32 @@ StochasticDiffEqRODE.RandomEM
 StochasticDiffEqRODE.RandomHeun
 StochasticDiffEqRODE.RandomTamedEM
 ```
+
+## Mass-action tau leaping
+
+`TauLeaping`, `CaoTauLeaping`, `ImplicitTauLeaping`, and
+`ThetaTrapezoidalTauLeaping` accept a `JumpProblem` built from a `DiscreteProblem`,
+`PureLeaping()`, and a `MassActionJump`. These solvers retain the mass-action
+representation, use its stored rate constants for error control, and apply its
+stoichiometry directly. The implicit methods evaluate the mass-action drift
+without an intermediate propensity vector during nonlinear iteration.
+
+```@example massaction_leaping
+using JumpProcesses, StochasticDiffEqLeaping
+
+jump = MassActionJump([0.1], [[1 => 1]], [[1 => -1, 2 => 1]])
+prob = JumpProblem(DiscreteProblem([1000.0, 0.0], (0.0, 1.0)), PureLeaping(), jump)
+tau_sol = solve(prob, TauLeaping())
+sol = solve(prob, ImplicitTauLeaping(); dt = 0.01, adaptive = false)
+```
+
+For more general propensity functions and count-based updates, these methods
+also accept `RegularJump`. Combining it with a `MassActionJump` in a
+`PureLeaping` problem is not supported. `RegularJump` leaps can still run alongside
+exactly aggregated mass-action jumps when using an SSA aggregator. These StochasticDiffEq solvers do not provide
+`EnsembleGPUKernel` implementations; see JumpProcesses for its supported GPU
+leaping algorithms.
+
+`CaoTauLeaping` currently lacks its adaptive step-selection calculation. Use
+`dt` with `adaptive = false` for that method; use `TauLeaping` when adaptive
+steps are needed.

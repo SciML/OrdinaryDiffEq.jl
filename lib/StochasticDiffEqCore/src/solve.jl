@@ -495,42 +495,26 @@ function _sde_init(
         W = nothing
     end
 
-    # ── CompoundPoissonProcess for tau-leaping ───────────────────────────
-    if _prob isa JumpProblem && _prob.regular_jump !== nothing
-        if !isnothing(_prob.regular_jump.mark_dist) == nothing
-            error("Mark distributions are currently not supported in SimpleTauLeaping")
-        end
-
-        jump_prototype = zeros(_prob.regular_jump.numjumps)
-        c = _prob.regular_jump.c
-
-        if isinplace(_prob.regular_jump)
-            rate_constants = zeros(_prob.regular_jump.numjumps)
-            _prob.regular_jump.rate(rate_constants, u ./ u, prob.p, tspan[1])
-            P = CompoundPoissonProcess!(
-                _prob.regular_jump.rate, t, jump_prototype,
-                computerates = !alg_control_rate(alg) || !adaptive,
-                save_everystep = save_noise,
-                rng = _rng
-            )
-            alg_control_rate(alg) && adaptive &&
-                P.cache.rate(P.cache.currate, u, p, tspan[1])
-        else
-            rate_constants = _prob.regular_jump.rate(u ./ u, prob.p, tspan[1])
-            P = CompoundPoissonProcess(
-                _prob.regular_jump.rate, t, jump_prototype,
-                save_everystep = save_noise,
-                computerates = !alg_control_rate(alg) || !adaptive,
-                rng = _rng
-            )
-            alg_control_rate(alg) && adaptive &&
-                (P.cache.currate = P.cache.rate(u, p, tspan[1]))
-        end
+    jump_data = jump_noise_data(alg, _prob, u, p, t)
+    if jump_data === nothing
+        jump_prototype = c = P = rate_constants = nothing
     else
-        jump_prototype = nothing
-        c = nothing
-        P = nothing
-        rate_constants = nothing
+        (; jump_prototype, c, rate_constants, rate, iip) = jump_data
+        if iip
+            P = CompoundPoissonProcess!(
+                rate, t, jump_prototype;
+                computerates = !alg_control_rate(alg) || !adaptive,
+                save_everystep = save_noise, rng = _rng
+            )
+            alg_control_rate(alg) && adaptive && rate(P.cache.currate, u, p, t)
+        else
+            P = CompoundPoissonProcess(
+                rate, t, jump_prototype;
+                computerates = !alg_control_rate(alg) || !adaptive,
+                save_everystep = save_noise, rng = _rng
+            )
+            alg_control_rate(alg) && adaptive && (P.cache.currate = rate(u, p, t))
+        end
     end
 
     # ── dW/dZ extraction, verbose conversion, alg_cache ──────────────────
@@ -609,3 +593,34 @@ end
 
 # solve! is now provided by OrdinaryDiffEqCore (SciMLBase.solve!(::ODEIntegrator))
 # handle_dt! and initialize_callbacks! are now provided by OrdinaryDiffEqCore
+
+"""
+    jump_noise_data(alg, prob, u, p, t)
+
+Return the reaction data used to initialize a stochastic solver's Poisson noise,
+or `nothing` when no jump noise is needed. Solver packages may specialize this
+hook to preserve and exploit structured jump representations.
+
+The result is a named tuple with `jump_prototype` (one zero per reaction), `c`
+(the solver's reaction-update representation), `rate_constants` (the reaction
+scales used by error control), `rate` (a propensity callable), and `iip` (whether
+`rate` has signature `rate(out, u, p, t)` rather than `rate(u, p, t)`). The default
+handles `RegularJump`; specializations must also provide step implementations
+that understand their chosen `c` representation.
+"""
+function jump_noise_data(alg, prob, u, p, t)
+    prob isa JumpProblem || return nothing
+    rj = prob.regular_jump
+    rj === nothing && return nothing
+    isnothing(rj.mark_dist) || error("Mark distributions are not supported by this solver")
+    jump_prototype = zeros(rj.numjumps)
+    iip = isinplace(rj)
+    rate_constants = if iip
+        out = similar(jump_prototype)
+        rj.rate(out, u ./ u, p, t)
+        out
+    else
+        rj.rate(u ./ u, p, t)
+    end
+    return (; jump_prototype, c = rj.c, rate_constants, rate = rj.rate, iip)
+end

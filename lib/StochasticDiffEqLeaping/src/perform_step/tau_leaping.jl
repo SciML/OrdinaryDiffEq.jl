@@ -1,6 +1,6 @@
 @muladd function perform_step!(integrator, cache::TauLeapingConstantCache)
     (; t, dt, uprev, u, W, p, P, c) = integrator
-    tmp = c(uprev, p, t, P.dW, nothing)
+    tmp = leaping_change(c, uprev, p, t, P.dW, nothing)
     integrator.u = uprev .+ tmp
 
     if integrator.opts.adaptive
@@ -22,7 +22,7 @@ end
 @muladd function perform_step!(integrator, cache::TauLeapingCache)
     (; t, dt, uprev, u, W, p, P, c) = integrator
     (; tmp, newrate, EEstcache) = cache
-    c(tmp, uprev, p, t, P.dW, nothing)
+    leaping_change(c, tmp, uprev, p, t, P.dW, nothing)
     @.. u = uprev + tmp
 
     if integrator.opts.adaptive
@@ -46,7 +46,7 @@ end
 #
 # Implicit equation:
 #   X_{n+1} = X_n + ν*k + dt*(drift(X_{n+1}) - drift(X_n))
-# where k ~ Poisson(dt * a(X_n)) and drift(u) = ν*a(u) = c(u, p, t, rate(u, p, t), nothing)
+# where k ~ Poisson(dt * a(X_n)) and drift(u) = ν*a(u) = leaping_change(c, u, p, t, rate(u, p, t), nothing)
 #
 # Rearranged for nlsolver:
 #   X_{n+1} = tmp + z
@@ -70,9 +70,9 @@ end
 
     # Step 2: Compute explicit contributions
     # jump_contribution = ν*k
-    jump_contribution = c(uprev, p, t, poisson_counts, nothing)
+    jump_contribution = leaping_change(c, uprev, p, t, poisson_counts, nothing)
     # drift_at_uprev = ν*a(X_n)
-    drift_at_uprev = c(uprev, p, t, rate_at_uprev, nothing)
+    drift_at_uprev = leaping_change(c, uprev, p, t, rate_at_uprev, nothing)
 
     # Step 3: Set up nlsolver
     # tmp = X_n + ν*k - dt*drift(X_n)
@@ -111,10 +111,10 @@ end
     # Step 2: Compute explicit contributions
     # Use nlsolver.tmp for intermediate storage
     # First compute jump_contribution = ν*k into nlsolver.tmp
-    c(nlsolver.tmp, uprev, p, t, poisson_counts, nothing)
+    leaping_change(c, nlsolver.tmp, uprev, p, t, poisson_counts, nothing)
 
     # Compute drift at uprev: drift(X_n) = ν*a(X_n) into nlsolver.z (will be overwritten)
-    c(nlsolver.z, uprev, p, t, rate_at_uprev, nothing)
+    leaping_change(c, nlsolver.z, uprev, p, t, rate_at_uprev, nothing)
 
     # Step 3: Set up nlsolver
     # tmp = X_n + ν*k - dt*drift(X_n)
@@ -143,7 +143,7 @@ end
 #
 # Implicit equation:
 #   X_{n+1} = X_n + ν*k + θ*dt*(drift(X_{n+1}) - drift(X_n))
-# where k ~ Poisson(dt * a(X_n)) and drift(u) = ν*a(u) = c(u, p, t, rate(u, p, t), nothing)
+# where k ~ Poisson(dt * a(X_n)) and drift(u) = ν*a(u) = leaping_change(c, u, p, t, rate(u, p, t), nothing)
 #
 # Rearranged for nlsolver:
 #   X_{n+1} = tmp + θ*z
@@ -167,9 +167,9 @@ end
 
     # Step 2: Compute explicit contributions
     # jump_contribution = ν*k
-    jump_contribution = c(uprev, p, t, poisson_counts, nothing)
+    jump_contribution = leaping_change(c, uprev, p, t, poisson_counts, nothing)
     # drift_at_uprev = ν*a(X_n)
-    drift_at_uprev = c(uprev, p, t, rate_at_uprev, nothing)
+    drift_at_uprev = leaping_change(c, uprev, p, t, rate_at_uprev, nothing)
 
     # Step 3: Set up nlsolver
     # tmp = X_n + ν*k - θ*dt*drift(X_n)
@@ -208,10 +208,10 @@ end
     # Step 2: Compute explicit contributions
     # Use nlsolver.tmp for intermediate storage
     # First compute jump_contribution = ν*k into nlsolver.tmp
-    c(nlsolver.tmp, uprev, p, t, poisson_counts, nothing)
+    leaping_change(c, nlsolver.tmp, uprev, p, t, poisson_counts, nothing)
 
     # Compute drift at uprev: drift(X_n) = ν*a(X_n) into nlsolver.z (will be overwritten)
-    c(nlsolver.z, uprev, p, t, rate_at_uprev, nothing)
+    leaping_change(c, nlsolver.z, uprev, p, t, rate_at_uprev, nothing)
 
     # Step 3: Set up nlsolver
     # tmp = X_n + ν*k - θ*dt*drift(X_n)
