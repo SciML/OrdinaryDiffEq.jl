@@ -133,6 +133,7 @@ function regression_ii()
     @time @safetestset "PSOS Energy Conservation Tests" include("Regression_II/psos_and_energy_conservation.jl")
     @time @safetestset "Unrolled Tests" include("Regression_II/ode_unrolled_comparison_tests.jl")
     @time @safetestset "IIP vs OOP Tests" include("Regression_II/iipvsoop_tests.jl")
+    @time @safetestset "Issue Regression Tests" include("Regression_II/issue_regression_tests.jl")
     return @time @safetestset "Inference Tests" include("Regression_II/inference.jl")
 end
 
