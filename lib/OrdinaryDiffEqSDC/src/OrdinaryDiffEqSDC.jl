@@ -27,6 +27,7 @@ using SciMLBase: SciMLBase, _unwrap_val
 @reexport using SciMLBase
 
 include("sdc_tableaus.jl")
+include("min_sr_s_coefficients.jl")
 include("algorithms.jl")
 include("alg_utils.jl")
 include("sdc_caches.jl")
