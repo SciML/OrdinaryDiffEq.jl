@@ -41,3 +41,5 @@ versions = ["lts"]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "gpu"]
 timeout = 120
+[Reactant]
+versions = ["1"]
