@@ -233,8 +233,8 @@ function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cac
         else # zₖ₋₁ > 10
             hₖ₋₁ = 0.1 * h
         end
-        if cache.consfailcnt > 2 || hₖ₋₁ > hₖ
-            hₙ = min(h, hₖ₋₁)
+        if cache.consfailcnt > 2 || abs(hₖ₋₁) > abs(hₖ)
+            hₙ = sign(h) * min(abs(h), abs(hₖ₋₁))
             kₙ = k - 1
         end
     end
