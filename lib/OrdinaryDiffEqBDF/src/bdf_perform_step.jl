@@ -207,8 +207,17 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     alg = unwrap_alg(integrator, true)
     (; uprev2, uprev3, uprev4, du₁, du₂, k₁, k₂, k₃, nlsolver) = cache
     (; f1, f2) = integrator.f
-    cnt = cache.cnt = min(alg.order, integrator.iter + 1)
+    # cnt tracks how many past (uprev_i, k_i) points the fixed-coefficient
+    # formulas below can validly read, which is the number of completed
+    # steps -- not one more than that (that was defect 1: it ran a k-point
+    # formula with only k-1 points on record). It must also drop back to 1
+    # whenever dt changes: the BDF coefficients below are derived assuming
+    # the whole history is spaced at the current dt, so history recorded at
+    # a different dt (e.g. a step clipped to land on tspan[2]) makes the
+    # formula wrong, not just less accurate (see #4329).
+    cnt = cache.cnt = min(alg.order, integrator.iter)
     integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
+    dt != cache.dtprev && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     if cache.ark
         # Additive Runge-Kutta Method
@@ -247,11 +256,19 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + γ * z
 
-    cnt == 4 && (
+    # Shift the history every step (not gated on cnt, which only says how
+    # much of it is *usable yet* -- defect 2 was gating the shift itself on
+    # cnt, so the first step that could validly read a slot found it still
+    # holding its cache-construction value). Gated on alg.order instead,
+    # which is fixed per algorithm instance: for order < 4 (< 3), uprev4/k₃
+    # (uprev3/k₂) alias uprev2/k₁ as a memory optimization in the mutable
+    # cache's constructor, and writing through an aliased slot here would
+    # corrupt uprev2/k₁ before the unaliased lines below read them.
+    alg.order == 4 && (
         cache.uprev4 = uprev3;
         cache.k₃ = k₂
     )
-    cnt >= 3 && (
+    alg.order >= 3 && (
         cache.uprev3 = uprev2;
         cache.k₂ = k₁
     )
@@ -259,6 +276,7 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
         cache.uprev2 = uprev;
         cache.k₁ = du₂
     )
+    cache.dtprev = dt
     cache.du₁ = f1(u, p, t + dt)
     cache.du₂ = f2(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -290,8 +308,12 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     (; uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁, du₂, nlsolver) = cache
     (; tmp, z) = nlsolver
     (; f1, f2) = integrator.f
-    cnt = cache.cnt = min(alg.order, integrator.iter + 1)
+    # See the matching branch in the constant-cache method for why cnt is
+    # min(order, iter) rather than iter + 1, and why it also resets on a
+    # dt change (#4329).
+    cnt = cache.cnt = min(alg.order, integrator.iter)
     integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
+    dt != cache.dtprev && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     # Explicit part
     if cache.ark
@@ -330,11 +352,17 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = tmp + γ * z
 
-    cnt == 4 && (
+    # See the matching comment in the constant-cache method: gated on
+    # alg.order (fixed), not cnt (varies per step and was defect 2), and
+    # the alg.order gate is what keeps this safe under the mutable cache's
+    # order<4/order<3 buffer aliasing (uprev4≡uprev2, k₃≡k₁ / uprev3≡uprev2,
+    # k₂≡k₁) -- each destination below is only written after every line
+    # that still needs its old contents as a source has already run.
+    alg.order == 4 && (
         cache.uprev4 .= uprev3;
         cache.k₃ .= k₂
     )
-    cnt >= 3 && (
+    alg.order >= 3 && (
         cache.uprev3 .= uprev2;
         cache.k₂ .= k₁
     )
@@ -342,6 +370,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
         cache.uprev2 .= uprev;
         cache.k₁ .= du₂
     )
+    cache.dtprev = dt
     f1(du₁, u, p, t + dt)
     f2(du₂, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
