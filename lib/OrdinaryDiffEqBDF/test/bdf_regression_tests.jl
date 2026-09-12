@@ -242,3 +242,24 @@ end
         @test c.order == 2
     end
 end
+  
+# Regression test for the backward-in-time step rejection path: for tdir < 0
+# (e.g. adjoint solves), `bdf_step_reject_controller!` must still shrink |dt|.
+# Previously `min(h, hₖ₋₁)`/`hₖ₋₁ > hₖ` compared signed (negative) step sizes,
+# picking the *larger* magnitude and letting dt hit a fixed point where
+# EEst > 1 forever, hanging the solver at maxiters.
+@testset "BDF step rejection shrinks |dt| for backward integration" begin
+    for (t0, t1) in ((0.0, 1.0), (1.0, 0.0))
+        prob = ODEProblem((u, p, t) -> -u, 1.0, (t0, t1))
+        integ = init(prob, FBDF(); abstol = 1.0e-8, reltol = 1.0e-8)
+        integ.cache.consfailcnt = 4
+        integ.cache.order = 3
+        OrdinaryDiffEqCore.set_EEst!(integ, 2.0)
+        # small k-1 estimate makes the lower-order candidate much larger
+        integ.cache.terkm1 = 0.01
+        dt0 = integ.dt
+        OrdinaryDiffEqCore.step_reject_controller!(integ, FBDF())
+        @test signbit(integ.dt) == signbit(dt0)
+        @test abs(integ.dt) <= abs(dt0) / 2
+    end
+end

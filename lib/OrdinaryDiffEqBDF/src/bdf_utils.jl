@@ -408,7 +408,179 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
     return terk
 end
 
+# Divided-difference filters and residual estimates (DeCaria et al., arXiv:1810.06670).
+
+"""
+    backdiff!(c, D, ts, n)
+
+Tabulate divided-difference coefficients for the ascending time points `ts[1:n]`.
+On return `c[q + 1, i]` is the coefficient of the solution value at `ts[i]` in the
+`q`-th divided difference over the newest `q + 1` points,
+
+    δ^q y = Σᵢ c[q + 1, i] * y(ts[i]),   q = 0, …, n - 1.
+
+`D` is an `n × n` workspace. Both `c` and `D` may be larger than `n × n`; only the
+leading block is touched.
+"""
+function backdiff!(c, D, ts, n)
+    T = eltype(c)
+    @inbounds for j in 1:n, i in 1:n
+        D[j, i] = ifelse(i == n + 1 - j, one(T), zero(T))
+    end
+    @inbounds for i in 1:n
+        c[1, i] = D[1, i]
+    end
+    @inbounds for q in 1:(n - 1)
+        for j in 1:(n - q)
+            denom = ts[n + 1 - j] - ts[n + 1 - j - q]
+            for i in 1:n
+                D[j, i] = (D[j, i] - D[j + 1, i]) / denom
+            end
+        end
+        for i in 1:n
+            c[q + 1, i] = D[1, i]
+        end
+    end
+    return c
+end
+
+"""
+    bdf3stab_coeff(c, n, µ = 9 // 125)
+
+Weight of the BDF3-Stab filter step `y² = y³ + weight * δ³y³` (equation 3.16 of
+DeCaria et al., arXiv:1810.06670v1), given a divided-difference table `c` from
+[`backdiff!`](@ref) over `n ≥ 4` ascending time points.
+
+`µ = 9/125` is the G-stability-optimal constant of the paper, which makes the
+resulting order-2 method A-stable where BDF3 is only α-stable.
+"""
+bdf3stab_coeff(c, n, µ = 9 // 125) = µ / c[4, n]
+
+# ts_asc[1:n] = [ts[n-1], …, ts[1], tdt], i.e. the cache history in ascending
+# order with the point being solved for appended.
+function _filt_fill_ts_asc!(ts_asc, ts, tdt, n)
+    @inbounds for i in 1:(n - 1)
+        ts_asc[i] = ts[n - i]
+    end
+    @inbounds ts_asc[n] = tdt
+    return ts_asc
+end
+
+# δ = Σᵢ c[row, i] · y(ts_asc[i]), where `y` is the value at the newest point and
+# the older ones come from `u_history` (which is ordered newest-first).
+function _filt_divided_diff(c, row, n, y, u_history)
+    if y isa Number
+        δ = c[row, n] * y
+        for i in 1:(n - 1)
+            δ += c[row, i] * u_history[n - i]
+        end
+        return δ
+    end
+    δ = @.. broadcast = false c[row, n] * y
+    for i in 1:(n - 1)
+        δ = @.. broadcast = false δ + c[row, i] * u_history[n - i]
+    end
+    return δ
+end
+
+function _filt_divided_diff!(δ, c, row, n, y, u_history)
+    @.. broadcast = false δ = c[row, n] * y
+    for i in 1:(n - 1)
+        @.. broadcast = false δ = δ + c[row, i] * u_history[n - i]
+    end
+    return δ
+end
+
+# Residual of the higher-order BDF formula, used as a defect estimate after
+# scaling by its leading coefficient.
+function _filt_bdf_residual(α_bar, n, y, u_history, fy)
+    if y isa Number
+        res = α_bar[n] * y
+        for i in 1:(n - 1)
+            res += α_bar[i] * u_history[n - i]
+        end
+        return res - fy
+    end
+    res = @.. broadcast = false α_bar[n] * y
+    for i in 1:(n - 1)
+        res = @.. broadcast = false res + α_bar[i] * u_history[n - i]
+    end
+    return @.. broadcast = false res - fy
+end
+
+function _filt_bdf_residual!(res, α_bar, n, y, u_history, fy)
+    @.. broadcast = false res = α_bar[n] * y
+    for i in 1:(n - 1)
+        @.. broadcast = false res = res + α_bar[i] * u_history[n - i]
+    end
+    @.. broadcast = false res = res - fy
+    return res
+end
+
+# Cancel the fixed-coefficient solve's error on a monic polynomial of degree
+# k+1. Its history interpolant is θ^(k+1) - ∏ⱼ(θ-θⱼ), with θ=(t-tdt)/dt.
+function _fbdf_filter_weight(c, ts, n, k, dt, bdf_coeffs)
+    defect = zero(eltype(ts))
+    for i in 1:k
+        θ = -i
+        product = one(eltype(ts))
+        for j in 1:(n - 1)
+            product *= θ - (ts[j] - ts[n]) / dt
+        end
+        defect -= bdf_coeffs[k, i + 1] * (θ^(k + 1) - product)
+    end
+    error = defect * dt^(k + 1) / bdf_coeffs[k, 1]
+    return error / (1 + c[n, n] * error)
+end
+
+function _filt_bdf_coefficients!(α_bar, c, ts, n, p)
+    for i in 1:n
+        α_bar[i] = zero(eltype(α_bar))
+        prefactor = one(eltype(α_bar))
+        for j in 1:p
+            α_bar[i] += prefactor * c[j + 1, i]
+            prefactor *= ts[n] - ts[n - j]
+        end
+    end
+    return α_bar
+end
+
+@inline function _filt_step_ratio(est, p)
+    iszero(est) && return oftype(est, Inf)
+    isfinite(est) && est > 0 || return zero(est)
+    return est^(-1 / (p + 1))
+end
+
+function _fbdf_select_filter!(integrator, cache, k, max_order, err, err_hi, err_lo)
+    order = k
+    estimate = err
+    ratio = _filt_step_ratio(err, k)
+    if k == 3 && _filt_step_ratio(err_lo, 2) > ratio
+        order = 2
+        estimate = err_lo
+        ratio = _filt_step_ratio(err_lo, 2)
+    end
+    if k < max_order && cache.qwait == 0 && _filt_step_ratio(err_hi, k + 1) > ratio
+        order = k + 1
+        estimate = err_hi
+    end
+    cache.filter_order = order
+    OrdinaryDiffEqCore.set_EEst!(integrator, estimate)
+    return order
+end
+
 # NordsieckBDF scales the Newton increment by the test quantity tq[2], which puts
 # it in the units of the local error test, so `NLNewton(κ = …)` means CVODE's
 # NLSCOEF.
 error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
+
+function _fbdf_finish_fixed_step!(integrator, cache)
+    if cache.time_filter && !integrator.opts.adaptive
+        cache.prev_order = cache.order
+        cache.order = max(cache.order, cache.filter_order)
+        cache.iters_from_event += 1
+        cache.nconsteps += 1
+        cache.consfailcnt = 0
+    end
+    return nothing
+end

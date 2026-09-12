@@ -484,6 +484,19 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     - `stald_sqtol`: STALD tolerance for quartic residual. Default: `1e-3`.
     - `stald_rrtol`: STALD tolerance for rr cross-verification. Default: `1e-2`.
     - `stald_tiny`: STALD tiny value to avoid division by zero. Default: `1e-90`.
+    - `time_filter`: Apply optional time filters based on
+        [DeCaria et al.](https://arxiv.org/abs/1810.06670), with the order-raising
+        weight adapted to FBDF's fixed-coefficient solve on unequal steps. At
+        base orders 1–4, an additional candidate has order `k+1`; at order 3,
+        a BDF3-Stab candidate has order 2. Adaptive stepping selects a candidate
+        and uses its error estimate and order for step-size control. The higher
+        candidate requires `qwait == 0` and never exceeds `max_order`; BDF3-Stab
+        remains available with `max_order = Val(3)`. Fixed stepping uses the
+        higher candidate when permitted by `max_order`. Filtering starts only
+        when sufficient history is available. Requires the identity mass matrix.
+        STALD's unfiltered derivative tests are not used on filtered steps.
+        Extra `f` evaluations are required; efficiency depends on the problem.
+        Default: `false`.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -499,6 +512,7 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_sqtol = 1e-3,
     stald_rrtol = 1e-2,
     stald_tiny = 1e-90,
+    time_filter = false,
     """
 )
 struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
