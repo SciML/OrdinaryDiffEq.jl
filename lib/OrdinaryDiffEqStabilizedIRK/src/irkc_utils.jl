@@ -66,7 +66,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         if integrator.alg isa IRKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    max(integrator.eigen_est, 1.0 / abs(integrator.opts.dtmax)) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 cache.zprev = z - uprev
@@ -169,7 +169,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         if integrator.alg isa IRKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    max(integrator.eigen_est, 1.0 / abs(integrator.opts.dtmax)) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 @.. broadcast = false ccache.zprev = z - uprev
