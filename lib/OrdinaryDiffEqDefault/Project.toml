@@ -60,3 +60,12 @@ SafeTestsets = "0.1.0"
 
 [targets]
 test = ["Aqua", "DiffEqDevTools", "JET", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Test", "Pkg", "SciMLTesting"]
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
+OrdinaryDiffEqVerner = {path = "../OrdinaryDiffEqVerner"}
