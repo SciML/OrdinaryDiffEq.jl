@@ -1,7 +1,7 @@
 using ModelingToolkit, OrdinaryDiffEq, Test
 using ModelingToolkit: t_nounits as t, D_nounits as D, SymbolicContinuousCallback
 
-@testset "All simultaenous events are saved" begin
+@testset "All simultaneous events are saved" begin
     # https://github.com/SciML/ModelingToolkit.jl/issues/4870 Case 2
     @variables x(t) = 0.0
     c_up = only(@discretes c_up(t) = 0.0)
