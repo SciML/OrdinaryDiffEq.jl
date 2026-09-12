@@ -407,7 +407,11 @@ end
         end
 
         @. cubuff = complex(fw1 - αdt * Mw1 + βdt * Mw2, fw2 - βdt * Mw1 - αdt * Mw2)
-        needfactor = iter == 1
+        # Only hand `A = W1` to the linear solver when W was actually rebuilt this
+        # step; otherwise W1 still holds the factorization from the previous step
+        # and re-factorizing it corrupts the solve.  Matches RadauIIA5/9 and
+        # AdaptiveRadau.
+        needfactor = iter == 1 && new_W
 
         linsolve = cache.linsolve
 
