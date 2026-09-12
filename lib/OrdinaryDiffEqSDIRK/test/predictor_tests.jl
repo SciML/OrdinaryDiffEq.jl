@@ -97,3 +97,28 @@ end
     @test ImplicitEuler(extrapolant = :constant).predictor == Predictor.Trivial
     @test KenCarp4(extrapolant = :interpolant).predictor == Predictor.MaxOrder
 end
+
+@testset "callable predictor" begin
+    calls = Ref(0)
+    prob_oop = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    prob_iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    seed_oop = (uprev, p, t, dt) -> (calls[] += 1; uprev)
+    seed_iip = (upred, uprev, p, t, dt) -> (calls[] += 1; upred .= uprev)
+
+    # ImplicitEuler solves an implicit first stage, TRBDF2 an explicit one
+    @testset "$(nameof(M)) $(iip ? "iip" : "oop")" for M in (ImplicitEuler, TRBDF2),
+            iip in (false, true)
+
+        prob = iip ? prob_iip : prob_oop
+        seed = iip ? seed_iip : seed_oop
+        calls[] = 0
+        custom = solve(prob, M(predictor = seed); abstol = 1.0e-10, reltol = 1.0e-10)
+        @test calls[] > 0
+        trivial = solve(
+            prob, M(predictor = Predictor.Trivial); abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        @test custom.u[end] ≈ trivial.u[end] rtol = 1.0e-8
+    end
+
+    @test_throws ArgumentError TRBDF2(predictor = seed_oop, extrapolant = :linear)
+end

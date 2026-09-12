@@ -87,7 +87,7 @@ alg_order(alg::BHR553) = 3
 isesdirk(alg::BHR553) = true
 
 # Per-stage Newton-seed strategy. Every SDIRK/ESDIRK algorithm in this module
-# carries a `predictor::Predictor.T` field, so the `alg.predictor` access is
+# carries a `predictor` field, so the `alg.predictor` access is
 # usually direct. The `hasproperty` fallback is for downstream algorithms that
 # reuse `ESDIRKIMEXCache` (e.g. OrdinaryDiffEqBDF's `ABDF2`, which uses the
 # Implicit Euler tableau as a starter step via `cache.eulercache`) without
@@ -97,9 +97,24 @@ isesdirk(alg::BHR553) = true
 # rather than the zero seed a genuine `Trivial` request selects.
 _predictor(alg) = hasproperty(alg, :predictor) ? alg.predictor : Predictor.Trivial
 
+# A predictor that is not one of the `Predictor` enum values is a user-supplied
+# callable seeding the stage value directly. The check is on the type, so it
+# folds away for the enum and costs nothing in the stage loop.
+_is_custom_predictor(predictor) = !(predictor isa Predictor.T)
+
 # The interpolant predictors use the Hermite power form; a method with a custom
 # interpolant should override this to false to fall back to the full extrapolant.
 _uses_hermite_interp(alg) = true
+
+# A callable predictor is passed through; `extrapolant` only ever named a builtin.
+function _resolve_predictor(predictor, extrapolant)
+    extrapolant === nothing && return predictor
+    throw(
+        ArgumentError(
+            "`extrapolant` is deprecated and cannot be combined with a callable `predictor`."
+        )
+    )
+end
 
 # Deprecated `extrapolant` Symbol -> `Predictor` enum mapping.
 function _resolve_predictor(predictor::Predictor.T, extrapolant)
