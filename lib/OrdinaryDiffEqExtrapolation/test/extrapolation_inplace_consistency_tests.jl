@@ -44,12 +44,12 @@ end
 
     @testset "same effort as out-of-place" begin
         for (algname, alg) in algs, (name, f, f!, u0, p, T) in CASES
-            soop = solve(ODEProblem(f, copy(u0), (-T, T), p), alg; kw...)
-            siip = solve(ODEProblem(f!, copy(u0), (-T, T), p), alg; kw...)
+            sol_oop = solve(ODEProblem(f, copy(u0), (-T, T), p), alg; kw...)
+            sol_iip = solve(ODEProblem(f!, copy(u0), (-T, T), p), alg; kw...)
             @testset "$algname $name" begin
-                @test siip.stats.naccept <= 2 * soop.stats.naccept
-                @test siip.stats.nreject <= 2 * soop.stats.nreject + 4
-                @test siip.u ≈ soop.u rtol = 1.0e-5
+                @test sol_iip.stats.naccept <= 2 * sol_oop.stats.naccept
+                @test sol_iip.stats.nreject <= 2 * sol_oop.stats.nreject + 4
+                @test sol_iip.u ≈ sol_oop.u rtol = 1.0e-5
             end
         end
     end
