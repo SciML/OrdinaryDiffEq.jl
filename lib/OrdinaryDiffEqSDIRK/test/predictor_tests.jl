@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSDIRK
+using SciMLBase
 using Test
 
 vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 1.0e3 * (1 - u[1]^2) * u[2] - u[1]; nothing)
@@ -96,4 +97,27 @@ end
     @test ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
     @test ImplicitEuler(extrapolant = :constant).predictor == Predictor.Trivial
     @test KenCarp4(extrapolant = :interpolant).predictor == Predictor.MaxOrder
+end
+
+@testset "interpolant predictors survive a rejected step (#4472)" begin
+    function rober!(du, u, p, t)
+        du[1] = -0.04u[1] + 1.0e4 * u[2] * u[3]
+        du[2] = 0.04u[1] - 1.0e4 * u[2] * u[3] - 3.0e7 * u[2]^2
+        du[3] = 3.0e7 * u[2]^2
+        return nothing
+    end
+    rober = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    lotka! = (du, u, p, t) -> (
+        du[1] = 1.5u[1] - u[1] * u[2];
+        du[2] = -3.0u[2] + u[1] * u[2]; nothing
+    )
+    lotka = ODEProblem(lotka!, [1.0, 1.0], (0.0, 30.0))
+
+    interp_predictors = (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
+    @testset "$(nameof(M)) $p" for (M, prob) in ((KenCarp4, rober), (TRBDF2, lotka)),
+            p in interp_predictors
+
+        sol = solve(prob, M(predictor = p); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+    end
 end
