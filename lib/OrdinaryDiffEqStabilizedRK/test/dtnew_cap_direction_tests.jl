@@ -4,12 +4,6 @@ using OrdinaryDiffEqStabilizedRK, OrdinaryDiffEqCore, Test
 # stability limit. The limit is a magnitude, so `min(dtnew, bound)` silently does
 # nothing for a backward (tdir < 0) solve, where dtnew < 0 < bound: the cap was
 # applied going forwards and dropped going backwards.
-#
-# NOTE: these methods' caps are currently unreachable from `calc_dt_propose!`
-# because `OrdinaryDiffEqStabilizedRK` defines `dtnew_modification` without
-# importing it from `OrdinaryDiffEqCore`, so the generic identity method is what
-# actually runs (see the issue linked from the PR). The tests below therefore
-# call the package's own method directly.
 
 f(u, p, t) = -1000.0 .* u
 
@@ -35,6 +29,26 @@ const CAPPED_ALGS = (
             end
             @test capped[1] < 1.0        # the cap actually binds forward
             @test capped[1] == capped[2] # and identically backward
+        end
+    end
+end
+
+# `calc_dt_propose!` dispatches on `OrdinaryDiffEqCore.dtnew_modification`. These
+# methods are only reached if this package *extends* that function rather than
+# defining a same-named one of its own, which is easy to get wrong by leaving it
+# out of the `import` list - and silently disables every cap above.
+@testset "stability cap is reachable from OrdinaryDiffEqCore" begin
+    @test OrdinaryDiffEqCore.dtnew_modification ===
+        OrdinaryDiffEqStabilizedRK.dtnew_modification
+    for (algname, alg) in CAPPED_ALGS
+        @testset "$algname" begin
+            @test OrdinaryDiffEqCore.has_dtnew_modification(alg)
+            integ = init(
+                ODEProblem(f, [1.0], (0.0, 1.0)), alg;
+                abstol = 1.0e-6, reltol = 1.0e-6
+            )
+            integ.eigen_est = 1.0e10
+            @test abs(OrdinaryDiffEqCore.dtnew_modification(integ, alg, 1.0)) < 1.0
         end
     end
 end
