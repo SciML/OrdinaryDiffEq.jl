@@ -89,7 +89,7 @@ end
 
 # SBDF
 
-@cache mutable struct SBDFConstantCache{rateType, N, uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct SBDFConstantCache{rateType, N, uType, dtType} <: OrdinaryDiffEqConstantCache
     cnt::Int
     ark::Bool
     k2::rateType
@@ -102,9 +102,10 @@ end
     k₃::rateType
     du₁::rateType
     du₂::rateType
+    dtprev::dtType
 end
 
-@cache mutable struct SBDFCache{uType, rateType, N} <: BDFMutableCache
+@cache mutable struct SBDFCache{uType, rateType, N, dtType} <: BDFMutableCache
     cnt::Int
     ark::Bool
     u::uType
@@ -119,6 +120,7 @@ end
     k₃::rateType
     du₁::rateType
     du₂::rateType
+    dtprev::dtType
 end
 
 function alg_cache(
@@ -143,10 +145,11 @@ function alg_cache(
     uprev2 = u
     uprev3 = u
     uprev4 = u
+    dtprev = zero(dt)
 
     return SBDFConstantCache(
         1, alg.ark, k2, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁,
-        du₂
+        du₂, dtprev
     )
 end
 
@@ -174,10 +177,11 @@ function alg_cache(
     uprev2 = zero(u)
     uprev3 = order >= 3 ? zero(u) : uprev2
     uprev4 = order == 4 ? zero(u) : uprev2
+    dtprev = zero(dt)
 
     return SBDFCache(
         1, alg.ark, u, uprev, fsalfirst, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃,
-        du₁, du₂
+        du₁, du₂, dtprev
     )
 end
 
