@@ -1049,7 +1049,7 @@ end
 end
 
 function _fired_cb_maybe_discontinuity(cb_idx, callbacks::AbstractVector)
-    return callbacks[cb_idx].maybe_discontinuity
+    return callbacks[cb_idx].maybe_discontinuity::Bool
 end
 
 # Use a generated function to call apply_callback! in a type-stable way
@@ -1089,9 +1089,9 @@ function apply_ith_callback!(
         integrator, time, upcrossing, event_idx, cb_idx,
         callbacks::AbstractVector
     )
-    return DiffEqBase.apply_callback!(
+    return Base.inferencebarrier(DiffEqBase.apply_callback!)(
         integrator, callbacks[cb_idx], time, upcrossing, event_idx
-    )
+    )::Tuple{Bool, Bool}
 end
 
 function handle_callbacks!(integrator)

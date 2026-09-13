@@ -90,9 +90,7 @@ has_continuous_callback(cb::VectorContinuousCallback) = true
 has_continuous_callback(cb::CallbackSet) = !isempty(cb.continuous_callbacks)
 has_continuous_callback(cb::Nothing) = false
 
-function _erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}})
-    return CallbackSet(copy(cb.continuous_callbacks), copy(cb.discrete_callbacks))
-end
+_erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
 function _erase_callback_types(callback)
     Base.@nospecialize callback
     callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
@@ -269,9 +267,25 @@ end
 end
 
 
+# A type-erased callback is called through `Base.inferencebarrier`, so the compiled loop
+# holds a plain dynamic dispatch instead of a method instance specialised on `Any` whose
+# abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
+# The callee runs on the concrete callback and hands back the two values the loop needs
+# typed: the event time and the residual, the latter already reduced and converted.
+function _find_callback_time_erased(integrator, callback, callback_idx)
+    tmin, upcrossing, event_occurred, event_idx, residual =
+        find_callback_time(integrator, callback, callback_idx)
+    return (
+        convert(typeof(integrator.t), tmin), upcrossing, event_occurred::Bool, event_idx,
+        convert(typeof(integrator.last_event_error), value(residual)),
+    )
+end
+
 function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     callback_count = length(callbacks)
     callback_count > 0 || throw(ArgumentError("at least one continuous callback is required"))
+    tType = typeof(integrator.t)
+    errType = typeof(integrator.last_event_error)
 
     has_vector_callback = any(callback -> callback isa VectorContinuousCallback, callbacks)
     if has_vector_callback
@@ -281,7 +295,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     end
 
     tmin, upcrossing, event_occurred, event_idx, residual =
-        find_callback_time(integrator, callbacks[1], 1)
+        Base.inferencebarrier(_find_callback_time_erased)(integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
     identified_idx = 1
     if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
         copyto!(
@@ -293,7 +307,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     for callback_idx in 2:callback_count
         callback = callbacks[callback_idx]
         tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
-            find_callback_time(integrator, callback, callback_idx)
+            Base.inferencebarrier(_find_callback_time_erased)(integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
         if event_occurred2 &&
                 (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
             tmin = tmin2
@@ -318,7 +332,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
         )
     end
     if event_occurred
-        integrator.last_event_error = value(residual)
+        integrator.last_event_error = residual
     end
     return tmin, upcrossing, event_occurred, event_idx, identified_idx, callback_count
 end
@@ -819,7 +833,8 @@ function apply_discrete_callback!(integrator, callbacks::AbstractVector)
     discrete_modified = false
     saved_in_cb = false
     for callback in callbacks
-        modified, saved = apply_discrete_callback!(integrator, callback)
+        modified, saved =
+            Base.inferencebarrier(apply_discrete_callback!)(integrator, callback)::Tuple{Bool, Bool}
         discrete_modified |= modified
         saved_in_cb |= saved
     end

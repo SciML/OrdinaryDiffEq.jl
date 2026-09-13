@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, Test
 import DiffEqBase
 import SciMLBase
+import FunctionWrappersWrappers
 
 @test OrdinaryDiffEq.AutoDespecialize === SciMLBase.AutoDespecialize
 @test OrdinaryDiffEq.AutoRespecialize === SciMLBase.AutoRespecialize
@@ -209,7 +210,9 @@ end
     end
 end
 
-@testset "AutoSpecialize wraps callbacks after constructing the integrator" begin
+@testset "despecializing levels wrap callbacks after constructing the integrator" for specialize in (
+        SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize,
+    )
     first_discrete = DiscreteCallback(
         (u, t, integrator) -> iszero(u[1]),
         integrator -> (integrator.u[1] = 1.0)
@@ -222,13 +225,13 @@ end
         (u, t, integrator) -> false,
         integrator -> nothing
     )
-    no_callback_problem = ODEProblem{true, SciMLBase.AutoSpecialize}(
+    no_callback_problem = ODEProblem{true, specialize}(
         callback_constant_rhs!, [0.0], (0.0, 1.0)
     )
-    first_discrete_problem = ODEProblem{true, SciMLBase.AutoSpecialize}(
+    first_discrete_problem = ODEProblem{true, specialize}(
         callback_constant_rhs!, [0.0], (0.0, 1.0); callback = first_discrete
     )
-    second_discrete_problem = ODEProblem{true, SciMLBase.AutoSpecialize}(
+    second_discrete_problem = ODEProblem{true, specialize}(
         callback_constant_rhs!, [0.0], (0.0, 1.0);
         callback = CallbackSet(second_discrete, unused_discrete)
     )
@@ -240,6 +243,7 @@ end
     second_wrapped = first(second_discrete_integrator.opts.callback.discrete_callbacks)
     @test typeof(no_callback_integrator) === typeof(first_discrete_integrator)
     @test typeof(first_discrete_integrator) === typeof(second_discrete_integrator)
+    @test first_wrapped.condition isa FunctionWrappersWrappers.FunctionWrappersWrapper
     @test typeof(first_wrapped.condition) === typeof(second_wrapped.condition)
     @test typeof(first_wrapped.affect!) === typeof(second_wrapped.affect!)
     @test solve(first_discrete_problem, Tsit5()).u[end] == [1.0]
@@ -314,4 +318,33 @@ end
     )
     @test no_vector_affect_wrapped.affect! === nothing
     @test solve(no_callback_problem, Tsit5(); callback = no_vector_affect).u[end] == [0.0]
+end
+
+@testset "callbacks that are not wrapped are stored as given" begin
+    condition(u, t, integrator) = iszero(u[1])
+    affect!(integrator) = (integrator.u[1] = 1.0)
+    plain = DiscreteCallback(condition, affect!)
+    hooked = DiscreteCallback(condition, affect!; initialize = (cb, u, t, integrator) -> nothing)
+
+    # NoSpecialize erases the container but leaves the entries alone, as it does `f`.
+    no_specialize_problem = ODEProblem{true, SciMLBase.NoSpecialize}(
+        callback_constant_rhs!, [0.0], (0.0, 1.0); callback = plain
+    )
+    @test only(init(no_specialize_problem, Tsit5()).opts.callback.discrete_callbacks) === plain
+
+    # A custom initialize or finalize hook may read `affect!`'s fields or dispatch on its
+    # type, so such callbacks are never wrapped.
+    hooked_problem = ODEProblem{true, SciMLBase.AutoSpecialize}(
+        callback_constant_rhs!, [0.0], (0.0, 1.0); callback = hooked
+    )
+    @test only(init(hooked_problem, Tsit5()).opts.callback.discrete_callbacks) === hooked
+    @test solve(hooked_problem, Tsit5()).u[end] == [1.0]
+
+    # Wrapping builds a new callback set; the problem's own stays unwrapped.
+    wrapped_problem = ODEProblem{true, SciMLBase.AutoSpecialize}(
+        callback_constant_rhs!, [0.0], (0.0, 1.0); callback = plain
+    )
+    integrator = init(wrapped_problem, Tsit5())
+    @test only(integrator.sol.prob.kwargs[:callback].discrete_callbacks) === plain
+    @test only(integrator.opts.callback.discrete_callbacks) !== plain
 end

@@ -42,7 +42,7 @@ function find_discontinuity(integrator)
     idx = 1
     addsteps_called = false
     for i in cb.continuous_callbacks
-        if (!(i.maybe_discontinuity))
+        if (!(i.maybe_discontinuity::Bool))
             continue
         end
         disco_prob = disco_probs[idx]
@@ -54,7 +54,7 @@ function find_discontinuity(integrator)
         disco_zero.tprev = t
         disco_zero.p = p
         if (i isa VectorContinuousCallback)
-            len_cb = i.len
+            len_cb = i.len::Int
             i.condition(disco_zero.out_low, uprev, t, integrator)
             i.condition(disco_zero.out_high, u, t + dt, integrator)
             for j in 1:len_cb
