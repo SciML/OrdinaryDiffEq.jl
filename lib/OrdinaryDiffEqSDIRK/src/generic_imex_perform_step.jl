@@ -73,6 +73,10 @@ end
     # non-split solve of the same method does (#4149).
     is_imex = integrator.f isa SplitFunction && issplit(alg)
     predictor = _predictor(alg)
+    # A callable `predictor` on the nlsolve algorithm overwrites `nlsolver.z`
+    # inside `nlsolve!`; collapse to the zero fill so the interpolant work is
+    # not computed then thrown away.
+    stage_predictor(nlsolver.alg) === nothing || (predictor = Predictor.Trivial)
     s = tab.s
     γ = Ai[s, s]
 
@@ -1359,6 +1363,9 @@ end
     # non-split solve of the same method does (#4149).
     is_imex = integrator.f isa SplitFunction && issplit(alg)
     predictor = _predictor(alg)
+    # See `_perform_step_iip!` above: a callable nlsolve `predictor` makes all
+    # of this seeding dead work.
+    stage_predictor(nlsolver.alg) === nothing || (predictor = Predictor.Trivial)
     s = tab.s
     γ = Ai[s, s]
 
