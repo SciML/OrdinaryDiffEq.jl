@@ -31,12 +31,12 @@ applies the operator more times than its reported iteration count (a warm start 
 initial residual each cost one), and one operator can be shared by several `W`s.
 """
 @concrete mutable struct JVPCache{T} <: SciMLOperators.AbstractSciMLOperator{T}
-    jvp_op::Any
-    f::Any
-    du::Any
-    u::Any
-    p::Any
-    t::Any
+    jvp_op
+    f
+    du
+    u
+    p
+    t
     njvps::Int
     nbase_evals::Int
     stale_point::Bool
