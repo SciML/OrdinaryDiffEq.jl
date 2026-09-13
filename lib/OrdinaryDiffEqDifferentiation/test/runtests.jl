@@ -63,4 +63,5 @@ if TEST_GROUP ∉ ("Core", "Sparse", "ModelingToolkit") && isempty(VERSION.prere
     activate_qa_env()
     @time @safetestset "JET Tests" include("qa/jet.jl")
     @time @safetestset "Aqua" include("qa/qa.jl")
+    @time @safetestset "JVPCache allocation" include("qa/jvp_alloc_tests.jl")
 end
