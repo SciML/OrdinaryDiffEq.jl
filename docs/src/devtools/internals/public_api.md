@@ -178,6 +178,7 @@ OrdinaryDiffEqCore.uses_uprev
 OrdinaryDiffEqCore.has_autodiff
 OrdinaryDiffEqCore.has_special_newton_error
 OrdinaryDiffEqCore.has_dtnew_modification
+OrdinaryDiffEqCore.dtnew_modification
 OrdinaryDiffEqCore.has_stiff_interpolation
 OrdinaryDiffEqCore.allows_null_u0
 OrdinaryDiffEqCore.isaposteriori
