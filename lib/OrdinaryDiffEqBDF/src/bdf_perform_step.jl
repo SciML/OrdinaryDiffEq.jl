@@ -1688,19 +1688,31 @@ end
 
 # Store the Nordsieck columns for dense output. Unused columns stay zero, so the
 # interpolant can sum all of them without knowing the order at evaluation time.
-@inline function _nordsieck_store_k!(integrator, cache, ::Val{true})
+@inline function _nordsieck_store_k!(integrator, cache, ::Val{true}, apply_correction = false)
     @inbounds for j in 0:(cache.max_order_int)
         if j <= cache.order
-            copyto!(integrator.k[j + 1], cache.zn[j + 1])
+            if apply_correction
+                kj, znj = integrator.k[j + 1], cache.zn[j + 1]
+                lj, acor = cache.l[j + 1], cache.acor
+                @.. broadcast = false kj = znj + lj * acor
+            else
+                copyto!(integrator.k[j + 1], cache.zn[j + 1])
+            end
         else
             fill!(integrator.k[j + 1], zero(eltype(integrator.u)))
         end
     end
     return nothing
 end
-@inline function _nordsieck_store_k!(integrator, cache, ::Val{false})
+@inline function _nordsieck_store_k!(integrator, cache, ::Val{false}, apply_correction = false)
     @inbounds for j in 0:(cache.max_order_int)
-        integrator.k[j + 1] = j <= cache.order ? cache.zn[j + 1] : zero(integrator.u)
+        integrator.k[j + 1] = if j > cache.order
+            zero(integrator.u)
+        elseif apply_correction
+            @.. cache.zn[j + 1] + cache.l[j + 1] * cache.acor
+        else
+            cache.zn[j + 1]
+        end
     end
     return nothing
 end
@@ -1747,6 +1759,10 @@ function perform_step!(integrator, cache::NordsieckBDFCache, repeat_step = false
 
     # zn[1] is h*f(u) exactly once the corrector has converged, so fsallast is free
     @.. broadcast = false integrator.fsallast = (zn[2] + l1 * cache.acor) / dt
+    # DelayDiffEq consumes dense output before the acceptance controller commits
+    # zn. Publish the corrected trial polynomial without modifying that history,
+    # so rejection can still undo the prediction.
+    integrator.opts.adaptive && _nordsieck_store_k!(integrator, cache, iip, true)
     _nordsieck_finish_fixed!(integrator, cache, iip)
     return nothing
 end
@@ -1786,6 +1802,7 @@ function perform_step!(integrator, cache::NordsieckBDFConstantCache, repeat_step
     end
     integrator.fsallast = @.. (zn[2] + l1 * cache.acor) / dt
     integrator.u = u
+    integrator.opts.adaptive && _nordsieck_store_k!(integrator, cache, iip, true)
     _nordsieck_finish_fixed!(integrator, cache, iip)
     return nothing
 end
