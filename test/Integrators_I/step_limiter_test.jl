@@ -267,6 +267,8 @@ end
         SSPRK22, SSPRK43, SSPRK104, SSPRK932,
         CarpenterKennedy2N54, ORK256, RDPK3Sp35, NDBLSRK124,
         Rosenbrock23, Rosenbrock32, ROS3P, Rodas4, Rodas5P,
+        ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
+        RKL1, RKL2, RKG1, RKG2,
     ]
     for A in supported
         alg = A()
@@ -279,7 +281,7 @@ end
     # Methods that do not apply stage limiters (including ones that merely carry a
     # vestigial `stage_limiter!` field) must reject the keyword.
     unsupported = [
-        FunctionMap, ImplicitEuler, KenCarp4, ROCK2, RKC, ESERK4, RKL1,
+        FunctionMap, ImplicitEuler, KenCarp4,
         AB3, AitkenNeville, CKLLSRK54_3C, ParsaniKetchesonDeconinck3S32,
     ]
     for A in unsupported
@@ -295,6 +297,8 @@ const LIMITER_ALGS = [
     SSPRK22, SSPRK43, SSPRK104, SSPRK932,
     CarpenterKennedy2N54, ORK256, RDPK3Sp35, NDBLSRK124,
     Rosenbrock23, ROS3P, Rodas4, Rodas5P,
+    ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
+    RKL1, RKL2, RKG1, RKG2,
 ]
 
 @testset "stage limiter receives the integrator" begin
