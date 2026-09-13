@@ -184,9 +184,13 @@ struct DIPushforward{F, DU, B, P}
 end
 
 function (op::DIPushforward)(Jv, v, u, p, t)
+    # `reshape` on an `Array` allocates a new array header, so it is only worth paying
+    # when the solver hands us a different shape than the linearization point's.
+    _Jv = size(Jv) == size(op.du) ? Jv : reshape(Jv, size(op.du))
+    _v = size(v) == size(u) ? v : reshape(v, size(u))
     DI.pushforward!(
-        op.f, op.du, (reshape(Jv, size(op.du)),), op.prep, op.backend, u,
-        (reshape(v, size(u)),), DI.ConstantOrCache(p), DI.Constant(t)
+        op.f, op.du, (_Jv,), op.prep, op.backend, u,
+        (_v,), DI.ConstantOrCache(p), DI.Constant(t)
     )
     return Jv
 end
