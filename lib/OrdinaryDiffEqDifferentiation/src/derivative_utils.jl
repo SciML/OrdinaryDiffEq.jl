@@ -245,7 +245,7 @@ function calc_tderivative(integrator, cache)
 
         autodiff_alg = gpu_safe_autodiff(ADTypes.dense_ad(alg_autodiff(alg)), u)
 
-        if alg_autodiff isa AutoFiniteDiff
+        if autodiff_alg isa AutoFiniteDiff
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
         end
 
