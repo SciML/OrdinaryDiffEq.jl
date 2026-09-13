@@ -146,19 +146,24 @@ end
     end
 
     @testset "callable overrides the algorithm's Predictor enum" begin
-        evals = Float64[]
-        pred = (uprev, p, t, dt) -> SEED
-        prob = ODEProblem(recording_f(evals), 1.0, (0.0, 1.0))
-        sol = solve(
-            prob,
-            ImplicitEuler(
-                predictor = Predictor.Linear,
-                nlsolve = NLNewton(predictor = pred)
-            );
-            dt = 0.1, adaptive = false
-        )
-        @test sol.retcode == SciMLBase.ReturnCode.Success
-        @test count(==(SEED), evals) >= 10
+        # With a callable set, `nlsolve!` overwrites whatever the kernel seeded —
+        # and the kernel skips the enum machinery entirely (no `addsteps!` for
+        # `MaxOrder`). The seed must still land for each of them.
+        for enum_predictor in (Predictor.Linear, Predictor.MaxOrder)
+            evals = Float64[]
+            pred = (uprev, p, t, dt) -> SEED
+            prob = ODEProblem(recording_f(evals), 1.0, (0.0, 1.0))
+            sol = solve(
+                prob,
+                ImplicitEuler(
+                    predictor = enum_predictor,
+                    nlsolve = NLNewton(predictor = pred)
+                );
+                dt = 0.1, adaptive = false
+            )
+            @test sol.retcode == SciMLBase.ReturnCode.Success
+            @test count(==(SEED), evals) >= 10
+        end
     end
 
     @testset "rejects misuse" begin
