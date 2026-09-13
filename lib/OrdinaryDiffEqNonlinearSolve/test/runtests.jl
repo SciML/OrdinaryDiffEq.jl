@@ -64,17 +64,22 @@ if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "NonlinearSolveAlg nlstep_data Field Tests" include("nsa_nlstep_data_field_tests.jl")
 end
 
-# Run QA tests (JET, Aqua)
-if TEST_GROUP ∉ ("Core", "ModelingToolkit") && isempty(VERSION.prerelease)
-    activate_qa_env()
-    @time @safetestset "JET Tests" include("qa/jet.jl")
-    @time @safetestset "Aqua" include("qa/qa.jl")
-end
-
 # Run ModelingToolkit tests (separate environment due to heavy MTK dependency)
 if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
     activate_modelingtoolkit_env()
     @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
     @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
     @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
+end
+
+# Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
+# virtual module, so every method the package defines on a generic function owned by
+# another module is replaced by a copy bound to a module with no package extensions
+# loaded. Anything that runs afterwards in the same process then exercises those
+# copies instead of the real methods. `activate_qa_env()` also leaves the QA
+# environment active, so the groups above must resolve before it runs.
+if TEST_GROUP ∉ ("Core", "ModelingToolkit") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end

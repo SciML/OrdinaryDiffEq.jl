@@ -23,7 +23,16 @@ end
     @test !any(Base.isexported.(Ref(OrdinaryDiffEqPDIRK), internal))
 end
 
-# Run QA tests (AllocCheck, JET) - skip on pre-release Julia
+@time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")
+@time @safetestset "nlsolve! Arguments" include("nlsolve_argument_tests.jl")
+@time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
+
+# Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
+# virtual module, so every method the package defines on a generic function owned by
+# another module is replaced by a copy bound to a module with no package extensions
+# loaded. Anything that runs afterwards in the same process then exercises those
+# copies instead of the real methods. `activate_qa_env()` also leaves the QA
+# environment active, so the groups above must resolve before it runs.
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
@@ -32,7 +41,3 @@ if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     @time @safetestset "JET Tests" include("qa/jet.jl")
     @time @safetestset "Aqua" include("qa/qa.jl")
 end
-
-@time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")
-@time @safetestset "nlsolve! Arguments" include("nlsolve_argument_tests.jl")
-@time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
