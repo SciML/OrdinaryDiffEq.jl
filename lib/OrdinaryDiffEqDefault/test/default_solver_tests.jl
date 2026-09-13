@@ -206,3 +206,37 @@ init_dae_dfbdf = init(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
 @test sol_dae_default.u == sol_dae_dfbdf.u
 @test typeof(init_dae_default.sol.prob) === typeof(init_dae_dfbdf.sol.prob)
 @test typeof(init_dae_default.cache) === typeof(init_dae_dfbdf.cache)
+
+# The in-place interpolation of a DefaultCache solution must agree with the out-of-place one
+# on every interval, whichever algorithm stepped it.
+function rober_interp!(du, u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+    du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+    du[3] = k₂ * y₂^2
+    return nothing
+end
+prob_rober_interp = ODEProblem(rober_interp!, [1.0, 0.0, 0.0], (0.0, 1.0e3), (0.04, 3.0e7, 1.0e4))
+
+function inplace_matches_oop(sol)
+    tmid = [(sol.t[i] + sol.t[i + 1]) / 2 for i in 1:(length(sol.t) - 1)]
+    out = similar(sol.u[1])
+    return all(tmid) do t
+        sol(out, t)
+        out == sol(t) || return false
+        sol(out, t, Val{1})
+        out == sol(t, Val{1})
+    end
+end
+
+@testset "DefaultCache in-place interpolation, alg_choice $(choices)" for (prob, kw, choices) in (
+        (prob_ode_2Dlinear, (;), [1]),
+        (prob_ode_2Dlinear, (; reltol = 1.0e-10), [2]),
+        (prob_rober_interp, (;), [1, 3]),
+        (prob_rober_interp, (; reltol = 1.0e-7, abstol = 1.0e-7), [2, 4]),
+    )
+    sol = solve(prob; kw...)
+    @test unique(sol.alg_choice) == choices
+    @test inplace_matches_oop(sol)
+end
