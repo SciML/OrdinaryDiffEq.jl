@@ -37,6 +37,20 @@ end
 
 parameter_values(z::zero_func_struct) = z.p
 
+# The zero function is reached through a `FunctionWrapper`, whose payload is untyped;
+# loading the step state through one typed call keeps the field writes off the
+# dynamic `setproperty!` path.
+function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
+    z.dt = dt
+    z.uprev = uprev
+    z.u = u
+    z.k = k
+    z.tprev = tprev
+    z.p = p
+    return nothing
+end
+_set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
+
 function (z::zero_func_struct)(θ, p)
     iszero(θ) && return z.out_low[z.ind]
     isone(θ) && return z.out_high[z.ind]
@@ -127,9 +141,15 @@ end
 
 _despecialize_callback(callback, integrator) = callback
 
+# The default hooks are read off a callback built with none given, since SciMLBase does
+# not expose them by name.
+const _DEFAULT_CALLBACK_HOOKS = let cb = SciMLBase.DiscreteCallback(Returns(false), identity)
+    (initialize = cb.initialize, finalize = cb.finalize)
+end
+
 function _has_default_callback_hooks(callback)
-    return callback.initialize === SciMLBase.INITIALIZE_DEFAULT &&
-        callback.finalize === SciMLBase.FINALIZE_DEFAULT
+    return callback.initialize === _DEFAULT_CALLBACK_HOOKS.initialize &&
+        callback.finalize === _DEFAULT_CALLBACK_HOOKS.finalize
 end
 
 function _wrap_calls(f, signatures, return_types)
@@ -168,7 +188,14 @@ function _condition_return_type(condition, signature)
     return isconcretetype(T) ? T : Any
 end
 
-_disco_zero_placeholder(θ, p) = 0.0
+function _build_callback_cache(u, max_len, ::Val{true}, ::Type{uBottomEltype}) where {uBottomEltype}
+    T = real(uBottomEltype)
+    return DiffEqBase.CallbackCache(u, max_len, T, T)
+end
+function _build_callback_cache(u, max_len, ::Val{false}, ::Type{uBottomEltype}) where {uBottomEltype}
+    T = real(uBottomEltype)
+    return DiffEqBase.CallbackCache(max_len, T, T)
+end
 
 Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
@@ -264,7 +291,7 @@ Base.@constprop :aggressive function _ode_init(
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
             !default_linear_interpolation(prob, alg),
-        calck = (callback !== nothing && callback !== CallbackSet()) ||
+        calck = (callback !== nothing && !isempty(callback)) ||
             (dense) || !isempty(saveat), # and no dense output
         dt = nothing,
         # For runtime-unit quantities (DynamicQuantities), eltype(prob.tspan)(0) would
@@ -573,21 +600,20 @@ Base.@constprop :aggressive function _ode_init(
     callbacks_internal = callback isa CallbackSet ? callback : CallbackSet(callback)
 
     max_len_cb = DiffEqBase.max_vector_callback_length_int(callbacks_internal)
-    if max_len_cb !== nothing
-        uBottomEltypeReal = real(uBottomEltype)
-        if isinplace(prob)
-            callback_cache = DiffEqBase.CallbackCache(
-                u, max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal
-            )
-        else
-            callback_cache = DiffEqBase.CallbackCache(
-                max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal
-            )
-        end
+    callback_cache = max_len_cb === nothing ? nothing :
+        _build_callback_cache(u, max_len_cb, Val(isinplace(prob)), uBottomEltype)
+    # Whether an erased callback set holds a vector callback is not visible in its type,
+    # so there the field admits both states and the integrator type stays fixed. The
+    # cache type is inferred, not built: a callback-free solve constructs nothing.
+    callback_cache_type = if callbacks_internal isa CallbackSet{<:AbstractVector, <:AbstractVector}
+        Union{
+            Nothing,
+            Base.promote_op(
+                _build_callback_cache, typeof(u), Int, Val{isinplace(prob)}, Type{uBottomEltype}
+            ),
+        }
     else
-        callback_cache = nothing
+        typeof(callback_cache)
     end
 
     ### Algorithm-specific defaults ###
@@ -856,13 +882,16 @@ Base.@constprop :aggressive function _ode_init(
     end
     # Concrete even when empty: the erased callback vector means the discontinuity loop
     # is compiled whether or not a callback uses it, and an abstract problem type there
-    # would leave abstract call edges into the bracketing solver.
-    disco_zero_wrapper = FunctionWrapper{Float64, Tuple{Float64, typeof(p)}}
-    disco_prob_type = typeof(
-        IntervalNonlinearProblem{false}(
-            disco_zero_wrapper(_disco_zero_placeholder), [zero(tType), one(tType)], p
-        )
+    # would leave abstract call edges into the bracketing solver. The type is inferred
+    # rather than built, so no problem is constructed for a solve that has no use for it.
+    # The zero function reads everything, `p` included, from its own state, so the
+    # problem carries no parameters and its type does not depend on `p`.
+    disco_zero_wrapper = FunctionWrapper{Float64, Tuple{Float64, SciMLBase.NullParameters}}
+    disco_prob_type = Base.promote_op(
+        IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{tType},
+        SciMLBase.NullParameters
     )
+    isconcretetype(disco_prob_type) || (disco_prob_type = IntervalNonlinearProblem)
     disco_probs = Vector{disco_prob_type}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
@@ -876,7 +905,9 @@ Base.@constprop :aggressive function _ode_init(
             end
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
             zero_func_wrapped = disco_zero_wrapper(zero_func)
-            disco_prob = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
+            disco_prob = IntervalNonlinearProblem{false}(
+                zero_func_wrapped, [zero(tType), one(tType)], SciMLBase.NullParameters()
+            )
             disco_probs[idx] = disco_prob
             idx += 1
         end
@@ -896,7 +927,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
-        typeof(last_event_error), typeof(callback_cache),
+        typeof(last_event_error), callback_cache_type,
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),

@@ -1089,8 +1089,8 @@ function apply_ith_callback!(
         integrator, time, upcrossing, event_idx, cb_idx,
         callbacks::AbstractVector
     )
-    return Base.inferencebarrier(DiffEqBase.apply_callback!)(
-        integrator, callbacks[cb_idx], time, upcrossing, event_idx
+    return Base.invokelatest(
+        DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
     )::Tuple{Bool, Bool}
 end
 

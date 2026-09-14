@@ -99,3 +99,15 @@ despecialized_solved, despecialized_stage = solve(
     SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
 @test isempty(despecialized_solved.kwargs[:callback].continuous_callbacks)
 @test isempty(despecialized_solved.kwargs[:callback].discrete_callbacks)
+
+# Problems that `ConstructionBase.setproperties` cannot rebuild are left untouched.
+rode_problem = RODEProblem((u, p, t, W) -> u + W, 1.0, (0.0, 1.0))
+bv_problem = BVProblem(
+    (du, u, p, t) -> (du[1] = u[2]; du[2] = -u[1]),
+    (res, u, p, t) -> (res[1] = u[1][1]; res[2] = u[end][1] - 1),
+    [0.0, 0.0], (0.0, 1.0)
+)
+for prob in (rode_problem, bv_problem)
+    @test DiffEqBase.get_concrete_problem(prob, true) === prob
+    @test !haskey(prob.kwargs, :callback)
+end

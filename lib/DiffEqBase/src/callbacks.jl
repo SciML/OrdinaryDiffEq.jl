@@ -267,8 +267,8 @@ end
 end
 
 
-# A type-erased callback is called through `Base.inferencebarrier`, so the compiled loop
-# holds a plain dynamic dispatch instead of a method instance specialised on `Any` whose
+# A type-erased callback is called through `Base.invokelatest`, so the compiled loop holds
+# a plain dynamic dispatch instead of a method instance specialised on `Any` whose
 # abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
 # The callee runs on the concrete callback and hands back the two values the loop needs
 # typed: the event time and the residual, the latter already reduced and converted.
@@ -295,7 +295,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     end
 
     tmin, upcrossing, event_occurred, event_idx, residual =
-        Base.inferencebarrier(_find_callback_time_erased)(integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
+        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
     identified_idx = 1
     if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
         copyto!(
@@ -307,7 +307,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     for callback_idx in 2:callback_count
         callback = callbacks[callback_idx]
         tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
-            Base.inferencebarrier(_find_callback_time_erased)(integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
+            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
         if event_occurred2 &&
                 (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
             tmin = tmin2
@@ -834,7 +834,7 @@ function apply_discrete_callback!(integrator, callbacks::AbstractVector)
     saved_in_cb = false
     for callback in callbacks
         modified, saved =
-            Base.inferencebarrier(apply_discrete_callback!)(integrator, callback)::Tuple{Bool, Bool}
+            Base.invokelatest(apply_discrete_callback!, integrator, callback)::Tuple{Bool, Bool}
         discrete_modified |= modified
         saved_in_cb |= saved
     end

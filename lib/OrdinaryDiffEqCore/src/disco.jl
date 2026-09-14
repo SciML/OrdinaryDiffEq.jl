@@ -47,12 +47,7 @@ function find_discontinuity(integrator)
         end
         disco_prob = disco_probs[idx]
         disco_zero = disco_prob.f.f.obj.x
-        disco_zero.dt = dt
-        disco_zero.uprev = uprev
-        disco_zero.u = u
-        disco_zero.k = k
-        disco_zero.tprev = t
-        disco_zero.p = p
+        _load_disco_state!(disco_zero, dt, uprev, u, k, t, p)
         if (i isa VectorContinuousCallback)
             len_cb = i.len::Int
             i.condition(disco_zero.out_low, uprev, t, integrator)
@@ -66,7 +61,7 @@ function find_discontinuity(integrator)
                             disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false
                         )
                     end
-                    disco_zero.ind = j
+                    _set_disco_index!(disco_zero, j)
                     disco_prob.tspan[2] = breakpointθ
                     sol = solve(disco_prob)
                     tmp = sol[]
