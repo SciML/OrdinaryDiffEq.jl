@@ -44,6 +44,24 @@ function isesdirk(
     return true
 end
 
+# Methods with an explicit first stage recover `z₁` from the FSAL derivative
+# rather than solving for it, which under a mass matrix needs `M⁻¹`. That is
+# done elementwise (see `_z_from_dtf`), so these are restricted to diagonal `M`;
+# Core's `solve` throws a pointed error for anything else. The implicit-first-stage
+# SDIRKs solve for `z₁` and keep general mass-matrix support.
+function only_diagonal_mass_matrix(
+        ::Union{
+            KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58,
+            Kvaerno3, Kvaerno4, Kvaerno5,
+            ESDIRK325L2SA, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2,
+            ESDIRK54I8L2SA, ESDIRK659L2SA,
+            TRBDF2, Trapezoid, CFNLIRK3,
+            ARS222, ARS232, ARS343, ARS443, BHR553,
+        }
+    )
+    return true
+end
+
 alg_adaptive_order(alg::Trapezoid) = 1
 alg_adaptive_order(alg::ImplicitMidpoint) = 1
 alg_adaptive_order(alg::ImplicitEuler) = 0
