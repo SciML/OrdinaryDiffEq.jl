@@ -7,7 +7,7 @@ import OrdinaryDiffEqCore: isfsal,
     unwrap_alg, perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     @cache, alg_cache, get_fsalfirstlast,
-    constvalue, _fixup_ad
+    constvalue, _fixup_ad, _ode_interpolant, _ode_interpolant!, _ode_addsteps!
 import OrdinaryDiffEqCore
 # `alg_order` and `full_cache` are owned by SciMLBase and extended here, so they
 # need `import`; `initialize!` is owned by DiffEqBase.
@@ -31,6 +31,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("sdc_caches.jl")
 include("sdc_perform_step.jl")
+include("sdc_interpolants.jl")
 
 export SDC, SDCNodes, SDCQuadrature, SDCSweeper, SDCStepUpdate
 

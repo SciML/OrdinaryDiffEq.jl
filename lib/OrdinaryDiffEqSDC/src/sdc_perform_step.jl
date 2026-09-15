@@ -12,7 +12,23 @@
 # `znew[1:m-1]` and node-local scratch is what will let the `m` loop be threaded
 # for parallel-across-the-nodes SDC without restructuring it.
 
-function initialize!(integrator, cache::Union{SDCCache, SDCConstantCache}) end
+function initialize!(integrator, cache::SDCCache)
+    integrator.kshortsize = length(cache.tab.nodes)
+    resize!(integrator.k, integrator.kshortsize)
+    for m in 1:(integrator.kshortsize)
+        integrator.k[m] = zero(cache.k)
+    end
+    return nothing
+end
+
+function initialize!(integrator, cache::SDCConstantCache)
+    integrator.kshortsize = length(cache.tab.nodes)
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    for m in 1:(integrator.kshortsize)
+        integrator.k[m] = zero(integrator.uprev)
+    end
+    return nothing
+end
 
 """
     sdc_step_update!(u, uprev, weights, z, ulast, step_update)
@@ -108,6 +124,9 @@ end
     end
 
     adaptive || sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
+    for m in 1:M
+        @.. broadcast = false integrator.k[m] = zk[m]
+    end
 
     if adaptive
         @.. broadcast = false tmp = u - ulow
@@ -176,6 +195,9 @@ end
 
     adaptive || (u = sdc_step_update(uprev, weights, zk, ulast, alg.step_update))
     integrator.u = u
+    for m in 1:M
+        integrator.k[m] = zk[m]
+    end
 
     if adaptive
         utilde = @.. broadcast = false u - ulow
