@@ -7,7 +7,8 @@ import OrdinaryDiffEqCore: isfsal,
     unwrap_alg, perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     @cache, alg_cache, get_fsalfirstlast,
-    constvalue, _fixup_ad
+    constvalue, _fixup_ad, _ode_interpolant, _ode_interpolant!, _ode_addsteps!,
+    hermite_interpolant, hermite_interpolant!, interpolation_differential_vars
 import OrdinaryDiffEqCore
 # `alg_order` and `full_cache` are owned by SciMLBase and extended here, so they
 # need `import`; `initialize!` is owned by DiffEqBase.
@@ -16,7 +17,7 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import FastBroadcast: @..
 import MuladdMacro: @muladd
 import LinearAlgebra
-import RecursiveArrayTools: recursivefill!
+import RecursiveArrayTools: recursivefill!, recursivecopy!, copyat_or_push!
 using OrdinaryDiffEqNonlinearSolve: build_nlsolver, nlsolve!, nlsolvefail,
     markfirststage!, NLNewton
 import ADTypes: AutoForwardDiff
@@ -32,6 +33,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("sdc_caches.jl")
 include("sdc_perform_step.jl")
+include("sdc_interpolants.jl")
 
 export SDC, SDCNodes, SDCQuadrature, SDCSweeper, SDCStepUpdate
 

@@ -25,6 +25,10 @@ end
     nlsolvers::N
     tab::TabType
     solver_index::Vector{Int}
+    # `integrator.k` aliases these: the derivatives at the step ends followed by the node
+    # rates. `post_savevalues!` trims `integrator.k` back after every save, so owning the
+    # arrays here is what makes growing it again allocation free.
+    kdense::Vector{rateType}
 end
 
 get_fsalfirstlast(cache::SDCCache, u) = (nothing, nothing)
@@ -75,7 +79,7 @@ function alg_cache(
     return SDCCache(
         u, uprev, zero(u), zero(u), zero(u), atmp, zero(rate_prototype),
         [zero(u) for _ in 1:M], [zero(u) for _ in 1:M],
-        nlsolvers, tab, solver_index
+        nlsolvers, tab, solver_index, [zero(rate_prototype) for _ in 1:(M + 2)]
     )
 end
 
