@@ -85,6 +85,8 @@ struct SDCTableau{T}
     weights::Vector{T}
     Q::Matrix{T}
     QΔ::Matrix{T}
+    # `dense[i, j]` is the coefficient of `θ^i` in `∫₀^θ ℓⱼ(s) ds`.
+    dense::Matrix{T}
 end
 
 """
@@ -227,6 +229,19 @@ function _lagrange_integrals(τ::Vector{BigFloat}, uppers::Vector{BigFloat})
 end
 
 """
+    _lagrange_integral_coefficients(τ)
+
+`D[i, j]` is the coefficient of `θ^i` in `∫₀^θ ℓⱼ(s) ds`, so the collocation
+polynomial through the node rates `zⱼ` is `u(θ) = uₙ + Σⱼ Σᵢ D[i, j] θ^i zⱼ`.
+"""
+function _lagrange_integral_coefficients(τ::Vector{BigFloat})
+    M = length(τ)
+    V = [τ[k]^(i - 1) for k in 1:M, i in 1:M]
+    C = [i == j ? inv(BigFloat(i)) : zero(BigFloat) for i in 1:M, j in 1:M]
+    return C / V
+end
+
+"""
     sdc_qdelta(T, sweeper, τ, Q)
 
 The sweep preconditioner `QΔ ≈ Q`. Must be lower triangular for the sweep to
@@ -300,7 +315,9 @@ function SDCTableau(
             generate_sdc_tableau(T, M, node_type, quad_type, sweeper)
         end
     end::SDCTableau{T}
-    return SDCTableau{T}(copy(tab.nodes), copy(tab.weights), copy(tab.Q), copy(tab.QΔ))
+    return SDCTableau{T}(
+        copy(tab.nodes), copy(tab.weights), copy(tab.Q), copy(tab.QΔ), copy(tab.dense)
+    )
 end
 
 function generate_sdc_tableau(
@@ -312,7 +329,8 @@ function generate_sdc_tableau(
         Q = _lagrange_integrals(τ, τ)
         weights = vec(_lagrange_integrals(τ, [one(BigFloat)]))
         QΔ = sdc_qdelta(T, sweeper, τ, Q)
-        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ)
+        dense = _lagrange_integral_coefficients(τ)
+        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ, T.(dense))
     end
 end
 
