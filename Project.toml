@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "7.8.1"
+version = "7.9.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -61,12 +61,14 @@ DocStringExtensions = "0.9.5"
 ForwardDiff = "1.3.3"
 NonlinearSolve = "4.20.3"
 OrdinaryDiffEqBDF = "2.4.5"
-OrdinaryDiffEqCore = "4.15.1"
+OrdinaryDiffEqCore = "4.15.3, 4.16"
 OrdinaryDiffEqDefault = "2"
 OrdinaryDiffEqRosenbrock = "2.6.3"
 OrdinaryDiffEqTsit5 = "2.1.4"
 OrdinaryDiffEqVerner = "2"
 PreallocationTools = "1.1.2"
+Reactant = "0.2.284"
+ReactantCore = "0.1.21"
 RecursiveArrayTools = "4.2.0"
 SciMLBase = "3.46"
 SciMLLogging = "2.0.0"
@@ -121,6 +123,8 @@ OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PreallocationTools = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+ReactantCore = "a3311ec8-5e00-46d5-b541-4f83e724a433"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 RecursiveFactorization = "f2c3362d-daeb-58d1-803e-2bc74f2840b4"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
@@ -138,4 +142,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["ADTypes", "ArrayInterface", "ComponentArrays", "AlgebraicMultigrid", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ExplicitImports",  "ForwardDiff", "IncompleteLU", "InteractiveUtils", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "OrdinaryDiffEqAdamsBashforthMoulton", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqExplicitTableaus", "OrdinaryDiffEqExponentialRK", "OrdinaryDiffEqExtrapolation", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqFunctionMap", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqIMEXMultistep", "OrdinaryDiffEqLinear", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "NonlinearSolve", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqNordsieck", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqPRK", "OrdinaryDiffEqQPRK", "OrdinaryDiffEqRKN", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqStabilizedIRK", "OrdinaryDiffEqStabilizedRK", "OrdinaryDiffEqSymplecticRK", "ElasticArrays", "JLArrays", "Random", "SafeTestsets", "SciMLOperators", "SciMLTesting", "StableRNGs", "StructArrays", "Test", "Unitful", "Pkg", "PreallocationTools", "RecursiveArrayTools", "RecursiveFactorization", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings", "StaticArrays", "Statistics"]
+test = ["ADTypes", "ArrayInterface", "ComponentArrays", "AlgebraicMultigrid", "DiffEqCallbacks", "DifferentiationInterface", "DiffEqDevTools", "ExplicitImports", "ForwardDiff", "IncompleteLU", "InteractiveUtils", "LinearAlgebra", "LinearSolve", "ODEProblemLibrary", "OrdinaryDiffEqAdamsBashforthMoulton", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqExplicitRK", "OrdinaryDiffEqExplicitTableaus", "OrdinaryDiffEqExponentialRK", "OrdinaryDiffEqExtrapolation", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqFeagin", "OrdinaryDiffEqFunctionMap", "OrdinaryDiffEqHighOrderRK", "OrdinaryDiffEqIMEXMultistep", "OrdinaryDiffEqLinear", "OrdinaryDiffEqLowOrderRK", "OrdinaryDiffEqLowStorageRK", "NonlinearSolve", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqNordsieck", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqPRK", "OrdinaryDiffEqQPRK", "OrdinaryDiffEqRKN", "OrdinaryDiffEqSDIRK", "OrdinaryDiffEqSSPRK", "OrdinaryDiffEqStabilizedIRK", "OrdinaryDiffEqStabilizedRK", "OrdinaryDiffEqSymplecticRK", "ElasticArrays", "JLArrays", "Random", "Reactant", "ReactantCore", "SafeTestsets", "SciMLOperators", "SciMLTesting", "StableRNGs", "StructArrays", "Test", "Unitful", "Pkg", "PreallocationTools", "RecursiveArrayTools", "RecursiveFactorization", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings", "StaticArrays", "Statistics"]

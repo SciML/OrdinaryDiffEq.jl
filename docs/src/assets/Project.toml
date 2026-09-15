@@ -97,6 +97,7 @@ OrdinaryDiffEqSymplecticRK = {path = "../lib/OrdinaryDiffEqSymplecticRK"}
 OrdinaryDiffEqTaylorSeries = {path = "../lib/OrdinaryDiffEqTaylorSeries"}
 OrdinaryDiffEqTsit5 = {path = "../lib/OrdinaryDiffEqTsit5"}
 OrdinaryDiffEqVerner = {path = "../lib/OrdinaryDiffEqVerner"}
+SciMLBase = {url = "https://github.com/ChrisRackauckas-Claude/SciMLBase.jl.git", rev = "agent/parametric-ode-retcode"}
 StochasticDiffEqCore = {path = "../lib/StochasticDiffEqCore"}
 StochasticDiffEqHighOrder = {path = "../lib/StochasticDiffEqHighOrder"}
 StochasticDiffEqIIF = {path = "../lib/StochasticDiffEqIIF"}
@@ -164,6 +165,6 @@ StochasticDiffEqMilstein = "2"
 StochasticDiffEqROCK = "2"
 StochasticDiffEqRODE = "2"
 StochasticDiffEqWeak = "2"
-SciMLBase = "3.39"
+SciMLBase = "3.51"
 SciMLLogging = "2.0.0"
 SciMLOperators = "1.24"

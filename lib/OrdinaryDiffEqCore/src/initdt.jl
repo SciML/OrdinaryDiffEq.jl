@@ -6,12 +6,33 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
-# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
-# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
-# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+# PyCall wrappers may return arrays from `==` (https://github.com/JuliaPy/PyCall.jl/issues/900).
+# Reduce these arrays while preserving scalar Boolean types.
 @inline function _bool_equal(a, b)
     r = a == b
-    return r isa Bool ? r : all(r)
+    return r isa Number ? r : all(r)
+end
+
+@muladd function _initdt_euler_step!(u₁, u0, dt, f₀)
+    if u0 isa Array
+        @inbounds @simd ivdep for i in eachindex(u0)
+            u₁[i] = u0[i] + dt * f₀[i]
+        end
+    else
+        @.. broadcast = false u₁ = u0 + dt * f₀
+    end
+    return u₁
+end
+
+@muladd function _initdt_scaled_diff!(tmp, u0, f₁, f₀, sk, oneunit_tType)
+    if u0 isa Array
+        @inbounds @simd ivdep for i in eachindex(u0)
+            tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+        end
+    else
+        @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
+    end
+    return tmp
 end
 
 @muladd function _ode_initdt_iip(
@@ -24,7 +45,7 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
+    dtmin = _initial_dtmin(t, integrator.opts.dtmin)
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -143,10 +164,11 @@ end
     =#
 
     ftmp = nothing
-    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
-            !(prob.f isa DynamicalODEFunction) ||
-                any(!_is_identity_massmatrix, prob.f.mass_matrix)
-        )
+    has_mass_matrix = !_is_identity_massmatrix(prob.f.mass_matrix) && (
+        !(prob.f isa DynamicalODEFunction) ||
+            any(!_is_identity_massmatrix, prob.f.mass_matrix)
+    )
+    if has_mass_matrix
         ftmp = zero(f₀)
         try
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
@@ -189,112 +211,112 @@ end
     # Better than checking any(x->any(isnan, x), f₀)
     # because it also checks if partials are NaN
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    if isnan(d₁)
+    # The fast-math norm can hide NaNs from a subsequent scalar check.
+    has_nan = DiffEqBase.NAN_CHECK(f₀) | isnan(d₁)
+    warn_initial_dt = !ReactantCore.within_compile()
+    if warn_initial_dt && has_nan
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
-        return tdir * dtmin
     end
-
-    dt₀ = ifelse(
-        (d₀ < 1 // 10^(5)) |
-            (d₁ < 1 // 10^(5)), smalldt,
-        convert(
-            _tType,
-            oneunit_tType * SciMLBase.value(
-                (d₀ / d₁) /
-                    100
+    ReactantCore.@trace track_numbers = false if has_nan
+        result_dt = tdir * dtmin
+    else
+        dt₀ = ifelse(
+            (d₀ < 1 // 10^(5)) |
+                (d₁ < 1 // 10^(5)), smalldt,
+            convert(
+                _tType,
+                oneunit_tType * SciMLBase.value(
+                    (d₀ / d₁) /
+                        100
+                )
             )
         )
-    )
-    # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    #   dt₀ = smalldt
-    # else
-    #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
-    # end
-    dt₀ = min(dt₀, dtmax_tdir)
+        # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
+        #   dt₀ = smalldt
+        # else
+        #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
+        # end
+        dt₀ = min(dt₀, dtmax_tdir)
 
-    if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
-        # This catches Andreas' non-singular example
-        # should act like it's singular
-        result_dt = tdir * max(smalldt, dtmin)
+        if (eltype(prob.tspan) <: AbstractFloat) && dt₀ < 10eps(eltype(prob.tspan)) * oneunit_tType
+            result_dt = tdir * max(smalldt, dtmin)
+
+        else
+            result_dt = let result_dt, tmp = tmp
+                dt₀_tdir = tdir * dt₀
+
+                u₁ = zero(u0) # required by DEDataArray
+
+                u₁ = _initdt_euler_step!(u₁, u0, dt₀_tdir, f₀)
+                f₁ = zero(f₀)
+                f(f₁, u₁, p, t + dt₀_tdir)
+
+                if has_mass_matrix
+                    integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
+                    copyto!(f₁, ftmp)
+                end
+
+                # Constant zone before callback
+                # Just return first guess
+                # Avoids AD issues.
+                # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
+                # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
+                # Coerce array-valued equality so the boolean context always receives a Bool.
+                if _bool_equal(f₀, f₁)
+                    result_dt = tdir * max(dtmin, 100dt₀)
+                else
+                    result_dt = let
+                        # d₂: fold in diffusion terms when g !== nothing
+                        if g !== nothing
+                            if noise_prototype !== nothing
+                                g₁ = zero(noise_prototype)
+                            else
+                                g₁ = zero(u0)
+                            end
+                            g(g₁, u₁, p, t + dt₀_tdir)
+                            g₁ .*= 3
+                            ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+                            d₂ = internalnorm(
+                                max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+                                t
+                            ) / dt₀
+                        else
+                            tmp = _initdt_scaled_diff!(tmp, u0, f₁, f₀, sk, oneunit_tType)
+                            d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
+                        end
+                        # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
+
+                        max_d₁d₂ = max(d₁, d₂)
+                        if max_d₁d₂ <= 1 // Int64(10)^(15)
+                            dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
+                        else
+                            dt₁ = convert(
+                                _tType,
+                                oneunit_tType *
+                                    SciMLBase.value(
+                                    10.0^(-(2 + log10(max_d₁d₂)) / order)
+                                )
+                            )
+                        end
+                        tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+                    end
+                end
+                result_dt
+            end
+        end
+    end
+    if warn_initial_dt && !has_nan &&
+            (eltype(prob.tspan) <: AbstractFloat) &&
+            dt₀ < 10eps(eltype(prob.tspan)) * oneunit_tType
         @SciMLMessage(
             lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
             integrator.opts.verbose, :dt_epsilon
         )
-        return result_dt
     end
-
-    dt₀_tdir = tdir * dt₀
-
-    u₁ = zero(u0) # required by DEDataArray
-
-    if u0 isa Array
-        @inbounds @simd ivdep for i in eachindex(u0)
-            u₁[i] = u0[i] + dt₀_tdir * f₀[i]
-        end
-    else
-        @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
-    end
-    f₁ = zero(f₀)
-    f(f₁, u₁, p, t + dt₀_tdir)
-
-    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
-            !(prob.f isa DynamicalODEFunction) ||
-                any(!_is_identity_massmatrix, prob.f.mass_matrix)
-        )
-        integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
-        copyto!(f₁, ftmp)
-    end
-
-    # Constant zone before callback
-    # Just return first guess
-    # Avoids AD issues.
-    # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
-    # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
-    # Coerce array-valued equality so the boolean context always receives a Bool.
-    length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
-
-    # d₂: fold in diffusion terms when g !== nothing
-    if g !== nothing
-        if noise_prototype !== nothing
-            g₁ = zero(noise_prototype)
-        else
-            g₁ = zero(u0)
-        end
-        g(g₁, u₁, p, t + dt₀_tdir)
-        g₁ .*= 3
-        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
-        d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
-            t
-        ) / dt₀
-    else
-        if u0 isa Array
-            @inbounds @simd ivdep for i in eachindex(u0)
-                tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
-            end
-        else
-            @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
-        end
-        d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
-    end
-    # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
-
-    max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
-    else
-        dt₁ = convert(
-            _tType,
-            oneunit_tType *
-                SciMLBase.value(
-                10.0^(-(2 + log10(max_d₁d₂)) / order)
-            )
-        )
-    end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    return result_dt
 end
 
 # ODE iip entry point
@@ -353,7 +375,7 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
+    dtmin = _initial_dtmin(t, integrator.opts.dtmin)
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -374,14 +396,26 @@ end
     # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
     # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
     # field types cannot sensibly overload (OrdinaryDiffEq #1404).
-    if DiffEqBase.NAN_CHECK(f₀)
+    warn_initial_dt = !ReactantCore.within_compile()
+    if warn_initial_dt && DiffEqBase.NAN_CHECK(f₀)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
-        return tdir * dtmin
     end
+    ReactantCore.@trace track_numbers = false if DiffEqBase.NAN_CHECK(f₀)
+        result_dt = tdir * dtmin
+    else
+        result_dt = _ode_initdt_oop_after_f0(prob, u0, t, tdir, sk, f₀, g, order, integrator, dtmin, smalldt, dtmax_tdir, d₀, internalnorm)
+    end
+    return result_dt
+end
 
+@muladd function _ode_initdt_oop_after_f0(prob, u0, t, tdir, sk, f₀, g, order, integrator, dtmin, smalldt, dtmax_tdir, d₀, internalnorm)
+    f = prob.f
+    p = prob.p
+    _tType = eltype(t)
+    oneunit_tType = oneunit(t)
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
     if !(f₀ isa inferredtype)
         throw(TypeNotConstantError(inferredtype, typeof(f₀)))
@@ -407,55 +441,63 @@ end
     end
 
     # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
-    if isnan(d₁)
+    warn_initial_dt = !ReactantCore.within_compile()
+    if warn_initial_dt && isnan(d₁)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
-        return tdir * dtmin
     end
-
-    if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
-        dt₀ = smalldt
+    ReactantCore.@trace track_numbers = false if isnan(d₁)
+        result_dt = tdir * dtmin
     else
-        dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
+        if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
+            dt₀ = smalldt
+        else
+            dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
+        end
+        dt₀ = min(dt₀, dtmax_tdir)
+        dt₀_tdir = tdir * dt₀
+
+        u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
+        f₁ = f(u₁, p, t + dt₀_tdir)
+
+        # Constant zone before callback
+        # Just return first guess
+        # Avoids AD issues.
+        # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
+        if _bool_equal(f₀, f₁)
+            result_dt = tdir * max(dtmin, 100dt₀)
+        else
+            result_dt = let
+                # d₂: fold in diffusion terms when g !== nothing
+                if g !== nothing
+                    g₁ = 3g(u₁, p, t + dt₀_tdir)
+                    ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+                    d₂ = internalnorm(
+                        max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+                        t
+                    ) / dt₀
+                else
+                    d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
+                end
+
+                max_d₁d₂ = max(d₁, d₂)
+                if max_d₁d₂ <= 1 // Int64(10)^(15)
+                    dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
+                else
+                    dt₁ = _tType(
+                        oneunit_tType *
+                            SciMLBase.value(
+                            10^(-(2 + log10(max_d₁d₂)) / order)
+                        )
+                    )
+                end
+                tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+            end
+        end
     end
-    dt₀ = min(dt₀, dtmax_tdir)
-    dt₀_tdir = tdir * dt₀
-
-    u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
-    f₁ = f(u₁, p, t + dt₀_tdir)
-
-    # Constant zone before callback
-    # Just return first guess
-    # Avoids AD issues.
-    # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
-    _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
-
-    # d₂: fold in diffusion terms when g !== nothing
-    if g !== nothing
-        g₁ = 3g(u₁, p, t + dt₀_tdir)
-        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
-        d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
-            t
-        ) / dt₀
-    else
-        d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
-    end
-
-    max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
-    else
-        dt₁ = _tType(
-            oneunit_tType *
-                SciMLBase.value(
-                10^(-(2 + log10(max_d₁d₂)) / order)
-            )
-        )
-    end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    return result_dt
 end
 
 # ODE oop entry point
@@ -522,4 +564,9 @@ function ode_determine_initdt(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, effective_order, integrator
     )
+end
+
+function _initial_dtmin(t, dtmin)
+    T = eltype(t)
+    return nextfloat(max(dtmin, convert(T, oneunit(t) * eps(SciMLBase.value(t)))))
 end

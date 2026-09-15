@@ -151,3 +151,11 @@ end
         end
     end
 end
+
+@testset "IIP initdt NaN fallback" for T in (Float32, Float64)
+    f_nan!(du, u, p, t) = (du .= p .* u; nothing)
+    prob = ODEProblem(f_nan!, ones(T, 2), (zero(T), one(T)), T[NaN])
+    dtmin = T(1.0e-5)
+    integrator = init(prob, Tsit5(); dtmin)
+    @test integrator.dt == nextfloat(dtmin)
+end
