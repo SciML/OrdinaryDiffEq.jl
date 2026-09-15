@@ -69,7 +69,7 @@ end
     # The step update after sweep k-1 is the embedded solution, so it is formed
     # every sweep and kept one behind.
     adaptive && sdc_step_update!(u, uprev, weights, zk, ubuf, alg.step_update)
-    for _ in 1:(alg.num_sweeps)
+    for sweep in 1:(alg.num_sweeps)
         for m in 1:M
             @.. broadcast = false tmp = uprev
             for j in 1:M
@@ -93,9 +93,9 @@ end
                 nls = nlsolvers[index]
                 @.. broadcast = false nls.tmp = tmp
                 @.. broadcast = false nls.z = zk[m]
+                (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
-                markfirststage!(nls)
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
                 nlsolvefail(nls) && return
                 @.. broadcast = false zk1[m] = znode
@@ -136,7 +136,7 @@ end
     adaptive = integrator.opts.adaptive
     u = adaptive ? sdc_step_update(uprev, weights, zk, ulast, alg.step_update) : uprev
     ulow = u
-    for _ in 1:(alg.num_sweeps)
+    for sweep in 1:(alg.num_sweeps)
         for m in 1:M
             tmp = uprev
             for j in 1:M
@@ -158,9 +158,9 @@ end
                 nls = nlsolvers[index]
                 nls.tmp = tmp
                 nls.z = zk[m]
+                (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
-                markfirststage!(nls)
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
                 nlsolvefail(nls) && return
                 zk1[m] = znode
