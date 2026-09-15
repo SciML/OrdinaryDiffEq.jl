@@ -828,6 +828,68 @@ function FineRKN5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, 7)
 end
 
+function SharpFineRKN6Tableau(::Type{T}, ::Type{T2}) where {T, T2}
+    a = zeros(T, 8, 8)
+    a[2, 1] = convert(T, 1 // 200)
+    a[3, 1] = convert(T, 14 // 2187); a[3, 2] = convert(T, 40 // 2187)
+    a[4, 1] = convert(T, 148 // 3087); a[4, 2] = convert(T, -85 // 3087); a[4, 3] = convert(T, 1 // 14)
+    a[5, 1] = convert(T, -2201 // 28350); a[5, 2] = convert(T, 932 // 2835)
+    a[5, 3] = convert(T, -7 // 50); a[5, 4] = convert(T, 1 // 9)
+    a[6, 1] = convert(T, 13198826 // 54140625); a[6, 2] = convert(T, -5602364 // 10828125)
+    a[6, 3] = convert(T, 27987101 // 44687500); a[6, 4] = convert(T, -332539 // 4021875)
+    a[6, 5] = convert(T, 1 // 20)
+    a[7, 1] = convert(T, -601416947 // 162162000); a[7, 2] = convert(T, 2972539 // 810810)
+    a[7, 3] = convert(T, 10883471 // 2574000); a[7, 4] = convert(T, -503477 // 99000)
+    a[7, 5] = convert(T, 3 // 5); a[7, 6] = convert(T, 4 // 5)
+    a[8, 1] = convert(T, -228527046421 // 72442188000); a[8, 2] = convert(T, 445808287 // 139311900)
+    a[8, 3] = convert(T, 104724572891 // 29896776000); a[8, 4] = convert(T, -31680158501 // 7474194000)
+    a[8, 5] = convert(T, 1033813 // 2044224); a[8, 6] = convert(T, 1166143 // 1703520)
+    a[8, 7] = convert(T, 0 // 1)
+
+    abar = zeros(T, 8, 8)
+    abar[2, 1] = convert(T, 1 // 10)
+    abar[3, 1] = convert(T, -2 // 81); abar[3, 2] = convert(T, 20 // 81)
+    abar[4, 1] = convert(T, 615 // 1372); abar[4, 2] = convert(T, -270 // 343); abar[4, 3] = convert(T, 1053 // 1372)
+    abar[5, 1] = convert(T, 140 // 297); abar[5, 2] = convert(T, -20 // 33)
+    abar[5, 3] = convert(T, 42 // 143); abar[5, 4] = convert(T, 1960 // 3861)
+    abar[6, 1] = convert(T, -15544 // 20625); abar[6, 2] = convert(T, 72 // 55)
+    abar[6, 3] = convert(T, 1053 // 6875); abar[6, 4] = convert(T, -40768 // 103125)
+    abar[6, 5] = convert(T, 1521 // 3125)
+    abar[7, 1] = convert(T, 6841 // 1584); abar[7, 2] = convert(T, -60 // 11)
+    abar[7, 3] = convert(T, -15291 // 7436); abar[7, 4] = convert(T, 207319 // 33462)
+    abar[7, 5] = convert(T, -27 // 8); abar[7, 6] = convert(T, 11125 // 8112)
+    abar[8, 1] = convert(T, 207707 // 54432); abar[8, 2] = convert(T, -305 // 63)
+    abar[8, 3] = convert(T, -24163 // 14196); abar[8, 4] = convert(T, 4448227 // 821340)
+    abar[8, 5] = convert(T, -4939 // 1680); abar[8, 6] = convert(T, 3837625 // 3066336)
+    abar[8, 7] = convert(T, 0 // 1)
+
+    b = [
+        convert(T, 23 // 320), zero(T), convert(T, 12393 // 54080),
+        convert(T, 2401 // 25350), convert(T, 99 // 1600), convert(T, 1375 // 32448),
+        zero(T), zero(T),
+    ]
+    bp = [
+        convert(T, 23 // 320), zero(T), convert(T, 111537 // 378560),
+        convert(T, 16807 // 101400), convert(T, 297 // 1600), convert(T, 6875 // 32448),
+        convert(T, -319 // 840), convert(T, 9 // 20),
+    ]
+    btilde = [
+        convert(T, -121541 // 3240000), zero(T), convert(T, 7488783 // 47320000),
+        convert(T, -78566551 // 342225000), convert(T, 102841 // 600000),
+        convert(T, -9349 // 162240), convert(T, 3971 // 37800), convert(T, -11 // 100)
+    ]
+    bptilde = [
+        convert(T, -17 // 1440), zero(T), convert(T, 12393 // 189280),
+        convert(T, -40817 // 304200), convert(T, 153 // 800), convert(T, -2125 // 16224),
+        convert(T, -361 // 840), convert(T, 9 // 20),
+    ]
+    c = T2[
+        convert(T2, 1 // 10), convert(T2, 2 // 9), convert(T2, 3 // 7),
+        convert(T2, 2 // 3), convert(T2, 4 // 5), one(T2), one(T2)
+    ]
+    return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, 8)
+end
+
 struct IRKN3ConstantCache{T, T2} <: NystromConstantCache
     bconst1::T
     bconst2::T

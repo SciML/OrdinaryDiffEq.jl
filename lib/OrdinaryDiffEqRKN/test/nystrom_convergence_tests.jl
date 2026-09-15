@@ -48,6 +48,9 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 7 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob_big, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Float64 convergence tests for DPRKN methods
 # These tests ensure the CompiledFloats coefficients match the rational coefficients
@@ -115,6 +118,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 16
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN4())
 @test length(sol.u) < 25
@@ -185,6 +191,9 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
@@ -226,6 +235,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 16
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN4())
 @test length(sol.u) < 25
@@ -294,6 +306,9 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Adaptive methods regression test
 
@@ -302,6 +317,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 25
 @test SciMLBase.successful_retcode(sol)
 
 println("In Place")
@@ -341,6 +359,9 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Adaptive methods regression test
 sol = solve(prob, FineRKN4())
@@ -348,6 +369,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, FineRKN5())
+@test length(sol.u) < 25
 @test SciMLBase.successful_retcode(sol)
 
 # Compare in-place and out-of-place versions
@@ -443,6 +467,26 @@ end
         @test_skip sol_i.u ≈ sol_o.u
     end
 
+    @testset "SharpFineRKN6" begin
+            alg = SharpFineRKN6()
+            dt = 0.5
+            # fixed time step
+            sol_i = solve(ode_i, alg; adaptive = false, dt)
+            sol_o = solve(ode_o, alg; adaptive = false, dt)
+            @test sol_i.t ≈ sol_o.t
+            @test sol_i.u ≈ sol_o.u
+            @test sol_i.stats.nf == sol_o.stats.nf
+            @test sol_i.stats.nf2 == sol_o.stats.nf2
+            @test sol_i.stats.naccept == sol_o.stats.naccept
+            @test 19 <= sol_i.stats.naccept <= 21
+            @test abs(sol_i.stats.nf - 8 * sol_i.stats.naccept) < 4
+            # adaptive time step - IIP vs OOP may diverge version-dependently
+            sol_i = solve(ode_i, alg)
+            sol_o = solve(ode_o, alg)
+            @test_skip sol_i.t ≈ sol_o.t
+            @test_skip sol_i.u ≈ sol_o.u 
+        end
+
     # The velocity-independent DPRKN methods no longer silently integrate this
     # velocity-dependent (`-0.5*du`) problem at order 1; they reject it at init.
     # See "velocity dependence is rejected" testset below and issue #3961.
@@ -470,7 +514,7 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
         Nystrom4VelocityIndependent(), Nystrom5VelocityIndependent(),
         IRKN3(), IRKN4(),
     )
-    velocity_dependent_algs = (Nystrom4(), FineRKN4(), FineRKN5(), RKN4())
+    velocity_dependent_algs = (Nystrom4(), FineRKN4(), FineRKN5(), SharpFineRKN6(), RKN4())
 
     # The probe must be a no-op for a valid (velocity-independent) u'' = -u problem:
     # every velocity-independent method still integrates the in-place vector form to Success.
