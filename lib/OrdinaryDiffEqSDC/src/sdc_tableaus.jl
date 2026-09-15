@@ -279,12 +279,31 @@ function sdc_qdelta(
     return T.(QΔ)
 end
 
+const SDCTableauCache = Dict{
+    Tuple{Type, Int, SDCNodes.T, SDCQuadrature.T, SDCSweeper.T}, SDCTableau,
+}()
+const SDCTableauCacheLock = ReentrantLock()
+
 """
     SDCTableau(T, M, node_type, quad_type, sweeper)
 
-Build every coefficient array the sweep needs, in the element type `T`.
+Every coefficient array the sweep needs, in the element type `T`. The coefficients are
+built once per configuration and each call returns its own copy of them.
 """
 function SDCTableau(
+        ::Type{T}, M::Int, node_type::SDCNodes.T, quad_type::SDCQuadrature.T,
+        sweeper::SDCSweeper.T
+    ) where {T}
+    key = (T, M, node_type, quad_type, sweeper)
+    tab = lock(SDCTableauCacheLock) do
+        get!(SDCTableauCache, key) do
+            generate_sdc_tableau(T, M, node_type, quad_type, sweeper)
+        end
+    end::SDCTableau{T}
+    return SDCTableau{T}(copy(tab.nodes), copy(tab.weights), copy(tab.Q), copy(tab.QΔ))
+end
+
+function generate_sdc_tableau(
         ::Type{T}, M::Int, node_type::SDCNodes.T, quad_type::SDCQuadrature.T,
         sweeper::SDCSweeper.T
     ) where {T}
