@@ -40,6 +40,7 @@ different tableau.
 | `quad_type` | `SDCQuadrature.RadauRight` | which endpoints are nodes: `Gauss` (neither), `RadauLeft`, `RadauRight`, `Lobatto` (both) |
 | `num_sweeps` | `3` | number of sweeps `K` |
 | `sweeper` | `SDCSweeper.BE` | the preconditioner `QΔ`, see below |
+| `explicit_sweeper` | `SDCSweeper.FE` | the preconditioner for `f2` on a `SplitODEProblem`, `.FE` or `.Picard` |
 | `step_update` | `SDCStepUpdate.Quadrature` | `Quadrature` (`u_n + Δt Σ_m w_m f_m`) or `LastNode` (`u_M`) |
 
 Standard implicit-solver keywords (`autodiff`, `concrete_jac`, `linsolve`,
@@ -122,6 +123,32 @@ and leaves cache. Two caveats. Solver statistics (`nf`, `nsolve`, `nw`)
 undercount when threaded, because the counters they accumulate into are shared
 and updated without synchronisation — this affects every threaded solver in the
 library, not just this one. And `f` must be safe to call concurrently.
+
+## IMEX
+
+On a `SplitODEProblem(f1, f2, u0, tspan)` the sweep is semi-implicit, following
+Minion (2003): `f1` goes through `sweeper` and one nonlinear solve per node as
+usual, while `f2` goes through the strictly lower triangular `explicit_sweeper`
+and is only evaluated at node values that have already been solved for, so its
+Jacobian is never formed.
+
+```julia
+prob = SplitODEProblem(f_stiff, f_nonstiff, u0, tspan)
+solve(prob, SDC(num_nodes = 3, num_sweeps = 4); dt = 0.05, adaptive = false)
+```
+
+The sweep still converges to the collocation solution. On a split problem with
+a stiff linear `f1` and a nonlinear `f2`, `M = 3`, `Δt = 0.05`, the distance
+from IMEX SDC to fully implicit SDC run to convergence is:
+
+| `K` | 2 | 4 | 8 | 16 | 40 |
+|---|---|---|---|---|---|
+| distance | 7.6e-5 | 9.9e-7 | 1.9e-8 | 1.7e-13 | 0 |
+
+`explicit_sweeper = SDCSweeper.FE` (the default) is explicit Euler between the
+nodes. `SDCSweeper.Picard` lags `f2` a whole sweep instead, which is what
+threading a split problem needs, since explicit Euler couples each node to the
+ones before it.
 
 The three `MIN_SR_*` families are from Čaklović, Lunet, Götschel and Ruprecht,
 SIAM J. Sci. Comput. 47 (2025) A430-A453. `MIN_SR_S` has no closed form — its entries solve a nilpotency
