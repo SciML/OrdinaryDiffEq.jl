@@ -1,4 +1,5 @@
 isfsal(::SDC) = false
+issplit(::SDC) = true
 
 """
     sdc_iteration_order(alg)
@@ -31,6 +32,22 @@ end
 # The embedded solution is the step update formed one sweep earlier, so it is
 # one order lower until the collocation ceiling flattens both.
 alg_adaptive_order(alg::SDC) = max(1, alg_order(alg) - 1)
+
+"""
+    sdc_validate_explicit(explicit_sweeper)
+
+The explicit preconditioner has to be strictly lower triangular, or `f2` would
+have to be evaluated at the value being solved for.
+"""
+function sdc_validate_explicit(explicit_sweeper::SDCSweeper.T)
+    explicit_sweeper in (SDCSweeper.FE, SDCSweeper.Picard) || throw(
+        ArgumentError(
+            "SDC: `explicit_sweeper` must be `SDCSweeper.FE` or `SDCSweeper.Picard`, " *
+                "got $(explicit_sweeper)"
+        )
+    )
+    return nothing
+end
 
 """
     sdc_validate(num_nodes, quad_type, num_sweeps, step_update)

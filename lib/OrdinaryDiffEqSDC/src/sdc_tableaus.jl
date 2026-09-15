@@ -101,6 +101,8 @@ struct SDCTableau{T}
     Q::Matrix{T}
     # One entry per sweep for `MIN_SR_FLEX`, one entry in total otherwise.
     QΔ::Vector{Matrix{T}}
+    # Preconditioner for the explicit part of a split problem.
+    QE::Matrix{T}
 end
 
 """
@@ -323,13 +325,14 @@ function sdc_qdelta(
 end
 
 """
-    SDCTableau(T, M, node_type, quad_type, sweeper)
+    SDCTableau(T, M, node_type, quad_type, sweeper, num_sweeps = 1; explicit_sweeper = SDCSweeper.FE)
 
 Build every coefficient array the sweep needs, in the element type `T`.
 """
 function SDCTableau(
         ::Type{T}, M::Int, node_type::SDCNodes.T, quad_type::SDCQuadrature.T,
-        sweeper::SDCSweeper.T, num_sweeps::Int = 1
+        sweeper::SDCSweeper.T, num_sweeps::Int = 1;
+        explicit_sweeper::SDCSweeper.T = SDCSweeper.FE
     ) where {T}
     return setprecision(BigFloat, SDC_COEFF_PRECISION) do
         τ = _sdc_nodes_big(M, node_type, quad_type)
@@ -339,7 +342,8 @@ function SDCTableau(
         QΔ = [
             sdc_qdelta(T, sweeper, τ, Q, node_type, quad_type, k) for k in 1:nsweeps
         ]
-        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ)
+        QE = sdc_qdelta(T, explicit_sweeper, τ, Q, node_type, quad_type, 1)
+        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ, QE)
     end
 end
 
