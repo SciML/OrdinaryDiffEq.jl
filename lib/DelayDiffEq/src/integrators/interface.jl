@@ -672,6 +672,15 @@ function DiffEqBase.reeval_internals_due_to_modification!(
         ode_integrator.u = integrator.u
     end
 
+    # The history is the ODE integrator's solution, so the state a callback leaves behind
+    # belongs in it whatever `save_positions` asks of the returned solution: without this
+    # point every later lookback into the step crossing the jump reads the pre-jump value.
+    # `derivative_discontinuity` is set by the callback machinery just before `affect!`,
+    # which separates this from the time rewind of a continuous callback.
+    if not_initialization && integrator.derivative_discontinuity
+        DiffEqBase.savevalues!(ode_integrator, true, false)
+    end
+
     return integrator.derivative_discontinuity = false
 end
 
