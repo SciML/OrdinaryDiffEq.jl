@@ -214,10 +214,11 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     # whenever dt changes: the BDF coefficients below are derived assuming
     # the whole history is spaced at the current dt, so history recorded at
     # a different dt (e.g. a step clipped to land on tspan[2]) makes the
-    # formula wrong, not just less accurate (see #4329).
+    # formula wrong, not just less accurate (see #4329). A dt difference
+    # within roundoff of t is not a step-size change (see #4573).
     cnt = cache.cnt = min(alg.order, integrator.iter)
     integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
-    dt != cache.dtprev && (cnt = cache.cnt = 1)
+    _sbdf_dt_changed(dt, cache.dtprev, t) && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     if cache.ark
         # Additive Runge-Kutta Method
@@ -310,10 +311,10 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     (; f1, f2) = integrator.f
     # See the matching branch in the constant-cache method for why cnt is
     # min(order, iter) rather than iter + 1, and why it also resets on a
-    # dt change (#4329).
+    # dt change (#4329, with roundoff tolerance per #4573).
     cnt = cache.cnt = min(alg.order, integrator.iter)
     integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
-    dt != cache.dtprev && (cnt = cache.cnt = 1)
+    _sbdf_dt_changed(dt, cache.dtprev, t) && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     # Explicit part
     if cache.ark

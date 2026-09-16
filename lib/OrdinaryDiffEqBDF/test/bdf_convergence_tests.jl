@@ -178,6 +178,33 @@ end
         )
         @test err_clipped < 5 * err_exact_binary
     end
+
+    @testset "1-ulp end-time perturbation does not restart the history" begin
+        # Regression for #4573: the final step clipped to a 1-ulp-perturbed
+        # tspan[2] differs from dt by ~eps(t). That roundoff must not reset
+        # the fixed-coefficient history to first order (which showed up as an
+        # O(dt^2) discrepancy with ratio 4 under refinement). a = -2, b = -0.5
+        # avoids an accidental second-order cancellation in the IMEX-Euler
+        # fallback that would hide the defect for a == ±b.
+        f1 = (u, p, t) -> -2.0 * u
+        f2 = (u, p, t) -> -0.5 * u
+        dt = 1 / 64
+        for alg in (SBDF2(), SBDF3(), SBDF4())
+            prob = SplitODEProblem(f1, f2, 1.0, (0.0, 1.0))
+            prob_ulp = SplitODEProblem(f1, f2, 1.0, (0.0, prevfloat(1.0)))
+            u = solve(prob, alg; dt, adaptive = false).u[end]
+            u_ulp = solve(prob_ulp, alg; dt, adaptive = false).u[end]
+            @test abs(u - u_ulp) < 1.0e-10
+        end
+        # In-place (mutable cache) path shares the same reset line.
+        f1_ip = (du, u, p, t) -> (du .= -2.0 .* u; nothing)
+        f2_ip = (du, u, p, t) -> (du .= -0.5 .* u; nothing)
+        prob_ip = SplitODEProblem(f1_ip, f2_ip, [1.0], (0.0, 1.0))
+        prob_ip_ulp = SplitODEProblem(f1_ip, f2_ip, [1.0], (0.0, prevfloat(1.0)))
+        u_ip = solve(prob_ip, SBDF2(); dt, adaptive = false).u[end]
+        u_ip_ulp = solve(prob_ip_ulp, SBDF2(); dt, adaptive = false).u[end]
+        @test maximum(abs, u_ip .- u_ip_ulp) < 1.0e-10
+    end
 end
 
 @testset "Static Array (SVector) Tests" begin
