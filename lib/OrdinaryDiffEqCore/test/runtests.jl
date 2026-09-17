@@ -23,6 +23,7 @@ end
 # Functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Generic algorithm trait contract" include("algorithm_interface_tests.jl")
+    @time @safetestset "change_t_via_interpolation!" include("change_t_via_interpolation_tests.jl")
     @time @safetestset "SciMLBase constructor bindings" begin
         using OrdinaryDiffEqCore: DynamicalODEProblem, ODEFunction
         using SciMLBase, Test
