@@ -303,3 +303,43 @@ end
     )
     check_event_step(sol, first)
 end
+
+@testset "NordsieckBDF: mid-step interpolation still sees committed data" begin
+    # step_limiter! runs inside perform_step!, while the Nordsieck array is in
+    # the predicted (uncommitted) state. Evaluating the integrator or the
+    # partially built solution there must still return the committed
+    # interpolation, and must not overwrite the saved columns.
+    tol = 1.0e-8
+    exact(t) = exp(-t)
+    scalar(u) = u isa Number ? u : u[1]
+    f_oop(u, p, t) = -u
+    f_iip(du, u, p, t) = (du[1] = -u[1]; nothing)
+    for (nm, prob) in (
+            ("out-of-place", ODEProblem(f_oop, 1.0, (0.0, 1.0))),
+            ("in-place", ODEProblem(f_iip, [1.0], (0.0, 1.0))),
+        )
+        nprobes = Ref(0)
+        maxerr = Ref(0.0)
+        function probe!(u, integrator, p, t)
+            t_old = (integrator.tprev + integrator.t) / 2
+            if integrator.t > 0.5 && nprobes[] < 4
+                maxerr[] = max(
+                    maxerr[], abs(scalar(integrator(t_old)) - exact(t_old)),
+                    abs(scalar(integrator.sol(t_old)) - exact(t_old))
+                )
+                nprobes[] += 1
+            end
+        end
+        sol = solve(
+            prob, NordsieckBDF();
+            step_limiter = probe!, abstol = tol, reltol = tol
+        )
+        @testset "$nm" begin
+            @test nprobes[] > 0
+            @test maxerr[] < 1.0e-6
+            @test maximum(
+                t -> abs(scalar(sol(t)) - exact(t)), range(0.01, 0.99, 99)
+            ) < 1.0e-6
+        end
+    end
+end
