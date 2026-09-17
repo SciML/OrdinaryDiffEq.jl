@@ -876,7 +876,7 @@ function SharpFineRKN6Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     btilde = [
         convert(T, -121541 // 3240000), zero(T), convert(T, 7488783 // 47320000),
         convert(T, -78566551 // 342225000), convert(T, 102841 // 600000),
-        convert(T, -9349 // 162240), convert(T, 3971 // 37800), convert(T, -11 // 100)
+        convert(T, -9349 // 162240), convert(T, 3971 // 37800), convert(T, -11 // 100),
     ]
     bptilde = [
         convert(T, -17 // 1440), zero(T), convert(T, 12393 // 189280),
@@ -885,7 +885,7 @@ function SharpFineRKN6Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     ]
     c = T2[
         convert(T2, 1 // 10), convert(T2, 2 // 9), convert(T2, 3 // 7),
-        convert(T2, 2 // 3), convert(T2, 4 // 5), one(T2), one(T2)
+        convert(T2, 2 // 3), convert(T2, 4 // 5), one(T2), one(T2),
     ]
     return NystromVDTableau(a, abar, b, bp, btilde, bptilde, c, 8)
 end

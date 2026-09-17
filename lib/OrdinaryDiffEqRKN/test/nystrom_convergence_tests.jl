@@ -468,24 +468,24 @@ end
     end
 
     @testset "SharpFineRKN6" begin
-            alg = SharpFineRKN6()
-            dt = 0.5
-            # fixed time step
-            sol_i = solve(ode_i, alg; adaptive = false, dt)
-            sol_o = solve(ode_o, alg; adaptive = false, dt)
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-            @test sol_i.stats.nf == sol_o.stats.nf
-            @test sol_i.stats.nf2 == sol_o.stats.nf2
-            @test sol_i.stats.naccept == sol_o.stats.naccept
-            @test 19 <= sol_i.stats.naccept <= 21
-            @test abs(sol_i.stats.nf - 8 * sol_i.stats.naccept) < 4
-            # adaptive time step - IIP vs OOP may diverge version-dependently
-            sol_i = solve(ode_i, alg)
-            sol_o = solve(ode_o, alg)
-            @test_skip sol_i.t ≈ sol_o.t
-            @test_skip sol_i.u ≈ sol_o.u 
-        end
+        alg = SharpFineRKN6()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg; adaptive = false, dt)
+        sol_o = solve(ode_o, alg; adaptive = false, dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 8 * sol_i.stats.naccept) < 4
+        # adaptive time step - IIP vs OOP may diverge version-dependently
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_skip sol_i.t ≈ sol_o.t
+        @test_skip sol_i.u ≈ sol_o.u
+    end
 
     # The velocity-independent DPRKN methods no longer silently integrate this
     # velocity-dependent (`-0.5*du`) problem at order 1; they reject it at init.
