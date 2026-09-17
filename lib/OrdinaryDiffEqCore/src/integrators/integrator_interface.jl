@@ -11,6 +11,18 @@ function _change_t_via_interpolation!(
     # cache array which can be modified.
     if integrator.tdir * t < integrator.tdir * integrator.tprev
         error("Current interpolant only works between tprev and t")
+    elseif T !== true && integrator.saveiter > 0 &&
+            integrator.tdir * t <
+            integrator.tdir * integrator.sol.t[integrator.saveiter]
+        # The solution stores its times in order, so moving behind a point it already
+        # holds cannot be represented: the times invert and every later interpolation
+        # over that span reads the wrong side. `Val{true}` is the tstop rewind, which
+        # repairs the endpoint itself through `solution_endpoint_match_cur_integrator!`.
+        error(
+            "cannot change t to $t, the solution already holds a point at " *
+                "$(integrator.sol.t[integrator.saveiter]). Moving the integrator behind " *
+                "a saved point would leave the saved times out of order."
+        )
     elseif t != integrator.t
         if is_constant_cache(integrator.cache)
             integrator.u = integrator(t)
