@@ -36,7 +36,8 @@ using DiffEqBase: calculate_residuals, calculate_residuals!
 using LinearAlgebra: mul!, diag, I
 import OrdinaryDiffEqCore
 
-using OrdinaryDiffEqDifferentiation: dolinsolve
+using OrdinaryDiffEqDifferentiation: dolinsolve, _is_scalar_massmatrix,
+    _scalar_massmatrix_λ
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
     nlsolve!, nlsolvefail, can_smooth_est, stage_predictor,
     NLNewton
