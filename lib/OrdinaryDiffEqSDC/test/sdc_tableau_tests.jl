@@ -92,6 +92,19 @@ end
     @test maximum(abs, big.Q * (τ .^ 3) - (τ .^ 4) ./ 4) < 1.0e-40
 end
 
+@testset "SDC tableaus are built once per configuration" begin
+    args = (Float64, 4, SDCNodes.Legendre, SDCQuadrature.RadauRight, SDCSweeper.LU)
+    tab = SDCTableau(args...)
+    @test @allocated(SDCTableau(args...)) < 100_000
+    other = SDCTableau(args...)
+    tab.Q[2, 1] += 1.0
+    tab.QΔ[2, 2] += 1.0
+    @test other.Q != tab.Q
+    @test SDCTableau(args...).Q == other.Q
+    @test SDCTableau(args...).QΔ == other.QΔ
+    @test SDCTableau(Float32, args[2:end]...) isa SDCTableau{Float32}
+end
+
 @testset "SDC argument validation" begin
     # Unknown names are rejected by the enum types themselves.
     @test_throws Exception SDC(node_type = :Chebyshev)
