@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSDIRK, LinearAlgebra, Test
+using SciMLBase: alg_order
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 import DifferentiationInterface as DI
