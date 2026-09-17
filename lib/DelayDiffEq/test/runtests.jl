@@ -93,6 +93,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Rosenbrock Tests" begin
         include("integrators/rosenbrock.jl")
     end
+    @time @safetestset "Nordsieck Tests" begin
+        include("integrators/nordsieck.jl")
+    end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
     end
