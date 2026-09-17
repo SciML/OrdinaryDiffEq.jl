@@ -94,9 +94,9 @@ end
                 nls = nlsolvers[index]
                 @.. broadcast = false nls.tmp = tmp
                 @.. broadcast = false nls.z = zk[m]
+                (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
-                markfirststage!(nls)
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
                 nlsolvefail(nls) && return
                 @.. broadcast = false zk1[m] = znode
@@ -160,9 +160,9 @@ end
                 nls = nlsolvers[index]
                 nls.tmp = tmp
                 nls.z = zk[m]
+                (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
-                markfirststage!(nls)
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
                 nlsolvefail(nls) && return
                 zk1[m] = znode
