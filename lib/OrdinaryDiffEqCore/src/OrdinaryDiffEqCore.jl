@@ -72,6 +72,7 @@ using SciMLBase: check_error!, _vec, _reshape, unwrap_cache
 using FastBroadcast: @..
 
 using FunctionWrappers: FunctionWrapper
+import FunctionWrappersWrappers
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
