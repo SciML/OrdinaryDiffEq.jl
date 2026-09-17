@@ -361,6 +361,50 @@ function find_algebraic_vars_eqs(M::SciMLOperators.AbstractSciMLOperator)
 end
 
 """
+    _is_identity_massmatrix(mm) -> Bool
+
+Whether `mm` acts as the identity matrix. Unlike `mm == I`, never scalar-indexes
+`mm`: `==(A::AbstractMatrix, ::UniformScaling)` reads `first(A)` on Julia 1.13+,
+which fails for GPU-backed mass matrices (e.g. `Diagonal{T, <:CuVector}`).
+"""
+_is_identity_massmatrix(mm::UniformScaling) = isone(mm.λ)
+_is_identity_massmatrix(mm::Diagonal) = all(isone, mm.diag)
+function _is_identity_massmatrix(mm::AbstractMatrix)
+    return ArrayInterface.fast_scalar_indexing(mm) ? mm == I :
+        _is_identity_massmatrix(Matrix(mm))
+end
+_is_identity_massmatrix(mm) = mm == I
+
+"""
+    _is_zero_massmatrix(mm) -> Bool
+
+Whether every entry of `mm` is zero. Unlike `all(isequal(0), mm)`, never
+scalar-indexes `mm`, so it accepts GPU-backed mass matrices.
+"""
+_is_zero_massmatrix(mm::Diagonal) = all(iszero, mm.diag)
+function _is_zero_massmatrix(mm::AbstractMatrix)
+    return ArrayInterface.fast_scalar_indexing(mm) ? all(isequal(0), mm) :
+        _is_zero_massmatrix(Matrix(mm))
+end
+_is_zero_massmatrix(mm) = all(isequal(0), mm)
+
+"""
+    _diff_alg_vars(mm, n) -> (diff_vars, alg_vars)
+
+Indices of the differential (nonzero diagonal entry) and algebraic (zero
+diagonal entry) variables of an `n` × `n` mass matrix. `findall` on `mm.diag`
+dispatches to a device kernel for GPU-backed diagonals, while `mm[i, i]` in a
+loop scalar-indexes.
+"""
+function _diff_alg_vars(mm::Diagonal, n)
+    return findall(!iszero, mm.diag), findall(iszero, mm.diag)
+end
+function _diff_alg_vars(mm::AbstractMatrix, n)
+    ArrayInterface.fast_scalar_indexing(mm) || return _diff_alg_vars(Matrix(mm), n)
+    return findall(i -> mm[i, i] != 0, 1:n), findall(i -> mm[i, i] == 0, 1:n)
+end
+
+"""
     isnewton(nlsolver) -> Bool
 
 Return whether the nonlinear solver `nlsolver` is a Newton-type solver (as opposed

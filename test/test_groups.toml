@@ -1,5 +1,12 @@
 [InterfaceI]
 versions = ["lts", "1", "pre"]
+
+["InterfaceI 32-bit"]
+group = "InterfaceI"
+versions = ["1"]
+os = ["ubuntu-latest"]
+arch = "x86"
+
 [InterfaceII]
 versions = ["lts", "1", "pre"]
 [InterfaceIII]
@@ -24,7 +31,6 @@ versions = ["lts", "1", "pre"]
 versions = ["lts", "1", "pre"]
 [Downstream]
 versions = ["lts", "1", "pre"]
-continue_on_error = true
 [AD]
 versions = ["lts", "1"]
 [QA]

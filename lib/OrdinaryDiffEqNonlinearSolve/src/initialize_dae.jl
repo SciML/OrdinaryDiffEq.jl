@@ -200,6 +200,8 @@ The method:
 du = (u-u0)/h
 Solve for `u`
 
+Same as BrownFullBasicInit: do not assign `integrator.uprev` here (#4485).
+
 =#
 
 function _initialize_dae!(
@@ -219,7 +221,8 @@ function _initialize_dae!(
 
     initdt = alg.initdt
     dt = if initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        integrator.dt != 0 ?
+            copysign(min(abs(integrator.dt) / 5, abs(dtmax)), integrator.dt) :
             (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         initdt
@@ -317,10 +320,6 @@ function _initialize_dae!(
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
 
     if failed
         @SciMLMessage(
@@ -347,7 +346,8 @@ function _initialize_dae!(
 
     initdt = alg.initdt
     dt = if initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        integrator.dt != 0 ?
+            copysign(min(abs(integrator.dt) / 5, abs(dtmax)), integrator.dt) :
             (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         initdt
@@ -411,10 +411,6 @@ function _initialize_dae!(
         failed = nlsol.retcode != ReturnCode.Success
     end
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
 
     if failed
         @SciMLMessage(
@@ -503,10 +499,6 @@ function _initialize_dae!(
     )
 
     integrator.u = nlsol.u
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
     if nlsol.retcode != ReturnCode.Success
         @SciMLMessage(
             lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
@@ -568,10 +560,6 @@ function _initialize_dae!(
 
     integrator.u = nlsol.u
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
     if nlsol.retcode != ReturnCode.Success
         @SciMLMessage(
             lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
@@ -592,6 +580,11 @@ The method:
 
 Keep differential variables constant
 Solve for the algebraic variables
+
+Do not assign `integrator.uprev` here. Callback truncation reinitializes the
+right endpoint while `uprev` must still be the left endpoint of the shortened
+step (see #4466 / #4485). Initial `uprev` sync happens in `solve` via
+`update_uprev!` after `initialize_dae!`.
 
 =#
 
@@ -678,10 +671,6 @@ function _initialize_dae!(
     )
     alg_u .= nlsol.u
 
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -758,10 +747,6 @@ function _initialize_dae!(
         integrator.u = u
     end
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -849,10 +834,6 @@ function _initialize_dae!(
     @. du = ifelse(differential_vars, nlsol.u, du)
     @. u = ifelse(differential_vars, u, nlsol.u)
 
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -918,10 +899,6 @@ function _initialize_dae!(
         integrator.du = du
     end
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(

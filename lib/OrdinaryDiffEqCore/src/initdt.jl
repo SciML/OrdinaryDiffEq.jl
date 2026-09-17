@@ -143,9 +143,9 @@ end
     =#
 
     ftmp = nothing
-    if prob.f.mass_matrix != I && (
+    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
             !(prob.f isa DynamicalODEFunction) ||
-                any(mm != I for mm in prob.f.mass_matrix)
+                any(!_is_identity_massmatrix, prob.f.mass_matrix)
         )
         ftmp = zero(f₀)
         try
@@ -240,9 +240,9 @@ end
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 
-    if prob.f.mass_matrix != I && (
+    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
             !(prob.f isa DynamicalODEFunction) ||
-                any(mm != I for mm in prob.f.mass_matrix)
+                any(!_is_identity_massmatrix, prob.f.mass_matrix)
         )
         integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
         copyto!(f₁, ftmp)

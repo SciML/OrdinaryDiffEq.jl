@@ -1288,7 +1288,7 @@ function ode_interpolation!(
                 ) # update the kcurrent
                 ode_interpolant!(
                     out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache.caches[2], idxs, deriv, differential_vars
+                    cache.cache2, idxs, deriv, differential_vars
                 )
             elseif alg_choice == 3
                 _ode_addsteps!(
@@ -1306,7 +1306,7 @@ function ode_interpolation!(
                 ) # update the kcurrent
                 ode_interpolant!(
                     out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache.cache5, idxs, deriv, differential_vars
+                    cache.cache4, idxs, deriv, differential_vars
                 )
             elseif alg_choice == 5
                 _ode_addsteps!(

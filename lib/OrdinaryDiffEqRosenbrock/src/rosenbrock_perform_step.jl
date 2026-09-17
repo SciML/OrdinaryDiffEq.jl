@@ -882,8 +882,7 @@ end
         diff_vars = Int[]
     else
         n = length(uprev)
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
         has_alg = !isempty(alg_vars)
     end
 

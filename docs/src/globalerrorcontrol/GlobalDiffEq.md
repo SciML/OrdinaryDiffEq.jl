@@ -25,6 +25,27 @@ estimated global error of `sol.u[i]` at `sol.t[i]`, and
 [`SciMLBase.has_global_error`](@ref) is `true` for these algorithms.
 [`global_error_estimate`](@ref) returns `sol.global_error`.
 
+[`GlobalErrorEstimation`](@ref) wraps any adaptive solver with global error
+estimation and `gtol`-based control by integrating a defect-driven companion
+equation. Two orthogonal choices configure it: [`GlobalErrorEquation`](@ref)
+selects the companion ODE — the nonlinear [`DefectCorrection`](@ref) (no Jacobian)
+or the linearized [`ErrorTransport`](@ref) (matrix-free Jacobian-vector products) —
+and [`GlobalErrorMode`](@ref) selects how it is integrated — [`InterpolatingMode`](@ref)
+(store the dense solution, integrate the companion in a second pass) or
+[`SimultaneousMode`](@ref) (advance the companion inline over each step for `O(1)`
+extra memory and no second solve). [`global_error_estimate`](@ref)`(prob, alg)`
+exposes the standalone estimator.
+
+To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
+solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
+requires SciMLSensitivity to be loaded); [`adjoint_error_estimate`](@ref)
+exposes the standalone estimator. Its [`GlobalAdjointScope`](@ref) selects whether
+the estimate is reported only at the endpoint ([`EndpointError`](@ref)) or along
+the whole trajectory ([`TrajectoryError`](@ref), filling `sol.global_error` at
+every saved time), and its [`GlobalAdjointControl`](@ref) selects whether `gtol`
+is met by tolerance tightening ([`ToleranceRefinement`](@ref)) or by re-solving
+non-adaptively on the accepted step grid ([`StepGridRefinement`](@ref)).
+
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global
 tolerances. It is the most robust and most expensive option.
@@ -59,4 +80,19 @@ global_error_estimate
 
 ```@docs
 GlobalRichardson
+GlobalErrorEstimation
+GlobalErrorEquation
+DefectCorrection
+ErrorTransport
+GlobalErrorMode
+InterpolatingMode
+SimultaneousMode
+GlobalAdjoint
+adjoint_error_estimate
+GlobalAdjointScope
+EndpointError
+TrajectoryError
+GlobalAdjointControl
+ToleranceRefinement
+StepGridRefinement
 ```

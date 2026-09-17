@@ -20,10 +20,10 @@ qsteady_max_default(alg::QNDF1) = 2 // 1
 qsteady_max_default(alg::FBDF) = 2 // 1
 
 get_current_alg_order(alg::QNDF, cache) = cache.order
-get_current_alg_order(alg::FBDF, cache) = cache.order
+get_current_alg_order(alg::FBDF, cache) = cache.filter_order > 0 ? cache.filter_order : cache.order
 
 get_current_adaptive_order(alg::QNDF, cache) = cache.order
-get_current_adaptive_order(alg::FBDF, cache) = cache.order
+get_current_adaptive_order(alg::FBDF, cache) = cache.filter_order > 0 ? cache.filter_order : cache.order
 
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true

@@ -9,6 +9,20 @@ function initialize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
         cb.discrete_callbacks...
     )
 end
+
+function initialize!(
+        cb::CallbackSet{<:AbstractVector, <:AbstractVector},
+        u, t, integrator::DEIntegrator
+    )
+    any_modified = false
+    for callbacks in (cb.continuous_callbacks, cb.discrete_callbacks)
+        for callback in callbacks
+            callback.initialize(callback, u, t, integrator)
+            any_modified |= integrator.derivative_discontinuity
+        end
+    end
+    return any_modified
+end
 initialize!(cb::CallbackSet{Tuple{}, Tuple{}}, u, t, integrator::DEIntegrator) = false
 function initialize!(
         u, t, integrator::DEIntegrator, any_modified::Bool,
@@ -32,6 +46,20 @@ Recursively apply `finalize!` and return whether any modified u
 """
 function finalize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
     return finalize!(u, t, integrator, false, cb.continuous_callbacks..., cb.discrete_callbacks...)
+end
+
+function finalize!(
+        cb::CallbackSet{<:AbstractVector, <:AbstractVector},
+        u, t, integrator::DEIntegrator
+    )
+    any_modified = false
+    for callbacks in (cb.continuous_callbacks, cb.discrete_callbacks)
+        for callback in callbacks
+            callback.finalize(callback, u, t, integrator)
+            any_modified |= integrator.derivative_discontinuity
+        end
+    end
+    return any_modified
 end
 finalize!(cb::CallbackSet{Tuple{}, Tuple{}}, u, t, integrator::DEIntegrator) = false
 function finalize!(
@@ -61,6 +89,16 @@ has_continuous_callback(cb::ContinuousCallback) = true
 has_continuous_callback(cb::VectorContinuousCallback) = true
 has_continuous_callback(cb::CallbackSet) = !isempty(cb.continuous_callbacks)
 has_continuous_callback(cb::Nothing) = false
+
+_erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
+function _erase_callback_types(callback)
+    Base.@nospecialize callback
+    callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
+    return CallbackSet(
+        collect(Any, callbacks.continuous_callbacks),
+        collect(Any, callbacks.discrete_callbacks)
+    )
+end
 
 rightfloat(t, tdir) = isone(tdir) ? nextfloat(t) : prevfloat(t)
 
@@ -226,6 +264,77 @@ end
         return tmin, upcrossing, event_occurred, event_idx, identified_idx, $N
     end
     return ex
+end
+
+
+# A type-erased callback is called through `Base.invokelatest`, so the compiled loop holds
+# a plain dynamic dispatch instead of a method instance specialised on `Any` whose
+# abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
+# The callee runs on the concrete callback and hands back the two values the loop needs
+# typed: the event time and the residual, the latter already reduced and converted.
+function _find_callback_time_erased(integrator, callback, callback_idx)
+    tmin, upcrossing, event_occurred, event_idx, residual =
+        find_callback_time(integrator, callback, callback_idx)
+    return (
+        convert(typeof(integrator.t), tmin), upcrossing, event_occurred::Bool, event_idx,
+        convert(typeof(integrator.last_event_error), value(residual)),
+    )
+end
+
+function find_first_continuous_callback(integrator, callbacks::AbstractVector)
+    callback_count = length(callbacks)
+    callback_count > 0 || throw(ArgumentError("at least one continuous callback is required"))
+    tType = typeof(integrator.t)
+    errType = typeof(integrator.last_event_error)
+
+    has_vector_callback = any(callback -> callback isa VectorContinuousCallback, callbacks)
+    if has_vector_callback
+        cache = integrator.callback_cache
+        @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
+        fill!(cache.winning_simultaneous_events, Int8(0))
+    end
+
+    tmin, upcrossing, event_occurred, event_idx, residual =
+        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
+    identified_idx = 1
+    if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
+        copyto!(
+            integrator.callback_cache.winning_simultaneous_events,
+            integrator.callback_cache.simultaneous_events
+        )
+    end
+
+    for callback_idx in 2:callback_count
+        callback = callbacks[callback_idx]
+        tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
+            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
+        if event_occurred2 &&
+                (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
+            tmin = tmin2
+            upcrossing = upcrossing2
+            event_occurred = true
+            event_idx = event_idx2
+            identified_idx = callback_idx
+            residual = residual2
+            if has_vector_callback && callback isa VectorContinuousCallback
+                copyto!(
+                    integrator.callback_cache.winning_simultaneous_events,
+                    integrator.callback_cache.simultaneous_events
+                )
+            end
+        end
+    end
+
+    if has_vector_callback && event_occurred
+        copyto!(
+            integrator.callback_cache.simultaneous_events,
+            integrator.callback_cache.winning_simultaneous_events
+        )
+    end
+    if event_occurred
+        integrator.last_event_error = residual
+    end
+    return tmin, upcrossing, event_occurred, event_idx, identified_idx, callback_count
 end
 
 """
@@ -433,7 +542,11 @@ function check_event_occurrence(integrator, callback, bottom_sign)
     if callback.interp_points != 0 && !isdiscrete(integrator.alg) &&
             any(iszero, event_idx)
         # Use the interpolants for safety checking
-        ts = range(integrator.tprev, stop = integrator.t, length = callback.interp_points)
+        ts = range(
+            integrator.tprev,
+            stop = integrator.t,
+            length = Int64(callback.interp_points)
+        )  # Int64: avoid i686 _linspace InexactError
         for i in 2:length(ts)
             top_t = ts[i]
             event_occurred, event_idx, top_sign =
@@ -619,7 +732,10 @@ function apply_callback!(
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
                 if callback isa VectorContinuousCallback
-                    SciMLBase.save_discretes!(integrator, callback, event_idx)
+                    @inbounds for i in 1:callback.len
+                        iszero(integrator.callback_cache.simultaneous_events[i]) && continue
+                        SciMLBase.save_discretes!(integrator, callback, i)
+                    end
                 else
                     SciMLBase.save_discretes!(integrator, callback)
                 end
@@ -712,6 +828,19 @@ end
     return discrete_modified || bool, saved_in_cb || saved_in_cb2
 end
 
+
+function apply_discrete_callback!(integrator, callbacks::AbstractVector)
+    discrete_modified = false
+    saved_in_cb = false
+    for callback in callbacks
+        modified, saved =
+            Base.invokelatest(apply_discrete_callback!, integrator, callback)::Tuple{Bool, Bool}
+        discrete_modified |= modified
+        saved_in_cb |= saved
+    end
+    return discrete_modified, saved_in_cb
+end
+
 """
     max_vector_callback_length_int(cs::CallbackSet)
     max_vector_callback_length_int(callbacks...)
@@ -721,7 +850,15 @@ Return the largest `len` among vector continuous callbacks.
 Returns `nothing` when no vector continuous callback is present.
 """
 function max_vector_callback_length_int(cs::CallbackSet)
-    return max_vector_callback_length_int(cs.continuous_callbacks...)
+    continuous_callbacks = cs.continuous_callbacks
+    all(cb -> cb isa ContinuousCallback, continuous_callbacks) && return nothing
+    maxlen = -1
+    for callback in continuous_callbacks
+        if callback isa VectorContinuousCallback && callback.len > maxlen
+            maxlen = callback.len
+        end
+    end
+    return maxlen
 end
 max_vector_callback_length_int() = nothing
 function max_vector_callback_length_int(continuous_callbacks...)

@@ -6,6 +6,7 @@ import OrdinaryDiffEqCore: perform_step!,
     alg_extrapolates,
     alg_cache,
     isesdirk, issplit,
+    only_diagonal_mass_matrix,
     ssp_coefficient, get_fsalfirstlast
 # OrdinaryDiffEqCore names used (called/referenced) but not extended here.
 using OrdinaryDiffEqCore: unwrap_alg,
@@ -32,12 +33,12 @@ using SciMLBase: SciMLBase, SplitFunction, ODEProblem, _vec, _reshape, _unwrap_v
 # `calculate_residuals`/`calculate_residuals!` are only called.
 import DiffEqBase: initialize!
 using DiffEqBase: calculate_residuals, calculate_residuals!
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, diag, I
 import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
-    nlsolve!, nlsolvefail, can_smooth_est,
+    nlsolve!, nlsolvefail, can_smooth_est, stage_predictor,
     NLNewton
 import ADTypes: AutoForwardDiff
 using CommonSolve: solve

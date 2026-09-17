@@ -26,7 +26,7 @@ function SciMLBase.__init(
         save_discretes = true,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
-        calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
+        calck = (callback !== nothing && !isempty(callback)) || # Empty callback
             dense, # and no dense output
         seed = UInt64(0),
         dt = zero(eltype(prob.tspan)),

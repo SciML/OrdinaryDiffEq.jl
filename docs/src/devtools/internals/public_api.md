@@ -178,6 +178,7 @@ OrdinaryDiffEqCore.uses_uprev
 OrdinaryDiffEqCore.has_autodiff
 OrdinaryDiffEqCore.has_special_newton_error
 OrdinaryDiffEqCore.has_dtnew_modification
+OrdinaryDiffEqCore.dtnew_modification
 OrdinaryDiffEqCore.has_stiff_interpolation
 OrdinaryDiffEqCore.allows_null_u0
 OrdinaryDiffEqCore.isaposteriori
@@ -360,6 +361,9 @@ OrdinaryDiffEqCore._ode_init
 OrdinaryDiffEqCore._initialize_dae!
 OrdinaryDiffEqCore.find_algebraic_vars_eqs
 OrdinaryDiffEqCore.get_differential_vars
+OrdinaryDiffEqCore._is_identity_massmatrix
+OrdinaryDiffEqCore._is_zero_massmatrix
+OrdinaryDiffEqCore._diff_alg_vars
 OrdinaryDiffEqCore.handle_callback_modifiers!
 OrdinaryDiffEqCore.resolve_stage_step_limiters
 OrdinaryDiffEqCore.trivial_limiter!

@@ -70,7 +70,51 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
 
+
+    if _erases_callback_types(prob)
+        callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
+        kwargs = merge(
+            (; kwargs...),
+            (; callback = _erase_callback_types(callback))
+        )
+    end
+
     return kwargs
+end
+
+
+# Erasure rewrites `prob.kwargs`, which rebuilds the problem through
+# `ConstructionBase.setproperties`. That works for these families but not for
+# `RODEProblem` or `BVProblem`, which SciMLBase gives no constructor it can use, so
+# those keep their callbacks as given.
+const _ERASABLE_CALLBACK_PROBLEMS = Union{
+    SciMLBase.AbstractODEProblem, SciMLBase.AbstractSDEProblem,
+    SciMLBase.AbstractDAEProblem, SciMLBase.AbstractDDEProblem,
+    SciMLBase.AbstractSDDEProblem,
+}
+
+# Restricted to Julia >= 1.12. On older versions Enzyme's forward mode is exercised
+# through continuous callbacks (see test/AD), and it aborts LLVM verification on the
+# erased vector's dynamic dispatch instead of throwing a catchable error; 1.11+ gates
+# Enzyme off, so erasure is enabled only where it has been validated.
+function _erases_callback_types(prob)
+    VERSION >= v"1.12" || return false
+    prob isa _ERASABLE_CALLBACK_PROBLEMS || return false
+    prob isa SciMLBase.AbstractBVProblem && return false
+    hasfield(typeof(prob), :f) || return false
+    specialize = SciMLBase.specialization(prob.f)
+    return specialize === SciMLBase.AutoSpecialize ||
+        specialize === SciMLBase.AutoDespecialize ||
+        specialize === SciMLBase.NoSpecialize
+end
+
+function _erase_problem_callback_types(prob)
+    if !_erases_callback_types(prob) || !has_kwargs(prob)
+        return prob
+    end
+    callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
+    callback = _erase_callback_types(callback)
+    return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
 const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
@@ -715,14 +759,18 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
     )
+    # Erase last: the promotions above read `prob.kwargs[:callback]`, and an erased set
+    # only answers "any continuous callbacks?" at run time, which would cost inference.
     if isconcreteu0(prob, tspan[1], kwargs) && prob.u0 === u0 &&
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return prob
+        return _erase_problem_callback_types(prob)
     else
-        return _remake_with_promoted_function(
-            prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
+        return _erase_problem_callback_types(
+            _remake_with_promoted_function(
+                prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
+            )
         )
     end
 end
@@ -772,11 +820,13 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return prob
+        return _erase_problem_callback_types(prob)
     else
-        return remake(
-            prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
-            tspan = tspan_promote
+        return _erase_problem_callback_types(
+            remake(
+                prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
+                tspan = tspan_promote
+            )
         )
     end
 end

@@ -336,9 +336,12 @@ function step_accept_controller!(
     win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perform_step! of the last step
     tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
     fill!(dt_new, zero(eltype(dt_new)))
-    @.. broadcast = false Q = integrator.dt / Q
+    # |dt|, not dt: `work` below is compared against `sigma * work`, and every
+    # one of those inequalities flips sign if the work estimates are negative.
+    absdt = abs(integrator.dt)
+    @.. broadcast = false Q = absdt / Q
     copyto!(dt_new, win_min_old, Q, win_min_old, (max(n_curr, n_old) + 1) - win_min_old + 1)
-    @.. broadcast = false Q = integrator.dt / Q
+    @.. broadcast = false Q = absdt / Q
     dtmin = timedepentdtmin(integrator)
     fill!(work, zero(eltype(work))) # work[n] is the work for order (n-1)
     for i in tmp

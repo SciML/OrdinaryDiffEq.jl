@@ -158,7 +158,7 @@ function stiffchoice(reltol, len, mass_matrix)
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
     else
-        if reltol < LOW_TOL || mass_matrix != I
+        if reltol < LOW_TOL || !_is_identity_massmatrix(mass_matrix)
             DefaultSolverChoice.Rodas5P
         else
             DefaultSolverChoice.Rosenbrock23
@@ -173,7 +173,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
 
     # Choose the starting method
     if AS.current == 0
-        choice = if AS.stiffalgfirst || integrator.f.mass_matrix != I
+        choice = if AS.stiffalgfirst || !_is_identity_massmatrix(integrator.f.mass_matrix)
             stiffchoice(reltol, len, integrator.f.mass_matrix)
         else
             nonstiffchoice(reltol)
@@ -191,7 +191,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
         ) ?
         AS.count < 0 ? 1 : AS.count + 1 :
         AS.count > 0 ? -1 : AS.count - 1
-    if integrator.f.mass_matrix != I
+    if !_is_identity_massmatrix(integrator.f.mass_matrix)
         #don't change anything
     elseif (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac

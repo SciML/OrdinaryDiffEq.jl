@@ -33,8 +33,12 @@ fac_default_gamma(alg::Union{RKC, SERK2, TSRKC2, TSRKC3, RKMC2}) = true
 fac_default_gamma(alg::Union{RKL1, RKL2}) = true
 has_dtnew_modification(alg::Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5, RKMC2}) = true
 
+# The stability bound is a magnitude.  `min` against a signed dtnew is a no-op
+# for a backward (tdir < 0) solve, which silently removes the cap.
+_cap(dtnew, bound) = copysign(min(abs(dtnew), abs(bound)), dtnew)
+
 function dtnew_modification(integrator, alg::ROCK2, dtnew)
-    return min(
+    return _cap(
         dtnew,
         typeof(dtnew)(
             (
@@ -47,7 +51,7 @@ function dtnew_modification(integrator, alg::ROCK2, dtnew)
     )
 end
 function dtnew_modification(integrator, alg::ROCK4, dtnew)
-    return min(
+    return _cap(
         dtnew,
         typeof(dtnew)(
             (
@@ -58,21 +62,21 @@ function dtnew_modification(integrator, alg::ROCK4, dtnew)
     )
 end
 function dtnew_modification(integrator, alg::SERK2, dtnew)
-    return min(
+    return _cap(
         dtnew,
         typeof(dtnew)((0.8 * 250 * 250 / (integrator.eigen_est + 1)))
     )
 end
 function dtnew_modification(integrator, alg::ESERK4, dtnew)
-    return min(dtnew, typeof(dtnew)((0.98 * 4000 * 4000 / integrator.eigen_est)))
+    return _cap(dtnew, typeof(dtnew)((0.98 * 4000 * 4000 / integrator.eigen_est)))
 end
 function dtnew_modification(integrator, alg::ESERK5, dtnew)
-    return min(dtnew, typeof(dtnew)((0.98 * 2000 * 2000 / integrator.eigen_est)))
+    return _cap(dtnew, typeof(dtnew)((0.98 * 2000 * 2000 / integrator.eigen_est)))
 end
 function dtnew_modification(integrator, alg::RKMC2, dtnew)
     s = min(alg.max_stages, 1000)
     rho_max = 0.31 * (s + 0.83)^1.87
-    return min(dtnew, typeof(dtnew)(rho_max / integrator.eigen_est))
+    return _cap(dtnew, typeof(dtnew)(rho_max / integrator.eigen_est))
 end
 
 
@@ -96,12 +100,12 @@ has_dtnew_modification(alg::Union{RKL1, RKL2}) = true
 
 function dtnew_modification(integrator, alg::RKL1, dtnew)
     _, s = _rkl_clamp_odd_stages(alg.min_stages, alg.max_stages)
-    return min(dtnew, typeof(dtnew)((s^2 + s) / integrator.eigen_est))
+    return _cap(dtnew, typeof(dtnew)((s^2 + s) / integrator.eigen_est))
 end
 
 function dtnew_modification(integrator, alg::RKL2, dtnew)
     _, s = _rkl_clamp_odd_stages(alg.min_stages, alg.max_stages)
-    return min(dtnew, typeof(dtnew)((s^2 + s - 2) / (2 * integrator.eigen_est)))
+    return _cap(dtnew, typeof(dtnew)((s^2 + s - 2) / (2 * integrator.eigen_est)))
 end
 
 alg_order(alg::RKG1) = 1
@@ -114,10 +118,10 @@ has_dtnew_modification(alg::Union{RKG1, RKG2}) = true
 
 function dtnew_modification(integrator, alg::RKG1, dtnew)
     s = alg.max_stages
-    return min(dtnew, typeof(dtnew)(s * (s + 3) / (2 * integrator.eigen_est)))
+    return _cap(dtnew, typeof(dtnew)(s * (s + 3) / (2 * integrator.eigen_est)))
 end
 
 function dtnew_modification(integrator, alg::RKG2, dtnew)
     s = alg.max_stages
-    return min(dtnew, typeof(dtnew)((s + 4) * (s - 1) / (3 * integrator.eigen_est)))
+    return _cap(dtnew, typeof(dtnew)((s + 4) * (s - 1) / (3 * integrator.eigen_est)))
 end

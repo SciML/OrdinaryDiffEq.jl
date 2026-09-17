@@ -407,7 +407,11 @@ end
         end
 
         @. cubuff = complex(fw1 - αdt * Mw1 + βdt * Mw2, fw2 - βdt * Mw1 - αdt * Mw2)
-        needfactor = iter == 1
+        # Only hand `A = W1` to the linear solver when W was actually rebuilt this
+        # step; otherwise W1 still holds the factorization from the previous step
+        # and re-factorizing it corrupts the solve.  Matches RadauIIA5/9 and
+        # AdaptiveRadau.
+        needfactor = iter == 1 && new_W
 
         linsolve = cache.linsolve
 
@@ -655,7 +659,7 @@ end
     if adaptive
         e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
         tmp = @.. e1dt * z1 + e2dt * z2 + e3dt * z3
-        mass_matrix != I && (tmp = mass_matrix * tmp)
+        !_is_identity_massmatrix(mass_matrix) && (tmp = mass_matrix * tmp)
         utilde = @.. integrator.fsalfirst + tmp
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
@@ -911,7 +915,7 @@ end
         utilde = w2
         e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
         @.. tmp = e1dt * z1 + e2dt * z2 + e3dt * z3
-        mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
+        !_is_identity_massmatrix(mass_matrix) && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
         @.. ubuff = integrator.fsalfirst + tmp
 
         if alg.smooth_est
@@ -1218,7 +1222,7 @@ end
     if adaptive
         e1dt, e2dt, e3dt, e4dt, e5dt = e1 / dt, e2 / dt, e3 / dt, e4 / dt, e5 / dt
         tmp = @.. e1dt * z1 + e2dt * z2 + e3dt * z3 + e4dt * z4 + e5dt * z5
-        mass_matrix != I && (tmp = mass_matrix * tmp)
+        !_is_identity_massmatrix(mass_matrix) && (tmp = mass_matrix * tmp)
         utilde = @.. integrator.fsalfirst + tmp
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
@@ -1597,7 +1601,7 @@ end
         utilde = w2
         e1dt, e2dt, e3dt, e4dt, e5dt = e1 / dt, e2 / dt, e3 / dt, e4 / dt, e5 / dt
         @.. tmp = e1dt * z1 + e2dt * z2 + e3dt * z3 + e4dt * z4 + e5dt * z5
-        mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
+        !_is_identity_massmatrix(mass_matrix) && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
         @.. ubuff = integrator.fsalfirst + tmp
 
         if alg.smooth_est
@@ -1867,7 +1871,7 @@ end
         for i in 1:num_stages
             tmp = @.. tmp + e[i] / dt * z[i]
         end
-        mass_matrix != I && (tmp = mass_matrix * tmp)
+        !_is_identity_massmatrix(mass_matrix) && (tmp = mass_matrix * tmp)
         #utilde = @..  1 / γ * dt * integrator.fsalfirst + tmp
         utilde = @.. integrator.fsalfirst + tmp
         if alg.smooth_est
@@ -2204,7 +2208,7 @@ end
         for i in 1:num_stages
             @.. tmp += e[i] / dt * z[i]
         end
-        mass_matrix != I && (mul!(w[1], mass_matrix, tmp); copyto!(tmp, w[1]))
+        !_is_identity_massmatrix(mass_matrix) && (mul!(w[1], mass_matrix, tmp); copyto!(tmp, w[1]))
         #@.. ubuff=1 / γ * dt * integrator.fsalfirst + tmp
         @.. ubuff = integrator.fsalfirst + tmp
 

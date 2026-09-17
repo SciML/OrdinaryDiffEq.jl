@@ -714,8 +714,7 @@ function alg_cache(
         diff_vars = collect(1:n)
         alg_vars = Int[]
     else
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
     end
     n_g = length(alg_vars)
     n_f = length(diff_vars)

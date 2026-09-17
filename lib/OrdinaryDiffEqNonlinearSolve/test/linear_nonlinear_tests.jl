@@ -236,7 +236,7 @@ let
         sol = solve!(integ)
         @test SciMLBase.successful_retcode(sol.retcode)
         @test maximum(abs.(sol.u[end] .- solref.u[end])) < 1.0e-3
-        @test sol.stats.njacs == sol.stats.nw
+        @test 0 < sol.stats.njacs < sol.stats.nw
         @test 0 < sol.stats.nw < sol.stats.nnonliniter
     end
 end

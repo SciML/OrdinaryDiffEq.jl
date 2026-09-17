@@ -331,6 +331,15 @@ Return whether `alg` post-processes the controller's proposed `dtnew` via a
 `dtnew_modification` hook (`false` by default).
 """
 has_dtnew_modification(alg) = false
+
+"""
+    dtnew_modification(integrator, alg, dtnew)
+
+Hook for algorithms that opt in via [`has_dtnew_modification`](@ref) to
+post-process the controller's proposed step size `dtnew` before it is applied
+(e.g. the stabilized RK methods cap it from their stage-count bound). Returns
+`dtnew` unchanged by default.
+"""
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
 # Whether the algorithm's alg_cache / perform_step! handle `u === nothing` directly.

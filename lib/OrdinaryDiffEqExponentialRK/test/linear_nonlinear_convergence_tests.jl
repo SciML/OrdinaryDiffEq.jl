@@ -23,6 +23,7 @@ using SciMLOperators: MatrixOperator, ScalarOperator
             ETDRK3,
             ETDRK4,
             HochOst4,
+            Friedli,
             ETD2,
             KenCarp3,
             CFNLIRK3,
@@ -57,6 +58,7 @@ end
             ETDRK3(),
             ETDRK4(),
             HochOst4(),
+            Friedli(),
             ETD2(),
         ]
         sim = test_convergence(dts, prob, Alg)
