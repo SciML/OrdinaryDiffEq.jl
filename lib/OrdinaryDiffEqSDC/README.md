@@ -36,11 +36,11 @@ different tableau.
 | keyword | default | meaning |
 |---|---|---|
 | `num_nodes` | `3` | number of collocation nodes `M` |
-| `node_type` | `:Legendre` | node distribution: `:Legendre`, `:Equidistant` |
-| `quad_type` | `:RadauRight` | which endpoints are nodes: `:Gauss` (neither), `:RadauLeft`, `:RadauRight`, `:Lobatto` (both) |
+| `node_type` | `SDCNodes.Legendre` | node distribution: `Legendre`, `Equidistant` |
+| `quad_type` | `SDCQuadrature.RadauRight` | which endpoints are nodes: `Gauss` (neither), `RadauLeft`, `RadauRight`, `Lobatto` (both) |
 | `num_sweeps` | `3` | number of sweeps `K` |
-| `sweeper` | `:BE` | the preconditioner `QΔ`: `:BE`, `:FE`, `:Trapezoid`, `:LU`, `:Picard`, `:BEpar`, `:MIN_SR_NS` |
-| `step_update` | `:quadrature` | `:quadrature` (`u_n + Δt Σ_m w_m f_m`) or `:lastnode` (`u_M`) |
+| `sweeper` | `SDCSweeper.BE` | the preconditioner `QΔ`, see below |
+| `step_update` | `SDCStepUpdate.Quadrature` | `Quadrature` (`u_n + Δt Σ_m w_m f_m`) or `LastNode` (`u_M`) |
 
 Standard implicit-solver keywords (`autodiff`, `concrete_jac`, `linsolve`,
 `nlsolve`) are accepted and behave as elsewhere in the library.
@@ -82,16 +82,33 @@ With `δ₁ = τ₁` and `δ_m = τ_m − τ_{m−1}`:
 
 | `sweeper` | `QΔ` | notes |
 |---|---|---|
-| `:BE` | `QΔ[i,j] = δ_j` for `j ≤ i` | implicit Euler between the nodes; the original Dutt–Greengard–Rokhlin sweep |
-| `:FE` | `QΔ[i,j] = δ_{j+1}` for `j < i` | explicit Euler between the nodes; strictly lower triangular, so the sweep needs no solve at all |
-| `:Trapezoid` | `(QΔ_BE + QΔ_FE)/2` | second order, so it gains two orders on the first sweep |
-| `:LU` | `Uᵀ` where `Qᵀ = LU` | Weiser's LU trick; makes the stiff-limit iteration matrix nilpotent, and is usually the best serial choice |
-| `:Picard` | `0` | unpreconditioned Picard iteration; diverges for stiff problems, useful for teaching and testing |
-| `:BEpar` | `diag(τ)` | **diagonal**: implicit Euler from the step start to each node |
-| `:MIN_SR_NS` | `diag(τ)/M` | **diagonal**: Čaklović et al. 2024, nilpotent non-stiff iteration matrix |
+| `BE` | `QΔ[i,j] = δ_j` for `j ≤ i` | implicit Euler between the nodes; the original Dutt–Greengard–Rokhlin sweep |
+| `FE` | `QΔ[i,j] = δ_{j+1}` for `j < i` | explicit Euler between the nodes; strictly lower triangular, so the sweep needs no solve at all |
+| `Trapezoid` | `(QΔ_BE + QΔ_FE)/2` | second order, so it gains two orders on the first sweep |
+| `LU` | `Uᵀ` where `Qᵀ = LU` | Weiser's LU trick; nilpotent stiff-limit iteration matrix, and the best serial choice |
+| `Picard` | `0` | unpreconditioned Picard iteration; diverges for stiff problems, useful for teaching and testing |
+| `BEpar` | `diag(τ)` | **diagonal**: implicit Euler from the step start to each node |
+| `MIN_SR_NS` | `diag(τ)/M` | **diagonal**: nilpotent non-stiff iteration matrix; optimal as `Δt → 0` and not A-stable |
+| `MIN_SR_S` | tabulated | **diagonal**: nilpotent stiff-limit iteration matrix; matches `LU` once the iteration has converged |
+| `MIN_SR_FLEX` | `diag(τ)/k` on sweep `k` | **diagonal**, changes every sweep, falls back to `MIN_SR_S` past sweep `M` |
 
-The two diagonal sweepers decouple the sweep across the nodes. They run serially
-here; running them in parallel across `M` threads is the next step.
+The last five are diagonal, so their sweeps decouple across the nodes and can run
+on `M` threads. They run serially here; the threading is the next step.
+
+The three `MIN_SR_*` families are from Čaklović, Lunet, Götschel and Ruprecht,
+SIAM J. Sci. Comput. 47 (2025) A430-A453. `MIN_SR_S` has no closed form — its entries solve a nilpotency
+condition numerically — so they are tabulated for 2 to 10 nodes, and asking for
+more raises an error naming the limit.
+
+On Prothero-Robinson with `lambda = -1e4`, `M = 3` and `dt = 0.1`, the diagonal
+sweepers separate clearly:
+
+| sweeper | `K = 3` | `K = 4` | `K = 6` | `K = 8` |
+|---|---|---|---|---|
+| `LU` (serial) | 3.6e-3 | 8.2e-4 | 2.9e-7 | 1.2e-9 |
+| `MIN_SR_S` | 2.3e+0 | 3.1e-3 | 2.0e-6 | 1.3e-9 |
+| `MIN_SR_FLEX` | 7.9e-2 | 5.7e-2 | 1.8e-4 | 2.6e-7 |
+| `BEpar` | 1.4e+1 | 9.9e+0 | 1.5e+0 | 2.7e-1 |
 
 ## References
 
@@ -102,7 +119,7 @@ here; running them in parallel across `M` threads is the next step.
 - R. Speck, *Parallelizing spectral deferred corrections across the method*,
   Computing and Visualization in Science 19 (2018) 75–83.
 - G. Čaklović, T. Lunet, S. Götschel and D. Ruprecht, *Improving efficiency of
-  parallel across the method spectral deferred corrections*, arXiv:2403.18641.
+  parallel across the method spectral deferred corrections*, SIAM J. Sci. Comput. 47 (2025) A430-A453.
 
 The coefficient conventions and the convergence-order test follow
 [qmat](https://github.com/Parallel-in-Time/qmat).
