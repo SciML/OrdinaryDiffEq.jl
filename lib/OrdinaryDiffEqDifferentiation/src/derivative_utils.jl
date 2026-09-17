@@ -608,6 +608,10 @@ _is_scalar_massmatrix(::UniformScaling) = true
 _is_scalar_massmatrix(::ScalarOperator) = true
 _scalar_massmatrix_λ(mm::UniformScaling) = mm.λ
 _scalar_massmatrix_λ(mm::ScalarOperator) = convert(Number, mm)
+# A `ScalarOperator` may carry an `update_func`, so its value belongs to a time.
+_scalar_massmatrix_λ(mm::UniformScaling, u, p, t) = mm.λ
+_scalar_massmatrix_λ(mm::ScalarOperator, u, p, t) =
+    convert(Number, update_coefficients(mm, u, p, t))
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
 @noinline function _throwWMerror(W, mass_matrix)
