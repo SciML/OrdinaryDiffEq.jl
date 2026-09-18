@@ -14,6 +14,7 @@ While completely independent and usable on its own, users wanting the full ODE s
 - `Nystrom4`
 - `FineRKN4`
 - `FineRKN5`
+- `SharpFineRKN6`
 - `DPRKN4`
 - `DPRKN5`
 - `DPRKN6`
