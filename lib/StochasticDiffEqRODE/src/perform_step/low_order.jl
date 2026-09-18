@@ -22,7 +22,8 @@ end
     (; rtmp) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     integrator.f(rtmp, uprev, p, t, W.curW)
-    @.. u = uprev + dt * rtmp / (1 + dt * norm(rtmp))
+    tamed = 1 + dt * norm(rtmp)
+    @.. u = uprev + dt * rtmp / tamed
 end
 
 @muladd function perform_step!(integrator, cache::RandomHeunConstantCache)
