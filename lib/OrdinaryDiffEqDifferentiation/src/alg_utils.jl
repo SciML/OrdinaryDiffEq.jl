@@ -121,10 +121,8 @@ function prepare_user_sparsity(ad_alg, prob)
     end
 
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
-        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
-            mass_matrix = mass_matrix_or_I(prob.f)
-
-            if mass_matrix isa UniformScaling
+        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f) && has_mass_matrix(prob.f)
+            if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
                 @. @view(sparsity[idxs]) = 1
 
@@ -132,7 +130,7 @@ function prepare_user_sparsity(ad_alg, prob)
                     @. @view(jac_prototype[idxs]) = 1
                 end
             else
-                mm = concrete_mass_matrix(mass_matrix)
+                mm = concrete_mass_matrix(prob.f.mass_matrix)
                 idxs = findall(!iszero, mm)
                 for idx in idxs
                     sparsity[idx] = mm[idx]

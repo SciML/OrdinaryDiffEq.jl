@@ -67,14 +67,14 @@ concrete_mass_matrix(mm) = mm
 concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
 
 """
-    mass_matrix_or_I(f)
+    has_mass_matrix(f)
 
-The mass matrix of `f`, or `I` for a function type that has none. `DAEFunction` is fully
-implicit — its residual already contains the `du` coefficients — so it carries no
-`mass_matrix` field, and the sparsity-seeding code below must treat it the same way it
-treats an ODE whose mass matrix is the identity.
+Whether `f` is a function type that carries a `mass_matrix` field. `DAEFunction` is fully
+implicit — its residual already contains the `du` coefficients — so it has none, and the
+mass-matrix seeding below is skipped for it entirely: a DAE `jac_prototype` must already
+be the complete pattern of `∂F/∂u + γ ∂F/∂(du)`.
 """
-mass_matrix_or_I(f) = hasfield(typeof(f), :mass_matrix) ? f.mass_matrix : I
+has_mass_matrix(f) = hasfield(typeof(f), :mass_matrix)
 
 # These will error if called without the extension, but should never be called
 # on non-sparse types due to the is_sparse checks
