@@ -101,6 +101,8 @@ struct SDCTableau{T}
     Q::Matrix{T}
     # One entry per sweep for `MIN_SR_FLEX`, one entry in total otherwise.
     QΔ::Vector{Matrix{T}}
+    # `dense[i, j]` is the coefficient of `θ^i` in `∫₀^θ ℓⱼ(s) ds`.
+    dense::Matrix{T}
 end
 
 """
@@ -240,14 +242,28 @@ end
 
 `P[m, j] = ∫₀^{uppers[m]} ℓⱼ(s) ds` for the Lagrange basis `ℓⱼ` on the nodes `τ`.
 
-Written in the monomial basis: the Lagrange coefficients are `V⁻¹` for the
-Vandermonde matrix `V[k, i] = τₖ^{i-1}` (since `ℓⱼ(τₖ) = δⱼₖ`), and the monomial
-integrals are `C[m, i] = uppers[m]^i / i`, so the result is `C V⁻¹`.
+Evaluating the monomial form from [`_lagrange_integral_coefficients`](@ref) at each
+upper limit.
 """
 function _lagrange_integrals(τ::Vector{BigFloat}, uppers::Vector{BigFloat})
     M = length(τ)
+    powers = [uppers[m]^i for m in eachindex(uppers), i in 1:M]
+    return powers * _lagrange_integral_coefficients(τ)
+end
+
+"""
+    _lagrange_integral_coefficients(τ)
+
+`D[i, j]` is the coefficient of `θ^i` in `∫₀^θ ℓⱼ(s) ds`, so the collocation
+polynomial through the node rates `zⱼ` is `u(θ) = uₙ + Σⱼ Σᵢ D[i, j] θ^i zⱼ`.
+
+The Lagrange coefficients are `V⁻¹` for the Vandermonde matrix `V[k, i] = τₖ^{i-1}`
+(since `ℓⱼ(τₖ) = δⱼₖ`), and integrating the monomials divides row `i` by `i`.
+"""
+function _lagrange_integral_coefficients(τ::Vector{BigFloat})
+    M = length(τ)
     V = [τ[k]^(i - 1) for k in 1:M, i in 1:M]
-    C = [uppers[m]^i / i for m in 1:length(uppers), i in 1:M]
+    C = [i == j ? inv(BigFloat(i)) : zero(BigFloat) for i in 1:M, j in 1:M]
     return C / V
 end
 
@@ -345,7 +361,8 @@ function SDCTableau(
         end
     end::SDCTableau{T}
     return SDCTableau{T}(
-        copy(tab.nodes), copy(tab.weights), copy(tab.Q), map(copy, tab.QΔ)
+        copy(tab.nodes), copy(tab.weights), copy(tab.Q), map(copy, tab.QΔ),
+        copy(tab.dense)
     )
 end
 
@@ -360,7 +377,8 @@ function generate_sdc_tableau(
         QΔ = [
             sdc_qdelta(T, sweeper, τ, Q, node_type, quad_type, k) for k in 1:nsweeps
         ]
-        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ)
+        dense = _lagrange_integral_coefficients(τ)
+        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ, T.(dense))
     end
 end
 
