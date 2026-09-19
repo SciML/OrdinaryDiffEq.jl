@@ -40,6 +40,7 @@ different tableau.
 | `quad_type` | `SDCQuadrature.RadauRight` | which endpoints are nodes: `Gauss` (neither), `RadauLeft`, `RadauRight`, `Lobatto` (both) |
 | `num_sweeps` | `3` | number of sweeps `K` |
 | `sweeper` | `SDCSweeper.BE` | the preconditioner `QΔ`, see below |
+| `explicit_sweeper` | `SDCSweeper.FE` | the preconditioner for `f2` on a `SplitODEProblem`, `.FE` or `.Picard` |
 | `step_update` | `SDCStepUpdate.Quadrature` | `Quadrature` (`u_n + Δt Σ_m w_m f_m`) or `LastNode` (`u_M`) |
 
 Standard implicit-solver keywords (`autodiff`, `concrete_jac`, `linsolve`,
@@ -63,7 +64,7 @@ sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 3); abstol = 1e-8, reltol = 1e
 
 # 7th order, and a much better preconditioner for stiff problems
 sol = solve(
-    prob, SDC(num_nodes = 4, num_sweeps = 6, sweeper = :LU);
+    prob, SDC(num_nodes = 4, num_sweeps = 6, sweeper = SDCSweeper.LU);
     abstol = 1e-10, reltol = 1e-10
 )
 ```
@@ -92,8 +93,62 @@ With `δ₁ = τ₁` and `δ_m = τ_m − τ_{m−1}`:
 | `MIN_SR_S` | tabulated | **diagonal**: nilpotent stiff-limit iteration matrix; matches `LU` once the iteration has converged |
 | `MIN_SR_FLEX` | `diag(τ)/k` on sweep `k` | **diagonal**, changes every sweep, falls back to `MIN_SR_S` past sweep `M` |
 
-The last five are diagonal, so their sweeps decouple across the nodes and can run
-on `M` threads. They run serially here; the threading is the next step.
+The last five are diagonal, so their sweeps decouple across the nodes. Pass
+`threading = true` to run the `M` node solves of each sweep concurrently
+(`OrdinaryDiffEqCore`'s `BaseThreads()` and `PolyesterThreads()` also work, for
+control over the backend); a non-diagonal sweeper with threading is rejected,
+since it couples the nodes within a sweep.
+
+```julia
+solve(
+    prob,
+    SDC(num_nodes = 4, num_sweeps = 6, sweeper = SDCSweeper.MIN_SR_S,
+        threading = true);
+    abstol = 1e-9, reltol = 1e-9
+)
+```
+
+Threaded and sequential runs produce bitwise identical solutions. Measured on a
+stiff 1-D reaction-diffusion problem, `M = 4` nodes on 4 threads:
+
+| unknowns | sequential | threaded | speedup |
+|---|---|---|---|
+| 64 | 0.0093 s | 0.0072 s | 1.3x |
+| 256 | 0.0905 s | 0.0460 s | 2.0x |
+| 1024 | 2.42 s | 1.42 s | 1.7x |
+
+The ceiling is `M`, and the fall-off at 1024 unknowns is the memory cost: each
+node keeps its own Jacobian and `W`, so the working set grows as `M x (J + W)`
+and leaves cache. Two caveats. Solver statistics (`nf`, `nsolve`, `nw`)
+undercount when threaded, because the counters they accumulate into are shared
+and updated without synchronisation — this affects every threaded solver in the
+library, not just this one. And `f` must be safe to call concurrently.
+
+## IMEX
+
+On a `SplitODEProblem(f1, f2, u0, tspan)` the sweep is semi-implicit, following
+Minion (2003): `f1` goes through `sweeper` and one nonlinear solve per node as
+usual, while `f2` goes through the strictly lower triangular `explicit_sweeper`
+and is only evaluated at node values that have already been solved for, so its
+Jacobian is never formed.
+
+```julia
+prob = SplitODEProblem(f_stiff, f_nonstiff, u0, tspan)
+solve(prob, SDC(num_nodes = 3, num_sweeps = 4); dt = 0.05, adaptive = false)
+```
+
+The sweep still converges to the collocation solution. On a split problem with
+a stiff linear `f1` and a nonlinear `f2`, `M = 3`, `Δt = 0.05`, the distance
+from IMEX SDC to fully implicit SDC run to convergence is:
+
+| `K` | 2 | 4 | 8 | 16 | 40 |
+|---|---|---|---|---|---|
+| distance | 7.6e-5 | 9.9e-7 | 1.9e-8 | 1.7e-13 | 0 |
+
+`explicit_sweeper = SDCSweeper.FE` (the default) is explicit Euler between the
+nodes. `SDCSweeper.Picard` lags `f2` a whole sweep instead, which is what
+threading a split problem needs, since explicit Euler couples each node to the
+ones before it.
 
 The three `MIN_SR_*` families are from Čaklović, Lunet, Götschel and Ruprecht,
 SIAM J. Sci. Comput. 47 (2025) A430-A453. `MIN_SR_S` has no closed form — its entries solve a nilpotency

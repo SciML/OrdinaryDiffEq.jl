@@ -1,13 +1,14 @@
 module OrdinaryDiffEqSDC
 
-import OrdinaryDiffEqCore: isfsal,
+import OrdinaryDiffEqCore: isfsal, issplit,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     alg_adaptive_order,
     generic_solver_docstring,
     unwrap_alg, perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     @cache, alg_cache, get_fsalfirstlast,
-    constvalue, _fixup_ad
+    constvalue, _fixup_ad,
+    @threaded, isthreaded
 import OrdinaryDiffEqCore
 # `alg_order` and `full_cache` are owned by SciMLBase and extended here, so they
 # need `import`; `initialize!` is owned by DiffEqBase.
@@ -23,7 +24,7 @@ import ADTypes: AutoForwardDiff
 using EnumX: @enumx
 
 using Reexport: Reexport, @reexport
-using SciMLBase: SciMLBase, _unwrap_val
+using SciMLBase: SciMLBase, _unwrap_val, SplitFunction
 @reexport using SciMLBase
 
 include("sdc_tableaus.jl")
