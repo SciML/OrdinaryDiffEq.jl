@@ -168,6 +168,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Dynamical SDE Tests" begin
             include("sde/sde_dynamical.jl")
         end
+        @time @safetestset "RODE Convergence Tests" begin
+            include("rode_convergence_tests.jl")
+        end
     end
 
     if !is_APPVEYOR && (TEST_GROUP == "ALL" || TEST_GROUP == "NoncommutativeConvergence")
