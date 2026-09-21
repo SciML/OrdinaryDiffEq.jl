@@ -48,3 +48,47 @@ end
     integrator.f(rtmp2, tmp, p, t + dt, wtmp)
     @.. u = uprev + (dt / 2) * (rtmp1 + rtmp2)
 end
+
+function path_integral(W, t, dt, w0)
+    tend = t + dt
+    integral = zero(w0) * dt
+    tprev = t
+    vprev = zero(w0)
+    @inbounds for i in searchsortedfirst(W.t, t):searchsortedlast(W.t, tend)
+        ti = W.t[i]
+        ti <= tprev && continue
+        vi = W.W[i] - w0
+        integral += (ti - tprev) * (vprev + vi) / 2
+        tprev = ti
+        vprev = vi
+    end
+    return integral + (tend - tprev) * (vprev + W.dW) / 2
+end
+
+@muladd function perform_step!(integrator, cache::RandomTaylor15ConstantCache)
+    (; t, dt, uprev, u, W, p, f) = integrator
+    w0 = W.curW
+    sqdt = sqrt(dt)
+    I10 = path_integral(W, t, dt, w0)
+    ftmp = integrator.f(uprev, p, t, w0)
+    utilde = uprev .+ dt .* ftmp
+    fp = integrator.f(utilde, p, t + dt, w0 + sqdt)
+    fm = integrator.f(utilde, p, t + dt, w0 - sqdt)
+    u = uprev .+ dt .* ftmp .+ (I10 / (2 * sqdt)) .* (fp .- fm) .+
+        (dt / 4) .* (fp .- 2 .* ftmp .+ fm)
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::RandomTaylor15Cache)
+    (; tmp, rtmp, rtmpp, rtmpm) = cache
+    (; t, dt, uprev, u, W, p, f) = integrator
+    w0 = W.curW
+    sqdt = sqrt(dt)
+    I10 = path_integral(W, t, dt, w0)
+    integrator.f(rtmp, uprev, p, t, w0)
+    @.. tmp = uprev + dt * rtmp
+    integrator.f(rtmpp, tmp, p, t + dt, w0 + sqdt)
+    integrator.f(rtmpm, tmp, p, t + dt, w0 - sqdt)
+    @.. u = uprev + dt * rtmp + (I10 / (2 * sqdt)) * (rtmpp - rtmpm) +
+        (dt / 4) * (rtmpp - 2 * rtmp + rtmpm)
+end

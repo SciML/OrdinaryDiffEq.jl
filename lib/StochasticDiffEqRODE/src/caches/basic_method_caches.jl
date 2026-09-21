@@ -86,3 +86,35 @@ function alg_cache(
     wtmp = zero(ΔW)
     return RandomHeunCache(u, uprev, tmp, rtmp1, rtmp2, wtmp)
 end
+
+struct RandomTaylor15ConstantCache <: StochasticDiffEqConstantCache end
+@cache struct RandomTaylor15Cache{uType, rateType} <: StochasticDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    rtmp::rateType
+    rtmpp::rateType
+    rtmpm::rateType
+end
+
+function alg_cache(
+        alg::RandomTaylor15, prob, u, ΔW, ΔZ, p, rate_prototype,
+        noise_rate_prototype, jump_rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, f, t, dt,
+        ::Type{Val{false}}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return RandomTaylor15ConstantCache()
+end
+
+function alg_cache(
+        alg::RandomTaylor15, prob, u, ΔW, ΔZ, p, rate_prototype,
+        noise_rate_prototype, jump_rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, f, t, dt,
+        ::Type{Val{true}}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    rtmp = zero(rate_prototype)
+    rtmpp = zero(rate_prototype)
+    rtmpm = zero(rate_prototype)
+    return RandomTaylor15Cache(u, uprev, tmp, rtmp, rtmpp, rtmpm)
+end

@@ -88,6 +88,38 @@ Applies taming technique to prevent numerical blow-up while maintaining accuracy
 struct RandomTamedEM <: StochasticDiffEqRODEAlgorithm end
 
 """
+    RandomTaylor15()
+
+**RandomTaylor15: Derivative-free order 1.5 Taylor method (RODE)**
+
+Order 1.5 scheme for Random Ordinary Differential Equations driven by a Wiener process
+supplied as a stored path. The derivatives of the Taylor scheme are replaced by finite
+differences of the right-hand side, so only evaluations of `f` are needed.
+
+## Method Properties
+
+  - **Problem type**: RODEs driven by a `NoiseGrid` with scalar values
+  - **Pathwise order**: 1.5
+  - **Time stepping**: Fixed step size
+  - **Noise usage**: reads the driving path between the step endpoints
+
+## When to Use
+
+The step uses the integral of the driving path over `[t, t+dt]`, so the path must be
+resolved more finely than the solver steps. That happens when the noise is measured
+data or is generated on a fine grid and the solver is stepped coarsely. With a path
+that is only known at the solver's own steps there is no sub-step information to use
+and `RandomEM` is the appropriate method.
+
+## References
+
+  - Asai, Numerical Methods for Random Ordinary Differential Equations and their
+    Applications in Biology and Medicine, PhD thesis, Goethe University Frankfurt, 2016,
+    equation (3.24).
+"""
+struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
+
+"""
     BAOAB(; gamma = 1.0, scale_noise = true)
 
 **BAOAB: Langevin Dynamics Integrator (Specialized)**

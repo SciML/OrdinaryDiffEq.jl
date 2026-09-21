@@ -96,3 +96,64 @@ end
             decay_solution(alg, noise, n, copy(u0); inplace = true).u
     end
 end
+
+const TAYLOR_STEP_COUNTS = STEP_COUNTS[1:5]
+
+function taylor15_study(alg; seed = 20260921)
+    rng = MersenneTwister(seed)
+    errors = zeros(PATHS, length(TAYLOR_STEP_COUNTS))
+    floors = zeros(PATHS)
+    for m in 1:PATHS
+        path = wiener_path(rng)
+        g = cos.(5 .* path)
+        exact = exp.(-cumulative_trapezoid(g, FINE_DT))
+        floors[m] = maximum(abs, exp.(-cumulative_trapezoid(g[1:4:end], 4FINE_DT)) .- exact[1:4:end])
+        noise = NoiseGrid(FINE_GRID, path)
+        for (j, n) in enumerate(TAYLOR_STEP_COUNTS)
+            sol = decay_solution(alg, noise, n, 1.0)
+            stride = FINE_POINTS ÷ n
+            errors[m, j] = maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n)
+        end
+    end
+    strong = [sqrt(mean(errors[:, j] .^ 2)) for j in eachindex(TAYLOR_STEP_COUNTS)]
+    return (
+        strong = strong, strong_order = fitted_slope(TAYLOR_STEP_COUNTS, strong),
+        reference_floor = maximum(floors),
+    )
+end
+
+@testset "RandomTaylor15 reaches order 1.5 on a resolved path" begin
+    taylor = taylor15_study(RandomTaylor15())
+    euler = taylor15_study(RandomEM())
+    @test minimum(taylor.strong) > 20 * taylor.reference_floor
+    @test abs(taylor.strong_order - 1.5) < 0.25
+    @test taylor.strong_order > euler.strong_order + 0.25
+    @test taylor.strong[end] < euler.strong[end] / 3
+end
+
+@testset "RandomTaylor15 is Heun when the noise leaves the right-hand side" begin
+    smooth(u, p, t, W) = -u
+    exact = exp.(-FINE_GRID)
+    noise = NoiseGrid(FINE_GRID, zeros(FINE_POINTS + 1))
+    function smooth_error(n)
+        prob = RODEProblem{false}(smooth, 1.0, (0.0, TEND), noise = noise)
+        sol = solve(prob, RandomTaylor15(), dt = TEND / n, save_everystep = true, adaptive = false)
+        stride = FINE_POINTS ÷ n
+        return maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n)
+    end
+    @test abs(fitted_slope(STEP_COUNTS, [smooth_error(n) for n in STEP_COUNTS]) - 2) < 0.2
+end
+
+@testset "RandomTaylor15 in-place matches out-of-place" begin
+    noise = NoiseGrid(FINE_GRID, wiener_path(MersenneTwister(20260921)))
+    u0 = [1.0, 1.0]
+    for n in (TAYLOR_STEP_COUNTS[1], TAYLOR_STEP_COUNTS[end])
+        @test decay_solution(RandomTaylor15(), noise, n, u0).u ==
+            decay_solution(RandomTaylor15(), noise, n, copy(u0); inplace = true).u
+    end
+end
+
+@testset "RandomTaylor15 rejects noise it cannot resolve" begin
+    prob = RODEProblem{false}(decay_oop, 1.0, (0.0, TEND))
+    @test_throws ErrorException solve(prob, RandomTaylor15(), dt = TEND / 16, adaptive = false)
+end
