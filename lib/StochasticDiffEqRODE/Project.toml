@@ -27,7 +27,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 [compat]
 SciMLTesting = "2.8"
 DiffEqBase = "7"
-DiffEqNoiseProcess = "5.36"
+DiffEqNoiseProcess = "5.30.0"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "4"

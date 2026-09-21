@@ -49,33 +49,42 @@ end
     @.. u = uprev + (dt / 2) * (rtmp1 + rtmp2)
 end
 
-function path_integral(W, t, dt, w0)
+function path_integrals(W, t, dt, w0)
     tend = t + dt
-    integral = zero(w0) * dt
+    tdir = dt < zero(dt) ? -one(dt) : one(dt)
+    rev = length(W.t) > 1 && W.t[2] < W.t[1]
+    ilo = searchsortedfirst(W.t, t, rev = rev)
+    ihi = searchsortedlast(W.t, tend, rev = rev)
+    I1 = zero(w0) * dt
+    I2 = zero(w0) * zero(w0) * dt
     tprev = t
     vprev = zero(w0)
-    @inbounds for i in searchsortedfirst(W.t, t):searchsortedlast(W.t, tend)
+    @inbounds for i in ilo:ihi
         ti = W.t[i]
-        ti <= tprev && continue
+        tdir * (ti - tprev) <= zero(dt) && continue
         vi = W.W[i] - w0
-        integral += (ti - tprev) * (vprev + vi) / 2
+        I1 += (ti - tprev) * (vprev + vi) / 2
+        I2 += (ti - tprev) * (vprev^2 + vprev * vi + vi^2) / 3
         tprev = ti
         vprev = vi
     end
-    return integral + (tend - tprev) * (vprev + W.dW) / 2
+    vend = W.dW
+    return I1 + (tend - tprev) * (vprev + vend) / 2,
+        I2 + (tend - tprev) * (vprev^2 + vprev * vend + vend^2) / 3
 end
 
 @muladd function perform_step!(integrator, cache::RandomTaylor15ConstantCache)
     (; t, dt, uprev, u, W, p, f) = integrator
     w0 = W.curW
-    sqdt = sqrt(dt)
-    I10 = path_integral(W, t, dt, w0)
+    adt = abs(dt)
+    h = sqrt(adt)
+    I1, I2 = path_integrals(W, t, dt, w0)
     ftmp = integrator.f(uprev, p, t, w0)
     utilde = uprev .+ dt .* ftmp
-    fp = integrator.f(utilde, p, t + dt, w0 + sqdt)
-    fm = integrator.f(utilde, p, t + dt, w0 - sqdt)
-    u = uprev .+ dt .* ftmp .+ (I10 / (2 * sqdt)) .* (fp .- fm) .+
-        (dt / 4) .* (fp .- 2 .* ftmp .+ fm)
+    fp = integrator.f(utilde, p, t + dt, w0 + h)
+    fm = integrator.f(utilde, p, t + dt, w0 - h)
+    u = uprev .+ dt .* ftmp .+ (I1 / (2 * h)) .* (fp .- fm) .+
+        (I2 / (2 * adt)) .* (fp .- 2 .* ftmp .+ fm)
     integrator.u = u
 end
 
@@ -83,12 +92,13 @@ end
     (; tmp, rtmp, rtmpp, rtmpm) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     w0 = W.curW
-    sqdt = sqrt(dt)
-    I10 = path_integral(W, t, dt, w0)
+    adt = abs(dt)
+    h = sqrt(adt)
+    I1, I2 = path_integrals(W, t, dt, w0)
     integrator.f(rtmp, uprev, p, t, w0)
     @.. tmp = uprev + dt * rtmp
-    integrator.f(rtmpp, tmp, p, t + dt, w0 + sqdt)
-    integrator.f(rtmpm, tmp, p, t + dt, w0 - sqdt)
-    @.. u = uprev + dt * rtmp + (I10 / (2 * sqdt)) * (rtmpp - rtmpm) +
-        (dt / 4) * (rtmpp - 2 * rtmp + rtmpm)
+    integrator.f(rtmpp, tmp, p, t + dt, w0 + h)
+    integrator.f(rtmpm, tmp, p, t + dt, w0 - h)
+    @.. u = uprev + dt * rtmp + (I1 / (2 * h)) * (rtmpp - rtmpm) +
+        (I2 / (2 * adt)) * (rtmpp - 2 * rtmp + rtmpm)
 end

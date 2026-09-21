@@ -94,7 +94,9 @@ struct RandomTamedEM <: StochasticDiffEqRODEAlgorithm end
 
 Order 1.5 scheme for Random Ordinary Differential Equations driven by a Wiener process
 supplied as a stored path. The derivatives of the Taylor scheme are replaced by finite
-differences of the right-hand side, so only evaluations of `f` are needed.
+differences of the right-hand side, so only evaluations of `f` are needed. Both step
+integrals are taken from the supplied path rather than from their Brownian expectations,
+which keeps the step exact in the path for driving signals that are not Brownian.
 
 ## Method Properties
 
@@ -105,17 +107,28 @@ differences of the right-hand side, so only evaluations of `f` are needed.
 
 ## When to Use
 
-The step uses the integral of the driving path over `[t, t+dt]`, so the path must be
+The step uses integrals of the driving path over `[t, t+dt]`, so the path must be
 resolved more finely than the solver steps. That happens when the noise is measured
 data or is generated on a fine grid and the solver is stepped coarsely. With a path
 that is only known at the solver's own steps there is no sub-step information to use
-and `RandomEM` is the appropriate method.
+and `RandomEM` is the appropriate method; the integrals then collapse to the endpoint
+rule and the order drops to 1, which is warned about when the cache is built.
+
+The finite differences perturb the noise argument by `sqrt(dt)`, so the error constant
+carries the third derivative of `f` in `W`. For a right-hand side oscillating in `W` at
+frequency `a` the asymptotic rate is reached once `a^2 * dt` is below about 1, and the
+measured rate is lower on coarser steps.
+
+The order is a pathwise order for Brownian driving signals. On a smoothly varying path
+the truncation that the scheme is built on keeps a different set of terms, so the rate
+is lower than `RandomHeun` reaches there.
 
 ## References
 
   - Asai, Numerical Methods for Random Ordinary Differential Equations and their
     Applications in Biology and Medicine, PhD thesis, Goethe University Frankfurt, 2016,
-    equation (3.24).
+    equation (3.24), whose double-integral coefficient is replaced here by the integral
+    taken from the path.
 """
 struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
 

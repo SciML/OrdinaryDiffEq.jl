@@ -29,4 +29,4 @@ This package is not intended to be used directly by end users. Instead, use one 
 | StochasticDiffEqWeak | DRI1, RI1, RI3, RI5, RI6, RDI1WM-RDI4WM, W2Ito1, RS1, RS2, PL1WM, NON, COM, IRI1, and more |
 | StochasticDiffEqIIF | IIF1M, IIF2M, IIF1Mil |
 | StochasticDiffEqLeaping | TauLeaping, CaoTauLeaping, ImplicitTauLeaping, ThetaTrapezoidalTauLeaping |
-| StochasticDiffEqRODE | RandomEM, RandomHeun, RandomTamedEM, BAOAB |
+| StochasticDiffEqRODE | RandomEM, RandomHeun, RandomTamedEM, RandomTaylor15, BAOAB |
