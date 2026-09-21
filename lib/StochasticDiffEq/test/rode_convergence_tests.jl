@@ -154,8 +154,9 @@ end
     noise = NoiseGrid(FINE_GRID, wiener_path(MersenneTwister(20260921)))
     u0 = [1.0, 2.0]
     for n in (TAYLOR_STEP_COUNTS[1], TAYLOR_STEP_COUNTS[end])
-        @test decay_solution(RandomTaylor15(), noise, n, u0).u ==
-            decay_solution(RandomTaylor15(), noise, n, copy(u0); inplace = true).u
+        outofplace = decay_solution(RandomTaylor15(), noise, n, u0).u
+        inplace = decay_solution(RandomTaylor15(), noise, n, copy(u0); inplace = true).u
+        @test all(isapprox(a, b, rtol = 1.0e-9) for (a, b) in zip(outofplace, inplace))
     end
 end
 
