@@ -99,12 +99,12 @@ end
 
 const TAYLOR_STEP_COUNTS = STEP_COUNTS[1:5]
 
-function taylor15_study(alg; seed = 20260921)
+function taylor15_study(alg; seed = 20260921, sigma = 1.0)
     rng = MersenneTwister(seed)
     errors = zeros(PATHS, length(TAYLOR_STEP_COUNTS))
     floors = zeros(PATHS)
     for m in 1:PATHS
-        path = wiener_path(rng)
+        path = sigma .* wiener_path(rng)
         g = cos.(5 .* path)
         exact = exp.(-cumulative_trapezoid(g, FINE_DT))
         floors[m] = maximum(abs, exp.(-cumulative_trapezoid(g[1:4:end], 4FINE_DT)) .- exact[1:4:end])
@@ -131,7 +131,15 @@ end
     @test taylor.strong[end] < euler.strong[end] / 10
 end
 
-@testset "RandomTaylor15 is Euler in the deterministic limit" begin
+@testset "RandomTaylor15 keeps its order on a Brownian path of another amplitude" begin
+    taylor = taylor15_study(RandomTaylor15(); sigma = 0.2)
+    euler = taylor15_study(RandomEM(); sigma = 0.2)
+    @test minimum(taylor.strong) > 3 * taylor.reference_floor
+    @test 1.5 < taylor.strong_order < 2.3
+    @test taylor.strong[end] < euler.strong[end] / 20
+end
+
+@testset "RandomTaylor15 is Heun in the deterministic limit" begin
     smooth(u, p, t, W) = -u
     exact = exp.(-FINE_GRID)
     noise = NoiseGrid(FINE_GRID, zeros(FINE_POINTS + 1))
@@ -145,9 +153,10 @@ end
         return maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n)
     end
     errors = [smooth_error(RandomTaylor15(), n) for n in STEP_COUNTS]
-    @test abs(fitted_slope(STEP_COUNTS, errors) - 1) < 0.2
-    @test smooth_solution(RandomTaylor15(), STEP_COUNTS[end]).u ==
-        smooth_solution(RandomEM(), STEP_COUNTS[end]).u
+    @test abs(fitted_slope(STEP_COUNTS, errors) - 2) < 0.2
+    taylor = smooth_solution(RandomTaylor15(), STEP_COUNTS[end]).u
+    heun = smooth_solution(RandomHeun(), STEP_COUNTS[end]).u
+    @test all(isapprox(a, b, rtol = 1.0e-9) for (a, b) in zip(taylor, heun))
 end
 
 @testset "RandomTaylor15 in-place matches out-of-place" begin

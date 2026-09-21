@@ -93,6 +93,7 @@ struct RandomTaylor15ConstantCache <: StochasticDiffEqConstantCache end
     uprev::uType
     tmp::uType
     rtmp::rateType
+    rtmp0::rateType
     rtmpp::rateType
     rtmpm::rateType
 end
@@ -126,7 +127,8 @@ function alg_cache(
     warn_unresolved_grid(prob, t, dt)
     tmp = zero(u)
     rtmp = zero(rate_prototype)
+    rtmp0 = zero(rate_prototype)
     rtmpp = zero(rate_prototype)
     rtmpm = zero(rate_prototype)
-    return RandomTaylor15Cache(u, uprev, tmp, rtmp, rtmpp, rtmpm)
+    return RandomTaylor15Cache(u, uprev, tmp, rtmp, rtmp0, rtmpp, rtmpm)
 end

@@ -94,15 +94,18 @@ struct RandomTamedEM <: StochasticDiffEqRODEAlgorithm end
 
 Order 1.5 scheme for Random Ordinary Differential Equations driven by a Wiener process
 supplied as a stored path. The derivatives of the Taylor scheme are replaced by finite
-differences of the right-hand side, so only evaluations of `f` are needed. Both step
-integrals are taken from the supplied path rather than from their Brownian expectations,
-which keeps the step exact in the path for driving signals that are not Brownian.
+differences of the right-hand side, so only evaluations of `f` are needed. The drift is
+advanced by a Heun step with the noise held at its value at `t`, and the noise enters
+through integrals of the path over the step, taken from the supplied path rather than
+from their Brownian expectations. The step therefore reduces to Heun's method when `f`
+does not depend on `W`, and its order does not depend on the amplitude of the path.
 
 ## Method Properties
 
   - **Problem type**: RODEs driven by a `NoiseGrid` with scalar values
   - **Pathwise order**: 1.5
   - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: 4 per step
   - **Noise usage**: reads the driving path between the step endpoints
 
 ## When to Use
@@ -119,16 +122,12 @@ carries the third derivative of `f` in `W`. For a right-hand side oscillating in
 frequency `a` the asymptotic rate is reached once `a^2 * dt` is below about 1, and the
 measured rate is lower on coarser steps.
 
-The order is a pathwise order for Brownian driving signals. On a smoothly varying path
-the truncation that the scheme is built on keeps a different set of terms, so the rate
-is lower than `RandomHeun` reaches there.
-
 ## References
 
   - Asai, Numerical Methods for Random Ordinary Differential Equations and their
     Applications in Biology and Medicine, PhD thesis, Goethe University Frankfurt, 2016,
-    equation (3.24), whose double-integral coefficient is replaced here by the integral
-    taken from the path.
+    equation (3.24), with the step integrals taken from the path and the drift advanced
+    by a Heun step rather than through the second difference.
 """
 struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
 

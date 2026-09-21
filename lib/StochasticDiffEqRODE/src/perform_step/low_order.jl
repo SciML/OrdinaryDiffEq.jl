@@ -81,15 +81,16 @@ end
     I1, I2 = path_integrals(W, t, dt, w0)
     ftmp = integrator.f(uprev, p, t, w0)
     utilde = uprev .+ dt .* ftmp
+    f0 = integrator.f(utilde, p, t + dt, w0)
     fp = integrator.f(utilde, p, t + dt, w0 + h)
     fm = integrator.f(utilde, p, t + dt, w0 - h)
-    u = uprev .+ dt .* ftmp .+ (I1 / (2 * h)) .* (fp .- fm) .+
-        (I2 / (2 * adt)) .* (fp .- 2 .* ftmp .+ fm)
+    u = uprev .+ (dt / 2) .* (ftmp .+ f0) .+ (I1 / (2 * h)) .* (fp .- fm) .+
+        (I2 / (2 * adt)) .* (fp .- 2 .* f0 .+ fm)
     integrator.u = u
 end
 
 @muladd function perform_step!(integrator, cache::RandomTaylor15Cache)
-    (; tmp, rtmp, rtmpp, rtmpm) = cache
+    (; tmp, rtmp, rtmp0, rtmpp, rtmpm) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     w0 = W.curW
     adt = abs(dt)
@@ -97,8 +98,9 @@ end
     I1, I2 = path_integrals(W, t, dt, w0)
     integrator.f(rtmp, uprev, p, t, w0)
     @.. tmp = uprev + dt * rtmp
+    integrator.f(rtmp0, tmp, p, t + dt, w0)
     integrator.f(rtmpp, tmp, p, t + dt, w0 + h)
     integrator.f(rtmpm, tmp, p, t + dt, w0 - h)
-    @.. u = uprev + dt * rtmp + (I1 / (2 * h)) * (rtmpp - rtmpm) +
-        (I2 / (2 * adt)) * (rtmpp - 2 * rtmp + rtmpm)
+    @.. u = uprev + (dt / 2) * (rtmp + rtmp0) + (I1 / (2 * h)) * (rtmpp - rtmpm) +
+        (I2 / (2 * adt)) * (rtmpp - 2 * rtmp0 + rtmpm)
 end
