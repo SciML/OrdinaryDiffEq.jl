@@ -1483,7 +1483,7 @@ version = "2.0.1"
 
 [[deps.OrdinaryDiffEq]]
 deps = ["ADTypes", "CommonSolve", "DiffEqBase", "DocStringExtensions", "OrdinaryDiffEqBDF", "OrdinaryDiffEqCore", "OrdinaryDiffEqDefault", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqVerner", "SciMLBase", "SciMLLogging"]
-path = "/home/runner/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
+path = "/home/runner/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 version = "7.8.1"
 
@@ -1694,7 +1694,7 @@ version = "2.2.2"
 deps = ["CommonSolve", "DiffEqBase", "FastBroadcast", "FunctionWrappers", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SymbolicUtils", "Symbolics", "TaylorDiff", "TruncatedStacktraces"]
 path = "../lib/OrdinaryDiffEqTaylorSeries"
 uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
-version = "2.3.0"
+version = "2.4.0"
 
 [[deps.OrdinaryDiffEqTsit5]]
 deps = ["CommonSolve", "DiffEqBase", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "TruncatedStacktraces"]
