@@ -94,6 +94,15 @@ _erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
 function _erase_callback_types(callback)
     Base.@nospecialize callback
     callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
+    # Normalize the container on all Julia versions, but preserve callback element
+    # types on older Julia for Enzyme forward mode (see test/AD). In particular,
+    # collecting heterogeneous tuples with their common supertype would erase them.
+    if VERSION < v"1.12" && !isempty(callbacks)
+        return CallbackSet(
+            collect(Union{map(typeof, callbacks.continuous_callbacks)...}, callbacks.continuous_callbacks),
+            collect(Union{map(typeof, callbacks.discrete_callbacks)...}, callbacks.discrete_callbacks)
+        )
+    end
     return CallbackSet(
         collect(Any, callbacks.continuous_callbacks),
         collect(Any, callbacks.discrete_callbacks)
