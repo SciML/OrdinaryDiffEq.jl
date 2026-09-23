@@ -97,6 +97,10 @@ const _ERASABLE_CALLBACK_PROBLEMS = Union{
 # through continuous callbacks (see test/AD), and it aborts LLVM verification on the
 # erased vector's dynamic dispatch instead of throwing a catchable error; 1.11+ gates
 # Enzyme off, so erasure is enabled only where it has been validated.
+# Callbacks follow the specialization of the problem's function: the levels that trade
+# runtime for compile time erase them, while `FullSpecialize` and
+# `FunctionWrapperSpecialize` keep them concretely typed. `AutoRespecialize` extends
+# `AutoSpecialize`, so it erases them as `AutoSpecialize` does.
 function _erases_callback_types(prob)
     VERSION >= v"1.12" || return false
     prob isa _ERASABLE_CALLBACK_PROBLEMS || return false
@@ -105,6 +109,7 @@ function _erases_callback_types(prob)
     specialize = SciMLBase.specialization(prob.f)
     return specialize === SciMLBase.AutoSpecialize ||
         specialize === SciMLBase.AutoDespecialize ||
+        specialize === SciMLBase.AutoRespecialize ||
         specialize === SciMLBase.NoSpecialize
 end
 
