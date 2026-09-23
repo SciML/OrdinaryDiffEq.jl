@@ -478,13 +478,15 @@ function residual_to_z_scale(nlsolver, isdae)
 end
 
 """
-    StageConvergenceMode(norm, κ)
+    StageConvergenceMode(norm, κ, γΔt)
 
 Termination mode for a complete inner solve on a `NonlinearSolveNoInitCache` that applies,
 to every inner iteration, the test `nlsolve!` applies to every outer one: with `ndz` the
 iteration's displacement in the integrator's weighted `norm`, an iteration converges when
 `θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` (or `θ ≈ 1` at `ndz ≤ 1`, the floating-point
-limit).
+limit), or at once when `γΔt⋅fu` has fallen to the roundoff floor of the iterate, as in
+`stage_unsolved` — at the root a trust-region solver cannot take another step, since its
+reduction ratio is all roundoff.
 
 A no-init cache cannot be stepped, so each outer iteration is a whole inner solve, and it
 ends on the inner solver's own criterion. Left at its default, `max|r| ≤ eps^(4/5)` on a
@@ -500,9 +502,10 @@ every outer iteration is a new inner solve and needs its own rate `θ`. An unmov
 not a first iteration either: a trust-region solver checks its initial point before it has
 taken a step.
 """
-struct StageConvergenceMode{N, K} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
+struct StageConvergenceMode{N, K, S} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
     norm::N
     κ::K
+    γΔt::S
 end
 
 mutable struct StageConvergenceCache{M, T}
@@ -517,7 +520,11 @@ function CommonSolve.init(
 end
 
 function (cache::StageConvergenceCache)(fu, u, uprev)
-    ndz = cache.mode.norm(u .- uprev)
+    (; norm, κ, γΔt) = cache.mode
+    resid = abs(γΔt) * maxabs(fu)
+    resid <= roundoff_level(typeof(resid)) * max(maxabs_axpy(γΔt, u, fu), maxabs(u)) &&
+        return true
+    ndz = norm(u .- uprev)
     ndzprev = cache.ndzprev
     if ndzprev < 0
         iszero(ndz) || (cache.ndzprev = ndz)
@@ -526,7 +533,7 @@ function (cache::StageConvergenceCache)(fu, u, uprev)
     cache.ndzprev = ndz
     θ = ndz / ndzprev
     abs(θ - one(θ)) <= eps_around_one(θ) && return ndz <= one(ndz)
-    return θ < 1 && θ / (1 - θ) * ndz < cache.mode.κ
+    return θ < 1 && θ / (1 - θ) * ndz < κ
 end
 
 """
@@ -557,7 +564,8 @@ function noinit_termination_kwargs(nlsolver, integrator)
     (; opts, uprev, t) = integrator
     norm = StageDisplacementNorm(uprev, opts.abstol, opts.reltol, opts.internalnorm, t)
     κ = convert(real(eltype(nlsolver.z)), nlsolver.κ)
-    return (; termination_condition = StageConvergenceMode(norm, κ))
+    γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+    return (; termination_condition = StageConvergenceMode(norm, κ, γΔt))
 end
 
 function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)

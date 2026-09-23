@@ -130,7 +130,7 @@ end
         # The post-resize rebuild must preserve the no-init tolerances exactly as the
         # build path does; the only termination criterion is the per-solve one.
         @test !iszero(NonlinearSolveBase.get_abstol(nlcache))
-        @test nlcache.kwargs.termination_condition isa
+        @test nlcache.kwargs[:termination_condition] isa
             OrdinaryDiffEqNonlinearSolve.StageConvergenceMode
     end
 end
