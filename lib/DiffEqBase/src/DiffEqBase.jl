@@ -8,17 +8,18 @@ import PrecompileTools
 
 import FastPower
 
-using ArrayInterface
+import ArrayInterface
 
-using StaticArraysCore # data arrays
+using StaticArraysCore: StaticArraysCore, Size # data arrays
 
-using LinearAlgebra, Printf
+using LinearAlgebra: LinearAlgebra, lu, norm
+using Printf: Printf, @printf
 
-using DocStringExtensions
+using DocStringExtensions: DocStringExtensions, TYPEDEF
 
 using FunctionWrappers: FunctionWrapper
 
-using MuladdMacro
+using MuladdMacro: MuladdMacro, @muladd
 
 
 using FastBroadcast: @.., Serial, Threaded
@@ -26,26 +27,29 @@ using FastBroadcast: @.., Serial, Threaded
 import RecursiveArrayTools
 import TruncatedStacktraces
 
-using Setfield
+using Setfield: Setfield, @set, @set!
 
 
-using Markdown
+import Markdown
 
-using ConcreteStructs: @concrete
 using FastClosures: @closure
 
 import FunctionWrappersWrappers
-
-using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
     MessageLevel, @verbosity_specifier, verbosity_to_bool, @SciMLMessage
 
-using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
+using SciMLOperators: SciMLOperators, AbstractSciMLOperator,
+    AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 using SciMLOperators: isconstant, islinear
 import SciMLOperators: update_coefficients, update_coefficients!
 
+import SciMLBase
+# This list is a namespace contract: many names are not used by DiffEqBase
+# itself but are reached through `DiffEqBase.X` by its extensions, downstream
+# sublibraries and packages (DelayDiffEq, Sundials, SciMLSensitivity, ...),
+# and test files (see the `no_stale_explicit_imports` ignore in test/qa/qa.jl).
 using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractDiffEqInterpolation,
     DECallback, AbstractDEOptions, DECache, AbstractContinuousCallback,
@@ -81,7 +85,7 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     postamble!, last_step_failed, has_stats,
     initialize_dae!, build_solution, solution_new_retcode,
     solution_new_tslocation, plot_indices, NonlinearAliasSpecifier,
-    NullParameters, isinplace, AbstractADType, AbstractDiscretization,
+    NullParameters, isinplace, AbstractDiscretization,
     DISCRETE_OUTOFPLACE_DEFAULT, DISCRETE_INPLACE_DEFAULT,
     has_analytic, calculate_solution_errors!, AbstractNoiseProcess,
     has_colorvec, parameterless_type, undefined_exports,
@@ -91,8 +95,15 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     NoAD, @add_kwonly,
     calculate_ensemble_errors,
     DEFAULT_REDUCTION, isautodifferentiable,
-    isadaptive, isdiscrete, has_syms, AbstractAnalyticalSolution,
-    wrap_sol
+    isdiscrete, has_syms, AbstractAnalyticalSolution,
+    wrap_sol,
+    BVProblem, CallbackSet, ContinuousCallback, DAEFunction, DAEProblem,
+    DDEProblem, DiscreteCallback, DiscreteProblem, IntervalNonlinearProblem,
+    ODEFunction, ODEProblem, PDEProblem, ReturnCode, SDDEProblem, SDEFunction,
+    SDEProblem, SplitFunction, SteadyStateProblem, VectorContinuousCallback,
+    addsteps!, change_t_via_interpolation!, get_tmp_cache,
+    reeval_internals_due_to_modification!, remake, savevalues!,
+    set_proposed_dt!
 
 import SciMLBase: solve, init, step!, solve!, __init, __solve,
     isadaptive, wrapfun_oop, wrapfun_iip,
@@ -110,8 +121,8 @@ import SciMLBase: solve, init, step!, solve!, __init, __solve,
 
 import SciMLStructures
 
-using Reexport
-Reexport.@reexport using SciMLBase
+using Reexport: @reexport
+@reexport using SciMLBase
 
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
