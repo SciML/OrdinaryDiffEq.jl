@@ -221,6 +221,9 @@ end
         )
         worst = 0.0
         for _ in integ
+            # The iterator also yields the state a `MaxIters` abort leaves behind, whose `u` is
+            # a rejected trial value rather than a stage the nonlinear solver accepted.
+            integ.accept_step || continue
             worst = max(worst, implicit_euler_stage_error(integ, s))
         end
         @testset "$(nameof(typeof(ialg))) $(iip ? "iip" : "oop")" begin

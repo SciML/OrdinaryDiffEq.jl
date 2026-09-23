@@ -929,7 +929,8 @@ function build_nlsolver(
                 weight,
                 dz,
                 est_linsolve,
-                zero(tstep), true, t, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition,
+                -one(uTolType)
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
@@ -1149,7 +1150,8 @@ function build_nlsolver(
                 W_ref === nothing ? nothing : J, W_ref,
                 W_ref === nothing ? nothing : uf,
                 nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, t, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition,
+                -one(uTolType)
             )
         else
             # Build separated DAE Jacobian cache if applicable
