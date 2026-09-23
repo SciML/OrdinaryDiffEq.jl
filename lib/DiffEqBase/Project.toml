@@ -144,6 +144,7 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 LabelledArrays = "2ee39098-c373-598a-b85f-a56591580800"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+MonteCarloMeasurements = "0987c9cc-fe09-11e8-30f0-b96dd679fdca"
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -159,4 +160,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["DiffEqCallbacks", "Distributed", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "RecursiveArrayToolsRaggedArrays","ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "Aqua"]
+test = ["DiffEqCallbacks", "Distributed", "Measurements", "MonteCarloMeasurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "RecursiveArrayToolsRaggedArrays","ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "Aqua", "Tracker"]
