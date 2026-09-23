@@ -924,8 +924,16 @@ end
 # wrapping step narrow back, and that step is skipped for a wrapped `f`. So an `f` that
 # is already wrapped must not be despecialized again, or concretizing a concretized
 # problem would change its type.
-_is_concretized(f) = !(f isa SDEFunction) &&
-    f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+# Functions without an `f` field (e.g. `DynamicalODEFunction`, which stores `f1`/`f2`)
+# are never wrapped here.
+_is_concretized(f) = hasfield(typeof(f), :f) &&
+    getfield(f, :f) isa FunctionWrappersWrappers.FunctionWrappersWrapper
+# An `SDEFunction` is only wrapped by the non-ForwardDiff path, and it counts as wrapped
+# when both the drift and the diffusion are, matching the skip condition of the wrapping
+# step below.
+_is_concretized(f::SDEFunction) =
+    f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper &&
+    f.g isa FunctionWrappersWrappers.FunctionWrappersWrapper
 
 function _despecialize_auxiliary_functions(f)
     if isdefined(f, :g) && f.g !== nothing &&
