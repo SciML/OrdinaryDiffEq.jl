@@ -69,7 +69,7 @@ end
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp::rateType
     k::rateType
     fsalfirst::rateType
     half::uEltypeNoUnits
@@ -89,7 +89,7 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     half = uEltypeNoUnits(1 // 2)
-    return LeapfrogDriftKickDriftCache(u, uprev, k, tmp, fsalfirst, half)
+    return LeapfrogDriftKickDriftCache(u, uprev, tmp, k, fsalfirst, half)
 end
 
 function alg_cache(
@@ -105,7 +105,7 @@ end
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp::rateType
     k::rateType
     fsalfirst::rateType
     half::uEltypeNoUnits
@@ -121,11 +121,11 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
+    tmp = zero(rate_prototype)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     half = uEltypeNoUnits(1 // 2)
-    return VerletLeapfrogCache(u, uprev, k, tmp, fsalfirst, half)
+    return VerletLeapfrogCache(u, uprev, tmp, k, fsalfirst, half)
 end
 
 function alg_cache(
@@ -142,7 +142,7 @@ end
 @cache struct SymplecticGenericCache{uType, rateType, tableauType} <: HamiltonMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp::rateType
     k::rateType
     fsalfirst::rateType
     tab::tableauType
@@ -175,13 +175,13 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
+    tmp = zero(rate_prototype)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     tab = _symplectic_tableau(
         alg, constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
     )
-    return SymplecticGenericCache(u, uprev, k, tmp, fsalfirst, tab)
+    return SymplecticGenericCache(u, uprev, tmp, k, fsalfirst, tab)
 end
 
 function alg_cache(
