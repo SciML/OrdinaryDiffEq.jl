@@ -478,48 +478,86 @@ function residual_to_z_scale(nlsolver, isdae)
 end
 
 """
-    StageResidualNorm(scale, uprev, abstol, reltol)
+    StageConvergenceMode(norm, κ)
 
-The integrator's error norm for a no-init inner solve's residual: `scale * r` in the units
-of `z`, weighted by `abstol + reltol * |uprev|` and reduced with the max-norm (never below
-the default RMS norm).
+Termination mode for a complete inner solve on a `NonlinearSolveNoInitCache` that applies,
+to every inner iteration, the test `nlsolve!` applies to every outer one: with `ndz` the
+iteration's displacement in the integrator's weighted `norm`, an iteration converges when
+`θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` (or `θ ≈ 1` at `ndz ≤ 1`, the floating-point
+limit).
+
+A no-init cache cannot be stepped, so each outer iteration is a whole inner solve, and it
+ends on the inner solver's own criterion. Left at its default, `max|r| ≤ eps^(4/5)` on a
+residual that carries a `1/(γΔt)` factor, that criterion is unrelated to the integrator's
+tolerances: on a problem of small magnitude it accepts a stage the `κ`/`η` test would
+reject, and on one of large magnitude it lies below roundoff, so every solve returns
+`MaxIters` and the step is rejected until `dt` collapses. A residual bound in the weighted
+norm is not enough either: on a stiff, non-normal Jacobian a small weighted residual can
+still leave a large weighted displacement.
+
+The first iteration never converges on its own, unlike in `nlsolve!` (`ndz < 1e-5`), because
+every outer iteration is a new inner solve and needs its own rate `θ`. An unmoved iterate is
+not a first iteration either: a trust-region solver checks its initial point before it has
+taken a step.
 """
-struct StageResidualNorm{S, U, A, R}
-    scale::S
+struct StageConvergenceMode{N, K} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
+    norm::N
+    κ::K
+end
+
+mutable struct StageConvergenceCache{M, T}
+    mode::M
+    ndzprev::T
+end
+
+function CommonSolve.init(
+        ::AbstractNonlinearProblem, mode::StageConvergenceMode, du, u, args...; kwargs...
+    )
+    return StageConvergenceCache(mode, -one(real(float(eltype(u)))))
+end
+
+function (cache::StageConvergenceCache)(fu, u, uprev)
+    ndz = cache.mode.norm(u .- uprev)
+    ndzprev = cache.ndzprev
+    if ndzprev < 0
+        iszero(ndz) || (cache.ndzprev = ndz)
+        return false
+    end
+    cache.ndzprev = ndz
+    θ = ndz / ndzprev
+    abs(θ - one(θ)) <= eps_around_one(θ) && return ndz <= one(ndz)
+    return θ < 1 && θ / (1 - θ) * ndz < cache.mode.κ
+end
+
+"""
+    StageDisplacementNorm(uprev, abstol, reltol, internalnorm, t)
+
+The integrator's error norm of a stage displacement, weighted by `abstol + reltol⋅|uprev|`.
+"""
+struct StageDisplacementNorm{U, A, R, N, T}
     uprev::U
     abstol::A
     reltol::R
+    internalnorm::N
+    t::T
 end
-function (n::StageResidualNorm)(r)
-    return maximum(abs.(n.scale .* r) ./ (n.abstol .+ n.reltol .* abs.(n.uprev)))
+function (n::StageDisplacementNorm)(dz)
+    atmp = calculate_residuals(dz, n.uprev, n.uprev, n.abstol, n.reltol, n.internalnorm, n.t)
+    return n.internalnorm(atmp, n.t)
 end
 
-"""
-    noinit_termination_kwargs(nlsolver, integrator)
+# Inner algorithms whose every step solves the Newton system with the true (or reused `W`)
+# Jacobian, so that the displacement measures the distance to the root. The quasi-Newton ones
+# (`SimpleBroyden`, `SimpleKlement`, ...) restart each solve from a scaled identity, and their
+# steps can be small far from the root; external wrappers reject a custom mode outright.
+const StageConvergenceAlgorithm = Union{SimpleNewtonRaphson, SimpleTrustRegion}
 
-Termination options for a complete inner solve on a `NonlinearSolveNoInitCache`.
-
-Such a cache cannot be stepped, so each outer iteration runs a whole solve, and the solve
-ends on the inner solver's own criterion. Left at its default — `‖r‖∞ ≤ eps^(4/5)` on a
-residual that carries a `1/(γΔt)` factor — that criterion ignores the integrator's
-tolerances: on a problem of small magnitude it accepts a stage the `κ`/`η` test would
-reject, and on one of large magnitude it lies below roundoff, so every solve returns
-`MaxIters` and the step is rejected until `dt` collapses. Instead the solve stops once the
-residual, carried into `z` units, is within `κ` in the integrator's weighted norm — the
-threshold `nlsolve!` applies to the outer displacement.
-
-A `precondition` replaces the residual the inner solver sees with `G(r)`, whose units are the
-user's, so the inner defaults are kept then.
-"""
 function noinit_termination_kwargs(nlsolver, integrator)
-    nlsolver.cache.precondition === nothing || return (;)
-    (; opts, uprev) = integrator
-    scale = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
-    norm = StageResidualNorm(scale, uprev, opts.abstol, opts.reltol)
-    return (;
-        abstol = convert(real(eltype(nlsolver.z)), nlsolver.κ),
-        termination_condition = NonlinearSolveBase.AbsNormTerminationMode(norm),
-    )
+    nlsolver.cache.cache.alg isa StageConvergenceAlgorithm || return (;)
+    (; opts, uprev, t) = integrator
+    norm = StageDisplacementNorm(uprev, opts.abstol, opts.reltol, opts.internalnorm, t)
+    κ = convert(real(eltype(nlsolver.z)), nlsolver.κ)
+    return (; termination_condition = StageConvergenceMode(norm, κ))
 end
 
 function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
