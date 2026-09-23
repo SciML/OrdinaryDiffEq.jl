@@ -232,9 +232,8 @@ function initialize!(
             end
             cache.prob = new_prob
             if cache.cache isa NonlinearSolveNoInitCache
-                # A no-init cache is `solve!`-driven, so it must keep terminating on its own
-                # (nonzero, default) tolerances here exactly as on the build path: rebuilding
-                # it with the zeroed tolerances below would leave every complete inner solve
+                # A no-init cache is `solve!`-driven, so it is rebuilt exactly as on the build
+                # path: the zeroed tolerances below would leave every complete inner solve
                 # returning `MaxIters`.
                 cache.cache = init(
                     new_prob, cache.cache.alg;
@@ -478,6 +477,51 @@ function residual_to_z_scale(nlsolver, isdae)
         inv(cache.invγdt)
 end
 
+"""
+    StageResidualNorm(scale, uprev, abstol, reltol)
+
+The integrator's error norm for a no-init inner solve's residual: `scale * r` in the units
+of `z`, weighted by `abstol + reltol * |uprev|` and reduced with the max-norm (never below
+the default RMS norm).
+"""
+struct StageResidualNorm{S, U, A, R}
+    scale::S
+    uprev::U
+    abstol::A
+    reltol::R
+end
+function (n::StageResidualNorm)(r)
+    return maximum(abs.(n.scale .* r) ./ (n.abstol .+ n.reltol .* abs.(n.uprev)))
+end
+
+"""
+    noinit_termination_kwargs(nlsolver, integrator)
+
+Termination options for a complete inner solve on a `NonlinearSolveNoInitCache`.
+
+Such a cache cannot be stepped, so each outer iteration runs a whole solve, and the solve
+ends on the inner solver's own criterion. Left at its default — `‖r‖∞ ≤ eps^(4/5)` on a
+residual that carries a `1/(γΔt)` factor — that criterion ignores the integrator's
+tolerances: on a problem of small magnitude it accepts a stage the `κ`/`η` test would
+reject, and on one of large magnitude it lies below roundoff, so every solve returns
+`MaxIters` and the step is rejected until `dt` collapses. Instead the solve stops once the
+residual, carried into `z` units, is within `κ` in the integrator's weighted norm — the
+threshold `nlsolve!` applies to the outer displacement.
+
+A `precondition` replaces the residual the inner solver sees with `G(r)`, whose units are the
+user's, so the inner defaults are kept then.
+"""
+function noinit_termination_kwargs(nlsolver, integrator)
+    nlsolver.cache.precondition === nothing || return (;)
+    (; opts, uprev) = integrator
+    scale = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+    norm = StageResidualNorm(scale, uprev, opts.abstol, opts.reltol)
+    return (;
+        abstol = convert(real(eltype(nlsolver.z)), nlsolver.κ),
+        termination_condition = NonlinearSolveBase.AbsNormTerminationMode(norm),
+    )
+end
+
 function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
     if new_jac
         nlcache.J = calc_J(integrator, nlcache)
@@ -506,7 +550,7 @@ end
         end
         innersol = solve(
             NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg;
-            conditioning_kwargs(cache)...
+            conditioning_kwargs(cache)..., noinit_termination_kwargs(nlsolver, integrator)...
         )
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
@@ -581,6 +625,14 @@ end
         # either: the reused `W` only serves as the inner Newton's Jacobian (`WReuseJac`),
         # where staleness costs convergence rate, not the root the full solve lands on. A
         # complete solve leaves no half-taken step behind, so nothing for the residual to veto.
+        # Each solve starts from the current iterate: restarting from the predictor stored by
+        # `initialize!` would reproduce the previous solve, so the second outer iteration would
+        # always see a zero displacement and accept.
+        if nlstep_data === nothing
+            SciMLBase.reinit!(
+                nlcache, copy(z); noinit_termination_kwargs(nlsolver, integrator)...
+            )
+        end
         innersol = solve!(nlcache)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(atmp), Inf)

@@ -906,10 +906,10 @@ function build_nlsolver(
                 # An inner algorithm with no `__init` (every SimpleNonlinearSolve algorithm)
                 # lands in this fallback cache, which only records the kwargs and splats them
                 # into a complete `solve` per outer iteration — it cannot be driven one
-                # `step!` at a time, so the integrator cannot own its convergence. The zeroed
-                # tolerances above would then make every inner solve run to `MaxIters`
-                # (except when the residual lands on exactly 0.0), so rebuild without them:
-                # the inner solver terminates on its own default (nonzero) tolerances.
+                # `step!` at a time. The zeroed tolerances above would then make every inner
+                # solve run to `MaxIters` (except when the residual lands on exactly 0.0), so
+                # rebuild without them; `compute_step!` passes each solve a criterion in the
+                # integrator's own norm (`noinit_termination_kwargs`).
                 cache = init(
                     prob, inner_alg; verbose = verbose.nonlinear_verbosity,
                     conditioning_kwargs(precondition, postcondition)...
@@ -1137,8 +1137,8 @@ function build_nlsolver(
                         copy(ztmp), nlp_params
                     )
                 end
-                # `solve!`-driven fallback cache: it must keep terminating on its own
-                # default (nonzero) tolerances (see the in-place branch above).
+                # `solve!`-driven fallback cache: no zeroed tolerances (see the in-place
+                # branch above).
                 cache = init(
                     prob, inner_alg; verbose = verbose.nonlinear_verbosity,
                     conditioning_kwargs(precondition, postcondition)...
