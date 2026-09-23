@@ -7,6 +7,21 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 @inline _set_val!(vals, j, v) = (vals[j] = v; nothing)
 @inline _set_val!(vals::RecursiveArrayTools.AbstractVectorOfArray, j, v) = (vals.u[j] = v; nothing)
 
+@inline function _check_interpolant_idxs_out(u, out, idxs)
+    if idxs isa Union{Integer, AbstractVector{<:Integer}} && u isa AbstractArray
+        checkbounds(u, idxs)
+    end
+    if idxs isa AbstractVector{<:Integer}
+        length(out) == length(idxs) ||
+            throw(
+            DimensionMismatch(
+                "in-place interpolation `out` has length $(length(out)) but `idxs` has length $(length(idxs))"
+            )
+        )
+    end
+    return nothing
+end
+
 const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
 Derivative order too high for interpolation order. An interpolation derivative is
 only accurate to a certain derivative. For example, a second order interpolation
@@ -300,6 +315,7 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         ode_interpolant!(
             val, Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -520,6 +536,7 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(
             val, Θ, integrator, integrator.cache.caches,
@@ -879,6 +896,8 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    isempty(vals) ||
+        _check_interpolant_idxs_out(timeseries[1], _get_val(vals, 1), idxs)
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
 
@@ -1233,6 +1252,7 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    _check_interpolant_idxs_out(timeseries[1], out, idxs)
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left

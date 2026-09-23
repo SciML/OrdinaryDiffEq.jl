@@ -133,6 +133,7 @@ end
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @tsit5pre0
+    # SAFETY: `idxs`/`out` are validated by the OrdinaryDiffEqCore interpolation entry points.
     @inbounds for (j, i) in enumerate(idxs)
         out[j] = y₀[i] +
             dt * (
