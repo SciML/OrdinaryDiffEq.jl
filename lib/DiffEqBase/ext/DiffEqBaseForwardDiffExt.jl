@@ -55,7 +55,7 @@ function wrapfun_oop(ff, inputs::Tuple = ())
     if !isempty(inputs)
         IT = Tuple{map(typeof, inputs)...}
         if IT ∉ NORECOMPILE_OOP_SUPPORTED_ARGS
-            throw(NoRecompileArgumentError(IT))
+            throw(DiffEqBase.NoRecompileArgumentError(IT))
         end
     end
     return FunctionWrappersWrappers.FunctionWrappersWrapper(
