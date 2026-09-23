@@ -6,6 +6,8 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 @inline _get_val(vals::RecursiveArrayTools.AbstractVectorOfArray, j) = vals.u[j]
 @inline _set_val!(vals, j, v) = (vals[j] = v; nothing)
 @inline _set_val!(vals::RecursiveArrayTools.AbstractVectorOfArray, j, v) = (vals.u[j] = v; nothing)
+@inline _vals_indices(vals) = eachindex(vals)
+@inline _vals_indices(vals::RecursiveArrayTools.AbstractVectorOfArray) = eachindex(vals.u)
 
 @noinline function _throw_interpolant_length_mismatch(len_out, len_idxs)
     return throw(
@@ -15,14 +17,24 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
     )
 end
 
-@inline function _check_interpolant_idxs_out(u, out, idxs)
+@inline function _check_interpolant_idxs(u, idxs)
     if idxs isa Union{Integer, AbstractVector{<:Integer}} && u isa AbstractArray
         checkbounds(u, idxs)
     end
+    return nothing
+end
+
+@inline function _check_interpolant_out_length(out, idxs)
     if idxs isa AbstractVector{<:Integer}
         length(out) == length(idxs) ||
             _throw_interpolant_length_mismatch(length(out), length(idxs))
     end
+    return nothing
+end
+
+@inline function _check_interpolant_idxs_out(u, out, idxs)
+    _check_interpolant_idxs(u, idxs)
+    _check_interpolant_out_length(out, idxs)
     return nothing
 end
 
@@ -902,8 +914,9 @@ function ode_interpolation!(
     (; ts, timeseries, ks, f, cache, differential_vars) = id
     if idxs !== nothing && !isempty(vals)
         u₁ = timeseries[1]
-        for i in eachindex(vals)
-            _check_interpolant_idxs_out(u₁, _get_val(vals, i), idxs)
+        _check_interpolant_idxs(u₁, idxs)
+        for i in _vals_indices(vals)
+            _check_interpolant_out_length(_get_val(vals, i), idxs)
         end
     end
     @inbounds tdir = sign(ts[end] - ts[1])

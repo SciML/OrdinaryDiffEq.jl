@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, Test
+using OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, RecursiveArrayTools, Test
 
 # In-place interpolation must reject mismatched/out-of-range `idxs`/`out` before `@inbounds` kernels.
 function growth!(du, u, p, t)
@@ -22,6 +22,10 @@ end
     @test_throws BoundsError sol(outs_ok, [0.4, 0.5]; idxs = [1, 10^6])
     outs_mixed = [zeros(2), zeros(1)]
     @test_throws DimensionMismatch sol(outs_mixed, [0.4, 0.5]; idxs = 1:2)
+    outs_voa = VectorOfArray([zeros(2) for _ in 1:3])
+    ts3 = [0.3, 0.4, 0.5]
+    sol(outs_voa, ts3; idxs = 1:2)
+    @test outs_voa.u == sol(ts3; idxs = 1:2).u
 
     # integrator-path interpolation
     integ = init(prob, Tsit5())
