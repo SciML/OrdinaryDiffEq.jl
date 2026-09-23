@@ -815,7 +815,6 @@ function perform_step!(
 
     k = order
     κlist = alg.kappa
-    κ = κlist[k]
     if cache.consfailcnt > 0
         # Deep copy to avoid aliasing: D[i] and prevD[i] must not share arrays
         for i in eachindex(D)
@@ -833,6 +832,10 @@ function perform_step!(
             D[j] = D_new[j]
         end
     end
+    # Cold start / post-restart: D history is zero. Match QNDF1 startup (κ=0 →
+    # plain BDF1) so the EE predictor difference is O(h²) and the factor is 1/2.
+    cold_start = k == 1 && iszero(D[1])
+    κ = cold_start ? zero(κlist[k]) : κlist[k]
 
     α₀ = 1
     β₀ = inv((1 - κ) * γₖ[k])
@@ -849,8 +852,10 @@ function perform_step!(
             ϕ = @.. ϕ + γₖ[i] * D[i]
         end
     end
+    # Keep formula predictor u₀ in the residual; EE for Newton guess and error.
+    u₀_err = cold_start ? (uprev + dt * integrator.fsalfirst) : u₀
     markfirststage!(nlsolver)
-    nlsolver.z = u₀
+    nlsolver.z = u₀_err
     mass_matrix = f.mass_matrix
 
     if mass_matrix === I
@@ -871,17 +876,20 @@ function perform_step!(
 
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
+        dd_est = cold_start ? (u - u₀_err) : dd
+        # On cold start κ was zeroed, so use 1/2 (BDF1) rather than alg.kappa[1].
+        ec = cold_start ? inv(oftype(dt, 2)) : error_constant(integrator, k)
         if cache.consfailcnt > 1 && mass_matrix !== I
             # if we get repeated failure and mass_matrix !== I it's likely that
             # there's a discontinuity on the algebraic equations
             atmp = calculate_residuals(
-                mass_matrix * dd, uprev, u, abstol, reltol,
+                mass_matrix * dd_est, uprev, u, abstol, reltol,
                 internalnorm, t
             )
         else
-            atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
+            atmp = calculate_residuals(dd_est, uprev, u, abstol, reltol, internalnorm, t)
         end
-        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
+        OrdinaryDiffEqCore.set_EEst!(integrator, ec * internalnorm(atmp, t))
         if k > 1
             atmpm1 = calculate_residuals(
                 D[k],
@@ -957,7 +965,6 @@ function perform_step!(
 
     k = order
     κlist = alg.kappa
-    κ = κlist[k]
     if cache.consfailcnt > 0
         for i in eachindex(D)
             copyto!(D[i], cache.prevD[i])
@@ -979,6 +986,9 @@ function perform_step!(
         cache.D = D
         cache.Dtmp = Dtmp
     end
+    # Cold start / post-restart: D history is zero. Match QNDF1 startup (κ=0).
+    cold_start = k == 1 && iszero(D[1])
+    κ = cold_start ? zero(κlist[k]) : κlist[k]
 
     α₀ = 1
     β₀ = inv((1 - κ) * γₖ[k])
@@ -995,8 +1005,13 @@ function perform_step!(
     for i in 1:k
         @.. broadcast = false ϕ += γₖ[i] * D[i]
     end
+    # Keep formula u₀ in the residual; EE for Newton guess and error.
     markfirststage!(nlsolver)
-    @.. broadcast = false nlsolver.z = u₀
+    if cold_start
+        @.. broadcast = false nlsolver.z = uprev + dt * integrator.fsalfirst
+    else
+        @.. broadcast = false nlsolver.z = u₀
+    end
     mass_matrix = f.mass_matrix
 
     if mass_matrix === I
@@ -1020,17 +1035,22 @@ function perform_step!(
 
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
+        if cold_start
+            @.. broadcast = false utilde = dd - dt * integrator.fsalfirst
+        end
+        dd_est = cold_start ? utilde : dd
+        ec = cold_start ? inv(oftype(dt, 2)) : error_constant(integrator, k)
         if cache.consfailcnt > 1 && mass_matrix !== I
             # if we get repeated failure and mass_matrix !== I it's likely that
             # there's a discontinuity on the algebraic equations
             calculate_residuals!(
-                atmp, mul!(nlsolver.tmp, mass_matrix, dd), uprev, u,
+                atmp, mul!(nlsolver.tmp, mass_matrix, dd_est), uprev, u,
                 abstol, reltol, internalnorm, t
             )
         else
-            calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
+            calculate_residuals!(atmp, dd_est, uprev, u, abstol, reltol, internalnorm, t)
         end
-        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
+        OrdinaryDiffEqCore.set_EEst!(integrator, ec * internalnorm(atmp, t))
         if k > 1
             calculate_residuals!(
                 atmpm1, D[k], uprev, u, abstol,
@@ -1261,13 +1281,18 @@ function perform_step!(
     n_pred = k + 1
     pred_thetas = Vector{typeof(t)}(undef, n_pred)
     u₀ = zero(u)
-    if iters_from_event >= 1
+    if k == 1
+        # Order-1: explicit-Euler predictor. Avoids O(h) constant predictor on
+        # cold start / restart, and avoids Lagrange with ulp-spaced history when
+        # dt ≈ eps(t). With this predictor, (u - u₀)/2 is the BDF1 LTE.
+        u₀ = uprev + dt * integrator.fsalfirst
+    elseif iters_from_event >= 1
         for j in 1:n_pred
             pred_thetas[j] = (ts[j] - t) / dt
         end
         u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
     else
-        u₀ = u
+        u₀ = uprev + dt * integrator.fsalfirst
     end
     markfirststage!(nlsolver)
 
@@ -1325,15 +1350,20 @@ function perform_step!(
     end
 
     terkp1 = (u - u₀)
-    for j in 1:(k + 1)
-        terkp1 *= j * dt / (tdt - ts[j])
-    end
+    if k == 1
+        # Order-1 + EE predictor: LTE = (u - u₀)/2 (asymptotically).
+        lte = terkp1 / oftype(dt, -2)
+    else
+        for j in 1:(k + 1)
+            terkp1 *= j * dt / (tdt - ts[j])
+        end
 
-    lte = -1 / (1 + k)
-    for j in 2:k
-        lte -= bdf_coeffs[k, j] * r[j]
+        lte = -1 / (1 + k)
+        for j in 2:k
+            lte -= bdf_coeffs[k, j] * r[j]
+        end
+        lte *= terkp1
     end
-    lte *= terkp1
 
     if integrator.opts.adaptive
         for i in 1:(k + 1)
@@ -1346,54 +1376,60 @@ function perform_step!(
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
-        fd_weights = calc_finite_difference_weights(ts_tmp, tdt, k, Val(max_order))
-        terk = @.. broadcast = false fd_weights[1, k + 1] * u
-        if u isa Number
-            for i in 2:(k + 1)
-                terk += fd_weights[i, k + 1] * u_history[i - 1]
-            end
-            terk *= abs(dt^(k))
-        else
-            for i in 2:(k + 1)
-                terk = @.. terk + fd_weights[i, k + 1] * u_history[i - 1]
-            end
-            terk *= abs(dt^(k))
-        end
-
-        atmp = calculate_residuals(
-            terk, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t
-        )
-        cache.terk = integrator.opts.internalnorm(atmp, t)
-
-        if k > 1
-            terkm1 = estimate_terk(integrator, cache, k, Val(max_order), u)
-            atmp = calculate_residuals(
-                terkm1, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm1 = integrator.opts.internalnorm(atmp, t)
-        end
-        if k > 2
-            terkm2 = estimate_terk(integrator, cache, k - 1, Val(max_order), u)
-            atmp = calculate_residuals(
-                terkm2, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm2 = integrator.opts.internalnorm(atmp, t)
-        end
-        if cache.qwait == 0 && k < max_order
-            atmp = calculate_residuals(
-                terkp1, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkp1 = integrator.opts.internalnorm(atmp, t)
-        else
+        if k == 1 && iters_from_event == 0
+            # Cold start: no FD history; seed terk from LTE for stepsize control.
+            cache.terk = OrdinaryDiffEqCore.get_EEst(integrator)
             cache.terkp1 = zero(cache.terk)
+        else
+            terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
+            fd_weights = calc_finite_difference_weights(ts_tmp, tdt, k, Val(max_order))
+            terk = @.. broadcast = false fd_weights[1, k + 1] * u
+            if u isa Number
+                for i in 2:(k + 1)
+                    terk += fd_weights[i, k + 1] * u_history[i - 1]
+                end
+                terk *= abs(dt^(k))
+            else
+                for i in 2:(k + 1)
+                    terk = @.. terk + fd_weights[i, k + 1] * u_history[i - 1]
+                end
+                terk *= abs(dt^(k))
+            end
+
+            atmp = calculate_residuals(
+                terk, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            cache.terk = integrator.opts.internalnorm(atmp, t)
+
+            if k > 1
+                terkm1 = estimate_terk(integrator, cache, k, Val(max_order), u)
+                atmp = calculate_residuals(
+                    terkm1, uprev, u,
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t
+                )
+                cache.terkm1 = integrator.opts.internalnorm(atmp, t)
+            end
+            if k > 2
+                terkm2 = estimate_terk(integrator, cache, k - 1, Val(max_order), u)
+                atmp = calculate_residuals(
+                    terkm2, uprev, u,
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t
+                )
+                cache.terkm2 = integrator.opts.internalnorm(atmp, t)
+            end
+            if cache.qwait == 0 && k < max_order
+                atmp = calculate_residuals(
+                    terkp1, uprev, u,
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t
+                )
+                cache.terkp1 = integrator.opts.internalnorm(atmp, t)
+            else
+                cache.terkp1 = zero(cache.terk)
+            end
         end
     end
 
@@ -1516,13 +1552,16 @@ function perform_step!(
     # using actual (variable) theta nodes. No need to fill integrator.k.
     n_pred = k + 1
     @.. broadcast = false u₀ = zero(u)
-    if cache.iters_from_event >= 1
+    if k == 1
+        # Order-1: explicit-Euler predictor (see ConstantCache path).
+        @.. broadcast = false u₀ = uprev + dt * integrator.fsalfirst
+    elseif cache.iters_from_event >= 1
         for j in 1:n_pred
             equi_ts[j] = (ts[j] - t) / dt
         end
         _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
     else
-        @.. broadcast = false u₀ = u
+        @.. broadcast = false u₀ = uprev + dt * integrator.fsalfirst
     end
     markfirststage!(nlsolver)
     @.. broadcast = false nlsolver.z = u₀
@@ -1570,15 +1609,20 @@ function perform_step!(
 
     #for terkp1, we could use corrector and predictor to make an estimation.
     @.. broadcast = false terkp1_tmp = (u - u₀)
-    for j in 1:(k + 1)
-        @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
-    end
+    if k == 1
+        # Order-1 + EE predictor: LTE = (u - u₀)/2 (asymptotically).
+        @.. broadcast = false terk_tmp = terkp1_tmp / oftype(dt, -2)
+    else
+        for j in 1:(k + 1)
+            @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
+        end
 
-    lte = -1 / (1 + k)
-    for j in 2:k
-        lte -= bdf_coeffs[k, j] * r[j]
+        lte = -1 / (1 + k)
+        for j in 2:k
+            lte -= bdf_coeffs[k, j] * r[j]
+        end
+        @.. broadcast = false terk_tmp = lte * terkp1_tmp
     end
-    @.. broadcast = false terk_tmp = lte * terkp1_tmp
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
         for i in 1:(k + 1)
@@ -1590,40 +1634,46 @@ function perform_step!(
             internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-        estimate_terk!(integrator, cache, k + 1, Val(max_order))
-        calculate_residuals!(
-            atmp, terk_tmp, uprev, u, abstol, reltol,
-            internalnorm, t
-        )
-        cache.terk = integrator.opts.internalnorm(atmp, t)
-
-        if k > 1
-            estimate_terk!(integrator, cache, k, Val(max_order))
-            calculate_residuals!(
-                atmp, terk_tmp, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm1 = integrator.opts.internalnorm(atmp, t)
-        end
-        if k > 2
-            estimate_terk!(integrator, cache, k - 1, Val(max_order))
-            calculate_residuals!(
-                atmp, terk_tmp, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm2 = integrator.opts.internalnorm(atmp, t)
-        end
-        if cache.qwait == 0 && k < max_order
-            calculate_residuals!(
-                atmp, terkp1_tmp, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkp1 = integrator.opts.internalnorm(atmp, t)
-        else
+        if k == 1 && cache.iters_from_event == 0
+            # Cold start: no FD history; seed terk from LTE for stepsize control.
+            cache.terk = OrdinaryDiffEqCore.get_EEst(integrator)
             cache.terkp1 = zero(cache.terkp1)
+        else
+            estimate_terk!(integrator, cache, k + 1, Val(max_order))
+            calculate_residuals!(
+                atmp, terk_tmp, uprev, u, abstol, reltol,
+                internalnorm, t
+            )
+            cache.terk = integrator.opts.internalnorm(atmp, t)
+
+            if k > 1
+                estimate_terk!(integrator, cache, k, Val(max_order))
+                calculate_residuals!(
+                    atmp, terk_tmp, uprev, u,
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t
+                )
+                cache.terkm1 = integrator.opts.internalnorm(atmp, t)
+            end
+            if k > 2
+                estimate_terk!(integrator, cache, k - 1, Val(max_order))
+                calculate_residuals!(
+                    atmp, terk_tmp, uprev, u,
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t
+                )
+                cache.terkm2 = integrator.opts.internalnorm(atmp, t)
+            end
+            if cache.qwait == 0 && k < max_order
+                calculate_residuals!(
+                    atmp, terkp1_tmp, uprev, u,
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t
+                )
+                cache.terkp1 = integrator.opts.internalnorm(atmp, t)
+            else
+                cache.terkp1 = zero(cache.terkp1)
+            end
         end
     end
 
