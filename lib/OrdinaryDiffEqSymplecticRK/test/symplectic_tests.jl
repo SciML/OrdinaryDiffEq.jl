@@ -113,16 +113,28 @@ end
 
 accel_units!(dv, v, u, p, t) = dv .= 0.0u"m/s^2"
 accel_units(v, u, p, t) = 0.0u"1/s" .* v
+gravity_units!(dv, v, u, p, t) = dv .= [-9.81, 0.0]u"m/s^2"
+gravity_units(v, u, p, t) = [-9.81, 0.0]u"m/s^2"
 
 @testset "VelocityVerlet with units iip=$iip" for iip in IIPS
     initial_positions = [0.0, 0.1]u"m"
     initial_velocities = [0.5, 0.0]u"m/s"
     tspan_units = (0.0u"s", 100.0u"s")
+    T = tspan_units[2] - tspan_units[1]
     prob = SecondOrderODEProblem(
         iip ? accel_units! : accel_units,
         initial_velocities, initial_positions, tspan_units
     )
     sol = solve(prob, VelocityVerlet(), dt = 0.1u"s")
     @test sol.u[end].x[1] ≈ initial_velocities
-    @test sol.u[end].x[2] ≈ initial_positions .+ initial_velocities .* tspan_units[2]
+    @test sol.u[end].x[2] ≈ initial_positions .+ initial_velocities .* T
+
+    g = [-9.81, 0.0]u"m/s^2"
+    prob_g = SecondOrderODEProblem(
+        iip ? gravity_units! : gravity_units,
+        initial_velocities, initial_positions, tspan_units
+    )
+    sol_g = solve(prob_g, VelocityVerlet(), dt = 0.1u"s")
+    @test sol_g.u[end].x[1] ≈ initial_velocities .+ g .* T
+    @test sol_g.u[end].x[2] ≈ initial_positions .+ initial_velocities .* T .+ g .* T .^ 2 ./ 2
 end
