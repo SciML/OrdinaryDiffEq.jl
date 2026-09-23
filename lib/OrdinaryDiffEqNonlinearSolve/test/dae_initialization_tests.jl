@@ -180,3 +180,29 @@ integrator = init(
     @test abs(integ.u[2]) < 1.0e-10  # u[2] stuck near 0, not reinitialized
     @test abs(integ.u[1]) > 1.5    # u[1] still evolving
 end
+
+@testset "BrownFullBasicInit with out-of-place static arrays" begin
+    f_static(u, p, t) = SA[-u[1] + u[2], u[1] + u[2] - p]
+    fn = ODEFunction(f_static, mass_matrix = [1.0 0.0; 0.0 0.0])
+    prob = ODEProblem(fn, SA[1.0, 0.5], (0.0, 1.0), 1.0)
+    sol = solve(prob, Rodas5P(); initializealg = BrownFullBasicInit())
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.u[1] isa SVector{2, Float64}
+    @test sol.u[1] ≈ SA[1.0, 0.0] atol = 1.0e-10
+
+    # Reinitialization after a callback changes the algebraic variable only.
+    cb = DiscreteCallback(
+        (u, t, integ) -> t == 0.5, integ -> (integ.p = 2.0);
+        initializealg = BrownFullBasicInit()
+    )
+    sol = solve(
+        prob, Rodas5P(); initializealg = BrownFullBasicInit(), callback = cb,
+        tstops = [0.5], abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test SciMLBase.successful_retcode(sol)
+    i = findall(==(0.5), sol.t)
+    @test length(i) == 2
+    @test sol.u[i[2]][1] == sol.u[i[1]][1]
+    @test sol.u[i[2]][2] ≈ 2.0 - sol.u[i[1]][1] atol = 1.0e-10
+    @test sol.u[i[1]][2] ≈ 1.0 - sol.u[i[1]][1] atol = 1.0e-8
+end
