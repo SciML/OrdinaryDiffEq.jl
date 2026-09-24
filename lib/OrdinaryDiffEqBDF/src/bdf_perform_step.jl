@@ -1223,6 +1223,104 @@ function _fbdf_time_filter(
     return u_bdf, f(u_bdf, p, tdt)
 end
 
+function _fbdf_use_rk_start(integrator, cache)
+    return cache.rkcache !== nothing && cache.iters_from_event == 0 &&
+        integrator.opts.adaptive
+end
+
+# Run the SDIRK start step on FBDF's nlsolver (shared W). Returns false on a
+# nonlinear-solve failure.
+function _fbdf_run_rk_start!(integrator, cache, repeat_step)
+    (; nlsolver, rkcache) = cache
+    nlsolver.method = DIRK
+    nlsolver.γ = rkcache.tab.Ai[1, 1]
+    nlsolver.α = 1
+    perform_step!(integrator, rkcache, repeat_step)
+    return !nlsolvefail(nlsolver)
+end
+
+# Without history FBDF can only take a BDF1 step. Instead take an L-stable SDIRK2 step
+# and leave (t + γdt, t) in u_history so the next step (after `reinitFBDF!` shifts in
+# t + dt) has three points and runs BDF2.
+function _fbdf_rk_start!(
+        integrator, cache::FBDFConstantCache{max_order}, repeat_step
+    ) where {max_order}
+    _fbdf_run_rk_start!(integrator, cache, repeat_step) || return
+    (; t, dt, uprev, u, fsallast) = integrator
+    (; ts, ts_tmp, u_history) = cache
+    (; abstol, reltol, internalnorm) = integrator.opts
+    γ = cache.rkcache.tab.c[1]
+    # The stage value is not exposed out of place. Use the quadratic through uprev, u
+    # and u'(t + dt): O(dt³), enough for BDF2, and free of f(uprev), which is
+    # inconsistent right after a state jump.
+    uᵧ = @.. uprev + γ * (2 - γ) * (u - uprev) + γ * (γ - 1) * dt * fsallast
+
+    ts[1], ts[2] = t + γ * dt, t
+    if uprev isa AbstractArray && ArrayInterface.ismutable(uprev)
+        copyto!(u_history[1], uᵧ)
+        copyto!(u_history[2], uprev)
+    else
+        u_history[1], u_history[2] = uᵧ, uprev
+    end
+    cache.rk_seeded = true
+    # Order-2 derivative estimates for the controller, as an FBDF step at k = 2 with
+    # this history would compute them.
+    cache.order = 2
+    cache.filter_order = 0
+    ts_tmp[1], ts_tmp[2], ts_tmp[3] = t + dt, ts[1], ts[2]
+    terk = estimate_terk(integrator, cache, 3, Val(max_order), u)
+    cache.terk = internalnorm(calculate_residuals(terk, uprev, u, abstol, reltol, internalnorm, t), t)
+    terkm1 = estimate_terk(integrator, cache, 2, Val(max_order), u)
+    cache.terkm1 = internalnorm(calculate_residuals(terkm1, uprev, u, abstol, reltol, internalnorm, t), t)
+    cache.terkp1 = zero(cache.terk)
+
+    if integrator.opts.calck
+        thetas = [one(t), γ, zero(t)]
+        _resample_at_chebyshev!(integrator.k, [u, uᵧ, uprev], thetas, 3)
+        for j in 4:(max_order + 1)
+            integrator.k[j] = zero(u)
+        end
+    end
+    return nothing
+end
+
+function _fbdf_rk_start!(
+        integrator, cache::FBDFCache{max_order}, repeat_step
+    ) where {max_order}
+    _fbdf_run_rk_start!(integrator, cache, repeat_step) || return
+    (; t, dt, uprev, u) = integrator
+    (; ts, ts_tmp, u_history, atmp, terk_tmp, equi_ts, rkcache) = cache
+    (; abstol, reltol, internalnorm) = integrator.opts
+    (; Ai, c) = rkcache.tab
+    γ = c[1]
+    copyto!(u_history[2], uprev)
+    @.. broadcast = false u_history[1] = uprev + Ai[1, 1] * rkcache.zs[1]
+
+    ts[1], ts[2] = t + γ * dt, t
+    cache.rk_seeded = true
+    # Order-2 derivative estimates for the controller, as an FBDF step at k = 2 with
+    # this history would compute them.
+    cache.order = 2
+    cache.filter_order = 0
+    ts_tmp[1], ts_tmp[2], ts_tmp[3] = t + dt, ts[1], ts[2]
+    estimate_terk!(integrator, cache, 3, Val(max_order))
+    calculate_residuals!(atmp, terk_tmp, uprev, u, abstol, reltol, internalnorm, t)
+    cache.terk = internalnorm(atmp, t)
+    estimate_terk!(integrator, cache, 2, Val(max_order))
+    calculate_residuals!(atmp, terk_tmp, uprev, u, abstol, reltol, internalnorm, t)
+    cache.terkm1 = internalnorm(atmp, t)
+    cache.terkp1 = zero(cache.terkp1)
+
+    if integrator.opts.calck
+        equi_ts[1], equi_ts[2], equi_ts[3] = one(t), γ, zero(t)
+        _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, 3)
+        for j in 4:(max_order + 1)
+            fill!(integrator.k[j], zero(eltype(u)))
+        end
+    end
+    return nothing
+end
+
 function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max_order}
     integrator.kshortsize = max_order + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1237,6 +1335,8 @@ function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
+    # History from a previous solve (`reinit!`) is not valid for the restart dt rescale.
+    cache.iters_from_event = 0
     reinitFBDF!(integrator, cache)
     return integrator.derivative_discontinuity = derivative_discontinuity
 end
@@ -1246,6 +1346,8 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
+    _fbdf_use_rk_start(integrator, cache) &&
+        return _fbdf_rk_start!(integrator, cache, repeat_step)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -1309,6 +1411,7 @@ function perform_step!(
     α₀ = 1 #bdf_coeffs[k,1]
     nlsolver.γ = β₀
     nlsolver.α = α₀
+    nlsolver.c = 1
 
     nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -1496,6 +1599,8 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
+    # History from a previous solve (`reinit!`) is not valid for the restart dt rescale.
+    cache.iters_from_event = 0
     reinitFBDF!(integrator, cache)
     return integrator.derivative_discontinuity = derivative_discontinuity
 end
@@ -1505,6 +1610,8 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
+    _fbdf_use_rk_start(integrator, cache) &&
+        return _fbdf_rk_start!(integrator, cache, repeat_step)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
@@ -1553,6 +1660,7 @@ function perform_step!(
     α₀ = 1
     nlsolver.γ = β₀
     nlsolver.α = α₀
+    nlsolver.c = 1
     nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
