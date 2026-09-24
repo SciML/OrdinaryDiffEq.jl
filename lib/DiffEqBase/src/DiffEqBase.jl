@@ -126,7 +126,7 @@ using Reexport: @reexport
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
 # Rootfinder for callbacks
-using BracketingNonlinearSolve: ModAB
+using BracketingNonlinearSolve: ModAB, NewtonBisection
 
 import SymbolicIndexingInterface as SII
 
@@ -200,6 +200,8 @@ end
 
 export DEVerbosity
 export initialize!, finalize!
+
+export ConditionWithDerivative
 
 export SensitivityADPassThrough
 
