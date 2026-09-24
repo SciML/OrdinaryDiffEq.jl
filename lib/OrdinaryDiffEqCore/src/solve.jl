@@ -266,13 +266,52 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
 end
 
 """
+    resolve_ode_tolerances(prob, u, abstol, reltol) -> (abstol, reltol)
+
+See [`DiffEqBase.resolve_ode_tolerances`](@ref). Kept as a Core alias so SDE
+packages that call [`_ode_init`](@ref) directly still resolve defaults before
+[`_ode_init_impl`](@ref).
+"""
+const resolve_ode_tolerances = DiffEqBase.resolve_ode_tolerances
+
+"""
     _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
-Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
-separated from `__init` so that SDE packages can call it directly, bypassing
-method dispatch (which would otherwise re-enter SDE's more specific `__init`).
+Entry point for ODE/DAE/SDE/RODE `__init`. Resolves `nothing` tolerances to
+concrete defaults before calling [`_ode_init_impl`](@ref), so the heavy keyword
+body specializes on the same types whether or not the user passed `abstol` /
+`reltol`. SDE packages call this directly to bypass method dispatch.
 """
 Base.@constprop :aggressive function _ode_init(
+        prob,
+        alg,
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = ();
+        abstol = nothing,
+        reltol = nothing,
+        alias = ODEAliasSpecifier(),
+        _u = nothing,
+        kwargs...
+    )
+    u = _u !== nothing ? _u : prob.u0
+    if u === nothing
+        u = Float64[]
+    end
+    abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
+    return _ode_init_impl(
+        prob, alg, timeseries_init, ts_init, ks_init;
+        abstol, reltol, alias, _u, kwargs...
+    )
+end
+
+"""
+    _ode_init_impl(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
+
+Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. Prefer
+[`_ode_init`](@ref), which resolves default tolerances first.
+"""
+Base.@constprop :aggressive function _ode_init_impl(
         prob,
         alg,
         timeseries_init = (),

@@ -157,8 +157,9 @@ Base.@constprop :aggressive function init(
 
     u0 = u0 !== nothing ? u0 : prob.u0
     p = p !== nothing ? p : prob.p
+    kwargs = with_resolved_ode_tolerances(prob, u0, (; verbose, kwargs...))
 
-    return init_up(prob, sensealg, u0, p, args...; verbose, kwargs...)
+    return init_up(prob, sensealg, u0, p, args...; kwargs...)
 end
 
 function init(prob::AbstractJumpProblem, args...; kwargs...)
@@ -660,20 +661,21 @@ Base.@constprop :aggressive function solve(
 
     u0 = u0 !== nothing ? u0 : prob.u0
     p = p !== nothing ? p : prob.p
+    kwargs = with_resolved_ode_tolerances(prob, u0, (; verbose, kwargs...))
 
     return if wrap isa Val{true}
         wrap_sol(
             solve_up(
                 prob, sensealg, u0, p, args...;
                 originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-                verbose, kwargs...
+                kwargs...
             )
         )
     else
         solve_up(
             prob, sensealg, u0, p, args...;
             originator = SciMLBase.set_mooncakeoriginator_if_mooncake(SciMLBase.ChainRulesOriginator()),
-            verbose, kwargs...
+            kwargs...
         )
     end
 end

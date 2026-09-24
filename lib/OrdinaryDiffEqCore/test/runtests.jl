@@ -40,6 +40,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "dtmin Direction" include("dtmin_direction_tests.jl")
     @time @safetestset "Instability Diagnostics" include("instability_diagnostics_tests.jl")
     @time @safetestset "Enzyme Interpolation" include("enzyme_interpolation_tests.jl")
+    @time @safetestset "Tolerance Default Equality" include("tolerance_default_equality_tests.jl")
 end
 
 # Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
