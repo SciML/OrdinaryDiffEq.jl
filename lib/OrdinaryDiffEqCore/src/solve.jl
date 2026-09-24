@@ -268,19 +268,67 @@ end
 """
     resolve_ode_tolerances(prob, u, abstol, reltol) -> (abstol, reltol)
 
-See [`DiffEqBase.resolve_ode_tolerances`](@ref). Kept as a Core alias so SDE
-packages that call [`_ode_init`](@ref) directly still resolve defaults before
-[`_ode_init_impl`](@ref).
+Internal: replace `nothing` absolute/relative tolerances with the concrete
+defaults `_ode_init_impl` would compute from `u` (`1 // 10^6` / `1 // 10^3` in
+the state eltype, or `false` for discrete problems). User-supplied values are
+passed through `real.(...)`. SDE/RODE callers resolve their own defaults
+(typically `1 // 10^2`) before calling `_ode_init`, so those concrete values
+are preserved here.
 """
-const resolve_ode_tolerances = DiffEqBase.resolve_ode_tolerances
+function resolve_ode_tolerances(prob, u, abstol, reltol)
+    uBottomEltype = recursive_bottom_eltype(u)
+    uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+    scalar_type_tol =
+        uBottomEltypeNoUnits == uBottomEltype &&
+        uBottomEltype <: Union{Real, Complex}
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
+        abstol_out = false
+    elseif abstol === nothing
+        if scalar_type_tol
+            abstol_out = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype, oneunit(uBottomEltype) * 1 // 10^6
+                    )
+                )
+            )
+        else
+            abstol_out = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
+        end
+    else
+        abstol_out = real.(abstol)
+    end
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
+        reltol_out = false
+    elseif reltol === nothing
+        if scalar_type_tol
+            reltol_out = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype, oneunit(uBottomEltype) * 1 // 10^3
+                    )
+                )
+            )
+        else
+            reltol_out = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
+        end
+    else
+        reltol_out = real.(reltol)
+    end
+
+    return abstol_out, reltol_out
+end
 
 """
     _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
 Entry point for ODE/DAE/SDE/RODE `__init`. Resolves `nothing` tolerances to
-concrete defaults before calling [`_ode_init_impl`](@ref), so the heavy keyword
-body specializes on the same types whether or not the user passed `abstol` /
-`reltol`. SDE packages call this directly to bypass method dispatch.
+concrete defaults before calling `_ode_init_impl`, so the heavy keyword body
+specializes on the same types whether or not the user passed `abstol` /
+`reltol`. SDE packages call this directly to bypass method dispatch; they must
+pass already-resolved tolerances (their defaults differ from ODE).
 """
 Base.@constprop :aggressive function _ode_init(
         prob,
@@ -309,7 +357,7 @@ end
     _ode_init_impl(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
 Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. Prefer
-[`_ode_init`](@ref), which resolves default tolerances first.
+`_ode_init`, which resolves default tolerances first.
 """
 Base.@constprop :aggressive function _ode_init_impl(
         prob,

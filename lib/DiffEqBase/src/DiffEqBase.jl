@@ -214,7 +214,6 @@ export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
             # Default-callback API (integrator defaults overridable via solver keywords)
             :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE,
             :ODE_DEFAULT_UNSTABLE_CHECK, :NAN_CHECK,
-            :resolve_ode_tolerances, :with_resolved_ode_tolerances,
             # Tableau extension supertypes downstream tableau packages subtype
             :Tableau, :ODERKTableau,
             # Error-estimate residual hooks solvers call/extend

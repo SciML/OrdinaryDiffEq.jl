@@ -1,7 +1,8 @@
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqRosenbrock
-using DiffEqBase
+using OrdinaryDiffEqBDF
+using Unitful
 using Test
 
 function expected_default_tolerances(u::AbstractArray{T}) where {T <: Number}
@@ -31,7 +32,7 @@ end
         prob = ODEProblem(decay!, u0, tspan)
         exp_abstol, exp_reltol = expected_default_tolerances(u0)
 
-        resolved = DiffEqBase.resolve_ode_tolerances(prob, u0, nothing, nothing)
+        resolved = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, nothing, nothing)
         @test resolved[1] == exp_abstol
         @test resolved[2] == exp_reltol
         @test typeof(resolved[1]) == typeof(exp_abstol)
@@ -78,27 +79,16 @@ end
 @testset "resolve leaves user Float64 tolerances unchanged in type" begin
     u0 = [1.0, 2.0]
     prob = ODEProblem(decay!, u0, (0.0, 1.0))
-    a, r = DiffEqBase.resolve_ode_tolerances(prob, u0, 1.0e-6, 1.0e-6)
+    a, r = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, 1.0e-6, 1.0e-6)
     @test a === 1.0e-6
     @test r === 1.0e-6
     @test typeof(a) == Float64
-    a0, r0 = DiffEqBase.resolve_ode_tolerances(prob, u0, nothing, nothing)
+    a0, r0 = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, nothing, nothing)
     @test typeof(a0) == typeof(a)
     @test typeof(r0) == typeof(r)
 end
 
-@testset "with_resolved_ode_tolerances unifies kwargs types" begin
-    u0 = [1.0, 2.0]
-    prob = ODEProblem(decay!, u0, (0.0, 1.0))
-    kw_none = DiffEqBase.with_resolved_ode_tolerances(prob, u0, (;))
-    kw_tol = DiffEqBase.with_resolved_ode_tolerances(
-        prob, u0, (; abstol = 1.0e-6, reltol = 1.0e-6)
-    )
-    @test typeof(kw_none.abstol) == typeof(kw_tol.abstol)
-    @test typeof(kw_none.reltol) == typeof(kw_tol.reltol)
-end
-
-@testset "problem kwargs abstol is preserved when call omits it" begin
+@testset "problem kwargs abstol takes precedence when call omits it" begin
     u0 = [1.0, 2.0]
     prob = ODEProblem(decay!, u0, (0.0, 1.0); abstol = 1.0e-8, reltol = 1.0e-5)
     integ = init(prob, Tsit5())
@@ -108,4 +98,56 @@ end
     sol_b = solve(prob, Tsit5(); abstol = 1.0e-8, reltol = 1.0e-5)
     @test sol_a.stats.naccept == sol_b.stats.naccept
     @test sol_a.u == sol_b.u
+end
+
+@testset "unitful u0 default tolerances" begin
+    u0 = [1.0u"m", 2.0u"m"]
+    tspan = (0.0u"s", 1.0u"s")
+    function decay_unitful!(du, u, p, t)
+        du[1] = -u[1] / 1u"s"
+        return du[2] = -2u[2] / 1u"s"
+    end
+    prob = ODEProblem(decay_unitful!, u0, tspan)
+    exp_a, exp_r = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, nothing, nothing)
+    integ = init(prob, Tsit5())
+    @test integ.opts.abstol == exp_a
+    @test integ.opts.reltol == exp_r
+    sol_a = solve(prob, Tsit5())
+    sol_b = solve(prob, Tsit5(); abstol = exp_a, reltol = exp_r)
+    @test sol_a.stats.naccept == sol_b.stats.naccept
+    @test sol_a.u == sol_b.u
+end
+
+@testset "Float32 DAE default tolerances (DFBDF)" begin
+    # index-1 semi-explicit DAE: u' = -u, 0 = u - v
+    function f!(out, du, u, p, t)
+        out[1] = du[1] + u[1]
+        return out[2] = u[1] - u[2]
+    end
+    u0 = Float32[1, 1]
+    du0 = Float32[-1, 0]
+    tspan = (0.0f0, 1.0f0)
+    prob = DAEProblem(f!, du0, u0, tspan; differential_vars = [true, false])
+    exp_a, exp_r = expected_default_tolerances(u0)
+    resolved = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, nothing, nothing)
+    @test resolved[1] == exp_a
+    @test resolved[2] == exp_r
+    integ = init(prob, DFBDF())
+    @test integ.opts.abstol == exp_a
+    @test integ.opts.reltol == exp_r
+    sol_a = solve(prob, DFBDF())
+    sol_b = solve(prob, DFBDF(); abstol = exp_a, reltol = exp_r)
+    @test sol_a.stats.naccept == sol_b.stats.naccept
+    @test sol_a.u == sol_b.u
+end
+
+@testset "SDE-resolved concrete tolerances pass through unchanged" begin
+    # StochasticDiffEq resolves to 1//10^2 before _ode_init; Core must not rewrite them.
+    u0 = [1.0, 2.0]
+    prob = ODEProblem(decay!, u0, (0.0, 1.0)) # type only matters for Discrete check
+    sde_abstol = 1.0e-2
+    sde_reltol = 1.0e-2
+    a, r = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, sde_abstol, sde_reltol)
+    @test a === sde_abstol
+    @test r === sde_reltol
 end
