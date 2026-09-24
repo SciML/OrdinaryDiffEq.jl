@@ -40,7 +40,8 @@ variables.
 
 ## Parameters
 
-- `abstol`: Absolute tolerance for the nonlinear solver (default: 1e-10)
+- `abstol`: Absolute tolerance for the nonlinear solver (default: 1e-10). Pass `nothing` to
+  use the `abstol` given to `solve` instead.
 - `nlsolve`: Custom nonlinear solver to use (optional)
 """
 struct BrownFullBasicInit{T, F} <: DAEInitializationAlgorithm
