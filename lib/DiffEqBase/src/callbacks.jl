@@ -189,16 +189,33 @@ found with `NewtonBisection` from BracketingNonlinearSolve, Newton's method safe
 bisection, which needs fewer evaluations of the condition than the default `ModAB` when the
 derivative is cheap.
 
-`condition(u, t, integrator)` is the usual condition ``g``, and `derivative(u, t, integrator)`
-returns ``dg/dt`` along the solution, at the same state `u` and time `t`. When the
-derivative needs ``du/dt``, it can be obtained with `integrator(t, Val{1})`.
+`condition(u, t, integrator)` is the usual condition ``g(u, t)``, and
+`derivative(u, t, integrator)` returns its derivative along the solution of
+``du/dt = f(u, p, t)``, at the same state `u` and time `t`:
+
+```math
+\\frac{d}{dt} g(u(t), t) = \\nabla_u g \\cdot f(u, p, t) + \\frac{\\partial g}{\\partial t}.
+```
+
+Inside a step, `u` is interpolated, so evaluating `f` there gives the derivative up to the
+interpolation error. `integrator(t, Val{1})` gives the derivative of the interpolant
+instead, at the cost of one more interpolation.
 
 # Example
 
 ```julia
-# Event when u[1] crosses 0.5, for u' = -u.
-condition = ConditionWithDerivative((u, t, integrator) -> u[1] - 0.5, (u, t, integrator) -> -u[1])
-callback = ContinuousCallback(condition, terminate!)
+# u' = -u from u(0) = 1, so u[1] reaches 1/2 at t = log(2).
+function dudt!(du, u, p, t)
+    du[1] = -u[1]
+    return nothing
+end
+prob = ODEProblem(dudt!, [1.0], (0.0, 2.0))
+
+condition(u, t, integrator) = u[1] - 0.5
+derivative(u, t, integrator) = -u[1]   # dg/dt = du[1]/dt, as computed by dudt!
+
+callback = ContinuousCallback(ConditionWithDerivative(condition, derivative), terminate!)
+sol = solve(prob, Tsit5(); callback)
 ```
 """
 struct ConditionWithDerivative{C, D}
