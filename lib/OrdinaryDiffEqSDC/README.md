@@ -69,7 +69,7 @@ sol = solve(
 )
 ```
 
-Adaptive. The embedded solution is the step update formed from the previous
+Adaptive whenever `num_sweeps > 0`. The embedded solution is the step update formed from the previous
 sweep, so the estimate costs a few `axpy`s. Because it measures how far the
 iteration is from the collocation solution rather than how far that solution is
 from the truth, a stiff problem needs enough sweeps for the iteration to

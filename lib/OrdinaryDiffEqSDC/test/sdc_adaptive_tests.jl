@@ -14,7 +14,12 @@ final_error(sol) = maximum(abs.(sol.u[end] .- rotation_exact(sol.t[end])))
         alg = SDC(num_nodes = 4, num_sweeps = K)
         @test OrdinaryDiffEqSDC.alg_adaptive_order(alg) ==
             max(1, OrdinaryDiffEqSDC.alg_order(alg) - 1)
+        @test SciMLBase.isadaptive(alg)
     end
+    @test !SciMLBase.isadaptive(SDC(num_sweeps = 0))
+    @test_throws ArgumentError solve(ROTATION, SDC(num_sweeps = 0))
+    # With a `dt`, zero sweeps is forward Euler.
+    @test solve(ROTATION, SDC(num_sweeps = 0); dt = 0.1).u[2] ≈ [1.0, 0.1]
 end
 
 @testset "SDC honours the requested tolerance" begin
