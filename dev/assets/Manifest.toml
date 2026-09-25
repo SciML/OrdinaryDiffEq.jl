@@ -1210,10 +1210,10 @@ version = "5.18.1"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "bba2d9aa057d8f126415de240573e86a8f39d2a1"
+git-tree-sha1 = "b85e2797b2409570e84c4de46238c0ed5f6476ae"
 registries = "General"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "1.0.1"
+version = "1.0.2"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"
@@ -2508,10 +2508,10 @@ version = "4.48.0"
 
 [[deps.Symbolics]]
 deps = ["ADTypes", "AbstractPlutoDingetjes", "ArrayInterface", "Bijections", "CommonWorldInvalidations", "ConstructionBase", "DataStructures", "DiffRules", "DocStringExtensions", "DomainSets", "DynamicPolynomials", "IntervalSets", "Libdl", "LinearAlgebra", "LogExpFunctions", "MacroTools", "Markdown", "Moshi", "MultivariatePolynomials", "MutableArithmetics", "NaNMath", "PrecompileTools", "Preferences", "Primes", "RecipesBase", "RuntimeGeneratedFunctions", "SciMLPublic", "Setfield", "SparseArrays", "SpecialFunctions", "StaticArraysCore", "SymbolicIndexingInterface", "SymbolicLimits", "SymbolicUtils", "TermInterface"]
-git-tree-sha1 = "487eee0c1cbcc02ff9c097507692e2a76cb3d31f"
+git-tree-sha1 = "35223e123a2119c2c9da9e7db22665143bb95b05"
 registries = "General"
 uuid = "0c5d862f-8b57-4792-8d23-62f2024744c7"
-version = "7.41.0"
+version = "7.41.1"
 
     [deps.Symbolics.extensions]
     SymbolicsD3TreesExt = "D3Trees"
