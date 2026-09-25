@@ -21,9 +21,7 @@ using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
 using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
     nlsolve!, nlsolvefail, isnewton, get_W, set_new_W!,
     NLNewton, COEFFICIENT_MULTISTEP, Convergence,
-    FastConvergence, NLStatus,
-    VerySlowConvergence,
-    Divergence, get_new_W_γdt_cutoff
+    NLStatus, Divergence, get_new_W_γdt_cutoff
 import ADTypes: AutoForwardDiff
 using FunctionWrappers
 import FunctionWrappers: FunctionWrapper
