@@ -47,8 +47,8 @@ function KantorovichTypeController(;
     )
 end
 
-mutable struct KantorovichTypeControllerCache{T, E} <: AbstractControllerCache
-    controller::KantorovichTypeController{OrdinaryDiffEqCore.CommonControllerOptions{T}, T}
+mutable struct KantorovichTypeControllerCache{T, E, NLPType} <: AbstractControllerCache
+    controller::KantorovichTypeController{OrdinaryDiffEqCore.CommonControllerOptions{T, NLPType}, T}
     EEst::E
 end
 
@@ -58,15 +58,15 @@ function OrdinaryDiffEqCore.default_controller(
     return KantorovichTypeController(; Θmin = QT(1 // 8), p = 1)
 end
 
-function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController, ::Type{E}) where {E}
+function OrdinaryDiffEqCore.setup_controller_cache(alg, cache, controller::KantorovichTypeController, ::Type{E}, disco_probs) where {E}
     QT = OrdinaryDiffEqCore._resolved_QT(controller.basic)
-    basic = OrdinaryDiffEqCore.resolve_basic(controller.basic, alg, QT)
+    basic = OrdinaryDiffEqCore.resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = KantorovichTypeController{typeof(basic), QT}(
         basic, QT(controller.Θmin), controller.p,
         QT(controller.Θreject), QT(controller.Θbar), QT(controller.γ), controller.strict,
     )
     T = QT
-    return KantorovichTypeControllerCache{T, E}(resolved, oneunit(E))
+    return KantorovichTypeControllerCache{T, E, eltype(disco_probs)}(resolved, oneunit(E))
 end
 
 function OrdinaryDiffEqCore.stepsize_controller!(
@@ -112,14 +112,14 @@ function OrdinaryDiffEqCore.step_reject_controller!(
     return
 end
 
+function _accept_kantorovich_step(controller, Θks)
+    return !controller.strict || all(Θk -> Θk <= controller.Θreject, Θks)
+end
+
 function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::KantorovichTypeControllerCache, alg)
     (; controller) = cache
     (; Θks) = integrator.cache
-    if controller.strict
-        return all(controller.Θreject .< Θks)
-    else
-        return true
-    end
+    return _accept_kantorovich_step(controller, Θks)
 end
 
 function OrdinaryDiffEqCore.sync_controllers!(cache1::KantorovichTypeControllerCache, cache2::KantorovichTypeControllerCache)

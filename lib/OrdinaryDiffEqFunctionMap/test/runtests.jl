@@ -1,15 +1,29 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqFunctionMap, Test
+        exported = (
+            :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+            :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+            :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqFunctionMap), exported))
+        internal = (
+            :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+            :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+            :ConvexOptimizationProblem,
+        )
+        @test !any(Base.isexported.(Ref(OrdinaryDiffEqFunctionMap), internal))
+    end
     @time @safetestset "DiscreteProblem Defaults" include("discrete_problem_defaults.jl")
     @time @safetestset "Discrete Algorithm Tests" include("discrete_algorithm_test.jl")
 end

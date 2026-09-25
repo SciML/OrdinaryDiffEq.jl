@@ -1,6 +1,7 @@
 using OrdinaryDiffEqTaylorSeries
 using OrdinaryDiffEqCore
-using SciMLBase: FullSpecialize
+using CommonSolve: init, step!
+using SciMLBase: FullSpecialize, ODEProblem
 using AllocCheck
 using Test
 
@@ -13,10 +14,10 @@ using Test
     # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise
     prob = ODEProblem{true, FullSpecialize}(simple_system!, [1.0, 1.0], (0.0, 1.0))
 
-    # ExplicitTaylor2 is allocation-free
-    passing_solvers = [ExplicitTaylor2()]
-    # Higher-order and adaptive methods allocate
-    broken_solvers = [ExplicitTaylor(order = Val(4)), ExplicitTaylorAdaptiveOrder()]
+    # Fixed-order methods are allocation-free.
+    passing_solvers = [ExplicitTaylor2(), ExplicitTaylor(order = Val(4))]
+    # Adaptive order selection allocates while evaluating controller candidates.
+    broken_solvers = [ExplicitTaylorAdaptiveOrder()]
 
     @testset "TaylorSeries perform_step! Static Analysis" begin
         for solver in passing_solvers

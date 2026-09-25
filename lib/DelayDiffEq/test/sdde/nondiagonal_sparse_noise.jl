@@ -39,7 +39,8 @@ using Test
         du[1, 1] = -sqrt(max(0.0, infection))
         du[2, 1] = sqrt(max(0.0, infection))
         du[2, 2] = -sqrt(max(0.0, recovery))
-        return du[3, 2] = sqrt(max(0.0, recovery))
+        du[3, 2] = sqrt(max(0.0, recovery))
+        return
     end
 
     function condition(u, t, integrator)

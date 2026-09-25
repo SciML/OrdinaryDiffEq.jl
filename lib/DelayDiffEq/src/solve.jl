@@ -26,7 +26,7 @@ function SciMLBase.__init(
         save_discretes = true,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
-        calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
+        calck = (callback !== nothing && !isempty(callback)) || # Empty callback
             dense, # and no dense output
         seed = UInt64(0),
         dt = zero(eltype(prob.tspan)),
@@ -66,6 +66,8 @@ function SciMLBase.__init(
         initializealg = DDEDefaultInit(),
         delta = nothing,
         save_noise = false,
+        stage_limiter = OrdinaryDiffEqCore.trivial_limiter!,
+        step_limiter = OrdinaryDiffEqCore.trivial_limiter!,
         kwargs...
     )
     is_stochastic = prob isa AbstractSDDEProblem
@@ -74,7 +76,18 @@ function SciMLBase.__init(
 
     # Handle verbose argument: convert AbstractVerbosityPreset to DEVerbosity
     if verbose isa Bool
-        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
+        throw(
+            ArgumentError(
+                """
+                Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7: `verbose` now takes a verbosity object.
+
+                    solve(prob, alg; verbose = DEVerbosity(SciMLLogging.None()))  # was verbose = false
+                    solve(prob, alg; verbose = DEVerbosity())                     # was verbose = true
+
+                `DEVerbosity` and `SciMLLogging` are both exported by OrdinaryDiffEq, so no extra `using` is needed; from another solver package add `using DiffEqBase, SciMLLogging`. Per-message control is documented at https://docs.sciml.ai/OrdinaryDiffEq/stable/verbosity/
+                """
+            )
+        )
     elseif verbose isa AbstractVerbosityPreset
         verbose_spec = DEVerbosity(verbose)
     else
@@ -143,8 +156,8 @@ function SciMLBase.__init(
     end
 
     # get absolute and relative tolerances
-    abstol_internal = get_abstol(u0, tspan, alg.alg; abstol = abstol)
-    reltol_internal = get_reltol(u0, tspan, alg.alg; reltol = reltol)
+    abstol_internal = get_abstol(u0, tspan, alg.alg; abstol)
+    reltol_internal = get_reltol(u0, tspan, alg.alg; reltol)
 
     # get rate prototype
     rate_prototype = rate_prototype_of(u0, tspan)
@@ -167,10 +180,10 @@ function SciMLBase.__init(
     u, uprev,
         uprev2 = u_uprev_uprev2(
         u0, alg;
-        alias_u0 = alias_u0,
-        adaptive = adaptive,
-        allow_extrapolation = allow_extrapolation,
-        calck = calck
+        alias_u0,
+        adaptive,
+        allow_extrapolation,
+        calck
     )
     uEltypeNoUnits = recursive_unitless_eltype(u)
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
@@ -188,8 +201,8 @@ function SciMLBase.__init(
     history = build_history_function(
         prob, alg, rate_prototype, reltol_internal,
         differential_vars;
-        dt = dt, dtmin = dtmin, calck = false,
-        adaptive = adaptive, internalnorm = internalnorm
+        dt, dtmin, calck = false,
+        adaptive, internalnorm
     )
     f_with_history = if is_stochastic
         SDEFunctionWrapper(f, history)
@@ -215,12 +228,12 @@ function SciMLBase.__init(
     ts, timeseries,
         ks = solution_arrays(
         u, tspan, rate_prototype;
-        timeseries_init = timeseries_init,
-        ts_init = ts_init,
-        ks_init = ks_init,
-        save_idxs = save_idxs,
-        save_start = save_start,
-        is_stochastic = is_stochastic
+        timeseries_init,
+        ts_init,
+        ks_init,
+        save_idxs,
+        save_start,
+        is_stochastic
     )
 
     # build cache
@@ -258,16 +271,16 @@ function SciMLBase.__init(
     sol = if is_stochastic
         SciMLBase.build_solution(
             prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats, W = W
+            dense, k = ks, interp = id, saved_subsystem,
+            id.alg_choice, calculate_error = false,
+            stats, W,
         )
     else
         SciMLBase.build_solution(
             prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats
+            dense, k = ks, interp = id, saved_subsystem,
+            id.alg_choice, calculate_error = false,
+            stats,
         )
     end
 
@@ -302,8 +315,8 @@ function SciMLBase.__init(
     # reserve capacity for the solution
     _sizehint_solution!(
         sol, alg, tspan, tstops_internal, saveat_internal;
-        save_everystep = save_everystep, adaptive = adaptive, dt = tType(dt),
-        dtmin = dtmin, internalnorm = internalnorm
+        save_everystep, adaptive, dt = tType(dt),
+        dtmin, internalnorm
     )
 
     # create array of tracked discontinuities
@@ -337,6 +350,12 @@ function SciMLBase.__init(
         delta = convert(recursive_unitless_bottom_eltype(u), 1 // 1)
     end
 
+    # Resolve solve-level limiters, honoring (with a deprecation warning) a
+    # non-trivial `stage_limiter!`/`step_limiter!` field on the underlying method.
+    stage_limiter, step_limiter = OrdinaryDiffEqCore.resolve_stage_step_limiters(
+        alg.alg, stage_limiter, step_limiter, verbose_spec
+    )
+
     # Construct DEOptions
     opts = OrdinaryDiffEqCore.DEOptions{
         typeof(abstol_internal), typeof(reltol_internal),
@@ -351,7 +370,7 @@ function SciMLBase.__init(
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
         typeof(saveat), typeof(d_discontinuities), typeof(verbose_spec),
-        typeof(delta),
+        typeof(delta), typeof(stage_limiter), typeof(step_limiter),
     }(
         maxiters,
         save_everystep,
@@ -379,6 +398,8 @@ function SciMLBase.__init(
         timeseries_errors,
         dense_errors,
         delta,
+        stage_limiter,
+        step_limiter,
         dense,
         save_on,
         save_start,
@@ -445,6 +466,8 @@ function SciMLBase.__init(
     success_iter = 0
     erracc = QT(1)
     dtacc = tType(1)
+    is_disco_step = false
+    disco_checkpoint = zero(t0)
 
     fsalfirst, fsallast = OrdinaryDiffEqCore.get_fsalfirstlast(cache, rate_prototype)
     OrdinaryDiffEqCore.set_EEst!(controller_cache, EEst)
@@ -515,6 +538,7 @@ function SciMLBase.__init(
         differential_vars,
         controller_cache,
         ode_integrator, fsalfirst, fsallast, initializealg,
+        is_disco_step, disco_checkpoint,
         W, P, sqdt, nothing,
     )
 
@@ -582,8 +606,8 @@ function DiffEqBase.solve!(integrator::DDEIntegrator)
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
             sol;
-            timeseries_errors = opts.timeseries_errors,
-            dense_errors = opts.dense_errors
+            opts.timeseries_errors,
+            opts.dense_errors
         )
     end
     sol.retcode == ReturnCode.Default || return sol
@@ -682,7 +706,7 @@ struct DDEDefaultInit <: SciMLBase.DAEInitializationAlgorithm end
 function SciMLBase.initialize_dae!(integrator::DDEIntegrator, initializealg = integrator.initializealg)
     return OrdinaryDiffEqCore._initialize_dae!(
         integrator, integrator.sol.prob, initializealg,
-        Val(DiffEqBase.isinplace(integrator.sol.prob))
+        Val(SciMLBase.isinplace(integrator.sol.prob))
     )
 end
 

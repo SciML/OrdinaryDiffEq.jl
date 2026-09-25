@@ -1,4 +1,6 @@
 using OrdinaryDiffEqBDF, DiffEqDevTools, ADTypes
+using SciMLBase: successful_retcode
+import SciMLBase
 using Test, Random
 Random.seed!(100)
 
@@ -8,7 +10,8 @@ testTol = 0.2
 f_dae_linear = (res, du, u, p, t) -> (@. res = du - u)
 function f_dae_linear_jac(J, du, u, p, gamma, t)
     J[1, 1] = gamma - 1.0
-    return J[2, 2] = gamma - 1.0
+    J[2, 2] = gamma - 1.0
+    return
 end
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_iip = DAEProblem(
@@ -101,9 +104,7 @@ end
 
 f_dae_linear = (du, u, p, t) -> (@. du - u)
 function f_dae_linear_jac(du, u, p, gamma, t)
-    J = zeros(2, 2)
-    J[1, 1] = gamma - 1.0
-    return J[2, 2] = gamma - 1.0
+    return gamma - 1.0
 end
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_oop = DAEProblem(
@@ -182,4 +183,45 @@ prob_dae_linear_oop_sep = DAEProblem(
     @test sim23.𝒪est[:final] ≈ 2 atol = testTol
 
     @test_nowarn solve(prob, DFBDF())
+end
+
+# Regression test for issue #3960: DABDF2 adaptive error estimate blew up on the
+# first BDF2 step (the FSAL startup left integrator.fsallast stale, so fsalfirst
+# was ~0 at the first estimate), forcing dt below eps and returning Unstable on a
+# trivial index-1 DAE that DImplicitEuler/DFBDF solve. The fixed-dt convergence
+# tests above do not exercise the adaptive controller, so this uses adaptive solves.
+@testset "DABDF2 adaptive index-1 DAE (issue #3960)" begin
+    # u1' = -u1 ;  0 = u2 - u1     exact: u1 = u2 = exp(-t)
+    f_index1_iip = (res, du, u, p, t) -> begin
+        res[1] = du[1] + u[1]
+        res[2] = u[2] - u[1]
+        return nothing
+    end
+    prob_iip = DAEProblem(
+        f_index1_iip, [-1.0, -1.0], [1.0, 1.0], (0.0, 1.0);
+        differential_vars = [true, false]
+    )
+    # scalar out-of-place hits the DABDF2ConstantCache path
+    f_scalar_oop = (du, u, p, t) -> du + u
+    prob_oop = DAEProblem(f_scalar_oop, -1.0, 1.0, (0.0, 1.0))
+
+    exact = exp(-1.0)
+    prev_err = Inf
+    for tol in (1.0e-4, 1.0e-6, 1.0e-8, 1.0e-10)
+        # atol 2e-3 cleanly separates a correct solve (worst observed err ~8e-4)
+        # from the pre-fix Unstable behavior (u stuck near the u0 = 1.0, err ~0.6)
+        sol_iip = solve(prob_iip, DABDF2(), abstol = tol, reltol = tol)
+        @test SciMLBase.successful_retcode(sol_iip)
+        @test sol_iip.u[end][1] ≈ exact atol = 2.0e-3
+        @test sol_iip.u[end][2] ≈ exact atol = 2.0e-3
+
+        sol_oop = solve(prob_oop, DABDF2(), abstol = tol, reltol = tol)
+        @test SciMLBase.successful_retcode(sol_oop)
+        @test sol_oop.u[end] ≈ exact atol = 2.0e-3
+
+        # tightening the tolerance must improve accuracy (estimator is meaningful)
+        err = abs(sol_iip.u[end][1] - exact)
+        @test err <= prev_err
+        prev_err = err
+    end
 end

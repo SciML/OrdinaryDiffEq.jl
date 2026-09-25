@@ -12,20 +12,30 @@
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities, so a
+        stale estimate that under-resolves the stability region self-corrects through a
+        rejection. The default of 25 matches the classical RKC/ROCK Fortran codes and is a
+        good choice for parabolic problems whose spectral radius varies slowly; set it to 1
+        to recompute every step (more robust when the dominant eigenvalue changes rapidly,
+        at the cost of a few extra function evaluations per step).
     """,
     """
     min_stages = 0,
     max_stages = 200,
     eigen_est = nothing,
+    eigen_est_interval = 25,
     """
 )
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
+    eigen_est_interval::Int
 end
-function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
-    return ROCK2(min_stages, max_stages, eigen_est)
+function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing, eigen_est_interval = 25)
+    return ROCK2(min_stages, max_stages, eigen_est, eigen_est_interval)
 end
 
 @doc generic_solver_docstring(
@@ -43,25 +53,35 @@ end
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities, so a
+        stale estimate that under-resolves the stability region self-corrects through a
+        rejection. The default of 25 matches the classical RKC/ROCK Fortran codes and is a
+        good choice for parabolic problems whose spectral radius varies slowly; set it to 1
+        to recompute every step (more robust when the dominant eigenvalue changes rapidly,
+        at the cost of a few extra function evaluations per step).
     """,
     """
     min_stages = 0,
     max_stages = 152,
     eigen_est = nothing,
+    eigen_est_interval = 25,
     """
 )
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
     max_stages::Int
     eigen_est::E
+    eigen_est_interval::Int
 end
-function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing)
-    return ROCK4(min_stages, max_stages, eigen_est)
+function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing, eigen_est_interval = 25)
+    return ROCK4(min_stages, max_stages, eigen_est, eigen_est_interval)
 end
 
 # SERK methods
 
-for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC3]
+for Alg in [:ESERK4, :ESERK5, :TSRKC2, :TSRKC3]
     @eval begin
         struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
             eigen_est::E
@@ -69,6 +89,12 @@ for Alg in [:ESERK4, :ESERK5, :RKC, :TSRKC3]
         $Alg(; eigen_est = nothing) = $Alg(eigen_est)
     end
 end
+
+struct RKC{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    eigen_est::E
+    eigen_est_interval::Int
+end
+RKC(; eigen_est = nothing, eigen_est_interval = 25) = RKC(eigen_est, eigen_est_interval)
 
 @doc generic_solver_docstring(
     """Second order method. Exhibits high stability for real eigenvalues.""",
@@ -82,9 +108,18 @@ end
         `(integrator) -> integrator.eigen_est = upper_bound`,
         where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
         If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities, so a
+        stale estimate that under-resolves the stability region self-corrects through a
+        rejection. The default of 25 matches the classical RKC/ROCK Fortran codes and is a
+        good choice for parabolic problems whose spectral radius varies slowly; set it to 1
+        to recompute every step (more robust when the dominant eigenvalue changes rapidly,
+        at the cost of a few extra function evaluations per step).
     """,
     """
     eigen_est = nothing,
+    eigen_est_interval = 25,
     """
 )
 function RKC end
@@ -159,6 +194,25 @@ end
 SERK2(; eigen_est = nothing) = SERK2(eigen_est)
 
 @doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues.""",
+    "TSRKC2",
+    "Two-step Stabilized Explicit Method.",
+    """A. V. Moisa. A family of two-step second order Runge-Kutta-Chebyshev methods,
+    Journal of Computational and Applied Mathematics, 446, pp 115868, 2024. doi:
+    https://doi.org/10.1016/j.cam.2024.115868""",
+    """
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    eigen_est = nothing,
+    """
+)
+function TSRKC2 end
+
+@doc generic_solver_docstring(
     """Third order method. Exhibits high stability for real eigenvalues.""",
     "TSRKC3",
     "Two-step Stabilized Explicit Method.",
@@ -176,6 +230,37 @@ SERK2(; eigen_est = nothing) = SERK2(eigen_est)
     """
 )
 function TSRKC3 end
+
+@doc generic_solver_docstring(
+    """Second order method. Exhibits high stability for real eigenvalues with a monotonically
+    increasing and positive stability function, giving smaller error constants than RKC.""",
+    "RKMC2",
+    "Stabilized Explicit Method.",
+    """Boris Faleichik, Andrew Moisa. Explicit Runge-Kutta-Chebyshev methods of second order
+    with monotonic stability polynomial. Journal of Computational and Applied Mathematics,
+    476, pp 117061, 2026. doi: https://doi.org/10.1016/j.cam.2025.117061""",
+    """
+    - `min_stages`: The minimum degree of the Chebyshev polynomial (>= 3).
+    - `max_stages`: The maximum degree of the Chebyshev polynomial.
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    """,
+    """
+    min_stages = 3,
+    max_stages = 1000,
+    eigen_est = nothing,
+    """
+)
+struct RKMC2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+end
+function RKMC2(; min_stages = 3, max_stages = 1000, eigen_est = nothing)
+    return RKMC2(max(3, min_stages), max_stages, eigen_est)
+end
 
 @doc generic_solver_docstring(
     """First-order super-time-stepping method based on shifted Legendre polynomials.
@@ -325,3 +410,10 @@ function RKG2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
     max_s = max(max_stages, min_s)
     return RKG2(min_s, max_s, eigen_est)
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
+        RKL1, RKL2, RKG1, RKG2,
+    },
+) = true

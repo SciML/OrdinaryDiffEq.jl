@@ -206,7 +206,16 @@ function DiffEqBase.initialize!(integrator::DDEIntegrator)
 end
 
 # signal the integrator of a derivative discontinuity
+"""
+    derivative_discontinuity!(integrator::DDEIntegrator, bool::Bool)
+
+Flag whether the current callback introduced a derivative discontinuity. Behaves
+identically to the `ODEIntegrator` method, including the order-independent,
+any-`true`-wins merge across simultaneous callbacks; see that method for details.
+"""
 function SciMLBase.derivative_discontinuity!(integrator::DDEIntegrator, bool::Bool)
+    # See ODEIntegrator counterpart: plain assignment; the order-independent merge
+    # lives in apply_callback! / apply_discrete_callback!.
     return integrator.derivative_discontinuity = bool
 end
 
@@ -397,10 +406,11 @@ function DiffEqBase.reinit!(
         reset_dt = iszero(integrator.dtcache) &&
             integrator.opts.adaptive,
         reinit_callbacks = true, initialize_save = true,
-        reinit_cache = true
+        reinit_cache = true,
+        reinit_controller = true
     )
     # reinit history
-    reinit!(integrator.integrator, u0; t0 = t0, tf = tf, erase_sol = true)
+    reinit!(integrator.integrator, u0; t0, tf, erase_sol = true)
 
     # reinit initial values of the integrator
     if isinplace(integrator.sol.prob)
@@ -501,9 +511,13 @@ function DiffEqBase.reinit!(
     integrator.iter = 0
     integrator.success_iter = 0
     integrator.derivative_discontinuity = false
+    integrator.is_disco_step = false
+    integrator.disco_checkpoint = zero(integrator.t)
 
     # full re-initialize the controller in timestepping
-    OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
+    if reinit_controller
+        OrdinaryDiffEqCore.reinit_controller!(integrator, integrator.controller_cache)
+    end
 
     if reset_dt
         DiffEqBase.auto_dt_reset!(integrator)

@@ -66,7 +66,7 @@ function alg_cache(
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     ie_tab = ImplicitEulerESDIRKIMEXTableau(
         constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
@@ -89,7 +89,7 @@ end
 
 # SBDF
 
-@cache mutable struct SBDFConstantCache{rateType, N, uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct SBDFConstantCache{rateType, N, uType, dtType} <: OrdinaryDiffEqConstantCache
     cnt::Int
     ark::Bool
     k2::rateType
@@ -102,9 +102,10 @@ end
     k₃::rateType
     du₁::rateType
     du₂::rateType
+    dtprev::dtType
 end
 
-@cache mutable struct SBDFCache{uType, rateType, N} <: BDFMutableCache
+@cache mutable struct SBDFCache{uType, rateType, N, dtType} <: BDFMutableCache
     cnt::Int
     ark::Bool
     u::uType
@@ -119,6 +120,7 @@ end
     k₃::rateType
     du₁::rateType
     du₂::rateType
+    dtprev::dtType
 end
 
 function alg_cache(
@@ -143,10 +145,11 @@ function alg_cache(
     uprev2 = u
     uprev3 = u
     uprev4 = u
+    dtprev = zero(dt)
 
     return SBDFConstantCache(
         1, alg.ark, k2, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁,
-        du₂
+        du₂, dtprev
     )
 end
 
@@ -174,10 +177,11 @@ function alg_cache(
     uprev2 = zero(u)
     uprev3 = order >= 3 ? zero(u) : uprev2
     uprev4 = order == 4 ? zero(u) : uprev2
+    dtprev = zero(dt)
 
     return SBDFCache(
         1, alg.ark, u, uprev, fsalfirst, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃,
-        du₁, du₂
+        du₁, du₂, dtprev
     )
 end
 
@@ -307,6 +311,7 @@ end
     uprev3::uType
     fsalfirst::rateType
     D::coefType1
+    Dtmp::coefType1
     D2::coefType2
     R::coefType
     U::coefType
@@ -359,12 +364,15 @@ function alg_cache(
     fsalfirst = zero(rate_prototype)
 
     D = Array{typeof(u)}(undef, 1, 2)
+    Dtmp = Array{typeof(u)}(undef, 1, 2)
     D2 = Array{typeof(u)}(undef, 1, 3)
     R = fill(zero(t), 2, 2)
     U = fill(zero(t), 2, 2)
 
     D[1] = zero(u)
     D[2] = zero(u)
+    Dtmp[1] = zero(u)
+    Dtmp[2] = zero(u)
     D2[1] = zero(u)
     D2[2] = zero(u)
     D2[3] = zero(u)
@@ -380,7 +388,7 @@ function alg_cache(
     dtₙ₋₂ = zero(dt)
 
     return QNDF2Cache(
-        uprev2, uprev3, fsalfirst, D, D2, R, U, atmp,
+        uprev2, uprev3, fsalfirst, D, Dtmp, D2, R, U, atmp,
         utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!
     )
 end
@@ -460,6 +468,8 @@ end
         gammaType, uType, uNoUnitsType, StepLimiter,
     } <:
     BDFMutableCache
+    u::uType
+    uprev::uType
     fsalfirst::rateType
     dd::uType
     utilde::uType
@@ -540,8 +550,8 @@ function alg_cache(
     dense = [zero(u) for _ in 1:max_order]
 
     return QNDFCache(
-        fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU, D, Dtmp,
-        tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
+        u, uprev, fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU,
+        D, Dtmp, tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
         atmpm1, atmpp1, dense, alg.step_limiter!
     )
 end
@@ -627,6 +637,12 @@ end
     iters_from_event::Int
     fd_weights::fdWeightsType
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    ts_asc::tsType
+    α_bar::tsType
+    dd_c::fdWeightsType
+    dd_D::fdWeightsType
 end
 
 function alg_cache(
@@ -683,10 +699,22 @@ function alg_cache(
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
+    ts_asc = zeros(typeof(t), n_filt)
+    α_bar = zeros(typeof(t), n_filt)
+    dd_c = zeros(typeof(t), n_filt, n_filt)
+    dd_D = zeros(typeof(t), n_filt, n_filt)
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald
+        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald,
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 
@@ -726,6 +754,12 @@ end
     step_limiter!::StepLimiter
     fd_weights::fdWeightsType
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    ts_asc::tsType
+    α_bar::tsType
+    dd_c::fdWeightsType
+    dd_D::fdWeightsType
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -791,10 +825,143 @@ function alg_cache(
         tiny = alg.stald_tiny,
     )
 
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
+    ts_asc = zeros(typeof(t), n_filt)
+    α_bar = zeros(typeof(t), n_filt)
+    dd_c = zeros(typeof(t), n_filt, n_filt)
+    dd_D = zeros(typeof(t), n_filt, n_filt)
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!, fd_weights, stald
+        iters_from_event, dense, alg.step_limiter!, fd_weights, stald,
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
+    )
+end
+
+############################################ NordsieckBDF
+# ================================================================= caches
+@cache mutable struct NordsieckBDFCache{
+        MO, N, rateType, uNoUnitsType, uType, tType, coeffType, staldType, StepLimiter,
+    } <: BDFMutableCache
+    fsalfirst::rateType
+    nlsolver::N
+    zn::Vector{uType}
+    ypred::uType
+    acor::uType
+    tempv::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    l::coeffType
+    tau::coeffType
+    tq::coeffType
+    order::Int
+    qprime::Int
+    qwait::Int
+    nst::Int
+    nef::Int
+    ncf::Int
+    index_acor::Int
+    max_order::Val{MO}
+    max_order_int::Int
+    hscale::tType
+    eta::tType
+    etamax::tType
+    etaq::tType
+    etaqm1::tType
+    etaqp1::tType
+    saved_tq5::tType
+    predicted::Bool
+    stald::staldType
+    step_limiter!::StepLimiter
+end
+
+@truncate_stacktrace NordsieckBDFCache 1
+
+mutable struct NordsieckBDFConstantCache{MO, N, uType, tType, coeffType, staldType} <:
+    OrdinaryDiffEqConstantCache
+    nlsolver::N
+    zn::Vector{uType}
+    ypred::uType
+    acor::uType
+    l::coeffType
+    tau::coeffType
+    tq::coeffType
+    order::Int
+    qprime::Int
+    qwait::Int
+    nst::Int
+    nef::Int
+    ncf::Int
+    index_acor::Int
+    max_order::Val{MO}
+    max_order_int::Int
+    hscale::tType
+    eta::tType
+    etamax::tType
+    etaq::tType
+    etaqm1::tType
+    etaqp1::tType
+    saved_tq5::tType
+    predicted::Bool
+    stald::staldType
+end
+
+# DAE caches carry `u₀` because `get_dae_uprev` uses it as the predictor the
+# correction `z` is measured against.
+
+function alg_cache(
+        alg::NordsieckBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{true}, verbose
+    ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+    zn = [zero(u) for _ in 1:(MO + 1)]
+    coeffs() = zeros(typeof(t), MO + 3)
+    tq = zeros(typeof(t), 6)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    return NordsieckBDFCache{
+        MO, typeof(nlsolver), typeof(rate_prototype),
+        typeof(similar(u, uEltypeNoUnits)), typeof(u), typeof(t),
+        typeof(coeffs()), typeof(stald), typeof(alg.step_limiter!),
+    }(
+        zero(rate_prototype), nlsolver, zn, zero(u), zero(u), zero(u), zero(u),
+        similar(u, uEltypeNoUnits), coeffs(), coeffs(), tq,
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
+        zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
+        zero(t), false, stald, alg.step_limiter!
+    )
+end
+
+function alg_cache(
+        alg::NordsieckBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{false}, verbose
+    ) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+    zn = [zero(u) for _ in 1:(MO + 1)]
+    coeffs() = zeros(typeof(t), MO + 3)
+    stald = StabilityLimitDetectionState(real(uBottomEltypeNoUnits); enabled = alg.stald)
+    return NordsieckBDFConstantCache{
+        MO, typeof(nlsolver), typeof(u), typeof(t), typeof(coeffs()), typeof(stald),
+    }(
+        nlsolver, zn, zero(u), zero(u), coeffs(), coeffs(), zeros(typeof(t), 6),
+        1, 1, 2, 0, 0, 0, MO, Val(MO), MO,
+        zero(t), one(t), typeof(t)(NORD_ETA_MAX_FS), one(t), zero(t), zero(t),
+        zero(t), false, stald
     )
 end

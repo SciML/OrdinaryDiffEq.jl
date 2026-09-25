@@ -45,23 +45,23 @@ print(".")
 eigen_est = (integrator) -> integrator.eigen_est = 10.0
 sim2 = test_convergence(dts, prob, SROCK1(), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
-sim2 = test_convergence(dts, prob, SROCK1(eigen_est = eigen_est), trajectories = Int(2.0e2))
+sim2 = test_convergence(dts, prob, SROCK1(; eigen_est), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 sim2 = test_convergence(dts, prob, SROCK2(), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
-sim2 = test_convergence(dts, prob, SROCK2(eigen_est = eigen_est), trajectories = Int(2.0e2))
+sim2 = test_convergence(dts, prob, SROCK2(; eigen_est), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 sim2 = test_convergence(dts, prob, SROCKEM(strong_order_1 = false), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 0.5) < 0.2
-sim2 = test_convergence(dts, prob, SROCKEM(eigen_est = eigen_est), trajectories = Int(2.0e2))
+sim2 = test_convergence(dts, prob, SROCKEM(; eigen_est), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 sim2 = test_convergence(dts, prob, SROCKEM(), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
-sim2 = test_convergence(dts, prob, SKSROCK(eigen_est = eigen_est), trajectories = Int(2.0e2))
+sim2 = test_convergence(dts, prob, SKSROCK(; eigen_est), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 0.5) < 0.2
 sim2 = test_convergence(dts, prob, SKSROCK(), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 0.5) < 0.2
-sim2 = test_convergence(dts, prob, SROCKC2(eigen_est = eigen_est), trajectories = Int(2.0e2))
+sim2 = test_convergence(dts, prob, SROCKC2(; eigen_est), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2
 sim2 = test_convergence(dts, prob, SROCKC2(), trajectories = Int(2.0e2))
 @test abs(sim2.𝒪est[:l∞] - 1) < 0.2

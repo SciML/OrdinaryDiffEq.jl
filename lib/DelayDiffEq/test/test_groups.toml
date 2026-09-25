@@ -1,14 +1,14 @@
 [Interface]
-versions = ["lts", "1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Integrators]
-versions = ["lts", "1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [Regression]
-versions = ["lts", "1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [SDDE]
-versions = ["lts", "1.11", "1", "pre"]
+versions = ["lts", "1", "pre"]
 
 [QA]
-versions = ["1"]
+versions = ["lts", "1"]

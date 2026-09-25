@@ -25,6 +25,7 @@ take a look at the Midpoint method's implementation:
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     @pack integrator = t, dt, u
+    return
 end
 ```
 

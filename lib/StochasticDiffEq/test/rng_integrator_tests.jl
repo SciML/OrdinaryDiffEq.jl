@@ -180,4 +180,17 @@ prob = SDEProblem(f, g, u0, tspan)
 
         @test jump_u1 != jump_u2
     end
+
+    @testset "Ensemble explicitly passed noise process reseeding" begin
+        using Statistics
+        # See https://github.com/SciML/OrdinaryDiffEq.jl/issues/3737
+        f_mwe = (u, p, t) -> 1.0
+        g_mwe = (u, p, t) -> 0.2
+        W_mwe = WienerProcess(0.0, 0.0)
+        prob_mwe = SDEProblem(f_mwe, g_mwe, 1.0, (0.5, 1.0), noise = W_mwe, save_noise = true)
+        ep = EnsembleProblem(prob_mwe, output_func = (sol, ctx) -> (sol.W.W[end], false), prob_func = (p, ctx) -> deepcopy(p))
+        s = solve(ep, EM(), dt = 0.1, trajectories = 100)
+        @test length(unique(s.u)) > 1
+        @test var(s.u) > 0.0
+    end
 end

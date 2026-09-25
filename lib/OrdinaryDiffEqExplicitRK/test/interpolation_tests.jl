@@ -17,7 +17,8 @@ prob_ode_linear = ODEProblem(
 
 function f_2Dlinear!(du, u, p, t)
     du[1] = 1.01 * u[1]
-    return du[2] = 1.01 * u[2]
+    du[2] = 1.01 * u[2]
+    return
 end
 prob_ode_2Dlinear = ODEProblem(
     ODEFunction(f_2Dlinear!; analytic = (u0, p, t) -> u0 .* exp(1.01t)),
@@ -119,7 +120,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         push!(errors, compute_midstep_error(sol, exact_scalar))
     end
@@ -146,7 +147,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv_vec, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv_vec, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         err = compute_midstep_error(sol, exact_vector)
         push!(errors, err)
@@ -155,4 +156,22 @@ end
     orders = estimate_order(errors, dts)
     avg_order = sum(orders) / length(orders)
     @test avg_order > 3.5
+end
+
+@testset "interpolating before the first step" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
+
+    integ = init(prob, ExplicitRK(); dt = 0.1)
+    @test integ.sol(0.0) ≈ [1.0, 2.0]
+
+    integ.sol(0.0, Val{1})
+    @test integ.sol.k[1][1] ≈ [-1.0, -2.0]
+    @test integ.sol.k[1][2] ≈ [-1.0, -2.0]
+
+    integ2 = init(prob, ExplicitRK(); dt = 0.1)
+    out = zeros(2)
+    integ2.sol(out, 0.0, Val{1})
+    @test integ2.sol.k[1][1] ≈ [-1.0, -2.0]
+    @test integ2.sol.k[1][2] ≈ [-1.0, -2.0]
 end

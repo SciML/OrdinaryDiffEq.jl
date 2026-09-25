@@ -6,11 +6,13 @@ using StochasticDiffEq, JumpProcesses, DiffEqBase, Test
 # --- Shared setup ---
 # Zero-drift, zero-noise SDE so u stays constant (deterministic for testing).
 function f!(du, u, p, t)
-    return du[1] = 0.0
+    du[1] = 0.0
+    return
 end
 
 function g!(du, u, p, t)
-    return du[1] = 0.0
+    du[1] = 0.0
+    return
 end
 
 # A jump that never fires (rate = 0).

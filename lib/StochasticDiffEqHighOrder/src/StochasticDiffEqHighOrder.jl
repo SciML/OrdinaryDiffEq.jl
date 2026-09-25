@@ -1,10 +1,13 @@
 module StochasticDiffEqHighOrder
 
-using Reexport
+using Reexport: Reexport, @reexport
+import StochasticDiffEqCore
 @reexport using StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!
+import OrdinaryDiffEqCore: perform_step!
+
+import DiffEqBase
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, alg_stability_size, delta_default,
@@ -16,7 +19,7 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     calc_twopoint_random!, calc_twopoint_random,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
+import DiffEqBase: @..
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
 import DiffEqBase: Tableau
@@ -24,10 +27,11 @@ import DiffEqBase: Tableau
 import MuladdMacro: @muladd
 
 import SciMLBase
+import SciMLBase: is_diagonal_noise
 
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
+using LinearAlgebra: LinearAlgebra, dot, mul!
+using StaticArrays: StaticArrays, SArray
+import RecursiveArrayTools
 
 include("tableaus.jl")
 include("algorithms.jl")

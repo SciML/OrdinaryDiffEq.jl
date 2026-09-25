@@ -28,14 +28,14 @@ function test(A_prototype, u_prototype, iip; use_ldiv = false, broken = false)
             u0 = u_prototype(1.0)
             t = (0.0, 1.0)
 
-            splfc = SplitFunction{iip}(Â, f; analytic = analytic)
+            splfc = SplitFunction{iip}(Â, f; analytic)
             spltode = SplitODEProblem(splfc, u0, t)
 
             if broken
                 # Wrap in try-catch since broken tests may throw during solve
                 try
                     sol = solve(
-                        spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1.0e-10
+                        spltode, RKIP(; use_ldiv); reltol, abstol = 1.0e-10
                     )
                     @test_broken isapprox(
                         sol(t[end]), splfc.analytic(u0, nothing, t[end]);
@@ -46,7 +46,7 @@ function test(A_prototype, u_prototype, iip; use_ldiv = false, broken = false)
                 end
             else
                 sol = solve(
-                    spltode, RKIP(; use_ldiv = use_ldiv); reltol = reltol, abstol = 1.0e-10
+                    spltode, RKIP(; use_ldiv); reltol, abstol = 1.0e-10
                 )
                 @test isapprox(
                     sol(t[end]), splfc.analytic(u0, nothing, t[end]);

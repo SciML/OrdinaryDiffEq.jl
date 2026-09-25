@@ -35,7 +35,7 @@ prob = SDEProblem(f, g, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(asinh(sol.u[end])), false),
-    prob_func = prob_func
+    prob_func
 )
 
 println("IRI1 weak convergence test")

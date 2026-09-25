@@ -1,5 +1,7 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol
+using OrdinaryDiffEqTsit5: AutoTsit5
+using ADTypes: AutoFiniteDiff
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
 
@@ -56,7 +58,8 @@ function vanderpol_firk(du, u, p, t)
     x, y = u[1], u[2]
     μ = p[1]
     du[1] = y                           # dx/dt = y
-    return du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    return
 end
 
 function vanderpol_firk(u, p, t)
@@ -152,7 +155,7 @@ end
         abstol = 1.0e-9
         sol = solve(
             prob_ode_linear, GaussLegendre(num_stages = s);
-            reltol = reltol, abstol = abstol
+            reltol, abstol
         )
         @test SciMLBase.successful_retcode(sol)
         exact = prob_ode_linear.u0 * exp(1.01 * (sol.t[end] - sol.t[1]))
@@ -160,7 +163,7 @@ end
     end
 end
 
-@testset "GaussLegendre Richardson tightens step count when tol tightens" begin
+@testset "GaussLegendre adaptive tightens step count when tol tightens" begin
     s = 3
     sol_loose = solve(
         prob_ode_linear, GaussLegendre(num_stages = s);
@@ -188,4 +191,68 @@ for iip in (true, false)
     end
     @test length(sol.t) < 5000 # the error estimate is not very good
     @test SciMLBase.successful_retcode(sol)
+end
+
+@testset "AdaptiveRadau initializes every stage-value slot" begin
+    # `integrator.k[3:end]` holds one stage value per possible stage; the extrapolated
+    # initial guess reads all `num_stages` of them, so the slots above the starting stage
+    # count are read as soon as the controller raises the order. Leave dirty blocks in the
+    # allocator's free lists first, or an uninitialized slot can come back zeroed by luck.
+    poison() = sum(sum, [fill(NaN, 2) for _ in 1:50_000])
+    @test isnan(poison())
+    GC.gc(false)
+    vanstiff = ODEProblem(vanderpol_firk, [sqrt(3), 0.0], (0.0, 1.0), [1.0e6])
+    integ = init(vanstiff, AdaptiveRadau())
+    @test all(x -> all(iszero, x), integ.k[3:(integ.kshortsize)])
+end
+
+@testset "AdaptiveRadau as a composite member (#4367)" begin
+    f_comp = (du, u, p, t) -> (du[1] = -1000u[1] + u[2]; du[2] = u[1] - 2u[2]; nothing)
+    prob_comp = ODEProblem(f_comp, [1.0, 1.0], (0.0, 1.0))
+
+    integ = init(prob_comp, AutoTsit5(AdaptiveRadau(); stiffalgfirst = true))
+    @test integ isa SciMLBase.DEIntegrator
+
+    bare = init(prob_comp, AdaptiveRadau())
+    @test integ.kshortsize == bare.kshortsize
+end
+
+@testset "AdaptiveRadau Newton tolerance follows the stage count" begin
+    prob = prob_ode_rober
+    ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
+    for alg in (AdaptiveRadau(), AdaptiveRadau(; min_order = 13, max_order = 13))
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.naccept < 500
+        @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
+        @test abs(sum(sol.u[end]) - 1) < 1.0e-8
+    end
+end
+
+@testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
+    function rober_firk!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+        return nothing
+    end
+    prob_rober = ODEProblem(rober_firk!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    reference = solve(prob_rober, RadauIIA5(); abstol = 1.0e-10, reltol = 1.0e-10).u[end]
+
+    for stiffalg in (
+            RadauIIA3(autodiff = AutoFiniteDiff()),
+            RadauIIA5(autodiff = AutoFiniteDiff()),
+            AdaptiveRadau(autodiff = AutoFiniteDiff()),
+        )
+        sol = solve(prob_rober, AutoTsit5(stiffalg); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test count(==(2), sol.alg_choice) > 0
+        @test sol.u[end] ≈ reference rtol = 1.0e-4
+    end
+
+    integ = init(
+        prob_rober, AutoTsit5(AdaptiveRadau(autodiff = AutoFiniteDiff()); stiffalgfirst = true)
+    )
+    @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end

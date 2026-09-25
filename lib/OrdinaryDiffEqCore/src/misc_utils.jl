@@ -6,6 +6,16 @@ macro swap!(x, y)
     end
 end
 
+"""
+    @cache struct MyCache ... end
+
+Macro used to define a mutable solver cache. It emits the given `struct` definition
+and additionally generates a `full_cache(c::MyCache)` method returning the tuple of
+its resizable buffer fields (those typed `uType`, `rateType`, `kType`,
+`uNoUnitsType`, or the `du`/`dual_du` of a `DiffCacheType`). That `full_cache`
+tuple is what the `resize!`/`deleteat!` integrator interface iterates over when the
+state length changes.
+"""
 macro cache(expr)
     name = expr.args[2].args[1].args[1]
     fields = [x for x in expr.args[3].args if typeof(x) != LineNumberNode]
@@ -22,21 +32,35 @@ macro cache(expr)
     end
     return quote
         $(esc(expr))
-        $(esc(:full_cache))(c::$(esc(name))) = tuple($(cache_vars...))
+        $(GlobalRef(SciMLBase, :full_cache))(c::$(esc(name))) = tuple($(cache_vars...))
     end
 end
 
 # Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
 # value should recurse for anything else.
+"""
+    constvalue(x)
+
+Strip any ForwardDiff/unit wrapper from `x` (or a type `T`) down to its underlying
+numeric value, taking the real part for `Complex` so that a scalar constant can be
+compared/used unambiguously. Used e.g. for eigenvalue estimates.
+"""
 function constvalue(::Type{T}) where {T}
-    _T = DiffEqBase.value(T)
-    return _T <: Complex ? DiffEqBase.value(real(_T)) : DiffEqBase.value(_T)
+    _T = SciMLBase.value(T)
+    return _T <: Complex ? SciMLBase.value(real(_T)) : SciMLBase.value(_T)
 end
 function constvalue(x)
-    _x = DiffEqBase.value(x)
-    return _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+    _x = SciMLBase.value(x)
+    return _x isa Complex ? SciMLBase.value(real(_x)) : SciMLBase.value(_x)
 end
 
+"""
+    diffdir(integrator) -> Int
+
+Return the finite-difference direction (`+1` or `-1`) to use for time
+derivatives, chosen so the stencil stays inside the integration interval near an
+endpoint.
+"""
 function diffdir(integrator::SciMLBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     return dir = integrator.tdir > zero(integrator.tdir) ?
@@ -44,13 +68,56 @@ function diffdir(integrator::SciMLBase.DEIntegrator)
         integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
 end
 
+"""
+    error_constant(integrator, order) -> Real
+
+Return the leading error constant of the current method at the given `order`, used
+when scaling the local error estimate. Dispatches on `integrator.alg`.
+"""
 error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
 
+"""
+    AbstractThreadingOption
+
+Abstract supertype for the `threading = …` option controlling how solvers that
+expose independent internal work (extrapolation columns, parallel Runge-Kutta
+stages) execute it. The concrete choices are [`Sequential`](@ref),
+[`BaseThreads`](@ref), and [`PolyesterThreads`](@ref); [`isthreaded`](@ref)
+reports whether a given option enables multithreading.
+
+This is distinct from the `thread = …` option of the FastBroadcast-based solvers,
+which takes `FastBroadcast.Serial()` or `FastBroadcast.Threaded()`.
+"""
 abstract type AbstractThreadingOption end
+"""
+    Sequential() <: AbstractThreadingOption
+
+Threading option that disables internal multithreading — all per-element work runs
+on a single thread. [`isthreaded`](@ref)`(Sequential())` is `false`.
+"""
 struct Sequential <: AbstractThreadingOption end
+"""
+    BaseThreads() <: AbstractThreadingOption
+
+Threading option that parallelizes internal broadcasting with Julia's built-in
+`Threads.@threads`. [`isthreaded`](@ref)`(BaseThreads())` is `true`.
+"""
 struct BaseThreads <: AbstractThreadingOption end
+"""
+    PolyesterThreads() <: AbstractThreadingOption
+
+Threading option that parallelizes internal broadcasting with Polyester.jl's
+low-overhead `@batch`. [`isthreaded`](@ref)`(PolyesterThreads())` is `true`.
+"""
 struct PolyesterThreads <: AbstractThreadingOption end
 
+"""
+    isthreaded(opt) -> Bool
+
+Return whether the threading option `opt` enables multithreaded internal
+broadcasting. `true` for [`BaseThreads`](@ref)/[`PolyesterThreads`](@ref) (and
+`true` for a `Bool` `opt` equal to `true`), `false` for [`Sequential`](@ref).
+"""
 isthreaded(b::Bool) = b
 isthreaded(::Sequential) = false
 isthreaded(::BaseThreads) = true
@@ -94,6 +161,55 @@ macro threaded(option, ex)
     end
 end
 
+"""
+    @OnDemandTableauExtract TableauType T
+    @OnDemandTableauExtract TableauType T T2
+
+Construct `TableauType` from one or two scalar types and bind each field of the
+constructed tableau to a same-named local variable in the invocation scope.
+Solver implementations use this macro to expose coefficient fields to stage code
+without storing a runtime tableau object.
+
+# Arguments
+
+  - `TableauType`: concrete or parametric tableau type defined in the invoking
+    module. Its field names determine the generated local bindings.
+  - `T`: scalar type passed as the first constructor argument.
+  - `T2`: optional scalar type passed as the second constructor argument, commonly
+    used for time nodes.
+
+# Returns
+
+An expression that constructs the tableau once and assigns every field value to a
+local variable with the corresponding field name.
+
+# Developer contract
+
+`TableauType` must resolve in the invoking module and provide the selected
+constructor. Its field layout is part of the solver implementation using the
+macro. Invoke the macro inside a function before reading the generated names, and
+do not use those generated locals as application API.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqCore: @OnDemandTableauExtract
+
+struct ExampleTableau{T, T2}
+    weight::T
+    node::T2
+end
+ExampleTableau(::Type{T}, ::Type{T2}) where {T, T2} =
+    ExampleTableau(one(T), convert(T2, 1 // 2))
+
+function coefficients(T, T2)
+    @OnDemandTableauExtract ExampleTableau T T2
+    return weight, node
+end
+
+coefficients(Float64, Float64) == (1.0, 0.5)
+```
+"""
 macro OnDemandTableauExtract(S_T, T, T2)
     S = getproperty(__module__, S_T)
     s = gensym(:s)
@@ -119,10 +235,52 @@ macro OnDemandTableauExtract(S_T, T)
     return esc(q)
 end
 
+"""
+    @fold function_definition
+
+Declare `function_definition` foldable using `Base.@assume_effects :foldable`.
+OrdinaryDiffEq solver packages use this macro for deterministic tableau and
+coefficient constructors that the compiler may evaluate at compile time.
+
+# Arguments
+
+  - `function_definition`: a function definition whose result depends only on its
+    arguments and immutable global constants.
+
+# Returns
+
+The escaped function definition wrapped in the Julia foldability annotation.
+
+# Developer contract
+
+Only annotate functions that are deterministic, effect-free, and safe to evaluate
+or eliminate at compile time. Incorrect use can cause invalid compiler
+optimizations; functions that mutate external state, perform I/O, inspect mutable
+globals, or depend on task state must not use `@fold`.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqCore: @fold
+
+@fold function coefficient_pair(::Type{T}) where {T}
+    return convert(T, 1 // 2), one(T)
+end
+
+coefficient_pair(Float64) == (0.5, 1.0)
+```
+"""
 macro fold(arg)
     return esc(:(Base.@assume_effects :foldable $arg))
 end
 
+"""
+    DifferentialVarsUndefined
+
+Sentinel returned by [`get_differential_vars`](@ref) when the differential vs
+algebraic split cannot be determined (the mass matrix is not diagonal). In that
+case dense output falls back to linear interpolation.
+"""
 struct DifferentialVarsUndefined end
 
 """
@@ -138,8 +296,17 @@ function get_differential_vars(f, u)
         mm = f.mass_matrix
         mm = mm isa MatrixOperator ? mm.A : mm
 
-        if mm isa UniformScaling
+        if mm isa UniformScaling || mm isa SciMLOperators.IdentityOperator
             return nothing
+        elseif mm isa SciMLOperators.ScalarOperator
+            # λ·I: every variable is algebraic when λ is zero.
+            return iszero(mm.val) ? falses(size(u)) : nothing
+        elseif mm isa Diagonal
+            # Check only `mm.diag`: the generic paths below visit every (i, j)
+            # pair via scalar `getindex`, which is disallowed when `mm.diag` is
+            # GPU-backed (e.g. `Diagonal{Float64, <:CuVector}`), while a
+            # broadcast over `mm.diag` dispatches to a proper GPU kernel.
+            return reshape(mm.diag .!= 0, size(u))
         elseif all(!iszero, mm)
             return trues(size(mm, 1))
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && _isdiag(mm)
@@ -156,6 +323,94 @@ end
 # Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
 _isdiag(A::AbstractMatrix) = isdiag(A)
 
+# Dense fallback to find large Jacobian entries.
+# Sparse specialization is provided in OrdinaryDiffEqCoreSparseArraysExt
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::AbstractMatrix)
+    for i in axes(jac, 1), j in axes(jac, 2)
+        val = jac[i, j]
+        if !isfinite(val) || abs(val) > 1.0e6
+            push!(rows, i)
+            push!(cols, j)
+            push!(entries, (i, j, val))
+        end
+    end
+    return
+end
+"""
+    find_algebraic_vars_eqs(M)
+
+Find algebraic variables (zero columns) and algebraic equations (zero rows) from mass matrix.
+Returns `(algebraic_vars, algebraic_eqs)` as boolean arrays (true = algebraic).
+
+Works on CPU and GPU arrays. Sparse specialization (O(nnz)) is provided in
+OrdinaryDiffEqCoreSparseArraysExt.
+"""
+function find_algebraic_vars_eqs(M::Diagonal)
+    _idxs = map(iszero, diag(M))
+    return _idxs, _idxs
+end
+
+function find_algebraic_vars_eqs(M::AbstractMatrix)
+    algebraic_vars = vec(all(iszero, M, dims = 1))
+    algebraic_eqs = vec(all(iszero, M, dims = 2))
+    return algebraic_vars, algebraic_eqs
+end
+
+function find_algebraic_vars_eqs(M::SciMLOperators.AbstractSciMLOperator)
+    return find_algebraic_vars_eqs(convert(AbstractMatrix, M))
+end
+
+"""
+    _is_identity_massmatrix(mm) -> Bool
+
+Whether `mm` acts as the identity matrix. Unlike `mm == I`, never scalar-indexes
+`mm`: `==(A::AbstractMatrix, ::UniformScaling)` reads `first(A)` on Julia 1.13+,
+which fails for GPU-backed mass matrices (e.g. `Diagonal{T, <:CuVector}`).
+"""
+_is_identity_massmatrix(mm::UniformScaling) = isone(mm.λ)
+_is_identity_massmatrix(mm::Diagonal) = all(isone, mm.diag)
+function _is_identity_massmatrix(mm::AbstractMatrix)
+    return ArrayInterface.fast_scalar_indexing(mm) ? mm == I :
+        _is_identity_massmatrix(Matrix(mm))
+end
+_is_identity_massmatrix(mm) = mm == I
+
+"""
+    _is_zero_massmatrix(mm) -> Bool
+
+Whether every entry of `mm` is zero. Unlike `all(isequal(0), mm)`, never
+scalar-indexes `mm`, so it accepts GPU-backed mass matrices.
+"""
+_is_zero_massmatrix(mm::Diagonal) = all(iszero, mm.diag)
+function _is_zero_massmatrix(mm::AbstractMatrix)
+    return ArrayInterface.fast_scalar_indexing(mm) ? all(isequal(0), mm) :
+        _is_zero_massmatrix(Matrix(mm))
+end
+_is_zero_massmatrix(mm) = all(isequal(0), mm)
+
+"""
+    _diff_alg_vars(mm, n) -> (diff_vars, alg_vars)
+
+Indices of the differential (nonzero diagonal entry) and algebraic (zero
+diagonal entry) variables of an `n` × `n` mass matrix. `findall` on `mm.diag`
+dispatches to a device kernel for GPU-backed diagonals, while `mm[i, i]` in a
+loop scalar-indexes.
+"""
+function _diff_alg_vars(mm::Diagonal, n)
+    return findall(!iszero, mm.diag), findall(iszero, mm.diag)
+end
+function _diff_alg_vars(mm::AbstractMatrix, n)
+    ArrayInterface.fast_scalar_indexing(mm) || return _diff_alg_vars(Matrix(mm), n)
+    return findall(i -> mm[i, i] != 0, 1:n), findall(i -> mm[i, i] == 0, 1:n)
+end
+
+"""
+    isnewton(nlsolver) -> Bool
+
+Return whether the nonlinear solver `nlsolver` is a Newton-type solver (as opposed
+to a fixed-point / functional iteration), which determines whether a W-matrix is
+formed and updated.
+"""
 isnewton(::Any) = false
 
 # Extract the chunk size integer from an ADType for use as a type parameter.
@@ -172,6 +427,13 @@ _ad_fdtype(::AutoSparse{<:AutoFiniteDiff{FD}}) where {FD} = FD
 _ad_fdtype(_) = Val{:forward}()
 
 # Fix AutoFiniteDiff dir: default dir of true (Bool) makes integration non-reversible
+"""
+    _fixup_ad(ad, args...)
+
+Internal helper that adjusts an autodiff choice `ad` to be consistent with the
+problem/solver context (e.g. disabling AD when it is not applicable). Returns the
+possibly-modified autodiff choice.
+"""
 function _fixup_ad(ad_alg::AutoFiniteDiff)
     if ad_alg.dir isa Bool
         @reset ad_alg.dir = Int(ad_alg.dir)
@@ -187,3 +449,93 @@ function _fixup_ad(ad_alg::Bool)
     )
 end
 _fixup_ad(ad_alg) = ad_alg
+
+# Warm-start state for the scalar interval searches in `ode_interpolation` /
+# `ode_interpolation!`. The strategy is stored as a mutable
+# `FindFirstFunctions.StrategyKind` enum field, so it can be re-selected as
+# the time grid's structure becomes known (at solve init from
+# `saveat`/`adaptive`, on grid growth, and at the ending phase) without
+# changing the container's type. All strategies return exact
+# `searchsortedfirst`/`searchsortedlast` results; the kind only affects
+# lookup speed. Races on the mutable fields under concurrent interpolation
+# only degrade the starting guess, never correctness.
+mutable struct TsSearchHint{T <: AbstractVector}
+    const ts::T
+    # 0 means "no query yet": the first search then starts from `lastindex(ts)`
+    # at query time. `ts` grows after construction, and mid-solve consumers
+    # (delay-equation history lookups especially) query near the current end,
+    # so a guess frozen at construction would go stale.
+    idx_prev::Int
+    kind::StrategyKind
+    # `length(ts)` at the last grid probe. `typemax(Int)` disables re-probing
+    # (the grid's uniformity is already known from the solve options).
+    probed_len::Int
+end
+
+TsSearchHint(ts::AbstractVector) = TsSearchHint(ts, 0, KIND_BRACKET_GALLOP, 0)
+
+@inline function ts_hint_start(h::TsSearchHint, v)
+    prev = h.idx_prev
+    return ifelse(prev == 0, lastindex(v), prev)
+end
+
+# Sampled uniformity probe: O(64) regardless of grid size. Interpolation
+# search wins on near-uniform grids (`saveat` ranges, fixed-dt stepping,
+# smooth adaptive solves); the hinted bracketing gallop is the robust choice
+# for irregular grids under the correlated access patterns of adjoints and
+# history lookups.
+function _ts_grid_kind(ts::AbstractVector)
+    n = length(ts)
+    n < 4 && return KIND_BRACKET_GALLOP
+    tf = first(ts)
+    tl = last(ts)
+    mean_dt = (tl - tf) / (n - 1)
+    iszero(mean_dt) && return KIND_BRACKET_GALLOP
+    # Skip the first and last few intervals: the adaptive initial-dt ramp-up
+    # and the final truncated step are structural boundary artifacts, not
+    # indicative of the interior grid.
+    skip = min(4, (n - 1) ÷ 4)
+    navail = n - 1 - 2 * skip
+    navail < 1 && return KIND_BRACKET_GALLOP
+    nsamples = min(navail, 64)
+    stride = navail ÷ nsamples
+    @inbounds for k in 0:(nsamples - 1)
+        i = firstindex(ts) + skip + k * stride
+        r = (ts[i + 1] - ts[i]) / mean_dt
+        # sign flips, plateaus, and strong local stretching all disqualify
+        # the linear index guess that interpolation search relies on
+        (0.25 <= r <= 4.0) || return KIND_BRACKET_GALLOP
+    end
+    return KIND_INTERPOLATION_SEARCH
+end
+
+@inline function reprobe_ts_hint!(h::TsSearchHint)
+    h.kind = _ts_grid_kind(h.ts)
+    h.probed_len = length(h.ts)
+    return nothing
+end
+
+# Cheap growth check performed by interpolation consumers (never by the step
+# loop): re-probe once the grid has doubled since the last look.
+@inline function maybe_reprobe_ts_hint!(h::TsSearchHint)
+    p = h.probed_len
+    p == typemax(Int) && return nothing
+    length(h.ts) >= 2 * max(p, 32) && reprobe_ts_hint!(h)
+    return nothing
+end
+
+# Interpolation objects that carry a `TsSearchHint` return it here; the
+# fallback keeps foreign interpolation types on the plain binary search. The
+# typed method for `InterpolationData` lives in interp_func.jl.
+@inline _ts_hint(id) = nothing
+
+# Ending-phase re-probe, called from `_postamble!` once the time grid is
+# final. Skipped when the kind was fixed from the solve options.
+function _finalize_ts_hint!(sol)
+    interp = hasproperty(sol, :interp) ? sol.interp : nothing
+    h = _ts_hint(interp)
+    h === nothing && return nothing
+    h.probed_len == typemax(Int) && return nothing
+    reprobe_ts_hint!(h)
+    return nothing
+end

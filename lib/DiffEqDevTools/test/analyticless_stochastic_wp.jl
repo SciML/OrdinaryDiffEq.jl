@@ -1,7 +1,14 @@
 using Random
 using StochasticDiffEq, DiffEqDevTools, Test
-using SDEProblemLibrary: prob_sde_additivesystem
+using SDEProblemLibrary: prob_sde_additivesystem, prob_sde_linear
 using SciMLLogging: None
+
+linear_prob = remake(prob_sde_linear, tspan = (0.0, 0.1))
+wp_default_dts = WorkPrecisionSet(
+    linear_prob, [1.0e-2, 1.0e-3], [1.0e-2, 1.0e-3], [Dict(:alg => SRIW1())];
+    numruns = 1, numruns_error = 1, error_estimate = :l2
+)
+@test wp_default_dts.wps[1].dts == zeros(2)
 
 prob = prob_sde_additivesystem
 prob = SDEProblem(prob.f, prob.g, prob.u0, (0.0, 0.1), prob.p)
@@ -28,6 +35,23 @@ setups = [
     )
     Dict(:alg => SRA1())
 ]
+
+threaded_prob = SDEProblem(
+    (du, u, p, t) -> (du .= u), (du, u, p, t) -> (du .= 0.1 .* u),
+    [1.0, 1.0], (0.0, 0.1)
+)
+threaded_setups = [
+    Dict(:alg => SRIW1()),
+    Dict(:alg => RKMil(), :dts => fill(0.001, length(reltols)), :adaptive => false),
+]
+threaded_wp = WorkPrecisionSet(
+    threaded_prob, abstols, reltols, threaded_setups, 0.01;
+    numruns = 1, numruns_error = max(32, Threads.nthreads()),
+    parallel_type = :threads, error_estimate = :final,
+    appxsol_setup = Dict(:alg => SRIW1(), :abstol => 1.0e-4, :reltol => 1.0e-4)
+)
+@test length(threaded_wp.wps) == 2
+
 _names = ["SRIW1", "EM", "RKMil", "SRIW1 Fixed", "SRA1 Fixed", "SRA1"]
 test_dt = 0.1
 wp = WorkPrecisionSet(
@@ -51,14 +75,14 @@ test_dt = 1 / 10^4
 appxsol_setup = Dict(:alg => SRIW1(), :abstol => 1.0e-4, :reltol => 1.0e-4)
 wp = WorkPrecisionSet(
     prob2, abstols, reltols, setups, test_dt;
-    appxsol_setup = appxsol_setup,
+    appxsol_setup,
     numruns = 5, names = _names, error_estimate = :weak_final
 )
 
 println("Get sample errors")
 
 se2 = get_sample_errors(
-    prob2, setups[1], test_dt, appxsol_setup = appxsol_setup,
+    prob2, setups[1], test_dt; appxsol_setup,
     numruns = [5, 10, 25, 50, 100], solution_runs = 20
 )
 
@@ -99,7 +123,7 @@ seeds = rand(UInt, numtraj)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h2(sol[1, end]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 reltols = 1.0 ./ 4.0 .^ (1:4)
@@ -117,7 +141,7 @@ wp1 = @time WorkPrecisionSet(
     ensemble_prob, abstols, reltols, setups, test_dt;
     maxiters = 1.0e7,
     verbose = None(), save_everystep = false, save_start = false,
-    appxsol_setup = appxsol_setup,
+    appxsol_setup,
     trajectories = numtraj, error_estimate = :weak_final
 )
 
@@ -126,11 +150,11 @@ wp2 = @time WorkPrecisionSet(
     ensemble_prob, abstols, reltols, setups, test_dt;
     maxiters = 1.0e7,
     verbose = None(), save_everystep = false, save_start = false,
-    appxsol_setup = appxsol_setup, expected_value = exp(-3.0),
+    appxsol_setup, expected_value = exp(-3.0),
     trajectories = numtraj, error_estimate = :weak_final
 )
 
-err1 = [wp1.wps[i].errors for i in 1:length(setups)]
-err2 = [wp2.wps[i].errors for i in 1:length(setups)]
+err1 = [wp1.wps[i].errors.weak_final for i in 1:length(setups)]
+err2 = [wp2.wps[i].errors.weak_final for i in 1:length(setups)]
 
 @test isapprox(err1, err2, atol = 1.0e-3)

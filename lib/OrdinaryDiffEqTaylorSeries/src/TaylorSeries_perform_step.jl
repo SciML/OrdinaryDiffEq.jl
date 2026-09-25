@@ -1,5 +1,3 @@
-using TaylorDiff: TaylorDiff, extract_derivative, extract_derivative!
-
 # Extract the first-order derivative from TaylorScalar results.
 # For scalars, access .partials[1]; for arrays, map over elements.
 @inline _extract_taylor2_deriv(x::TaylorScalar) = x.partials[1]
@@ -7,9 +5,9 @@ using TaylorDiff: TaylorDiff, extract_derivative, extract_derivative!
 
 # Extract the i-th coefficient from a TaylorScalar or array of TaylorScalars.
 # For scalar problems, returns a scalar. For array problems, returns a vector.
-@inline _taylor_get_coefficient(ts::TaylorScalar, i::Int) = get_coefficient(ts, i)
+@inline _taylor_get_coefficient(ts::TaylorScalar, i::Int) = TaylorDiff.get_coefficient(ts, i)
 @inline function _taylor_get_coefficient(arr::AbstractArray{<:TaylorScalar}, i::Int)
-    return map(ts -> get_coefficient(ts, i), arr)
+    return map(ts -> TaylorDiff.get_coefficient(ts, i), arr)
 end
 
 @inline make_taylor(all::Vararg{X, P}) where {P, X <: AbstractArray} = TaylorArray(
@@ -60,7 +58,7 @@ end
     f(k1, uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
-    out1 = make_taylor(k1, k2)
+    out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
@@ -101,7 +99,7 @@ function initialize!(integrator, cache::ExplicitTaylorCache{P}) where {P}
     resize!(integrator.k, P)
     # Setup k pointers
     for i in 1:P
-        integrator.k[i] = get_coefficient(cache.utaylor, i)
+        integrator.k[i] = TaylorDiff.get_coefficient(cache.utaylor, i)
     end
     return nothing
 end
@@ -110,9 +108,9 @@ end
         integrator, cache::ExplicitTaylorCache{P}, repeat_step = false
     ) where {P}
     (; t, dt, uprev, u, f, p) = integrator
-    (; jet, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jet, coeffs, utaylor, utilde, tmp, atmp, thread) = cache
 
-    jet(utaylor, uprev, t)
+    jet(utaylor, coeffs, uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end
@@ -129,12 +127,20 @@ end
     # Copy Taylor coefficients into k for dense output interpolation.
     # Use map! to avoid the intermediate allocation from get_coefficient.
     for i in 1:P
-        map!(ts -> get_coefficient(ts, i), integrator.k[i], utaylor)
+        map!(ts -> TaylorDiff.get_coefficient(ts, i), integrator.k[i], utaylor)
     end
     return nothing
 end
 
 function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderCache)
+    max_order_value = get_value(cache.max_order)
+    integrator.kshortsize = max_order_value
+    resize!(integrator.k, max_order_value)
+    # Setup k pointers
+    for i in 1:max_order_value
+        integrator.k[i] = TaylorDiff.get_coefficient(cache.utaylor, i)
+    end
+    return nothing
 end
 
 @muladd function perform_step!(
@@ -142,7 +148,7 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jets, coeffs, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)
@@ -150,11 +156,16 @@ end
     jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
-    jet(utaylor, uprev, t)
+    jet(utaylor, coeffs[jet_index + 1], uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    # Copy Taylor coefficients into k for dense output interpolation.
+    # Coefficients above the order of this step's jet are zero.
+    for i in 1:max_order_value
+        map!(ts -> TaylorDiff.get_coefficient(ts, i), integrator.k[i], utaylor)
+    end
     if integrator.opts.adaptive
         min_work = Inf
         start_order = max(min_order_value, current_order[] - 1)
@@ -219,12 +230,19 @@ end
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
     utaylor = jet(uprev, t)
-    u = map(x -> evaluate_polynomial(x, dt), utaylor)
+    u = eval_taylor_polynomial(utaylor, dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    # Save Taylor coefficients for dense output interpolation.
+    # Coefficients above the order of this step's jet are zero.
+    for i in 1:max_order_value
+        integrator.k[i] = _taylor_get_coefficient(utaylor, i)
+    end
     if integrator.opts.adaptive
         min_work = Inf
         start_order = max(min_order_value, current_order[] - 1)
-        end_order = min(max_order_value, current_order[] + 1)
+        # one order above `current_order` is still jetted next step, so it has to stay
+        # within `jets`
+        end_order = min(max_order_value - 1, current_order[] + 1)
         for i in start_order:end_order
             A = i * i
             utilde = TaylorDiff.get_coefficient(utaylor, i) * dt^i
@@ -258,5 +276,6 @@ end
             end
         end
     end
+    integrator.u = u
     return nothing
 end

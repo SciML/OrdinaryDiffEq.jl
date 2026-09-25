@@ -1,7 +1,8 @@
 using SafeTestsets
 using Pkg
+using SciMLTesting
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_modelingtoolkit_env()
     Pkg.activate(joinpath(@__DIR__, "modelingtoolkit"))
@@ -19,30 +20,49 @@ function activate_modelingtoolkit_env()
 end
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    lib_dir = dirname(dirname(@__DIR__))
+    return activate_group_env(
+        joinpath(@__DIR__, "qa");
+        parent = [
+            dirname(@__DIR__),
+            joinpath(lib_dir, "OrdinaryDiffEqCore"),
+            joinpath(lib_dir, "OrdinaryDiffEqBDF"),
+            joinpath(lib_dir, "OrdinaryDiffEqRosenbrock"),
+        ],
+    )
 end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "ModelingToolkit")
+    @time @safetestset "Developer API Tests" include("developer_api_tests.jl")
     @time @safetestset "Newton Tests" include("newton_tests.jl")
-    @time @safetestset "Sparse Algebraic Detection" include("sparse_algebraic_detection_tests.jl")
+    @time @safetestset "Callable Predictor Tests" include("predictor_tests.jl")
     @time @safetestset "Sparse DAE Initialization" include("sparse_dae_initialization_tests.jl")
     @time @safetestset "Linear Nonlinear Solver Tests" include("linear_nonlinear_tests.jl")
     @time @safetestset "Linear Solver Tests" include("linear_solver_tests.jl")
     @time @safetestset "Linear Solver Split ODE Tests" include("linear_solver_split_ode_tests.jl")
+    @time @safetestset "Default Krylov Preconditioner Tests" include("default_krylov_preconditioner_tests.jl")
     @time @safetestset "Mass Matrix Tests" include("mass_matrix_tests.jl")
     @time @safetestset "W-Operator Prototype Tests" include("wprototype_tests.jl")
     @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
     @time @safetestset "CheckInit Tests" include("checkinit_tests.jl")
     @time @safetestset "Nested AD over NonlinearSolveAlg" include("nested_ad_nlsolvealg_tests.jl")
-end
-
-# Run QA tests (JET, Aqua)
-if TEST_GROUP ∉ ("Core", "ModelingToolkit") && isempty(VERSION.prerelease)
-    activate_qa_env()
-    @time @safetestset "JET Tests" include("qa/jet.jl")
-    @time @safetestset "Aqua" include("qa/qa.jl")
+    @time @safetestset "NonlinearSolveAlg Jacobian Reuse Tests" include("nsa_jacobian_reuse_tests.jl")
+    @time @safetestset "Homotopy Nonlinear Solver Tests" include("homotopy_nlsolve_tests.jl")
+    @time @safetestset "Homotopy init default_nlsolve Tests" include("homotopy_default_nlsolve_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Sparse Jacobian Tests" include("nsa_sparse_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Matrix-Free WOperator Tests" include("nsa_matrixfree_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Split W (LHL) Tests" include("nsa_lhl_split_w_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Krylov Tolerance Tests" include("nsa_krylov_tolerance_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Smoothed Error Estimate Tests" include("nsa_smooth_est_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Stale W Reuse Tests" include("nsa_stale_w_reuse_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Stats Tests" include("nsa_stats_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Polyalgorithm Inner Solver Tests" include("nsa_polyalg_tests.jl")
+    @time @safetestset "NonlinearSolveAlg No-Init Inner Solver Tests" include("nsa_noinit_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Preconditioning Tests" include("nsa_conditioning_tests.jl")
+    @time @safetestset "NonlinearSolveAlg Residual Convergence Tests" include("nsa_residual_convergence_tests.jl")
+    @time @safetestset "NonlinearSolveAlg DAEProblem Tests" include("nsa_dae_tests.jl")
+    @time @safetestset "NonlinearSolveAlg nlstep_data Field Tests" include("nsa_nlstep_data_field_tests.jl")
 end
 
 # Run ModelingToolkit tests (separate environment due to heavy MTK dependency)
@@ -51,4 +71,16 @@ if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
     @time @safetestset "NLStep Tests" include("modelingtoolkit/nlstep_tests.jl")
     @time @safetestset "Preconditioner Tests" include("modelingtoolkit/preconditioners.jl")
     @time @safetestset "DAE Initialize Integration" include("modelingtoolkit/dae_initialize_integration.jl")
+end
+
+# Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
+# virtual module, so every method the package defines on a generic function owned by
+# another module is replaced by a copy bound to a module with no package extensions
+# loaded. Anything that runs afterwards in the same process then exercises those
+# copies instead of the real methods. `activate_qa_env()` also leaves the QA
+# environment active, so the groups above must resolve before it runs.
+if TEST_GROUP ∉ ("Core", "ModelingToolkit") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
 end

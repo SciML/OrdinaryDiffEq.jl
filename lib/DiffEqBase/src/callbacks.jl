@@ -1,5 +1,5 @@
 """
-    initialize!(cb::CallbackSet,u,t,integrator::DEIntegrator)
+    initialize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
 
 Recursively apply `initialize!` and return whether any modified u
 """
@@ -8,6 +8,20 @@ function initialize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
         u, t, integrator, false, cb.continuous_callbacks...,
         cb.discrete_callbacks...
     )
+end
+
+function initialize!(
+        cb::CallbackSet{<:AbstractVector, <:AbstractVector},
+        u, t, integrator::DEIntegrator
+    )
+    any_modified = false
+    for callbacks in (cb.continuous_callbacks, cb.discrete_callbacks)
+        for callback in callbacks
+            callback.initialize(callback, u, t, integrator)
+            any_modified |= integrator.derivative_discontinuity
+        end
+    end
+    return any_modified
 end
 initialize!(cb::CallbackSet{Tuple{}, Tuple{}}, u, t, integrator::DEIntegrator) = false
 function initialize!(
@@ -26,12 +40,26 @@ function initialize!(
 end
 
 """
-    finalize!(cb::CallbackSet,u,t,integrator::DEIntegrator)
+    finalize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
 
 Recursively apply `finalize!` and return whether any modified u
 """
 function finalize!(cb::CallbackSet, u, t, integrator::DEIntegrator)
     return finalize!(u, t, integrator, false, cb.continuous_callbacks..., cb.discrete_callbacks...)
+end
+
+function finalize!(
+        cb::CallbackSet{<:AbstractVector, <:AbstractVector},
+        u, t, integrator::DEIntegrator
+    )
+    any_modified = false
+    for callbacks in (cb.continuous_callbacks, cb.discrete_callbacks)
+        for callback in callbacks
+            callback.finalize(callback, u, t, integrator)
+            any_modified |= integrator.derivative_discontinuity
+        end
+    end
+    return any_modified
 end
 finalize!(cb::CallbackSet{Tuple{}, Tuple{}}, u, t, integrator::DEIntegrator) = false
 function finalize!(
@@ -62,6 +90,16 @@ has_continuous_callback(cb::VectorContinuousCallback) = true
 has_continuous_callback(cb::CallbackSet) = !isempty(cb.continuous_callbacks)
 has_continuous_callback(cb::Nothing) = false
 
+_erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
+function _erase_callback_types(callback)
+    Base.@nospecialize callback
+    callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
+    return CallbackSet(
+        collect(Any, callbacks.continuous_callbacks),
+        collect(Any, callbacks.discrete_callbacks)
+    )
+end
+
 rightfloat(t, tdir) = isone(tdir) ? nextfloat(t) : prevfloat(t)
 
 # Callback handling
@@ -80,6 +118,14 @@ function get_tmp(integrator::DEIntegrator, callback)
     return tmp
 end
 
+"""
+    get_condition(integrator, callback, abst)
+
+Evaluate a continuous `callback`'s condition function for `integrator` at the absolute time
+`abst`, interpolating the state when `abst != integrator.t` and respecting the callback's
+`idxs`/cache so the evaluation is allocation-free where possible. Used by the rootfinding
+that locates continuous-callback event times.
+"""
 function get_condition(integrator::DEIntegrator, callback, abst)
     tmp = get_tmp(integrator, callback)
     ismutable = !(tmp === nothing)
@@ -129,6 +175,14 @@ function get_condition(integrator::DEIntegrator, callback, abst)
 end
 
 # Use a generated function for type stability even when many callbacks are given
+"""
+    find_first_continuous_callback(integrator, callbacks...)
+
+Scan the given continuous `callbacks` and return the bookkeeping for the one whose event
+fires earliest in the current step: the event time, crossing sign, whether an event occurred,
+the (vector-callback) event index, the identified callback index, and the number of callbacks.
+A generated method keeps the result type-stable for an arbitrary number of callbacks.
+"""
 @inline function find_first_continuous_callback(
         integrator,
         callbacks::Vararg{
@@ -145,13 +199,33 @@ end
             AbstractContinuousCallback,
         }
     ) where {N}
+    is_vcc = ntuple(i -> callbacks.parameters[i] <: VectorContinuousCallback, N)
+    any_vcc = any(is_vcc)
+
+    snapshot_winner(i) = is_vcc[i] ? quote
+            copyto!(
+                integrator.callback_cache.winning_simultaneous_events,
+                integrator.callback_cache.simultaneous_events
+            )
+        end : :()
+
+    setup = any_vcc ? quote
+            cache = integrator.callback_cache
+            @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
+            fill!(cache.winning_simultaneous_events, Int8(0))
+        end : :()
+
     ex = quote
+        $setup
         tmin, upcrossing,
             event_occurred, event_idx, residual = find_callback_time(
             integrator,
             callbacks[1], 1
         )
         identified_idx = 1
+        if event_occurred
+            $(snapshot_winner(1))
+        end
     end
     for i in 2:N
         ex = quote
@@ -169,11 +243,21 @@ end
                 event_idx = event_idx2
                 identified_idx = $i
                 residual = residual2
+                $(snapshot_winner(i))
             end
         end
     end
+    finalize = any_vcc ? quote
+            if event_occurred
+                copyto!(
+                    integrator.callback_cache.simultaneous_events,
+                    integrator.callback_cache.winning_simultaneous_events
+                )
+        end
+        end : :()
     ex = quote
         $ex
+        $finalize
         if event_occurred
             integrator.last_event_error = value(residual)
         end
@@ -182,6 +266,85 @@ end
     return ex
 end
 
+
+# A type-erased callback is called through `Base.invokelatest`, so the compiled loop holds
+# a plain dynamic dispatch instead of a method instance specialised on `Any` whose
+# abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
+# The callee runs on the concrete callback and hands back the two values the loop needs
+# typed: the event time and the residual, the latter already reduced and converted.
+function _find_callback_time_erased(integrator, callback, callback_idx)
+    tmin, upcrossing, event_occurred, event_idx, residual =
+        find_callback_time(integrator, callback, callback_idx)
+    return (
+        convert(typeof(integrator.t), tmin), upcrossing, event_occurred::Bool, event_idx,
+        convert(typeof(integrator.last_event_error), value(residual)),
+    )
+end
+
+function find_first_continuous_callback(integrator, callbacks::AbstractVector)
+    callback_count = length(callbacks)
+    callback_count > 0 || throw(ArgumentError("at least one continuous callback is required"))
+    tType = typeof(integrator.t)
+    errType = typeof(integrator.last_event_error)
+
+    has_vector_callback = any(callback -> callback isa VectorContinuousCallback, callbacks)
+    if has_vector_callback
+        cache = integrator.callback_cache
+        @. cache.prev_simultaneous_events = !iszero(cache.simultaneous_events)
+        fill!(cache.winning_simultaneous_events, Int8(0))
+    end
+
+    tmin, upcrossing, event_occurred, event_idx, residual =
+        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
+    identified_idx = 1
+    if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
+        copyto!(
+            integrator.callback_cache.winning_simultaneous_events,
+            integrator.callback_cache.simultaneous_events
+        )
+    end
+
+    for callback_idx in 2:callback_count
+        callback = callbacks[callback_idx]
+        tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
+            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
+        if event_occurred2 &&
+                (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
+            tmin = tmin2
+            upcrossing = upcrossing2
+            event_occurred = true
+            event_idx = event_idx2
+            identified_idx = callback_idx
+            residual = residual2
+            if has_vector_callback && callback isa VectorContinuousCallback
+                copyto!(
+                    integrator.callback_cache.winning_simultaneous_events,
+                    integrator.callback_cache.simultaneous_events
+                )
+            end
+        end
+    end
+
+    if has_vector_callback && event_occurred
+        copyto!(
+            integrator.callback_cache.simultaneous_events,
+            integrator.callback_cache.winning_simultaneous_events
+        )
+    end
+    if event_occurred
+        integrator.last_event_error = residual
+    end
+    return tmin, upcrossing, event_occurred, event_idx, identified_idx, callback_count
+end
+
+"""
+    find_callback_time(integrator, callback, callback_idx)
+
+Locate, within the current step, the time at which a single continuous `callback`'s event
+occurs. Returns the event time together with the crossing sign, whether an event occurred,
+and the relevant event indices; for a `VectorContinuousCallback` it also records the
+per-component event mask. The event time is found by rootfinding on the callback condition.
+"""
 @inline function find_callback_time(
         integrator, callback::VectorContinuousCallback,
         callback_idx
@@ -198,18 +361,13 @@ end
 
     prev_simultaneous_events = integrator.callback_cache.prev_simultaneous_events
     (; simultaneous_events) = integrator.callback_cache
-    # Snapshot the previous step's triggered events into `prev_simultaneous_events`
-    # BEFORE using them for the nudge logic, then clear `simultaneous_events` so it
-    # can be populated with events detected during this step. Previously this was
-    # done only after the nudge block, which left `prev_simultaneous_events` stale
-    # on the step immediately following an event — causing the repeat-detection
-    # avoidance logic (which relies on `prev_simultaneous_events[idx]`) to be
-    # skipped and the just-fired event to be re-detected.
-    if integrator.event_last_time == callback_idx
-        @. prev_simultaneous_events = !iszero(simultaneous_events)
-    else
-        prev_simultaneous_events .= false
-    end
+    # `prev_simultaneous_events` is populated once per step by `find_first_continuous_callback`
+    # from the prior step's winning mask, before any `find_callback_time` runs. It is only
+    # read here under the `event_last_time == callback_idx` guard, so its content matters
+    # only for the callback that actually fired last step (= the prior winner). The shared
+    # `simultaneous_events` buffer, however, must be zeroed per-call: each VCC writes a
+    # candidate mask, and the generated body of `find_first_continuous_callback` snapshots
+    # it into `winning_simultaneous_events` when the new tmin winner is identified.
     simultaneous_events .= Int8(0)
 
     if integrator.event_last_time == callback_idx
@@ -384,7 +542,11 @@ function check_event_occurrence(integrator, callback, bottom_sign)
     if callback.interp_points != 0 && !isdiscrete(integrator.alg) &&
             any(iszero, event_idx)
         # Use the interpolants for safety checking
-        ts = range(integrator.tprev, stop = integrator.t, length = callback.interp_points)
+        ts = range(
+            integrator.tprev,
+            stop = integrator.t,
+            length = Int64(callback.interp_points)
+        )  # Int64: avoid i686 _linspace InexactError
         for i in 2:length(ts)
             top_t = ts[i]
             event_occurred, event_idx, top_sign =
@@ -447,26 +609,8 @@ Modifies `next_sign` to be an array of booleans for if there is a sign change
 in the interval between prev_sign and next_sign.
 Return `true` if any event occurred.
 """
-function findall_events!(
-        next_sign::Union{Array, SubArray},
-        prev_sign::Union{Array, SubArray}
-    )
-    # `VectorContinuousCallback` only has `affect!` (no `affect_neg!`) and
-    # `apply_callback!` invokes it with the `simultaneous_events` mask, so
-    # detection only needs to fire on any sign change away from a non-zero
-    # `prev_sign`.
-    #
-    # The `prev_sign[i] != 0` guard is load-bearing: state-machine
-    # callbacks (conditions of the form `(state == X) * (expr)`) snap
-    # other-state condition values to exactly 0 the instant the affect
-    # changes state. Without the guard, `prev_sign[i] * next_sign[i] <= 0`
-    # would fire on every subsequent step (0 * ±1 = 0 ≤ 0) and the
-    # rootfinder would re-fire the just-handled callback indefinitely —
-    # the scalar `is_event_occurrence` already excludes `prev_sign == 0`
-    # implicitly via its direction checks.
-    @inbounds for i in 1:length(prev_sign)
-        next_sign[i] = prev_sign[i] != 0 && prev_sign[i] * next_sign[i] <= 0
-    end
+function findall_events!(next_sign, prev_sign)
+    map!(is_event_occurrence, next_sign, prev_sign, next_sign)
     return any(isone, next_sign)
 end
 
@@ -480,6 +624,22 @@ function is_event_occurrence(prev_sign::Number, next_sign::Number, affect!::F1, 
     ) && prev_sign * next_sign <= 0
 end
 
+# `VectorContinuousCallback` only has `affect!` (no `affect_neg!`) and
+# `apply_callback!` invokes it with the `simultaneous_events` mask, so
+# detection only needs to fire on any sign change away from a non-zero
+# `prev_sign`.
+#
+# The `prev_sign != 0` guard is load-bearing: state-machine callbacks
+# (conditions of the form `(state == X) * (expr)`) snap other-state
+# condition values to exactly 0 the instant the affect changes state.
+# Without the guard, `prev_sign * next_sign <= 0` would fire on every
+# subsequent step (0 * ±1 = 0 ≤ 0) and the rootfinder would re-fire the
+# just-handled callback indefinitely. The 4-argument method already
+# excludes `prev_sign == 0` via its direction checks.
+function is_event_occurrence(prev_sign::Number, next_sign::Number)
+    return prev_sign != 0 && prev_sign * next_sign <= 0
+end
+
 """
     apply_callback!(integrator, callback, cb_time, prev_sign, event_idx)
 
@@ -490,8 +650,8 @@ crossing direction (`prev_sign`):
   - `prev_sign < 0` (upcrossing): `callback.affect!(integrator)` is called
   - `prev_sign > 0` (downcrossing): `callback.affect_neg!(integrator)` is called
 
-For `VectorContinuousCallback`, `callback.affect!` is called once with the full
-`simultaneous_events::Vector{Int8}` array from the callback cache:
+For `VectorContinuousCallback`, `callback.affect!` is called once with a length-`callback.len`
+view into the `simultaneous_events::Vector{Int8}` buffer from the callback cache:
 
     callback.affect!(integrator, simultaneous_events)
 
@@ -533,13 +693,19 @@ function apply_callback!(
         savedexactly || savevalues!(integrator, true)
     end
 
+    # Assume the affect! introduces a derivative discontinuity unless it says
+    # otherwise via derivative_discontinuity!(integrator, false). A `nothing`
+    # affect! makes no modification.
     integrator.derivative_discontinuity = true
 
     if callback isa VectorContinuousCallback
         if callback.affect! === nothing
             integrator.derivative_discontinuity = false
         else
-            callback.affect!(integrator, integrator.callback_cache.simultaneous_events)
+            callback.affect!(
+                integrator,
+                @view(integrator.callback_cache.simultaneous_events[1:(callback.len)])
+            )
         end
     else
         if prev_sign < 0
@@ -566,7 +732,10 @@ function apply_callback!(
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
                 if callback isa VectorContinuousCallback
-                    SciMLBase.save_discretes!(integrator, callback, event_idx)
+                    @inbounds for i in 1:callback.len
+                        iszero(integrator.callback_cache.simultaneous_events[i]) && continue
+                        SciMLBase.save_discretes!(integrator, callback, i)
+                    end
                 else
                     SciMLBase.save_discretes!(integrator, callback)
                 end
@@ -579,8 +748,17 @@ function apply_callback!(
 end
 
 #Base Case: Just one
+"""
+    apply_discrete_callback!(integrator, callback...)
+
+Apply discrete `callback`(s) to `integrator`: for each `DiscreteCallback` whose condition is
+true at the current `(u, t)`, run its `affect!` and handle any `saveat`/save bookkeeping.
+Returns whether the discrete-callback set modified the integrator and whether a save was
+performed inside a callback, recursing over multiple callbacks while staying type-stable.
+"""
 @inline function apply_discrete_callback!(integrator, callback::DiscreteCallback)
     saved_in_cb = false
+    did_modify = false
     if callback.condition(integrator.u, integrator.t, integrator)
         # handle saveat
         _, savedexactly = savevalues!(integrator)
@@ -589,13 +767,22 @@ end
             # if already saved then skip saving
             savedexactly || savevalues!(integrator, true)
         end
+
+        # Assume a derivative discontinuity unless the affect! clears it.
         integrator.derivative_discontinuity = true
         callback.affect!(integrator)
-        if integrator.derivative_discontinuity
+        # Capture this callback's verdict BEFORE reeval_internals_due_to_modification!
+        # resets derivative_discontinuity to false. Returning the captured value (rather
+        # than re-reading the field) is what makes the OR-fold across simultaneous
+        # callbacks order independent: a true-flagging callback that triggers a reeval
+        # still reports true to the fold in handle_callbacks!.
+        did_modify = integrator.derivative_discontinuity
+        if did_modify
             reeval_internals_due_to_modification!(
                 integrator, false, callback_initializealg = callback.initializealg
             )
         end
+
         @inbounds if callback.save_positions[2]
             savevalues!(integrator, true)
             if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
@@ -605,7 +792,7 @@ end
         end
     end
     integrator.sol.stats.ncondition += 1
-    return integrator.derivative_discontinuity, saved_in_cb
+    return did_modify, saved_in_cb
 end
 
 #Starting: Get bool from first and do next
@@ -641,8 +828,37 @@ end
     return discrete_modified || bool, saved_in_cb || saved_in_cb2
 end
 
+
+function apply_discrete_callback!(integrator, callbacks::AbstractVector)
+    discrete_modified = false
+    saved_in_cb = false
+    for callback in callbacks
+        modified, saved =
+            Base.invokelatest(apply_discrete_callback!, integrator, callback)::Tuple{Bool, Bool}
+        discrete_modified |= modified
+        saved_in_cb |= saved
+    end
+    return discrete_modified, saved_in_cb
+end
+
+"""
+    max_vector_callback_length_int(cs::CallbackSet)
+    max_vector_callback_length_int(callbacks...)
+
+Return the largest `len` among vector continuous callbacks.
+
+Returns `nothing` when no vector continuous callback is present.
+"""
 function max_vector_callback_length_int(cs::CallbackSet)
-    return max_vector_callback_length_int(cs.continuous_callbacks...)
+    continuous_callbacks = cs.continuous_callbacks
+    all(cb -> cb isa ContinuousCallback, continuous_callbacks) && return nothing
+    maxlen = -1
+    for callback in continuous_callbacks
+        if callback isa VectorContinuousCallback && callback.len > maxlen
+            maxlen = callback.len
+        end
+    end
+    return maxlen
 end
 max_vector_callback_length_int() = nothing
 function max_vector_callback_length_int(continuous_callbacks...)
@@ -656,6 +872,13 @@ function max_vector_callback_length_int(continuous_callbacks...)
     return maxlen
 end
 
+"""
+    max_vector_callback_length(cs::CallbackSet)
+
+Return the `VectorContinuousCallback` in the callback set `cs` with the largest `len`, or
+`nothing` if the set contains none. Integrators use this to size the per-step
+[`CallbackCache`](@ref) buffers large enough for every vector callback.
+"""
 function max_vector_callback_length(cs::CallbackSet)
     continuous_callbacks = cs.continuous_callbacks
     maxlen_cb = nothing
@@ -671,6 +894,12 @@ end
 
 """
 $(TYPEDEF)
+
+Preallocated scratch buffers used by the continuous-callback machinery. It holds the
+condition values and crossing signs evaluated during a step plus the per-component event
+masks for vector callbacks, so that locating and applying continuous-callback events is
+allocation-free. Integrators construct one (sized via [`max_vector_callback_length`](@ref))
+when a problem has continuous callbacks.
 """
 mutable struct CallbackCache{conditionType, signType}
     tmp_condition::conditionType
@@ -679,6 +908,13 @@ mutable struct CallbackCache{conditionType, signType}
     prev_sign::signType
     simultaneous_events::Vector{Int8}
     prev_simultaneous_events::Vector{Bool}
+    # Snapshot of the winning VCC's `simultaneous_events` mask. `find_callback_time`
+    # writes its candidate mask into `simultaneous_events` and zeros it on entry, so
+    # later VCCs in the same step would otherwise clobber an earlier VCC's mask. The
+    # generated body of `find_first_continuous_callback` copies the candidate into
+    # this buffer when a new tmin winner is identified, then restores it back into
+    # `simultaneous_events` after the loop so `apply_callback!` sees the winner's mask.
+    winning_simultaneous_events::Vector{Int8}
 end
 
 function CallbackCache(
@@ -691,9 +927,11 @@ function CallbackCache(
     prev_sign = similar(u, signType, max_len)
     simultaneous_events = zeros(Int8, max_len)
     prev_simultaneous_events = zeros(Bool, max_len)
+    winning_simultaneous_events = zeros(Int8, max_len)
     return CallbackCache(
         tmp_condition, next_condition, next_sign, prev_sign,
-        simultaneous_events, prev_simultaneous_events
+        simultaneous_events, prev_simultaneous_events,
+        winning_simultaneous_events
     )
 end
 
@@ -707,8 +945,10 @@ function CallbackCache(
     prev_sign = zeros(signType, max_len)
     simultaneous_events = zeros(Int8, max_len)
     prev_simultaneous_events = zeros(Bool, max_len)
+    winning_simultaneous_events = zeros(Int8, max_len)
     return CallbackCache(
         tmp_condition, next_condition, next_sign, prev_sign,
-        simultaneous_events, prev_simultaneous_events
+        simultaneous_events, prev_simultaneous_events,
+        winning_simultaneous_events
     )
 end

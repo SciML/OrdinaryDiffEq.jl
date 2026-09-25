@@ -1,5 +1,5 @@
 """
-    RKMilGeneral(; interpretation=Ito, ii_approx=IILevyArea(), c=1, p=nothing, dt=nothing)
+    RKMilGeneral(; interpretation = Ito, ii_approx = IILevyArea(), c = 1, p = nothing, dt = nothing)
 
 **RKMilGeneral: Generalized Runge-Kutta Milstein Method**
 
@@ -19,9 +19,20 @@ noise via iterated stochastic integrals (Levy area approximation).
   - `interpretation`: `SciMLBase.AlgorithmInterpretation.Ito` (default) or
     `SciMLBase.AlgorithmInterpretation.Stratonovich`
   - `ii_approx`: Iterated integral approximation method (default: `IILevyArea()`)
-  - `c`: Truncation parameter for Levy area computation (default: 1)
-  - `p`: Truncation level (default: `nothing` for automatic; set `true` with `dt` for manual)
-  - `dt`: Time step (used only when `p=true` for manual truncation)
+  - `c`: Constant in the Levy area accuracy target `ε = c dt^(3/2)` (default: 1)
+  - `p`: Number of Fourier terms retained in the Levy area series. `nothing` (the
+    default) picks it from the noise dimension and the solver's step size so that the
+    truncation error meets `ε`; pass an `Integer` to fix it instead.
+  - `dt`: Ignored, accepted for backwards compatibility.
+
+!!! note "`p = true`"
+
+    `p = true` together with `dt` used to select the truncation from
+    `floor(c dt^(-1)) + 1`. That is the rule for an order-1/2 Fourier expansion, while
+    the Levy area here is evaluated with the order-1 `MronRoe()` scheme, which reaches
+    the same accuracy with `O(dt^(-1/2))` terms — at `dt = 2^-12` the old rule asked
+    for 4097 terms where 12 suffice. `p = true` is now equivalent to `p = nothing`,
+    which applies the correct rule at solve time.
 
 ## When to Use
 
@@ -52,8 +63,7 @@ function RKMilGeneral(;
         interpretation = SciMLBase.AlgorithmInterpretation.Ito,
         ii_approx = IILevyArea(), c = 1, p = nothing, dt = nothing
     )
-    gamma = 1 // 1
-    p == true && (p = Int(floor(c * dt^(1 // 1 - 2 // 1 * gamma)) + 1))
+    p === true && (p = nothing)
     return RKMilGeneral{typeof(ii_approx), typeof(p)}(interpretation, ii_approx, c, p)
 end
 

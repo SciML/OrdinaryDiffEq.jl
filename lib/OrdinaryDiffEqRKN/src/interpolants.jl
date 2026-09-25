@@ -1,24 +1,16 @@
-@def dprkn6unpack begin
-    if cache isa OrdinaryDiffEqMutableCache
-        (; r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61) = cache.tab
-    else
-        (; r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61) = cache
-    end
-end
-
 @def dprkn6pre0 begin
-    @dprkn6unpack
-    b1Θ = @evalpoly(Θ, r10, r11, r12, r13, r14)
-    b3Θ = Θ * @evalpoly(Θ, r31, r32, r33, r34)
-    b4Θ = Θ * @evalpoly(Θ, r41, r42, r43, r44)
-    b5Θ = Θ * @evalpoly(Θ, r51, r52, r53, r54)
-    b6Θ = Θ * @evalpoly(Θ, r61, r62, r63, r64)
+    R, Rp = cache.tab.R, cache.tab.Rp
+    b1Θ = @evalpoly(Θ, R[1, 1], R[1, 2], R[1, 3], R[1, 4], R[1, 5])
+    b3Θ = @evalpoly(Θ, R[3, 1], R[3, 2], R[3, 3], R[3, 4], R[3, 5])
+    b4Θ = @evalpoly(Θ, R[4, 1], R[4, 2], R[4, 3], R[4, 4], R[4, 5])
+    b5Θ = @evalpoly(Θ, R[5, 1], R[5, 2], R[5, 3], R[5, 4], R[5, 5])
+    b6Θ = @evalpoly(Θ, R[6, 1], R[6, 2], R[6, 3], R[6, 4], R[6, 5])
 
-    bp1Θ = @evalpoly(Θ, rp10, rp11, rp12, rp13, rp14)
-    bp3Θ = Θ * @evalpoly(Θ, rp31, rp32, rp33, rp34)
-    bp4Θ = Θ * @evalpoly(Θ, rp41, rp42, rp43, rp44)
-    bp5Θ = Θ * @evalpoly(Θ, rp51, rp52, rp53, rp54)
-    bp6Θ = Θ * @evalpoly(Θ, rp61, rp62, rp63, rp64)
+    bp1Θ = @evalpoly(Θ, Rp[1, 1], Rp[1, 2], Rp[1, 3], Rp[1, 4], Rp[1, 5])
+    bp3Θ = @evalpoly(Θ, Rp[3, 1], Rp[3, 2], Rp[3, 3], Rp[3, 4], Rp[3, 5])
+    bp4Θ = @evalpoly(Θ, Rp[4, 1], Rp[4, 2], Rp[4, 3], Rp[4, 4], Rp[4, 5])
+    bp5Θ = @evalpoly(Θ, Rp[5, 1], Rp[5, 2], Rp[5, 3], Rp[5, 4], Rp[5, 5])
+    bp6Θ = @evalpoly(Θ, Rp[6, 1], Rp[6, 2], Rp[6, 3], Rp[6, 4], Rp[6, 5])
 
     kk1, kk2, kk3 = k
     k1, k2 = kk1.x
@@ -31,7 +23,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{DPRKN6ConstantCache, DPRKN6Cache},
+        cache::DPRKN6Caches,
         idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
     )
     @dprkn6pre0
@@ -56,7 +48,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{DPRKN6ConstantCache, DPRKN6Cache}, idxs,
+        cache::DPRKN6Caches, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @dprkn6pre0
@@ -83,7 +75,7 @@ end
 
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::Union{DPRKN6ConstantCache, DPRKN6Cache}, idxs::Number,
+        cache::DPRKN6Caches, idxs::Number,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @dprkn6pre0
@@ -113,7 +105,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{DPRKN6ConstantCache, DPRKN6Cache},
+        cache::DPRKN6Caches,
         idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
     )
     @dprkn6pre0
@@ -146,7 +138,7 @@ end
 
 @muladd function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k,
-        cache::Union{DPRKN6ConstantCache, DPRKN6Cache}, idxs,
+        cache::DPRKN6Caches, idxs,
         T::Type{Val{0}}, differential_vars::Nothing
     )
     @dprkn6pre0

@@ -1,6 +1,6 @@
 name = "StochasticDiffEq"
 uuid = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
-version = "7.0.0"
+version = "7.2.0"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
@@ -10,6 +10,8 @@ DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
@@ -28,7 +30,7 @@ StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
 ImplicitDiscreteSolve = {path = "../ImplicitDiscreteSolve"}
-OrdinaryDiffEq = {path = "../../"}
+OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
@@ -45,21 +47,29 @@ StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 
 [compat]
-ADTypes = "1.21.0"
-DiffEqBase = "7"
-DiffEqNoiseProcess = "5.13"
+ADTypes = "1.22.0"
+AllocCheck = "0.2"
+DiffEqBase = "7.21"
+DiffEqNoiseProcess = "5.30.0"
 LinearAlgebra = "1.6"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4.15.1"
 OrdinaryDiffEqNonlinearSolve = "2"
-Reexport = "0.2, 1.0"
-SciMLBase = "3"
+PrecompileTools = "1"
+Preferences = "1"
+RecursiveArrayTools = "4.2"
+Reexport = "1.2.2"
+SciMLBase = "3.51"
+SciMLLogging = "2"
+SciMLTesting = "2.4"
+SciMLOperators = "1.24.3"
+StaticArrays = "1.9.18"
 StochasticDiffEqCore = "2"
 StochasticDiffEqHighOrder = "2"
 StochasticDiffEqIIF = "2"
 StochasticDiffEqImplicit = "2"
 StochasticDiffEqLeaping = "2"
-StochasticDiffEqLevyArea = "2"
-StochasticDiffEqLowOrder = "2"
+StochasticDiffEqLevyArea = "2.1.1"
+StochasticDiffEqLowOrder = "2.0.5"
 StochasticDiffEqMilstein = "2"
 StochasticDiffEqROCK = "2"
 StochasticDiffEqRODE = "2"
@@ -72,8 +82,8 @@ DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
+JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 LevyArea = "2d8b4e74-eb68-11e8-0fb9-d5eb67b50637"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
@@ -85,11 +95,13 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "ImplicitDiscreteSolve", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqRosenbrock", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test"]
+test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "ImplicitDiscreteSolve", "LevyArea", "LinearSolve", "ModelingToolkit", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqRosenbrock", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test", "SciMLLogging"]

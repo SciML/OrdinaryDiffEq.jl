@@ -1,3 +1,10 @@
+"""
+    BS3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+
+Developer-only tableau cache for the Bogacki-Shampine 3(2) method (`BS3`).
+Sibling solver packages obtain it through `alg_cache`; application code should
+use `BS3()` rather than depend on this cache representation.
+"""
 struct BS3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     a21::T
     a32::T
@@ -1835,6 +1842,7 @@ struct Alshina2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     b1::T
     b2::T
     b1tilde::T
+    b2tilde::T
 
     c2::T2
 end
@@ -1844,11 +1852,12 @@ function Alshina2ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
 
     b1 = convert(T, 0.25)
     b2 = convert(T, 0.75)
-    b1tilde = convert(T, 1.0)
+    b1tilde = convert(T, -0.75)
+    b2tilde = convert(T, 0.75)
 
     c2 = convert(T2, 0.666666666666666)
 
-    return Alshina2ConstantCache(a21, b1, b2, b1tilde, c2)
+    return Alshina2ConstantCache(a21, b1, b2, b1tilde, b2tilde, c2)
 end
 
 struct Alshina3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache

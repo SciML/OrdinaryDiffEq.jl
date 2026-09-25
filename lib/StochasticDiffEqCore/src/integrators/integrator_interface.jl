@@ -27,6 +27,21 @@ function jac_iter(integrator::StochasticCompositeCache)
     return Iterators.flatten(jac_iter(c) for c in integrator.caches)
 end
 
+"""
+    resize_noise!(integrator, cache, bot_idx, i) -> nothing
+
+Resize the noise process of `integrator` to length `i` after the state was resized.
+
+All of the noise process's buffers (`dW`, `dWtilde`, `dWtmp`, `curW`, the `dZ` family
+when [`alg_needs_extra_process`](@ref) holds, and the cached increments in the
+interpolation stacks `S₁`/`S₂`) are grown or shrunk together. New entries from
+`bot_idx` up to `i` are filled with freshly sampled increments via
+[`fill_new_noise_caches!`](@ref) so the process stays consistent with the already
+generated path.
+
+This is called from the `resize!` integrator interface; see
+[`deleteat_noise!`](@ref) and [`addat_noise!`](@ref) for the index-wise variants.
+"""
 function resize_noise!(integrator, cache, bot_idx, i)
     for c in integrator.W.S₁
         resize!(c[2], i)
@@ -74,6 +89,19 @@ function resize_noise!(integrator, cache, bot_idx, i)
     end
 end
 
+"""
+    fill_new_noise_caches!(integrator, c, scaling_factor, idxs) -> nothing
+
+Sample fresh noise increments into positions `idxs` of a cached noise entry `c`.
+
+`c` is one entry of the noise process's interpolation stacks (`W.S₁`/`W.S₂`), a tuple
+whose first element is the step's scaling factor and whose remaining elements hold the
+cached `ΔW` and, when [`alg_needs_extra_process`](@ref) holds, `ΔZ` values. The new
+values are drawn from the process's own distribution so that the extended path has
+the correct law.
+
+Used by [`resize_noise!`](@ref) and [`addat_noise!`](@ref) whenever the state grows.
+"""
 @inline function fill_new_noise_caches!(integrator, c, scaling_factor, idxs)
     return if isinplace(integrator.W)
         integrator.W.dist(
@@ -108,6 +136,13 @@ function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
     return
 end
 
+function resize_non_user_cache!(integrator::SDEIntegrator, cache::CompositeCache, i)
+    for _cache in cache.caches
+        resize_non_user_cache!(integrator, _cache, i)
+    end
+    return
+end
+
 function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     if is_diagonal_noise(integrator.sol.prob)
         deleteat_noise!(integrator, cache, idxs)
@@ -117,6 +152,13 @@ function deleteat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     end
     for c in ratenoise_cache(integrator)
         deleteat!(c, idxs)
+    end
+    return
+end
+
+function deleteat_non_user_cache!(integrator::SDEIntegrator, cache::CompositeCache, idxs)
+    for _cache in cache.caches
+        deleteat_non_user_cache!(integrator, _cache, idxs)
     end
     return
 end
@@ -134,6 +176,23 @@ function addat_non_user_cache!(integrator::SDEIntegrator, cache, idxs)
     return
 end
 
+function addat_non_user_cache!(integrator::SDEIntegrator, cache::CompositeCache, idxs)
+    for _cache in cache.caches
+        addat_non_user_cache!(integrator, _cache, idxs)
+    end
+    return
+end
+
+"""
+    deleteat_noise!(integrator, cache, idxs) -> nothing
+
+Delete the components `idxs` from the noise process of `integrator`.
+
+The counterpart of [`addat_noise!`](@ref), called from `deleteat!` on the integrator:
+the same components are removed from every noise buffer and from the cached
+increments in the interpolation stacks, keeping the process dimension in step with
+the shrunken state.
+"""
 function deleteat_noise!(integrator, cache, idxs)
     for c in integrator.W.S₁
         deleteat!(c[2], idxs)
@@ -161,6 +220,16 @@ function deleteat_noise!(integrator, cache, idxs)
     end
 end
 
+"""
+    addat_noise!(integrator, cache, idxs) -> nothing
+
+Insert new components at positions `idxs` in the noise process of `integrator`.
+
+The counterpart of [`deleteat_noise!`](@ref), called from `addat!` on the integrator.
+Space is made in every noise buffer and in the cached increments of the interpolation
+stacks, and the new slots are filled with freshly sampled increments through
+[`fill_new_noise_caches!`](@ref).
+"""
 function addat_noise!(integrator, cache, idxs)
     for c in integrator.W.S₁
         addat!(c[2], idxs)

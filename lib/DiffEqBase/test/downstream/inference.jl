@@ -2,7 +2,8 @@ using OrdinaryDiffEq, SciMLBase, Test
 function lorenz(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 1.0)
@@ -65,7 +66,7 @@ function solve_ode(f::F, p::P, ensemblealg; kwargs...) where {F, P}
     end
 
     # ensemble problem
-    odes = EnsembleProblem(prob, prob_func = prob_func)
+    odes = EnsembleProblem(prob; prob_func)
 
     sol = OrdinaryDiffEq.solve(
         odes, OrdinaryDiffEq.Tsit5(), ensemblealg,
@@ -103,6 +104,6 @@ gg(u, p, t) = u
 dt = 1 // 2^(4)
 tspan = (0.0, 1.0)
 prob = SDEProblem(ff, gg, u0, (0.0, 1.0))
-sol = solve(prob, EM(), dt = dt)
-@inferred solve(prob, EM(), dt = dt)
-@inferred solve(prob, EM(), dt = dt, save_idxs = 1)
+sol = solve(prob, EM(); dt)
+@inferred solve(prob, EM(); dt)
+@inferred solve(prob, EM(); dt, save_idxs = 1)

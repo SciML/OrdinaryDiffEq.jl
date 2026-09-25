@@ -1,5 +1,7 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
+using CommonSolve: solve
+using SciMLBase: SciMLBase, ODEFunction, ODEProblem
 
 # Define test problems
 # Note that the time span in ODEProblemLibrary is given by
@@ -301,3 +303,29 @@ testTol = 0.2
         @test all(s1[end] .- s2[end] .< 5.0e-2)
     end
 end # Extrapolation methods
+
+@testset "AitkenNeville function evaluation count is independent of threading" begin
+    prob_iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    prob_oop = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    for prob in (prob_iip, prob_oop), max_order in (3, 5)
+        serial = solve(
+            prob, AitkenNeville(; max_order, init_order = max_order, threading = false);
+            dt = 0.1, adaptive = false
+        )
+        threaded = solve(
+            prob, AitkenNeville(; max_order, init_order = max_order, threading = true);
+            dt = 0.1, adaptive = false
+        )
+        @test threaded.stats.nf == serial.stats.nf
+        @test serial.stats.nf == 10 * 2^max_order + 1
+    end
+end
+
+@testset "AitkenNeville out-of-place with an array state" begin
+    prob = ODEProblem((u, p, t) -> -u, [1.0, 2.0], (0.0, 1.0))
+    for threading in (false, true)
+        sol = solve(prob, AitkenNeville(; threading); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end] ≈ [1.0, 2.0] .* exp(-1) rtol = 1.0e-6
+    end
+end

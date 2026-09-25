@@ -14,8 +14,14 @@ While completely independent and usable on its own, users wanting the full ODE s
 - `ROCK2`
 - `ROCK4`
 - `RKC`
+- `RKMC2`
+- `TSRKC3`
 - `ESERK4`
 - `ESERK5`
 - `SERK2`
+- `RKL1`
+- `RKL2`
+- `RKG1`
+- `RKG2`
 
 For a full description of the solvers and their options, see the [ODE solver documentation](https://docs.sciml.ai/DiffEqDocs/stable/).

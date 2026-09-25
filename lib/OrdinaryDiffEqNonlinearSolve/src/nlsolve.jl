@@ -1,7 +1,60 @@
 @inline eps_around_one(θ::T) where {T} = 100sqrt(eps(one(θ)))
 
+# A globalized inner solver can return from `step!` with the iterate all but unmoved: a
+# TrustRegion that rejected its trial step and only shrank its radius (#3817), a line search
+# that collapsed to a near-zero step length. The convergence tests below would read that
+# displacement as a perfect solve (`ndz < 1e-5` on the first iteration, `η·ndz ≈ 0 < κ` on
+# later ones) and accept the stage with no correction applied.
+#
+# Two disjoint symptoms. An exactly unmoved iterate from a cache that has not terminated has
+# decided nothing yet (a cache that terminated at zero displacement either reached the root
+# exactly or failed, and `compute_step!` turns failures into `Inf`). A displacement that is
+# merely below roundoff is not self-evidently either, so `compute_step!` puts the question to
+# the residual — see `stalled_inner_step`.
+_uninformative_step(nlsolver, ndz) = false
+function _uninformative_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
+    nlcache = nlsolver.cache.cache
+    # A no-init cache is `solve!`-driven, so it has no trial-step state to reject (and no
+    # `force_stop`/`nsteps` for `not_terminated` to read): a zero `ndz` there means a
+    # complete inner solve returned the iterate unchanged, which is genuine convergence.
+    nlcache isa NonlinearSolveNoInitCache && return false
+    return (iszero(ndz) && NonlinearSolveBase.not_terminated(nlcache)) ||
+        nlsolver.cache.stalled
+end
+
 """
-    nlsolve!(nlsolver::AbstractNLSolver, integrator)
+    compute_step!(nlsolver, integrator[, γW]) -> residual_norm
+
+Compute one candidate nonlinear iteration and return its scaled residual or
+increment norm.
+
+# Arguments
+
+  - `nlsolver`: the nonlinear solver whose candidate iterate and workspace are
+    updated.
+  - `integrator`: the differential-equation integrator that supplies the current
+    state, tolerances, right-hand side, and statistics.
+  - `γW`: the current `γ * dt` scaling for Newton-type methods. Fixed-point
+    methods omit this argument.
+
+# Returns
+
+A finite, nonnegative norm when a candidate iteration was computed. Returning a
+non-finite value reports divergence to [`nlsolve!`](@ref). This function mutates
+the candidate iterate and its workspace and may update the integrator's nonlinear
+evaluation statistics. The shared driver calls
+[`OrdinaryDiffEqCore.apply_step!`](@ref) after accepting the candidate.
+
+Solver packages that subtype [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref) extend
+this function to participate in the shared [`nlsolve!`](@ref) convergence loop.
+"""
+function compute_step! end
+
+"""
+    nlsolve!(
+        nlsolver::AbstractNLSolver, integrator, cache = nothing,
+        repeat_step = false
+    )
 
 Solve
 
@@ -9,7 +62,42 @@ Solve
 dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 
-where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
+where `dt` is the step size and `γ` and `c` are stage constants.
+
+# Arguments
+
+  - `nlsolver`: a solver returned by [`build_nlsolver`](@ref), or another
+    [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref) implementation of this driver
+    contract.
+  - `integrator`: the current differential-equation integrator.
+  - `cache`: the owning implicit algorithm's cache. Newton-type solvers require
+    it for `W` updates; fixed-point solvers may leave it as `nothing`.
+  - `repeat_step`: whether this solve is retrying the same integrator step after
+    a rejection.
+
+# Mutation and return value
+
+The solve updates the nonlinear iterate, convergence estimate, status, failure
+counters, and solver workspace. It may update the integrator state while forming
+a new `W`, and its postamble updates integrator statistics and
+`force_stepfail`. The return value is the result of the solver's
+`SciMLBase.postamble!` method; the solvers constructed by [`build_nlsolver`](@ref)
+return the converged stage increment `z`.
+
+# Failure behavior
+
+Non-convergence is recorded in the solver status rather than thrown: inspect it
+with [`nlsolvefail`](@ref). A stale-Jacobian failure is retried once with a fresh
+Jacobian. Calling a Newton-type solver without `cache` throws `ArgumentError`,
+and exceptions raised by residual, Jacobian, or linear-solver evaluations
+propagate.
+
+# Extension contract
+
+Custom nonlinear solvers extend [`compute_step!`](@ref) and [`initial_η`](@ref),
+and provide the `AbstractNLSolver` state queried by the documented
+`OrdinaryDiffEqCore` nonlinear-solver hooks. Candidate acceptance and finalization
+are dispatched through `OrdinaryDiffEqCore.apply_step!` and `SciMLBase.postamble!`.
 
 Whether `innertmp` and `outertmp` is used for the evaluation is controlled by setting `nlsolver.method`.
 In both cases the variable name is actually `nlsolver.tmp`.
@@ -24,6 +112,16 @@ function nlsolve!(
     # Initialize γW for JET
     γW = one(integrator.dt)
     if isnewton(nlsolver)
+        # Checking the type, not just `nothing`: passing something else entirely
+        # in this slot went unnoticed because `update_W!` happens not to read it
+        # on the out-of-place path.
+        cache isa Union{SciMLBase.DECache, Nothing} ||
+            throw(
+            ArgumentError(
+                "`nlsolve!` expects the integrator cache in its third argument, got a " *
+                    "$(typeof(cache))"
+            )
+        )
         cache === nothing &&
             throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
         if nlsolver.method === DIRK
@@ -36,6 +134,7 @@ function nlsolve!(
 
     (; maxiters, κ, fast_convergence_cutoff) = nlsolver
 
+    apply_predictor!(nlsolver, integrator)
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence
     η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
@@ -68,6 +167,19 @@ function nlsolve!(
             nlsolver.status = Divergence
             nlsolver.nfails += 1
             break
+        end
+
+        if _uninformative_step(nlsolver, ndz)
+            @SciMLMessage(
+                lazy"Inner nonlinear solver made no progress (iter = $(iter)); the unmoved iterate is not treated as convergence",
+                integrator.opts.verbose, :newton_convergence
+            )
+            # No new iterate exists to judge: skip the convergence and divergence
+            # bookkeeping (a near-zero `ndz` would also poison the next iteration's
+            # `θ`) and let the inner solver retry with its shrunken trust region. If
+            # it never moves, the loop runs out and the step fails as unconverged.
+            ndz = ndzprev
+            continue
         end
 
         has_prev_θ = hasfield(NL, :prev_θ)
@@ -120,12 +232,21 @@ function nlsolve!(
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        η = DiffEqBase.value(θ / (1 - θ))
+        η = SciMLBase.value(θ / (1 - θ))
         # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
         # for us to know whether our previous nlsolve converged sufficiently well
         check_η_convergence = (
             iter > 1 ||
-                (isnewton(nlsolver) && isadaptive(integrator.alg))
+                (
+                isadaptive(integrator.alg) &&
+                    (
+                    isnewton(nlsolver) ||
+                        (
+                        nlsolver.alg isa NonlinearSolveAlg &&
+                            nlsolver.cache.W !== nothing
+                    )
+                )
+            )
         )
         if (iter == 1 && ndz < 1.0e-5) ||
                 (check_η_convergence && η >= zero(η) && η * ndz < κ)
@@ -139,7 +260,7 @@ function nlsolve!(
         end
     end
 
-    if isnewton(nlsolver) && nlsolver.status == Divergence &&
+    if tracks_J_age(nlsolver) && nlsolver.status == Divergence &&
             !isJcurrent(nlsolver, integrator)
         @SciMLMessage(
             lazy"Newton iteration failed with stale Jacobian, retrying with fresh Jacobian",
@@ -158,6 +279,79 @@ end
 
 initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
 
+"""
+    apply_predictor!(nlsolver, integrator)
+
+Seed the stage solve's iterate from the nonlinear-solver algorithm's `predictor`
+callable, when one was supplied. The callable guesses the stage *value* —
+`predictor(uprev, p, t + c*dt, dt)` out of place and
+`predictor(upred, uprev, p, t + c*dt, dt)` in place — and the guess is mapped
+back onto the stage increment `z` through the inverse of the `ustep` map the
+residual uses (`tmp + γ⋅z` for `DIRK`, `z` for `COEFFICIENT_MULTISTEP`,
+`u₀ + z` for `DAEFunction`), so it applies uniformly to every implicit stage of
+any algorithm driven through [`nlsolve!`](@ref). Runs once per solve attempt,
+before [`initialize!`](@ref) — including a `TryAgain` retry, which restarts from
+the seed rather than the diverged iterate.
+"""
+apply_predictor!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
+
+function apply_predictor!(nlsolver::NLSolver{<:Any, false}, integrator::SciMLBase.DEIntegrator)
+    pred = stage_predictor(nlsolver.alg)
+    pred === nothing && return nothing
+    (; uprev, p, t, dt) = integrator
+    upred = pred(uprev, p, t + nlsolver.c * dt, dt)
+    nlsolver.z = _z_of_stage_guess(nlsolver, integrator, upred)
+    return nothing
+end
+
+function apply_predictor!(nlsolver::NLSolver{<:Any, true}, integrator::SciMLBase.DEIntegrator)
+    pred = stage_predictor(nlsolver.alg)
+    pred === nothing && return nothing
+    (; uprev, p, t, dt) = integrator
+    # `ztmp` is the next-iterate buffer; before the iteration it is scratch.
+    upred = nlsolver.ztmp
+    pred(upred, uprev, p, t + nlsolver.c * dt, dt)
+    _z_of_stage_guess!(nlsolver, integrator, upred)
+    return nothing
+end
+
+function _z_of_stage_guess(nlsolver, integrator, upred)
+    if integrator.f isa DAEFunction
+        return upred - get_dae_uprev(integrator, integrator.uprev)
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        return upred
+    else
+        return (upred - nlsolver.tmp) * inv(nlsolver.γ)
+    end
+end
+
+function _z_of_stage_guess!(nlsolver, integrator, upred)
+    z = nlsolver.z
+    if integrator.f isa DAEFunction
+        _uprev = get_dae_uprev(integrator, integrator.uprev)
+        @.. broadcast = false z = upred - _uprev
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        copyto!(z, upred)
+    else
+        invγ = inv(nlsolver.γ)
+        @.. broadcast = false z = (upred - nlsolver.tmp) * invγ
+    end
+    return z
+end
+
+"""
+    initial_η(nlsolver, integrator) -> η
+
+Return the initial convergence-rate estimate `η` for a fresh nonlinear solve.
+Functional/Anderson solvers reuse the previous `ηold`; the Newton solver method
+derives it from the tolerance. The return value must be a finite nonnegative
+number compatible with the integrator tolerances.
+
+Solver packages that define an [`OrdinaryDiffEqCore.AbstractNLSolver`](@ref)
+subtype extend this function when their initial estimate differs from the default
+tolerance-based rule. The function does not mutate the solver or integrator and
+is consumed by [`nlsolve!`](@ref).
+"""
 function initial_η(nlsolver::NLSolver, integrator)
     return max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 end
@@ -175,7 +369,7 @@ function apply_step!(
     return nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
+function SciMLBase.postamble!(nlsolver::NLSolver, integrator::SciMLBase.DEIntegrator)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nnonliniter += nlsolver.iter
 

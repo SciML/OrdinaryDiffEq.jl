@@ -88,7 +88,7 @@ Applies taming technique to prevent numerical blow-up while maintaining accuracy
 struct RandomTamedEM <: StochasticDiffEqRODEAlgorithm end
 
 """
-    BAOAB(;gamma=1.0, scale_noise=true)
+    BAOAB(; gamma = 1.0, scale_noise = true)
 
 **BAOAB: Langevin Dynamics Integrator (Specialized)**
 

@@ -28,3 +28,31 @@ using OrdinaryDiffEqStabilizedIRK: maxeig!
         @test_nowarn solve(prob, alg)
     end
 end
+
+@testset "IRKC in-place matches out-of-place" begin
+    A1 = [-100.0 0.0; 0.0 -50.0]
+    A2 = [0.0 1.0; -1.0 0.0]
+    u0 = [1.0, 1.0]
+    tspan = (0.0, 0.1)
+    exact = exp((A1 + A2) * 0.1) * u0
+
+    f1! = (du, u, p, t) -> (mul!(du, A1, u); nothing)
+    f2! = (du, u, p, t) -> (mul!(du, A2, u); nothing)
+    f1 = (u, p, t) -> A1 * u
+    f2 = (u, p, t) -> A2 * u
+    prob_iip = SplitODEProblem(f1!, f2!, u0, tspan)
+    prob_oop = SplitODEProblem(f1, f2, u0, tspan)
+
+    dts = [0.1 / 2^i for i in 3:7]
+    err(prob) = [
+        maximum(abs.(solve(prob, IRKC(); dt = dt, adaptive = false).u[end] .- exact))
+            for dt in dts
+    ]
+    eiip = err(prob_iip)
+    eoop = err(prob_oop)
+
+    @test maximum(abs.(eiip .- eoop)) < 1.0e-10
+
+    orders = [log2(eiip[i] / eiip[i + 1]) for i in 1:(length(dts) - 1)]
+    @test minimum(orders) > 1.5
+end

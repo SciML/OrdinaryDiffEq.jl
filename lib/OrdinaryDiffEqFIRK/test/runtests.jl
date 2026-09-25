@@ -1,16 +1,18 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "FIRK Tests" include("ode_firk_tests.jl")
+    @time @safetestset "FIRK Time Reversal Tests" include("firk_time_reversal_tests.jl")
+    @time @safetestset "FIRK Krylov Tests" include("firk_krylov_tests.jl")
+    @time @safetestset "FIRK LHL Factorization Tests" include("lhl_factorization_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

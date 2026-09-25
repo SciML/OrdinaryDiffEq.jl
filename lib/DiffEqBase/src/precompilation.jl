@@ -1,6 +1,11 @@
 # Precompilation workload for DiffEqBase
 # This precompiles commonly used code paths to reduce TTFX
 
+function _despecialized_precompile_rhs!(du, u, p, t)
+    du[1] = p.rate * u[1]
+    return nothing
+end
+
 PrecompileTools.@setup_workload begin
     # Minimal setup for precompilation
     u0 = [1.0, 0.0, 0.0]
@@ -9,6 +14,9 @@ PrecompileTools.@setup_workload begin
     dt = 0.1
     α = 1.0e-6
     ρ = 1.0e-3
+    despecialized_prob = ODEProblem{true, SciMLBase.AutoDespecialize}(
+        _despecialized_precompile_rhs!, [1.0], (0.0, 1.0), (; rate = 1.0)
+    )
 
     PrecompileTools.@compile_workload begin
         # Precompile ODE_DEFAULT_NORM for Vector{Float64} (most common case)
@@ -47,6 +55,8 @@ PrecompileTools.@setup_workload begin
         ũ = u1 .- u0
         calculate_residuals(ũ, u0, u1, α, ρ, ODE_DEFAULT_NORM, t)
         calculate_residuals!(out, ũ, u0, u1, α, ρ, ODE_DEFAULT_NORM, t)
+
+        get_concrete_problem(despecialized_prob, true)
 
         # Precompile scalar versions (commonly used)
         ODE_DEFAULT_NORM(1.0, t)

@@ -1,8 +1,17 @@
-using OrdinaryDiffEqFeagin
-using Aqua
+using SciMLTesting, OrdinaryDiffEqFeagin, SciMLBase, Test
 
-@testset "Aqua" begin
-    Aqua.test_all(
-        OrdinaryDiffEqFeagin
-    )
-end
+run_qa(
+    OrdinaryDiffEqFeagin;
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqFeagin)),
+    explicit_imports = true,
+    ei_kwargs = (;
+        all_explicit_imports_are_public = (;
+            ignore = (
+                # OrdinaryDiffEqCore-owned internals, deliberately not `public`.
+                :CompiledFloats, :trivial_limiter!,
+                # DiffEqBase-owned internal macro, deliberately not `public`.
+                Symbol("@tight_loop_macros"),
+            ),
+        ),
+    ),
+)

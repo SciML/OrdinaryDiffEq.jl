@@ -61,13 +61,13 @@ end
     prob = DynamicalODEProblem(dynfun, p0, q0, tspan, pa)
 
     if x || pa[1] == 1
-        sol = solve(prob, alg(); dt = dt)
+        sol = solve(prob, alg(); dt)
         calc = sol(t1)
         # printerrors("$alg-$iip-$pa", calc, solution, pa, t1)
         @test calc[1] ≈ solution(t1, pa)[1] rtol = errorbound(dt, d, calc[1])
         @test calc[2] ≈ solution(t1, pa)[2] rtol = errorbound(dt, d, calc[2])
     else
-        @test_throws ArgumentError solve(prob, alg(); dt = dt)
+        @test_throws ArgumentError solve(prob, alg(); dt)
     end
 end
 
@@ -75,7 +75,8 @@ function motionfuncDirect1(dv, v, u, p, t)
     # 1:Electron, 2: Be
     ω_1, ω_2, γ, m_1, m_2, η, ω_d = p
     dv[1] = -ω_1^2 * u[1] * (1 + η * cos(ω_d * t)) - γ * u[2] / m_1
-    return dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
+    dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
+    return
 end
 
 function motionfuncDirect1(v, u, p, t)
@@ -101,7 +102,7 @@ ref = solve(
 )
 
 @testset "symplectic time-dependent $alg" for (alg, x, d) in ALGOS
-    sol = solve(prob_direct, alg(), dt = dt, saveat = 0.01)
+    sol = solve(prob_direct, alg(); dt, saveat = 0.01)
     if alg <: Yoshida6
         @test maximum(ref[4, :] - sol[4, :]) < 9.0e-3
     else

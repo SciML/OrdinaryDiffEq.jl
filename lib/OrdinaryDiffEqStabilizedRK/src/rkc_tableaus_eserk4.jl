@@ -1,4 +1,4 @@
-function ESERK4ConstantCache(zprev)
+function ESERK4ConstantCache(::Type{T}, zprev) where {T}
     ms = [
         2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200,
         250, 300, 350, 400, 450, 500, 600,
@@ -46286,7 +46286,7 @@ function ESERK4ConstantCache(zprev)
         0.62906701403698332886e-54,
     ]
 
-    return ESERK4ConstantCache{eltype(Bᵢ), typeof(zprev)}(
-        Tuple(ms), Tuple(Cᵤ), Tuple(Cₑ), zprev, Bᵢ, 1, 0, 0
+    return ESERK4ConstantCache{T, typeof(zprev)}(
+        Tuple(ms), Tuple(Cᵤ), Tuple(Cₑ), zprev, T.(Bᵢ), 1, 0, 0
     )
 end

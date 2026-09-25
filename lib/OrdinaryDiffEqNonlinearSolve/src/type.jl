@@ -1,31 +1,177 @@
 # algorithms
-struct NLFunctional{K, C} <: AbstractNLSolverAlgorithm
+
+# `precondition`/`postcondition` need the stage solve to funnel through the iterate-commit
+# points of a NonlinearSolve.jl solver, which only `NonlinearSolveAlg` does. These
+# constructors accept the keywords solely so that supplying one is a loud error rather than
+# a silent no-op. NonlinearSolve reports the same situation through the turn-downable
+# `unsupported_postcondition` toggle; here the option is a constructor keyword of one
+# specific nonlinear solver rather than a `solve` keyword held fixed across a sweep of
+# algorithms, and there is no verbosity object in scope at construction time, so it is a
+# plain error.
+function reject_conditioning(T, precondition, postcondition, reason)
+    (precondition === nothing && postcondition === nothing) && return nothing
+    opt = precondition !== nothing ? "precondition" : "postcondition"
+    throw(
+        ArgumentError(
+            "`$(opt)` is not supported by `$(nameof(T))`: $(reason). Use \
+            `NonlinearSolveAlg(NewtonRaphson(); $(opt) = ...)` instead."
+        )
+    )
+end
+
+function reject_conditioning(T, precondition, postcondition)
+    return reject_conditioning(
+        T, precondition, postcondition,
+        "its nonlinear iteration is implemented here rather than delegated to \
+        NonlinearSolve.jl, so there is no commit point at which a corrector could be \
+        applied"
+    )
+end
+
+# A `Predictor` enum value selects the algorithm's built-in stage-guess scheme, which
+# needs tableau/extrapolant context the nonlinear solver never sees. The `predictor`
+# here is a callable guessing the stage *value*; keep the two unconfusable.
+function check_predictor(T, predictor)
+    predictor isa OrdinaryDiffEqCore.Predictor.T || return nothing
+    throw(
+        ArgumentError(
+            "`predictor` on `$(nameof(T))` must be a callable returning a guess for \
+            the stage value. The `Predictor` enum is the stage-guess option of the \
+            ODE algorithm itself, e.g. `ImplicitEuler(predictor = Predictor.Linear)`."
+        )
+    )
+end
+check_predictor(T, ::Nothing) = nothing
+
+"""
+    NLFunctional(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5)
+
+Functional (fixed-point) iteration solver for the implicit stage equations,
+`z ← g(z)`. No Jacobian/`W` is formed, so it is cheap per iteration but only
+converges for mildly stiff problems.
+
+# Keywords
+
+  - `κ`: relative tolerance on the increment used in the convergence test.
+  - `max_iter`: maximum number of fixed-point iterations per solve.
+  - `fast_convergence_cutoff`: convergence-rate threshold for fast convergence.
+  - `predictor`: optional callable seeding each stage solve, `predictor(uprev, p, t, dt)`
+    out of place and `predictor(upred, uprev, p, t, dt)` in place, returning a guess
+    for the stage value at stage time `t`.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLFunctional())
+sol = solve(prob, alg)
+```
+"""
+struct NLFunctional{K, C, P} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C
     max_iter::Int
+    predictor::P
 end
 
-function NLFunctional(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5)
-    return NLFunctional(κ, fast_convergence_cutoff, max_iter)
+function NLFunctional(;
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        precondition = nothing, postcondition = nothing, predictor = nothing
+    )
+    reject_conditioning(NLFunctional, precondition, postcondition)
+    check_predictor(NLFunctional, predictor)
+    return NLFunctional(κ, fast_convergence_cutoff, max_iter, predictor)
 end
 
-struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
+"""
+    NLAnderson(;
+        κ = 1 // 100, max_iter = 10, max_history = 5, aa_start = 1,
+        droptol = nothing, fast_convergence_cutoff = 1 // 5
+    )
+
+Anderson-accelerated fixed-point iteration for the implicit stage equations. Like
+[`NLFunctional`](@ref) but mixes in `max_history` previous residuals via a
+least-squares update to accelerate convergence.
+
+# Keywords
+
+  - `κ`, `max_iter`, `fast_convergence_cutoff`: as in [`NLFunctional`](@ref).
+  - `max_history`: number of past iterates kept for the acceleration.
+  - `aa_start`: iteration at which acceleration starts.
+  - `droptol`: optional condition-number threshold for dropping history columns.
+  - `predictor`: optional callable seeding each stage solve, as in
+    [`NLFunctional`](@ref).
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLAnderson())
+sol = solve(prob, alg)
+```
+"""
+struct NLAnderson{K, D, C, P} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C
     max_iter::Int
     max_history::Int
     aa_start::Int
     droptol::D
+    predictor::P
 end
 
 function NLAnderson(;
         κ = 1 // 100, max_iter = 10, max_history::Int = 5, aa_start::Int = 1,
-        droptol = nothing, fast_convergence_cutoff = 1 // 5
+        droptol = nothing, fast_convergence_cutoff = 1 // 5,
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
-    return NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
+    reject_conditioning(NLAnderson, precondition, postcondition)
+    check_predictor(NLAnderson, predictor)
+    return NLAnderson(
+        κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol, predictor
+    )
 end
 
-struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
+"""
+    NLNewton(;
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true, relax = nothing
+    )
+
+Quasi-Newton nonlinear solver for the implicit stage equations. Uses the
+`W = M/(γΔt) - J` matrix (reused/refactorized across steps and stages when
+possible) to solve `g(z) = 0`.
+
+# Keywords
+
+  - `κ`: relative tolerance on the Newton increment used in the convergence test.
+  - `max_iter`: maximum number of Newton iterations per solve.
+  - `fast_convergence_cutoff`: convergence-rate threshold below which convergence
+    is deemed fast (allowing `W` reuse).
+  - `new_W_dt_cutoff`: relative change in `γΔt` above which `W` is refactorized.
+  - `always_new`: force recomputation of `W` on every solve.
+  - `check_div`: enable early divergence detection.
+  - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+  - `predictor`: optional callable seeding each stage solve, `predictor(uprev, p, t, dt)`
+    out of place and `predictor(upred, uprev, p, t, dt)` in place, returning a guess
+    for the stage value at stage time `t`. Applied to every implicit stage of any
+    implicit algorithm, independent of the algorithm's own stage-guess scheme.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLNewton())
+sol = solve(prob, alg)
+```
+"""
+struct NLNewton{K, C1, C2, R, P} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
     fast_convergence_cutoff::C1
@@ -33,24 +179,145 @@ struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
     always_new::Bool
     check_div::Bool
     relax::R
+    predictor::P
 end
 
 function NLNewton(;
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        relax = nothing
+        relax = nothing, precondition = nothing, postcondition = nothing,
+        predictor = nothing
     )
+    reject_conditioning(NLNewton, precondition, postcondition)
+    check_predictor(NLNewton, predictor)
     if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
     end
 
     return NLNewton(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        relax
+        relax, predictor
     )
 end
 
-struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
+"""
+    NonlinearSolveAlg(
+        alg = NewtonRaphson(autodiff = AutoFiniteDiff());
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
+        precondition = nothing, postcondition = nothing
+    )
+
+Use a NonlinearSolve.jl algorithm for the nonlinear stage equations of an implicit
+OrdinaryDiffEq method. Pass this algorithm as the `nlsolve` keyword to an implicit
+solver constructor.
+
+# Arguments
+
+  - `alg`: a NonlinearSolve.jl algorithm. The default is finite-difference Newton.
+
+# Keywords
+
+  - `κ`: relative tolerance on the Newton increment used in the convergence test.
+  - `max_iter`: maximum number of nonlinear iterations per stage solve.
+  - `fast_convergence_cutoff`: convergence-rate threshold below which convergence is
+    considered fast and the `W` matrix may be reused.
+  - `new_W_dt_cutoff`: relative change in `γΔt` above which `W` is refactorized.
+  - `always_new`: force recomputation of `W` on every nonlinear solve.
+  - `check_div`: enable early divergence detection.
+  - `precondition`, `postcondition`: NonlinearSolve.jl's nonlinear preconditioning
+    options, applied to the stage solve. See the section below.
+  - `predictor`: optional callable seeding each stage solve,
+    `predictor(uprev, p, t, dt)` out of place and `predictor(upred, uprev, p, t, dt)`
+    in place, returning a guess for the stage value at stage time `t`. A
+    `postcondition` corrector is applied on top of the seeded guess.
+
+# Nonlinear preconditioning of the stage solve
+
+`precondition` (a left preconditioner `G` on the residual) and `postcondition` (an
+iterate corrector `H`, the corrector phase of the PCNR method that replaces SPICE-style
+limiting) are forwarded to the NonlinearSolve.jl solve of each implicit stage. Both are
+stated in terms of the **ODE state at the stage** and the **ODE parameters**, not in terms
+of the raw unknown of the stage system:
+
+  - `postcondition(u_stage, u_stage_prev, p, cache)`. `u_stage` is the state the stage
+    equations are being solved for — `uₙ₊₁` for `ImplicitEuler`, the stage value
+    `tmp + γ⋅z` at time `t + cΔt` for a DIRK stage — so a limiter written for a physical
+    ODE variable applies unchanged. A multi-stage method calls the corrector once per
+    implicit stage, at that stage's own time point, not only at the end of the step. `p`
+    is the ODE's parameter object and `cache` is the inner NonlinearSolve cache
+    (`nothing` for the once-per-stage correction of the predictor). In-place problems
+    overwrite the first argument.
+  - `precondition(fu, u_stage, p)`. Only `u_stage` and `p` are remapped: `fu` is the
+    *stage residual* `(Δt⋅f(u_stage, p, t + cΔt) - z)/(γΔt)`, not `f` itself, and there is
+    no state-space reading of it to map onto.
+
+Internally the stage unknown is the increment `z`, and the corrector is conjugated with
+the affine map `z ↦ u_stage` so that `H` never sees `z`. The correction is applied to the
+stage predictor and then at every iterate the inner solver commits, before its residual is
+evaluated there. `u_stage_prev` is the previous iterate *of the same stage* — the corrected
+predictor on the stage's first correction — so a limiter that clips relative to the last
+iterate restarts at each stage rather than reaching back into the previous one.
+
+Two consequences are worth knowing:
+
+  - A `postcondition` that actively corrects makes the stage iteration's displacement
+    larger than the raw Newton step, so a limiter that is still clamping at the end of the
+    iteration shows up as a non-converged stage and the integrator rejects the step and
+    retries with a smaller `Δt`. That is the intended response.
+  - `precondition` changes the residual the inner solver differentiates, so the ODE's `W`
+    matrix is no longer its Jacobian. `W` reuse is therefore disabled for the stage solve
+    and the inner solver builds its own Jacobian of the composed residual; this also
+    disables the `W`-based smoothed error estimate.
+
+On an **in-place** problem that last point carries a restriction. The in-place stage
+residual writes the stage state and `f`'s output through preallocated `Float64` buffers,
+and an `AutoSpecialize` `f` is a `FunctionWrapper` accepting only `Float64` and
+OrdinaryDiffEq's own one-chunk duals, so it cannot be evaluated at `ForwardDiff.Dual`.
+Without `W` to reuse, the inner solver has to differentiate it, so a `precondition` on an
+in-place problem requires an inner algorithm with a non-dual AD backend:
+
+```julia
+NonlinearSolveAlg(NewtonRaphson(autodiff = AutoFiniteDiff()); precondition = G!)
+```
+
+which is what the default `alg` already is. Anything ForwardDiff-based is rejected with an
+`ArgumentError` rather than allowed to fail inside ForwardDiff. Out-of-place problems have
+an allocating residual and are unrestricted, and `postcondition` is unaffected either way —
+it does not change the residual, so `W` reuse stays on.
+
+Neither option is supported when the stage system comes from ModelingToolkit's
+`nlstep_data` or from a `DAEProblem`; both throw rather than apply a corrector to an
+unknown whose relation to the ODE state is not available here. The other nonlinear solvers
+in this package ([`NLNewton`](@ref), [`NLFunctional`](@ref), [`NLAnderson`](@ref),
+[`HomotopyNonlinearSolveAlg`](@ref)) run their own iteration and reject both options
+rather than ignore them, so `nlsolve = NonlinearSolveAlg(...)` is how an implicit method
+gets a corrector.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve, NonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(
+    nlsolve = OrdinaryDiffEqNonlinearSolve.NonlinearSolveAlg(NewtonRaphson())
+)
+sol = solve(prob, alg)
+```
+
+Keeping a positive concentration positive throughout the stage iteration:
+
+```julia
+H(u, uprev, p, cache) = max(u, zero(u))
+alg = ImplicitEuler(
+    nlsolve = OrdinaryDiffEqNonlinearSolve.NonlinearSolveAlg(
+        NewtonRaphson(); postcondition = H
+    )
+)
+```
+"""
+struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST, P} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
     fast_convergence_cutoff::C1
@@ -58,18 +325,144 @@ struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
     always_new::Bool
     check_div::Bool
     alg::A
+    precondition::PRE
+    postcondition::POST
+    predictor::P
 end
 
 function NonlinearSolveAlg(
         alg = NewtonRaphson(autodiff = AutoFiniteDiff());
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
-        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true
+        new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
+    check_predictor(NonlinearSolveAlg, predictor)
     return NonlinearSolveAlg(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        alg
+        alg, precondition, postcondition, predictor
     )
 end
+
+"""
+    HomotopyNonlinearSolveAlg(
+        alg = HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()));
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        abstol = nothing, reltol = nothing
+    )
+
+Solve the implicit stage equations by homotopy continuation in the step size instead of
+a plain Newton iteration. The stage equation
+
+```math
+0 = dt⋅f(\\mathrm{tmp} + γ⋅z, p, t + c⋅dt) - M z
+```
+
+is embedded into the one-parameter family
+
+```math
+H(z, λ) = λ⋅dt⋅f(\\mathrm{tmp} + γ⋅z, p, t + c⋅dt) - M z, \\quad λ ∈ [0, 1]
+```
+
+(with the analogous embedding `tmp + λ⋅f(z) - α/(γ dt)⋅M z` for multistep-form
+methods), built as a `SciMLBase.HomotopyProblem` and handed to a NonlinearSolve.jl
+continuation solver. At `λ = 0` the solution is known (`z = 0` for DIRK-form methods, a
+single linear solve for multistep form), and the continuation tracks the solution branch
+of the implicit method as the effective step size grows from `0` to `dt` — the
+"principal branch" of Green, Patrick & Spiteri (*On theoretical upper limits for valid
+timesteps of implicit ODE methods*, AIMS Mathematics 4(6), 2019). This is much more
+expensive than [`NLNewton`](@ref) per stage, but it converges from the exact anchor at
+`λ = 0` regardless of predictor quality, which makes it useful on problems where the
+Newton iteration fails even after step-size reduction.
+
+For continuation algorithms that implement `init`/`reinit!`/`solve!` (currently
+`HomotopySweep` and `KantorovichHomotopy`), the homotopy problem and solver cache are
+initialized with the ODE cache and reused across implicit stages. Other homotopy
+algorithms retain the one-shot `solve` path.
+
+When the continuation cannot reach `λ = 1` (for example at a fold, where the connected
+solution branch of the stage equation turns back and no consistent solution at the full
+`dt` exists), the solve reports divergence and the step is rejected, so the integrator
+retries with a smaller `dt` — exactly the semantically correct response to a fold in the
+step-size homotopy.
+
+# Arguments
+
+  - `alg`: the continuation algorithm used for the `HomotopyProblem`. Defaults to
+    `HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()))`
+    (natural-parameter continuation). Any NonlinearSolve.jl homotopy solver works, e.g.
+    `ArcLengthContinuation(inner = NewtonRaphson(autodiff = AutoFiniteDiff()))` to track
+    the branch around folds. Note that the inner solver must not use ForwardDiff-based
+    autodiff: the stage residual closes over preallocated `Float64` buffers (the same
+    restriction as `NonlinearSolveAlg`).
+
+# Keywords
+
+  - `κ`, `max_iter`, `fast_convergence_cutoff`: kept for interface compatibility with the
+    other nonlinear-solver algorithms; the continuation solve does not run the shared
+    Newton convergence loop, so only `max_iter` (as a bound on inner iterations reported
+    to the integrator statistics) has an effect.
+  - `abstol`, `reltol`: tolerances passed to the continuation `solve`. The residual is
+    kept in `u` units, and `abstol = nothing` (the default) resolves at solve time to
+    `κ * abstol_integrator`, mirroring the `κ ⋅ tol` convergence criterion of the Newton
+    solvers. `reltol = nothing` uses the NonlinearSolve.jl default.
+
+!!! warning
+
+    DAE problems (`DAEFunction`s and singular mass matrices) are not supported: the
+    λ-embedding scales the whole right-hand side, which degenerates the algebraic
+    equations at `λ = 0`.
+
+# Examples
+
+```julia
+using OrdinaryDiffEq, OrdinaryDiffEqNonlinearSolve
+
+prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+alg = ImplicitEuler(
+    nlsolve = OrdinaryDiffEqNonlinearSolve.HomotopyNonlinearSolveAlg()
+)
+sol = solve(prob, alg)
+```
+"""
+struct HomotopyNonlinearSolveAlg{K, C1, A, AT, RT} <: AbstractNLSolverAlgorithm
+    κ::K
+    max_iter::Int
+    fast_convergence_cutoff::C1
+    abstol::AT
+    reltol::RT
+    alg::A
+end
+
+function HomotopyNonlinearSolveAlg(
+        alg = HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()));
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+        abstol = nothing, reltol = nothing,
+        precondition = nothing, postcondition = nothing, predictor = nothing
+    )
+    reject_conditioning(
+        HomotopyNonlinearSolveAlg, precondition, postcondition,
+        "the continuation solvers do not apply iterate corrections, and the residual it \
+        solves is the λ-embedding of the stage equations rather than the stage residual \
+        itself"
+    )
+    predictor === nothing || throw(
+        ArgumentError(
+            "`predictor` is not supported by `HomotopyNonlinearSolveAlg`: continuation \
+            starts each stage from the exact λ = 0 anchor rather than an initial guess."
+        )
+    )
+    return HomotopyNonlinearSolveAlg(
+        κ, max_iter, fast_convergence_cutoff, abstol, reltol, alg
+    )
+end
+
+# The stage-value guess an `AbstractNLSolverAlgorithm` may carry for `nlsolve!`
+# to seed its iterate from. Solvers without the field return `nothing` here.
+stage_predictor(::AbstractNLSolverAlgorithm) = nothing
+stage_predictor(alg::NLFunctional) = alg.predictor
+stage_predictor(alg::NLAnderson) = alg.predictor
+stage_predictor(alg::NLNewton) = alg.predictor
+stage_predictor(alg::NonlinearSolveAlg) = alg.predictor
 
 # solver
 
@@ -127,6 +520,20 @@ function NLSolver{iip, tType}(
 end
 
 # caches
+
+# A rejected nonfinite step can produce a zero residual weight; leave that component unscaled.
+@inline _nonzero_weight(x) = iszero(x) ? one(x) : x
+
+struct _WeightPreconditioner{T}
+    weight::T
+end
+
+Base.eltype(P::_WeightPreconditioner) = eltype(P.weight)
+LinearAlgebra.ldiv!(P::_WeightPreconditioner, x) = ldiv!(x, P, x)
+LinearAlgebra.ldiv!(y, P::_WeightPreconditioner, x) =
+    (y .= x ./ _nonzero_weight.(P.weight))
+LinearAlgebra.mul!(y, P::_WeightPreconditioner, x) =
+    (y .= _nonzero_weight.(P.weight) .* x)
 
 mutable struct NLNewtonCache{
         uType,
@@ -226,7 +633,22 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
     droptol::Union{Nothing, tType}
 end
 
-mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
+mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R, V, C} <:
+    AbstractNLSolverCache
+    ustep::uType
+    tstep::tType
+    k::rateType
+    invγdt::tType2
+    nlfunc::F
+    # residual-evaluation counter (a `Ref(0)`): the continuation solutions do not carry
+    # stats, so the residual itself counts its `f` calls for the integrator statistics
+    nf::R
+    verbose::V
+    continuation_cache::C
+    needs_rebuild::Bool
+end
+
+mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType, dzType, lsType, preType, postType} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -235,4 +657,29 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
     invγdt::tType2
     prob::P
     cache::C
+    J::JType
+    W::WType
+    uf::ufType
+    jac_config::jcType
+    du1::du1Type
+    weight::weightType
+    # `u`-sized scratch. Holds the smoothed error estimate `W \ tmp` for the `smooth_est`
+    # option, and is what `get_tmp_cache` hands DAE initialization, so the in-place cache
+    # allocates it whether or not `W` is reused. `linsolve` is not a second solver: it aliases
+    # the inner NonlinearSolve's own W factorization (`get_linear_cache`), or is `nothing`
+    # when none is reusable (→ raw estimate).
+    dz::dzType
+    linsolve::lsType
+    W_γdt::tType
+    new_W::Bool
+    # `t` at which `J` was last evaluated; drives `isJcurrent` and hence the stale-Jacobian retry.
+    J_t::tType
+    # Whether the last `step!` produced no usable iterate (see `stalled_inner_step`).
+    stalled::Bool
+    # Stage-coordinate adapters around the algorithm's `precondition`/`postcondition`
+    # (see `StageConditioner`). `precondition` is composed into the inner problem's
+    # residual by `init` and only kept here so the resize path can re-compose it;
+    # `postcondition` is additionally applied to the stage predictor in `initialize!`.
+    precondition::preType
+    postcondition::postType
 end

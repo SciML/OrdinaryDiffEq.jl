@@ -12,6 +12,14 @@
 #   step size formula h ~ (2/yddnrm)^(1/(p+1))
 # =============================================================================
 
+# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
+# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
+# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+@inline function _bool_equal(a, b)
+    r = a == b
+    return r isa Bool ? r : all(r)
+end
+
 @muladd function _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
@@ -22,13 +30,24 @@
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
         result_dt = tdir * max(smalldt, dtmin)
         @SciMLMessage(
             lazy"Using default small timestep for DAE: dt = $(result_dt)",
+            integrator.opts.verbose, :shampine_dt
+        )
+        return result_dt
+    end
+
+    # With zero continuous states there is nothing to estimate from (and indexing
+    # into the empty state would throw), so fall back to a finite default dt.
+    if isempty(u0)
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(
+            lazy"Empty initial state, using default small timestep: dt = $(result_dt)",
             integrator.opts.verbose, :shampine_dt
         )
         return result_dt
@@ -125,9 +144,9 @@
     =#
 
     ftmp = nothing
-    if prob.f.mass_matrix != I && (
+    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
             !(prob.f isa DynamicalODEFunction) ||
-                any(mm != I for mm in prob.f.mass_matrix)
+                any(!_is_identity_massmatrix, prob.f.mass_matrix)
         )
         ftmp = zero(f₀)
         try
@@ -187,7 +206,7 @@
                 (d₁ < 1 // 10^(5)), smalldt,
             convert(
                 _tType,
-                oneunit_tType * DiffEqBase.value(
+                oneunit_tType * SciMLBase.value(
                     (d₀ / d₁) /
                         100
                 )
@@ -220,9 +239,9 @@
         f₁ = zero(f₀)
         f(f₁, u₁, p, t + dt₀_tdir)
 
-        if prob.f.mass_matrix != I && (
+        if !_is_identity_massmatrix(prob.f.mass_matrix) && (
                 !(prob.f isa DynamicalODEFunction) ||
-                    any(mm != I for mm in prob.f.mass_matrix)
+                    any(!_is_identity_massmatrix, prob.f.mass_matrix)
             )
             integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
             copyto!(f₁, ftmp)
@@ -231,7 +250,7 @@
         # Constant zone before callback
         # Just return first guess
         # Avoids AD issues
-        length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+        length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
         # d₂: fold in diffusion terms
         if noise_prototype !== nothing
@@ -258,7 +277,7 @@
             dt₁ = convert(
                 _tType,
                 oneunit_tType *
-                    DiffEqBase.value(
+                    SciMLBase.value(
                     10.0^(-(2 + log10(max_d₁d₂)) / order)
                 )
             )
@@ -327,7 +346,7 @@
             hub_inv = maximum(nums ./ max.(denoms, eps(_fType) .* oneunit.(denoms)))
         end
         # Strip ForwardDiff.Dual tracking — step size bounds don't need AD
-        hub_inv = DiffEqBase.value(hub_inv)
+        hub_inv = SciMLBase.value(hub_inv)
 
         hub = convert(_fType, 0.1) * tdist
         if hub * hub_inv > oneunit_tType
@@ -367,9 +386,9 @@
                 f(f₁, u₁, p, t + convert(_tType, hgs))
                 integrator.stats.nf += 1
 
-                if prob.f.mass_matrix != I && ftmp !== nothing && (
+                if !_is_identity_massmatrix(prob.f.mass_matrix) && ftmp !== nothing && (
                         !(prob.f isa DynamicalODEFunction) ||
-                            any(mm != I for mm in prob.f.mass_matrix)
+                            any(!_is_identity_massmatrix, prob.f.mass_matrix)
                     )
                     integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
                     copyto!(f₁, ftmp)
@@ -419,10 +438,10 @@
             # numeric scalar before the `_tType` convert (otherwise a
             # Quantity{Measurement} `yddnrm` propagates through and
             # convert(Quantity{Float64}, Quantity{Measurement}) errors).
-            if DiffEqBase.value(yddnrm) > 0
+            if SciMLBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
-                    oneunit_tType * DiffEqBase.value(
+                    oneunit_tType * SciMLBase.value(
                         DiffEqBase.stripunits(
                             (2 / yddnrm)^(1 / (p_order + 1))
                         )
@@ -502,10 +521,16 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(DiffEqBase.value(t)))))
+    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
+        return tdir * max(smalldt, dtmin)
+    end
+
+    # With zero continuous states there is nothing to estimate from, so fall back
+    # to a finite default dt rather than indexing into the empty state.
+    if isempty(u0)
         return tdir * max(smalldt, dtmin)
     end
 
@@ -513,11 +538,15 @@ end
 
     f₀ = f(u0, p, t)
 
-    if any(x -> any(isnan, x), f₀)
+    # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
+    # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
+    # field types cannot sensibly overload (OrdinaryDiffEq #1404).
+    if DiffEqBase.NAN_CHECK(f₀)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
+        return tdir * dtmin
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
@@ -545,10 +574,19 @@ end
             max.(internalnorm.(f₀ .+ g₀, t), internalnorm.(f₀ .- g₀, t)) ./ sk, t
         )
 
+        # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
+        if isnan(d₁)
+            @SciMLMessage(
+                "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
+                integrator.opts.verbose, :init_NaN
+            )
+            return tdir * dtmin
+        end
+
         if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
             dt₀ = smalldt
         else
-            dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
+            dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
         end
         dt₀ = min(dt₀, dtmax_tdir)
         dt₀_tdir = tdir * dt₀
@@ -559,7 +597,7 @@ end
         # Constant zone before callback
         # Just return first guess
         # Avoids AD issues
-        f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+        _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
 
         # d₂: fold in diffusion terms
         g₁ = 3g(u₁, p, t + dt₀_tdir)
@@ -578,7 +616,7 @@ end
         else
             dt₁ = _tType(
                 oneunit_tType *
-                    DiffEqBase.value(
+                    SciMLBase.value(
                     10^(-(2 + log10(max_d₁d₂)) / order)
                 )
             )
@@ -626,7 +664,7 @@ end
         # (e.g., Unitful u0 with explicit dimensionless tolerances).
         d₁_cv = internalnorm(f₀ ./ sk .* oneunit_tType, t)
         d₀_cv = internalnorm(u0 ./ sk, t)
-        hub_inv = DiffEqBase.value(
+        hub_inv = SciMLBase.value(
             d₁_cv / max(convert(_fType, 0.1) * d₀_cv + one(_fType), eps(_fType))
         )
 
@@ -682,10 +720,10 @@ end
             # numeric scalar before the `_tType` convert (otherwise a
             # Quantity{Measurement} `yddnrm` propagates through and
             # convert(Quantity{Float64}, Quantity{Measurement}) errors).
-            if DiffEqBase.value(yddnrm) > 0
+            if SciMLBase.value(yddnrm) > 0
                 hnew = convert(
                     _tType,
-                    oneunit_tType * DiffEqBase.value(
+                    oneunit_tType * SciMLBase.value(
                         DiffEqBase.stripunits(
                             (2 / yddnrm)^(1 / (p_order + 1))
                         )

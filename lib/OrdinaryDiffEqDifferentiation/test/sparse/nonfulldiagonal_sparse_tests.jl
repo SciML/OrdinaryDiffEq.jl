@@ -1,6 +1,7 @@
-using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra
+using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra, Test
 using OrdinaryDiffEqSDIRK
 using ComponentArrays
+using SciMLOperators: MatrixOperator
 
 function enclosethetimedifferential(parameters::NamedTuple)::Function
     @info "Enclosing the time differential"
@@ -93,7 +94,8 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         du[end - 1] = dcc_dt
 
         dcb_dt = (Q_l / V_b) * c_c + C / V_b
-        return du[end] = dcb_dt
+        du[end] = dcb_dt
+        return
     end
 
     return timedifferentialclosure!
@@ -115,13 +117,13 @@ prior = ComponentArray(;
 )
 
 r_space = collect(range(0.0, 2.0, length = 15))
-computeparams = (
+computeparams = (;
     Δr = r_space[2],
-    r_space = r_space,
+    r_space,
     countorderapprox = 2,
 )
-parameters = (
-    prior = prior,
+parameters = (;
+    prior,
     compute = computeparams,
 )
 
@@ -153,3 +155,21 @@ solve(odeprob, TRBDF2());
 solve(sparseodeprob, TRBDF2());
 solve(sparseodeprob, Rosenbrock23(linsolve = KLUFactorization()));
 solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
+
+@testset "Sparse Jacobian caches are initialized with stored values" begin
+    function sparse_cache_f!(du, u, p, t)
+        return du .= u
+    end
+
+    N = 8
+    jac_prototype = sparse(1:N, 1:N, ones(N), N, N)
+    prob = ODEProblem(
+        ODEFunction(sparse_cache_f!; jac_prototype),
+        ones(N),
+        (0.0, 1.0)
+    )
+    integ = init(prob, Rodas5P())
+
+    @test all(==(1), nonzeros(integ.cache.J))
+    @test all(==(1), nonzeros(integ.cache.W))
+end

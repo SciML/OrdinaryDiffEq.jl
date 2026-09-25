@@ -51,10 +51,12 @@ sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit(1.0e-10, RobustMu
 # https://github.com/SciML/ModelingToolkit.jl/issues/2508
 
 function testsys(du, u, p, t)
-    return du[1] = -2
+    du[1] = -2
+    return
 end
 function initsys(du, u, p)
-    return du[1] = -1 + u[1]
+    du[1] = -1 + u[1]
+    return
 end
 nlprob = NonlinearProblem(initsys, [0.0])
 initprobmap(nlprob) = nlprob.u

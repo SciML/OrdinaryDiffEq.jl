@@ -1,5 +1,8 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, RecursiveFactorization, DiffEqDevTools, Test, Random
+using CommonSolve: solve
+using SciMLBase: SciMLBase, ODEFunction, ODEProblem
+using OrdinaryDiffEqCore: Sequential, BaseThreads, PolyesterThreads
 using Polyester
 
 println("Running on $(Threads.nthreads()) thread(s).")
@@ -237,7 +240,7 @@ testTol = 0.2
                     min_order = j,
                     init_order = j, max_order = j,
                     sequence = seq,
-                    threading = OrdinaryDiffEqExtrapolation.PolyesterThreads()
+                    threading = PolyesterThreads()
                 )
                 simp = test_convergence(dts, prob, algp)
                 @test simp.𝒪est[:final] ≈ algp.init_order + 0.5 atol = newTol #Superconvergence
@@ -270,7 +273,7 @@ testTol = 0.2
                     min_order = j,
                     init_order = j, max_order = j,
                     sequence = seq,
-                    threading = OrdinaryDiffEqExtrapolation.Sequential()
+                    threading = Sequential()
                 )
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final] ≈ 2 * (alg.init_order + 1) atol = testTol
@@ -309,7 +312,7 @@ testTol = 0.2
             alg = ImplicitDeuflhardExtrapolation(
                 max_order = 9, min_order = 1,
                 init_order = 9, sequence = seq,
-                threading = OrdinaryDiffEqExtrapolation.BaseThreads()
+                threading = BaseThreads()
             )
             sol = solve(prob, alg, reltol = 1.0e-3)
             @test length(sol.u) < 10
@@ -357,7 +360,7 @@ testTol = 0.2
                     min_order = j,
                     init_order = j, max_order = j,
                     sequence = seq,
-                    threading = OrdinaryDiffEqExtrapolation.PolyesterThreads()
+                    threading = PolyesterThreads()
                 )
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final] ≈ 2 * (alg.init_order + 1) - 1 atol = testTol
@@ -388,7 +391,7 @@ testTol = 0.2
                         min_order = j,
                         init_order = j, max_order = j,
                         sequence = seq,
-                        threading = OrdinaryDiffEqExtrapolation.Sequential()
+                        threading = Sequential()
                     )
                     sim = test_convergence(dts, prob, alg)
                     @test sim.𝒪est[:final] ≈ 2 * (alg.init_order + 1) atol = testTol

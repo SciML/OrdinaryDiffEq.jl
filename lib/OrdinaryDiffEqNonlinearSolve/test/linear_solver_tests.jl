@@ -1,6 +1,7 @@
 using Test, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqBDF
 using SparseArrays, LinearSolve
 using LinearAlgebra, Random, StaticArrays
+using SciMLOperators: MatrixOperator
 N = 30
 AA = sprand(MersenneTwister(12), N, N, 0.5)
 mm = sprand(MersenneTwister(123), N, N, 0.5)
@@ -25,11 +26,11 @@ n = 2
 p = collect(1.0:n)
 u0 = ones(n)
 tspan = [0.0, 1]
-odef = ODEFunction(foop; jac = jac, jac_prototype = jac(u0, p, 0.0), paramjac = paramjac)
+odef = ODEFunction(foop; jac, jac_prototype = jac(u0, p, 0.0), paramjac)
 
 function g_helper(p; alg = Rosenbrock23(linsolve = LUFactorization()))
     prob = ODEProblem(odef, u0, tspan, p)
-    soln = Array(solve(prob, alg; u0 = prob.u0, p = prob.p, abstol = 1.0e-4, reltol = 1.0e-4))[
+    soln = Array(solve(prob, alg; prob.u0, prob.p, abstol = 1.0e-4, reltol = 1.0e-4))[
         :, end,
     ]
     return soln
@@ -133,13 +134,13 @@ p = collect(1.0:n)
 u0 = ones(n)
 tspan = [0.0, 1]
 odef = ODEFunction{true}(
-    fiip; jac = jac, jac_prototype = jac(u0, p, 0.0),
-    paramjac = paramjac
+    fiip; jac, jac_prototype = jac(u0, p, 0.0),
+    paramjac
 )
 
 function g_helper(p; alg = Rosenbrock23(linsolve = LUFactorization()))
     prob = ODEProblem(odef, u0, tspan, p)
-    soln = Array(solve(prob, alg; u0 = prob.u0, p = prob.p, abstol = 1.0e-4, reltol = 1.0e-4))[
+    soln = Array(solve(prob, alg; prob.u0, prob.p, abstol = 1.0e-4, reltol = 1.0e-4))[
         :, end,
     ]
     return soln
@@ -238,7 +239,8 @@ function hires!(du, u, p, t)
     du[6] = T(-280.0) * u[6] * u[8] + T(0.69) * u[4] + T(1.71) * u[5] - T(0.43) * u[6] +
         T(0.69) * u[7]
     du[7] = T(280.0) * u[6] * u[8] - T(1.81) * u[7]
-    return du[8] = T(-280.0) * u[6] * u[8] + T(1.81) * u[7]
+    du[8] = T(-280.0) * u[6] * u[8] + T(1.81) * u[7]
+    return
 end
 
 function hires(u, p, t)

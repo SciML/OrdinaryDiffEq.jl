@@ -67,7 +67,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
                 end
             end
         end
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)^max_order - 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2^max_order - 1)
     end
 
     # Richardson extrapolation
@@ -192,7 +192,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             end
         end
 
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)^max_order - 1
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2^max_order - 1)
     end
 
     # Richardson extrapolation
@@ -329,8 +329,6 @@ function perform_step!(
                     )
                 end
 
-                cache.linsolve[1] = linres.cache
-
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_tmps2[1] = u_tmps[1]
                 @.. broadcast = false u_tmps[1] = u_tmps[1] - k_tmps[1]
@@ -393,8 +391,6 @@ function perform_step!(
                             )
                         end
 
-                        cache.linsolve[Threads.threadid()] = linres.cache
-
                         @.. broadcast = false u_tmps2[Threads.threadid()] = u_tmps[Threads.threadid()]
                         @.. broadcast = false u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] -
                             k_tmps[Threads.threadid()]
@@ -456,8 +452,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = T[i + 1, i + 1]
             @.. broadcast = false cache.utilde = T[i + 1, i]
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -510,8 +507,6 @@ function perform_step!(
                         )
                     end
 
-                    cache.linsolve[1] = linres.cache
-
                     integrator.stats.nsolve += 1
                     @.. broadcast = false u_tmps[1] = u_tmps[1] - k_tmps[1]
                     f(k_tmps[1], u_tmps[1], p, t + j * dt_temp)
@@ -536,8 +531,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = T[n_curr + 1, n_curr + 1]
                 @.. broadcast = false cache.utilde = T[n_curr + 1, n_curr]
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -695,7 +691,7 @@ function perform_step!(
             utilde = T[i + 1, i]
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -755,7 +751,7 @@ function perform_step!(
                 utilde = T[n_curr + 1, n_curr]
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -928,8 +924,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -983,8 +980,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -1147,7 +1145,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -1211,7 +1209,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -1313,8 +1311,6 @@ function perform_step!(
                 )
             end
 
-            cache.linsolve[1] = linres.cache
-
             integrator.stats.nsolve += 1
             @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
             @.. broadcast = false diff1[1] = u_temp1 - u_temp2
@@ -1336,7 +1332,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false T[i + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -1397,7 +1392,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
@@ -1433,7 +1427,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 *
                                 u_temp3[Threads.threadid()] -
@@ -1503,7 +1496,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
@@ -1539,7 +1531,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 *
                                 u_temp3[Threads.threadid()] -
@@ -1600,8 +1591,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -1636,25 +1628,36 @@ function perform_step!(
                 @.. broadcast = false linsolve_tmps[1] = fsalfirst
 
                 linsolve = cache.linsolve[1]
-                linres = dolinsolve(
-                    integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                    linu = _vec(k)
-                )
-                cache.linsolve[1] = linres.cache
+
+                # `jacobian2W!` above overwrote W[1] in place, and the LU factors
+                # live in that same array, so the cached factorization must be
+                # invalidated by passing the new `A`.
+                if !repeat_step
+                    linres = dolinsolve(
+                        integrator, linsolve; A = W[1],
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k)
+                    )
+                else
+                    linres = dolinsolve(
+                        integrator, linsolve; A = nothing,
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k)
+                    )
+                end
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast = false linsolve_tmps[1] = dt_int * k - (u_temp1 - u_temp2)
+                    # W is built for `dt_int`, so the residual is scaled the same
+                    # way as in the internal-discretisation loop above.
+                    @.. broadcast = false linsolve_tmps[1] = k - (u_temp1 - u_temp2) / dt_int
 
                     linsolve = cache.linsolve[1]
                     linres = dolinsolve(
-                        integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                        linu = _vec(k)
+                        integrator, linsolve; A = nothing,
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false T[n_curr + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -1679,8 +1682,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -1928,7 +1932,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -2004,7 +2008,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2190,8 +2194,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -2249,8 +2254,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2413,7 +2419,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -2481,7 +2487,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2751,7 +2757,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -2833,7 +2839,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -2937,7 +2943,6 @@ function perform_step!(
                     b = _vec(linsolve_tmps[1]), linu = _vec(k)
                 )
             end
-            cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
             @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -2960,7 +2965,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false T[i + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -3026,7 +3030,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
                             k_tmps[Threads.threadid()] # Euler starting step
@@ -3060,7 +3063,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 *
                                 u_temp3[Threads.threadid()] -
@@ -3134,7 +3136,6 @@ function perform_step!(
                                 b = _vec(linsolvetmp), linu = _vec(ktmp)
                             )
                         end
-                        cache.linsolve[tid] = linres.cache
 
                         @.. broadcast = false u_temp3[tid] = u_temp4[tid] - ktmp # Euler starting step
                         @.. broadcast = false diff1[tid] = u_temp3[tid] - u_temp4[tid]
@@ -3159,7 +3160,6 @@ function perform_step!(
                                     linu = _vec(ktmp)
                                 )
                             end
-                            cache.linsolve[tid] = linres.cache
 
                             @.. broadcast = false T[index + 1] = 2 * u_temp3[tid] -
                                 u_temp4[tid] - 2 * ktmp # Explicit Midpoint rule
@@ -3215,8 +3215,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -3263,7 +3264,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -3285,7 +3285,6 @@ function perform_step!(
                             b = _vec(linsolve_tmps[1]), linu = _vec(k)
                         )
                     end
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false T[n_curr + 1] = 2 * u_temp1 - u_temp2 - 2 * k # Explicit Midpoint rule
@@ -3313,8 +3312,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -3569,7 +3569,7 @@ function perform_step!(
             ) # and its internal counterpart
             # FIXME this should be stored in the controller cache
             res = calculate_residuals(
-                u, utilde, integrator.opts.abstol,
+                u - utilde, integrator.uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t
             )
@@ -3649,7 +3649,7 @@ function perform_step!(
                 ) # and its internal counterpart
                 # FIXME this should be stored in the controller cache
                 res = calculate_residuals(
-                    u, utilde, integrator.opts.abstol,
+                    u - utilde, integrator.uprev, u, integrator.opts.abstol,
                     integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )
@@ -3755,7 +3755,6 @@ function perform_step!(
                     b = _vec(linsolve_tmps[1]), linu = _vec(k)
                 )
             end
-            cache.linsolve[1] = linres.cache
 
             integrator.stats.nsolve += 1
             @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
@@ -3777,7 +3776,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false T[i + 1] = u_temp1 - k
@@ -3843,7 +3841,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
@@ -3874,7 +3871,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = u_temp3[Threads.threadid()] -
                                 k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -3952,7 +3948,6 @@ function perform_step!(
                                 linu = _vec(k_tmps[Threads.threadid()])
                             )
                         end
-                        cache.linsolve[Threads.threadid()] = linres.cache
 
                         @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
                             k_tmps[Threads.threadid()] # Euler starting step
@@ -3982,7 +3977,6 @@ function perform_step!(
                                     linu = _vec(k_tmps[Threads.threadid()])
                                 )
                             end
-                            cache.linsolve[Threads.threadid()] = linres.cache
 
                             @.. broadcast = false T[index + 1] = u_temp3[Threads.threadid()] -
                                 k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -4051,8 +4045,9 @@ function perform_step!(
             @.. broadcast = false integrator.u = extrapolation_scalars[i + 1] * u_temp1
             @.. broadcast = false cache.utilde = extrapolation_scalars_2[i] * u_temp2
 
+            @.. broadcast = false cache.tmp = integrator.u - cache.utilde
             calculate_residuals!(
-                cache.atmp, integrator.u, cache.utilde,
+                cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                 integrator.opts.abstol, integrator.opts.reltol,
                 integrator.opts.internalnorm, t
             )
@@ -4101,7 +4096,6 @@ function perform_step!(
                         b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
                 end
-                cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false k = -k
@@ -4116,7 +4110,6 @@ function perform_step!(
                         integrator, linsolve; b = _vec(linsolve_tmps[1]),
                         linu = _vec(k)
                     )
-                    cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
                     @.. broadcast = false T[n_curr + 1] = u_temp1 - k # Explicit Midpoint rule
@@ -4147,8 +4140,9 @@ function perform_step!(
                 @.. broadcast = false integrator.u = extrapolation_scalars[n_curr + 1] * u_temp1
                 @.. broadcast = false cache.utilde = extrapolation_scalars_2[n_curr] * u_temp2
 
+                @.. broadcast = false cache.tmp = integrator.u - cache.utilde
                 calculate_residuals!(
-                    cache.atmp, integrator.u, cache.utilde,
+                    cache.atmp, cache.tmp, integrator.uprev, integrator.u,
                     integrator.opts.abstol, integrator.opts.reltol,
                     integrator.opts.internalnorm, t
                 )

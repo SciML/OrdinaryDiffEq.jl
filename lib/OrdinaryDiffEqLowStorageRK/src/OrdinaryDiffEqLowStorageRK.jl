@@ -1,26 +1,29 @@
 module OrdinaryDiffEqLowStorageRK
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
-    beta2_default, beta1_default, gamma_default,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, ssp_coefficient,
+import OrdinaryDiffEqCore: perform_step!,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
     PIDController,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-    constvalue, _unwrap_val,
-    trivial_limiter!, perform_step!, initialize!,
-    explicit_rk_docstring, get_fsalfirstlast
-using FastBroadcast, MuladdMacro, RecursiveArrayTools, Adapt
-using FastBroadcast: Serial
-import RecursiveArrayTools: recursive_unitless_bottom_eltype
+    alg_cache, @cache, isfsal,
+    constvalue,
+    trivial_limiter!,
+    explicit_rk_docstring, get_fsalfirstlast,
+    default_controller
 import OrdinaryDiffEqCore
+# `alg_order` is owned by and public in SciMLBase; `initialize!` is owned by and
+# public in DiffEqBase. Import from the true public owners (not re-exporters).
+import SciMLBase: alg_order, full_cache
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
+using FastBroadcast: FastBroadcast, @.., Serial
+using MuladdMacro: MuladdMacro, @muladd
+using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
+using Adapt: Adapt, adapt
+using CommonSolve: solve
 
-import OrdinaryDiffEqCore: default_controller
-
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, ODEProblem
 
 include("arrayfuse.jl")
 include("algorithms.jl")
@@ -68,6 +71,23 @@ PrecompileTools.@compile_workload begin
             ODEProblem{true, SciMLBase.AutoSpecialize}(
                 lorenz, [1.0; 0.0; 0.0],
                 (0.0, 1.0), Float64[]
+            )
+        )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )
         )
     end
@@ -126,6 +146,10 @@ export ORK256, CarpenterKennedy2N54, SHLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
     ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
     ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
     ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+    AlJahdaliAdv3S42, AlJahdaliAdv3S82, AlJahdaliAdv3S53, AlJahdaliAdv3S113,
+    AlJahdaliAdv3S64, AlJahdaliAdv3S154, AlJahdaliAdv3S85, AlJahdaliAdv3S165,
+    AlJahdaliVor3S42, AlJahdaliVor3S82, AlJahdaliVor3S53, AlJahdaliVor3S113,
+    AlJahdaliVor3S64, AlJahdaliVor3S154, AlJahdaliVor3S85, AlJahdaliVor3S165,
     RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
     RK46NL, SHLDDRK_2N, SHLDDRK52
 end

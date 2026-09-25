@@ -5,7 +5,7 @@ function initialize!(integrator, cache::IRKCConstantCache)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     cache.du₁ = f1(uprev, p, t)
     cache.du₂ = f2(uprev, p, t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
     integrator.fsalfirst = cache.du₁ + cache.du₂
 
@@ -82,7 +82,7 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
 
         f1ⱼ₋₁ = f1(gprev, p, t + Cⱼ₋₁ * dt)
         f2ⱼ₋₁ = f2(gprev, p, t + Cⱼ₋₁ * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        increment_nf!(integrator.stats, 1)
         integrator.stats.nf2 += 1
         nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ + dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ - ν * μs₁ * dt * f1ⱼ₋₂
         nlsolver.z = dt * f1ⱼ₋₁
@@ -110,7 +110,7 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
 
     cache.du₁ = f1(u, p, t + dt)
     cache.du₂ = f2(u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
     # error estimate
     if isnewton(nlsolver) && integrator.opts.adaptive
@@ -121,7 +121,7 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
             tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+        set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     integrator.fsallast = cache.du₁ + cache.du₂
@@ -139,7 +139,7 @@ function initialize!(integrator, cache::IRKCCache)
     integrator.k[2] = integrator.fsallast
     f1(cache.du₁, uprev, p, t)
     f2(cache.du₂, uprev, p, t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
     return @.. broadcast = false integrator.fsalfirst = cache.du₁ + cache.du₂
 end
@@ -169,7 +169,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     Bⱼ₋₁ = 1 / ω₀
 
     #stage-1
-    f1ⱼ₋₂ = du₁
+    @.. broadcast = false f1ⱼ₋₂ = du₁
     @.. broadcast = false gprev2 = uprev
     μs = ω₁ * Bⱼ₋₁
     μs₁ = μs
@@ -214,7 +214,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
 
         f1(f1ⱼ₋₁, gprev, p, t + Cⱼ₋₁ * dt)
         f2(f2ⱼ₋₁, gprev, p, t + Cⱼ₋₁ * dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        increment_nf!(integrator.stats, 1)
         integrator.stats.nf2 += 1
         @.. broadcast = false nlsolver.tmp = (1 - μ - ν) * uprev + μ * gprev + ν * gprev2 + dt * μs * f2ⱼ₋₁ + dt * νs * du₂ + (νs - (1 - μ - ν) * μs₁) * dt * du₁ - ν * μs₁ * dt * f1ⱼ₋₂
         @.. broadcast = false nlsolver.z = dt * f1ⱼ₋₁
@@ -244,7 +244,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     @.. broadcast = false f2ⱼ₋₁ = du₂
     f1(du₁, u, p, t + dt)
     f2(du₂, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
     # error estimate
     if isnewton(nlsolver) && integrator.opts.adaptive
@@ -258,7 +258,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
             atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
-        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+        set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
     @.. broadcast = false integrator.fsallast = du₁ + du₂

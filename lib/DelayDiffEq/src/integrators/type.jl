@@ -100,6 +100,8 @@ mutable struct DDEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     initializealg::IA
+    is_disco_step::Bool
+    disco_checkpoint::tType
     # SDE/RODE noise fields: populated for SDDEProblem, Nothing for DDEProblem.
     W::WType
     P::PType
@@ -108,6 +110,9 @@ mutable struct DDEIntegrator{
 end
 
 function (integrator::DDEIntegrator)(t, deriv::Type = Val{0}; idxs = nothing)
+    if SciMLBase.has_symbolic_idxs(idxs)
+        return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
+    end
     return OrdinaryDiffEqCore.current_interpolant(t, integrator, idxs, deriv)
 end
 

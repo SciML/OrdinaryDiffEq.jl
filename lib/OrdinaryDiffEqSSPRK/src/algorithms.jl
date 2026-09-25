@@ -126,7 +126,7 @@ size.",
     [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)"
 )
 Base.@kwdef struct SSPRKMSVS32{StageLimiter, StepLimiter, Thread} <:
-    OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
@@ -203,7 +203,7 @@ size.",
     [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)"
 )
 Base.@kwdef struct SSPRKMSVS43{StageLimiter, StepLimiter, Thread} <:
-    OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
@@ -351,3 +351,11 @@ Base.@kwdef struct pRRK54{T, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        KYK2014DGSSPRK_3S2, KYKSSPRK42, SSPRK104, SSPRK22, SSPRK33, SSPRK43, SSPRK432,
+        SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK54, SSPRK63, SSPRK73, SSPRK83,
+        SSPRK932, SSPRKMSVS32, SSPRKMSVS43, pRRK22, pRRK33, pRRK54,
+    },
+) = true

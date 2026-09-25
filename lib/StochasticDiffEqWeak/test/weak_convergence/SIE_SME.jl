@@ -41,7 +41,7 @@ prob = SDEProblem(f, g, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(sol.u[end]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 sim = test_convergence(
@@ -97,7 +97,7 @@ prob = SDEProblem(f1!, g1!, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h1(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e5)
@@ -150,11 +150,13 @@ println("SMEB:", sim.𝒪est[:weak_final])
 u₀ = [0.1, 0.1]
 function f3!(du, u, p, t)
     du[1] = 3 // 2 * u[1]
-    return du[2] = 3 // 2 * u[2]
+    du[2] = 3 // 2 * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (5:-1:1)
 tspan = (0.0, 1.0)
@@ -165,7 +167,7 @@ prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
     output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    prob_func
 )
 
 numtraj = Int(1.0e6)

@@ -2,11 +2,12 @@
     sub_specifiers = (:linear_verbosity, :nonlinear_verbosity)
     toggles = (
         :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
+        :symbolic_diagnostic,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
         :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-        :stability_check, :near_singular,
+        :stability_check, :near_singular, :stage_limiter_unused, :step_limiter_unused,
         :sensitivity_vjp_choice,
         # SDE-specific fields
         :noise_evaluation,
@@ -29,6 +30,7 @@
             max_iters = Silent(),
             dt_min_unstable = Silent(),
             instability = Silent(),
+            symbolic_diagnostic = Silent(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -45,6 +47,8 @@
             dt_epsilon = Silent(),
             stability_check = Silent(),
             near_singular = Silent(),
+            stage_limiter_unused = Silent(),
+            step_limiter_unused = Silent(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -65,6 +69,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = Silent(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -81,6 +86,8 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -101,6 +108,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -117,6 +125,8 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = Silent(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -137,6 +147,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -153,6 +164,8 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
@@ -173,6 +186,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -189,6 +203,8 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
@@ -205,7 +221,7 @@
     groups = (
         error_control = (
             :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable,
-            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
+            :instability, :symbolic_diagnostic, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         ),
         performance = (
             :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
@@ -213,7 +229,7 @@
         ),
         numerical = (
             :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-            :stability_check, :near_singular,
+            :stability_check, :near_singular, :stage_limiter_unused, :step_limiter_unused,
         ),
         sensitivity = (
             :sensitivity_vjp_choice,
@@ -271,6 +287,8 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
 - `stability_check`: Messages about stability checks in extrapolation methods
 - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
+- `stage_limiter_unused`: Supplying a `stage_limiter` to a solver that does not apply one (defaults to `ErrorLevel`; lower it to allow the unused limiter)
+- `step_limiter_unused`: Messages when a step limiter is supplied to a solver that does not use it
 
 ## Sensitivity Group
 - `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)
@@ -297,7 +315,7 @@ Create an `DEVerbosity` using a preset configuration:
 - `SciMLLogging.Detailed()`: Comprehensive debugging information
 - `SciMLLogging.All()`: Maximum verbosity
 
-    DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
+    DEVerbosity(; preset = nothing, error_control = nothing, performance = nothing, numerical = nothing, sde_specific = nothing, dde_specific = nothing, kwargs...)
 
 Create an `DEVerbosity` with group-level or individual field control.
 
@@ -335,7 +353,18 @@ const DEFAULT_VERBOSE = DEVerbosity()
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
+    throw(
+        ArgumentError(
+            """
+            Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7: `verbose` now takes a verbosity object.
+
+                solve(prob, alg; verbose = DEVerbosity(SciMLLogging.None()))  # was verbose = false
+                solve(prob, alg; verbose = DEVerbosity())                     # was verbose = true
+
+            `DEVerbosity` and `SciMLLogging` are both exported by OrdinaryDiffEq, so no extra `using` is needed; from another solver package add `using DiffEqBase, SciMLLogging`. Per-message control is documented at https://docs.sciml.ai/OrdinaryDiffEq/stable/verbosity/
+            """
+        )
+    )
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose

@@ -22,6 +22,9 @@ vectorized = "vectorized"
 extrapolant = "extrapolant"
 # Person names in citations - these are correct spellings
 Sigal = "Sigal"  # Sigal Gottlieb is a real person/author
+lamba = "lamba"  # Lamba's adaptive Euler-Maruyama method (LambaEM, LambaEulerHeun)
+Lamba = "Lamba"
+Strang = "Strang"  # Strang splitting (Gilbert Strang)
 Steinebach = "Steinebach"
 Protopapa = "Protopapa"
 Hairer = "Hairer"
@@ -51,6 +54,7 @@ Darmstadt = "Darmstadt"
 "problèmes" = "problèmes"
 problemes = "problemes"  # French word in citation without accent
 Ono = "Ono"  # Hiroshi Ono, author of Ono10/Ono12 RK methods
+Vor = "Vor"  # vorticity-optimized AlJahdaliVor3S* method family (Al Jahdali et al. 2022)
 padd = "padd"  # variable name in analyticless_convergence_tests.jl
 Preprint = "Preprint"
 Nr = "Nr"
@@ -66,6 +70,7 @@ arXiv = "arXiv"
 # (Numer already declared above for "BIT Numer" context.)
 
 # Technical variable names
+hom = "hom"  # homotopy abbreviation (scc_hom, HomotopyProblem)
 dorder = "dorder"  # Parameter for delta order / order change
 
 
@@ -127,6 +132,7 @@ iif = "iif"
 currate = "currate"  # current rate variable in tau-leaping
 SIE = "SIE"  # SIEA/SIEB algorithm name prefix
 SME = "SME"  # SME algorithm name (Stochastic Modified Euler)
+MIS = "MIS"  # Multirate Infinitesimal Step methods (MIS2, MIS3a, ...)
 resetted = "resetted"  # variable name in stepsize control
 strat = "strat"  # Stratonovich abbreviation
 
@@ -141,3 +147,6 @@ Comput = "Comput"  # J. Comput. Phys. (Journal of Computational Physics)
 
 # Julia spelling convention
 inferrable = "inferrable"  # Julia uses "inferrable" not "inferable"
+
+# (hom already declared above under "Technical variable names"; it covers the
+# scc_hom NonlinearSolve test variables too.)

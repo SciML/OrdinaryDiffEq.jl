@@ -1,6 +1,7 @@
 using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEqVerner, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: alg_order
+using SciMLOperators: MatrixOperator, ScalarOperator
 
 @testset "Caching Out-of-place" begin
     println("Caching Out-of-place")
@@ -22,6 +23,7 @@ using OrdinaryDiffEqCore: alg_order
             ETDRK3,
             ETDRK4,
             HochOst4,
+            Friedli,
             ETD2,
             KenCarp3,
             CFNLIRK3,
@@ -56,6 +58,7 @@ end
             ETDRK3(),
             ETDRK4(),
             HochOst4(),
+            Friedli(),
             ETD2(),
         ]
         sim = test_convergence(dts, prob, Alg)
@@ -81,7 +84,7 @@ end
     A = [-2.0 1.0; 1.0 -2.0]
     f = (u, p, t) -> A * u - u .^ 3
     jac = (u, p, t) -> A - [3u[1]^2 0.0; 0.0 3u[2]^2]
-    fun = ODEFunction(f; jac = jac)
+    fun = ODEFunction(f; jac)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -111,7 +114,7 @@ end
     f = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
     jac_update! = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
     jac_prototype = MatrixOperator(zeros(2, 2); update_func! = jac_update!)
-    fun = ODEFunction(f; jac_prototype = jac_prototype)
+    fun = ODEFunction(f; jac_prototype)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -173,7 +176,7 @@ end
     A = [-2.0 1.0; 1.0 -2.0]
     f = (u, p, t) -> A * u - u .^ 3
     jac = (u, p, t) -> A - [3u[1]^2 0.0; 0.0 3u[2]^2]
-    fun = ODEFunction(f; jac = jac)
+    fun = ODEFunction(f; jac)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -196,7 +199,7 @@ end
     f = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
     jac_update! = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
     jac_prototype = MatrixOperator(zeros(2, 2); update_func! = jac_update!)
-    fun = ODEFunction(f; jac_prototype = jac_prototype)
+    fun = ODEFunction(f; jac_prototype)
     Random.seed!(0)
     u0 = rand(2)
     tspan = (0.0, 1.0)
@@ -209,5 +212,17 @@ end
     for Alg in Algs
         sim = analyticless_test_convergence(dts, prob, Alg(), test_setup)
         @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.1
+    end
+end
+
+@testset "Exprb methods with the default in-place problem specialization" begin
+    f! = (du, u, p, t) -> (du .= -u .+ u .^ 2 ./ 10)
+    prob = ODEProblem(f!, [1.0, 0.5], (0.0, 1.0))
+    prob_full = ODEProblem{true, SciMLBase.FullSpecialize}(f!, [1.0, 0.5], (0.0, 1.0))
+    for alg in (Exprb32(), Exprb43())
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        sol_full = solve(prob_full, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end] ≈ sol_full.u[end]
     end
 end

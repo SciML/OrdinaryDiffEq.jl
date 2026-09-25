@@ -8,7 +8,7 @@ import OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqDifferent
 import OrdinaryDiffEqDefault: OrdinaryDiffEqDefault
 import OrdinaryDiffEqFunctionMap: OrdinaryDiffEqFunctionMap
 
-using DataStructures: BinaryMinHeap
+using BinaryHeaps: BinaryMinHeap
 using LinearAlgebra: opnorm, I
 using Logging: @logmsg
 using RecursiveArrayTools: copyat_or_push!, recursivecopy, recursivecopy!,
@@ -30,14 +30,15 @@ import FastBroadcast: @..
 
 using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
-    alg_extrapolates, alg_maximum_order, initialize!
+    alg_extrapolates, alg_maximum_order
 using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
     StochasticDiffEqRODEAlgorithm
 using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
 
-using DiffEqBase: is_diagonal_noise, DEVerbosity
+using SciMLBase: is_diagonal_noise
+using DiffEqBase: DEVerbosity
 
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm

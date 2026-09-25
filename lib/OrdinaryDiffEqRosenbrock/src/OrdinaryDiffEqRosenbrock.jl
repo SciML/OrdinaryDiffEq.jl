@@ -1,45 +1,60 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
+import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     OrdinaryDiffEqRosenbrockAlgorithm, @cache,
     alg_cache, initialize!,
     calculate_residuals!, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
-    _vec, _reshape, perform_step!, trivial_limiter!,
+    _vec, perform_step!, trivial_limiter!,
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
     OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring,
     initialize!, perform_step!, get_fsalfirstlast,
     constvalue, only_diagonal_mass_matrix,
     calculate_residuals, has_stiff_interpolation, ODEIntegrator,
-    resize_non_user_cache!, _ode_addsteps!, full_cache,
-    DerivativeOrderNotPossibleError, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
-    LinearAliasSpecifier, copyat_or_push!, DifferentialVarsUndefined
-using MuladdMacro, FastBroadcast, RecursiveArrayTools
-import MacroTools: namify
-using MacroTools: @capture
-using DiffEqBase: @def
+    _ode_addsteps!,
+    DerivativeOrderNotPossibleError, _fixup_ad,
+    copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
+    find_algebraic_vars_eqs, _diff_alg_vars
+using MuladdMacro: MuladdMacro, @muladd
+using FastBroadcast: FastBroadcast, @..
+using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
+using ArrayInterface: ArrayInterface
+
+# Map flat linear-solve results onto the state container (ArrayPartition-safe).
+@inline _restructure_state(template, x) = ArrayInterface.restructure(template, x)
+@inline _restructure_state(template::Number, x) = oftype(template, x)
 import DifferentiationInterface as DI
 import LinearSolve
-import LinearSolve: UniformScaling
 import ForwardDiff
-using FiniteDiff
-using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm, lu, lu!
-using ADTypes
+using FiniteDiff: FiniteDiff
+using LinearAlgebra: mul!, I, norm, lu, UniformScaling
+using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
+using SciMLBase: @def, LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
-using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
-    UDerivativeWrapper, UJacobianWrapper,
-    wrapprecs, calc_tderivative, build_grad_config,
+using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
     build_jac_config, issuccess_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
-    calc_W, calc_rosenbrock_differentiation!, build_J_W,
-    UJacobianWrapper, dolinsolve, WOperator, resize_J_W!
+    calc_rosenbrock_differentiation!, build_J_W,
+    dolinsolve
 
 using OrdinaryDiffEqDifferentiation: calc_rosenbrock_differentiation
 
-using OrdinaryDiffEqRosenbrockTableaus
-using Reexport
+using OrdinaryDiffEqRosenbrockTableaus: OrdinaryDiffEqRosenbrockTableaus,
+    GRK4ARodasTableau, GRK4TRodasTableau, ROS2PRRodasTableau, ROS2RodasTableau,
+    ROS2SRodasTableau, ROS34PRwRodasTableau, ROS34PW1aRodasTableau,
+    ROS34PW1bRodasTableau, ROS34PW2RodasTableau, ROS3PRL2RodasTableau,
+    ROS3PRLRodasTableau, ROS3PRRodasTableau, ROS3PRodasTableau, ROS3RodasTableau,
+    Rodas3PRodasTableau, Rodas3RodasTableau, Rodas3dRodasTableau, Rodas42Tableau, Rodas4P2Tableau,
+    Rodas4PTableau, Rodas4PWTableau, Rodas4Tableau, Rodas5Tableau, RodasTableau,
+    Ros4LStabRodasTableau, RosShamp4RodasTableau, RosenbrockW6S4OSRodasTableau,
+    Scholz4_7RodasTableau, Veldd4RodasTableau, Velds4RodasTableau
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase, LinearProblem, ODEProblem, init, solve,
+    TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper
+# alg_order is owned by and public in SciMLBase; import (not using) so methods can be extended
+import SciMLBase: alg_order, full_cache, resize_non_user_cache!
 
 import OrdinaryDiffEqCore: alg_autodiff
 import OrdinaryDiffEqCore
@@ -131,8 +146,31 @@ include("integrator_interface.jl")
 import PrecompileTools
 import Preferences
 PrecompileTools.@compile_workload begin
-    lorenz = OrdinaryDiffEqCore.lorenz
-    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    function lorenz(du, u, p, t)
+        du[1] = 10.0(u[2] - u[1])
+        du[2] = u[1] * (28.0 - u[3]) - u[2]
+        du[3] = u[1] * u[2] - (8 / 3) * u[3]
+        return
+    end
+    lorenz_oop(u, p, t) = [
+        10.0(u[2] - u[1]),
+        u[1] * (28.0 - u[3]) - u[2],
+        u[1] * u[2] - (8 / 3) * u[3],
+    ]
+    function lorenz_p(du, u, p, t)
+        du[1] = p.σ * (u[2] - u[1])
+        du[2] = u[1] * (p.ρ - u[3]) - u[2]
+        du[3] = u[1] * u[2] - p.β * u[3]
+        return
+    end
+    lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
+    function lorenz_pref(du, u, p, t)
+        du[1] = p[1] * (u[2] - u[1])
+        du[2] = u[1] * (p[2] - u[3]) - u[2]
+        du[3] = u[1] * u[2] - p[3] * u[3]
+        return
+    end
+    lorenz_pref_params = [10.0, 28.0, 8 / 3]
     solver_list = [Rosenbrock23(), Rodas5P()]
     prob_list = []
 
@@ -154,6 +192,33 @@ PrecompileTools.@compile_workload begin
             ODEProblem{true, SciMLBase.AutoSpecialize}(
                 lorenz, [1.0; 0.0; 0.0],
                 (0.0, 1.0), Float64[]
+            )
+        )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDespecialize}(
+                lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_p_params
+            )
+        )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_p_params
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), lorenz_pref_params
             )
         )
     end
@@ -199,10 +264,18 @@ PrecompileTools.@compile_workload begin
 end
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-    Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
+    Ros4LStab, ROS3P, Rodas3, Rodas3d, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
     Rodas4PW, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P, HybridExplicitImplicitRK,
     Tsit5DA, RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw,
     ROS3PRL, ROS3PRL2, ROK4a,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+
+# Abstract Rosenbrock cache supertype that other OrdinaryDiffEq consumers
+# (e.g. DelayDiffEq) reference to special-case Rosenbrock cache resizing.
+# Marked public so that cross-package reference is recognized as a supported
+# extension API rather than internal access.
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Expr(:public, :RosenbrockMutableCache))
+end
 
 end

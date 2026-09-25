@@ -6,7 +6,7 @@ get_fsalfirstlast(cache::ExpRKCache, u) = (zero(cache.rtmp), zero(cache.rtmp))
 
 # Precomputation of exponential-like operators
 """
-    expRK_operators(alg,dt,A) -> ops
+    expRK_operators(alg, dt, A) -> ops
 
 Compute operator(s) for an ExpRK algorithm. `dt` is the time step and `A` is
 the matrix form of the linear operator (from either a linear problem or a
@@ -60,6 +60,20 @@ function expRK_operators(::HochOst4, dt, A)
     B5 = 4P[3] - 8P[4]
     return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
+function expRK_operators(::Friedli, dt, A)
+    P = phi(dt * A, 3)
+    Phalf = phi(dt / 2 * A, 2)
+    A21 = 0.5 * Phalf[2]
+    A31 = A21 - 0.5 * Phalf[3]
+    A32 = 0.5 * Phalf[3]
+    A41 = P[2] - 2 * P[3]
+    A42 = (-26 // 25) * P[2] + (2 // 25) * P[3]
+    A43 = (26 // 25) * P[2] + (48 // 25) * P[3]
+    B1 = P[2] - 3 * P[3] + 4 * P[4]
+    B3 = 4 * P[3] - 8 * P[4]
+    B4 = -P[3] + 4 * P[4]
+    return A21, A31, A32, A41, A42, A43, B1, B3, B4
+end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [
@@ -69,6 +83,7 @@ for (Alg, Cache) in [
         (:ETDRK3, :ETDRK3ConstantCache),
         (:ETDRK4, :ETDRK4ConstantCache),
         (:HochOst4, :HochOst4ConstantCache),
+        (:Friedli, :FriedliConstantCache),
     ]
     @eval struct $Cache{opType, FType} <: ExpRKConstantCache
         ops::opType # precomputed operators
@@ -103,7 +118,66 @@ for (Alg, Cache) in [
 end
 
 """
-    alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
+    _cached_ishermitian(f) -> Union{Bool,Nothing}
+
+Symmetry of the ExpRK linear operator, or `nothing` when it cannot safely be cached.
+
+`arnoldi!` takes `ishermitian` as a keyword argument whose default is
+`LinearAlgebra.ishermitian(A)`, so the property is re-derived on *every* call -- five times per
+`ETDRK4` step. For a sparse symmetric operator that check is a full `O(nnz)` scan (it can only
+exit early on finding an asymmetry), costing roughly 10% of a Krylov build at `m = 15`.
+
+Caching a *value* -- "are these entries symmetric?" -- is only accurate while the entries cannot
+change, and what licenses that is `isconstant(A)`, only that. Being split does not: a
+`SplitFunction`'s linear part is an operator like any other, free to depend on `u`, `p` and `t`,
+and evaluating the split right-hand side runs `update_coefficients!` on it, so its entries can
+change from one step to the next -- symmetric at `t = 0` and not afterwards, say. The
+`SplitFunction` test only picks out *which* object `A` is: `f.f1.f`, as against a Jacobian that
+`calc_J!` overwrites every step and that could never be cached at all.
+
+The gate is conservative because the error is asymmetric. A stale `false` merely costs
+performance -- `arnoldi!` runs full Arnoldi. A stale `true` sends it to `lanczos!`, whose
+three-term recurrence is valid only for symmetric operators, and the result is *silently wrong*.
+So anything not `isconstant` returns `nothing`, and `arnoldi!` derives the flag itself on every
+call, exactly as before.
+
+Not covered: mutating the underlying array in place through a reference held outside the solver
+without going through `update_coefficients!`. That is outside the SciMLOperators contract and is
+already unsupported here -- the `krylov = false` path precomputes `expRK_operators(alg, dt, A)`
+once at cache construction and would ignore such a change entirely.
+"""
+function _cached_ishermitian(f)
+    # Not a fixedness test: it says `A` is `f.f1.f` rather than a per-step Jacobian.
+    isa(f, SplitFunction) || return nothing
+    A = f.f1.f
+    isconstant(A) || return nothing
+    # `A` is usually a `MatrixOperator` rather than a bare `AbstractMatrix`, so do not require
+    # the latter -- just ask whether `ishermitian` is defined for it, as `arnoldi!` would.
+    applicable(ishermitian, A) || return nothing
+    return ishermitian(A)
+end
+
+"""
+    _arnoldi_kwargs(alg, A, integrator, herm)
+
+Keyword bundle shared by the `arnoldi!` calls within one `perform_step!`.
+
+`herm` is the flag cached by [`_cached_ishermitian`](@ref), or `nothing` when it could not be
+cached, in which case it is derived here exactly as `arnoldi!` would have. The returned
+`NamedTuple` always has the same shape, so the call sites stay type-stable.
+"""
+@inline function _arnoldi_kwargs(alg, A, integrator, herm)
+    ish = herm === nothing ? ishermitian(A) : herm
+    return (
+        m = min(alg.m, size(A, 1)),
+        opnorm = integrator.opts.internalopnorm,
+        iop = alg.iop,
+        ishermitian = ish,
+    )
+end
+
+"""
+    alg_cache_expRK(alg, u, uEltypeNoUnits, uprev, f, t, dt, p, du1, tmp, dz, plist)
 
 Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 
@@ -139,7 +213,7 @@ function alg_cache_expRK(
         Ks = KrylovSubspace{T}(n, m)
         phiv_cache = PhivCache(u, m, maximum(plist))
         ws = [Matrix{T}(undef, n, plist[i] + 1) for i in 1:length(plist)]
-        KsCache = (Ks, phiv_cache, ws)
+        KsCache = (Ks, phiv_cache, ws, _cached_ishermitian(f))
     else
         KsCache = nothing
         # Precompute the operators
@@ -399,6 +473,48 @@ function alg_cache(
     )
 end
 
+@cache struct FriedliCache{uType, rateType, JCType, FType, JType, opType, KsType} <:
+    ExpRKCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    dz::uType
+    rtmp::rateType
+    rtmp2::rateType
+    Au::rateType
+    F2::rateType
+    F3::rateType
+    F4::rateType
+    du1::rateType
+    jac_config::JCType
+    uf::FType
+    J::JType
+    ops::opType
+    KsCache::KsType
+end
+
+function alg_cache(
+        alg::Friedli, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp, dz = (zero(u) for i in 1:2)                                        # uType caches
+    rtmp, rtmp2, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i in 1:7) # rateType caches
+    plist = (2, 2, 3, 2, 3, 3)
+    uf, jac_config,
+        J,
+        ops,
+        KsCache = alg_cache_expRK(
+        alg, u, uEltypeNoUnits, uprev, f, t,
+        dt, p, du1, tmp, dz, plist
+    ) # other caches
+    return FriedliCache(
+        u, uprev, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, du1, jac_config, uf,
+        J, ops, KsCache
+    )
+end
+
 ####################################
 # EPIRK method caches
 function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
@@ -443,7 +559,7 @@ for (Alg, Cache) in [
     end
 end
 
-@cache struct Exp4Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct Exp4Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -458,6 +574,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::Exp4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -489,10 +606,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 1)
-    return Exp4Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 3)
+    return Exp4Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK4s3ACache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK4s3ACache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -507,6 +625,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK4s3A, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -537,10 +656,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 4)
-    return EPIRK4s3ACache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 2)
+    return EPIRK4s3ACache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK4s3BCache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK4s3BCache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -555,6 +675,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK4s3B, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -585,7 +706,8 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 4)
-    return EPIRK4s3BCache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 2)
+    return EPIRK4s3BCache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
 @cache struct EPIRK5s3Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
@@ -635,7 +757,7 @@ function alg_cache(
     return EPIRK5s3Cache(u, uprev, tmp, dz, k, rtmp, rtmp2, du1, jac_config, uf, J, B, KsCache)
 end
 
-@cache struct EXPRB53s3Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EXPRB53s3Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -650,6 +772,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EXPRB53s3, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -680,10 +803,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 4)
-    return EXPRB53s3Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 2)
+    return EXPRB53s3Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK5P1Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK5P1Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -698,6 +822,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK5P1, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -728,10 +853,11 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 3)
-    return EPIRK5P1Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 3)
+    return EPIRK5P1Cache(u, uprev, tmp, dz, rtmp, rtmp2, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
-@cache struct EPIRK5P2Cache{uType, rateType, JCType, FType, matType, JType, KsType} <:
+@cache struct EPIRK5P2Cache{uType, rateType, JCType, FType, matType, JType, KsType, tsType} <:
     ExpRKCache
     u::uType
     uprev::uType
@@ -747,6 +873,7 @@ end
     J::JType
     B::matType
     KsCache::KsType
+    ts::tsType
 end
 function alg_cache(
         alg::EPIRK5P2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -777,7 +904,8 @@ function alg_cache(
     # Allocate caches for phiv_timestep
     maxiter = min(alg.m, n)
     KsCache = _phiv_timestep_caches(u, maxiter, 3)
-    return EPIRK5P2Cache(u, uprev, tmp, dz, rtmp, rtmp2, dR, du1, jac_config, uf, K, J, B, KsCache)
+    ts = Vector{typeof(dt)}(undef, 3)
+    return EPIRK5P2Cache(u, uprev, tmp, dz, rtmp, rtmp2, dR, du1, jac_config, uf, K, J, B, KsCache, ts)
 end
 
 ####################################
@@ -811,7 +939,7 @@ end
 
 ## Mutable caches
 """
-    alg_cache_exprb(alg,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist)
+    alg_cache_exprb(alg, uEltypeNoUnits, uprev, f, t, p, du1, tmp, dz, plist)
 
 Construct the non-standard caches (not uType or rateType) for Exprb integrators.
 
@@ -847,7 +975,9 @@ function alg_cache_exprb(
     Ks = KrylovSubspace{T}(n, m)
     phiv_cache = PhivCache(u, m, maximum(plist))
     ws = [Matrix{T}(undef, n, plist[i] + 1) for i in 1:length(plist)]
-    KsCache = (Ks, phiv_cache, ws)
+    # `nothing`: the exponential Rosenbrock methods rebuild the Jacobian every step, so its
+    # symmetry cannot be cached across the solve. `_arnoldi_kwargs` derives it per call.
+    KsCache = (Ks, phiv_cache, ws, nothing)
     return uf, jac_config, J, KsCache
 end
 
@@ -999,4 +1129,24 @@ function alg_cache(
         u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype), Phi[1], Phi[2],
         Phi[2] + Phi[3], -Phi[3]
     )
+end
+
+function OrdinaryDiffEqCore.reset_fsal!(integrator, ::ETD2ConstantCache)
+    fsalfirst = integrator.fsalfirst
+    fsalfirst.nlprev = integrator.fsallast.nlprev
+    fsalfirst.lin = integrator.f.f1(integrator.u, integrator.p, integrator.t)
+    fsalfirst.nl = integrator.f.f2(integrator.u, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    return nothing
+end
+
+function OrdinaryDiffEqCore.reset_fsal!(integrator, ::ETD2Cache)
+    fsalfirst = integrator.fsalfirst
+    recursivecopy!(fsalfirst.nlprev, integrator.fsallast.nlprev)
+    integrator.f.f1(fsalfirst.lin, integrator.u, integrator.p, integrator.t)
+    integrator.f.f2(fsalfirst.nl, integrator.u, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    return nothing
 end

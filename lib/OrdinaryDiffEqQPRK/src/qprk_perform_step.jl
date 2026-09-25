@@ -120,10 +120,8 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract QPRK98Tableau T T2
-    (;
-        fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16,
-        utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread,
-    ) = cache
+    (; fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, atmp, k, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     k1 = fsalfirst
     f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * b21 * k1
@@ -136,7 +134,7 @@ end
     stage_limiter!(tmp, integrator, p, t + d4 * dt)
     f(k4, tmp, p, t + d4 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (b51 * k1 + b53 * k3 + b54 * k4)
-    stage_limiter!(uprev, integrator, p, t + d5 * dt)
+    stage_limiter!(tmp, integrator, p, t + d5 * dt)
     f(k5, tmp, p, t + d5 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (b61 * k1 + b64 * k4 + b65 * k5)
     stage_limiter!(tmp, integrator, p, t + d6 * dt)
@@ -214,7 +212,7 @@ end
             + b16_10 * k10 + b16_11 * k11 + b16_12 * k12
             + b16_13 * k13 + b16_14 * k14
     )
-    stage_limiter!(u, integrator, p, t + dt)
+    stage_limiter!(tmp, integrator, p, t + dt)
     f(k16, tmp, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)
@@ -226,7 +224,6 @@ end
             + w14 * k14 + w15 * k15 + w16 * k16
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (

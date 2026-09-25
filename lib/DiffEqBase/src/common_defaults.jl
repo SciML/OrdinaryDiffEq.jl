@@ -50,6 +50,16 @@ function recursive_length(
     return prod(Size(eltype(u))) * length(u)
 end
 
+"""
+    ODE_DEFAULT_NORM(u, t)
+    ODE_DEFAULT_NORM(f, u, t)
+
+The default internal norm used by the integrators for error estimation and step-size
+control. It is the (optionally `f`-weighted) RMS norm: roughly `sqrt(sum(abs2, u) / length(u))`,
+which scales with the magnitude of the state but not its dimensionality, with specialized
+methods for scalars, `Array`s, static arrays, and nested array types. Pass a custom callable
+via the `internalnorm` solver keyword to override it.
+"""
 ODE_DEFAULT_NORM(u::Union{AbstractFloat, Complex}, t) = @fastmath abs(u)
 
 function ODE_DEFAULT_NORM(f::F, u::Union{AbstractFloat, Complex}, t) where {F}
@@ -121,7 +131,23 @@ end
 ODE_DEFAULT_NORM(u, t) = norm(u)
 ODE_DEFAULT_NORM(f::F, u, t) where {F} = norm(f.(u))
 
+"""
+    ODE_DEFAULT_ISOUTOFDOMAIN(u, p, t)
+
+The default `isoutofdomain` predicate used by the integrators. It always returns `false`,
+i.e. no state is considered out of the problem's domain. Pass a custom predicate via the
+`isoutofdomain` solver keyword to reject steps whose proposed state leaves a valid domain.
+"""
 ODE_DEFAULT_ISOUTOFDOMAIN(u, p, t) = false
+
+"""
+    ODE_DEFAULT_PROG_MESSAGE(dt, u, p, t)
+
+The default progress-bar message builder used by the integrators when `progress = true`.
+It returns a short multi-line string reporting the current `dt`, `t`, and the largest-magnitude
+component of the state `u`. Pass a custom callable via the `progress_message` solver keyword
+to override it.
+"""
 function ODE_DEFAULT_PROG_MESSAGE(dt, u::Array, p, t)
     tmp = u[1]
     for i in eachindex(u)
@@ -133,6 +159,25 @@ function ODE_DEFAULT_PROG_MESSAGE(dt, u, p, t)
     return "dt=" * string(dt) * "\nt=" * string(t) * "\nmax u=" * string(maximum(abs.(u)))
 end
 
+"""
+    NAN_CHECK(x)
+
+Recursively test whether `x` holds a `NaN`. The integrators use this to detect a step
+that produced `NaN` and reject it.
+
+Methods are provided for numbers, `AbstractArray`s, `RecursiveArrayTools.AbstractVectorOfArray`s
+and `RecursiveArrayTools.ArrayPartition`s; nested containers are descended into, so a state
+made of arrays of arrays reports `true` if any leaf is `NaN`. `Enum` values always report
+`false`, which keeps discrete components of a mixed state vector from being sent through
+`isnan`. Add a method to make the check reach the elements of a custom state type:
+
+```julia
+DiffEqBase.NAN_CHECK(x::MyStateType) = any(DiffEqBase.NAN_CHECK, x.parts)
+```
+
+`NaN` is only one of the ways a step can go bad; `Inf` and overflow are handled separately
+by [`ODE_DEFAULT_UNSTABLE_CHECK`](@ref).
+"""
 NAN_CHECK(x::Number) = isnan(x)
 NAN_CHECK(x::Enum) = false
 function NAN_CHECK(x::Union{AbstractArray, RecursiveArrayTools.AbstractVectorOfArray})
@@ -153,6 +198,27 @@ function INFINITE_OR_GIANT(
     )
 end
 INFINITE_OR_GIANT(x::RecursiveArrayTools.ArrayPartition) = any(INFINITE_OR_GIANT, x.x)
+
+"""
+    ODE_DEFAULT_UNSTABLE_CHECK(dt, u, p, t) -> Bool
+
+Return whether the default ODE instability check considers the current state
+unstable.
+
+The generic fallback returns `false`. Numeric scalars, arrays, and
+`ArrayPartition`s return `true` when any state entry is infinite or non-finite.
+This is the default used by OrdinaryDiffEq solvers when no `unstable_check`
+callback is supplied.
+
+# Arguments
+- `dt`: Current step size.
+- `u`: Current state.
+- `p`: Problem parameters.
+- `t`: Current time.
+
+# Returns
+- `Bool`: `true` when the state should be treated as unstable.
+"""
 ODE_DEFAULT_UNSTABLE_CHECK(dt, u, p, t) = false
 function ODE_DEFAULT_UNSTABLE_CHECK(dt, u::Union{Number, AbstractArray{<:Number}}, p, t)
     return INFINITE_OR_GIANT(u)

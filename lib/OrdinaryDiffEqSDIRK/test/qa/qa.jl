@@ -1,8 +1,35 @@
-using OrdinaryDiffEqSDIRK
-using Aqua
+using SciMLTesting, OrdinaryDiffEqSDIRK, Test
 
-@testset "Aqua" begin
-    Aqua.test_all(
-        OrdinaryDiffEqSDIRK
-    )
-end
+# The base solver-author API of OrdinaryDiffEqCore / OrdinaryDiffEqDifferentiation /
+# OrdinaryDiffEqNonlinearSolve / DiffEqBase is now declared `public`, so those names
+# no longer need ignoring here. What remains are genuine non-public internals with no
+# public alternative, grouped by owning package:
+#   * OrdinaryDiffEqCore internals that were intentionally NOT promoted to public
+#     (the `lorenz`/`lorenz_oop` precompile-workload fixtures and the
+#     `trivial_limiter!` default limiter).
+#   * SciMLBase private helpers (`_reshape`/`_unwrap_val`/`_vec`).
+#   * External packages whose names have no public export (TruncatedStacktraces'
+#     `@truncate_stacktrace`).
+run_qa(
+    OrdinaryDiffEqSDIRK;
+    reexports_allow = union(public_api_names(SciMLBase), (:Predictor, :SciMLBase)),
+    explicit_imports = true,
+    ei_kwargs = (
+        all_qualified_accesses_are_public = (;
+            ignore = (
+                # non-public OrdinaryDiffEqCore precompile-workload fixtures
+                :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
+            ),
+        ),
+        all_explicit_imports_are_public = (;
+            ignore = (
+                # non-public SciMLBase internals
+                :_reshape, :_unwrap_val, :_vec,
+                # non-public TruncatedStacktraces macro
+                Symbol("@truncate_stacktrace"),
+                # non-public OrdinaryDiffEqCore internal (limiter default)
+                :trivial_limiter!,
+            ),
+        ),
+    ),
+)

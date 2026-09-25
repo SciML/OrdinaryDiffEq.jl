@@ -1,19 +1,22 @@
 module ImplicitDiscreteSolve
 
-using SciMLBase
-using NonlinearSolveBase
-using NonlinearSolveFirstOrder
-using SymbolicIndexingInterface: parameter_symbols
-import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_cache, OrdinaryDiffEqMutableCache,
-    OrdinaryDiffEqConstantCache, get_fsalfirstlast, isfsal,
-    initialize!, perform_step!, isdiscretecache, isdiscretealg,
-    alg_order, beta2_default, beta1_default, dt_required,
-    _initialize_dae!, DefaultInit, BrownFullBasicInit, OverrideInit,
-    @muladd, @.., _unwrap_val, OrdinaryDiffEqCore, isadaptive,
-    allows_null_u0,
-    AbstractController, AbstractControllerCache
+using SciMLBase: SciMLBase, ImplicitDiscreteProblem, NonlinearFunction,
+    NonlinearLeastSquaresProblem, NonlinearProblem, ReturnCode, isinplace,
+    OverrideInit
+import SciMLBase: alg_order, isadaptive
+using NonlinearSolveBase: NonlinearSolveBase
+using NonlinearSolveFirstOrder: NewtonRaphson
+using CommonSolve: init, solve!
+using DiffEqBase: DefaultInit
+import DiffEqBase: initialize!
+using SymbolicIndexingInterface: state_values
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, OrdinaryDiffEqAlgorithm,
+    OrdinaryDiffEqMutableCache, AbstractController, AbstractControllerCache
+import OrdinaryDiffEqCore: alg_cache, get_fsalfirstlast, isfsal, perform_step!,
+    isdiscretecache, isdiscretealg, beta2_default, beta1_default, dt_required,
+    _initialize_dae!, allows_null_u0
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 
 include("algorithms.jl")

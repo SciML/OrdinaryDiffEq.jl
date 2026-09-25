@@ -109,10 +109,6 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
         integrator.stats.nf += 1
     end
 
-    if dense isa AutoFiniteDiff
-        dense = SciMLBase.@set dense.dir = diffdir(integrator)
-    end
-
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
     dense = gpu_safe_autodiff(dense, x)
 
@@ -157,10 +153,6 @@ function jacobian(f::F, x, integrator) where {F}
         integrator.stats.nf += 1
     end
 
-    if dense isa AutoFiniteDiff
-        dense = SciMLBase.@set dense.dir = diffdir(integrator)
-    end
-
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
     dense = gpu_safe_autodiff(dense, x)
 
@@ -185,6 +177,13 @@ function jacobian(f::F, x, integrator) where {F}
     return jac
 end
 
+"""
+    jacobian!(J, f, x, fx, integrator, jac_config)
+
+Compute the Jacobian of `f` at `x` into `J` in place, using the AD backend or
+finite differences configured in `jac_config` (respecting the finite-difference
+direction). `fx` is a preallocated RHS buffer. No-op for an empty state.
+"""
 function jacobian!(
         J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
@@ -234,11 +233,7 @@ function jacobian!(
         integrator.stats.nf += 1
     end
 
-    if dense isa AutoFiniteDiff
-        config = diffdir(integrator) > 0 ? jac_config[1] : jac_config[2]
-    else
-        config = jac_config[1]
-    end
+    config = jac_config[1]
 
     if integrator.iter == 1
         try
@@ -253,6 +248,15 @@ function jacobian!(
     return nothing
 end
 
+"""
+    build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+Construct the differentiation configuration used to compute the state Jacobian of
+`f` via [`jacobian!`](@ref) (a DifferentiationInterface preparation, or `nothing`
+when the problem supplies its own `jac`/`Wfact`). The state Jacobian perturbs
+`u`, not `t`, so the finite-difference direction does not depend on the
+integration direction; the returned tuple holds the same config twice.
+"""
 function build_jac_config(
         alg, f::F1, uf::F2, du1, uprev,
         u, tmp, du2
@@ -279,38 +283,17 @@ function build_jac_config(
                 idxs = diagind(jac_prototype)
                 @. @view(jac_prototype[idxs]) = 1
             else
-                idxs = findall(!iszero, f.mass_matrix)
-                @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+                mm = concrete_mass_matrix(f.mass_matrix)
+                idxs = findall(!iszero, mm)
+                @. @view(jac_prototype[idxs]) = @view(mm[idxs])
             end
         end
 
         autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), u)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
-        if dense isa AutoFiniteDiff
-            dir_forward = @set dense.dir = 1
-            dir_reverse = @set dense.dir = -1
-
-            if autodiff_alg isa AutoSparse
-                autodiff_alg_forward = @set autodiff_alg.dense_ad = dir_forward
-                autodiff_alg_reverse = @set autodiff_alg.dense_ad = dir_reverse
-            else
-                autodiff_alg_forward = dir_forward
-                autodiff_alg_reverse = dir_reverse
-            end
-
-            jac_config_forward = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_forward, u, strict = Val(false)
-            )
-            jac_config_reverse = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_reverse, u, strict = Val(false)
-            )
-
-            jac_config = (jac_config_forward, jac_config_reverse)
-        else
-            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
-            jac_config = (jac_config1, jac_config1)
-        end
+        jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
+        jac_config = (jac_config1, jac_config1)
 
     else
         jac_config = (nothing, nothing)
@@ -332,6 +315,13 @@ function get_chunksize(
     return Val(N)
 end # don't degrade compile time information to runtime information
 
+"""
+    resize_jac_config!(cache, integrator)
+
+Resize the Jacobian differentiation configuration on `cache` to match a changed
+state length (e.g. after a `resize!` callback), rebuilding the AD/finite-difference
+configs for the new size.
+"""
 function resize_jac_config!(cache, integrator)
     if !isnothing(cache.jac_config) && !isnothing(cache.jac_config[1])
         uf = cache.uf
@@ -350,8 +340,8 @@ function resize_jac_config!(cache, integrator)
         cache.jac_config = (
             [
                 DI.prepare!_jacobian(
-                        uf, cache.du1, config, ad, integrator.u
-                    )
+                    uf, cache.du1, config, ad, integrator.u
+                )
                     for (ad, config) in zip(
                         (ad_right, ad_left), cache.jac_config
                     )
@@ -361,6 +351,12 @@ function resize_jac_config!(cache, integrator)
     return cache.jac_config
 end
 
+"""
+    resize_grad_config!(cache, integrator)
+
+Resize the time-derivative differentiation configuration on `cache` to match a
+changed state length.
+"""
 function resize_grad_config!(cache, integrator)
     if !isnothing(cache.grad_config) && !isnothing(cache.grad_config[1])
 
@@ -377,8 +373,8 @@ function resize_grad_config!(cache, integrator)
         cache.grad_config = (
             [
                 DI.prepare!_derivative(
-                        cache.tf, cache.du1, config, ad, integrator.t
-                    )
+                    cache.tf, cache.du1, config, ad, integrator.t
+                )
                     for (ad, config) in zip(
                         (ad_right, ad_left), cache.grad_config
                     )
@@ -407,6 +403,14 @@ end
 # Fallback for other AD backends
 gpu_safe_autodiff(backend, u) = backend
 
+"""
+    build_grad_config(alg, f, tf, du1, t)
+
+Construct the differentiation configuration used to compute the time derivative
+`∂f/∂t` (needed by Rosenbrock methods) via the `tf` time-gradient wrapper. Returns
+`nothing` when `f` provides an analytic `tgrad`; for finite differencing it returns
+forward/backward-direction configs.
+"""
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !SciMLBase.has_tgrad(f)
         ad = ADTypes.dense_ad(alg_autodiff(alg))
@@ -443,8 +447,9 @@ function sparsity_colorvec(f::F, x) where {F}
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1
         else
-            idxs = findall(!iszero, f.mass_matrix)
-            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+            mm = concrete_mass_matrix(f.mass_matrix)
+            idxs = findall(!iszero, mm)
+            @. @view(sparsity[idxs]) = @view(mm[idxs])
         end
     end
 

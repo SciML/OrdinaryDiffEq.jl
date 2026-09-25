@@ -4,9 +4,20 @@
     "Explicit Runge-Kutta Method.",
     """E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
     Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-    Springer-Verlag.""", "", ""
+    Springer-Verlag.""",
+    """
+    - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    """,
+    """
+    stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    """
 )
-struct Euler <: OrdinaryDiffEqAlgorithm end
+Base.@kwdef struct Euler{StageLimiter, StepLimiter} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 @doc generic_solver_docstring(
     "1st order fully explicit method for testing split accuracy",
@@ -204,6 +215,29 @@ Base.@kwdef struct DP5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdapt
     thread::Thread = Serial()
 end
 
+"""
+    AutoDP5(alg; kwargs...)
+
+Construct an automatic solver switch that starts with `DP5()` and changes to
+`alg` when the problem becomes stiff.
+
+# Arguments
+
+- `alg`: Stiff solver algorithm to use after the switch.
+
+# Keywords
+
+- `kwargs...`: Forwarded to [`AutoAlgSwitch`](@ref), including its switching
+  criterion and stiffness-detection options.
+
+# Examples
+
+```julia
+sol = solve(prob, AutoDP5(Rodas5P()))
+```
+
+See [`AutoAlgSwitch`](@ref) for the switching options accepted through `kwargs`.
+"""
 AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
 
 @doc explicit_rk_docstring(
@@ -499,3 +533,11 @@ Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEq
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        Alshina2, Alshina3, Alshina6, Anas5, BS3, BS5, DP5, Euler, FRK65, Heun,
+        MSRK5, MSRK6, Midpoint, OwrenZen3, OwrenZen4, OwrenZen5, PSRK3p5q4, PSRK3p6q5,
+        PSRK4p7q6, RK4, RKM, RKO65, Ralston, Ralston4, SIR54, Stepanov5,
+    },
+) = true

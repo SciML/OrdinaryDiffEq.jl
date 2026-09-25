@@ -1047,11 +1047,7 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
-    if calck
-        fsalfirst = zero(k)
-    else
-        fsalfirst = k
-    end
+    fsalfirst = zero(k)
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)

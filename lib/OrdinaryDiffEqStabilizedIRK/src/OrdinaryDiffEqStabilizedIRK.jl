@@ -1,29 +1,30 @@
 module OrdinaryDiffEqStabilizedIRK
 
-import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
-    calculate_residuals!, default_controller, IController,
-    beta2_default, beta1_default, gamma_default, issplit,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, fac_default_gamma,
-    OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+import OrdinaryDiffEqCore: default_controller, IController,
+    gamma_default, issplit,
+    perform_step!, unwrap_alg, fac_default_gamma,
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqAdaptiveAlgorithm,
-    OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-    alg_cache, _unwrap_val, @cache,
-    _reshape, _vec, full_cache, get_fsalfirstlast,
-    generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad
+    alg_cache, @cache,
+    get_fsalfirstlast, increment_nf!, set_EEst!,
+    generic_solver_docstring, _fixup_ad,
+    get_W, isnewton
 
-using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
-using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver,
-    markfirststage!, du_alias_or_new, get_W
+import SciMLBase: alg_order, _unwrap_val, _reshape, _vec
+import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 
-using OrdinaryDiffEqStabilizedRK: ESERK4, ESERK5, RKC, SERK2
+import OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
+import OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, build_nlsolver,
+    markfirststage!, du_alias_or_new
 
-using FastBroadcast, MuladdMacro, RecursiveArrayTools
-import OrdinaryDiffEqCore
-import ADTypes: AutoForwardDiff, AbstractADType
+using OrdinaryDiffEqStabilizedRK: ESERK4, ESERK5, SERK2
 
-using Reexport
+import FastBroadcast: @..
+import RecursiveArrayTools: recursivefill!
+import ADTypes: AutoForwardDiff
+
+using Reexport: Reexport, @reexport
+using SciMLBase: SciMLBase
 @reexport using SciMLBase
 
 include("algorithms.jl")

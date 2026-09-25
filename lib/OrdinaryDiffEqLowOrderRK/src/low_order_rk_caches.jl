@@ -199,6 +199,23 @@ end
     thread::Thread
 end
 
+# `@cache struct` expands to the struct plus a `full_cache` method, which a docstring
+# on the macrocall cannot wrap, so the docstring attaches to the type binding here.
+"""
+    RK4Cache <: OrdinaryDiffEqMutableCache
+
+In-place solver cache for the classical 4th-order Runge–Kutta method (`RK4`),
+holding its four stage buffers, error/temporary buffers, and the stage/step
+limiters and threading option.
+"""
+RK4Cache
+
+"""
+    RK4ConstantCache <: OrdinaryDiffEqConstantCache
+
+Out-of-place solver cache for the classical 4th-order Runge–Kutta method (`RK4`).
+Carries no state (the coefficients are compile-time constants).
+"""
 struct RK4ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(
@@ -248,6 +265,18 @@ end
     step_limiter!::StepLimiter
     thread::Thread
 end
+
+# `@cache struct` expands to the struct plus a `full_cache` method, which a docstring
+# on the macrocall cannot wrap, so the docstring attaches to the type binding here.
+"""
+    BS3Cache <: OrdinaryDiffEqMutableCache
+
+In-place solver cache for the Bogacki–Shampine 3(2) method (`BS3`), holding its
+stage buffers, embedded-error temporaries, tableau ([`BS3ConstantCache`](@ref)),
+and the stage/step limiters and threading option. Declared public because other
+sublibraries (e.g. the Adams–Bashforth–Moulton starters) reuse the `BS3` step.
+"""
+BS3Cache
 
 function alg_cache(
         alg::BS3, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -945,13 +974,13 @@ struct FRK65ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
         β7 = T1(1822809703 // 7599996644)
         β8 = T1(79524953 // 2351253316)
 
-        β1tilde = T1(413034411 // 13925408836)
+        β1tilde = T1(big(1026331676) // 33222204855 - 413034411 // 13925408836)
         β4tilde = T1(1865954212 // 7538591735)
         β5tilde = T1(4451980162 // 16576017119)
         β6tilde = T1(1157843020 // 6320223511)
-        β7tilde = T1(802708729 // 3404369569)
-        β8tilde = T1(-251398161 // 17050111121)
-        β9tilde = T1(1 // 20)
+        β7tilde = T1(big(1822809703) // 7599996644 - 802708729 // 3404369569)
+        β8tilde = T1(big(79524953) // 2351253316 + 251398161 // 17050111121)
+        β9tilde = T1(-1 // 20)
 
         c2 = T2(1 // 89)
         c3 = T2(34 // 377)

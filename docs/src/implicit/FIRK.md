@@ -35,7 +35,7 @@ These methods are recommended for:
 
 RadauIIA methods are based on Gaussian collocation and achieve order 2s-1 for s stages, making them among the highest-order implicit methods available. They represent the ODE analog of Gaussian quadrature with a fixed right node (Gauss-Radau). They are L-stable, meaning they are stiffly accurate and handle large negative eigenvalues/stiffness ratios. For more details on recent advances in FIRK methods, see our paper: [High-Order Adaptive Time Stepping for the Incompressible Navier-Stokes Equations](https://arxiv.org/abs/2412.14362).
 
-Gauss–Legendre methods use the roots of the Legendre polynomial directly as collocation points and achieve an order of 2s, the highest order IRK available. They are also A-stable, symmetric, and can be symplectic in certain usages. They conserve energy within the system but are not L-Stable like Radau, which means they preserve oscilations instead of damping. 
+Gauss–Legendre methods use the roots of the Legendre polynomial directly as collocation points and achieve an order of 2s, the highest order IRK available. They are also A-stable, symmetric, and can be symplectic in certain usages. They conserve energy within the system but are not L-Stable like Radau, which means they preserve oscillations instead of damping. 
 
 ## Computational Considerations
 
@@ -63,7 +63,25 @@ Gauss–Legendre methods use the roots of the Legendre polynomial directly as co
 ### System size considerations
 
   - **Systems < 200**: FIRK methods are competitive due to better multithreading
-  - **Systems > 200**: Consider SDIRK or BDF methods instead
+  - **Systems > 200**: Consider SDIRK or BDF methods instead, or keep a Radau method and
+    switch to a matrix-free linear solver (see below)
+
+## Matrix-free (Newton-Krylov) usage
+
+The RadauIIA methods and `AdaptiveRadau` accept a matrix-free `linsolve`, which avoids
+forming a Jacobian at all:
+
+```julia
+solve(prob, RadauIIA5(linsolve = KrylovJL_GMRES()))
+```
+
+The W-transform decouples each step into one real shifted solve and one shifted solve per
+complex-conjugate stage pair, and every one of them is applied through the same real
+Jacobian-vector product. `concrete_jac = true` keeps a concrete Jacobian alongside the
+matrix-free application, which is what a preconditioner needs.
+
+`GaussLegendre` has no matrix-free path: it solves a single coupled
+`num_stages * length(u)` block system rather than decoupled shifted systems.
 
 ## Performance Guidelines
 

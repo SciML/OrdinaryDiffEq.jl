@@ -11,6 +11,18 @@ function _change_t_via_interpolation!(
     # cache array which can be modified.
     if integrator.tdir * t < integrator.tdir * integrator.tprev
         error("Current interpolant only works between tprev and t")
+    elseif T !== true && integrator.saveiter > 0 &&
+            integrator.tdir * t <
+            integrator.tdir * integrator.sol.t[integrator.saveiter]
+        # The solution stores its times in order, so moving behind a point it already
+        # holds cannot be represented: the times invert and every later interpolation
+        # over that span reads the wrong side. `Val{true}` is the tstop rewind, which
+        # repairs the endpoint itself through `solution_endpoint_match_cur_integrator!`.
+        error(
+            "cannot change t to $t, the solution already holds a point at " *
+                "$(integrator.sol.t[integrator.saveiter]). Moving the integrator behind " *
+                "a saved point would leave the saved times out of order."
+        )
     elseif t != integrator.t
         if is_constant_cache(integrator.cache)
             integrator.u = integrator(t)
@@ -56,22 +68,22 @@ function SciMLBase.reeval_internals_due_to_modification!(
         callback_initializealg = nothing
     )
     if integrator.isdae
-        DiffEqBase.initialize_dae!(
+        # Reinitialization changes the right endpoint; uprev must still describe tprev.
+        SciMLBase.initialize_dae!(
             integrator,
             isnothing(callback_initializealg) ? integrator.initializealg :
                 callback_initializealg
         )
-        update_uprev!(integrator)
     end
 
     if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if SciMLBase.has_lazy_interpolation(alg)
-            ode_addsteps!(integrator, integrator.f, true, false, !_unwrap_val(alg.lazy))
-        else
-            ode_addsteps!(integrator, integrator.f, true, false)
-        end
+        # A non-lazy interpolant keeps its extra stages inside kshortsize, so the
+        # resize! above cannot drop them and they stay stale for the shortened dt.
+        # Force them to be recomputed; lazy interpolants build them on demand.
+        force_calc_end = !SciMLBase.has_lazy_interpolation(alg)
+        ode_addsteps!(integrator, integrator.f, true, false, force_calc_end)
     end
 
     integrator.derivative_discontinuity = false
@@ -81,8 +93,8 @@ end
 @inline function SciMLBase.get_du(integrator::ODEIntegrator)
     isdiscretecache(integrator.cache) &&
         error("Derivatives are not defined for this stepper.")
-    return if isfsal(integrator.alg) &&
-            !has_stiff_interpolation(integrator.alg)
+    return if get_current_isfsal(integrator.alg, integrator.cache) &&
+            !get_current_has_stiff_interpolation(integrator.alg, integrator.cache)
         # Special stiff interpolations do not store the
         # right value in fsallast
         integrator.fsallast
@@ -116,8 +128,8 @@ end
     if isdiscretecache(integrator.cache)
         out .= integrator.cache.tmp
     else
-        return if isfsal(integrator.alg) &&
-                !has_stiff_interpolation(integrator.alg)
+        return if get_current_isfsal(integrator.alg, integrator.cache) &&
+                !get_current_has_stiff_interpolation(integrator.alg, integrator.cache)
             # Special stiff interpolations do not store the
             # right value in fsallast
             out .= integrator.fsallast
@@ -144,7 +156,33 @@ end
     end
 end
 
+"""
+    derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
+
+Flag whether the current callback introduced a derivative discontinuity (a change to
+`u`, `p`, `t`, or `f` that makes `f(u, p, t)` discontinuous). A `true` triggers extra
+work at the start of the next step (FSAL re-evaluation, Jacobian recomputation,
+extrapolant reset); a `false` lets the integrator skip it. The default when a callback
+fires but does not call this is `true`, the conservative choice.
+
+When several callbacks run on the same step (multiple `DiscreteCallback`s, or
+simultaneous events in a `VectorContinuousCallback`), the outcome is **order
+independent and any-`true`-wins**:
+
+  - if any callback flags `true`, the step is treated as discontinuous, even if other
+    callbacks flag `false` and even if a `false` callback runs last;
+  - only if every callback that spoke flagged `false` (and none flagged `true`) is the
+    recomputation skipped;
+  - if no callback calls this at all, the conservative default (`true`) is kept.
+
+A callback may therefore safely call `derivative_discontinuity!(integrator, false)`
+without having to account for what sibling callbacks did. Within a single callback the
+last call wins.
+"""
 function SciMLBase.derivative_discontinuity!(integrator::ODEIntegrator, bool::Bool)
+    # A plain assignment: a callback may freely set false. The order-independent
+    # any-true-wins merge across simultaneous callbacks is handled by the per-callback
+    # verdict folding in apply_callback! / apply_discrete_callback!.
     return integrator.derivative_discontinuity = bool
 end
 
@@ -461,6 +499,7 @@ function SciMLBase.reinit!(
         reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
+        reinit_controller = true,
         reinit_retcode = true,
         rng = nothing
     )
@@ -485,6 +524,14 @@ function SciMLBase.reinit!(
             integrator.sol = sol
         end
     end
+    # Null u0 (e.g., MTK systems with only observed/algebraic variables and no state).
+    # `init` coerces such a `nothing` to the working state (`Float64[]`), but `prob.u0`
+    # (the default here) and `late_binding_update_u0_p` can still hand back `nothing`.
+    # There is no state to reinitialize, so fall back to the integrator's current `u`,
+    # which downstream copying/saving can handle uniformly.
+    if u0 === nothing
+        u0 = integrator.u
+    end
     if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.u, u0)
         recursivecopy!(integrator.uprev, integrator.u)
@@ -503,6 +550,20 @@ function SciMLBase.reinit!(
 
     integrator.t = t0
     integrator.tprev = t0
+
+    # Initialization changes the ImplicitDiscrete start state, so run it before
+    # save_start and preserve any InitialFailure instead of resetting it below.
+    implicit_discrete = integrator.sol.prob isa SciMLBase.ImplicitDiscreteProblem
+    if reinit_dae && implicit_discrete
+        if reinit_retcode
+            integrator.sol = SciMLBase.solution_new_retcode(
+                integrator.sol, ReturnCode.Default
+            )
+        end
+        SciMLBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
+        u0 = integrator.u
+    end
 
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
@@ -549,7 +610,9 @@ function SciMLBase.reinit!(
     integrator.derivative_discontinuity = false
 
     # full re-initialize the controller in timestepping
-    reinit_controller!(integrator, integrator.controller_cache)
+    if reinit_controller
+        reinit_controller!(integrator, integrator.controller_cache)
+    end
 
     if rng !== nothing
         SciMLBase.set_rng!(integrator, rng)
@@ -559,9 +622,9 @@ function SciMLBase.reinit!(
         auto_dt_reset!(integrator)
     end
 
-    if reinit_dae &&
+    if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
-        DiffEqBase.initialize_dae!(integrator)
+        SciMLBase.initialize_dae!(integrator)
         update_uprev!(integrator)
     end
 
@@ -573,7 +636,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reinit_retcode
+    if reinit_retcode && !(reinit_dae && implicit_discrete)
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 
@@ -587,10 +650,20 @@ end
 
 # Extensible initdt hook: ODE defaults to ode_determine_initdt.
 # SDE extends this in StochasticDiffEq to pass the stochastic order.
+"""
+    _determine_initdt(integrator) -> dt
+
+Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
+`integrator` (state, tolerances, norm, problem).
+"""
 function _determine_initdt(integrator)
+    tdir = integrator.tdir
+    dtmax = tdir * min(
+        abs(integrator.opts.dtmax), abs(first_tstop(integrator) - tdir * integrator.t)
+    )
     return ode_determine_initdt(
         integrator.u, integrator.t,
-        integrator.tdir, integrator.opts.dtmax,
+        tdir, dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator
@@ -603,6 +676,11 @@ function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
     return increment_nf!(integrator.stats, 2)
 end
 
+"""
+    increment_nf!(stats, amt = 1)
+
+Increment the RHS-evaluation counter `stats.nf` by `amt`.
+"""
 function increment_nf!(stats, amt = 1)
     return stats.nf += amt
 end
@@ -620,7 +698,8 @@ function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
             t0 = t,
             reset_dt = false,
             reinit_callbacks = false,
-            reinit_cache = false
+            reinit_cache = false,
+            reinit_controller = false
         )
     else
         integrator.t = t

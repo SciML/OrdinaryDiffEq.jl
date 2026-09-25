@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, ADTypes, Test
+using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
 using NonlinearSolve: TrustRegion
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqCore: DEVerbosity
@@ -6,7 +7,7 @@ using OrdinaryDiffEqCore: DEVerbosity
 prob = ODEProblem((du, u, p, t) -> du .= u, zeros(1), (0.0, 1.0))
 nlalg = FBDF(
     autodiff = AutoFiniteDiff(),
-    nlsolve = OrdinaryDiffEqBDF.NonlinearSolveAlg(TrustRegion(autodiff = AutoFiniteDiff()))
+    nlsolve = NonlinearSolveAlg(TrustRegion(autodiff = AutoFiniteDiff()))
 )
 basicalg = FBDF(autodiff = AutoFiniteDiff())
 basicalgad = FBDF()

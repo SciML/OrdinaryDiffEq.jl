@@ -2,7 +2,8 @@ using DiffEqBase, Test
 
 function f_lin(du, u, p, t)
     du[1] = 0.2u[1] + p[1] * u[2]
-    return du[2] = 0.2u[1] - p[2] * u[2]
+    du[2] = 0.2u[1] - p[2] * u[2]
+    return
 end
 p = (0.0, 1.0)
 prob = LinearProblem(f_lin, ones(2))
@@ -10,21 +11,24 @@ prob = LinearProblem(rand(2, 2), ones(2))
 
 function f_nonlin(du, u, p)
     du[1] = 0.2u[1] + p[1] * u[2]
-    return du[2] = 0.2u[1] - p[2] * u[2]
+    du[2] = 0.2u[1] - p[2] * u[2]
+    return
 end
 p = (0.0, 1.0)
 prob = NonlinearProblem(f_nonlin, ones(2), p)
 
 function f_quad(du, u, p)
     du[1] = 0.2u[1] + p[1] * u[2]
-    return du[2] = 0.2u[1] - p[2] * u[2]
+    du[2] = 0.2u[1] - p[2] * u[2]
+    return
 end
 p = (0.0, 1.0)
 prob = IntegralProblem(f_quad, (zeros(2), ones(2)), p)
 
 function f_ode(du, u, p, t)
     du[1] = 0.2u[1]
-    return du[2] = 0.4u[2]
+    du[2] = 0.4u[2]
+    return
 end
 u0 = ones(2)
 tspan = (0, 1.0)
@@ -54,11 +58,13 @@ prob = SDEProblem((u, p, t) -> 1.01u, (u, p, t) -> 0.87u, 1 / 2, (0.0, 1.0))
 
 function f_sde(du, u, p, t)
     du[1] = 0.2u[1]
-    return du[2] = 0.4u[2]
+    du[2] = 0.4u[2]
+    return
 end
 function g_sde(du, u, p, t)
     du[1] = 0.2u[1]
-    return du[2] = 0.4u[2]
+    du[2] = 0.4u[2]
+    return
 end
 u0 = ones(2)
 tspan = (0, 1.0)
@@ -69,7 +75,8 @@ prob = SDEProblem{true}(f_sde, g_sde, u0, tspan)
 @inferred SDEProblem{true}(f_sde, g_sde, u0, tspan)
 
 f_1delay = function (du, u, h, p, t)
-    return du[1] = -h(t - 1)[1]
+    du[1] = -h(t - 1)[1]
+    return
 end
 prob = DDEProblem(f_1delay, ones(1), t -> zeros(1), (0.0, 10.0), constant_lags = ones(1))
 prob = DDEProblem{true}(
@@ -95,7 +102,8 @@ function f_dae(r, yp, y, p, tres)
     r[1] = -0.04 * y[1] + 1.0e4 * y[2] * y[3]
     r[2] = -r[1] - 3.0e7 * y[2] * y[2] - yp[2]
     r[1] -= yp[1]
-    return r[3] = y[1] + y[2] + y[3] - 1.0
+    r[3] = y[1] + y[2] + y[3] - 1.0
+    return
 end
 u0 = [1.0, 0, 0]
 du0 = [-0.04, 0.04, 0.0]
@@ -133,7 +141,8 @@ DiscreteProblem{false}(f_discrete, ones(1), tspan)
 
 function f_steady(du, u, p, t)
     du[1] = 2 - 2u[1]
-    return du[2] = u[1] - 4u[2]
+    du[2] = u[1] - 4u[2]
+    return
 end
 u0 = zeros(2)
 prob = SteadyStateProblem(f_steady, u0)

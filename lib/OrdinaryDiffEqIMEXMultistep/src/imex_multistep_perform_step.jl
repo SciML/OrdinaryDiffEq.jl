@@ -1,3 +1,10 @@
+# Both methods here are two-step: they combine the current state with history
+# (`k2`, `uprev2`) carried over from the previous step. A callback that jumps `u`
+# invalidates that history — it describes the pre-jump trajectory — so the step
+# after a discontinuity has to fall back to the one-step startup formula, exactly
+# as on the very first step.
+is_startup_step(integrator) = integrator.iter == 1 || integrator.derivative_discontinuity
+
 # CNAB2
 
 function initialize!(integrator, cache::CNAB2ConstantCache)
@@ -16,14 +23,14 @@ end
 function perform_step!(integrator, cache::CNAB2ConstantCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, nlsolver) = cache
-    cnt = integrator.iter
+    startup = is_startup_step(integrator)
     f1 = integrator.f.f1
     f2 = integrator.f.f2
     du₁ = f1(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     k1 = integrator.fsalfirst - du₁
     # Explicit part
-    if cnt == 1
+    if startup
         tmp = uprev + dt * k1
     else
         tmp = uprev + dt * (3 // 2 * k1 - 1 // 2 * k2)
@@ -68,13 +75,13 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step = false)
     (; k1, k2, du₁, nlsolver) = cache
     (; z, tmp) = nlsolver
     (; f1) = f
-    cnt = integrator.iter
+    startup = is_startup_step(integrator)
 
     f1(du₁, uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false k1 = integrator.fsalfirst - du₁
     # Explicit part
-    if cnt == 1
+    if startup
         @.. broadcast = false tmp = uprev + dt * k1
     else
         @.. broadcast = false tmp = uprev + dt * (3 // 2 * k1 - 1 // 2 * k2)
@@ -115,13 +122,13 @@ end
 function perform_step!(integrator, cache::CNLF2ConstantCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
     (; k2, uprev2, nlsolver) = cache
-    cnt = integrator.iter
+    startup = is_startup_step(integrator)
     f1 = integrator.f.f1
     f2 = integrator.f.f2
     du₁ = f1(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # Explicit part
-    if cnt == 1
+    if startup
         tmp = uprev + dt * (integrator.fsalfirst - du₁)
     else
         tmp = uprev2 + 2 // 1 * dt * (integrator.fsalfirst - du₁)
@@ -129,7 +136,7 @@ function perform_step!(integrator, cache::CNLF2ConstantCache, repeat_step = fals
     # Implicit part
     # precalculations
     γ = 1 // 1
-    if cnt != 1
+    if !startup
         tmp += γ * dt * k2
     end
     γdt = γ * dt
@@ -169,12 +176,12 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step = false)
     (; uprev2, k2, du₁, nlsolver) = cache
     (; z, tmp) = nlsolver
     (; f1) = f
-    cnt = integrator.iter
+    startup = is_startup_step(integrator)
 
     f1(du₁, uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # Explicit part
-    if cnt == 1
+    if startup
         @.. broadcast = false tmp = uprev + dt * (integrator.fsalfirst - du₁)
     else
         @.. broadcast = false tmp = uprev2 + 2 // 1 * dt * (integrator.fsalfirst - du₁)
@@ -182,7 +189,7 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step = false)
     # Implicit part
     # precalculations
     γ = 1 // 1
-    if cnt != 1
+    if !startup
         @.. broadcast = false tmp += γ * dt * k2
     end
     γdt = γ * dt

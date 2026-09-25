@@ -20,13 +20,15 @@ Then you call `Shootout` on that setup. The code is as follows:
 
 ```julia
 using OrdinaryDiffEq, DiffEqProblemLibrary.ODEProblemLibrary, DiffEqDevTools, ODE,
-      ODEInterface, ODEInterfaceDiffEq
+    ODEInterface, ODEInterfaceDiffEq
 
 ODEProblemLibrary.importodeproblems()
 prob = ODEProblemLibrary.prob_ode_2Dlinear
-setups = [Dict(:alg => DP5())
-          Dict(:abstol => 1e-3, :reltol => 1e-6, :alg => ode45()) # Fix ODE to be normal
-          Dict(:alg => dopri5())]
+setups = [
+    Dict(:alg => DP5())
+    Dict(:abstol => 1.0e-3, :reltol => 1.0e-6, :alg => ode45()) # Fix ODE to be normal
+    Dict(:alg => dopri5())
+]
 names = ["DifferentialEquations"; "ODE"; "ODEInterface"]
 shoot = Shootout(prob, setups; dt = 1 / 2^(10), names = names)
 ```
@@ -54,7 +56,7 @@ on each of these values.
 
 ### WorkPrecision
 
-A WorkPrecision calculates the necessary componnets of a work-precision plot. This
+A WorkPrecision calculates the necessary components of a work-precision plot. This
 shows how time scales with the user chosen tolerances on a given problem. To make
 a WorkPrecision, you give it a vector of absolute and relative tolerances:
 
@@ -70,10 +72,90 @@ into the function as well:
 
 ```julia
 wp_set = WorkPrecisionSet(prob, tspan, abstols, reltols, setups; numruns = 2)
-setups = [Dict(:alg => RK4()); Dict(:alg => Euler()); Dict(:alg => BS3());
-          Dict(:alg => Midpoint()); Dict(:alg => BS5()); Dict(:alg => DP5())]
+setups = [
+    Dict(:alg => RK4()); Dict(:alg => Euler()); Dict(:alg => BS3());
+    Dict(:alg => Midpoint()); Dict(:alg => BS5()); Dict(:alg => DP5())
+]
 wp_set = WorkPrecisionSet(prob, abstols, reltols, setups; dt = 1 / 2^4, numruns = 2)
 ```
 
 Both of these types have a plot recipe to produce a work-precision diagram,
 and a print which will show some relevant information.
+
+### Tags and comparison plots
+
+A benchmark usually wants several views of the same data: each family of methods on its
+own, then the best of each family against each other, with a couple of reference methods
+in every plot. Preset tags derived from algorithm traits and supertypes produce all of
+those from a single run. Add only benchmark-specific tags such as `:reference`, request
+every error metric the plots need with `error_estimates`, and slice the result afterwards:
+
+```julia
+setups = [
+    Dict(:alg => Rosenbrock23()),
+    Dict(:alg => Rodas5P()),
+    Dict(:alg => TRBDF2()),
+    Dict(:alg => KenCarp4()),
+    Dict(:alg => RadauIIA5(), :tags => [:reference]),
+]
+wp_set = WorkPrecisionSet(
+    prob, abstols, reltols, setups;
+    error_estimates = [:final, :l2], appxsol = test_sol
+)
+
+plot(wp_set, tags = [:rosenbrock])                     # one family
+plot(best_of_families(wp_set, [:rosenbrock, :sdirk]))  # cross-family comparison
+plot(wp_set, x = :l2)                                  # a second error metric, no re-solve
+
+# a family against the baseline
+plot(
+    wp_set, tags = [:sdirk], include_tags = [:reference],
+    reference_tags = [:reference]
+)
+```
+
+For example, `auto_tags(KenCarp4())` includes `:order_4`, `:adaptive`, `:implicit`,
+`:sdirk`, `:esdirk`, and `:split`. Explicit setup tags are appended without duplicates.
+Use `:auto_tags => false` when a setup needs only its manually supplied tags.
+[`tag_kind`](@ref) distinguishes algorithm families from traits, benchmark roles,
+providers, variants, and problem domains. This lets `autoplot(wp_set)` discover family
+views without treating tags such as `:order_4` or `:reference` as families. Pass
+`families` explicitly for one-off custom family tags.
+
+`plot(wp_set; tags)` keeps the entries carrying all of `tags`, `include_tags` adds
+entries back regardless of that filter, and `exclude_tags` drops entries. Entries
+matching `reference_tags` are drawn in a separate, de-emphasized style controlled by
+`reference_style`. [`autoplot`](@ref) returns the whole standard collection of subsets
+at once, keyed by name.
+
+Slow configurations can be capped with `timeout` (seconds per tolerance): a solve is
+never interrupted, but once one exceeds the budget its repeated timing runs are skipped
+and the point is recorded as `NaN`, which the plot recipe drops.
+
+## API
+
+```@docs
+DiffEqDevTools.Shootout
+DiffEqDevTools.ShootoutSet
+DiffEqDevTools.WorkPrecision
+DiffEqDevTools.WorkPrecisionSet
+DiffEqDevTools.get_sample_errors
+```
+
+### Tagging and comparison helpers
+
+```@docs
+DiffEqDevTools.auto_tags
+DiffEqDevTools.tag_kind
+DiffEqDevTools.get_tags
+DiffEqDevTools.unique_tags
+DiffEqDevTools.filter_by_tags
+DiffEqDevTools.exclude_by_tags
+DiffEqDevTools.merge_wp_sets
+DiffEqDevTools.available_errors
+DiffEqDevTools.wp_area
+DiffEqDevTools.best_by_tag
+DiffEqDevTools.best_of_families
+DiffEqDevTools.with_autodiff_variants
+DiffEqDevTools.autoplot
+```

@@ -1,15 +1,17 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "MREEF Tests" include("mreef_tests.jl")
+    @time @safetestset "MRAB Tests" include("mrab_tests.jl")
+    @time @safetestset "MRI-GARK Tests" include("mri_gark_tests.jl")
+    @time @safetestset "MIS Tests" include("mis_tests.jl")
 end
 
 # Run QA tests (AllocCheck) - skip on pre-release Julia

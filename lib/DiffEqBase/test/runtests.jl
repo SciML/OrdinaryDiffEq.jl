@@ -2,7 +2,7 @@ using Pkg
 using SafeTestsets
 using Test
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "Core")
+const TEST_GROUP = get(ENV, "GROUP", "Core")
 
 function activate_downstream_env()
     Pkg.activate(joinpath(@__DIR__, "downstream"))
@@ -41,11 +41,15 @@ end
         @time @safetestset "Internal Euler" include("internal_euler_test.jl")
         @time @safetestset "Norm" include("norm.jl")
         @time @safetestset "Utils" include("utils.jl")
+        @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
         @time @safetestset "ForwardDiff Dual Detection" include("forwarddiff_dual_detection.jl")
         @time @safetestset "ODE default norm" include("ode_default_norm.jl")
         @time @safetestset "DynamicQuantities extension" include("dynamicquantities_ext.jl")
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
+        @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
+        @time @safetestset "Despecialized-p Hook" include("despecialized_p_test.jl")
+        @time @safetestset "Despecialized mass-matrix problems" include("despecialize_mass_matrix.jl")
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 
@@ -81,6 +85,12 @@ end
         @time @safetestset "LabelledArrays Tests" include("downstream/labelledarrays.jl")
         @time @safetestset "GTPSA Tests" include("downstream/gtpsa.jl")
         @time @safetestset "SubArray Support" include("downstream/subarray_support.jl")
+        # Run ahead of the Unitful/FlexUnits tests: a @safetestset that errors
+        # (FlexUnits currently does) aborts the rest of this group, which would
+        # otherwise shadow this test. DiffEqBaseEnzymeExt is disabled on prerelease.
+        if isempty(VERSION.prerelease)
+            @time @safetestset "Enzyme solve_up rule" include("downstream/enzyme_solve_up_rule.jl")
+        end
         @time @safetestset "Unitful" include("downstream/unitful.jl")
         @time @safetestset "FlexUnits" include("downstream/flexunits.jl")
     end
@@ -102,6 +112,7 @@ end
     if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
         activate_modelingtoolkit_env()
         @time @safetestset "Null DE Handling" include("modelingtoolkit/null_de.jl")
+        @time @safetestset "ModelingToolkit events" include("modelingtoolkit/events.jl")
     end
 
     # Sundials tests — only run when DiffEqBase itself changes

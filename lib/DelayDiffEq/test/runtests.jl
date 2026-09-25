@@ -1,6 +1,6 @@
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     @time @safetestset "AD Tests" begin
@@ -30,6 +30,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     @time @safetestset "Fixed-point Iteration Tests" begin
         include("interface/fpsolve.jl")
     end
+    @time @safetestset "Limiter Tests" begin
+        include("interface/limiters.jl")
+    end
     @time @safetestset "History Function Tests" begin
         include("interface/history_function.jl")
     end
@@ -50,6 +53,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     end
     @time @safetestset "save_idxs Tests" begin
         include("interface/save_idxs.jl")
+    end
+    @time @safetestset "Symbolic Interpolation Tests" begin
+        include("interface/symbolic_interpolation.jl")
     end
     @time @safetestset "Unconstrained Time Steps Tests" begin
         include("interface/unconstrained.jl")
@@ -87,6 +93,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Rosenbrock Tests" begin
         include("integrators/rosenbrock.jl")
     end
+    @time @safetestset "Nordsieck Tests" begin
+        include("integrators/nordsieck.jl")
+    end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
     end
@@ -113,6 +122,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     end
     @time @safetestset "Issue #3636: DDE tstop overshoot" begin
         include("regression/issue_3636_dde_tstop_overshoot.jl")
+    end
+    @time @safetestset "DDE/SDIRK stage-1 tmp aliasing" begin
+        include("regression/dde_sdirk_stage1_tmp_aliasing.jl")
     end
 end
 

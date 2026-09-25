@@ -35,13 +35,13 @@ function _ode_addsteps!(
             end
         end
         f₀ = f(uprev, p, t)
-        k₁ = _reshape(W \ _vec((f₀ + dtγ * dT)), axes(uprev)) * neginvdtγ
+        k₁ = _restructure_state(uprev, W \ _vec((f₀ + dtγ * dT))) * neginvdtγ
         tmp = @.. uprev + dto2 * k₁
         f₁ = f(tmp, p, t + dto2)
         if mass_matrix === I
-            k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+            k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
         else
-            k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
+            k₂ = _restructure_state(uprev, W \ _vec(f₁ - mass_matrix * k₁))
         end
         k₂ = @.. k₂ * neginvdtγ + k₁
         copyat_or_push!(k, 1, k₁)
@@ -87,9 +87,9 @@ function _ode_addsteps!(
         end
 
         num_stages = size(A, 1)
-        du = f(u, p, t)
+        du = f(uprev, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
-        k1 = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
+        k1 = _restructure_state(uprev, W \ _vec(linsolve_tmp))
         # constant number for type stability make sure this is greater than num_stages
         ks = ntuple(Returns(k1), Val(20))
         # Last stage affect's ks for Rodas5,5P,6P
@@ -114,7 +114,7 @@ function _ode_addsteps!(
                 linsolve_tmp = mass_matrix * linsolve_tmp
             end
             linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
-            ks = Base.setindex(ks, _reshape(W \ _vec(linsolve_tmp), axes(uprev)), stage)
+            ks = Base.setindex(ks, _restructure_state(uprev, W \ _vec(linsolve_tmp)), stage)
         end
 
         if size(H, 1) > 0
@@ -168,7 +168,7 @@ function _ode_addsteps!(
         linsolve = cache.linsolve
 
         linres = dolinsolve(
-            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol
+            cache, linsolve; A = W, b = _vec(linsolve_tmp), cache.reltol
         )
         @.. $(_vec(ks[1])) = -linres.u
         # Last stage affect's ks for Rodas5,5P,6P
@@ -185,7 +185,7 @@ function _ode_addsteps!(
                     @.. linsolve_tmp += dtC[stage, i] * _vec(ks[i])
                 end
             else
-                du1 .= du
+                fill!(du1, zero(eltype(du1)))
                 for i in 1:(stage - 1)
                     @.. du1 += dtC[stage, i] * _vec(ks[i])
                 end
@@ -194,7 +194,7 @@ function _ode_addsteps!(
             end
 
             linres = dolinsolve(
-                cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol
+                cache, linsolve; b = _vec(linsolve_tmp), cache.reltol
             )
             @.. $(_vec(ks[stage])) = -linres.u
         end

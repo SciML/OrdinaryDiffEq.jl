@@ -19,9 +19,21 @@ end
 
 @inline initialize!(integrator, cache::StochasticDiffEqCache, f = integrator.f) = nothing
 
-# TauLeapingDrift: wrapper for tau-leaping drift function used by nlsolver
-# Computes drift(u, p, t) = c(u, p, t, rate(u, p, t), nothing)
-# where c is the stoichiometry function and rate is the propensity function
+"""
+    TauLeapingDrift{C, R, RateCache, IIP}(c, rate, rate_cache)
+
+Callable that presents the drift of a tau-leaping jump problem as an ordinary ODE
+right-hand side.
+
+The drift is `ν ⋅ a(u)` written in terms of the `RegularJump` pieces: `rate` is the
+propensity function `a` and `c` is the stoichiometry function that applies the jump
+counts. The wrapper evaluates `c(u, p, t, rate(u, p, t), nothing)`, which is exactly
+the function the implicit tau-leaping methods hand to their nonlinear solver.
+
+The `IIP` type parameter selects the calling convention: out-of-place instances are
+called as `drift(u, p, t)`, in-place ones as `drift(du, u, p, t)` and use
+`rate_cache` as scratch space for the propensities.
+"""
 struct TauLeapingDrift{C, R, RateCache, IIP}
     c::C              # Stoichiometry function (from integrator.c)
     rate::R           # Rate function (from integrator.P.cache.rate)
@@ -64,22 +76,22 @@ OrdinaryDiffEqCore.is_composite_cache(cache::StochasticCompositeCache) = true
 # is_noise_saveable interface that ODE's unified loop functions call.
 # ============================================================================
 
-function OrdinaryDiffEqCore.accept_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt, u, p, setup)
+function OrdinaryDiffEqCore.accept_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p, setup)
     return DiffEqNoiseProcess.accept_step!(W, dt, u, p, setup)
 end
 
-function OrdinaryDiffEqCore.reject_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt, u, p)
+function OrdinaryDiffEqCore.reject_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p)
     return DiffEqNoiseProcess.reject_step!(W, dt, u, p)
 end
 
-function OrdinaryDiffEqCore.save_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess)
+function OrdinaryDiffEqCore.save_noise!(W::SciMLBase.AbstractNoiseProcess)
     return DiffEqNoiseProcess.save_noise!(W)
 end
 
-OrdinaryDiffEqCore.noise_curt(W::DiffEqNoiseProcess.AbstractNoiseProcess) = W.curt
+OrdinaryDiffEqCore.noise_curt(W::SciMLBase.AbstractNoiseProcess) = W.curt
 
 OrdinaryDiffEqCore.is_noise_saveable(W::NoiseProcess) = true
-OrdinaryDiffEqCore.is_noise_saveable(W::DiffEqNoiseProcess.AbstractNoiseProcess) = false
+OrdinaryDiffEqCore.is_noise_saveable(W::SciMLBase.AbstractNoiseProcess) = false
 
 # ============================================================================
 # is_constant_cache for SDE cache types (needed by ODE's change_t_via_interpolation!)
@@ -106,8 +118,8 @@ OrdinaryDiffEqCore.get_fsalfirstlast(::StochasticDiffEqMutableCache, u) =
 # reinit_noise!: reinitialize noise process (called from ODE's reinit!)
 # ============================================================================
 
-function OrdinaryDiffEqCore.reinit_noise!(W::DiffEqNoiseProcess.AbstractNoiseProcess, dt)
-    return DiffEqNoiseProcess.reinit!(W, dt)
+function OrdinaryDiffEqCore.reinit_noise!(W::SciMLBase.AbstractNoiseProcess, dt)
+    return SciMLBase.reinit!(W, dt)
 end
 
 # _determine_initdt: SDE extension (called from ODE's auto_dt_reset!)

@@ -1,20 +1,11 @@
 using DiffEqDevTools
-using Pkg
+using SciMLTesting
 using Test
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
-end
-
-# Run QA tests (Aqua) — skip on pre-release Julia
-if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-    activate_qa_env()
-    @time @testset "Aqua" begin
-        include("qa/qa.jl")
-    end
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
@@ -31,6 +22,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @testset "Analyticless Stochastic WP" begin
         include("analyticless_stochastic_wp.jl")
     end
+    @time @testset "Convergence retain_solutions" begin
+        include("retain_solutions_tests.jl")
+    end
     @time @testset "Stability Region Tests" begin
         include("stability_region_test.jl")
     end
@@ -39,5 +33,30 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
     @time @testset "Plot Recipes (Nonlinearsolve WP-diagrams)" begin
         include("nonlinearsolve_wpdiagram_tests.jl")
+    end
+    @time @testset "Tagging" begin
+        include("tagging_tests.jl")
+    end
+    @time @testset "Multiple Error Estimates" begin
+        include("multi_error_tests.jl")
+    end
+    @time @testset "Best-of-Family Selection" begin
+        include("wp_selection_tests.jl")
+    end
+    @time @testset "Timeout" begin
+        include("timeout_tests.jl")
+    end
+end
+
+# Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
+# virtual module, so every method the package defines on a generic function owned by
+# another module is replaced by a copy bound to a module with no package extensions
+# loaded. Anything that runs afterwards in the same process then exercises those
+# copies instead of the real methods. `activate_qa_env()` also leaves the QA
+# environment active, so the groups above must resolve before it runs.
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @testset "Aqua" begin
+        include("qa/qa.jl")
     end
 end

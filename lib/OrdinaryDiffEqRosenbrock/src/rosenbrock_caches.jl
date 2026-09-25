@@ -1,3 +1,13 @@
+"""
+    RosenbrockMutableCache <: OrdinaryDiffEqMutableCache
+
+Abstract supertype for the in-place caches of the Rosenbrock (and Rosenbrock-W)
+methods. Concrete Rosenbrock caches subtype this; the shared integrator interface
+dispatches on it to access the stage buffers, Jacobian/`W` matrices, and
+differentiation configs common to the Rosenbrock family. Declared public so
+cross-sublibrary references to the Rosenbrock cache hierarchy are recognized as a
+supported extension point.
+"""
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 abstract type RosenbrockConstantCache <: OrdinaryDiffEqConstantCache end
 
@@ -11,7 +21,7 @@ Jacobian recomputations when conditions allow it.
 `T` is the element type of `dtgamma` at solve time — usually `Float64`, but
 `ForwardDiff.Dual` (including nested Duals under `ForwardDiff.hessian`) when
 the solve is being differentiated. Callers must construct this with a zero
-value of the right type (typically `zero(dt)`) so the same cache can hold
+value of the right type (typically `zero(dt * gamma)`) so the same cache can hold
 Dual-valued dtgammas without any `ForwardDiff.value` unwrapping — unconditional
 unwrapping is unsafe under nested AD because it collapses a still-active
 inner derivative into a primal.
@@ -242,15 +252,15 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
 
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     return Rosenbrock23Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁,
@@ -297,15 +307,15 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
 
     algebraic_vars = f.mass_matrix === I ? nothing :
-        [all(iszero, x) for x in eachcol(f.mass_matrix)]
+        find_algebraic_vars_eqs(f.mass_matrix)[1]
 
     return Rosenbrock32Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
@@ -342,13 +352,15 @@ function alg_cache(
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
-    # Seed JacReuseState with `zero(dt)` rather than a `constvalue`-stripped
-    # type: under nested ForwardDiff (e.g. `hessian`), dt is a Dual-of-Dual and
-    # dtgamma inherits that full type; a Float64 field would reject the assign.
+    # Seed JacReuseState with `zero(dt * tab.d)` rather than a
+    # `constvalue`-stripped type: this carries the exact type dtgamma has at
+    # solve time, including Dual-of-Dual under nested ForwardDiff
+    # (e.g. `hessian`), where a Float64 field would reject the assign.
+    dtgamma_seed = zero(dt * tab.d)
     return Rosenbrock23ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
         _make_jac_reuse_state(
-            zero(dt), alg.max_jac_age, J, zero(rate_prototype), W
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
         )
     )
 end
@@ -378,12 +390,13 @@ function alg_cache(
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
     tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
-    # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt)` here
-    # rather than a `constvalue`-stripped type.
+    # See the Rosenbrock23 OOP alg_cache above for why we pass `zero(dt * tab.d)`
+    # here rather than a `constvalue`-stripped type.
+    dtgamma_seed = zero(dt * tab.d)
     return Rosenbrock32ConstantCache(
         tab.c₃₂, tab.d, tf, uf, J, W, linsolve, alg_autodiff(alg),
         _make_jac_reuse_state(
-            zero(dt), alg.max_jac_age, J, zero(rate_prototype), W
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
         )
     )
 end
@@ -395,7 +408,7 @@ end
 _get_step_limiter(alg) = trivial_limiter!
 _get_stage_limiter(alg) = trivial_limiter!
 for Alg in (
-        :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas23W, :Rodas3P,
+        :Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :Rodas3d, :Rodas23W, :Rodas3P,
         :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas4PW, :Rodas5,
         :Rodas5P, :Rodas5Pe, :Rodas5Pr, :Rodas6P,
     )
@@ -418,6 +431,7 @@ tabtype(::Rodas6P) = Rodas6PTableau
 # Consolidated methods: tableau type dispatch
 tabtype(::ROS3P) = ROS3PRodasTableau
 tabtype(::Rodas3) = Rodas3RodasTableau
+tabtype(::Rodas3d) = Rodas3dRodasTableau
 tabtype(::Rodas3P) = Rodas3PRodasTableau
 tabtype(::Rodas23W) = Rodas23WRodasTableau
 tabtype(::ROS2) = ROS2RodasTableau
@@ -446,7 +460,7 @@ tabtype(::RosenbrockW6S4OS) = RosenbrockW6S4OSRodasTableau
 const RodasTableauAlgorithms = Union{
     Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas4PW,
     Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr, Rodas6P,
-    ROS3P, Rodas3, Rodas3P, Rodas23W,
+    ROS3P, Rodas3, Rodas3d, Rodas3P, Rodas23W,
     ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7,
     ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3,
     ROS34PRw, ROS3PRL, ROS3PRL2, ROK4a,
@@ -475,14 +489,15 @@ function alg_cache(
     else
         interp_order = H_rows
     end
-    # Seed JacReuseState with `zero(dt)` so its dtgamma fields carry the full
-    # (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
+    # Seed JacReuseState with `zero(dt * tab.gamma)` so its dtgamma fields carry
+    # the full (possibly ForwardDiff.Dual) type dtgamma will have at solve time.
+    dtgamma_seed = zero(dt * tab.gamma)
     return RosenbrockCombinedConstantCache(
         tf, uf,
         tab, J, W, linsolve,
         alg_autodiff(alg), interp_order,
         _make_jac_reuse_state(
-            zero(dt), alg.max_jac_age, J, zero(rate_prototype), W
+            dtgamma_seed, alg.max_jac_age, J, zero(rate_prototype), W
         )
     )
 end
@@ -543,9 +558,9 @@ function alg_cache(
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
 
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -685,9 +700,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -699,8 +714,7 @@ function alg_cache(
         diff_vars = collect(1:n)
         alg_vars = Int[]
     else
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
     end
     n_g = length(alg_vars)
     n_f = length(diff_vars)

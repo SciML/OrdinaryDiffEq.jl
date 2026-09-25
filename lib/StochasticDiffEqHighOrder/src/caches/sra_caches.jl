@@ -404,13 +404,49 @@ end
     tab::tabType
 end
 
+"""
+    u_cache(cache::SRACache)
+
+Return additional mutable state buffers for an `SRACache`. Solver implementations
+use this developer hook when resizing or inspecting a high-order SRA cache.
+
+# Returns
+
+An empty tuple for `SRACache`; user code must not rely on cache-hook tuple
+layouts.
+"""
 u_cache(c::SRACache) = ()
+
+"""
+    du_cache(cache::SRACache)
+
+Return derivative and noise-work buffers stored by an `SRACache`. This is a
+developer extension hook for the SRA cache implementation.
+
+# Returns
+
+A tuple of internal work buffers. Its order and contents are a solver-internal
+contract and must not be used by application code.
+"""
 function du_cache(c::SRACache)
     return (
         c.A0temp, c.B0temp, c.ftmp, c.gtmp, c.chi2, c.chi2, c.atemp,
         c.btemp, c.E₁, c.E₁temp, c.E₂,
     )
 end
+
+"""
+    user_cache(cache::SRACache)
+
+Return the user-state buffers stored by an `SRACache`. This developer hook is
+used by solver infrastructure; application code should not depend on its tuple
+layout.
+
+# Returns
+
+A tuple containing the current and previous user states plus internal
+temporaries. Its order and contents are only a solver-extension contract.
+"""
 user_cache(c::SRACache) = (c.u, c.uprev, c.tmp, c.H0...)
 
 function alg_cache(

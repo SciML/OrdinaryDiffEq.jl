@@ -15,7 +15,7 @@ function Heun(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 2, αEEst = αEEst, adaptiveorder = 1,
+            A, c, α, 2; αEEst, adaptiveorder = 1,
             stability_size = 2.0
         )
     )
@@ -34,7 +34,7 @@ function Ralston(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = map(T, A)
     α = map(T, α)
     c = map(T_time, c)
-    return (DiffEqBase.ExplicitRKTableau(A, c, α, 2, stability_size = 2.0))
+    return DiffEqBase.ExplicitRKTableau(A, c, α, 2, stability_size = 2.0)
 end
 
 """
@@ -132,7 +132,7 @@ function Ralston4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     A = map(T, A)
     α = map(T, α)
     c = map(T_time, c)
-    return DiffEqBase.ExplicitRKTableau(A, c, α, 4, stability_size = 2.7852935634052822)
+    return (DiffEqBase.ExplicitRKTableau(A, c, α, 4, stability_size = 2.7852935634052822))
 end
 
 """

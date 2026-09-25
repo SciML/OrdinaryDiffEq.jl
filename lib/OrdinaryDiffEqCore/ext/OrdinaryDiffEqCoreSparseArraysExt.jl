@@ -1,7 +1,7 @@
 module OrdinaryDiffEqCoreSparseArraysExt
 
 using SparseArrays: SparseMatrixCSC
-import OrdinaryDiffEqCore: _isdiag
+import OrdinaryDiffEqCore: _isdiag, find_algebraic_vars_eqs, _find_large_jac_entries!
 
 # Efficient O(nnz) isdiag check for sparse matrices.
 # Standard isdiag is O(n²) which is prohibitively slow for large sparse matrices.
@@ -20,6 +20,44 @@ function _isdiag(A::SparseMatrixCSC)
         end
     end
     return true
+end
+
+# only look at nonzero vals
+function _find_large_jac_entries!(rows::Set{Int}, cols::Set{Int}, entries::Vector, jac::SparseMatrixCSC)
+    return @inbounds for j in axes(jac, 2)
+        for k in jac.colptr[j]:(jac.colptr[j + 1] - 1)
+            val = jac.nzval[k]
+            if !isfinite(val) || abs(val) > 1.0e6
+                i = jac.rowval[k]
+                push!(rows, i)
+                push!(cols, j)
+                push!(entries, (i, j, val))
+            end
+        end
+    end
+end
+"""
+    find_algebraic_vars_eqs(M::SparseMatrixCSC)
+
+O(nnz) detection of algebraic variables (zero columns) and equations (zero rows).
+"""
+function find_algebraic_vars_eqs(M::SparseMatrixCSC)
+    n_cols = size(M, 2)
+    n_rows = size(M, 1)
+
+    algebraic_vars = fill(true, n_cols)
+    algebraic_eqs = fill(true, n_rows)
+
+    @inbounds for j in 1:n_cols
+        for idx in M.colptr[j]:(M.colptr[j + 1] - 1)
+            if !iszero(M.nzval[idx])
+                algebraic_vars[j] = false
+                algebraic_eqs[M.rowval[idx]] = false
+            end
+        end
+    end
+
+    return algebraic_vars, algebraic_eqs
 end
 
 end

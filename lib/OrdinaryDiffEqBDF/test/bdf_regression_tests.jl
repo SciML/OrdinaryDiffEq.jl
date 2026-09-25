@@ -1,7 +1,8 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
+using RecursiveArrayTools: ArrayPartition
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -195,4 +196,80 @@ end
     # the solver gives up cleanly (Unstable) instead of overflowing the stack.
     @test sol.retcode != ReturnCode.Success
     @test sol.retcode != ReturnCode.Default
+end
+
+# Regression test for issue #3962: the out-of-place Newton step used
+# `_reshape(W \ _vec(ztmp), axes(ztmp))`, which collapses the ArrayPartition state
+# behind SecondOrderODEProblem/DynamicalODEFunction down to a bare Vector. Storing
+# `z .- dz` back into the ArrayPartition-typed nlsolver fields then failed with
+# `Cannot convert Vector to ArrayPartition`.
+@testset "OOP SecondOrderODEProblem with FBDF preserves ArrayPartition (#3962)" begin
+    # u'' = -u  ⇒  position = [cos t, sin t], velocity = [-sin t, cos t]
+    ho_iip(ddu, du, u, p, t) = (@. ddu = -u)
+    ho_oop(du, u, p, t) = -u
+    u0 = [1.0, 0.0]
+    du0 = [0.0, 1.0]
+    tspan = (0.0, 1.0)
+    prob_iip = SecondOrderODEProblem(ho_iip, du0, u0, tspan)
+    prob_oop = SecondOrderODEProblem(ho_oop, du0, u0, tspan)
+
+    ref = solve(prob_iip, FBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
+    sol = solve(prob_oop, FBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[end] isa ArrayPartition
+    @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
+end
+
+@testset "backward-in-time step rejection shrinks |dt| (#4504)" begin
+    # Signed step comparisons must compare magnitudes: for tdir < 0 both h and
+    # hₖ₋₁ are negative, so `min(h, hₖ₋₁)` selects the larger |step| and |dt|
+    # can grow on rejection instead of shrinking until the error test passes.
+    prob = ODEProblem(fiip, [1.0], (1.0, 0.0), 1.0)
+    for (alg, set_estm1) in (
+            (FBDF(), (integ, v) -> (integ.cache.terkm1 = v)),
+            (QNDF(), (integ, v) -> (integ.cache.EEst1 = v)),
+        )
+        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        step!(integ)
+        c = integ.cache
+        c.order = 3
+        c.consfailcnt = 5
+        integ.dt = -1.0e-3
+        OrdinaryDiffEqCore.set_EEst!(integ, 1.5)
+        set_estm1(integ, 1.0e-3) # Fₖ₋₁ ≈ 7.7; signed min() would grow |dt| ~3.85×
+        OrdinaryDiffEqCore.step_reject_controller!(integ, integ.alg)
+        @test abs(integ.dt) <= 5.0e-4 # h was halved (cf > 1); |dt| must not exceed it
+        @test c.order == 2
+    end
+end
+
+# Regression test for the backward-in-time step rejection path: for tdir < 0
+# (e.g. adjoint solves), `bdf_step_reject_controller!` must still shrink |dt|.
+# Previously `min(h, hₖ₋₁)`/`hₖ₋₁ > hₖ` compared signed (negative) step sizes,
+# picking the *larger* magnitude and letting dt hit a fixed point where
+# EEst > 1 forever, hanging the solver at maxiters.
+@testset "BDF step rejection shrinks |dt| for backward integration" begin
+    for (t0, t1) in ((0.0, 1.0), (1.0, 0.0))
+        prob = ODEProblem((u, p, t) -> -u, 1.0, (t0, t1))
+        integ = init(prob, FBDF(); abstol = 1.0e-8, reltol = 1.0e-8)
+        integ.cache.consfailcnt = 4
+        integ.cache.order = 3
+        OrdinaryDiffEqCore.set_EEst!(integ, 2.0)
+        # small k-1 estimate makes the lower-order candidate much larger
+        integ.cache.terkm1 = 0.01
+        dt0 = integ.dt
+        OrdinaryDiffEqCore.step_reject_controller!(integ, FBDF())
+        @test signbit(integ.dt) == signbit(dt0)
+        @test abs(integ.dt) <= abs(dt0) / 2
+    end
+end
+
+@testset "QNDF2 step size control does not thrash (#4332)" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
+    for alg in (QNDF2(), QBDF2())
+        sol = solve(prob, alg, reltol = 1.0e-8, abstol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject < sol.stats.naccept / 10
+        @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
 end

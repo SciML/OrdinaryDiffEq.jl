@@ -346,8 +346,8 @@ function build_history_function(
     # reserve capacity
     _sizehint_solution!(
         ode_sol, alg.alg, tspan, (), ();
-        save_everystep = true, adaptive = adaptive, internalnorm = internalnorm,
-        dt = dt, dtmin = dtmin
+        save_everystep = true, adaptive, internalnorm,
+        dt, dtmin
     )
 
     # create simple integrator
@@ -464,8 +464,8 @@ function build_history_function(
 
     _sizehint_solution!(
         ode_sol, alg.alg, tspan, (), ();
-        save_everystep = true, adaptive = adaptive, internalnorm = internalnorm,
-        dt = dt, dtmin = dtmin
+        save_everystep = true, adaptive, internalnorm,
+        dt, dtmin
     )
 
     tdirType = typeof(sign(zero(tType)))

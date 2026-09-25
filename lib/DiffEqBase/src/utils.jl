@@ -1,8 +1,64 @@
+"""
+    @tight_loop_macros loop_expr
+
+Apply the DiffEqBase loop policy to `loop_expr`. Solver packages use this macro
+around scalar stage loops so DiffEqBase can select common loop annotations without
+duplicating them in every solver implementation.
+
+# Arguments
+
+  - `loop_expr`: loop expression to emit in the caller's scope, normally a `for`
+    loop over state indices.
+
+# Returns
+
+The escaped loop expression with the current DiffEqBase loop policy applied. The
+current policy preserves the expression unchanged; solver packages must not rely
+on that implementation detail.
+
+# Developer contract
+
+The loop body must be valid under reordering and vectorization policies that a
+future DiffEqBase release may apply. Do not use the loop body for externally
+observable iteration ordering or cross-iteration dependencies. This is versioned
+solver-development API, not an application-facing loop macro.
+
+# Examples
+
+```julia
+using DiffEqBase: @tight_loop_macros
+
+function add_one!(out, x)
+    @tight_loop_macros for i in eachindex(out, x)
+        @inbounds out[i] = x[i] + 1
+    end
+    return out
+end
+
+add_one!(zeros(2), [1.0, 2.0]) == [2.0, 3.0]
+```
+"""
 macro tight_loop_macros(ex)
     return :($(esc(ex)))
 end
 
 # TODO: would be good to have dtmin a function of dt
+"""
+    prob2dtmin(prob; use_end_time = true)
+    prob2dtmin(tspan, onet, use_end_time)
+
+Compute the default minimum timestep implied by a problem or time span.
+
+# Arguments
+- `prob`: Differential-equation problem with a `tspan` field.
+- `tspan`: Tuple-like time span.
+- `onet`: Unit step value used to preserve units for non-floating time types.
+- `use_end_time`: Whether the end of the time span contributes to the floating
+  point spacing calculation.
+
+# Returns
+- A nonnegative minimum timestep with units compatible with the time span.
+"""
 function prob2dtmin(prob; use_end_time = true)
     return prob2dtmin(prob.tspan, oneunit(eltype(prob.tspan)), use_end_time)
 end
@@ -22,6 +78,15 @@ prob2dtmin(tspan, ::Integer, ::Any) = 0
 # Multiplication is for putting the right units on the constant!
 prob2dtmin(tspan, onet, ::Any) = onet * 1 // Int64(2)^33 # roughly 10^10 but more likely to turn into a multiplication.
 
+"""
+    timedepentdtmin(integrator)
+    timedepentdtmin(t, dtmin)
+
+Return the time-dependent minimum timestep at the current time.
+
+Floating-point times are bounded below by machine spacing at `t`; other time
+types use `abs(dtmin)`.
+"""
 function timedepentdtmin(integrator::DEIntegrator)
     return timedepentdtmin(integrator.t, integrator.opts.dtmin)
 end
@@ -56,6 +121,14 @@ _rate_prototype(u, t::T, onet::T) where {T} = u
 # Tracker, etc.) intact. Extensions for Unitful, DynamicQuantities, and FlexUnits
 # override this to return the underlying numeric value.
 # Complementary to `value` (strips everything) and `unitfulvalue` (strips AD, keeps units).
+"""
+    stripunits(x)
+
+Return `x` with only its unit wrapper removed.
+
+The default method returns `x` unchanged. Unitful extension packages specialize
+this function while preserving AD and uncertainty wrappers.
+"""
 stripunits(x) = x
 
 # Nonlinear Solve functionality

@@ -1,7 +1,7 @@
 # Rossler
 
 """
-    SRA(;tableau=constructSRA1())
+    SRA(; tableau = constructSRA1())
 
 **SRA: Configurable Stochastic Runge-Kutta for Additive Noise (Nonstiff)**
 
@@ -41,7 +41,7 @@ end
 SRA(; tableau = constructSRA1()) = SRA(tableau)
 
 """
-    SRI(;tableau=constructSRIW1(), error_terms=4)
+    SRI(; tableau = constructSRIW1(), error_terms = 4)
 
 **SRI: Configurable Stochastic Runge-Kutta for Itô SDEs (Nonstiff)**
 

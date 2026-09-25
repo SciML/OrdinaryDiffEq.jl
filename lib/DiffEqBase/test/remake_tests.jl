@@ -40,7 +40,8 @@ ddeprob = DDEProblem((du, u, h, p, t) -> -2u, 0.5, (p, t) -> 0.0, (0.0, 1.0))
 
 function f(du, u, p, t)
     du[1] = 0.2u[1]
-    return du[2] = 0.4u[2]
+    du[2] = 0.4u[2]
+    return
 end
 u0 = ones(2)
 tspan = (0, 1.0)

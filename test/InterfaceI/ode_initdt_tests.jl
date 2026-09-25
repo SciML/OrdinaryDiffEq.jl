@@ -1,0 +1,153 @@
+using OrdinaryDiffEq, DiffEqDevTools, Test
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqBDF
+import OrdinaryDiffEqExplicitTableaus
+
+prob = prob_ode_linear
+sol = solve(prob, Rosenbrock32())
+dt₀ = sol.t[2]
+
+prob = prob_ode_2Dlinear
+sol = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.BogakiShampine3()))
+dt₀ = sol.t[2]
+
+@test 1.0e-7 < dt₀ < 0.1
+@test_throws ArgumentError local sol = solve(prob, Euler())
+#dt₀ = sol.t[2]
+
+sol3 = solve(prob, ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.DormandPrince8_64bit()))
+dt₀ = sol3.t[2]
+
+@test 1.0e-7 < dt₀ < 0.3
+
+T = Float32
+u0 = T.([1.0; 0.0; 0.0])
+
+tspan = T.((0, 70))
+prob = remake(prob; u0, tspan)
+@test_nowarn solve(prob, Euler(); dt = T(0.0001))
+
+tspan = T.((2000, 2100))
+prob = remake(prob; tspan)
+# set maxiters to prevent infinite loop on test failure
+@test solve(prob, Euler(); dt = T(0.0001), maxiters = 10).retcode ==
+    SciMLBase.ReturnCode.MaxIters
+
+function rober(du, u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+    du[2] = k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃
+    du[3] = k₂ * y₂^2
+    return nothing
+end
+u0 = Float32[1.0, 0.0, 0.0]
+tspan = (0.0f0, 1.0f5)
+params = (4.0f-2, 3.0f7, 1.0f4)
+prob = ODEProblem(rober, u0, tspan, params)
+sol = solve(prob, Rosenbrock23())
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/743
+
+using LinearAlgebra
+function f(du, u, p, t)
+    du[1] = -p[1] * u[1] + p[2] * u[2] * u[3]
+    du[2] = p[1] * u[1] - p[2] * u[2] * u[3] - p[3] * u[2] * u[2]
+    du[3] = u[1] + u[2] + u[3] - 1.0
+    return
+end
+M = Diagonal([1, 1, 0])
+p = [0.04, 10^4, 3.0e7]
+u0 = [1.0, 0.0, 0.0]
+tspan = (0.0, 1.0e6)
+prob = ODEProblem(ODEFunction(f, mass_matrix = M), u0, tspan, p)
+sol = solve(prob, Rodas5())
+@test sol.t[end] == 1.0e6
+
+# test that dtmin is set based on timespan
+prob = ODEProblem((u, p, t) -> 1.0e20 * sin(1.0e20 * t), 0.1, (0, 1.0e-19))
+@test solve(prob, Tsit5()).retcode == ReturnCode.Success
+
+#test that we are robust to u0=0, t0!=0
+integ = init(ODEProblem(((u, p, t) -> u), 0.0f0, (20.0f0, 0.0f0)), Tsit5())
+@test abs(integ.dt) > eps(integ.t)
+integ = init(ODEProblem(((du, u, p, t) -> du .= u), [0.0f0], (20.0f0, 0.0f0)), Tsit5())
+@test abs(integ.dt) > eps(integ.t)
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/3779
+# Automatic dt selection must not index into an empty state vector (zero
+# continuous unknowns), which arises e.g. for purely-discrete/clocked models.
+let
+    empty_iip = ODEProblem((du, u, p, t) -> nothing, Float64[], (0.0, 0.5))
+    empty_oop = ODEProblem((u, p, t) -> u, Float64[], (0.0, 0.5))
+    for prob in (empty_iip, empty_oop)
+        # in-place and out-of-place init-dt paths
+        integ = init(prob, Tsit5())
+        @test isfinite(integ.dt) && integ.dt > 0
+        @test SciMLBase.successful_retcode(solve(prob, Tsit5()))
+        # the default algorithm is a CompositeAlgorithm and used to BoundsError here
+        @test SciMLBase.successful_retcode(solve(prob, DefaultODEAlgorithm()))
+    end
+end
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/908
+# Automatic initial dt for DAEProblem on a reversed tspan must have tdir sign.
+@testset "DAE reversed tspan automatic initdt (#908)" begin
+    function dae_lin!(resid, du, u, p, t)
+        resid[1] = du[1] + u[1]
+        resid[2] = u[2] - u[1]
+        return nothing
+    end
+    u0b = [exp(-5), exp(-5)]
+    du0b = [-exp(-5), -exp(-5)]
+    prob_b = DAEProblem(
+        dae_lin!, du0b, u0b, (5.0, 0.0); differential_vars = [true, false]
+    )
+    for alg in (DImplicitEuler(), DABDF2(), DFBDF())
+        # Core #908 regression: auto initdt must be negative for tspan[1] > tspan[2].
+        integ = init(prob_b, alg)
+        @test integ.dt < 0
+        # Tighter tols so endpoint accuracy is not confounded with default adaptive error.
+        sol = solve(prob_b, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == 0.0
+        @test sol.u[end][1] ≈ 1.0 atol = 1.0e-2
+    end
+end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1404
+# OOP initdt must route through DiffEqBase.NAN_CHECK (not nested any(isnan, ·))
+# so custom array types can overload it, matching the IIP intent.
+@testset "OOP initdt NaN handling (#1404)" begin
+    f_nan(u, p, t) = [NaN]
+    prob = ODEProblem(f_nan, [1.0], (0.0, 1.0))
+    sol = solve(prob, Tsit5())
+    # NAN_CHECK triggers early exit with dtmin; subsequent stepping aborts as
+    # Unstable (tiny dt). Must not MethodError on any(isnan, ·).
+    @test sol.retcode in (ReturnCode.DtNaN, ReturnCode.Unstable)
+
+    f_ok(u, p, t) = -u
+    sol_ok = solve(ODEProblem(f_ok, [1.0], (0.0, 1.0)), Tsit5())
+    @test SciMLBase.successful_retcode(sol_ok)
+end
+
+@testset "Initial dt probe respects the first tstop" begin
+    for (tspan, tstop) in (((0.0, 10.0), 1.0e-3), ((10.0, 0.0), 9.999))
+        tdir = sign(tspan[2] - tspan[1])
+        for stop_keyword in (:tstops, :d_discontinuities)
+            options = NamedTuple{(stop_keyword,)}(([tstop],))
+            for isinplace in (false, true)
+                evaluated = Float64[]
+                f = if isinplace
+                    (du, u, p, t) -> (push!(p, t); du .= -u)
+                else
+                    (u, p, t) -> (push!(p, t); -u)
+                end
+                prob = ODEProblem(f, [1.0], tspan, evaluated)
+                init(prob, Tsit5(); options...)
+                @test maximum(tdir .* (evaluated .- tstop)) <= 0
+            end
+        end
+    end
+end

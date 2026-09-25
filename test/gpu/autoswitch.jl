@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, CUDA, Test
+using OrdinaryDiffEqLowOrderRK: AutoDP5
 CUDA.allowscalar(false)
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1614

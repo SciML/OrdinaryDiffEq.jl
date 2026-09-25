@@ -1,6 +1,7 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqCore: PIController
 using SciMLBase: ReturnCode
 using Test
 
@@ -62,6 +63,25 @@ end
     end
 end
 
+@testset "autonomous discontinuity controller state" begin
+    alg = BS3()
+    controller = PIController(alg; discontinuity_detection = true)
+    integrator = init(prob, MethodOfSteps(alg); controller, dt = 0.01)
+
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
+    @test typeof(integrator.disco_checkpoint) === typeof(integrator.t)
+
+    sol = solve!(integrator)
+    @test sol.retcode == ReturnCode.Success
+
+    integrator.is_disco_step = true
+    integrator.disco_checkpoint = integrator.t
+    reinit!(integrator)
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
+end
+
 # additional discontinuities
 @testset "DDE with discontinuities" begin
     integrator = init(
@@ -82,6 +102,40 @@ end
     )
     @test integrator.opts.d_discontinuities_cache ==
         [Discontinuity(0.3, 4), Discontinuity(0.6, 5)]
+end
+
+@testset "discontinuity at tspan[1]" begin
+    history(p, t) = zeros(1)
+    function f(du, u, h, p, t)
+        du[1] = t > 0.0 ? 1.0 : 0.0
+        return nothing
+    end
+    prob = DDEProblem(f, [0.0], history, (0.0, 2.0); constant_lags = (1.0,))
+    integrator = init(
+        prob, MethodOfSteps(Tsit5()); d_discontinuities = [prob.tspan[1]]
+    )
+
+    @test integrator.t == nextfloat(prob.tspan[1])
+    @test integrator.fsalfirst == [1.0]
+
+    sol = solve!(integrator)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == prob.tspan[2]
+    @test sol.u[end] ≈ [2.0]
+end
+
+@testset "discontinuity before tspan[1]" begin
+    history(p, t) = ones(1)
+    function f(du, u, h, p, t)
+        du[1] = -h(p, t - 10.0)[1]
+        return nothing
+    end
+    prob = DDEProblem(f, [1.0], history, (0.0, 50.0); constant_lags = (10.0,))
+
+    sol = solve(prob, MethodOfSteps(Tsit5()); d_discontinuities = [-3.0])
+
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == prob.tspan[2]
 end
 
 # discontinuities induced by callbacks

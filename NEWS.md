@@ -41,7 +41,23 @@ This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes
 Most of the breaking changes fall into a small set of recurring themes. Keep these in mind while reading the migration table — they explain why an individual change exists and often suggest the right migration direction:
 
 - **Time to first solve (TTFS) reduction.** Direct deps on `Static.jl`, `StaticArrayInterface.jl`, `Polyester.jl`, and `StaticArrays.jl` were dropped; `using OrdinaryDiffEq` now loads only the default solver set; `ODEFunction` switched to `AutoSpecialize`. All of this means less code loaded and more precompilation caching on first `solve`.
-- **Type stability everywhere.** All `Bool` solver/`solve` keyword arguments (`autodiff`, `verbose`, `alias`, `lazy`, …) were replaced by typed objects. Passing a `Bool` no longer changes dispatch in ways the compiler cannot specialize on, and the reverse is no longer allowed to silently fall back through slow generic paths.
+- **Type stability everywhere.** All `Bool` solver/`solve` keyword arguments (`autodiff`, `verbose`, `alias`, `lazy`, …) were replaced by typed objects. Passing a `Bool` no longer changes dispatch in ways the compiler cannot specialize on, and the reverse is no longer allowed to silently fall back through slow generic paths. For example:
+
+  ```julia
+  # v6 — a Bool
+  Rosenbrock23(autodiff = true)
+  solve(prob, alg; verbose = false, alias = true)
+
+  # v7 — a typed object
+  Rosenbrock23(autodiff = AutoForwardDiff())
+  solve(
+      prob, alg;
+      verbose = DEVerbosity(SciMLLogging.None()),
+      alias = ODEAliasSpecifier(alias_u0 = true)
+  )
+  ```
+
+  The `Bool` form chose between code paths (e.g. ForwardDiff vs. FiniteDiff for `autodiff`) at runtime, so the choice was invisible to the compiler; the typed object carries that choice in its type, so the solver specializes on it at compile time. The same swap applies to `lazy` (now `Val{true}()` / `Val{false}()`). See the per-keyword before/after sections below ([`autodiff`](#autodiff-bool-no-longer-accepted), [`verbose`](#verbose-bool-no-longer-accepted), [`alias`](#alias-bool-no-longer-accepted), [`lazy`](#lazy-keyword-bool-no-longer-accepted)) for the full migration of each.
 - **Generality beyond ForwardDiff.** `chunk_size`, `diff_type`, `standardtag`, etc. encoded ForwardDiff-specific or FiniteDiff-specific knobs on every solver. They are replaced by the `ADTypes` interface (`AutoForwardDiff`, `AutoFiniteDiff`, `AutoEnzyme`, `AutoZygote`, …) so every solver automatically generalizes to any AD backend.
 - **Controller is now an object, not a pile of `solve` kwargs.** `gamma`, `beta1`, `beta2`, `qmin`, `qmax`, `qsteady_min`, `qsteady_max`, `qoldinit` were moved onto concrete `PIController` / `PIDController` / `IController` / `PredictiveController` structs, and `EEst` moved to the controller cache. This is prep work for pluggable controllers and removes a large amount of dead state from the integrator struct.
 - **Cleanup of old re-exports / deprecations.** Functions like `has_destats` (now `has_stats`), `sol.destats` (now `sol.stats`), `DEAlgorithm`/`DEProblem`/`DESolution` abstract types, `tuples()`/`intervals()`, `QuadratureProblem`, `fastpow`, `concrete_solve`, etc. were on a deprecation path for one or more minor releases. v7 removes them.
@@ -50,7 +66,7 @@ Most of the breaking changes fall into a small set of recurring themes. Keep the
 
 The cleanest path is **not** to jump straight from an old environment onto v7. Most renamed APIs (e.g. `DEAlgorithm` → `AbstractDEAlgorithm`, `u_modified!` → `derivative_discontinuity!`, `has_destats` → `has_stats`, `sol.destats` → `sol.stats`, the `construct*` tableau functions, `alias_u0`/`alias_du0`, `beta1`/`beta2`, PID kwargs) already exist under their new names in **SciMLBase v2** / **OrdinaryDiffEq v6** with deprecation warnings. The recommended sequence is:
 
-1. **Stay on SciMLBase v2 / OrdinaryDiffEq v6.** Update your code to the new names (`has_stats`, `sol.stats`, `AbstractDEAlgorithm`, `derivative_discontinuity!`, `ODEAliasSpecifier`, `ODEVerbosity`, `ADTypes`-based `autodiff`, explicit `controller = …` objects, new tableau names) while the deprecation shims still exist.
+1. **Stay on SciMLBase v2 / OrdinaryDiffEq v6.** Update your code to the new names (`has_stats`, `sol.stats`, `AbstractDEAlgorithm`, `derivative_discontinuity!`, `ODEAliasSpecifier`, `DEVerbosity`, `ADTypes`-based `autodiff`, explicit `controller = …` objects, new tableau names) while the deprecation shims still exist.
 2. **Verify your tests pass on v6 with no deprecation warnings.**
 3. **Then bump to v7.** At this point your code should compile and run against v7 without further changes aside from the genuinely new breakage (RAT v4 array semantics, ensemble `prob_func`/`output_func` signature, struct type parameter removals, kwargs that truly no longer exist, default changes like `CheckInit` and `williamson_condition=false`).
 
@@ -280,12 +296,12 @@ Across all implicit/Rosenbrock/BDF/SDIRK/FIRK/Exponential constructors:
 
 ```julia
 # v6
-Rosenbrock23(autodiff=true)   # worked
-Rosenbrock23(autodiff=false)  # worked
+Rosenbrock23(autodiff = true)   # worked
+Rosenbrock23(autodiff = false)  # worked
 
 # v7 — must use ADTypes
-Rosenbrock23(autodiff=AutoForwardDiff())
-Rosenbrock23(autodiff=AutoFiniteDiff())
+Rosenbrock23(autodiff = AutoForwardDiff())
+Rosenbrock23(autodiff = AutoFiniteDiff())
 ```
 
 **Why:** type stability. `autodiff::Bool` forced a runtime branch between AD backends that the compiler couldn't specialize through; `autodiff::AbstractADType` dispatches at compile time. This is also what enables the "generalizes beyond ForwardDiff" story — you can now pass `AutoEnzyme()`, `AutoZygote()`, `AutoMooncake()`, etc., and the solver specializes correctly.
@@ -294,22 +310,24 @@ Rosenbrock23(autodiff=AutoFiniteDiff())
 
 ```julia
 # v6
-solve(prob, alg, verbose=false)
+solve(prob, alg, verbose = false)
 
-# v7 — must use ODEVerbosity
-solve(prob, alg, verbose=ODEVerbosity(SciMLLogging.None()))
+# v7 — must use DEVerbosity
+solve(prob, alg, verbose = DEVerbosity(SciMLLogging.None()))
 ```
 
-**Why:** same type-stability reason, plus `ODEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
+**Why:** same type-stability reason, plus `DEVerbosity` exposes fine-grained control (separate levels for nonlinear solver, linear solver, initialization, etc.) that a single `Bool` can't express.
+
+`DEVerbosity` is owned by DiffEqBase and is exported by OrdinaryDiffEq (from v7.4.0) and StochasticDiffEq, alongside the `SciMLLogging` module that supplies the presets, so `using OrdinaryDiffEq` is enough for the line above. From a package that re-exports neither, add `using DiffEqBase, SciMLLogging`.
 
 ### alias: Bool no longer accepted
 
 ```julia
 # v6
-solve(prob, alg, alias=true)
+solve(prob, alg, alias = true)
 
 # v7 — must use ODEAliasSpecifier
-solve(prob, alg, alias=ODEAliasSpecifier(alias_u0=true))
+solve(prob, alg, alias = ODEAliasSpecifier(alias_u0 = true))
 ```
 
 Deprecated `alias_u0` / `alias_du0` keyword shortcuts also removed — they already printed warnings on v6. Update to `alias = ODEAliasSpecifier(alias_u0=…, alias_du0=…)` on v6 first, then upgrade.
@@ -326,7 +344,7 @@ solve(prob, Rodas5P())
 solve(prob, Rodas5P())  # throws if u0 is inconsistent
 
 # v7 — explicit opt-in to automatic fixing
-solve(prob, Rodas5P(), initializealg=BrownFullBasicInit())
+solve(prob, Rodas5P(), initializealg = BrownFullBasicInit())
 ```
 
 **Why:** silently fixing an inconsistent DAE initial condition produced wrong answers when the user's `u0` was actually correct but a modeling bug elsewhere made the system look inconsistent. The new default errors loudly; users who want the old "just fix it" behavior opt in explicitly via `initializealg=BrownFullBasicInit()`.
@@ -398,6 +416,12 @@ All four removals are driven by TTFS.
 | **Polyester.jl** (direct dep) | Moved to weak dep `OrdinaryDiffEqCorePolyesterExt`; requires `using Polyester` to activate | Polyester loads a nontrivial amount of threading infrastructure. Users who don't enable Polyester-threaded solvers no longer pay for it |
 | **StaticArrays.jl** (direct dep) | `SVector`/`MVector` in tableaus replaced with `NTuple`/`Vector`; SA moved to test-only | Loading StaticArrays forces compilation of a large generated-function surface for every solver that mentions an `SVector`. Tableaus used them for constants, which `NTuple` expresses just as statically |
 
+The threading option types also moved. In v6 `Sequential`, `BaseThreads` and `PolyesterThreads` were reachable as `OrdinaryDiffEq.PolyesterThreads()` — never bare, which is why v6's own test suite qualified them. When the umbrella stopped importing them that qualified form broke too, leaving only `OrdinaryDiffEqCore.PolyesterThreads()`.
+
+As of OrdinaryDiffEq 7.5.0 the v6 spelling works again: OrdinaryDiffEq and each sublibrary taking `threading` (Extrapolation, FIRK, PDIRK, PRK) import the names and declare them `public`, so `OrdinaryDiffEq.PolyesterThreads()` and `OrdinaryDiffEqExtrapolation.PolyesterThreads()` both resolve. They remain unexported, so bare `PolyesterThreads()` is still an `UndefVarError` — as it was in v6. Write them qualified, or `using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads`.
+
+These are the values for the `threading` keyword. The unrelated `thread` keyword of the FastBroadcast-based solvers still takes `FastBroadcast.Serial()` / `FastBroadcast.Threaded()`.
+
 ---
 
 ## DiffEqBase changes
@@ -461,6 +485,7 @@ function affect!(integrator, event_index)
     elseif event_index == 2
         # ball 2 hit the ground
     end
+    return
 end
 cb = VectorContinuousCallback(condition, affect!, affect_neg!, 2)
 
@@ -475,6 +500,7 @@ function affect!(integrator, simultaneous_events)
             # ball 2 hit the ground
         end
     end
+    return
 end
 cb = VectorContinuousCallback(condition, affect!, 2)
 ```

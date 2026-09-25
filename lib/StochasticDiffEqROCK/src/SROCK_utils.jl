@@ -151,7 +151,7 @@ function choose_deg!(integrator, cache::T) where {T}
     isconst || (cache = cache.constantcache)
 
     if integrator.alg isa SROCK1
-        # binary search as stability domain is monotonically incrasing with number of stages
+        # binary search as stability domain is monotonically increasing with number of stages
         mn_st, mx_st, mid_st = 3, 200, 3
         while (mx_st - mn_st > 1)
             mid_st = Int(floor((mn_st + mx_st) * 0.5))

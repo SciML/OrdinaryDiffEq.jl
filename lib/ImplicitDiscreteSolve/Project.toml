@@ -1,9 +1,10 @@
 name = "ImplicitDiscreteSolve"
 uuid = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 authors = ["vyudu <vincent.duyuan@gmail.com>"]
-version = "2.1.0"
+version = "2.3.0"
 
 [deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
 NonlinearSolveFirstOrder = "5959db7a-ea39-4486-b5fe-2dd0bf03d60d"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
@@ -14,31 +15,41 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [extras]
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
+NonlinearSolve = "4"
+SimpleNonlinearSolve = "2"
+SciMLTesting = "2.8"
+CommonSolve = "0.2.6"
 Pkg = "1"
 Test = "1.10.0"
-NonlinearSolveBase = "2.0.0"
+NonlinearSolveBase = "2.38"
 OrdinaryDiffEqSDIRK = "2"
 SafeTestsets = "0.1.0"
-SciMLBase = "3"
-OrdinaryDiffEqCore = "4.1"
+SciMLBase = "3.39"
+OrdinaryDiffEqCore = "4.4"
 ConcreteStructs = "0.2.3"
-NonlinearSolveFirstOrder = "1.9.0, 2"
-SymbolicIndexingInterface = "0.3.38"
+NonlinearSolveFirstOrder = "2.1.1"
+SymbolicIndexingInterface = "0.3.43"
 julia = "1.10"
 DiffEqBase = "7"
-Reexport = "1.2"
+Reexport = "1.2.2"
 
 [targets]
-test = ["OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets"]
+test = [
+    "OrdinaryDiffEqSDIRK", "Test", "Pkg", "SafeTestsets", "SciMLTesting",
+    "NonlinearSolve", "SimpleNonlinearSolve",
+]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

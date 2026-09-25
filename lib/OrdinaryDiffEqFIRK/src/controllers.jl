@@ -1,13 +1,23 @@
+with_current_cache(f::F, cache, args...) where {F} = f(cache, args...)
+function with_current_cache(f::F, cache::CompositeCache, args...) where {F}
+    return _eval_index(f, cache.caches, cache.current, args...)
+end
+
 function step_accept_controller!(
         integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau, q
+    )
+    return with_current_cache(firk_step_accept_controller!, integrator.cache, integrator, ccache, alg, q)
+end
+
+function firk_step_accept_controller!(
+        cache, integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau, q
     )
     (; controller) = ccache
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
-    (; cache) = integrator
     (; num_stages, step, iter, hist_iter, index) = cache
 
-    EEst = DiffEqBase.value(OrdinaryDiffEqCore.get_EEst(integrator))
+    EEst = value(OrdinaryDiffEqCore.get_EEst(integrator))
 
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, cache) + 1)
@@ -21,8 +31,6 @@ function step_accept_controller!(
     if qsteady_min <= qacc <= qsteady_max
         qacc = one(qacc)
     end
-    ccache.dtacc = integrator.dt
-    ccache.erracc = max(1.0e-2, EEst)
     cache.step = step + 1
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
@@ -46,14 +54,27 @@ function step_accept_controller!(
             cache.hist_iter = iter
         end
     end
+    ccache.dtacc = integrator.dt
+    ccache.erracc = max(1.0e-2, EEst)
+    if controller.basic.discontinuity_detection && integrator.is_disco_step
+        integrator.is_disco_step = false
+        return min((integrator.disco_checkpoint - integrator.t) / 4, integrator.dt / qacc)
+    end
     return integrator.dt / qacc
 end
 
 function step_reject_controller!(
         integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau
     )
+    with_current_cache(firk_step_reject_controller!, integrator.cache, integrator, ccache, alg)
+    return nothing
+end
+
+function firk_step_reject_controller!(
+        cache, integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau
+    )
     (; controller) = ccache
-    (; cache) = controller
+    (; discontinuity_detection) = controller.basic
     (; dt, success_iter) = integrator
     (; num_stages, step, iter, hist_iter) = cache
     integrator.dt = success_iter == 0 ? 0.1 * dt : dt / ccache.qold
@@ -61,6 +82,14 @@ function step_reject_controller!(
     hist_iter = hist_iter * 0.8 + iter * 0.2
     cache.hist_iter = hist_iter
     min_stages = (alg.min_order - 1) ÷ 4 * 2 + 1
+
+    if (discontinuity_detection)
+        disco_dt = set_discontinuity(integrator)
+        if disco_dt > zero(dt)
+            integrator.dt = disco_dt
+        end
+    end
+
     return if (step > 10)
         if (
                 (

@@ -2,9 +2,8 @@ abstract type ExtrapolationMutableCache <: OrdinaryDiffEqMutableCache end
 get_fsalfirstlast(cache::ExtrapolationMutableCache, u) = (cache.fsalfirst, cache.k)
 
 # Helper function to determine appropriate thread count for array allocation
-# Uses maxthreadid() when threading is enabled, otherwise just 1 for maximum memory efficiency
 @inline function get_thread_count(alg)
-    return isthreaded(alg.threading) ? Threads.maxthreadid() : 1
+    return isthreaded(alg.threading) ? _thread_storage_size() : 1
 end
 
 @cache mutable struct AitkenNevilleCache{
@@ -90,7 +89,11 @@ function alg_cache(
     dtpropose = zero(dt)
     cur_order = max(alg.init_order, alg.min_order)
     T = Array{typeof(u), 2}(undef, alg.max_order, alg.max_order)
-    @.. broadcast = false T = u
+    for i in 1:(alg.max_order)
+        for j in 1:i
+            T[i, j] = zero(u)
+        end
+    end
     work = zero(dt)
     A = one(Int)
     step_no = zero(Int)
@@ -257,7 +260,7 @@ function alg_cache(
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !_has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1271,7 +1274,7 @@ function alg_cache(
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !_has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1630,7 +1633,7 @@ function alg_cache(
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !_has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else
@@ -1845,7 +1848,7 @@ function alg_cache(
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
 
-    if SciMLBase.has_jac(f) && !SciMLBase.has_Wfact(f) && f.jac_prototype !== nothing
+    if SciMLBase.has_jac(f) && !_has_Wfact(f) && f.jac_prototype !== nothing
         W_el = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
     else

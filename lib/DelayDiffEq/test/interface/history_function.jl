@@ -40,18 +40,18 @@ end
     # test evaluation of history function
     @testset "evaluation" for idxs in (nothing, [2])
         # expected value
-        trueval = h_notinplace(nothing, -1; idxs = idxs)
+        trueval = h_notinplace(nothing, -1; idxs)
 
         # out-of-place
-        @test history_notinplace(nothing, -1, Val{0}; idxs = idxs) == trueval
+        @test history_notinplace(nothing, -1, Val{0}; idxs) == trueval
 
         # in-place
         val = zero(trueval)
-        history_inplace(val, nothing, -1; idxs = idxs)
+        history_inplace(val, nothing, -1; idxs)
         @test val == trueval
 
         val = zero(trueval)
-        history_inplace(val, nothing, -1, Val{0}; idxs = idxs)
+        history_inplace(val, nothing, -1, Val{0}; idxs)
         @test val == trueval
     end
 
@@ -64,17 +64,17 @@ end
 
         # out-of-place
         history_notinplace.isout = false
-        @test history_notinplace(nothing, 1, deriv; idxs = idxs) == trueval
+        @test history_notinplace(nothing, 1, deriv; idxs) == trueval
         @test history_notinplace.isout
 
         # in-place
         history_inplace.isout = false
-        @test history_inplace(nothing, nothing, 1, deriv; idxs = idxs) == trueval
+        @test history_inplace(nothing, nothing, 1, deriv; idxs) == trueval
         @test history_inplace.isout
 
         history_inplace.isout = false
         val = 1 .- trueval # ensures that val ≠ trueval
-        history_inplace(val, nothing, 1, deriv; idxs = idxs)
+        history_inplace(val, nothing, 1, deriv; idxs)
         @test val == trueval
         @test history_inplace.isout
     end
@@ -96,13 +96,13 @@ end
 
         # out-of-place
         history_notinplace.isout = false
-        @test history_notinplace(nothing, 0.01, deriv; idxs = idxs) == trueval
+        @test history_notinplace(nothing, 0.01, deriv; idxs) == trueval
         @test history_notinplace.isout
 
         # in-place
         history_inplace.isout = false
         val = zero(trueval)
-        history_inplace(val, nothing, 0.01, deriv; idxs = idxs)
+        history_inplace(val, nothing, 0.01, deriv; idxs)
         @test val == trueval
         @test history_inplace.isout
     end
@@ -121,13 +121,13 @@ end
 
         # out-of-place
         history_notinplace.isout = false
-        @test history_notinplace(nothing, 0.01, deriv; idxs = idxs) == trueval
+        @test history_notinplace(nothing, 0.01, deriv; idxs) == trueval
         @test !history_notinplace.isout
 
         # in-place
         history_inplace.isout = false
         val = zero(trueval)
-        history_inplace(val, nothing, 0.01, deriv; idxs = idxs)
+        history_inplace(val, nothing, 0.01, deriv; idxs)
         @test val == trueval
         @test !history_inplace.isout
     end
@@ -141,13 +141,13 @@ end
 
         # out-of-place
         history_notinplace.isout = false
-        @test history_notinplace(nothing, 1, deriv; idxs = idxs) == trueval
+        @test history_notinplace(nothing, 1, deriv; idxs) == trueval
         @test history_notinplace.isout
 
         # in-place
         history_inplace.isout = false
         val = zero(trueval)
-        history_inplace(val, nothing, 1, deriv; idxs = idxs)
+        history_inplace(val, nothing, 1, deriv; idxs)
         @test val == trueval
         @test history_inplace.isout
     end

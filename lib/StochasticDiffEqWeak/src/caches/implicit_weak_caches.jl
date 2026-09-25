@@ -8,7 +8,9 @@
 Constant cache for the IRI1 (Implicit Rößler 1) method.
 Contains the nlsolver for implicit drift treatment and the RI1 tableau coefficients.
 """
-mutable struct IRI1ConstantCache{N, T, T2} <: StochasticDiffEqConstantCache
+mutable struct IRI1ConstantCache{
+        N <: OrdinaryDiffEqCore.AbstractNLSolver, T, T2,
+    } <: StochasticDiffEqConstantCache
     nlsolver::N
     # RI1 Tableau coefficients (same as DRI1ConstantCache but stored directly)
     a021::T
@@ -119,7 +121,8 @@ end
 # IRI1Cache: Mutable cache for the IRI1 (Implicit Rößler 1) method (in-place version).
 # Contains all the working arrays needed for the implicit weak order 2 SRK method.
 @cache mutable struct IRI1Cache{
-        uType, randType, rateNoiseType, rateType, noUnitsType, N, T, T2,
+        uType, randType, rateNoiseType, rateType, noUnitsType,
+        N <: OrdinaryDiffEqCore.AbstractNLSolver, T, T2,
     } <:
     StochasticDiffEqMutableCache
     u::uType

@@ -1,6 +1,7 @@
 using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, ADTypes
 using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
+import SciMLBase
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -190,11 +191,51 @@ function dae_rober!(out, du, u, p, t)
 end
 u0_dae = [1.0, 0.0, 0.0]
 du0_dae = [-0.04, 0.04, 0.0]
+dae_rober_despecialized = DAEFunction{true, SciMLBase.AutoDespecialize}(dae_rober!)
 prob_dae = DAEProblem(
-    dae_rober!, du0_dae, u0_dae, (0.0, 1.0e3); differential_vars = [true, true, false]
+    dae_rober_despecialized, du0_dae, u0_dae, (0.0, 1.0e3), (unused = 1,);
+    differential_vars = [true, true, false]
 )
 sol_dae_default = solve(prob_dae)
 sol_dae_dfbdf = solve(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
+init_dae_default = init(prob_dae)
+init_dae_dfbdf = init(prob_dae, DFBDF(autodiff = AutoFiniteDiff()))
 @test sol_dae_default.retcode == ReturnCode.Success
 @test sol_dae_default.t == sol_dae_dfbdf.t
 @test sol_dae_default.u == sol_dae_dfbdf.u
+@test typeof(init_dae_default.sol.prob) === typeof(init_dae_dfbdf.sol.prob)
+@test typeof(init_dae_default.cache) === typeof(init_dae_dfbdf.cache)
+
+# The in-place interpolation of a DefaultCache solution must agree with the out-of-place one
+# on every interval, whichever algorithm stepped it.
+function rober_interp!(du, u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+    du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+    du[3] = k₂ * y₂^2
+    return nothing
+end
+prob_rober_interp = ODEProblem(rober_interp!, [1.0, 0.0, 0.0], (0.0, 1.0e3), (0.04, 3.0e7, 1.0e4))
+
+function inplace_matches_oop(sol)
+    tmid = [(sol.t[i] + sol.t[i + 1]) / 2 for i in 1:(length(sol.t) - 1)]
+    out = similar(sol.u[1])
+    return all(tmid) do t
+        sol(out, t)
+        out == sol(t) || return false
+        sol(out, t, Val{1})
+        out == sol(t, Val{1})
+    end
+end
+
+@testset "DefaultCache in-place interpolation, alg_choice $(choices)" for (prob, kw, choices) in (
+        (prob_ode_2Dlinear, (;), [1]),
+        (prob_ode_2Dlinear, (; reltol = 1.0e-10), [2]),
+        (prob_rober_interp, (;), [1, 3]),
+        (prob_rober_interp, (; reltol = 1.0e-7, abstol = 1.0e-7), [2, 4]),
+    )
+    sol = solve(prob; kw...)
+    @test unique(sol.alg_choice) == choices
+    @test inplace_matches_oop(sol)
+end

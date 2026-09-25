@@ -1,44 +1,44 @@
 module OrdinaryDiffEqBDF
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, alg_extrapolates,
-    OrdinaryDiffEqAlgorithm, default_controller, IController,
+import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
+    alg_extrapolates,
+    default_controller, IController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqNewtonAlgorithm,
     AbstractController,
-    CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache,
-    isfsal, full_cache,
-    constvalue, isadaptive, error_constant,
+    alg_cache, @cache,
+    isfsal,
+    constvalue, error_constant,
     has_special_newton_error,
     trivial_limiter!,
-    issplit, qmin_default, qmax_default, gamma_default,
+    issplit, qmax_default, gamma_default,
     qsteady_min_default, qsteady_max_default,
     get_current_alg_order, get_current_adaptive_order,
     stepsize_controller!,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
-    accept_step_controller, get_EEst, set_EEst!,
-    setup_controller_cache, get_qmax, get_gamma, get_qsteady_min, get_qsteady_max,
+    get_EEst,
+    setup_controller_cache, get_qmax, get_qmin, get_gamma, get_qsteady_min, get_qsteady_max,
     get_failfactor, CommonControllerOptions, resolve_basic, _resolved_QT,
     AbstractControllerCache,
-    DAEAlgorithm, _unwrap_val, DummyController,
-    get_fsalfirstlast, generic_solver_docstring, _ad_chunksize_int, _ad_fdtype, _fixup_ad,
+    DAEAlgorithm,
+    get_fsalfirstlast, generic_solver_docstring, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
-    _ode_addsteps!, DerivativeOrderNotPossibleError
+    _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
+    DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
+    find_algebraic_vars_eqs
+import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache
+import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
 
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
-using MacroTools: @capture
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, I, Diagonal
 import ArrayInterface
-using ArrayInterface: ismutable
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: default_controller
 
@@ -53,20 +53,21 @@ else
     end
 end
 
-using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
-    nlsolve!, nlsolvefail, isnewton, markfirststage!,
-    set_new_W!, DIRK, compute_step!, COEFFICIENT_MULTISTEP,
-    NonlinearSolveAlg
-import ADTypes: AutoForwardDiff, AutoFiniteDiff, AbstractADType
+    nlsolve!, nlsolvefail, markfirststage!
+import ADTypes: AutoForwardDiff
 
-using Reexport
+using Reexport: Reexport, @reexport
+import SciMLBase
+using SciMLBase: DAEFunction, DAEProblem, ODEProblem, ODEFunction,
+    derivative_discontinuity!, solve
 @reexport using SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
 include("bdf_utils.jl")
 include("stald.jl")
+include("nordsieck_utils.jl")
 include("bdf_caches.jl")
 include("dae_caches.jl")
 include("controllers.jl")
@@ -78,15 +79,39 @@ include("stiff_addsteps.jl")
 
 import PrecompileTools
 import Preferences
+
+# Index-1 mass matrix DAE (Robertson). The pure-ODE problems in the workload below
+# never reach the algebraic variable detection or the DAE initialization solve, so
+# without this every mass matrix FBDF user pays that inference at first solve.
+function precompile_mm_dae(du, u, p, t)
+    du[1] = -0.04u[1] + 1.0e4 * u[2] * u[3]
+    du[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3]
+    du[3] = u[1] + u[2] + u[3] - 1.0
+    return
+end
+
+function precompile_dae(resid, du, u, p, t)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
+end
+
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
-    solver_list = [FBDF()]
+    solver_list = [FBDF(), NordsieckBDF()]
     prob_list = []
 
     if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
         push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
         push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileMassMatrixDAE", true)
+        mm_dae = ODEFunction(
+            precompile_mm_dae, mass_matrix = Diagonal([1.0, 1.0, 0.0])
+        )
+        push!(prob_list, ODEProblem(mm_dae, [1.0, 0.0, 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(mm_dae, [1.0, 0.0, 0.0], (0.0, 1.0), Float64[]))
     end
 
     if Preferences.@load_preference("PrecompileAutoSpecialize", false)
@@ -104,6 +129,32 @@ PrecompileTools.@compile_workload begin
                 (0.0, 1.0), Float64[]
             )
         )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+            )
+        )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(precompile_dae)
+        dae_prob = DAEProblem(
+            dae_f, [-0.5], [1.0], (0.0, 0.1), (rate = 0.5,)
+        )
+        solve(dae_prob, DFBDF())
+        solve(dae_prob, DNordsieckBDF())
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
@@ -148,6 +199,7 @@ end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
     SBDF, SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
-    DABDF2, DImplicitEuler, DFBDF
+    DABDF2, DImplicitEuler, DFBDF,
+    NordsieckBDF, DNordsieckBDF
 
 end

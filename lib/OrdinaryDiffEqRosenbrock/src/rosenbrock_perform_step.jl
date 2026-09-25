@@ -33,10 +33,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (;
-        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
-        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -62,10 +60,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -86,7 +85,7 @@ end
 
     @.. linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -95,7 +94,6 @@ end
 
     @.. u = uprev + dt * k₂
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         f(fsallast, u, p, t + dt)
@@ -111,7 +109,7 @@ end
                 dt * dT
         end
 
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
         vecu = _vec(linres.u)
         veck3 = _vec(k₃)
         @.. veck3 = vecu * neginvdtγ
@@ -136,22 +134,21 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        # Guard on the field rather than `mass_matrix !== I` so inference can drop
+        # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
+        if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(algvar, fsallast, false) * invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
-    cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p, opts) = integrator
-    (;
-        k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf,
-        linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; c₃₂, d) = cache.tab
 
     # Assignments
@@ -177,10 +174,11 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -201,7 +199,7 @@ end
 
     @.. broadcast = false linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -222,7 +220,7 @@ end
         @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
     end
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
 
@@ -231,7 +229,6 @@ end
 
     @.. broadcast = false u = uprev + dto6 * (k₁ + 4k₂ + k₃)
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
@@ -241,13 +238,12 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        if cache.algebraic_vars !== nothing
             invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
-    cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(
@@ -277,16 +273,16 @@ end
         return nothing
     end
 
-    k₁ = _reshape(W \ _vec((integrator.fsalfirst + dtγ * dT)), axes(uprev)) * neginvdtγ
+    k₁ = _restructure_state(uprev, W \ _vec((integrator.fsalfirst + dtγ * dT))) * neginvdtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
     else
-        k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - mass_matrix * k₁))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
     integrator.stats.nsolve += 1
@@ -308,7 +304,7 @@ end
                     c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
             )
         end
-        k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
+        k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
         integrator.stats.nsolve += 1
 
         if u isa Number
@@ -362,17 +358,17 @@ end
         return nothing
     end
 
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ * dT)), axes(uprev)) / dtγ
+    k₁ = _restructure_state(uprev, W \ -_vec((integrator.fsalfirst + dtγ * dT))) / dtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
     else
         linsolve_tmp = f₁ - mass_matrix * k₁
-        k₂ = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
+        k₂ = _restructure_state(uprev, W \ _vec(linsolve_tmp))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
 
@@ -393,7 +389,7 @@ end
                 c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
         )
     end
-    k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
+    k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
     integrator.stats.nsolve += 1
     u = @.. uprev + dto6 * (k₁ + 4k₂ + k₃)
 
@@ -459,7 +455,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
     linsolve_tmp = @.. du + dtd[1] * dT
-    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+    k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
 
@@ -494,7 +490,7 @@ end
         end
         linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
 
-        ks = Base.setindex(ks, _reshape(W \ -_vec(linsolve_tmp), axes(uprev)), stage)
+        ks = Base.setindex(ks, _restructure_state(uprev, W \ -_vec(linsolve_tmp)), stage)
         integrator.stats.nsolve += 1
     end
     # Solution update using explicit b weights
@@ -571,12 +567,174 @@ function initialize!(integrator, cache::RosenbrockCache)
     return
 end
 
+# Fused single-sweep accumulation kernels for the stage loops below. Each
+# replaces a sequence of per-coefficient broadcasts — one full memory sweep per
+# tableau entry — with a single sweep, which is where the pre-consolidation
+# hand-unrolled kernels got their speed. The tableau coefficients are hoisted
+# into an NTuple through a bounded `@nif` ladder (single function, not
+# per-`Val{num_stages}` specializations, so no compile-time blowup) and the
+# inner term expansion unrolls statically so the sweep SIMD-vectorizes.
+# `Array` states take these; anything without fast scalar indexing (GPU etc.)
+# keeps the per-coefficient broadcast fallback. Beyond 8 fused terms (only
+# Rodas6P's late stages) the fallback path is used as well.
+
+@inline function _madd_terms(acc, idx, cs::Tuple, karrs::Tuple)
+    c = first(cs)
+    # Exact-zero coefficients (e.g. Rodas5P's btilde = [0,0,0,0,0,0,0,1]) must
+    # skip their term rather than multiply through: 0 * NaN/Inf is NaN, so a
+    # transient non-finite value in an unrelated, zero-weighted stage (from an
+    # ill-conditioned early-stage solve, e.g. right after a callback-driven
+    # parameter jump) would otherwise silently poison the whole accumulation
+    # even though the mathematically correct result never depends on that term.
+    newacc = iszero(c) ? acc : muladd(c, (@inbounds first(karrs)[idx]), acc)
+    return _madd_terms(newacc, idx, Base.tail(cs), Base.tail(karrs))
+end
+@inline _madd_terms(acc, idx, ::Tuple{}, ::Tuple{}) = acc
+
+@inline function _fused_lincomb!(
+        out::Array, base::Array, cs::NTuple{N, Any}, karrs::NTuple{N, Any}
+    ) where {N}
+    @inbounds @simd ivdep for idx in eachindex(out)
+        out[idx] = _madd_terms(base[idx], idx, cs, karrs)
+    end
+    return nothing
+end
+
+@inline function _fused_lincomb!(
+        out::Array, ::Nothing, cs::NTuple{N, Any}, karrs::NTuple{N, Any}
+    ) where {N}
+    z = zero(eltype(out))
+    @inbounds @simd ivdep for idx in eachindex(out)
+        out[idx] = _madd_terms(z, idx, cs, karrs)
+    end
+    return nothing
+end
+
+# out .= base .+ sum(A[stage, i] .* ks[i] for i in 1:(stage-1))
+@inline function _stage_accum!(
+        out::Array, base::Array, A::AbstractMatrix, ks::Vector{<:Array}, stage::Int
+    )
+    nks = stage - 1
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> A[stage, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(out, base, cs, ka)
+        end
+    else
+        _stage_accum_fallback!(out, base, A, ks, stage)
+    end
+    return nothing
+end
+
+_stage_accum!(out, base, A, ks, stage::Int) =
+    _stage_accum_fallback!(out, base, A, ks, stage)
+
+@inline function _stage_accum_fallback!(out, base, A, ks, stage::Int)
+    out === base || copyto!(out, base)
+    @inbounds for i in 1:(stage - 1)
+        @.. out += A[stage, i] * ks[i]
+    end
+    return nothing
+end
+
+# linsolve_tmp .= du .+ dtd_s .* dT .+ sum(dtC[stage, i] .* ks[i] for i in 1:(stage-1))
+@inline function _stage_rhs!(
+        linsolve_tmp::Array, du::Array, dtd_s, dT::Array, dtC::AbstractMatrix,
+        ks::Vector{<:Array}, stage::Int
+    )
+    nks = stage - 1
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> dtC[stage, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            @inbounds @simd ivdep for idx in eachindex(linsolve_tmp)
+                linsolve_tmp[idx] = _madd_terms(
+                    muladd(dtd_s, dT[idx], du[idx]), idx, cs, ka
+                )
+            end
+        end
+    else
+        _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage)
+    end
+    return nothing
+end
+
+_stage_rhs!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage::Int) =
+    _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage)
+
+@inline function _stage_rhs_fallback!(linsolve_tmp, du, dtd_s, dT, dtC, ks, stage::Int)
+    @.. linsolve_tmp = du + dtd_s * dT
+    @inbounds for i in 1:(stage - 1)
+        @.. linsolve_tmp += dtC[stage, i] * ks[i]
+    end
+    return nothing
+end
+
+# out .= (base or zero) .+ sum(w[i] .* ks[i]); zero weights are multiplied
+# through on the fused path (exact zeros, ks are always finite solver output)
+# and skipped on the fallback path.
+@inline function _weighted_sum!(
+        out::Array, base::Union{Array, Nothing}, w::AbstractVector, ks::Vector{<:Array}
+    )
+    nks = length(ks)
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> w[i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(out, base, cs, ka)
+        end
+    else
+        _weighted_sum_fallback!(out, base, w, ks)
+    end
+    return nothing
+end
+
+_weighted_sum!(out, base, w, ks) = _weighted_sum_fallback!(out, base, w, ks)
+
+@inline function _weighted_sum_fallback!(out, base, w, ks)
+    if base === nothing
+        fill!(out, zero(eltype(out)))
+    else
+        out === base || copyto!(out, base)
+    end
+    @inbounds for i in eachindex(ks)
+        if !iszero(w[i])
+            @.. out += w[i] * ks[i]
+        end
+    end
+    return nothing
+end
+
+# kj .= sum(H[j, i] .* ks[i] for i in eachindex(ks))
+@inline function _dense_row!(kj::Array, H::AbstractMatrix, j::Int, ks::Vector{<:Array})
+    nks = length(ks)
+    if nks <= 8
+        Base.Cartesian.@nif 8 n -> (nks == n) n -> begin
+            cs = Base.Cartesian.@ntuple n i -> H[j, i]
+            ka = Base.Cartesian.@ntuple n i -> ks[i]
+            _fused_lincomb!(kj, nothing, cs, ka)
+        end
+    else
+        _dense_row_fallback!(kj, H, j, ks)
+    end
+    return nothing
+end
+
+_dense_row!(kj, H, j::Int, ks) = _dense_row_fallback!(kj, H, j, ks)
+
+@inline function _dense_row_fallback!(kj, H, j::Int, ks)
+    fill!(kj, zero(eltype(kj)))
+    @inbounds for i in eachindex(ks)
+        @.. kj += H[j, i] * ks[i]
+    end
+    return nothing
+end
+
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (;
-        du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp,
-        jac_config, atmp, weight, stage_limiter!, step_limiter!,
-    ) = cache
+    (; du, du1, du2, dT, dtC, dtd, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     (; A, C, gamma, c, d, H) = cache.tab
 
     # Assignments
@@ -589,8 +747,11 @@ end
     @. dtd = dt * d
     dtgamma = dt * gamma
 
-    f(cache.fsalfirst, uprev, p, t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    if !repeat_step
+        # On a repeated step uprev and t are unchanged, so fsalfirst is still valid.
+        f(cache.fsalfirst, uprev, p, t)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
 
     new_W = calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step)
 
@@ -600,19 +761,17 @@ end
         integrator.opts.internalnorm, t
     )
 
-    linres = dolinsolve(
-        integrator, cache.linsolve;
-        A = (repeat_step || !new_W) ? nothing : W, b = _vec(linsolve_tmp)
-    )
+    if repeat_step || !new_W
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    else
+        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+    end
 
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
     for stage in 2:length(ks)
-        u .= uprev
-        for i in 1:(stage - 1)
-            @.. u += A[stage, i] * ks[i]
-        end
+        _stage_accum!(u, uprev, A, ks, stage)
 
         stage_limiter!(u, integrator, p, t + c[stage] * dt)
         # Skip redundant f evaluation when a[stage,:]=a[stage-1,:] and c[stage]=c[stage-1]
@@ -625,44 +784,28 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         end
 
-        du1 .= 0
         if mass_matrix === I
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
+            _stage_rhs!(linsolve_tmp, du, dtd[stage], dT, dtC, ks, stage)
         else
-            for i in 1:(stage - 1)
-                @.. du1 += dtC[stage, i] * ks[i]
-            end
+            fill!(du1, zero(eltype(du1)))
+            _stage_accum!(du1, du1, dtC, ks, stage)
             mul!(_vec(du2), mass_matrix, _vec(du1))
-            du1 .= du2
+            @.. linsolve_tmp = du + dtd[stage] * dT + du2
         end
-        @.. linsolve_tmp = du + dtd[stage] * dT + du1
 
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
 
     # Solution update using explicit b weights
     tab = cache.tab
-    u .= uprev
-    for i in eachindex(ks)
-        if !iszero(tab.b[i])
-            @.. u += tab.b[i] * ks[i]
-        end
-    end
+    _weighted_sum!(u, uprev, tab.b, ks)
 
-    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive && tab.btilde !== nothing
         # Error estimate using explicit btilde weights
-        du .= 0
-        for i in eachindex(ks)
-            if !iszero(tab.btilde[i])
-                @.. du += tab.btilde[i] * ks[i]
-            end
-        end
+        _weighted_sum!(du, nothing, tab.btilde, ks)
         calculate_residuals!(
             atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -673,12 +816,7 @@ end
     if integrator.opts.calck
         if size(H, 1) > 0
             for j in eachindex(integrator.k)
-                integrator.k[j] .= 0
-            end
-            for i in eachindex(ks)
-                for j in eachindex(integrator.k)
-                    @.. integrator.k[j] += H[j, i] * ks[i]
-                end
+                _dense_row!(integrator.k[j], H, j, ks)
             end
             if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
                     (OrdinaryDiffEqCore.get_EEst(integrator) < 1.0)
@@ -711,7 +849,6 @@ end
             integrator.k[2] .= du
         end
     end
-    cache.linsolve = linres.cache
 end
 
 
@@ -745,8 +882,7 @@ end
         diff_vars = Int[]
     else
         n = length(uprev)
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
         has_alg = !isempty(alg_vars)
     end
 
@@ -881,11 +1017,8 @@ end
 
 @muladd function perform_step!(integrator, cache::HybridExplicitImplicitCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (;
-        du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight,
-        stage_limiter!, step_limiter!, diff_vars, alg_vars,
-        g_z, g_y, linsolve_tmp_z,
-    ) = cache
+    (; du, du1, du2, dT, J, W, uf, tf, ks, linsolve_tmp, jac_config, atmp, weight, diff_vars, alg_vars, g_z, g_y, linsolve_tmp_z) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     W_z = cache.W_z
     (; A, C, gamma, b, bhat, c, d, H) = cache.tab
 
@@ -1013,7 +1146,6 @@ end
         @.. u += b[i] * ks[i]
     end
 
-    step_limiter!(u, integrator, p, t + dt)
 
     # Error estimation
     if integrator.opts.adaptive

@@ -156,9 +156,11 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
         g7 = u
-        # Hairer II, page 22 modified to use the Inf norm
+        # Hairer II, page 22 modified to use the Inf norm.
+        # `norm(_, Inf)` rather than `maximum(abs, _)` so an empty state (zero
+        # continuous unknowns) yields 0 instead of reducing over an empty collection.
         integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t
+            norm((k7 .- k6) ./ (g7 .- g6), Inf), t
         )
     end
     if integrator.opts.adaptive
@@ -204,27 +206,28 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-    (; k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
+    (; k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, thread) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
-    stage_limiter!(tmp, f, p, t + c1 * dt)
+    stage_limiter!(tmp, integrator, p, t + c1 * dt)
     f(k2, tmp, p, t + c1 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a31 * k1 + a32 * k2)
-    stage_limiter!(tmp, f, p, t + c2 * dt)
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k3, tmp, p, t + c2 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
-    stage_limiter!(tmp, f, p, t + c3 * dt)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
     f(k4, tmp, p, t + c3 * dt)
     @.. broadcast = false thread = thread tmp = uprev +
         dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
-    stage_limiter!(tmp, f, p, t + c4 * dt)
+    stage_limiter!(tmp, integrator, p, t + c4 * dt)
     f(k5, tmp, p, t + c4 * dt)
     @.. broadcast = false thread = thread tmp = uprev +
         dt * (
         a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 +
             a65 * k5
     )
-    stage_limiter!(tmp, f, p, t + dt)
+    stage_limiter!(tmp, integrator, p, t + dt)
     f(k6, tmp, p, t + dt)
     @.. broadcast = false thread = thread u = uprev +
         dt * (
@@ -232,7 +235,6 @@ end
             a75 * k5 + a76 * k6
     )
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm

@@ -1,5 +1,5 @@
 """
-    generate_coefficients(m, n, alg, rng=default_rng(); T=Float64)
+    generate_coefficients(m, n, alg, rng = default_rng(); T = Float64)
 
 Generate Fourier coefficients for Lévy area computation. The layout of X and Y
 depends on the algorithm:

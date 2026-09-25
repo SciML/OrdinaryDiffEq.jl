@@ -1,6 +1,7 @@
 """
-    BDFController(; qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step,
-                  failfactor)
+    BDFController(;
+        qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step, failfactor
+    )
 
 Step-size controller for the variable-order BDF family (`QNDF`, `FBDF`,
 `DFBDF`). Composes the standard step-size knobs via [`CommonControllerOptions`](@ref);
@@ -20,19 +21,19 @@ BDFController(alg; kwargs...) = BDFController(Float64, alg; kwargs...)
 BDFController(::Type{QT}, alg; kwargs...) where {QT} =
     BDFController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct BDFControllerCache{T, E, C} <: AbstractControllerCache
-    controller::BDFController{CommonControllerOptions{T}}
+mutable struct BDFControllerCache{T, E, C, NLPType} <: AbstractControllerCache
+    controller::BDFController{CommonControllerOptions{T, NLPType}}
     cache::C
     EEst::E
 end
 
 function setup_controller_cache(
-        alg::Union{QNDF, FBDF, DFBDF}, cache, controller::BDFController, ::Type{E},
+        alg::Union{QNDF, FBDF, DFBDF}, cache, controller::BDFController, ::Type{E}, disco_probs
     ) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = BDFController(basic)
-    return BDFControllerCache{QT, E, typeof(cache)}(resolved, cache, oneunit(E))
+    return BDFControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(resolved, cache, oneunit(E))
 end
 
 # The BDF stepsize/accept/reject logic lives at the algorithm level — the
@@ -63,9 +64,9 @@ function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
     # `QNDF(qmax = 20)` keeps working (qmax = 20 ends up on the controller).
     return BDFController(
         QT, alg;
-        qmax = alg.qmax,
-        qsteady_min = alg.qsteady_min,
-        qsteady_max = alg.qsteady_max,
+        alg.qmax,
+        alg.qsteady_min,
+        alg.qsteady_max
     )
 end
 
@@ -83,14 +84,22 @@ end
 function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, alg::QNDF{max_order}, q) where {max_order}
     #step is accepted, reset count of consecutive failed steps
     cache.consfailcnt = 0
+    is_disco = integrator.is_disco_step
+    if is_disco
+        integrator.is_disco_step = false
+        cache.nconsteps = 0
+    end
     cache.nconsteps += 1
-    if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
-        return integrator.dt * get_current_qmax(integrator, get_qmax(integrator))
+    new_dt = if iszero(OrdinaryDiffEqCore.get_EEst(integrator))
+        integrator.dt * get_current_qmax(integrator, get_qmax(integrator))
     else
         est = OrdinaryDiffEqCore.get_EEst(integrator)
         estₖ₋₁ = cache.EEst1
         estₖ₊₁ = cache.EEst2
-        h = integrator.dt
+        # Work on |dt|: the candidate step sizes below are ranked with `>` and a
+        # `0` sentinel marks "this order is not viable".  With a signed dt the
+        # sentinel wins every comparison when tdir < 0.
+        h = abs(integrator.dt)
         k = cache.order
         prefer_const_step = cache.nconsteps < cache.order + 2
         zₛ = get_gamma(integrator)
@@ -146,29 +155,70 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             end
         end
         cache.order = kₙ
-        q = integrator.dt / hₙ
+        q = h / hₙ
+
+        hnew = if prefer_const_step && 0.6 < q < 1.2
+            h
+        elseif q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
+            h
+        else
+            h / q
+        end
+        integrator.tdir * hnew
     end
-    if prefer_const_step
-        if q < 1.2 && q > 0.6
+    if is_disco
+        return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
+    end
+    return new_dt
+end
+
+"""
+    bdf_restart_estimates!(cache)
+
+Restart the order and constant-step estimates for a step that straddles a derivative
+discontinuity, where the history behind it and the solution ahead belong to different
+regimes. We do this because the BDF step-size and order logic is based on the history of the solution,
+and we have effectively entered a new regime where old estimates no longer apply.
+"""
+function bdf_restart_estimates!(cache)
+    cache.order = 1
+    cache.nconsteps = 0
+    if hasfield(typeof(cache), :qwait)
+        cache.qwait = 3
+    end
+    return nothing
+end
+
+function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cache.order)
+    k = cache.order
+    # dt is negative for backward-in-time integration, so all step-size
+    # selection below is done on magnitudes and the direction is restored
+    # when writing back integrator.dt.
+    h = abs(integrator.dt)
+    cache.consfailcnt += 1
+    cache.nconsteps = 0
+
+    controller_cache = integrator.controller_cache
+    discontinuity_detection = if controller_cache isa OrdinaryDiffEqCore.CompositeControllerCache
+        current_idx = integrator.cache.current
+        controller_cache.caches[current_idx].controller.basic.discontinuity_detection
+    else
+        controller_cache.controller.basic.discontinuity_detection
+    end
+
+    if discontinuity_detection
+        disco_dt = set_discontinuity(integrator)
+        if disco_dt > zero(disco_dt)
+            integrator.dt = disco_dt
             return integrator.dt
         end
     end
-    if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
-        return integrator.dt
-    end
-    return integrator.dt / q
-end
 
-function bdf_step_reject_controller!(integrator, cache, EEst1)
-    k = cache.order
-    h = integrator.dt
-    cache.consfailcnt += 1
-    cache.nconsteps = 0
     if cache.consfailcnt > 1
         h = h / 2
     end
     zₛ = get_gamma(integrator)
-    expo = 1 / (k + 1)
+    expo = 1 / (error_order + 1)
     z = zₛ * ((OrdinaryDiffEqCore.get_EEst(integrator))^expo)
     F = inv(z)
     if z <= 10
@@ -187,8 +237,8 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
         else # zₖ₋₁ > 10
             hₖ₋₁ = 0.1 * h
         end
-        if cache.consfailcnt > 2 || hₖ₋₁ > hₖ
-            hₙ = min(h, hₖ₋₁)
+        if cache.consfailcnt > 2 || abs(hₖ₋₁) > abs(hₖ)
+            hₙ = sign(h) * min(abs(h), abs(hₖ₋₁))
             kₙ = k - 1
         end
     end
@@ -196,7 +246,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     if kₙ == 1 && cache.consfailcnt > 3
         derivative_discontinuity!(integrator, true)
     end
-    integrator.dt = hₙ
+    integrator.dt = integrator.tdir * hₙ
     return cache.order = kₙ
 end
 
@@ -223,6 +273,9 @@ function step_reject_controller!(integrator, alg::FBDF)
     return step_reject_controller!(integrator, integrator.cache, alg)
 end
 function step_reject_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, ::FBDF)
+    if cache.filter_order > 0
+        return bdf_step_reject_controller!(integrator, cache, oftype(cache.terkm1, Inf), cache.filter_order)
+    end
     return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
@@ -348,6 +401,11 @@ function stepsize_controller!(
         max_order,
     }
     cache.prev_order = cache.order
+    if cache.filter_order > 0
+        stald_reset!(cache.stald)
+        q = get_gamma(integrator) / _filt_step_ratio(OrdinaryDiffEqCore.get_EEst(integrator), cache.filter_order)
+        return clamp(q, inv(get_current_qmax(integrator, get_qmax(integrator))), inv(get_qmin(integrator)))
+    end
 
     # CVODE-style Stability Limit Detection (STALD)
     # Collect data and check BEFORE order selection, using the step's order and norms.
@@ -399,6 +457,15 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    if cache.filter_order > cache.order
+        cache.order = min(cache.filter_order, max_order)
+        cache.nconsteps = 0
+    end
+    is_disco = integrator.is_disco_step
+    if is_disco
+        integrator.is_disco_step = false
+        cache.nconsteps = 0
+    end
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
@@ -410,7 +477,12 @@ function step_accept_controller!(
     elseif cache.qwait > 0
         cache.qwait -= 1 # countdown
     end
-    return integrator.dt / q
+    new_dt = integrator.dt / q
+    if is_disco
+        bdf_restart_estimates!(cache)
+        return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
+    end
+    return new_dt
 end
 
 function step_reject_controller!(integrator, alg::DFBDF)
@@ -562,6 +634,11 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    is_disco = integrator.is_disco_step
+    if is_disco
+        integrator.is_disco_step = false
+        cache.nconsteps = 0
+    end
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
@@ -573,5 +650,149 @@ function step_accept_controller!(
     elseif cache.qwait > 0
         cache.qwait -= 1 # countdown
     end
-    return integrator.dt / q
+    new_dt = integrator.dt / q
+    if is_disco
+        bdf_restart_estimates!(cache)
+        return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
+    end
+    return new_dt
+end
+
+############################################ NordsieckBDF / DNordsieckBDF
+# ================================================================= controllers
+# The controller hooks own the Nordsieck bookkeeping: `perform_step!` leaves the
+# array in the *predicted* state, accepting commits it with the rank-1 update, and
+# rejecting undoes the Pascal shift. `cache.predicted` makes both idempotent, so
+# the hooks are safe regardless of the order the integrator calls them in.
+
+_nordsieck_iip(::Union{NordsieckBDFCache, DNordsieckBDFCache}) = Val(true)
+_nordsieck_iip(::Union{NordsieckBDFConstantCache, DNordsieckBDFConstantCache}) = Val(false)
+
+stepsize_controller!(integrator, alg::NordsieckBDFAlgs) = nothing
+
+function step_accept_controller!(integrator, alg::NordsieckBDFAlgs, q)
+    cache = integrator.cache
+    iip = _nordsieck_iip(cache)
+    (; dt, u, uprev) = integrator
+    T = typeof(cache.eta)
+    dsm = OrdinaryDiffEqCore.get_EEst(integrator)
+    acor = cache.acor
+
+    # STALD inspects the step that was just taken, so it runs before the array is
+    # advanced and before the new order is chosen.
+    stald_reduce = nordsieck_stald!(cache, integrator, u, uprev, dsm)
+
+    nordsieck_complete!(cache, dt, acor, iip)
+    cache.nef = 0
+    cache.ncf = 0
+    # dense output data: the committed Nordsieck columns about t_{n+1}
+    _nordsieck_store_k!(integrator, cache, iip)
+
+    if cache.etamax == one(T)
+        # a failure earlier in this step forbids growth (CVODE cvPrepareNextStep)
+        cache.qwait = max(cache.qwait, 2)
+        cache.qprime = cache.order
+        cache.eta = one(T)
+    else
+        cache.etaq = inv((NORD_BIAS2 * dsm)^(one(T) / (cache.order + 1)) + NORD_ADDON)
+        if cache.qwait != 0
+            cache.eta = cache.etaq
+            cache.qprime = cache.order
+            nordsieck_set_eta!(cache, integrator)
+        else
+            cache.qwait = 2
+            cache.etaqm1 = nordsieck_compute_etaqm1(cache, integrator, u, uprev)
+            cache.etaqp1 = nordsieck_compute_etaqp1(cache, integrator, u, uprev, acor, dt)
+            nordsieck_choose_eta!(cache, integrator, u, uprev, acor, dt, iip)
+            nordsieck_set_eta!(cache, integrator)
+        end
+    end
+    if stald_reduce && cache.qprime > 1
+        # a stability violation overrides whatever order the error estimates chose
+        cache.qprime = min(cache.qprime, cache.order - 1)
+        cache.eta = min(cache.eta, one(T))
+    end
+    # after the first step the growth cap drops from ETA_MAX_FS to the steady value
+    cache.etamax = T(NORD_ETA_MAX_GS)
+    eta = min(cache.eta, get_current_qmax(integrator, get_qmax(integrator)))
+    return dt * eta
+end
+
+function step_reject_controller!(integrator, alg::NordsieckBDFAlgs)
+    cache = integrator.cache
+    iip = _nordsieck_iip(cache)
+    T = typeof(cache.eta)
+    dsm = OrdinaryDiffEqCore.get_EEst(integrator)
+    nordsieck_restore!(cache, iip)
+    cache.nef += 1
+    cache.etamax = one(T)
+
+    if cache.nef <= NORD_MXNEF1
+        eta = inv((NORD_BIAS2 * dsm)^(one(T) / (cache.order + 1)) + NORD_ADDON)
+        eta = max(T(NORD_ETA_MIN_EF), eta)
+        if cache.nef >= NORD_SMALL_NEF
+            eta = min(eta, T(NORD_ETA_MAX_EF))
+        end
+        cache.eta = eta
+    elseif cache.order > 1
+        # after repeated failures drop the order and retry
+        cache.eta = T(NORD_ETA_MIN_EF)
+        nordsieck_adjust_order!(cache, -1, iip)
+        cache.order -= 1
+        cache.qprime = cache.order
+        cache.qwait = cache.order + 1
+    else
+        # already at order 1: restart the history from scratch
+        cache.eta = T(NORD_ETA_MIN_EF)
+        cache.qwait = NORD_LONG_WAIT
+        derivative_discontinuity!(integrator, true)
+    end
+    nordsieck_rescale!(cache, cache.eta, iip)
+    integrator.dt = cache.hscale
+    return integrator.dt
+end
+
+function post_newton_controller!(integrator, alg::NordsieckBDFAlgs)
+    cache = integrator.cache
+    iip = _nordsieck_iip(cache)
+    T = typeof(cache.eta)
+    nordsieck_restore!(cache, iip)
+    cache.etamax = one(T)
+    cache.ncf += 1
+    if cache.ncf >= 3 && cache.order > 1
+        # repeated corrector failures usually mean the high-order predictor is the
+        # problem, so drop the order as well as the step size
+        nordsieck_adjust_order!(cache, -1, iip)
+        cache.order -= 1
+        cache.qprime = cache.order
+        cache.qwait = cache.order + 1
+        cache.ncf = 0
+    end
+    cache.eta = T(NORD_ETA_CF)
+    nordsieck_rescale!(cache, cache.eta, iip)
+    integrator.dt = cache.hscale
+    return nothing
+end
+
+# generic qsteady band must not also clamp it.
+qmax_default(::NordsieckBDFAlgs) = 10 // 1
+qsteady_min_default(::NordsieckBDFAlgs) = 1 // 1
+qsteady_max_default(::NordsieckBDFAlgs) = 1 // 1
+gamma_default(::NordsieckBDFAlgs) = 1 // 1
+
+function default_controller(QT, alg::NordsieckBDFAlgs)
+    return BDFController(
+        QT, alg; alg.qmax,
+        alg.qsteady_min, alg.qsteady_max
+    )
+end
+
+function setup_controller_cache(
+        alg::NordsieckBDFAlgs, cache, controller::BDFController, ::Type{E}, disco_probs
+    ) where {E}
+    QT = _resolved_QT(controller.basic)
+    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
+    return BDFControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(
+        BDFController(basic), cache, oneunit(E)
+    )
 end
