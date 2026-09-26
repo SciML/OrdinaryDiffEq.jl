@@ -1351,6 +1351,10 @@ function perform_step!(
         for j in 1:(k + 1)
             terkp1 *= j * dt / (tdt - ts[j])
         end
+    elseif mass_matrix !== I
+        # M (u - u₀) for the explicit-Euler predictor, without inverting M. Algebraic rows
+        # give -dt g(uprev), which vanishes for a consistent uprev.
+        terkp1 = mass_matrix * (u - uprev) - dt * integrator.fsalfirst
     end
 
     lte = -1 / (1 + k)
@@ -1602,6 +1606,12 @@ function perform_step!(
         for j in 1:(k + 1)
             @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
         end
+    elseif mass_matrix !== I
+        # M (u - u₀) for the explicit-Euler predictor, without inverting M. Algebraic rows
+        # give -dt g(uprev), which vanishes for a consistent uprev.
+        @.. broadcast = false tmp = u - uprev
+        mul!(terkp1_tmp, mass_matrix, tmp)
+        @.. broadcast = false terkp1_tmp -= dt * integrator.fsalfirst
     end
 
     lte = -1 / (1 + k)

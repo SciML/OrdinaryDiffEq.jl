@@ -330,3 +330,21 @@ end
         @test abs(integ.u[1] - 1 - taken) < 1.0e-3 * eps(t0)
     end
 end
+
+@testset "FBDF mass-matrix start from an inconsistent algebraic state" begin
+    # The first step moves u₂ onto the constraint u₂ = u₁. The error estimate of that
+    # step must still shrink with dt, or the solve cannot leave t0 ≫ 0.
+    f!(du, u, p, t) = (du[1] = -u[1]; du[2] = u[2] - u[1]; nothing)
+    f(u, p, t) = [-u[1], u[2] - u[1]]
+    M = [1.0 0; 0 0]
+    t0 = 1.0e4
+    for ff in (f!, f)
+        prob = ODEProblem(ODEFunction(ff, mass_matrix = M), [1.0, 0.0], (t0, t0 + 1))
+        sol = solve(
+            prob, FBDF(); abstol = 1.0e-8, reltol = 1.0e-8,
+            initializealg = SciMLBase.NoInit()
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ exp(-1) rtol = 1.0e-6
+    end
+end
