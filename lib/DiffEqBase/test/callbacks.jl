@@ -176,3 +176,16 @@ test_find_first_callback(callbacks, find_first_integrator);
     @test irrational_f(after) < 0.0
     @test nextfloat(after) == before
 end
+
+@testset "Rootfinding with a derivative" begin
+    g(x, p = nothing) = x^2 - 2
+    for dg in ((x, p) -> 2x, (x, p) -> 100.0)   # the exact derivative, and a poor one
+        for tspan in ((1.0, 2.0), (2.0, 1.0))
+            before = DiffEqBase.find_root(g, dg, tspan, SciMLBase.LeftRootFind)
+            after = DiffEqBase.find_root(g, dg, tspan, SciMLBase.RightRootFind)
+            @test sign(g(before)) == sign(g(first(tspan)))
+            @test sign(g(after)) == sign(g(last(tspan)))
+            @test nextfloat(min(before, after)) == max(before, after)
+        end
+    end
+end

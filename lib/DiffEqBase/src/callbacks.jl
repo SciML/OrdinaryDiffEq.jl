@@ -118,15 +118,9 @@ function get_tmp(integrator::DEIntegrator, callback)
     return tmp
 end
 
-"""
-    get_condition(integrator, callback, abst)
-
-Evaluate a continuous `callback`'s condition function for `integrator` at the absolute time
-`abst`, interpolating the state when `abst != integrator.t` and respecting the callback's
-`idxs`/cache so the evaluation is allocation-free where possible. Used by the rootfinding
-that locates continuous-callback event times.
-"""
-function get_condition(integrator::DEIntegrator, callback, abst)
+# State (or its `idxs` entries) at the absolute time `abst`, interpolated when `abst` is not
+# an end point of the step, in the callback cache when possible.
+@inline function condition_state(integrator::DEIntegrator, callback, abst)
     tmp = get_tmp(integrator, callback)
     ismutable = !(tmp === nothing)
     if abst == integrator.t
@@ -162,6 +156,19 @@ function get_condition(integrator::DEIntegrator, callback, abst)
         # ismutable && !(callback.idxs isa Number) ? integrator(tmp,abst,Val{0},idxs=callback.idxs) :
         #                                                 tmp = integrator(abst,Val{0},idxs=callback.idxs)
     end
+    return tmp
+end
+
+"""
+    get_condition(integrator, callback, abst)
+
+Evaluate a continuous `callback`'s condition function for `integrator` at the absolute time
+`abst`, interpolating the state when `abst != integrator.t` and respecting the callback's
+`idxs`/cache so the evaluation is allocation-free where possible. Used by the rootfinding
+that locates continuous-callback event times.
+"""
+function get_condition(integrator::DEIntegrator, callback, abst)
+    tmp = condition_state(integrator, callback, abst)
     integrator.sol.stats.ncondition += 1
     if callback isa VectorContinuousCallback
         callback.condition(
@@ -173,6 +180,97 @@ function get_condition(integrator::DEIntegrator, callback, abst)
         return callback.condition(tmp, abst, integrator)
     end
 end
+
+"""
+    ConditionWithDerivative(condition, derivative)
+
+Condition of a `ContinuousCallback` together with its time derivative. Event times are then
+found with `NewtonBisection` from BracketingNonlinearSolve, Newton's method safeguarded by
+bisection, which needs fewer evaluations of the condition than the default `ModAB` when the
+derivative is cheap.
+
+`condition(u, t, integrator)` is the usual condition ``g(u, t)``, and
+`derivative(u, t, integrator)` returns its derivative along the solution of
+``du/dt = f(u, p, t)``, at the same state `u` and time `t`:
+
+```math
+\\frac{d}{dt} g(u(t), t) = \\nabla_u g \\cdot f(u, p, t) + \\frac{\\partial g}{\\partial t}.
+```
+
+Inside a step, `u` is interpolated, so evaluating `f` there gives the derivative up to the
+interpolation error. `integrator(t, Val{1})` gives the derivative of the interpolant
+instead, at the cost of one more interpolation.
+
+# Example
+
+```julia
+# u' = -u from u(0) = 1, so u[1] reaches 1/2 at t = log(2).
+function dudt!(du, u, p, t)
+    du[1] = -u[1]
+    return nothing
+end
+prob = ODEProblem(dudt!, [1.0], (0.0, 2.0))
+
+condition(u, t, integrator) = u[1] - 0.5
+derivative(u, t, integrator) = -u[1]   # dg/dt = du[1]/dt, as computed by dudt!
+
+callback = ContinuousCallback(ConditionWithDerivative(condition, derivative), terminate!)
+sol = solve(prob, Tsit5(); callback)
+```
+"""
+struct ConditionWithDerivative{C, D}
+    condition::C
+    derivative::D
+end
+
+(c::ConditionWithDerivative)(u, t, integrator) = c.condition(u, t, integrator)
+
+# Time derivative of the `ConditionWithDerivative` of `callback` at the absolute time `abst`.
+function get_condition_derivative(integrator::DEIntegrator, callback, abst)
+    u = condition_state(integrator, callback, abst)
+    return callback.condition.derivative(u, abst, integrator)
+end
+
+# Condition of `callback` for the root finder, which also keeps the derivative at the last
+# time. `NewtonBisection` asks for the derivative right after the condition at the same
+# time, so both come from one interpolation of the state.
+mutable struct ConditionAndDerivative{I, C, T, D}
+    const integrator::I
+    const callback::C
+    t::T
+    derivative::D
+end
+
+function ConditionAndDerivative(integrator, callback, t)
+    return ConditionAndDerivative(
+        integrator, callback, t, get_condition_derivative(integrator, callback, t)
+    )
+end
+
+function (c::ConditionAndDerivative)(abst, p = nothing)
+    (; integrator, callback) = c
+    u = condition_state(integrator, callback, abst)
+    integrator.sol.stats.ncondition += 1
+    c.t = abst
+    c.derivative = callback.condition.derivative(u, abst, integrator)
+    return callback.condition.condition(u, abst, integrator)
+end
+
+function condition_derivative(c::ConditionAndDerivative, abst)
+    abst == c.t && return c.derivative
+    return get_condition_derivative(c.integrator, c.callback, abst)
+end
+
+# The derivative for the root finder, as the `jac` of its `IntervalNonlinearFunction`.
+struct ConditionDerivative{C <: ConditionAndDerivative}
+    condition::C
+end
+
+(d::ConditionDerivative)(abst, p) = condition_derivative(d.condition, abst)
+
+# `IntervalNonlinearFunction` checks the arguments of `jac`, by reflection unless they are
+# known; it is built at every event.
+SciMLBase.numargs(::ConditionDerivative) = (2,)
 
 # Use a generated function for type stability even when many callbacks are given
 """
@@ -504,6 +602,12 @@ end
     elseif isdiscrete(integrator.alg) || callback.rootfind == SciMLBase.NoRootFind || iszero(top_sign)
         callback_t = top_t
         residual = zero(bottom_condition)
+    elseif callback.condition isa ConditionWithDerivative
+        # Find callback time with Newton steps
+        condition = ConditionAndDerivative(integrator, callback, bottom_t)
+        derivative = ConditionDerivative(condition)
+        callback_t = find_root(condition, derivative, (bottom_t, top_t), callback.rootfind)
+        residual = condition(callback_t)
     else
         # Find callback time
         zero_func(abst, p = nothing) = get_condition(integrator, callback, abst)
@@ -594,6 +698,24 @@ function find_root(f, tup, rootfind::SciMLBase.RootfindOpt)
     sol = solve(
         IntervalNonlinearProblem{false}(f, tup),
         ModAB(), abstol = 0.0, reltol = 0.0
+    )
+    if rootfind == SciMLBase.LeftRootFind
+        return sol.left
+    else
+        return sol.right
+    end
+end
+
+"""
+    find_root(f, jac, tup, rootfind::SciMLBase.RootfindOpt)
+
+Like `find_root(f, tup, rootfind)`, for a function `f` with derivative `jac`: the root is
+found with `NewtonBisection`, Newton's method safeguarded by bisection.
+"""
+function find_root(f, jac, tup, rootfind::SciMLBase.RootfindOpt)
+    sol = solve(
+        IntervalNonlinearProblem{false}(IntervalNonlinearFunction{false}(f; jac), tup),
+        NewtonBisection(), abstol = 0.0, reltol = 0.0
     )
     if rootfind == SciMLBase.LeftRootFind
         return sol.left
