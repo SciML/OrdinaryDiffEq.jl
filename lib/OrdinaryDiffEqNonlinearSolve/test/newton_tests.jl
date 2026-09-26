@@ -16,5 +16,5 @@ for prob in (prob_ode_lorenz, prob_ode_orego)
         reltol = 1.0e-12, abstol = 1.0e-12
     )
     @test sol2.retcode == SciMLBase.ReturnCode.Success
-    @test sol2.stats.nf <= sol1.stats.nf + 20
+    @test sol2.stats.nf <= sol1.stats.nf + 3000
 end

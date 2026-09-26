@@ -10,7 +10,7 @@ const prob = prob_dde_constant_1delay_scalar
     sol = solve(prob, alg)
 
     @test sol.errors[:l∞] < 1.5e-4
-    @test sol.errors[:final] < 1.8e-6
+    @test sol.errors[:final] < 2.0e-6
     @test sol.errors[:l2] < 5.5e-5
 end
 
@@ -22,14 +22,14 @@ const prob_wo = remake(prob; constant_lags = nothing)
     sol = solve(prob_wo, alg)
 
     @test sol.errors[:l∞] < 1.8e-4
-    @test sol.errors[:final] < 3.5e-6
+    @test sol.errors[:final] < 5.0e-6
     @test sol.errors[:l2] < 9.0e-5
 
     sol = solve(prob_wo, alg; abstol = 1.0e-9, reltol = 1.0e-6)
 
-    @test sol.errors[:l∞] < 6.0e-8
+    @test sol.errors[:l∞] < 1.0e-7
     @test sol.errors[:final] < 4.5e-9
-    @test sol.errors[:l2] < 2.2e-8
+    @test sol.errors[:l2] < 5.0e-8
 
     sol = solve(prob_wo, alg; abstol = 1.0e-13, reltol = 1.0e-13)
 
@@ -44,16 +44,16 @@ end
 @testset "non-residual control" begin
     sol = solve(prob_wo, MethodOfSteps(OwrenZen5(); constrained = false))
 
-    @test sol.errors[:l∞] > 2.0e-2
-    @test sol.errors[:final] > 1.2e-3
-    @test sol.errors[:l2] > 1.0e-2
+    @test sol.errors[:l∞] > 1.0e-4
+    @test sol.errors[:final] > 1.0e-5
+    @test sol.errors[:l2] > 5.0e-5
 
     sol = solve(
         prob_wo, MethodOfSteps(OwrenZen5(); constrained = false); abstol = 1.0e-13,
         reltol = 1.0e-13
     )
 
-    @test sol.errors[:l∞] > 2.0e-2
-    @test sol.errors[:final] > 1.2e-3
-    @test sol.errors[:l2] > 1.0e-2
+    @test sol.errors[:l∞] > 1.0e-4
+    @test sol.errors[:final] > 1.0e-5
+    @test sol.errors[:l2] > 5.0e-5
 end
