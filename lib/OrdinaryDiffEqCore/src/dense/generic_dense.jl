@@ -964,24 +964,39 @@ function ode_interpolation!(
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
-        out_j = _get_val(vals, j)
-        # `idxs` / full-state `out` validity depends only on the states' axes;
-        # skip the idxs rescan while consecutive intervals keep the axes already
-        # validated. For `idxs === nothing`, still O(1)-check each time's `out`
-        # length against those axes (not a rescan).
+        # Mutate-in-place path (`vals` elements are arrays): read each slot and
+        # validate length. Replace-slot path (`_set_val!`): do not read the slot
+        # (may be uninitialized `Any`/`BigFloat`), but still validate idxs vs state.
         ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
-        if ax != last_idxs_axes
-            _check_interpolant_idxs_out(timeseries[i₋], out_j, idxs)
-            _check_interpolant_idxs_out(timeseries[i₊], out_j, idxs)
-            last_idxs_axes = ax
-        elseif idxs === nothing
-            if !(timeseries[i₋] isa Number) && !(out_j isa Number)
-                length(out_j) == length(timeseries[i₋]) ||
-                    _throw_interpolant_length_mismatch(length(out_j), length(timeseries[i₋]))
+        if _vals_eltype(vals) <: AbstractArray
+            out_j = _get_val(vals, j)
+            # `idxs` / full-state `out` validity depends only on the states' axes;
+            # skip the idxs rescan while consecutive intervals keep the axes already
+            # validated. For `idxs === nothing`, still O(1)-check each time's `out`
+            # length against those axes (not a rescan).
+            if ax != last_idxs_axes
+                _check_interpolant_idxs_out(timeseries[i₋], out_j, idxs)
+                _check_interpolant_idxs_out(timeseries[i₊], out_j, idxs)
+                last_idxs_axes = ax
+            elseif idxs === nothing
+                if !(timeseries[i₋] isa Number) && !(out_j isa Number)
+                    length(out_j) == length(timeseries[i₋]) ||
+                        _throw_interpolant_length_mismatch(
+                        length(out_j), length(timeseries[i₋])
+                    )
+                end
+                if !(timeseries[i₊] isa Number) && !(out_j isa Number)
+                    length(out_j) == length(timeseries[i₊]) ||
+                        _throw_interpolant_length_mismatch(
+                        length(out_j), length(timeseries[i₊])
+                    )
+                end
             end
-            if !(timeseries[i₊] isa Number) && !(out_j isa Number)
-                length(out_j) == length(timeseries[i₊]) ||
-                    _throw_interpolant_length_mismatch(length(out_j), length(timeseries[i₊]))
+        elseif idxs !== nothing
+            if ax != last_idxs_axes
+                _check_interpolant_idxs(timeseries[i₋], idxs)
+                _check_interpolant_idxs(timeseries[i₊], idxs)
+                last_idxs_axes = ax
             end
         end
 

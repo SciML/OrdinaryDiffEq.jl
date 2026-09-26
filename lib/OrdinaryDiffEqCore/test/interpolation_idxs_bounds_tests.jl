@@ -186,3 +186,17 @@ end
     @test out_s_pre == s_shrink(0.25)
     @test_throws DimensionMismatch s_shrink(zeros(2), 0.25)
 end
+
+@testset "uninitialized scalar batch buffers" begin
+    # Replace-slot path must not read vals[j] before `_set_val!` (UndefRefError)
+    for initial in (1.0, big"1.0")
+        sol = solve(ODEProblem((u, p, t) -> u, initial, (0.0, 1.0)), Tsit5())
+        for T in (typeof(initial), Any)
+            @testset "$T from $(typeof(initial))" begin
+                out = Vector{T}(undef, 2)
+                sol(out, [0.3, 0.7])
+                @test out ≈ [sol(0.3), sol(0.7)]
+            end
+        end
+    end
+end
