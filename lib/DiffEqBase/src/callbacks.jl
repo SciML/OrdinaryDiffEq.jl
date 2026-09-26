@@ -94,19 +94,33 @@ _erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
 function _erase_callback_types(callback)
     Base.@nospecialize callback
     callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
-    # Normalize the container on all Julia versions, but preserve callback element
-    # types on older Julia for Enzyme forward mode (see test/AD). In particular,
-    # collecting heterogeneous tuples with their common supertype would erase them.
+    return CallbackSet(
+        collect(Any, callbacks.continuous_callbacks),
+        collect(Any, callbacks.discrete_callbacks)
+    )
+end
+
+# Solvers must opt in: older Core versions replace vector-backed callbacks with
+# Vector{Any}, which cannot be assigned to options holding concretely typed vectors.
+_supports_typed_callback_vectors(alg) = false
+
+_erase_callback_types(callback, ::Nothing) = _erase_callback_types(callback)
+function _erase_callback_types(callback, alg)
+    callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
+    # Preserve static dispatch for Enzyme on older Julia. Without solver support,
+    # retain the tuple representation used before callback normalization was added.
     if VERSION < v"1.12" && !isempty(callbacks)
+        if !_supports_typed_callback_vectors(alg)
+            return CallbackSet(
+                Tuple(callbacks.continuous_callbacks), Tuple(callbacks.discrete_callbacks)
+            )
+        end
         return CallbackSet(
             collect(Union{map(typeof, callbacks.continuous_callbacks)...}, callbacks.continuous_callbacks),
             collect(Union{map(typeof, callbacks.discrete_callbacks)...}, callbacks.discrete_callbacks)
         )
     end
-    return CallbackSet(
-        collect(Any, callbacks.continuous_callbacks),
-        collect(Any, callbacks.discrete_callbacks)
-    )
+    return _erase_callback_types(callbacks)
 end
 
 rightfloat(t, tdir) = isone(tdir) ? nextfloat(t) : prevfloat(t)

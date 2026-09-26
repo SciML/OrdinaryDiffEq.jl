@@ -96,6 +96,12 @@ function _despecialize_callbacks!(integrator)
     return nothing
 end
 
+# Older DiffEqBase releases do not normalize callbacks on Julia < 1.12.
+# Negotiate typed vectors only when the normalization hook is available.
+@static if isdefined(DiffEqBase, :_supports_typed_callback_vectors)
+    DiffEqBase._supports_typed_callback_vectors(::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
+end
+
 function _despecialize_callback(callback::ContinuousCallback, integrator)
     _has_default_callback_hooks(callback) || return callback
     I = typeof(integrator)

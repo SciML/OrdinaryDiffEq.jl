@@ -47,6 +47,10 @@ and need to manually handle kwargs merging that would normally be done by `solve
 or `init_call`.
 """
 function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
+    return _merge_problem_kwargs(prob, nothing; merge_callbacks, kwargs...)
+end
+
+function _merge_problem_kwargs(prob, alg; merge_callbacks = true, kwargs...)
 
     # Special handling for callback merging
     if has_kwargs(prob)
@@ -75,7 +79,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
         kwargs = merge(
             (; kwargs...),
-            (; callback = _erase_callback_types(callback))
+            (; callback = _erase_callback_types(callback, alg))
         )
     end
 
@@ -103,12 +107,12 @@ function _erases_callback_types(prob)
         specialize === SciMLBase.NoSpecialize
 end
 
-function _erase_problem_callback_types(prob)
+function _erase_problem_callback_types(prob, alg)
     if !_erases_callback_types(prob) || !has_kwargs(prob)
         return prob
     end
     callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
-    callback = _erase_callback_types(callback)
+    callback = _erase_callback_types(callback, alg)
     return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
@@ -127,7 +131,8 @@ function init_call(
         _prob.kwargs[:kwargshandle] : kwargshandle
 
     # Merge problem kwargs with passed kwargs
-    kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
+    alg = extract_alg(args, kwargs, has_kwargs(_prob) ? _prob.kwargs : kwargs)
+    kwargs = _merge_problem_kwargs(_prob, alg; merge_callbacks, kwargs...)
 
     checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
 
@@ -200,7 +205,8 @@ function solve_call(
         _prob.kwargs[:kwargshandle] : kwargshandle
 
     # Merge problem kwargs with passed kwargs
-    kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
+    alg = extract_alg(args, kwargs, has_kwargs(_prob) ? _prob.kwargs : kwargs)
+    kwargs = _merge_problem_kwargs(_prob, alg; merge_callbacks, kwargs...)
 
     checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
     if isdefined(_prob, :u0)
@@ -760,12 +766,12 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return _erase_problem_callback_types(prob)
+        return _erase_problem_callback_types(prob, alg)
     else
         return _erase_problem_callback_types(
             _remake_with_promoted_function(
                 prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
-            )
+            ), alg
         )
     end
 end
@@ -815,13 +821,13 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return _erase_problem_callback_types(prob)
+        return _erase_problem_callback_types(prob, alg)
     else
         return _erase_problem_callback_types(
             remake(
                 prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
                 tspan = tspan_promote
-            )
+            ), alg
         )
     end
 end
@@ -1450,7 +1456,7 @@ function _solve_adjoint(
     end
 
     # Merge problem kwargs with passed kwargs
-    kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
+    kwargs = _merge_problem_kwargs(_prob, alg; merge_callbacks, kwargs...)
 
     return if length(args) > 1
         _concrete_solve_adjoint(
@@ -1477,7 +1483,7 @@ function _solve_forward(
     end
 
     # Merge problem kwargs with passed kwargs
-    kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
+    kwargs = _merge_problem_kwargs(_prob, alg; merge_callbacks, kwargs...)
 
     return if length(args) > 1
         _concrete_solve_forward(
