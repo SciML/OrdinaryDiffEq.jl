@@ -4,10 +4,8 @@ using SparseArrays
 import SciMLBase
 using Test
 
-# A `DAEFunction` is fully implicit and therefore has no `mass_matrix` field. The sparse
-# Jacobian setup shared with the ODE solvers used to read `f.mass_matrix` unconditionally,
-# so every fully implicit DAE algorithm errored on a `DAEProblem` carrying a sparse
-# `jac_prototype` (SciML/OrdinaryDiffEq.jl#1966).
+# `DAEFunction` has no `mass_matrix`; sparse Jacobian setup must not seed one
+# (SciML/OrdinaryDiffEq.jl#1966).
 
 # Chain of `N` index-1 subsystems:
 #   x_i' = -x_i + y_i          (differential)
