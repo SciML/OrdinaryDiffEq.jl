@@ -51,8 +51,8 @@ end
     cnt = cache.step
     if cache.step <= 2
         cache.step += 1
-        ttmp = t + (2 / 3) * dt
-        ralk2 = f(uprev + (2 / 3) * dt * k1, p, ttmp)       #Ralston Method
+        ttmp = t + 2dt / 3
+        ralk2 = f(uprev + 2dt / 3 * k1, p, ttmp)       #Ralston Method
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = uprev + (dt / 4) * (k1 + 3 * ralk2)
         if cnt == 1
@@ -84,8 +84,8 @@ end
     cnt = cache.step
     if cache.step <= 2
         cache.step += 1
-        ttmp = t + (2 / 3) * dt
-        @.. broadcast = false thread = thread tmp = uprev + (2 / 3) * dt * k1
+        ttmp = t + 2dt / 3
+        @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1
         f(ralk2, tmp, p, ttmp)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)        #Ralston Method
@@ -113,8 +113,8 @@ end
     cnt = cache.step
     if cache.step == 1
         cache.step += 1
-        ttmp = t + (2 / 3) * dt
-        ralk2 = f(uprev + (2 / 3) * dt * k1, p, ttmp)     #Ralston Method
+        ttmp = t + 2dt / 3
+        ralk2 = f(uprev + 2dt / 3 * k1, p, ttmp)     #Ralston Method
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = uprev + (dt / 4) * (k1 + 3 * ralk2)
         k2 = k1
@@ -144,8 +144,8 @@ end
     cnt = cache.step
     if cache.step == 1
         cache.step += 1
-        ttmp = t + (2 / 3) * dt
-        @.. broadcast = false thread = thread tmp = uprev + (2 / 3) * dt * k1
+        ttmp = t + 2dt / 3
+        @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1
         f(ralk2, tmp, p, ttmp)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method

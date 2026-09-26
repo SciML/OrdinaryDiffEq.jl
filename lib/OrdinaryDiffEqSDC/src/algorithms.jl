@@ -25,7 +25,11 @@ the underlying collocation method is reached, so the accuracy is tuned by
 
 Adaptive. The embedded estimate is the difference between the step updates
 formed from the last two sweeps, which costs a handful of `axpy`s because both
-iterates are already in the cache.",
+iterates are already in the cache.
+
+On a `SplitODEProblem` the sweep is semi-implicit: `f1` goes through `QΔ` and a
+nonlinear solve per node as above, while `f2` goes through the strictly lower
+triangular `explicit_sweeper` and is only ever evaluated at solved node values.",
     "SDC",
     "Spectral Deferred Correction method.",
     """@article{dutt2000spectral,
@@ -37,6 +41,14 @@ iterates are already in the cache.",
     pages={241--266},
     year={2000},
     publisher={Springer}}
+    @article{minion2003semi,
+    title={Semi-implicit spectral deferred correction methods for ordinary differential equations},
+    author={Minion, Michael L},
+    journal={Communications in Mathematical Sciences},
+    volume={1},
+    number={3},
+    pages={471--500},
+    year={2003}}
     @article{weiser2015faster,
     title={Faster {SDC} convergence on non-equidistant grids by {DIRK} sweeps},
     author={Weiser, Martin},
@@ -57,6 +69,9 @@ iterates are already in the cache.",
         (Weiser's LU trick), `.Picard` (`QΔ = 0`), `.BEpar` (diagonal, implicit
         Euler from the step start to each node) or `.MIN_SR_NS` (diagonal,
         `diag(τ)/M`).
+    - `explicit_sweeper`: the preconditioner for `f2` when the problem is a
+        `SplitODEProblem`, `SDCSweeper.FE` (explicit Euler between the nodes) or
+        `.Picard` (`f2` lagged a whole sweep). Ignored otherwise.
     - `step_update`: how the step solution is formed from the node values,
         `SDCStepUpdate.Quadrature` (`u_n + Δt Σ_m w_m f_m`) or `.LastNode`
         (`u_M`, which requires the last node to be the right endpoint).
@@ -65,7 +80,9 @@ iterates are already in the cache.",
         `OrdinaryDiffEqCore`'s `Sequential()`, `BaseThreads()` and
         `PolyesterThreads()` for control over the backend. Only valid for a
         diagonal `sweeper`, since any other one couples the nodes within a
-        sweep. Out-of-place problems sweep serially whatever this is set to.
+        sweep. Out-of-place problems sweep serially whatever this is set to. On a
+        `SplitODEProblem` it also needs `explicit_sweeper = SDCSweeper.Picard`,
+        since explicit Euler couples each node to the ones before it.
     """,
     """
     num_nodes = 3,
@@ -73,6 +90,7 @@ iterates are already in the cache.",
     quad_type = SDCQuadrature.RadauRight,
     num_sweeps = 3,
     sweeper = SDCSweeper.BE,
+    explicit_sweeper = SDCSweeper.FE,
     step_update = SDCStepUpdate.Quadrature,
     threading = false,
     """
@@ -83,6 +101,7 @@ struct SDC{AD, F, F2, TO, CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
     quad_type::SDCQuadrature.T
     num_sweeps::Int
     sweeper::SDCSweeper.T
+    explicit_sweeper::SDCSweeper.T
     step_update::SDCStepUpdate.T
     threading::TO
     linsolve::F
@@ -97,15 +116,17 @@ function SDC(;
         quad_type::SDCQuadrature.T = SDCQuadrature.RadauRight,
         num_sweeps::Int = 3,
         sweeper::SDCSweeper.T = SDCSweeper.BE,
+        explicit_sweeper::SDCSweeper.T = SDCSweeper.FE,
         step_update::SDCStepUpdate.T = SDCStepUpdate.Quadrature,
         threading = false,
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
         linsolve = nothing, nlsolve = NLNewton()
     )
     sdc_validate(num_nodes, quad_type, num_sweeps, step_update, sweeper, threading)
+    sdc_validate_explicit(explicit_sweeper)
     autodiff = _fixup_ad(autodiff)
     return SDC(
-        num_nodes, node_type, quad_type, num_sweeps, sweeper, step_update,
-        threading, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac)
+        num_nodes, node_type, quad_type, num_sweeps, sweeper, explicit_sweeper,
+        step_update, threading, linsolve, nlsolve, autodiff, _unwrap_val(concrete_jac)
     )
 end

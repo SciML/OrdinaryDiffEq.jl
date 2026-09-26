@@ -1,4 +1,4 @@
-RK_WITH_SPECIAL_INTERPOLATIONS = Union{Tsit5ConstantCache, Tsit5Cache}
+const RK_WITH_SPECIAL_INTERPOLATIONS = Union{Tsit5ConstantCache, Tsit5Cache}
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,

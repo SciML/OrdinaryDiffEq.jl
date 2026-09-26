@@ -101,6 +101,8 @@ struct SDCTableau{T}
     Q::Matrix{T}
     # One entry per sweep for `MIN_SR_FLEX`, one entry in total otherwise.
     QΔ::Vector{Matrix{T}}
+    # Preconditioner for the explicit part of a split problem.
+    QE::Matrix{T}
 end
 
 """
@@ -323,35 +325,40 @@ function sdc_qdelta(
 end
 
 const SDCTableauCache = Dict{
-    Tuple{Type, Int, SDCNodes.T, SDCQuadrature.T, SDCSweeper.T, Int}, SDCTableau,
+    Tuple{Type, Int, SDCNodes.T, SDCQuadrature.T, SDCSweeper.T, Int, SDCSweeper.T},
+    SDCTableau,
 }()
 const SDCTableauCacheLock = ReentrantLock()
 
 """
-    SDCTableau(T, M, node_type, quad_type, sweeper)
+    SDCTableau(T, M, node_type, quad_type, sweeper, num_sweeps = 1; explicit_sweeper = SDCSweeper.FE)
 
 Every coefficient array the sweep needs, in the element type `T`. The coefficients are
 built once per configuration and each call returns its own copy of them.
 """
 function SDCTableau(
         ::Type{T}, M::Int, node_type::SDCNodes.T, quad_type::SDCQuadrature.T,
-        sweeper::SDCSweeper.T, num_sweeps::Int = 1
+        sweeper::SDCSweeper.T, num_sweeps::Int = 1;
+        explicit_sweeper::SDCSweeper.T = SDCSweeper.FE
     ) where {T}
     nsweeps = sweeper in SDC_SWEEP_DEPENDENT_SWEEPERS ? max(1, num_sweeps) : 1
-    key = (T, M, node_type, quad_type, sweeper, nsweeps)
+    key = (T, M, node_type, quad_type, sweeper, nsweeps, explicit_sweeper)
     tab = lock(SDCTableauCacheLock) do
         get!(SDCTableauCache, key) do
-            generate_sdc_tableau(T, M, node_type, quad_type, sweeper, nsweeps)
+            generate_sdc_tableau(
+                T, M, node_type, quad_type, sweeper, nsweeps, explicit_sweeper
+            )
         end
     end::SDCTableau{T}
     return SDCTableau{T}(
-        copy(tab.nodes), copy(tab.weights), copy(tab.Q), map(copy, tab.QΔ)
+        copy(tab.nodes), copy(tab.weights), copy(tab.Q), map(copy, tab.QΔ),
+        copy(tab.QE)
     )
 end
 
 function generate_sdc_tableau(
         ::Type{T}, M::Int, node_type::SDCNodes.T, quad_type::SDCQuadrature.T,
-        sweeper::SDCSweeper.T, nsweeps::Int
+        sweeper::SDCSweeper.T, nsweeps::Int, explicit_sweeper::SDCSweeper.T
     ) where {T}
     return setprecision(BigFloat, SDC_COEFF_PRECISION) do
         τ = _sdc_nodes_big(M, node_type, quad_type)
@@ -360,7 +367,8 @@ function generate_sdc_tableau(
         QΔ = [
             sdc_qdelta(T, sweeper, τ, Q, node_type, quad_type, k) for k in 1:nsweeps
         ]
-        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ)
+        QE = sdc_qdelta(T, explicit_sweeper, τ, Q, node_type, quad_type, 1)
+        SDCTableau{T}(T.(τ), T.(weights), T.(Q), QΔ, QE)
     end
 end
 

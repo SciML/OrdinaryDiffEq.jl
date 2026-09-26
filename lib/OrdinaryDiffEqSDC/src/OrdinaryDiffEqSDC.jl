@@ -1,6 +1,6 @@
 module OrdinaryDiffEqSDC
 
-import OrdinaryDiffEqCore: isfsal,
+import OrdinaryDiffEqCore: isfsal, issplit,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     alg_adaptive_order,
     generic_solver_docstring,
@@ -24,7 +24,7 @@ import ADTypes: AutoForwardDiff
 using EnumX: @enumx
 
 using Reexport: Reexport, @reexport
-using SciMLBase: SciMLBase, _unwrap_val
+using SciMLBase: SciMLBase, _unwrap_val, SplitFunction
 @reexport using SciMLBase
 
 include("sdc_tableaus.jl")
