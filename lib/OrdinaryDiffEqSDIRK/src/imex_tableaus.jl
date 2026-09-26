@@ -949,10 +949,10 @@ function ARS443Tableau(T, T2)
     Ae[5, 4] = convert(T, -7 // 4)
 
     be = zeros(T, s)
-    be[2] = convert(T, 3 // 2)
-    be[3] = convert(T, -3 // 2)
-    be[4] = convert(T, 1 // 2)
-    be[5] = γ
+    be[1] = convert(T, 1 // 4)
+    be[2] = convert(T, 7 // 4)
+    be[3] = convert(T, 3 // 4)
+    be[4] = convert(T, -7 // 4)
 
     c = T2[zero(T2), convert(T2, 1 // 2), convert(T2, 2 // 3), convert(T2, 1 // 2), one(T2)]
 
