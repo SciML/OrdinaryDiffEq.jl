@@ -4,8 +4,6 @@ using ReverseDiff
 using DiffEqBase: ODE_DEFAULT_NORM
 
 @testset "ReverseDiff ODE_DEFAULT_NORM is RMS" begin
-    # Issue #4610: AbstractArray{<:TrackedReal} norms must match RMS,
-    # sqrt(mean(abs2(value(x)))), not sqrt(mean(abs(value(x)))).
     # TrackedArray methods already use abs2 and are a positive control.
     plain = [3.0, 4.0]
     expected = sqrt((abs2(3.0) + abs2(4.0)) / 2)
