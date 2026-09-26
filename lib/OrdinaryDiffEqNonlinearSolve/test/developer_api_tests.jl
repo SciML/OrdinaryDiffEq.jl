@@ -97,3 +97,19 @@ const ExternalClient = ExternalNonlinearSolverClient
     @test ExternalClient.solve_integrator_step(iip_prob, anderson_alg) ≈ [10 / 11] atol =
         1.0e-10
 end
+
+@testset "resize_nlsolver! with a solver array" begin
+    using OrdinaryDiffEqPDIRK: PDIRK44
+    using OrdinaryDiffEqNonlinearSolve: resize_nlsolver!
+    prob = ExternalClient.ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    integrator = ExternalClient.init(prob, PDIRK44(); dt = 0.1)
+    @test integrator.cache.nlsolver isa AbstractVector
+    ExternalClient.step!(integrator)
+    @test !any(nls -> nls.cache.firstcall, integrator.cache.nlsolver)
+    resize!(integrator.u, 3)
+    resize_nlsolver!(integrator, 3)
+    for nls in integrator.cache.nlsolver
+        @test axes(nls.z) == axes(integrator.u)
+        @test nls.cache.firstcall
+    end
+end
