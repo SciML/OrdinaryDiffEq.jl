@@ -9,10 +9,10 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 @inline _vals_indices(vals) = eachindex(vals)
 @inline _vals_indices(vals::RecursiveArrayTools.AbstractVectorOfArray) = eachindex(vals.u)
 
-@noinline function _throw_interpolant_length_mismatch(len_out, len_idxs)
+@noinline function _throw_interpolant_length_mismatch(len_out, expected)
     return throw(
         DimensionMismatch(
-            "in-place interpolation `out` has length $len_out but `idxs` has length $len_idxs"
+            "in-place interpolation `out` has length $len_out but expected length $expected"
         )
     )
 end
@@ -38,7 +38,14 @@ end
 
 @inline function _check_interpolant_idxs_out(u, out, idxs)
     _check_interpolant_idxs(u, idxs)
-    _check_interpolant_out_length(out, idxs)
+    if idxs === nothing
+        if !(u isa Number) && !(out isa Number)
+            length(out) == length(u) ||
+                _throw_interpolant_length_mismatch(length(out), length(u))
+        end
+    else
+        _check_interpolant_out_length(out, idxs)
+    end
     return nothing
 end
 
@@ -335,7 +342,7 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
-    _check_interpolant_idxs(integrator.uprev, idxs)
+    _check_interpolant_idxs_out(integrator.uprev, val, idxs)
     _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         ode_interpolant!(
@@ -557,7 +564,7 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
-    _check_interpolant_idxs(integrator.uprev, idxs)
+    _check_interpolant_idxs_out(integrator.uprev, val, idxs)
     _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(
@@ -957,14 +964,24 @@ function ode_interpolation!(
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
-        if idxs !== nothing
-            # `idxs` validity depends only on the states' axes; skip the rescan
-            # while consecutive intervals keep the axes already validated
-            ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
-            if ax != last_idxs_axes
-                _check_interpolant_idxs(timeseries[i₋], idxs)
-                _check_interpolant_idxs(timeseries[i₊], idxs)
-                last_idxs_axes = ax
+        out_j = _get_val(vals, j)
+        # `idxs` / full-state `out` validity depends only on the states' axes;
+        # skip the idxs rescan while consecutive intervals keep the axes already
+        # validated. For `idxs === nothing`, still O(1)-check each time's `out`
+        # length against those axes (not a rescan).
+        ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
+        if ax != last_idxs_axes
+            _check_interpolant_idxs_out(timeseries[i₋], out_j, idxs)
+            _check_interpolant_idxs_out(timeseries[i₊], out_j, idxs)
+            last_idxs_axes = ax
+        elseif idxs === nothing
+            if !(timeseries[i₋] isa Number) && !(out_j isa Number)
+                length(out_j) == length(timeseries[i₋]) ||
+                    _throw_interpolant_length_mismatch(length(out_j), length(timeseries[i₋]))
+            end
+            if !(timeseries[i₊] isa Number) && !(out_j isa Number)
+                length(out_j) == length(timeseries[i₊]) ||
+                    _throw_interpolant_length_mismatch(length(out_j), length(timeseries[i₊]))
             end
         end
 
@@ -1303,10 +1320,8 @@ function ode_interpolation!(
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
-    if idxs !== nothing
-        _check_interpolant_idxs(timeseries[i₋], idxs)
-        _check_interpolant_idxs(timeseries[i₊], idxs)
-    end
+    _check_interpolant_idxs_out(timeseries[i₋], out, idxs)
+    _check_interpolant_idxs_out(timeseries[i₊], out, idxs)
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
