@@ -170,19 +170,25 @@ function count_kwbody_specializations(mod, name::Symbol)
     return n
 end
 
-@testset "tol solve does not add _ode_init_impl kwbody specialization" begin
+@testset "tol solve does not add _ode_init kwbody specialization" begin
     # Property this PR exists for: after a default solve warms the Float64 path,
-    # an explicit abstol/reltol solve must not compile a new heavy `_ode_init_impl`
-    # keyword body (only the thin `_ode_init` wrapper may grow).
+    # an explicit abstol/reltol solve must not compile a new heavy `_ode_init`
+    # keyword body (SciMLBase.__init may grow; the heavy body must not).
     function f!(du, u, p, t)
         du .= -u
         return nothing
     end
     prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
     solve(prob, Tsit5())
-    n0 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init_impl)
+    n0 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init)
     solve(prob, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6)
-    n1 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init_impl)
+    n1 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init)
     @test n1 == n0
     @test n0 > 0
+end
+
+@testset "ODE solve inference with and without tolerances" begin
+    prob = ODEProblem(decay, [1.0, 2.0], (0.0, 1.0))
+    @inferred solve(prob, Tsit5())
+    @inferred solve(prob, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6)
 end
