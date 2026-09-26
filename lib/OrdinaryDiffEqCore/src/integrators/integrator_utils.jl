@@ -220,9 +220,7 @@ end
     return nothing
 end
 
-_fsal_buffers(integrator, cache) = get_fsalfirstlast(cache, integrator.u)
-_fsal_buffers(integrator, ::Union{CompositeCache, DefaultCache, OrdinaryDiffEqConstantCache}) =
-    (integrator.fsalfirst, integrator.fsallast)
+_fsal_buffers(integrator, cache) = (integrator.fsalfirst, integrator.fsallast)
 
 function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
@@ -241,6 +239,10 @@ function update_fsal!(integrator)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
             if isinplace(integrator.sol.prob)
+                # Always copy via integrator.fsalfirst/fsallast. Many caches'
+                # `get_fsalfirstlast` return throwaway `zero(...)` placeholders
+                # (RKM, ExpRK, …); copying those would zero the real FSAL and
+                # destroy convergence on inplace array states.
                 fsalfirst, fsallast = _fsal_buffers(integrator, integrator.cache)
                 recursivecopy!(fsalfirst, fsallast)
             else
@@ -287,11 +289,17 @@ function modify_dt_for_tstops!(integrator)
         # distance_to_tstop to within rounding still triggers the tstop
         # branch.  Without this, accumulated `t + dt + dt + …` can drift
         # just past the last tstop and produce a spurious micro-step.
+        # Match DelayDiffEq's sync check and pre-Reactant Core: `100 * eps(mag)`,
+        # not `100 * eps(T) * mag`. The latter is larger near typical times and
+        # lets the tstop snap exceed DelayDiffEq's tolerance ("unexpected time
+        # discrepancy"). Use `eps` of the magnitude so Unitful times keep the
+        # oneunit scaling of the previous host-only formula.
         tstop_tol = zero(distance_to_tstop)
         if eltype(integrator.sol.prob.tspan) <: AbstractFloat
             ReactantCore.@trace track_numbers = false if isfinite(tdir_tstop) & isfinite(integrator.t)
-                tstop_tol = 100 * eps(eltype(integrator.sol.prob.tspan)) *
-                    max(abs(integrator.t), abs(tdir_tstop))
+                t_mag = max(abs(integrator.t), abs(tdir_tstop))
+                tstop_tol = 100 * eps(float(t_mag / oneunit(integrator.t))) *
+                    oneunit(integrator.t)
             end
         end
 
