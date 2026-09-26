@@ -10,9 +10,9 @@ const DIAGNOSTIC_REPORT_CHARS = 4000
 """
     truncate_str(x, limit::Int = DIAGNOSTIC_OBJECT_CHARS) -> String
 
-Render `x` to a string of at most `limit` characters, appending
-`"… (truncated)"` when the output is longer. Used to keep solver failure
-diagnostics bounded when printing large symbolic systems or user data.
+Render `x` to a string, cutting the content to `limit` characters and
+appending `"… (truncated)"` when the output is longer. Used to keep solver
+failure diagnostics bounded when printing large symbolic systems or user data.
 """
 @noinline function truncate_str(x, limit::Int = DIAGNOSTIC_OBJECT_CHARS)::String
     buf = IOBuffer(maxsize = 4limit)
