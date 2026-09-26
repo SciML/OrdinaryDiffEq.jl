@@ -4,8 +4,6 @@ using Measurements
 using DiffEqBase: ODE_DEFAULT_NORM
 
 @testset "Measurements ODE_DEFAULT_NORM is RMS" begin
-    # Issue #4610: array norms must match RMS on stripped values,
-    # sqrt(mean(abs2(value(x)))), not sqrt(mean(abs(value(x)))).
     plain = [3.0, 4.0]
     expected = sqrt((abs2(3.0) + abs2(4.0)) / 2)
     @test ODE_DEFAULT_NORM(plain, 0.0) ≈ expected
