@@ -14,6 +14,21 @@
     return r isa Bool ? r : all(r)
 end
 
+# A first guess below machine epsilon only falls back if the refined step is tiny too: that
+# separates a near-singular mass matrix (Andreas' example above) from a well-scaled Float32 problem.
+function _fallback_if_tiny(dt, tiny_first, tdir, smalldt, dtmin, integrator)
+    _tType = typeof(dt)
+    if tiny_first && (!isfinite(dt) || abs(dt) < 10eps(_tType) * oneunit(_tType))
+        result_dt = tdir * max(smalldt, dtmin)
+        @SciMLMessage(
+            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+            integrator.opts.verbose, :dt_epsilon
+        )
+        return result_dt
+    end
+    return dt
+end
+
 @muladd function _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, noise_prototype, order, integrator
@@ -214,17 +229,7 @@ end
     #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
     # end
     dt₀ = min(dt₀, dtmax_tdir)
-
-    if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
-        # This catches Andreas' non-singular example
-        # should act like it's singular
-        result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage(
-            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
-            integrator.opts.verbose, :dt_epsilon
-        )
-        return result_dt
-    end
+    tiny_first = typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
 
     dt₀_tdir = tdir * dt₀
 
@@ -254,7 +259,8 @@ end
     # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
     # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
     # Coerce array-valued equality so the boolean context always receives a Bool.
-    length(u0) > 0 && _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
+    length(u0) > 0 && _bool_equal(f₀, f₁) &&
+        return _fallback_if_tiny(tdir * max(dtmin, 100dt₀), tiny_first, tdir, smalldt, dtmin, integrator)
 
     # d₂: fold in diffusion terms when g !== nothing
     if g !== nothing
@@ -294,7 +300,9 @@ end
             )
         )
     end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    return _fallback_if_tiny(
+        tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir)), tiny_first, tdir, smalldt, dtmin, integrator
+    )
 end
 
 # ODE iip entry point
