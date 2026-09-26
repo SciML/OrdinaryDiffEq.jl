@@ -253,6 +253,18 @@ end
 # of `promote_f`, the only path that wraps an `SDEFunction`.
 struct NonForwardDiffAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
 
+# The `promote_f` call of `get_concrete_problem`, without the `remake` that follows it.
+# SciMLBase's `remake` can restore the narrowed types of a re-widened function, which
+# would hide a non-idempotent `promote_f` from the problem-level checks.
+function promote_again(prob, alg)
+    f, _ = DiffEqBase._promote_f(
+        prob, prob.f, Val(SciMLBase.specialization(prob.f)), prob.u0, prob.p,
+        prob.tspan[1], Val(DiffEqBase._uses_forwarddiff(alg)),
+        DiffEqBase._forwarddiff_chunksize(alg)
+    )
+    return f
+end
+
 @testset "concretizing a concretized problem is idempotent" begin
     p = DynamicP(0.5)
     # Without `jac`/`tgrad` no `@set` in `promote_f` touches the function, so this
@@ -265,6 +277,7 @@ struct NonForwardDiffAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
         twice = concretize(once, alg)
         @test SciMLBase.specialization(twice.f) === SciMLBase.AutoDespecialize
         @test typeof(twice) === typeof(once)
+        @test typeof(promote_again(once, alg)) === typeof(once.f)
     end
 
     sde_p = DynamicSDEParameters(0.5, 0.1)
@@ -278,6 +291,7 @@ struct NonForwardDiffAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
     twice = concretize(once, NonForwardDiffAlgorithm())
     @test typeof(twice.f) === typeof(once.f)
     @test typeof(twice) === typeof(once)
+    @test typeof(promote_again(once, NonForwardDiffAlgorithm())) === typeof(once.f)
     du = zeros(1)
     twice.f(du, [1.0], twice.p, 0.0)
     @test du == [-0.5]
