@@ -135,6 +135,13 @@ sim_gl3 = test_convergence(
 )
 @test sim_gl3.𝒪est[:final] ≈ 6 atol = testTol
 
+@testset "GaussLegendre with one stage is fixed-step" begin
+    @test !SciMLBase.isadaptive(GaussLegendre(num_stages = 1))
+    @test SciMLBase.isadaptive(GaussLegendre(num_stages = 2))
+    sol = solve(prob_ode_linear, GaussLegendre(num_stages = 1); dt = 1 // 64)
+    @test SciMLBase.successful_retcode(sol)
+end
+
 # GaussLegendre: fixed-step accuracy at s = 4 (order 8)
 @testset "GaussLegendre fixed-dt accuracy (s = 4)" begin
     s = 4
