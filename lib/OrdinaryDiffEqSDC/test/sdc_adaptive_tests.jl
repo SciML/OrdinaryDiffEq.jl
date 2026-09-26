@@ -48,6 +48,24 @@ end
     @test adaptive.stats.nw < fixed.stats.nw / 10
 end
 
+@testset "SDC adaptive reuses W across the sweeps of a step" begin
+    # With `fast_convergence_cutoff = 0` W is rebuilt exactly when a solve is marked
+    # as the first stage, and the first step rebuilds on every solve.
+    vdp(u, p, t) = [u[2], p * ((1 - u[1]^2) * u[2]) - u[1]]
+    vdp!(du, u, p, t) = (du .= vdp(u, p, t); nothing)
+    alg = SDC(
+        num_nodes = 3, num_sweeps = 4,
+        nlsolve = OrdinaryDiffEqSDC.NLNewton(fast_convergence_cutoff = 0)
+    )
+    for f in (vdp, vdp!)
+        prob = ODEProblem(f, [2.0, 0.0], (0.0, 3.0), 1000.0)
+        sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+        @test SciMLBase.successful_retcode(sol)
+        attempts = sol.stats.naccept + sol.stats.nreject
+        @test sol.stats.nw <= alg.num_nodes * (attempts + alg.num_sweeps)
+    end
+end
+
 @testset "SDC adaptive out-of-place" begin
     prob = ODEProblem((u, p, t) -> [-u[2], u[1]], [1.0, 0.0], (0.0, 2 * π))
     sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 3); abstol = 1.0e-8, reltol = 1.0e-8)
