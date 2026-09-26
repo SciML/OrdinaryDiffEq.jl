@@ -67,6 +67,22 @@ end
     end
 end
 
+@testset "in-place interpolation into uninitialized outs" begin
+    f4!(du, u, p, t) = (du .= -u; nothing)
+    s = solve(ODEProblem(f4!, [1.0, 2.0], (0.0, 1.0)), Tsit5())
+    for T in (Any, BigFloat), deriv in (Val{0}, Val{1}), idxs in (1, [1])
+        outs = Vector{T}(undef, 2)
+        if T === BigFloat && idxs isa Vector
+            # storing a vector-valued interpolant into a BigFloat slot is a
+            # convert error, same as on master
+            @test_throws MethodError s(outs, [0.3, 0.7], deriv; idxs = idxs)
+        else
+            s(outs, [0.3, 0.7], deriv; idxs = idxs)
+            @test outs == [s(t, deriv; idxs = idxs) for t in [0.3, 0.7]]
+        end
+    end
+end
+
 @testset "in-place interpolation idxs/out validation after resize" begin
     f2!(du, u, p, t) = (du .= u)
 

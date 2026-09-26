@@ -918,7 +918,9 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
-    if idxs !== nothing && !isempty(vals)
+    # `vals` slots are read only on the mutate-in-place path (array elements);
+    # on the `_set_val!` path they may be uninitialized (`Any`/`BigFloat` undef)
+    if idxs !== nothing && !isempty(vals) && _vals_eltype(vals) <: AbstractArray
         for i in _vals_indices(vals)
             _check_interpolant_out_length(_get_val(vals, i), idxs)
         end
