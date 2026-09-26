@@ -618,3 +618,69 @@ end
     )
     @test SciMLBase.successful_retcode(sol)
 end
+
+# Regression test for issue #4598: the mass-matrix DAE error estimate scales the
+# algebraic-constraint residual by 1/abstol, which must work elementwise when
+# abstol is a vector. A vector abstol with equal entries must reproduce the
+# scalar-abstol trajectory bitwise.
+@testset "Vector abstol on mass-matrix DAEs (#4598)" begin
+    function rober_dae(du, u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+        du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+        du[3] = y₁ + y₂ + y₃ - 1
+        return nothing
+    end
+    function rober_dae(u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        return [
+            -k₁ * y₁ + k₃ * y₂ * y₃,
+            k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
+            y₁ + y₂ + y₃ - 1,
+        ]
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    u0 = [1.0, 0.0, 0.2]
+    p = (0.04, 3.0e7, 1.0e4)
+    abstol_vec = [1.0e-8, 1.0e-8, 1.0e-8]
+
+    for prob in (
+            ODEProblem(ODEFunction{true}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
+            ODEProblem(ODEFunction{false}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
+        )
+        for Alg in (Rosenbrock23, Rodas5P)
+            sol_vec = solve(
+                prob, Alg(); abstol = abstol_vec, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            sol_scalar = solve(
+                prob, Alg(); abstol = 1.0e-8, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            @test SciMLBase.successful_retcode(sol_vec)
+            @test sol_vec.stats.naccept == sol_scalar.stats.naccept
+            @test sol_vec.stats.nreject == sol_scalar.stats.nreject
+            @test sol_vec.u[end] == sol_scalar.u[end]
+        end
+    end
+
+    # Rosenbrock32 goes through separate caches for the same correction. On
+    # ROBER at 1e-8 its error estimate rejects to instability even with scalar
+    # abstol, so exercise it on a non-stiff DAE at a looser tolerance.
+    dae_oop(u, p, t) = [-u[1], u[1] - u[2]]
+    function dae_iip(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[1] - u[2]
+        return nothing
+    end
+    M2 = Diagonal([1.0, 0.0])
+    for prob in (
+            ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
+            ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
+        )
+        sol = solve(prob, Rosenbrock32(); abstol = [1.0e-6, 1.0e-6], reltol = 1.0e-6)
+        @test SciMLBase.successful_retcode(sol)
+    end
+end

@@ -138,7 +138,7 @@ end
         # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
         if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
-            invatol = inv(integrator.opts.abstol)
+            invatol = inv.(integrator.opts.abstol)
             @.. atmp = ifelse(algvar, fsallast, false) * invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
@@ -239,7 +239,7 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if cache.algebraic_vars !== nothing
-            invatol = inv(integrator.opts.abstol)
+            invatol = inv.(integrator.opts.abstol)
             @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
@@ -319,7 +319,7 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
+            invatol = inv.(integrator.opts.abstol)
             atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
                 invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
@@ -402,8 +402,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
+            invatol = inv.(integrator.opts.abstol)
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
                 invatol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
