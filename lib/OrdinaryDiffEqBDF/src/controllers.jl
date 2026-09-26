@@ -300,11 +300,6 @@ function choose_order!(
     (; t, dt, u, uprev) = integrator
     (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
     k = cache.order
-    # Near eps(t), divided-difference order estimates are unreliable (#4606).
-    if t isa AbstractFloat && isfinite(t)
-        eps_t = eps(float(max(abs(t), abs(t + dt)) / oneunit(t))) * oneunit(t)
-        abs(dt) < 1000 * eps_t && return k, terk
-    end
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && cache.qwait == 0 &&
             (
@@ -347,11 +342,6 @@ function choose_order!(
     (; t, dt, u, uprev) = integrator
     (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history, fd_weights) = cache
     k = cache.order
-    # Near eps(t), divided-difference order estimates are unreliable (#4606).
-    if t isa AbstractFloat && isfinite(t)
-        eps_t = eps(float(max(abs(t), abs(t + dt)) / oneunit(t))) * oneunit(t)
-        abs(dt) < 1000 * eps_t && return k, terk
-    end
     if k < max_order && cache.qwait == 0 &&
             (
             (k == 1 && terk > terkp1) ||
@@ -445,11 +435,7 @@ function stepsize_controller!(
         terk = cache.terkm1
     end
 
-    # At order 1 the FD terk is ‖dt u'‖ = O(h), while EEst is the O(h²) LTE.
-    # Use EEst for the step-size formula so dt can grow when dt ≈ eps(t); keep
-    # FD terk for choose_order! (order increase needs terk > terkp1).
-    terk_for_q = k == 1 ? OrdinaryDiffEqCore.get_EEst(integrator) : terk
-    if iszero(terk_for_q)
+    if iszero(terk)
         q = inv(get_current_qmax(integrator, get_qmax(integrator)))
     else
         # CVODE-style step size formula: eta = 1 / (BIAS2 * dsm)^(1/(k+1))
@@ -457,7 +443,7 @@ function stepsize_controller!(
         # FBDF uses fixed leading coefficients, so alpha0 = bdf_coeffs[k, 1].
         # BIAS2 = 6 matches CVODE (cvode_impl.h).
         alpha0 = cache.bdf_coeffs[k, 1]
-        q = ((6 * terk_for_q / (alpha0 * (k + 1)))^(1 / (k + 1)))
+        q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
     end
     return q
 end
@@ -492,17 +478,6 @@ function step_accept_controller!(
         cache.qwait -= 1 # countdown
     end
     new_dt = integrator.dt / q
-    # When dt is comparable to eps(t), the qsteady band can freeze the step size
-    # and higher-order FD estimates become unreliable. Grow by at least 2× on
-    # accepted steps so the solve can leave the eps(t) floor (issue #4606).
-    (; t, dt) = integrator
-    if t isa AbstractFloat && isfinite(t)
-        eps_t = eps(float(max(abs(t), abs(t + dt)) / oneunit(t))) * oneunit(t)
-        if abs(dt) < 1000 * eps_t &&
-                OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
-            new_dt = integrator.tdir * max(abs(new_dt), 2 * abs(dt))
-        end
-    end
     if is_disco
         bdf_restart_estimates!(cache)
         return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)

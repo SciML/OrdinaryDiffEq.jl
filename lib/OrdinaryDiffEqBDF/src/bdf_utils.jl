@@ -154,6 +154,16 @@ function error_constant(integrator, alg::QNDF, k)
     return κ * γₖ[k] + inv(k + 1)
 end
 
+# With no difference history (first step or restart), QNDF takes a plain BDF1 step
+# (κ = 0) with D[1] seeded as dt * f(uprev), i.e. an explicit-Euler predictor. Then
+# u - u₀ ≈ dt² u'' while the BDF1 local error is dt²/2 u'', so the error constant is 1/2.
+_qndf_cold_start(f, D, k) = k == 1 && f.mass_matrix === I && iszero(D[1])
+
+function _qndf_error_constant(integrator, k, cold_start)
+    cold_start && return inv(oftype(integrator.cache.γₖ[1], 2))
+    return error_constant(integrator, k)
+end
+
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
 

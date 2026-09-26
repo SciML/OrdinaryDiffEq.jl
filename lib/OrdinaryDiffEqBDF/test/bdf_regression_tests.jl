@@ -274,28 +274,23 @@ end
     end
 end
 
-# Issue #4606: constant predictor on the first order-1 step made the BDF1 error
-# estimate O(h). With t0 ≫ 0 that forces dt below eps(t0) and aborts Unstable.
-@testset "FBDF/QNDF first-step O(h²) error estimate (#4606)" begin
+@testset "FBDF/QNDF first step: O(h²) BDF1 error estimate" begin
     f!(du, u, p, t) = (du[1] = -8.6e8 * u[1]; du[2] = 1.0e-3 * u[2]; nothing)
     f(u, p, t) = [-8.6e8 * u[1], 1.0e-3 * u[2]]
 
+    # eps(14400.0) ≈ 1.8e-12; a BDF1 step of that size is within tol 1e-8, so the
+    # solve must not abort at t0.
     t0 = 14400.0
-    for alg in (FBDF(), QNDF())
-        for (label, prob) in (
-                ("iip", ODEProblem(f!, [1.0e-3, 1.0e12], (t0, t0 + 1000.0))),
-                ("oop", ODEProblem(f, [1.0e-3, 1.0e12], (t0, t0 + 1000.0))),
-            )
-            sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false)
-            @test SciMLBase.successful_retcode(sol)
-            @test sol.t[end] == t0 + 1000
-        end
+    for alg in (FBDF(), QNDF()), ff in (f!, f)
+        prob = ODEProblem(ff, [1.0e-3, 1.0e12], (t0, t0 + 1000.0))
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == t0 + 1000
     end
 
-    # Forced first step at t0=0: true BDF1 LTE ≈ 1.2e-9 ≪ tol 1e-8, so with an
-    # O(h²) estimate the step must be accepted with no rejection.
-    prob0 = ODEProblem(f!, [1.0e-3, 1.0e12], (0.0, 1000.0))
-    for alg in (FBDF(), QNDF())
+    # True BDF1 local error of this step is ≈ 1.2e-9 < tol, so it must be accepted.
+    for alg in (FBDF(), QNDF()), ff in (f!, f)
+        prob0 = ODEProblem(ff, [1.0e-3, 1.0e12], (0.0, 1000.0))
         integ = init(prob0, alg; abstol = 1.0e-8, reltol = 1.0e-8, dt = 1.8e-12, save_everystep = false)
         step!(integ)
         @test integ.stats.nreject == 0
