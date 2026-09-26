@@ -307,14 +307,16 @@ end
                 result_dt
             end
         end
-    end
-    if warn_initial_dt && !has_nan &&
-            (eltype(prob.tspan) <: AbstractFloat) &&
-            dt₀ < 10eps(eltype(prob.tspan)) * oneunit_tType
-        @SciMLMessage(
-            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
-            integrator.opts.verbose, :dt_epsilon
-        )
+        # Keep this warning inside the non-NaN branch: `dt₀` is only assigned there,
+        # and `ReactantCore.@trace if` confuses JET's definite-assignment analysis.
+        if warn_initial_dt &&
+                (eltype(prob.tspan) <: AbstractFloat) &&
+                dt₀ < 10eps(eltype(prob.tspan)) * oneunit_tType
+            @SciMLMessage(
+                lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+                integrator.opts.verbose, :dt_epsilon
+            )
+        end
     end
     return result_dt
 end

@@ -51,9 +51,6 @@ OrdinaryDiffEqStabilizedIRK = {path = "lib/OrdinaryDiffEqStabilizedIRK"}
 OrdinaryDiffEqStabilizedRK = {path = "lib/OrdinaryDiffEqStabilizedRK"}
 OrdinaryDiffEqSymplecticRK = {path = "lib/OrdinaryDiffEqSymplecticRK"}
 
-Reactant = {url = "https://github.com/EnzymeAD/Reactant.jl", rev = "main"}
-ReactantCore = {url = "https://github.com/EnzymeAD/Reactant.jl", rev = "main", subdir = "lib/ReactantCore"}
-
 [compat]
 ADTypes = "1.22.0"
 ArrayInterface = "7.28"
