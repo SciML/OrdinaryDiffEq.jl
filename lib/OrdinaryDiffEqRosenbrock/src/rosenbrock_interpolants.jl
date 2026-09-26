@@ -1,5 +1,5 @@
 ### Fallbacks to capture
-ROSENBROCKS_WITH_INTERPOLATIONS = Union{
+const ROSENBROCKS_WITH_INTERPOLATIONS = Union{
     Rosenbrock23ConstantCache, Rosenbrock23Cache,
     Rosenbrock32ConstantCache, Rosenbrock32Cache,
     RosenbrockCombinedConstantCache,
