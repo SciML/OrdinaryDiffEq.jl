@@ -33,7 +33,8 @@ using SciMLBase: SciMLBase, SplitFunction, ODEProblem, _vec, _reshape, _unwrap_v
 # `calculate_residuals`/`calculate_residuals!` are only called.
 import DiffEqBase: initialize!
 using DiffEqBase: calculate_residuals, calculate_residuals!
-using LinearAlgebra: mul!, diag, I
+using LinearAlgebra: mul!, diag, I, UniformScaling
+using SciMLOperators: ScalarOperator, isconstant, update_coefficients!
 import OrdinaryDiffEqCore
 
 using OrdinaryDiffEqDifferentiation: dolinsolve
