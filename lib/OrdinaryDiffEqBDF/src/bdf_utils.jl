@@ -154,6 +154,28 @@ function error_constant(integrator, alg::QNDF, k)
     return κ * γₖ[k] + inv(k + 1)
 end
 
+# With no difference history (first step or restart), QNDF takes a plain BDF1 step
+# (κ = 0) with the explicit-Euler predictor u₀ = uprev + dt * f(uprev). Then
+# u - u₀ ≈ dt² u'' while the BDF1 local error is dt²/2 u'', so the error constant is 1/2.
+_qndf_cold_start(f, D, k) = k == 1 && f.mass_matrix === I && iszero(D[1])
+
+function _qndf_error_constant(integrator, k, cold_start)
+    cold_start && return inv(oftype(integrator.cache.γₖ[1], 2))
+    return error_constant(integrator, k)
+end
+
+# FBDF stores its history at the rounded times t + dt, which differ from t + dt when dt is a
+# few eps(t), so the formulas must use the increment actually taken. The endpoint is rounded
+# toward t, so the step never exceeds the dt already limited by dtmax and the next tstop.
+function _fbdf_representable_dt(t::T, dt::T) where {T <: AbstractFloat}
+    h = (t + dt) - t
+    if abs(h) > abs(dt)
+        h = (dt > 0 ? prevfloat(t + dt) : nextfloat(t + dt)) - t
+    end
+    return iszero(h) ? dt : h
+end
+_fbdf_representable_dt(t, dt) = dt
+
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
 

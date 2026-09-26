@@ -56,7 +56,7 @@ end
 #       `tol_ode_2Dlinear`.
 function regression_test(
         alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
-        nth_der = 1, dertol = 1.0e-6
+        nth_der = 1, dertol = 1.0e-6, compare_fixed_step = true
     )
     println("\n")
     show(stdout, alg)
@@ -65,12 +65,14 @@ function regression_test(
     sol = solve(prob_ode_linear, alg, dt = 1 // 2^(2), dense = true)
     @inferred sol(interpolation_results_1d, interpolation_points)
     @inferred sol(interpolation_points[1])
-    sol2 = solve(prob_ode_linear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
-    for i in eachindex(sol2.u)
-        print_results(
-            @test maximum(abs.(sol2.u[i] - interpolation_results_1d[i])) <
-                tol_ode_linear
-        )
+    if compare_fixed_step
+        sol2 = solve(prob_ode_linear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
+        for i in eachindex(sol2.u)
+            print_results(
+                @test maximum(abs.(sol2.u[i] - interpolation_results_1d[i])) <
+                    tol_ode_linear
+            )
+        end
     end
     for N in 1:nth_der
         # prevent CI error
@@ -110,16 +112,18 @@ function regression_test(
     sol = solve(prob_ode_2Dlinear, alg, dt = 1 // 2^(2), dense = true)
     sol(interpolation_results_2d, interpolation_points)
     sol(interpolation_points[1])
-    sol2 = solve(prob_ode_2Dlinear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
-    # `eachindex(sol2)` now returns `CartesianIndices` over the full solution
-    # tensor (u_dims..., nsteps) under RecursiveArrayTools v4; iterate the
-    # timestep axis via `sol2.u` so `sol2.u[i]` / `interpolation_results_2d[i]`
-    # index the per-step matrix as the test intends.
-    for i in eachindex(sol2.u)
-        print_results(
-            @test maximum(maximum.(abs.(sol2.u[i] - interpolation_results_2d[i]))) <
-                tol_ode_2Dlinear
-        )
+    if compare_fixed_step
+        sol2 = solve(prob_ode_2Dlinear, alg, dt = 1 // 2^(4), dense = true, adaptive = false)
+        # `eachindex(sol2)` now returns `CartesianIndices` over the full solution
+        # tensor (u_dims..., nsteps) under RecursiveArrayTools v4; iterate the
+        # timestep axis via `sol2.u` so `sol2.u[i]` / `interpolation_results_2d[i]`
+        # index the per-step matrix as the test intends.
+        for i in eachindex(sol2.u)
+            print_results(
+                @test maximum(maximum.(abs.(sol2.u[i] - interpolation_results_2d[i]))) <
+                    tol_ode_2Dlinear
+            )
+        end
     end
     return
 end
@@ -487,8 +491,54 @@ regression_test(Rodas5Pr(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dert
 
 println("BDFs")
 
-# QNDF
-regression_test(QNDF(), 2.0e-2, 2.0e-2; test_diff1 = true, nth_der = 1, dertol = 1.0e-2)
+# QNDF: a fixed-step QNDF solve is first order (NDF1), so it is checked against the NDF1
+# recurrence and its error constant, and the adaptive dense output against the analytic
+# solution, rather than the two against each other.
+regression_test(
+    QNDF(), nothing, nothing; test_diff1 = true, nth_der = 1, dertol = 1.0e-2,
+    compare_fixed_step = false
+)
+@testset "QNDF fixed-step NDF1 and dense output accuracy" begin
+    λ = 1.01
+    κ = QNDF().kappa[1]
+    f_oop = (u, p, t) -> λ * u
+    f_iip = (du, u, p, t) -> (@. du = λ * u)
+    u0_2d = reshape(collect(range(0.1, 0.8, length = 8)), 4, 2)
+    for (f, u0) in ((f_oop, 0.5), (f_iip, u0_2d))
+        prob = ODEProblem(f, u0, (0.0, 1.0))
+        u1 = u0 .* exp(λ)
+        errs = map((16, 64, 256)) do n
+            h = 1 / n
+            sol = solve(prob, QNDF(), dt = h, adaptive = false)
+            # NDF1 for u' = λu with a backward-Euler first step:
+            # (1 - κ - hλ) u[n+1] = (1 - 2κ) u[n] + κ u[n-1]
+            uprev, ucur = u0, u0 ./ (1 - h * λ)
+            for _ in 2:n
+                uprev, ucur = ucur, ((1 - 2κ) .* ucur .+ κ .* uprev) ./ (1 - κ - h * λ)
+            end
+            @test sol.u[end] ≈ ucur rtol = 1.0e-12
+            maximum(abs.(sol.u[end] .- u1)) * n
+        end
+        # Leading global error of NDF1 is (1/2 + κ) h λ² u(1); the next term is O(h²), which
+        # accounts for the ≈ 10% deviation at h = 1/16 and so ≈ 0.6% at h = 1/256.
+        C = (1 / 2 + κ) * λ^2 * maximum(abs.(u1))
+        @test errs[1] > errs[2] > errs[3]
+        @test abs(errs[3] / C - 1) < 0.02
+
+        sol = solve(prob, QNDF(), dt = 1 // 4, dense = true)
+        reltol, abstol = 1.0e-3, 1.0e-6
+        # EEst ≤ 1 in the RMS norm bounds each component's local error by
+        # √length(u) (reltol|u| + abstol), and for u' = λu an error made at t grows by
+        # exp(λ(1 - t)), so the global error is at most
+        # naccept √length(u) (reltol|u(1)| + abstol exp(λ)); the factor 2 allows for interpolation.
+        bound = 2 * sol.stats.naccept * sqrt(length(u0)) *
+            (reltol * maximum(abs.(u1)) + abstol * exp(λ))
+        dense_err = maximum(
+            maximum(abs.(sol(t) .- u0 .* exp(λ * t))) for t in interpolation_points
+        )
+        @test dense_err < bound
+    end
+end
 
 # FBDF
 regression_test(FBDF(), 1.0e-1, 1.5e-1; test_diff1 = true, nth_der = 1, dertol = 1.0e-2)
