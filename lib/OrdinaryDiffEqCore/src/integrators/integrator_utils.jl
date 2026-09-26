@@ -220,25 +220,39 @@ end
     return nothing
 end
 
-_fsal_buffers(integrator, cache) = get_fsalfirstlast(cache, integrator.u)
-_fsal_buffers(integrator, ::Union{CompositeCache, DefaultCache, OrdinaryDiffEqConstantCache}) =
-    (integrator.fsalfirst, integrator.fsallast)
-
-# Prefer stable cache-owned FSAL buffers (what `perform_step!` mutates). After
-# Reactant `_dealias_traced!`, `integrator.fsalfirst`/`fsallast` may no longer
-# alias those cache fields. Throwaway `get_fsalfirstlast` results (fresh
-# `zero(...)` each call, e.g. ExpRK) fall back to the integrator fields.
-function _fsal_copy_buffers(integrator)
-    cache = integrator.cache
-    c_first, c_last = _fsal_buffers(integrator, cache)
-    if c_first === integrator.fsalfirst || c_last === integrator.fsallast
-        return integrator.fsalfirst, integrator.fsallast
+# Host path: always use the integrator's FSAL buffers (what `alg_cache` /
+# init wired). Calling `get_fsalfirstlast` here is wrong for caches whose
+# accessor allocates throwaways each call (ExpRK: `zero(cache.rtmp)`).
+#
+# Under Reactant compile, `_dealias_traced!` may break integrator↔cache aliasing
+# so `perform_step!` mutates cache fields while `integrator.fsalfirst` is a
+# detached copy. Resolve via `get_fsalfirstlast` once and accept those buffers
+# only when they are already owned by the cache (stable fields); otherwise keep
+# the integrator buffers (throwaway factories like ExpRK).
+@inline function _cache_owns_buffer(cache, buf)
+    @inbounds for i in 1:nfields(cache)
+        getfield(cache, i) === buf && return true
     end
-    c_first2, c_last2 = _fsal_buffers(integrator, cache)
-    if c_first === c_first2 && c_last === c_last2
+    return false
+end
+
+function _fsal_copy_buffers(integrator)
+    fsalfirst = integrator.fsalfirst
+    fsallast = integrator.fsallast
+    if !ReactantCore.within_compile()
+        return fsalfirst, fsallast
+    end
+    cache = integrator.cache
+    cache isa Union{CompositeCache, DefaultCache, OrdinaryDiffEqConstantCache} &&
+        return fsalfirst, fsallast
+    c_first, c_last = get_fsalfirstlast(cache, integrator.u)
+    if c_first === fsalfirst || c_last === fsallast
+        return fsalfirst, fsallast
+    end
+    if _cache_owns_buffer(cache, c_first) || _cache_owns_buffer(cache, c_last)
         return c_first, c_last
     end
-    return integrator.fsalfirst, integrator.fsallast
+    return fsalfirst, fsallast
 end
 
 function update_fsal!(integrator)

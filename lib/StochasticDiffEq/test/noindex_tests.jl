@@ -137,8 +137,6 @@ RecursiveArrayTools.recursive_unitless_bottom_eltype(x::CustomArray) = eltype(x)
 RecursiveArrayTools.recursivecopy!(dest::CustomArray, src::CustomArray) = copyto!(dest, src)
 RecursiveArrayTools.recursivecopy(x::CustomArray) = copy(x)
 RecursiveArrayTools.recursivefill!(x::CustomArray, a) = fill!(x, a)
-# CustomArray is not an AbstractArray; initdt uses DiffEqBase.NAN_CHECK.
-DiffEqBase.NAN_CHECK(x::CustomArray) = DiffEqBase.NAN_CHECK(x.x)
 function DiffEqNoiseProcess.wiener_randn!(rng::AbstractRNG, rand_vec::CustomArray)
     return randn!(rng, rand_vec.x)
 end

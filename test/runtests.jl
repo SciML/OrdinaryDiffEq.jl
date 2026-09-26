@@ -1,26 +1,5 @@
 using Pkg
 
-# Traced enums landed on Reactant main (EnzymeAD/Reactant.jl#3232) but are not
-# in a release yet (latest v0.2.288). Pin the Reactant group to main until then.
-# SciMLBase >= 3.56.0 already provides the parametric retcode / FullSpecialize
-# Reactant extension (SciMLBase#1564).
-if get(ENV, "GROUP", "All") == "Reactant"
-    withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
-        Pkg.add(
-            [
-                PackageSpec(
-                    name = "Reactant", url = "https://github.com/EnzymeAD/Reactant.jl",
-                    rev = "main"
-                ),
-                PackageSpec(
-                    name = "ReactantCore", url = "https://github.com/EnzymeAD/Reactant.jl",
-                    rev = "main", subdir = "lib/ReactantCore"
-                ),
-            ]
-        )
-    end
-end
-
 using SafeTestsets, Test
 using SciMLTesting
 
@@ -227,6 +206,24 @@ end
 
 function reactant_group()
     is_APPVEYOR && return
+    # Traced enums landed on Reactant main (EnzymeAD/Reactant.jl#3232) but are not
+    # in a release yet (latest v0.2.288). Pin at the group boundary so GROUP=Reactant
+    # and GROUP=Everything both pick up main (SciMLBase >= 3.56 already has the
+    # parametric retcode / FullSpecialize Reactant extension, SciMLBase#1564).
+    withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
+        Pkg.add(
+            [
+                PackageSpec(
+                    name = "Reactant", url = "https://github.com/EnzymeAD/Reactant.jl",
+                    rev = "main"
+                ),
+                PackageSpec(
+                    name = "ReactantCore", url = "https://github.com/EnzymeAD/Reactant.jl",
+                    rev = "main", subdir = "lib/ReactantCore"
+                ),
+            ]
+        )
+    end
     return @time @safetestset "Reactant Tests" include("Reactant/reactant_tests.jl")
 end
 

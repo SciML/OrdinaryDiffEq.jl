@@ -13,6 +13,13 @@
     return r isa Number ? r : all(r)
 end
 
+# `DiffEqBase.NAN_CHECK` catches Dual NaN partials that a fast-math norm can hide,
+# but only when a method exists (Number / AbstractArray / ArrayPartition / …).
+# Custom non-array states without a method keep master's reduction-only path.
+@inline function _ode_nan_check(x)
+    return applicable(DiffEqBase.NAN_CHECK, x) ? DiffEqBase.NAN_CHECK(x) : false
+end
+
 @muladd function _initdt_euler_step!(u₁, u0, dt, f₀)
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
@@ -208,11 +215,12 @@ end
         d₁ = internalnorm(tmp, t)
     end
 
-    # Better than checking any(x->any(isnan, x), f₀)
-    # because it also checks if partials are NaN
+    # Prefer DiffEqBase.NAN_CHECK when a method exists (catches Dual NaN
+    # partials that a fast-math norm can hide). Custom non-array states that
+    # have not defined NAN_CHECK keep master's reduction-only path via isnan(d₁)
+    # so existing fixtures are not forced to add a new method.
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    # The fast-math norm can hide NaNs from a subsequent scalar check.
-    has_nan = DiffEqBase.NAN_CHECK(f₀) | isnan(d₁)
+    has_nan = _ode_nan_check(f₀) | isnan(d₁)
     warn_initial_dt = !ReactantCore.within_compile()
     if warn_initial_dt && has_nan
         @SciMLMessage(
@@ -395,17 +403,16 @@ end
 
     f₀ = f(u0, p, t)
 
-    # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
-    # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
-    # field types cannot sensibly overload (OrdinaryDiffEq #1404).
+    # Same NAN_CHECK-when-applicable policy as the IIP path (OrdinaryDiffEq #1404).
+    f0_nan = _ode_nan_check(f₀)
     warn_initial_dt = !ReactantCore.within_compile()
-    if warn_initial_dt && DiffEqBase.NAN_CHECK(f₀)
+    if warn_initial_dt && f0_nan
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
     end
-    ReactantCore.@trace track_numbers = false if DiffEqBase.NAN_CHECK(f₀)
+    ReactantCore.@trace track_numbers = false if f0_nan
         result_dt = tdir * dtmin
     else
         result_dt = _ode_initdt_oop_after_f0(prob, u0, t, tdir, sk, f₀, g, order, integrator, dtmin, smalldt, dtmax_tdir, d₀, internalnorm)
@@ -428,7 +435,7 @@ end
     g₀ = nothing
     if g !== nothing
         g₀ = 3g(u0, p, t)
-        if DiffEqBase.NAN_CHECK(g₀)
+        if _ode_nan_check(g₀)
             @SciMLMessage(
                 "First function call for g produced NaNs. Exiting.",
                 integrator.opts.verbose, :init_NaN
