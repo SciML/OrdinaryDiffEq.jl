@@ -110,8 +110,9 @@ end
     for alg in esdirk_algs
         @test_throws ArgumentError solve(prob, alg; dt = 0.01, adaptive = false)
     end
-    # Implicit-first-stage SDIRKs solve for z₁ and keep general mass-matrix support.
-    for alg in (Cash4(), Hairer4(), SDIRK2())
+    # Implicit-first-stage SDIRKs solve for z₁ and Trapezoid folds `M * uprev` into its
+    # stage, so both keep general mass-matrix support.
+    for alg in (Cash4(), Hairer4(), SDIRK2(), Trapezoid())
         @test !SDIRK.only_diagonal_mass_matrix(alg)
         @test observed_order(prob, alg) ≥ alg_order(alg) - 0.35
     end
@@ -132,7 +133,8 @@ end
     for alg in all_algs
         tab = SDIRK.ESDIRKIMEXTableau(alg, Float64, Float64)
         @testset "$(nameof(typeof(alg)))" begin
-            @test SDIRK.only_diagonal_mass_matrix(alg) == tab.explicit_first_stage
+            generic_step = !(tab isa SDIRK.ESDIRKIMEXTableau{<:Any, <:Any, :trap_dd3})
+            @test SDIRK.only_diagonal_mass_matrix(alg) == (tab.explicit_first_stage && generic_step)
         end
     end
 end
