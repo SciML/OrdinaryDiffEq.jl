@@ -6,6 +6,41 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 @inline _get_val(vals::RecursiveArrayTools.AbstractVectorOfArray, j) = vals.u[j]
 @inline _set_val!(vals, j, v) = (vals[j] = v; nothing)
 @inline _set_val!(vals::RecursiveArrayTools.AbstractVectorOfArray, j, v) = (vals.u[j] = v; nothing)
+@inline _vals_indices(vals) = eachindex(vals)
+@inline _vals_indices(vals::RecursiveArrayTools.AbstractVectorOfArray) = eachindex(vals.u)
+
+@noinline function _throw_interpolant_length_mismatch(len_out, len_idxs)
+    return throw(
+        DimensionMismatch(
+            "in-place interpolation `out` has length $len_out but `idxs` has length $len_idxs"
+        )
+    )
+end
+
+@inline function _check_interpolant_idxs(u, idxs)
+    if idxs isa Union{Integer, AbstractVector{<:Integer}, AbstractVector{Bool}} &&
+            u isa AbstractArray
+        checkbounds(u, idxs)
+    end
+    return nothing
+end
+
+@inline _interpolant_idxs_count(idxs::AbstractVector{<:Integer}) = length(idxs)
+@inline _interpolant_idxs_count(idxs::AbstractVector{Bool}) = count(idxs)
+
+@inline function _check_interpolant_out_length(out, idxs)
+    if idxs isa Union{AbstractVector{<:Integer}, AbstractVector{Bool}}
+        n = _interpolant_idxs_count(idxs)
+        length(out) == n || _throw_interpolant_length_mismatch(length(out), n)
+    end
+    return nothing
+end
+
+@inline function _check_interpolant_idxs_out(u, out, idxs)
+    _check_interpolant_idxs(u, idxs)
+    _check_interpolant_out_length(out, idxs)
+    return nothing
+end
 
 const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
 Derivative order too high for interpolation order. An interpolation derivative is
@@ -300,6 +335,8 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs(integrator.uprev, idxs)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         ode_interpolant!(
             val, Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -520,6 +557,8 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs(integrator.uprev, idxs)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(
             val, Θ, integrator, integrator.cache.caches,
@@ -879,6 +918,11 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    if idxs !== nothing && !isempty(vals)
+        for i in _vals_indices(vals)
+            _check_interpolant_out_length(_get_val(vals, i), idxs)
+        end
+    end
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
 
@@ -897,6 +941,7 @@ function ode_interpolation!(
     else
         cache_i₊ = cache
     end
+    last_idxs_axes = nothing
     @inbounds for j in idx
         t = tvals[j]
 
@@ -912,6 +957,16 @@ function ode_interpolation!(
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+        if idxs !== nothing
+            # `idxs` validity depends only on the states' axes; skip the rescan
+            # while consecutive intervals keep the axes already validated
+            ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
+            if ax != last_idxs_axes
+                _check_interpolant_idxs(timeseries[i₋], idxs)
+                _check_interpolant_idxs(timeseries[i₊], idxs)
+                last_idxs_axes = ax
+            end
+        end
 
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
@@ -1233,6 +1288,7 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    _check_interpolant_out_length(out, idxs)
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
@@ -1247,6 +1303,10 @@ function ode_interpolation!(
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+    if idxs !== nothing
+        _check_interpolant_idxs(timeseries[i₋], idxs)
+        _check_interpolant_idxs(timeseries[i₊], idxs)
+    end
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
