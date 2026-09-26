@@ -50,3 +50,61 @@ end
     sol(out_full, 0.5)
     @test out_full == sol(0.5)
 end
+
+@testset "in-place interpolation idxs/out validation after resize" begin
+    f2!(du, u, p, t) = (du .= u)
+
+    # state grown 2 -> 3 at t = 0.5
+    function grow_affect!(i)
+        resize!(i, 3)
+        i.u[3] = 2.0
+        return nothing
+    end
+    s_grow = solve(
+        ODEProblem(f2!, [1.0, 2.0], (0.0, 1.0)), Tsit5();
+        callback = DiscreteCallback((u, t, i) -> t == 0.5, grow_affect!),
+        tstops = [0.5]
+    )
+    @test length(s_grow(0.75)) == 3
+
+    out_g = zeros(1)
+    s_grow(out_g, 0.75; idxs = [3])
+    @test out_g[] == only(s_grow(0.75; idxs = [3]))
+    out_g2 = zeros(2)
+    s_grow(out_g2, 0.75; idxs = 2:3)
+    @test out_g2 == s_grow(0.75; idxs = 2:3)
+    @test_throws BoundsError s_grow(zeros(2), 0.75; idxs = [3, 4])
+    # before the resize the state still has length 2
+    @test_throws BoundsError s_grow(zeros(1), 0.25; idxs = [3])
+    # at the resize time, :left sees the pre-resize state, :right the post-resize one
+    @test_throws BoundsError s_grow(zeros(1), 0.5; idxs = [3], continuity = :left)
+    out_gr = zeros(1)
+    s_grow(out_gr, 0.5; idxs = [3], continuity = :right)
+    @test out_gr[] == only(s_grow(0.5; idxs = [3], continuity = :right))
+    # vector-of-times validates each time's own interval
+    @test_throws BoundsError s_grow([zeros(1), zeros(1)], [0.25, 0.75]; idxs = [3])
+    outs_g = [zeros(1), zeros(1)]
+    s_grow(outs_g, [0.6, 0.75]; idxs = [3])
+    @test outs_g[1][] == only(s_grow(0.6; idxs = [3]))
+
+    # state shrunk 3 -> 2 at t = 0.5
+    s_shrink = solve(
+        ODEProblem(f2!, [1.0, 2.0, 3.0], (0.0, 1.0)), Tsit5();
+        callback = DiscreteCallback((u, t, i) -> t == 0.5, i -> resize!(i, 2)),
+        tstops = [0.5]
+    )
+    @test length(s_shrink(0.75)) == 2
+
+    @test_throws BoundsError s_shrink(zeros(1), 0.75; idxs = [3])
+    out_s = zeros(1)
+    s_shrink(out_s, 0.25; idxs = [3])
+    @test out_s[] == only(s_shrink(0.25; idxs = [3]))
+    @test_throws BoundsError s_shrink(zeros(1), 0.5; idxs = [3], continuity = :right)
+    out_sl = zeros(1)
+    s_shrink(out_sl, 0.5; idxs = [3], continuity = :left)
+    @test out_sl[] == only(s_shrink(0.5; idxs = [3], continuity = :left))
+    @test_throws BoundsError s_shrink([zeros(1), zeros(1)], [0.25, 0.75]; idxs = [3])
+    outs_s = [zeros(1)]
+    s_shrink(outs_s, [0.25]; idxs = [3])
+    @test outs_s[1][] == only(s_shrink(0.25; idxs = [3]))
+end

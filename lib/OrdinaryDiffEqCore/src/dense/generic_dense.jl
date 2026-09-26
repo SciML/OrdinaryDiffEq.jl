@@ -331,6 +331,7 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs(integrator.uprev, idxs)
     _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         ode_interpolant!(
@@ -552,6 +553,7 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs(integrator.uprev, idxs)
     _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(
@@ -913,8 +915,6 @@ function ode_interpolation!(
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
     if idxs !== nothing && !isempty(vals)
-        u₁ = timeseries[1]
-        _check_interpolant_idxs(u₁, idxs)
         for i in _vals_indices(vals)
             _check_interpolant_out_length(_get_val(vals, i), idxs)
         end
@@ -952,6 +952,10 @@ function ode_interpolation!(
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+        if idxs !== nothing
+            _check_interpolant_idxs(timeseries[i₋], idxs)
+            _check_interpolant_idxs(timeseries[i₊], idxs)
+        end
 
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
@@ -1273,7 +1277,7 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
-    _check_interpolant_idxs_out(timeseries[1], out, idxs)
+    _check_interpolant_out_length(out, idxs)
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
@@ -1288,6 +1292,10 @@ function ode_interpolation!(
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+    if idxs !== nothing
+        _check_interpolant_idxs(timeseries[i₋], idxs)
+        _check_interpolant_idxs(timeseries[i₊], idxs)
+    end
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
