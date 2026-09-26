@@ -269,7 +269,7 @@ end
     resolve_ode_tolerances(prob, u, abstol, reltol) -> (abstol, reltol)
 
 Internal: replace `nothing` absolute/relative tolerances with the concrete
-defaults `_ode_init_impl` would compute from `u` (`1 // 10^6` / `1 // 10^3` in
+defaults used by OrdinaryDiffEq (`1 // 10^6` / `1 // 10^3` in
 the state eltype, or `false` for discrete problems). User-supplied values are
 passed through `real.(...)`. SDE/RODE callers resolve their own defaults
 (typically `1 // 10^2`) before calling `_ode_init`, so those concrete values
@@ -388,8 +388,8 @@ Base.@constprop :aggressive function _ode_init_impl(
         dtmax = (prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = anyadaptive(alg),
-        abstol = nothing,
-        reltol = nothing,
+        abstol,
+        reltol,
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
@@ -605,7 +605,7 @@ Base.@constprop :aggressive function _ode_init_impl(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
 
-    # Already resolved by `_ode_init` / StochasticDiffEqCore (concrete, already `real`).
+    # Resolved by `_ode_init` (concrete, already `real`).
     abstol_internal, reltol_internal = abstol, reltol
 
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert

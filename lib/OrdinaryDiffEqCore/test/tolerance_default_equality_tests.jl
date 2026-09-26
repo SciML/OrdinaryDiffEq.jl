@@ -108,10 +108,14 @@ end
         return du[2] = -2u[2] / 1u"s"
     end
     prob = ODEProblem(decay_unitful!, u0, tspan)
-    exp_a, exp_r = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, nothing, nothing)
+    # Master defaults for this problem (vector Quantity{Float64} in meters).
+    exp_a = [1.0e-6u"m", 1.0e-6u"m"]
+    exp_r = [1.0e-3u"m", 1.0e-3u"m"]
     integ = init(prob, Tsit5())
     @test integ.opts.abstol == exp_a
     @test integ.opts.reltol == exp_r
+    @test typeof(integ.opts.abstol) == typeof(exp_a)
+    @test typeof(integ.opts.reltol) == typeof(exp_r)
     sol_a = solve(prob, Tsit5())
     sol_b = solve(prob, Tsit5(); abstol = exp_a, reltol = exp_r)
     @test sol_a.stats.naccept == sol_b.stats.naccept
@@ -150,4 +154,35 @@ end
     a, r = OrdinaryDiffEqCore.resolve_ode_tolerances(prob, u0, sde_abstol, sde_reltol)
     @test a === sde_abstol
     @test r === sde_reltol
+end
+
+function count_kwbody_specializations(mod, name::Symbol)
+    n = 0
+    prefix = "#" * string(name) * "#"
+    for s in names(mod; all = true)
+        startswith(string(s), prefix) || continue
+        fn = getfield(mod, s)
+        fn isa Function || continue
+        for m in methods(fn).ms
+            n += count(!isnothing, Base.specializations(m))
+        end
+    end
+    return n
+end
+
+@testset "tol solve does not add _ode_init_impl kwbody specialization" begin
+    # Property this PR exists for: after a default solve warms the Float64 path,
+    # an explicit abstol/reltol solve must not compile a new heavy `_ode_init_impl`
+    # keyword body (only the thin `_ode_init` wrapper may grow).
+    function f!(du, u, p, t)
+        du .= -u
+        return nothing
+    end
+    prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
+    solve(prob, Tsit5())
+    n0 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init_impl)
+    solve(prob, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6)
+    n1 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init_impl)
+    @test n1 == n0
+    @test n0 > 0
 end
