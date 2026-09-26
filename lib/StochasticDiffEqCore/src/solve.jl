@@ -569,14 +569,15 @@ function _sde_init(
         tTypeNoUnits, uprev, f, t, dt, Val{isinplace(_prob)}, verbose_internal
     )
 
-    # ── Delegate to ODE's heavy init (concrete abstol/reltol already set) ─
-    # Call `_ode_init_impl` (not public `_ode_init`) so SDE `solve` inference is
-    # not broken by an extra kwargs-resolving wrapper layer.
+    # ── Delegate to public ODE `_ode_init` (concrete abstol/reltol already set) ─
+    # Call public `_ode_init` (not a non-public impl) after SDE defaults + `real.(...)`.
+    # Pre-resolved Float64 kwargs keep a single kwcall layer so `@inferred solve`
+    # stays concrete (OrdinaryDiffEq Core `__init` pre-resolves the same way).
     ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)
 
     tType = eltype(prob.tspan)
 
-    integrator = OrdinaryDiffEqCore._ode_init_impl(
+    integrator = OrdinaryDiffEqCore._ode_init(
         prob, alg;
         # Pre-built objects
         _cache = cache,

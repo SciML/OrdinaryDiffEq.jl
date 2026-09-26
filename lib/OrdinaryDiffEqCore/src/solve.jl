@@ -217,16 +217,15 @@ Base.@constprop :aggressive function SciMLBase.__init(
         reltol = nothing,
         kwargs...
     )
-    # Resolve here (not via a kwargs-forwarding `_ode_init` wrapper) so the heavy
-    # `_ode_init_impl` body sees concrete types for TTFX, and so `solve` inference
-    # is not broken by an extra kwcall layer. Public `_ode_init` still resolves for
-    # direct callers; StochasticDiffEqCore calls `_ode_init_impl` after `real.(...)`.
+    # Resolve before the heavy `_ode_init` keyword body so `solve`/`init` always
+    # specialize that body on concrete types (TTFX). StochasticDiffEqCore applies
+    # SDE defaults + `real.(...)` then calls public `_ode_init` the same way.
     u = prob.u0
     if u === nothing
         u = Float64[]
     end
     abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
-    return _ode_init_impl(
+    return _ode_init(
         prob, alg, timeseries_init, ts_init, ks_init; abstol, reltol, kwargs...
     )
 end
@@ -339,41 +338,13 @@ end
 Public entry for ODE/DAE/SDE/RODE integrator construction. Accepts optional
 `abstol`/`reltol` (default `nothing`): missing/`nothing` become the problem's
 concrete defaults, and supplied values are normalized with `real.(...)`, matching
-master. Prefer `init`/`solve` for normal use; StochasticDiffEqCore calls
-`_ode_init_impl` directly after applying SDE defaults and `real.(...)`.
+master. Prefer `init`/`solve` for normal use. `SciMLBase.__init` and
+StochasticDiffEqCore pre-resolve tolerances to concrete types before calling so
+the heavy keyword body does not specialize on `Nothing` (TTFX); direct callers
+that omit tolerances still get master's defaults via the resolve near the top of
+this function.
 """
 Base.@constprop :aggressive function _ode_init(
-        prob,
-        alg,
-        timeseries_init = (),
-        ts_init = (),
-        ks_init = ();
-        abstol = nothing,
-        reltol = nothing,
-        alias = ODEAliasSpecifier(),
-        _u = nothing,
-        kwargs...
-    )
-    u = _u !== nothing ? _u : prob.u0
-    if u === nothing
-        u = Float64[]
-    end
-    abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
-    return _ode_init_impl(
-        prob, alg, timeseries_init, ts_init, ks_init;
-        abstol, reltol, alias, _u, kwargs...
-    )
-end
-
-"""
-    _ode_init_impl(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
-
-Heavy `__init` body for ODE/DAE/SDE/RODE problems. Expects `abstol`/`reltol` to
-already be resolved (concrete defaults or `real.`-normalized user values). Called
-from `__init` / public `_ode_init` after `resolve_ode_tolerances`, and from
-StochasticDiffEqCore after SDE defaults + `real.(...)`.
-"""
-Base.@constprop :aggressive function _ode_init_impl(
         prob,
         alg,
         timeseries_init = (),
@@ -401,8 +372,8 @@ Base.@constprop :aggressive function _ode_init_impl(
         dtmax = (prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = anyadaptive(alg),
-        abstol,
-        reltol,
+        abstol = nothing,
+        reltol = nothing,
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
@@ -618,7 +589,12 @@ Base.@constprop :aggressive function _ode_init_impl(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
 
-    # Already resolved by `_ode_init` (concrete, already `real`).
+    # Resolve missing/`nothing` tolerances and normalize supplied values with
+    # `real.(...)`. Callers that already passed concrete tolerances
+    # (`SciMLBase.__init`, StochasticDiffEqCore) are unchanged; public direct
+    # callers that omit tolerances get master's defaults here.
+    u_for_tol = _u !== nothing ? _u : (prob.u0 === nothing ? Float64[] : prob.u0)
+    abstol, reltol = resolve_ode_tolerances(prob, u_for_tol, abstol, reltol)
     abstol_internal, reltol_internal = abstol, reltol
 
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
