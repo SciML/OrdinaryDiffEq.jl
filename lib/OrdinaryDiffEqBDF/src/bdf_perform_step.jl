@@ -833,9 +833,6 @@ function perform_step!(
         end
     end
     cold_start = _qndf_cold_start(f, D, k)
-    if cold_start
-        D[1] = dt * integrator.fsalfirst
-    end
     κ = cold_start ? zero(κlist[k]) : κlist[k]
 
     α₀ = 1
@@ -862,6 +859,10 @@ function perform_step!(
     else
         nlsolver.tmp = mass_matrix * @.. (u₀ / β₀ - ϕ) / dt
     end
+    if cold_start
+        u₀ = uprev + dt * integrator.fsalfirst
+        nlsolver.z = u₀
+    end
 
     nlsolver.γ = β₀
     nlsolver.α = α₀
@@ -871,6 +872,10 @@ function perform_step!(
     nlsolvefail(nlsolver) && return
     u = z
     dd = u - u₀
+    if cold_start
+        # Seeded only after Newton succeeds, so a failed attempt leaves no history.
+        D[1] = dt * integrator.fsalfirst
+    end
     update_D!(D, dd, k)
 
     if integrator.opts.adaptive
@@ -983,9 +988,6 @@ function perform_step!(
         cache.Dtmp = Dtmp
     end
     cold_start = _qndf_cold_start(f, D, k)
-    if cold_start
-        @.. broadcast = false D[1] = dt * integrator.fsalfirst
-    end
     κ = cold_start ? zero(κlist[k]) : κlist[k]
 
     α₀ = 1
@@ -1014,6 +1016,10 @@ function perform_step!(
         @.. broadcast = false tmp2 = (u₀ / β₀ - ϕ) / dt
         mul!(nlsolver.tmp, mass_matrix, tmp2)
     end
+    if cold_start
+        @.. broadcast = false u₀ = uprev + dt * integrator.fsalfirst
+        @.. broadcast = false nlsolver.z = u₀
+    end
 
     nlsolver.γ = β₀
     nlsolver.α = α₀
@@ -1023,6 +1029,10 @@ function perform_step!(
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = z
     @.. broadcast = false dd = u - u₀
+    if cold_start
+        # Seeded only after Newton succeeds, so a failed attempt leaves no history.
+        @.. broadcast = false D[1] = dt * integrator.fsalfirst
+    end
     update_D!(D, dd, k)
 
 
@@ -1255,8 +1265,7 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
-    # History nodes are the rounded t + dt, which differs from dt when dt is a few eps(t).
-    integrator.dt = (integrator.t + integrator.dt) - integrator.t
+    integrator.dt = _fbdf_representable_dt(integrator.t, integrator.dt)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -1521,8 +1530,7 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
-    # History nodes are the rounded t + dt, which differs from dt when dt is a few eps(t).
-    integrator.dt = (integrator.t + integrator.dt) - integrator.t
+    integrator.dt = _fbdf_representable_dt(integrator.t, integrator.dt)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
