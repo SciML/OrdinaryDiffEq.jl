@@ -16,6 +16,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "SDC Stiff Tests" include("sdc_stiff_tests.jl")
     @time @safetestset "SDC Diagonal Sweeper Tests" include("sdc_diagonal_sweeper_tests.jl")
     @time @safetestset "SDC Adaptive Tests" include("sdc_adaptive_tests.jl")
+    @time @safetestset "SDC IMEX Tests" include("sdc_imex_tests.jl")
 end
 
 # The threaded sweep is only exercised when the job actually has more than one

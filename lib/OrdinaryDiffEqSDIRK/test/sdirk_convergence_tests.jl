@@ -198,6 +198,11 @@ end
     f2_iip! = (du, u, p, t) -> (du .= 2u)
     ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
     prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    forced = (u0, p, t) -> (cos(t) + sin(t)) / 2 .+ (u0 .- 1 / 2) .* exp(-t)
+    ff_forced_oop = SplitFunction(f1_oop, (u, p, t) -> cos(t); analytic = forced)
+    prob_forced_oop = SplitODEProblem(ff_forced_oop, 1.0, (0.0, 1.0))
+    ff_forced_iip = SplitFunction(f1_iip!, (du, u, p, t) -> (du .= cos(t)); analytic = forced)
+    prob_forced_iip = SplitODEProblem(ff_forced_iip, [1.0, 0.5], (0.0, 1.0))
     for (alg, expected) in (
             (IMEXSSP222(), 2), (IMEXSSP2322(), 2),
             (IMEXSSP3332(), 2), (IMEXSSP3433(), 3),
@@ -206,6 +211,10 @@ end
         @test sim_oop.𝒪est[:l∞] ≈ expected atol = testTol
         sim_iip = test_convergence(dts, prob_iip, alg)
         @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_forced_oop = test_convergence(dts, prob_forced_oop, alg)
+        @test sim_forced_oop.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_forced_iip = test_convergence(dts, prob_forced_iip, alg)
+        @test sim_forced_iip.𝒪est[:l∞] ≈ expected atol = testTol
     end
 end
 
