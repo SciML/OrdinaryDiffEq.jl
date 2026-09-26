@@ -7,6 +7,16 @@
 
 _positive_finite_real(value) = value isa Real && isfinite(value) && value > 0
 
+# DiffEqBase.has_callbacks is not public (ExplicitImports QA). Mirror its
+# semantics with the public `isempty(::CallbackSet)` API so empty erasure
+# CallbackSets injected on Julia ≥1.12 are not treated as real callbacks.
+function _has_nonzero_callbacks(kwargs)
+    cb = get(kwargs, :callback, nothing)
+    cb === nothing && return false
+    cb isa DiffEqBase.CallbackSet && return !isempty(cb)
+    return true
+end
+
 function _validate_tolerances(abstol, reltol, name)
     abstol isa Real && isfinite(abstol) && abstol >= 0 ||
         throw(ArgumentError("$(name)_abstol must be a nonnegative finite real number"))
@@ -26,7 +36,8 @@ function _validate_estimation_problem(prob, name)
     prob.f.mass_matrix == LinearAlgebra.I ||
         throw(ArgumentError("$name currently requires the standard mass matrix"))
     problem_kwargs = values(prob.kwargs)
-    if haskey(problem_kwargs, :callback) && DiffEqBase.has_callbacks((; callback = problem_kwargs.callback))
+    if haskey(problem_kwargs, :callback) &&
+            _has_nonzero_callbacks((; callback = problem_kwargs.callback))
         throw(ArgumentError("$name does not currently support callbacks"))
     end
     return nothing
@@ -264,7 +275,7 @@ function _companion_error_estimate(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    DiffEqBase.has_callbacks(kwargs) &&
+    _has_nonzero_callbacks(kwargs) &&
         throw(ArgumentError("$name does not currently support callbacks"))
     _validate_estimation_problem(prob, name)
     solve_kwargs = merge((; kwargs...), _DENSE_SOLVE_KWARGS)
@@ -285,7 +296,7 @@ function _companion_error_estimate_streaming(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    DiffEqBase.has_callbacks(kwargs) &&
+    _has_nonzero_callbacks(kwargs) &&
         throw(ArgumentError("$name does not currently support callbacks"))
     _validate_estimation_problem(prob, name)
     integrator = SciMLBase.init(

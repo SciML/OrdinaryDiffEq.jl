@@ -220,7 +220,26 @@ end
     return nothing
 end
 
-_fsal_buffers(integrator, cache) = (integrator.fsalfirst, integrator.fsallast)
+_fsal_buffers(integrator, cache) = get_fsalfirstlast(cache, integrator.u)
+_fsal_buffers(integrator, ::Union{CompositeCache, DefaultCache, OrdinaryDiffEqConstantCache}) =
+    (integrator.fsalfirst, integrator.fsallast)
+
+# Prefer stable cache-owned FSAL buffers (what `perform_step!` mutates). After
+# Reactant `_dealias_traced!`, `integrator.fsalfirst`/`fsallast` may no longer
+# alias those cache fields. Throwaway `get_fsalfirstlast` results (fresh
+# `zero(...)` each call, e.g. ExpRK) fall back to the integrator fields.
+function _fsal_copy_buffers(integrator)
+    cache = integrator.cache
+    c_first, c_last = _fsal_buffers(integrator, cache)
+    if c_first === integrator.fsalfirst || c_last === integrator.fsallast
+        return integrator.fsalfirst, integrator.fsallast
+    end
+    c_first2, c_last2 = _fsal_buffers(integrator, cache)
+    if c_first === c_first2 && c_last === c_last2
+        return c_first, c_last
+    end
+    return integrator.fsalfirst, integrator.fsallast
+end
 
 function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
@@ -239,11 +258,7 @@ function update_fsal!(integrator)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
             if isinplace(integrator.sol.prob)
-                # Always copy via integrator.fsalfirst/fsallast. Many caches'
-                # `get_fsalfirstlast` return throwaway `zero(...)` placeholders
-                # (RKM, ExpRK, …); copying those would zero the real FSAL and
-                # destroy convergence on inplace array states.
-                fsalfirst, fsallast = _fsal_buffers(integrator, integrator.cache)
+                fsalfirst, fsallast = _fsal_copy_buffers(integrator)
                 recursivecopy!(fsalfirst, fsallast)
             else
                 integrator.fsalfirst = integrator.fsallast
