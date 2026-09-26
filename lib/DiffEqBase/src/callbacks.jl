@@ -94,6 +94,15 @@ _erase_callback_types(cb::CallbackSet{Vector{Any}, Vector{Any}}) = cb
 function _erase_callback_types(callback)
     Base.@nospecialize callback
     callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
+    # Normalize the container on all Julia versions, but preserve callback element
+    # types on older Julia for Enzyme forward mode (see test/AD). In particular,
+    # collecting heterogeneous tuples with their common supertype would erase them.
+    if VERSION < v"1.12" && !isempty(callbacks)
+        return CallbackSet(
+            collect(Union{map(typeof, callbacks.continuous_callbacks)...}, callbacks.continuous_callbacks),
+            collect(Union{map(typeof, callbacks.discrete_callbacks)...}, callbacks.discrete_callbacks)
+        )
+    end
     return CallbackSet(
         collect(Any, callbacks.continuous_callbacks),
         collect(Any, callbacks.discrete_callbacks)
@@ -281,11 +290,25 @@ function _find_callback_time_erased(integrator, callback, callback_idx)
     )
 end
 
+# Typed vectors must keep normal dispatch for AD; `invokelatest` is only needed
+# when callback element types have been erased.
+@inline function _find_callback_time(
+        integrator, callbacks::AbstractVector{<:AbstractContinuousCallback}, callback_idx
+    )
+    return _find_callback_time_erased(integrator, callbacks[callback_idx], callback_idx)
+end
+
+function _find_callback_time(integrator, callbacks::AbstractVector, callback_idx)
+    tType = typeof(integrator.t)
+    errType = typeof(integrator.last_event_error)
+    return Base.invokelatest(
+        _find_callback_time_erased, integrator, callbacks[callback_idx], callback_idx
+    )::Tuple{tType, Any, Bool, Any, errType}
+end
+
 function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     callback_count = length(callbacks)
     callback_count > 0 || throw(ArgumentError("at least one continuous callback is required"))
-    tType = typeof(integrator.t)
-    errType = typeof(integrator.last_event_error)
 
     has_vector_callback = any(callback -> callback isa VectorContinuousCallback, callbacks)
     if has_vector_callback
@@ -295,7 +318,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     end
 
     tmin, upcrossing, event_occurred, event_idx, residual =
-        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
+        _find_callback_time(integrator, callbacks, 1)
     identified_idx = 1
     if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
         copyto!(
@@ -307,7 +330,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     for callback_idx in 2:callback_count
         callback = callbacks[callback_idx]
         tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
-            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
+            _find_callback_time(integrator, callbacks, callback_idx)
         if event_occurred2 &&
                 (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
             tmin = tmin2
@@ -833,8 +856,11 @@ function apply_discrete_callback!(integrator, callbacks::AbstractVector)
     discrete_modified = false
     saved_in_cb = false
     for callback in callbacks
-        modified, saved =
+        modified, saved = if eltype(callbacks) === Any
             Base.invokelatest(apply_discrete_callback!, integrator, callback)::Tuple{Bool, Bool}
+        else
+            apply_discrete_callback!(integrator, callback)
+        end
         discrete_modified |= modified
         saved_in_cb |= saved
     end

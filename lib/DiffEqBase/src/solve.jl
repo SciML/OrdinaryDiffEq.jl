@@ -93,12 +93,7 @@ const _ERASABLE_CALLBACK_PROBLEMS = Union{
     SciMLBase.AbstractSDDEProblem,
 }
 
-# Restricted to Julia >= 1.12. On older versions Enzyme's forward mode is exercised
-# through continuous callbacks (see test/AD), and it aborts LLVM verification on the
-# erased vector's dynamic dispatch instead of throwing a catchable error; 1.11+ gates
-# Enzyme off, so erasure is enabled only where it has been validated.
 function _erases_callback_types(prob)
-    VERSION >= v"1.12" || return false
     prob isa _ERASABLE_CALLBACK_PROBLEMS || return false
     prob isa SciMLBase.AbstractBVProblem && return false
     hasfield(typeof(prob), :f) || return false

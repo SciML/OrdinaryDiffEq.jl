@@ -1089,9 +1089,13 @@ function apply_ith_callback!(
         integrator, time, upcrossing, event_idx, cb_idx,
         callbacks::AbstractVector
     )
-    return Base.invokelatest(
-        DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
-    )::Tuple{Bool, Bool}
+    return if eltype(callbacks) === Any
+        Base.invokelatest(
+            DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
+        )::Tuple{Bool, Bool}
+    else
+        DiffEqBase.apply_callback!(integrator, callbacks[cb_idx], time, upcrossing, event_idx)
+    end
 end
 
 function handle_callbacks!(integrator)

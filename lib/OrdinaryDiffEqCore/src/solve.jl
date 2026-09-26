@@ -82,6 +82,8 @@ hooks treat `affect!` as an object, reading its fields or dispatching on its typ
 which no wrapper can preserve.
 """
 function _despecialize_callbacks!(integrator)
+    # DiffEqBase preserves callback element types on older Julia for Enzyme.
+    VERSION >= v"1.12" || return nothing
     specialize = SciMLBase.specialization(integrator.f)
     specialize === SciMLBase.AutoSpecialize || specialize === SciMLBase.AutoDespecialize ||
         return nothing
