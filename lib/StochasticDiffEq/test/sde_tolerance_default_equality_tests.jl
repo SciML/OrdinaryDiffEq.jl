@@ -46,3 +46,28 @@ end
         @test integ.opts.reltol == exp_r
     end
 end
+
+@testset "complex user SDE tolerances are stored as real" begin
+    # SDE entry applies real.(...) on user tolerances (master `_ode_init` did the
+    # same) so adaptive residual calculations stay real.
+    drift(u, p, t) = -u
+    diffusion(u, p, t) = 0.1u
+    for (u0, abstol, reltol) in (
+            (1.0 + 0.5im, 1.0e-3 + 0im, 1.0e-3 + 0im),
+            (1.0 + 0.5im, 1.0e-3 + 0.1im, 1.0e-3 + 0.2im),
+            (1.0, 1.0e-3 + 0im, 1.0e-3 + 0im),
+        )
+        prob = SDEProblem(drift, diffusion, u0, (0.0, 0.1))
+        for (alg, base_kw) in ((SOSRI(), (; dt = 0.01, seed = 1234)), (EM(), (; dt = 0.01, seed = 1234)))
+            integ = init(prob, alg; abstol, reltol, base_kw...)
+            @test integ.opts.abstol isa Real
+            @test integ.opts.reltol isa Real
+            @test integ.opts.abstol == real(abstol)
+            @test integ.opts.reltol == real(reltol)
+            if alg isa typeof(SOSRI())
+                sol = solve!(integ)
+                @test SciMLBase.successful_retcode(sol)
+            end
+        end
+    end
+end

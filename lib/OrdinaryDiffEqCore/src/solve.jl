@@ -217,15 +217,16 @@ Base.@constprop :aggressive function SciMLBase.__init(
         reltol = nothing,
         kwargs...
     )
-    # Resolve nothing tolerances here so `_ode_init`'s heavy keyword body always
-    # sees concrete types (TTFX). SDE/RODE use StochasticDiffEqCore.__init, which
-    # resolves its own 1e-2 defaults and calls `_ode_init` directly.
+    # Resolve here (not via a kwargs-forwarding `_ode_init` wrapper) so the heavy
+    # `_ode_init_impl` body sees concrete types for TTFX, and so `solve` inference
+    # is not broken by an extra kwcall layer. Public `_ode_init` still resolves for
+    # direct callers; StochasticDiffEqCore calls `_ode_init_impl` after `real.(...)`.
     u = prob.u0
     if u === nothing
         u = Float64[]
     end
     abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
-    return _ode_init(
+    return _ode_init_impl(
         prob, alg, timeseries_init, ts_init, ks_init; abstol, reltol, kwargs...
     )
 end
@@ -283,9 +284,8 @@ end
 Internal: replace `nothing` absolute/relative tolerances with the concrete
 defaults used by OrdinaryDiffEq (`1 // 10^6` / `1 // 10^3` in
 the state eltype, or `false` for discrete problems). User-supplied values are
-passed through `real.(...)`. SDE/RODE callers resolve their own defaults
-(typically `1 // 10^2`) before calling `_ode_init`, so those concrete values
-are preserved here.
+passed through `real.(...)` (matches master `_ode_init` normalization, including
+complex tolerances from SDE callers).
 """
 function resolve_ode_tolerances(prob, u, abstol, reltol)
     uBottomEltype = recursive_bottom_eltype(u)
@@ -336,12 +336,44 @@ end
 """
     _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
-Internal `__init` body for ODE/DAE/SDE/RODE problems. Expects `abstol`/`reltol`
-to already be resolved (concrete defaults or user values). OrdinaryDiffEq
-`SciMLBase.__init` resolves ODE/DAE defaults first; StochasticDiffEqCore
-resolves SDE/RODE defaults (`1 // 10^2`) and calls this directly.
+Public entry for ODE/DAE/SDE/RODE integrator construction. Accepts optional
+`abstol`/`reltol` (default `nothing`): missing/`nothing` become the problem's
+concrete defaults, and supplied values are normalized with `real.(...)`, matching
+master. Prefer `init`/`solve` for normal use; StochasticDiffEqCore calls
+`_ode_init_impl` directly after applying SDE defaults and `real.(...)`.
 """
 Base.@constprop :aggressive function _ode_init(
+        prob,
+        alg,
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = ();
+        abstol = nothing,
+        reltol = nothing,
+        alias = ODEAliasSpecifier(),
+        _u = nothing,
+        kwargs...
+    )
+    u = _u !== nothing ? _u : prob.u0
+    if u === nothing
+        u = Float64[]
+    end
+    abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
+    return _ode_init_impl(
+        prob, alg, timeseries_init, ts_init, ks_init;
+        abstol, reltol, alias, _u, kwargs...
+    )
+end
+
+"""
+    _ode_init_impl(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
+
+Heavy `__init` body for ODE/DAE/SDE/RODE problems. Expects `abstol`/`reltol` to
+already be resolved (concrete defaults or `real.`-normalized user values). Called
+from `__init` / public `_ode_init` after `resolve_ode_tolerances`, and from
+StochasticDiffEqCore after SDE defaults + `real.(...)`.
+"""
+Base.@constprop :aggressive function _ode_init_impl(
         prob,
         alg,
         timeseries_init = (),
@@ -586,7 +618,7 @@ Base.@constprop :aggressive function _ode_init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
 
-    # Already resolved by SciMLBase.__init / StochasticDiffEqCore (concrete, already `real`).
+    # Already resolved by `_ode_init` (concrete, already `real`).
     abstol_internal, reltol_internal = abstol, reltol
 
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert

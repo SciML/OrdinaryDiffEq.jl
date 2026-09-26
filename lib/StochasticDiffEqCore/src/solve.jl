@@ -356,6 +356,12 @@ function _sde_init(
         end
     end
 
+    # Normalize user-supplied tolerances the same way master `_ode_init` did
+    # (`real.(...)`). Defaults above already use `real(...)`; this covers complex
+    # abstol/reltol kwargs so DiffEqBase.calculate_residuals does not StackOverflow.
+    abstol = real.(abstol)
+    reltol = real.(reltol)
+
     # ── rate_prototype / noise_rate_prototype (needed for cache) ─────────
     if isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
             uBottomEltypeNoUnits == uBottomEltype
@@ -563,12 +569,14 @@ function _sde_init(
         tTypeNoUnits, uprev, f, t, dt, Val{isinplace(_prob)}, verbose_internal
     )
 
-    # ── Delegate to ODE's _ode_init directly ─────────────────────────────
+    # ── Delegate to ODE's heavy init (concrete abstol/reltol already set) ─
+    # Call `_ode_init_impl` (not public `_ode_init`) so SDE `solve` inference is
+    # not broken by an extra kwargs-resolving wrapper layer.
     ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)
 
     tType = eltype(prob.tspan)
 
-    integrator = OrdinaryDiffEqCore._ode_init(
+    integrator = OrdinaryDiffEqCore._ode_init_impl(
         prob, alg;
         # Pre-built objects
         _cache = cache,

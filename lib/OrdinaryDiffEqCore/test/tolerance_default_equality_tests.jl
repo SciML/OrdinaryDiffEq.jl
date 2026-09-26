@@ -146,7 +146,8 @@ end
 end
 
 @testset "SDE-resolved concrete tolerances pass through unchanged" begin
-    # StochasticDiffEq resolves to 1//10^2 before _ode_init; Core must not rewrite them.
+    # StochasticDiffEq resolves missing defaults to 1//10^2; Core must not rewrite
+    # already-real Float64 values (only apply real.(...) which is a no-op).
     u0 = [1.0, 2.0]
     prob = ODEProblem(decay!, u0, (0.0, 1.0)) # type only matters for Discrete check
     sde_abstol = 1.0e-2
@@ -170,19 +171,19 @@ function count_kwbody_specializations(mod, name::Symbol)
     return n
 end
 
-@testset "tol solve does not add _ode_init kwbody specialization" begin
+@testset "tol solve does not add _ode_init_impl kwbody specialization" begin
     # Property this PR exists for: after a default solve warms the Float64 path,
-    # an explicit abstol/reltol solve must not compile a new heavy `_ode_init`
-    # keyword body (SciMLBase.__init may grow; the heavy body must not).
+    # an explicit abstol/reltol solve must not compile a new heavy `_ode_init_impl`
+    # keyword body (thin `_ode_init` may grow).
     function f!(du, u, p, t)
         du .= -u
         return nothing
     end
     prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
     solve(prob, Tsit5())
-    n0 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init)
+    n0 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init_impl)
     solve(prob, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6)
-    n1 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init)
+    n1 = count_kwbody_specializations(OrdinaryDiffEqCore, :_ode_init_impl)
     @test n1 == n0
     @test n0 > 0
 end
@@ -191,4 +192,23 @@ end
     prob = ODEProblem(decay, [1.0, 2.0], (0.0, 1.0))
     @inferred solve(prob, Tsit5())
     @inferred solve(prob, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6)
+end
+
+@testset "public _ode_init accepts missing / nothing / one tolerance" begin
+    # Master's calling convention: abstol/reltol optional; nothing -> defaults.
+    f_scalar(u, p, t) = -u
+    prob = ODEProblem(f_scalar, 1.0, (0.0, 1.0))
+    alg = Tsit5()
+    integ = OrdinaryDiffEqCore._ode_init(prob, alg)
+    @test integ.opts.abstol == 1.0e-6
+    @test integ.opts.reltol == 1.0e-3
+    integ = OrdinaryDiffEqCore._ode_init(prob, alg; abstol = nothing, reltol = nothing)
+    @test integ.opts.abstol == 1.0e-6
+    @test integ.opts.reltol == 1.0e-3
+    integ = OrdinaryDiffEqCore._ode_init(prob, alg; abstol = 1.0e-8)
+    @test integ.opts.abstol == 1.0e-8
+    @test integ.opts.reltol == 1.0e-3
+    integ = OrdinaryDiffEqCore._ode_init(prob, alg; reltol = 1.0e-4)
+    @test integ.opts.abstol == 1.0e-6
+    @test integ.opts.reltol == 1.0e-4
 end
