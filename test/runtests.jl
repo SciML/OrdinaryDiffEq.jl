@@ -1,4 +1,26 @@
 using Pkg
+
+# Traced enums landed on Reactant main (EnzymeAD/Reactant.jl#3232) but are not
+# in a release yet (latest v0.2.288). Pin the Reactant group to main until then.
+# SciMLBase >= 3.56.0 already provides the parametric retcode / FullSpecialize
+# Reactant extension (SciMLBase#1564).
+if get(ENV, "GROUP", "All") == "Reactant"
+    withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
+        Pkg.add(
+            [
+                PackageSpec(
+                    name = "Reactant", url = "https://github.com/EnzymeAD/Reactant.jl",
+                    rev = "main"
+                ),
+                PackageSpec(
+                    name = "ReactantCore", url = "https://github.com/EnzymeAD/Reactant.jl",
+                    rev = "main", subdir = "lib/ReactantCore"
+                ),
+            ]
+        )
+    end
+end
+
 using SafeTestsets, Test
 using SciMLTesting
 
@@ -203,6 +225,11 @@ function qa_group()
     return @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
 end
 
+function reactant_group()
+    is_APPVEYOR && return
+    return @time @safetestset "Reactant Tests" include("Reactant/reactant_tests.jl")
+end
+
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -314,6 +341,7 @@ end
                 "AD" => ad_group,
                 "ODEInterfaceRegression" => odeinterface_group,
                 "GPU" => gpu_group,
+                "Reactant" => reactant_group,
             ),
             # QA runs in the root test environment (no per-group Project.toml);
             # its body is the ExplicitImports testset, not the standard

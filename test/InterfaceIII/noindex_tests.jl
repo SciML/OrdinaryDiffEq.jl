@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, LinearAlgebra
+using OrdinaryDiffEq, RecursiveArrayTools, LinearAlgebra, DiffEqBase
 using OrdinaryDiffEqLowOrderRK
 
 struct NoIndexArray{T, N} <: AbstractArray{T, N}
@@ -140,6 +140,8 @@ RecursiveArrayTools.recursive_unitless_bottom_eltype(x::CustomArray) = eltype(x)
 RecursiveArrayTools.recursivecopy!(dest::CustomArray, src::CustomArray) = copyto!(dest, src)
 RecursiveArrayTools.recursivecopy(x::CustomArray) = copy(x)
 RecursiveArrayTools.recursivefill!(x::CustomArray, a) = fill!(x, a)
+# CustomArray is not an AbstractArray; initdt uses DiffEqBase.NAN_CHECK.
+DiffEqBase.NAN_CHECK(x::CustomArray) = DiffEqBase.NAN_CHECK(x.x)
 
 Base.show_vector(io::IO, x::CustomArray) = Base.show_vector(io, x.x)
 

@@ -7,8 +7,7 @@ Base.@constprop :aggressive function SciMLBase.__solve(
         kwargs...
     )
     integrator = SciMLBase.__init(prob, alg, args...; kwargs...)
-    solve!(integrator)
-    return integrator.sol
+    return ReactantCore.within_compile() ? solve!(integrator) : (solve!(integrator); integrator.sol)
 end
 
 determine_controller_datatype(u::AbstractVector{<:Number}, internalnorm, ts::Tuple{<:Number, <:Number}) = promote_type(typeof(SciMLBase.value(internalnorm(u, ts[1]))), typeof(SciMLBase.value(internalnorm(u, ts[2]))), eltype(SciMLBase.value.(ts)))
@@ -347,6 +346,31 @@ Base.@constprop :aggressive function _ode_init(
         seed = UInt64(0),
         kwargs...
     )
+    if ReactantCore.within_compile()
+        prob isa SciMLBase.AbstractODEProblem ||
+            throw(ArgumentError("only ODEProblem is supported inside Reactant compilation"))
+        isimplicit(alg) &&
+            throw(ArgumentError("implicit algorithms are not supported inside Reactant compilation"))
+        !adaptive && isnothing(dt) &&
+            throw(ArgumentError("dt is required for fixed-step solves inside Reactant compilation"))
+        isempty(saveat) || throw(ArgumentError("saveat is not supported inside Reactant compilation"))
+        isempty(tstops) || throw(ArgumentError("tstops are not supported inside Reactant compilation"))
+        isempty(d_discontinuities) || throw(ArgumentError("d_discontinuities are not supported inside Reactant compilation"))
+        isnothing(callback) || throw(ArgumentError("callbacks are not supported inside Reactant compilation"))
+        isnothing(save_idxs) || throw(ArgumentError("save_idxs is not supported inside Reactant compilation"))
+        isoutofdomain === ODE_DEFAULT_ISOUTOFDOMAIN ||
+            throw(ArgumentError("isoutofdomain is not supported inside Reactant compilation"))
+        unstable_check === ODE_DEFAULT_UNSTABLE_CHECK ||
+            throw(ArgumentError("unstable_check is not supported inside Reactant compilation"))
+        force_dtmin && throw(ArgumentError("force_dtmin is not supported inside Reactant compilation"))
+        progress && throw(ArgumentError("progress is not supported inside Reactant compilation"))
+        save_on = false
+        save_everystep = false
+        save_start = false
+        save_end = true
+        dense = false
+        calck = false
+    end
     # ODE/DAE-specific validation (skip for RODE/SDE problems)
     if !(prob isa SciMLBase.AbstractRODEProblem)
         if prob isa SciMLBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -385,6 +409,9 @@ Base.@constprop :aggressive function _ode_init(
     stage_limiter!, step_limiter! = resolve_stage_step_limiters(
         alg, stage_limiter, step_limiter, verbose_spec
     )
+    if ReactantCore.within_compile() && step_limiter! !== trivial_limiter!
+        throw(ArgumentError("step_limiter is not supported inside Reactant compilation"))
+    end
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
             # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
@@ -841,21 +868,22 @@ Base.@constprop :aggressive function _ode_init(
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
     eigen_est = inv(one(tType))
+    t = _maybe_traced(t)
     tprev = t
-    dtcache = tType(_dt)
-    dtpropose = tType(_dt)
-    iter = 0
+    dtcache = _maybe_traced(tType(_dt))
+    dtpropose = _maybe_traced(tType(_dt))
+    iter = _maybe_traced(0)
     kshortsize = 0
     reeval_fsal = false
     derivative_discontinuity = false
     EEst = oneunit(EEstT) # https://github.com/JuliaPhysics/Measurements.jl/pull/135
     just_hit_tstop = false
-    next_step_tstop = false
+    next_step_tstop = _maybe_traced(false)
     tstop_target = zero(t)
     isout = false
-    accept_step = false
+    accept_step = _maybe_traced(false)
     force_stepfail = false
-    last_stepfail = false
+    last_stepfail = _maybe_traced(false)
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
@@ -865,7 +893,7 @@ Base.@constprop :aggressive function _ode_init(
             0.0
         )
     dtchangeable = isdtchangeable(_alg)
-    success_iter = 0
+    success_iter = _maybe_traced(0)
     reinitialize = true
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -923,7 +951,7 @@ Base.@constprop :aggressive function _ode_init(
 
     integrator = ODEIntegrator{
         typeof(_alg), isinplace(prob), uType, typeof(du),
-        tType, typeof(p), typeof(eigen_est),
+        typeof(t), typeof(p), typeof(eigen_est),
         typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
@@ -931,9 +959,9 @@ Base.@constprop :aggressive function _ode_init(
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
-        typeof(noise), typeof(c), typeof(rate_constants),
+        typeof(noise), typeof(c), typeof(rate_constants), typeof(iter), typeof(accept_step),
     }(
-        sol, u, du, k, t, tType(_dt), f, p,
+        sol, u, du, k, t, dtcache, f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est,
@@ -1062,26 +1090,26 @@ end
 function SciMLBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
-        while integrator.tdir * integrator.t < first_tstop
-            loopheader!(integrator)
-            if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
-                return integrator.sol
-            end
-
-            # Use special tstop handling if flag is set, otherwise normal stepping
-            if integrator.next_step_tstop
-                handle_tstop_step!(integrator)
-            else
-                perform_step!(integrator, integrator.cache)
-            end
-
-            should_exit = integrator.next_step_tstop
-
-            loopfooter!(integrator)
-            if isempty(integrator.opts.tstops) || should_exit
-                break
-            end
+        stop = _maybe_traced(false)
+        errored = _maybe_traced(false)
+        maxiters = ReactantCore.within_compile() ? integrator.opts.maxiters : typemax(Int)
+        _dealias_traced!(integrator)
+        ReactantCore.@trace track_numbers = false while (integrator.tdir * integrator.t < first_tstop) & !stop &
+                (integrator.iter < maxiters)
+            stop, errored = _solve_step!(integrator)
+            _dealias_traced!(integrator)
         end
+        if ReactantCore.within_compile()
+            ReactantCore.@trace track_numbers = false if !integrator.accept_step
+                integrator.u = integrator.uprev
+            end
+            retcode = ifelse(
+                integrator.tdir * integrator.t >= first_tstop,
+                ReturnCode.Success, ReturnCode.MaxIters
+            )
+            return _traced_finalize_solution(integrator, retcode)
+        end
+        errored && return integrator.sol
         handle_tstop!(integrator)
     end
     postamble!(integrator)
@@ -1103,10 +1131,35 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     return integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
+function _solve_step!(integrator)
+    loopheader!(integrator)
+    if !ReactantCore.within_compile() && integrator.do_error_check &&
+            check_error!(integrator) != ReturnCode.Success
+        return true, true
+    end
+    ReactantCore.@trace track_numbers = false if integrator.next_step_tstop
+        handle_tstop_step!(integrator)
+    else
+        perform_step!(integrator, integrator.cache)
+    end
+    should_exit = integrator.next_step_tstop
+    loopfooter!(integrator)
+    return isempty(integrator.opts.tstops) | (should_exit & integrator.accept_step), false
+end
+
 # Helpers
 
 function handle_dt!(integrator)
-    return if iszero(integrator.dt) && integrator.opts.adaptive
+    # 1-arg form is used by DelayDiffEq; ODE init uses the 2-arg form below.
+    # During Reactant compilation, skip the traced `iszero(dt)` gate and only apply
+    # the host-side tdir sign fix (auto-dt reset is handled by the 2-arg ODE path).
+    if ReactantCore.within_compile()
+        if integrator.opts.adaptive && integrator.tdir < 0
+            integrator.dt = abs(integrator.dt) * integrator.tdir
+        end
+        return nothing
+    end
+    if iszero(integrator.dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
                 !isnan(integrator.dt)
@@ -1118,28 +1171,33 @@ function handle_dt!(integrator)
                 integrator.opts.verbose, :dt_NaN
             )
         end
-    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-            integrator.tdir < 0
-        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+    elseif integrator.opts.adaptive && integrator.tdir < 0
+        integrator.dt = abs(integrator.dt) * integrator.tdir
     end
+    return nothing
 end
 function handle_dt!(integrator, dt)
-    return if isnothing(dt) && iszero(integrator.dt) && integrator.opts.adaptive
+    # Always run auto_dt_reset! and the tdir sign fix; only skip host diagnostics during
+    # Reactant compilation (traced comparisons cannot drive ordinary `if`).
+    if isnothing(dt) && integrator.opts.adaptive &&
+            (ReactantCore.within_compile() || iszero(integrator.dt))
         auto_dt_reset!(integrator)
-        if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
-                !isnan(integrator.dt)
-            error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+        if !ReactantCore.within_compile()
+            if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
+                    !isnan(integrator.dt)
+                error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+            end
+            if isnan(integrator.dt)
+                @SciMLMessage(
+                    "Automatic dt set the starting dt as NaN, causing instability. Exiting.",
+                    integrator.opts.verbose, :dt_NaN
+                )
+            end
         end
-        if isnan(integrator.dt)
-            @SciMLMessage(
-                "Automatic dt set the starting dt as NaN, causing instability. Exiting.",
-                integrator.opts.verbose, :dt_NaN
-            )
-        end
-    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-            integrator.tdir < 0
-        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+    elseif integrator.opts.adaptive && integrator.tdir < 0
+        integrator.dt = abs(integrator.dt) * integrator.tdir
     end
+    return nothing
 end
 
 """

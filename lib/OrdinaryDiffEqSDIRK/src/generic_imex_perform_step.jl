@@ -56,7 +56,15 @@ end
 @inline _mmmul(z, d) = d * z
 
 function _mmdiag(tab, mass_matrix)
-    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing : diag(mass_matrix)
+    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing :
+        _mmdiag_values(mass_matrix)
+end
+# λ·I without a dense layout: UniformScaling (λ ≠ 1) and ScalarOperator
+# (`axes == ()`). `_mmdiv`/`_mmmul` accept a scalar the same way.
+_mmdiag_values(mass_matrix::UniformScaling) = mass_matrix.λ
+function _mmdiag_values(mass_matrix)
+    isempty(axes(mass_matrix)) && return convert(Number, mass_matrix)
+    return diag(mass_matrix)
 end
 
 # ===========================================================================
