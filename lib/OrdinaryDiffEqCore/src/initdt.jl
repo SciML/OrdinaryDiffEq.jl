@@ -310,10 +310,12 @@ function ode_determine_initdt(
         prob::SciMLBase.AbstractODEProblem{uType, tType, true},
         integrator
     ) where {tType, uType}
+    # The dt₁ exponent is 1/(q+1), q the order of the error estimate, matching the
+    # step-size controllers; alg_order is right only for embedded p(p-1) pairs.
     return _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing, nothing,
-        get_current_alg_order(integrator.alg, integrator.cache), integrator
+        get_current_adaptive_order(integrator.alg, integrator.cache) + 1, integrator
     )
 end
 
@@ -464,10 +466,11 @@ function ode_determine_initdt(
         prob::SciMLBase.AbstractODEProblem{uType, tType, false},
         integrator
     ) where {uType, tType}
+    # See the iip entry point for the exponent.
     return _ode_initdt_oop(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing,
-        get_current_alg_order(integrator.alg, integrator.cache), integrator
+        get_current_adaptive_order(integrator.alg, integrator.cache) + 1, integrator
     )
 end
 
