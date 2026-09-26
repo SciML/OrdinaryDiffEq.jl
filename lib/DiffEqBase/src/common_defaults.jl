@@ -59,19 +59,23 @@ control. It is the (optionally `f`-weighted) RMS norm: roughly `sqrt(sum(abs2, u
 which scales with the magnitude of the state but not its dimensionality, with specialized
 methods for scalars, `Array`s, static arrays, and nested array types. Pass a custom callable
 via the `internalnorm` solver keyword to override it.
+
+`@fastmath` / `sqrt_fast` must not be used here: their `nnan`/`ninf` LLVM flags let the
+optimizer fold away `isnan`/`isfinite` on the result (see SciML/NonlinearSolve.jl#1182,
+OrdinaryDiffEq.jl#4595). `@simd` supplies `reassoc`+`contract` for the Array reductions.
 """
-ODE_DEFAULT_NORM(u::Union{AbstractFloat, Complex}, t) = @fastmath abs(u)
+ODE_DEFAULT_NORM(u::Union{AbstractFloat, Complex}, t) = abs(u)
 
 function ODE_DEFAULT_NORM(f::F, u::Union{AbstractFloat, Complex}, t) where {F}
-    return @fastmath abs(f(u))
+    return abs(f(u))
 end
 
 function ODE_DEFAULT_NORM(u::Array{T}, t) where {T <: Union{AbstractFloat, Complex}}
     x = zero(T)
-    @inbounds @fastmath for ui in u
+    @inbounds @simd for ui in u
         x += abs2(ui)
     end
-    return Base.FastMath.sqrt_fast(real(x) / max(length(u), 1))
+    return sqrt(real(x) / max(length(u), 1))
 end
 
 function ODE_DEFAULT_NORM(
@@ -80,10 +84,10 @@ function ODE_DEFAULT_NORM(
         t
     ) where {F, T <: Union{AbstractFloat, Complex}}
     x = zero(T)
-    @inbounds @fastmath for ui in u
+    @inbounds @simd for ui in u
         x += abs2(f(ui))
     end
-    return Base.FastMath.sqrt_fast(real(x) / max(length(u), 1))
+    return sqrt(real(x) / max(length(u), 1))
 end
 
 function ODE_DEFAULT_NORM(
@@ -93,24 +97,24 @@ function ODE_DEFAULT_NORM(
     ) where {F, Z <: Tuple{Vararg{Array{<:Union{AbstractFloat, Complex}}}}}
     T = eltype(first(u.is))
     x = zero(T)
-    @inbounds @fastmath for ui in u
+    @inbounds for ui in u
         x += abs2(f(ui))
     end
-    return Base.FastMath.sqrt_fast(real(x) / max(length(u), 1))
+    return sqrt(real(x) / max(length(u), 1))
 end
 
 function ODE_DEFAULT_NORM(
         u::StaticArraysCore.StaticArray{<:Tuple, T},
         t
     ) where {T <: Union{AbstractFloat, Complex}}
-    return Base.FastMath.sqrt_fast(real(sum(abs2, u)) / max(length(u), 1))
+    return sqrt(real(sum(abs2, u)) / max(length(u), 1))
 end
 
 function ODE_DEFAULT_NORM(
         f::F, u::StaticArraysCore.StaticArray{<:Tuple, T},
         t
     ) where {F, T <: Union{AbstractFloat, Complex}}
-    return Base.FastMath.sqrt_fast(real(sum(abs2 ∘ f, u)) / max(length(u), 1))
+    return sqrt(real(sum(abs2 ∘ f, u)) / max(length(u), 1))
 end
 
 function ODE_DEFAULT_NORM(
@@ -121,11 +125,11 @@ function ODE_DEFAULT_NORM(
         },
         t
     )
-    return Base.FastMath.sqrt_fast(UNITLESS_ABS2(u) / max(recursive_length(u), 1))
+    return sqrt(UNITLESS_ABS2(u) / max(recursive_length(u), 1))
 end
 
 function ODE_DEFAULT_NORM(f::F, u::AbstractArray, t) where {F}
-    return Base.FastMath.sqrt_fast(UNITLESS_ABS2(f, u) / max(recursive_length(u), 1))
+    return sqrt(UNITLESS_ABS2(f, u) / max(recursive_length(u), 1))
 end
 
 ODE_DEFAULT_NORM(u, t) = norm(u)
