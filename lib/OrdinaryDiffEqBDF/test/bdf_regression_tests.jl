@@ -332,10 +332,10 @@ end
 end
 
 @testset "FBDF mass-matrix start from an inconsistent algebraic state" begin
-    # The first step moves u₂ onto the constraint u₂ = u₁. The error estimate of that
-    # step must still shrink with dt, or the solve cannot leave t0 ≫ 0.
-    f!(du, u, p, t) = (du[1] = -u[1]; du[2] = u[2] - u[1]; nothing)
-    f(u, p, t) = [-u[1], u[2] - u[1]]
+    # The first step moves u₂ onto the constraint u₂ = u₁. That jump is not local error,
+    # so it must not force dt below eps(t0), even with a large constraint residual.
+    f!(du, u, p, t) = (du[1] = -u[1]; du[2] = 1.0e7 * (u[2] - u[1]); nothing)
+    f(u, p, t) = [-u[1], 1.0e7 * (u[2] - u[1])]
     M = [1.0 0; 0 0]
     t0 = 1.0e4
     for ff in (f!, f)
