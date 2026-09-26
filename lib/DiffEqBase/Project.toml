@@ -6,7 +6,6 @@ version = "7.21.2"
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 BracketingNonlinearSolve = "70df07ce-3d50-431d-a3e7-ca6ddb60ac1e"
-ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
@@ -70,12 +69,10 @@ DiffEqBaseUnitfulExt = "Unitful"
 
 [compat]
 ADTypes = "1.22.0"
-Aqua = "0.8"
 ArrayInterface = "7.28"
 BracketingNonlinearSolve = "1.12.1"
 CUDA = "6"
 ChainRulesCore = "1"
-ConcreteStructs = "0.2.3"
 DiffEqCallbacks = "4"
 DifferentiationInterface = "0.7.18"
 Distributed = "1.9"
@@ -114,7 +111,7 @@ RecursiveArrayToolsRaggedArrays = "1"
 SafeTestsets = "0.1"
 SciMLBase = "3.49.2"
 SciMLLogging = "2.0"
-SciMLTesting = "2.4"
+SciMLTesting = "2.8"
 SciMLOperators = "1.7.0"
 SciMLStructures = "1.5"
 Setfield = "1.1.2"
@@ -131,7 +128,6 @@ julia = "1.10"
 
 [extras]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
@@ -159,4 +155,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["DiffEqCallbacks", "Distributed", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "RecursiveArrayToolsRaggedArrays","ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "Aqua"]
+test = ["DiffEqCallbacks", "Distributed", "Measurements", "Unitful", "FlexUnits", "LabelledArrays", "ForwardDiff", "SparseArrays", "InteractiveUtils", "Pkg", "Random", "RecursiveArrayToolsRaggedArrays","ReverseDiff", "StaticArrays", "SafeTestsets", "Test", "Distributions", "DynamicQuantities", "SciMLTesting"]

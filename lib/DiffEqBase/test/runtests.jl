@@ -1,8 +1,13 @@
 using Pkg
 using SafeTestsets
+using SciMLTesting
 using Test
 
 const TEST_GROUP = get(ENV, "GROUP", "Core")
+
+function activate_qa_env()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+end
 
 function activate_downstream_env()
     Pkg.activate(joinpath(@__DIR__, "downstream"))
@@ -53,12 +58,19 @@ end
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 
-    # QA tests — Aqua quality checks
+    # QA tests — Aqua/ExplicitImports quality checks. Runs last among the
+    # in-process groups: `activate_qa_env()` leaves the QA environment active,
+    # so the groups above must resolve before it runs.
     if TEST_GROUP ∉ (
             "Core", "Static", "Downstream", "Downstream2",
             "ModelingToolkit", "Sundials",
         ) && isempty(VERSION.prerelease)
-        @time @safetestset "Aqua" include("aqua.jl")
+        activate_qa_env()
+        # Plain @testset, not @safetestset: the env switch above makes
+        # SafeTestsets unreachable inside the @eval'd testset module.
+        @time @testset "QA" begin
+            include("qa/qa.jl")
+        end
     end
 
     # Static analysis tests — allocation checks with ComponentArrays

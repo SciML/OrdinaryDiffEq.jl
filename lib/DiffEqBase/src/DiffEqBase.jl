@@ -8,17 +8,18 @@ import PrecompileTools
 
 import FastPower
 
-using ArrayInterface
+import ArrayInterface
 
-using StaticArraysCore # data arrays
+using StaticArraysCore: StaticArraysCore, Size # data arrays
 
-using LinearAlgebra, Printf
+using LinearAlgebra: LinearAlgebra, lu, norm
+using Printf: Printf, @printf
 
-using DocStringExtensions
+using DocStringExtensions: DocStringExtensions, TYPEDEF
 
 using FunctionWrappers: FunctionWrapper
 
-using MuladdMacro
+using MuladdMacro: MuladdMacro, @muladd
 
 
 using FastBroadcast: @.., Serial, Threaded
@@ -26,73 +27,82 @@ using FastBroadcast: @.., Serial, Threaded
 import RecursiveArrayTools
 import TruncatedStacktraces
 
-using Setfield
+using Setfield: Setfield, @set, @set!
 
 
-using Markdown
+import Markdown
 
-using ConcreteStructs: @concrete
 using FastClosures: @closure
 
 import FunctionWrappersWrappers
-
-using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
     MessageLevel, @verbosity_specifier, verbosity_to_bool, @SciMLMessage
 
-using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
+using SciMLOperators: SciMLOperators, AbstractSciMLOperator,
+    DEFAULT_UPDATE_FUNC
 using SciMLOperators: isconstant, islinear
 import SciMLOperators: update_coefficients, update_coefficients!
 
+import SciMLBase
+# This list is a namespace contract: many names are not used by DiffEqBase
+# itself but are reached through `DiffEqBase.X` by its extensions, downstream
+# sublibraries and packages (DelayDiffEq, Sundials, SciMLSensitivity, ...),
+# and test files (see the `no_stale_explicit_imports` ignore in test/qa/qa.jl).
 using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractDiffEqInterpolation,
-    DECallback, AbstractDEOptions, DECache, AbstractContinuousCallback,
+    DECallback, DECache, AbstractContinuousCallback,
     AbstractDiscreteCallback, AbstractLinearProblem,
     AbstractNonlinearProblem,
-    AbstractOptimizationProblem, AbstractSteadyStateProblem,
+    AbstractSteadyStateProblem,
     AbstractJumpProblem,
     AbstractNoiseProblem, AbstractEnsembleProblem,
     AbstractDynamicalODEProblem,
     AbstractDEAlgorithm, StandardODEProblem, AbstractIntegralProblem,
     AbstractSensitivityAlgorithm, AbstractODEAlgorithm,
     AbstractSDEAlgorithm, AbstractDDEAlgorithm, AbstractDAEAlgorithm,
-    AbstractSDDEAlgorithm, AbstractRODEAlgorithm, AbstractBVPAlgorithm,
+    AbstractRODEAlgorithm, AbstractBVPAlgorithm,
     DAEInitializationAlgorithm,
     AbstractSteadyStateAlgorithm, AbstractODEProblem,
     AbstractDiscreteProblem, AbstractNonlinearAlgorithm,
     AbstractSDEProblem, AbstractRODEProblem, AbstractDDEProblem,
     AbstractDAEProblem, AbstractSDDEProblem, AbstractBVProblem,
     AbstractTimeseriesSolution, AbstractNoTimeSolution, numargs,
-    AbstractODEFunction, AbstractSDEFunction, AbstractRODEFunction,
-    AbstractDDEFunction, AbstractSDDEFunction, AbstractDAEFunction,
-    AbstractNonlinearFunction, AbstractEnsembleSolution,
+    AbstractODEFunction,
+    AbstractDDEFunction,
+    AbstractEnsembleSolution,
     AbstractODESolution, AbstractRODESolution, AbstractDAESolution,
-    AbstractDDESolution,
-    EnsembleAlgorithm, EnsembleSolution, EnsembleSummary,
+    EnsembleSolution, EnsembleSummary,
     NonlinearSolution,
     TimeGradientWrapper, TimeDerivativeWrapper, UDerivativeWrapper,
-    UJacobianWrapper, ParamJacobianWrapper, JacobianWrapper,
+    UJacobianWrapper, ParamJacobianWrapper,
     check_error!, has_jac, has_tgrad, has_Wfact, has_Wfact_t, has_paramjac,
     AbstractODEIntegrator, AbstractSDEIntegrator, AbstractRODEIntegrator,
     AbstractDDEIntegrator, AbstractSDDEIntegrator,
-    AbstractDAEIntegrator, unwrap_cache, has_reinit, reinit!,
+    unwrap_cache, has_reinit, reinit!,
     postamble!, last_step_failed, has_stats,
     initialize_dae!, build_solution, solution_new_retcode,
-    solution_new_tslocation, plot_indices, NonlinearAliasSpecifier,
-    NullParameters, isinplace, AbstractADType, AbstractDiscretization,
+    solution_new_tslocation, plot_indices,
+    NullParameters, isinplace,
     DISCRETE_OUTOFPLACE_DEFAULT, DISCRETE_INPLACE_DEFAULT,
     has_analytic, calculate_solution_errors!, AbstractNoiseProcess,
     has_colorvec, parameterless_type, undefined_exports,
     is_diagonal_noise, AbstractDiffEqFunction, sensitivity_solution,
     interp_summary, AbstractHistoryFunction, LinearInterpolation,
     ConstantInterpolation, HermiteInterpolation, SensitivityInterpolation,
-    NoAD, @add_kwonly,
+    @add_kwonly,
     calculate_ensemble_errors,
-    DEFAULT_REDUCTION, isautodifferentiable,
-    isadaptive, isdiscrete, has_syms, AbstractAnalyticalSolution,
-    wrap_sol
+    isautodifferentiable,
+    isdiscrete,
+    wrap_sol,
+    BVProblem, CallbackSet, ContinuousCallback, DAEFunction, DAEProblem,
+    DDEProblem, DiscreteCallback, DiscreteProblem, IntervalNonlinearProblem,
+    ODEFunction, ODEProblem, PDEProblem, ReturnCode, SDDEProblem, SDEFunction,
+    SDEProblem, SplitFunction, SteadyStateProblem, VectorContinuousCallback,
+    addsteps!, change_t_via_interpolation!, get_tmp_cache,
+    reeval_internals_due_to_modification!, remake, savevalues!,
+    set_proposed_dt!
 
 import SciMLBase: solve, init, step!, solve!, __init, __solve,
     isadaptive, wrapfun_oop, wrapfun_iip,
@@ -100,18 +110,18 @@ import SciMLBase: solve, init, step!, solve!, __init, __solve,
     extract_alg, checkkwargs, has_kwargs, _concrete_solve_adjoint, _concrete_solve_forward,
     eltypedual, get_updated_symbolic_problem, get_concrete_p, get_concrete_u0, promote_u0,
     isconcreteu0, isconcretedu0, get_concrete_du0, _reshape, value, unitfulvalue, anyeltypedual, allowedkeywords,
-    sse, totallength, __sum, DualEltypeChecker, KeywordArgError, KeywordArgWarn, KeywordArgSilent, KWARGWARN_MESSAGE, KWARGERROR_MESSAGE,
-    CommonKwargError, IncompatibleInitialConditionError, NO_DEFAULT_ALGORITHM_MESSAGE, NoDefaultAlgorithmError, NO_TSPAN_MESSAGE, NoTspanError,
-    NAN_TSPAN_MESSAGE, NaNTspanError, NON_SOLVER_MESSAGE, NonSolverError, NOISE_SIZE_MESSAGE, NoiseSizeIncompatibilityError, PROBSOLVER_PAIRING_MESSAGE,
-    ProblemSolverPairingError, compatible_problem_types, DIRECT_AUTODIFF_INCOMPATIBILITY_MESSAGE, DirectAutodiffError, NONNUMBER_ELTYPE_MESSAGE, NonNumberEltypeError,
-    GENERIC_NUMBER_TYPE_ERROR_MESSAGE, GenericNumberTypeError, COMPLEX_SUPPORT_ERROR_MESSAGE, ComplexSupportError, COMPLEX_TSPAN_ERROR_MESSAGE, ComplexTspanError,
-    TUPLE_STATE_ERROR_MESSAGE, TupleStateError, MASS_MATRIX_ERROR_MESSAGE, IncompatibleMassMatrixError, LATE_BINDING_TSTOPS_ERROR_MESSAGE, LateBindingTstopsNotSupportedError,
-    NONCONCRETE_ELTYPE_MESSAGE, NonConcreteEltypeError, _vec
+    sse, totallength, __sum, DualEltypeChecker,
+    NoDefaultAlgorithmError, NoTspanError,
+    NaNTspanError, NonSolverError, NoiseSizeIncompatibilityError,
+    ProblemSolverPairingError, DirectAutodiffError, NonNumberEltypeError,
+    GenericNumberTypeError, ComplexSupportError, ComplexTspanError,
+    LateBindingTstopsNotSupportedError,
+    NonConcreteEltypeError, _vec
 
 import SciMLStructures
 
-using Reexport
-Reexport.@reexport using SciMLBase
+using Reexport: @reexport
+@reexport using SciMLBase
 
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
