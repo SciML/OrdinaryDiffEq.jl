@@ -51,7 +51,7 @@ function sdc_step_update(uprev, weights, z, zE, ulast, step_update)
 end
 
 """
-    sdc_node!(m, integrator, cache, QΔ, zk, zk1, zEk, zEk1, repeat_step)
+    sdc_node!(m, sweep, integrator, cache, QΔ, zk, zk1, zEk, zEk1, repeat_step)
 
 One node of one sweep, writing only into slot `m` of the per-node buffers.
 
@@ -60,7 +60,7 @@ the coefficients) or private to node `m`. The one exception is the strictly
 lower part of `QΔ`, which couples node `m` to nodes before it — that part is
 empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
 """
-@muladd function sdc_node!(m, integrator, cache, QΔ, zk, zk1, zEk, zEk1, repeat_step)
+@muladd function sdc_node!(m, sweep, integrator, cache, QΔ, zk, zk1, zEk, zEk1, repeat_step)
     (; t, dt, uprev, f, p) = integrator
     (; tmp, ubuf, k, k2, nlsolvers, tab, solver_index, split) = cache
     (; nodes, Q, QE) = tab
@@ -103,9 +103,9 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         nls = nlsolvers[index]
         @.. broadcast = false nls.tmp = tmpm
         @.. broadcast = false nls.z = zk[m]
+        (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
         nls.γ = QΔ[m, m]
         nls.c = nodes[m]
-        markfirststage!(nls)
         znode = nlsolve!(nls, integrator, cache, repeat_step)
         cache.failed[m] = nlsolvefail(nls)
         @.. broadcast = false zk1[m] = znode
@@ -161,7 +161,7 @@ end
                 zEk = zEk, zEk1 = zEk1, repeat_step = repeat_step
 
             @threaded threading for m in 1:M
-                sdc_node!(m, integrator, cache, QΔ, zk, zk1, zEk, zEk1, repeat_step)
+                sdc_node!(m, sweep, integrator, cache, QΔ, zk, zk1, zEk, zEk1, repeat_step)
             end
         end
         # `nlsolve!` writes `integrator.force_stepfail` from every node, so a
@@ -249,9 +249,9 @@ end
                 nls = nlsolvers[index]
                 nls.tmp = tmp
                 nls.z = zk[m]
+                (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
-                markfirststage!(nls)
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
                 nlsolvefail(nls) && return
                 zk1[m] = znode
