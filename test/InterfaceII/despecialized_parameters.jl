@@ -80,6 +80,7 @@ end
         for specialize in (
                 SciMLBase.AutoSpecialize,
                 SciMLBase.AutoDespecialize,
+                SciMLBase.AutoRespecialize,
                 SciMLBase.NoSpecialize,
             )
             first_problem = ODEProblem{true, specialize}(
@@ -113,7 +114,9 @@ end
             integrator -> nothing
         )
 
-        for specialize in (SciMLBase.AutoDespecialize, SciMLBase.NoSpecialize)
+        for specialize in (
+                SciMLBase.AutoDespecialize, SciMLBase.AutoRespecialize, SciMLBase.NoSpecialize,
+            )
             no_callback_problem = ODEProblem{true, specialize}(
                 callback_constant_rhs!, [0.0], (0.0, 1.0)
             )
@@ -215,7 +218,7 @@ end
     end
 
     @testset "despecializing levels wrap callbacks after constructing the integrator" for specialize in (
-            SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize,
+            SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.AutoRespecialize,
         )
         first_discrete = DiscreteCallback(
             (u, t, integrator) -> iszero(u[1]),
@@ -322,6 +325,42 @@ end
         )
         @test no_vector_affect_wrapped.affect! === nothing
         @test solve(no_callback_problem, Tsit5(); callback = no_vector_affect).u[end] == [0.0]
+    end
+
+    @testset "callbacks stay despecialized when the Jacobian is wrapped" for specialize in (
+            SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.AutoRespecialize,
+        )
+        # A ForwardDiff-based solver makes `promote_f` rebuild the function to wrap `jac`,
+        # which must not change how the callbacks are stored.
+        f = ODEFunction{true, specialize}(
+            callback_constant_rhs!; jac = (J, u, p, t) -> (fill!(J, 0); nothing)
+        )
+        callback = DiscreteCallback(
+            (u, t, integrator) -> iszero(u[1]),
+            integrator -> (integrator.u[1] = 1.0)
+        )
+        prob = ODEProblem(f, [0.0], (0.0, 1.0); callback)
+        integrator = init(prob, Rosenbrock23())
+        @test integrator.opts.callback isa CallbackSet{Vector{Any}, Vector{Any}}
+        @test only(integrator.opts.callback.discrete_callbacks).condition isa
+            FunctionWrappersWrappers.FunctionWrappersWrapper
+        @test solve(prob, Rosenbrock23()).u[end] == [1.0]
+    end
+
+    @testset "FullSpecialize keeps callbacks typed" begin
+        callback = DiscreteCallback(
+            (u, t, integrator) -> iszero(u[1]),
+            integrator -> (integrator.u[1] = 1.0)
+        )
+        prob = ODEProblem{true, SciMLBase.FullSpecialize}(
+            callback_constant_rhs!, [0.0], (0.0, 1.0); callback
+        )
+        for alg in (Tsit5(), Rosenbrock23())
+            integrator = init(prob, alg)
+            @test !(integrator.opts.callback isa CallbackSet{Vector{Any}, Vector{Any}})
+            @test only(integrator.opts.callback.discrete_callbacks) === callback
+            @test solve(prob, alg).u[end] == [1.0]
+        end
     end
 
     @testset "callbacks that are not wrapped are stored as given" begin
