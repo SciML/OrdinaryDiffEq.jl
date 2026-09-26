@@ -28,6 +28,10 @@ function alg_order(alg::SDC)
     return max(1, min(sdc_iteration_order(alg), coll))
 end
 
+# The embedded solution is the step update formed one sweep earlier, so it is
+# one order lower until the collocation ceiling flattens both.
+alg_adaptive_order(alg::SDC) = max(1, alg_order(alg) - 1)
+
 """
     sdc_validate(num_nodes, quad_type, num_sweeps, step_update)
 
@@ -40,8 +44,18 @@ solver needs, and adding an `SDC` method here would make the two ambiguous.
 """
 function sdc_validate(
         num_nodes::Int, quad_type::SDCQuadrature.T,
-        num_sweeps::Int, step_update::SDCStepUpdate.T
+        num_sweeps::Int, step_update::SDCStepUpdate.T,
+        sweeper::SDCSweeper.T, threading
     )
+    if isthreaded(threading) && !(sweeper in SDC_DIAGONAL_SWEEPERS)
+        throw(
+            ArgumentError(
+                "SDC: `threading` needs a diagonal `sweeper`, since any other one " *
+                    "couples the nodes within a sweep. Got $(sweeper); the diagonal " *
+                    "sweepers are $(SDC_DIAGONAL_SWEEPERS)"
+            )
+        )
+    end
     num_sweeps >= 0 ||
         throw(ArgumentError("SDC: `num_sweeps` must be ≥ 0, got $(num_sweeps)"))
     endpoint_on_left = quad_type in (SDCQuadrature.Lobatto, SDCQuadrature.RadauLeft)

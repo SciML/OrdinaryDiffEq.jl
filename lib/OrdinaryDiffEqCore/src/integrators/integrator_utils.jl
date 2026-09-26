@@ -740,6 +740,9 @@ handle_force_stepfail!(integrator) = post_newton_controller!(integrator, integra
 Increment the accepted-step counter `stats.naccept` by one.
 """
 function increment_accept!(stats)
+    # DEStats counters are plain `Int`; Reactant forbids mutating untraced fields
+    # inside `@trace if` (EnzymeAD/Reactant.jl#3271). Compiled solves strip stats.
+    ReactantCore.within_compile() && return nothing
     return stats.naccept += 1
 end
 
@@ -749,6 +752,7 @@ end
 Increment the rejected-step counter `stats.nreject` by one.
 """
 function increment_reject!(stats)
+    ReactantCore.within_compile() && return nothing
     return stats.nreject += 1
 end
 
@@ -1051,6 +1055,10 @@ end
     return ex
 end
 
+function _fired_cb_maybe_discontinuity(cb_idx, callbacks::AbstractVector)
+    return callbacks[cb_idx].maybe_discontinuity::Bool
+end
+
 # Use a generated function to call apply_callback! in a type-stable way
 @generated function apply_ith_callback!(
         integrator,
@@ -1084,6 +1092,15 @@ end
     return ex
 end
 
+function apply_ith_callback!(
+        integrator, time, upcrossing, event_idx, cb_idx,
+        callbacks::AbstractVector
+    )
+    return Base.invokelatest(
+        DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
+    )::Tuple{Bool, Bool}
+end
+
 function handle_callbacks!(integrator)
     discrete_callbacks = integrator.opts.callback.discrete_callbacks
     continuous_callbacks = integrator.opts.callback.continuous_callbacks
@@ -1092,15 +1109,13 @@ function handle_callbacks!(integrator)
     continuous_modified = false
     discrete_modified = false
     saved_in_cb = false
-    if !(continuous_callbacks isa Tuple{})
-        time, upcrossing,
-            event_occurred,
-            event_idx,
-            idx,
-            counter = DiffEqBase.find_first_continuous_callback(
-            integrator,
-            continuous_callbacks...
-        )
+    if !isempty(continuous_callbacks)
+        time, upcrossing, event_occurred, event_idx, idx, counter =
+        if continuous_callbacks isa AbstractVector
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks)
+        else
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks...)
+        end
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
@@ -1121,12 +1136,12 @@ function handle_callbacks!(integrator)
             integrator.vector_event_last_time = 1
         end
     end
-    if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
-        discrete_modified,
-            saved_in_cb = DiffEqBase.apply_discrete_callback!(
-            integrator,
-            discrete_callbacks...
-        )
+    if !integrator.force_stepfail && !isempty(discrete_callbacks)
+        discrete_modified, saved_in_cb = if discrete_callbacks isa AbstractVector
+            DiffEqBase.apply_discrete_callback!(integrator, discrete_callbacks)
+        else
+            DiffEqBase.apply_discrete_callback!(integrator, discrete_callbacks...)
+        end
     end
     if !saved_in_cb
         savevalues!(integrator)
@@ -1209,6 +1224,12 @@ function calc_dt_propose!(integrator, dtnew)
     else
         dtnew
     end
+    if integrator.opts.adaptive && integrator.t isa AbstractFloat && dtnew isa AbstractFloat
+        # Use the same interval for the state update and the floating-point clock.
+        # Otherwise, rounding t + dt can accumulate a drift in the integrated time.
+        dtnew = integrator.tdir * abs(dtnew)
+        dtnew = (integrator.t + dtnew) - integrator.t
+    end
     dtpropose = integrator.tdir * min(abs(integrator.opts.dtmax), abs(dtnew))
     dtpropose = integrator.tdir * max(abs(dtpropose), timedepentdtmin(integrator))
     integrator.dtpropose = dtpropose
@@ -1252,11 +1273,11 @@ function fix_dt_at_bounds!(integrator)
     else
         integrator.dt = max(integrator.opts.dtmax, integrator.dt)
     end
-    dtmin = timedepentdtmin(integrator)
+    dtmin = timedepentdtmin(integrator)  # always positive
     if integrator.tdir > 0
         integrator.dt = max(integrator.dt, dtmin)
     else
-        integrator.dt = min(integrator.dt, dtmin)
+        integrator.dt = min(integrator.dt, -dtmin)
     end
     return nothing
 end

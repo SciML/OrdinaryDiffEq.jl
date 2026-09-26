@@ -34,6 +34,8 @@ function order_window(alg::ExplicitTaylorAdaptiveOrder)
 end
 
 JET_CACHE = IdDict()
+# f -> (coeffs, params, polynomial, d_polynomial)
+POLYNOMIAL_CACHE = IdDict()
 
 # Helper functions to unwrap Symbolics.Num to concrete values (needed for Symbolics v7+)
 # After build_function evaluation, results may be wrapped in Num and need explicit unwrapping
@@ -167,6 +169,50 @@ function build_jet(
     return jet
 end
 
+function build_polynomial(f::ODEFunction{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
+    f = unwrapped_f(f)
+    return build_polynomial(f, Val{iip}(), p, coeffs, length)
+end
+
+function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
+    P = P1 - 1
+    if haskey(POLYNOMIAL_CACHE, f)
+        list = POLYNOMIAL_CACHE[f]
+        index = findfirst(x -> x[1] == coeffs && x[2] == p, list)
+        index !== nothing && return list[index][3], list[index][4]
+    end
+    @variables t0::Real dt::Real
+    u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
+    if iip
+        f0 = similar(u0)
+        f(f0, u0, p, t0)
+    else
+        f0 = f(u0, p, t0)
+    end
+    u = TaylorDiff.make_seed(u0, f0, Val(1))
+    for index in 2:P
+        t = TaylorScalar{index - 1}(t0, one(t0))
+        if iip
+            fu = similar(u)
+            f(fu, u, p, t)
+        else
+            fu = f(u, p, t)
+        end
+        d = TaylorDiff.get_coefficient(fu, index - 1) / index
+        u = TaylorDiff.append_coefficient(u, d)
+    end
+    ut = eval_taylor_polynomial(u, coeffs, dt)
+    polynomial = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
+    jacobian = Symbolics.jacobian(ut, u0)
+    d_polynomial = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
+
+    if !haskey(POLYNOMIAL_CACHE, f)
+        POLYNOMIAL_CACHE[f] = []
+    end
+    push!(POLYNOMIAL_CACHE[f], (coeffs, p, polynomial, d_polynomial))
+    return polynomial, d_polynomial
+end
+
 # evaluate using Qin Jiushao's algorithm
 @generated function evaluate_polynomial(t::TaylorScalar{T, P}, z) where {T, P}
     ex = :(v[$(P + 1)])
@@ -180,3 +226,7 @@ end
 @inline eval_taylor_polynomial(utaylor::TaylorScalar, dt) = evaluate_polynomial(utaylor, dt)
 # Evaluate polynomial for array of TaylorScalars (returns array)
 @inline eval_taylor_polynomial(utaylor::AbstractArray, dt) = map(x -> evaluate_polynomial(x, dt), utaylor)
+
+# Evaluate a weighted Taylor polynomial for scalar or array states.
+@inline eval_taylor_polynomial(u::TaylorScalar, coeffs, dt) = evalpoly(dt, map(*, coeffs, TaylorDiff.flatten(u)))
+@inline eval_taylor_polynomial(us::AbstractArray, coeffs, dt) = map(x -> eval_taylor_polynomial(x, coeffs, dt), us)

@@ -221,7 +221,8 @@ function _initialize_dae!(
 
     initdt = alg.initdt
     dt = if initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        integrator.dt != 0 ?
+            copysign(min(abs(integrator.dt) / 5, abs(dtmax)), integrator.dt) :
             (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         initdt
@@ -345,7 +346,8 @@ function _initialize_dae!(
 
     initdt = alg.initdt
     dt = if initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        integrator.dt != 0 ?
+            copysign(min(abs(integrator.dt) / 5, abs(dtmax)), integrator.dt) :
             (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         initdt

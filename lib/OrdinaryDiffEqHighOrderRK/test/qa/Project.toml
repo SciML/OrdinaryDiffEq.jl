@@ -16,7 +16,7 @@ OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
 [compat]
 AllocCheck = "0.2"
 Aqua = "0.8.11"
-JET = "0.9, 0.11"
+JET = "0.9, 0.11, 0.12"
 OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqHighOrderRK = "2"
 SciMLBase = "3"

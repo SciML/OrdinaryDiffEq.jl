@@ -72,6 +72,7 @@ using SciMLBase: check_error!, _vec, _reshape, unwrap_cache
 using FastBroadcast: @..
 
 using FunctionWrappers: FunctionWrapper
+import FunctionWrappersWrappers
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
@@ -464,6 +465,7 @@ include("precompilation_setup.jl")
             # Algorithm-trait predicates extended/queried by solver sublibs.
             :has_stage_limiter,
             :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
+            :dtnew_modification,
             :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
             :allows_null_u0, :isaposteriori, :isdiscretealg, :isdp8,
             :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,

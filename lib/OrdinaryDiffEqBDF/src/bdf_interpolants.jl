@@ -865,11 +865,3 @@ for (TV, m) in ((Val{1}, 1), (Val{2}, 2), (Val{3}, 3))
         return out
     end
 end
-
-# `addsteps!` is a no-op: the interpolation data is written during the step.
-function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::NORDSIECK_CACHES,
-        always_calc_begin = false, allow_calc_end = true, force_calc_end = false
-    )
-    return nothing
-end

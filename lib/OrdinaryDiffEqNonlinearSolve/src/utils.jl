@@ -16,6 +16,14 @@ get_nlstep_data(f) = hasfield(typeof(f), :nlstep_data) ? f.nlstep_data : nothing
 @inline _restructure_state(template::Number, x) = oftype(template, x)
 
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
+
+# Whether the error test rejected the step this one is retrying. `EEst` is written once per
+# step, in the footer, so every stage of a step reads the same value.
+function errorfail(integrator)
+    eest = OrdinaryDiffEqCore.get_EEst(integrator)
+    return eest > one(eest)
+end
+
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
@@ -49,6 +57,12 @@ relax(_) = 0 // 1
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
+
+# Whether the cache records the `t` at which `J` was taken, so `isJcurrent` is meaningful and
+# a diverged solve can be retried with a fresh Jacobian.
+tracks_J_age(nlsolver::AbstractNLSolver) = tracks_J_age(nlsolver.cache)
+tracks_J_age(cache::AbstractNLSolverCache) = isnewton(cache)
+tracks_J_age(cache::NonlinearSolveCache) = cache.W !== nothing
 
 """
     can_smooth_est(nlsolver::AbstractNLSolver) -> Bool
@@ -366,11 +380,20 @@ function set_inner_linear_reltol!(nlcache, integrator)
 end
 
 function reuse_jac_kwargs(W)
-    Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
-        W._concrete_form : W
-    return Wr isa AbstractSciMLOperator ? (; jac_prototype = Wr) :
-        (; jac = WReuseJac(Ref(Wr)), jac_prototype = (Z = similar(Wr); fill!(Z, 0); Z))
+    return W isa AbstractSciMLOperator ? (; jac_prototype = W) :
+        (; jac = WReuseJac(Ref(W)), jac_prototype = (Z = similar(W); fill!(Z, 0); Z))
 end
+
+"""
+    is_split_W(W) -> Bool
+
+Whether `W` is kept split as a concrete Jacobian `J` and a scalar shift `gamma` — a
+`WOperator` over a plain matrix, which `build_J_W` only produces for a linear solver that
+consumes the split form (`LHLFactorization`). Such a `W` is reused as the operator itself:
+the linear solver reduces `J` once and reads each new `gamma` off the operator, and both
+are lost the moment `W` is assembled.
+"""
+is_split_W(W) = W isa WOperator && W.J isa AbstractMatrix
 
 """
     build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
@@ -825,12 +848,6 @@ function build_nlsolver(
             # linear solver) is reused as an operator: NonlinearSolve applies it via
             # `mul!` rather than rebuilding a residual-derived AD JVP.
             matrixfree_W = W isa WOperator && W.J isa AbstractSciMLOperator
-            W_for_reuse = if W isa WOperator && W.J !== nothing &&
-                    !(W.J isa AbstractSciMLOperator)
-                W._concrete_form
-            else
-                W
-            end
             # `W` is the Jacobian of the *raw* stage residual, so handing it to the inner
             # solver as the Jacobian of a preconditioned one would be a lie; let the inner
             # solver differentiate the composition it actually solves.
@@ -838,10 +855,8 @@ function build_nlsolver(
             use_w_reuse = !isdae && nlstep_data === nothing &&
                 precondition === nothing &&
                 (
-                (
-                    W_for_reuse isa AbstractMatrix &&
-                        !(W_for_reuse isa AbstractSciMLOperator)
-                ) || matrixfree_W
+                (W isa AbstractMatrix && !(W isa AbstractSciMLOperator)) ||
+                    matrixfree_W || is_split_W(W)
             )
             prob = if nlstep_data !== nothing
                 nlstep_data.nlprob
@@ -907,14 +922,14 @@ function build_nlsolver(
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
                 use_w_reuse ? J : nothing,
-                use_w_reuse ? W_for_reuse : nothing,
+                use_w_reuse ? W : nothing,
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
                 weight,
                 dz,
                 est_linsolve,
-                zero(tstep), true, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
@@ -1131,9 +1146,10 @@ function build_nlsolver(
             end
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, W_ref, W_ref === nothing ? nothing : uf,
+                W_ref === nothing ? nothing : J, W_ref,
+                W_ref === nothing ? nothing : uf,
                 nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition
             )
         else
             # Build separated DAE Jacobian cache if applicable

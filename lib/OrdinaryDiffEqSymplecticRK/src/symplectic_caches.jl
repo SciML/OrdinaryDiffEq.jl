@@ -33,7 +33,7 @@ end
     OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
+    tmp::rateType
     k::rateType
     fsalfirst::rateType
     half::uEltypeNoUnits
@@ -53,7 +53,7 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     half = uEltypeNoUnits(1 // 2)
-    return VelocityVerletCache(u, uprev, k, tmp, fsalfirst, half)
+    return VelocityVerletCache(u, uprev, tmp, k, fsalfirst, half)
 end
 
 function alg_cache(

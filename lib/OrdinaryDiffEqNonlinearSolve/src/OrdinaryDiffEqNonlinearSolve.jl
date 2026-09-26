@@ -42,7 +42,8 @@ import ForwardDiff: ForwardDiff
 using ForwardDiff: Dual
 import OrdinaryDiffEqCore
 
-import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator
+import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator,
+    mark_jacobian_updated!
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
 import OrdinaryDiffEqCore: default_nlsolve

@@ -187,7 +187,7 @@ mutable struct ODEIntegrator{
     callback_cache::CallbackCacheType
     kshortsize::Int
     force_stepfail::Bool
-    last_stepfail::Bool
+    last_stepfail::FlagType
     just_hit_tstop::Bool
     next_step_tstop::FlagType
     tstop_target::tType

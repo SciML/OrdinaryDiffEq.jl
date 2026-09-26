@@ -23,6 +23,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEqRKN = "af6ede74-add8-4cfd-b1df-9a4dbb109d7a"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
@@ -42,6 +43,7 @@ LinearAlgebra = "1.10"
 OrdinaryDiffEqRKN = "2"
 SciMLBase = "3.39"
 OrdinaryDiffEqCore = "4.15.1"
+Unitful = "1.25.1"
 julia = "1.10"
 RecursiveArrayTools = "4.2.0"
 DiffEqBase = "7"
@@ -49,7 +51,7 @@ Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "LinearAlgebra", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqRKN", "Pkg", "SciMLTesting"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "LinearAlgebra", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqRKN", "Pkg", "SciMLTesting", "Unitful"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

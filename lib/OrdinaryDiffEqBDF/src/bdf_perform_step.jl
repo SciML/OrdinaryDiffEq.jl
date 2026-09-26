@@ -207,8 +207,18 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     alg = unwrap_alg(integrator, true)
     (; uprev2, uprev3, uprev4, du₁, du₂, k₁, k₂, k₃, nlsolver) = cache
     (; f1, f2) = integrator.f
-    cnt = cache.cnt = min(alg.order, integrator.iter + 1)
+    # cnt tracks how many past (uprev_i, k_i) points the fixed-coefficient
+    # formulas below can validly read, which is the number of completed
+    # steps -- not one more than that (that was defect 1: it ran a k-point
+    # formula with only k-1 points on record). It must also drop back to 1
+    # whenever dt changes: the BDF coefficients below are derived assuming
+    # the whole history is spaced at the current dt, so history recorded at
+    # a different dt (e.g. a step clipped to land on tspan[2]) makes the
+    # formula wrong, not just less accurate (see #4329). A dt difference
+    # within roundoff of t is not a step-size change (see #4573).
+    cnt = cache.cnt = min(alg.order, integrator.iter)
     integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
+    _sbdf_dt_changed(dt, cache.dtprev, t) && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     if cache.ark
         # Additive Runge-Kutta Method
@@ -247,11 +257,19 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
     nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + γ * z
 
-    cnt == 4 && (
+    # Shift the history every step (not gated on cnt, which only says how
+    # much of it is *usable yet* -- defect 2 was gating the shift itself on
+    # cnt, so the first step that could validly read a slot found it still
+    # holding its cache-construction value). Gated on alg.order instead,
+    # which is fixed per algorithm instance: for order < 4 (< 3), uprev4/k₃
+    # (uprev3/k₂) alias uprev2/k₁ as a memory optimization in the mutable
+    # cache's constructor, and writing through an aliased slot here would
+    # corrupt uprev2/k₁ before the unaliased lines below read them.
+    alg.order == 4 && (
         cache.uprev4 = uprev3;
         cache.k₃ = k₂
     )
-    cnt >= 3 && (
+    alg.order >= 3 && (
         cache.uprev3 = uprev2;
         cache.k₂ = k₁
     )
@@ -259,6 +277,7 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
         cache.uprev2 = uprev;
         cache.k₁ = du₂
     )
+    cache.dtprev = dt
     cache.du₁ = f1(u, p, t + dt)
     cache.du₂ = f2(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -290,8 +309,12 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     (; uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁, du₂, nlsolver) = cache
     (; tmp, z) = nlsolver
     (; f1, f2) = integrator.f
-    cnt = cache.cnt = min(alg.order, integrator.iter + 1)
+    # See the matching branch in the constant-cache method for why cnt is
+    # min(order, iter) rather than iter + 1, and why it also resets on a
+    # dt change (#4329, with roundoff tolerance per #4573).
+    cnt = cache.cnt = min(alg.order, integrator.iter)
     integrator.iter == 1 && !integrator.derivative_discontinuity && (cnt = cache.cnt = 1)
+    _sbdf_dt_changed(dt, cache.dtprev, t) && (cnt = cache.cnt = 1)
     nlsolver.γ = γ = inv(γₖ[cnt])
     # Explicit part
     if cache.ark
@@ -330,11 +353,17 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = tmp + γ * z
 
-    cnt == 4 && (
+    # See the matching comment in the constant-cache method: gated on
+    # alg.order (fixed), not cnt (varies per step and was defect 2), and
+    # the alg.order gate is what keeps this safe under the mutable cache's
+    # order<4/order<3 buffer aliasing (uprev4≡uprev2, k₃≡k₁ / uprev3≡uprev2,
+    # k₂≡k₁) -- each destination below is only written after every line
+    # that still needs its old contents as a source has already run.
+    alg.order == 4 && (
         cache.uprev4 .= uprev3;
         cache.k₃ .= k₂
     )
-    cnt >= 3 && (
+    alg.order >= 3 && (
         cache.uprev3 .= uprev2;
         cache.k₂ .= k₁
     )
@@ -342,6 +371,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
         cache.uprev2 .= uprev;
         cache.k₁ .= du₂
     )
+    cache.dtprev = dt
     f1(du₁, u, p, t + dt)
     f2(du₂, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -547,41 +577,35 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
-    elseif dtₙ₋₁ != dtₙ₋₂
-        κ = alg.kappa
-        γ₁ = Int64(1) // 1
-        γ₂ = Int64(1) // 1 + Int64(1) // 2
-        ρ₁ = dt / dtₙ₋₁
-        ρ₂ = dt / dtₙ₋₂
-        D[1] = uprev - uprev2
-        D[1] = D[1] * ρ₁
-        D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
     else
         κ = alg.kappa
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1 + Int64(1) // 2
-        ρ = dt / dtₙ₋₁
-        # backward diff
-        D[1] = uprev - uprev2
-        D[2] = D[1] - (uprev2 - uprev3)
-        if ρ != 1
-            R!(k, ρ, cache)
-            R .= R * U
-            D[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
-            D[2] = D[1] * R[1, 2] + D[2] * R[2, 2]
-        end
+    end
+
+    # `D` stays at the step size its differences were formed with, so a change of
+    # `dt` scales them through `R * U` instead of rebuilding them from the
+    # solution history, and a rejected attempt leaves `D` untouched.
+    if cnt > 2 && dt != dtₙ₋₁
+        R!(k, dt / dtₙ₋₁, cache)
+        R .= R * U
+        d₁ = D[1] * R[1, 1] + D[2] * R[2, 1]
+        d₂ = D[1] * R[1, 2] + D[2] * R[2, 2]
+    else
+        d₁ = D[1]
+        d₂ = D[2]
     end
 
     β₀ = inv((1 - κ) * γ₂)
     α₀ = 1
 
-    u₀ = uprev + D[1] + D[2]
-    ϕ = (γ₁ * D[1] + γ₂ * D[2]) * β₀
+    u₀ = uprev + d₁ + d₂
+    ϕ = (γ₁ * d₁ + γ₂ * d₂) * β₀
 
     markfirststage!(nlsolver)
 
     # initial guess
-    nlsolver.z = uprev + sum(D)
+    nlsolver.z = u₀
 
     mass_matrix = f.mass_matrix
 
@@ -612,8 +636,8 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         else
             D2[1] = u - uprev
-            D2[2] = D2[1] - D[1]
-            D2[3] = D2[2] - D[2]
+            D2[2] = D2[1] - d₁
+            D2[3] = D2[2] - d₂
             utilde = (κ * γ₂ + inv(k + 1)) * D2[3]
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
@@ -627,6 +651,9 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
         return
     end
 
+    Δ = u - uprev
+    cache.D[1] = Δ
+    cache.D[2] = integrator.success_iter == 0 ? zero(Δ) : Δ - d₁
     cache.uprev3 = uprev2
     cache.uprev2 = uprev
     cache.dtₙ₋₂ = dtₙ₋₁
@@ -651,7 +678,7 @@ end
 
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, utilde, atmp, nlsolver) = cache
+    (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, Dtmp, D2, R, U, utilde, atmp, nlsolver) = cache
     (; z, tmp, ztmp) = nlsolver
     alg = unwrap_alg(integrator, true)
     cnt = integrator.iter
@@ -660,41 +687,35 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
-    elseif dtₙ₋₁ != dtₙ₋₂
-        κ = alg.kappa
-        γ₁ = Int64(1) // 1
-        γ₂ = Int64(1) // 1 + Int64(1) // 2
-        ρ₁ = dt / dtₙ₋₁
-        ρ₂ = dt / dtₙ₋₂
-        @.. broadcast = false D[1] = uprev - uprev2
-        @.. broadcast = false D[1] = D[1] * ρ₁
-        @.. broadcast = false D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
     else
         κ = alg.kappa
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1 + Int64(1) // 2
-        ρ = dt / dtₙ₋₁
-        # backward diff
-        @.. broadcast = false D[1] = uprev - uprev2
-        @.. broadcast = false D[2] = D[1] - (uprev2 - uprev3)
-        if ρ != 1
-            R!(k, ρ, cache)
-            R .= R * U
-            @.. broadcast = false D[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
-            @.. broadcast = false D[2] = D[1] * R[1, 2] + D[2] * R[2, 2]
-        end
+    end
+
+    # `D` stays at the step size its differences were formed with, so a change of
+    # `dt` scales them through `R * U` instead of rebuilding them from the
+    # solution history, and a rejected attempt leaves `D` untouched.
+    if cnt > 2 && dt != dtₙ₋₁
+        R!(k, dt / dtₙ₋₁, cache)
+        R .= R * U
+        @.. broadcast = false Dtmp[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
+        @.. broadcast = false Dtmp[2] = D[1] * R[1, 2] + D[2] * R[2, 2]
+    else
+        @.. broadcast = false Dtmp[1] = D[1]
+        @.. broadcast = false Dtmp[2] = D[2]
     end
 
     β₀ = inv((1 - κ) * γ₂)
     α₀ = 1
 
-    u₀ = uprev + D[1] + D[2]
-    ϕ = (γ₁ * D[1] + γ₂ * D[2]) * β₀
+    u₀ = uprev + Dtmp[1] + Dtmp[2]
+    ϕ = (γ₁ * Dtmp[1] + γ₂ * Dtmp[2]) * β₀
 
     markfirststage!(nlsolver)
 
     # initial guess
-    nlsolver.z = uprev + sum(D)
+    nlsolver.z = u₀
 
     mass_matrix = f.mass_matrix
 
@@ -728,8 +749,8 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         else
             @.. broadcast = false D2[1] = u - uprev
-            @.. broadcast = false D2[2] = D2[1] - D[1]
-            @.. broadcast = false D2[3] = D2[2] - D[2]
+            @.. broadcast = false D2[2] = D2[1] - Dtmp[1]
+            @.. broadcast = false D2[3] = D2[2] - Dtmp[2]
             @.. broadcast = false utilde = (κ * γ₂ + inv(k + 1)) * D2[3]
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -742,6 +763,12 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
         return
     end
 
+    if integrator.success_iter == 0
+        @.. broadcast = false D[2] = false
+    else
+        @.. broadcast = false D[2] = (u - uprev) - Dtmp[1]
+    end
+    @.. broadcast = false D[1] = u - uprev
     cache.uprev3 .= uprev2
     cache.uprev2 .= uprev
     cache.dtₙ₋₂ = dtₙ₋₁

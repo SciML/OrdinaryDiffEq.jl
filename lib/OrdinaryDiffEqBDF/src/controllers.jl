@@ -96,7 +96,10 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
         est = OrdinaryDiffEqCore.get_EEst(integrator)
         estₖ₋₁ = cache.EEst1
         estₖ₊₁ = cache.EEst2
-        h = integrator.dt
+        # Work on |dt|: the candidate step sizes below are ranked with `>` and a
+        # `0` sentinel marks "this order is not viable".  With a signed dt the
+        # sentinel wins every comparison when tdir < 0.
+        h = abs(integrator.dt)
         k = cache.order
         prefer_const_step = cache.nconsteps < cache.order + 2
         zₛ = get_gamma(integrator)
@@ -152,15 +155,16 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             end
         end
         cache.order = kₙ
-        q = integrator.dt / hₙ
+        q = h / hₙ
 
-        if prefer_const_step && 0.6 < q < 1.2
+        hnew = if prefer_const_step && 0.6 < q < 1.2
             h
         elseif q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
             h
         else
             h / q
         end
+        integrator.tdir * hnew
     end
     if is_disco
         return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)

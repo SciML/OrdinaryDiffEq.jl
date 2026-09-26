@@ -1,22 +1,20 @@
 using Pkg
 
-# Julia 1.10 cannot develop revision-pinned `[sources]`, so keep the prerequisite
-# branches scoped to the Julia-1-only Reactant group.
+# Traced enums landed on Reactant main (EnzymeAD/Reactant.jl#3232) but are not
+# in a release yet (latest v0.2.288). Pin the Reactant group to main until then.
+# SciMLBase >= 3.56.0 already provides the parametric retcode / FullSpecialize
+# Reactant extension (SciMLBase#1564).
 if get(ENV, "GROUP", "All") == "Reactant"
     withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
         Pkg.add(
             [
                 PackageSpec(
-                    name = "Reactant", url = "https://github.com/ChrisRackauckas-Claude/Reactant.jl.git",
-                    rev = "traced-enums"
+                    name = "Reactant", url = "https://github.com/EnzymeAD/Reactant.jl",
+                    rev = "main"
                 ),
                 PackageSpec(
-                    name = "ReactantCore", url = "https://github.com/ChrisRackauckas-Claude/Reactant.jl.git",
-                    rev = "traced-enums", subdir = "lib/ReactantCore"
-                ),
-                PackageSpec(
-                    name = "SciMLBase", url = "https://github.com/ChrisRackauckas-Claude/SciMLBase.jl.git",
-                    rev = "agent/parametric-ode-retcode"
+                    name = "ReactantCore", url = "https://github.com/EnzymeAD/Reactant.jl",
+                    rev = "main", subdir = "lib/ReactantCore"
                 ),
             ]
         )
