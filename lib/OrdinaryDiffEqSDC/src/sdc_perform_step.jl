@@ -12,7 +12,93 @@
 # `znew[1:m-1]` and node-local scratch is what will let the `m` loop be threaded
 # for parallel-across-the-nodes SDC without restructuring it.
 
-function initialize!(integrator, cache::Union{SDCCache, SDCConstantCache}) end
+# The node rates only describe the step when it ends on the collocation polynomial.
+sdc_stores_dense(integrator, alg) =
+    integrator.opts.calck && alg.step_update === SDCStepUpdate.Quadrature
+
+function initialize!(integrator, cache::SDCCache)
+    sdc_stores_dense(integrator, unwrap_alg(integrator, true)) || return nothing
+    integrator.kshortsize = 2
+    resize!(integrator.k, 2)
+    (; kdense) = cache
+    integrator.f(kdense[1], integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    recursivecopy!(kdense[2], kdense[1])
+    integrator.k[1] = kdense[1]
+    integrator.k[2] = kdense[2]
+    return nothing
+end
+
+function initialize!(integrator, cache::SDCConstantCache)
+    sdc_stores_dense(integrator, unwrap_alg(integrator, true)) || return nothing
+    integrator.kshortsize = 2
+    du = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k = typeof(integrator.k)(undef, 2)
+    integrator.k[1] = du
+    integrator.k[2] = du
+    return nothing
+end
+
+"""
+    sdc_store_dense!(integrator, cache, zk, zEk, alg, M)
+
+Hand the node rates of the step just taken to the interpolant, as `k[1]`, `k[2]` for the
+derivatives at the step ends and `k[3:M + 2]` for the rates themselves.
+"""
+function sdc_store_dense!(integrator, cache::SDCCache, zk, zEk, alg, M)
+    sdc_stores_dense(integrator, alg) || return nothing
+    (; kdense) = cache
+    k = integrator.k
+    if length(k) != M + 2
+        resize!(k, M + 2)
+        for i in 1:(M + 2)
+            k[i] = kdense[i]
+        end
+    end
+    invdt = inv(integrator.dt)
+    for m in 1:M
+        km = kdense[m + 2]
+        @.. broadcast = false km = invdt * zk[m]
+        isempty(zEk) || @.. broadcast = false km = km + invdt * zEk[m]
+    end
+    (; dense) = cache.tab
+    for (i, Θ) in ((1, false), (2, true))
+        ki = kdense[i]
+        fill!(ki, false)
+        for m in 1:M
+            w = sdc_basis_value(dense, m, Θ)
+            km = kdense[m + 2]
+            @.. broadcast = false ki = ki + w * km
+        end
+    end
+    return nothing
+end
+
+function sdc_store_dense!(integrator, cache::SDCConstantCache, zk, zEk, alg, M)
+    sdc_stores_dense(integrator, alg) || return nothing
+    k = integrator.k
+    length(k) == M + 2 || resize!(k, M + 2)
+    invdt = inv(integrator.dt)
+    for m in 1:M
+        z = isempty(zEk) ? zk[m] : zk[m] + zEk[m]
+        k[m + 2] = @.. broadcast = false invdt * z
+    end
+    (; dense) = cache.tab
+    for i in 1:2
+        Θ = i == 2
+        w = sdc_basis_value(dense, 1, Θ)
+        k3 = k[3]
+        ki = @.. broadcast = false w * k3
+        for m in 2:M
+            w = sdc_basis_value(dense, m, Θ)
+            km = k[m + 2]
+            ki = @.. broadcast = false ki + w * km
+        end
+        k[i] = ki
+    end
+    return nothing
+end
 
 """
     sdc_step_update!(u, uprev, weights, z, zE, ulast, step_update)
@@ -180,6 +266,7 @@ end
     end
 
     adaptive || sdc_step_update!(u, uprev, weights, zk, zEk, ubuf[M], alg.step_update)
+    sdc_store_dense!(integrator, cache, zk, zEk, alg, M)
 
     if adaptive
         tmp1 = cache.tmp[1]
@@ -272,6 +359,7 @@ end
 
     adaptive || (u = sdc_step_update(uprev, weights, zk, zEk, ulast, alg.step_update))
     integrator.u = u
+    sdc_store_dense!(integrator, cache, zk, zEk, alg, M)
 
     if adaptive
         utilde = @.. broadcast = false u - ulow
