@@ -1150,7 +1150,16 @@ end
 # Helpers
 
 function handle_dt!(integrator)
-    return if iszero(integrator.dt) && integrator.opts.adaptive
+    # 1-arg form is used by DelayDiffEq; ODE init uses the 2-arg form below.
+    # During Reactant compilation, skip the traced `iszero(dt)` gate and only apply
+    # the host-side tdir sign fix (auto-dt reset is handled by the 2-arg ODE path).
+    if ReactantCore.within_compile()
+        if integrator.opts.adaptive && integrator.tdir < 0
+            integrator.dt = abs(integrator.dt) * integrator.tdir
+        end
+        return nothing
+    end
+    if iszero(integrator.dt) && integrator.opts.adaptive
         auto_dt_reset!(integrator)
         if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
                 !isnan(integrator.dt)
@@ -1162,13 +1171,16 @@ function handle_dt!(integrator)
                 integrator.opts.verbose, :dt_NaN
             )
         end
-    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-            integrator.tdir < 0
-        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+    elseif integrator.opts.adaptive && integrator.tdir < 0
+        integrator.dt = abs(integrator.dt) * integrator.tdir
     end
+    return nothing
 end
 function handle_dt!(integrator, dt)
-    if isnothing(dt) && iszero(integrator.dt) && integrator.opts.adaptive
+    # Always run auto_dt_reset! and the tdir sign fix; only skip host diagnostics during
+    # Reactant compilation (traced comparisons cannot drive ordinary `if`).
+    if isnothing(dt) && integrator.opts.adaptive &&
+            (ReactantCore.within_compile() || iszero(integrator.dt))
         auto_dt_reset!(integrator)
         if !ReactantCore.within_compile()
             if sign(integrator.dt) != integrator.tdir && !iszero(integrator.dt) &&
@@ -1182,9 +1194,8 @@ function handle_dt!(integrator, dt)
                 )
             end
         end
-    elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) &&
-            integrator.tdir < 0
-        integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+    elseif integrator.opts.adaptive && integrator.tdir < 0
+        integrator.dt = abs(integrator.dt) * integrator.tdir
     end
     return nothing
 end
