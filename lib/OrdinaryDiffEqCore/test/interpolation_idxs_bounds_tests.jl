@@ -51,6 +51,22 @@ end
     @test out_full == sol(0.5)
 end
 
+@testset "in-place interpolation idxs/out validation with Bool masks" begin
+    f3!(du, u, p, t) = (du .= u)
+    s = solve(ODEProblem(f3!, [1.0, 2.0, 3.0], (0.0, 1.0)), Tsit5(); dense = false)
+    for mask in ([true, false, true], BitVector([true, false, true]))
+        out_m = zeros(2)
+        s(out_m, 0.5; idxs = mask)
+        @test out_m == s(0.5; idxs = mask)
+        outs_m = [zeros(2)]
+        s(outs_m, [0.5]; idxs = mask)
+        @test outs_m[1] == only(s([0.5]; idxs = mask).u)
+        @test_throws DimensionMismatch s(zeros(3), 0.5; idxs = mask)
+        @test_throws DimensionMismatch s([zeros(1)], [0.5]; idxs = mask)
+        @test_throws BoundsError s(zeros(3), 0.5; idxs = [mask; true])
+    end
+end
+
 @testset "in-place interpolation idxs/out validation after resize" begin
     f2!(du, u, p, t) = (du .= u)
 

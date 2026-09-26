@@ -18,16 +18,20 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 end
 
 @inline function _check_interpolant_idxs(u, idxs)
-    if idxs isa Union{Integer, AbstractVector{<:Integer}} && u isa AbstractArray
+    if idxs isa Union{Integer, AbstractVector{<:Integer}, AbstractVector{Bool}} &&
+            u isa AbstractArray
         checkbounds(u, idxs)
     end
     return nothing
 end
 
+@inline _interpolant_idxs_count(idxs::AbstractVector{<:Integer}) = length(idxs)
+@inline _interpolant_idxs_count(idxs::AbstractVector{Bool}) = count(idxs)
+
 @inline function _check_interpolant_out_length(out, idxs)
-    if idxs isa AbstractVector{<:Integer}
-        length(out) == length(idxs) ||
-            _throw_interpolant_length_mismatch(length(out), length(idxs))
+    if idxs isa Union{AbstractVector{<:Integer}, AbstractVector{Bool}}
+        n = _interpolant_idxs_count(idxs)
+        length(out) == n || _throw_interpolant_length_mismatch(length(out), n)
     end
     return nothing
 end
@@ -937,6 +941,7 @@ function ode_interpolation!(
     else
         cache_i₊ = cache
     end
+    last_idxs_axes = nothing
     @inbounds for j in idx
         t = tvals[j]
 
@@ -953,8 +958,14 @@ function ode_interpolation!(
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
         if idxs !== nothing
-            _check_interpolant_idxs(timeseries[i₋], idxs)
-            _check_interpolant_idxs(timeseries[i₊], idxs)
+            # `idxs` validity depends only on the states' axes; skip the rescan
+            # while consecutive intervals keep the axes already validated
+            ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
+            if ax != last_idxs_axes
+                _check_interpolant_idxs(timeseries[i₋], idxs)
+                _check_interpolant_idxs(timeseries[i₊], idxs)
+                last_idxs_axes = ax
+            end
         end
 
         dt = ts[i₊] - ts[i₋]
