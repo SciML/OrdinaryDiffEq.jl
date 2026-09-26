@@ -10,63 +10,51 @@ run_qa(
     # `detect_unbound_args_recursively` assertion.
     aqua_kwargs = (; piracies = false, ambiguities = false, unbound_args = false),
     ei_kwargs = (;
-        # Most of these names are not used by DiffEqBase itself, but are
-        # imported into its namespace and reached through `DiffEqBase.X` by its
-        # extensions, the InternalEuler submodule, downstream sublibraries and
-        # packages (e.g. DiffEqNoiseProcess calls `DiffEqBase.has_reinit`,
-        # Sundials calls `DiffEqBase.update_coefficients!`), and test files.
-        # ExplicitImports cannot see that cross-module usage, so it reports
-        # them as stale; they must remain part of this package's namespace
-        # contract.
+        # These names are not used by DiffEqBase itself, but every one is
+        # reached through `DiffEqBase.X` or `import DiffEqBase: X` by its
+        # extensions, downstream sublibraries and packages (e.g.
+        # DiffEqNoiseProcess calls `DiffEqBase.has_reinit`, Sundials calls
+        # `DiffEqBase.update_coefficients!`, OrdinaryDiffEq imports
+        # `DiffEqBase: DEFAULT_UPDATE_FUNC`), or test files — verified by
+        # grepping every lib/*/src, lib/*/ext, src/, ext/ and all of
+        # ~/.julia/packages. ExplicitImports cannot see that cross-module
+        # usage, so it reports them as stale; they must remain part of this
+        # package's namespace contract.
         no_stale_explicit_imports = (;
             ignore = (
                 Symbol("@add_kwonly"), Symbol("@def"),
-                :AbstractAnalyticalSolution, :AbstractDAEFunction,
-                :AbstractDAEIntegrator, :AbstractDAEProblem,
-                :AbstractDAESolution, :AbstractDDEFunction,
-                :AbstractDDEIntegrator, :AbstractDDEProblem,
-                :AbstractDDESolution, :AbstractDEOptions,
+                :AbstractDAEProblem, :AbstractDAESolution,
+                :AbstractDDEFunction, :AbstractDDEIntegrator,
+                :AbstractDDEProblem,
                 :AbstractDiffEqFunction, :AbstractDiffEqInterpolation,
-                :AbstractDiscreteProblem, :AbstractDiscretization,
+                :AbstractDiscreteProblem,
                 :AbstractDynamicalODEProblem, :AbstractEnsembleSolution,
                 :AbstractHistoryFunction, :AbstractNoTimeSolution,
-                :AbstractNoiseProcess, :AbstractNonlinearFunction,
+                :AbstractNoiseProcess,
                 :AbstractODEProblem, :AbstractODESolution,
-                :AbstractOptimizationProblem, :AbstractRODEAlgorithm,
-                :AbstractRODEFunction, :AbstractRODEIntegrator,
+                :AbstractRODEAlgorithm, :AbstractRODEIntegrator,
                 :AbstractRODEProblem, :AbstractRODESolution,
-                :AbstractSDDEAlgorithm, :AbstractSDDEFunction,
                 :AbstractSDDEIntegrator, :AbstractSDDEProblem,
-                :AbstractSDEFunction, :AbstractSDEIntegrator,
-                :AbstractSDEProblem, :AbstractSciMLScalarOperator,
+                :AbstractSDEIntegrator,
+                :AbstractSDEProblem,
                 :AbstractSensitivityAlgorithm, :AbstractTimeseriesSolution,
-                :COMPLEX_SUPPORT_ERROR_MESSAGE, :COMPLEX_TSPAN_ERROR_MESSAGE,
-                :CommonKwargError, :ConstantInterpolation, :DECache,
-                :DEFAULT_REDUCTION, :DEFAULT_UPDATE_FUNC,
-                :DIRECT_AUTODIFF_INCOMPATIBILITY_MESSAGE,
+                :ConstantInterpolation, :DECache,
+                :DEFAULT_UPDATE_FUNC,
                 :DISCRETE_INPLACE_DEFAULT, :DISCRETE_OUTOFPLACE_DEFAULT,
-                :DualEltypeChecker, :EnsembleAlgorithm,
-                :GENERIC_NUMBER_TYPE_ERROR_MESSAGE, :HermiteInterpolation,
-                :IncompatibleInitialConditionError,
-                :IncompatibleMassMatrixError, :JacobianWrapper,
-                :KWARGERROR_MESSAGE, :KWARGWARN_MESSAGE, :KeywordArgError,
-                :KeywordArgSilent, :KeywordArgWarn,
-                :LATE_BINDING_TSTOPS_ERROR_MESSAGE, :LinearInterpolation,
-                :MASS_MATRIX_ERROR_MESSAGE, :NAN_TSPAN_MESSAGE,
-                :NOISE_SIZE_MESSAGE, :NONCONCRETE_ELTYPE_MESSAGE,
-                :NONNUMBER_ELTYPE_MESSAGE, :NON_SOLVER_MESSAGE,
-                :NO_DEFAULT_ALGORITHM_MESSAGE, :NO_TSPAN_MESSAGE, :NoAD,
-                :NonlinearAliasSpecifier, :NullParameters,
-                :PROBSOLVER_PAIRING_MESSAGE, :ParamJacobianWrapper,
+                :DualEltypeChecker,
+                :HermiteInterpolation,
+                :LinearInterpolation,
+                :NullParameters,
+                :ParamJacobianWrapper,
                 :SensitivityInterpolation, :StandardODEProblem,
-                :TUPLE_STATE_ERROR_MESSAGE, :TimeDerivativeWrapper,
-                :TimeGradientWrapper, :TupleStateError, :UDerivativeWrapper,
+                :TimeDerivativeWrapper,
+                :TimeGradientWrapper, :UDerivativeWrapper,
                 :UJacobianWrapper, :__sum, :_reshape, :_vec, :allowedkeywords,
                 :anyeltypedual, :calculate_ensemble_errors,
                 :calculate_solution_errors!, :check_error!,
-                :compatible_problem_types, :has_Wfact, :has_Wfact_t,
+                :has_Wfact, :has_Wfact_t,
                 :has_analytic, :has_colorvec, :has_jac, :has_paramjac,
-                :has_reinit, :has_stats, :has_syms, :has_tgrad,
+                :has_reinit, :has_stats, :has_tgrad,
                 :initialize_dae!, :interp_summary, :is_diagonal_noise,
                 :isautodifferentiable, :numargs, :parameterless_type,
                 :plot_indices, :sensitivity_solution, :set_ut!,
@@ -97,34 +85,26 @@ run_qa(
         all_explicit_imports_are_public = (;
             ignore = (
                 # SciMLBase internals genuinely needed by solve/remake
-                # machinery, plus the error types/messages it throws; many are
+                # machinery, plus the error types it throws; many are
                 # additionally part of the downstream `DiffEqBase.X` namespace
                 # contract (see above).
                 :__sum, :_reshape, :_vec, :allowedkeywords, :anyeltypedual,
-                :checkkwargs, :compatible_problem_types, :eltypedual,
+                :checkkwargs, :eltypedual,
                 :extract_alg, :get_concrete_du0, :has_Wfact, :has_Wfact_t,
-                :has_colorvec, :has_kwargs, :has_syms, :isconcretedu0,
+                :has_colorvec, :has_kwargs, :isconcretedu0,
                 :plot_indices, :solution_new_tslocation, :sse, :totallength,
                 :undefined_exports, :unwrap_cache, :DualEltypeChecker,
-                :COMPLEX_SUPPORT_ERROR_MESSAGE, :COMPLEX_TSPAN_ERROR_MESSAGE,
-                :CommonKwargError, :ComplexSupportError, :ComplexTspanError,
-                :DIRECT_AUTODIFF_INCOMPATIBILITY_MESSAGE,
+                :ComplexSupportError, :ComplexTspanError,
                 :DISCRETE_INPLACE_DEFAULT, :DISCRETE_OUTOFPLACE_DEFAULT,
-                :DirectAutodiffError, :GENERIC_NUMBER_TYPE_ERROR_MESSAGE,
-                :GenericNumberTypeError, :IncompatibleInitialConditionError,
-                :IncompatibleMassMatrixError, :KWARGERROR_MESSAGE,
-                :KWARGWARN_MESSAGE, :KeywordArgSilent, :KeywordArgWarn,
-                :LATE_BINDING_TSTOPS_ERROR_MESSAGE,
-                :LateBindingTstopsNotSupportedError, :MASS_MATRIX_ERROR_MESSAGE,
-                :NAN_TSPAN_MESSAGE, :NOISE_SIZE_MESSAGE,
-                :NONCONCRETE_ELTYPE_MESSAGE, :NONNUMBER_ELTYPE_MESSAGE,
-                :NON_SOLVER_MESSAGE, :NO_DEFAULT_ALGORITHM_MESSAGE,
-                :NO_TSPAN_MESSAGE, :NaNTspanError, :NoDefaultAlgorithmError,
+                :DirectAutodiffError,
+                :GenericNumberTypeError,
+                :LateBindingTstopsNotSupportedError,
+                :NaNTspanError, :NoDefaultAlgorithmError,
                 :NoTspanError, :NoiseSizeIncompatibilityError,
                 :NonConcreteEltypeError, :NonNumberEltypeError, :NonSolverError,
-                :PROBSOLVER_PAIRING_MESSAGE, :ProblemSolverPairingError,
-                :TUPLE_STATE_ERROR_MESSAGE, :TupleStateError,
-                # SciMLOperators — owner-internal, no public alternative
+                :ProblemSolverPairingError,
+                # SciMLOperators — owner-internal, imported downstream via
+                # `using DiffEqBase: DEFAULT_UPDATE_FUNC`
                 :DEFAULT_UPDATE_FUNC,
                 # FunctionWrappers — owner-internal, no public alternative
                 :FunctionWrapper,
