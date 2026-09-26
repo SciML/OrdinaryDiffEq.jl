@@ -72,6 +72,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "JumpProblem kwarg forwarding Tests" begin
             include("jump_kwarg_forwarding_tests.jl")
         end
+        @time @safetestset "JumpProblem init dispatch Tests" begin
+            include("jump_init_dispatch_tests.jl")
+        end
         @time @safetestset "saveat Tests" begin
             include("saveat_tests.jl")
         end
