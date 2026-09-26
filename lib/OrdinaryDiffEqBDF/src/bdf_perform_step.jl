@@ -1265,7 +1265,14 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
-    integrator.dt = _fbdf_representable_dt(integrator.t, integrator.dt)
+    dt_taken = _fbdf_representable_dt(integrator)
+    if dt_taken === nothing
+        # No representable step lies within [dtmin, dtmax] before the next tstop.
+        integrator.force_stepfail = true
+        SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.DtLessThanMin)
+        return nothing
+    end
+    integrator.dt = dt_taken
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -1533,7 +1540,14 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
-    integrator.dt = _fbdf_representable_dt(integrator.t, integrator.dt)
+    dt_taken = _fbdf_representable_dt(integrator)
+    if dt_taken === nothing
+        # No representable step lies within [dtmin, dtmax] before the next tstop.
+        integrator.force_stepfail = true
+        SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.DtLessThanMin)
+        return nothing
+    end
+    integrator.dt = dt_taken
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 

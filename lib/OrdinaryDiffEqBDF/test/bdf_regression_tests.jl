@@ -348,3 +348,32 @@ end
         @test sol.u[end][1] ≈ exp(-1) rtol = 1.0e-6
     end
 end
+
+@testset "FBDF representable step respects dtmin" begin
+    t0 = 14400.0
+    hmin = 1.5 * eps(t0)
+    for f in ((u, p, t) -> one.(u), (du, u, p, t) -> (du .= 1)), dir in (1, -1),
+            force_dtmin in (false, true)
+        prob = ODEProblem(f, [1.0], (t0, t0 + dir))
+        # dt = 1.75 eps(t0) rounds down to one ulp, below dtmin; the next ulp is admissible.
+        integ = init(
+            prob, FBDF(); dt = dir * 1.75 * eps(t0), dtmin = hmin, force_dtmin,
+            abstol = 1.0, reltol = 0.0
+        )
+        step!(integ)
+        taken = integ.t - t0
+        @test hmin <= dir * taken
+        @test abs(integ.u[1] - 1 - taken) < 1.0e-3 * eps(t0)
+    end
+    # No representable step lies in [dtmin, dtmax] = [1.25, 1.75] eps(t0).
+    for f in ((u, p, t) -> one.(u), (du, u, p, t) -> (du .= 1)), dir in (1, -1)
+        prob = ODEProblem(f, [1.0], (t0, t0 + dir))
+        integ = init(
+            prob, FBDF(); dt = dir * 1.5 * eps(t0), dtmin = 1.25 * eps(t0),
+            dtmax = 1.75 * eps(t0), force_dtmin = true, abstol = 1.0, reltol = 0.0
+        )
+        step!(integ)
+        @test integ.t == t0
+        @test integ.sol.retcode == ReturnCode.DtLessThanMin
+    end
+end

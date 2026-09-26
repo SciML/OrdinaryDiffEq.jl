@@ -165,16 +165,36 @@ function _qndf_error_constant(integrator, k, cold_start)
 end
 
 # FBDF stores its history at the rounded times t + dt, which differ from t + dt when dt is a
-# few eps(t), so the formulas must use the increment actually taken. The endpoint is rounded
-# toward t, so the step never exceeds the dt already limited by dtmax and the next tstop.
-function _fbdf_representable_dt(t::T, dt::T) where {T <: AbstractFloat}
-    h = (t + dt) - t
-    if abs(h) > abs(dt)
-        h = (dt > 0 ? prevfloat(t + dt) : nextfloat(t + dt)) - t
-    end
-    return iszero(h) ? dt : h
+# few eps(t), so the formulas must use the increment actually taken. Returns the step to a
+# representable endpoint that respects dtmin, dtmax and the next tstop: the nearest one to
+# t + dt if admissible, otherwise its neighbor on the other side of t + dt. Landing exactly
+# on the tstop is allowed below dtmin, as in the core. Returns `nothing` if neither is
+# admissible.
+function _fbdf_representable_dt(integrator)
+    return _fbdf_representable_dt(
+        integrator.t, integrator.dt, integrator.tdir, integrator.opts.dtmin,
+        integrator.opts.dtmax,
+        SciMLBase.has_tstop(integrator) ? integrator.tdir * SciMLBase.first_tstop(integrator) :
+            nothing
+    )
 end
-_fbdf_representable_dt(t, dt) = dt
+function _fbdf_representable_dt(t::T, dt::T, tdir, dtmin, dtmax, tstop) where {T <: AbstractFloat}
+    e = t + dt
+    h = e - t
+    other = abs(h) > abs(dt) ? (dt > 0 ? prevfloat(e) : nextfloat(e)) :
+        (dt > 0 ? nextfloat(e) : prevfloat(e))
+    for endpoint in (e, other)
+        h = endpoint - t
+        on_tstop = tstop !== nothing && endpoint == tstop
+        passes_tstop = tstop !== nothing && tdir * (endpoint - tstop) > 0
+        if !iszero(h) && !passes_tstop && abs(h) <= abs(dtmax) &&
+                (on_tstop || abs(h) >= abs(dtmin))
+            return h
+        end
+    end
+    return nothing
+end
+_fbdf_representable_dt(t, dt, tdir, dtmin, dtmax, tstop) = dt
 
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
