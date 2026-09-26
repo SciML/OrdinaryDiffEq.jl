@@ -4,9 +4,7 @@ using Unitful
 using DiffEqBase: ODE_DEFAULT_NORM
 
 @testset "Unitful ODE_DEFAULT_NORM is RMS" begin
-    # Issue #4596: Unitful array norms must match RMS on stripped values,
-    # sqrt(mean(abs2(value(x)))), not sqrt(mean(abs(value(x)))).
-    # Reference: RMS of [3, 4] is sqrt((9+16)/2) ≈ 3.5355339059327378
+    # Unitful array norms must match plain RMS of stripped values.
     plain = [3.0, 4.0]
     expected = sqrt((abs2(3.0) + abs2(4.0)) / 2)
     @test ODE_DEFAULT_NORM(plain, 0.0) ≈ expected
