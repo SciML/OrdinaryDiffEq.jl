@@ -1214,7 +1214,7 @@ end
     # ---------------- Output u ----------------
     if is_imex
         @.. broadcast = false u = tmp + γ * zs[s]
-        f2(ks[s], u, p, t + dt)
+        f2(ks[s], u, p, t + ce[s] * dt)
         ks[s] .*= dt
         integrator.stats.nf2 += 1
         if s == 1
@@ -2193,62 +2193,62 @@ end
     if is_imex
         if s == 1
             u_last = tmp + γ * z1
-            k1 = dt * f2(u_last, p, t + dt)
+            k1 = dt * f2(u_last, p, t + ce[1] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + be[1] * k1
         elseif s == 2
             u_last = tmp + γ * z2
-            k2 = dt * f2(u_last, p, t + dt)
+            k2 = dt * f2(u_last, p, t + ce[2] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + be[1] * k1 + be[2] * k2
         elseif s == 3
             u_last = tmp + γ * z3
-            k3 = dt * f2(u_last, p, t + dt)
+            k3 = dt * f2(u_last, p, t + ce[3] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + be[1] * k1 + be[2] * k2 + be[3] * k3
         elseif s == 4
             u_last = tmp + γ * z4
-            k4 = dt * f2(u_last, p, t + dt)
+            k4 = dt * f2(u_last, p, t + ce[4] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4
         elseif s == 5
             u_last = tmp + γ * z5
-            k5 = dt * f2(u_last, p, t + dt)
+            k5 = dt * f2(u_last, p, t + ce[5] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5
         elseif s == 6
             u_last = tmp + γ * z6
-            k6 = dt * f2(u_last, p, t + dt)
+            k6 = dt * f2(u_last, p, t + ce[6] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6
         elseif s == 7
             u_last = tmp + γ * z7
-            k7 = dt * f2(u_last, p, t + dt)
+            k7 = dt * f2(u_last, p, t + ce[7] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7
         elseif s == 8
             u_last = tmp + γ * z8
-            k8 = dt * f2(u_last, p, t + dt)
+            k8 = dt * f2(u_last, p, t + ce[8] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8
         elseif s == 9
             u_last = tmp + γ * z9
-            k9 = dt * f2(u_last, p, t + dt)
+            k9 = dt * f2(u_last, p, t + ce[9] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9
         elseif s == 10
             u_last = tmp + γ * z10
-            k10 = dt * f2(u_last, p, t + dt)
+            k10 = dt * f2(u_last, p, t + ce[10] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10
         elseif s == 11
             u_last = tmp + γ * z11
-            k11 = dt * f2(u_last, p, t + dt)
+            k11 = dt * f2(u_last, p, t + ce[11] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10 + be[11] * k11
         elseif s == 12
             u_last = tmp + γ * z12
-            k12 = dt * f2(u_last, p, t + dt)
+            k12 = dt * f2(u_last, p, t + ce[12] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + bi[12] * z12 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10 + be[11] * k11 + be[12] * k12
         end
