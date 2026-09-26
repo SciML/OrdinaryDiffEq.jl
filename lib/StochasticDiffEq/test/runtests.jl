@@ -96,6 +96,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Element-wise Tolerances Tests" begin
             include("tolerances_tests.jl")
         end
+        @time @safetestset "SDE Default Tolerance Equality" begin
+            include("sde_tolerance_default_equality_tests.jl")
+        end
         @time @safetestset "Zeroed Noise Tests" begin
             include("zeroed_noise_test.jl")
         end

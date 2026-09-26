@@ -213,9 +213,22 @@ Base.@constprop :aggressive function SciMLBase.__init(
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
+        abstol = nothing,
+        reltol = nothing,
         kwargs...
     )
-    return _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
+    # Resolve here (not via a kwargs-forwarding `_ode_init` wrapper) so the heavy
+    # `_ode_init_impl` body sees concrete types for TTFX, and so `solve` inference
+    # is not broken by an extra kwcall layer. Public `_ode_init` still resolves for
+    # direct callers; StochasticDiffEqCore calls `_ode_init_impl` after `real.(...)`.
+    u = prob.u0
+    if u === nothing
+        u = Float64[]
+    end
+    abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
+    return _ode_init_impl(
+        prob, alg, timeseries_init, ts_init, ks_init; abstol, reltol, kwargs...
+    )
 end
 
 """
@@ -266,13 +279,101 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
 end
 
 """
+    resolve_ode_tolerances(prob, u, abstol, reltol) -> (abstol, reltol)
+
+Internal: replace `nothing` absolute/relative tolerances with the concrete
+defaults used by OrdinaryDiffEq (`1 // 10^6` / `1 // 10^3` in
+the state eltype, or `false` for discrete problems). User-supplied values are
+passed through `real.(...)` (matches master `_ode_init` normalization, including
+complex tolerances from SDE callers).
+"""
+function resolve_ode_tolerances(prob, u, abstol, reltol)
+    uBottomEltype = recursive_bottom_eltype(u)
+    uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+    scalar_type_tol =
+        uBottomEltypeNoUnits == uBottomEltype &&
+        uBottomEltype <: Union{Real, Complex}
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
+        abstol_out = false
+    elseif abstol === nothing
+        if scalar_type_tol
+            abstol_out = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype, oneunit(uBottomEltype) * 1 // 10^6
+                    )
+                )
+            )
+        else
+            abstol_out = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
+        end
+    else
+        abstol_out = real.(abstol)
+    end
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
+        reltol_out = false
+    elseif reltol === nothing
+        if scalar_type_tol
+            reltol_out = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype, oneunit(uBottomEltype) * 1 // 10^3
+                    )
+                )
+            )
+        else
+            reltol_out = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
+        end
+    else
+        reltol_out = real.(reltol)
+    end
+
+    return abstol_out, reltol_out
+end
+
+"""
     _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
-Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
-separated from `__init` so that SDE packages can call it directly, bypassing
-method dispatch (which would otherwise re-enter SDE's more specific `__init`).
+Public entry for ODE/DAE/SDE/RODE integrator construction. Accepts optional
+`abstol`/`reltol` (default `nothing`): missing/`nothing` become the problem's
+concrete defaults, and supplied values are normalized with `real.(...)`, matching
+master. Prefer `init`/`solve` for normal use; StochasticDiffEqCore calls
+`_ode_init_impl` directly after applying SDE defaults and `real.(...)`.
 """
 Base.@constprop :aggressive function _ode_init(
+        prob,
+        alg,
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = ();
+        abstol = nothing,
+        reltol = nothing,
+        alias = ODEAliasSpecifier(),
+        _u = nothing,
+        kwargs...
+    )
+    u = _u !== nothing ? _u : prob.u0
+    if u === nothing
+        u = Float64[]
+    end
+    abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
+    return _ode_init_impl(
+        prob, alg, timeseries_init, ts_init, ks_init;
+        abstol, reltol, alias, _u, kwargs...
+    )
+end
+
+"""
+    _ode_init_impl(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
+
+Heavy `__init` body for ODE/DAE/SDE/RODE problems. Expects `abstol`/`reltol` to
+already be resolved (concrete defaults or `real.`-normalized user values). Called
+from `__init` / public `_ode_init` after `resolve_ode_tolerances`, and from
+StochasticDiffEqCore after SDE defaults + `real.(...)`.
+"""
+Base.@constprop :aggressive function _ode_init_impl(
         prob,
         alg,
         timeseries_init = (),
@@ -300,8 +401,8 @@ Base.@constprop :aggressive function _ode_init(
         dtmax = (prob.tspan[end] - prob.tspan[1]),
         force_dtmin = false,
         adaptive = anyadaptive(alg),
-        abstol = nothing,
-        reltol = nothing,
+        abstol,
+        reltol,
         controller = nothing,
         fullnormalize = true,
         failfactor = 2,
@@ -517,33 +618,8 @@ Base.@constprop :aggressive function _ode_init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
 
-    scalar_type_tol =
-        uBottomEltypeNoUnits == uBottomEltype &&
-        uBottomEltype <: Union{Real, Complex}
-
-    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
-        abstol_internal = false
-    elseif abstol === nothing
-        if scalar_type_tol
-            abstol_internal = unitfulvalue(real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^6)))
-        else
-            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
-        end
-    else
-        abstol_internal = real.(abstol)
-    end
-
-    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
-        reltol_internal = false
-    elseif reltol === nothing
-        if scalar_type_tol
-            reltol_internal = unitfulvalue(real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^3)))
-        else
-            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
-        end
-    else
-        reltol_internal = real.(reltol)
-    end
+    # Already resolved by `_ode_init` (concrete, already `real`).
+    abstol_internal, reltol_internal = abstol, reltol
 
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
     # dtmin is all abs => does not care about sign already.
