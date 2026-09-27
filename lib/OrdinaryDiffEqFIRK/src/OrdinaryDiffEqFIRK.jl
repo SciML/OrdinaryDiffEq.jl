@@ -42,6 +42,7 @@ import OrdinaryDiffEqDifferentiation: jvp_counter, JVPCache
 import ADTypes: AutoForwardDiff
 import SciMLOperators
 import SciMLOperators: AbstractSciMLOperator
+import SparseArrays: SparseMatrixCSC, sparse, nonzeros, rowvals
 # Load-bearing runtime dependency: provides the nonlinear-solver machinery the FIRK
 # integrators dispatch into. The convergence-state names FIRK uses are owned by
 # OrdinaryDiffEqCore (imported above), so this is a module-only import to keep the

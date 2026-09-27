@@ -1,9 +1,28 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
+using SparseArrays
 using OrdinaryDiffEqTsit5: AutoTsit5
 using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
+
+@testset "Sparse FIRK stage matrix assembly" begin
+    J = sparse([1, 1, 2], [1, 2, 3], [2.0, 0.0, 4.0], 3, 3)
+    mass_matrix = sparse([3, 2], [1, 2], [5.0, 0.0], 3, 3)
+    W = copy(J)
+    expected = copy(J)
+    scale = -2.5
+
+    OrdinaryDiffEqFIRK.firk_sparse_W!(W, J, mass_matrix, scale)
+    @inbounds for II in CartesianIndices(J)
+        expected[II] = scale * mass_matrix[II] + J[II]
+    end
+
+    @test W == expected
+    @test W.colptr == expected.colptr
+    @test W.rowval == expected.rowval
+    @test nnz(W) == 4
+end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5(), dense_errors = true)

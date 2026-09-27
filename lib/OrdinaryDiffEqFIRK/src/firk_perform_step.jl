@@ -26,6 +26,63 @@ function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # for FIRK
     return !smallstepchange
 end
 
+function firk_sparse_W!(W::SparseMatrixCSC, J::SparseMatrixCSC, mass_matrix, scale)
+    @inbounds for II in CartesianIndices(J)
+        W[II] = scale * mass_matrix[Tuple(II)...] + J[II]
+    end
+    return W
+end
+
+function firk_sparse_W!(
+        W::SparseMatrixCSC, J::SparseMatrixCSC,
+        mass_matrix::Union{UniformScaling, AbstractMatrix}, scale
+    )
+    assembled = scale * mass_matrix + J
+    assembled isa SparseMatrixCSC || (assembled = sparse(assembled))
+    assembled_rows = rowvals(assembled)
+    assembled_values = nonzeros(assembled)
+    jac_rows = rowvals(J)
+    colptr = W.colptr
+    rows = rowvals(W)
+    values = nonzeros(W)
+    resize!(rows, length(assembled_rows) + length(jac_rows))
+    resize!(values, length(assembled_values) + length(nonzeros(J)))
+
+    idx = 1
+    @inbounds for col in 1:size(J, 2)
+        colptr[col] = idx
+        j = J.colptr[col]
+        jend = J.colptr[col + 1] - 1
+        a = assembled.colptr[col]
+        aend = assembled.colptr[col + 1] - 1
+        while j <= jend || a <= aend
+            if a > aend || (j <= jend && jac_rows[j] < assembled_rows[a])
+                rows[idx] = jac_rows[j]
+                values[idx] = zero(eltype(W))
+                idx += 1
+                j += 1
+            elseif j > jend || assembled_rows[a] < jac_rows[j]
+                if !iszero(assembled_values[a])
+                    rows[idx] = assembled_rows[a]
+                    values[idx] = assembled_values[a]
+                    idx += 1
+                end
+                a += 1
+            else
+                rows[idx] = jac_rows[j]
+                values[idx] = assembled_values[a]
+                idx += 1
+                j += 1
+                a += 1
+            end
+        end
+    end
+    colptr[end] = idx
+    resize!(rows, idx - 1)
+    resize!(values, idx - 1)
+    return W
+end
+
 function initialize!(integrator, cache::RadauIIA3ConstantCache)
     integrator.kshortsize = 4
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -345,8 +402,12 @@ end
         set_W_gamma!(W1, αdt + βdt * im)
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
+        if W1 isa SparseMatrixCSC
+            firk_sparse_W!(W1, J, mass_matrix, -(αdt + βdt * im))
+        else
+            @inbounds for II in CartesianIndices(J)
+                W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
+            end
         end
         integrator.stats.nw += 1
     end
@@ -726,9 +787,14 @@ end
         set_W_gamma!(W2, αdt + βdt * im)
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
+        if W1 isa SparseMatrixCSC
+            firk_sparse_W!(W1, J, mass_matrix, -γdt)
+            firk_sparse_W!(W2, J, mass_matrix, -(αdt + βdt * im))
+        else
+            @inbounds for II in CartesianIndices(J)
+                W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
+                W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
+            end
         end
         integrator.stats.nw += 1
     end
@@ -1307,10 +1373,16 @@ end
         set_W_gamma!(W3, α2dt + β2dt * im)
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(α1dt + β1dt * im) * mass_matrix[Tuple(II)...] + J[II]
-            W3[II] = -(α2dt + β2dt * im) * mass_matrix[Tuple(II)...] + J[II]
+        if W1 isa SparseMatrixCSC
+            firk_sparse_W!(W1, J, mass_matrix, -γdt)
+            firk_sparse_W!(W2, J, mass_matrix, -(α1dt + β1dt * im))
+            firk_sparse_W!(W3, J, mass_matrix, -(α2dt + β2dt * im))
+        else
+            @inbounds for II in CartesianIndices(J)
+                W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
+                W2[II] = -(α1dt + β1dt * im) * mass_matrix[Tuple(II)...] + J[II]
+                W3[II] = -(α2dt + β2dt * im) * mass_matrix[Tuple(II)...] + J[II]
+            end
         end
         integrator.stats.nw += 1
     end
@@ -1959,23 +2031,40 @@ end
         end
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-        end
-        if !isthreaded(alg.threading)
-            @inbounds for II in CartesianIndices(J)
+        if W1 isa SparseMatrixCSC
+            firk_sparse_W!(W1, J, mass_matrix, -γdt)
+            if !isthreaded(alg.threading)
                 for i in 1:((num_stages - 1) ÷ 2)
-                    W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
+                    firk_sparse_W!(W2[i], J, mass_matrix, -(αdt[i] + βdt[i] * im))
+                end
+            else
+                let W2 = W2, αdt = αdt, βdt = βdt, mass_matrix = mass_matrix, J = J
+
+                    @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
+                        firk_sparse_W!(W2[i], J, mass_matrix, -(αdt[i] + βdt[i] * im))
+                    end
                 end
             end
         else
-            let W1 = W1, W2 = W2, γdt = γdt, αdt = αdt, βdt = βdt,
-                    mass_matrix = mass_matrix, num_stages = num_stages, J = J
-
-                @inbounds @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
-                    for II in CartesianIndices(J)
+            @inbounds for II in CartesianIndices(J)
+                W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
+            end
+            if !isthreaded(alg.threading)
+                @inbounds for II in CartesianIndices(J)
+                    for i in 1:((num_stages - 1) ÷ 2)
                         W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] +
                             J[II]
+                    end
+                end
+            else
+                let W1 = W1, W2 = W2, γdt = γdt, αdt = αdt, βdt = βdt,
+                        mass_matrix = mass_matrix, num_stages = num_stages, J = J
+
+                    @inbounds @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
+                        for II in CartesianIndices(J)
+                            W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] +
+                                J[II]
+                        end
                     end
                 end
             end
