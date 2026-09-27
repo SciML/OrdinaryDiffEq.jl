@@ -945,9 +945,9 @@ function build_nlsolver(
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
                 precs...,
-                # Newton residuals shrink with the correction. A fixed absolute
-                # floor can return zero before the outer iteration has converged.
-                abstol = zero(uTolType),
+                # Resolve small Newton residuals below the sqrt(eps) default floor,
+                # retaining round-off slack for fixed-step Krylov solves.
+                abstol = _inner_lintol(uTolType),
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
