@@ -44,8 +44,10 @@ function track_propagated_discontinuities!(integrator::DDEIntegrator)
                     integrator.opts.verbose, :discontinuity_tracking
                 )
             end
-            push!(integrator.opts.d_discontinuities, d)
-            push!(integrator.opts.tstops, t)
+            # Keep generated stops separate from user-supplied stops so nearby
+            # propagated discontinuities can be removed together.
+            push!(integrator.d_discontinuities_propagated, d)
+            push!(integrator.tstops_propagated, t)
 
             # analogously to RADAR5 we do not strive for finding the first discontinuity
             break

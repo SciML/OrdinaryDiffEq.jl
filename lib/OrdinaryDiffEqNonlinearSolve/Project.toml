@@ -90,3 +90,6 @@ ConstructionBase = "1.5.8"
 
 [targets]
 test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
+
+[sources]
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}

@@ -100,17 +100,24 @@ function _erase_callback_types(callback)
     )
 end
 
-# Solvers must opt in: older Core versions replace vector-backed callbacks with
-# Vector{Any}, which cannot be assigned to options holding concretely typed vectors.
-_supports_typed_callback_vectors(alg) = false
+"""
+    supports_typed_callback_vectors(alg)
+
+Whether the solver preserves callback vectors with concrete element types.
+Solvers that replace these vectors with `Vector{Any}` must keep the default `false`.
+This trait controls callback normalization on Julia versions older than 1.12.
+"""
+supports_typed_callback_vectors(alg) = false
 
 _erase_callback_types(callback, ::Nothing) = _erase_callback_types(callback)
 function _erase_callback_types(callback, alg)
+    # Keep already-erased callbacks stable through repeated normalization.
+    callback isa CallbackSet{Vector{Any}, Vector{Any}} && return callback
     callbacks = callback isa CallbackSet ? callback : CallbackSet(callback)
     # Preserve static dispatch for Enzyme on older Julia. Without solver support,
     # retain the tuple representation used before callback normalization was added.
     if VERSION < v"1.12" && !isempty(callbacks)
-        if !_supports_typed_callback_vectors(alg)
+        if !supports_typed_callback_vectors(alg)
             return CallbackSet(
                 Tuple(callbacks.continuous_callbacks), Tuple(callbacks.discrete_callbacks)
             )
