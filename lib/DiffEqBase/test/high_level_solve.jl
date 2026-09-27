@@ -100,6 +100,37 @@ despecialized_solved, despecialized_stage = solve(
 @test isempty(despecialized_solved.kwargs[:callback].continuous_callbacks)
 @test isempty(despecialized_solved.kwargs[:callback].discrete_callbacks)
 
+# Callbacks follow the specialization of the concretized function: every despecializing
+# level erases them, `FullSpecialize` keeps them typed. `AutoRespecialize` extends
+# `AutoSpecialize` and erases them with or without a `jac_prototype`, whose `@set` in
+# `promote_f` rebuilds the function.
+@static if VERSION >= v"1.12"
+    erasure_rhs!(du, u, p, t) = (du .= -u; nothing)
+    erasure_callback = SciMLBase.DiscreteCallback(
+        (u, t, integrator) -> false, integrator -> nothing
+    )
+    for specialize in (
+                SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize,
+                SciMLBase.AutoRespecialize, SciMLBase.NoSpecialize, SciMLBase.FullSpecialize,
+            ), jac_prototype in (nothing, zeros(1, 1))
+        erasure_f = SciMLBase.ODEFunction{true, specialize}(erasure_rhs!; jac_prototype)
+        erasure_problem = ODEProblem(
+            erasure_f, [1.0], (0.0, 1.0); callback = erasure_callback
+        )
+        concrete = DiffEqBase.get_concrete_problem(erasure_problem, true)
+        erased = concrete.kwargs[:callback] isa
+            SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
+        @test erased ==
+            (SciMLBase.specialization(concrete.f) !== SciMLBase.FullSpecialize)
+        if specialize === SciMLBase.AutoRespecialize
+            @test erased
+            @test only(concrete.kwargs[:callback].discrete_callbacks) === erasure_callback
+        elseif specialize === SciMLBase.FullSpecialize && jac_prototype === nothing
+            @test !erased
+        end
+    end
+end
+
 # Problems that `ConstructionBase.setproperties` cannot rebuild are left untouched.
 rode_problem = RODEProblem((u, p, t, W) -> u + W, 1.0, (0.0, 1.0))
 bv_problem = BVProblem(

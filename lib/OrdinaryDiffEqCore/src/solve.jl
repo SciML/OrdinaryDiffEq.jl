@@ -67,12 +67,12 @@ end
 """
     _despecialize_callbacks!(integrator)
 
-Wrap the condition and affect functions of the callbacks that `AutoSpecialize` and
-`AutoDespecialize` store type-erased, so that `find_callback_time`,
-`apply_discrete_callback!` and the rest of the callback machinery compile once per
-integrator type instead of once per callback closure type. This is the callback
-counterpart of what `DiffEqBase.promote_f` does to the right-hand side; `NoSpecialize`
-leaves callbacks as plain `Any` entries, as it leaves `f`.
+Wrap the condition and affect functions of the callbacks that `AutoSpecialize`,
+`AutoDespecialize` and `AutoRespecialize` store type-erased, so that
+`find_callback_time`, `apply_discrete_callback!` and the rest of the callback machinery
+compile once per integrator type instead of once per callback closure type. This is the
+callback counterpart of what `DiffEqBase.promote_f` does to the right-hand side;
+`NoSpecialize` leaves callbacks as plain `Any` entries, as it leaves `f`.
 
 Each wrapper is a `FunctionWrappersWrapper` whose listed signatures are the argument
 types the integrator passes on its usual paths, with a cached typed fallback for any
@@ -84,7 +84,7 @@ which no wrapper can preserve.
 function _despecialize_callbacks!(integrator)
     specialize = SciMLBase.specialization(integrator.f)
     specialize === SciMLBase.AutoSpecialize || specialize === SciMLBase.AutoDespecialize ||
-        return nothing
+        specialize === SciMLBase.AutoRespecialize || return nothing
     callbacks = integrator.opts.callback
     callbacks isa CallbackSet{<:AbstractVector, <:AbstractVector} || return nothing
     integrator.opts.callback = CallbackSet(
