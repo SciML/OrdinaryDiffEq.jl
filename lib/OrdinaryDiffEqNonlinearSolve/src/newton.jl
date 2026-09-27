@@ -970,13 +970,13 @@ function _compute_rhs!(
         f(k, ustep, p, tstep)
         if mass_matrix === I
             @inbounds @simd ivdep for i in eachindex(z)
-                ztmp[i] = (dt * k[i] - z[i]) * invγdt
+                ztmp[i] = muladd(dt, k[i], -z[i]) * invγdt
             end
         else
             update_coefficients!(mass_matrix, ustep, p, tstep)
             mul!(_vec(ztmp), mass_matrix, _vec(z))
             @inbounds @simd ivdep for i in eachindex(z)
-                ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
+                ztmp[i] = muladd(dt, k[i], -ztmp[i]) * invγdt
             end
         end
     end
