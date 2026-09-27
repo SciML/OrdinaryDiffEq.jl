@@ -81,6 +81,23 @@ end
             @test outs == [s(t, deriv; idxs = idxs) for t in [0.3, 0.7]]
         end
     end
+
+    # `vals` may be longer than `tvals`; slots beyond eachindex(tvals) are
+    # untouched and must not be inspected
+    o = Vector{Vector{Float64}}(undef, 3)
+    o[1] = zeros(1)
+    o[2] = zeros(1)
+    s(o, [0.7, 0.3]; idxs = [1])
+    @test o[1] == s(0.7; idxs = [1])
+    @test o[2] == s(0.3; idxs = [1])
+    @test !isassigned(o, 3)
+    o2 = Vector{Vector{Float64}}(undef, 3)
+    o2[1] = zeros(1)
+    o2[2] = zeros(1)
+    o2[3] = zeros(99)
+    s(o2, [0.7, 0.3]; idxs = [1])
+    @test o2[1] == s(0.7; idxs = [1])
+    @test o2[3] == zeros(99)
 end
 
 @testset "in-place interpolation idxs/out validation after resize" begin

@@ -919,9 +919,11 @@ function ode_interpolation!(
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
     # `vals` slots are read only on the mutate-in-place path (array elements);
-    # on the `_set_val!` path they may be uninitialized (`Any`/`BigFloat` undef)
+    # on the `_set_val!` path they may be uninitialized (`Any`/`BigFloat` undef).
+    # Only the slots the main loop writes (`eachindex(tvals)`) are checked —
+    # `vals` may be longer than `tvals`, with untouched extra slots.
     if idxs !== nothing && !isempty(vals) && _vals_eltype(vals) <: AbstractArray
-        for i in _vals_indices(vals)
+        for i in eachindex(tvals)
             _check_interpolant_out_length(_get_val(vals, i), idxs)
         end
     end
