@@ -49,6 +49,32 @@ end
     out_full = zeros(3)
     sol(out_full, 0.5)
     @test out_full == sol(0.5)
+
+    # `idxs = nothing` must reject wrong-length `out` (short truncates; long OOB-reads state)
+    @test_throws DimensionMismatch sol(zeros(2), 0.5)
+    @test_throws DimensionMismatch sol(zeros(4), 0.5)
+    @test_throws DimensionMismatch sol([zeros(2), zeros(3)], [0.4, 0.5])
+    @test_throws DimensionMismatch sol([zeros(4), zeros(3)], [0.4, 0.5])
+    # only a later output has the wrong length
+    @test_throws DimensionMismatch sol([zeros(3), zeros(2)], [0.4, 0.5])
+    @test_throws DimensionMismatch integ(zeros(2), t_mid)
+    @test_throws DimensionMismatch integ(zeros(4), t_mid)
+
+    # extrapolation path (current_extrapolant! / ode_extrapolant!)
+    step!(integ)
+    t_ex = integ.t + 0.01
+    @test_throws DimensionMismatch OrdinaryDiffEqCore.current_extrapolant!(
+        zeros(2), t_ex, integ
+    )
+    @test_throws DimensionMismatch OrdinaryDiffEqCore.current_extrapolant!(
+        zeros(4), t_ex, integ
+    )
+    @test_throws DimensionMismatch OrdinaryDiffEqCore.ode_extrapolant!(
+        zeros(2), 1.1, integ, nothing, Val{0}
+    )
+    @test_throws DimensionMismatch OrdinaryDiffEqCore.ode_extrapolant!(
+        zeros(4), 1.1, integ, nothing, Val{0}
+    )
 end
 
 @testset "in-place interpolation idxs/out validation with Bool masks" begin
@@ -98,6 +124,23 @@ end
     s(o2, [0.7, 0.3]; idxs = [1])
     @test o2[1] == s(0.7; idxs = [1])
     @test o2[3] == zeros(99)
+
+    # same over-long rule for idxs === nothing: only eachindex(tvals) slots
+    # are read/length-checked; extra uninitialized or wrong-length slots ok
+    o_full = Vector{Vector{Float64}}(undef, 3)
+    o_full[1] = zeros(2)
+    o_full[2] = zeros(2)
+    s(o_full, [0.7, 0.3])
+    @test o_full[1] == s(0.7)
+    @test o_full[2] == s(0.3)
+    @test !isassigned(o_full, 3)
+    o_full2 = Vector{Vector{Float64}}(undef, 3)
+    o_full2[1] = zeros(2)
+    o_full2[2] = zeros(2)
+    o_full2[3] = zeros(99)
+    s(o_full2, [0.7, 0.3])
+    @test o_full2[1] == s(0.7)
+    @test o_full2[3] == zeros(99)
 end
 
 @testset "in-place interpolation idxs/out validation after resize" begin
@@ -136,6 +179,24 @@ end
     s_grow(outs_g, [0.6, 0.75]; idxs = [3])
     @test outs_g[1][] == only(s_grow(0.6; idxs = [3]))
 
+    # idxs=nothing: after grow, length-3 out is accepted; short/long rejected
+    out_g_ok = zeros(3)
+    s_grow(out_g_ok, 0.75)
+    @test out_g_ok == s_grow(0.75)
+    @test_throws DimensionMismatch s_grow(zeros(2), 0.75)
+    @test_throws DimensionMismatch s_grow(zeros(4), 0.75)
+    outs_g_ok = [zeros(3), zeros(3)]
+    s_grow(outs_g_ok, [0.6, 0.75])
+    @test outs_g_ok[1] == s_grow(0.6)
+    @test outs_g_ok[2] == s_grow(0.75)
+    @test_throws DimensionMismatch s_grow([zeros(2), zeros(3)], [0.6, 0.75])
+    @test_throws DimensionMismatch s_grow([zeros(3), zeros(4)], [0.6, 0.75])
+    # before grow, length-2 out is accepted
+    out_g_pre = zeros(2)
+    s_grow(out_g_pre, 0.25)
+    @test out_g_pre == s_grow(0.25)
+    @test_throws DimensionMismatch s_grow(zeros(3), 0.25)
+
     # state shrunk 3 -> 2 at t = 0.5
     s_shrink = solve(
         ODEProblem(f2!, [1.0, 2.0, 3.0], (0.0, 1.0)), Tsit5();
@@ -156,4 +217,36 @@ end
     outs_s = [zeros(1)]
     s_shrink(outs_s, [0.25]; idxs = [3])
     @test outs_s[1][] == only(s_shrink(0.25; idxs = [3]))
+
+    # idxs=nothing: after shrink, length-2 out is accepted; short/long rejected
+    out_s_ok = zeros(2)
+    s_shrink(out_s_ok, 0.75)
+    @test out_s_ok == s_shrink(0.75)
+    @test_throws DimensionMismatch s_shrink(zeros(1), 0.75)
+    @test_throws DimensionMismatch s_shrink(zeros(3), 0.75)
+    outs_s_ok = [zeros(2), zeros(2)]
+    s_shrink(outs_s_ok, [0.6, 0.75])
+    @test outs_s_ok[1] == s_shrink(0.6)
+    @test outs_s_ok[2] == s_shrink(0.75)
+    @test_throws DimensionMismatch s_shrink([zeros(1), zeros(2)], [0.6, 0.75])
+    @test_throws DimensionMismatch s_shrink([zeros(2), zeros(3)], [0.6, 0.75])
+    # before shrink, length-3 out is accepted
+    out_s_pre = zeros(3)
+    s_shrink(out_s_pre, 0.25)
+    @test out_s_pre == s_shrink(0.25)
+    @test_throws DimensionMismatch s_shrink(zeros(2), 0.25)
+end
+
+@testset "uninitialized scalar batch buffers" begin
+    # Replace-slot path must not read vals[j] before `_set_val!` (UndefRefError)
+    for initial in (1.0, big"1.0")
+        sol = solve(ODEProblem((u, p, t) -> u, initial, (0.0, 1.0)), Tsit5())
+        for T in (typeof(initial), Any)
+            @testset "$T from $(typeof(initial))" begin
+                out = Vector{T}(undef, 2)
+                sol(out, [0.3, 0.7])
+                @test out ≈ [sol(0.3), sol(0.7)]
+            end
+        end
+    end
 end
