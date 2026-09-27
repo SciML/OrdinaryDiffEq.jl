@@ -42,6 +42,7 @@ DiffEqBase.merge_problem_kwargs
 DiffEqBase.prepare_alg
 DiffEqBase.prob2dtmin
 DiffEqBase.stripunits
+DiffEqBase.supports_typed_callback_vectors
 DiffEqBase.timedepentdtmin
 ```
 
