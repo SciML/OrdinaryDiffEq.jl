@@ -1362,18 +1362,13 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
 
     (; nlsolver) = integrator.cache
 
-    if nlsolver isa AbstractArray
-        for idx in eachindex(nlsolver)
-            resize!(nlsolver[idx], integrator, i)
-        end
-    else
-        resize!(nlsolver, integrator, i)
+    for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+
+        # make it reset everything since the caches changed size!
+        isnewton(nls) && (nls.cache.firstcall = true)
     end
-
-    nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve, i)
-
-    # make it reset everything since the caches changed size!
-    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
 
     return nothing
 end
