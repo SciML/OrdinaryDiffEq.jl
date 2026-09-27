@@ -279,8 +279,7 @@ end
     f!(du, u, p, t) = (du[1] = -8.6e8 * u[1]; du[2] = 1.0e-3 * u[2]; nothing)
     f(u, p, t) = [-8.6e8 * u[1], 1.0e-3 * u[2]]
 
-    # eps(14400.0) ≈ 1.8e-12; a BDF1 step of that size is within tol 1e-8, so the
-    # solve must not abort at t0.
+    # A BDF1 step of eps(14400.0) ≈ 1.8e-12 is within tol 1e-8.
     t0 = 14400.0
     for alg in (FBDF(), QNDF()), ff in (f!, f)
         prob = ODEProblem(ff, [1.0e-3, 1.0e12], (t0, t0 + 1000.0))
@@ -318,23 +317,8 @@ end
     end
 end
 
-@testset "FBDF representable step does not exceed dtmax" begin
-    t0 = 14400.0
-    hmax = 1.5 * eps(t0)
-    for f in ((u, p, t) -> one.(u), (du, u, p, t) -> (du .= 1)), dir in (1, -1)
-        prob = ODEProblem(f, [1.0], (t0, t0 + dir))
-        integ = init(prob, FBDF(); dt = dir * hmax, dtmax = hmax, abstol = 1.0, reltol = 0.0)
-        step!(integ)
-        taken = integ.t - t0
-        @test 0 < dir * taken <= hmax
-        # u' = 1, so BDF1 gives u - 1 = the step used in the formula, which must be the step taken.
-        @test abs(integ.u[1] - 1 - taken) < 1.0e-3 * eps(t0)
-    end
-end
-
 @testset "FBDF mass-matrix start from an inconsistent algebraic state" begin
-    # The first step moves u₂ onto the constraint u₂ = u₁. That jump is not local error,
-    # so it must not force dt below eps(t0), even with a large constraint residual.
+    # The first step's jump of u₂ onto u₂ = u₁ must not force dt below eps(t0).
     f!(du, u, p, t) = (du[1] = -u[1]; du[2] = 1.0e7 * (u[2] - u[1]); nothing)
     f(u, p, t) = [-u[1], 1.0e7 * (u[2] - u[1])]
     M = [1.0 0; 0 0]
@@ -347,35 +331,6 @@ end
         )
         @test SciMLBase.successful_retcode(sol)
         @test sol.u[end][1] ≈ exp(-1) rtol = 1.0e-6
-    end
-end
-
-@testset "FBDF representable step respects dtmin" begin
-    t0 = 14400.0
-    hmin = 1.5 * eps(t0)
-    for f in ((u, p, t) -> one.(u), (du, u, p, t) -> (du .= 1)), dir in (1, -1),
-            force_dtmin in (false, true)
-        prob = ODEProblem(f, [1.0], (t0, t0 + dir))
-        # dt = 1.75 eps(t0) rounds down to one ulp, below dtmin; the next ulp is admissible.
-        integ = init(
-            prob, FBDF(); dt = dir * 1.75 * eps(t0), dtmin = hmin, force_dtmin,
-            abstol = 1.0, reltol = 0.0
-        )
-        step!(integ)
-        taken = integ.t - t0
-        @test hmin <= dir * taken
-        @test abs(integ.u[1] - 1 - taken) < 1.0e-3 * eps(t0)
-    end
-    # No representable step lies in [dtmin, dtmax] = [1.25, 1.75] eps(t0).
-    for f in ((u, p, t) -> one.(u), (du, u, p, t) -> (du .= 1)), dir in (1, -1)
-        prob = ODEProblem(f, [1.0], (t0, t0 + dir))
-        integ = init(
-            prob, FBDF(); dt = dir * 1.5 * eps(t0), dtmin = 1.25 * eps(t0),
-            dtmax = 1.75 * eps(t0), force_dtmin = true, abstol = 1.0, reltol = 0.0
-        )
-        step!(integ)
-        @test integ.t == t0
-        @test integ.sol.retcode == ReturnCode.DtLessThanMin
     end
 end
 

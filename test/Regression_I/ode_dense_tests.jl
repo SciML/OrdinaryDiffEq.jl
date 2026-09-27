@@ -491,9 +491,8 @@ regression_test(Rodas5Pr(), 2.0e-5, 3.0e-5, test_diff1 = true, nth_der = 3, dert
 
 println("BDFs")
 
-# QNDF: a fixed-step QNDF solve is first order (NDF1), so it is checked against the NDF1
-# recurrence and its error constant, and the adaptive dense output against the analytic
-# solution, rather than the two against each other.
+# Fixed-step QNDF is NDF1: check it against the NDF1 recurrence and error constant, and the
+# adaptive dense output against the analytic solution, rather than the two against each other.
 regression_test(
     QNDF(), nothing, nothing; test_diff1 = true, nth_der = 1, dertol = 1.0e-2,
     compare_fixed_step = false
@@ -527,10 +526,9 @@ regression_test(
 
         sol = solve(prob, QNDF(), dt = 1 // 4, dense = true)
         reltol, abstol = 1.0e-3, 1.0e-6
-        # EEst ≤ 1 in the RMS norm bounds each component's local error by
-        # √length(u) (reltol|u| + abstol), and for u' = λu an error made at t grows by
-        # exp(λ(1 - t)), so the global error is at most
-        # naccept √length(u) (reltol|u(1)| + abstol exp(λ)); the factor 2 allows for interpolation.
+        # EEst ≤ 1 (RMS) bounds each local error by √length(u) (reltol|u| + abstol); for u' = λu
+        # an error at t grows by exp(λ(1 - t)), giving naccept times that at t = 1, with a
+        # factor 2 for interpolation.
         bound = 2 * sol.stats.naccept * sqrt(length(u0)) *
             (reltol * maximum(abs.(u1)) + abstol * exp(λ))
         dense_err = maximum(

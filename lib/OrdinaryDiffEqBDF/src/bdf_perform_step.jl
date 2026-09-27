@@ -873,7 +873,6 @@ function perform_step!(
     u = z
     dd = u - u₀
     if cold_start
-        # Seeded only after Newton succeeds, so a failed attempt leaves no history.
         D[1] = dt * integrator.fsalfirst
     end
     update_D!(D, dd, k)
@@ -1264,15 +1263,19 @@ function perform_step!(
         integrator, cache::FBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
+    # History is stored at the committed times fl(t + dt): step by that increment.
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    _fbdf_perform_step!(integrator, cache, repeat_step)
+    integrator.dt = dt
+    return nothing
+end
+
+function _fbdf_perform_step!(
+        integrator, cache::FBDFConstantCache{max_order},
+        repeat_step
+    ) where {max_order}
     reinitFBDF!(integrator, cache)
-    dt_taken = _fbdf_representable_dt(integrator)
-    if dt_taken === nothing
-        # dtmin and dtmax leave less than one ulp of t between them.
-        integrator.force_stepfail = true
-        SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.DtLessThanMin)
-        return nothing
-    end
-    integrator.dt = dt_taken
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -1293,7 +1296,6 @@ function perform_step!(
         end
         u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
     elseif f.mass_matrix === I
-        # No history: explicit-Euler predictor, so (u - u₀)/2 is the BDF1 local error.
         u₀ = uprev + dt * integrator.fsalfirst
     else
         u₀ = u
@@ -1354,9 +1356,8 @@ function perform_step!(
     end
 
     terkp1 = (u - u₀)
-    # Mass-matrix cold starts have no explicit-Euler predictor and keep the rescaling by the
-    # zero-filled ts[2], which makes the first-step estimate ≈ 0 for t ≫ dt. DAE adjoints
-    # start from inconsistent algebraic states and rely on that step being accepted.
+    # Mass-matrix cold starts keep the zero-filled ts[2] rescaling (estimate ≈ 0 for t ≫ dt);
+    # inconsistent algebraic starts (e.g. DAE adjoints) rely on that first step being accepted.
     if iters_from_event >= 1 || mass_matrix !== I
         for j in 1:(k + 1)
             terkp1 *= j * dt / (tdt - ts[j])
@@ -1539,15 +1540,18 @@ function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    _fbdf_perform_step!(integrator, cache, repeat_step)
+    integrator.dt = dt
+    return nothing
+end
+
+function _fbdf_perform_step!(
+        integrator, cache::FBDFCache{max_order},
+        repeat_step
+    ) where {max_order}
     reinitFBDF!(integrator, cache)
-    dt_taken = _fbdf_representable_dt(integrator)
-    if dt_taken === nothing
-        # dtmin and dtmax leave less than one ulp of t between them.
-        integrator.force_stepfail = true
-        SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.DtLessThanMin)
-        return nothing
-    end
-    integrator.dt = dt_taken
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
@@ -1615,9 +1619,6 @@ function perform_step!(
 
     #for terkp1, we could use corrector and predictor to make an estimation.
     @.. broadcast = false terkp1_tmp = (u - u₀)
-    # Mass-matrix cold starts have no explicit-Euler predictor and keep the rescaling by the
-    # zero-filled ts[2], which makes the first-step estimate ≈ 0 for t ≫ dt. DAE adjoints
-    # start from inconsistent algebraic states and rely on that step being accepted.
     if cache.iters_from_event >= 1 || mass_matrix !== I
         for j in 1:(k + 1)
             @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
