@@ -622,7 +622,8 @@ end
 # Regression test for issue #4598: the mass-matrix DAE error estimate scales the
 # algebraic-constraint residual by 1/abstol, which must work elementwise when
 # abstol is a vector. A vector abstol with equal entries must reproduce the
-# scalar-abstol trajectory bitwise.
+# scalar-abstol trajectory bitwise. A non-uniform vector must not collapse to
+# inv(first(abstol)) (equal-entry tests alone cannot catch that).
 @testset "Vector abstol on mass-matrix DAEs (#4598)" begin
     function rober_dae(du, u, p, t)
         y₁, y₂, y₃ = u
@@ -645,6 +646,10 @@ end
     u0 = [1.0, 0.0, 0.2]
     p = (0.04, 3.0e7, 1.0e4)
     abstol_vec = [1.0e-8, 1.0e-8, 1.0e-8]
+    # Tighter algebraic absolute tolerance: elementwise scaling changes the
+    # adaptive path vs equal-entry / scalar abstol (reviewer: Rosenbrock23
+    # ~213/1 vs ~211/0; Rodas5P ~181 vs ~112).
+    abstol_nu = [1.0e-8, 1.0e-8, 1.0e-12]
 
     for prob in (
             ODEProblem(ODEFunction{true}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
@@ -663,14 +668,45 @@ end
             @test sol_vec.stats.naccept == sol_scalar.stats.naccept
             @test sol_vec.stats.nreject == sol_scalar.stats.nreject
             @test sol_vec.u[end] == sol_scalar.u[end]
+
+            sol_nu = solve(
+                prob, Alg(); abstol = abstol_nu, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            @test SciMLBase.successful_retcode(sol_nu)
+            @test (sol_nu.stats.naccept != sol_vec.stats.naccept) ||
+                (sol_nu.stats.nreject != sol_vec.stats.nreject)
         end
     end
 
+    # Hand-derived algebraic contribution after one Rosenbrock23 IIP step.
+    # perform_step! (adaptive path) overwrites cache.atmp with
+    # ifelse(algvar, fsallast, 0) ./ abstol, so atmp[3] must equal
+    # fsallast[3] / abstol_nu[3] — not fsallast[3] / abstol_nu[1]
+    # (the inv(first(abstol)) mistake). Use NoInit so the first residual is
+    # nonzero; the adaptive=false path skips this branch entirely.
+    prob_iip = ODEProblem(
+        ODEFunction{true}(rober_dae; mass_matrix = M), [1.0, 0.0, 0.5], (0.0, 1.0), p
+    )
+    integ = init(
+        prob_iip, Rosenbrock23();
+        abstol = abstol_nu, reltol = 1.0e-8,
+        adaptive = true, dt = 1.0e-4,
+        initializealg = SciMLBase.NoInit()
+    )
+    OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+    r_alg = integ.fsallast[3]
+    @test integ.cache.atmp[1] == 0
+    @test integ.cache.atmp[2] == 0
+    @test integ.cache.atmp[3] ≈ r_alg / abstol_nu[3]
+    @test integ.cache.atmp[3] != r_alg / abstol_nu[1]
+
     # Rosenbrock32 goes through separate caches for the same correction. On
     # ROBER at 1e-8 its error estimate rejects to instability even with scalar
-    # abstol, so exercise it on a non-stiff DAE. OOP at 1e-6 also goes Unstable
-    # (scalar and vector alike) after current master, so use 1e-4 where both
-    # succeed and equal-entry vector abstol must match the scalar trajectory.
+    # abstol, so exercise it on the non-stiff DAE u1'=-u1, 0=u1-u2. OOP
+    # Rosenbrock32 is Unstable at tol 1e-6 on that problem (many rejections)
+    # while IIP succeeds, so the regression uses 1e-4 where both forms succeed
+    # and equal-entry vector abstol must match the scalar trajectory.
     dae_oop(u, p, t) = [-u[1], u[1] - u[2]]
     function dae_iip(du, u, p, t)
         du[1] = -u[1]
