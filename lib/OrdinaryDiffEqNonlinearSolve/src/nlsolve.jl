@@ -6,10 +6,9 @@
 # displacement as a perfect solve (`ndz < 1e-5` on the first iteration, `η·ndz ≈ 0 < κ` on
 # later ones) and accept the stage with no correction applied.
 #
-# Both exactly zero and sub-roundoff displacements need the residual check performed by
-# `compute_step!` (see `stalled_inner_step`). The inner cache has zero tolerances, so it can
-# remain unterminated at a solved stage whose residual is at the cancellation floor.
-# Rejecting every zero displacement from an unterminated cache would reject that solution.
+# A zero displacement from an unterminated cache does not establish convergence by itself.
+# The integration loop checks the stage residual before rejecting such an iterate: the inner
+# cache has zero tolerances and can remain unterminated at the cancellation floor.
 _uninformative_step(nlsolver, ndz) = false
 function _uninformative_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
     nlcache = nlsolver.cache.cache
@@ -17,7 +16,16 @@ function _uninformative_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
     # `force_stop`/`nsteps` for `not_terminated` to read): a zero `ndz` there means a
     # complete inner solve returned the iterate unchanged, which is genuine convergence.
     nlcache isa NonlinearSolveNoInitCache && return false
-    return nlsolver.cache.stalled
+    return (iszero(ndz) && NonlinearSolveBase.not_terminated(nlcache)) ||
+        nlsolver.cache.stalled
+end
+
+_residual_converged(nlsolver, integrator) = false
+function _residual_converged(nlsolver::NLSolver{<:NonlinearSolveAlg}, integrator)
+    nlcache = nlsolver.cache.cache
+    sync_inner_residual!(nlcache)
+    γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+    return !stage_unsolved(nlcache, γΔt)
 end
 
 """
@@ -168,6 +176,14 @@ function nlsolve!(
         end
 
         if _uninformative_step(nlsolver, ndz)
+            # A stationary iterate can still solve the stage to floating-point precision,
+            # even though the inner solver's deliberately zero tolerances never terminate it.
+            if _residual_converged(nlsolver, integrator)
+                apply_step!(nlsolver, integrator)
+                nlsolver.status = Convergence
+                nlsolver.nfails = 0
+                break
+            end
             @SciMLMessage(
                 lazy"Inner nonlinear solver made no progress (iter = $(iter)); the unmoved iterate is not treated as convergence",
                 integrator.opts.verbose, :newton_convergence
