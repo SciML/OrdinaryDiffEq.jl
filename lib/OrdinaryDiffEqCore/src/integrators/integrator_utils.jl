@@ -1217,7 +1217,9 @@ function calc_dt_propose!(integrator, dtnew)
     else
         dtnew
     end
-    if integrator.opts.adaptive && integrator.t isa AbstractFloat && dtnew isa AbstractFloat
+    # Preserve multistep controller proposals so roundoff does not restart their history.
+    if integrator.opts.adaptive && !ismultistep(integrator.alg) &&
+            integrator.t isa AbstractFloat && dtnew isa AbstractFloat
         # Use the same interval for the state update and the floating-point clock.
         # Otherwise, rounding t + dt can accumulate a drift in the integrated time.
         dtnew = integrator.tdir * abs(dtnew)
