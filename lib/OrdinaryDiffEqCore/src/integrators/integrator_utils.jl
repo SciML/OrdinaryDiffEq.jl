@@ -227,8 +227,8 @@ end
 # Under Reactant compile, `_dealias_traced!` may break integrator↔cache aliasing
 # so `perform_step!` mutates cache fields while `integrator.fsalfirst` is a
 # detached copy. Resolve via `get_fsalfirstlast` once and accept those buffers
-# only when they are already owned by the cache (stable fields); otherwise keep
-# the integrator buffers (throwaway factories like ExpRK).
+# only when *both* are already owned by the cache (some caches return an owned
+# first buffer and a fresh last one); otherwise keep the integrator buffers.
 @inline function _cache_owns_buffer(cache, buf)
     @inbounds for i in 1:nfields(cache)
         getfield(cache, i) === buf && return true
@@ -249,7 +249,7 @@ function _fsal_copy_buffers(integrator)
     if c_first === fsalfirst || c_last === fsallast
         return fsalfirst, fsallast
     end
-    if _cache_owns_buffer(cache, c_first) || _cache_owns_buffer(cache, c_last)
+    if _cache_owns_buffer(cache, c_first) && _cache_owns_buffer(cache, c_last)
         return c_first, c_last
     end
     return fsalfirst, fsallast
