@@ -124,6 +124,23 @@ end
     s(o2, [0.7, 0.3]; idxs = [1])
     @test o2[1] == s(0.7; idxs = [1])
     @test o2[3] == zeros(99)
+
+    # same over-long rule for idxs === nothing: only eachindex(tvals) slots
+    # are read/length-checked; extra uninitialized or wrong-length slots ok
+    o_full = Vector{Vector{Float64}}(undef, 3)
+    o_full[1] = zeros(2)
+    o_full[2] = zeros(2)
+    s(o_full, [0.7, 0.3])
+    @test o_full[1] == s(0.7)
+    @test o_full[2] == s(0.3)
+    @test !isassigned(o_full, 3)
+    o_full2 = Vector{Vector{Float64}}(undef, 3)
+    o_full2[1] = zeros(2)
+    o_full2[2] = zeros(2)
+    o_full2[3] = zeros(99)
+    s(o_full2, [0.7, 0.3])
+    @test o_full2[1] == s(0.7)
+    @test o_full2[3] == zeros(99)
 end
 
 @testset "in-place interpolation idxs/out validation after resize" begin
