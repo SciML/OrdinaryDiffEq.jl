@@ -1307,10 +1307,18 @@ end
                 end
             end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
-                # W = J - M/W_γdt may be reused from an earlier step, so scale by
-                # the γdt baked into W (not the current dt*γ) for W ERR = W_γdt⁻¹ err (#2902).
-                @.. broadcast = false tmp = tmp * inv(nlsolver.cache.W_γdt)
+                # Hairer–Wanner / Shampine DAE form: W ERR = W_γdt⁻¹ (M err).
+                # Use the γdt stored with (possibly reused) W; premultiply by M so
+                # algebraic rows (M=0) stay filtered rather than growing like err/c (#2902).
+                # M·err goes into atmp — not dz — so Krylov warm-start in linu is preserved.
                 est = nlsolver.cache.dz
+                mass_matrix = integrator.f.mass_matrix
+                if _is_identity_massmatrix(mass_matrix)
+                    @.. broadcast = false tmp = tmp * inv(nlsolver.cache.W_γdt)
+                else
+                    mul!(atmp, mass_matrix, tmp)
+                    @.. broadcast = false tmp = atmp * inv(nlsolver.cache.W_γdt)
+                end
                 linres = dolinsolve(
                     integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                     linu = _vec(est)
@@ -2368,9 +2376,15 @@ end
                 end
             end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
-                # W = J - M/W_γdt may be reused from an earlier step, so scale by
-                # the γdt baked into W (not the current dt*γ) for W ERR = W_γdt⁻¹ err (#2902).
-                tmp_est = tmp_est * inv(nlsolver.cache.W_γdt)
+                # Hairer–Wanner / Shampine DAE form: W ERR = W_γdt⁻¹ (M err).
+                # Use the γdt stored with (possibly reused) W; premultiply by M so
+                # algebraic rows (M=0) stay filtered rather than growing like err/c (#2902).
+                mass_matrix = integrator.f.mass_matrix
+                if _is_identity_massmatrix(mass_matrix)
+                    tmp_est = tmp_est * inv(nlsolver.cache.W_γdt)
+                else
+                    tmp_est = (mass_matrix * tmp_est) * inv(nlsolver.cache.W_γdt)
+                end
                 integrator.stats.nsolve += 1
                 est = _reshape(get_W(nlsolver) \ _vec(tmp_est), axes(tmp_est))
             else

@@ -1,13 +1,15 @@
 using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: get_EEst
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
+using LinearAlgebra
 using SciMLBase
 using Test
 
-# Issue #2902: smooth_est must solve W ERR = W_γdt⁻¹ err (Hairer–Wanner / Shampine),
+# Issue #2902: smooth_est must solve W ERR = W_γdt⁻¹ (M err) (Hairer–Wanner / Shampine),
 # using the γdt stored with the (possibly reused) W factorization.
 #
-# Non-stiff (J ≡ 0): W = −W_γdt⁻¹ I ⇒ ‖ERR‖ = ‖err‖ (ratio ≈ 1).
-# Stiff linear (J = −λ): M = I + W_γdt·λ ⇒ ‖ERR‖/‖err‖ = 1/(1 + λ·W_γdt).
+# Non-stiff (J ≡ 0, M = I): W = −W_γdt⁻¹ I ⇒ ‖ERR‖ = ‖err‖ (ratio ≈ 1).
+# Stiff linear (J = −λ, M = I): ‖ERR‖/‖err‖ = 1/(1 + λ·W_γdt).
 
 function f_cos!(du, u, p, t)
     du[1] = cos(t)
@@ -95,18 +97,16 @@ end
             @test isfinite(es) && isfinite(er) && er > 0
             ratio = es / er
             @test ratio ≈ expected rtol = 1.0e-6 atol = 1.0e-10
-            # Pre-fix buggy ratio was (γ·dt)/(1 + λ·γ·dt) = (γ·dt)·expected
             buggy = Float64(γ) * dt * expected
             @test abs(ratio - buggy) > 1.0e-3 * max(abs(expected), abs(buggy))
         end
     end
 end
 
-# Compare the smoothed estimate to the true local error u_num - u(t₀+dt) on u' = λu.
-# With abstol=1, reltol=0 the residual weight is 1, so EEst equals ‖est‖.
-# Non-stiff (z = λ·dt ∈ {-0.1, -1}): TRBDF2 ratio ≈ 1.0 / 1.07 — stay in a derived band.
-# Stiff (λ = -1e6): smoothed must be filtered well below the raw estimate
-# (exact exp(λ·dt) underflows in Float64, so no true-error ratio there).
+# Scalar linear u' = λu, M = I. With abstol=1, reltol=0, EEst = |est|.
+# Closed form: W = λ − 1/(γ_diag·dt), W ERR = (γ_diag·dt)⁻¹ err
+# ⇒ |ERR| = |err| / |1 − γ_diag·z| with z = λ·dt. True local error = |φ(z) − eᶻ|
+# (when eᶻ underflows to 0, that is just |φ(z)| = |u_num|).
 @testset "smooth_est vs true local error (#2902)" begin
     function f_lin!(du, u, p, t)
         du[1] = p[1] * u[1]
@@ -117,40 +117,83 @@ end
         return nothing
     end
     u0 = [1.0]
-    # abstol=1, reltol=0 ⇒ EEst = |est| for a scalar problem
     tol_kwargs = (; abstol = 1.0, reltol = 0.0)
+    # TRBDF2 diagonal entry γ_diag = A_{s,s} = 1 − 1/√2
+    γ_diag = 1 - 1 / sqrt(2)
 
-    @testset "non-stiff band (TRBDF2)" begin
-        # Reviewer-measured TRBDF2 ratios ≈ 1.0 at z=-0.1 and ≈ 1.07 at z=-1.
-        for (z, lo, hi) in ((-0.1, 0.85, 1.15), (-1.0, 0.9, 1.25))
-            λ = z # with dt=1 ⇒ z = λ·dt
+    @testset "closed form (TRBDF2)" begin
+        for z in (-0.1, -1.0)
+            λ = z
             dt = 1.0
             prob = ODEProblem(ODEFunction(f_lin!; jac = jac_lin!), u0, (0.0, dt), [λ])
             es, integ = first_step_EEst(
                 prob, TRBDF2(smooth_est = true); dt = dt, tol_kwargs...
             )
-            true_err = abs(integ.u[1] - u0[1] * exp(λ * dt))
-            @test true_err > 0
-            ratio = es / true_err
-            @test lo <= ratio <= hi
+            er, _ = first_step_EEst(
+                prob, TRBDF2(smooth_est = false); dt = dt, tol_kwargs...
+            )
+            φ = integ.u[1] / u0[1]
+            e_z = exp(z)
+            true_err = abs(φ - e_z)
+            @test true_err > 0 && er > 0
+            # Smoothed estimate from the raw embedded difference
+            smooth_closed = er / abs(1 - γ_diag * z)
+            # rtol from the order-2 leading-term cancellation: |φ−eᶻ| ~ O(z³) so a few
+            # ulps on the estimate are enough once the closed form is exact.
+            @test es ≈ smooth_closed rtol = 1.0e-9
+            @test es / true_err ≈ smooth_closed / true_err rtol = 1.0e-9
         end
     end
 
     @testset "stiff filtering (λ = -1e6)" begin
         λ = -1.0e6
         dt = 1.0e-2
+        z = λ * dt
         prob = ODEProblem(ODEFunction(f_lin!; jac = jac_lin!), u0, (0.0, 1.0), [λ])
-        for ALG in (TRBDF2, KenCarp4, SDIRK2)
-            es, _ = first_step_EEst(
+        for (ALG, γd) in ((TRBDF2, γ_diag), (KenCarp4, 1 // 4), (SDIRK2, 1))
+            es, integ = first_step_EEst(
                 prob, ALG(smooth_est = true); dt = dt, tol_kwargs...
             )
             er, _ = first_step_EEst(
                 prob, ALG(smooth_est = false); dt = dt, tol_kwargs...
             )
-            @test isfinite(es) && isfinite(er) && es > 0 && er > 0
-            # Smoothing must filter the explicit-like raw estimate
+            # eᶻ underflows to 0 ⇒ true local error is |u_num|
+            true_err = abs(integ.u[1] - u0[1] * exp(z))
+            @test true_err > 0 && es > 0 && er > 0
             @test es < er / 10
+            @test es ≈ er / abs(1 - Float64(γd) * z) rtol = 1.0e-9
         end
+    end
+end
+
+# Singular mass-matrix Robertson DAE: without M·err premultiply, smooth_est blows up
+# on the algebraic row and the solver returns Unstable.
+@testset "smooth_est singular mass matrix Robertson (#2902)" begin
+    function rober!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+        du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+        du[3] = y₁ + y₂ + y₃ - 1
+        return nothing
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    prob = ODEProblem(
+        ODEFunction{true}(rober!; mass_matrix = M),
+        [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4)
+    )
+    ref = solve(
+        prob, KenCarp4(smooth_est = false); reltol = 1.0e-12, abstol = 1.0e-12,
+        initializealg = BrownFullBasicInit()
+    )
+    @test SciMLBase.successful_retcode(ref)
+    for ALG in (SDIRK2, Hairer4, Hairer42, KenCarp4, Kvaerno5, TRBDF2)
+        sol = solve(
+            prob, ALG(smooth_est = true); reltol = 1.0e-8, abstol = 1.0e-8,
+            initializealg = BrownFullBasicInit(), maxiters = 100_000
+        )
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end] ≈ ref(sol.t[end]) rtol = 1.0e-3 atol = 1.0e-3
     end
 end
 
