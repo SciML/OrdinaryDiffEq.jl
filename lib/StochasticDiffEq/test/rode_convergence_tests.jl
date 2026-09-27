@@ -96,3 +96,105 @@ end
             decay_solution(alg, noise, n, copy(u0); inplace = true).u
     end
 end
+
+const TAYLOR_STEP_COUNTS = STEP_COUNTS[1:5]
+
+function taylor15_study(alg; seed = 20260921, sigma = 1.0)
+    rng = MersenneTwister(seed)
+    errors = zeros(PATHS, length(TAYLOR_STEP_COUNTS))
+    floors = zeros(PATHS)
+    for m in 1:PATHS
+        path = sigma .* wiener_path(rng)
+        g = cos.(5 .* path)
+        exact = exp.(-cumulative_trapezoid(g, FINE_DT))
+        floors[m] = maximum(abs, exp.(-cumulative_trapezoid(g[1:4:end], 4FINE_DT)) .- exact[1:4:end])
+        noise = NoiseGrid(FINE_GRID, path)
+        for (j, n) in enumerate(TAYLOR_STEP_COUNTS)
+            sol = decay_solution(alg, noise, n, 1.0)
+            stride = FINE_POINTS ÷ n
+            errors[m, j] = maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n)
+        end
+    end
+    strong = [sqrt(mean(errors[:, j] .^ 2)) for j in eachindex(TAYLOR_STEP_COUNTS)]
+    return (
+        strong = strong, strong_order = fitted_slope(TAYLOR_STEP_COUNTS, strong),
+        reference_floor = maximum(floors),
+    )
+end
+
+@testset "RandomTaylor15 reaches order 1.5 on a resolved path" begin
+    taylor = taylor15_study(RandomTaylor15())
+    euler = taylor15_study(RandomEM())
+    @test minimum(taylor.strong) > 5 * taylor.reference_floor
+    @test 1.5 < taylor.strong_order < 2.2
+    @test taylor.strong_order > euler.strong_order + 0.5
+    @test taylor.strong[end] < euler.strong[end] / 10
+end
+
+@testset "RandomTaylor15 keeps its order on a Brownian path of another amplitude" begin
+    taylor = taylor15_study(RandomTaylor15(); sigma = 0.2)
+    euler = taylor15_study(RandomEM(); sigma = 0.2)
+    @test minimum(taylor.strong) > 3 * taylor.reference_floor
+    @test 1.5 < taylor.strong_order < 2.3
+    @test taylor.strong[end] < euler.strong[end] / 20
+end
+
+@testset "RandomTaylor15 is Heun in the deterministic limit" begin
+    smooth(u, p, t, W) = -u
+    exact = exp.(-FINE_GRID)
+    noise = NoiseGrid(FINE_GRID, zeros(FINE_POINTS + 1))
+    function smooth_solution(alg, n)
+        prob = RODEProblem{false}(smooth, 1.0, (0.0, TEND), noise = noise)
+        return solve(prob, alg, dt = TEND / n, save_everystep = true, adaptive = false)
+    end
+    function smooth_error(alg, n)
+        sol = smooth_solution(alg, n)
+        stride = FINE_POINTS ÷ n
+        return maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n)
+    end
+    errors = [smooth_error(RandomTaylor15(), n) for n in STEP_COUNTS]
+    @test abs(fitted_slope(STEP_COUNTS, errors) - 2) < 0.2
+    taylor = smooth_solution(RandomTaylor15(), STEP_COUNTS[end]).u
+    heun = smooth_solution(RandomHeun(), STEP_COUNTS[end]).u
+    @test all(isapprox(a, b, rtol = 1.0e-9) for (a, b) in zip(taylor, heun))
+end
+
+@testset "RandomTaylor15 in-place matches out-of-place" begin
+    noise = NoiseGrid(FINE_GRID, wiener_path(MersenneTwister(20260921)))
+    u0 = [1.0, 2.0]
+    for n in (TAYLOR_STEP_COUNTS[1], TAYLOR_STEP_COUNTS[end])
+        outofplace = decay_solution(RandomTaylor15(), noise, n, u0).u
+        inplace = decay_solution(RandomTaylor15(), noise, n, copy(u0); inplace = true).u
+        @test all(isapprox(a, b, rtol = 1.0e-9) for (a, b) in zip(outofplace, inplace))
+    end
+end
+
+@testset "RandomTaylor15 step integrals are exact on a misaligned grid" begin
+    grid = collect(range(0.0, 1.0; length = 13))
+    integrals = StochasticDiffEq.StochasticDiffEqRODE.path_integrals
+    for (t, dt) in ((0.0, 0.25), (0.05, 0.25), (0.03, 0.04), (1 / 12, 1 / 12), (0.5, 0.5))
+        W = (t = grid, W = copy(grid), dW = dt, curW = t)
+        I1, I2 = integrals(W, t, dt, t)
+        @test I1 ≈ dt^2 / 2
+        @test I2 ≈ dt^3 / 3
+    end
+end
+
+@testset "RandomTaylor15 integrates backwards in time" begin
+    n = 64
+    back_grid = collect(range(TEND, 0.0; length = FINE_POINTS + 1))
+    path = reverse(wiener_path(MersenneTwister(20260921)))
+    g = cos.(5 .* path)
+    exact = exp.(-cumulative_trapezoid(g, -FINE_DT))
+    prob = RODEProblem{false}(decay_oop, 1.0, (TEND, 0.0), noise = NoiseGrid(back_grid, path))
+    sol = solve(prob, RandomTaylor15(), dt = -TEND / n, save_everystep = true, adaptive = false)
+    stride = FINE_POINTS ÷ n
+    @test maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n) < 1.0e-2
+end
+
+@testset "RandomTaylor15 rejects noise it cannot resolve" begin
+    prob = RODEProblem{false}(decay_oop, 1.0, (0.0, TEND))
+    @test_throws "not compatible with the chosen noise type" solve(
+        prob, RandomTaylor15(), dt = TEND / 16, adaptive = false
+    )
+end
