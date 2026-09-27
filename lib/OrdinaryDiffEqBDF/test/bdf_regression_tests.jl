@@ -3,6 +3,7 @@ using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
 using RecursiveArrayTools: ArrayPartition
+import Random
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -375,5 +376,34 @@ end
         step!(integ)
         @test integ.t == t0
         @test integ.sol.retcode == ReturnCode.DtLessThanMin
+    end
+end
+
+@testset "FBDF steps that land on a tstop across t = 0" begin
+    # fl(b - a) overshoots b by one ulp here; the core commits t = b exactly.
+    a, b = -0.9175594033000789, 0.8958939067577941
+    f_oop(u, p, t) = -0.01 .* u
+    f_iip(du, u, p, t) = (du .= -0.01 .* u; nothing)
+    for f in (f_oop, f_iip)
+        for (tspan, kw) in (
+                ((a, b), (;)), ((a, b), (; dt = 5.0)),
+                ((a, 2.0), (; tstops = [b], dt = 5.0)), ((-a, -b), (; dt = 5.0)),
+            )
+            sol = solve(ODEProblem(f, [1.0], tspan), FBDF(); kw...)
+            @test SciMLBase.successful_retcode(sol)
+            @test b in abs.(sol.t)
+        end
+        rng = Random.Xoshiro(7)
+        failed = Tuple{Float64, Float64}[]
+        for _ in 1:300
+            t0, t1 = -10 * rand(rng), 10 * rand(rng)
+            for tspan in ((t0, t1), (t1, t0))
+                sol = solve(ODEProblem(f, [1.0], tspan), FBDF(); save_everystep = false)
+                ok = SciMLBase.successful_retcode(sol) &&
+                    isapprox(sol.u[end][1], exp(-0.01 * (tspan[2] - tspan[1])), rtol = 1.0e-3)
+                ok || push!(failed, tspan)
+            end
+        end
+        @test isempty(failed)
     end
 end

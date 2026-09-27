@@ -1267,7 +1267,7 @@ function perform_step!(
     reinitFBDF!(integrator, cache)
     dt_taken = _fbdf_representable_dt(integrator)
     if dt_taken === nothing
-        # No representable step lies within [dtmin, dtmax] before the next tstop.
+        # dtmin and dtmax leave less than one ulp of t between them.
         integrator.force_stepfail = true
         SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.DtLessThanMin)
         return nothing
@@ -1542,7 +1542,7 @@ function perform_step!(
     reinitFBDF!(integrator, cache)
     dt_taken = _fbdf_representable_dt(integrator)
     if dt_taken === nothing
-        # No representable step lies within [dtmin, dtmax] before the next tstop.
+        # dtmin and dtmax leave less than one ulp of t between them.
         integrator.force_stepfail = true
         SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.DtLessThanMin)
         return nothing

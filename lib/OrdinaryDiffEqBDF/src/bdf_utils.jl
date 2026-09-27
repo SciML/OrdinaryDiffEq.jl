@@ -164,37 +164,33 @@ function _qndf_error_constant(integrator, k, cold_start)
     return error_constant(integrator, k)
 end
 
-# FBDF stores its history at the rounded times t + dt, which differ from t + dt when dt is a
-# few eps(t), so the formulas must use the increment actually taken. Returns the step to a
-# representable endpoint that respects dtmin, dtmax and the next tstop: the nearest one to
-# t + dt if admissible, otherwise its neighbor on the other side of t + dt. Landing exactly
-# on the tstop is allowed below dtmin, as in the core. Returns `nothing` if neither is
-# admissible.
+# FBDF stores its history at the times the integrator commits, so the formulas must use the
+# step actually taken. When the core will land this step on a tstop (or the tspan end), that
+# step is tstop - t. Otherwise it is the step to a representable endpoint that stays within
+# the bounds dt already satisfies: the one nearest t + dt if admissible, else its neighbor
+# on the other side of t + dt. A dt the core already took below dtmin (force_dtmin) is not
+# held to dtmin. Returns `nothing` only if [dtmin, dtmax] contains no representable endpoint.
 function _fbdf_representable_dt(integrator)
+    integrator.next_step_tstop && return integrator.tstop_target - integrator.t
     return _fbdf_representable_dt(
-        integrator.t, integrator.dt, integrator.tdir, integrator.opts.dtmin,
-        integrator.opts.dtmax,
-        SciMLBase.has_tstop(integrator) ? integrator.tdir * SciMLBase.first_tstop(integrator) :
-            nothing
+        integrator.t, integrator.dt, integrator.opts.dtmin, integrator.opts.dtmax
     )
 end
-function _fbdf_representable_dt(t::T, dt::T, tdir, dtmin, dtmax, tstop) where {T <: AbstractFloat}
+function _fbdf_representable_dt(t::T, dt::T, dtmin, dtmax) where {T <: AbstractFloat}
     e = t + dt
-    h = e - t
-    other = abs(h) > abs(dt) ? (dt > 0 ? prevfloat(e) : nextfloat(e)) :
+    other = abs(e - t) > abs(dt) ? (dt > 0 ? prevfloat(e) : nextfloat(e)) :
         (dt > 0 ? nextfloat(e) : prevfloat(e))
+    lo = min(abs(dtmin), abs(dt))
+    hi = max(abs(dtmax), abs(dt))
     for endpoint in (e, other)
         h = endpoint - t
-        on_tstop = tstop !== nothing && endpoint == tstop
-        passes_tstop = tstop !== nothing && tdir * (endpoint - tstop) > 0
-        if !iszero(h) && !passes_tstop && abs(h) <= abs(dtmax) &&
-                (on_tstop || abs(h) >= abs(dtmin))
+        if !iszero(h) && lo <= abs(h) <= hi
             return h
         end
     end
     return nothing
 end
-_fbdf_representable_dt(t, dt, tdir, dtmin, dtmax, tstop) = dt
+_fbdf_representable_dt(t, dt, dtmin, dtmax) = dt
 
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
