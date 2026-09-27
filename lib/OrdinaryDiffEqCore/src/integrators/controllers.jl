@@ -1307,14 +1307,20 @@ for (fname, extra_args) in (
             ) where {T}
             expr = Expr(:block)
             for i in 1:length(T.types)
+                callexpr = Expr(
+                    :call, $(QuoteNode(fname)),
+                    :(integrator),
+                    :(@inbounds(cache.caches[$i])),
+                    :(@inbounds(alg.algs[$i])),
+                )
+                for a in $(QuoteNode(extra_args))
+                    push!(callexpr.args, a)
+                end
                 push!(
                     expr.args,
                     quote
                         if integrator.cache.current == $i
-                            return $($fname)(
-                                integrator, @inbounds(cache.caches[$i]),
-                                @inbounds(alg.algs[$i]), $(extra_args...)
-                            )
+                            return $(callexpr)
                         end
                     end
                 )
@@ -1332,14 +1338,20 @@ for (fname, extra_args) in (
             ) where {T}
             expr = Expr(:block)
             for i in 1:length(T.types)
+                callexpr = Expr(
+                    :call, $(QuoteNode(fname)),
+                    :(integrator),
+                    :(@inbounds(cache.caches[$i])),
+                    :(alg),
+                )
+                for a in $(QuoteNode(extra_args))
+                    push!(callexpr.args, a)
+                end
                 push!(
                     expr.args,
                     quote
                         if integrator.cache.current == $i
-                            return $($fname)(
-                                integrator, @inbounds(cache.caches[$i]), alg,
-                                $(extra_args...)
-                            )
+                            return $(callexpr)
                         end
                     end
                 )
