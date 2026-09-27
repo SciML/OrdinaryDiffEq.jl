@@ -356,9 +356,9 @@ function _sde_init(
         end
     end
 
-    # Normalize user-supplied tolerances the same way master `_ode_init` did
-    # (`real.(...)`). Defaults above already use `real(...)`; this covers complex
-    # abstol/reltol kwargs so DiffEqBase.calculate_residuals does not StackOverflow.
+    # Normalize user-supplied tolerances with `real.(...)`. Defaults above already
+    # use `real(...)`; this covers complex abstol/reltol kwargs so
+    # DiffEqBase.calculate_residuals does not StackOverflow.
     abstol = real.(abstol)
     reltol = real.(reltol)
 
@@ -570,7 +570,7 @@ function _sde_init(
     )
 
     # ── Delegate to public ODE `_ode_init` (concrete abstol/reltol already set) ─
-    # Call public `_ode_init` (not a non-public impl) after SDE defaults + `real.(...)`.
+    # Call public `_ode_init` after SDE defaults + `real.(...)`.
     # Pre-resolved Float64 kwargs keep a single kwcall layer so `@inferred solve`
     # stays concrete (OrdinaryDiffEq Core `__init` pre-resolves the same way).
     ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)

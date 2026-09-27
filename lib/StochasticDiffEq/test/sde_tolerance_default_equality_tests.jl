@@ -48,8 +48,8 @@ end
 end
 
 @testset "complex user SDE tolerances are stored as real" begin
-    # SDE entry applies real.(...) on user tolerances (master `_ode_init` did the
-    # same) so adaptive residual calculations stay real.
+    # SDE entry applies real.(...) on user tolerances so adaptive residual
+    # calculations stay real.
     drift(u, p, t) = -u
     diffusion(u, p, t) = 0.1u
     for (u0, abstol, reltol) in (

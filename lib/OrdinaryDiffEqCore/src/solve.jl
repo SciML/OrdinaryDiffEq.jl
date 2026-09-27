@@ -283,8 +283,8 @@ end
 Internal: replace `nothing` absolute/relative tolerances with the concrete
 defaults used by OrdinaryDiffEq (`1 // 10^6` / `1 // 10^3` in
 the state eltype, or `false` for discrete problems). User-supplied values are
-passed through `real.(...)` (matches master `_ode_init` normalization, including
-complex tolerances from SDE callers).
+passed through `real.(...)` so complex tolerances (including from SDE callers)
+become real for residual calculations.
 """
 function resolve_ode_tolerances(prob, u, abstol, reltol)
     uBottomEltype = recursive_bottom_eltype(u)
@@ -337,11 +337,11 @@ end
 
 Public entry for ODE/DAE/SDE/RODE integrator construction. Accepts optional
 `abstol`/`reltol` (default `nothing`): missing/`nothing` become the problem's
-concrete defaults, and supplied values are normalized with `real.(...)`, matching
-master. Prefer `init`/`solve` for normal use. `SciMLBase.__init` and
+concrete defaults, and supplied values are normalized with `real.(...)`.
+Prefer `init`/`solve` for normal use. `SciMLBase.__init` and
 StochasticDiffEqCore pre-resolve tolerances to concrete types before calling so
 the heavy keyword body does not specialize on `Nothing` (TTFX); direct callers
-that omit tolerances still get master's defaults via the resolve near the top of
+that omit tolerances still get the defaults via the resolve near the top of
 this function.
 """
 Base.@constprop :aggressive function _ode_init(
@@ -592,7 +592,7 @@ Base.@constprop :aggressive function _ode_init(
     # Resolve missing/`nothing` tolerances and normalize supplied values with
     # `real.(...)`. Callers that already passed concrete tolerances
     # (`SciMLBase.__init`, StochasticDiffEqCore) are unchanged; public direct
-    # callers that omit tolerances get master's defaults here.
+    # callers that omit tolerances get the concrete defaults here.
     u_for_tol = _u !== nothing ? _u : (prob.u0 === nothing ? Float64[] : prob.u0)
     abstol, reltol = resolve_ode_tolerances(prob, u_for_tol, abstol, reltol)
     abstol_internal, reltol_internal = abstol, reltol

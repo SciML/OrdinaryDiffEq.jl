@@ -108,7 +108,7 @@ end
         return du[2] = -2u[2] / 1u"s"
     end
     prob = ODEProblem(decay_unitful!, u0, tspan)
-    # Master defaults for this problem (vector Quantity{Float64} in meters).
+    # Expected defaults for this problem (vector Quantity{Float64} in meters).
     exp_a = [1.0e-6u"m", 1.0e-6u"m"]
     exp_r = [1.0e-3u"m", 1.0e-3u"m"]
     integ = init(prob, Tsit5())
@@ -164,7 +164,8 @@ function count_kwbody_specializations(mod, name::Symbol)
         startswith(string(s), prefix) || continue
         fn = getfield(mod, s)
         fn isa Function || continue
-        for m in methods(fn).ms
+        for m in methods(fn)
+            # Base.specializations is the compiler reflection this count needs.
             n += count(!isnothing, Base.specializations(m))
         end
     end
@@ -195,7 +196,7 @@ end
 end
 
 @testset "public _ode_init accepts missing / nothing / one tolerance" begin
-    # Master's calling convention: abstol/reltol optional; nothing -> defaults.
+    # abstol/reltol are optional; nothing resolves to the concrete defaults.
     f_scalar(u, p, t) = -u
     prob = ODEProblem(f_scalar, 1.0, (0.0, 1.0))
     alg = Tsit5()
