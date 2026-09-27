@@ -91,12 +91,9 @@ ConstructionBase = "1.5.8"
 [targets]
 test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
 
+# Path-source only SDIRK so Trapezoid DAE tests see in-tree #4631 before that
+# release is in General. Broader sibling [sources] made the downgrade job resolve
+# local Core/BDF/etc. and fail nsa_stats_tests.jl:91 under Julia 1.11; master's
+# NonlinearSolve Project.toml had no [sources] and that downgrade stayed green.
 [sources]
-DiffEqBase = {path = "../DiffEqBase"}
-DiffEqDevTools = {path = "../DiffEqDevTools"}
-OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
-OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
-OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
-OrdinaryDiffEqFIRK = {path = "../OrdinaryDiffEqFIRK"}
-OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
 OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
