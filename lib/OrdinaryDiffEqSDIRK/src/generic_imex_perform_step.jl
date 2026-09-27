@@ -1313,6 +1313,11 @@ _mmdiag(mass_matrix::ScalarOperator) = convert(Number, mass_matrix)
                     @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
             end
+            # The explicit first stage is arbitrary in algebraic components, so
+            # its embedded difference only estimates error in differential rows.
+            if mmd !== nothing
+                @.. broadcast = false tmp = ifelse(iszero(mmd), zero(tmp), tmp)
+            end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
                 est = nlsolver.cache.dz
                 linres = dolinsolve(
@@ -2373,6 +2378,9 @@ end
                 elseif s == 12
                     tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11 + ebtilde[12] * k12
                 end
+            end
+            if mmd !== nothing
+                tmp_est = @.. ifelse(iszero(mmd), zero(tmp_est), tmp_est)
             end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
                 integrator.stats.nsolve += 1
