@@ -945,6 +945,9 @@ function build_nlsolver(
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
                 precs...,
+                # Newton residuals shrink with the correction. A fixed absolute
+                # floor can return zero before the outer iteration has converged.
+                abstol = zero(uTolType),
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
