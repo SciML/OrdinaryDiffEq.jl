@@ -206,21 +206,14 @@ end
 
 function reactant_group()
     is_APPVEYOR && return
-    # Traced enums landed on Reactant main (EnzymeAD/Reactant.jl#3232) but are not
-    # in a release yet (latest v0.2.288). Pin at the group boundary so GROUP=Reactant
-    # and GROUP=Everything both pick up main (SciMLBase >= 3.56 already has the
-    # parametric retcode / FullSpecialize Reactant extension, SciMLBase#1564).
+    # Reactant v0.2.289 includes traced enums (EnzymeAD/Reactant.jl#3232). Keep the
+    # Reactant suite self-contained here rather than listing Reactant in the root
+    # [extras]/[targets] test environment.
     withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
         Pkg.add(
             [
-                PackageSpec(
-                    name = "Reactant", url = "https://github.com/EnzymeAD/Reactant.jl",
-                    rev = "main"
-                ),
-                PackageSpec(
-                    name = "ReactantCore", url = "https://github.com/EnzymeAD/Reactant.jl",
-                    rev = "main", subdir = "lib/ReactantCore"
-                ),
+                PackageSpec(name = "Reactant", version = v"0.2.289"),
+                PackageSpec(name = "ReactantCore", version = v"0.1.23"),
             ]
         )
     end
