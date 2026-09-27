@@ -556,6 +556,7 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
+    reset_qndf2_history!(integrator, cache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -568,12 +569,15 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = false)
+    if integrator.derivative_discontinuity
+        reset_qndf2_history!(integrator, cache)
+    end
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver) = cache
     alg = unwrap_alg(integrator, true)
-    cnt = integrator.iter
+    cnt = cache.iters_from_event
     k = 2
-    if cnt == 1 || cnt == 2
+    if cnt < 2
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -586,7 +590,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 2 && dt != dtₙ₋₁
+    if cnt > 0 && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         d₁ = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -624,9 +628,9 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0
+        if cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
-        elseif integrator.success_iter == 1
+        elseif cnt == 1
             utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
@@ -653,11 +657,12 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 
     Δ = u - uprev
     cache.D[1] = Δ
-    cache.D[2] = integrator.success_iter == 0 ? zero(Δ) : Δ - d₁
+    cache.D[2] = cnt == 0 ? zero(Δ) : Δ - d₁
     cache.uprev3 = uprev2
     cache.uprev2 = uprev
     cache.dtₙ₋₂ = dtₙ₋₁
     cache.dtₙ₋₁ = dt
+    cache.iters_from_event += 1
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
@@ -667,6 +672,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF2Cache)
+    reset_qndf2_history!(integrator, cache)
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
@@ -677,13 +683,16 @@ function initialize!(integrator, cache::QNDF2Cache)
 end
 
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
+    if integrator.derivative_discontinuity
+        reset_qndf2_history!(integrator, cache)
+    end
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, Dtmp, D2, R, U, utilde, atmp, nlsolver) = cache
     (; z, tmp, ztmp) = nlsolver
     alg = unwrap_alg(integrator, true)
-    cnt = integrator.iter
+    cnt = cache.iters_from_event
     k = 2
-    if cnt == 1 || cnt == 2
+    if cnt < 2
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -696,7 +705,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 2 && dt != dtₙ₋₁
+    if cnt > 0 && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         @.. broadcast = false Dtmp[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -738,9 +747,9 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0
+        if cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
-        elseif integrator.success_iter == 1
+        elseif cnt == 1
             @.. broadcast = false utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -763,7 +772,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
         return
     end
 
-    if integrator.success_iter == 0
+    if cnt == 0
         @.. broadcast = false D[2] = false
     else
         @.. broadcast = false D[2] = (u - uprev) - Dtmp[1]
@@ -773,6 +782,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     cache.uprev2 .= uprev
     cache.dtₙ₋₂ = dtₙ₋₁
     cache.dtₙ₋₁ = dt
+    cache.iters_from_event += 1
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
@@ -801,8 +811,9 @@ function perform_step!(
     alg = unwrap_alg(integrator, true)
 
     if integrator.derivative_discontinuity
-        dtprev = one(dt)
-        order = 1
+        dtprev = cache.dtprev = one(dt)
+        order = cache.order = 1
+        cache.prevorder = 1
         cache.nconsteps = 0
         cache.consfailcnt = 0
         for i in eachindex(D)
@@ -943,8 +954,9 @@ function perform_step!(
     alg = unwrap_alg(integrator, true)
 
     if integrator.derivative_discontinuity
-        dtprev = one(dt)
-        order = 1
+        dtprev = cache.dtprev = one(dt)
+        order = cache.order = 1
+        cache.prevorder = 1
         cache.nconsteps = 0
         cache.consfailcnt = 0
         for d in D

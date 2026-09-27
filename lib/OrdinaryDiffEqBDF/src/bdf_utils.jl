@@ -602,3 +602,22 @@ function _fbdf_finish_fixed_step!(integrator, cache)
     end
     return nothing
 end
+
+function reset_qndf2_history!(integrator, cache)
+    cache.iters_from_event = 0
+    cache.dtₙ₋₁ = zero(integrator.dt)
+    cache.dtₙ₋₂ = zero(integrator.dt)
+    if cache isa QNDF2Cache
+        copyto!(cache.uprev2, integrator.uprev)
+        copyto!(cache.uprev3, integrator.uprev)
+        recursivefill!(cache.D, false)
+        recursivefill!(cache.D2, false)
+    else
+        cache.uprev2 = copy(integrator.uprev)
+        cache.uprev3 = copy(integrator.uprev)
+        for D in (cache.D, cache.D2), i in eachindex(D)
+            D[i] = zero(integrator.uprev)
+        end
+    end
+    return nothing
+end
