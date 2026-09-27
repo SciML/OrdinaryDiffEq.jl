@@ -184,9 +184,8 @@ end
 
 # FSAL refresh must not call allocating `get_fsalfirstlast` factories (ExpRK
 # returns fresh `zero(cache.rtmp)` each call). Assert `update_fsal!` stays at 0
-# bytes (this is what failed on 080d4c11d with ~320 KB). Under `Pkg.test`'s
-# `--check-bounds=yes`, ETDRK2 `step!` allocates a constant ~64 bytes on master
-# and head alike, so guard size-independence instead of absolute zero.
+# bytes. Under `Pkg.test`'s `--check-bounds=yes`, ETDRK2 `step!` allocates a
+# small constant amount, so guard size-independence instead of absolute zero.
 @testset "ExpRK FSAL refresh does not allocate on warmed in-place steps" begin
     f!(du, u, p, t) = (du .= .-u; nothing)
     function warmed_etdrk2(n)
