@@ -6,11 +6,10 @@
 # displacement as a perfect solve (`ndz < 1e-5` on the first iteration, `η·ndz ≈ 0 < κ` on
 # later ones) and accept the stage with no correction applied.
 #
-# Two disjoint symptoms. An exactly unmoved iterate from a cache that has not terminated has
-# decided nothing yet (a cache that terminated at zero displacement either reached the root
-# exactly or failed, and `compute_step!` turns failures into `Inf`). A displacement that is
-# merely below roundoff is not self-evidently either, so `compute_step!` puts the question to
-# the residual — see `stalled_inner_step`.
+# Both exactly zero and sub-roundoff displacements need the residual check performed by
+# `compute_step!` (see `stalled_inner_step`). The inner cache has zero tolerances, so it can
+# remain unterminated at a solved stage whose residual is at the cancellation floor.
+# Rejecting every zero displacement from an unterminated cache would reject that solution.
 _uninformative_step(nlsolver, ndz) = false
 function _uninformative_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
     nlcache = nlsolver.cache.cache
@@ -18,8 +17,7 @@ function _uninformative_step(nlsolver::NLSolver{<:NonlinearSolveAlg}, ndz)
     # `force_stop`/`nsteps` for `not_terminated` to read): a zero `ndz` there means a
     # complete inner solve returned the iterate unchanged, which is genuine convergence.
     nlcache isa NonlinearSolveNoInitCache && return false
-    return (iszero(ndz) && NonlinearSolveBase.not_terminated(nlcache)) ||
-        nlsolver.cache.stalled
+    return nlsolver.cache.stalled
 end
 
 """
