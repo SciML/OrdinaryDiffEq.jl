@@ -383,6 +383,10 @@ The keyword only goes where it is understood: an older `NonlinearSolveBase` has 
 keyword and would reject the call.
 """
 function step_inner!(nlcache, recompute_jacobian, defer_residual)
+    # DFSane has no Jacobian and warns on every iteration if given this control.
+    if hasproperty(nlcache, :alg) && nlcache.alg isa GeneralizedDFSane
+        recompute_jacobian = nothing
+    end
     if defer_residual
         step!(nlcache; recompute_jacobian, evaluate_residual = false)
     else
