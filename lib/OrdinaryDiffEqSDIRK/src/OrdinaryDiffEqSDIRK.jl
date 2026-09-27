@@ -83,7 +83,7 @@ const _lorenz_pref_params = [10.0, 28.0, 8 / 3]
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
-    solver_list = [TRBDF2(), KenCarp4()]
+    solver_list = [TRBDF2(), KenCarp4(), ImplicitEuler()]
     prob_list = []
 
     if Preferences.@load_preference("PrecompileDefaultSpecialize", true)

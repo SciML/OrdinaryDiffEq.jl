@@ -649,7 +649,8 @@ stage (`false` by default). Algorithms that do set this to `true` so the
 integrator computes `uprev2`/extrapolant state for them.
 """
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
+# Prefer `any(f, itr)` over broadcast so this stays allocation-free on Julia LTS.
+alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates, alg.algs)
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 alg_extrapolates(alg) = false
 """

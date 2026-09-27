@@ -252,6 +252,16 @@ end
         sim_iip = test_convergence(dts, prob_iip, alg)
         @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
     end
+
+    # ARS232 and ARS343 have one more explicit stage than implicit, so they do not end on the last stage.
+    ε = 1.0e-10
+    relax! = (du, u, p, t) -> (du[1] = 0; du[2] = (u[1] - u[2]) / ε; nothing)
+    rotate! = (du, u, p, t) -> (du[1] = -u[2]; du[2] = u[1]; nothing)
+    stiff_prob = SplitODEProblem(relax!, rotate!, [1.0, 1.0], (0.0, 0.1))
+    for alg in (ARS222(), ARS443())
+        u = solve(stiff_prob, alg; dt = 0.1, adaptive = false).u[end]
+        @test abs(u[2] - u[1]) < 100ε
+    end
 end
 
 # Regression test: Kvaerno3/4/5 with SplitODEProblem must integrate the full RHS (f1+f2),

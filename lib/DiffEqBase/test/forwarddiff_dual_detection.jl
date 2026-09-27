@@ -409,3 +409,11 @@ u = ForwardDiff.Dual.(val, par)
 @test DiffEqBase.totallength(u[1]) ==
     DiffEqBase.totallength(val[1]) + DiffEqBase.totallength(par[1])
 @test DiffEqBase.totallength(u) == sum(DiffEqBase.totallength, u)
+
+# An out-of-place `FunctionWrapperSpecialize` problem whose argument types have no
+# precompiled wrapper signature raises the dedicated error, not an `UndefVarError`.
+@test_throws DiffEqBase.NoRecompileArgumentError ODEProblem{
+    false, DiffEqBase.SciMLBase.FunctionWrapperSpecialize,
+}(
+    (u, p, t) -> u, Float32[1], (0.0f0, 1.0f0), nothing
+)

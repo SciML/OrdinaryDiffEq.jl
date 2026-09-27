@@ -10,9 +10,9 @@ import OrdinaryDiffEqCore: isfsal, issplit,
     constvalue, _fixup_ad,
     @threaded, isthreaded
 import OrdinaryDiffEqCore
-# `alg_order` and `full_cache` are owned by SciMLBase and extended here, so they
-# need `import`; `initialize!` is owned by DiffEqBase.
-import SciMLBase: alg_order, full_cache
+# `alg_order`, `full_cache` and `isadaptive` are owned by SciMLBase and extended
+# here, so they need `import`; `initialize!` is owned by DiffEqBase.
+import SciMLBase: alg_order, full_cache, isadaptive
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import FastBroadcast: @..
 import MuladdMacro: @muladd

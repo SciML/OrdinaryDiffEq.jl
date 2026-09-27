@@ -88,6 +88,50 @@ Applies taming technique to prevent numerical blow-up while maintaining accuracy
 struct RandomTamedEM <: StochasticDiffEqRODEAlgorithm end
 
 """
+    RandomTaylor15()
+
+**RandomTaylor15: Derivative-free order 1.5 Taylor method (RODE)**
+
+Order 1.5 scheme for Random Ordinary Differential Equations driven by a Wiener process
+supplied as a stored path. The derivatives of the Taylor scheme are replaced by finite
+differences of the right-hand side, so only evaluations of `f` are needed. The drift is
+advanced by a Heun step with the noise held at its value at `t`, and the noise enters
+through integrals of the path over the step, taken from the supplied path rather than
+from their Brownian expectations. The step therefore reduces to Heun's method when `f`
+does not depend on `W`, and its order does not depend on the amplitude of the path.
+
+## Method Properties
+
+  - **Problem type**: RODEs driven by a `NoiseGrid` with scalar values
+  - **Pathwise order**: 1.5
+  - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: 4 per step
+  - **Noise usage**: reads the driving path between the step endpoints
+
+## When to Use
+
+The step uses integrals of the driving path over `[t, t+dt]`, so the path must be
+resolved more finely than the solver steps. That happens when the noise is measured
+data or is generated on a fine grid and the solver is stepped coarsely. With a path
+that is only known at the solver's own steps there is no sub-step information to use
+and `RandomEM` is the appropriate method; the integrals then collapse to the endpoint
+rule and the order drops to 1, which is warned about when the cache is built.
+
+The finite differences perturb the noise argument by `sqrt(dt)`, so the error constant
+carries the third derivative of `f` in `W`. For a right-hand side oscillating in `W` at
+frequency `a` the asymptotic rate is reached once `a^2 * dt` is below about 1, and the
+measured rate is lower on coarser steps.
+
+## References
+
+  - Asai, Numerical Methods for Random Ordinary Differential Equations and their
+    Applications in Biology and Medicine, PhD thesis, Goethe University Frankfurt, 2016,
+    equation (3.24), with the step integrals taken from the path and the drift advanced
+    by a Heun step rather than through the second difference.
+"""
+struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
+
+"""
     BAOAB(; gamma = 1.0, scale_noise = true)
 
 **BAOAB: Langevin Dynamics Integrator (Specialized)**
