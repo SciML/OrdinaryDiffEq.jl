@@ -412,15 +412,12 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 5 * sol_i.stats.naccept) < 4
-        # adaptive time step — after unifying the per-method perform_step!s into
-        # the generic Nyström loop, IIP (`@..` broadcast) and OOP (scalar) paths
-        # diverge by per-step FP roundoff that compounds through the step
-        # controller on every Julia version. Same family-wide behaviour as the
-        # other DPRKN/ERKN methods.
+        # adaptive time step — IIP vs OOP may produce different step counts
+        # due to FP rounding differences in initdt and step controller
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        @test_broken sol_i.t ≈ sol_o.t
-        @test_broken sol_i.u ≈ sol_o.u
+        @test SciMLBase.successful_retcode(sol_i)
+        @test SciMLBase.successful_retcode(sol_o)
     end
 
     @testset "FineRKN5" begin
