@@ -241,8 +241,7 @@ end
     @test inplace_matches_oop(sol)
 end
 
-# Regression: DefaultODEAlgorithm step! must be allocation-free after warm-up
-# (composite controller dispatch used to index a heterogeneous tuple at runtime).
+# Regression: DefaultODEAlgorithm step! must be allocation-free after warm-up.
 @testset "DefaultODEAlgorithm step! allocation-free" begin
     function lorenz_step_alloc!(du, u, p, t)
         du[1] = 10 * (u[2] - u[1])
