@@ -301,7 +301,7 @@ end
     uprev3::uType
     dtₙ₋₁::dtType
     dtₙ₋₂::dtType
-    iters_from_event::Int
+    success_iter_at_event::Int
 end
 
 @cache mutable struct QNDF2Cache{
@@ -321,7 +321,7 @@ end
     nlsolver::N
     dtₙ₋₁::dtType
     dtₙ₋₂::dtType
-    iters_from_event::Int
+    success_iter_at_event::Int
     step_limiter!::StepLimiter
 end
 

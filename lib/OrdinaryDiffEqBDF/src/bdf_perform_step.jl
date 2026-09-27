@@ -575,7 +575,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver) = cache
     alg = unwrap_alg(integrator, true)
-    cnt = cache.iters_from_event
+    cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
     if cnt < 2
         κ = zero(alg.kappa)
@@ -662,7 +662,6 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     cache.uprev2 = uprev
     cache.dtₙ₋₂ = dtₙ₋₁
     cache.dtₙ₋₁ = dt
-    cache.iters_from_event += 1
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
@@ -690,7 +689,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, Dtmp, D2, R, U, utilde, atmp, nlsolver) = cache
     (; z, tmp, ztmp) = nlsolver
     alg = unwrap_alg(integrator, true)
-    cnt = cache.iters_from_event
+    cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
     if cnt < 2
         κ = zero(alg.kappa)
@@ -782,7 +781,6 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     cache.uprev2 .= uprev
     cache.dtₙ₋₂ = dtₙ₋₁
     cache.dtₙ₋₁ = dt
-    cache.iters_from_event += 1
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
