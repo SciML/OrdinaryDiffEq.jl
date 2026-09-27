@@ -1,5 +1,5 @@
 using StochasticDiffEq, Test, Random, DiffEqNoiseProcess,
-    RecursiveArrayTools, LinearAlgebra, DiffEqBase
+    RecursiveArrayTools, LinearAlgebra
 Random.seed!(100)
 
 struct NoIndexArray{T, N} <: AbstractArray{T, N}
