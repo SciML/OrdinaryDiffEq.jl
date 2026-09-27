@@ -230,8 +230,8 @@ end
 # tuples of differently sized tuples, so indexing them with a runtime `n`
 # is type-unstable and boxes the result. The unrolled branch dispatches
 # each kernel on a literal Val(1)..Val(6), giving it a statically known
-# order so the table lookups constant-fold to concrete NTuple types. The
-# fallback keeps the previous BoundsError behavior for orders above 6.
+# order so the table lookups constant-fold to concrete NTuple types.
+# Orders above 6 throw BoundsError.
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
         cache::FBDF_CACHES,
