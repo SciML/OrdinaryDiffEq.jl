@@ -77,6 +77,11 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
     for j in 1:(m - 1)
         coeff = QΔ[m, j]
         iszero(coeff) && continue
+        # The right-hand side can throw at a failed node's iterate.
+        if cache.failed[j]
+            cache.failed[m] = true
+            return nothing
+        end
         @.. broadcast = false tmpm = tmpm + coeff * zk1[j]
     end
     if split
@@ -88,6 +93,10 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         for j in 1:(m - 1)
             coeff = QE[m, j]
             iszero(coeff) && continue
+            if cache.failed[j]
+                cache.failed[m] = true
+                return nothing
+            end
             @.. broadcast = false tmpm = tmpm + coeff * zEk1[j]
         end
     end
@@ -111,7 +120,7 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         @.. broadcast = false zk1[m] = znode
         @.. broadcast = false ubuf[m] = tmpm + QΔ[m, m] * znode
     end
-    if split
+    if split && !cache.failed[m]
         f.f2(k2[m], ubuf[m], p, tm)
         cache.nf2[m] += 1
         @.. broadcast = false zEk1[m] = dt * k2[m]
