@@ -1293,255 +1293,82 @@ end
 # Unrolled dispatch over the heterogeneous `caches` tuple. Runtime indexing
 # `caches[current]` is type-unstable and allocates on every composite / default
 # step (see `composite_ode_interpolant` and `DefaultCache` perform_step!).
-@generated function accept_step_controller(
-        integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return accept_step_controller(
-                        integrator, @inbounds(cache.caches[$i]), @inbounds(alg.algs[$i])
-                    )
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
+for (fname, extra_args) in (
+        (:accept_step_controller, ()),
+        (:stepsize_controller!, ()),
+        (:step_accept_controller!, (:q,)),
+        (:step_reject_controller!, ()),
+        (:post_newton_controller!, ()),
     )
-    return expr
-end
-@generated function accept_step_controller(
-        integrator, cache::CompositeControllerCache{T}, alg
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return accept_step_controller(integrator, @inbounds(cache.caches[$i]), alg)
-                end
+    @eval begin
+        @generated function $fname(
+                integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm,
+                $(extra_args...)
+            ) where {T}
+            expr = Expr(:block)
+            for i in 1:length(T.types)
+                push!(
+                    expr.args,
+                    quote
+                        if integrator.cache.current == $i
+                            return $($fname)(
+                                integrator, @inbounds(cache.caches[$i]),
+                                @inbounds(alg.algs[$i]), $(extra_args...)
+                            )
+                        end
+                    end
+                )
             end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
+            push!(
+                expr.args,
+                quote
+                    throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+                end
+            )
+            return expr
         end
-    )
-    return expr
+        @generated function $fname(
+                integrator, cache::CompositeControllerCache{T}, alg, $(extra_args...)
+            ) where {T}
+            expr = Expr(:block)
+            for i in 1:length(T.types)
+                push!(
+                    expr.args,
+                    quote
+                        if integrator.cache.current == $i
+                            return $($fname)(
+                                integrator, @inbounds(cache.caches[$i]), alg,
+                                $(extra_args...)
+                            )
+                        end
+                    end
+                )
+            end
+            push!(
+                expr.args,
+                quote
+                    throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+                end
+            )
+            return expr
+        end
+    end
 end
 @inline function accept_step_controller(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@generated function stepsize_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return stepsize_controller!(
-                        integrator, @inbounds(cache.caches[$i]), @inbounds(alg.algs[$i])
-                    )
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
-end
-@generated function stepsize_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return stepsize_controller!(integrator, @inbounds(cache.caches[$i]), alg)
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
-end
 @inline function stepsize_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
-end
-
-@generated function step_accept_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm, q
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return step_accept_controller!(
-                        integrator, @inbounds(cache.caches[$i]), @inbounds(alg.algs[$i]), q
-                    )
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
-end
-@generated function step_accept_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg, q
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return step_accept_controller!(integrator, @inbounds(cache.caches[$i]), alg, q)
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
 end
 @inline function step_accept_controller!(integrator, cache::CompositeCache, alg, q)
     current_idx = integrator.cache.current
     return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), alg, q)
 end
-
-@generated function step_reject_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return step_reject_controller!(
-                        integrator, @inbounds(cache.caches[$i]), @inbounds(alg.algs[$i])
-                    )
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
-end
-@generated function step_reject_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return step_reject_controller!(integrator, @inbounds(cache.caches[$i]), alg)
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
-end
 @inline function step_reject_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
-end
-
-@generated function post_newton_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return post_newton_controller!(
-                        integrator, @inbounds(cache.caches[$i]), @inbounds(alg.algs[$i])
-                    )
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
-end
-@generated function post_newton_controller!(
-        integrator, cache::CompositeControllerCache{T}, alg
-    ) where {T}
-    expr = Expr(:block)
-    for i in 1:length(T.types)
-        push!(
-            expr.args,
-            quote
-                if integrator.cache.current == $i
-                    return post_newton_controller!(integrator, @inbounds(cache.caches[$i]), alg)
-                end
-            end
-        )
-    end
-    push!(
-        expr.args,
-        quote
-            throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
-        end
-    )
-    return expr
 end
 @inline function post_newton_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
@@ -1568,7 +1395,7 @@ for accessor in (
         push!(
             expr.args,
             quote
-                throw(ArgumentError(string("Controller cache ", integrator.cache.current, " is not available. There are only ", length(cache.caches), " caches.")))
+                throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
             end
         )
         return expr
