@@ -44,7 +44,10 @@ strict Rosenbrock methods, linear problems, mass-matrix (DAE) problems,
 CompositeAlgorithm, non-adaptive solves, and first iteration.
 """
 function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-    alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
+    return _with_current_alg(_rosenbrock_jac_reuse_decision_alg, integrator, cache, dtgamma)
+end
+
+function _rosenbrock_jac_reuse_decision_alg(alg, integrator, cache, dtgamma)
 
     # Non-W-methods always recompute
     if !isWmethod(alg)
@@ -179,6 +182,10 @@ side `linsolve_tmp = fsalfirst + dtd1·dT` on the cache. Skipped when `repeat_st
 is `true`.
 """
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
+    return _with_current_alg(_calc_tderivative!, integrator, cache, dtd1, repeat_step)
+end
+
+function _calc_tderivative!(alg, integrator, cache, dtd1, repeat_step)
     return @inbounds begin
         (; t, dt, uprev, u, f, p) = integrator
         (; du2, fsalfirst, dT, tf, linsolve_tmp) = cache
@@ -190,8 +197,6 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                alg = unwrap_alg(integrator, true)
-
                 autodiff_alg = gpu_safe_autodiff(ADTypes.dense_ad(alg_autodiff(alg)), u)
 
                 # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work
@@ -827,6 +832,10 @@ function calc_W!(
         W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, newJW = nothing
     )
+    return _with_current_alg(_calc_W!, integrator, W, nlsolver, cache, dtgamma, repeat_step, newJW)
+end
+
+function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, newJW)
     (; t, dt, uprev, u, f, p) = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
@@ -837,7 +846,6 @@ function calc_W!(
 
     (; J) = lcache
     isdae = integrator.alg isa DAEAlgorithm
-    alg = unwrap_alg(integrator, true)
     mass_matrix = nothing
     if !isdae
         mass_matrix = integrator.f.mass_matrix
@@ -1033,8 +1041,13 @@ time derivative needed by a Rosenbrock step, honoring Jacobian reuse for W-metho
 Returns whether a fresh `W` was formed. Skips the work on a repeated step.
 """
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
+    return _with_current_alg(
+        _calc_rosenbrock_differentiation!, integrator, cache, dtd1, dtgamma, repeat_step
+    )
+end
+
+function _calc_rosenbrock_differentiation!(alg, integrator, cache, dtd1, dtgamma, repeat_step)
     nlsolver = nothing
-    alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step

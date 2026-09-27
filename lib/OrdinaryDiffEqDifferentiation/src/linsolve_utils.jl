@@ -50,8 +50,10 @@ function dolinsolve(
     )
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
+    return _with_current_alg(_dolinsolve, integrator, linsolve, A, reltol)
+end
 
-    _alg = unwrap_alg(integrator, true)
+function _dolinsolve(_alg, integrator, linsolve, A, reltol)
     if !isnothing(A)
         if integrator isa DEIntegrator
             (; u, p, t) = integrator

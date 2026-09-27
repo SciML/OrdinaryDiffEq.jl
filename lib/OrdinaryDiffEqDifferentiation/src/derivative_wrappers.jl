@@ -194,8 +194,10 @@ function jacobian!(
         return nothing
     end
 
-    alg = unwrap_alg(integrator, true)
+    return _with_current_alg(_jacobian!, integrator, J, f, x, fx, jac_config)
+end
 
+function _jacobian!(alg, integrator, J, f, x, fx, jac_config)
     dense = ADTypes.dense_ad(alg_autodiff(alg))
 
     if dense isa AutoForwardDiff
