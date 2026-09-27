@@ -7,8 +7,6 @@ using Test
 
 # Van der Pol μ=1e5: smoothed vs raw SDIRK error estimates differ in accepted step
 # counts here, which makes it a detector for whether smoothing is actually active.
-# Before the NSA W-reuse fix, smoothing was `isnewton`-gated, so NonlinearSolveAlg
-# silently error-controlled on the raw estimate and step counts diverged from NLNewton.
 function vdp!(du, u, p, t)
     du[1] = u[2]
     du[2] = p[1] * ((1 - u[1]^2) * u[2] - u[1])

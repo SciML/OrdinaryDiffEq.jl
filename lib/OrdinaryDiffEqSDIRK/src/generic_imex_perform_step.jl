@@ -1307,9 +1307,9 @@ end
                 end
             end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
-                # W = J - (hγ)⁻¹ I; Hairer–Wanner / Shampine smoothing is
-                # W ERR = (hγ)⁻¹ err, so scale the raw estimate before the solve (#2902).
-                @.. broadcast = false tmp = tmp * inv(dt * γ)
+                # W = J - M/W_γdt may be reused from an earlier step, so scale by
+                # the γdt baked into W (not the current dt*γ) for W ERR = W_γdt⁻¹ err (#2902).
+                @.. broadcast = false tmp = tmp * inv(nlsolver.cache.W_γdt)
                 est = nlsolver.cache.dz
                 linres = dolinsolve(
                     integrator, nlsolver.cache.linsolve; b = _vec(tmp),
@@ -2368,9 +2368,9 @@ end
                 end
             end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
-                # W = J - (hγ)⁻¹ I; Hairer–Wanner / Shampine smoothing is
-                # W ERR = (hγ)⁻¹ err, so scale the raw estimate before the solve (#2902).
-                tmp_est = tmp_est * inv(dt * γ)
+                # W = J - M/W_γdt may be reused from an earlier step, so scale by
+                # the γdt baked into W (not the current dt*γ) for W ERR = W_γdt⁻¹ err (#2902).
+                tmp_est = tmp_est * inv(nlsolver.cache.W_γdt)
                 integrator.stats.nsolve += 1
                 est = _reshape(get_W(nlsolver) \ _vec(tmp_est), axes(tmp_est))
             else
