@@ -19,9 +19,13 @@ NO_TSPAN_PROBS = Union{
 }
 
 """
-    has_callbacks(kwargs)
+    has_callbacks(kwargs) -> Bool
 
-Check if there are any callbacks in the kwargs. Returns `true` if callbacks are present.
+Return `true` if `kwargs` contains a nonzero callback.
+
+An absent or `nothing` `:callback` is treated as no callback. An empty
+`CallbackSet` (including the empty erasure set injected on Julia ≥ 1.12) is also
+treated as no callback; any other callback value is treated as present.
 """
 function has_callbacks(kwargs)
     cb = get(kwargs, :callback, nothing)

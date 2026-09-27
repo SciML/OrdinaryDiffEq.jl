@@ -38,6 +38,13 @@ Private = false
 Filter = x -> x === SciMLBase.AutoRespecialize
 ```
 
+## Problem kwargs helpers
+
+```@docs
+DiffEqBase.has_callbacks
+DiffEqBase.merge_problem_kwargs
+```
+
 ## Default callback behavior
 
 ```@docs
