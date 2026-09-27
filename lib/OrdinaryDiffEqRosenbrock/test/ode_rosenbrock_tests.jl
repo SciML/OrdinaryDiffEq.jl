@@ -701,12 +701,7 @@ end
     @test integ.cache.atmp[3] ≈ r_alg / abstol_nu[3]
     @test integ.cache.atmp[3] != r_alg / abstol_nu[1]
 
-    # Rosenbrock32 goes through separate caches for the same correction. On
-    # ROBER at 1e-8 its error estimate rejects to instability even with scalar
-    # abstol, so exercise it on the non-stiff DAE u1'=-u1, 0=u1-u2. OOP
-    # Rosenbrock32 is Unstable at tol 1e-6 on that problem (many rejections)
-    # while IIP succeeds, so the regression uses 1e-4 where both forms succeed
-    # and equal-entry vector abstol must match the scalar trajectory.
+    # Rosenbrock32 must reject singular mass matrices (#4650), IIP and OOP.
     dae_oop(u, p, t) = [-u[1], u[1] - u[2]]
     function dae_iip(du, u, p, t)
         du[1] = -u[1]
@@ -714,16 +709,17 @@ end
         return nothing
     end
     M2 = Diagonal([1.0, 0.0])
-    abstol32 = [1.0e-4, 1.0e-4]
     for prob in (
             ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
             ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
         )
-        sol_vec = solve(prob, Rosenbrock32(); abstol = abstol32, reltol = 1.0e-4)
-        sol_scalar = solve(prob, Rosenbrock32(); abstol = 1.0e-4, reltol = 1.0e-4)
-        @test SciMLBase.successful_retcode(sol_vec)
-        @test sol_vec.stats.naccept == sol_scalar.stats.naccept
-        @test sol_vec.stats.nreject == sol_scalar.stats.nreject
-        @test sol_vec.u[end] == sol_scalar.u[end]
+        @test_throws ArgumentError solve(prob, Rosenbrock32())
+    end
+    Mns = Diagonal([2.0, 1.0])
+    for prob in (
+            ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = Mns), [1.0, 1.0], (0.0, 1.0)),
+            ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = Mns), [1.0, 1.0], (0.0, 1.0)),
+        )
+        @test SciMLBase.successful_retcode(solve(prob, Rosenbrock32()))
     end
 end
