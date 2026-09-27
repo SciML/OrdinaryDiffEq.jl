@@ -13,9 +13,10 @@
     return r isa Number ? r : all(r)
 end
 
-# `DiffEqBase.NAN_CHECK` catches Dual NaN partials that a fast-math norm can hide,
-# but only when a method exists (Number / AbstractArray / ArrayPartition / …).
-# Custom non-array states without a method keep master's reduction-only path.
+# Prefer DiffEqBase.NAN_CHECK when a method exists (Number / AbstractArray /
+# ArrayPartition / …). Custom non-array states without a method keep master's
+# reduction-only path. (NAN_CHECK on Vector{<:Dual} only sees NaN values, not
+# NaN Dual partials — that is DiffEqBase's behavior.)
 @inline function _ode_nan_check(x)
     return applicable(DiffEqBase.NAN_CHECK, x) ? DiffEqBase.NAN_CHECK(x) : false
 end
@@ -215,10 +216,10 @@ end
         d₁ = internalnorm(tmp, t)
     end
 
-    # Prefer DiffEqBase.NAN_CHECK when a method exists (catches Dual NaN
-    # partials that a fast-math norm can hide). Custom non-array states that
-    # have not defined NAN_CHECK keep master's reduction-only path via isnan(d₁)
-    # so existing fixtures are not forced to add a new method.
+    # Prefer DiffEqBase.NAN_CHECK when a method exists; otherwise keep master's
+    # reduction-only path via isnan(d₁) so custom non-array states are not forced
+    # to add a new method. Complements the fast-math norm which can hide NaNs
+    # from a subsequent scalar isnan check:
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     has_nan = _ode_nan_check(f₀) | isnan(d₁)
     warn_initial_dt = !ReactantCore.within_compile()
@@ -449,7 +450,8 @@ end
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
     end
 
-    # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
+    # Match IIP: also reject when the norm itself is NaN (fast-math can hide
+    # elementwise NaNs from NAN_CHECK on some array types).
     warn_initial_dt = !ReactantCore.within_compile()
     if warn_initial_dt && isnan(d₁)
         @SciMLMessage(
