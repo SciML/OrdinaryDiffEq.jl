@@ -28,9 +28,10 @@ using OrdinaryDiffEqBDF, SciMLBase, Test
     end
 end
 
-# No-event QNDF2 with a user dt that triggers an early rejection must keep
-# master's attempt-based startup counter (see #4655 / PR #4664 round-2 B1).
-@testset "QNDF2 no-event early rejection matches master step count" begin
+# No-event QNDF2 with a user dt that triggers an early rejection must keep the
+# attempt-based startup counter (`cnt` counts attempts since the last history
+# reset; the first two use BDF1 coefficients).
+@testset "QNDF2 no-event early rejection step count" begin
     function rober!(du, u, p, t)
         y₁, y₂, y₃ = u
         k₁, k₂, k₃ = p
@@ -44,4 +45,24 @@ end
     @test sol.retcode == ReturnCode.Success
     @test sol.stats.naccept == 54
     @test sol.stats.nreject == 1
+end
+
+# `reinit!` must not leave QNDF2 event anchors stale relative to reset `iter`,
+# and must not wipe cold-start history on `initialize!` (see #4655).
+@testset "QNDF2 reinit! preserves Success on Robertson" begin
+    function rober!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+        du[2] = k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃
+        du[3] = k₂ * y₂^2
+        return nothing
+    end
+    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e3), (0.04, 3.0e7, 1.0e4))
+    integ = init(prob, QNDF2(); dt = 1.0e-3, abstol = 1.0e-4, reltol = 1.0e-4)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    reinit!(integ)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
 end

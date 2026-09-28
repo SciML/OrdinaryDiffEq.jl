@@ -556,7 +556,10 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
-    reset_qndf2_history!(integrator, cache)
+    # Cold start: keep the empty multistep history from the cache constructor and
+    # only zero the event anchors so `cnt` / `success_cnt` count from this init.
+    cache.iter_at_event = 0
+    cache.success_iter_at_event = 0
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -571,13 +574,18 @@ end
 function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = false)
     if integrator.derivative_discontinuity
         reset_qndf2_history!(integrator, cache)
+    elseif integrator.iter <= cache.iter_at_event
+        # `reinit!(; reinit_cache=false)` zeroes `iter` without calling `initialize!`,
+        # so re-anchor here instead of letting `cnt` go negative and skip startup.
+        cache.iter_at_event = 0
+        cache.success_iter_at_event = 0
     end
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver) = cache
     alg = unwrap_alg(integrator, true)
-    # Attempt count since the last event (master's `integrator.iter` with no events).
+    # Attempts since the last history reset; the first two use BDF1 coefficients.
     cnt = integrator.iter - cache.iter_at_event
-    # Accepted-step count for the error estimator (master's `success_iter`).
+    # Accepted steps since the last history reset, for the error estimator.
     success_cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
     if cnt == 1 || cnt == 2
@@ -674,7 +682,10 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF2Cache)
-    reset_qndf2_history!(integrator, cache)
+    # Cold start: keep the empty multistep history from the cache constructor and
+    # only zero the event anchors so `cnt` / `success_cnt` count from this init.
+    cache.iter_at_event = 0
+    cache.success_iter_at_event = 0
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
@@ -687,14 +698,19 @@ end
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     if integrator.derivative_discontinuity
         reset_qndf2_history!(integrator, cache)
+    elseif integrator.iter <= cache.iter_at_event
+        # `reinit!(; reinit_cache=false)` zeroes `iter` without calling `initialize!`,
+        # so re-anchor here instead of letting `cnt` go negative and skip startup.
+        cache.iter_at_event = 0
+        cache.success_iter_at_event = 0
     end
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, Dtmp, D2, R, U, utilde, atmp, nlsolver) = cache
     (; z, tmp, ztmp) = nlsolver
     alg = unwrap_alg(integrator, true)
-    # Attempt count since the last event (master's `integrator.iter` with no events).
+    # Attempts since the last history reset; the first two use BDF1 coefficients.
     cnt = integrator.iter - cache.iter_at_event
-    # Accepted-step count for the error estimator (master's `success_iter`).
+    # Accepted steps since the last history reset, for the error estimator.
     success_cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
     if cnt == 1 || cnt == 2
