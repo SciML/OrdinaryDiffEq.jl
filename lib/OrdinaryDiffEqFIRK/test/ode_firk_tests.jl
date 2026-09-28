@@ -19,7 +19,7 @@ testTol = 0.5
         expected = similar(J, T)
         OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
         @inbounds for II in CartesianIndices(J)
-            expected[II] = muladd(scale, mass_matrix[II], J[II])
+            expected[II] = muladd(scale, mass_matrix[Tuple(II)...], J[II])
         end
 
         @test W == expected
