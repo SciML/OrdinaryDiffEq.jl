@@ -596,12 +596,16 @@ function algebraic_jacobian(
     return jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
-# `abstol = nothing` makes Brown follow the solver's abstol. A per-state tolerance is
-# reduced to the tightest entry among the states the nonlinear solve works on.
-_brown_abstol(alg, integrator, idxs) = _pick_abstol(alg.abstol, integrator.opts.abstol, idxs)
-_pick_abstol(abstol, _, idxs) = abstol
-_pick_abstol(::Nothing, opts_abstol::Number, idxs) = opts_abstol
-_pick_abstol(::Nothing, opts_abstol, idxs) = minimum(opts_abstol[idxs])
+# `abstol = nothing` makes Brown follow the solver's abstol. NonlinearSolve only takes scalar
+# tolerances, so a per-state tolerance is reduced to the tightest entry among the states the
+# nonlinear solve works on.
+function _brown_tols(alg, integrator, idxs)
+    abstol = _scalar_tol(something(alg.abstol, integrator.opts.abstol), idxs)
+    reltol = _scalar_tol(integrator.opts.reltol, idxs)
+    return abstol, reltol
+end
+_scalar_tol(tol::Number, idxs) = tol
+_scalar_tol(tol, idxs) = minimum(tol[idxs])
 
 function _initialize_dae!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
@@ -617,7 +621,7 @@ function _initialize_dae!(
 
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
-    abstol = _brown_abstol(alg, integrator, algebraic_vars)
+    abstol, reltol = _brown_tols(alg, integrator, algebraic_vars)
     tmp = get_tmp_cache(integrator)[1]
 
     f(tmp, u, p, t)
@@ -675,7 +679,7 @@ function _initialize_dae!(
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
-        nlprob, nlsolve; abstol, integrator.opts.reltol,
+        nlprob, nlsolve; abstol, reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
     alg_u .= nlsol.u
@@ -701,7 +705,7 @@ function _initialize_dae!(
     update_coefficients!(M, u0, p, t)
     algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-    abstol = _brown_abstol(alg, integrator, algebraic_vars)
+    abstol, reltol = _brown_tols(alg, integrator, algebraic_vars)
 
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
@@ -747,7 +751,7 @@ function _initialize_dae!(
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
 
     nlsol = solve(
-        nlprob, nlsolve; abstol, integrator.opts.reltol,
+        nlprob, nlsolve; abstol, reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
@@ -775,7 +779,7 @@ function _initialize_dae!(
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true}
     )
     (; p, t, f) = integrator
-    abstol = _brown_abstol(alg, integrator, :)
+    abstol, reltol = _brown_tols(alg, integrator, :)
     differential_vars = prob.differential_vars
     u = integrator.u
     du = integrator.du
@@ -841,7 +845,7 @@ function _initialize_dae!(
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     nlsol = solve(
-        nlprob, nlsolve; abstol, integrator.opts.reltol,
+        nlprob, nlsolve; abstol, reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
@@ -863,7 +867,7 @@ function _initialize_dae!(
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false}
     )
     (; p, t, f) = integrator
-    abstol = _brown_abstol(alg, integrator, :)
+    abstol, reltol = _brown_tols(alg, integrator, :)
     differential_vars = prob.differential_vars
 
     if check_dae_tolerance(
@@ -901,7 +905,7 @@ function _initialize_dae!(
     )
 
     nlsol = solve(
-        nlprob, nlsolve; abstol, integrator.opts.reltol,
+        nlprob, nlsolve; abstol, reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
