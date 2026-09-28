@@ -45,3 +45,37 @@ using OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner, SciMLBase, Test
         end
     end
 end
+
+# On a first step clamped onto a tstop, saveat values and ContinuousCallback
+# event times must use the accepted interval (exact solution u = 1 + t).
+@testset "saveat and ContinuousCallback on a tstop-clamped first step" begin
+    for alg in (Rodas5P(), ImplicitEuler(), TRBDF2(), Tsit5(), Vern9())
+        @testset "$(nameof(typeof(alg)))" begin
+            prob = ODEProblem((u, p, t) -> one.(u), [1.0], (0.0, 2.0))
+            sol = solve(
+                prob, alg; dt = 5.0, tstops = [1.0], saveat = [0.5, 1.5],
+                abstol = 1.0e-8, reltol = 1.0e-8
+            )
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t == [0.5, 1.5]
+            @test sol.u[1] ≈ [1.5]
+            @test sol.u[2] ≈ [2.5]
+
+            event_t = Ref(NaN)
+            cb = ContinuousCallback(
+                (u, t, integrator) -> u[1] - 1.5,
+                function (integrator)
+                    event_t[] = integrator.t
+                    return nothing
+                end;
+                save_positions = (false, false)
+            )
+            sol_cb = solve(
+                prob, alg; dt = 5.0, tstops = [1.0], callback = cb,
+                save_everystep = false, abstol = 1.0e-8, reltol = 1.0e-8
+            )
+            @test SciMLBase.successful_retcode(sol_cb)
+            @test event_t[] ≈ 0.5
+        end
+    end
+end

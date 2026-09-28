@@ -590,7 +590,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 0 && dt != dtₙ₋₁
+    if cnt > 1 && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         d₁ = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -704,7 +704,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 0 && dt != dtₙ₋₁
+    if cnt > 1 && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         @.. broadcast = false Dtmp[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -809,9 +809,8 @@ function perform_step!(
     alg = unwrap_alg(integrator, true)
 
     if integrator.derivative_discontinuity
-        dtprev = cache.dtprev = one(dt)
-        order = cache.order = 1
-        cache.prevorder = 1
+        dtprev = one(dt)
+        order = 1
         cache.nconsteps = 0
         cache.consfailcnt = 0
         for i in eachindex(D)
@@ -952,9 +951,8 @@ function perform_step!(
     alg = unwrap_alg(integrator, true)
 
     if integrator.derivative_discontinuity
-        dtprev = cache.dtprev = one(dt)
-        order = cache.order = 1
-        cache.prevorder = 1
+        dtprev = one(dt)
+        order = 1
         cache.nconsteps = 0
         cache.consfailcnt = 0
         for d in D
