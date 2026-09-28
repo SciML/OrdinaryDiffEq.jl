@@ -37,6 +37,9 @@ end
     k2::Vector{rateType}
     nf2::Vector{Int}
     split::Bool
+    # `integrator.k` aliases these, so regrowing it after `post_savevalues!` trims it
+    # does not allocate.
+    kdense::Vector{rateType}
 end
 
 get_fsalfirstlast(cache::SDCCache, u) = (nothing, nothing)
@@ -103,7 +106,8 @@ function alg_cache(
         fill(false, M), zeros(Int, M),
         nlsolvers, tab, solver_index,
         [zero(u) for _ in 1:nsplit], [zero(u) for _ in 1:nsplit],
-        [zero(rate_prototype) for _ in 1:nsplit], zeros(Int, nsplit), split
+        [zero(rate_prototype) for _ in 1:nsplit], zeros(Int, nsplit), split,
+        [zero(rate_prototype) for _ in 1:(M + 2)]
     )
 end
 
