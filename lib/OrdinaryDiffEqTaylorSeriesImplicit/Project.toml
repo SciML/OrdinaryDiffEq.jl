@@ -5,6 +5,7 @@ authors = ["Songchen Tan <i@tansongchen.com>"]
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
