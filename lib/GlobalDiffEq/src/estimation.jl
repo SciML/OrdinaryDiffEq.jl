@@ -134,9 +134,7 @@ function SciMLBase.__solve(
         ArgumentError("GlobalErrorEstimation requires a positive `gtol` constructor keyword")
     )
     _validate_tolerances(abstol, reltol, "local")
-    # DiffEqBase.solve injects an empty CallbackSet into kwargs; reject only
-    # when a real callback is present (same rule as DiffEqBase.has_callbacks).
-    DiffEqBase.has_callbacks(kwargs) &&
+    _has_callbacks(kwargs) &&
         throw(ArgumentError("GlobalErrorEstimation does not currently support callbacks"))
     estimator = (local_abstol, local_reltol) -> global_error_estimate(
         prob, alg, args...;
