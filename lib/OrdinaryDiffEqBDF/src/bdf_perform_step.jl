@@ -556,8 +556,10 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
-    # Cold start: keep the empty multistep history from the cache constructor and
-    # only zero the event anchors so `cnt` / `success_cnt` count from this init.
+    # Only reset the event anchors; the multistep history is left as master leaves it.
+    # On a fresh `init` that history is still empty from the cache constructor; on
+    # `reinit!` it is leftover from the previous solve. `cnt` / `success_cnt` count
+    # from these anchors.
     cache.iter_at_event = 0
     cache.success_iter_at_event = 0
     integrator.kshortsize = 2
@@ -682,8 +684,10 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF2Cache)
-    # Cold start: keep the empty multistep history from the cache constructor and
-    # only zero the event anchors so `cnt` / `success_cnt` count from this init.
+    # Only reset the event anchors; the multistep history is left as master leaves it.
+    # On a fresh `init` that history is still empty from the cache constructor; on
+    # `reinit!` it is leftover from the previous solve. `cnt` / `success_cnt` count
+    # from these anchors.
     cache.iter_at_event = 0
     cache.success_iter_at_event = 0
     integrator.kshortsize = 2

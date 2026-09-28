@@ -66,3 +66,31 @@ end
     solve!(integ)
     @test integ.sol.retcode == ReturnCode.Success
 end
+
+# After a mid-solve event, `reinit!(; reinit_cache=false)` zeroes `iter` without
+# calling `initialize!`, so `perform_step!` must re-anchor when
+# `iter <= iter_at_event`. Stats are not reset by `reinit!`, so a correct
+# re-solve doubles the first run's accept/reject counts (without the branch:
+# Robertson QNDF2 goes ~130/5 → ~400/124).
+@testset "QNDF2 reinit!(; reinit_cache=false) re-anchors after an event" begin
+    function rober!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        du[1] = -0.04y₁ + 1.0e4 * y₂ * y₃
+        du[2] = 0.04y₁ - 3.0e7 * y₂^2 - 1.0e4 * y₂ * y₃
+        du[3] = 3.0e7 * y₂^2
+        return nothing
+    end
+    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 100.0))
+    tev = 50.0
+    cb = DiscreteCallback((u, t, integrator) -> t == tev, integrator -> (integrator.u .*= 1.0))
+    integ = init(prob, QNDF2(); callback = cb, tstops = [tev], abstol = 1.0e-6, reltol = 1.0e-6)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    first_naccept = integ.stats.naccept
+    first_nreject = integ.stats.nreject
+    reinit!(integ; reinit_cache = false)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    @test integ.stats.naccept == 2 * first_naccept
+    @test integ.stats.nreject == 2 * first_nreject
+end
