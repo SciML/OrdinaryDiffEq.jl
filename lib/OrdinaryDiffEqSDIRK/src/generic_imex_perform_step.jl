@@ -55,9 +55,14 @@ end
 @inline _mmmul(z, ::Nothing) = z
 @inline _mmmul(z, d) = d * z
 
-function _mmdiag(tab, mass_matrix)
-    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing : diag(mass_matrix)
+function _mmdiag(tab, mass_matrix, u, p, t)
+    (mass_matrix === I || !tab.explicit_first_stage) && return nothing
+    return _mmdiag(mass_matrix, u, p, t)
 end
+# `λ·I` has no diagonal, so its scalar is the elementwise factor, read at time `t`.
+_mmdiag(mm::UniformScaling, u, p, t) = mm.λ
+_mmdiag(mm::ScalarOperator, u, p, t) = convert(Number, update_coefficients(mm, u, p, t))
+_mmdiag(mm, u, p, t) = diag(mm)
 
 # ===========================================================================
 # Generic ESDIRK/IMEX perform_step bodies
@@ -121,7 +126,7 @@ end
     markfirststage!(nlsolver)
 
     # ---------------- Stage 1 ----------------
-    mmd = _mmdiag(tab, integrator.f.mass_matrix)
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, integrator.uprev, p, integrator.t)
     if tab.explicit_first_stage
         if is_imex && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
@@ -1354,8 +1359,9 @@ end
     else
         # `mmd === nothing` leaves the plain `z_s/dt`. Otherwise this feeds an
         # explicit first stage next step, which wants `f(u)`: `M z_s = dt f(u_s)`
-        # and `u == u_s` when stiffly accurate, so scale by the diagonal.
-        @.. broadcast = false integrator.fsallast = _mmmul(zs[s], mmd) / dt
+        # and `u == u_s` when stiffly accurate, so scale by the diagonal at the step's end.
+        mmd_end = _mmdiag(tab, integrator.f.mass_matrix, u, p, t + dt)
+        @.. broadcast = false integrator.fsallast = _mmmul(zs[s], mmd_end) / dt
     end
 
     # ---------------- :ie_dd2-specific DAE EEst tail ----------------
@@ -1431,7 +1437,7 @@ end
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
-    mmd = _mmdiag(tab, integrator.f.mass_matrix)
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, uprev, p, t)
     if tab.explicit_first_stage
         if is_imex
             z1 = dt .* _mmdiv.(f_impl(uprev, p, t), mmd)
@@ -2437,7 +2443,8 @@ end
         if mmd !== nothing
             # The ladder leaves `z_s/dt`, but this feeds an explicit first stage
             # next step, which wants `f(u)`. See `_perform_step_iip!` above.
-            integrator.fsallast = _mmmul.(integrator.fsallast, mmd)
+            mmd_end = _mmdiag(tab, integrator.f.mass_matrix, u, p, t + dt)
+            integrator.fsallast = _mmmul.(integrator.fsallast, mmd_end)
         end
         integrator.k[1] = integrator.fsalfirst
         integrator.k[2] = integrator.fsallast
