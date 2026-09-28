@@ -66,8 +66,7 @@ function firk_W!(
                 emitted = true
             end
             rowval[idx] = row
-            nzval[idx] = row == col ? muladd(scale, mval, jv[k]) :
-                muladd(scale, zero(eltype(mass_matrix)), jv[k])
+            nzval[idx] = muladd(scale, mass_matrix[row, col], jv[k])
             emitted |= row == col
             idx += 1
         end

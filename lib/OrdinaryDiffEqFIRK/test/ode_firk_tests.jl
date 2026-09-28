@@ -8,23 +8,31 @@ testTol = 0.5
 
 @testset "Sparse FIRK stage matrix assembly" begin
     J = sparse([1, 1, 2], [1, 2, 3], [2.0, 0.0, 4.0], 3, 3)
-    mass_matrix = sparse([3, 2], [1, 2], [5.0, 0.0], 3, 3)
-    W = copy(J)
-    expected = copy(J)
-    scale = -2.5
+    for (mass_matrix, scale) in (
+            (sparse([3, 2], [1, 2], [5.0, 0.0], 3, 3), -2.5),
+            (I, -2.5), (I, -2.5 - 0.4im),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5 - 0.4im),
+        )
+        T = scale isa Complex ? ComplexF64 : Float64
+        W = similar(J, T)
+        expected = similar(J, T)
+        OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
+        @inbounds for II in CartesianIndices(J)
+            expected[II] = muladd(scale, mass_matrix[II], J[II])
+        end
 
-    OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
-    @inbounds for II in CartesianIndices(J)
-        expected[II] = muladd(scale, mass_matrix[II], J[II])
+        @test W == expected
+        if !(scale isa Complex)
+            # entrywise setindex! densifies the pattern with signed zeros on
+            # complex scales; on real scales the merged pattern is identical
+            @test all(c -> nzrange(W, c) == nzrange(expected, c), axes(W, 2))
+            @test rowvals(W) == rowvals(expected)
+        end
     end
-
-    @test W == expected
-    @test all(c -> nzrange(W, c) == nzrange(expected, c), axes(W, 2))
-    @test rowvals(W) == rowvals(expected)
-    @test nnz(W) == 4
 end
 
-@testset "Sparse FIRK solve with non-identity mass matrix" begin
+@testset "Sparse FIRK solves vs dense jac_prototype" begin
     n = 50
     function firk_test_lin!(du, u, p, t)
         @inbounds for i in 1:n
@@ -38,17 +46,20 @@ end
     u0 = ones(n)
     tspan = (0.0, 0.1)
     ts = [0.01, 0.05, 0.1]
-    for alg in (
-            RadauIIA3(), RadauIIA5(), RadauIIA9(),
-            AdaptiveRadau(), AdaptiveRadau(threading = true),
-        )
+    for (mm_sparse, mm_dense) in (
+                (I, I), (mass_matrix, Matrix(mass_matrix)),
+            ), alg in (
+                RadauIIA3(), RadauIIA5(), RadauIIA9(),
+                AdaptiveRadau(), AdaptiveRadau(threading = true),
+            )
         prob_sparse = ODEProblem(
-            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix), u0, tspan
+            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix = mm_sparse),
+            u0, tspan
         )
         prob_dense = ODEProblem(
             ODEFunction(
                 firk_test_lin!;
-                jac_prototype = Matrix(J), mass_matrix = Matrix(mass_matrix)
+                jac_prototype = Matrix(J), mass_matrix = mm_dense
             ),
             u0, tspan
         )
