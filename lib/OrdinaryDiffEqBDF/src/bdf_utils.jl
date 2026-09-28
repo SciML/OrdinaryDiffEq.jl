@@ -604,6 +604,11 @@ function _fbdf_finish_fixed_step!(integrator, cache)
 end
 
 function reset_qndf2_history!(integrator, cache)
+    # Anchor attempt counting so the next `perform_step!` sees `cnt == 1`, matching
+    # master's `integrator.iter == 1` at cold start. At `initialize!`, `iter == 0`
+    # so `iter_at_event` becomes 0; mid-solve, `iter` already counts the current
+    # attempt, so subtract one.
+    cache.iter_at_event = max(integrator.iter - 1, 0)
     cache.success_iter_at_event = integrator.success_iter
     cache.dtₙ₋₁ = zero(integrator.dt)
     cache.dtₙ₋₂ = zero(integrator.dt)

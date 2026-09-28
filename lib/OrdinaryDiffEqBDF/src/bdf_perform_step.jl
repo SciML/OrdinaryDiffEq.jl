@@ -575,9 +575,12 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver) = cache
     alg = unwrap_alg(integrator, true)
-    cnt = integrator.success_iter - cache.success_iter_at_event
+    # Attempt count since the last event (master's `integrator.iter` with no events).
+    cnt = integrator.iter - cache.iter_at_event
+    # Accepted-step count for the error estimator (master's `success_iter`).
+    success_cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
-    if cnt < 2
+    if cnt == 1 || cnt == 2
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -590,7 +593,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 1 && dt != dtₙ₋₁
+    if cnt > 2 && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         d₁ = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -628,9 +631,9 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
 
     if integrator.opts.adaptive
-        if cnt == 0
+        if success_cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
-        elseif cnt == 1
+        elseif success_cnt == 1
             utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
@@ -657,7 +660,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 
     Δ = u - uprev
     cache.D[1] = Δ
-    cache.D[2] = cnt == 0 ? zero(Δ) : Δ - d₁
+    cache.D[2] = success_cnt == 0 ? zero(Δ) : Δ - d₁
     cache.uprev3 = uprev2
     cache.uprev2 = uprev
     cache.dtₙ₋₂ = dtₙ₋₁
@@ -689,9 +692,12 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, Dtmp, D2, R, U, utilde, atmp, nlsolver) = cache
     (; z, tmp, ztmp) = nlsolver
     alg = unwrap_alg(integrator, true)
-    cnt = integrator.success_iter - cache.success_iter_at_event
+    # Attempt count since the last event (master's `integrator.iter` with no events).
+    cnt = integrator.iter - cache.iter_at_event
+    # Accepted-step count for the error estimator (master's `success_iter`).
+    success_cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
-    if cnt < 2
+    if cnt == 1 || cnt == 2
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -704,7 +710,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 1 && dt != dtₙ₋₁
+    if cnt > 2 && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         @.. broadcast = false Dtmp[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -746,9 +752,9 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
-        if cnt == 0
+        if success_cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
-        elseif cnt == 1
+        elseif success_cnt == 1
             @.. broadcast = false utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -771,7 +777,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
         return
     end
 
-    if cnt == 0
+    if success_cnt == 0
         @.. broadcast = false D[2] = false
     else
         @.. broadcast = false D[2] = (u - uprev) - Dtmp[1]
