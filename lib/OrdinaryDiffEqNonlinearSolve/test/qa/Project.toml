@@ -10,11 +10,6 @@ OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-OrdinaryDiffEqBDF = {path = "../../../OrdinaryDiffEqBDF"}
-OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
-OrdinaryDiffEqRosenbrock = {path = "../../../OrdinaryDiffEqRosenbrock"}
-
 [compat]
 ADTypes = "1.16"
 Aqua = "0.8.11"

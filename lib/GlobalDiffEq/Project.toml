@@ -30,7 +30,6 @@ GlobalDiffEqSciMLSensitivityExt = "SciMLSensitivity"
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
-OrdinaryDiffEqSSPRK = {path = "../OrdinaryDiffEqSSPRK"}
 OrdinaryDiffEqTsit5 = {path = "../OrdinaryDiffEqTsit5"}
 
 [compat]
