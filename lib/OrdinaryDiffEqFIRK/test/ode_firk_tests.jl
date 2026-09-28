@@ -13,15 +13,61 @@ testTol = 0.5
     expected = copy(J)
     scale = -2.5
 
-    OrdinaryDiffEqFIRK.firk_sparse_W!(W, J, mass_matrix, scale)
+    OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
     @inbounds for II in CartesianIndices(J)
-        expected[II] = scale * mass_matrix[II] + J[II]
+        expected[II] = muladd(scale, mass_matrix[II], J[II])
     end
 
     @test W == expected
-    @test W.colptr == expected.colptr
-    @test W.rowval == expected.rowval
+    @test all(c -> nzrange(W, c) == nzrange(expected, c), axes(W, 2))
+    @test rowvals(W) == rowvals(expected)
     @test nnz(W) == 4
+end
+
+@testset "Sparse FIRK solve with non-identity mass matrix" begin
+    n = 50
+    function firk_test_lin!(du, u, p, t)
+        @inbounds for i in 1:n
+            du[i] = -100u[i] + (i > 1 ? 10u[i - 1] : 0) + (i < n ? 10u[i + 1] : 0)
+        end
+    end
+    J = spdiagm(
+        -1 => fill(10.0, n - 1), 0 => fill(-100.0, n), 1 => fill(10.0, n - 1)
+    )
+    mass_matrix = spdiagm(0 => collect(range(0.8, 1.2; length = n)))
+    u0 = ones(n)
+    tspan = (0.0, 0.1)
+    ts = [0.01, 0.05, 0.1]
+    for alg in (
+            RadauIIA3(), RadauIIA5(), RadauIIA9(),
+            AdaptiveRadau(), AdaptiveRadau(threading = true),
+        )
+        prob_sparse = ODEProblem(
+            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix), u0, tspan
+        )
+        prob_dense = ODEProblem(
+            ODEFunction(
+                firk_test_lin!;
+                jac_prototype = Matrix(J), mass_matrix = Matrix(mass_matrix)
+            ),
+            u0, tspan
+        )
+        sol_sparse = solve(
+            prob_sparse, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        sol_dense = solve(
+            prob_dense, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        @test sol_sparse.retcode == ReturnCode.Success
+        @test sol_sparse.u[end] ≈ sol_dense.u[end] atol = 1.0e-6
+        # Dense-output interpolation can differ between the sparse and dense LU
+        # paths by more than the solver tolerance (≈2e-5 for AdaptiveRadau here).
+        for t in ts
+            @test all(isapprox.(sol_sparse(t), sol_dense(t); atol = 1.0e-4))
+        end
+    end
 end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
