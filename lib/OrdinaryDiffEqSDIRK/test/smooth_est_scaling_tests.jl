@@ -141,7 +141,10 @@ end
             # rtol from the order-2 leading-term cancellation: |φ−eᶻ| ~ O(z³) so a few
             # ulps on the estimate are enough once the closed form is exact.
             @test es ≈ smooth_closed rtol = 1.0e-9
-            @test es / true_err ≈ smooth_closed / true_err rtol = 1.0e-9
+            # Distinct from the line above: estimate tracks the true local truncation
+            # error to within a small O(1) factor set by the order-2 leading constant
+            # (not a restatement of es ≈ smooth_closed).
+            @test 0.25 < es / true_err < 4.0
         end
     end
 
@@ -193,7 +196,31 @@ end
             initializealg = BrownFullBasicInit(), maxiters = 100_000
         )
         @test sol.retcode == ReturnCode.Success
-        @test sol.u[end] ≈ ref(sol.t[end]) rtol = 1.0e-3 atol = 1.0e-3
+        # atol from the solve abstol so the small y₂ (~1e-7) component is checked;
+        # rtol covers the O(1) components (y₁, y₃).
+        @test sol.u[end] ≈ ref(sol.t[end]) rtol = 1.0e-3 atol = 1.0e-8
+    end
+end
+
+# Matrix-shaped u with a non-identity diagonal mass matrix: M·err must go through
+# _vec or mul! hits DimensionMismatch on the (length(u)×length(u)) mass matrix.
+# Use implicit-first-stage methods (SDIRK2/Hairer4): explicit-first-stage tableaus
+# still hit a separate `_mmdiv` broadcast issue with matrix u (unrelated to #2902).
+@testset "smooth_est matrix state with mass matrix (#2902)" begin
+    function f_mat!(du, u, p, t)
+        @. du = -u
+        return nothing
+    end
+    u0 = ones(2, 2)
+    M = Diagonal([1.0, 1.0, 1.0, 0.5])
+    prob = ODEProblem(ODEFunction(f_mat!; mass_matrix = M), u0, (0.0, 0.1))
+    for ALG in (SDIRK2, Hairer4)
+        sol = solve(
+            prob, ALG(smooth_est = true); reltol = 1.0e-6, abstol = 1.0e-6,
+            dt = 1.0e-2
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test size(sol.u[end]) == size(u0)
     end
 end
 

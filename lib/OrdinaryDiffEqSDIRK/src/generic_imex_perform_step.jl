@@ -1316,7 +1316,8 @@ end
                 if _is_identity_massmatrix(mass_matrix)
                     @.. broadcast = false tmp = tmp * inv(nlsolver.cache.W_γdt)
                 else
-                    mul!(atmp, mass_matrix, tmp)
+                    # M acts on vec(u); required for matrix-shaped states (#2902).
+                    mul!(_vec(atmp), mass_matrix, _vec(tmp))
                     @.. broadcast = false tmp = atmp * inv(nlsolver.cache.W_γdt)
                 end
                 linres = dolinsolve(
@@ -2383,7 +2384,11 @@ end
                 if _is_identity_massmatrix(mass_matrix)
                     tmp_est = tmp_est * inv(nlsolver.cache.W_γdt)
                 else
-                    tmp_est = (mass_matrix * tmp_est) * inv(nlsolver.cache.W_γdt)
+                    # M acts on vec(u); required for matrix-shaped states (#2902).
+                    tmp_est = _reshape(
+                        (mass_matrix * _vec(tmp_est)) * inv(nlsolver.cache.W_γdt),
+                        axes(tmp_est)
+                    )
                 end
                 integrator.stats.nsolve += 1
                 est = _reshape(get_W(nlsolver) \ _vec(tmp_est), axes(tmp_est))
