@@ -32,6 +32,7 @@ DiffEqDevTools = {path = "../DiffEqDevTools"}
 ImplicitDiscreteSolve = {path = "../ImplicitDiscreteSolve"}
 OrdinaryDiffEq = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqNonlinearSolve = {path = "../OrdinaryDiffEqNonlinearSolve"}
 OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
 StochasticDiffEqCore = {path = "../StochasticDiffEqCore"}
