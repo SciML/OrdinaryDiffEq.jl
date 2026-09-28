@@ -1,7 +1,7 @@
 ### Type unions for dispatch
-QNDF_CACHES = Union{QNDFConstantCache, QNDFCache}
-FBDF_CACHES = Union{FBDFConstantCache, FBDFCache, DFBDFConstantCache, DFBDFCache}
-BDF_CACHES_WITH_INTERPOLATIONS = Union{QNDF_CACHES, FBDF_CACHES}
+const QNDF_CACHES = Union{QNDFConstantCache, QNDFCache}
+const FBDF_CACHES = Union{FBDFConstantCache, FBDFCache, DFBDFConstantCache, DFBDFCache}
+const BDF_CACHES_WITH_INTERPOLATIONS = Union{QNDF_CACHES, FBDF_CACHES}
 
 ### Fallbacks to capture unsupported derivative orders
 function _ode_interpolant(
