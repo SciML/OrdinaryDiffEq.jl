@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqNonlinearSolve,
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqBDF,
     StaticArrays, LinearAlgebra, Test, ADTypes
 
 ## Mass Matrix
@@ -179,4 +179,78 @@ integrator = init(
     step!(integ, 0.01, true)
     @test abs(integ.u[2]) < 1.0e-10  # u[2] stuck near 0, not reinitialized
     @test abs(integ.u[1]) > 1.5    # u[1] still evolving
+end
+
+# records the keywords Brown passes to the nonlinear solve
+struct SpyNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
+    kwargs::Base.RefValue{Any}
+end
+SpyNLSolve() = SpyNLSolve(Ref{Any}((;)))
+function SciMLBase.__solve(prob::NonlinearProblem, alg::SpyNLSolve, args...; kwargs...)
+    alg.kwargs[] = NamedTuple(kwargs)
+    return SciMLBase.build_solution(prob, alg, prob.u0, prob.u0; retcode = ReturnCode.Success)
+end
+
+@testset "BrownFullBasicInit tolerances" begin
+    # y₁' = -y₁, 0 = y₂³ + y₂ - y₁
+    mm_oop(u, p, t) = [-u[1], u[2]^3 + u[2] - u[1]]
+    mm_iip(du, u, p, t) = (du .= mm_oop(u, p, t); nothing)
+    dae_oop(du, u, p, t) = [du[1] + u[1], u[2]^3 + u[2] - u[1]]
+    dae_iip(r, du, u, p, t) = (r .= dae_oop(du, u, p, t); nothing)
+    y₂ = 0.6823278038280193 # root of y₂³ + y₂ = 1
+
+    M = Diagonal([1.0, 0.0])
+    dv = [true, false]
+    make_probs(u0; kw...) = [
+        (ODEProblem(ODEFunction(mm_oop; mass_matrix = M), u0, (0.0, 1.0); kw...), FBDF()),
+        (ODEProblem(ODEFunction(mm_iip; mass_matrix = M), u0, (0.0, 1.0); kw...), FBDF()),
+        (DAEProblem(dae_oop, [-1.0, 0.0], u0, (0.0, 1.0); differential_vars = dv, kw...), DFBDF()),
+        (DAEProblem(dae_iip, [-1.0, 0.0], u0, (0.0, 1.0); differential_vars = dv, kw...), DFBDF()),
+    ]
+
+    # per-state tolerances are reduced to scalars for the nonlinear solve
+    for (prob, alg) in make_probs([1.0, 2.0])
+        for initializealg in (BrownFullBasicInit(), BrownFullBasicInit(abstol = nothing))
+            integ = init(prob, alg; initializealg, abstol = [1.0e-8, 1.0e-8], reltol = [1.0e-8, 1.0e-8])
+            @test integ.u ≈ [1.0, y₂]
+        end
+    end
+
+    # the residual is below the solver's abstol but above Brown's default of 1e-10,
+    # so only `abstol = nothing` leaves u0 untouched
+    u0 = [1.0, y₂ + 1.0e-5]
+    for (prob, alg) in make_probs(u0), abstol in (1.0e-3, [1.0e-3, 1.0e-3])
+        integ = init(prob, alg; initializealg = BrownFullBasicInit(abstol = nothing), abstol)
+        @test integ.u == u0
+        integ = init(prob, alg; initializealg = BrownFullBasicInit(), abstol)
+        @test integ.u ≈ [1.0, y₂]
+        @test integ.u != u0
+    end
+
+    # the tolerances reach the nonlinear solve, with vectors reduced to their tightest entry
+    for (prob, alg) in make_probs([1.0, 2.0])
+        spy = SpyNLSolve()
+        init(
+            prob, alg; initializealg = BrownFullBasicInit(; abstol = 1.0e-6, nlsolve = spy),
+            abstol = 1.0e-3, reltol = [1.0e-4, 1.0e-5]
+        )
+        @test get(spy.kwargs[], :abstol, nothing) == 1.0e-6
+        @test get(spy.kwargs[], :reltol, nothing) == 1.0e-5
+
+        spy = SpyNLSolve()
+        init(
+            prob, alg; initializealg = BrownFullBasicInit(; abstol = nothing, nlsolve = spy),
+            abstol = [1.0e-2, 1.0e-3]
+        )
+        @test get(spy.kwargs[], :abstol, nothing) == 1.0e-3
+    end
+
+    # `abstol = nothing` also works when the algorithm is set on the problem
+    spy = SpyNLSolve()
+    initializealg = BrownFullBasicInit(; abstol = nothing, nlsolve = spy)
+    for (prob, alg) in make_probs([1.0, 2.0]; initializealg)
+        spy.kwargs[] = (;)
+        init(prob, alg; abstol = 1.0e-3)
+        @test get(spy.kwargs[], :abstol, nothing) == 1.0e-3
+    end
 end
