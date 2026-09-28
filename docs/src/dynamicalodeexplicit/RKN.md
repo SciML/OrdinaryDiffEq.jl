@@ -61,6 +61,7 @@ When acceleration depends on both position and velocity:
 
   - **`FineRKN4`**: Fourth-order allowing velocity dependence
   - **`FineRKN5`**: Fifth-order allowing velocity dependence
+  - **`SharpFineRKN6`**: Sixth-order allowing velocity dependence
 
 ### High-order Dormand-Prince variants
 
@@ -124,6 +125,7 @@ Nystrom4VelocityIndependent
 Nystrom5VelocityIndependent
 FineRKN4
 FineRKN5
+SharpFineRKN6
 DPRKN4
 DPRKN5
 DPRKN6
