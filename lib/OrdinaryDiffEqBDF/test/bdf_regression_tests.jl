@@ -273,3 +273,24 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+@testset "tstop on an algebraic jump of a mass-matrix DAE (#4660)" begin
+    load(t) = t < 10.0 ? 0.0 : 5.0
+    function f!(du, u, p, t)
+        du[1] = -u[2] / 3600
+        du[2] = u[2] - 1 - load(t)
+        return nothing
+    end
+    prob = ODEProblem(
+        ODEFunction(f!; mass_matrix = [1.0 0.0; 0.0 0.0]), [1.0, 1.0], (0.0, 20.0)
+    )
+    for kw in ((; tstops = [10.0]), (; tstops = [10.0], d_discontinuities = [10.0]))
+        sol = solve(prob, FBDF(); kw...)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 20.0
+        i = findfirst(==(10.0), sol.t)
+        @test i !== nothing
+        # The state saved at the tstop must satisfy the algebraic constraint there.
+        @test sol.u[i][2] ≈ 1 + load(10.0)
+    end
+end

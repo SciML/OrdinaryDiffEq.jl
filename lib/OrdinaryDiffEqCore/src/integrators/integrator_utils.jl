@@ -294,12 +294,13 @@ function modify_dt_for_tstops!(integrator)
             integrator.dtpropose = integrator.tdir * original_dt
             if original_dt + tstop_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
+                integrator.dt = integrator.tdir * original_dt
             else
                 _set_tstop_flag!(
                     integrator, true, integrator.tdir * tdir_tstop
                 )
+                integrator.dt = integrator.tdir * distance_to_tstop
             end
-            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
         elseif iszero(integrator.dtcache) && integrator.dtchangeable
             integrator.dt = integrator.tdir * distance_to_tstop
             _set_tstop_flag!(
@@ -310,13 +311,13 @@ function modify_dt_for_tstops!(integrator)
             # however, if force_stepfail then don't set to dtcache, and no tstop worry
             if abs(integrator.dtcache) + tstop_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
+                integrator.dt = integrator.tdir * abs(integrator.dtcache)
             else
                 _set_tstop_flag!(
                     integrator, true, integrator.tdir * tdir_tstop
                 )
+                integrator.dt = integrator.tdir * distance_to_tstop
             end
-            integrator.dt = integrator.tdir *
-                min(abs(integrator.dtcache), distance_to_tstop)
         else
             _set_tstop_flag!(integrator, false)
         end
