@@ -1,5 +1,6 @@
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
-using OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner, SciMLBase, Test
+using OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner, OrdinaryDiffEqCore, SciMLBase, Test
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 @testset "Callback interpolation on a tstop-clamped step" begin
     for alg in (ImplicitEuler(), TRBDF2(), Rodas5P(), QBDF2(), QBDF(), FBDF(), Tsit5(), Vern9()),
@@ -77,5 +78,46 @@ end
             @test SciMLBase.successful_retcode(sol_cb)
             @test event_t[] ≈ 0.5
         end
+    end
+end
+
+# A composite that switches on a non-first clamped step (AutoSwitch / default
+# dtfac) must still interpolate saveat against the accepted interval, not the
+# inflated dtpropose restored before handle_callbacks! (#4655 follow-up).
+@testset "saveat on composite switch during a non-first clamped step" begin
+    switched_iter = Ref(0)
+    function choice_function(integrator)
+        # Mirror AutoSwitch: after apply_step! has clamped dt onto tf, inflate
+        # by dtfac = 2 and switch methods. Require iter ≥ 1 so this is not the
+        # first-step clamp already covered above.
+        if integrator.iter >= 1 && switched_iter[] == 0
+            remaining = integrator.sol.prob.tspan[end] - integrator.t
+            if abs(remaining) > 0 &&
+                    abs(abs(integrator.dt) - abs(remaining)) <=
+                    100 * eps(max(abs(integrator.dt), abs(remaining)))
+                switched_iter[] = integrator.iter
+                integrator.dt *= 2
+                return 2
+            end
+        end
+        return switched_iter[] == 0 ? 1 : 2
+    end
+    alg = CompositeAlgorithm((Tsit5(), Rodas5P()), choice_function)
+    # Exact solution u(t) = 1 + t. dt = 0.3 yields a first free step then a
+    # clamp of the remaining 0.7 onto tf = 1.
+    prob = ODEProblem((u, p, t) -> one.(u), [1.0], (0.0, 1.0))
+    save_ts = collect(0.0:0.05:1.0)
+    integrator = init(
+        prob, alg; dt = 0.3, saveat = save_ts, abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    solve!(integrator)
+    sol = integrator.sol
+    @test SciMLBase.successful_retcode(sol)
+    @test switched_iter[] > 1          # switch on a non-first step
+    @test integrator.cache.current == 2  # landed on Rodas5P
+    @test integrator.dt == integrator.t - integrator.tprev
+    @test sol.t == save_ts
+    for (u, t) in zip(sol.u, sol.t)
+        @test u ≈ [1 + t]
     end
 end
