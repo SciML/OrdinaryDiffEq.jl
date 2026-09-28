@@ -456,8 +456,12 @@ function HomotopyNonlinearSolveAlg(
     )
 end
 
-# The stage-value guess an `AbstractNLSolverAlgorithm` may carry for `nlsolve!`
-# to seed its iterate from. Solvers without the field return `nothing` here.
+"""
+    stage_predictor(alg::AbstractNLSolverAlgorithm)
+
+Return the stage-value guess `alg` carries for `nlsolve!` to seed its iterate from, or
+`nothing` for an algorithm without one.
+"""
 stage_predictor(::AbstractNLSolverAlgorithm) = nothing
 stage_predictor(alg::NLFunctional) = alg.predictor
 stage_predictor(alg::NLAnderson) = alg.predictor
