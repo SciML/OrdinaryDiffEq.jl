@@ -44,6 +44,20 @@ end
 
 get_fsalfirstlast(cache::SDCCache, u) = (nothing, nothing)
 
+# The per-node vectors and solvers are not in `full_cache`, so `resize!` reaches them here.
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::SDCCache, i)
+    (; tmp, ubuf, k, z, znew, zE, zE_new, k2, kdense) = cache
+    for x in Iterators.flatten((tmp, ubuf, k, z, znew, zE, zE_new, k2, kdense))
+        resize!(x, i)
+    end
+    for nls in cache.nlsolvers
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+        isnewton(nls) && (nls.cache.firstcall = true)
+    end
+    return nothing
+end
+
 """
     sdc_solver_index(QΔ)
 
