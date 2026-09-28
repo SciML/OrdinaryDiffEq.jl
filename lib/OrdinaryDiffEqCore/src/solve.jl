@@ -290,7 +290,7 @@ Base.@constprop :aggressive function _ode_init(
         save_end = nothing,
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
-            !default_linear_interpolation(prob, alg),
+            !default_linear_interpolation(alg, prob),
         calck = (callback !== nothing && !isempty(callback)) ||
             (dense) || !isempty(saveat), # and no dense output
         dt = nothing,
