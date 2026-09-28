@@ -20,11 +20,15 @@ using Test
 # DAE (`algebraic_vars isa Vector`, which exercises the `reshape`/`ifelse` branch)
 # are checked, since they take different paths through `perform_step!`.
 @testset "Rosenbrock perform_step! Inference Tests" begin
-    rosenbrock_solvers = [
+    # ODE path covers every Rosenbrock, including Rosenbrock32. The DAE path omits
+    # Rosenbrock32: since #4650 / #4653 it refuses singular mass matrices at cache
+    # build time (unstable on DAEs), so init would throw before perform_step!.
+    ode_solvers = [
         Rosenbrock23(), Rosenbrock32(), RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
         Rodas3(), Rodas3d(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
         Rodas5P(), Rodas5Pe(), Rodas5Pr(), Rodas6P(),
     ]
+    dae_solvers = filter(s -> !(s isa Rosenbrock32), ode_solvers)
 
     # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise, and a
     # 50-dim system so the default linear solver takes its generic dispatch path.
@@ -49,12 +53,12 @@ using Test
         ones(2n), (0.0, 1.0)
     )
 
-    for (label, prob, tol) in (
-            ("ODE", ode_prob, 1.0e-10),
-            ("DAE", dae_prob, 1.0e-8),
+    for (label, prob, tol, solvers) in (
+            ("ODE", ode_prob, 1.0e-10, ode_solvers),
+            ("DAE", dae_prob, 1.0e-8, dae_solvers),
         )
         @testset "$label" begin
-            for solver in rosenbrock_solvers
+            for solver in solvers
                 @testset "$(typeof(solver).name.name) perform_step! inference" begin
                     integrator = init(
                         prob, solver, dt = 0.05, save_everystep = false,
