@@ -36,7 +36,7 @@ function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
 end
 
 """
-    dolinsolve(integrator, linsolve; alg = _current_alg(integrator), A = nothing, linu = nothing, b = nothing, reltol = …) -> linres
+    dolinsolve(integrator, linsolve; alg = unwrap_alg(integrator, true), A = nothing, linu = nothing, b = nothing, reltol = …) -> linres
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
 resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerance
@@ -48,7 +48,7 @@ returns the LinearSolve result.
 """
 function dolinsolve(
         integrator, linsolve;
-        alg = integrator === nothing ? nothing : _current_alg(integrator),
+        alg = integrator === nothing ? nothing : unwrap_alg(integrator, true),
         A = nothing, linu = nothing, b = nothing,
         reltol = integrator === nothing ? nothing : integrator.opts.reltol
     )

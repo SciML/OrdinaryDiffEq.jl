@@ -166,34 +166,24 @@ function _eval_index(f::F, t::Tuple{A, Vararg}, i, args...) where {F, A}
 end
 
 """
-    _current_alg(integrator)
     _current_alg(cache, integrator)
 
 Return the concrete member algorithm currently selected by a
 `CompositeAlgorithm` (see [`unwrap_alg`](@ref)). When `cache` carries a
 concretely-typed `alg` field — as member sub-caches do — `cache.alg` is used
-so callers dispatch statically on the member type.
+so callers dispatch statically on the member type. Otherwise falls back to
+`unwrap_alg(integrator, true)`, which keeps the member an over-split-limit
+union at the call site, so the call stays an ordinary runtime dispatch and
+only the algorithm that actually executes gets compiled.
 
 `_eval_index` is not enough for this: a caller that specializes on the member
 type gets inferred once per member of a heterogeneous `algs` tuple even
 though only one member ever runs — for the six-member default auto-switch
-algorithm that multiplies first-solve compile time. Selecting through the
-integrator instead keeps the member an over-split-limit union at the call
-site, so the call stays an ordinary runtime dispatch and only the algorithm
-that actually executes gets compiled.
+algorithm that multiplies first-solve compile time.
 """
-@inline function _current_alg(integrator)
-    alg = integrator.alg
-    if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitchCache &&
-            length(alg.algs) > 2
-        return alg.algs[alg.choice_function.current]
-    end
-    return unwrap_alg(integrator, true)
-end
-
 @inline function _current_alg(cache, integrator)
     hasproperty(cache, :alg) && return cache.alg
-    return _current_alg(integrator)
+    return unwrap_alg(integrator, true)
 end
 
 function get_current_isfsal(alg::CompositeAlgorithm, cache)
