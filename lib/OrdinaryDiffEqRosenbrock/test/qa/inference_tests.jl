@@ -20,9 +20,8 @@ using Test
 # DAE (`algebraic_vars isa Vector`, which exercises the `reshape`/`ifelse` branch)
 # are checked, since they take different paths through `perform_step!`.
 @testset "Rosenbrock perform_step! Inference Tests" begin
-    # ODE path covers every Rosenbrock, including Rosenbrock32. The DAE path omits
-    # Rosenbrock32: since #4650 / #4653 it refuses singular mass matrices at cache
-    # build time (unstable on DAEs), so init would throw before perform_step!.
+    # Rosenbrock32 rejects singular mass matrices at cache construction, so it
+    # has no DAE perform_step! to check.
     ode_solvers = [
         Rosenbrock23(), Rosenbrock32(), RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
         Rodas3(), Rodas3d(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
