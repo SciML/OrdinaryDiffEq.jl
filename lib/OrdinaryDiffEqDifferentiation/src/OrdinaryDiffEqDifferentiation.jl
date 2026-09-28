@@ -38,7 +38,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     isnewton,
     set_new_W!, set_W_γdt!, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff, isWmethod,
+    get_new_W_γdt_cutoff, isWmethod, _current_alg,
     TryAgain,
     Divergence, constvalue, @SciMLMessage
 

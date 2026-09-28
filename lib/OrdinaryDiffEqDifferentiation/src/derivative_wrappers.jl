@@ -194,7 +194,7 @@ function jacobian!(
         return nothing
     end
 
-    return _with_current_alg(_jacobian!, integrator, J, f, x, fx, jac_config)
+    return _jacobian!(_current_alg(integrator), integrator, J, f, x, fx, jac_config)
 end
 
 function _jacobian!(alg, integrator, J, f, x, fx, jac_config)

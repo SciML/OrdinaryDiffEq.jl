@@ -1,36 +1,3 @@
-@generated function _apply_alg_index(f, integrator::I, i, args...) where {I}
-    T = fieldtype(fieldtype(I, :alg), :algs)
-    n = fieldcount(T)
-    expr = Expr(:block)
-    for j in 1:(n - 1)
-        push!(
-            expr.args, :(
-                if i == $j
-                    return f(getfield(integrator.alg.algs, $j), integrator, args...)
-                end
-            )
-        )
-    end
-    push!(expr.args, :(return f(getfield(integrator.alg.algs, $n), integrator, args...)))
-    return expr
-end
-
-@inline function _with_current_alg(f, integrator, args...)
-    alg = integrator.alg
-    if alg isa CompositeAlgorithm
-        if alg.choice_function isa OrdinaryDiffEqCore.AutoSwitchCache
-            if length(alg.algs) > 2
-                i = alg.choice_function.current
-                1 <= i <= length(alg.algs) || throw(BoundsError(alg.algs, i))
-                return _apply_alg_index(f, integrator, i, args...)
-            end
-        else
-            return _apply_alg_index(f, integrator, integrator.cache.current, args...)
-        end
-    end
-    return f(unwrap_alg(integrator, true), integrator, args...)
-end
-
 function alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end

@@ -44,7 +44,9 @@ strict Rosenbrock methods, linear problems, mass-matrix (DAE) problems,
 CompositeAlgorithm, non-adaptive solves, and first iteration.
 """
 function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-    return _with_current_alg(_rosenbrock_jac_reuse_decision_alg, integrator, cache, dtgamma)
+    return _rosenbrock_jac_reuse_decision_alg(
+        _current_alg(cache, integrator), integrator, cache, dtgamma
+    )::NTuple{2, Bool}
 end
 
 function _rosenbrock_jac_reuse_decision_alg(alg, integrator, cache, dtgamma)
@@ -182,7 +184,7 @@ side `linsolve_tmp = fsalfirst + dtd1·dT` on the cache. Skipped when `repeat_st
 is `true`.
 """
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
-    return _with_current_alg(_calc_tderivative!, integrator, cache, dtd1, repeat_step)
+    return _calc_tderivative!(_current_alg(cache, integrator), integrator, cache, dtd1, repeat_step)
 end
 
 function _calc_tderivative!(alg, integrator, cache, dtd1, repeat_step)
@@ -391,6 +393,10 @@ either automatic or finite differencing will be used depending on the `cache`.
 If `next_step`, then it will evaluate the Jacobian at the next step.
 """
 function calc_J!(J, integrator, cache, next_step::Bool = false)
+    return _calc_J!(_current_alg(cache, integrator), integrator, J, cache, next_step)::Nothing
+end
+
+function _calc_J!(alg_member, integrator, J, cache, next_step)
     (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
@@ -414,7 +420,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             x = cache.dz
             uf.t = t
             fill!(x, zero(eltype(x)))
-            jacobian!(J, uf, x, du1, integrator, jac_config)
+            _jacobian!(alg_member, integrator, J, uf, x, du1, jac_config)
         end
     else
         if SciMLBase.has_jac(f)
@@ -432,7 +438,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             if !(p isa SciMLBase.NullParameters)
                 uf.p = p
             end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
+            _jacobian!(alg_member, integrator, J, uf, uprev, du1, jac_config)
         end
     end
 
@@ -452,6 +458,10 @@ For user-provided Jacobians, extracts via f.jac(cj=0) and f.jac(cj=1).
 For AD/FD, uses separate wrapper functions.
 """
 function calc_J_dae!(J_u, J_du, integrator, cache)
+    return _calc_J_dae!(_current_alg(cache, integrator), integrator, J_u, J_du, cache)::Nothing
+end
+
+function _calc_J_dae!(alg_member, integrator, J_u, J_du, cache)
     (; t, uprev, f, p) = integrator
 
     if SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f)
@@ -484,10 +494,10 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
         du1 = cache.du1
 
         # Compute J_u = dF/du at (du_fixed, uprev)
-        jacobian!(J_u, uf_u, uprev, du1, integrator, jac_config_u)
+        _jacobian!(alg_member, integrator, J_u, uf_u, uprev, du1, jac_config_u)
 
         # Compute J_du = dF/d(du) at (du_eval, u_fixed)
-        jacobian!(J_du, uf_du, uf_u.du_fixed, du1, integrator, jac_config_du)
+        _jacobian!(alg_member, integrator, J_du, uf_du, uf_u.du_fixed, du1, jac_config_du)
     end
 
     integrator.stats.njacs += 1
@@ -832,7 +842,10 @@ function calc_W!(
         W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, newJW = nothing
     )
-    return _with_current_alg(_calc_W!, integrator, W, nlsolver, cache, dtgamma, repeat_step, newJW)
+    return _calc_W!(
+        _current_alg(cache, integrator), integrator, W, nlsolver, cache, dtgamma,
+        repeat_step, newJW
+    )::NTuple{2, Bool}
 end
 
 function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, newJW)
@@ -915,7 +928,7 @@ function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, new
         elseif W.J !== nothing
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-                (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
+                (new_jac && (_calc_J!(alg, integrator, W.J, lcache, next_step)))
             # A linear solver caching a factorization of J across steps needs to know when
             # J moved; `gamma` it can see for itself.
             new_jac && mark_jacobian_updated!(W)
@@ -931,7 +944,7 @@ function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, new
             dae_jac = isnewton(lcache) ? lcache.dae_jacobians : nothing
             if dae_jac !== nothing
                 if new_jac
-                    calc_J_dae!(J, dae_jac.J_du, integrator, lcache)
+                    _calc_J_dae!(alg, integrator, J, dae_jac.J_du, lcache)
                 end
                 if new_W
                     cj = dae_cj(nlsolver, integrator)
@@ -941,13 +954,13 @@ function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, new
                 # Fallback: no separated Jacobians available
                 islin, isode = islinearfunction(integrator)
                 islin ? (J = isode ? f.f : f.f1.f) :
-                    (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+                    (new_jac && (_calc_J!(alg, integrator, J, lcache, next_step)))
                 new_W && copyto!(W, J)
             end
         else
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-                (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+                (new_jac && (_calc_J!(alg, integrator, J, lcache, next_step)))
             new_W && jacobian2W!(W, mass_matrix, dtgamma, J)
         end
     end
@@ -1041,9 +1054,9 @@ time derivative needed by a Rosenbrock step, honoring Jacobian reuse for W-metho
 Returns whether a fresh `W` was formed. Skips the work on a repeated step.
 """
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
-    return _with_current_alg(
-        _calc_rosenbrock_differentiation!, integrator, cache, dtd1, dtgamma, repeat_step
-    )
+    return _calc_rosenbrock_differentiation!(
+        _current_alg(cache, integrator), integrator, cache, dtd1, dtgamma, repeat_step
+    )::Bool
 end
 
 function _calc_rosenbrock_differentiation!(alg, integrator, cache, dtd1, dtgamma, repeat_step)
@@ -1054,9 +1067,9 @@ function _calc_rosenbrock_differentiation!(alg, integrator, cache, dtd1, dtgamma
         jac_reuse = get_jac_reuse(cache)
         if isWmethod(alg) && jac_reuse !== nothing
             # W-methods with reuse enabled: use CVODE-inspired reuse logic
-            newJW = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-            new_jac, new_W = calc_W!(
-                cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, newJW
+            newJW = _rosenbrock_jac_reuse_decision_alg(alg, integrator, cache, dtgamma)
+            new_jac, new_W = _calc_W!(
+                alg, integrator, cache.W, nlsolver, cache, dtgamma, repeat_step, newJW
             )
             jac_reuse.last_step_iter = integrator.iter
             if new_jac
@@ -1067,13 +1080,14 @@ function _calc_rosenbrock_differentiation!(alg, integrator, cache, dtd1, dtgamma
             # Strict Rosenbrock, or W-method with reuse disabled (jac_reuse ===
             # nothing). Defer to do_newJW inside calc_W! so that the errorfail
             # branch reuses J across step rejections (matches master).
-            new_jac, new_W = calc_W!(
-                cache.W, integrator, nlsolver, cache, dtgamma, repeat_step
+            new_jac, new_W = _calc_W!(
+                alg, integrator, cache.W, nlsolver, cache, dtgamma, repeat_step,
+                nothing
             )
         end
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
-    calc_tderivative!(integrator, cache, dtd1, repeat_step || !new_jac)
+    _calc_tderivative!(alg, integrator, cache, dtd1, repeat_step || !new_jac)
     return new_W
 end
 
