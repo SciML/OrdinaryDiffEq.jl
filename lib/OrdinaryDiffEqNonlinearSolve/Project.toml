@@ -92,3 +92,17 @@ ConstructionBase = "1.5.8"
 
 [targets]
 test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
+
+# Sublibrary CI develops in-repo [sources] only. Without these, Core tests pull
+# registry OrdinaryDiffEqSDIRK (≤2.9.6), which still restricts Trapezoid to
+# diagonal mass matrices (#4560). Master already lifts that for Trapezoid (#4631).
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqFIRK = {path = "../OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqPDIRK = {path = "../OrdinaryDiffEqPDIRK"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
