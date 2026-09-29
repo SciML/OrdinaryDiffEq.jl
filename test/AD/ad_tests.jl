@@ -487,6 +487,53 @@ end ≈ [6.765310476296564]
     @test grad_mc ≈ ref_grad rtol = 1.0e-6
 end
 
+# HVP through MooncakeAdjoint (SciML/SciMLSensitivity.jl#1680): erased callbacks must
+# leave the integrator's `callback_cache` concretely typed.
+@testset "Mooncake HVP through MooncakeAdjoint" begin
+    f(u, p, t) = [p[1] * u[1] + p[2] * u[2], -p[2] * u[1] + p[1] * u[2]]
+    prob = ODEProblem(f, [1.0, 0.0], (0.0, 1.0), [-0.2, 2.0])
+    loss(p) = sum(
+        abs2, Array(
+            solve(
+                prob, Tsit5(); p, saveat = 0.1, sensealg = MooncakeAdjoint(),
+                abstol = 1.0e-10, reltol = 1.0e-10
+            )
+        )
+    )
+    loss_fd(p) = sum(
+        abs2, Array(
+            solve(
+                remake(prob; p, u0 = eltype(p).(prob.u0)), Tsit5();
+                saveat = 0.1, abstol = 1.0e-10, reltol = 1.0e-10
+            )
+        )
+    )
+    p, v = [-0.2, 2.0], [0.3, -0.7]
+    _, _, hv = Mooncake.value_and_hvp!!(Mooncake.prepare_hvp_cache(loss, p), loss, v, p)
+    @test hv ≈ ForwardDiff.hessian(loss_fd, p) * v rtol = 1.0e-5
+end
+
+# The vector condition and the event root finder go through `callback_cache`, so the
+# gradient of an event time needs its tangent. Closed form: [-1.0, 285.6].
+@testset "Mooncake gradient through a VectorContinuousCallback event" begin
+    ball!(du, u, p, t) = (du[1] = u[2]; du[2] = -p[1]; nothing)
+    floor!(out, u, t, integrator) = (out[1] = u[1]; out[2] = u[1] - 50; nothing)
+    bounce!(integrator, events) = (
+        events[1] != 0 && (integrator.u[2] = -integrator.p[2] * integrator.u[2]); nothing
+    )
+    cb = VectorContinuousCallback(floor!, bounce!, 2)
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(ball!, [10.0, 0.0], (0.0, 2.0), [9.8, 0.9])
+    loss(p) = sum(
+        abs2, solve(
+            prob, Tsit5(); p, callback = cb, sensealg = MooncakeAdjoint(),
+            abstol = 1.0e-12, reltol = 1.0e-12
+        ).u[end]
+    )
+    p = [9.8, 0.9]
+    _, g = Mooncake.value_and_gradient!!(Mooncake.prepare_gradient_cache(loss, p), loss, p)
+    @test g[2] ≈ [-1.0, 285.6] rtol = 1.0e-6
+end
+
 # Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
 # and ensemble AD scenarios (previously tested via SciMLSensitivity integration).
 

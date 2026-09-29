@@ -600,21 +600,12 @@ Base.@constprop :aggressive function _ode_init(
     callbacks_internal = callback isa CallbackSet ? callback : CallbackSet(callback)
 
     max_len_cb = DiffEqBase.max_vector_callback_length_int(callbacks_internal)
-    callback_cache = max_len_cb === nothing ? nothing :
-        _build_callback_cache(u, max_len_cb, Val(isinplace(prob)), uBottomEltype)
-    # Whether an erased callback set holds a vector callback is not visible in its type,
-    # so there the field admits both states and the integrator type stays fixed. The
-    # cache type is inferred, not built: a callback-free solve constructs nothing.
-    callback_cache_type = if callbacks_internal isa CallbackSet{<:AbstractVector, <:AbstractVector}
-        Union{
-            Nothing,
-            Base.promote_op(
-                _build_callback_cache, typeof(u), Int, Val{isinplace(prob)}, Type{uBottomEltype}
-            ),
-        }
-    else
-        typeof(callback_cache)
-    end
+    # Whether an erased set holds a vector callback is not visible in its type, so it always
+    # gets a cache, empty when it has none, keeping the integrator type fixed and concrete.
+    erased_callbacks = callbacks_internal isa CallbackSet{<:AbstractVector, <:AbstractVector}
+    callback_cache = max_len_cb === nothing && !erased_callbacks ? nothing :
+        _build_callback_cache(u, something(max_len_cb, 0), Val(isinplace(prob)), uBottomEltype)
+    callback_cache_type = typeof(callback_cache)
 
     ### Algorithm-specific defaults ###
     save_idxs,
