@@ -487,6 +487,32 @@ end ≈ [6.765310476296564]
     @test grad_mc ≈ ref_grad rtol = 1.0e-6
 end
 
+# HVP through MooncakeAdjoint (SciML/SciMLSensitivity.jl#1680): the integrator's
+# `callback_cache` field is Union-typed when callbacks are erased.
+@testset "Mooncake HVP through MooncakeAdjoint" begin
+    f(u, p, t) = [p[1] * u[1] + p[2] * u[2], -p[2] * u[1] + p[1] * u[2]]
+    prob = ODEProblem(f, [1.0, 0.0], (0.0, 1.0), [-0.2, 2.0])
+    loss(p) = sum(
+        abs2, Array(
+            solve(
+                prob, Tsit5(); p, saveat = 0.1, sensealg = MooncakeAdjoint(),
+                abstol = 1.0e-10, reltol = 1.0e-10
+            )
+        )
+    )
+    loss_fd(p) = sum(
+        abs2, Array(
+            solve(
+                remake(prob; p, u0 = eltype(p).(prob.u0)), Tsit5();
+                saveat = 0.1, abstol = 1.0e-10, reltol = 1.0e-10
+            )
+        )
+    )
+    p, v = [-0.2, 2.0], [0.3, -0.7]
+    _, _, hv = Mooncake.value_and_hvp!!(Mooncake.prepare_hvp_cache(loss, p), loss, v, p)
+    @test hv ≈ ForwardDiff.hessian(loss_fd, p) * v rtol = 1.0e-5
+end
+
 # Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
 # and ensemble AD scenarios (previously tested via SciMLSensitivity integration).
 
