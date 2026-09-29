@@ -10,8 +10,11 @@ import SciMLBase
     end
 
     # The despecializing levels (the default `AutoSpecialize` included) rewrite `callback`
-    # into a type-erased CallbackSet, so identity checks become membership checks.
-    erased_callbacks(cb) = vcat(cb.continuous_callbacks, cb.discrete_callbacks)
+    # into a type-erased CallbackSet on Julia 1.12 and later, so identity checks become
+    # membership checks. Earlier versions pass the callback through as given, if any.
+    erased_callbacks(cb::DiffEqBase.CallbackSet) = [cb.continuous_callbacks..., cb.discrete_callbacks...]
+    erased_callbacks(cb) = [cb]
+    erased_callbacks(::Nothing) = []
     without_callback(kwargs) = Base.structdiff((; kwargs...), (; callback = nothing))
 
     # Test 1: Problem with no kwargs
@@ -19,13 +22,13 @@ import SciMLBase
     kwargs_in = (abstol = 1.0e-6, reltol = 1.0e-6)
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_no_kwargs; kwargs_in...)
     @test without_callback(kwargs_out) == kwargs_in
-    @test isempty(erased_callbacks(kwargs_out.callback))
+    @test isempty(erased_callbacks(get(kwargs_out, :callback, nothing)))
 
     # Test 2: Problem with empty kwargs
     prob_empty_kwargs = ODEProblem(f, [1.0], (0.0, 1.0); Dict{Symbol, Any}()...)
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_empty_kwargs; kwargs_in...)
     @test without_callback(kwargs_out) == kwargs_in
-    @test isempty(erased_callbacks(kwargs_out.callback))
+    @test isempty(erased_callbacks(get(kwargs_out, :callback, nothing)))
 
     # Test 3: Problem kwargs are preserved, passed kwargs take precedence
     prob_with_kwargs = ODEProblem(f, [1.0], (0.0, 1.0); abstol = 1.0e-8, reltol = 1.0e-8)
