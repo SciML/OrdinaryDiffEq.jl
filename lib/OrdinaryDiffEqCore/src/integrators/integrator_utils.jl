@@ -1089,9 +1089,13 @@ function apply_ith_callback!(
         integrator, time, upcrossing, event_idx, cb_idx,
         callbacks::AbstractVector
     )
-    return Base.invokelatest(
-        DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
-    )::Tuple{Bool, Bool}
+    return if eltype(callbacks) === Any
+        Base.invokelatest(
+            DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
+        )::Tuple{Bool, Bool}
+    else
+        DiffEqBase.apply_callback!(integrator, callbacks[cb_idx], time, upcrossing, event_idx)
+    end
 end
 
 function handle_callbacks!(integrator)
@@ -1217,7 +1221,9 @@ function calc_dt_propose!(integrator, dtnew)
     else
         dtnew
     end
-    if integrator.opts.adaptive && integrator.t isa AbstractFloat && dtnew isa AbstractFloat
+    # Preserve multistep controller proposals so roundoff does not restart their history.
+    if integrator.opts.adaptive && !ismultistep(integrator.alg) &&
+            integrator.t isa AbstractFloat && dtnew isa AbstractFloat
         # Use the same interval for the state update and the floating-point clock.
         # Otherwise, rounding t + dt can accumulate a drift in the integrated time.
         dtnew = integrator.tdir * abs(dtnew)

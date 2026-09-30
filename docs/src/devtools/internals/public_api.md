@@ -34,6 +34,7 @@ DiffEqBase.get_condition
 DiffEqBase.get_tstops
 DiffEqBase.get_tstops_array
 DiffEqBase.get_tstops_max
+DiffEqBase.has_callbacks
 DiffEqBase.initialize!
 DiffEqBase.max_vector_callback_length
 DiffEqBase.max_vector_callback_length_int
@@ -41,6 +42,7 @@ DiffEqBase.merge_problem_kwargs
 DiffEqBase.prepare_alg
 DiffEqBase.prob2dtmin
 DiffEqBase.stripunits
+DiffEqBase.supports_typed_callback_vectors
 DiffEqBase.timedepentdtmin
 ```
 

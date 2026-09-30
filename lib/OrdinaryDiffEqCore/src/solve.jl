@@ -82,6 +82,8 @@ hooks treat `affect!` as an object, reading its fields or dispatching on its typ
 which no wrapper can preserve.
 """
 function _despecialize_callbacks!(integrator)
+    # DiffEqBase preserves callback element types on older Julia for Enzyme.
+    VERSION >= v"1.12" || return nothing
     specialize = SciMLBase.specialization(integrator.f)
     specialize === SciMLBase.AutoSpecialize || specialize === SciMLBase.AutoDespecialize ||
         return nothing
@@ -92,6 +94,12 @@ function _despecialize_callbacks!(integrator)
         Any[_despecialize_callback(cb, integrator) for cb in callbacks.discrete_callbacks]
     )
     return nothing
+end
+
+# Older DiffEqBase releases do not normalize callbacks on Julia < 1.12.
+# Negotiate typed vectors only when the normalization hook is available.
+@static if isdefined(DiffEqBase, :supports_typed_callback_vectors)
+    DiffEqBase.supports_typed_callback_vectors(::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 end
 
 function _despecialize_callback(callback::ContinuousCallback, integrator)

@@ -945,6 +945,9 @@ function build_nlsolver(
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
                 precs...,
+                # Resolve small Newton residuals below the sqrt(eps) default floor,
+                # retaining round-off slack for fixed-step Krylov solves.
+                abstol = _inner_lintol(uTolType),
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity

@@ -55,9 +55,16 @@ end
 @inline _mmmul(z, ::Nothing) = z
 @inline _mmmul(z, d) = d * z
 
-function _mmdiag(tab, mass_matrix)
-    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing : diag(mass_matrix)
+function _mmdiag(tab, mass_matrix, u, p, t)
+    if tab.explicit_first_stage
+        update_coefficients!(mass_matrix, u, p, t)
+    end
+    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing : _mmdiag(mass_matrix)
 end
+
+_mmdiag(mass_matrix) = diag(mass_matrix)
+_mmdiag(mass_matrix::UniformScaling) = mass_matrix.λ
+_mmdiag(mass_matrix::ScalarOperator) = convert(Number, mass_matrix)
 
 # ===========================================================================
 # Generic ESDIRK/IMEX perform_step bodies
@@ -121,7 +128,7 @@ end
     markfirststage!(nlsolver)
 
     # ---------------- Stage 1 ----------------
-    mmd = _mmdiag(tab, integrator.f.mass_matrix)
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, uprev, p, t)
     if tab.explicit_first_stage
         if is_imex && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
@@ -1306,6 +1313,11 @@ end
                     @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
             end
+            # The explicit first stage is arbitrary in algebraic components, so
+            # its embedded difference only estimates error in differential rows.
+            if mmd !== nothing
+                @.. broadcast = false tmp = ifelse(iszero(mmd), zero(tmp), tmp)
+            end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
                 est = nlsolver.cache.dz
                 linres = dolinsolve(
@@ -1355,6 +1367,9 @@ end
         # `mmd === nothing` leaves the plain `z_s/dt`. Otherwise this feeds an
         # explicit first stage next step, which wants `f(u)`: `M z_s = dt f(u_s)`
         # and `u == u_s` when stiffly accurate, so scale by the diagonal.
+        if mmd !== nothing && !isconstant(integrator.f.mass_matrix)
+            mmd = _mmdiag(tab, integrator.f.mass_matrix, u, p, t + dt)
+        end
         @.. broadcast = false integrator.fsallast = _mmmul(zs[s], mmd) / dt
     end
 
@@ -1431,7 +1446,7 @@ end
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
-    mmd = _mmdiag(tab, integrator.f.mass_matrix)
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, uprev, p, t)
     if tab.explicit_first_stage
         if is_imex
             z1 = dt .* _mmdiv.(f_impl(uprev, p, t), mmd)
@@ -2364,6 +2379,9 @@ end
                     tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11 + ebtilde[12] * k12
                 end
             end
+            if mmd !== nothing
+                tmp_est = @.. ifelse(iszero(mmd), zero(tmp_est), tmp_est)
+            end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
                 integrator.stats.nsolve += 1
                 est = _reshape(get_W(nlsolver) \ _vec(tmp_est), axes(tmp_est))
@@ -2437,6 +2455,9 @@ end
         if mmd !== nothing
             # The ladder leaves `z_s/dt`, but this feeds an explicit first stage
             # next step, which wants `f(u)`. See `_perform_step_iip!` above.
+            if !isconstant(integrator.f.mass_matrix)
+                mmd = _mmdiag(tab, integrator.f.mass_matrix, u, p, t + dt)
+            end
             integrator.fsallast = _mmmul.(integrator.fsallast, mmd)
         end
         integrator.k[1] = integrator.fsalfirst

@@ -383,6 +383,10 @@ The keyword only goes where it is understood: an older `NonlinearSolveBase` has 
 keyword and would reject the call.
 """
 function step_inner!(nlcache, recompute_jacobian, defer_residual)
+    # DFSane has no Jacobian and warns on every iteration if given this control.
+    if hasproperty(nlcache, :alg) && nlcache.alg isa GeneralizedDFSane
+        recompute_jacobian = nothing
+    end
     if defer_residual
         step!(nlcache; recompute_jacobian, evaluate_residual = false)
     else
@@ -970,13 +974,13 @@ function _compute_rhs!(
         f(k, ustep, p, tstep)
         if mass_matrix === I
             @inbounds @simd ivdep for i in eachindex(z)
-                ztmp[i] = (dt * k[i] - z[i]) * invγdt
+                ztmp[i] = muladd(dt, k[i], -z[i]) * invγdt
             end
         else
             update_coefficients!(mass_matrix, ustep, p, tstep)
             mul!(_vec(ztmp), mass_matrix, _vec(z))
             @inbounds @simd ivdep for i in eachindex(z)
-                ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
+                ztmp[i] = muladd(dt, k[i], -ztmp[i]) * invγdt
             end
         end
     end
@@ -1045,15 +1049,12 @@ function relax!(
             return res
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            # Small Newton corrections can round away a sqrt(eps()) perturbation in α.
+            ϵ = cbrt(eps())
+            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return ϕ(α), dϕ(α)
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
@@ -1113,15 +1114,11 @@ function relax(
             return resid(z)
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            ϵ = cbrt(eps())
+            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return ϕ(α), dϕ(α)
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
