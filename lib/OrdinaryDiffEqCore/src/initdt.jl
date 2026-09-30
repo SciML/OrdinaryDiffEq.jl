@@ -22,6 +22,15 @@ end
     return applicable(DiffEqBase.NAN_CHECK, x) ? DiffEqBase.NAN_CHECK(x) : false
 end
 
+# Machine-epsilon threshold in `dt`'s units. Unwrap via `SciMLBase.value` so
+# unitful / wrapper types (e.g. DynamicQuantities.Quantity) do not hit
+# `eps(::Type{<:Quantity})`. Safe to evaluate unconditionally under `&`/`|`
+# (needed for Reactant traced comparisons that cannot short-circuit).
+@inline function _dt_eps_threshold(dt)
+    T = typeof(dt)
+    return convert(T, oneunit(dt) * eps(typeof(SciMLBase.value(dt))))
+end
+
 @muladd function _initdt_euler_step!(u₁, u0, dt, f₀)
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
@@ -255,7 +264,7 @@ end
         # Always refine (#4601); fall back only if both the first guess and the
         # refined step are tiny.
         tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
-            (dt₀ < 10eps(_tType) * oneunit(_tType))
+            (dt₀ < 10 * _dt_eps_threshold(dt₀))
 
         result_dt = let result_dt, tmp = tmp, tiny_first = tiny_first
             dt₀_tdir = tdir * dt₀
@@ -318,7 +327,7 @@ end
             end
             fallback_dt = tdir * max(smalldt, dtmin)
             tiny_refined = !isfinite(result_dt) |
-                (abs(result_dt) < 10eps(typeof(result_dt)) * oneunit(typeof(result_dt)))
+                (abs(result_dt) < 10 * _dt_eps_threshold(result_dt))
             should_fallback = tiny_first & tiny_refined
             ifelse(should_fallback, fallback_dt, result_dt)
         end
@@ -465,7 +474,7 @@ end
         )
         dt₀ = min(dt₀, dtmax_tdir)
         tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
-            (dt₀ < 10eps(_tType) * oneunit(_tType))
+            (dt₀ < 10 * _dt_eps_threshold(dt₀))
         dt₀_tdir = tdir * dt₀
 
         u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
@@ -507,7 +516,7 @@ end
         end
         fallback_dt = tdir * max(smalldt, dtmin)
         tiny_refined = !isfinite(result_dt) |
-            (abs(result_dt) < 10eps(typeof(result_dt)) * oneunit(typeof(result_dt)))
+            (abs(result_dt) < 10 * _dt_eps_threshold(result_dt))
         should_fallback = tiny_first & tiny_refined
         result_dt = ifelse(should_fallback, fallback_dt, result_dt)
     end
