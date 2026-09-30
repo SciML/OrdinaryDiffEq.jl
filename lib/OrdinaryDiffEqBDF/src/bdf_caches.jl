@@ -610,9 +610,19 @@ function alg_cache(
     return MEBDF2ConstantCache(nlsolver)
 end
 
+# Tableau for the `rk_start` restart step. It only runs without a usable previous-step
+# interpolant, where the interpolant predictors seed u = uprev (the Hermite branch, which
+# would misread FBDF's Chebyshev-node `k`, is never reached). Unsmoothed, the SDIRK
+# estimate grows like hλ in stiff components and rejects far smaller steps than BDF1.
+function _fbdf_start_tableau(T, T2)
+    return AlexanderSDIRK2ESDIRKIMEXTableau(
+        T, T2; predictor = OrdinaryDiffEqCore.Predictor.MaxOrder, smooth_est = true
+    )
+end
+
 @cache mutable struct FBDFConstantCache{
         MO, N, tsType, tType, uType, uuType, coeffType,
-        EEstType, rType, wType, fdWeightsType, staldType,
+        EEstType, rType, wType, fdWeightsType, staldType, RKC,
     } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
@@ -643,6 +653,8 @@ end
     α_bar::tsType
     dd_c::fdWeightsType
     dd_D::fdWeightsType
+    rkcache::RKC # SDIRK2 step for restarts without history, or `nothing`
+    rk_seeded::Bool # u_history[1:2] hold the SDIRK2 start's (t+γdt, t) values
 end
 
 function alg_cache(
@@ -710,17 +722,23 @@ function alg_cache(
     dd_c = zeros(typeof(t), n_filt, n_filt)
     dd_D = zeros(typeof(t), n_filt, n_filt)
 
+    rkcache = alg.rk_start isa Val{true} && MO >= 2 ?
+        ESDIRKIMEXConstantCache(
+            nlsolver,
+            _fbdf_start_tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ) : nothing
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
         terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald,
-        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D, rkcache, false
     )
 end
 
 @cache mutable struct FBDFCache{
         MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-        coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType, staldType,
+        coeffType, EEstType, rType, wType, StepLimiter, fdWeightsType, staldType, RKC,
     } <:
     BDFMutableCache
     fsalfirst::rateType
@@ -760,6 +778,8 @@ end
     α_bar::tsType
     dd_c::fdWeightsType
     dd_D::fdWeightsType
+    rkcache::RKC # SDIRK2 step for restarts without history, or `nothing`
+    rk_seeded::Bool # u_history[1:2] hold the SDIRK2 start's (t+γdt, t) values
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -836,12 +856,22 @@ function alg_cache(
     dd_c = zeros(typeof(t), n_filt, n_filt)
     dd_D = zeros(typeof(t), n_filt, n_filt)
 
+    rkcache = if alg.rk_start isa Val{true} && MO >= 2
+        rk_tab = _fbdf_start_tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        ESDIRKIMEXCache(
+            u, uprev, fsalfirst, [zero(u), nlsolver.z], Vector{Nothing}(),
+            atmp, nlsolver, rk_tab, alg.step_limiter!
+        )
+    else
+        nothing
+    end
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
         iters_from_event, dense, alg.step_limiter!, fd_weights, stald,
-        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D, rkcache, false
     )
 end
 
