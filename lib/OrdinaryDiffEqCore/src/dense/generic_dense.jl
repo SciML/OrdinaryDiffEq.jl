@@ -904,7 +904,12 @@ function ode_interpolation(
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
         i₋₊ref[] = (i₋, i₊)
         dt = ts[i₊] - ts[i₋]
-        Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
+        Θ = if iszero(dt)
+            continuity === :left ? zero(oneunit(t) / oneunit(dt)) :
+                oneunit(t) / oneunit(dt)
+        else
+            (t - ts[i₋]) / dt
+        end
         evaluate_interpolant(
             f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
             deriv, ks, ts, id, p, differential_vars
@@ -1005,7 +1010,12 @@ function ode_interpolation!(
         end
 
         dt = ts[i₊] - ts[i₋]
-        Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
+        Θ = if iszero(dt)
+            continuity === :left ? zero(oneunit(t) / oneunit(dt)) :
+                oneunit(t) / oneunit(dt)
+        else
+            (t - ts[i₋]) / dt
+        end
 
         if i₋ == i₊ && deriv === Val{0}
             if _vals_eltype(vals) <: AbstractArray
@@ -1219,7 +1229,12 @@ function ode_interpolation(
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
-        Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
+        Θ = if iszero(dt)
+            continuity === :left ? zero(oneunit(tval) / oneunit(dt)) :
+                oneunit(tval) / oneunit(dt)
+        else
+            (tval - ts[i₋]) / dt
+        end
 
         if i₋ == i₊ && deriv === Val{0}
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
@@ -1344,7 +1359,12 @@ function ode_interpolation!(
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
-        Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
+        Θ = if iszero(dt)
+            continuity === :left ? zero(oneunit(tval) / oneunit(dt)) :
+                oneunit(tval) / oneunit(dt)
+        else
+            (tval - ts[i₋]) / dt
+        end
 
         if i₋ == i₊ && deriv === Val{0}
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
