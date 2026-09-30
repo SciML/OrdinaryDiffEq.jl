@@ -133,7 +133,7 @@ function handle_step_rejection!(integrator)
         integrator.opts.verbose, :step_rejected
     )
     if integrator.isout
-        integrator.dt = integrator.dt * get_qmin(integrator)
+        domain_reject_controller!(integrator, integrator.alg)
     elseif !integrator.force_stepfail
         step_reject_controller!(integrator, integrator.alg)
     end

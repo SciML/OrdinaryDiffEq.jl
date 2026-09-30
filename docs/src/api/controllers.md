@@ -164,6 +164,7 @@ JVODE, …) where the algorithm itself owns the step-size logic.
 ```@docs
 OrdinaryDiffEqCore.accept_step_controller
 OrdinaryDiffEqCore.post_newton_controller!
+OrdinaryDiffEqCore.domain_reject_controller!
 OrdinaryDiffEqCore.reinit_controller!
 OrdinaryDiffEqCore.sync_controllers!
 OrdinaryDiffEqCore.reset_alg_dependent_opts!
@@ -173,6 +174,7 @@ OrdinaryDiffEqCore.reset_alg_dependent_opts!
 |---|---|---|
 | `accept_step_controller(integrator, cache, alg)::Bool` | `get_EEst(integrator) <= 1` | Controllers that accept on a different criterion (e.g. `PIDController` uses `dt_factor >= accept_safety`). |
 | `post_newton_controller!(integrator, cache, alg)` | Shrinks `integrator.dt` by `get_failfactor(integrator)` | Implicit-solver controllers that also reduce the BDF order on Newton failure (`BDFController`, `JVODEController`). |
+| `domain_reject_controller!(integrator, cache, alg)` | Shrinks `integrator.dt` by `get_qmin(integrator)` | Multistep controllers whose history must be repaired when `isoutofdomain` rejects a step (`BDFController` for `QNDF` / `FBDF` / `DFBDF` / `NordsieckBDF`). |
 | `reinit_controller!(integrator, cache)` | no-op | Stateful controllers that need to reset `q11`, `qold`, `dtacc`, etc. on `reinit!`. |
 | `sync_controllers!(cache1, cache2)` | no-op | Composite-alg switching, when state must transfer between sub-controllers. |
 | `reset_alg_dependent_opts!(cache, alg1, alg2)` | no-op | Re-derive `beta1` / `beta2` etc. when a composite algorithm switches between branches. |
