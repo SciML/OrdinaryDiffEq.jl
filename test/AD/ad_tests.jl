@@ -487,8 +487,7 @@ end ≈ [6.765310476296564]
     @test grad_mc ≈ ref_grad rtol = 1.0e-6
 end
 
-# HVP through MooncakeAdjoint (SciML/SciMLSensitivity.jl#1680): the integrator's
-# `callback_cache` field is Union-typed when callbacks are erased.
+# SciML/SciMLSensitivity.jl#1680: erased callbacks make `callback_cache` Union-typed.
 @testset "Mooncake HVP through MooncakeAdjoint" begin
     f(u, p, t) = [p[1] * u[1] + p[2] * u[2], -p[2] * u[1] + p[1] * u[2]]
     prob = ODEProblem(f, [1.0, 0.0], (0.0, 1.0), [-0.2, 2.0])
@@ -513,8 +512,8 @@ end
     @test hv ≈ ForwardDiff.hessian(loss_fd, p) * v rtol = 1.0e-5
 end
 
-# Event finding differentiates through a concretely typed `callback_cache`, so its tangent
-# must be kept. Closed form: [-1.0, 285.6].
+# Event times differentiate through a concretely typed `callback_cache`.
+# Closed form: [-1.0, 285.6].
 @testset "Mooncake gradient through a VectorContinuousCallback event" begin
     ball!(du, u, p, t) = (du[1] = u[2]; du[2] = -p[1]; nothing)
     floor!(out, u, t, integrator) = (out[1] = u[1]; out[2] = u[1] - 50; nothing)

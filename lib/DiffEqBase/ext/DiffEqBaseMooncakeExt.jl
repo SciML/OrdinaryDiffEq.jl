@@ -138,12 +138,9 @@ function frule!!(
     return Dual((f_out, p_out), _tuple_tangent(f_out_tangent, tangent(p)))
 end
 
-# With erased callbacks, ODEIntegrator.callback_cache is typed Union{Nothing, CallbackCache},
-# and Mooncake can't build a tangent for a struct field of that type
-# (SciML/SciMLSensitivity.jl#1680), so that field gets no tangent. A concretely typed
-# CallbackCache keeps its tangent, since event finding differentiates through it.
-# MooncakeAdjoint can't yet differentiate through erased callbacks at all (they are called
-# through `invokelatest`), so no working case loses derivatives here.
+# With erased callbacks, ODEIntegrator.callback_cache is Union{Nothing, CallbackCache},
+# which Mooncake can't build a tangent for (SciML/SciMLSensitivity.jl#1680). A concretely
+# typed cache keeps its tangent, since event finding differentiates through it.
 Mooncake.tangent_type(::Type{Union{Nothing, C}}) where {C <: DiffEqBase.CallbackCache} =
     Mooncake.NoTangent
 
