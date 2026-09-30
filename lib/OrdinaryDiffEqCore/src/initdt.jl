@@ -6,36 +6,12 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
-# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
-# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
-# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+# PyCall wrappers may return arrays from `==` (https://github.com/JuliaPy/PyCall.jl/issues/900).
+# Reduce these arrays while preserving scalar Boolean / number types (incl. Reactant
+# TracedRNumber{Bool}, which is a Number but not a Bool).
 @inline function _bool_equal(a, b)
     r = a == b
-    return r isa Bool ? r : all(r)
-end
-
-# A first guess below machine epsilon falls back only if the refined step is tiny
-# too, so a well-scaled Float32 problem keeps its refined step (#4601).
-function _fallback_if_tiny(dt, tiny_first, tdir, smalldt, dtmin, integrator)
-    _tType = typeof(dt)
-    fallback = tdir * max(smalldt, dtmin)
-    tiny_refined = !isfinite(dt) | (abs(dt) < 10eps(_tType) * oneunit(_tType))
-    should_fallback = tiny_first & tiny_refined
-    if !ReactantCore.within_compile()
-        if should_fallback
-            @SciMLMessage(
-                lazy"Initial timestep too small (near machine epsilon), using default: dt = $(fallback)",
-                integrator.opts.verbose, :dt_epsilon
-            )
-            return fallback
-        end
-        return dt
-    end
-    result_dt = dt
-    ReactantCore.@trace track_numbers = false if should_fallback
-        result_dt = fallback
-    end
-    return result_dt
+    return r isa Number ? r : all(r)
 end
 
 # Prefer DiffEqBase.NAN_CHECK when a method exists (Number / AbstractArray /
@@ -254,6 +230,7 @@ end
             integrator.opts.verbose, :init_NaN
         )
     end
+    result_dt = tdir * dtmin
     ReactantCore.@trace track_numbers = false if has_nan
         result_dt = tdir * dtmin
     else
@@ -274,8 +251,11 @@ end
         #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
         # end
         dt₀ = min(dt₀, dtmax_tdir)
-        tiny_first = typeof(one(_tType)) <: AbstractFloat &&
-            dt₀ < 10eps(_tType) * oneunit(_tType)
+        # Use `&` (not `&&`) so traced comparisons stay out of a Bool context.
+        # Always refine (#4601); fall back only if both the first guess and the
+        # refined step are tiny.
+        tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
+            (dt₀ < 10eps(_tType) * oneunit(_tType))
 
         result_dt = let result_dt, tmp = tmp, tiny_first = tiny_first
             dt₀_tdir = tdir * dt₀
@@ -298,9 +278,7 @@ end
             # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
             # Coerce array-valued equality so the boolean context always receives a Bool.
             if _bool_equal(f₀, f₁)
-                result_dt = _fallback_if_tiny(
-                    tdir * max(dtmin, 100dt₀), tiny_first, tdir, smalldt, dtmin, integrator
-                )
+                result_dt = tdir * max(dtmin, 100dt₀)
             else
                 result_dt = let
                     # d₂: fold in diffusion terms when g !== nothing
@@ -335,13 +313,14 @@ end
                             )
                         )
                     end
-                    _fallback_if_tiny(
-                        tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir)),
-                        tiny_first, tdir, smalldt, dtmin, integrator
-                    )
+                    tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
                 end
             end
-            result_dt
+            fallback_dt = tdir * max(smalldt, dtmin)
+            tiny_refined = !isfinite(result_dt) |
+                (abs(result_dt) < 10eps(typeof(result_dt)) * oneunit(typeof(result_dt)))
+            should_fallback = tiny_first & tiny_refined
+            ifelse(should_fallback, fallback_dt, result_dt)
         end
     end
     return result_dt
@@ -479,12 +458,14 @@ end
     ReactantCore.@trace track_numbers = false if isnan(d₁)
         result_dt = tdir * dtmin
     else
-        if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
-            dt₀ = smalldt
-        else
-            dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
-        end
+        dt₀ = ifelse(
+            (d₀ < 1 // 10^(5)) | (d₁ < 1 // 10^(5)),
+            smalldt,
+            convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
+        )
         dt₀ = min(dt₀, dtmax_tdir)
+        tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
+            (dt₀ < 10eps(_tType) * oneunit(_tType))
         dt₀_tdir = tdir * dt₀
 
         u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
@@ -524,6 +505,11 @@ end
                 tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
             end
         end
+        fallback_dt = tdir * max(smalldt, dtmin)
+        tiny_refined = !isfinite(result_dt) |
+            (abs(result_dt) < 10eps(typeof(result_dt)) * oneunit(typeof(result_dt)))
+        should_fallback = tiny_first & tiny_refined
+        result_dt = ifelse(should_fallback, fallback_dt, result_dt)
     end
     return result_dt
 end
