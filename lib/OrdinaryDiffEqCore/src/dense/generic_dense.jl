@@ -899,7 +899,7 @@ function ode_interpolation(
         t = tvals[j]
         (i₋, i₊) = i₋₊ref[]
         if continuity === :left
-            # Duplicated knots: collapse zero-width :left intervals at the knot.
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
             (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
@@ -965,7 +965,7 @@ function ode_interpolation!(
         t = tvals[j]
 
         if continuity === :left
-            # Duplicated knots: collapse zero-width :left intervals at the knot.
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
             (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
@@ -1213,7 +1213,7 @@ function ode_interpolation(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # Duplicated knots: collapse zero-width :left intervals at the knot.
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
         (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
@@ -1336,7 +1336,7 @@ function ode_interpolation!(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # Duplicated knots: collapse zero-width :left intervals at the knot.
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
         (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
