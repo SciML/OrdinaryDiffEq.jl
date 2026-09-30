@@ -579,8 +579,9 @@ end
     step_reject_controller!(integrator, alg)
 @inline post_newton_controller!(integrator, ::DummyControllerCache, alg) =
     post_newton_controller!(integrator, alg)
-@inline domain_reject_controller!(integrator, ::DummyControllerCache, alg) =
-    domain_reject_controller!(integrator, alg)
+# No `domain_reject_controller!` forwarding for `DummyControllerCache`: algorithms
+# on this path (e.g. TauLeaping) have no alg-level method, so forwarding would
+# recurse forever. They fall through to the generic `dt *= qmin` method instead.
 @inline accept_step_controller(integrator, cache::DummyControllerCache, alg) =
     get_EEst(cache) <= 1
 # DummyControllerCache is used by some SDE algorithms (e.g.
