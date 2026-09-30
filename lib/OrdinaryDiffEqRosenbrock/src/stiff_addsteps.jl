@@ -59,9 +59,6 @@ function _ode_addsteps!(
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
-        # Precalculations
-        dtC = C ./ dt
-        dtd = dt .* d
         dtgamma = dt * gamma
         mass_matrix = f.mass_matrix
 
@@ -88,7 +85,7 @@ function _ode_addsteps!(
 
         num_stages = size(A, 1)
         du = f(uprev, p, t)
-        linsolve_tmp = @.. du + dtd[1] * dT
+        linsolve_tmp = @.. du + (dt * d[1]) * dT
         k1 = _restructure_state(uprev, W \ _vec(linsolve_tmp))
         # constant number for type stability make sure this is greater than num_stages
         ks = ntuple(Returns(k1), Val(20))
@@ -105,15 +102,15 @@ function _ode_addsteps!(
             linsolve_tmp = zero(du)
             if mass_matrix === I
                 for i in 1:(stage - 1)
-                    linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                    linsolve_tmp = @.. linsolve_tmp + (C[stage, i] / dt) * ks[i]
                 end
             else
                 for i in 1:(stage - 1)
-                    linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                    linsolve_tmp = @.. linsolve_tmp + (C[stage, i] / dt) * ks[i]
                 end
                 linsolve_tmp = mass_matrix * linsolve_tmp
             end
-            linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
+            linsolve_tmp = @.. du + (dt * d[stage]) * dT + linsolve_tmp
             ks = Base.setindex(ks, _restructure_state(uprev, W \ _vec(linsolve_tmp)), stage)
         end
 
