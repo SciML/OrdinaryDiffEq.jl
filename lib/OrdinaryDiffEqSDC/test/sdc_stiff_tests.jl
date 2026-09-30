@@ -99,3 +99,17 @@ end
     )
     @test fast[2] < abs(be.u[2][1]) / 10
 end
+
+@testset "resize! in place carries the node solvers along" begin
+    cb = DiscreteCallback((u, t, i) -> t == 0.5, i -> (resize!(i, 3); i.u[3] = 1.0))
+    exact = [exp(-1.0), 2exp(-1.0), exp(-0.5)]
+    prob = ODEProblem((du, u, p, t) -> (du .= -u; nothing), [1.0, 2.0], (0.0, 1.0))
+    for sweeper in (SDCSweeper.LU, SDCSweeper.MIN_SR_S)
+        sol = solve(
+            prob, SDC(num_nodes = 3, num_sweeps = 6, sweeper = sweeper);
+            dt = 0.05, adaptive = false, callback = cb, tstops = [0.5]
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end] ≈ exact rtol = 1.0e-8
+    end
+end

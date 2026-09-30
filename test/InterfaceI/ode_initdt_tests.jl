@@ -159,3 +159,21 @@ end
     integrator = init(prob, Tsit5(); dtmin)
     @test integrator.dt == nextfloat(dtmin)
 end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4601
+function lorenz!(du, u, p, t)
+    du[1] = 10 * (u[2] - u[1])
+    du[2] = u[1] * (28 - u[3]) - u[2]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return nothing
+end
+dt32 = init(ODEProblem(lorenz!, Float32[1, 0, 0], (0.0f0, 1.0f0)), Tsit5()).dt
+dt64 = init(ODEProblem(lorenz!, [1.0, 0.0, 0.0], (0.0, 1.0)), Tsit5()).dt
+@test dt32 ≈ dt64 rtol = 1.0e-4
+relax!(du, u, p, t) = (du .= 1 .- u; nothing)
+dt32 = init(ODEProblem(relax!, Float32[0], (0.0f0, 1.0f0)), Tsit5()).dt
+dt64 = init(ODEProblem(relax!, [0.0], (0.0, 1.0)), Tsit5()).dt
+@test dt32 ≈ dt64 rtol = 1.0e-4
+# A refined step still below machine epsilon falls back to the default.
+stiff_decay = ODEProblem((du, u, p, t) -> (du .= -1.0e16 .* u; nothing), [1.0], (0.0, 1.0))
+@test init(stiff_decay, Rodas5P()).dt == 1.0e-6

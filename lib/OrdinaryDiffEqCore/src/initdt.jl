@@ -6,11 +6,36 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
-# PyCall wrappers may return arrays from `==` (https://github.com/JuliaPy/PyCall.jl/issues/900).
-# Reduce these arrays while preserving scalar Boolean types.
+# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
+# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
+# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
 @inline function _bool_equal(a, b)
     r = a == b
-    return r isa Number ? r : all(r)
+    return r isa Bool ? r : all(r)
+end
+
+# A first guess below machine epsilon falls back only if the refined step is tiny
+# too, so a well-scaled Float32 problem keeps its refined step (#4601).
+function _fallback_if_tiny(dt, tiny_first, tdir, smalldt, dtmin, integrator)
+    _tType = typeof(dt)
+    fallback = tdir * max(smalldt, dtmin)
+    tiny_refined = !isfinite(dt) | (abs(dt) < 10eps(_tType) * oneunit(_tType))
+    should_fallback = tiny_first & tiny_refined
+    if !ReactantCore.within_compile()
+        if should_fallback
+            @SciMLMessage(
+                lazy"Initial timestep too small (near machine epsilon), using default: dt = $(fallback)",
+                integrator.opts.verbose, :dt_epsilon
+            )
+            return fallback
+        end
+        return dt
+    end
+    result_dt = dt
+    ReactantCore.@trace track_numbers = false if should_fallback
+        result_dt = fallback
+    end
+    return result_dt
 end
 
 # Prefer DiffEqBase.NAN_CHECK when a method exists (Number / AbstractArray /
@@ -249,82 +274,74 @@ end
         #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
         # end
         dt₀ = min(dt₀, dtmax_tdir)
+        tiny_first = typeof(one(_tType)) <: AbstractFloat &&
+            dt₀ < 10eps(_tType) * oneunit(_tType)
 
-        if (eltype(prob.tspan) <: AbstractFloat) && dt₀ < 10eps(eltype(prob.tspan)) * oneunit_tType
-            result_dt = tdir * max(smalldt, dtmin)
+        result_dt = let result_dt, tmp = tmp, tiny_first = tiny_first
+            dt₀_tdir = tdir * dt₀
 
-        else
-            result_dt = let result_dt, tmp = tmp
-                dt₀_tdir = tdir * dt₀
+            u₁ = zero(u0) # required by DEDataArray
 
-                u₁ = zero(u0) # required by DEDataArray
+            u₁ = _initdt_euler_step!(u₁, u0, dt₀_tdir, f₀)
+            f₁ = zero(f₀)
+            f(f₁, u₁, p, t + dt₀_tdir)
 
-                u₁ = _initdt_euler_step!(u₁, u0, dt₀_tdir, f₀)
-                f₁ = zero(f₀)
-                f(f₁, u₁, p, t + dt₀_tdir)
-
-                if has_mass_matrix
-                    integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
-                    copyto!(f₁, ftmp)
-                end
-
-                # Constant zone before callback
-                # Just return first guess
-                # Avoids AD issues.
-                # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
-                # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
-                # Coerce array-valued equality so the boolean context always receives a Bool.
-                if _bool_equal(f₀, f₁)
-                    result_dt = tdir * max(dtmin, 100dt₀)
-                else
-                    result_dt = let
-                        # d₂: fold in diffusion terms when g !== nothing
-                        if g !== nothing
-                            if noise_prototype !== nothing
-                                g₁ = zero(noise_prototype)
-                            else
-                                g₁ = zero(u0)
-                            end
-                            g(g₁, u₁, p, t + dt₀_tdir)
-                            g₁ .*= 3
-                            ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
-                            d₂ = internalnorm(
-                                max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
-                                t
-                            ) / dt₀
-                        else
-                            tmp = _initdt_scaled_diff!(tmp, u0, f₁, f₀, sk, oneunit_tType)
-                            d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
-                        end
-                        # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
-
-                        max_d₁d₂ = max(d₁, d₂)
-                        if max_d₁d₂ <= 1 // Int64(10)^(15)
-                            dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
-                        else
-                            dt₁ = convert(
-                                _tType,
-                                oneunit_tType *
-                                    SciMLBase.value(
-                                    10.0^(-(2 + log10(max_d₁d₂)) / order)
-                                )
-                            )
-                        end
-                        tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
-                    end
-                end
-                result_dt
+            if has_mass_matrix
+                integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
+                copyto!(f₁, ftmp)
             end
-        end
-        # Keep this warning inside the non-NaN branch: `dt₀` is only assigned there,
-        # and `ReactantCore.@trace if` confuses JET's definite-assignment analysis.
-        if warn_initial_dt &&
-                (eltype(prob.tspan) <: AbstractFloat) &&
-                dt₀ < 10eps(eltype(prob.tspan)) * oneunit_tType
-            @SciMLMessage(
-                lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
-                integrator.opts.verbose, :dt_epsilon
-            )
+
+            # Constant zone before callback
+            # Just return first guess
+            # Avoids AD issues.
+            # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
+            # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
+            # Coerce array-valued equality so the boolean context always receives a Bool.
+            if _bool_equal(f₀, f₁)
+                result_dt = _fallback_if_tiny(
+                    tdir * max(dtmin, 100dt₀), tiny_first, tdir, smalldt, dtmin, integrator
+                )
+            else
+                result_dt = let
+                    # d₂: fold in diffusion terms when g !== nothing
+                    if g !== nothing
+                        if noise_prototype !== nothing
+                            g₁ = zero(noise_prototype)
+                        else
+                            g₁ = zero(u0)
+                        end
+                        g(g₁, u₁, p, t + dt₀_tdir)
+                        g₁ .*= 3
+                        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+                        d₂ = internalnorm(
+                            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+                            t
+                        ) / dt₀
+                    else
+                        tmp = _initdt_scaled_diff!(tmp, u0, f₁, f₀, sk, oneunit_tType)
+                        d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
+                    end
+                    # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
+
+                    max_d₁d₂ = max(d₁, d₂)
+                    if max_d₁d₂ <= 1 // Int64(10)^(15)
+                        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
+                    else
+                        dt₁ = convert(
+                            _tType,
+                            oneunit_tType *
+                                SciMLBase.value(
+                                10.0^(-(2 + log10(max_d₁d₂)) / order)
+                            )
+                        )
+                    end
+                    _fallback_if_tiny(
+                        tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir)),
+                        tiny_first, tdir, smalldt, dtmin, integrator
+                    )
+                end
+            end
+            result_dt
         end
     end
     return result_dt
