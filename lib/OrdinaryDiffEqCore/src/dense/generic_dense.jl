@@ -140,6 +140,14 @@ end
     return _searchsortedlast(v, x, lo, forward)
 end
 
+# Collapse :left zero-width duplicated knots at t to i₋ (pre-jump); skip when t ≠ knot (past-end).
+@inline function _collapse_left_duplicate_knot(i₋::Integer, i₊::Integer, ts, t)
+    if i₋ == i₊ || @inbounds(ts[i₋] != ts[i₊]) || t != @inbounds(ts[i₋])
+        return (i₋, i₊)
+    end
+    return (i₋, i₋)
+end
+
 """
     ode_addsteps!(k, integrator, ...)
     ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false, allow_calc_end = true, force_calc_end = false)
@@ -891,10 +899,10 @@ function ode_interpolation(
         t = tvals[j]
         (i₋, i₊) = i₋₊ref[]
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # Duplicated knots: collapse zero-width :left intervals at the knot.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -904,12 +912,7 @@ function ode_interpolation(
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
         i₋₊ref[] = (i₋, i₊)
         dt = ts[i₊] - ts[i₋]
-        Θ = if iszero(dt)
-            continuity === :left ? zero(oneunit(t) / oneunit(dt)) :
-                oneunit(t) / oneunit(dt)
-        else
-            (t - ts[i₋]) / dt
-        end
+        Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
         evaluate_interpolant(
             f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
             deriv, ks, ts, id, p, differential_vars
@@ -962,10 +965,10 @@ function ode_interpolation!(
         t = tvals[j]
 
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # Duplicated knots: collapse zero-width :left intervals at the knot.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -1010,12 +1013,7 @@ function ode_interpolation!(
         end
 
         dt = ts[i₊] - ts[i₋]
-        Θ = if iszero(dt)
-            continuity === :left ? zero(oneunit(t) / oneunit(dt)) :
-                oneunit(t) / oneunit(dt)
-        else
-            (t - ts[i₋]) / dt
-        end
+        Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
         if i₋ == i₊ && deriv === Val{0}
             if _vals_eltype(vals) <: AbstractArray
@@ -1215,10 +1213,10 @@ function ode_interpolation(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+        # Duplicated knots: collapse zero-width :left intervals at the knot.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
@@ -1229,12 +1227,7 @@ function ode_interpolation(
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
-        Θ = if iszero(dt)
-            continuity === :left ? zero(oneunit(tval) / oneunit(dt)) :
-                oneunit(tval) / oneunit(dt)
-        else
-            (tval - ts[i₋]) / dt
-        end
+        Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
         if i₋ == i₊ && deriv === Val{0}
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
@@ -1343,10 +1336,10 @@ function ode_interpolation!(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+        # Duplicated knots: collapse zero-width :left intervals at the knot.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
@@ -1359,12 +1352,7 @@ function ode_interpolation!(
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
-        Θ = if iszero(dt)
-            continuity === :left ? zero(oneunit(tval) / oneunit(dt)) :
-                oneunit(tval) / oneunit(dt)
-        else
-            (tval - ts[i₋]) / dt
-        end
+        Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
         if i₋ == i₊ && deriv === Val{0}
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
