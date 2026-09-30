@@ -29,6 +29,13 @@ OrdinaryDiffEqDifferentiation.set_all_nzval!(A::AbstractSparseMatrix, val) = (no
 # indices — positionally when `W` and `J` already share a pattern, by a merge
 # pass otherwise. Values use the same `muladd` operands as the broadcast path,
 # so they are bitwise identical.
+#
+# Loss regime: with a `Diagonal` mass matrix and an over-approximated
+# `jac_prototype` (many stored entries that are always zero), the kept zeros
+# increase LU fill — ~+11% fill and +12–23% per refactorization for KLU on a
+# n=1002 benchmark; UMFPACK is unaffected. The remedy is a tighter prototype.
+# The scalar/`I` mass-matrix path already kept J's stored zeros, so this makes
+# `Diagonal` consistent with it.
 # ---------------------------------------------------------------------------
 
 const _ScalarOrDiagonalMassMatrix = Union{UniformScaling, ScalarOperator, Diagonal}

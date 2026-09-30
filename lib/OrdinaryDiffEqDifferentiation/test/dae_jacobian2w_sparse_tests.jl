@@ -39,7 +39,7 @@ Adense = Matrix(A) - Matrix(B)
 @test OrdinaryDiffEqDifferentiation._sparse_pattern_stable_sub!(A, B)
 @test Matrix(A) ≈ Adense
 @test map(bitstring, Matrix(A)) == map(bitstring, Adense)
-@test nnz(A) == nnz(sparse([1, 1, 2, 2], [1, 2, 1, 2], ones(4), 2, 2))  # A ∪ B
+@test nnz(A) == 4  # A ∪ B
 A2 = sparse([1, 1, 2], [1, 2, 2], [4.0, 0.0, 0.5], 2, 2)
 @test OrdinaryDiffEqDifferentiation._sparse_pattern_stable_sub!(A2, B)
 @test nnz(A2) == nnz(A)
