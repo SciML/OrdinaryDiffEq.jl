@@ -513,6 +513,27 @@ end
     @test hv ≈ ForwardDiff.hessian(loss_fd, p) * v rtol = 1.0e-5
 end
 
+# Event finding differentiates through a concretely typed `callback_cache`, so its tangent
+# must be kept. Closed form: [-1.0, 285.6].
+@testset "Mooncake gradient through a VectorContinuousCallback event" begin
+    ball!(du, u, p, t) = (du[1] = u[2]; du[2] = -p[1]; nothing)
+    floor!(out, u, t, integrator) = (out[1] = u[1]; out[2] = u[1] - 50; nothing)
+    bounce!(integrator, events) = (
+        events[1] != 0 && (integrator.u[2] = -integrator.p[2] * integrator.u[2]); nothing
+    )
+    cb = VectorContinuousCallback(floor!, bounce!, 2)
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(ball!, [10.0, 0.0], (0.0, 2.0), [9.8, 0.9])
+    loss(p) = sum(
+        abs2, solve(
+            prob, Tsit5(); p, callback = cb, sensealg = MooncakeAdjoint(),
+            abstol = 1.0e-12, reltol = 1.0e-12
+        ).u[end]
+    )
+    p = [9.8, 0.9]
+    _, g = Mooncake.value_and_gradient!!(Mooncake.prepare_gradient_cache(loss, p), loss, p)
+    @test g[2] ≈ [-1.0, 285.6] rtol = 1.0e-6
+end
+
 # Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
 # and ensemble AD scenarios (previously tested via SciMLSensitivity integration).
 

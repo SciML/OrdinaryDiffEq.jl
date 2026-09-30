@@ -138,10 +138,13 @@ function frule!!(
     return Dual((f_out, p_out), _tuple_tangent(f_out_tangent, tangent(p)))
 end
 
-# CallbackCache is scratch space for locating vector-callback events, so it doesn't need a
-# tangent. This also gives ODEIntegrator.callback_cache, which is
-# Union{Nothing, CallbackCache} when callbacks are erased, a plain NoTangent tangent
-# instead of a Union one, which Mooncake HVPs fail on (SciML/SciMLSensitivity.jl#1680).
-Mooncake.tangent_type(::Type{<:DiffEqBase.CallbackCache}) = Mooncake.NoTangent
+# With erased callbacks, ODEIntegrator.callback_cache is typed Union{Nothing, CallbackCache},
+# and Mooncake can't build a tangent for a struct field of that type
+# (SciML/SciMLSensitivity.jl#1680), so that field gets no tangent. A concretely typed
+# CallbackCache keeps its tangent, since event finding differentiates through it.
+# MooncakeAdjoint can't yet differentiate through erased callbacks at all (they are called
+# through `invokelatest`), so no working case loses derivatives here.
+Mooncake.tangent_type(::Type{Union{Nothing, C}}) where {C <: DiffEqBase.CallbackCache} =
+    Mooncake.NoTangent
 
 end
