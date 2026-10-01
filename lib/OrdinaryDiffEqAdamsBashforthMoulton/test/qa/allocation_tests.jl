@@ -15,14 +15,18 @@ using Test
 
     # Solvers confirmed allocation-free in `perform_step!`. Any regression
     # here fails the test loud.
-    ab_solvers_alloc_free = [AB3()]
+    # AllocCheck reports broadcast-alias sites for ABM32 outside Julia 1.12 bounds=auto.
+    abm32_alloc_free = VERSION >= v"1.12" && Base.JLOptions().check_bounds == 0
+    ab_solvers_alloc_free = abm32_alloc_free ? [AB3(), ABM32()] : [AB3()]
 
     # Solvers with known allocation sites in `perform_step!`. Marked
     # `broken = true` so the suite stays green while tracking the
     # regression. When a solver is fixed, AllocCheck will report zero
     # sites, the test flips to "Unexpected Pass", and the entry should
     # move up to the `*_alloc_free` list above.
-    ab_solvers_known_broken = [AB4(), AB5(), ABM32(), ABM43(), ABM54()]
+    ab_solvers_known_broken = abm32_alloc_free ?
+        [AB4(), AB5(), ABM43(), ABM54()] :
+        [AB4(), AB5(), ABM32(), ABM43(), ABM54()]
     vcab_solvers_known_broken = [
         VCAB3(), VCAB4(), VCAB5(),
         VCABM3(), VCABM4(), VCABM5(), VCABM(),
