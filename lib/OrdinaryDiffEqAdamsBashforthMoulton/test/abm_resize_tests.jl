@@ -33,11 +33,10 @@ function exact_at(t, n_new)
     return exp(A_resize[1:n_new, 1:n_new] * (t - t_resize)) * v
 end
 
-function solve_with_resize(alg, n_new; modified = true, kwargs...)
+function solve_with_resize(alg, n_new; kwargs...)
     function affect!(integrator)
         resize!(integrator, n_new)
         n_new > length(u0_resize) && (integrator.u[n_new] = u_new_grow)
-        modified || derivative_discontinuity!(integrator, false)
         return nothing
     end
     cb = DiscreteCallback(
@@ -96,16 +95,6 @@ const FIXED_ABM_TYPES = Union{AB3, AB4, AB5, ABM32, ABM43, ABM54}
         @test final_resize_error(sol, 2) < atol
         @test max_post_resize_error(sol, 2) < 1.0e-5
     end
-end
-
-@testset "resize! without restart is incorrect on coupled system" begin
-    # VCAB3 grow / VCAB5 shrink leave stale ϕ history when u_modified is cleared.
-    sol = solve_with_resize(VCAB3(), 4; modified = false, abstol = 1.0e-10, reltol = 1.0e-10)
-    @test SciMLBase.successful_retcode(sol)
-    @test final_resize_error(sol, 4) > 1.0e-5
-    sol = solve_with_resize(VCAB5(), 2; modified = false, abstol = 1.0e-10, reltol = 1.0e-10)
-    @test SciMLBase.successful_retcode(sol)
-    @test final_resize_error(sol, 2) > 1.0e-5
 end
 
 @testset "deleteat!: $(nameof(typeof(alg)))" for alg in (

@@ -46,7 +46,7 @@ ODEProblemLibrary = "1"
 DiffEqBase = "7"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
-LinearAlgebra = "1"
+LinearAlgebra = "<0.0.1, 1"
 
 [targets]
 test = ["DiffEqDevTools", "LinearAlgebra", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg", "SciMLTesting"]
