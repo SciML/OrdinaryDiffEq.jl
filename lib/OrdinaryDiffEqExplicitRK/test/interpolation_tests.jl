@@ -217,3 +217,30 @@ end
         out
     end ≈ expected_d2
 end
+
+@testset "generic_rk_interpolant! validates idxs" begin
+    # Direct callers reach the scalar-indexed kernel without an upstream
+    # idxs bounds check, so the kernel must validate idxs itself before its
+    # @inbounds loops.
+    B_interp = constructTsit5ExplicitRK().B_interp
+    y0 = [1.0, 2.0, 3.0]
+    k = [fill(Float64(i), 3) for i in 1:size(B_interp, 1)]
+    out = zeros(2)
+
+    ref = OrdinaryDiffEqExplicitRK.generic_rk_interpolant(
+        0.5, 0.1, y0, k, B_interp; idxs = [3, 1]
+    )
+    @test OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        out, 0.5, 0.1, y0, k, B_interp; idxs = [3, 1]
+    ) ≈ ref
+
+    @test_throws BoundsError OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        out, 0.5, 0.1, y0, k, B_interp; idxs = [1, 4]
+    )
+    @test_throws BoundsError OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        out, 0.5, 0.1, y0, k, B_interp; idxs = [1, 4], order = 1
+    )
+    @test_throws DimensionMismatch OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        zeros(3), 0.5, 0.1, y0, k, B_interp; idxs = [1, 2]
+    )
+end
