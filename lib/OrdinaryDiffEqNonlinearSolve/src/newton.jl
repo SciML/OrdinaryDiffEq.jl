@@ -1057,7 +1057,16 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        # Modified Newton (reused/stale `W`, γΔt rescaling) is not guaranteed to produce a
+        # descent direction for the residual *norm*. LineSearches.BackTracking ≥ 7.7.2
+        # throws `LineSearchException` when the finite-difference slope `dϕ0` is positive.
+        # Fall back to the undamped step, matching pre-check BackTracking when the trial
+        # residual still decreases.
+        α = if dϕ0 > zero(dϕ0)
+            α0
+        else
+            linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)[1]
+        end
         @.. dz = dz * α
         return dz
     end
@@ -1125,7 +1134,13 @@ function relax(
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        # See the in-place `relax!` linesearch branch: approximate Newton directions need
+        # not be residual-norm descent directions for LineSearches.BackTracking ≥ 7.7.2.
+        α = if dϕ0 > zero(dϕ0)
+            α0
+        else
+            linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)[1]
+        end
         dz = dz * α
         return dz
     end
