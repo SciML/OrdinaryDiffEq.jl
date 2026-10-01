@@ -145,7 +145,6 @@ end
     if integrator.derivative_discontinuity
         cache.step = 1
     end
-    cnt = cache.step
     if cache.step == 1
         cache.step += 1
         ttmp = t + 2dt / 3
@@ -155,16 +154,11 @@ end
         @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method
         cache.k2 .= k1
     else
-        # AB3 predictor
-        if cnt <= 2
-            ttmp = t + 2dt / 3
-            @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1
-            f(ralk2, tmp, p, ttmp)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method
-        else
-            @.. broadcast = false thread = thread u = uprev + (dt / 12) * (23 * k1 - 16 * k2 + 5 * k3)
-        end
+        ttmp = t + 2dt / 3
+        @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1
+        f(ralk2, tmp, p, ttmp)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method
         f(k, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false thread = thread u = uprev + (dt / 12) * (5 * k + 8 * k1 - k2)
@@ -319,22 +313,16 @@ end
             cache.k2 .= k1
         end
     else
-        # AB4 predictor
-        if cnt <= 3
-            halfdt = dt / 2
-            ttmp = t + halfdt
-            @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
-            f(t5, tmp, p, ttmp)
-            @.. broadcast = false thread = thread tmp = uprev + halfdt * t5
-            f(t6, tmp, p, ttmp)
-            @.. broadcast = false thread = thread tmp = uprev + dt * t6
-            f(t7, tmp, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-            @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t5 + t6) + (k1 + t7))   #RK4
-        else
-            @.. broadcast = false thread = thread u = uprev +
-                (dt / 24) * (55 * k1 - 59 * k2 + 37 * k3 - 9 * k4)
-        end
+        halfdt = dt / 2
+        ttmp = t + halfdt
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
+        f(t5, tmp, p, ttmp)
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * t5
+        f(t6, tmp, p, ttmp)
+        @.. broadcast = false thread = thread tmp = uprev + dt * t6
+        f(t7, tmp, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+        @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t5 + t6) + (k1 + t7))   #RK4
         f(k, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false thread = thread u = uprev +
@@ -506,26 +494,16 @@ end
             cache.k2 .= k1
         end
     else
-        # AB5 predictor
-        if cnt <= 4
-            halfdt = dt / 2
-            ttmp = t + halfdt
-            @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
-            f(t6, tmp, p, ttmp)
-            @.. broadcast = false thread = thread tmp = uprev + halfdt * t6
-            f(t7, tmp, p, ttmp)
-            @.. broadcast = false thread = thread tmp = uprev + dt * t7
-            f(t8, tmp, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-            @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t6 + t7) + (k1 + t8))   #RK4
-        else
-            @.. broadcast = false thread = thread u = uprev +
-                (dt / 720) *
-                (
-                1901 * k1 - 2774 * k2 + 2616 * k3 - 1274 * k4 +
-                    251 * k5
-            )
-        end
+        halfdt = dt / 2
+        ttmp = t + halfdt
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
+        f(t6, tmp, p, ttmp)
+        @.. broadcast = false thread = thread tmp = uprev + halfdt * t6
+        f(t7, tmp, p, ttmp)
+        @.. broadcast = false thread = thread tmp = uprev + dt * t7
+        f(t8, tmp, p, t + dt)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t6 + t7) + (k1 + t8))   #RK4
         f(k, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false thread = thread u = uprev +

@@ -136,7 +136,11 @@ using Test
         end
         ref_bytes = @allocated step!(ref_integrator)
 
-        for solver in [ABM32(), ABM43(), ABM54(), VCABM3()]
+        for solver in [
+                ABM32(), ABM43(), ABM54(),
+                VCAB3(), VCAB4(), VCAB5(),
+                VCABM3(), VCABM4(), VCABM5(), VCABM(),
+            ]
             @testset "$(typeof(solver)) step! is allocation-free" begin
                 integrator = init(
                     prob, solver, dt = 0.1, save_everystep = false,

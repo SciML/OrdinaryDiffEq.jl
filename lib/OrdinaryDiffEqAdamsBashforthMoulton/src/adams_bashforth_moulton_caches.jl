@@ -157,7 +157,6 @@ end
     k2::rateType
     k3::rateType
     k4::rateType
-    ralk2::rateType
     k::rateType
     tmp::uType
     t2::rateType
@@ -188,7 +187,6 @@ function alg_cache(
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
-    ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
     t2 = zero(rate_prototype)
@@ -198,7 +196,7 @@ function alg_cache(
     t6 = zero(rate_prototype)
     t7 = zero(rate_prototype)
     return ABM43Cache(
-        u, uprev, fsalfirst, k2, k3, k4, ralk2, k,
+        u, uprev, fsalfirst, k2, k3, k4, k,
         tmp, t2, t3, t4, t5, t6, t7, 1, alg.thread
     )
 end
@@ -285,7 +283,6 @@ end
     t2::rateType
     t3::rateType
     t4::rateType
-    t5::rateType
     t6::rateType
     t7::rateType
     t8::rateType
@@ -318,13 +315,12 @@ function alg_cache(
     t2 = zero(rate_prototype)
     t3 = zero(rate_prototype)
     t4 = zero(rate_prototype)
-    t5 = zero(rate_prototype)
     t6 = zero(rate_prototype)
     t7 = zero(rate_prototype)
     t8 = zero(rate_prototype)
     return ABM54Cache(
         u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp,
-        t2, t3, t4, t5, t6, t7, t8, 1, alg.thread
+        t2, t3, t4, t6, t7, t8, 1, alg.thread
     )
 end
 
