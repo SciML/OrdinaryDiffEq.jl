@@ -135,7 +135,7 @@ function prepare_user_sparsity(ad_alg, prob)
                 end
             else
                 mm = concrete_mass_matrix(prob.f.mass_matrix)
-                idxs = findall(!iszero, mm)
+                idxs = mass_matrix_nonzeros(mm)
                 for idx in idxs
                     sparsity[idx] = mm[idx]
                 end
