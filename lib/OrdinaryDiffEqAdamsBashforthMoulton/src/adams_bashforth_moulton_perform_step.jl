@@ -150,7 +150,8 @@ end
     if integrator.derivative_discontinuity
         cache.step = 1
     end
-    if cache.step == 1
+    cnt = cache.step
+    if cnt == 1
         cache.step += 1
         ttmp = t + 2dt / 3
         @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1
@@ -159,7 +160,7 @@ end
         @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)       #Ralston Method
         cache.k2 .= k1
     else
-        if cache.step == 2
+        if cnt == 2
             cache.step += 1
             ttmp = t + 2dt / 3
             @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1

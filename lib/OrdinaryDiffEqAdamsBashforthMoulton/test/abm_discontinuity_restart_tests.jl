@@ -48,7 +48,7 @@ reset_oop!(integrator) = (integrator.u = u0_oop)
 end
 
 @testset "reinit! restart: $(nameof(typeof(alg)))" for alg in (
-        ABM32(), ABM43(), ABM54(),
+        AB3(), AB4(), AB5(), ABM32(), ABM43(), ABM54(),
     )
     for (f, u0) in ((f_iip, u0_iip), (f_oop, u0_oop))
         prob = ODEProblem(f, u0, (0.0, tjump))

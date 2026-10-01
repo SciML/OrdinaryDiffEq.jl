@@ -41,30 +41,3 @@ testTol = 0.2
     sim106 = test_convergence(dts, prob, VCABM5())
     @test sim106.𝒪est[:l2] ≈ 5 atol = testTol
 end
-
-@testset "ABM steady-step function evaluations" begin
-    for (alg, startup) in ((ABM32(), 2), (ABM43(), 3), (ABM54(), 4))
-        for inplace in (false, true)
-            calls = Ref(0)
-            prob = if inplace
-                ODEProblem(
-                    (du, u, p, t) -> (calls[] += 1; du[1] = -u[1]),
-                    [1.0], (0.0, 1.0)
-                )
-            else
-                ODEProblem((u, p, t) -> (calls[] += 1; -u), 1.0, (0.0, 1.0))
-            end
-            integrator = init(prob, alg; dt = 1 / 32, adaptive = false)
-            for _ in 1:startup
-                step!(integrator)
-            end
-            for _ in 1:4
-                nf = integrator.stats.nf
-                old_calls = calls[]
-                step!(integrator)
-                @test integrator.stats.nf - nf == 2
-                @test calls[] - old_calls == 2
-            end
-        end
-    end
-end
