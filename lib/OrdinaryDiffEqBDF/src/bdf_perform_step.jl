@@ -800,7 +800,8 @@ function perform_step!(
     (; dtprev, order, D, U, nlsolver, γₖ) = cache
     alg = unwrap_alg(integrator, true)
 
-    if integrator.derivative_discontinuity
+    if integrator.derivative_discontinuity || cache.restart_at_tstop
+        cache.restart_at_tstop = false
         dtprev = one(dt)
         order = 1
         cache.nconsteps = 0
@@ -882,20 +883,21 @@ function perform_step!(
             atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
         end
         OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
-        if k > 1
-            atmpm1 = calculate_residuals(
-                D[k],
-                uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t
+        jump = _algebraic_jump_at_tstop(integrator, mass_matrix)
+        cache.restart_at_tstop = jump
+        if jump
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
+                error_constant(integrator, k) * _bdf_error_norm(dd, true, mass_matrix, uprev, u, integrator)
             )
-            cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
+        end
+        if k > 1
+            cache.EEst1 = error_constant(integrator, k - 1) *
+                _bdf_error_norm(D[k], jump, mass_matrix, uprev, u, integrator)
         end
         if k < max_order
-            atmpp1 = calculate_residuals(
-                D[k + 2],
-                uprev, u, abstol, reltol, internalnorm, t
-            )
-            cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
+            cache.EEst2 = error_constant(integrator, k + 1) *
+                _bdf_error_norm(D[k + 2], jump, mass_matrix, uprev, u, integrator)
         end
     end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
@@ -942,7 +944,8 @@ function perform_step!(
     (; dtprev, order, D, nlsolver, γₖ, dd, atmp, atmpm1, atmpp1, utilde, utildem1, utildep1, ϕ, u₀) = cache
     alg = unwrap_alg(integrator, true)
 
-    if integrator.derivative_discontinuity
+    if integrator.derivative_discontinuity || cache.restart_at_tstop
+        cache.restart_at_tstop = false
         dtprev = one(dt)
         order = 1
         cache.nconsteps = 0
@@ -1031,19 +1034,21 @@ function perform_step!(
             calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
         end
         OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
-        if k > 1
-            calculate_residuals!(
-                atmpm1, D[k], uprev, u, abstol,
-                reltol, internalnorm, t
+        jump = _algebraic_jump_at_tstop(integrator, mass_matrix)
+        cache.restart_at_tstop = jump
+        if jump
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator, error_constant(integrator, k) *
+                    _bdf_error_norm!(atmp, nlsolver.tmp, dd, true, mass_matrix, uprev, u, integrator)
             )
-            cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
+        end
+        if k > 1
+            cache.EEst1 = error_constant(integrator, k - 1) *
+                _bdf_error_norm!(atmpm1, nlsolver.tmp, D[k], jump, mass_matrix, uprev, u, integrator)
         end
         if k < max_order
-            calculate_residuals!(
-                atmpp1, D[k + 2], uprev, u, abstol,
-                reltol, internalnorm, t
-            )
-            cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
+            cache.EEst2 = error_constant(integrator, k + 1) *
+                _bdf_error_norm!(atmpp1, nlsolver.tmp, D[k + 2], jump, mass_matrix, uprev, u, integrator)
         end
     end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
@@ -1246,7 +1251,9 @@ function perform_step!(
         integrator, cache::FBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
-    reinitFBDF!(integrator, cache)
+    restart = integrator.derivative_discontinuity || cache.restart_at_tstop
+    cache.restart_at_tstop = false
+    reinitFBDF!(integrator, cache, restart)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -1345,6 +1352,13 @@ function perform_step!(
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+        jump = _algebraic_jump_at_tstop(integrator, mass_matrix)
+        cache.restart_at_tstop = jump
+        if jump
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator, _bdf_error_norm(lte, true, mass_matrix, uprev, u, integrator)
+            )
+        end
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
         fd_weights = calc_finite_difference_weights(ts_tmp, tdt, k, Val(max_order))
@@ -1361,37 +1375,18 @@ function perform_step!(
             terk *= abs(dt^(k))
         end
 
-        atmp = calculate_residuals(
-            terk, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t
-        )
-        cache.terk = integrator.opts.internalnorm(atmp, t)
+        cache.terk = _bdf_error_norm(terk, jump, mass_matrix, uprev, u, integrator)
 
         if k > 1
             terkm1 = estimate_terk(integrator, cache, k, Val(max_order), u)
-            atmp = calculate_residuals(
-                terkm1, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm1 = integrator.opts.internalnorm(atmp, t)
+            cache.terkm1 = _bdf_error_norm(terkm1, jump, mass_matrix, uprev, u, integrator)
         end
         if k > 2
             terkm2 = estimate_terk(integrator, cache, k - 1, Val(max_order), u)
-            atmp = calculate_residuals(
-                terkm2, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm2 = integrator.opts.internalnorm(atmp, t)
+            cache.terkm2 = _bdf_error_norm(terkm2, jump, mass_matrix, uprev, u, integrator)
         end
         if cache.qwait == 0 && k < max_order
-            atmp = calculate_residuals(
-                terkp1, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkp1 = integrator.opts.internalnorm(atmp, t)
+            cache.terkp1 = _bdf_error_norm(terkp1, jump, mass_matrix, uprev, u, integrator)
         else
             cache.terkp1 = zero(cache.terk)
         end
@@ -1505,7 +1500,9 @@ function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
-    reinitFBDF!(integrator, cache)
+    restart = integrator.derivative_discontinuity || cache.restart_at_tstop
+    cache.restart_at_tstop = false
+    reinitFBDF!(integrator, cache, restart)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
@@ -1590,38 +1587,27 @@ function perform_step!(
             internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+        jump = _algebraic_jump_at_tstop(integrator, mass_matrix)
+        cache.restart_at_tstop = jump
+        if jump
+            OrdinaryDiffEqCore.set_EEst!(
+                integrator,
+                _bdf_error_norm!(atmp, tmp, terk_tmp, true, mass_matrix, uprev, u, integrator)
+            )
+        end
         estimate_terk!(integrator, cache, k + 1, Val(max_order))
-        calculate_residuals!(
-            atmp, terk_tmp, uprev, u, abstol, reltol,
-            internalnorm, t
-        )
-        cache.terk = integrator.opts.internalnorm(atmp, t)
+        cache.terk = _bdf_error_norm!(atmp, tmp, terk_tmp, jump, mass_matrix, uprev, u, integrator)
 
         if k > 1
             estimate_terk!(integrator, cache, k, Val(max_order))
-            calculate_residuals!(
-                atmp, terk_tmp, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm1 = integrator.opts.internalnorm(atmp, t)
+            cache.terkm1 = _bdf_error_norm!(atmp, tmp, terk_tmp, jump, mass_matrix, uprev, u, integrator)
         end
         if k > 2
             estimate_terk!(integrator, cache, k - 1, Val(max_order))
-            calculate_residuals!(
-                atmp, terk_tmp, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkm2 = integrator.opts.internalnorm(atmp, t)
+            cache.terkm2 = _bdf_error_norm!(atmp, tmp, terk_tmp, jump, mass_matrix, uprev, u, integrator)
         end
         if cache.qwait == 0 && k < max_order
-            calculate_residuals!(
-                atmp, terkp1_tmp, uprev, u,
-                integrator.opts.abstol, integrator.opts.reltol,
-                integrator.opts.internalnorm, t
-            )
-            cache.terkp1 = integrator.opts.internalnorm(atmp, t)
+            cache.terkp1 = _bdf_error_norm!(atmp, tmp, terkp1_tmp, jump, mass_matrix, uprev, u, integrator)
         else
             cache.terkp1 = zero(cache.terkp1)
         end

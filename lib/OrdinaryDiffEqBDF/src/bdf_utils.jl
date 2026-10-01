@@ -148,6 +148,39 @@ const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
     end
 end
 
+# A mass-matrix step that ends on a tstop can straddle a jump in the algebraic
+# equations, e.g. an input that switches at the tstop. The algebraic rows of the
+# predictor-corrector difference then measure the jump, which does not shrink with
+# dt, and every shrunken retry stops short of the tstop, so the step onto the tstop
+# could never pass. Such a step is judged on the differential rows `M * err` alone,
+# and the multistep history is restarted after it because it no longer describes
+# the solution past the tstop.
+@inline function _algebraic_jump_at_tstop(integrator, mass_matrix)
+    return mass_matrix !== I && integrator.next_step_tstop &&
+        OrdinaryDiffEqCore.get_EEst(integrator) > 1
+end
+
+@inline function _bdf_error_norm!(
+        atmp, buf, err, differential_only, mass_matrix, uprev, u, integrator
+    )
+    t = integrator.t
+    (; abstol, reltol, internalnorm) = integrator.opts
+    if differential_only
+        mul!(buf, mass_matrix, err)
+        calculate_residuals!(atmp, buf, uprev, u, abstol, reltol, internalnorm, t)
+    else
+        calculate_residuals!(atmp, err, uprev, u, abstol, reltol, internalnorm, t)
+    end
+    return internalnorm(atmp, t)
+end
+
+@inline function _bdf_error_norm(err, differential_only, mass_matrix, uprev, u, integrator)
+    t = integrator.t
+    (; abstol, reltol, internalnorm) = integrator.opts
+    e = differential_only ? mass_matrix * err : err
+    return internalnorm(calculate_residuals(e, uprev, u, abstol, reltol, internalnorm, t), t)
+end
+
 function error_constant(integrator, alg::QNDF, k)
     (; γₖ) = integrator.cache
     κ = alg.kappa[k]
@@ -193,7 +226,7 @@ function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
     return c
 end
 
-function reinitFBDF!(integrator, cache)
+function reinitFBDF!(integrator, cache, restart = integrator.derivative_discontinuity)
     # This function is used to initialize arrays that store past history information.
     # It will be used in the first-time step advancing and event handling.
     (;
@@ -202,7 +235,7 @@ function reinitFBDF!(integrator, cache)
     ) = cache
     (; t, dt, uprev) = integrator
 
-    if integrator.derivative_discontinuity
+    if restart
         order = cache.order = 1
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         cache.qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs

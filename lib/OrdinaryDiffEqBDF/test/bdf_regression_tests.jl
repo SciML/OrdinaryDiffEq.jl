@@ -284,13 +284,20 @@ end
     prob = ODEProblem(
         ODEFunction(f!; mass_matrix = [1.0 0.0; 0.0 0.0]), [1.0, 1.0], (0.0, 20.0)
     )
-    for kw in ((; tstops = [10.0]), (; tstops = [10.0], d_discontinuities = [10.0]))
-        sol = solve(prob, FBDF(); kw...)
+    x20 = 1 - 10 / 3600 - 6 * 10 / 3600
+    stops = ((; tstops = [10.0]), (; tstops = [10.0], d_discontinuities = [10.0]))
+    for alg in (FBDF(), QNDF()), reltol in (1.0e-3, 1.0e-6), kw in stops
+        sol = solve(prob, alg; reltol, abstol = reltol / 100, kw...)
         @test sol.retcode == ReturnCode.Success
         @test sol.t[end] == 20.0
         i = findfirst(==(10.0), sol.t)
         @test i !== nothing
-        # The state saved at the tstop must satisfy the algebraic constraint there.
-        @test sol.u[i][2] ≈ 1 + load(10.0)
+        # The step onto the tstop solves the constraint with the post-jump load,
+        # to the accuracy of the Newton iteration.
+        @test sol.u[i][2] ≈ 1 + load(10.0) rtol = 1.0e-4
+        @test abs(sol.u[end][1] - x20) < 20 * reltol
+        # The step onto the tstop passes directly rather than the solve creeping
+        # towards the tstop through hundreds of rejected steps.
+        @test sol.stats.nreject < 100
     end
 end
