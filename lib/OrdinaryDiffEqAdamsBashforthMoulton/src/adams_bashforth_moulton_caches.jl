@@ -1170,38 +1170,26 @@ function _resize_nested_cache!(nested, i)
     return nothing
 end
 
-function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCAB3Cache, i)
-    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n), i)
+_adams_ϕ_bufs(cache::Union{VCAB3Cache, VCAB4Cache, VCAB5Cache}) =
+    (cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n)
+_adams_ϕ_bufs(cache::Union{VCABM3Cache, VCABM4Cache, VCABM5Cache, VCABMCache}) =
+    (cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n)
+
+function resize_non_user_cache!(
+        integrator::ODEIntegrator, cache::Union{VCAB3Cache, VCABM3Cache}, i
+    )
+    _resize_adams_history!(_adams_ϕ_bufs(cache), i)
     return _resize_nested_cache!(cache.bs3cache, i)
 end
 
-function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCAB4Cache, i)
-    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n), i)
-    return _resize_nested_cache!(cache.rk4cache, i)
-end
-
-function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCAB5Cache, i)
-    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n), i)
-    return _resize_nested_cache!(cache.rk4cache, i)
-end
-
-function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABM3Cache, i)
-    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i)
-    return _resize_nested_cache!(cache.bs3cache, i)
-end
-
-function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABM4Cache, i)
-    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i)
-    return _resize_nested_cache!(cache.rk4cache, i)
-end
-
-function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABM5Cache, i)
-    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i)
+function resize_non_user_cache!(
+        integrator::ODEIntegrator,
+        cache::Union{VCAB4Cache, VCAB5Cache, VCABM4Cache, VCABM5Cache}, i
+    )
+    _resize_adams_history!(_adams_ϕ_bufs(cache), i)
     return _resize_nested_cache!(cache.rk4cache, i)
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABMCache, i)
-    return _resize_adams_history!(
-        (cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i
-    )
+    return _resize_adams_history!(_adams_ϕ_bufs(cache), i)
 end
