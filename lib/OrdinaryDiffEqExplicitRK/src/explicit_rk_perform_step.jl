@@ -471,6 +471,31 @@ end
     )
 end
 
+# Scalar-indexed stage accumulation shared by the value (order0) and
+# derivative forms; the derivative result is scaled by inv_dt_factor by the
+# caller. `out[j]` accumulates component `idxs[j]`; all indexing is under
+# @inbounds and must be validated by the caller.
+@inline function indexed_rk_interpolant_stages!(
+        out, Θ, dt, y₀, k, B_interp, idxs, order, nstages, ::Val{order0}
+    ) where {order0}
+    if order0
+        @inbounds for (j, idx) in zip(eachindex(out), idxs)
+            out[j] = y₀[idx]
+        end
+    else
+        @inbounds for j in eachindex(out)
+            out[j] = zero(eltype(out))
+        end
+    end
+    for i in 1:nstages
+        bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+        @inbounds for (j, idx) in zip(eachindex(out), idxs)
+            out[j] += order0 ? dt * k[i][idx] * bval : k[i][idx] * bval
+        end
+    end
+    return out
+end
+
 """
     generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp;
         idxs = nothing, order = 0)
@@ -528,28 +553,19 @@ function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing,
                 !(idxs isa AbstractVector{Bool})
             # `out` is indexed like `idxs` (out[j] corresponds to component
             # idxs[j]); scalar indexing avoids a SubArray view per stage.
+            # The scalar loops index under @inbounds, so idxs is validated
+            # here: callers may reach this kernel without an upstream check.
+            checkbounds(y₀, idxs)
+            for ki in k
+                axes(ki) == axes(y₀) ||
+                    throw(DimensionMismatch("stage derivative axes $(axes(ki)) do not match state axes $(axes(y₀))"))
+            end
             length(out) == length(idxs) ||
                 throw(DimensionMismatch("output length $(length(out)) does not match the $(length(idxs)) requested components"))
-            if order == 0
-                @inbounds for (j, idx) in zip(eachindex(out), idxs)
-                    out[j] = y₀[idx]
-                end
-                for i in 1:nstages
-                    bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-                    @inbounds for (j, idx) in zip(eachindex(out), idxs)
-                        out[j] += dt * k[i][idx] * bval
-                    end
-                end
-            else
-                @inbounds for j in eachindex(out)
-                    out[j] = zero(eltype(out))
-                end
-                for i in 1:nstages
-                    bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-                    @inbounds for (j, idx) in zip(eachindex(out), idxs)
-                        out[j] += k[i][idx] * bval
-                    end
-                end
+            indexed_rk_interpolant_stages!(
+                out, Θ, dt, y₀, k, B_interp, idxs, order, nstages, Val(order == 0)
+            )
+            if order != 0
                 @.. broadcast = false out *= inv_dt_factor
             end
         else
