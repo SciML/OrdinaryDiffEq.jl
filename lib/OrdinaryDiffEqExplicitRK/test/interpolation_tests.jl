@@ -41,6 +41,29 @@ prob_ode_2Dlinear = ODEProblem(
     end
 end
 
+@testset "Float32 in-place ExplicitRK" begin
+    function f32!(du, u, p, t)
+        du[1] = 1.01f0 * u[1]
+        return nothing
+    end
+    prob = ODEProblem(f32!, Float32[0.5], (0.0f0, 1.0f0))
+    sol = solve(prob, ExplicitRK())
+    @test SciMLBase.successful_retcode(sol)
+    @test eltype(sol.u[end]) === Float32
+    @test eltype(sol.t) === Float32
+end
+
+@testset "Rational dt ExplicitRK" begin
+    function frat!(du, u, p, t)
+        du[1] = u[1]
+        return nothing
+    end
+    prob = ODEProblem(frat!, [1 // 1], (0 // 1, 1 // 1))
+    sol = solve(prob, ExplicitRK(); adaptive = false, dt = 1 // 10)
+    @test SciMLBase.successful_retcode(sol)
+    @test eltype(sol.t) <: Rational
+end
+
 # ============================================================================
 # Interpolation Tests
 # ============================================================================
