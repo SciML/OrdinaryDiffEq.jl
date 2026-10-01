@@ -1152,3 +1152,56 @@ function alg_cache(
         atmpm2, atmpp1, 1, alg.thread
     )
 end
+
+# `ϕ_*` / nested BS3/RK4 caches are not `rateType`, so `@cache` skips them in `full_cache`.
+function _resize_adams_history!(bufs, i)
+    for buf in bufs
+        for x in buf
+            resize!(x, i)
+        end
+    end
+    return nothing
+end
+
+function _resize_nested_cache!(nested, i)
+    for c in full_cache(nested)
+        c !== nothing && resize!(c, i)
+    end
+    return nothing
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCAB3Cache, i)
+    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n), i)
+    return _resize_nested_cache!(cache.bs3cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCAB4Cache, i)
+    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n), i)
+    return _resize_nested_cache!(cache.rk4cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCAB5Cache, i)
+    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕstar_n), i)
+    return _resize_nested_cache!(cache.rk4cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABM3Cache, i)
+    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i)
+    return _resize_nested_cache!(cache.bs3cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABM4Cache, i)
+    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i)
+    return _resize_nested_cache!(cache.rk4cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABM5Cache, i)
+    _resize_adams_history!((cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i)
+    return _resize_nested_cache!(cache.rk4cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABMCache, i)
+    return _resize_adams_history!(
+        (cache.ϕstar_nm1, cache.ϕ_n, cache.ϕ_np1, cache.ϕstar_n), i
+    )
+end

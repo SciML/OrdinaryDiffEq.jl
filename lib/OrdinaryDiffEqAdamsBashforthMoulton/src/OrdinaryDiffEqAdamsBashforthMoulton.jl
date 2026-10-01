@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCac
     constvalue,
     trivial_limiter!, get_fsalfirstlast,
     generic_solver_docstring
-import SciMLBase: alg_order, full_cache
+import SciMLBase: alg_order, full_cache, resize_non_user_cache!
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
@@ -17,7 +17,7 @@ using MuladdMacro: @muladd
 import FastBroadcast: @..
 using FastBroadcast: Serial
 import OrdinaryDiffEqCore
-
+import OrdinaryDiffEqCore: ODEIntegrator
 using Reexport: @reexport
 import SciMLBase
 @reexport using SciMLBase
