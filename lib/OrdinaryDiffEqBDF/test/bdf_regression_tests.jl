@@ -295,9 +295,46 @@ end
         # The step onto the tstop solves the constraint with the post-jump load,
         # to the accuracy of the Newton iteration.
         @test sol.u[i][2] ≈ 1 + load(10.0) rtol = 1.0e-4
-        @test abs(sol.u[end][1] - x20) < 20 * reltol
-        # The step onto the tstop passes directly rather than the solve creeping
-        # towards the tstop through hundreds of rejected steps.
+        # Missing the jump would shift x(20) by 50 / 3600; allow half of that.
+        @test abs(sol.u[end][1] - x20) < min(20 * reltol, 25 / 3600)
+        # The solve must not creep towards the tstop through hundreds of rejected
+        # steps.
         @test sol.stats.nreject < 100
+    end
+end
+
+@testset "History restart after an algebraic jump at a high-order tstop landing" begin
+    # x' = y, 0 = y - sin(t) - 2 * (t >= 3): smooth until t = 3, so the solvers reach
+    # high order before the jump lands on the tstop.
+    load(t) = t < 3 ? 0.0 : 2.0
+    f!(du, u, p, t) = (du[1] = u[2]; du[2] = u[2] - sin(t) - load(t); nothing)
+    f(u, p, t) = [u[2], u[2] - sin(t) - load(t)]
+    xex(t) = 1 - cos(t) + 2 * max(t - 3, 0)
+    M = [1.0 0.0; 0.0 0.0]
+    used_order(c) = hasproperty(c, :prevorder) ? c.prevorder : c.prev_order
+    maxerr(sol) = maximum(abs(u[1] - xex(t)) for (t, u) in zip(sol.t, sol.u))
+    for rhs in (f!, f), alg in (FBDF(), QNDF()), reltol in (1.0e-5, 1.0e-7)
+        kw = (; reltol, abstol = reltol / 100)
+        prob = ODEProblem(ODEFunction(rhs; mass_matrix = M), [0.0, 0.0], (0.0, 5.0))
+        integ = init(prob, alg; tstops = [3.0], kw...)
+        order_before = 0
+        while integ.t < 3
+            step!(integ)
+            order_before = max(order_before, used_order(integ.cache))
+        end
+        @test integ.t == 3
+        @test integ.u[2] ≈ sin(3) + 2
+        @test order_before > 1
+        step!(integ)
+        @test used_order(integ.cache) == 1
+
+        sol = solve(prob, alg; tstops = [3.0], kw...)
+        @test sol.retcode == ReturnCode.Success
+        # x' = y with y fixed by the constraint, so the error in x is the error carried
+        # to t = 3 plus what accumulates after it. A fresh solve from the exact state at
+        # t = 3 bounds the second part; the factor 2 allows for different step sequences.
+        pre = solve(remake(prob; tspan = (0.0, 3.0)), alg; kw...)
+        post = solve(remake(prob; u0 = [xex(3.0), sin(3.0) + 2], tspan = (3.0, 5.0)), alg; kw...)
+        @test maxerr(sol) <= maxerr(pre) + 2 * maxerr(post)
     end
 end

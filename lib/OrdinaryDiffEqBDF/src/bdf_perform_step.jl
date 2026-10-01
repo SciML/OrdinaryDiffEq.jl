@@ -803,7 +803,7 @@ function perform_step!(
     if integrator.derivative_discontinuity || cache.restart_at_tstop
         cache.restart_at_tstop = false
         dtprev = one(dt)
-        order = 1
+        order = cache.order = 1
         cache.nconsteps = 0
         cache.consfailcnt = 0
         for i in eachindex(D)
@@ -947,7 +947,7 @@ function perform_step!(
     if integrator.derivative_discontinuity || cache.restart_at_tstop
         cache.restart_at_tstop = false
         dtprev = one(dt)
-        order = 1
+        order = cache.order = 1
         cache.nconsteps = 0
         cache.consfailcnt = 0
         for d in D
