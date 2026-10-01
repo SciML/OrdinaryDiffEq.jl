@@ -289,6 +289,24 @@ end
         out, 0.5, 0.1, y0, k, B_interp; idxs = [3, 1]
     ) ≈ ref
 
+    child_script = """
+        using OrdinaryDiffEqExplicitRK
+        B_interp = OrdinaryDiffEqExplicitRK.constructTsit5ExplicitRK().B_interp
+        y0 = [1.0, 2.0, 3.0]
+        k = [fill(Float64(i), 3) for i in 1:size(B_interp, 1)]
+        try
+            OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+                zeros(2), 0.5, 0.1, y0, k, B_interp; idxs = [1, 4]
+            )
+        catch err
+            err isa BoundsError || rethrow()
+            exit(0)
+        end
+        exit(1)
+    """
+    child = `$(Base.julia_cmd()) --check-bounds=auto --project=$(Base.active_project()) -e $child_script`
+    @test success(run(pipeline(ignorestatus(child), stdout = devnull, stderr = devnull)))
+
     @test_throws BoundsError OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
         out, 0.5, 0.1, y0, k, B_interp; idxs = [1, 4]
     )

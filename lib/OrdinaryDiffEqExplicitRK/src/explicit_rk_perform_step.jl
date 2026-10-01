@@ -553,8 +553,6 @@ function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing,
                 !(idxs isa AbstractVector{Bool})
             # `out` is indexed like `idxs` (out[j] corresponds to component
             # idxs[j]); scalar indexing avoids a SubArray view per stage.
-            # The scalar loops index under @inbounds, so idxs is validated
-            # here: callers may reach this kernel without an upstream check.
             checkbounds(y₀, idxs)
             for ki in k
                 axes(ki) == axes(y₀) ||
