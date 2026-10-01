@@ -364,7 +364,6 @@ time within the step.
 - `y₀`: State at the beginning of the step.
 - `k`: Stage derivatives.
 - `B_interp`: Dense-output coefficient matrix.
-- `bi`: Precomputed interpolation data associated with the tableau.
 
 # Keywords
 
@@ -381,10 +380,10 @@ The interpolated state, or the requested derivative, at `Θ`.
 using OrdinaryDiffEqExplicitRK
 
 # Solver internals call this with a method tableau and stage derivatives.
-generic_rk_interpolant(0.5, 0.1, y₀, k, B_interp, bi)
+generic_rk_interpolant(0.5, 0.1, y₀, k, B_interp)
 ```
 """
-function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, order = 0)
+function generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
     if isnothing(B_interp)
         throw(DerivativeOrderNotPossibleError())
     end
@@ -397,8 +396,6 @@ function generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs = nothing, o
 
     inv_dt_factor = order <= 1 ? one(dt) : inv(dt)^(order - 1)
 
-    # Compute weights inline (Θ may be a ForwardDiff.Dual, so we cannot
-    # store into the pre-allocated Float64 buffer here).
     b1 = eval_poly_derivative(Θ, @view(B_interp[1, :]), order)
     return if isnothing(idxs)
         interp_sum = k[1] * b1
@@ -475,7 +472,7 @@ end
 end
 
 """
-    generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi;
+    generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp;
         idxs = nothing, order = 0)
 
 Evaluate the dense-output polynomial for an explicit Runge-Kutta method into
@@ -489,7 +486,6 @@ the preallocated `out` array.
 - `y₀`: State at the beginning of the step.
 - `k`: Stage derivatives.
 - `B_interp`: Dense-output coefficient matrix.
-- `bi`: Precomputed interpolation data associated with the tableau.
 
 # Keywords
 
@@ -506,10 +502,10 @@ The same `out` array after it has been populated.
 using OrdinaryDiffEqExplicitRK
 
 # Solver internals pass the preallocated output and interpolation workspace.
-generic_rk_interpolant!(out, 0.5, 0.1, y₀, k, B_interp, bi)
+generic_rk_interpolant!(out, 0.5, 0.1, y₀, k, B_interp)
 ```
 """
-function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = nothing, order = 0)
+function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs = nothing, order = 0)
     if isnothing(B_interp)
         throw(DerivativeOrderNotPossibleError())
     end
@@ -525,21 +521,52 @@ function generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs = noth
     if isnothing(idxs)
         fused_rk_interpolant_split!(out, Θ, dt, y₀, k, B_interp, inv_dt_factor, order, nstages)
     else
-        # Fill pre-allocated bi buffer with polynomial weights
-        for i in 1:nstages
-            bi[i] = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
-        end
-        if order == 0
-            @views @.. out = y₀[idxs]
-            for i in 1:nstages
-                @views @.. out += dt * k[i][idxs] * bi[i]
+        # Weights are evaluated at the point of use so that Θ (and hence the
+        # weights) may be non-Float64, e.g. a ForwardDiff.Dual when
+        # differentiating through the interpolation point.
+        if out isa Array && idxs isa AbstractVector{<:Integer} &&
+                !(idxs isa AbstractVector{Bool})
+            # `out` is indexed like `idxs` (out[j] corresponds to component
+            # idxs[j]); scalar indexing avoids a SubArray view per stage.
+            length(out) == length(idxs) ||
+                throw(DimensionMismatch("output length $(length(out)) does not match the $(length(idxs)) requested components"))
+            if order == 0
+                @inbounds for (j, idx) in zip(eachindex(out), idxs)
+                    out[j] = y₀[idx]
+                end
+                for i in 1:nstages
+                    bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+                    @inbounds for (j, idx) in zip(eachindex(out), idxs)
+                        out[j] += dt * k[i][idx] * bval
+                    end
+                end
+            else
+                @inbounds for j in eachindex(out)
+                    out[j] = zero(eltype(out))
+                end
+                for i in 1:nstages
+                    bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+                    @inbounds for (j, idx) in zip(eachindex(out), idxs)
+                        out[j] += k[i][idx] * bval
+                    end
+                end
+                @.. broadcast = false out *= inv_dt_factor
             end
         else
-            @.. out = zero(eltype(out))
-            for i in 1:nstages
-                @views @.. out += k[i][idxs] * bi[i]
+            if order == 0
+                @views @.. broadcast = false out = y₀[idxs]
+                for i in 1:nstages
+                    bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+                    @views @.. broadcast = false out += dt * k[i][idxs] * bval
+                end
+            else
+                @.. broadcast = false out = zero(eltype(out))
+                for i in 1:nstages
+                    bval = eval_poly_derivative(Θ, @view(B_interp[i, :]), order)
+                    @views @.. broadcast = false out += k[i][idxs] * bval
+                end
+                @.. broadcast = false out *= inv_dt_factor
             end
-            @.. out *= inv_dt_factor
         end
     end
     return out

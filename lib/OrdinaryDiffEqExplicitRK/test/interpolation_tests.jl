@@ -3,6 +3,7 @@ using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince
     ExplicitRKConstantCache
 using OrdinaryDiffEqCore
 using DiffEqBase
+using ForwardDiff
 using Test
 import SciMLBase
 import JLArrays
@@ -229,4 +230,45 @@ end
     finally
         JLArrays.allowscalar(true)
     end
+end
+
+@testset "idxs interpolation under ForwardDiff Dual times" begin
+    function f_vec!(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = -2 * u[2]
+        return nothing
+    end
+    prob = ODEProblem(f_vec!, [1.0, 1.0], (0.0, 1.0))
+    sol = solve(prob, ExplicitRK(tableau = constructTsit5ExplicitRK()); dense = true)
+    @test SciMLBase.successful_retcode(sol)
+
+    t0 = sol.t[3]
+    expected_d1 = [-exp(-t0), -2 * exp(-2t0)]
+    # Reference for the derivative-of-derivative check: idxs must select the
+    # same components as the full-state interpolant derivative.
+    expected_d2 = ForwardDiff.derivative(t -> sol(t, Val{1}), t0)
+
+    # sol(t; idxs) with an index vector routes through the in-place kernel
+    # internally, so it exercises the same code path as sol(out, t; idxs).
+    @test ForwardDiff.derivative(t -> sol(t; idxs = 1), t0) ≈ expected_d1[1] atol = 1.0e-6
+    @test ForwardDiff.derivative(t -> sol(t; idxs = [1, 2]), t0) ≈ expected_d1 atol = 1.0e-6
+    @test ForwardDiff.derivative(t -> sol(t, Val{1}; idxs = [1, 2]), t0) ≈ expected_d2
+
+    @test ForwardDiff.derivative(t0) do t
+        out = zeros(typeof(t), 2)
+        sol(out, t; idxs = [1, 2])
+        out
+    end ≈ expected_d1 atol = 1.0e-6
+
+    @test ForwardDiff.derivative(t0) do t
+        out = zeros(typeof(t), 1)
+        sol(out, t; idxs = 1)
+        out[1]
+    end ≈ expected_d1[1] atol = 1.0e-6
+
+    @test ForwardDiff.derivative(t0) do t
+        out = zeros(typeof(t), 2)
+        sol(out, t, Val{1}; idxs = [1, 2])
+        out
+    end ≈ expected_d2
 end
