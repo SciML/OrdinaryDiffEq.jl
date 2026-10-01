@@ -1,5 +1,7 @@
 using SafeTestsets
 using Pkg
+using SciMLTesting
+using Test
 
 function activate_gpu_env()
     Pkg.activate("gpu")
@@ -11,6 +13,13 @@ function activate_nopre_env()
     Pkg.activate("nopre")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
+end
+
+function activate_qa_env()
+    return activate_group_env(
+        joinpath(@__DIR__, "qa");
+        parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")],
+    )
 end
 
 const LONGER_TESTS = false
@@ -253,6 +262,20 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         activate_nopre_env()
         @time @safetestset "JET Static Analysis Tests" begin
             include("nopre/jet_tests.jl")
+        end
+    end
+
+    # Run QA last. `activate_qa_env()` leaves the QA environment active, and
+    # `JET.test_package` re-evaluates source into a virtual module, so functional
+    # groups above must resolve before this block (same ordering as
+    # OrdinaryDiffEqCore / StochasticDiffEq* siblings).
+    if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+        activate_qa_env()
+        # Plain @testset, not @safetestset: after the env switch SafeTestsets is
+        # unreachable inside the @eval'd testset module (same workaround as
+        # DiffEqBase / DiffEqDevTools).
+        @time @testset "QA (Aqua, ExplicitImports, JET)" begin
+            include("qa/qa.jl")
         end
     end
 end

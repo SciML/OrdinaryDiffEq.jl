@@ -1,10 +1,8 @@
 module StochasticDiffEq
 
-using Reexport
-@reexport using DiffEqBase
-
 using Reexport: @reexport
 
+@reexport using DiffEqBase
 @reexport using StochasticDiffEqCore
 @reexport using StochasticDiffEqLowOrder
 @reexport using StochasticDiffEqRODE
@@ -16,16 +14,35 @@ using Reexport: @reexport
 @reexport using StochasticDiffEqIIF
 @reexport using StochasticDiffEqLeaping
 @reexport using DiffEqNoiseProcess
+
+# Multi-@reexport of DiffEqBase and solver sublibraries can leave these DiffEqBase
+# exports in `names(StochasticDiffEq)` without a binding (`isdefined == false`).
+# Re-bind them from the owner so Aqua's undefined-exports check passes.
+using DiffEqBase: du_cache, u_cache, user_cache
+
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 import SciMLBase
-import OrdinaryDiffEqCore: perform_step!, loopheader!, loopfooter!
 import PrecompileTools
 import Preferences
 
 # AutoSOSRI2/AutoSOSRA2 reference concrete types from multiple solver subpackages
 # (SOSRI2 from HighOrder, implicit algs from Implicit), so they live here in the umbrella.
+
+"""
+    AutoSOSRI2(alg; kwargs...)
+
+Automatic stiffness switching between [`SOSRI2`](@ref) and a stiff SDE algorithm
+`alg` (typically an implicit method). See [`AutoAlgSwitch`](@ref).
+"""
 AutoSOSRI2(alg; kwargs...) = AutoAlgSwitch(SOSRI2(), alg; kwargs...)
+
+"""
+    AutoSOSRA2(alg; kwargs...)
+
+Automatic stiffness switching between [`SOSRA2`](@ref) and a stiff SDE algorithm
+`alg` (typically an implicit method). See [`AutoAlgSwitch`](@ref).
+"""
 AutoSOSRA2(alg; kwargs...) = AutoAlgSwitch(SOSRA2(), alg; kwargs...)
 
 include("default_sde_alg.jl")
