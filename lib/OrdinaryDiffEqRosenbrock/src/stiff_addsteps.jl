@@ -59,6 +59,7 @@ function _ode_addsteps!(
         (; tf, uf) = cache
         (; A, C, gamma, c, d, H) = cache.tab
 
+        invdt = inv(dt)
         dtgamma = dt * gamma
         mass_matrix = f.mass_matrix
 
@@ -102,11 +103,11 @@ function _ode_addsteps!(
             linsolve_tmp = zero(du)
             if mass_matrix === I
                 for i in 1:(stage - 1)
-                    linsolve_tmp = @.. linsolve_tmp + (C[stage, i] / dt) * ks[i]
+                    linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
                 end
             else
                 for i in 1:(stage - 1)
-                    linsolve_tmp = @.. linsolve_tmp + (C[stage, i] / dt) * ks[i]
+                    linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
                 end
                 linsolve_tmp = mass_matrix * linsolve_tmp
             end
@@ -153,7 +154,7 @@ function _ode_addsteps!(
         tmp = ks[end]
 
         # Precalculations
-        dtC = C ./ dt
+        dtC = C .* inv(dt)
         dtd = dt .* d
         dtgamma = dt * gamma
 

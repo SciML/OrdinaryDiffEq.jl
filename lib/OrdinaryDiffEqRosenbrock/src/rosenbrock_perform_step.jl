@@ -435,6 +435,7 @@ end
     (; tf, uf) = cache
     (; A, C, gamma, c, d, H) = cache.tab
 
+    invdt = inv(dt)
     dtgamma = dt * gamma
 
     mass_matrix = integrator.f.mass_matrix
@@ -477,11 +478,11 @@ end
         linsolve_tmp = zero(du)
         if mass_matrix === I
             for i in 1:(stage - 1)
-                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] / dt) * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
             end
         else
             for i in 1:(stage - 1)
-                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] / dt) * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
             end
             linsolve_tmp = mass_matrix * linsolve_tmp
         end
