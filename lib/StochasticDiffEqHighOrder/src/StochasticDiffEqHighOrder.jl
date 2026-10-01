@@ -23,6 +23,10 @@ import DiffEqBase: @..
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
 import DiffEqBase: Tableau
+# Without these imports the SRACache accessors would define a *new* local
+# `u_cache`/`du_cache`/`user_cache` that shadows the SciMLBase interface
+# function rather than extending it, so `resize!` would never see them.
+import DiffEqBase: u_cache, du_cache, user_cache
 
 import MuladdMacro: @muladd
 
