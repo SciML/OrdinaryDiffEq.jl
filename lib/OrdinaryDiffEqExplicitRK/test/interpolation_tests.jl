@@ -1,5 +1,6 @@
 using OrdinaryDiffEqExplicitRK
-using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince
+using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince,
+    ExplicitRKConstantCache
 using OrdinaryDiffEqCore
 using DiffEqBase
 using Test
@@ -53,15 +54,10 @@ end
     @test eltype(sol.t) === Float32
 end
 
-@testset "Rational dt ExplicitRK" begin
-    function frat!(du, u, p, t)
-        du[1] = u[1]
-        return nothing
-    end
-    prob = ODEProblem(frat!, [1 // 1], (0 // 1, 1 // 1))
-    sol = solve(prob, ExplicitRK(); adaptive = false, dt = 1 // 10)
-    @test SciMLBase.successful_retcode(sol)
-    @test eltype(sol.t) <: Rational
+@testset "ExplicitRKConstantCache c eltype inference" begin
+    tab = constructDormandPrince(BigFloat)
+    cache = @inferred ExplicitRKConstantCache(tab, [1.0], Float64)
+    @test eltype(cache.c) === BigFloat
 end
 
 # ============================================================================

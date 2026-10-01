@@ -49,68 +49,20 @@ struct ExplicitRKConstantCache{MType, VType, CType, KType, BType, BiType} <:
     bi::BiType  # Pre-allocated buffer for interpolation polynomial weights
 end
 
-# Prefer the dimensionless time type for tableau `c` when conversion is exact
-# (and for IEEE float narrowing), so `t + c[i]*dt` keeps FunctionWrapper types.
-# Fall back to promote_type to preserve wider coefficient types (e.g. BigFloat).
-_is_ieee_float(::Type{T}) where {T} = false
-_is_ieee_float(::Type{Float16}) = true
-_is_ieee_float(::Type{Float32}) = true
-_is_ieee_float(::Type{Float64}) = true
+# When both the dimensionless time type and tableau `c` are IEEE floats, match
+# `c` to the time type so `t + c[i]*dt` keeps FunctionWrapper signatures under
+# AutoSpecialize. Otherwise use promote_type (preserves BigFloat, Rational, etc.).
+const _IEEEFloat = Union{Float16, Float32, Float64}
 
-function _explicit_rk_c_eltype(::Type{T}, c) where {T}
-    C = eltype(c)
-    preferred = T
-    fallback = promote_type(C, T)
-    preferred === fallback && return preferred
-    if _is_ieee_float(preferred) && _is_ieee_float(C)
-        return preferred
-    elseif _coefficients_exactly_convertible(preferred, c)
-        return preferred
-    else
-        return fallback
-    end
-end
-
-_exactly_convertible(::Type{T}, ::T) where {T} = true
-
-function _exactly_convertible(::Type{T}, x::AbstractFloat) where {T <: AbstractFloat}
-    y = T(x)
-    return convert(typeof(x), y) == x
-end
-
-function _exactly_convertible(::Type{Rational{BigInt}}, x::AbstractFloat)
-    return isfinite(x)
-end
-
-function _exactly_convertible(::Type{Rational{I}}, x::AbstractFloat) where {I <: Integer}
-    isfinite(x) || return false
-    r = Rational{BigInt}(x)
-    return (typemin(I) <= r.num <= typemax(I)) & (0 < r.den <= typemax(I))
-end
-
-function _exactly_convertible(::Type{Rational{BigInt}}, ::Rational)
-    return true
-end
-
-function _exactly_convertible(::Type{Rational{I}}, x::Rational) where {I <: Integer}
-    return (typemin(I) <= numerator(x) <= typemax(I)) &
-        (0 < denominator(x) <= typemax(I))
-end
-
-_exactly_convertible(::Type{T}, x) where {T} = false
-
-function _coefficients_exactly_convertible(::Type{T}, c) where {T}
-    @inbounds for i in eachindex(c)
-        _exactly_convertible(T, c[i]) || return false
-    end
-    return true
+function _explicit_rk_c_eltype(::Type{T}, ::Type{C}) where {T, C}
+    return (T <: _IEEEFloat && C <: _IEEEFloat) ? T : promote_type(C, T)
 end
 
 function ExplicitRKConstantCache(tableau, rate_prototype, ::Type{tType} = Float64) where {tType}
     (; A, c, α, αEEst, stages) = tableau
     A = copy(A') # Transpose A to column major looping
     # `one(tType)` strips units for Unitful while preserving BigFloat/Float32.
-    cType = _explicit_rk_c_eltype(typeof(one(tType)), c)
+    cType = _explicit_rk_c_eltype(typeof(one(tType)), eltype(c))
     c = cType.(c)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
