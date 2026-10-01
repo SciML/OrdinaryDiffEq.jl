@@ -121,4 +121,34 @@ using Test
             end
         end
     end
+
+    @testset "step! runtime allocations" begin
+        # AllocCheck over-reports broadcast alias copies, so the steady
+        # step is also required to be allocation-free at runtime. step!
+        # itself carries a small fixed allocation on Julia LTS that is
+        # absent on 1.12, so each solver is compared against the AB3
+        # baseline instead of zero.
+        ref_integrator = init(
+            prob, AB3(), dt = 0.1, save_everystep = false, adaptive = false
+        )
+        for _ in 1:10
+            step!(ref_integrator)
+        end
+        ref_bytes = @allocated step!(ref_integrator)
+
+        for solver in [ABM32(), ABM43(), ABM54(), VCABM3()]
+            @testset "$(typeof(solver)) step! is allocation-free" begin
+                integrator = init(
+                    prob, solver, dt = 0.1, save_everystep = false,
+                    adaptive = OrdinaryDiffEqCore.isadaptive(solver),
+                    abstol = 1.0e-6, reltol = 1.0e-6
+                )
+                # Multistep methods need history: advance past startup steps
+                for _ in 1:10
+                    step!(integrator)
+                end
+                @test @allocated(step!(integrator)) == ref_bytes
+            end
+        end
+    end
 end
