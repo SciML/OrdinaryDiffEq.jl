@@ -55,13 +55,12 @@ sol_uniform = solve(
 @test sol_op.u[end] ≈ sol_uniform.u[end]
 
 # The case `UniformScaling` cannot express: a time-varying scalar mass matrix.
-# M(t) u' = -u with M(t) = (1+t) I has the exact solution u(t) = u0 / (1+t), so
-# a stale or ignored `update_func` shows up directly in the answer.
+# ESDIRK's `_mmdiag_values` only accepts constant ScalarOperators (matching
+# master's `diag(::ScalarOperator)` MethodError). Correct time-varying support
+# needs a separate PR; a silent wrong answer is worse than throwing.
 mm_t = ScalarOperator(1.0; update_func = (a, u, p, t) -> 1.0 + t)
 decay!(du, u, p, t) = (du .= -u; nothing)
-sol_t = solve(
+@test_throws MethodError solve(
     ODEProblem(ODEFunction(decay!; mass_matrix = mm_t), [1.0], (0.0, 1.0)),
     TRBDF2(), abstol = 1.0e-10, reltol = 1.0e-10
 )
-@test SciMLBase.successful_retcode(sol_t)
-@test sol_t.u[end][1] ≈ 0.5 atol = 1.0e-5

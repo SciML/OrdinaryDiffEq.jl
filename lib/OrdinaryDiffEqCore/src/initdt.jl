@@ -240,8 +240,10 @@ end
         )
     end
     result_dt = tdir * dtmin
+    should_fallback = false
     ReactantCore.@trace track_numbers = false if has_nan
         result_dt = tdir * dtmin
+        should_fallback = false
     else
         dt₀ = ifelse(
             (d₀ < 1 // 10^(5)) |
@@ -266,7 +268,9 @@ end
         tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
             (dt₀ < 10 * _dt_eps_threshold(dt₀))
 
-        result_dt = let result_dt, tmp = tmp, tiny_first = tiny_first
+        # Return `(dt, should_fallback)` so the host path can emit master's
+        # `:dt_epsilon` message outside `@trace` (Reactant must not see it).
+        result_dt, should_fallback = let result_dt, tmp = tmp, tiny_first = tiny_first
             dt₀_tdir = tdir * dt₀
 
             u₁ = zero(u0) # required by DEDataArray
@@ -329,8 +333,15 @@ end
             tiny_refined = !isfinite(result_dt) |
                 (abs(result_dt) < 10 * _dt_eps_threshold(result_dt))
             should_fallback = tiny_first & tiny_refined
-            ifelse(should_fallback, fallback_dt, result_dt)
+            (ifelse(should_fallback, fallback_dt, result_dt), should_fallback)
         end
+    end
+    # Match master's `_fallback_if_tiny` host warning (#4601).
+    if warn_initial_dt && !has_nan && should_fallback
+        @SciMLMessage(
+            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+            integrator.opts.verbose, :dt_epsilon
+        )
     end
     return result_dt
 end
@@ -473,8 +484,6 @@ end
             convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
         )
         dt₀ = min(dt₀, dtmax_tdir)
-        tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
-            (dt₀ < 10 * _dt_eps_threshold(dt₀))
         dt₀_tdir = tdir * dt₀
 
         u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
@@ -514,11 +523,7 @@ end
                 tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
             end
         end
-        fallback_dt = tdir * max(smalldt, dtmin)
-        tiny_refined = !isfinite(result_dt) |
-            (abs(result_dt) < 10 * _dt_eps_threshold(result_dt))
-        should_fallback = tiny_first & tiny_refined
-        result_dt = ifelse(should_fallback, fallback_dt, result_dt)
+        # Master's #4601 tiny-dt fallback is IIP-only; keep OOP host semantics.
     end
     return result_dt
 end

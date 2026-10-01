@@ -59,11 +59,18 @@ function _mmdiag(tab, mass_matrix)
     return (mass_matrix === I || !tab.explicit_first_stage) ? nothing :
         _mmdiag_values(mass_matrix)
 end
-# λ·I without a dense layout: UniformScaling (λ ≠ 1) and ScalarOperator
+# λ·I without a dense layout: UniformScaling (λ ≠ 1) and constant ScalarOperator
 # (`axes == ()`). `_mmdiv`/`_mmmul` accept a scalar the same way.
+# Non-constant ScalarOperators must not take the convert(Number) fast path — that
+# freezes a time-varying mass matrix into a wrong constant and turns master's
+# `diag(::ScalarOperator)` MethodError into a silent incorrect ESDIRK answer.
 _mmdiag_values(mass_matrix::UniformScaling) = mass_matrix.λ
 function _mmdiag_values(mass_matrix)
-    isempty(axes(mass_matrix)) && return convert(Number, mass_matrix)
+    if isempty(axes(mass_matrix))
+        OrdinaryDiffEqCore.SciMLOperators.isconstant(mass_matrix) ||
+            return diag(mass_matrix)
+        return convert(Number, mass_matrix)
+    end
     return diag(mass_matrix)
 end
 
