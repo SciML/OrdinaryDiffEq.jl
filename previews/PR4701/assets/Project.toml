@@ -62,7 +62,7 @@ DiffEqBase = {path = "../lib/DiffEqBase"}
 DiffEqDevTools = {path = "../lib/DiffEqDevTools"}
 GlobalDiffEq = {path = "../lib/GlobalDiffEq"}
 ImplicitDiscreteSolve = {path = "../lib/ImplicitDiscreteSolve"}
-OrdinaryDiffEq = {path = "/home/runner/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"}
+OrdinaryDiffEq = {path = "/home/runner/_work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl"}
 OrdinaryDiffEqAMF = {path = "../lib/OrdinaryDiffEqAMF"}
 OrdinaryDiffEqAdamsBashforthMoulton = {path = "../lib/OrdinaryDiffEqAdamsBashforthMoulton"}
 OrdinaryDiffEqBDF = {path = "../lib/OrdinaryDiffEqBDF"}
