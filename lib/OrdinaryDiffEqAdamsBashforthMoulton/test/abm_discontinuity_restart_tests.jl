@@ -47,6 +47,25 @@ reset_oop!(integrator) = (integrator.u = u0_oop)
     end
 end
 
+@testset "reinit! restart: $(nameof(typeof(alg)))" for alg in (
+        ABM32(), ABM43(), ABM54(),
+    )
+    for (f, u0) in ((f_iip, u0_iip), (f_oop, u0_oop))
+        prob = ODEProblem(f, u0, (0.0, tjump))
+        restarted = init(prob, alg; adaptive = false, dt = 0.5)
+        fresh = init(prob, alg; adaptive = false, dt = 0.5)
+        for _ in 1:6
+            step!(restarted)
+        end
+        reinit!(restarted, copy(u0))
+        for _ in 1:6
+            step!(restarted)
+            step!(fresh)
+            @test restarted.u == fresh.u
+        end
+    end
+end
+
 # The adaptive variable-coefficient methods carry a variable-order divided-difference
 # history rather than a step counter, so check the user-visible consequence instead:
 # after the jump the solution must track the exact decay to the requested tolerance.
