@@ -958,7 +958,14 @@ function calc_W!(
     return new_jac, new_W
 end
 
-@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step)
+@inline function calc_J_for_W(integrator, cache, next_step, new_jac)
+    new_jac === false && return cache.J
+    J = calc_J(integrator, cache, next_step)
+    new_jac === true && (cache.J = J)
+    return J
+end
+
+@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step, new_jac = nothing)
     (; t, uprev, p, f) = integrator
 
     next_step = is_always_new(nlsolver)
@@ -983,14 +990,14 @@ end
     J = nothing
     if cache.W isa StaticWOperator
         integrator.stats.nw += 1
-        J = calc_J(integrator, cache, next_step)
+        J = calc_J_for_W(integrator, cache, next_step, new_jac)
         W = StaticWOperator(J - mass_matrix * inv(dtgamma))
     elseif cache.W isa WOperator
         integrator.stats.nw += 1
         J = if islin
             isode ? f.f : f.f1.f
         else
-            calc_J(integrator, cache, next_step)
+            calc_J_for_W(integrator, cache, next_step, new_jac)
         end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec)
     elseif cache.W isa AbstractSciMLOperator
@@ -1007,10 +1014,12 @@ end
             W = dae_jacobian2W(J_u, J_du, cj)
             J = J_u
         elseif isdae
-            J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
+            J = islin ? isode ? f.f : f.f1.f :
+                calc_J_for_W(integrator, cache, next_step, new_jac)
             W = J
         else
-            J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
+            J = islin ? isode ? f.f : f.f1.f :
+                calc_J_for_W(integrator, cache, next_step, new_jac)
             W = J - mass_matrix * inv(dtgamma)
 
             if !isa(W, Number)
@@ -1232,16 +1241,10 @@ function update_W!(
             end
         else
             if new_W
-                lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step)
+                lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step, new_jac)
             end
         end
-        if isdae
-            new_jac && (lcache.J_t = integrator.t)
-        else
-            # OOP calc_W always recomputes J via calc_J (no mutable J to reuse),
-            # so J_t should be updated whenever calc_W is called (i.e., new_W).
-            (new_jac || new_W) && (lcache.J_t = integrator.t)
-        end
+        new_jac && (lcache.J_t = integrator.t)
         set_new_W!(nlsolver, new_W)
         if isdae && new_W
             set_W_γdt!(nlsolver, dae_cj(nlsolver, integrator))
