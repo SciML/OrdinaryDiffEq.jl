@@ -262,29 +262,6 @@ function reinitFBDF!(integrator, cache)
     return nothing
 end
 
-# Largest BDF order supported by the recorded history: the predictor,
-# corrector, and time filter interpolate through ts[1..k+1], which requires
-# distinct nodes. Recomputed passes of a step (DelayDiffEq fixed-point
-# iteration, step retries) must not run at an order stepped up for a step
-# that was never accepted, so clamp k to the supported depth (BDF1 needs
-# only uprev and is always usable).
-function _fbdf_usable_order(ts, order)
-    for m in order:-1:2
-        distinct = true
-        for j in 2:(m + 1)
-            for i in 1:(j - 1)
-                if ts[i] == ts[j]
-                    distinct = false
-                    break
-                end
-            end
-            distinct || break
-        end
-        distinct && return m
-    end
-    return 1
-end
-
 ####################################################################
 # Chebyshev reference nodes and barycentric weights for FBDF/DFBDF
 # dense output. Lagrange interpolation is resampled at these fixed
@@ -615,8 +592,12 @@ end
 # NLSCOEF.
 error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
 
-function _fbdf_finish_fixed_step!(integrator, cache)
-    if cache.time_filter && !integrator.opts.adaptive
+# With `adaptive = false` no step controller runs, so the order raise and step
+# counters for the previous step are applied when the next step begins. A step
+# recomputed at the same `t` (DelayDiffEq fixed-point iteration) leaves `ts[1]`
+# equal to `t`, so every pass of that step sees the same order and history.
+function _fbdf_begin_fixed_step!(integrator, cache)
+    if cache.time_filter && !integrator.opts.adaptive && integrator.t != cache.ts[1]
         cache.prev_order = cache.order
         cache.order = max(cache.order, cache.filter_order)
         cache.iters_from_event += 1
