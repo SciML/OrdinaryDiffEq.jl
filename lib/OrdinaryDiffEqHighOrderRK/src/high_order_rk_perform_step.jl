@@ -557,7 +557,7 @@ function initialize!(integrator, cache::DP8ConstantCache)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
-    return @inbounds for i in eachindex(integrator.k)
+    return for i in eachindex(integrator.k)
         integrator.k[i] = zero(integrator.fsalfirst)
     end
 end
