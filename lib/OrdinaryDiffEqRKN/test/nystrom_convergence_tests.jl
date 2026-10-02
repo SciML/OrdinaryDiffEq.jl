@@ -561,8 +561,6 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
     end
 end
 
-# Regression: IRKN4 out-of-place ConstantCache perform_step! (SVector Kepler).
-# Previously MethodError — only IRKN4Cache (in-place) was implemented.
 @testset "IRKN4 out-of-place SVector Kepler" begin
     function kepler_acc!(ddu, du, u, p, t)
         r2 = sum(u .* u)
@@ -598,4 +596,79 @@ end
     dts = 1 .// 2 .^ (9:-1:6)
     sim = test_convergence(dts, prob_oop, IRKN4())
     @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
+end
+
+# After a DiscreteCallback changes p, IRKN4 must rebuild its multistep stage
+# history via the one-step bootstrap; otherwise the next step is only first-order.
+@testset "IRKN4 restart after derivative discontinuity" begin
+    oscillator_acc!(ddu, du, u, p, t) = (ddu .= -p[1] .* u; nothing)
+    oscillator_acc(du, u, p, t) = -p[1] * u
+
+    function jump_local_error(oop, dt)
+        cb = DiscreteCallback(
+            (u, t, integrator) -> integrator.iter == 10,
+            integrator -> (integrator.p[1] = 4.0);
+            save_positions = (false, false)
+        )
+        if oop
+            prob = SecondOrderODEProblem(
+                oscillator_acc, SVector(0.0), SVector(1.0), (0.0, 5.0), [1.0]
+            )
+        else
+            prob = SecondOrderODEProblem(
+                oscillator_acc!, [0.0], [1.0], (0.0, 5.0), [1.0]
+            )
+        end
+        integrator = init(
+            prob, IRKN4();
+            dt, adaptive = false, save_everystep = false, dense = false, callback = cb
+        )
+        for _ in 1:10
+            step!(integrator)
+        end
+        v = integrator.u.x[1][1]
+        u = integrator.u.x[2][1]
+        step!(integrator)
+        exact_v = v * cos(2dt) - 2u * sin(2dt)
+        exact_u = u * cos(2dt) + v * sin(2dt) / 2
+        return max(abs(integrator.u.x[1][1] - exact_v), abs(integrator.u.x[2][1] - exact_u))
+    end
+
+    dts = (0.01, 0.005, 0.0025)
+    for oop in (true, false)
+        local_errors = [jump_local_error(oop, dt) for dt in dts]
+        # Order-4 local truncation is O(dt^5); the stale-history bug is O(dt).
+        @test local_errors[1] / dts[1]^5 < 50
+        @test local_errors[2] / dts[2]^5 < 50
+        @test local_errors[3] / dts[3]^5 < 50
+        ratios = local_errors[1:(end - 1)] ./ local_errors[2:end]
+        @test all(r -> r > 20, ratios)  # ~2^5 when dt halves, not ~2
+    end
+
+    function global_error(dt)
+        cb = DiscreteCallback(
+            (u, t, integrator) -> integrator.iter == 10,
+            integrator -> (integrator.p[1] = 4.0);
+            save_positions = (false, false)
+        )
+        # Exact: u=cos(t) on [0, 10dt], then u=A cos(2(t-t*))+B sin(2(t-t*))
+        # with continuity of u,u' at t*=10dt.
+        tstar = 10dt
+        A = cos(tstar)
+        B = -sin(tstar) / 2
+        tf = 30dt
+        exact_u = A * cos(2(tf - tstar)) + B * sin(2(tf - tstar))
+        exact_v = -2A * sin(2(tf - tstar)) + 2B * cos(2(tf - tstar))
+        sol = solve(
+            SecondOrderODEProblem(
+                oscillator_acc!, [0.0], [1.0], (0.0, tf), [1.0]
+            ),
+            IRKN4();
+            dt, adaptive = false, save_everystep = false, dense = false, callback = cb
+        )
+        return max(abs(sol.u[end].x[1][1] - exact_v), abs(sol.u[end].x[2][1] - exact_u))
+    end
+    global_errors = [global_error(dt) for dt in dts]
+    orders = log2.(global_errors[1:(end - 1)] ./ global_errors[2:end])
+    @test all(o -> o > 3.5, orders)
 end
