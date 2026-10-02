@@ -1254,7 +1254,7 @@ function perform_step!(
     (; t, dt, u, f, p, uprev) = integrator
 
     tdt = t + dt
-    k = order
+    k = _fbdf_usable_order(ts, order)
 
     # Predictor: evaluate Lagrange interpolant through u_history at Θ=1
     # using actual (variable) theta nodes. No need to fill integrator.k.
@@ -1509,7 +1509,7 @@ function perform_step!(
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
-    k = order
+    k = _fbdf_usable_order(ts, order)
     tdt = t + dt
 
     # Predictor: evaluate Lagrange interpolant through u_history at Θ=1

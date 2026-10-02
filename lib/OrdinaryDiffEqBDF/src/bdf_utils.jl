@@ -233,7 +233,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             copyto!(u_history[2], u_history[1])
             copyto!(u_history[1], uprev)
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 copyto!(u_history[i], u_history[i - 1])
@@ -250,7 +250,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             u_history[2] = u_history[1]
             u_history[1] = uprev
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 u_history[i] = u_history[i - 1]
@@ -260,6 +260,29 @@ function reinitFBDF!(integrator, cache)
         end
     end
     return nothing
+end
+
+# Largest BDF order supported by the recorded history: the predictor,
+# corrector, and time filter interpolate through ts[1..k+1], which requires
+# distinct nodes. Recomputed passes of a step (DelayDiffEq fixed-point
+# iteration, step retries) must not run at an order stepped up for a step
+# that was never accepted, so clamp k to the supported depth (BDF1 needs
+# only uprev and is always usable).
+function _fbdf_usable_order(ts, order)
+    for m in order:-1:2
+        distinct = true
+        for j in 2:(m + 1)
+            for i in 1:(j - 1)
+                if ts[i] == ts[j]
+                    distinct = false
+                    break
+                end
+            end
+            distinct || break
+        end
+        distinct && return m
+    end
+    return 1
 end
 
 ####################################################################
