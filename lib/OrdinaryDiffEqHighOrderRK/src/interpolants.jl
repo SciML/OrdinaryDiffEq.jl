@@ -61,7 +61,10 @@ end
         T::Type{Val{0}}, differential_vars::Nothing
     )
     Θ1 = 1 - Θ
-    @.. broadcast = false out = y₀ +
+    checkbounds(k, 1:7)
+    # SAFETY: DP8 dense output always supplies k[1:7] with axes matching out/y₀
+    # (integrator cache invariant); checkbounds validates the stage indexing.
+    @inbounds @.. broadcast = false out = y₀ +
         dt * Θ *
         (
         k[1] +
