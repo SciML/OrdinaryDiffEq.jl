@@ -1435,11 +1435,9 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
         axpy!(-r, q, v)
     end
 
-    begin
-        d = norm(v)
-        R[k, k] = d
-        @.. broadcast = false @view(Q[:, k]) = v / d
-    end
+    d = norm(v)
+    R[k, k] = d
+    @.. broadcast = false @view(Q[:, k]) = v / d
 
     return Q, R
 end
