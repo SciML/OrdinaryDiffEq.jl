@@ -15,7 +15,7 @@ end
 
 @testset "Small extrapolation steps avoid task launches" begin
     for Alg in (AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner)
-        counts = zeros(Int, Threads.nthreads())
+        counts = zeros(Int, Threads.maxthreadid())
         prob = ODEProblem(tracked_lorenz!, [1.0, 0.0, 0.0], (0.0, 0.1), counts)
         reference = solve(prob, Alg(threading = false); reltol = 1.0e-8, abstol = 1.0e-8)
         fill!(counts, 0)
@@ -23,6 +23,11 @@ end
         @test threaded.t == reference.t
         @test threaded.u == reference.u
         @test all(iszero, counts[2:end])
+        fill!(counts, 0)
+        forced = solve(prob, Alg(threading = BaseThreads()); reltol = 1.0e-8, abstol = 1.0e-8)
+        @test forced.t == reference.t
+        @test forced.u == reference.u
+        @test any(!iszero, counts[2:end])
     end
 end
 
@@ -111,7 +116,7 @@ testTol = 0.2
                         AitkenNeville(
                             max_order = j,
                             min_order = j, init_order = j,
-                            threading = true
+                            threading = BaseThreads()
                         )
                     )
                     @test sim.𝒪est[:final] ≈ j atol = testTol
@@ -122,7 +127,7 @@ testTol = 0.2
                     prob,
                     AitkenNeville(
                         max_order = 9, min_order = 1,
-                        init_order = 9, threading = true
+                        init_order = 9, threading = BaseThreads()
                     ), reltol = 1.0e-3
                 )
                 @test length(sol.u) < 15
@@ -132,7 +137,7 @@ testTol = 0.2
                     prob,
                     AitkenNeville(
                         max_order = 9, min_order = 1,
-                        init_order = 9, threading = true
+                        init_order = 9, threading = BaseThreads()
                     ), reltol = 1.0e-6
                 )
                 @test length(sol.u) < 18
@@ -441,7 +446,7 @@ testTol = 0.2
                     alg = ExtrapolationMidpointDeuflhard(
                         min_order = j,
                         init_order = j, max_order = j,
-                        sequence = seq, threading = true
+                        sequence = seq, threading = BaseThreads()
                     )
                     sim = test_convergence(dts, prob, alg)
                     @test sim.𝒪est[:final] ≈ 2 * (alg.init_order + 1) atol = testTol
@@ -451,7 +456,7 @@ testTol = 0.2
                 alg = ExtrapolationMidpointDeuflhard(
                     max_order = 9, min_order = 1,
                     init_order = 9, sequence = seq,
-                    threading = true
+                    threading = BaseThreads()
                 )
                 sol = solve(prob, alg, reltol = 1.0e-3)
                 @test length(sol.u) < 10
@@ -505,7 +510,7 @@ testTol = 0.2
                         min_order = j,
                         init_order = j, max_order = j,
                         sequence = seq,
-                        threading = true
+                        threading = BaseThreads()
                     )
                     sim = test_convergence(dts, prob, alg)
                     @test sim.𝒪est[:final] ≈ 2 * (alg.init_order + 1) atol = testTol
@@ -515,7 +520,7 @@ testTol = 0.2
                 alg = ExtrapolationMidpointHairerWanner(
                     max_order = 9, min_order = 2,
                     init_order = 9, sequence = seq,
-                    threading = true
+                    threading = BaseThreads()
                 )
                 sol = solve(prob, alg, reltol = 1.0e-3)
                 @test length(sol.u) < 10

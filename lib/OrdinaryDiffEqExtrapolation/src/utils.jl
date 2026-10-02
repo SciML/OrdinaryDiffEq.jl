@@ -58,11 +58,12 @@ end
     return Threads.threadpoolsize(:default) + Threads.threadpoolsize(:interactive)
 end
 
+# Pinned-thread benchmarks showed little benefit near 84,000 work units and clear benefit near 280,000.
 const _EXTRAPOLATION_THREAD_WORK_THRESHOLD = 200_000
 
 @inline function _use_extrapolation_threads(threading, work::Integer)
     isthreaded(threading) || return false
-    threading isa PolyesterThreads && return true
+    threading isa Union{PolyesterThreads, BaseThreads} && return true
     return Threads.threadpoolsize(:default) > 1 &&
         work >= _EXTRAPOLATION_THREAD_WORK_THRESHOLD
 end
