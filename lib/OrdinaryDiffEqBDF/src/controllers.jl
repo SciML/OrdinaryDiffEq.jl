@@ -46,6 +46,8 @@ end
     step_reject_controller!(integrator, alg)
 @inline OrdinaryDiffEqCore.post_newton_controller!(integrator, ::BDFControllerCache, alg) =
     post_newton_controller!(integrator, alg)
+@inline OrdinaryDiffEqCore.domain_reject_controller!(integrator, ::BDFControllerCache, alg) =
+    domain_reject_controller!(integrator, alg)
 @inline OrdinaryDiffEqCore.accept_step_controller(
     integrator, cache::BDFControllerCache, alg,
 ) = get_EEst(cache) <= 1
@@ -267,6 +269,33 @@ end
 function post_newton_controller!(integrator, cache::Union{QNDFCache, QNDFConstantCache}, ::QNDF)
     integrator.dt = integrator.dt / get_failfactor(integrator)
     return nothing
+end
+
+# An `isoutofdomain` rejection must go through the same history bookkeeping as an
+# error-test rejection: `consfailcnt > 0` makes the retry restore `D` from `prevD`
+# (QNDF) or skip the history shift in `reinitFBDF!` (FBDF/DFBDF), which otherwise
+# would shift the history a second time at the same accepted time (#4687). The step
+# size is not chosen from the error estimate, which can be small for a step that is
+# merely out of the domain, so `dt` is shrunk by `qmin` as for other algorithms.
+function bdf_domain_reject_controller!(integrator, cache)
+    cache.consfailcnt += 1
+    cache.nconsteps = 0
+    integrator.dt = integrator.dt * get_qmin(integrator)
+    return nothing
+end
+
+function domain_reject_controller!(integrator, alg::Union{QNDF, FBDF, DFBDF})
+    return domain_reject_controller!(integrator, integrator.cache, alg)
+end
+function domain_reject_controller!(
+        integrator,
+        cache::Union{
+            QNDFCache, QNDFConstantCache, FBDFCache, FBDFConstantCache,
+            DFBDFCache, DFBDFConstantCache,
+        },
+        ::Union{QNDF, FBDF, DFBDF}
+    )
+    return bdf_domain_reject_controller!(integrator, cache)
 end
 
 function step_reject_controller!(integrator, alg::FBDF)
@@ -750,6 +779,22 @@ function step_reject_controller!(integrator, alg::NordsieckBDFAlgs)
     nordsieck_rescale!(cache, cache.eta, iip)
     integrator.dt = cache.hscale
     return integrator.dt
+end
+
+# CVODE handles a recoverable failure outside the error test by restoring the
+# predicted array before shrinking the step. Without `nordsieck_restore!` the retry
+# rescales the *predicted* `zn` and, because `nordsieck_predict!` is idempotent,
+# reuses a prediction made for the old step size (#4687).
+function domain_reject_controller!(integrator, alg::NordsieckBDFAlgs)
+    cache = integrator.cache
+    iip = _nordsieck_iip(cache)
+    T = typeof(cache.eta)
+    nordsieck_restore!(cache, iip)
+    cache.etamax = one(T)
+    cache.eta = T(get_qmin(integrator))
+    nordsieck_rescale!(cache, cache.eta, iip)
+    integrator.dt = cache.hscale
+    return nothing
 end
 
 function post_newton_controller!(integrator, alg::NordsieckBDFAlgs)
