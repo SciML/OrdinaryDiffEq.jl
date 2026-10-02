@@ -78,8 +78,9 @@ Dense output is the collocation polynomial through the final sweep's node values
     - `sweeper`: the preconditioner `QΔ`. `SDCSweeper.BE` (implicit Euler between
         the nodes), `.FE` (explicit Euler between the nodes), `.Trapezoid`, `.LU`
         (Weiser's LU trick), `.Picard` (`QΔ = 0`), `.BEpar` (diagonal, implicit
-        Euler from the step start to each node) or `.MIN_SR_NS` (diagonal,
-        `diag(τ)/M`).
+        Euler from the step start to each node), `.MIN_SR_NS` (diagonal,
+        `diag(τ)/M`), `.MIN_SR_S` (diagonal, tabulated for stiff problems) or
+        `.MIN_SR_FLEX` (diagonal, `diag(τ)/k` on sweep `k`).
     - `explicit_sweeper`: the preconditioner for `f2` when the problem is a
         `SplitODEProblem`, `SDCSweeper.FE` (explicit Euler between the nodes) or
         `.Picard` (`f2` lagged a whole sweep). Ignored otherwise.
