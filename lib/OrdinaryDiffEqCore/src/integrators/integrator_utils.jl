@@ -308,6 +308,15 @@ types. The Reactant extension adds the exact comparison for traced floating-poin
 dt_below_time_eps(dt, t::AbstractFloat) = abs(dt) <= abs(eps(t))
 dt_below_time_eps(dt, t) = false
 
+"""
+    value_eps(x)
+
+`eps(x)`, the spacing of floating-point numbers at `x`. The Reactant extension gives a
+traced float `x` its spacing, where Reactant's `eps` returns `eps` of the type; a subnormal
+spacing becomes `floatmin`, since compiled code flushes subnormals to zero.
+"""
+value_eps(x) = eps(x)
+
 # Accessor functions for tstop flag fields with fallbacks for non-ODE integrators
 # (e.g. DDEIntegrator in DelayDiffEq.jl which doesn't have these fields)
 _get_next_step_tstop(integrator::ODEIntegrator) = integrator.next_step_tstop
@@ -341,7 +350,7 @@ function modify_dt_for_tstops!(integrator)
         if eltype(integrator.sol.prob.tspan) <: AbstractFloat
             ReactantCore.@trace track_numbers = false if isfinite(tdir_tstop) & isfinite(integrator.t)
                 t_mag = max(abs(integrator.t), abs(tdir_tstop))
-                tstop_tol = 100 * eps(float(t_mag / oneunit(integrator.t))) *
+                tstop_tol = 100 * value_eps(float(t_mag / oneunit(integrator.t))) *
                     oneunit(integrator.t)
             end
         end

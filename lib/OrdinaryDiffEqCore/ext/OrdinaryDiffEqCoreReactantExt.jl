@@ -3,13 +3,11 @@ module OrdinaryDiffEqCoreReactantExt
 using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 using Reactant: Reactant, TracedRNumber
 
-# Compiled CPU code flushes subnormal floats to zero, so these read and compare bit patterns
-# wherever the host result depends on subnormal values.
-
 bits(x::TracedRNumber{T}) where {T} = Reactant.Ops.bitcast_convert(Base.uinttype(T), x)
 
 magnitude_bits(x::TracedRNumber{T}) where {T} = bits(x) & ~Base.sign_mask(T)
 
+# Compiled code flushes subnormal floats to zero, so the comparison is made on bit patterns.
 # The bits of `eps(t)` for finite `t` are `2^(E - 1)` for a biased exponent `E <= p`, where
 # `eps(t)` is subnormal, and `(E - p) << p` otherwise. Non-negative floats and non-NaN bit
 # patterns order alike, and a NaN `dt` compares above every finite `eps`.
@@ -25,6 +23,14 @@ function OrdinaryDiffEqCore.dt_below_time_eps(
     eps_bits = ifelse(biased > p, (biased - p) * (one(U) << p), subnormal_eps)
     dt_bits = magnitude_bits(Reactant.promote_to(TracedRNumber{T}, dt))
     return (biased != Base.exponent_mask(T) >> p) & (dt_bits <= eps_bits)
+end
+
+# `nextfloat(a) - a` is exact, `eps(floatmax(T))` caps `a == floatmax(T)`, and a
+# non-finite `x` gives NaN. A subnormal spacing, which compiled code would flush to zero,
+# is raised to `floatmin(T)`, the nearest step that compiled code can take.
+function OrdinaryDiffEqCore.value_eps(x::TracedRNumber{T}) where {T <: Base.IEEEFloat}
+    a = abs(x)
+    return max(min(nextfloat(a) - a, eps(floatmax(T))), floatmin(T))
 end
 
 # `FastPower.fastlog2`: the significand and exponent are read from the bits of `x`.
@@ -44,13 +50,14 @@ function fastlog2(x::TracedRNumber{Float32})
     return (signif - 1.0f0) * quot + exponent
 end
 
-# `FastPower.fastpower(x::T, y::T)`, which the controllers use for floats on the host.
+# `FastPower.fastpower(x::T, y::T)`, which the controllers use for floats on the host, up to
+# the rounding of `exp2`. An `x` whose `Float32` value is subnormal is flushed to zero.
 function fastpower(x::TracedRNumber{T}, y::TracedRNumber{T}) where {T}
     x32 = Reactant.Ops.convert(TracedRNumber{Float32}, x)
     y32 = Reactant.Ops.convert(TracedRNumber{Float32}, y)
     approx = Reactant.Ops.convert(TracedRNumber{T}, 2.0f0^(y32 * fastlog2(x32)))
     return ifelse(
-        iszero(magnitude_bits(x)), zero(approx),
+        iszero(x), zero(approx),
         ifelse(isinf(x) & isinf(y), T(Inf), approx)
     )
 end

@@ -595,5 +595,5 @@ end
 
 function _initial_dtmin(t, dtmin)
     T = eltype(t)
-    return nextfloat(max(dtmin, convert(T, oneunit(t) * eps(SciMLBase.value(t)))))
+    return nextfloat(max(dtmin, convert(T, oneunit(t) * value_eps(SciMLBase.value(t)))))
 end
