@@ -4,10 +4,11 @@ using SciMLBase
 using Test
 
 fdecay!(du, u, p, t) = (du .= -p[1] .* u; nothing)
+feq!(du, u, p, t) = (du .= 1 .- u; nothing)
 
 @testset "NLAnderson resize" begin
     @testset "grow/shrink matches NLNewton" begin
-        prob = ODEProblem(fdecay!, ones(3), (0.0, 2.0), 50.0)
+        prob = ODEProblem(feq!, fill(0.2, 3), (0.0, 2.0))
 
         function make_cb()
             phase = Ref(0)
@@ -17,7 +18,7 @@ fdecay!(du, u, p, t) = (du .= -p[1] .* u; nothing)
             affect! = function (integ)
                 if phase[] == 0
                     resize!(integ, 5)
-                    integ.u[4:5] .= 1.0
+                    integ.u[4:5] .= 0.5
                     phase[] = 1
                 else
                     resize!(integ, 3)
@@ -30,20 +31,36 @@ fdecay!(du, u, p, t) = (du .= -p[1] .* u; nothing)
         end
 
         kwargs = (;
-            callback = make_cb(), tstops = [0.5, 1.0],
-            reltol = 1.0e-4, abstol = 1.0e-6,
+            tstops = [0.5, 1.0],
+            reltol = 1.0e-12, abstol = 1.0e-12,
+            dt = 0.025, adaptive = false, saveat = 0.025,
         )
-        sol_ref = solve(prob, ImplicitEuler(nlsolve = NLNewton()); kwargs...)
-        sol_and = solve(prob, ImplicitEuler(nlsolve = NLAnderson()); kwargs...)
-        sol_fun = solve(prob, ImplicitEuler(nlsolve = NLFunctional()); kwargs...)
+        sol_ref = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton()); callback = make_cb(), kwargs...
+        )
+        sol_and = solve(
+            prob, ImplicitEuler(nlsolve = NLAnderson()); callback = make_cb(), kwargs...
+        )
+        sol_fun = solve(
+            prob, ImplicitEuler(nlsolve = NLFunctional()); callback = make_cb(), kwargs...
+        )
 
         @test SciMLBase.successful_retcode(sol_ref)
         @test SciMLBase.successful_retcode(sol_and)
         @test SciMLBase.successful_retcode(sol_fun)
+        @test 5 in length.(sol_ref.u)
+        @test 5 in length.(sol_and.u)
+        @test 5 in length.(sol_fun.u)
         @test length(sol_and.u[end]) == 3
         @test length(sol_fun.u[end]) == 3
-        @test sol_and.u[end] ≈ sol_ref.u[end] rtol = 1.0e-3 atol = 1.0e-3
-        @test sol_fun.u[end] ≈ sol_ref.u[end] rtol = 1.0e-3 atol = 1.0e-3
+        @test sol_and.t == sol_ref.t
+        @test sol_fun.t == sol_ref.t
+        for i in eachindex(sol_ref.t)
+            @test length(sol_and.u[i]) == length(sol_ref.u[i])
+            @test length(sol_fun.u[i]) == length(sol_ref.u[i])
+            @test sol_and.u[i] ≈ sol_ref.u[i] rtol = 1.0e-8 atol = 1.0e-8
+            @test sol_fun.u[i] ≈ sol_ref.u[i] rtol = 1.0e-8 atol = 1.0e-8
+        end
     end
 
     @testset "rebuilds Q/R and Δz₊s when max_history is unchanged" begin
