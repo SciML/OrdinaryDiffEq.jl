@@ -426,15 +426,18 @@ end
 
 # Displacement-only outer tests are a Newton inference. Quasi-Newton inner steps can hold
 # `ndz` nearly constant (θ ≈ 1, ndz ≤ 1) with a residual that still misses the stage
-# equation; accepting that iterate as the floating-point limit leaves the stage unsolved.
-# `stage_unsolved` is a roundoff test and is too tight here: the integrator's own
-# `abstol`/`reltol` are the stage tolerance the inner `step!` path is supposed to meet.
+# equation; accepting that iterate as Convergence leaves the stage unsolved.
+# Newton caches defer the terminal residual evaluation; do not force it here — the
+# displacement is then a true Newton correction and the stats tests require the deferral.
+# `stage_unsolved` is a roundoff floor; the integrator's `abstol`/`reltol` are the stage
+# tolerance the `step!` path is supposed to meet.
 unconverged_nlsolvealg_stage(::AbstractNLSolver, ::SciMLBase.DEIntegrator) = false
 function unconverged_nlsolvealg_stage(
         nlsolver::NLSolver{<:NonlinearSolveAlg}, integrator::SciMLBase.DEIntegrator
     )
     nlcache = nlsolver.cache.cache
     nlcache isa NonlinearSolveNoInitCache && return false
+    defers_residual(nlcache) && return false
     sync_inner_residual!(nlcache)
     γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
     fu = get_fu(nlcache)
@@ -444,19 +447,6 @@ function unconverged_nlsolvealg_stage(
     atol = maxabs(integrator.opts.abstol)
     rtol = maxabs(integrator.opts.reltol)
     return resid > max(roundoff_level(typeof(resid)) * scale, atol + rtol * scale)
-end
-
-# One inner `step!` is a Newton correction only for Newton-type algorithms. Quasi-Newton
-# updates can leave the residual well above the stage tolerance; keep stepping until it
-# meets that tolerance or the inner cache stops.
-function finish_nlsolvealg_inner!(nlsolver, integrator, nlcache, defer_residual)
-    while unconverged_nlsolvealg_stage(nlsolver, integrator)
-        if inner_solve_failed(nlcache) || !NonlinearSolveBase.not_terminated(nlcache)
-            return false
-        end
-        step_inner!(nlcache, false, defer_residual)
-    end
-    return true
 end
 
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small
@@ -555,8 +545,7 @@ end
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
         set_inner_linear_reltol!(nlcache, integrator)
-        defer_residual = defers_residual(nlcache)
-        step_inner!(nlcache, recompute_jacobian, defer_residual)
+        step_inner!(nlcache, recompute_jacobian, defers_residual(nlcache))
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
@@ -566,10 +555,6 @@ end
         if inner_solve_failed(nlcache)
             sync_inner_residual!(nlcache)
             stage_unsolved(nlcache, γΔt) && return convert(eltype(z), Inf)
-        elseif !finish_nlsolvealg_inner!(nlsolver, integrator, nlcache, defer_residual)
-            sync_inner_residual!(nlcache)
-            unconverged_nlsolvealg_stage(nlsolver, integrator) &&
-                return convert(eltype(z), Inf)
         end
         active_u = get_u(nlcache)
         cache.stalled = stalled_inner_step(
@@ -639,8 +624,9 @@ end
         set_inner_linear_reltol!(nlcache, integrator)
         # The `nlstep_data` branch below reads the residual on every iteration, so deferring
         # there would only move the same evaluation a few lines later.
-        defer_residual = nlstep_data === nothing && defers_residual(nlcache)
-        step_inner!(nlcache, recompute_jacobian, defer_residual)
+        step_inner!(
+            nlcache, recompute_jacobian, nlstep_data === nothing && defers_residual(nlcache)
+        )
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
@@ -650,10 +636,6 @@ end
         if inner_solve_failed(nlcache)
             sync_inner_residual!(nlcache)
             stage_unsolved(nlcache, γΔt) && return convert(eltype(atmp), Inf)
-        elseif !finish_nlsolvealg_inner!(nlsolver, integrator, nlcache, defer_residual)
-            sync_inner_residual!(nlcache)
-            unconverged_nlsolvealg_stage(nlsolver, integrator) &&
-                return convert(eltype(atmp), Inf)
         end
     end
 

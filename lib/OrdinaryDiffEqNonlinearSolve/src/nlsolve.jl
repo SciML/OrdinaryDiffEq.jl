@@ -194,15 +194,24 @@ function nlsolve!(
             # it convergence/divergence according to `ndz` directly.
             if abs(θ - one(θ)) <= eps_around_one(θ)
                 if ndz <= one(ndz)
-                    if !unconverged_nlsolvealg_stage(nlsolver, integrator)
+                    # Quasi-Newton can hold ndz nearly constant with a residual that still
+                    # misses the stage equation; do not treat that as Convergence.
+                    if unconverged_nlsolvealg_stage(nlsolver, integrator)
                         @SciMLMessage(
-                            lazy"Newton iteration converged at floating point limit: θ ≈ 1.0, ndz = $(ndz)",
+                            lazy"Newton iteration rejected at floating point limit: θ ≈ 1.0, ndz = $(ndz), stage residual still above tolerance",
                             integrator.opts.verbose, :convergence_limit
                         )
-                        nlsolver.status = Convergence
-                        nlsolver.nfails = 0
+                        nlsolver.status = Divergence
+                        nlsolver.nfails += 1
                         break
                     end
+                    @SciMLMessage(
+                        lazy"Newton iteration converged at floating point limit: θ ≈ 1.0, ndz = $(ndz)",
+                        integrator.opts.verbose, :convergence_limit
+                    )
+                    nlsolver.status = Convergence
+                    nlsolver.nfails = 0
+                    break
                 elseif check_div′
                     nlsolver.status = Divergence
                     nlsolver.nfails += 1
