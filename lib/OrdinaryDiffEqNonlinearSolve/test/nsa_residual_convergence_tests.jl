@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
-using NonlinearSolve: DFSane, NewtonRaphson, Broyden
+using NonlinearSolve: DFSane, NewtonRaphson, Broyden, Klement
 using LineSearch: BackTracking
 using ADTypes, LinearAlgebra, SciMLBase
 using Test
@@ -65,6 +65,23 @@ relerr(sol, ref) = norm(sol.u[end] .- ref) / norm(ref)
             reltol = 1.0e-6, abstol = 1.0e-9, maxiters = 10^5
         )
         @test !SciMLBase.successful_retcode(sol) || relerr(sol, ref) < 1.0e-3
+    end
+end
+
+# Quasi-Newton inner steps can hold the displacement almost constant (θ ≈ 1, ndz ≤ 1) while
+# the residual still misses the stage equation. The floating-point-limit accept then marks
+# Convergence at ‖f‖ of order one, and the step-size controller collapses dt off u0.
+# `u' = -u` on `[0, 1]` has the closed form `exp(-t)`. The issue thread's successful
+# NewtonRaphson run on this problem printed `u(1) = 0.364032788367996` against
+# `exact = 0.36787944117144233` (~1.05% relative), so `rtol = 2e-2` is that printed
+# working-solver accuracy, not a fit to the broken `u(1) ≈ 1` result.
+@testset "quasi-Newton stages do not converge on displacement alone" begin
+    exact = 0.36787944117144233
+    prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0))
+    for inner in (Broyden(), Klement())
+        sol = solve(prob, TRBDF2(nlsolve = NonlinearSolveAlg(inner)))
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ exact rtol = 2.0e-2
     end
 end
 
