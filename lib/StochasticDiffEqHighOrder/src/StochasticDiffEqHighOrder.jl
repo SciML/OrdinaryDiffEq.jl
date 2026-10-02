@@ -23,15 +23,15 @@ import DiffEqBase: @..
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
 import DiffEqBase: Tableau
-# Without these imports the SRACache accessors would define a *new* local
-# `u_cache`/`du_cache`/`user_cache` that shadows the SciMLBase interface
-# function rather than extending it, so `resize!` would never see them.
-import DiffEqBase: u_cache, du_cache, user_cache
 
 import MuladdMacro: @muladd
 
 import SciMLBase
 import SciMLBase: is_diagonal_noise
+# Without these imports, SRACache's accessors would bind new HighOrder-local
+# `u_cache`/`du_cache`/`user_cache` and shadow SciMLBase's exported functions,
+# causing an umbrella reexport clash / Aqua undefined-exports.
+import SciMLBase: u_cache, du_cache, user_cache
 
 using LinearAlgebra: LinearAlgebra, dot, mul!
 using StaticArrays: StaticArrays, SArray

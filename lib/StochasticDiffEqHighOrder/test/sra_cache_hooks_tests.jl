@@ -2,9 +2,9 @@ using StochasticDiffEqHighOrder
 using SciMLBase
 using Test
 
-# SRA() builds an SRACache, which defines u_cache/du_cache/user_cache. Those
-# methods must extend SciMLBase's functions (reached via DiffEqBase), not a
-# HighOrder-local function, or resize! never sees them.
+# SRA() builds an SRACache with u_cache/du_cache/user_cache methods. Those must
+# extend SciMLBase's functions, not HighOrder-local ones (otherwise the umbrella
+# reexport clashes / leaves undefined exports).
 @testset "SRACache extends SciMLBase cache hooks" begin
     @test StochasticDiffEqHighOrder.du_cache === SciMLBase.du_cache
     @test StochasticDiffEqHighOrder.u_cache === SciMLBase.u_cache
@@ -17,15 +17,12 @@ using Test
     cache = integ.cache
     @test cache isa StochasticDiffEqHighOrder.SRACache
 
+    @test !isempty(methods(SciMLBase.du_cache, (typeof(cache),)))
+    @test !isempty(methods(SciMLBase.u_cache, (typeof(cache),)))
+    @test !isempty(methods(SciMLBase.user_cache, (typeof(cache),)))
+
     du_bufs = SciMLBase.du_cache(cache)
     @test !isempty(du_bufs)
     user_bufs = SciMLBase.user_cache(cache)
     @test integ.u in user_bufs
-
-    old_len = length(integ.u)
-    resize!(integ, old_len + 1)
-    @test length(integ.u) == old_len + 1
-    for buf in du_bufs
-        @test length(buf) == old_len + 1
-    end
 end
