@@ -1,4 +1,13 @@
 """
+    controller_fastpower(x, y)
+
+`FastPower.fastpower(x, y)`, the approximate power the step-size controllers use. The
+Reactant extension gives traced floats the same approximation; `fastpower` itself falls back
+to `x^y` for them, which is NaN or Inf where the approximation is finite.
+"""
+controller_fastpower(x, y) = fastpower(x, y)
+
+"""
     AbstractController
 
 Supertype of every step-size controller. A concrete subtype is a small
@@ -669,7 +678,7 @@ end
     ReactantCore.@trace track_numbers = false if iszero(EEst)
         q = inv(qmax)
     else
-        qtmp = fastpower(EEst, expo) / gamma
+        qtmp = controller_fastpower(EEst, expo) / gamma
         @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
         cache.dtreject = SciMLBase.value(integrator.dt) / q
@@ -807,8 +816,8 @@ end
     ReactantCore.@trace track_numbers = false if iszero(EEst)
         q = inv(qmax)
     else
-        q11 = fastpower(EEst, beta1)
-        q = q11 / fastpower(errold, beta2)
+        q11 = controller_fastpower(EEst, beta1)
+        q = q11 / controller_fastpower(errold, beta2)
         cache.q11 = q11
         @fastmath q = clamp(q / gamma, inv(qmax), inv(qmin))
     end
@@ -1093,7 +1102,7 @@ fac = min(
         (niters + 2 * integrator.cache.nlsolver.maxiters)
 )
 expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-qtmp = fastpower(get_EEst(integrator), expo) / fac
+qtmp = controller_fastpower(get_EEst(integrator), expo) / fac
 @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
 cache.qold = q
 q
@@ -1111,7 +1120,7 @@ When the step is accepted, the following logic is applied:
 qmax = get_current_qmax(integrator, qmax)
 if integrator.success_iter > 0
     expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-    qgus = (dtacc / integrator.dt) * fastpower((get_EEst(integrator)^2) / erracc, expo)
+    qgus = (dtacc / integrator.dt) * controller_fastpower((get_EEst(integrator)^2) / erracc, expo)
     qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
     qacc = max(q, qgus)
 else
@@ -1211,7 +1220,7 @@ end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = fastpower(EEst, expo) / fac
+        qtmp = controller_fastpower(EEst, expo) / fac
         @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         cache.qold = q
     end
@@ -1228,7 +1237,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qgus = (dtacc / integrator.dt) *
-            fastpower((EEst^2) / erracc, expo)
+            controller_fastpower((EEst^2) / erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else

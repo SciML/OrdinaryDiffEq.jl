@@ -290,8 +290,23 @@ step failed while `adaptive` is `false`). Used by the iterator interface to deci
 whether to stop.
 """
 function last_step_failed(integrator::ODEIntegrator)
-    return integrator.last_stepfail && !integrator.opts.adaptive
+    return integrator.last_stepfail & !integrator.opts.adaptive
 end
+
+# `DiffEqBase.staged_check_error` evaluates the same conditions for compiled solves.
+SciMLBase.check_error(integrator::ODEIntegrator) = DiffEqBase.de_check_error(integrator)
+
+DiffEqBase.check_error_dt_below_time_eps(integrator::ODEIntegrator) =
+    dt_below_time_eps(integrator.dt, integrator.t)
+
+"""
+    dt_below_time_eps(dt, t) -> Bool
+
+Whether `abs(dt) <= abs(eps(t))` for a floating-point time `t`, and `false` for other time
+types. The Reactant extension adds the exact comparison for traced floating-point times.
+"""
+dt_below_time_eps(dt, t::AbstractFloat) = abs(dt) <= abs(eps(t))
+dt_below_time_eps(dt, t) = false
 
 # Accessor functions for tstop flag fields with fallbacks for non-ODE integrators
 # (e.g. DDEIntegrator in DelayDiffEq.jl which doesn't have these fields)

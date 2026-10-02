@@ -1092,30 +1092,13 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
         first_tstop = first(integrator.opts.tstops)
         stop = _maybe_traced(false)
         errored = _maybe_traced(false)
-        maxiters = ReactantCore.within_compile() ? integrator.opts.maxiters : typemax(Int)
         _dealias_traced!(integrator)
-        ReactantCore.@trace track_numbers = false while (integrator.tdir * integrator.t < first_tstop) & !stop &
-                !errored & (integrator.iter < maxiters)
+        ReactantCore.@trace track_numbers = false while (integrator.tdir * integrator.t < first_tstop) & !stop & !errored
             stop, errored = _solve_step!(integrator)
             _dealias_traced!(integrator)
         end
         if ReactantCore.within_compile()
-            # Recompute the failure code from the stopped state rather than
-            # carrying a TracedEnum through the while loop (Ref{ReturnCode.T}
-            # cannot store TracedEnum). Do this before restoring `uprev`.
-            _, fail_code = _traced_check_error(integrator)
-            ReactantCore.@trace track_numbers = false if !integrator.accept_step
-                integrator.u = integrator.uprev
-            end
-            retcode = ifelse(
-                errored,
-                fail_code,
-                ifelse(
-                    integrator.tdir * integrator.t >= first_tstop,
-                    ReturnCode.Success, ReturnCode.MaxIters
-                )
-            )
-            return _traced_finalize_solution(integrator, retcode)
+            return _traced_finalize_solution(integrator, _traced_retcode(integrator, errored))
         end
         errored && return integrator.sol
         handle_tstop!(integrator)
@@ -1139,73 +1122,16 @@ function SciMLBase.solve!(integrator::ODEIntegrator)
     return integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
-# Default instability predicate (same as `ODE_DEFAULT_UNSTABLE_CHECK` /
-# `INFINITE_OR_GIANT`) as a traced Bool. Custom `unstable_check` is rejected at
-# `_ode_init`.
-function _traced_default_unstable(u)
-    return ODE_DEFAULT_UNSTABLE_CHECK(false, u, nothing, nothing)
-end
-
-# Float eltype of a time value, including wrappers such as TracedRNumber{T}.
-function _float_eltype(t)
-    t isa AbstractFloat && return typeof(t)
-    T = typeof(t)
-    if t isa Number && !isempty(T.parameters)
-        E = T.parameters[1]
-        E isa Type && E <: AbstractFloat && return E
+# The host's `solve!` returns an existing failure code in every case, and otherwise the code
+# of the error check that stopped the loop. The loop does not carry the code, since a traced
+# enum cannot be loop-carried; the check is repeated on the unchanged stopped state instead.
+function _traced_retcode(integrator, errored)
+    _, code = DiffEqBase.staged_check_error(integrator)
+    ReactantCore.@trace track_numbers = false if !integrator.accept_step
+        integrator.u = integrator.uprev
     end
-    return nothing
-end
-
-# Compile-safe stand-in for `Base.eps(t)` (exact at 0 and powers of two).
-function _traced_eps_of(t, ::Type{FT}) where {FT <: AbstractFloat}
-    dtT = typeof(t)
-    return max(
-        abs(t) * convert(dtT, eps(FT)),
-        convert(dtT, floatmin(FT)),
-    )
-end
-
-# Compile-time mirror of `de_check_error` (messages omitted). Host still uses
-# `check_error!` unchanged.
-function _traced_check_error(integrator)
-    opts = integrator.opts
-    step_accepted = integrator.accept_step
-    dt_nan = isnan(integrator.dt)
-    over_maxiters = integrator.iter > opts.maxiters
-    dtmin_fail = _maybe_traced(false)
-    dt_eps_fail = _maybe_traced(false)
-    FT = _float_eltype(integrator.t)
-    if opts.adaptive
-        not_tstop = integrator.t + integrator.dt <
-            integrator.tdir * first(opts.tstops)
-        dtmin_fail = (abs(integrator.dt) <= abs(opts.dtmin)) &
-            (!step_accepted | not_tstop)
-        # Match host `eps(integrator.t)` when the time type is floating-point.
-        # TracedRNumber{T} is not `<: AbstractFloat`, so gate on the eltype.
-        if FT !== nothing
-            dt_eps_fail = !step_accepted &
-                (abs(integrator.dt) <= abs(_traced_eps_of(integrator.t, FT)))
-        end
-        # Reactant adaptive rejection can yield a NaN `dt` where the host shrinks
-        # to a tiny finite step and returns `Unstable` via the eps check. Map that
-        # NaN-dt rejection to the same Unstable code instead of DtNaN.
-        dt_eps_fail = dt_eps_fail | (dt_nan & !step_accepted)
-    end
-    unstable = step_accepted & _traced_default_unstable(integrator.u)
-    newton_fail = integrator.last_stepfail & !opts.adaptive
-    # DtNaN only when NaN dt is not already classified as the adaptive eps failure.
-    pure_dt_nan = dt_nan & !dt_eps_fail
-    failed = pure_dt_nan | over_maxiters | dtmin_fail | dt_eps_fail | unstable |
-        newton_fail
-    # Priority matches `de_check_error` (first match wins → last ifelse wins).
-    code = ifelse(newton_fail, ReturnCode.ConvergenceFailure, ReturnCode.Success)
-    code = ifelse(unstable, ReturnCode.Unstable, code)
-    code = ifelse(dt_eps_fail, ReturnCode.Unstable, code)
-    code = ifelse(dtmin_fail, ReturnCode.DtLessThanMin, code)
-    code = ifelse(over_maxiters, ReturnCode.MaxIters, code)
-    code = ifelse(pure_dt_nan, ReturnCode.DtNaN, code)
-    return failed, code
+    DiffEqBase.check_error_failed_retcode(integrator) && return integrator.sol.retcode
+    return ifelse(errored, code, ReturnCode.Success)
 end
 
 function _solve_step!(integrator)
@@ -1224,12 +1150,9 @@ function _solve_step!(integrator)
         return isempty(integrator.opts.tstops) | (should_exit & integrator.accept_step), false
     end
 
-    # Compile path: mirror `check_error!` with traced Bools, then step only when
-    # the check passed. `@trace` forbids begin-blocks, so gate with if/elseif.
-    # Failure ReturnCode is recomputed at finalize from the stopped state.
     failed = _maybe_traced(false)
     if integrator.do_error_check
-        failed, _ = _traced_check_error(integrator)
+        failed, _ = DiffEqBase.staged_check_error(integrator)
     end
     ReactantCore.@trace track_numbers = false if !failed & integrator.next_step_tstop
         handle_tstop_step!(integrator)
