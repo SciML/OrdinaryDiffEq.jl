@@ -1246,7 +1246,7 @@ function perform_step!(
         integrator, cache::FBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
-    _fbdf_begin_fixed_step!(integrator, cache)
+    _fbdf_undo_fixed_step!(integrator, cache)
     reinitFBDF!(integrator, cache)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
@@ -1423,6 +1423,7 @@ function perform_step!(
             integrator.k[j] = zero(u)
         end
     end
+    _fbdf_finish_fixed_step!(integrator, cache)
     return integrator.u = u
 end
 
@@ -1505,7 +1506,7 @@ function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
-    _fbdf_begin_fixed_step!(integrator, cache)
+    _fbdf_undo_fixed_step!(integrator, cache)
     reinitFBDF!(integrator, cache)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
@@ -1660,6 +1661,7 @@ function perform_step!(
             fill!(integrator.k[j], zero(eltype(u)))
         end
     end
+    _fbdf_finish_fixed_step!(integrator, cache)
     return nothing
 end
 

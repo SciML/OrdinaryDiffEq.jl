@@ -592,17 +592,33 @@ end
 # NLSCOEF.
 error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
 
-# With `adaptive = false` no step controller runs, so the order raise and step
-# counters for the previous step are applied when the next step begins. A step
-# recomputed at the same `t` (DelayDiffEq fixed-point iteration) leaves `ts[1]`
-# equal to `t`, so every pass of that step sees the same order and history.
-function _fbdf_begin_fixed_step!(integrator, cache)
-    if cache.time_filter && !integrator.opts.adaptive && integrator.t != cache.ts[1]
+# With `adaptive = false` no step controller runs, so each completed pass
+# records its order raise and step counters itself, and `t_old` marks the step
+# they belong to. DelayDiffEq's fixed-point iteration recomputes a step at the
+# same `t`; undoing that step's bookkeeping first gives every pass the order,
+# counters and history the first pass saw.
+function _fbdf_finish_fixed_step!(integrator, cache)
+    if cache.time_filter && !integrator.opts.adaptive
         cache.prev_order = cache.order
         cache.order = max(cache.order, cache.filter_order)
         cache.iters_from_event += 1
         cache.nconsteps += 1
         cache.consfailcnt = 0
+        cache.t_old = integrator.t
+    end
+    return nothing
+end
+
+function _fbdf_undo_fixed_step!(integrator, cache)
+    if cache.time_filter && !integrator.opts.adaptive &&
+            cache.iters_from_event > 0 && cache.consfailcnt == 0 &&
+            integrator.t == cache.t_old
+        cache.order = cache.prev_order
+        cache.iters_from_event -= 1
+        cache.nconsteps -= 1
+        # The recorded bookkeeping now belongs to the previous step. Without
+        # this, a retry after a failed recomputation would undo twice.
+        cache.t_old = cache.ts[2]
     end
     return nothing
 end
