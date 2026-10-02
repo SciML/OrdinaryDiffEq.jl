@@ -330,11 +330,32 @@ end
 
         sol = solve(prob, alg; tstops = [3.0], kw...)
         @test sol.retcode == ReturnCode.Success
-        # x' = y with y fixed by the constraint, so the error in x is the error carried
-        # to t = 3 plus what accumulates after it. A fresh solve from the exact state at
-        # t = 3 bounds the second part; the factor 2 allows for different step sequences.
-        pre = solve(remake(prob; tspan = (0.0, 3.0)), alg; kw...)
-        post = solve(remake(prob; u0 = [xex(3.0), sin(3.0) + 2], tspan = (3.0, 5.0)), alg; kw...)
-        @test maxerr(sol) <= maxerr(pre) + 2 * maxerr(post)
+        # Empirical accuracy floor, not a derived bound. The step onto t = 3 integrates
+        # x' = y with the post-jump y over the whole step, an O(jump * dt) error that
+        # only the differential error estimate limits.
+        @test maxerr(sol) < 100 * reltol
+    end
+end
+
+@testset "Mass-matrix scaling does not loosen error control at tstops" begin
+    # σ u' = -σ u is u' = -u for every σ, alone and next to the algebraic equation
+    # 0 = y. Neither has a jump, so every tstop landing keeps the full error test.
+    reltol, abstol = 1.0e-6, 1.0e-8
+    for dae in (false, true), iip in (true, false), alg in (FBDF(), QNDF()),
+            σ in (1.0, 1.0e-3, 1.0e-6)
+
+        if dae
+            f! = (du, u, p, t) -> (du[1] = -σ * u[1]; du[2] = u[2]; nothing)
+            f = (u, p, t) -> [-σ * u[1], u[2]]
+            M, u0 = [σ 0.0; 0.0 0.0], [1.0, 0.0]
+        else
+            f! = (du, u, p, t) -> (du[1] = -σ * u[1]; nothing)
+            f = (u, p, t) -> [-σ * u[1]]
+            M, u0 = fill(σ, 1, 1), [1.0]
+        end
+        prob = ODEProblem(ODEFunction(iip ? f! : f; mass_matrix = M), u0, (0.0, 1.0))
+        sol = solve(prob, alg; dt = 0.1, tstops = [0.1, 0.5], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(abs(u[1] - exp(-t)) for (t, u) in zip(sol.t, sol.u)) < 100 * reltol
     end
 end

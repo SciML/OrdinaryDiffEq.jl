@@ -149,35 +149,46 @@ const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
 end
 
 # A mass-matrix step that ends on a tstop can straddle a jump in the algebraic
-# equations, e.g. an input that switches at the tstop. The algebraic rows of the
-# predictor-corrector difference then measure the jump, which does not shrink with
-# dt, and every shrunken retry stops short of the tstop, so the step onto the tstop
-# could never pass. Such a step is judged on the differential rows `M * err` alone,
-# and the multistep history is restarted after it because it no longer describes
-# the solution past the tstop.
-@inline function _algebraic_jump_at_tstop(integrator, mass_matrix)
-    return mass_matrix !== I && integrator.next_step_tstop &&
-        OrdinaryDiffEqCore.get_EEst(integrator) > 1
+# equations, e.g. an input that switches at the tstop. The algebraic components of
+# the predictor-corrector difference then measure the jump, which does not shrink
+# with dt, and every shrunken retry stops short of the tstop, so the step onto the
+# tstop could never pass. Such a step is judged on the differential components
+# alone, in their usual units, and the multistep history is restarted after it
+# because it no longer describes the solution past the tstop.
+#
+# The algebraic components are the structurally zero rows of the mass matrix.
+# Returns those rows when the step qualifies, otherwise `nothing`; a mass matrix
+# without zero rows keeps the full error test.
+@inline function _algebraic_jump_at_tstop(integrator, mass_matrix, u)
+    integrator.next_step_tstop && OrdinaryDiffEqCore.get_EEst(integrator) > 1 ||
+        return nothing
+    return _algebraic_rows(mass_matrix, u)
 end
 
-@inline function _bdf_error_norm!(
-        atmp, buf, err, differential_only, mass_matrix, uprev, u, integrator
-    )
+function _algebraic_rows(mass_matrix::AbstractMatrix, u::AbstractVector)
+    ArrayInterface.fast_scalar_indexing(u) || return nothing
+    size(mass_matrix, 1) == length(u) || return nothing
+    rows = vec(all(iszero, mass_matrix; dims = 2))
+    return any(rows) ? rows : nothing
+end
+_algebraic_rows(mass_matrix, u) = nothing
+
+@inline function _bdf_error_norm!(atmp, buf, err, algebraic_rows, uprev, u, integrator)
     t = integrator.t
     (; abstol, reltol, internalnorm) = integrator.opts
-    if differential_only
-        mul!(buf, mass_matrix, err)
-        calculate_residuals!(atmp, buf, uprev, u, abstol, reltol, internalnorm, t)
-    else
+    if algebraic_rows === nothing
         calculate_residuals!(atmp, err, uprev, u, abstol, reltol, internalnorm, t)
+    else
+        @.. broadcast = false buf = ifelse(algebraic_rows, zero(err), err)
+        calculate_residuals!(atmp, buf, uprev, u, abstol, reltol, internalnorm, t)
     end
     return internalnorm(atmp, t)
 end
 
-@inline function _bdf_error_norm(err, differential_only, mass_matrix, uprev, u, integrator)
+@inline function _bdf_error_norm(err, algebraic_rows, uprev, u, integrator)
     t = integrator.t
     (; abstol, reltol, internalnorm) = integrator.opts
-    e = differential_only ? mass_matrix * err : err
+    e = algebraic_rows === nothing ? err : @. ifelse(algebraic_rows, zero(err), err)
     return internalnorm(calculate_residuals(e, uprev, u, abstol, reltol, internalnorm, t), t)
 end
 
