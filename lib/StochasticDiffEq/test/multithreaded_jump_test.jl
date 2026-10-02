@@ -1,4 +1,4 @@
-using JumpProcesses, StochasticDiffEq, Test
+using JumpProcesses, StochasticDiffEq, SciMLBase, Test
 
 # Requires threads to be effective
 # https://github.com/SciML/DifferentialEquations.jl/issues/854
@@ -46,5 +46,5 @@ test_ensemsim = solve(
     dt = 0.01,
     EnsembleThreads();
     trajectories = 1_000_000,
-    alias_jump = false
+    alias = SciMLBase.SDEAliasSpecifier(; alias_jumps = false)
 )

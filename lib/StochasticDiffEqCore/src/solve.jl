@@ -136,8 +136,34 @@ function SciMLBase.__init(
 end
 
 function SciMLBase.__init(
-        _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
+        _prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
+        kwargs...
+    )
+    return _sde_init(_prob, alg; kwargs...)
+end
+
+# The `JumpProblem` methods are deliberately concrete in the problem and split by
+# algorithm supertype. JumpProcesses defines a generic
+# `__init(::JumpProblem, ::AbstractDEAlgorithm)`, and its OrdinaryDiffEqCore
+# extension defines `__init(::JumpProblem{IIP, P}, ::Union{StochasticDiffEqAlgorithm,
+# StochasticDiffEqRODEAlgorithm})` to disambiguate against OrdinaryDiffEqCore's broad
+# initializer. A single method over the same algorithm union would have the identical
+# signature and overwrite that extension method; these per-supertype methods are
+# strictly more specific in the algorithm argument, so `init(::JumpProblem, alg)` reaches
+# `_sde_init` (as `solve` already does) for both JumpProcesses 9 and 10 with no
+# overwrite and no ambiguity.
+function SciMLBase.__init(
+        _prob::JumpProblem,
+        alg::StochasticDiffEqAlgorithm;
+        kwargs...
+    )
+    return _sde_init(_prob, alg; kwargs...)
+end
+
+function SciMLBase.__init(
+        _prob::JumpProblem,
+        alg::StochasticDiffEqRODEAlgorithm;
         kwargs...
     )
     return _sde_init(_prob, alg; kwargs...)
