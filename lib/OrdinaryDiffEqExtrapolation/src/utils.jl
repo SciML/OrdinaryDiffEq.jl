@@ -57,3 +57,12 @@ end
 @inline function _thread_storage_size()
     return Threads.threadpoolsize(:default) + Threads.threadpoolsize(:interactive)
 end
+
+const _EXTRAPOLATION_THREAD_WORK_THRESHOLD = 200_000
+
+@inline function _use_extrapolation_threads(threading, work::Integer)
+    isthreaded(threading) || return false
+    threading isa PolyesterThreads && return true
+    return Threads.threadpoolsize(:default) > 1 &&
+        work >= _EXTRAPOLATION_THREAD_WORK_THRESHOLD
+end

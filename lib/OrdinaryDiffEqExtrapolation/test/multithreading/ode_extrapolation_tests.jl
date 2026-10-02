@@ -5,6 +5,27 @@ using SciMLBase: SciMLBase, ODEFunction, ODEProblem
 using OrdinaryDiffEqCore: Sequential, BaseThreads, PolyesterThreads
 using Polyester
 
+function tracked_lorenz!(du, u, counts, t)
+    counts[Threads.threadid()] += 1
+    du[1] = 10 * (u[2] - u[1])
+    du[2] = u[1] * (28 - u[3]) - u[2]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return nothing
+end
+
+@testset "Small extrapolation steps avoid task launches" begin
+    for Alg in (AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner)
+        counts = zeros(Int, Threads.nthreads())
+        prob = ODEProblem(tracked_lorenz!, [1.0, 0.0, 0.0], (0.0, 0.1), counts)
+        reference = solve(prob, Alg(threading = false); reltol = 1.0e-8, abstol = 1.0e-8)
+        fill!(counts, 0)
+        threaded = solve(prob, Alg(threading = true); reltol = 1.0e-8, abstol = 1.0e-8)
+        @test threaded.t == reference.t
+        @test threaded.u == reference.u
+        @test all(iszero, counts[2:end])
+    end
+end
+
 println("Running on $(Threads.nthreads()) thread(s).")
 
 # Define test problems
