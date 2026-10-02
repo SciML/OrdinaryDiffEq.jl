@@ -273,3 +273,25 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+# On master, rejected startup attempts with a user `dt` push `cnt` past the
+# startup window while `dtₙ₋₁` is still the zero sentinel, so the Nordsieck
+# rescale divides by zero and the solve returns Unstable at t=0 (#4675).
+@testset "QNDF/QNDF2 startup does not divide by zero dtₙ₋₁ (#4675)" begin
+    function rober!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        du[1] = -0.04y₁ + 1.0e4 * y₂ * y₃
+        du[2] = 0.04y₁ - 3.0e7 * y₂^2 - 1.0e4 * y₂ * y₃
+        du[3] = 3.0e7 * y₂^2
+    end
+    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e3))
+    for alg in (QNDF2(), QBDF2(), QNDF1(), QBDF1())
+        sol = solve(
+            prob, alg; dt = 1.0e-2, abstol = 1.0e-4, reltol = 1.0e-4,
+            verbose = DEVerbosity(SciMLLogging.None())
+        )
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 1.0e3
+        @test sol.stats.naccept > 0
+    end
+end
