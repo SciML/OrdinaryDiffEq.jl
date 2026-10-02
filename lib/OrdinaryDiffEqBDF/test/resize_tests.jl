@@ -1,43 +1,50 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, Test
+using OrdinaryDiffEqBDF, LinearAlgebra, Test
 
-f!(du, u, p, t) = (du .= -u)
+const A = [-1.0 0.35 0.1; 0.2 -1.4 0.25; 0.15 0.3 -1.2]
+const U0 = [1.0, -0.5]
+const UNEW = 0.3
+const TG = 0.5
+const TS = 1.0
+const TF = 2.0
 
-function resize_callback!(restart_orders)
+f!(du, u, p, t) = (mul!(du, view(A, 1:length(u), 1:length(u)), u); nothing)
+
+function exact(t)
+    u = exp(A[1:2, 1:2] * min(t, TG)) * U0
+    t <= TG && return u
+    u3 = exp(A * (min(t, TS) - TG)) * vcat(u, UNEW)
+    t <= TS && return u3
+    return exp(A[1:2, 1:2] * (t - TS)) * u3[1:2]
+end
+
+function resize_callback!(disc, restart_orders)
     grew = Ref(false)
     shrank = Ref(false)
     function condition(u, t, integrator)
-        return (!grew[] && t >= 0.5) || (!shrank[] && t >= 1.0)
+        return (!grew[] && t >= TG) || (!shrank[] && t >= TS)
     end
     function affect(integrator)
-        if !grew[]
-            resize!(integrator, 3)
-            integrator.u[3] = 0.5
-            grew[] = true
-        else
-            resize!(integrator, 2)
-            shrank[] = true
-        end
-        hasproperty(integrator.cache, :order) && push!(restart_orders, integrator.cache.order)
-        return derivative_discontinuity!(integrator, true)
+        n = grew[] ? 2 : 3
+        resize!(integrator, n)
+        n == 3 && (integrator.u[3] = UNEW)
+        push!(restart_orders, integrator.cache.order)
+        grew[] ? (shrank[] = true) : (grew[] = true)
+        return derivative_discontinuity!(integrator, disc)
     end
     return DiscreteCallback(condition, affect; save_positions = (false, false))
 end
 
 @testset "BDF state resizing" begin
-    prob = ODEProblem(f!, ones(2), (0.0, 2.0))
-    reference = solve(
-        prob, ImplicitEuler(); callback = resize_callback!(Int[]),
-        tstops = [0.5, 1.0], reltol = 1.0e-9, abstol = 1.0e-11
-    )
+    prob = ODEProblem(f!, copy(U0), (0.0, TF))
 
-    for alg in (FBDF(), QNDF())
+    for alg in (FBDF(), QNDF()), disc in (true, false)
         restart_orders = Int[]
         sol = solve(
-            prob, alg; callback = resize_callback!(restart_orders),
-            tstops = [0.5, 1.0], reltol = 1.0e-9, abstol = 1.0e-11
+            prob, alg; callback = resize_callback!(disc, restart_orders),
+            tstops = [TG, TS], reltol = 1.0e-10, abstol = 1.0e-12
         )
-        @test length(sol.u[end]) == 2
-        @test sol.u[end] ≈ reference.u[end] rtol = 5.0e-5 atol = 2.0e-7
+        @test sol(0.75) ≈ exact(0.75) rtol = 1.0e-7 atol = 1.0e-10
+        @test sol.u[end] ≈ exact(TF) rtol = 1.0e-7 atol = 1.0e-10
         @test restart_orders == [1, 1]
     end
 end
