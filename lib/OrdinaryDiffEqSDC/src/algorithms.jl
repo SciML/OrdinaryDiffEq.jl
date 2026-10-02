@@ -27,6 +27,15 @@ Adaptive whenever `num_sweeps > 0`. The embedded estimate is the difference betw
 formed from the last two sweeps, which costs a handful of `axpy`s because both
 iterates are already in the cache.
 
+On stiff problems the step update limits how few sweeps can be used. With
+`SDCStepUpdate.Quadrature` on Radau-right nodes the stability function exceeds
+one in the stiff limit until `num_sweeps ≥ num_nodes` for `SDCSweeper.LU` (two
+to five nodes), and until 4, 6 and 7 sweeps on 3, 4 and 5 nodes for
+`SDCSweeper.MIN_SR_S`. An adaptive solve needs one sweep more because the
+embedded solution is one sweep behind. `SDCSweeper.BE` is below one from two
+sweeps. With `SDCStepUpdate.LastNode`, `LU` and `BE` damp the stiff limit
+completely from the first sweep.
+
 On a `SplitODEProblem` the sweep is semi-implicit: `f1` goes through `QΔ` and a
 nonlinear solve per node as above, while `f2` goes through the strictly lower
 triangular `explicit_sweeper` and is only ever evaluated at solved node values.
