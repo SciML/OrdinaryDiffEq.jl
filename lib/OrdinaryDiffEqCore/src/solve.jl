@@ -1060,7 +1060,7 @@ function handle_starting_time_discontinuity!(integrator)
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
-    @inbounds while !isempty(integrator.opts.tstops)
+    while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first_tstop
             loopheader!(integrator)
