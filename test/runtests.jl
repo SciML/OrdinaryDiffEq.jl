@@ -204,19 +204,15 @@ function qa_group()
     return @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
 end
 
+function activate_reactant_env()
+    Pkg.activate(joinpath(@__DIR__, "Reactant"))
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    return Pkg.instantiate()
+end
+
 function reactant_group()
     is_APPVEYOR && return
-    # Reactant v0.2.289 includes traced enums (EnzymeAD/Reactant.jl#3232). Keep the
-    # Reactant suite self-contained here rather than listing Reactant in the root
-    # [extras]/[targets] test environment.
-    withenv("JULIA_PKG_PRECOMPILE_AUTO" => "0") do
-        Pkg.add(
-            [
-                PackageSpec(name = "Reactant", version = v"0.2.289"),
-                PackageSpec(name = "ReactantCore", version = v"0.1.23"),
-            ]
-        )
-    end
+    activate_reactant_env()
     return @time @safetestset "Reactant Tests" include("Reactant/reactant_tests.jl")
 end
 

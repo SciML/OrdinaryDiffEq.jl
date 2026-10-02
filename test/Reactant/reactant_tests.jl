@@ -1,6 +1,11 @@
 using OrdinaryDiffEqCore: IController, PIController, PIDController
 using OrdinaryDiffEq
+using OrdinaryDiffEqCore
+using DiffEqBase
+using FastPower
+using Logging
 using Reactant
+using Random
 using SciMLBase
 using Test
 
@@ -113,6 +118,116 @@ unstable_check_solver = CompiledODESolve(
         else
             @test !SciMLBase.successful_retcode(host)
             @test !Bool(SciMLBase.successful_retcode(traced))
+        end
+    end
+end
+
+@testset "Compiled failure retcodes equal the host's" begin
+    u = Float32[1]
+    cases = (
+        ("small first step", (1.5f0, 2.0f0), (; dt = 1.5f0 * eps(1.5f0)), ((Float32[-1], ReturnCode.Success),)),
+        (
+            "dtmin after rejected steps", (0.0f0, 1.0f0), (; dt = 0.1f0, dtmin = 1.0f-5),
+            ((Float32[NaN], ReturnCode.DtLessThanMin), (Float32[1.0f30], ReturnCode.DtLessThanMin), (Float32[-1], ReturnCode.Success)),
+        ),
+        ("NaN dt", (0.0f0, 1.0f0), (; dt = NaN32), ((Float32[-1], ReturnCode.DtNaN),)),
+        (
+            "PIDController", (0.0f0, 1.0f0), (; controller = PIDController(0.7, -0.4), maxiters = 1000),
+            ((Float32[-1], ReturnCode.Success), (Float32[NaN], ReturnCode.DtNaN), (Float32[1.0f30], ReturnCode.DtNaN)),
+        ),
+    )
+    @testset "$name" for (name, tspan, kwargs, params) in cases
+        solver = (u, p) -> solve(ODEProblem(f, u, tspan, p), Tsit5(); kwargs...)
+        compiled = Reactant.compile(
+            solver, (Reactant.to_rarray(u), Reactant.to_rarray(Float32[-1]))
+        )
+        for (p, expected) in params
+            host = solver(u, p)
+            traced = compiled(Reactant.to_rarray(u), Reactant.to_rarray(p))
+            @test host.retcode == expected
+            @test traced.retcode == host.retcode
+        end
+    end
+
+    @testset "existing failure code, adaptive = $adaptive" for adaptive in (false, true)
+        function solve_failed(u, p)
+            integrator = init(
+                ODEProblem(f, u, (0.0f0, 1.0f0), p), Tsit5(); adaptive, dt = 0.1f0
+            )
+            integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Unstable)
+            return solve!(integrator)
+        end
+        host = solve_failed(u, Float32[-1])
+        traced = Reactant.@jit solve_failed(Reactant.to_rarray(u), Reactant.to_rarray(Float32[-1]))
+        @test host.retcode == ReturnCode.Unstable
+        @test traced.retcode == host.retcode
+    end
+end
+
+@testset "Staged error check equals the host check" begin
+    prob = ODEProblem(f, Float32[1], (0.0f0, 1.0f0), Float32[-1])
+    nchecked = 0
+    for adaptive in (true, false), dt in (NaN32, 1.0f-30, 1.0f-6, 0.1f0),
+            iter in (1, 11), accept_step in (false, true), unew in (1.0f0, NaN32),
+            last_stepfail in (false, true), stored in (ReturnCode.Default, ReturnCode.MaxIters)
+
+        integrator = init(prob, Tsit5(); adaptive, dt = 0.1f0, dtmin = 1.0f-5, maxiters = 10)
+        integrator.dt = dt
+        integrator.iter = iter
+        integrator.accept_step = accept_step
+        integrator.u .= unew
+        integrator.last_stepfail = last_stepfail
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, stored)
+        host = with_logger(() -> SciMLBase.check_error(integrator), NullLogger())
+        failed, code = DiffEqBase.staged_check_error(integrator)
+        @test code == host
+        @test failed == (host != ReturnCode.Success)
+        nchecked += 1
+    end
+    @test nchecked == 256
+end
+
+@testset "Compiled eps(t) is exact" begin
+    Random.seed!(0)
+    below(dt, t) = OrdinaryDiffEqCore.dt_below_time_eps.(dt, t)
+    @testset "$T" for T in (Float32, Float64)
+        U = Base.uinttype(T)
+        ts = T[]
+        for biased in 0:(Base.exponent_mask(T) >> Base.significand_bits(T))
+            x = reinterpret(T, U(biased) << Base.significand_bits(T))
+            append!(ts, (x, nextfloat(x), prevfloat(max(x, nextfloat(zero(T))))))
+        end
+        append!(ts, (zero(T), floatmin(T), prevfloat(floatmin(T)), floatmax(T), T(NaN)))
+        append!(ts, reinterpret.(T, rand(U, 2000)))
+        append!(ts, -ts)
+        epss = eps.(ts)
+        for dts in (epss, nextfloat.(epss), prevfloat.(epss), -epss, zero(ts), reinterpret.(T, rand(U, length(ts))))
+            traced = Array(Reactant.@jit below(Reactant.to_rarray(dts), Reactant.to_rarray(ts)))
+            @test traced == (abs.(dts) .<= abs.(eps.(ts)))
+        end
+        # Compiled code flushes subnormals, so a subnormal spacing is raised to `floatmin`.
+        spacing(t) = OrdinaryDiffEqCore.value_eps.(t)
+        traced = Array(Reactant.@jit spacing(Reactant.to_rarray(ts)))
+        @test isequal(traced, map(t -> isfinite(t) ? max(eps(t), floatmin(T)) : T(NaN), ts))
+    end
+end
+
+@testset "Compiled controller power follows FastPower" begin
+    fp(x, y) = OrdinaryDiffEqCore.controller_fastpower(x, y)
+    @testset "$T" for T in (Float32, Float64)
+        compiled = Reactant.compile(
+            fp, (Reactant.ConcreteRNumber(one(T)), Reactant.ConcreteRNumber(one(T)))
+        )
+        Random.seed!(1)
+        xs = T[0, NaN, Inf, 1.0e30, floatmax(T), floatmin(T), 1.0e-30, 0.5, 1, 1.5, 2, 100]
+        ys = T[0.14, -0.08, 0.7, -0.4, 1 // 6, 0.2, Inf, 0]
+        pairs = vcat(vec(collect(Iterators.product(xs, ys))), [(T(exp(20randn())), T(rand() - 0.5)) for _ in 1:200])
+        for (x, y) in pairs
+            host = FastPower.fastpower(x, y)
+            traced = Float64(compiled(Reactant.ConcreteRNumber(x), Reactant.ConcreteRNumber(y)))
+            # Both round an `exp2` evaluated in `Float32`, by different implementations.
+            @test isfinite(traced) == isfinite(host)
+            @test isapprox(traced, host; rtol = 2 * eps(Float32), nans = true)
         end
     end
 end
