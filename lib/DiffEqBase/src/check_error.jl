@@ -91,6 +91,13 @@ failure_message(integ, ::Val{:newton_convergence}) =
 check_error_step_accepted(integrator) =
     !hasproperty(integrator, :accept_step) || integrator.accept_step
 
+"""
+    check_error_failed_retcode(integrator) -> Bool
+
+Whether `integrator.sol.retcode` already records a failure, i.e. is neither
+`ReturnCode.Success` nor `ReturnCode.Default`. `de_check_error` returns such a code
+unchanged before checking anything else.
+"""
 check_error_failed_retcode(integrator) =
     integrator.sol.retcode ∉ (ReturnCode.Success, ReturnCode.Default)
 

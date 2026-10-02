@@ -24,7 +24,10 @@ DiffEqBase.apply_callback!
 DiffEqBase.apply_discrete_callback!
 DiffEqBase.calculate_residuals
 DiffEqBase.calculate_residuals!
+DiffEqBase.check_error_dt_below_time_eps
+DiffEqBase.check_error_failed_retcode
 DiffEqBase.check_prob_alg_pairing
+DiffEqBase.de_check_error
 DiffEqBase.default_factorize
 DiffEqBase.finalize!
 DiffEqBase.find_callback_time
@@ -41,6 +44,7 @@ DiffEqBase.max_vector_callback_length_int
 DiffEqBase.merge_problem_kwargs
 DiffEqBase.prepare_alg
 DiffEqBase.prob2dtmin
+DiffEqBase.staged_check_error
 DiffEqBase.stripunits
 DiffEqBase.timedepentdtmin
 ```
