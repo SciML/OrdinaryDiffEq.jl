@@ -14,9 +14,9 @@
     return r isa Number ? r : all(r)
 end
 
-# Prefer DiffEqBase.NAN_CHECK when a method exists (Number / AbstractArray /
-# ArrayPartition / …). Custom non-array states without a method keep master's
-# reduction-only path. (NAN_CHECK on Vector{<:Dual} only sees NaN values, not
+# Use DiffEqBase.NAN_CHECK when a method exists (Number / AbstractArray /
+# ArrayPartition / …). Custom non-array states without a method rely on the
+# reduction-only check. (NAN_CHECK on Vector{<:Dual} only sees NaN values, not
 # NaN Dual partials — that is DiffEqBase's behavior.)
 @inline function _ode_nan_check(x)
     return applicable(DiffEqBase.NAN_CHECK, x) ? DiffEqBase.NAN_CHECK(x) : false
@@ -226,9 +226,9 @@ end
         d₁ = internalnorm(tmp, t)
     end
 
-    # Prefer DiffEqBase.NAN_CHECK when a method exists; otherwise keep master's
-    # reduction-only path via isnan(d₁) so custom non-array states are not forced
-    # to add a new method. Complements the fast-math norm which can hide NaNs
+    # Use DiffEqBase.NAN_CHECK when a method exists; otherwise rely on the
+    # reduction-only check isnan(d₁) so custom non-array states need no new
+    # method. Complements the fast-math norm which can hide NaNs
     # from a subsequent scalar isnan check:
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
     has_nan = _ode_nan_check(f₀) | isnan(d₁)
@@ -336,7 +336,7 @@ end
             (ifelse(should_fallback, fallback_dt, result_dt), should_fallback)
         end
     end
-    # Match master's `_fallback_if_tiny` host warning (#4601).
+    # Host-only warning for the tiny-step fallback (#4601).
     if warn_initial_dt && !has_nan && should_fallback
         @SciMLMessage(
             lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",

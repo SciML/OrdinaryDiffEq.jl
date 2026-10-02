@@ -333,11 +333,10 @@ function modify_dt_for_tstops!(integrator)
         # distance_to_tstop to within rounding still triggers the tstop
         # branch.  Without this, accumulated `t + dt + dt + …` can drift
         # just past the last tstop and produce a spurious micro-step.
-        # Match DelayDiffEq's sync check and pre-Reactant Core: `100 * eps(mag)`,
-        # not `100 * eps(T) * mag`. The latter is larger near typical times and
-        # lets the tstop snap exceed DelayDiffEq's tolerance ("unexpected time
-        # discrepancy"). Use `eps` of the magnitude so Unitful times keep the
-        # oneunit scaling of the previous host-only formula.
+        # `100 * eps(mag)`, as in DelayDiffEq's sync check. `100 * eps(T) * mag`
+        # is larger near typical times and lets the tstop snap exceed
+        # DelayDiffEq's tolerance ("unexpected time discrepancy"). Taking `eps`
+        # of the unitless magnitude keeps the `oneunit` scaling for Unitful times.
         tstop_tol = zero(distance_to_tstop)
         if eltype(integrator.sol.prob.tspan) <: AbstractFloat
             ReactantCore.@trace track_numbers = false if isfinite(tdir_tstop) & isfinite(integrator.t)
