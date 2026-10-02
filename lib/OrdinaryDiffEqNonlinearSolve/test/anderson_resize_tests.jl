@@ -95,9 +95,12 @@ feq!(du, u, p, t) = (du .= 1 .- u; nothing)
         sol = solve(
             ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0),
             ImplicitEuler(nlsolve = NLAnderson());
-            callback = cb, tstops = [0.5], reltol = 1.0e-4, abstol = 1.0e-6,
+            callback = cb, tstops = [0.5],
+            dt = 0.01, adaptive = false,
+            reltol = 1.0e-4, abstol = 1.0e-6,
         )
         @test SciMLBase.successful_retcode(sol)
         @test length(sol.u[end]) == 15
+        @test 15 in length.(sol.u)
     end
 end
