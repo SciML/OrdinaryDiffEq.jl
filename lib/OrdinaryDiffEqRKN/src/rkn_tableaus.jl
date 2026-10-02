@@ -863,7 +863,7 @@ function IRKN3ConstantCache(T::Type, T2::Type)
     return IRKN3ConstantCache(bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2)
 end
 
-struct IRKN4ConstantCache{T, T2} <: NystromConstantCache
+mutable struct IRKN4ConstantCache{T, T2, rateType} <: NystromConstantCache
     bconst1::T
     bconst2::T
     c1::T2
@@ -877,9 +877,12 @@ struct IRKN4ConstantCache{T, T2} <: NystromConstantCache
     bbar1::T
     bbar2::T
     bbar3::T
+    k₂::rateType
+    k₃::rateType
+    k1cache::rateType
 end
 
-function IRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function IRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats}, rate_prototype = nothing)
     bconst1 = convert(T, 1.5)
     bconst2 = convert(T, -0.5)
     c1 = convert(T2, 0.25)
@@ -893,10 +896,13 @@ function IRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
     bbar1 = convert(T, -0.05555555555555555)
     bbar2 = convert(T, 0.2916666666666667)
     bbar3 = convert(T, 0.125)
-    return IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
+    return IRKN4ConstantCache(
+        bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3,
+        rate_prototype, rate_prototype, rate_prototype
+    )
 end
 
-function IRKN4ConstantCache(T::Type, T2::Type)
+function IRKN4ConstantCache(T::Type, T2::Type, rate_prototype = nothing)
     bconst1 = convert(T, 3 // 2)
     bconst2 = convert(T, -1 // 2)
     c1 = convert(T2, 1 // 4)
@@ -910,7 +916,10 @@ function IRKN4ConstantCache(T::Type, T2::Type)
     bbar1 = convert(T, -1 // 18)
     bbar2 = convert(T, 7 // 24)
     bbar3 = convert(T, 1 // 8)
-    return IRKN4ConstantCache(bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3)
+    return IRKN4ConstantCache(
+        bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3,
+        rate_prototype, rate_prototype, rate_prototype
+    )
 end
 
 

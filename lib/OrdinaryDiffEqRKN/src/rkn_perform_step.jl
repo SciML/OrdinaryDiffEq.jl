@@ -247,6 +247,64 @@ end
     end # end if
 end
 
+@muladd function perform_step!(integrator, cache::IRKN4ConstantCache, repeat_step = false)
+    (; t, dt, k, tprev, f, p) = integrator
+    duprev, uprev = integrator.uprev.x
+    duprev2, uprev2 = integrator.uprev2.x
+    (; bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3) = cache
+    k1cache = cache.k1cache
+    k₂ = cache.k₂
+    k₃ = cache.k₃
+    # if there's a discontinuity or the solver is in the first step
+    if integrator.iter < 2 && !integrator.derivative_discontinuity
+        perform_step!(integrator, Nystrom4VelocityIndependentConstantCache())
+        k = integrator.fsallast
+        k1_1 = k.x[1]
+        k1_2 = f.f1(duprev, uprev, p, t + c1 * dt)
+        cache.k1cache = ArrayPartition((k1_1, k1_2))
+        kdu = uprev + dt * (c1 * duprev + dt * a21 * k1_1)
+        k2_1 = f.f1(duprev, kdu, p, t + c1 * dt)
+        cache.k₂ = ArrayPartition((k2_1, k2_1))
+        kdu = uprev + dt * (c2 * duprev + dt * a32 * k1_2)
+        k3_1 = f.f1(duprev, kdu, p, t + c1 * dt)
+        cache.k₃ = ArrayPartition((k3_1, k3_1))
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+    else
+        ku = uprev + dt * (c1 * duprev + dt * a21 * k1cache.x[1])
+        k2_2 = f.f1(duprev, ku, p, t + c1 * dt)
+        ku = uprev + dt * (c2 * duprev + dt * a32 * k2_2)
+        k3_2 = f.f1(duprev, ku, p, t + c2 * dt)
+        du = duprev +
+            dt * (
+            b1 * k1cache.x[1] + bbar1 * k1cache.x[2] +
+                b2 * (k2_2 - k₂.x[1]) +
+                b3 * (k3_2 - k₃.x[1])
+        )
+        u = uprev + dt * bconst1 * duprev +
+            dt * (
+            bconst2 * duprev2 +
+                dt * (
+                bbar2 * (k2_2 - k₂.x[1]) +
+                    bbar3 * (k3_2 - k₃.x[1])
+            )
+        )
+        integrator.u = ArrayPartition((du, u))
+        integrator.fsallast = ArrayPartition(
+            (
+                f.f1(du, u, p, t + dt),
+                f.f2(du, u, p, t + dt),
+            )
+        )
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
+        integrator.stats.nf2 += 1
+        cache.k₂ = ArrayPartition((k2_2, k2_2))
+        cache.k₃ = ArrayPartition((k3_2, k3_2))
+        cache.k1cache = ArrayPartition((integrator.fsallast.x[1], k1cache.x[1]))
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+    end # end if
+end
+
 @muladd function perform_step!(integrator, cache::IRKN4Cache, repeat_step = false)
     (; t, dt, k, tprev, f, p) = integrator
     du, u = integrator.u.x

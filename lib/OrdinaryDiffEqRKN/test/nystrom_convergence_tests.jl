@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics, StaticArrays
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
@@ -172,9 +172,10 @@ sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = 
 @test_broken sim = test_convergence(dts, prob, IRKN3(), dense_errors = true)
 @test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1.0e-1
 @test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1.0e-1
-@test_broken sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
-#@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-#@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+let sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
+    @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
+    @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+end
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
@@ -483,10 +484,10 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
         @test SciMLBase.successful_retcode(solve(prob_iip, alg, dt = 0.05, adaptive = false))
     end
 
-    # Out-of-place scalar form. IRKN3/IRKN4 have a pre-existing out-of-place perform_step!
-    # bug (they are @test_broken out-of-place above), unrelated to the velocity probe.
+    # Out-of-place scalar form. IRKN3 still has a pre-existing out-of-place perform_step!
+    # bug (it is @test_broken out-of-place above), unrelated to the velocity probe.
     @testset "velocity-independent problem still solves (out-of-place): $(nameof(typeof(alg)))" for alg in
-        filter(a -> !(a isa IRKN3 || a isa IRKN4), collect(velocity_independent_algs))
+        filter(a -> !(a isa IRKN3), collect(velocity_independent_algs))
         prob_oop = DynamicalODEProblem(
             (v, u, p, t) -> -u, (v, u, p, t) -> v,
             1.0, 0.0, (0.0, 5.0)
@@ -558,4 +559,43 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
         u_exact = exp(-5.0 / 4) * (cos(w * 5.0) + (0.25 / w) * sin(w * 5.0))
         @test sol_iip.u[end].x[2][1] ≈ u_exact atol = 1.0e-2
     end
+end
+
+# Regression: IRKN4 out-of-place ConstantCache perform_step! (SVector Kepler).
+# Previously MethodError — only IRKN4Cache (in-place) was implemented.
+@testset "IRKN4 out-of-place SVector Kepler" begin
+    function kepler_acc!(ddu, du, u, p, t)
+        r2 = sum(u .* u)
+        r3 = r2 * sqrt(r2)
+        @. ddu = -u / r3
+        return nothing
+    end
+    function kepler_acc(du, u, p, t)
+        r2 = sum(u .* u)
+        r3 = r2 * sqrt(r2)
+        return @. -u / r3
+    end
+    function kepler_analytic(y0, p, t)
+        return ArrayPartition(SVector(-sin(t), cos(t)), SVector(cos(t), sin(t)))
+    end
+    ff_kepler = DynamicalODEFunction(
+        kepler_acc, (v, u, p, t) -> v; analytic = kepler_analytic
+    )
+    du0 = SVector(0.0, 1.0)
+    u0 = SVector(1.0, 0.0)
+    tspan = (0.0, 5.0)
+    dt = 0.01
+    prob_oop = SecondOrderODEProblem(ff_kepler, du0, u0, tspan)
+    prob_iip = SecondOrderODEProblem(kepler_acc!, Vector(du0), Vector(u0), tspan)
+
+    sol_oop = solve(prob_oop, IRKN4(), dt = dt, adaptive = false)
+    sol_iip = solve(prob_iip, IRKN4(), dt = dt, adaptive = false)
+    @test SciMLBase.successful_retcode(sol_oop)
+    @test SciMLBase.successful_retcode(sol_iip)
+    @test sol_oop.u[end].x[1] ≈ SVector(sol_iip.u[end].x[1]...) atol = 1.0e-12
+    @test sol_oop.u[end].x[2] ≈ SVector(sol_iip.u[end].x[2]...) atol = 1.0e-12
+
+    dts = 1 .// 2 .^ (9:-1:6)
+    sim = test_convergence(dts, prob_oop, IRKN4())
+    @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
 end
