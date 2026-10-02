@@ -194,13 +194,15 @@ function nlsolve!(
             # it convergence/divergence according to `ndz` directly.
             if abs(θ - one(θ)) <= eps_around_one(θ)
                 if ndz <= one(ndz)
-                    @SciMLMessage(
-                        lazy"Newton iteration converged at floating point limit: θ ≈ 1.0, ndz = $(ndz)",
-                        integrator.opts.verbose, :convergence_limit
-                    )
-                    nlsolver.status = Convergence
-                    nlsolver.nfails = 0
-                    break
+                    if !unconverged_nlsolvealg_stage(nlsolver, integrator)
+                        @SciMLMessage(
+                            lazy"Newton iteration converged at floating point limit: θ ≈ 1.0, ndz = $(ndz)",
+                            integrator.opts.verbose, :convergence_limit
+                        )
+                        nlsolver.status = Convergence
+                        nlsolver.nfails = 0
+                        break
+                    end
                 elseif check_div′
                     nlsolver.status = Divergence
                     nlsolver.nfails += 1
@@ -248,8 +250,11 @@ function nlsolve!(
                 )
             )
         )
-        if (iter == 1 && ndz < 1.0e-5) ||
-                (check_η_convergence && η >= zero(η) && η * ndz < κ)
+        if (
+                (iter == 1 && ndz < 1.0e-5) ||
+                    (check_η_convergence && η >= zero(η) && η * ndz < κ)
+            ) &&
+                !unconverged_nlsolvealg_stage(nlsolver, integrator)
             @SciMLMessage(
                 lazy"Newton iteration converged in $(iter) iterations: η = $(η), ndz = $(ndz)",
                 integrator.opts.verbose, :newton_iterations
