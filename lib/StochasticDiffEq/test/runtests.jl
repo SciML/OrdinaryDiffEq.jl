@@ -265,15 +265,10 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
     end
 
-    # Run QA last. `activate_qa_env()` leaves the QA environment active, and
-    # `JET.test_package` re-evaluates source into a virtual module, so functional
-    # groups above must resolve before this block (same ordering as
-    # OrdinaryDiffEqCore / StochasticDiffEq* siblings).
+    # QA last: activate_qa_env() switches the active project; JET re-evaluates src.
     if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
         activate_qa_env()
-        # Plain @testset, not @safetestset: after the env switch SafeTestsets is
-        # unreachable inside the @eval'd testset module (same workaround as
-        # DiffEqBase / DiffEqDevTools).
+        # Plain @testset: SafeTestsets is unreachable after the env switch.
         @time @testset "QA (Aqua, ExplicitImports, JET)" begin
             include("qa/qa.jl")
         end

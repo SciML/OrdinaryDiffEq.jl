@@ -68,8 +68,6 @@ end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractSDEProblem, ::Nothing) = true
 
-# Dispatch for __init with Nothing algorithm - use default.
-# Owner path is SciMLBase (same as OrdinaryDiffEqDefault / StochasticDiffEqCore).
 function SciMLBase.__init(
         prob::SciMLBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
     )
@@ -77,7 +75,6 @@ function SciMLBase.__init(
     return SciMLBase.__init(prob, alg, args...; kwargs...)
 end
 
-# Dispatch for __solve with Nothing algorithm - use default
 function SciMLBase.__solve(
         prob::SciMLBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
     )

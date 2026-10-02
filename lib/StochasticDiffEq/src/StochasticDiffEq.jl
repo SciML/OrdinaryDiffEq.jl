@@ -14,20 +14,13 @@ using Reexport: @reexport
 @reexport using StochasticDiffEqIIF
 @reexport using StochasticDiffEqLeaping
 @reexport using DiffEqNoiseProcess
-
-# Multi-@reexport of DiffEqBase and solver sublibraries can leave these DiffEqBase
-# exports in `names(StochasticDiffEq)` without a binding (`isdefined == false`).
-# Re-bind them from the owner so Aqua's undefined-exports check passes.
-using DiffEqBase: du_cache, u_cache, user_cache
-
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 import SciMLBase
 import PrecompileTools
 import Preferences
 
-# AutoSOSRI2/AutoSOSRA2 reference concrete types from multiple solver subpackages
-# (SOSRI2 from HighOrder, implicit algs from Implicit), so they live here in the umbrella.
+# Cross-subpackage composites (SOSRI2 from HighOrder + stiff algs from Implicit).
 
 """
     AutoSOSRI2(alg; kwargs...)
@@ -51,10 +44,8 @@ include("precompilation.jl")
 export AutoSOSRI2, AutoSOSRA2
 export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
-# Re-export general functions
 export solve, init, solve!, step!
 
-# Misc Tools (tableau constructors from HighOrder)
 export checkSRIOrder, checkSRAOrder, checkRIOrder, checkRSOrder,
     checkNONOrder,
     constructSRIW1, constructSRA1,
