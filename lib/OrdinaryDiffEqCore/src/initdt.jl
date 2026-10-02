@@ -268,8 +268,8 @@ end
         tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
             (dt₀ < 10 * _dt_eps_threshold(dt₀))
 
-        # Return `(dt, should_fallback)` so the host path can emit master's
-        # `:dt_epsilon` message outside `@trace` (Reactant must not see it).
+        # Return `(dt, should_fallback)` so the host path can emit the
+        # `:dt_epsilon` message outside `@trace`.
         result_dt, should_fallback = let result_dt, tmp = tmp, tiny_first = tiny_first
             dt₀_tdir = tdir * dt₀
 
@@ -523,7 +523,6 @@ end
                 tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
             end
         end
-        # Master's #4601 tiny-dt fallback is IIP-only; keep OOP host semantics.
     end
     return result_dt
 end

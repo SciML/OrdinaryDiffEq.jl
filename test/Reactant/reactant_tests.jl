@@ -88,3 +88,31 @@ end
     nan_p = Reactant.to_rarray(Float32[NaN])
     @test Reactant.@jit(first_dt(u0, nan_p)) == first_dt(Float32[1, 2], Float32[NaN])
 end
+
+unstable_check_solver = CompiledODESolve(
+    f, Tsit5(), (; adaptive = false, dt = 0.1f0, unstable_check = (dt, u, p, t) -> false)
+)
+@test_throws ArgumentError Reactant.@jit unstable_check_solver(u0, p0)
+
+@testset "Compiled failure retcodes match host" for (name, kwargs) in (
+        ("fixed Tsit5", (; adaptive = false, dt = 0.1f0)),
+        ("adaptive Tsit5", (;)),
+    )
+    solver = CompiledODESolve(f, Tsit5(), kwargs)
+    u = Float32[1]
+    compiled = Reactant.compile(
+        solver, (Reactant.to_rarray(u), Reactant.to_rarray(Float32[-1]))
+    )
+    for p in (Float32[-1], Float32[NaN], Float32[1.0f30])
+        host = solver(u, p)
+        traced = compiled(Reactant.to_rarray(u), Reactant.to_rarray(p))
+        @test traced.retcode == host.retcode
+        if p == Float32[-1]
+            @test host.retcode == ReturnCode.Success
+            @test Array(traced.u[end]) ≈ Float32[0.3678795] rtol = 5.0f-4
+        else
+            @test !SciMLBase.successful_retcode(host)
+            @test !Bool(SciMLBase.successful_retcode(traced))
+        end
+    end
+end
