@@ -202,7 +202,8 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         nls.γ = QΔ[m, m]
         nls.c = nodes[m]
         znode = nlsolve!(nls, integrator, cache, repeat_step)
-        cache.failed[m] = nlsolvefail(nls)
+        cache.failed[m] = nlsolvefail(nls) &&
+            !sdc_sweep_converged(integrator, znode, zk[m], sweep)
         @.. broadcast = false zk1[m] = znode
         @.. broadcast = false ubuf[m] = tmpm + QΔ[m, m] * znode
     end
@@ -212,6 +213,14 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         @.. broadcast = false zEk1[m] = dt * k2[m]
     end
     return nothing
+end
+
+function sdc_sweep_converged(integrator, znode, zprev, sweep)
+    sweep == 1 && return false
+    (; abstol, reltol, internalnorm) = integrator.opts
+    (; uprev, t) = integrator
+    atmp = calculate_residuals(znode .- zprev, uprev, uprev, abstol, reltol, internalnorm, t)
+    return internalnorm(atmp, t) <= 1
 end
 
 @muladd function perform_step!(integrator, cache::SDCCache, repeat_step = false)
@@ -349,7 +358,8 @@ end
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
-                nlsolvefail(nls) && return
+                nlsolvefail(nls) &&
+                    !sdc_sweep_converged(integrator, znode, zk[m], sweep) && return
                 zk1[m] = znode
                 ulast = @.. broadcast = false tmp + QΔ[m, m] * znode
             end
