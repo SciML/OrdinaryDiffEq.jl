@@ -6,6 +6,7 @@ using Test
 fdecay!(du, u, p, t) = (du .= -p[1] .* u; nothing)
 feq!(du, u, p, t) = (du .= 1 .- u; nothing)
 
+# Until SciML/OrdinaryDiffEq.jl#4722, callback grow must init new uprev/uprev2 from u.
 @testset "NLAnderson resize" begin
     @testset "grow/shrink matches NLNewton" begin
         prob = ODEProblem(feq!, fill(0.2, 3), (0.0, 2.0))
@@ -19,6 +20,8 @@ feq!(du, u, p, t) = (du .= 1 .- u; nothing)
                 if phase[] == 0
                     resize!(integ, 5)
                     integ.u[4:5] .= 0.5
+                    integ.uprev[4:5] .= integ.u[4:5]
+                    integ.uprev2[4:5] .= integ.u[4:5]
                     phase[] = 1
                 else
                     resize!(integ, 3)
@@ -87,6 +90,8 @@ feq!(du, u, p, t) = (du .= 1 .- u; nothing)
             function (integ)
                 resize!(integ, 15)
                 integ.u[11:15] .= 1.0
+                integ.uprev[11:15] .= integ.u[11:15]
+                integ.uprev2[11:15] .= integ.u[11:15]
                 grew[] = true
                 u_modified!(integ, true)
                 return nothing
