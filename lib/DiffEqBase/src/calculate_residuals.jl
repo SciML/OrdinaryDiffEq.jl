@@ -124,6 +124,21 @@ end
     return nothing
 end
 
+@inline function calculate_residuals!(
+        out::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array}}},
+        ũ::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array}}},
+        u₀::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array}}},
+        u₁::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array}}},
+        α, ρ, internalnorm, t, thread::Union{Serial, Threaded} = Serial()
+    )
+    @inbounds for i in eachindex(out.x)
+        calculate_residuals!(
+            out.x[i], ũ.x[i], u₀.x[i], u₁.x[i], α, ρ, internalnorm, t, thread
+        )
+    end
+    return nothing
+end
+
 """
     calculate_residuals!(out, u₀, u₁, α, ρ, thread = Serial())
 
