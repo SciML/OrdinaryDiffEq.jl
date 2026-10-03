@@ -60,12 +60,16 @@ sol = solve(prob, Feagin14(), dt = dts[1])
         mul!(du, A, u)
         return nothing
     end
-    u0 = JLArray([1.0, 0.0, 0.0])
+    initial = [1.0, 0.0, 0.0]
+    u0 = JLArray(initial)
     prob_jl = ODEProblem(linear_iip!, u0, (0.0, 1.0), A)
+    reference = exp(Ahost) * initial
     JLArrays.allowscalar(false)
-    for alg in (Feagin10(), Feagin12(), Feagin14())
-        sol = solve(prob_jl, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+    for alg in (Feagin10(), Feagin12(), Feagin14()), adaptive in (true, false)
+        sol = solve(prob_jl, alg; adaptive, dt = 0.01, abstol = 1.0e-8, reltol = 1.0e-8)
         @test successful_retcode(sol)
         @test eltype(sol.u[end]) === Float64
+        @test sol.u[end] isa JLArray
+        @test Array(sol.u[end]) ≈ reference atol = 1.0e-7 rtol = 1.0e-7
     end
 end
