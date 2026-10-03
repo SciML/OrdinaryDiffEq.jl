@@ -852,6 +852,7 @@ Base.@constprop :aggressive function _ode_init(
     just_hit_tstop = false
     next_step_tstop = false
     tstop_target = zero(t)
+    dt_before_tstop = tType(_dt)
     isout = false
     accept_step = false
     force_stepfail = false
@@ -943,7 +944,7 @@ Base.@constprop :aggressive function _ode_init(
         callback_cache,
         kshortsize, force_stepfail,
         last_stepfail,
-        just_hit_tstop, next_step_tstop, tstop_target, do_error_check,
+        just_hit_tstop, next_step_tstop, tstop_target, dt_before_tstop, do_error_check,
         event_last_time,
         vector_event_last_time,
         last_event_error, accept_step,
