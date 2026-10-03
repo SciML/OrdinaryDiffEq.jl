@@ -184,6 +184,9 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
     - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure
             Note that if the linear operator/Jacobian is hermitian,
             then the Lanczos algorithm will always be used and the IOP setting is ignored.
+    - For time- or parameter-dependent operators, define `update_func!` so the operator is
+      non-constant and is recomputed each step. Mutating a constant operator between plain
+      `step!` calls without a callback is unsupported.
     """,
     """
     krylov = :off,
