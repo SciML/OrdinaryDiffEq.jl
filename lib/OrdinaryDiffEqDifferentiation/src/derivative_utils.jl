@@ -1194,6 +1194,9 @@ function update_W!(
         else
             new_jac, new_W = newJW
         end
+        if integrator isa SciMLBase.AbstractDDEIntegrator && new_W
+            new_jac = true
+        end
         lcache = nlsolver.cache
         if isdae
             if new_jac
