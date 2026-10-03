@@ -424,6 +424,31 @@ function stage_unsolved(nlcache, γΔt)
     return resid > roundoff_level(typeof(resid)) * scale
 end
 
+# Displacement-only outer tests are a Newton inference. Quasi-Newton inner steps can hold
+# `ndz` nearly constant (θ ≈ 1, ndz ≤ 1) with a residual that still misses the stage
+# equation; accepting that iterate as Convergence leaves the stage unsolved.
+# Newton caches defer the terminal residual evaluation; do not force it here — the
+# displacement is then a true Newton correction and the stats tests require the deferral.
+# `stage_unsolved` is a roundoff floor; the integrator's `abstol`/`reltol` are the stage
+# tolerance the `step!` path is supposed to meet.
+unconverged_nlsolvealg_stage(::AbstractNLSolver, ::SciMLBase.DEIntegrator) = false
+function unconverged_nlsolvealg_stage(
+        nlsolver::NLSolver{<:NonlinearSolveAlg}, integrator::SciMLBase.DEIntegrator
+    )
+    nlcache = nlsolver.cache.cache
+    nlcache isa NonlinearSolveNoInitCache && return false
+    defers_residual(nlcache) && return false
+    sync_inner_residual!(nlcache)
+    γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+    fu = get_fu(nlcache)
+    u = get_u(nlcache)
+    resid = abs(γΔt) * maxabs(fu)
+    scale = max(maxabs_axpy(γΔt, u, fu), maxabs(u))
+    atol = maxabs(integrator.opts.abstol)
+    rtol = maxabs(integrator.opts.reltol)
+    return resid > max(roundoff_level(typeof(resid)) * scale, atol + rtol * scale)
+end
+
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small
 # relative to the terms it is the difference of, are both indistinguishable from zero in the
 # arithmetic that produced them.
