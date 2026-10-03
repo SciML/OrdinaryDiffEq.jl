@@ -1,5 +1,6 @@
 using OrdinaryDiffEqExplicitRK
-using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince
+using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince,
+    ExplicitRKConstantCache
 using OrdinaryDiffEqCore
 using DiffEqBase
 using Test
@@ -39,6 +40,24 @@ prob_ode_2Dlinear = ODEProblem(
         @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
+end
+
+@testset "Float32 in-place ExplicitRK" begin
+    function f32!(du, u, p, t)
+        du[1] = 1.01f0 * u[1]
+        return nothing
+    end
+    prob = ODEProblem(f32!, Float32[0.5], (0.0f0, 1.0f0))
+    sol = solve(prob, ExplicitRK())
+    @test SciMLBase.successful_retcode(sol)
+    @test eltype(sol.u[end]) === Float32
+    @test eltype(sol.t) === Float32
+end
+
+@testset "ExplicitRKConstantCache c eltype inference" begin
+    tab = constructDormandPrince(BigFloat)
+    cache = @inferred ExplicitRKConstantCache(tab, [1.0], Float64)
+    @test eltype(cache.c) === BigFloat
 end
 
 # ============================================================================
