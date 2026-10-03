@@ -359,3 +359,35 @@ end
         @test maximum(abs(u[1] - exp(-t)) for (t, u) in zip(sol.t, sol.u)) < 100 * reltol
     end
 end
+
+@testset "Non-diagonal mass matrices keep the full error test at tstops" begin
+    # Smooth DAEs whose mass matrix does not identify algebraic variables by its
+    # diagonal. Each has exact solution components built from exp(-t).
+    problems = (
+        # equation 2 is algebraic (0 = u1), variable 2 is differential (u2' = -u2)
+        permuted = (
+            [0.0 1.0; 0.0 0.0], (u, t) -> [-u[2], u[1]], [0.0, 1.0],
+            (t, u) -> abs(u[2] - exp(-t)),
+        ),
+        # coupled differential block, algebraic u3 = u1
+        coupled = (
+            [1.0 0.5 0.0; 0.5 1.0 0.0; 0.0 0.0 0.0],
+            (u, t) -> [-(u[1] + 0.5u[2]), -(0.5u[1] + u[2]), u[3] - u[1]],
+            [1.0, 2.0, 1.0], (t, u) -> max(abs(u[1] - exp(-t)), abs(u[2] - 2exp(-t))),
+        ),
+        # dense singular: (a + b)' = -(a + b) with the constraint a = b
+        dense = (
+            [1.0 1.0; 1.0 1.0], (u, t) -> [-(u[1] + u[2]), -(u[1] + u[2]) + (u[1] - u[2])],
+            [1.0, 1.0], (t, u) -> max(abs(u[1] - exp(-t)), abs(u[2] - exp(-t))),
+        ),
+    )
+    reltol, abstol = 1.0e-6, 1.0e-8
+    for (M, rhs, u0, err) in problems, iip in (true, false), alg in (FBDF(), QNDF())
+        f! = (du, u, p, t) -> (du .= rhs(u, t); nothing)
+        f = (u, p, t) -> rhs(u, t)
+        prob = ODEProblem(ODEFunction(iip ? f! : f; mass_matrix = M), u0, (0.0, 1.0))
+        sol = solve(prob, alg; dt = 0.1, tstops = [0.1, 0.5], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(err(t, u) for (t, u) in zip(sol.t, sol.u)) < 100 * reltol
+    end
+end

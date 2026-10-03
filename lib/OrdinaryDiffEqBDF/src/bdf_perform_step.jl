@@ -883,7 +883,7 @@ function perform_step!(
             atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
         end
         OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
-        rows = _algebraic_jump_at_tstop(integrator, mass_matrix, u)
+        rows = _algebraic_jump_at_tstop(integrator, u)
         cache.restart_at_tstop = rows !== nothing
         if rows !== nothing
             OrdinaryDiffEqCore.set_EEst!(
@@ -1034,7 +1034,7 @@ function perform_step!(
             calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
         end
         OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
-        rows = _algebraic_jump_at_tstop(integrator, mass_matrix, u)
+        rows = _algebraic_jump_at_tstop(integrator, u)
         cache.restart_at_tstop = rows !== nothing
         if rows !== nothing
             OrdinaryDiffEqCore.set_EEst!(
@@ -1352,7 +1352,7 @@ function perform_step!(
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-        rows = _algebraic_jump_at_tstop(integrator, mass_matrix, u)
+        rows = _algebraic_jump_at_tstop(integrator, u)
         cache.restart_at_tstop = rows !== nothing
         if rows !== nothing
             OrdinaryDiffEqCore.set_EEst!(
@@ -1587,7 +1587,7 @@ function perform_step!(
             internalnorm, t
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
-        rows = _algebraic_jump_at_tstop(integrator, mass_matrix, u)
+        rows = _algebraic_jump_at_tstop(integrator, u)
         cache.restart_at_tstop = rows !== nothing
         if rows !== nothing
             OrdinaryDiffEqCore.set_EEst!(
