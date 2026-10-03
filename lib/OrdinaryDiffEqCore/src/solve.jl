@@ -1088,7 +1088,7 @@ function handle_starting_time_discontinuity!(integrator)
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
-    @inbounds while !isempty(integrator.opts.tstops)
+    while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
         stop = _maybe_traced(false)
         errored = _maybe_traced(false)
