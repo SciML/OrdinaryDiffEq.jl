@@ -30,7 +30,7 @@ import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport
 @reexport using SciMLBase
-using SparseArrays: AbstractSparseMatrix
+using SparseArrays: issparse
 using SciMLBase: SciMLBase, SplitFunction
 using SciMLOperators: SciMLOperators, isconstant
 

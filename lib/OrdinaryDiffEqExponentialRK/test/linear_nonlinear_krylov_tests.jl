@@ -293,6 +293,23 @@ end
 end
 
 @testset "LawsonEuler krylov=false rejects sparse and BigFloat operators" begin
+    function _krylov_error(prob; dt)
+        try
+            solve(prob, LawsonEuler(krylov = false); dt)
+            return nothing
+        catch e
+            return e
+        end
+    end
+    function _test_krylov_error(prob, reason; dt)
+        err = _krylov_error(prob; dt)
+        @test err isa ArgumentError
+        if err isa ArgumentError
+            @test occursin(reason, err.msg)
+            @test occursin("krylov = true", err.msg)
+        end
+    end
+
     N = 8
     Asp = spdiagm(-1 => ones(N - 1), 0 => -2 * ones(N), 1 => ones(N - 1))
     g! = (du, u, p, t) -> (@. du = -u^3; nothing)
@@ -301,14 +318,30 @@ end
     sp_ip = SplitODEProblem(MatrixOperator(Asp), g!, copy(u0), (0.0, 0.5))
     sp_oop = SplitODEProblem(MatrixOperator(Asp), g, copy(u0), (0.0, 0.5))
 
-    @test_throws ArgumentError solve(sp_ip, LawsonEuler(krylov = false); dt = 0.01)
-    @test_throws ArgumentError solve(sp_oop, LawsonEuler(krylov = false); dt = 0.01)
+    _test_krylov_error(sp_ip, "sparse"; dt = 0.01)
+    _test_krylov_error(sp_oop, "sparse"; dt = 0.01)
     @test successful_retcode(
         solve(sp_ip, LawsonEuler(krylov = true, m = N); dt = 0.01)
     )
     @test successful_retcode(
         solve(sp_oop, LawsonEuler(krylov = true, m = N); dt = 0.01)
     )
+
+    t_ip = SplitODEProblem(MatrixOperator(transpose(Asp)), g!, copy(u0), (0.0, 0.5))
+    t_oop = SplitODEProblem(MatrixOperator(transpose(Asp)), g, copy(u0), (0.0, 0.5))
+    _test_krylov_error(t_ip, "sparse"; dt = 0.01)
+    _test_krylov_error(t_oop, "sparse"; dt = 0.01)
+    @test successful_retcode(
+        solve(t_ip, LawsonEuler(krylov = true, m = N); dt = 0.01)
+    )
+    @test successful_retcode(
+        solve(t_oop, LawsonEuler(krylov = true, m = N); dt = 0.01)
+    )
+
+    s_ip = SplitODEProblem(MatrixOperator(Symmetric(Asp)), g!, copy(u0), (0.0, 0.5))
+    s_oop = SplitODEProblem(MatrixOperator(Symmetric(Asp)), g, copy(u0), (0.0, 0.5))
+    _test_krylov_error(s_ip, "sparse"; dt = 0.01)
+    _test_krylov_error(s_oop, "sparse"; dt = 0.01)
 
     T = BigFloat
     Abig = Matrix{T}(T[-1 0; 0 -2])
@@ -317,12 +350,35 @@ end
     bf_ip = SplitODEProblem(MatrixOperator(Abig), zb!, T[1, 1], (T(0), T(1)))
     bf_oop = SplitODEProblem(MatrixOperator(Abig), zb, T[1, 1], (T(0), T(1)))
 
-    @test_throws ArgumentError solve(bf_ip, LawsonEuler(krylov = false); dt = T(0.1))
-    @test_throws ArgumentError solve(bf_oop, LawsonEuler(krylov = false); dt = T(0.1))
+    _test_krylov_error(bf_ip, "BigFloat"; dt = T(0.1))
+    _test_krylov_error(bf_oop, "BigFloat"; dt = T(0.1))
     @test successful_retcode(
         solve(bf_ip, LawsonEuler(krylov = true, m = 2); dt = T(0.1))
     )
     @test successful_retcode(
         solve(bf_oop, LawsonEuler(krylov = true, m = 2); dt = T(0.1))
     )
+
+    Abig_c = Matrix{Complex{T}}([-1 0; 0 -2])
+    zc! = (du, u, p, t) -> (du .= zero(eltype(du)); nothing)
+    zc = (u, p, t) -> zero(u)
+    bc_ip = SplitODEProblem(MatrixOperator(Abig_c), zc!, Complex{T}[1, 1], (0.0, 1.0))
+    bc_oop = SplitODEProblem(MatrixOperator(Abig_c), zc, Complex{T}[1, 1], (0.0, 1.0))
+    _test_krylov_error(bc_ip, "Complex{BigFloat}"; dt = 0.1)
+    _test_krylov_error(bc_oop, "Complex{BigFloat}"; dt = 0.1)
+
+    Arat = Matrix{Rational{BigInt}}([-1 0; 0 -2])
+    brat_ip = SplitODEProblem(MatrixOperator(Arat), g!, copy(u0), (0.0, 0.5))
+    brat_oop = SplitODEProblem(MatrixOperator(Arat), g, copy(u0), (0.0, 0.5))
+    _test_krylov_error(brat_ip, "BigFloat"; dt = 0.01)
+    _test_krylov_error(brat_oop, "BigFloat"; dt = 0.01)
+
+    for Td in (Float64, BigFloat), inplace in (false, true)
+        Adiag = MatrixOperator(Diagonal(Td[-1, -2]))
+        probdiag = inplace ? SplitODEProblem(Adiag, zb!, T[1, 1], (T(0), T(1))) :
+            SplitODEProblem(Adiag, zb, T[1, 1], (T(0), T(1)))
+        @test successful_retcode(
+            solve(probdiag, LawsonEuler(krylov = false); dt = T(0.1))
+        )
+    end
 end
