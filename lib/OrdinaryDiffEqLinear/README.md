@@ -15,6 +15,8 @@ While completely independent and usable on its own, users wanting the full ODE s
 - `LinearExponential`
 - `MagnusLeapfrog`
 - `LieEuler`
+- `CFLie3`
+- `CFLie4`
 - `CayleyEuler`
 - `MagnusGauss4`
 - `MagnusGL6`
