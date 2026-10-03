@@ -10,9 +10,15 @@
     return map(ts -> TaylorDiff.get_coefficient(ts, i), arr)
 end
 
-@inline make_taylor(all::Vararg{X, P}) where {P, X <: AbstractArray} = TaylorArray(
-    Base.first(all), Base.tail(all)
-)
+@inline function make_taylor(all::Vararg{X, P}) where {P, X <: AbstractArray}
+    x = first(all)
+    if !isempty(propertynames(x)) || axes(x) != axes(parent(x))
+        return map(all...) do xs...
+            TaylorScalar{P - 1}(xs...)
+        end
+    end
+    return TaylorArray(x, Base.tail(all))
+end
 @inline make_taylor(all::Vararg{X, P}) where {P, X} = TaylorScalar(all)
 
 function initialize!(integrator, cache::ExplicitTaylor2ConstantCache)
@@ -60,6 +66,11 @@ end
     t1 = TaylorScalar{1}(t, one(t))
     out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
+    if !(out1 isa TaylorArray)
+        for i in eachindex(parent(k2))
+            parent(k2)[i] = parent(out1)[i].partials[1]
+        end
+    end
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
     return nothing
