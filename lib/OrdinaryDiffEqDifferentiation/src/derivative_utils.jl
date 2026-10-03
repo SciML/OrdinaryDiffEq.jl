@@ -541,6 +541,14 @@ end
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     integrator.iter <= 1 && return true, true # at least one JW eval at the start
     repeat_step && return false, false
+    # At tiny steps, a steep state transition can invalidate J between W rebuilds.
+    if isnewton(nlsolver) && alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
+            SciMLBase.alg_order(alg) > 1 &&
+            integrator.t isa AbstractFloat &&
+            abs(integrator.dt) <= sqrt(eps(integrator.t)) *
+            max(abs(integrator.t), one(integrator.t))
+        return true, true
+    end
     islin, _ = islinearfunction(integrator)
     if islin
         # J never changes for a linear function, so W = J - M/(γdt) has to track γdt and
@@ -959,13 +967,14 @@ function calc_W!(
 end
 
 @inline function calc_J_for_W(integrator, cache, next_step, new_jac)
+    # `nothing` computes without caching; `true` caches if mutable; `false` reuses J.
     new_jac === false && return cache.J
     J = calc_J(integrator, cache, next_step)
-    new_jac === true && (cache.J = J)
+    new_jac === true && ismutabletype(typeof(cache)) && (cache.J = J)
     return J
 end
 
-@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step, new_jac = nothing)
+@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step; new_jac = nothing)
     (; t, uprev, p, f) = integrator
 
     next_step = is_always_new(nlsolver)
@@ -1241,7 +1250,7 @@ function update_W!(
             end
         else
             if new_W
-                lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step, new_jac)
+                lcache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step; new_jac)
             end
         end
         new_jac && (lcache.J_t = integrator.t)
@@ -1378,10 +1387,10 @@ function build_J_W(
             deepcopy(f.jac_prototype)
         end
         W = if J isa StaticMatrix
-            # callinv = false skips inverting the seed-valued matrix while
-            # producing the same concrete type as calc_W's
-            # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
-            StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
+            W0 = J - f.mass_matrix * invdtgamma_prototype
+            !IIP && alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
+                SciMLBase.alg_order(alg) == 1 ?
+                DiffEqBase.default_factorize(W0) : StaticWOperator(W0, false)
         else
             jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
@@ -1423,7 +1432,9 @@ function build_J_W(
         elseif IIP
             similar(J)
         elseif J isa StaticMatrix
-            StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
+            W0 = J - f.mass_matrix * invdtgamma_prototype
+            alg isa OrdinaryDiffEqCore.NewtonAlgorithm && SciMLBase.alg_order(alg) == 1 ?
+                DiffEqBase.default_factorize(W0) : StaticWOperator(W0, false)
         elseif f.mass_matrix isa MatrixOperator
             WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
         else
