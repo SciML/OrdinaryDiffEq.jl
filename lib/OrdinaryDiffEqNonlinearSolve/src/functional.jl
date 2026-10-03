@@ -255,23 +255,16 @@ function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
     resize!(nlcache.dzold, i)
     resize!(z₊old, i)
 
-    # update history of Anderson cache
-    max_history_old = length(Δz₊s)
     max_history = min(nlalg.max_history, nlalg.max_iter, i)
-
     resize!(nlcache.γs, max_history)
     resize!(nlcache.Δz₊s, max_history)
-
-    if max_history != max_history_old
+    if size(nlcache.Q, 1) != i || size(nlcache.Q, 2) != max_history
+        for j in 1:max_history
+            Δz₊s[j] = zero(z₊old)
+        end
         nlcache.Q = typeof(nlcache.Q)(undef, i, max_history)
         nlcache.R = typeof(nlcache.R)(undef, max_history, max_history)
-    end
-
-    max_history = length(Δz₊s)
-    if max_history > max_history_old
-        for i in (max_history_old + 1):max_history
-            Δz₊s[i] = zero(z₊old)
-        end
+        nlcache.history = 0
     end
 
     return nothing
