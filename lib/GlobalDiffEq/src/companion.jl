@@ -7,6 +7,16 @@
 
 _positive_finite_real(value) = value isa Real && isfinite(value) && value > 0
 
+# True when kwargs carry a real callback. An empty CallbackSet counts as none.
+function _has_callbacks(kwargs)
+    cb = get(kwargs, :callback, nothing)
+    cb === nothing && return false
+    if cb isa SciMLBase.CallbackSet
+        return !(isempty(cb.continuous_callbacks) && isempty(cb.discrete_callbacks))
+    end
+    return true
+end
+
 function _validate_tolerances(abstol, reltol, name)
     abstol isa Real && isfinite(abstol) && abstol >= 0 ||
         throw(ArgumentError("$(name)_abstol must be a nonnegative finite real number"))
@@ -26,7 +36,7 @@ function _validate_estimation_problem(prob, name)
     prob.f.mass_matrix == LinearAlgebra.I ||
         throw(ArgumentError("$name currently requires the standard mass matrix"))
     problem_kwargs = values(prob.kwargs)
-    if haskey(problem_kwargs, :callback) && problem_kwargs.callback !== nothing
+    if _has_callbacks(problem_kwargs)
         throw(ArgumentError("$name does not currently support callbacks"))
     end
     return nothing
@@ -264,7 +274,7 @@ function _companion_error_estimate(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    haskey(kwargs, :callback) &&
+    _has_callbacks(kwargs) &&
         throw(ArgumentError("$name does not currently support callbacks"))
     _validate_estimation_problem(prob, name)
     solve_kwargs = merge((; kwargs...), _DENSE_SOLVE_KWARGS)
@@ -285,7 +295,7 @@ function _companion_error_estimate_streaming(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    haskey(kwargs, :callback) &&
+    _has_callbacks(kwargs) &&
         throw(ArgumentError("$name does not currently support callbacks"))
     _validate_estimation_problem(prob, name)
     integrator = SciMLBase.init(
