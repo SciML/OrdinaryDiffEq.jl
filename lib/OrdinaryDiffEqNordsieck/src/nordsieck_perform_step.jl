@@ -23,8 +23,6 @@ end
     # Nordsieck form needs to build the history vector
     if cache.order == 1
         # Start the Nordsieck vector in one shot!
-        fill!(l, 0)
-        fill!(m, 0)
         perform_step!(integrator, tsit5tab, repeat_step)
         cache.order = 4
         z[1] = integrator.uprev
@@ -122,10 +120,12 @@ end
     # Nordsieck form needs to build the history vector
     if cache.order == 1
         ## Start the Nordsieck vector in two shots!
-        fill!(l, 0)
-        fill!(m, 0)
-        f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-        increment_nf!(integrator.stats, 1)
+        if cache.resize_restart
+            copyto!(integrator.uprev, integrator.u)
+            f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+            increment_nf!(integrator.stats, 1)
+            cache.resize_restart = false
+        end
         perform_step!(integrator, tsit5cache, repeat_step)
         copyto!(tmp, integrator.u)
         cache.order = 4
@@ -288,7 +288,11 @@ end
     (; t, dt, uprev, u, f, p, uprev2, differential_vars) = integrator
     (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
     # handle callbacks, rewind back to order one.
-    if integrator.derivative_discontinuity || integrator.iter == 1
+    if integrator.derivative_discontinuity || integrator.iter == 1 || cache.resize_restart
+        if cache.resize_restart
+            copyto!(integrator.uprev, integrator.u)
+            cache.resize_restart = false
+        end
         cache.order = 1
         @.. broadcast = false z[1] = integrator.uprev
         f(z[2], uprev, p, t)

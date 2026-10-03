@@ -44,10 +44,10 @@ end
     end
 end
 
-# Coupled linear resize: AN5Cache had no `full_cache`, so `resize!(integrator, n)`
-# threw MethodError. History after a resize is invalid, so the method restarts at
-# order 1. JVODE is omitted: its `post_newton_controller!` 2-arg/3-arg recursion
-# (StackOverflowError) is a separate bug, not this cache-resize path.
+# Coupled linear resize: grow 2→3 and shrink back, restarting Nordsieck
+# history at order 1. New `uprev` slots must not be consumed uninitialized
+# (#4722); Core copies after an accepted step, and a resize before the first
+# step is synchronized on the next restart.
 const A_resize = [-1.0 0.35 0.1; 0.2 -1.4 0.25; 0.15 0.3 -1.2]
 const U0_resize = [1.0, -0.5]
 const UNEW_resize = 0.3
@@ -65,7 +65,11 @@ function exact_resize(t)
     return exp(A_resize[1:2, 1:2] * (t - TS_resize)) * u3[1:2]
 end
 
-@testset "AN5 state resizing" begin
+resize_cases = (
+    (AN5(), 1.0e-10, 1.0e-12, 1.0e-7),
+    (JVODE_Adams(), 1.0e-4, 1.0e-7, 5.0e-3),
+)
+@testset "Nordsieck state resizing ($alg)" for (alg, reltol, abstol, check_rtol) in resize_cases
     grew = Ref(false)
     shrank = Ref(false)
     restart_orders = Int[]
@@ -73,9 +77,6 @@ end
         n = grew[] ? 2 : 3
         resize!(integrator, n)
         n == 3 && (integrator.u[3] = UNEW_resize)
-        # New `uprev` slots are uninitialized (#4722); a Nordsieck restart
-        # reads `uprev` as the step start, so it must match the resized `u`.
-        copyto!(integrator.uprev, integrator.u)
         push!(restart_orders, integrator.cache.order)
         grew[] ? (shrank[] = true) : (grew[] = true)
         return nothing
@@ -86,11 +87,23 @@ end
         save_positions = (false, false)
     )
     sol = solve(
-        ODEProblem(f_resize!, copy(U0_resize), (0.0, TF_resize)), AN5();
-        callback = cb, tstops = [TG_resize, TS_resize], reltol = 1.0e-10, abstol = 1.0e-12
+        ODEProblem(f_resize!, copy(U0_resize), (0.0, TF_resize)), alg;
+        callback = cb, tstops = [TG_resize, TS_resize], reltol = reltol, abstol = abstol
     )
     @test SciMLBase.successful_retcode(sol)
-    @test sol(0.58) ≈ exact_resize(0.58) rtol = 1.0e-7 atol = 1.0e-10
-    @test sol.u[end] ≈ exact_resize(TF_resize) rtol = 1.0e-7 atol = 1.0e-10
+    @test sol(0.58) ≈ exact_resize(0.58) rtol = check_rtol atol = 1.0e-10
+    @test sol.u[end] ≈ exact_resize(TF_resize) rtol = check_rtol atol = 1.0e-10
     @test restart_orders == [1, 1]
+end
+
+@testset "resize before first step initializes restart state" begin
+    for alg in (AN5(), JVODE_Adams())
+        it = init(ODEProblem(f_resize!, [1.0, -0.5], (0.0, 0.1)), alg; adaptive = false, dt = 1.0e-4)
+        resize!(it, 3)
+        it.u[3] = 0.3
+        it.uprev[3] = NaN
+        u_modified!(it, true)
+        step!(it)
+        @test all(isfinite, it.u)
+    end
 end

@@ -61,6 +61,7 @@ end
     # `Tsit5` for the first step
     tsit5cache::tsit5Type
     order::Int
+    resize_restart::Bool
 end
 
 function alg_cache(
@@ -105,7 +106,7 @@ function alg_cache(
     return AN5Cache(
         u, uprev, tmp, Δ, atmp, fsalfirst, ratetmp,
         z, l, m, c_LTE, c_conv, dts,
-        tsit5cache, 1
+        tsit5cache, 1, false
     )
 end
 
@@ -224,6 +225,7 @@ end
     η₊₁::etaType
     η₋₁::etaType
     maxη::etaType
+    resize_restart::Bool
 end
 
 function alg_cache(
@@ -282,7 +284,7 @@ function alg_cache(
         u, uprev, tmp, fsalfirst, ratetmp,
         z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η
+        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η, false
     )
 end
 
@@ -305,8 +307,8 @@ function _resize_nordsieck_arrays!(integrator, cache, i)
     fill!(cache.l, 0)
     fill!(cache.m, 0)
     cache.order = 1
+    cache.resize_restart = true
     integrator.derivative_discontinuity = true
-    integrator.reeval_fsal = true
     reinit_controller!(integrator, integrator.controller_cache)
     return nothing
 end
