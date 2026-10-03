@@ -273,3 +273,28 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+# On master the first adaptive step pinned EEst = 1, so a user-supplied dt = 0.1
+# was always accepted (+1.43% local error on u₁' = u₁²). That error then grew to
+# ~14.5% by t = 0.9 at abstol = reltol = 1e-10. A genuine O(h²) BDF1 estimate
+# must reject that step.
+@testset "QNDF1/QNDF2 reject oversized first step (#4740)" begin
+    clock_oop(u, p, t) = [u[1]^2, one(t)]
+    clock_iip(du, u, p, t) = (du[1] = u[1]^2; du[2] = one(t); nothing)
+    u1exact(t) = inv(1 - t)
+    for f in (clock_oop, clock_iip), alg in (QNDF1(), QBDF1(), QNDF2(), QBDF2())
+        prob = ODEProblem(f, [1.0, 0.0], (0.0, 0.9))
+        integ = init(
+            prob, alg; dt = 0.1, abstol = 1.0e-10, reltol = 1.0e-10, adaptive = true,
+            verbose = DEVerbosity(SciMLLogging.None())
+        )
+        step!(integ) # first accepted step
+        @test integ.t < 0.05
+        @test abs((integ.u[1] - u1exact(integ.t)) / u1exact(integ.t)) < 1.0e-4
+        @test OrdinaryDiffEqCore.get_EEst(integ) <= one(OrdinaryDiffEqCore.get_EEst(integ))
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+        @test integ.sol.stats.nreject > 0
+        @test abs((integ.sol.u[end][1] - 10.0) / 10.0) < 1.0e-3
+    end
+end
