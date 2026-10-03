@@ -253,6 +253,28 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test length(sol.t) < 700
     end
 
+    @testset "AdaptiveOrder step! allocation bound" begin
+        function f_alloc!(du, u, p, t)
+            du[1] = -0.5 * u[1]
+            du[2] = -1.5 * u[2]
+            return nothing
+        end
+        prob = ODEProblem{true, SciMLBase.FullSpecialize}(
+            f_alloc!, [1.0, 1.0], (0.0, 1.0e6)
+        )
+        integrator = init(
+            prob, ExplicitTaylorAdaptiveOrder(),
+            abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false
+        )
+        for _ in 1:30
+            step!(integrator)
+        end
+        @allocated step!(integrator)
+        @allocated step!(integrator)
+        allocs = @allocated step!(integrator)
+        @test allocs < 2048
+    end
+
     # Test AutoSpecialize (default ODEProblem wraps in FunctionWrappers)
     # and FullSpecialize paths for IIP problems
     @testset "AutoSpecialize / FullSpecialize IIP" begin
