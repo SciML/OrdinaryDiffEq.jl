@@ -124,6 +124,19 @@ end
     return nothing
 end
 
+@inline function calculate_residuals!(
+        out::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        ũ::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        u₀::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        u₁::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        α, ρ, internalnorm, t, thread::Union{Serial, Threaded} = Serial()
+    )
+    map(out.x, ũ.x, u₀.x, u₁.x) do o, e, a, b
+        calculate_residuals!(o, e, a, b, α, ρ, internalnorm, t, thread)
+    end
+    return nothing
+end
+
 """
     calculate_residuals!(out, u₀, u₁, α, ρ, thread = Serial())
 
