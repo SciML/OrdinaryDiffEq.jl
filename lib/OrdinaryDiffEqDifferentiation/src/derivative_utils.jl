@@ -1194,6 +1194,7 @@ function update_W!(
         else
             new_jac, new_W = newJW
         end
+        # Match master's out-of-place DDE J refresh; otherwise SDIRK2 Robertson hits DtLessThanMin.
         if integrator isa SciMLBase.AbstractDDEIntegrator && new_W
             new_jac = true
         end

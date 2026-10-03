@@ -22,6 +22,21 @@ using Test
     end
 end
 
+@testset "nonlinear static out-of-place ImplicitEuler with NonlinearSolveAlg" begin
+    prob = ODEProblem(
+        (u, p, t) -> SA[u[2], 100.0 * (1 - u[1]^2) * u[2] - u[1]],
+        SA[2.0, 0.0], (0.0, 100.0)
+    )
+    sol = solve(
+        prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson()));
+        reltol = 1.0e-6, abstol = 1.0e-8
+    )
+    refsol = solve(prob, Rodas5P(); reltol = 1.0e-10, abstol = 1.0e-12)
+    @test SciMLBase.successful_retcode(sol)
+    @test norm(sol.u[end] - refsol.u[end]) < 5.0e-3
+    @test 1 < sol.stats.njacs < sol.stats.nw
+end
+
 function rober!(du, u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
