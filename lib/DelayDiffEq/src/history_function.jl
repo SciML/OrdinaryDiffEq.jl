@@ -17,6 +17,9 @@ end
 
 HistoryFunction(h, integrator) = HistoryFunction(h, integrator, false)
 
+# Actual integration start after reinit!; falls back when the solution is empty.
+@inline history_start_time(sol) = isempty(sol.t) ? sol.prob.tspan[1] : sol.t[1]
+
 function (f::HistoryFunction)(
         p, t, ::Type{Val{deriv}} = Val{0};
         idxs = nothing
@@ -25,8 +28,9 @@ function (f::HistoryFunction)(
     (; tdir, sol) = integrator
 
     tdir_t = tdir * t
+    tstart = history_start_time(sol)
 
-    if tdir_t < tdir * sol.prob.tspan[1]
+    if tdir_t < tdir * tstart
         if deriv == 0 && idxs === nothing
             return f.h(p, t)
         elseif idxs === nothing
@@ -53,7 +57,7 @@ function (f::HistoryFunction)(
         f.isout = true
     end
 
-    if integrator.t == sol.prob.tspan[1]
+    if integrator.t == tstart
         # handle extrapolations at initial time point
         return constant_extrapolant(t, integrator, idxs, Val{deriv})
     else
@@ -69,8 +73,9 @@ function (f::HistoryFunction)(
     (; tdir, sol) = integrator
 
     tdir_t = tdir * t
+    tstart = history_start_time(sol)
 
-    if tdir_t < tdir * sol.prob.tspan[1]
+    if tdir_t < tdir * tstart
         if deriv == 0 && idxs === nothing
             return f.h(val, p, t)
         elseif idxs === nothing
@@ -97,7 +102,7 @@ function (f::HistoryFunction)(
         f.isout = true
     end
 
-    if integrator.t == sol.prob.tspan[1]
+    if integrator.t == tstart
         # handle extrapolations at initial time point
         return constant_extrapolant!(val, t, integrator, idxs, Val{deriv})
     else
