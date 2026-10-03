@@ -298,6 +298,17 @@ end
     @test sol_uneven.t[end] == 1.0
 end
 
+@testset "Float32 short tspan: adaptive dt does not snap past remaining interval" begin
+    f(u, p, t) = p .* u
+    t0 = 1.5f0
+    tf = 1.50001f0
+    p = Float32[-6.0f6]
+    s = solve(ODEProblem(f, Float32[1], (t0, tf), p), Tsit5(); dt = 8 * eps(t0))
+    @test s.retcode == ReturnCode.Success
+    @test s.stats.naccept > 1
+    @test s.u[end][1] < 1.0f-5
+end
+
 @testset "d_discontinuities: tprev advanced past discontinuity" begin
     # Directly verify the shift-past invariant using the integrator interface:
     # after stepping past the discontinuity, integrator.tprev should be
