@@ -541,14 +541,6 @@ end
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     integrator.iter <= 1 && return true, true # at least one JW eval at the start
     repeat_step && return false, false
-    # At tiny steps, a steep state transition can invalidate J between W rebuilds.
-    if isnewton(nlsolver) && alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
-            SciMLBase.alg_order(alg) > 1 &&
-            integrator.t isa AbstractFloat &&
-            abs(integrator.dt) <= sqrt(eps(integrator.t)) *
-            max(abs(integrator.t), one(integrator.t))
-        return true, true
-    end
     islin, _ = islinearfunction(integrator)
     if islin
         # J never changes for a linear function, so W = J - M/(γdt) has to track γdt and
@@ -1193,6 +1185,12 @@ function update_W!(
         isdae = integrator.alg isa DAEAlgorithm
         if newJW === nothing
             new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, repeat_step)
+            t = integrator.t
+            if !repeat_step && integrator.alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
+                    SciMLBase.alg_order(integrator.alg) > 1 && t isa AbstractFloat &&
+                    abs(integrator.dt) <= sqrt(eps(typeof(t))) * max(abs(t), one(t))
+                new_jac, new_W = true, true
+            end
         else
             new_jac, new_W = newJW
         end

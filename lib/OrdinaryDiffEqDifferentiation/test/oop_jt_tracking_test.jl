@@ -82,3 +82,30 @@ bertolazzi_iip!(du, u, p, t) = (du .= bertolazzi_rhs(SVector{3}(u), p, t); nothi
     @test sol.retcode == ReturnCode.Success
     @test abs(sum(sol.u[end]) - 3.0) < 1.0e-6
 end
+
+function long_rober!(du, u, p, t)
+    du[1] = -0.04u[1] + 1.0e4u[2] * u[3]
+    du[2] = 0.04u[1] - 1.0e4u[2] * u[3] - 3.0e7u[2]^2
+    du[3] = 3.0e7u[2]^2
+    return nothing
+end
+
+@testset "in-place long-horizon Jacobian reuse" begin
+    prob = ODEProblem(long_rober!, [1.0, 0.0, 0.0], (0.0, 1.0e11))
+    for (alg, njacs) in ((TRBDF2(), 9), (KenCarp4(), 8))
+        sol = solve(prob, alg; reltol = 1.0e-6, abstol = 1.0e-10)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.njacs == njacs
+    end
+end
+
+@testset "out-of-place long-horizon Jacobian reuse" begin
+    f(u, p, t) = (du = similar(u); long_rober!(du, u, p, t); du)
+    prob = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e11))
+    for alg in (TRBDF2(), KenCarp4())
+        sol = solve(prob, alg; reltol = 1.0e-6, abstol = 1.0e-10)
+        @test sol.retcode == ReturnCode.Success
+        @test 0 < sol.stats.njacs < 100
+        @test sol.stats.njacs < sol.stats.nw
+    end
+end
