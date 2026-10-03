@@ -712,13 +712,6 @@ function _initialize_dae!(
         nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
     end
 
-    if u0 isa Number
-        # This doesn't fix static arrays!
-        u = [u0]
-    else
-        u = u0
-    end
-
     nlequation = @closure (x, _) -> begin
         uu = isAD ? get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
@@ -738,13 +731,17 @@ function _initialize_dae!(
 
     nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
 
-    u[algebraic_vars] .= nlsol.u
-
     if u0 isa Number
-        # This doesn't fix static arrays!
-        integrator.u = first(u)
-    else
+        integrator.u = first(nlsol.u)
+    elseif ArrayInterface.ismutable(u0)
+        u = copy(u0)
+        u[algebraic_vars] .= nlsol.u
         integrator.u = u
+    else
+        u = similar(u0)
+        copyto!(u, u0)
+        u[algebraic_vars] .= nlsol.u
+        integrator.u = convert(typeof(u0), u)
     end
 
 
