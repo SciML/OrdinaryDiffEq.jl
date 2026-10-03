@@ -186,7 +186,10 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
             then the Lanczos algorithm will always be used and the IOP setting is ignored.
     - For time- or parameter-dependent operators, define `update_func!` so the operator is
       non-constant and is recomputed each step. Mutating a constant operator between plain
-      `step!` calls without a callback is unsupported.
+      `step!` calls without a callback is unsupported unless followed by
+      `derivative_discontinuity!(integrator, true)`, which refreshes the cached
+      exponential. A callback that mutates the operator and calls
+      `derivative_discontinuity!(integrator, false)` keeps the cached (stale) exponential.
     """,
     """
     krylov = :off,

@@ -821,7 +821,9 @@ function perform_step!(
 end
 
 function initialize!(integrator, cache::LinearExponentialCache)
-    cache.exp_matrix_cache.valid = false
+    if cache.exp_matrix_cache !== nothing
+        cache.exp_matrix_cache.valid = false
+    end
     # Pre-start fsal
     integrator.fsalfirst = zero(cache.rtmp)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
