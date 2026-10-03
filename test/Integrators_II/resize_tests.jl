@@ -254,3 +254,38 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     @test_nowarn step!(integrator)
     @test length(integrator.u) == 2
 end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4722
+@testset "resize! initializes new uprev/uprev2 history" begin
+    fdecay!(du, u, p, t) = (du .= -p[1] .* u; nothing)
+    poison = 2.4e77
+
+    integ = init(ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0), ImplicitEuler())
+    fill!(integ.uprev, poison)
+    fill!(integ.uprev2, poison)
+    resize!(integ, 5)
+    resize!(integ, 10)
+    @test integ.uprev[1:5] == fill(poison, 5)
+    @test all(iszero, integ.uprev[6:10])
+    @test all(iszero, integ.uprev2[6:10])
+
+    grew = Ref(false)
+    cb = DiscreteCallback(
+        (u, t, integ) -> !grew[] && t >= 0.5,
+        function (integ)
+            resize!(integ, 15)
+            integ.uprev[11:15] .= poison
+            integ.uprev2[11:15] .= poison
+            resize!(integ, 10)
+            resize!(integ, 15)
+            integ.u[11:15] .= 1.0
+            grew[] = true
+            derivative_discontinuity!(integ, true)
+        end
+    )
+    sol = solve(
+        ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0), ImplicitEuler();
+        callback = cb, tstops = [0.5], reltol = 1e-4, abstol = 1e-6
+    )
+    @test sol.retcode == ReturnCode.Success
+end
