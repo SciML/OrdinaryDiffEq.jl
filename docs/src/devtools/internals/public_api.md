@@ -148,6 +148,7 @@ OrdinaryDiffEqCore.AutoSwitchCache
 OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
+OrdinaryDiffEqCore._current_alg
 OrdinaryDiffEqCore.isdefaultalg
 OrdinaryDiffEqCore.is_composite_algorithm
 OrdinaryDiffEqCore.is_composite_cache

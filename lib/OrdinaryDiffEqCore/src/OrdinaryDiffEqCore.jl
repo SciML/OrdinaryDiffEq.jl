@@ -453,7 +453,7 @@ include("precompilation_setup.jl")
             :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
             :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
             :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :sync_controllers!, :TryAgain,
-            :unwrap_alg, :uses_uprev, :VerySlowConvergence,
+            :unwrap_alg, :uses_uprev, :VerySlowConvergence, :_current_alg,
             # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
             # Error / sentinel / dispatch-helper types shared across solver sublibs.
             :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,

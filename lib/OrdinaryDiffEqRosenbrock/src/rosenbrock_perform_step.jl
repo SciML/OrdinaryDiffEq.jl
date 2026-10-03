@@ -61,9 +61,9 @@ end
     )
 
     if repeat_step || !new_W
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
     vecu = _vec(linres.u)
@@ -85,7 +85,7 @@ end
 
     @.. linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -109,7 +109,7 @@ end
                 dt * dT
         end
 
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
         vecu = _vec(linres.u)
         veck3 = _vec(k₃)
         @.. veck3 = vecu * neginvdtγ
@@ -175,9 +175,9 @@ end
     )
 
     if repeat_step || !new_W
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
     vecu = _vec(linres.u)
@@ -199,7 +199,7 @@ end
 
     @.. broadcast = false linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -220,7 +220,7 @@ end
         @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
     end
 
-    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
 
@@ -762,9 +762,9 @@ end
     )
 
     if repeat_step || !new_W
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
     @.. $(_vec(ks[1])) = -linres.u
@@ -793,7 +793,7 @@ end
             @.. linsolve_tmp = du + dtd[stage] * dT + du2
         end
 
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
