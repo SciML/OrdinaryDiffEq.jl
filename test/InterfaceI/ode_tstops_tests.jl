@@ -314,3 +314,41 @@ end
     step!(integrator)
     @test integrator.tprev == nextfloat(5.0)
 end
+
+@testset "The step after a tstop resumes the proposal from before the shortening" begin
+    # A tstop 1% into a natural step: the step that lands on it is shortened to 1% of the
+    # proposal; the next step resumes the proposal instead of growing from the landing step.
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
+    for alg in (Tsit5(), Rodas5P(), FBDF())
+        free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        j = length(free.t) ÷ 2
+        tstop = free.t[j] + 0.01 * (free.t[j + 1] - free.t[j])
+        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop])
+        while integ.t + integ.dtpropose < tstop
+            step!(integ)
+        end
+        proposed = integ.dtpropose
+        step!(integ)
+        @test integ.t == tstop
+        @test integ.t - integ.tprev < 0.02proposed
+        step!(integ)
+        @test integ.t - integ.tprev > 0.5proposed
+        # never more than the proposal: the landing step's error says nothing about a full step
+        @test integ.t - integ.tprev <= proposed * (1 + 1.0e-12)
+    end
+end
+
+@testset "Callbacks after a step shortened to a tstop see the accepted step (#4655)" begin
+    for alg in (Tsit5(), Rodas5P())
+        seen = Ref{Any}(nothing)
+        cb = DiscreteCallback(
+            (u, t, i) -> seen[] === nothing && t == 1.0,
+            i -> (seen[] = (dt = i.dt, step = i.t - i.tprev, u_mid = i(0.5)[1]));
+            save_positions = (false, false)
+        )
+        prob = ODEProblem((u, p, t) -> one.(u), [1.0], (0.0, 2.0))
+        solve(prob, alg; dt = 5.0, tstops = [1.0], callback = cb, abstol = 1.0e-8, reltol = 1.0e-8)
+        @test seen[].dt == seen[].step
+        @test seen[].u_mid ≈ 1.5
+    end
+end
