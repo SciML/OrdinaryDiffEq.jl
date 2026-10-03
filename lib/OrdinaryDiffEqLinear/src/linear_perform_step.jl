@@ -842,7 +842,17 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
     A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator
 
     if alg.krylov == :off
-        E = exponential!(dt * A, exp_method, exp_cache)
+        if SciMLOperators.isconstant(f.f)
+            exp_matrix_cache = cache.exp_matrix_cache
+            E = exp_matrix_cache.matrix
+            if E === nothing || exp_matrix_cache.dt != dt
+                E = exponential!(dt * A, exp_method, exp_cache)
+                exp_matrix_cache.matrix = E
+                exp_matrix_cache.dt = dt
+            end
+        else
+            E = exponential!(dt * A, exp_method, exp_cache)
+        end
         mul!(tmp, E, u)
     elseif alg.krylov == :simple
         Ks, expv_cache = KsCache

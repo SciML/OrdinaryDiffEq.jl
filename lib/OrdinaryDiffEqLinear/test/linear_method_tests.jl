@@ -20,6 +20,25 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 @test isapprox(sol3, sol_analytic, rtol = 1.0e-10)
 @test isapprox(sol4, sol_analytic, rtol = 1.0e-8)
 
+let
+    A = MatrixOperator(randn(MersenneTwister(1), 50, 50))
+    u0 = ones(50)
+    prob = ODEProblem(A, u0, (0.0, 1.0))
+    integrator = init(prob, LinearExponential(krylov = :off); dt = 0.01)
+    step!(integrator)
+    step!(integrator)
+    bytes = @allocated step!(integrator)
+    @test bytes < 20_000
+end
+
+let
+    A = MatrixOperator([0.0 1.0; -1.0 0.0])
+    u0 = [1.0, 0.0]
+    prob = ODEProblem(A, u0, (0.0, 1.0))
+    sol = solve(prob, LinearExponential(krylov = :off); dt = 0.1, tstops = [0.35])
+    @test sol.u[end] ≈ exp(1.0 * Matrix(A)) * u0 rtol = 1.0e-14
+end
+
 # Adaptive LinearExponential must not require `opnorm` on the operator: it feeds
 # ExponentialUtilities an explicit abstol and initial tau instead. Wrap the
 # operator in a type whose `opnorm` throws to guard against regressions (some

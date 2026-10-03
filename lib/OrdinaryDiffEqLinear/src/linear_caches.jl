@@ -616,6 +616,11 @@ end
 
 struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
 
+mutable struct LinearExponentialMatrixCache
+    dt::Any
+    matrix::Any
+end
+
 function alg_cache(
         alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
@@ -633,6 +638,7 @@ end
     rtmp::rateType
     KsCache::KsType # different depending on alg.krylov
     exp_cache::expType
+    exp_matrix_cache::LinearExponentialMatrixCache
 end
 
 get_fsalfirstlast(cache::LinearExponentialCache, u) = (zero(u), zero(u))
@@ -674,5 +680,7 @@ function alg_cache(
         throw(ArgumentError("Unknown krylov setting $(alg.krylov). Can be :off, :simple or :adaptive."))
     end
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return LinearExponentialCache(u, uprev, tmp, rtmp, KsCache, exp_cache)
+    return LinearExponentialCache(
+        u, uprev, tmp, rtmp, KsCache, exp_cache, LinearExponentialMatrixCache(nothing, nothing)
+    )
 end
