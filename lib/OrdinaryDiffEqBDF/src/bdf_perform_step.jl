@@ -445,9 +445,13 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
     if integrator.opts.adaptive
         D2[1] = u - uprev
-        # No trusted history yet: explicit-Euler predictor gives O(h²) BDF1 LTE.
-        prev_diff = integrator.success_iter == 0 ? dt * integrator.fsalfirst : D[1]
-        D2[2] = D2[1] - prev_diff
+        if integrator.success_iter == 0
+            # Explicit-Euler predictor: startup analogue of the success_iter == 1 estimate.
+            D2[2] = mass_matrix === I ? D2[1] - dt * integrator.fsalfirst :
+                mass_matrix * D2[1] - dt * integrator.fsalfirst
+        else
+            D2[2] = D2[1] - D[1]
+        end
         utilde = (κ + inv(k + 1)) * D2[2]
         atmp = calculate_residuals(
             utilde, uprev, u, integrator.opts.abstol,
@@ -536,7 +540,12 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
     if integrator.opts.adaptive
         @.. broadcast = false D2[1] = u - uprev
         if integrator.success_iter == 0
-            @.. broadcast = false D2[2] = D2[1] - dt * integrator.fsalfirst
+            if mass_matrix === I
+                @.. broadcast = false D2[2] = D2[1] - dt * integrator.fsalfirst
+            else
+                mul!(utilde, mass_matrix, D2[1])
+                @.. broadcast = false D2[2] = utilde - dt * integrator.fsalfirst
+            end
         else
             @.. broadcast = false D2[2] = D2[1] - D[1]
         end
@@ -630,8 +639,9 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            # Explicit-Euler predictor: O(h²) BDF1 LTE (same form as success_iter == 1).
-            utilde = (u - uprev) - dt * integrator.fsalfirst
+            Δu = u - uprev
+            utilde = mass_matrix === I ? Δu - dt * integrator.fsalfirst :
+                mass_matrix * Δu - dt * integrator.fsalfirst
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
@@ -754,8 +764,13 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            # Explicit-Euler predictor: O(h²) BDF1 LTE (same form as success_iter == 1).
-            @.. broadcast = false utilde = (u - uprev) - dt * integrator.fsalfirst
+            if mass_matrix === I
+                @.. broadcast = false utilde = (u - uprev) - dt * integrator.fsalfirst
+            else
+                @.. broadcast = false D2[1] = u - uprev
+                mul!(utilde, mass_matrix, D2[1])
+                @.. broadcast = false utilde = utilde - dt * integrator.fsalfirst
+            end
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
