@@ -1,5 +1,6 @@
 using OrdinaryDiffEqFeagin, DiffEqBase, Test, DiffEqDevTools,
-    Random
+    Random, LinearAlgebra
+using JLArrays
 
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
     prob_ode_bigfloat2Dlinear,
@@ -51,3 +52,20 @@ sol = solve(prob, Feagin14(), dt = dts[1])
 @time sol = solve(prob, Feagin10(), dt = dts[1])
 @time sol = solve(prob, Feagin12(), dt = dts[1])
 @time sol = solve(prob, Feagin14(), dt = dts[1])
+
+@testset "Feagin in-place JLArray under allowscalar(false)" begin
+    Ahost = [-1.0 0.2 0.0; -0.1 -0.8 0.1; 0.0 -0.2 -0.5]
+    A = JLArray(Ahost)
+    function linear_iip!(du, u, A, t)
+        mul!(du, A, u)
+        return nothing
+    end
+    u0 = JLArray([1.0, 0.0, 0.0])
+    prob_jl = ODEProblem(linear_iip!, u0, (0.0, 1.0), A)
+    JLArrays.allowscalar(false)
+    for alg in (Feagin10(), Feagin12(), Feagin14())
+        sol = solve(prob_jl, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        @test successful_retcode(sol)
+        @test eltype(sol.u[end]) === Float64
+    end
+end
