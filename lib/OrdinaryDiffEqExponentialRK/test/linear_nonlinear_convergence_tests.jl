@@ -226,3 +226,26 @@ end
         @test sol.u[end] ≈ sol_full.u[end]
     end
 end
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/1041
+@testset "f2 writing only part of du" begin
+    N = 3
+    K = [1.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 2.0]
+    F0 = [20.0, 20.0, 0.0]
+    A = MatrixOperator([zeros(N, N) I; -K -0.01K])
+
+    f2_partial!(du, u, p, t) = (du[(N + 1):end] .= F0)
+    function f2_full!(du, u, p, t)
+        fill!(du, false)
+        du[(N + 1):end] .= F0
+    end
+
+    u0 = zeros(2N)
+    tspan = (0.0, 1.0)
+    for Alg in (ETDRK2, ETDRK3, ETDRK4, HochOst4)
+        sol_partial = solve(SplitODEProblem(A, f2_partial!, u0, tspan), Alg(); dt = 0.1)
+        sol_full = solve(SplitODEProblem(A, f2_full!, u0, tspan), Alg(); dt = 0.1)
+        @test sol_partial.u[end] ≈ sol_full.u[end]
+        @test sol_partial(0.55) ≈ sol_full(0.55)
+    end
+end
