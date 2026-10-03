@@ -819,7 +819,7 @@ function _initialize_dae!(
     if nlsolve_alg !== nothing
         nlsolve = nlsolve_alg
     else
-        nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
+        nlsolve = NewtonRaphson(autodiff = ADTypes.dense_ad(alg_autodiff(integrator.alg)))
     end
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
