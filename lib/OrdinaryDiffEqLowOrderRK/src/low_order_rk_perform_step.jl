@@ -1109,7 +1109,7 @@ end
     integrator.u = u
 end
 
-get_fsalfirstlast(cache::RKMCache, u) = (cache.k1, zero(cache.k1))
+get_fsalfirstlast(cache::RKMCache, u) = (cache.k1, cache.fsalfirst)
 function initialize!(integrator, cache::RKMCache)
     (; k, fsalfirst) = cache
     integrator.kshortsize = 6
@@ -1151,7 +1151,9 @@ end
         dt *
         (β1 * k1 + β2 * k2 + β3 * k3 + β4 * k4 + β6 * k6)
     stage_limiter!(u, integrator, p, t + dt)
-    f(integrator.fsallast, u, p, t + dt)
+    # Write the FSAL into the cache-owned last buffer (`cache.fsalfirst` via
+    # `get_fsalfirstlast`), not a possibly-dealiased `integrator.fsallast`.
+    f(fsalfirst, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     return nothing
 end

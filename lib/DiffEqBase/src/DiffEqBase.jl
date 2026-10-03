@@ -206,6 +206,10 @@ export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
             :public,
             :get_tstops, :get_tstops_array, :get_tstops_max,
             :ExplicitRKTableau, :ImplicitRKTableau, :DECostFunction, :merge_problem_kwargs,
+            :has_callbacks,
+            # Error checks shared by host and staged (compiled) integrator loops
+            :de_check_error, :staged_check_error, :check_error_failed_retcode,
+            :check_error_dt_below_time_eps,
             # Callback API (DiffEqBase-owned shared functionality used by downstream solvers)
             :apply_callback!, :apply_discrete_callback!, :CallbackCache,
             :find_first_continuous_callback, :find_callback_time,

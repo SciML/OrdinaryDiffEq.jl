@@ -152,6 +152,14 @@ end
     end
 end
 
+@testset "IIP initdt NaN fallback" for T in (Float32, Float64)
+    f_nan!(du, u, p, t) = (du .= p .* u; nothing)
+    prob = ODEProblem(f_nan!, ones(T, 2), (zero(T), one(T)), T[NaN])
+    dtmin = T(1.0e-5)
+    integrator = init(prob, Tsit5(); dtmin)
+    @test integrator.dt == nextfloat(dtmin)
+end
+
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/4601
 function lorenz!(du, u, p, t)
     du[1] = 10 * (u[2] - u[1])
@@ -168,4 +176,6 @@ dt64 = init(ODEProblem(relax!, [0.0], (0.0, 1.0)), Tsit5()).dt
 @test dt32 ≈ dt64 rtol = 1.0e-4
 # A refined step still below machine epsilon falls back to the default.
 stiff_decay = ODEProblem((du, u, p, t) -> (du .= -1.0e16 .* u; nothing), [1.0], (0.0, 1.0))
-@test init(stiff_decay, Rodas5P()).dt == 1.0e-6
+@test_logs (:warn, r"machine epsilon") match_mode = :any begin
+    @test init(stiff_decay, Rodas5P()).dt == 1.0e-6
+end
