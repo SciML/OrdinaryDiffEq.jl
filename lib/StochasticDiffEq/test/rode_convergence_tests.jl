@@ -198,3 +198,96 @@ end
         prob, RandomTaylor15(), dt = TEND / 16, adaptive = false
     )
 end
+
+function exact_decay(path)
+    exact = ones(length(path))
+    acc = 0.0
+    for k in 1:(length(path) - 1)
+        a = 5 * path[k]
+        b = 5 * path[k + 1]
+        acc += abs(b - a) < 1.0e-8 ? FINE_DT * cos((a + b) / 2) :
+            FINE_DT * (sin(b) - sin(a)) / (b - a)
+        exact[k + 1] = exp(-acc)
+    end
+    return exact
+end
+
+function taylor25_study(alg; seed = 20261004, sigma = 1.0)
+    rng = MersenneTwister(seed)
+    errors = zeros(PATHS, length(STEP_COUNTS))
+    for m in 1:PATHS
+        path = sigma .* wiener_path(rng)
+        exact = exact_decay(path)
+        noise = NoiseGrid(FINE_GRID, path)
+        for (j, n) in enumerate(STEP_COUNTS)
+            sol = decay_solution(alg, noise, n, 1.0)
+            stride = FINE_POINTS ÷ n
+            errors[m, j] = maximum(abs(sol.u[k + 1] - exact[k * stride + 1]) for k in 0:n)
+        end
+    end
+    strong = [sqrt(mean(errors[:, j] .^ 2)) for j in eachindex(STEP_COUNTS)]
+    return (strong = strong, strong_order = fitted_slope(STEP_COUNTS, strong))
+end
+
+@testset "RandomTaylor25 reaches order 3 on a resolved path" begin
+    taylor = taylor25_study(RandomTaylor25())
+    lower = taylor25_study(RandomTaylor15())
+    @test 2.5 < taylor.strong_order < 3.4
+    @test taylor.strong[end] < lower.strong[end] / 50
+end
+
+@testset "RandomTaylor25 keeps its order on a Brownian path of another amplitude" begin
+    taylor = taylor25_study(RandomTaylor25(); sigma = 0.2)
+    @test 2.5 < taylor.strong_order < 3.4
+end
+
+@testset "RandomTaylor25 is third order in the deterministic limit" begin
+    forced(u, p, t, W) = -u + cos(t)
+    exact = (exp(-TEND) + sin(TEND) + cos(TEND)) / 2
+    noise = NoiseGrid(FINE_GRID, zeros(FINE_POINTS + 1))
+    errors = map(TAYLOR_STEP_COUNTS) do n
+        prob = RODEProblem{false}(forced, 1.0, (0.0, TEND), noise = noise)
+        abs(solve(prob, RandomTaylor25(), dt = TEND / n, adaptive = false).u[end] - exact)
+    end
+    @test abs(fitted_slope(TAYLOR_STEP_COUNTS, errors) - 3) < 0.2
+end
+
+@testset "RandomTaylor25 in-place matches out-of-place" begin
+    noise = NoiseGrid(FINE_GRID, wiener_path(MersenneTwister(20261004)))
+    u0 = [1.0, 2.0]
+    for n in (STEP_COUNTS[1], STEP_COUNTS[end])
+        outofplace = decay_solution(RandomTaylor25(), noise, n, u0).u
+        inplace = decay_solution(RandomTaylor25(), noise, n, copy(u0); inplace = true).u
+        @test all(isapprox(a, b, rtol = 1.0e-9) for (a, b) in zip(outofplace, inplace))
+    end
+end
+
+@testset "RandomTaylor25 step integrals are exact on a misaligned grid" begin
+    grid = collect(range(0.0, 1.0; length = 13))
+    integrals = StochasticDiffEq.StochasticDiffEqRODE.path_integrals25
+    for (t, dt) in ((0.0, 0.25), (0.05, 0.25), (0.03, 0.04), (1 / 12, 1 / 12), (0.5, 0.5))
+        W = (t = grid, W = copy(grid), dW = dt, curW = t)
+        I = integrals(W, t, dt, t)
+        @test all(I .≈ (dt^2 / 2, dt^3 / 3, dt^4 / 4, dt^5 / 5, dt^3 / 3, dt^4 / 4))
+    end
+end
+
+@testset "RandomTaylor25 integrates backwards in time" begin
+    n = 64
+    path = wiener_path(MersenneTwister(20261004))
+    exact = exact_decay(path)
+    back_grid = collect(range(TEND, 0.0; length = FINE_POINTS + 1))
+    prob = RODEProblem{false}(
+        decay_oop, exact[end], (TEND, 0.0), noise = NoiseGrid(back_grid, reverse(path))
+    )
+    sol = solve(prob, RandomTaylor25(), dt = -TEND / n, save_everystep = true, adaptive = false)
+    stride = FINE_POINTS ÷ n
+    @test maximum(abs(sol.u[k + 1] - exact[end - k * stride]) for k in 0:n) < 1.0e-3
+end
+
+@testset "RandomTaylor25 rejects noise it cannot resolve" begin
+    prob = RODEProblem{false}(decay_oop, 1.0, (0.0, TEND))
+    @test_throws "not compatible with the chosen noise type" solve(
+        prob, RandomTaylor25(), dt = TEND / 16, adaptive = false
+    )
+end

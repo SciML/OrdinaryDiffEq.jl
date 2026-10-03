@@ -35,6 +35,6 @@ include("caches/dynamical_caches.jl")
 include("perform_step/low_order.jl")
 include("perform_step/dynamical.jl")
 
-export RandomEM, RandomHeun, RandomTamedEM, RandomTaylor15, BAOAB
+export RandomEM, RandomHeun, RandomTamedEM, RandomTaylor15, RandomTaylor25, BAOAB
 
 end # module
