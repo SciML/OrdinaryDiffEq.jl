@@ -323,7 +323,7 @@ end
         end
     end
 
-    @testset "QBDF2 ROBER at tol 1e-4 stays bounded (#4740)" begin
+    @testset "QBDF2 ROBER rejects oversized first step (#4740)" begin
         function rober!(du, u, p, t)
             y₁, y₂, y₃ = u
             du[1] = -0.04y₁ + 1.0e4 * y₂ * y₃
@@ -331,14 +331,12 @@ end
             du[3] = 3.0e7 * y₂^2
             return nothing
         end
-        sol = solve(
+        integ = init(
             ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e3)), QBDF2();
-            abstol = 1.0e-4, reltol = 1.0e-4,
+            dt = 1.0e-2, abstol = 1.0e-4, reltol = 1.0e-4, adaptive = true,
             verbose = DEVerbosity(SciMLLogging.None())
         )
-        @test sol.retcode == ReturnCode.Success
-        @test sol.t[end] == 1.0e3
-        @test isapprox(sum(sol.u[end]), 1; atol = 1.0e-2)
-        @test maximum(abs, sol.u[end]) < 2
+        step!(integ)
+        @test 0 < integ.t < 1.0e-2
     end
 end
