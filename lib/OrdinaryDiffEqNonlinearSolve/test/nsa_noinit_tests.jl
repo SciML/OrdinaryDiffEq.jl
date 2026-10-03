@@ -1,8 +1,8 @@
 # NonlinearSolveAlg with inner algorithms that have no `init` (every SimpleNonlinearSolve
 # algorithm): these land in `NonlinearSolveBase.NonlinearSolveNoInitCache`, a fallback with
 # no iteration state, so `step!`, `get_fu`, `.stats` and `not_terminated` are all
-# unavailable and the cache can only be driven by complete `solve!` calls that must
-# terminate on their own (nonzero) tolerances.
+# unavailable and the cache can only be driven by complete `solve!` calls, each ending on a
+# criterion in the integrator's own weighted norm.
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
@@ -128,9 +128,10 @@ end
         nlcache = noinit_cache(integ).cache
         @test nlcache isa NonlinearSolveBase.NonlinearSolveNoInitCache
         # The post-resize rebuild must preserve the no-init tolerances exactly as the
-        # build path does.
+        # build path does; the only termination criterion is the per-solve one.
         @test !iszero(NonlinearSolveBase.get_abstol(nlcache))
-        @test !haskey(nlcache.kwargs, :termination_condition)
+        @test nlcache.kwargs[:termination_condition] isa
+            OrdinaryDiffEqNonlinearSolve.StageConvergenceMode
     end
 end
 
@@ -161,4 +162,75 @@ end
         reltol = 1.0e-8, abstol = 1.0e-10
     )
     @test SciMLBase.successful_retcode(sol.retcode)
+end
+
+# ROBER in units scaled by `s` (`y = s⋅Y`): identical dynamics, so tolerances scaled with it
+# must give the same steps and the same weighted stage accuracy at every `s`.
+function rober_scaled(u, s)
+    y₁, y₂, y₃ = u ./ s
+    return s .* [
+        -0.04y₁ + 1.0e4 * y₂ * y₃,
+        0.04y₁ - 1.0e4 * y₂ * y₃ - 3.0e7 * y₂^2,
+        3.0e7 * y₂^2,
+    ]
+end
+function rober_scaled_jac(u, s)
+    y₁, y₂, y₃ = u ./ s
+    return [
+        -0.04 1.0e4 * y₃ 1.0e4 * y₂
+        0.04 (-1.0e4 * y₃ - 6.0e7 * y₂) -1.0e4 * y₂
+        0.0 6.0e7 * y₂ 0.0
+    ]
+end
+rober_scaled!(du, u, s, t) = (du .= rober_scaled(u, s); nothing)
+rober_scaled_oop(u, s, t) = rober_scaled(u, s)
+
+# Weighted distance of an accepted ImplicitEuler step from the exact root of
+# `u = uprev + h⋅f(u)`, in the integrator's own norm.
+function implicit_euler_stage_error(integ, s)
+    uprev, u, h = collect(integ.uprev), collect(integ.u), integ.t - integ.tprev
+    x = copy(u)
+    for _ in 1:30
+        x = x .- (I - h * rober_scaled_jac(x, s)) \ (x .- uprev .- h .* rober_scaled(x, s))
+    end
+    w = integ.opts.abstol .+ integ.opts.reltol .* max.(abs.(uprev), abs.(u))
+    return sqrt(sum(abs2, (u .- x) ./ w) / length(u))
+end
+
+# The integrator's κ/η test accepts a stage once its estimated weighted error is below
+# κ = 1/100 (NLNewton stays under 0.04 here), so an accepted stage a whole tolerance unit off
+# the root was accepted by some other criterion. SimpleTrustRegion is checked for accuracy
+# only: it stalls on ROBER at every scale through repeated outer convergence failures, which
+# is unrelated to how its inner solve terminates.
+@testset "inner termination follows the integrator's tolerances (s = $s)" for s in
+    (1.0e-10, 1.0e6)
+    tspan = (0.0, 1.0e3)
+    reltol, abstol = 1.0e-4, 1.0e-8 * s
+    ref_steps = length(
+        solve(
+            ODEProblem(rober_scaled!, [s, 0.0, 0.0], tspan, s), ImplicitEuler();
+            reltol, abstol
+        ).t
+    )
+    for iip in (true, false), ialg in (SimpleNewtonRaphson(), SimpleTrustRegion())
+        prob = iip ? ODEProblem(rober_scaled!, [s, 0.0, 0.0], tspan, s) :
+            ODEProblem(rober_scaled_oop, [s, 0.0, 0.0], tspan, s)
+        integ = init(
+            prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(ialg));
+            reltol, abstol, maxiters = 3 * ref_steps
+        )
+        worst = 0.0
+        for _ in integ
+            # The iterator also yields the state a `MaxIters` abort leaves behind, whose `u` is
+            # a rejected trial value rather than a stage the nonlinear solver accepted.
+            integ.accept_step || continue
+            worst = max(worst, implicit_euler_stage_error(integ, s))
+        end
+        @testset "$(nameof(typeof(ialg))) $(iip ? "iip" : "oop")" begin
+            @test worst < 1
+            if ialg isa SimpleNewtonRaphson
+                @test SciMLBase.successful_retcode(integ.sol.retcode)
+            end
+        end
+    end
 end
