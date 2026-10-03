@@ -176,3 +176,23 @@ test_find_first_callback(callbacks, find_first_integrator);
     @test irrational_f(after) < 0.0
     @test nextfloat(after) == before
 end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4388
+@testset "Dual rootfinding partials" begin
+    using ForwardDiff: Dual, value, partials
+    q = Dual{:t}(0.4, 1.0, -2.0)
+    tspan = (Dual{:t}(0.0, 0.0, 0.0), Dual{:t}(2.0, 0.0, 0.0))
+    cases = (
+        (t -> sin(t) - q, asin(0.4), 1 / sqrt(1 - 0.4^2)),
+        (t -> t^3 - q, cbrt(0.4), 1 / (3 * cbrt(0.4)^2)),
+        (t -> exp(t) - q - 1, log(1.4), 1 / 1.4),
+    )
+    for (g, root, droot) in cases, rootfind in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        zero_func(t, p = nothing) = g(t)
+        r = DiffEqBase.find_root(zero_func, tspan, rootfind)
+        @test value(r) == DiffEqBase.find_root((t, p = nothing) -> value(g(t)), value.(tspan), rootfind)
+        @test value(r) ≈ root atol = 4 * eps(root)
+        @test partials(r)[1] ≈ droot rtol = 16 * eps()
+        @test partials(r)[2] ≈ -2 * droot rtol = 16 * eps()
+    end
+end
