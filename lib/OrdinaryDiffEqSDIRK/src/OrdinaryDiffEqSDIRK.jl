@@ -19,7 +19,7 @@ using OrdinaryDiffEqCore: unwrap_alg,
     generic_solver_docstring,
     _fixup_ad, current_extrapolant!, current_extrapolant, Predictor,
     isnewton, get_W, set_new_W!, COEFFICIENT_MULTISTEP,
-    find_algebraic_vars_eqs
+    find_algebraic_vars_eqs, ODEIntegrator
 export Predictor
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: MuladdMacro, @muladd
@@ -27,7 +27,7 @@ using MacroTools: MacroTools
 using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
 # `alg_order` is owned by SciMLBase and extended here, so it needs `import`.
-import SciMLBase: alg_order, full_cache
+import SciMLBase: alg_order, full_cache, resize_non_user_cache!
 using SciMLBase: SciMLBase, SplitFunction, ODEProblem, _vec, _reshape, _unwrap_val
 # `initialize!` is owned by DiffEqBase and extended here, so it needs `import`;
 # `calculate_residuals`/`calculate_residuals!` are only called.

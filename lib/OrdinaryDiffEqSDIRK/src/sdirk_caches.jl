@@ -81,10 +81,20 @@ function full_cache(c::ESDIRKIMEXCache)
     if c.uprev2 !== nothing
         base = tuple(base..., c.uprev2)
     end
-    if c.uprev3 !== nothing
-        base = tuple(base..., c.uprev3)
-    end
     return base
+end
+
+function resize_non_user_cache!(
+        integrator::ODEIntegrator, cache::ESDIRKIMEXCache, i
+    )
+    uprev3 = cache.uprev3
+    uprev3 isa AbstractArray || return nothing
+    oldlen = length(uprev3)
+    resize!(uprev3, i)
+    if i > oldlen
+        fill!(view(uprev3, (oldlen + 1):i), zero(eltype(uprev3)))
+    end
+    return nothing
 end
 
 function OrdinaryDiffEqCore.strip_cache(cache::ESDIRKIMEXCache)
