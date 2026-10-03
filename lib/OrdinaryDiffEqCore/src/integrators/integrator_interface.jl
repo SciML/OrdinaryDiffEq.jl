@@ -364,6 +364,8 @@ function fill_grown_step_history!(integrator, oldlen)
     if integrator.alg isa DAEAlgorithm
         fill_grown_history_slots!(integrator.duprev, oldlen)
     end
+    cache = integrator.cache
+    hasfield(typeof(cache), :uprev3) && fill_grown_history_slots!(cache.uprev3, oldlen)
     return nothing
 end
 
