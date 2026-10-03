@@ -94,9 +94,9 @@ end
 
 # deprecated `extrapolant` keyword still maps onto a predictor
 @testset "extrapolant deprecation" begin
-    @test ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
-    @test ImplicitEuler(extrapolant = :constant).predictor == Predictor.Trivial
-    @test KenCarp4(extrapolant = :interpolant).predictor == Predictor.MaxOrder
+    @test_deprecated ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
+    @test_deprecated ImplicitEuler(extrapolant = :constant).predictor == Predictor.Trivial
+    @test_deprecated KenCarp4(extrapolant = :interpolant).predictor == Predictor.MaxOrder
 end
 
 @testset "interpolant predictors survive a rejected step (#4472)" begin
