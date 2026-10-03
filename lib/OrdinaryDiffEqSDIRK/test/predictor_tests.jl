@@ -94,9 +94,44 @@ end
 
 # deprecated `extrapolant` keyword still maps onto a predictor
 @testset "extrapolant deprecation" begin
-    @test_deprecated ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
-    @test_deprecated ImplicitEuler(extrapolant = :constant).predictor == Predictor.Trivial
-    @test_deprecated KenCarp4(extrapolant = :interpolant).predictor == Predictor.MaxOrder
+    mappings = (
+        (ImplicitEuler, :linear, Predictor.Linear),
+        (ImplicitEuler, :constant, Predictor.Trivial),
+        (KenCarp4, :interpolant, Predictor.MaxOrder),
+    )
+    depwarn_error = Base.JLOptions().depwarn == 2
+    for (M, extra, pred) in mappings
+        if depwarn_error
+            @test_deprecated M(extrapolant = extra)
+        else
+            alg = @test_deprecated M(extrapolant = extra)
+            @test alg.predictor == pred
+        end
+    end
+    # `--depwarn=error` makes `@test_deprecated` a throw-check before the mapping
+    # return, so the value checks run in a `--depwarn=yes` child using the same
+    # expected predictors as above.
+    if depwarn_error
+        checks = join(
+            (
+                "@test $(nameof(M))(extrapolant = :$extra).predictor == Predictor.$(pred)"
+                    for (M, extra, pred) in mappings
+            ),
+            "; ",
+        )
+        code = "using OrdinaryDiffEqSDIRK, Test; @testset \"extrapolant mapping\" begin $checks end"
+        cmd = Cmd(
+            [
+                first(Base.julia_cmd()),
+                "--startup-file=no",
+                "--project=$(Base.active_project())",
+                "--depwarn=yes",
+                "-e",
+                code,
+            ]
+        )
+        @test success(pipeline(cmd; stdout, stderr))
+    end
 end
 
 @testset "interpolant predictors survive a rejected step (#4472)" begin
