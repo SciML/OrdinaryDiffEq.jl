@@ -20,7 +20,7 @@ jobs:
     uses: "SciML/.github/.github/workflows/sublibrary-downgrade.yml@v1"
     secrets: "inherit"
     with:
-      julia-version: "1.11"
+      julia-version: "1.12"
       skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation"
       group-env-name: "GROUP"
       group-env-value: "Core"
