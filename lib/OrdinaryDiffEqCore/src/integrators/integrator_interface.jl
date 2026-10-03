@@ -350,8 +350,26 @@ function SciMLBase.add_saveat!(integrator::ODEIntegrator, t)
     return push!(integrator.opts.saveat, integrator.tdir * t)
 end
 
+function fill_grown_history_slots!(v, oldlen)
+    v isa AbstractArray || return nothing
+    newlen = length(v)
+    newlen > oldlen || return nothing
+    fill!(view(v, (oldlen + 1):newlen), zero(eltype(v)))
+    return nothing
+end
+
+function fill_grown_step_history!(integrator, oldlen)
+    fill_grown_history_slots!(integrator.uprev, oldlen)
+    fill_grown_history_slots!(integrator.uprev2, oldlen)
+    if integrator.alg isa DAEAlgorithm
+        fill_grown_history_slots!(integrator.duprev, oldlen)
+    end
+    return nothing
+end
+
 function resize!(integrator::ODEIntegrator, i::Int)
     (; cache) = integrator
+    oldlen = integrator.u isa AbstractArray ? length(integrator.u) : 0
 
     for c in full_cache(integrator)
         # Skip nothings which may exist in the cache since extra variables
@@ -363,7 +381,9 @@ function resize!(integrator::ODEIntegrator, i::Int)
     resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
-    return resize_non_user_cache!(integrator, cache, i)
+    resize_non_user_cache!(integrator, cache, i)
+    fill_grown_step_history!(integrator, oldlen)
+    return nothing
 end
 # we can't use resize!(..., i::Union{Int, NTuple{N,Int}}) where {N} because of method ambiguities with DiffEqBase
 function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
