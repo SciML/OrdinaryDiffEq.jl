@@ -219,9 +219,19 @@ end
             fp, (Reactant.ConcreteRNumber(one(T)), Reactant.ConcreteRNumber(one(T)))
         )
         Random.seed!(1)
-        xs = T[0, NaN, Inf, 1.0e30, floatmax(T), floatmin(T), 1.0e-30, 0.5, 1, 1.5, 2, 100]
+        # The `Float32` subnormal range: subnormal `Float32` inputs, and normal `Float64`
+        # inputs whose `Float32` conversion is subnormal or rounds up to `floatmin(Float32)`.
+        sub32 = T[
+            nextfloat(0.0f0), 3.0f-45, 1.0f-40, prevfloat(floatmin(Float32)),
+            prevfloat(T(floatmin(Float32))), -prevfloat(floatmin(Float32)),
+        ]
+        xs = T[0, -0.0, NaN, Inf, 1.0e30, floatmax(T), floatmin(T), floatmin(Float32), 1.0e-30, 0.5, 1, 1.5, 2, 100]
         ys = T[0.14, -0.08, 0.7, -0.4, 1 // 6, 0.2, Inf, 0]
-        pairs = vcat(vec(collect(Iterators.product(xs, ys))), [(T(exp(20randn())), T(rand() - 0.5)) for _ in 1:200])
+        pairs = vcat(
+            vec(collect(Iterators.product(vcat(xs, sub32), ys))),
+            [(T(exp(20randn())), T(rand() - 0.5)) for _ in 1:200],
+            [(T(rand() * floatmin(Float32)), T(rand() - 0.5)) for _ in 1:200],
+        )
         for (x, y) in pairs
             host = FastPower.fastpower(x, y)
             traced = Float64(compiled(Reactant.ConcreteRNumber(x), Reactant.ConcreteRNumber(y)))
@@ -230,4 +240,7 @@ end
             @test isapprox(traced, host; rtol = 2 * eps(Float32), nans = true)
         end
     end
+    @test_throws ArgumentError Reactant.@jit fp(
+        Reactant.ConcreteRNumber(Float16(0.5)), Reactant.ConcreteRNumber(Float16(0.2))
+    )
 end
