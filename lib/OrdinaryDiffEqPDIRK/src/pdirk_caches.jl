@@ -59,7 +59,7 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    if alg.threading
+    if isthreaded(alg.threading)
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
@@ -92,7 +92,7 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    if alg.threading
+    if isthreaded(alg.threading)
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
