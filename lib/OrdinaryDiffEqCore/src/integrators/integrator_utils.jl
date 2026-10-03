@@ -629,6 +629,7 @@ function _loopfooter!(integrator)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
 
+            accepted_dt = integrator.dt
             if _get_next_step_tstop(integrator)
                 # Step controller dt is overly pessimistic, since dt = time to tstop.
                 # Restore the original dt so the controller proposes a reasonable next step.
@@ -645,6 +646,7 @@ function _loopfooter!(integrator)
             ) *
                 oneunit(integrator.dt)
             calc_dt_propose!(integrator, dtnew)
+            integrator.dt = accepted_dt
             handle_callbacks!(integrator)
         else # Reject
             increment_reject!(integrator.stats)

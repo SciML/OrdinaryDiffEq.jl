@@ -602,3 +602,26 @@ function _fbdf_finish_fixed_step!(integrator, cache)
     end
     return nothing
 end
+
+function reset_qndf2_history!(integrator, cache)
+    # Anchor attempt counting so the next `perform_step!` sees `cnt == 1` (BDF1
+    # startup). Mid-solve, `iter` already counts the current attempt, so subtract
+    # one; at cold start `initialize!` sets both anchors to 0 directly instead.
+    cache.iter_at_event = max(integrator.iter - 1, 0)
+    cache.success_iter_at_event = integrator.success_iter
+    cache.dtₙ₋₁ = zero(integrator.dt)
+    cache.dtₙ₋₂ = zero(integrator.dt)
+    if cache isa QNDF2Cache
+        copyto!(cache.uprev2, integrator.uprev)
+        copyto!(cache.uprev3, integrator.uprev)
+        recursivefill!(cache.D, false)
+        recursivefill!(cache.D2, false)
+    else
+        cache.uprev2 = copy(integrator.uprev)
+        cache.uprev3 = copy(integrator.uprev)
+        for D in (cache.D, cache.D2), i in eachindex(D)
+            D[i] = zero(integrator.uprev)
+        end
+    end
+    return nothing
+end
