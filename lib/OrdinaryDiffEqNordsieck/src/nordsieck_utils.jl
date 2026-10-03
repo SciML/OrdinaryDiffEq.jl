@@ -64,6 +64,17 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
     return nothing
 end
 
+function nordsieck_complete_step!(integrator, cache, oldest_dt)
+    if get_EEst(integrator) > one(get_EEst(integrator))
+        nordsieck_prepare_next!(integrator, cache)
+        nordsieck_restore_dts!(cache, oldest_dt)
+    else
+        nordsieck_finalize!(integrator, cache)
+        nordsieck_prepare_next!(integrator, cache)
+    end
+    return nothing
+end
+
 ##############################################################
 # Lower level functions
 ##############################################################
@@ -284,6 +295,20 @@ end
 function nordsieck_rewind!(cache)
     perform_predict!(cache, true)
     return nordsieck_rescale!(cache, true)
+end
+
+function nordsieck_restore_failed_step!(cache, oldest_dt)
+    nordsieck_rewind!(cache)
+    return nordsieck_restore_dts!(cache, oldest_dt)
+end
+
+function nordsieck_restore_dts!(cache, oldest_dt)
+    dts = cache.dts
+    for i in 1:(length(dts) - 1)
+        dts[i] = dts[i + 1]
+    end
+    dts[end] = oldest_dt
+    return nothing
 end
 
 function is_nordsieck_change_order(cache::T, n = 0) where {T}
