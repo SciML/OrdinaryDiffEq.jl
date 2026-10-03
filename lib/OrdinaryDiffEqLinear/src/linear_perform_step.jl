@@ -821,6 +821,7 @@ function perform_step!(
 end
 
 function initialize!(integrator, cache::LinearExponentialCache)
+    cache.exp_matrix_cache.valid = false
     # Pre-start fsal
     integrator.fsalfirst = zero(cache.rtmp)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -844,11 +845,15 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
     if alg.krylov == :off
         if SciMLOperators.isconstant(f.f)
             exp_matrix_cache = cache.exp_matrix_cache
+            if integrator.derivative_discontinuity
+                exp_matrix_cache.valid = false
+            end
             E = exp_matrix_cache.matrix
-            if E === nothing || exp_matrix_cache.dt != dt
+            if !exp_matrix_cache.valid || exp_matrix_cache.dt != dt
                 E = exponential!(dt * A, exp_method, exp_cache)
                 exp_matrix_cache.matrix = E
                 exp_matrix_cache.dt = dt
+                exp_matrix_cache.valid = true
             end
         else
             E = exponential!(dt * A, exp_method, exp_cache)
