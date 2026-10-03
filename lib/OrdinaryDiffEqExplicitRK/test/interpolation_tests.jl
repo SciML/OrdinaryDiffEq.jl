@@ -5,6 +5,7 @@ using OrdinaryDiffEqCore
 using DiffEqBase
 using Test
 import SciMLBase
+import JLArrays
 
 # ============================================================================
 # Test Problems
@@ -193,4 +194,39 @@ end
     integ2.sol(out, 0.0, Val{1})
     @test integ2.sol.k[1][1] ≈ [-1.0, -2.0]
     @test integ2.sol.k[1][2] ≈ [-1.0, -2.0]
+end
+
+@testset "fallback compute_stages! (>17 stages) on JLArray" begin
+    n = 19
+    A = zeros(n, n)
+    for i in 2:n, j in 1:(i - 1)
+        A[i, j] = 1 / (i - 1)
+    end
+    c = [0; fill(0.5, n - 1)]
+    α = zeros(n)
+    α[end] = 1.0
+    αEEst = zeros(n)
+    αEEst[end] = 0.5
+    αEEst[1] = -0.5
+    tab = DiffEqBase.ExplicitRKTableau(A, c, α, 2; αEEst, adaptiveorder = 1)
+    alg = ExplicitRK(tableau = tab)
+    f_jl!(du, u, p, t) = (du .= -0.5 .* u; nothing)
+
+    sol_cpu = solve(
+        ODEProblem(f_jl!, ones(10), (0.0, 1.0)), alg;
+        adaptive = false, dt = 0.1, dense = false,
+    )
+    @test SciMLBase.successful_retcode(sol_cpu)
+
+    JLArrays.allowscalar(false)
+    try
+        sol_jl = solve(
+            ODEProblem(f_jl!, JLArrays.JLVector(ones(10)), (0.0, 1.0)), alg;
+            adaptive = false, dt = 0.1, dense = false,
+        )
+        @test SciMLBase.successful_retcode(sol_jl)
+        @test Array(sol_jl.u[end]) == sol_cpu.u[end]
+    finally
+        JLArrays.allowscalar(true)
+    end
 end
