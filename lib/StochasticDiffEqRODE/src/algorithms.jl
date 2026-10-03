@@ -139,9 +139,9 @@ struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
 Order 2.5 RODE-Taylor scheme for Random Ordinary Differential Equations driven by a Wiener
 process supplied as a stored path. It keeps every term of the Taylor expansion whose index
 satisfies `ι(a) + |a|/2 < 3.5`, thirteen in all, and replaces each derivative of `f` by a
-finite difference: five-point stencils of spacing `sqrt(dt)` in `W`, and differences of
-size `dt` in the state along the directions the scheme needs. The integrals of the path
-over the step are taken from the supplied path.
+finite difference: five-point stencils of spacing `sqrt(dt)` in `W`, and differences in
+the state along the directions the scheme needs, with displacements of size `dt` or
+smaller. The integrals of the path over the step are taken from the supplied path.
 
 ## Method Properties
 

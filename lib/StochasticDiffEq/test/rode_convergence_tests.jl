@@ -252,12 +252,65 @@ end
     @test abs(fitted_slope(TAYLOR_STEP_COUNTS, errors) - 3) < 0.2
 end
 
+mixed_oop(u, p, t, W) = @. -u + sin(u + W) * cos(t)
+mixed_iip(du, u, p, t, W) = (@. du = -u + sin(u + W) * cos(t))
+
+function mixed_reference(path)
+    u = 1.0
+    for k in 1:FINE_POINTS
+        t = FINE_GRID[k]
+        wm = (path[k] + path[k + 1]) / 2
+        k1 = mixed_oop(u, nothing, t, path[k])
+        k2 = mixed_oop(u + FINE_DT / 2 * k1, nothing, t + FINE_DT / 2, wm)
+        k3 = mixed_oop(u + FINE_DT / 2 * k2, nothing, t + FINE_DT / 2, wm)
+        k4 = mixed_oop(u + FINE_DT * k3, nothing, t + FINE_DT, path[k + 1])
+        u += FINE_DT / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    end
+    return u
+end
+
+@testset "RandomTaylor25 reaches order 3 on a nonlinear, time-dependent right-hand side" begin
+    rng = MersenneTwister(20261004)
+    errors = zeros(PATHS, length(TAYLOR_STEP_COUNTS))
+    backward = zeros(PATHS)
+    back_grid = reverse(FINE_GRID)
+    for m in 1:PATHS
+        path = wiener_path(rng)
+        exact = mixed_reference(path)
+        noise = NoiseGrid(FINE_GRID, path)
+        for (j, n) in enumerate(TAYLOR_STEP_COUNTS)
+            prob = RODEProblem{false}(mixed_oop, 1.0, (0.0, TEND), noise = noise)
+            sol = solve(prob, RandomTaylor25(), dt = TEND / n, adaptive = false)
+            errors[m, j] = abs(sol.u[end] - exact)
+        end
+        n = TAYLOR_STEP_COUNTS[3]
+        prob = RODEProblem{false}(
+            mixed_oop, exact, (TEND, 0.0), noise = NoiseGrid(back_grid, reverse(path))
+        )
+        sol = solve(prob, RandomTaylor25(), dt = -TEND / n, adaptive = false)
+        backward[m] = abs(sol.u[end] - 1.0)
+    end
+    strong = [sqrt(mean(errors[:, j] .^ 2)) for j in eachindex(TAYLOR_STEP_COUNTS)]
+    @test 2.5 < fitted_slope(TAYLOR_STEP_COUNTS, strong) < 3.4
+    @test sqrt(mean(backward .^ 2)) < 5 * strong[3]
+end
+
 @testset "RandomTaylor25 in-place matches out-of-place" begin
-    noise = NoiseGrid(FINE_GRID, wiener_path(MersenneTwister(20261004)))
+    path = wiener_path(MersenneTwister(20261004))
     u0 = [1.0, 2.0]
-    for n in (STEP_COUNTS[1], STEP_COUNTS[end])
-        outofplace = decay_solution(RandomTaylor25(), noise, n, u0).u
-        inplace = decay_solution(RandomTaylor25(), noise, n, copy(u0); inplace = true).u
+    for (tspan, grid, W) in (
+            ((0.0, TEND), FINE_GRID, path), ((TEND, 0.0), reverse(FINE_GRID), reverse(path)),
+        )
+        noise = NoiseGrid(grid, W)
+        dt = (tspan[2] - tspan[1]) / STEP_COUNTS[3]
+        outofplace = solve(
+            RODEProblem{false}(mixed_oop, u0, tspan, noise = noise), RandomTaylor25(),
+            dt = dt, save_everystep = true, adaptive = false
+        ).u
+        inplace = solve(
+            RODEProblem(mixed_iip, copy(u0), tspan, noise = noise), RandomTaylor25(),
+            dt = dt, save_everystep = true, adaptive = false
+        ).u
         @test all(isapprox(a, b, rtol = 1.0e-9) for (a, b) in zip(outofplace, inplace))
     end
 end
@@ -265,10 +318,12 @@ end
 @testset "RandomTaylor25 step integrals are exact on a misaligned grid" begin
     grid = collect(range(0.0, 1.0; length = 13))
     integrals = StochasticDiffEq.StochasticDiffEqRODE.path_integrals25
+    closed(dt) = (dt^2 / 2, dt^3 / 3, dt^4 / 4, dt^5 / 5, dt^3 / 3, dt^4 / 4)
     for (t, dt) in ((0.0, 0.25), (0.05, 0.25), (0.03, 0.04), (1 / 12, 1 / 12), (0.5, 0.5))
         W = (t = grid, W = copy(grid), dW = dt, curW = t)
-        I = integrals(W, t, dt, t)
-        @test all(I .≈ (dt^2 / 2, dt^3 / 3, dt^4 / 4, dt^5 / 5, dt^3 / 3, dt^4 / 4))
+        @test all(integrals(W, t, dt, t) .≈ closed(dt))
+        back = (t = reverse(grid), W = reverse(grid), dW = -dt, curW = t + dt)
+        @test all(integrals(back, t + dt, -dt, t + dt) .≈ closed(-dt))
     end
 end
 
@@ -282,7 +337,7 @@ end
     )
     sol = solve(prob, RandomTaylor25(), dt = -TEND / n, save_everystep = true, adaptive = false)
     stride = FINE_POINTS ÷ n
-    @test maximum(abs(sol.u[k + 1] - exact[end - k * stride]) for k in 0:n) < 1.0e-3
+    @test maximum(abs(sol.u[k + 1] - exact[end - k * stride]) for k in 0:n) < 2.0e-4
 end
 
 @testset "RandomTaylor25 rejects noise it cannot resolve" begin
