@@ -76,6 +76,18 @@ function expRK_operators(::Friedli, dt, A)
 end
 
 # Unified constructor for constant caches
+_check_cached_expRK_operators(alg, A, dt) = nothing
+
+function _check_cached_expRK_operators(::LawsonEuler, A, dt)
+    A isa AbstractMatrix || return nothing
+    if A isa AbstractSparseMatrix
+        throw(ArgumentError("LawsonEuler with krylov = false does not support sparse linear operators (got $(typeof(A))). Use LawsonEuler(krylov = true) instead."))
+    elseif eltype(A) <: BigFloat || dt isa BigFloat
+        throw(ArgumentError("LawsonEuler with krylov = false does not support BigFloat. Use LawsonEuler(krylov = true) instead."))
+    end
+    return nothing
+end
+
 for (Alg, Cache) in [
         (:LawsonEuler, :LawsonEulerConstantCache),
         (:NorsettEuler, :NorsettEulerConstantCache),
@@ -106,6 +118,7 @@ for (Alg, Cache) in [
                 throw(ArgumentError("Caching can only be used with SplitFunction"))
             A = size(f.f1.f) == () ? convert(Number, f.f1.f) :
                 convert(AbstractMatrix, f.f1.f)
+            _check_cached_expRK_operators(alg, A, dt)
             ops = expRK_operators(alg, dt, A)
         end
         if isa(f, SplitFunction) || SciMLBase.has_jac(f)
@@ -218,6 +231,7 @@ function alg_cache_expRK(
         KsCache = nothing
         # Precompute the operators
         A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
+        _check_cached_expRK_operators(alg, A, dt)
         ops = expRK_operators(alg, dt, A)
     end
     return uf, jac_config, J, ops, KsCache
@@ -277,6 +291,7 @@ function alg_cache(
     else
         KsCache = nothing
         A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
+        _check_cached_expRK_operators(alg, A, dt)
         exphA = expRK_operators(alg, dt, A)
     end
     return LawsonEulerCache(u, uprev, tmp, dz, rtmp, G, du1, jac_config, uf, J, exphA, KsCache)

@@ -291,3 +291,38 @@ end
         )
     end
 end
+
+@testset "LawsonEuler krylov=false rejects sparse and BigFloat operators" begin
+    N = 8
+    Asp = spdiagm(-1 => ones(N - 1), 0 => -2 * ones(N), 1 => ones(N - 1))
+    g! = (du, u, p, t) -> (@. du = -u^3; nothing)
+    g = (u, p, t) -> -u .^ 3
+    u0 = collect(1.0:N) / N
+    sp_ip = SplitODEProblem(MatrixOperator(Asp), g!, copy(u0), (0.0, 0.5))
+    sp_oop = SplitODEProblem(MatrixOperator(Asp), g, copy(u0), (0.0, 0.5))
+
+    @test_throws ArgumentError solve(sp_ip, LawsonEuler(krylov = false); dt = 0.01)
+    @test_throws ArgumentError solve(sp_oop, LawsonEuler(krylov = false); dt = 0.01)
+    @test successful_retcode(
+        solve(sp_ip, LawsonEuler(krylov = true, m = N); dt = 0.01)
+    )
+    @test successful_retcode(
+        solve(sp_oop, LawsonEuler(krylov = true, m = N); dt = 0.01)
+    )
+
+    T = BigFloat
+    Abig = Matrix{T}(T[-1 0; 0 -2])
+    zb! = (du, u, p, t) -> (du .= zero(T); nothing)
+    zb = (u, p, t) -> zero(u)
+    bf_ip = SplitODEProblem(MatrixOperator(Abig), zb!, T[1, 1], (T(0), T(1)))
+    bf_oop = SplitODEProblem(MatrixOperator(Abig), zb, T[1, 1], (T(0), T(1)))
+
+    @test_throws ArgumentError solve(bf_ip, LawsonEuler(krylov = false); dt = T(0.1))
+    @test_throws ArgumentError solve(bf_oop, LawsonEuler(krylov = false); dt = T(0.1))
+    @test successful_retcode(
+        solve(bf_ip, LawsonEuler(krylov = true, m = 2); dt = T(0.1))
+    )
+    @test successful_retcode(
+        solve(bf_oop, LawsonEuler(krylov = true, m = 2); dt = T(0.1))
+    )
+end
