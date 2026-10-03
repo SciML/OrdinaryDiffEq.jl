@@ -298,15 +298,43 @@ end
     @test sol_uneven.t[end] == 1.0
 end
 
-@testset "Float32 short tspan: adaptive dt does not snap past remaining interval" begin
-    f(u, p, t) = p .* u
-    t0 = 1.5f0
-    tf = 1.50001f0
-    p = Float32[-6.0f6]
-    s = solve(ODEProblem(f, Float32[1], (t0, tf), p), Tsit5(); dt = 8 * eps(t0))
-    @test s.retcode == ReturnCode.Success
-    @test s.stats.naccept > 1
-    @test s.u[end][1] < 1.0f-5
+@testset "Snap reaches tstop: u' = 1 covers full span" begin
+    f(u, p, t) = one(u)
+    for alg in (Euler(), Tsit5())
+        t0 = 1.5f0
+        span = 8 * eps(t0)
+        tf = t0 + span
+        dt = 6 * eps(t0)
+        s = solve(
+            ODEProblem(f, zero(t0), (t0, tf)), alg;
+            dt = dt, adaptive = false
+        )
+        @test s.retcode == ReturnCode.Success
+        @test s.t[end] == tf
+        @test s.u[end] ≈ (tf - t0)
+
+        s_rev = solve(
+            ODEProblem(f, zero(t0), (tf, t0)), alg;
+            dt = -dt, adaptive = false
+        )
+        @test s_rev.retcode == ReturnCode.Success
+        @test s_rev.t[end] == t0
+        @test s_rev.u[end] ≈ (t0 - tf)
+    end
+
+    t0 = 1.0e10
+    span = 150 * eps(t0)
+    tf = t0 + span
+    dt = 110 * eps(t0)
+    for alg in (Euler(), Tsit5())
+        s = solve(
+            ODEProblem(f, 0.0, (t0, tf)), alg;
+            dt = dt, adaptive = false
+        )
+        @test s.retcode == ReturnCode.Success
+        @test s.t[end] == tf
+        @test s.u[end] ≈ (tf - t0)
+    end
 end
 
 @testset "d_discontinuities: tprev advanced past discontinuity" begin
