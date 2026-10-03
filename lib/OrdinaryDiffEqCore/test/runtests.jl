@@ -39,7 +39,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Interpolation idxs/out validation" include("interpolation_idxs_bounds_tests.jl")
     @time @safetestset "Bool Equal Coercion" include("bool_equal_tests.jl")
     @time @safetestset "dtmin Direction" include("dtmin_direction_tests.jl")
-    @time @safetestset "Float32 tstop snap" include("float32_tstop_snap_tests.jl")
+    @time @safetestset "tstop snap" include("tstop_snap_tests.jl")
     @time @safetestset "Instability Diagnostics" include("instability_diagnostics_tests.jl")
     @time @safetestset "Enzyme Interpolation" include("enzyme_interpolation_tests.jl")
 end

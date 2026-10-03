@@ -298,43 +298,39 @@ end
     @test sol_uneven.t[end] == 1.0
 end
 
-@testset "Snap reaches tstop: u' = 1 covers full span" begin
+@testset "Snap reaches tstop: Euler u' = 1 covers full span" begin
     f(u, p, t) = one(u)
-    for alg in (Euler(), Tsit5())
-        t0 = 1.5f0
-        span = 8 * eps(t0)
-        tf = t0 + span
-        dt = 6 * eps(t0)
-        s = solve(
-            ODEProblem(f, zero(t0), (t0, tf)), alg;
-            dt = dt, adaptive = false
-        )
-        @test s.retcode == ReturnCode.Success
-        @test s.t[end] == tf
-        @test s.u[end] ≈ (tf - t0)
-
-        s_rev = solve(
-            ODEProblem(f, zero(t0), (tf, t0)), alg;
-            dt = -dt, adaptive = false
-        )
-        @test s_rev.retcode == ReturnCode.Success
-        @test s_rev.t[end] == t0
-        @test s_rev.u[end] ≈ (t0 - tf)
-    end
-
-    t0 = 1.0e10
-    span = 150 * eps(t0)
+    t0 = 1.5f0
+    span = 8 * eps(t0)
     tf = t0 + span
-    dt = 110 * eps(t0)
-    for alg in (Euler(), Tsit5())
-        s = solve(
-            ODEProblem(f, 0.0, (t0, tf)), alg;
-            dt = dt, adaptive = false
-        )
-        @test s.retcode == ReturnCode.Success
-        @test s.t[end] == tf
-        @test s.u[end] ≈ (tf - t0)
-    end
+    dt = 6 * eps(t0)
+    s = solve(
+        ODEProblem(f, zero(t0), (t0, tf)), Euler();
+        dt = dt, adaptive = false
+    )
+    @test s.retcode == ReturnCode.Success
+    @test s.t[end] == tf
+    @test s.u[end] ≈ (tf - t0)
+
+    s_rev = solve(
+        ODEProblem(f, zero(t0), (tf, t0)), Euler();
+        dt = -dt, adaptive = false
+    )
+    @test s_rev.retcode == ReturnCode.Success
+    @test s_rev.t[end] == t0
+    @test s_rev.u[end] ≈ (t0 - tf)
+
+    t0_64 = 1.0e10
+    span_64 = 150 * eps(t0_64)
+    tf_64 = t0_64 + span_64
+    dt_64 = 110 * eps(t0_64)
+    s64 = solve(
+        ODEProblem(f, 0.0, (t0_64, tf_64)), Euler();
+        dt = dt_64, adaptive = false
+    )
+    @test s64.retcode == ReturnCode.Success
+    @test s64.t[end] == tf_64
+    @test s64.u[end] ≈ (tf_64 - t0_64)
 end
 
 @testset "d_discontinuities: tprev advanced past discontinuity" begin

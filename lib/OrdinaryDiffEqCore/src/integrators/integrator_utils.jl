@@ -273,7 +273,7 @@ function modify_dt_for_tstops!(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         distance_to_tstop = abs(tdir_tstop - tdir_t)
-        # Snap tol ≤ fraction of the step; on snap, dt must equal distance_to_tstop.
+        # Snap window covers accumulated `t + dt` drift; on snap dt equals distance_to_tstop.
         tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
                 isfinite(integrator.t)
             100 * eps(
@@ -290,6 +290,7 @@ function modify_dt_for_tstops!(integrator)
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
             step_tol = min(tstop_tol, original_dt / 2)
+            # Do not re-lengthen after a rejection (else forever); first step exempt (10x shrink).
             reject_retry = !integrator.accept_step && integrator.success_iter > 0
             if original_dt + step_tol < distance_to_tstop ||
                     (reject_retry && original_dt < distance_to_tstop)

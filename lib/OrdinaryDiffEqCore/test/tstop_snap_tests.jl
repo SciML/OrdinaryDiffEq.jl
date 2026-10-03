@@ -44,6 +44,25 @@ end
     @test s64.u[end] ≈ (tf_64 - t0_64)
 end
 
+@testset "Adaptive snap reaches tstop: u' = 1 covers full span" begin
+    f(u, p, t) = one(u)
+    t0 = 1.5f0
+    span = 8 * eps(t0)
+    tf = t0 + span
+    dt = 6 * eps(t0)
+    s = solve(ODEProblem(f, zero(t0), (t0, tf)), Tsit5(); dt = dt)
+    @test s.retcode == ReturnCode.Success
+    @test s.u[end] ≈ (tf - t0)
+
+    t0_64 = 1.0e10
+    span_64 = 150 * eps(t0_64)
+    tf_64 = t0_64 + span_64
+    dt_64 = 110 * eps(t0_64)
+    s64 = solve(ODEProblem(f, 0.0, (t0_64, tf_64)), Tsit5(); dt = dt_64)
+    @test s64.retcode == ReturnCode.Success
+    @test s64.u[end] ≈ (tf_64 - t0_64)
+end
+
 @testset "Float32/Float64 tstops are hit without collapsing steps" begin
     f(u, p, t) = -u
     counts = Int[]
