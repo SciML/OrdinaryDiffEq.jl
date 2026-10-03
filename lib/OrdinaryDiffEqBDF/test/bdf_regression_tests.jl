@@ -273,3 +273,121 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+@testset "tstop on an algebraic jump of a mass-matrix DAE (#4660)" begin
+    load(t) = t < 10.0 ? 0.0 : 5.0
+    function f!(du, u, p, t)
+        du[1] = -u[2] / 3600
+        du[2] = u[2] - 1 - load(t)
+        return nothing
+    end
+    prob = ODEProblem(
+        ODEFunction(f!; mass_matrix = [1.0 0.0; 0.0 0.0]), [1.0, 1.0], (0.0, 20.0)
+    )
+    x20 = 1 - 10 / 3600 - 6 * 10 / 3600
+    stops = ((; tstops = [10.0]), (; tstops = [10.0], d_discontinuities = [10.0]))
+    for alg in (FBDF(), QNDF()), reltol in (1.0e-3, 1.0e-6), kw in stops
+        sol = solve(prob, alg; reltol, abstol = reltol / 100, kw...)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 20.0
+        i = findfirst(==(10.0), sol.t)
+        @test i !== nothing
+        # The step onto the tstop solves the constraint with the post-jump load,
+        # to the accuracy of the Newton iteration.
+        @test sol.u[i][2] ≈ 1 + load(10.0) rtol = 1.0e-4
+        # Missing the jump would shift x(20) by 50 / 3600; allow half of that.
+        @test abs(sol.u[end][1] - x20) < min(20 * reltol, 25 / 3600)
+        # The solve must not creep towards the tstop through hundreds of rejected
+        # steps.
+        @test sol.stats.nreject < 100
+    end
+end
+
+@testset "History restart after an algebraic jump at a high-order tstop landing" begin
+    # x' = y, 0 = y - sin(t) - 2 * (t >= 3): smooth until t = 3, so the solvers reach
+    # high order before the jump lands on the tstop.
+    load(t) = t < 3 ? 0.0 : 2.0
+    f!(du, u, p, t) = (du[1] = u[2]; du[2] = u[2] - sin(t) - load(t); nothing)
+    f(u, p, t) = [u[2], u[2] - sin(t) - load(t)]
+    xex(t) = 1 - cos(t) + 2 * max(t - 3, 0)
+    M = [1.0 0.0; 0.0 0.0]
+    used_order(c) = hasproperty(c, :prevorder) ? c.prevorder : c.prev_order
+    maxerr(sol) = maximum(abs(u[1] - xex(t)) for (t, u) in zip(sol.t, sol.u))
+    for rhs in (f!, f), alg in (FBDF(), QNDF()), reltol in (1.0e-5, 1.0e-7)
+        kw = (; reltol, abstol = reltol / 100)
+        prob = ODEProblem(ODEFunction(rhs; mass_matrix = M), [0.0, 0.0], (0.0, 5.0))
+        integ = init(prob, alg; tstops = [3.0], kw...)
+        order_before = 0
+        while integ.t < 3
+            step!(integ)
+            order_before = max(order_before, used_order(integ.cache))
+        end
+        @test integ.t == 3
+        @test integ.u[2] ≈ sin(3) + 2
+        @test order_before > 1
+        step!(integ)
+        @test used_order(integ.cache) == 1
+
+        sol = solve(prob, alg; tstops = [3.0], kw...)
+        @test sol.retcode == ReturnCode.Success
+        # Empirical accuracy floor, not a derived bound. The step onto t = 3 integrates
+        # x' = y with the post-jump y over the whole step, an O(jump * dt) error that
+        # only the differential error estimate limits.
+        @test maxerr(sol) < 100 * reltol
+    end
+end
+
+@testset "Mass-matrix scaling does not loosen error control at tstops" begin
+    # σ u' = -σ u is u' = -u for every σ, alone and next to the algebraic equation
+    # 0 = y. Neither has a jump, so every tstop landing keeps the full error test.
+    reltol, abstol = 1.0e-6, 1.0e-8
+    for dae in (false, true), iip in (true, false), alg in (FBDF(), QNDF()),
+            σ in (1.0, 1.0e-3, 1.0e-6)
+
+        if dae
+            f! = (du, u, p, t) -> (du[1] = -σ * u[1]; du[2] = u[2]; nothing)
+            f = (u, p, t) -> [-σ * u[1], u[2]]
+            M, u0 = [σ 0.0; 0.0 0.0], [1.0, 0.0]
+        else
+            f! = (du, u, p, t) -> (du[1] = -σ * u[1]; nothing)
+            f = (u, p, t) -> [-σ * u[1]]
+            M, u0 = fill(σ, 1, 1), [1.0]
+        end
+        prob = ODEProblem(ODEFunction(iip ? f! : f; mass_matrix = M), u0, (0.0, 1.0))
+        sol = solve(prob, alg; dt = 0.1, tstops = [0.1, 0.5], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(abs(u[1] - exp(-t)) for (t, u) in zip(sol.t, sol.u)) < 100 * reltol
+    end
+end
+
+@testset "Non-diagonal mass matrices keep the full error test at tstops" begin
+    # Smooth DAEs whose mass matrix does not identify algebraic variables by its
+    # diagonal. Each has exact solution components built from exp(-t).
+    problems = (
+        # equation 2 is algebraic (0 = u1), variable 2 is differential (u2' = -u2)
+        permuted = (
+            [0.0 1.0; 0.0 0.0], (u, t) -> [-u[2], u[1]], [0.0, 1.0],
+            (t, u) -> abs(u[2] - exp(-t)),
+        ),
+        # coupled differential block, algebraic u3 = u1
+        coupled = (
+            [1.0 0.5 0.0; 0.5 1.0 0.0; 0.0 0.0 0.0],
+            (u, t) -> [-(u[1] + 0.5u[2]), -(0.5u[1] + u[2]), u[3] - u[1]],
+            [1.0, 2.0, 1.0], (t, u) -> max(abs(u[1] - exp(-t)), abs(u[2] - 2exp(-t))),
+        ),
+        # dense singular: (a + b)' = -(a + b) with the constraint a = b
+        dense = (
+            [1.0 1.0; 1.0 1.0], (u, t) -> [-(u[1] + u[2]), -(u[1] + u[2]) + (u[1] - u[2])],
+            [1.0, 1.0], (t, u) -> max(abs(u[1] - exp(-t)), abs(u[2] - exp(-t))),
+        ),
+    )
+    reltol, abstol = 1.0e-6, 1.0e-8
+    for (M, rhs, u0, err) in problems, iip in (true, false), alg in (FBDF(), QNDF())
+        f! = (du, u, p, t) -> (du .= rhs(u, t); nothing)
+        f = (u, p, t) -> rhs(u, t)
+        prob = ODEProblem(ODEFunction(iip ? f! : f; mass_matrix = M), u0, (0.0, 1.0))
+        sol = solve(prob, alg; dt = 0.1, tstops = [0.1, 0.5], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(err(t, u) for (t, u) in zip(sol.t, sol.u)) < 100 * reltol
+    end
+end
