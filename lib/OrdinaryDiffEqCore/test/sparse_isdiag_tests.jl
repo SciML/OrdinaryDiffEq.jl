@@ -3,6 +3,19 @@ using Test
 using SparseArrays
 using OrdinaryDiffEqCore: _isdiag
 
+function median_isdiag_runtime(A; samples = 5, evaluations = 10)
+    times = map(1:samples) do _
+        is_diagonal = true
+        elapsed = @elapsed for _ in 1:evaluations
+            is_diagonal &= _isdiag(A)
+        end
+        @assert is_diagonal
+        elapsed
+    end
+    sort!(times)
+    return times[cld(samples, 2)]
+end
+
 @testset "Sparse isdiag Performance" begin
     # Test 1: Correctness - _isdiag should correctly identify diagonal matrices
     @testset "Correctness" begin
@@ -46,14 +59,8 @@ using OrdinaryDiffEqCore: _isdiag
         _isdiag(M_small)
         _isdiag(M_large)
 
-        # Measure
-        t_small = @elapsed for _ in 1:10
-            _isdiag(M_small)
-        end
-
-        t_large = @elapsed for _ in 1:10
-            _isdiag(M_large)
-        end
+        t_small = median_isdiag_runtime(M_small)
+        t_large = median_isdiag_runtime(M_large)
 
         ratio = t_large / t_small
         size_ratio = n_large / n_small  # 4x size increase
@@ -64,7 +71,7 @@ using OrdinaryDiffEqCore: _isdiag
         @test ratio < size_ratio * 2  # Should be closer to linear than quadratic
 
         # Absolute sanity check: processing 40k diagonal shouldn't take > 100ms
-        t_single = @elapsed _isdiag(M_large)
+        t_single = median_isdiag_runtime(M_large; evaluations = 1)
         @test t_single < 0.1  # Should be < 100ms, typically < 1ms
     end
 
