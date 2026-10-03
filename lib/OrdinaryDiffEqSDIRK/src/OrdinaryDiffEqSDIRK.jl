@@ -19,7 +19,7 @@ using OrdinaryDiffEqCore: unwrap_alg,
     generic_solver_docstring,
     _fixup_ad, current_extrapolant!, current_extrapolant, Predictor,
     isnewton, get_W, set_new_W!, COEFFICIENT_MULTISTEP,
-    find_algebraic_vars_eqs
+    find_algebraic_vars_eqs, _is_identity_massmatrix
 export Predictor
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: MuladdMacro, @muladd
