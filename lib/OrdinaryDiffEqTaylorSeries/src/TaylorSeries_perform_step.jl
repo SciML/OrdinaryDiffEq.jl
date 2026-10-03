@@ -182,13 +182,13 @@ end
             EEst = integrator.opts.internalnorm(atmp, t)
 
             saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
-            snapshot_controller!(cache.controller_snapshot, integrator.controller_cache)
+            snap = snapshot_controller(integrator.controller_cache)
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            restore_controller!(integrator.controller_cache, cache.controller_snapshot)
+            restore_controller!(integrator.controller_cache, snap)
             OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose
@@ -246,13 +246,13 @@ end
             EEst = integrator.opts.internalnorm(atmp, t)
 
             saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
-            snapshot_controller!(cache.controller_snapshot, integrator.controller_cache)
+            snap = snapshot_controller(integrator.controller_cache)
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            restore_controller!(integrator.controller_cache, cache.controller_snapshot)
+            restore_controller!(integrator.controller_cache, snap)
             OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose

@@ -105,62 +105,57 @@ function alg_cache(
     return ExplicitTaylorConstantCache(alg.order, jet_wrapped)
 end
 
-mutable struct AdaptiveControllerSnapshot{T}
-    q11::T
-    errold::T
-    dtreject::T
-    dtacc::T
-    erracc::T
-    qold::T
-    dt_factor::T
-    err1::T
-    err2::T
-    err3::T
+# Per-trial snapshot of controller-cache scratch (every isbits field except
+# `controller` / `EEst`, plus array fields elementwise). This is AdaptiveOrder's
+# analogue of `sync_controllers!`: new isbits scratch fields are included
+# automatically. Array history is a 3-tuple (`PIDControllerCache.err`).
+@inline function _snapshot_array(v::AbstractVector)
+    return @inbounds (v[1], v[2], v[3])
 end
 
-function AdaptiveControllerSnapshot(::Type{T}) where {T}
-    z = zero(T)
-    o = one(T)
-    return AdaptiveControllerSnapshot{T}(o, o, o, o, o, o, o, z, z, z)
-end
-
-@inline function snapshot_controller!(snap::AdaptiveControllerSnapshot, cache)
-    C = typeof(cache)
-    hasfield(C, :q11) && (snap.q11 = getfield(cache, :q11))
-    hasfield(C, :errold) && (snap.errold = getfield(cache, :errold))
-    hasfield(C, :dtreject) && (snap.dtreject = getfield(cache, :dtreject))
-    hasfield(C, :dtacc) && (snap.dtacc = getfield(cache, :dtacc))
-    hasfield(C, :erracc) && (snap.erracc = getfield(cache, :erracc))
-    hasfield(C, :qold) && (snap.qold = getfield(cache, :qold))
-    hasfield(C, :dt_factor) && (snap.dt_factor = getfield(cache, :dt_factor))
-    if hasfield(C, :err)
-        err = getfield(cache, :err)
-        snap.err1 = err[1]
-        snap.err2 = err[2]
-        snap.err3 = err[3]
+@generated function snapshot_controller(cache::C) where {C}
+    pairs = Expr[]
+    for name in fieldnames(C)
+        name === :controller && continue
+        name === :EEst && continue
+        ft = fieldtype(C, name)
+        qname = QuoteNode(name)
+        if ft <: AbstractArray
+            push!(pairs, Expr(:kw, name, :(_snapshot_array(getfield(cache, $qname)))))
+        elseif isbitstype(ft)
+            push!(pairs, Expr(:kw, name, :(getfield(cache, $qname))))
+        end
     end
-    return nothing
+    isempty(pairs) && return :(NamedTuple())
+    return :((; $(pairs...)))
 end
 
-@inline function restore_controller!(cache, snap::AdaptiveControllerSnapshot)
-    C = typeof(cache)
-    hasfield(C, :q11) && setfield!(cache, :q11, convert(fieldtype(C, :q11), snap.q11))
-    hasfield(C, :errold) && setfield!(cache, :errold, convert(fieldtype(C, :errold), snap.errold))
-    hasfield(C, :dtreject) &&
-        setfield!(cache, :dtreject, convert(fieldtype(C, :dtreject), snap.dtreject))
-    hasfield(C, :dtacc) && setfield!(cache, :dtacc, convert(fieldtype(C, :dtacc), snap.dtacc))
-    hasfield(C, :erracc) &&
-        setfield!(cache, :erracc, convert(fieldtype(C, :erracc), snap.erracc))
-    hasfield(C, :qold) && setfield!(cache, :qold, convert(fieldtype(C, :qold), snap.qold))
-    hasfield(C, :dt_factor) &&
-        setfield!(cache, :dt_factor, convert(fieldtype(C, :dt_factor), snap.dt_factor))
-    if hasfield(C, :err)
-        err = getfield(cache, :err)
-        err[1] = snap.err1
-        err[2] = snap.err2
-        err[3] = snap.err3
+@generated function restore_controller!(cache::C, snap::NamedTuple{N}) where {C, N}
+    body = Expr[]
+    for name in N
+        ft = fieldtype(C, name)
+        qname = QuoteNode(name)
+        if ft <: AbstractArray
+            push!(
+                body,
+                quote
+                    v = getfield(cache, $qname)
+                    s = getfield(snap, $qname)
+                    @inbounds begin
+                        v[1] = s[1]
+                        v[2] = s[2]
+                        v[3] = s[3]
+                    end
+                end
+            )
+        else
+            push!(body, :(setfield!(cache, $qname, getfield(snap, $qname))))
+        end
     end
-    return nothing
+    return quote
+        $(body...)
+        return nothing
+    end
 end
 
 @cache struct ExplicitTaylorAdaptiveOrderCache{
@@ -171,7 +166,6 @@ end
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
-    controller_snapshot::AdaptiveControllerSnapshot{tType}
     jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, coeffType, uType, tType}}}
     coeffs::Vector{coeffType}
     u::uType
@@ -209,7 +203,7 @@ function alg_cache(
     tmp = zero(u)
     current_order = Ref(max_order_value - 1)
     return ExplicitTaylorAdaptiveOrderCache(
-        alg.min_order, alg.max_order, current_order, AdaptiveControllerSnapshot(typeof(t)),
+        alg.min_order, alg.max_order, current_order,
         jets, coeffs, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
@@ -223,7 +217,6 @@ struct ExplicitTaylorAdaptiveOrderConstantCache{
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
-    controller_snapshot::AdaptiveControllerSnapshot{tType}
     jets::Vector{FunctionWrapper{taylorType, Tuple{uType, tType}}}
 end
 function alg_cache(
@@ -246,7 +239,6 @@ function alg_cache(
     end
     current_order = Ref(max_order_value - 1)
     return ExplicitTaylorAdaptiveOrderConstantCache(
-        alg.min_order, alg.max_order, current_order,
-        AdaptiveControllerSnapshot(typeof(t)), jets
+        alg.min_order, alg.max_order, current_order, jets
     )
 end
