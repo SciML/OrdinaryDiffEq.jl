@@ -29,7 +29,7 @@ end
 @testset "issue #4743: reinit! history boundary (oop)" begin
     prob = DDEProblem(f_4743, 1.0, h_4743, (-1.0, 0.0); constant_lags = [τ_4743])
     integrator = init(
-        prob, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1e-8, reltol = 1e-8
+        prob, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1.0e-8, reltol = 1.0e-8
     )
     reinit!(integrator, 2.0; t0 = 0.0, tf = 1.0)
 
@@ -40,20 +40,20 @@ end
     @test sol.retcode == ReturnCode.Success
     # With correct history, Tsit5 integrates u'=1 exactly up to floating-point noise.
     # Without the fix, the cached history returns 2.0 and max error is O(1e-3).
-    @test maximum(abs(u - (2 + t)) for (u, t) in zip(sol.u, sol.t)) < 1e-12
+    @test maximum(abs(u - (2 + t)) for (u, t) in zip(sol.u, sol.t)) < 1.0e-12
 
     prob_fresh = DDEProblem(f_4743, 2.0, h_4743, (0.0, 1.0); constant_lags = [τ_4743])
     sol_fresh = solve(
-        prob_fresh, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1e-8, reltol = 1e-8
+        prob_fresh, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1.0e-8, reltol = 1.0e-8
     )
     @test sol_fresh.retcode == ReturnCode.Success
-    @test maximum(abs(u - (2 + t)) for (u, t) in zip(sol_fresh.u, sol_fresh.t)) < 1e-12
+    @test maximum(abs(u - (2 + t)) for (u, t) in zip(sol_fresh.u, sol_fresh.t)) < 1.0e-12
 end
 
 @testset "issue #4743: reinit! history boundary (iip)" begin
     prob = DDEProblem(f_4743!, [1.0], h_4743_vec, (-1.0, 0.0); constant_lags = [τ_4743])
     integrator = init(
-        prob, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1e-8, reltol = 1e-8
+        prob, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1.0e-8, reltol = 1.0e-8
     )
     reinit!(integrator, [2.0]; t0 = 0.0, tf = 1.0)
 
@@ -64,7 +64,7 @@ end
 
     sol = solve!(integrator)
     @test sol.retcode == ReturnCode.Success
-    @test maximum(abs(only(u) - (2 + t)) for (u, t) in zip(sol.u, sol.t)) < 1e-12
+    @test maximum(abs(only(u) - (2 + t)) for (u, t) in zip(sol.u, sol.t)) < 1.0e-12
 end
 
 @testset "issue #4743: save_start=false / erase_sol=false" begin
@@ -72,7 +72,7 @@ end
         prob = DDEProblem(f_4743, 1.0, h_4743, (-1.0, 0.0); constant_lags = [τ_4743])
         integrator = init(
             prob, MethodOfSteps(Tsit5());
-            dt = 0.2, abstol = 1e-8, reltol = 1e-8, save_start
+            dt = 0.2, abstol = 1.0e-8, reltol = 1.0e-8, save_start
         )
         for _ in 1:3
             step!(integrator)
@@ -86,7 +86,7 @@ end
         # With erase_sol=false, earlier interval points remain; check the new span.
         idx = findall(t -> t >= 0, sol.t)
         @test !isempty(idx)
-        @test maximum(abs(sol.u[i] - (2 + sol.t[i])) for i in idx) < 1e-12
+        @test maximum(abs(sol.u[i] - (2 + sol.t[i])) for i in idx) < 1.0e-12
     end
 end
 
@@ -96,7 +96,7 @@ end
     f_back(u, h, p, t) = (h(p, t + τ_4743) - τ_4743) / (2 + t)
     prob = DDEProblem(f_back, 3.0, h_4743, (1.0, 0.0); constant_lags = [-τ_4743])
     integrator = init(
-        prob, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1e-8, reltol = 1e-8
+        prob, MethodOfSteps(Tsit5()); dt = 0.2, abstol = 1.0e-8, reltol = 1.0e-8
     )
     reinit!(integrator, 2.0; t0 = 0.0, tf = -1.0)
 
@@ -106,5 +106,5 @@ end
 
     sol = solve!(integrator)
     @test sol.retcode == ReturnCode.Success
-    @test maximum(abs(u - (2 + t)) for (u, t) in zip(sol.u, sol.t)) < 1e-12
+    @test maximum(abs(u - (2 + t)) for (u, t) in zip(sol.u, sol.t)) < 1.0e-12
 end
