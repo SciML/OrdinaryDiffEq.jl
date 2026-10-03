@@ -29,3 +29,12 @@ errsol3 = appxtrue(sol5, test_sol)
 @test errsol1.errors[:l∞] ≈ sol.errors[:l∞]
 @test errsol1.errors[:L∞] ≈ sol.errors[:L∞]
 @test errsol1.errors[:L2] ≈ sol.errors[:L2]
+
+sol_nodense = solve(
+    prob, Vern9(); dt = 1 // 2^(10), abstol = 1.0e-14, reltol = 1.0e-14,
+    dense = false, saveat = 1 // 4
+)
+
+@test TestSolution(sol2).dense
+@test !TestSolution(sol_nodense).dense
+@test !haskey(appxtrue(sol4, TestSolution(sol_nodense)).errors, :l2)
