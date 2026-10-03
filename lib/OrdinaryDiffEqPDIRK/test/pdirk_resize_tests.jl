@@ -47,11 +47,11 @@ function resize_callback!()
     return DiscreteCallback(condition, affect!; save_positions = (false, false))
 end
 
-const ALG = PDIRK44(threading = false)
-
-@testset "PDIRK44 resize! grow then shrink" begin
+@testset "PDIRK44 resize! grow then shrink (threading=$threading)" for threading in (
+        false, true,
+    )
     sol = solve(
-        ODEProblem(f!, copy(U0), (0.0, TF)), ALG;
+        ODEProblem(f!, copy(U0), (0.0, TF)), PDIRK44(; threading);
         dt = 1.0e-3, adaptive = false, callback = resize_callback!(),
         tstops = [TG, TS]
     )
@@ -63,7 +63,7 @@ end
 
 # `deleteat!` reaches stage buffers only through `resize_non_user_cache!`
 # (default: resize to `length(u)`). Stage values are overwritten each step.
-@testset "PDIRK44 deleteat!" begin
+@testset "PDIRK44 deleteat! (threading=$threading)" for threading in (false, true)
     keep = Ref([1, 2, 3])
     A3 = A
     function f_del!(du, u, p, t)
@@ -81,7 +81,7 @@ end
     )
     u0 = [1.0, 2.0, 3.0]
     sol = solve(
-        ODEProblem(f_del!, copy(u0), (0.0, TF)), ALG;
+        ODEProblem(f_del!, copy(u0), (0.0, TF)), PDIRK44(; threading);
         dt = 1.0e-3, adaptive = false, callback = cb, tstops = [TG]
     )
     u1 = exp(A3 * TG) * u0
