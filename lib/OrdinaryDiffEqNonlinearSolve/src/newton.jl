@@ -985,6 +985,16 @@ function _compute_rhs!(
 end
 
 ## relax!
+
+# FD slope of the residual norm is roundoff-dominated near convergence; use the Newton-model slope.
+function linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
+    ϕ0, dϕ0 = ϕdϕ(zero(α0))
+    if dϕ0 > zero(dϕ0) || !isfinite(dϕ0)
+        dϕ0 = -ϕ0
+    end
+    return linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)[1]
+end
+
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
     return relax!(dz, nlsolver, integrator, f, relax(nlsolver))
 end
@@ -1056,8 +1066,7 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
         @.. dz = dz * α
         return dz
     end
@@ -1124,8 +1133,7 @@ function relax(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
         dz = dz * α
         return dz
     end
