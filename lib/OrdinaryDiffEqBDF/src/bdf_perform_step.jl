@@ -400,7 +400,9 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
     κ = alg.kappa
     cnt = integrator.iter
     k = 1
-    if cnt > 1
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    if cnt > 1 && !iszero(dtₙ₋₁)
         ρ = dt / dtₙ₋₁
         D[1] = uprev - uprev2   # backward diff
         if ρ != 1
@@ -487,7 +489,9 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
     κ = alg.kappa
     cnt = integrator.iter
     k = 1
-    if cnt > 1
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    if cnt > 1 && !iszero(dtₙ₋₁)
         ρ = dt / dtₙ₋₁
         @.. broadcast = false D[1] = uprev - uprev2 # backward diff
         if ρ != 1
@@ -573,7 +577,10 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     alg = unwrap_alg(integrator, true)
     cnt = integrator.iter
     k = 2
-    if cnt == 1 || cnt == 2
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    startup = cnt <= 2 || iszero(dtₙ₋₁)
+    if startup
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -586,7 +593,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 2 && dt != dtₙ₋₁
+    if !startup && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         d₁ = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -683,7 +690,10 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     alg = unwrap_alg(integrator, true)
     cnt = integrator.iter
     k = 2
-    if cnt == 1 || cnt == 2
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    startup = cnt <= 2 || iszero(dtₙ₋₁)
+    if startup
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -696,7 +706,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 2 && dt != dtₙ₋₁
+    if !startup && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         @.. broadcast = false Dtmp[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
