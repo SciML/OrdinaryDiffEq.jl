@@ -24,6 +24,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test SOSRA() isa StochasticDiffEqAdaptiveAlgorithm
         @test SOSRA2() isa StochasticDiffEqAdaptiveAlgorithm
     end
+
+    @time @safetestset "SRA/SRI resize! stage buffers (issue 4720)" begin
+        include("sra_resize_tests.jl")
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
