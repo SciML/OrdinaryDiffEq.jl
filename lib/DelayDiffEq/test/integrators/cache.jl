@@ -7,6 +7,8 @@ using OrdinaryDiffEqHighOrderRK
 using OrdinaryDiffEqFeagin
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqSDIRK
+using SciMLBase: ReturnCode
 using Random
 Random.seed!(213)
 
@@ -64,3 +66,22 @@ println("Rodas4")
 
 println("Rodas5")
 @test_nowarn solve(prob, MethodOfSteps(Rodas5()); dt = 0.5)
+
+@testset "Trapezoid resize! grows uprev3" begin
+    ddef!(du, u, h, p, t) = (du .= -50 .* (u .- 0.5 .* h(p, t - 0.1; idxs = 1)); nothing)
+    h0 = (p, t; idxs = nothing) -> idxs === nothing ? ones(3) : 1.0
+    integ = init(
+        DDEProblem(ddef!, ones(3), h0, (0.0, 1.0); constant_lags = [0.1]),
+        MethodOfSteps(Trapezoid()),
+    )
+    for _ in 1:4
+        step!(integ)
+    end
+    resize!(integ, 5)
+    integ.u[4:5] .= 1.0
+    for _ in 1:6
+        step!(integ)
+    end
+    @test integ.sol.retcode == ReturnCode.Success
+    @test length(integ.cache.uprev3) == 5
+end
