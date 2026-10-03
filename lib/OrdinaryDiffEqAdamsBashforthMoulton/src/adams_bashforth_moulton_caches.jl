@@ -66,6 +66,7 @@ end
     k2::rateType
     k3::rateType
     step::Int
+    abcache::AB3ConstantCache{rateType}
 end
 
 function alg_cache(
@@ -91,7 +92,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
-    return ABM32ConstantCache(k2, k3, 1)
+    return ABM32ConstantCache(k2, k3, 1, AB3ConstantCache(k2, k3, 1))
 end
 
 @cache mutable struct AB4Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -156,7 +157,6 @@ end
     k2::rateType
     k3::rateType
     k4::rateType
-    ralk2::rateType
     k::rateType
     tmp::uType
     t2::rateType
@@ -174,6 +174,7 @@ end
     k3::rateType
     k4::rateType
     step::Int
+    abcache::AB4ConstantCache{rateType}
 end
 
 function alg_cache(
@@ -186,7 +187,6 @@ function alg_cache(
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
-    ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
     t2 = zero(rate_prototype)
@@ -196,7 +196,7 @@ function alg_cache(
     t6 = zero(rate_prototype)
     t7 = zero(rate_prototype)
     return ABM43Cache(
-        u, uprev, fsalfirst, k2, k3, k4, ralk2, k,
+        u, uprev, fsalfirst, k2, k3, k4, k,
         tmp, t2, t3, t4, t5, t6, t7, 1, alg.thread
     )
 end
@@ -210,7 +210,7 @@ function alg_cache(
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
-    return ABM43ConstantCache(k2, k3, k4, 1)
+    return ABM43ConstantCache(k2, k3, k4, 1, AB4ConstantCache(k2, k3, k4, 1))
 end
 
 @cache mutable struct AB5Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -283,7 +283,6 @@ end
     t2::rateType
     t3::rateType
     t4::rateType
-    t5::rateType
     t6::rateType
     t7::rateType
     t8::rateType
@@ -297,6 +296,7 @@ end
     k4::rateType
     k5::rateType
     step::Int
+    abcache::AB5ConstantCache{rateType}
 end
 
 function alg_cache(
@@ -315,13 +315,12 @@ function alg_cache(
     t2 = zero(rate_prototype)
     t3 = zero(rate_prototype)
     t4 = zero(rate_prototype)
-    t5 = zero(rate_prototype)
     t6 = zero(rate_prototype)
     t7 = zero(rate_prototype)
     t8 = zero(rate_prototype)
     return ABM54Cache(
         u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp,
-        t2, t3, t4, t5, t6, t7, t8, 1, alg.thread
+        t2, t3, t4, t6, t7, t8, 1, alg.thread
     )
 end
 
@@ -335,7 +334,7 @@ function alg_cache(
     k3 = rate_prototype
     k4 = rate_prototype
     k5 = rate_prototype
-    return ABM54ConstantCache(k2, k3, k4, k5, 1)
+    return ABM54ConstantCache(k2, k3, k4, k5, 1, AB5ConstantCache(k2, k3, k4, k5, 1))
 end
 
 @cache mutable struct VCAB3ConstantCache{
