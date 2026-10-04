@@ -24,6 +24,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test SOSRA() isa StochasticDiffEqAdaptiveAlgorithm
         @test SOSRA2() isa StochasticDiffEqAdaptiveAlgorithm
     end
+    @time @safetestset "SRACache SciMLBase cache hooks" include("sra_cache_hooks_tests.jl")
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
