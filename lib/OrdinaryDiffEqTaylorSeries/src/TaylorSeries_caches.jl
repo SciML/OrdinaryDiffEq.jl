@@ -110,10 +110,12 @@ end
 # analogue of `sync_controllers!`: new scratch fields are included automatically,
 # including non-isbits scalars (e.g. `BigFloat` QT). Immutable scalars may be
 # stored by reference; restore puts the pre-trial value back. Array history is
-# an `NTuple` of the field length (`PIDControllerCache.err`).
+# the fixed-length-3 `PIDControllerCache.err` (ones(QT,3) at construction);
+# `Val(3)` keeps Float64/Float32 isbits snapshots allocation-free.
 @inline function _snapshot_array(v::AbstractVector)
-    n = length(v)
-    return ntuple(i -> @inbounds(v[i]), n)
+    length(v) == 3 ||
+        throw(ArgumentError("AdaptiveOrder controller array snapshot expects length 3, got $(length(v))"))
+    return ntuple(i -> @inbounds(v[i]), Val(3))
 end
 
 @generated function snapshot_controller(cache::C) where {C}
