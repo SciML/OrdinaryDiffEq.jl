@@ -469,7 +469,10 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
 
     # PIDControllerCache.err is a length-3 Vector{Float64}; a runtime-length
-    # ntuple snapshot boxes ~0.4–1.0 KB/step. Val(3) must stay at 0 B.
+    # ntuple snapshot boxes ~0.4–1.0 KB/step. step! itself carries a fixed
+    # 16-byte infrastructure allocation on Julia 1.10/1.11 for every solver,
+    # so compare against ExplicitTaylor2 (allocation-free in perform_step!)
+    # on the same problem instead of zero.
     @testset "AdaptiveOrder PIDController step! allocation bound" begin
         function f_pid_alloc!(du, u, p, t)
             du[1] = -0.5 * u[1]
@@ -479,6 +482,17 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         prob = ODEProblem{true, SciMLBase.FullSpecialize}(
             f_pid_alloc!, [1.0, 1.0], (0.0, 1.0e6)
         )
+        ref_integrator = init(
+            prob, ExplicitTaylor2(),
+            dt = 0.1, save_everystep = false, adaptive = false
+        )
+        for _ in 1:30
+            step!(ref_integrator)
+        end
+        ref_bytes = typemax(Int)
+        for _ in 1:10
+            ref_bytes = min(ref_bytes, @allocated step!(ref_integrator))
+        end
         integrator = init(
             prob, ExplicitTaylorAdaptiveOrder(),
             controller = PIDController(0.7, -0.4),
@@ -491,7 +505,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         for _ in 1:10
             allocs = min(allocs, @allocated step!(integrator))
         end
-        @test allocs == 0
+        @test allocs == ref_bytes
     end
 
     # Test AutoSpecialize (default ODEProblem wraps in FunctionWrappers)
