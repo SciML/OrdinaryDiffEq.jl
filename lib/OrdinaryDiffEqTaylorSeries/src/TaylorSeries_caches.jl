@@ -105,12 +105,15 @@ function alg_cache(
     return ExplicitTaylorConstantCache(alg.order, jet_wrapped)
 end
 
-# Per-trial snapshot of controller-cache scratch (every isbits field except
+# Per-trial snapshot of controller-cache scratch (every scalar field except
 # `controller` / `EEst`, plus array fields elementwise). This is AdaptiveOrder's
-# analogue of `sync_controllers!`: new isbits scratch fields are included
-# automatically. Array history is a 3-tuple (`PIDControllerCache.err`).
+# analogue of `sync_controllers!`: new scratch fields are included automatically,
+# including non-isbits scalars (e.g. `BigFloat` QT). Immutable scalars may be
+# stored by reference; restore puts the pre-trial value back. Array history is
+# an `NTuple` of the field length (`PIDControllerCache.err`).
 @inline function _snapshot_array(v::AbstractVector)
-    return @inbounds (v[1], v[2], v[3])
+    n = length(v)
+    return ntuple(i -> @inbounds(v[i]), n)
 end
 
 @generated function snapshot_controller(cache::C) where {C}
@@ -122,7 +125,7 @@ end
         qname = QuoteNode(name)
         if ft <: AbstractArray
             push!(pairs, Expr(:kw, name, :(_snapshot_array(getfield(cache, $qname)))))
-        elseif isbitstype(ft)
+        else
             push!(pairs, Expr(:kw, name, :(getfield(cache, $qname))))
         end
     end
@@ -141,10 +144,8 @@ end
                 quote
                     v = getfield(cache, $qname)
                     s = getfield(snap, $qname)
-                    @inbounds begin
-                        v[1] = s[1]
-                        v[2] = s[2]
-                        v[3] = s[3]
+                    @inbounds for i in eachindex(s)
+                        v[i] = s[i]
                     end
                 end
             )
