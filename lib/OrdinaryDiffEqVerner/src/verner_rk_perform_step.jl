@@ -447,17 +447,8 @@ end
     )
     stage_limiter!(tmp, integrator, p, t + c8 * dt)
     f(k8, tmp, p, t + c8 * dt)
-    # Stage 10 does not depend on stages 8 and 9. Computing it first and stage 9 in `u`
-    # keeps both stage values available for the stiffness estimate.
-    @.. broadcast = false thread = thread tmp = uprev +
-        dt *
-        (
-        a101 * k1 + a103 * k3 + a104 * k4 + a105 * k5 +
-            a106 * k6 +
-            a107 * k7
-    )
-    stage_limiter!(tmp, integrator, p, t + dt)
-    f(k10, tmp, p, t + dt)
+    # Stage 9 is computed in `u` so that both stage values are available for the
+    # stiffness estimate. It must precede stage 10 since `k10` aliases `k3`.
     @.. broadcast = false thread = thread u = uprev +
         dt *
         (
@@ -467,6 +458,15 @@ end
     )
     stage_limiter!(u, integrator, p, t + dt)
     f(k9, u, p, t + dt)
+    @.. broadcast = false thread = thread tmp = uprev +
+        dt *
+        (
+        a101 * k1 + a103 * k3 + a104 * k4 + a105 * k5 +
+            a106 * k6 +
+            a107 * k7
+    )
+    stage_limiter!(tmp, integrator, p, t + dt)
+    f(k10, tmp, p, t + dt)
     if integrator.alg isa CompositeAlgorithm
         g10 = tmp
         g9 = u
