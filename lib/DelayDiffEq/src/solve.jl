@@ -442,7 +442,8 @@ function SciMLBase.__init(
     # parameters of fixed-point iteration
     # do not initialize fsalfirst and fsallast
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
-    eigen_est = inv(one(tType))
+    # we don't want to differentiate through eigenvalue estimation
+    eigen_est = inv(one(constvalue(tType)))
     tprev = t0
     dtcache = tType(dt)
     dtpropose = tType(dt)

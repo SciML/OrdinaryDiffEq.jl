@@ -42,9 +42,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     if integrator.alg isa CompositeAlgorithm
         g9 = u
-        integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k9 .- k8) ./ (g9 .- g8))), t
-        )
+        integrator.eigen_est = eigen_est_from_stages(k9, k8, g9, g8)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -184,8 +182,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g9 = u
         g8 = tmp
-        @.. broadcast = false thread = thread rtmp = abs((k9 - k8) / (g9 - g8))
-        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
+        integrator.eigen_est = eigen_est_from_stages(k9, k8, g9, g8)
     end
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (
@@ -285,9 +282,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k10 .- k9) ./ (g10 .- g9))), t
-        )
+        integrator.eigen_est = eigen_est_from_stages(k10, k9, g10, g9)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -452,15 +447,8 @@ end
     )
     stage_limiter!(tmp, integrator, p, t + c8 * dt)
     f(k8, tmp, p, t + c8 * dt)
-    @.. broadcast = false thread = thread tmp = uprev +
-        dt *
-        (
-        a091 * k1 + a093 * k3 + a094 * k4 + a095 * k5 +
-            a096 * k6 +
-            a097 * k7 + a098 * k8
-    )
-    stage_limiter!(tmp, integrator, p, t + dt)
-    f(k9, tmp, p, t + dt)
+    # Stage 10 does not depend on stages 8 and 9. Computing it first and stage 9 in `u`
+    # keeps both stage values available for the stiffness estimate.
     @.. broadcast = false thread = thread tmp = uprev +
         dt *
         (
@@ -473,18 +461,26 @@ end
     @.. broadcast = false thread = thread u = uprev +
         dt *
         (
+        a091 * k1 + a093 * k3 + a094 * k4 + a095 * k5 +
+            a096 * k6 +
+            a097 * k7 + a098 * k8
+    )
+    stage_limiter!(u, integrator, p, t + dt)
+    f(k9, u, p, t + dt)
+    if integrator.alg isa CompositeAlgorithm
+        g10 = tmp
+        g9 = u
+        integrator.eigen_est = eigen_est_from_stages(k10, k9, g10, g9)
+    end
+    @.. broadcast = false thread = thread u = uprev +
+        dt *
+        (
         b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 +
             b8 * k8 +
             b9 * k9
     )
     stage_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 10)
-    if integrator.alg isa CompositeAlgorithm
-        g10 = u
-        g9 = tmp
-        @.. broadcast = false thread = thread rtmp = abs((k10 - k9) / (g10 - g9))
-        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
-    end
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (
             btilde1 * k1 + btilde4 * k4 +
@@ -643,9 +639,7 @@ end
             b12 * k12
     )
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k13 .- k12) ./ (g13 .- g12))), t
-        )
+        integrator.eigen_est = eigen_est_from_stages(k13, k12, g13, g12)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -879,8 +873,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g13 = u
         g12 = tmp
-        @.. broadcast = false thread = thread rtmp = abs((k13 - k12) / (g13 - g12))
-        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
+        integrator.eigen_est = eigen_est_from_stages(k13, k12, g13, g12)
     end
     @.. broadcast = false thread = thread u = uprev +
         dt *
@@ -1097,9 +1090,7 @@ end
             b14 * k14 + b15 * k15
     )
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k16 .- k15) ./ (g16 .- g15))), t
-        )
+        integrator.eigen_est = eigen_est_from_stages(k16, k15, g16, g15)
     end
     if integrator.opts.adaptive
         utilde = dt * (
@@ -1381,8 +1372,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g16 = u
         g15 = tmp
-        @.. broadcast = false thread = thread rtmp = abs((k16 - k15) / (g16 - g15))
-        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
+        integrator.eigen_est = eigen_est_from_stages(k16, k15, g16, g15)
     end
     @.. broadcast = false thread = thread u = uprev +
         dt *

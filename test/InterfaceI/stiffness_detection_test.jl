@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, Test, ADTypes
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 import ODEProblemLibrary: prob_ode_vanderpol
-using ForwardDiff: Dual
+using ForwardDiff: Dual, Tag
 
 # Create Van der Pol problem with same structure as the new ODEProblemLibrary implementation
 # New implementation uses: u[1] = x, u[2] = y, p[1] = μ
@@ -100,4 +100,34 @@ for (i, prob) in enumerate(probArr)
     @test length(sol.t) < 570
     @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
+end
+
+# Stiffness detection must not depend on the partials of dual numbers (#4776):
+# the forward sensitivity system has the same eigenvalues as the primal problem
+@testset "Stiffness detection ignores dual partials" begin
+    stiffalg = Rosenbrock23(autodiff = AutoFiniteDiff())
+    algs = (
+        AutoTsit5(stiffalg), AutoDP5(stiffalg), AutoVern6(stiffalg),
+        AutoVern7(stiffalg), AutoVern8(stiffalg), AutoVern9(stiffalg),
+    )
+    seed = 1.0e3
+    k1 = Dual{typeof(Tag(identity, Float64))}(0.25, seed)
+    k2 = Dual{typeof(Tag(abs, typeof(k1)))}(k1, Dual{typeof(Tag(identity, Float64))}(seed, seed))
+    for k in (k1, k2), u0 in ([one(k)], [complex(one(k))])
+        prob_iip = ODEProblem((du, u, p, t) -> (du .= -p .* u), u0, (0.0, 40.0), k)
+        prob_oop = ODEProblem((u, p, t) -> -p .* u, u0, (0.0, 40.0), k)
+        for prob in (prob_iip, prob_oop)
+            for alg in algs
+                sol = solve(prob, alg; abstol = 1.0e-12, reltol = 1.0e-8)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.stats.maxeig ≈ 0.25 rtol = 1.0e-2
+                @test all(==(1), sol.alg_choice)
+            end
+
+            # The default solver switches via its own logic and does not record `maxeig`
+            sol = solve(prob; abstol = 1.0e-12, reltol = 1.0e-8)
+            @test SciMLBase.successful_retcode(sol)
+            @test allequal(sol.alg_choice)
+        end
+    end
 end

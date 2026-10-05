@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: alg_stability_size, explicit_rk_docstring,
     OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache,
     alg_cache,
     OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
-    constvalue, perform_step!, @cache,
+    constvalue, eigen_est_from_stages, perform_step!, @cache,
     _ode_interpolant, _ode_interpolant!,
     CompiledFloats, @OnDemandTableauExtract,
     CompositeAlgorithm, _ode_addsteps!,
@@ -15,7 +15,6 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype,
     copyat_or_push!
-import LinearAlgebra: norm
 using TruncatedStacktraces: @truncate_stacktrace
 import SciMLBase: alg_order, @def, full_cache
 using DiffEqBase: calculate_residuals, calculate_residuals!
