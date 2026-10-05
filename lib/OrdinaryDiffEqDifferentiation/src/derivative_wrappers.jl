@@ -284,7 +284,7 @@ function build_jac_config(
                 @. @view(jac_prototype[idxs]) = 1
             else
                 mm = concrete_mass_matrix(f.mass_matrix)
-                idxs = findall(!iszero, mm)
+                idxs = mass_matrix_nonzeros(mm)
                 @. @view(jac_prototype[idxs]) = @view(mm[idxs])
             end
         end
@@ -448,7 +448,7 @@ function sparsity_colorvec(f::F, x) where {F}
             @. @view(sparsity[idxs]) = 1
         else
             mm = concrete_mass_matrix(f.mass_matrix)
-            idxs = findall(!iszero, mm)
+            idxs = mass_matrix_nonzeros(mm)
             @. @view(sparsity[idxs]) = @view(mm[idxs])
         end
     end
