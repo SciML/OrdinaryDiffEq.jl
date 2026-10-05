@@ -1,7 +1,7 @@
 name = "DiffEqDevTools"
 uuid = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "3.6.4"
+version = "3.6.3"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
@@ -69,7 +69,7 @@ NonlinearSolve = "4.20.3"
 ODEProblemLibrary = "1"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqBDF = "2"
-OrdinaryDiffEqCore = "4, 5"
+OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqFIRK = "2"
 OrdinaryDiffEqLowOrderRK = "2"
 OrdinaryDiffEqNonlinearSolve = "2"
