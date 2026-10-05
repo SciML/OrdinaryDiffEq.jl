@@ -8,7 +8,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 AllocCheck = "0.2"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4, 5"
 OrdinaryDiffEqMultirate = "3"
 SciMLBase = "3"
 SciMLTesting = "2.10"

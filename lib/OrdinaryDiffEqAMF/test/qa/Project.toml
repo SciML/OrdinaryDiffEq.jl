@@ -13,7 +13,7 @@ path = "../../../OrdinaryDiffEqCore"
 [compat]
 AllocCheck = "0.2"
 OrdinaryDiffEqAMF = "2"
-OrdinaryDiffEqCore = "4"
+OrdinaryDiffEqCore = "4, 5"
 SciMLBase = "3"
 SciMLOperators = "1"
 SciMLTesting = "2.10"

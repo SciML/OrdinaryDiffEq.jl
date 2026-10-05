@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqSymplecticRK"
 uuid = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
-version = "2.2.3"
+version = "2.2.4"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -42,7 +42,7 @@ MuladdMacro = "0.2.4"
 LinearAlgebra = "1.10"
 OrdinaryDiffEqRKN = "2"
 SciMLBase = "3.39"
-OrdinaryDiffEqCore = "4.15.1"
+OrdinaryDiffEqCore = "4.15.1, 5"
 Unitful = "1.25.1"
 julia = "1.10"
 RecursiveArrayTools = "4.2.0"
