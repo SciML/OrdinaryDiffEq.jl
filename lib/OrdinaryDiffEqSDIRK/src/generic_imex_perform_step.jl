@@ -55,7 +55,6 @@ end
 @inline _mmmul(z, ::Nothing) = z
 @inline _mmmul(z, d) = d * z
 
-#
 # A SciMLOperators mass matrix may depend on `(u, p, t)`, so its diagonal is read at
 # the point each conversion belongs to: `(uprev, t)` for the first stage and
 # `(u, t + dt)` for the FSAL. The out-of-place `update_coefficients` leaves the
@@ -66,9 +65,10 @@ function _mmdiag(tab, mass_matrix, u, p, t)
 end
 
 # The end-of-step diagonal. A plain matrix is constant, so the first-stage `mmd` is reused.
-_mmdiag_end(::Nothing, mass_matrix, u, p, t) = nothing
 _mmdiag_end(mmd, ::Union{UniformScaling, AbstractMatrix}, u, p, t) = mmd
-_mmdiag_end(mmd, mass_matrix, u, p, t) = _mmdiag_values(mass_matrix, u, p, t)
+function _mmdiag_end(mmd, mass_matrix, u, p, t)
+    return mmd === nothing ? nothing : _mmdiag_values(mass_matrix, u, p, t)
+end
 
 # A scalar mass matrix (`λ * I`, or a SciMLOperators `ScalarOperator`, which reports
 # `axes(M) == ()`) has no `diag`; its diagonal is the scalar itself, which
