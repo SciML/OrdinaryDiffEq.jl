@@ -56,7 +56,17 @@ end
 @inline _mmmul(z, d) = d * z
 
 function _mmdiag(tab, mass_matrix)
-    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing : diag(mass_matrix)
+    (mass_matrix === I || !tab.explicit_first_stage) && return nothing
+    return _mmdiag_values(mass_matrix)
+end
+
+# A scalar mass matrix (`λ * I`, or a SciMLOperators `ScalarOperator`, which reports
+# `axes(M) == ()`) has no `diag`; its diagonal is the scalar itself, which
+# broadcasts in `_mmdiv`/`_mmmul`.
+_mmdiag_values(mass_matrix::UniformScaling) = mass_matrix.λ
+_mmdiag_values(mass_matrix::AbstractMatrix) = diag(mass_matrix)
+function _mmdiag_values(mass_matrix)
+    return axes(mass_matrix) == () ? convert(Number, mass_matrix) : diag(mass_matrix)
 end
 
 # ===========================================================================
