@@ -25,10 +25,8 @@ function _validate_estimation_problem(prob, name)
         throw(ArgumentError("$name requires a forward-time ODEProblem"))
     prob.f.mass_matrix == LinearAlgebra.I ||
         throw(ArgumentError("$name currently requires the standard mass matrix"))
-    problem_kwargs = values(prob.kwargs)
-    if haskey(problem_kwargs, :callback) && problem_kwargs.callback !== nothing
+    _has_callbacks(values(prob.kwargs)) &&
         throw(ArgumentError("$name does not currently support callbacks"))
-    end
     return nothing
 end
 
