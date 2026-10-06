@@ -28,7 +28,8 @@ using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!
 # `alg_order` is owned by SciMLBase and extended here, so it needs `import`.
 import SciMLBase: alg_order, full_cache
-using SciMLBase: SciMLBase, SplitFunction, ODEProblem, _vec, _reshape, _unwrap_val
+using SciMLBase: SciMLBase, SplitFunction, ODEProblem, _vec, _reshape, _unwrap_val,
+    update_coefficients
 # `initialize!` is owned by DiffEqBase and extended here, so it needs `import`;
 # `calculate_residuals`/`calculate_residuals!` are only called.
 import DiffEqBase: initialize!
