@@ -57,7 +57,8 @@ end
     integ = init(prob, alg; dt = 0.01, adaptive)
     step!(integ)
     for (n, change!) in (
-            (4, i -> resize!(i, 4)), (3, i -> resize!(i, 3)), (5, i -> resize!(i, 5)),
+            (4, i -> resize!(i, 4)), (3, i -> resize!(i, 3)),
+            (2, i -> deleteat!(i, 2)), (3, i -> addat!(i, 1:1)), (5, i -> resize!(i, 5)),
             (4, i -> deleteat!(i, 2)), (5, i -> addat!(i, 1:1)), (2, i -> resize!(i, 2)),
         )
         change!(integ)
@@ -71,4 +72,26 @@ end
         @test all(isfinite, integ.u)
     end
     adaptive && @test all(c -> length(c[3]) == zlen(2), integ.W.S₂.data)
+end
+
+function seeded_resize_run(alg)
+    integ = init(prob, alg; dt = 0.01, adaptive = false, seed = 99)
+    foreach(_ -> step!(integ), 1:3)
+    resize!(integ, 5)
+    integ.u[3:5] .= 1.0
+    foreach(_ -> step!(integ), 1:3)
+    resize!(integ, 3)
+    foreach(_ -> step!(integ), 1:2)
+    deleteat!(integ, 1)
+    step!(integ)
+    addat!(integ, 2:2)
+    integ.u[2] = 1.0
+    foreach(_ -> step!(integ), 1:2)
+    return integ.u
+end
+
+# Reference values pin the order of the noise draws made when the state grows.
+@testset "DRI1 seeded trajectory through resize!/deleteat!/addat!" begin
+    @test seeded_resize_run(DRI1()) ≈
+        [0.9459635381650938, 1.0072467196875334, 0.9921011934618271] rtol = 1.0e-12
 end

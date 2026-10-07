@@ -44,10 +44,12 @@ This is called from the `resize!` integrator interface; see
 """
 function resize_noise!(integrator, cache, bot_idx, i)
     extra = alg_needs_extra_process(integrator.alg)
+    zindexed = extra && z_follows_w(integrator)
     for S in (integrator.W.S₁, integrator.W.S₂), c in S
         resize!(c[2], i)
+        zindexed && resize!(c[3], i)
         if i >= bot_idx # fill in rands
-            fill_new_noise_caches!(integrator, c, c[1], bot_idx:i, 1:0)
+            fill_new_noise_caches!(integrator, c, c[1], bot_idx:i, zindexed ? (bot_idx:i) : (1:0))
         end
     end
     resize!(integrator.W.dW, i)
@@ -59,10 +61,22 @@ function resize_noise!(integrator, cache, bot_idx, i)
     resize!(integrator.W.curW, i)
     integrator.W.curW[end] = zero(eltype(integrator.u))
     DiffEqNoiseProcess.resize_stack!(integrator.W, i)
-    extra && resize_extra_process!(integrator, extra_process_length(integrator, i))
 
+    if zindexed
+        resize!(integrator.W.dZ, i)
+        integrator.W.dZ[end] = zero(eltype(integrator.u))
+        resize!(integrator.W.dZtilde, i)
+        integrator.W.dZtilde[end] = zero(eltype(integrator.u))
+        resize!(integrator.W.dZtmp, i)
+        integrator.W.dZtmp[end] = zero(eltype(integrator.u))
+        resize!(integrator.W.curZ, i)
+        integrator.W.curZ[end] = zero(eltype(integrator.u))
+    elseif extra
+        resize_extra_process!(integrator, extra_process_length(integrator, i))
+    end
     return if i >= bot_idx # fill in rands
         fill!(@view(integrator.W.curW[bot_idx:i]), zero(eltype(integrator.u)))
+        zindexed && fill!(@view(integrator.W.curZ[bot_idx:i]), zero(eltype(integrator.u)))
     end
 end
 
@@ -108,14 +122,16 @@ function resize_extra_process!(integrator, zlen)
 end
 
 """
-    z_follows_w(integrator, i) -> Bool
+    z_follows_w(integrator) -> Bool
 
-Whether the extra noise process `Z` has one entry per component of `W`, both now and
-once `W` has `i` components, so that state indices also index `Z`.
+Whether the algorithm's extra noise process `Z` has one entry per component of `W` by
+construction, i.e. its [`_z_prototype`](@ref) is the `W` prototype itself, so that
+state indices also index `Z`.
 """
-function z_follows_w(integrator, i)
-    return length(integrator.W.dZ) == length(integrator.W.dW) &&
-        extra_process_length(integrator, i) == i
+function z_follows_w(integrator)
+    W = integrator.W
+    proto = similar(W.dW)
+    return _z_prototype(integrator.alg, proto, isinplace(W), integrator.dt) === proto
 end
 
 """
@@ -227,7 +243,7 @@ the shrunken state.
 function deleteat_noise!(integrator, cache, idxs)
     i = length(integrator.u)
     extra = alg_needs_extra_process(integrator.alg)
-    zindexed = extra && z_follows_w(integrator, i)
+    zindexed = extra && z_follows_w(integrator)
     for S in (integrator.W.S₁, integrator.W.S₂), c in S
         deleteat!(c[2], idxs)
         zindexed && deleteat!(c[3], idxs)
@@ -262,7 +278,7 @@ stacks, and the new slots are filled with freshly sampled increments through
 function addat_noise!(integrator, cache, idxs)
     i = length(integrator.u)
     extra = alg_needs_extra_process(integrator.alg)
-    zindexed = extra && z_follows_w(integrator, i)
+    zindexed = extra && z_follows_w(integrator)
     for S in (integrator.W.S₁, integrator.W.S₂), c in S
         addat!(c[2], idxs)
         zindexed && addat!(c[3], idxs)
