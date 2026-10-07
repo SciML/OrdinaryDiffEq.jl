@@ -108,6 +108,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Initialization" begin
         include("integrators/initialization.jl")
     end
+    @time @safetestset "save_discretes" begin
+        include("integrators/save_discretes.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
