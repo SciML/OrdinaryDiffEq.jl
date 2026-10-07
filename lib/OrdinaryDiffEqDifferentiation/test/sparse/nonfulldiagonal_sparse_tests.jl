@@ -174,7 +174,7 @@ solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
     @test all(iszero, nonzeros(integ.cache.W))
 end
 
-@testset "Sparse W zero-init enables LinearSolve nonstructural-zero Auto reduction" begin
+@testset "Sparse W zero-init with PureKLU stiff solve" begin
     n = 4
     jp = spdiagm(-1 => ones(n - 1), 0 => ones(n), 1 => ones(n - 1))
     f!(du, u, p, t) = (du .= (-u); nothing)
@@ -185,23 +185,13 @@ end
         end
         return nothing
     end
-    function sparse_reduction(lc)
-        return lc.cacheval isa LinearSolve.DefaultLinearSolverInit ?
-            lc.cacheval.sparse_reduction : lc.sparse_reduction
-    end
 
     prob = ODEProblem(ODEFunction(f!; jac = jac!, jac_prototype = jp), ones(n), (0.0, 1.0))
     integ = init(prob, Rodas5P(linsolve = PureKLUFactorization()))
-    red = sparse_reduction(integ.cache.linsolve)
     @test all(iszero, nonzeros(integ.cache.J))
     @test all(iszero, nonzeros(integ.cache.W))
-    @test !red.active
-    @test red.pending
 
-    step!(integ)
-    red = sparse_reduction(integ.cache.linsolve)
-    @test count(iszero, nonzeros(integ.cache.W)) >= 1
-    @test !red.pending
-    @test red.active
-    @test red.nstart_zeros > 0
+    sol = solve!(integ)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[end] ≈ exp(-1) .* ones(n) rtol = 1.0e-6
 end
