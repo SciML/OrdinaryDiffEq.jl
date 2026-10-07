@@ -234,18 +234,56 @@ function jacobian!(
     end
 
     config = jac_config[1]
+    backend = gpu_safe_autodiff(alg_autodiff(alg), x)
+    shrunk = shrunk_forwarddiff_backend(backend, x, integrator)
 
     if integrator.iter == 1
         try
-            DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
+            _jacobian!(f, fx, J, config, backend, shrunk, x)
         catch e
             throw(FirstAutodiffJacError(e))
         end
     else
-        DI.jacobian!(f, fx, J, config, gpu_safe_autodiff(alg_autodiff(alg), x), x)
+        _jacobian!(f, fx, J, config, backend, shrunk, x)
     end
 
     return nothing
+end
+
+_jacobian!(f, fx, J, config, backend, ::Nothing, x) = DI.jacobian!(f, fx, J, config, backend, x)
+function _jacobian!(f, fx, J, config, backend, shrunk, x)
+    return DI.jacobian!(unwrap_jac_f(f), fx, J, shrunk, x)
+end
+
+# A despecialized RHS only accepts duals of the chunk chosen at `init`.
+unwrap_jac_f(f::UJacobianWrapper) = SciMLBase.@set f.f = SciMLBase.unwrapped_f(f.f)
+unwrap_jac_f(f) = f
+
+"""
+    shrunk_forwarddiff_backend(backend, x, integrator)
+
+Return `nothing` when the prepared Jacobian config can differentiate at `x`, and otherwise
+an `AutoForwardDiff` backend whose chunk fits `length(x)`.
+
+The chunk of a ForwardDiff config is part of its type, so `resize_jac_config!`
+keeps the chunk chosen at `init`: the explicit `chunksize` of the backend, or
+`ForwardDiff.pickchunksize` of the initial state length. ForwardDiff rejects a chunk longer
+than the input, so once the state shrinks below that chunk the Jacobian is computed without
+the prepared config, with the explicit chunk clamped to `length(x)` or, for an automatic
+chunk, one picked for `length(x)`.
+"""
+shrunk_forwarddiff_backend(backend, x, integrator) = nothing
+
+function shrunk_forwarddiff_backend(backend::AutoForwardDiff, x, integrator)
+    n = length(x)
+    k = OrdinaryDiffEqCore._get_fwd_chunksize_int(backend)
+    if k == 0
+        u0 = integrator.sol.prob.u0
+        u0 isa AbstractArray && ForwardDiff.pickchunksize(length(u0)) > n || return nothing
+        return AutoForwardDiff(; tag = backend.tag)
+    end
+    k <= n && return nothing
+    return AutoForwardDiff(; chunksize = n, tag = backend.tag)
 end
 
 """
@@ -320,7 +358,8 @@ end # don't degrade compile time information to runtime information
 
 Resize the Jacobian differentiation configuration on `cache` to match a changed
 state length (e.g. after a `resize!` callback), rebuilding the AD/finite-difference
-configs for the new size.
+configs for the new size. A ForwardDiff config keeps its chunk size; see
+`shrunk_forwarddiff_backend` for a state that shrinks below it.
 """
 function resize_jac_config!(cache, integrator)
     if !isnothing(cache.jac_config) && !isnothing(cache.jac_config[1])
