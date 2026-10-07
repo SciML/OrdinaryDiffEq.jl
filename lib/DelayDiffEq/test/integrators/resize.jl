@@ -48,6 +48,40 @@ end
     @test integ.sol.retcode == ReturnCode.Success
 end
 
+# A lag of 8 fixed steps puts every propagated discontinuity on the step grid of both
+# integrators, so the continued and the fresh solve take identical steps and differ only
+# by rounding (largest observed: 1.3e-13 for Rodas5P with a finite-difference Jacobian).
+@testset "deleteat! matches a fresh solve of the reduced system with $(nameof(typeof(alg)))" for alg in (
+        Tsit5(), Vern7(), BS3(), Trapezoid(autodiff = AutoFiniteDiff()),
+        KenCarp4(autodiff = AutoFiniteDiff()), Rodas5P(autodiff = AutoFiniteDiff()),
+    )
+    u0 = [1.0, 2.0, 3.0]
+    hist(p, t; idxs = nothing) = idxs === nothing ? u0 : u0[idxs]
+    lag = 1 / 8
+    f!(du, u, h, p, t) = (du .= -50 .* (u .- 0.5 .* h(p, t - lag; idxs = 1)); nothing)
+    kwargs = (; adaptive = false, dt = 1 / 64)
+    integ = init(
+        DDEProblem(f!, u0, hist, (0.0, 1.0); constant_lags = [lag]), MethodOfSteps(alg);
+        kwargs...
+    )
+    for _ in 1:4
+        step!(integ)
+    end
+    kept = [1, 3]
+    pre = deepcopy(integ.sol)
+    href(p, t; idxs = nothing) = t < 0 ? hist(p, t; idxs = kept[something(idxs, :)]) :
+        idxs === nothing ? pre(t)[kept] : pre(t; idxs = kept[idxs])
+    ref = solve(
+        DDEProblem(f!, integ.u[kept], href, (integ.t, 1.0); constant_lags = [lag]),
+        MethodOfSteps(alg); kwargs...
+    )
+    deleteat!(integ, 2)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    @test integ.t == ref.t[end] == 1.0
+    @test integ.u ≈ ref.u[end] rtol = 1.0e-12
+end
+
 @testset "grown step history is zeroed" begin
     # Leftover array capacity stands in for uninitialized memory; this relies on
     # shrinking a Vector keeping its contents.

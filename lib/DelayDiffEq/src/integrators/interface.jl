@@ -237,8 +237,7 @@ DiffEqBase.u_cache(integrator::DDEIntegrator) = u_cache(integrator.cache)
 DiffEqBase.du_cache(integrator::DDEIntegrator) = du_cache(integrator.cache)
 DiffEqBase.full_cache(integrator::DDEIntegrator) = full_cache(integrator.cache)
 
-# Cache fields alias each other and `fsalfirst`/`fsallast`, so each distinct array is
-# visited once: `deleteat!` and `addat!` are not idempotent.
+# Each distinct array is visited once: buffers alias and `deleteat!`/`addat!` are not idempotent.
 function foreach_state_buffer(f, integrator::DDEIntegrator, cache = integrator.cache)
     ode_integrator = integrator.integrator
     seen = Any[]
@@ -255,8 +254,7 @@ function foreach_state_buffer(f, integrator::DDEIntegrator, cache = integrator.c
     return nothing
 end
 
-# Grown entries of the step history are read by the next step (error estimates,
-# extrapolated predictors), so they must not keep leftover array memory.
+# The next step reads the step history, so grown entries must not keep leftover memory.
 function fill_grown_step_history!(integrator::DDEIntegrator, cache, oldlen)
     uprev3 = hasfield(typeof(cache), :uprev3) ? cache.uprev3 : nothing
     for v in (integrator.uprev, integrator.uprev2, uprev3)
@@ -277,8 +275,7 @@ end
 Base.resize!(integrator::DDEIntegrator, i::Int) = resize!(integrator, integrator.cache, i)
 function Base.resize!(integrator::DDEIntegrator, cache, i)
     oldlen = length(integrator.u)
-    # Arrays already at the target length are skipped: some share data with another
-    # array and fail with "cannot resize array with shared data" on some platforms.
+    # Skipping arrays at the target length avoids "cannot resize array with shared data".
     foreach_state_buffer(c -> length(c) != i && resize!(c, i), integrator, cache)
     resize_solver_internals!(integrator, cache, i)
     resize_non_user_cache!(integrator, cache, i)
