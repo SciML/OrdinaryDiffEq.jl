@@ -314,9 +314,7 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            # Recompute terkm2 as estimate_terk(..., k - 2) ≡ h^(k-3) u^(k-3).
-            # Must use fd_weights[1, k - 2] and dt^(k - 3), not the transposed
-            # index fd_weights[k - 2, 1] / dt^(k - 2) (see #4641).
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
             estimate_terk!(integrator, cache, k - 2, Val(max_order))
             calculate_residuals!(
                 atmp, terk_tmp, uprev, u,
@@ -351,9 +349,7 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            # Recompute terkm2 as estimate_terk(..., k - 2) ≡ h^(k-3) u^(k-3).
-            # Must use fd_weights[1, k - 2] and dt^(k - 3), not the transposed
-            # index fd_weights[k - 2, 1] / dt^(k - 2) (see #4641).
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
             terk_tmp = estimate_terk(integrator, cache, k - 2, Val(max_order), u)
             atmp = calculate_residuals(
                 terk_tmp, uprev, u,
@@ -508,9 +504,7 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            # Recompute terkm2 as estimate_terk(..., k - 2) ≡ h^(k-3) u^(k-3).
-            # Must use fd_weights[1, k - 2] and dt^(k - 3), not the transposed
-            # index fd_weights[k - 2, 1] / dt^(k - 2) (see #4641).
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
             estimate_terk!(integrator, cache, k - 2, Val(max_order))
             calculate_residuals!(
                 atmp, terk_tmp, uprev, u,
@@ -545,9 +539,7 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            # Recompute terkm2 as estimate_terk(..., k - 2) ≡ h^(k-3) u^(k-3).
-            # Must use fd_weights[1, k - 2] and dt^(k - 3), not the transposed
-            # index fd_weights[k - 2, 1] / dt^(k - 2) (see #4641).
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
             terk_tmp = estimate_terk(integrator, cache, k - 2, Val(max_order), u)
             atmp = calculate_residuals(
                 terk_tmp, uprev, u,
