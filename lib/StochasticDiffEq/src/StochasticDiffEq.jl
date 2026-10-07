@@ -1,10 +1,8 @@
 module StochasticDiffEq
 
-using Reexport
-@reexport using DiffEqBase
-
 using Reexport: @reexport
 
+@reexport using DiffEqBase
 @reexport using StochasticDiffEqCore
 @reexport using StochasticDiffEqLowOrder
 @reexport using StochasticDiffEqRODE
@@ -19,13 +17,25 @@ using Reexport: @reexport
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 import SciMLBase
-import OrdinaryDiffEqCore: perform_step!, loopheader!, loopfooter!
 import PrecompileTools
 import Preferences
 
-# AutoSOSRI2/AutoSOSRA2 reference concrete types from multiple solver subpackages
-# (SOSRI2 from HighOrder, implicit algs from Implicit), so they live here in the umbrella.
+# Cross-subpackage composites (SOSRI2 from HighOrder + stiff algs from Implicit).
+
+"""
+    AutoSOSRI2(alg; kwargs...)
+
+Automatic stiffness switching between [`SOSRI2`](@ref) and a stiff SDE algorithm
+`alg` (typically an implicit method). See [`AutoAlgSwitch`](@ref).
+"""
 AutoSOSRI2(alg; kwargs...) = AutoAlgSwitch(SOSRI2(), alg; kwargs...)
+
+"""
+    AutoSOSRA2(alg; kwargs...)
+
+Automatic stiffness switching between [`SOSRA2`](@ref) and a stiff SDE algorithm
+`alg` (typically an implicit method). See [`AutoAlgSwitch`](@ref).
+"""
 AutoSOSRA2(alg; kwargs...) = AutoAlgSwitch(SOSRA2(), alg; kwargs...)
 
 include("default_sde_alg.jl")
@@ -34,10 +44,8 @@ include("precompilation.jl")
 export AutoSOSRI2, AutoSOSRA2
 export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
-# Re-export general functions
 export solve, init, solve!, step!
 
-# Misc Tools (tableau constructors from HighOrder)
 export checkSRIOrder, checkSRAOrder, checkRIOrder, checkRSOrder,
     checkNONOrder,
     constructSRIW1, constructSRA1,
