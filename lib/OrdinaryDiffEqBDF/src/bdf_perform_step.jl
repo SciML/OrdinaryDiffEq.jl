@@ -1346,21 +1346,7 @@ function perform_step!(
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        # Inline terk estimate (equivalent to estimate_terk(..., k + 1)). The
-        # previous estimate_terk call was dead: its result was overwritten here.
-        fd_weights = calc_finite_difference_weights(ts_tmp, tdt, k, Val(max_order))
-        terk = @.. broadcast = false fd_weights[1, k + 1] * u
-        if u isa Number
-            for i in 2:(k + 1)
-                terk += fd_weights[i, k + 1] * u_history[i - 1]
-            end
-            terk *= abs(dt^(k))
-        else
-            for i in 2:(k + 1)
-                terk = @.. terk + fd_weights[i, k + 1] * u_history[i - 1]
-            end
-            terk *= abs(dt^(k))
-        end
+        terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
 
         atmp = calculate_residuals(
             terk, uprev, u, integrator.opts.abstol,
