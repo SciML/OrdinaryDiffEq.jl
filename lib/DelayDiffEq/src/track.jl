@@ -32,20 +32,22 @@ function track_propagated_discontinuities!(integrator::DDEIntegrator)
 
             # add new discontinuity of correct order at the estimated time point
             if integrator.sol.prob.neutral
-                d = Discontinuity(t, discontinuity.order)
+                d = Discontinuity(integrator.tdir * t, discontinuity.order)
                 @SciMLMessage(
                     lazy"Propagated discontinuity found at t = $t with order $(discontinuity.order) (neutral DDE)",
                     integrator.opts.verbose, :discontinuity_tracking
                 )
             else
-                d = Discontinuity(t, discontinuity.order + 1)
+                d = Discontinuity(integrator.tdir * t, discontinuity.order + 1)
                 @SciMLMessage(
                     lazy"Propagated discontinuity found at t = $t with order $(discontinuity.order + 1)",
                     integrator.opts.verbose, :discontinuity_tracking
                 )
             end
-            push!(integrator.opts.d_discontinuities, d)
-            push!(integrator.opts.tstops, t)
+            # solver-generated, so `handle_discontinuities!` may coalesce it with a
+            # discontinuity it is handling within `10eps` (unlike user tstops)
+            push!(integrator.d_discontinuities_propagated, d)
+            push!(integrator.tstops_propagated, d.t)
 
             # analogously to RADAR5 we do not strive for finding the first discontinuity
             break
