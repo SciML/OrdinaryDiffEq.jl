@@ -127,11 +127,15 @@ function _z_prototype(alg, rand_prototype, iip::Bool, dt)
     return _z_prototype(alg, rand_prototype, iip)
 end
 
-function SciMLBase.__init(
-        _prob::JumpProblem,
-        alg::Union{StochasticDiffEqJumpAlgorithm, StochasticDiffEqJumpAdaptiveAlgorithm};
-        kwargs...
-    )
+# Separate methods (rather than one over the Union) so they are more specific than
+# JumpProcesses' `__init(::JumpProblem, ::Union{StochasticDiffEqAlgorithm,
+# StochasticDiffEqRODEAlgorithm})`, which merges `prob.kwargs` a second time after
+# `init_call` has already merged them.
+function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqAlgorithm; kwargs...)
+    return _sde_init(_prob, alg; kwargs...)
+end
+
+function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqRODEAlgorithm; kwargs...)
     return _sde_init(_prob, alg; kwargs...)
 end
 

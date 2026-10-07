@@ -49,18 +49,20 @@ struct ExplicitRKConstantCache{MType, VType, CType, KType, BType, BiType} <:
     bi::BiType  # Pre-allocated buffer for interpolation polynomial weights
 end
 
+# When both the dimensionless time type and tableau `c` are IEEE floats, match
+# `c` to the time type so `t + c[i]*dt` keeps FunctionWrapper signatures under
+# AutoSpecialize. Otherwise use promote_type (preserves BigFloat, Rational, etc.).
+const _IEEEFloat = Union{Float16, Float32, Float64}
+
+function _explicit_rk_c_eltype(::Type{T}, ::Type{C}) where {T, C}
+    return (T <: _IEEEFloat && C <: _IEEEFloat) ? T : promote_type(C, T)
+end
+
 function ExplicitRKConstantCache(tableau, rate_prototype, ::Type{tType} = Float64) where {tType}
     (; A, c, α, αEEst, stages) = tableau
     A = copy(A') # Transpose A to column major looping
-    # Convert c to match the dimensionless numeric type of dt so that
-    # t + c[i]*dt doesn't promote t beyond what FunctionWrapper signatures
-    # expect under AutoSpecialize. `one(tType)` strips units for Unitful
-    # quantities while preserving precision for BigFloat/Float32 time types.
-    # Use promote_type so that when `c`'s eltype is already wider than the
-    # dimensionless dt type (e.g. BigFloat `c` with Rational{Int} dt during
-    # convergence testing), we don't attempt a lossy narrowing that could
-    # throw InexactError for non-exactly-representable coefficients.
-    cType = promote_type(eltype(c), typeof(one(tType)))
+    # `one(tType)` strips units for Unitful while preserving BigFloat/Float32.
+    cType = _explicit_rk_c_eltype(typeof(one(tType)), eltype(c))
     c = cType.(c)
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst
