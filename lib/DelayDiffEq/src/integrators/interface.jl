@@ -237,29 +237,52 @@ DiffEqBase.u_cache(integrator::DDEIntegrator) = u_cache(integrator.cache)
 DiffEqBase.du_cache(integrator::DDEIntegrator) = du_cache(integrator.cache)
 DiffEqBase.full_cache(integrator::DDEIntegrator) = full_cache(integrator.cache)
 
+# Cache fields alias each other and `fsalfirst`/`fsallast`, so each distinct array is
+# visited once: `deleteat!` and `addat!` are not idempotent.
+function foreach_state_buffer(f, integrator::DDEIntegrator, cache = integrator.cache)
+    ode_integrator = integrator.integrator
+    seen = Any[]
+    for c in Iterators.flatten(
+            (
+                (ode_integrator.u,), ode_integrator.k, integrator.k, full_cache(cache),
+                (integrator.fsalfirst, integrator.fsallast),
+            )
+        )
+        (c isa AbstractArray && !any(s -> s === c, seen)) || continue
+        push!(seen, c)
+        f(c)
+    end
+    return nothing
+end
+
+# Grown entries of the step history are read by the next step (error estimates,
+# extrapolated predictors), so they must not keep leftover array memory.
+function fill_grown_step_history!(integrator::DDEIntegrator, cache, oldlen)
+    uprev3 = hasfield(typeof(cache), :uprev3) ? cache.uprev3 : nothing
+    for v in (integrator.uprev, integrator.uprev2, uprev3)
+        (v isa AbstractArray && v !== integrator.u && length(v) > oldlen) || continue
+        fill!(view(v, (oldlen + 1):length(v)), zero(eltype(v)))
+    end
+    return nothing
+end
+
+function resize_solver_internals!(integrator::DDEIntegrator, cache, i)
+    OrdinaryDiffEqCore.resize_nlsolver!(integrator, i)
+    OrdinaryDiffEqCore.resize_J_W!(cache, integrator, i)
+    resize_fpsolver!(integrator, i)
+    return nothing
+end
+
 # change number of components
 Base.resize!(integrator::DDEIntegrator, i::Int) = resize!(integrator, integrator.cache, i)
 function Base.resize!(integrator::DDEIntegrator, cache, i)
-    # resize ODE integrator (do only have to care about u and k)
-    ode_integrator = integrator.integrator
-    resize!(ode_integrator.u, i)
-    for k in ode_integrator.k
-        resize!(k, i)
-    end
-
-    # resize DDE integrator
-    # Skip arrays already at the target length to avoid redundant resize!
-    # calls on aliased arrays (e.g., cache.u === ode_integrator.u,
-    # cache.fsalfirst === integrator.k[1]), which can fail with
-    # "cannot resize array with shared data" on some platforms.
-    for c in full_cache(cache)
-        length(c) != i && resize!(c, i)
-    end
-
-    OrdinaryDiffEqCore.resize_nlsolver!(integrator, i)
-    OrdinaryDiffEqCore.resize_J_W!(cache, integrator, i)
+    oldlen = length(integrator.u)
+    # Arrays already at the target length are skipped: some share data with another
+    # array and fail with "cannot resize array with shared data" on some platforms.
+    foreach_state_buffer(c -> length(c) != i && resize!(c, i), integrator, cache)
+    resize_solver_internals!(integrator, cache, i)
     resize_non_user_cache!(integrator, cache, i)
-    resize_fpsolver!(integrator, i)
+    fill_grown_step_history!(integrator, cache, oldlen)
     return nothing
 end
 
@@ -287,18 +310,10 @@ end
 
 # delete component(s)
 function Base.deleteat!(integrator::DDEIntegrator, idxs)
-    # delete components of ODE integrator (do only have to care about u and k)
-    ode_integrator = integrator.integrator
-    deleteat!(ode_integrator.u, idxs)
-    for k in ode_integrator.k
-        deleteat!(k, idxs)
-    end
-
-    # delete components of DDE integrator
-    for c in full_cache(integrator)
-        deleteat!(c, idxs)
-    end
-    return deleteat_non_user_cache!(integrator, integrator.cache, i)
+    foreach_state_buffer(c -> deleteat!(c, idxs), integrator)
+    resize_solver_internals!(integrator, integrator.cache, length(integrator.u))
+    deleteat_non_user_cache!(integrator, integrator.cache, idxs)
+    return nothing
 end
 
 function DiffEqBase.deleteat_non_user_cache!(integrator::DDEIntegrator, cache, idxs)
@@ -308,18 +323,12 @@ end
 
 # add component(s)
 function DiffEqBase.addat!(integrator::DDEIntegrator, idxs)
-    # add components to ODE integrator (do only have to care about u and k)
-    ode_integrator = integrator.integrator
-    addat!(ode_integrator.u, idxs)
-    for k in ode_integrator.k
-        addat!(k, idxs)
-    end
-
-    # add components to DDE integrator
-    for c in full_cache(integrator)
-        addat!(c, idxs)
-    end
-    return addat_non_user_cache!(integrator, integrator.cache, idxs)
+    oldlen = length(integrator.u)
+    foreach_state_buffer(c -> addat!(c, idxs), integrator)
+    resize_solver_internals!(integrator, integrator.cache, length(integrator.u))
+    addat_non_user_cache!(integrator, integrator.cache, idxs)
+    fill_grown_step_history!(integrator, integrator.cache, oldlen)
+    return nothing
 end
 
 function DiffEqBase.addat_non_user_cache!(integrator::DDEIntegrator, cache, idxs)
