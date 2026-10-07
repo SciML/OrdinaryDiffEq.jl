@@ -6,6 +6,8 @@ alg_order(alg::ABDF2) = 2
 alg_order(alg::SBDF) = alg.order
 alg_order(alg::QNDF1) = 1
 alg_order(alg::QNDF2) = 2
+# The estimate `(κ + 1/2) * ∇²u` is O(dt²), so the controller exponent must be 1/2.
+alg_adaptive_order(alg::QNDF1) = 1
 alg_order(alg::QNDF) = 1 #dummy value
 alg_order(alg::MEBDF2) = 2
 alg_order(alg::FBDF) = 1 #dummy value
