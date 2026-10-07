@@ -335,8 +335,10 @@ end
         k = 4
         m = k - 2
         tdt = integ.t + integ.dt
-        analytic = (integ.u isa Number ? one(integ.u) :
-                    ones(eltype(integ.u), size(integ.u))) *
+        analytic = (
+            integ.u isa Number ? one(integ.u) :
+                ones(eltype(integ.u), size(integ.u))
+        ) *
             (abs(integ.dt)^m * exp(-tdt))
         analytic_res = residual_norm(integ, analytic)
 
