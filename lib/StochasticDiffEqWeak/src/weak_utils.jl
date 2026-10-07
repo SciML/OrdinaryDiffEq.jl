@@ -50,11 +50,8 @@ function Ihat2(cache::Union{NONConstantCache, NONCache}, _dW, _dZ, sqdt, k, l)
     end
 end
 
-################################################################################
-# resize!/deleteat!/addat! support for the per-noise-dimension stage buffers.
-# With diagonal noise the noise dimension equals the state length, so the outer
-# vectors grow and shrink with the state. Every element is scratch space that
-# `perform_step!` overwrites before reading, so only the lengths need fixing.
+# With diagonal noise these per-noise-dimension vectors track the state length. Their
+# elements are scratch that `perform_step!` overwrites, so only lengths are fixed.
 
 noise_stage_vectors(c::Union{DRI1Cache, IRI1Cache}) =
     (c.g2, c.g3, c.H12, c.H13, c.H22, c.H23)

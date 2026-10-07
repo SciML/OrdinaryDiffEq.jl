@@ -81,7 +81,7 @@ function alg_cache(
     return SRA2ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-@cache struct SRA2Cache{uType, randType, tabType, rateNoiseType, T} <:
+@cache struct SRA2Cache{uType, randType, tabType, rateNoiseType, rateType} <:
     StochasticDiffEqMutableCache
     u::uType
     uprev::uType
@@ -89,11 +89,11 @@ end
     tab::tabType
     g1::rateNoiseType
     g2::rateNoiseType
-    k1::T
-    k2::T
-    E₁::T
-    E₂::T
-    tmp::T
+    k1::rateType
+    k2::rateType
+    E₁::rateType
+    E₂::rateType
+    tmp::rateType
 end
 
 function alg_cache(
@@ -114,7 +114,7 @@ function alg_cache(
     k2 = zero(rate_prototype)
     E₁ = zero(rate_prototype)
     E₂ = zero(rate_prototype)
-    tmp = k1
+    tmp = zero(rate_prototype)
     return SRA2Cache(u, uprev, chi2, tab, g1, g2, k1, k2, E₁, E₂, tmp)
 end
 
