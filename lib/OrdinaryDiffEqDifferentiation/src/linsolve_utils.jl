@@ -10,6 +10,26 @@ issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
 """
+    isfinite_W(W) -> Bool
+
+Return whether the unfactorized system matrix `W` is free of `Inf`/`NaN` entries.
+LAPACK's dense LU throws an `ArgumentError` on non-finite input, so a non-finite `W`
+must be caught before it is factorized for the step to be rejected instead. Dense
+strided matrices and scalars are checked; other representations return `true`.
+"""
+function isfinite_W(W::StridedMatrix)
+    # `0 * v` is `NaN` exactly when `v` is not finite; the branch-free sum vectorizes,
+    # unlike the short-circuiting `all(isfinite, W)`.
+    acc = zero(eltype(W))
+    @simd for v in W
+        acc += zero(v) * v
+    end
+    return isfinite(acc)
+end
+isfinite_W(W::Number) = isfinite(W)
+isfinite_W(::Any) = true
+
+"""
     set_linear_reltol!(linsolve, reltol; default_algorithm = false) -> linsolve
 
 Point the LinearSolve.jl cache `linsolve` at relative tolerance `reltol`.

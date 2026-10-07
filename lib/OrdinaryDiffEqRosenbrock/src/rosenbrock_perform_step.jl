@@ -62,6 +62,9 @@ end
 
     if repeat_step || !new_W
         linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    elseif !isfinite_W(W)
+        OrdinaryDiffEqCore.set_EEst!(integrator, Inf)
+        return nothing
     else
         linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
     end
@@ -176,6 +179,9 @@ end
 
     if repeat_step || !new_W
         linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    elseif !isfinite_W(W)
+        OrdinaryDiffEqCore.set_EEst!(integrator, Inf)
+        return nothing
     else
         linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
     end
@@ -763,6 +769,9 @@ end
 
     if repeat_step || !new_W
         linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    elseif !isfinite_W(W)
+        OrdinaryDiffEqCore.set_EEst!(integrator, Inf)
+        return nothing
     else
         linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
     end
