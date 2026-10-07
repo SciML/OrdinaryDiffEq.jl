@@ -80,6 +80,7 @@ function fit_noise_stages!(integrator, cache::NoiseStageCache)
     is_diagonal_noise(integrator.sol.prob) || return nothing
     n = length(integrator.u)
     foreach(v -> fit_stage_vector!(v, n), noise_stage_vectors(cache))
+    hasproperty(cache, :_dZ) && resize!(cache._dZ, length(integrator.W.dZ))
     return nothing
 end
 

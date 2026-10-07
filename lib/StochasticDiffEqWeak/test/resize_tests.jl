@@ -49,3 +49,26 @@ end
     integ.u[3] = 1.0
     step_and_check!(integ, 3)
 end
+
+# PL1WM's Z process holds one entry per pair of noise dimensions, W2Ito1's always two.
+@testset "$(nameof(typeof(alg))) (adaptive = $adaptive) Z process follows the state" for (alg, zlen, adaptive) in (
+        (PL1WM(), m -> m * (m - 1) ÷ 2, false), (W2Ito1(), m -> 2, false), (W2Ito1(), m -> 2, true),
+    )
+    integ = init(prob, alg; dt = 0.01, adaptive)
+    step!(integ)
+    for (n, change!) in (
+            (4, i -> resize!(i, 4)), (3, i -> resize!(i, 3)), (5, i -> resize!(i, 5)),
+            (4, i -> deleteat!(i, 2)), (5, i -> addat!(i, 1:1)), (2, i -> resize!(i, 2)),
+        )
+        change!(integ)
+        integ.u .= 1.0
+        @test length(integ.W.dZ) == zlen(n)
+        @test length(integ.cache._dZ) == zlen(n)
+        check_stage_lengths(integ.cache, n)
+        step!(integ)
+        step!(integ)
+        @test length(integ.u) == n
+        @test all(isfinite, integ.u)
+    end
+    adaptive && @test all(c -> length(c[3]) == zlen(2), integ.W.S₂.data)
+end
