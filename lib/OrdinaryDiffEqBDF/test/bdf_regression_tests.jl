@@ -273,3 +273,15 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+@testset "DImplicitEuler step size control matches its O(dt^2) error estimate (#4808)" begin
+    alg = DImplicitEuler()
+    @test OrdinaryDiffEqCore.alg_adaptive_order(alg) == 1
+    # u1 = 1/(1 - t): a mismatched controller gain gives nreject ≈ naccept here.
+    res! = (r, du, u, p, t) -> (r[1] = du[1] - u[1]^2; r[2] = du[2] - 1.0; nothing)
+    prob = DAEProblem(res!, [1.0, 1.0], [1.0, 0.0], (0.0, 0.9); differential_vars = [true, true])
+    sol = solve(prob, alg; reltol = 1.0e-8, abstol = 1.0e-8)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.stats.nreject < sol.stats.naccept / 100
+    @test abs(sol[1, end] - 10) / 10 < 5.0e-3
+end
