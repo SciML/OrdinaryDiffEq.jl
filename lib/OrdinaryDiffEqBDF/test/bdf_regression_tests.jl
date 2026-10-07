@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
+using SciMLBase: CheckInit, NoInit
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
@@ -271,5 +272,70 @@ end
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.nreject < sol.stats.naccept / 10
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
+end
+
+@testset "DFBDF first step: O(h²) BDF1 error estimate (#4791)" begin
+    λ = 8.6e8
+    u0 = [1.0e-3, 1.0e12]
+    du0 = [-λ * u0[1], 1.0e-3 * u0[2]]
+    fiip = (out, du, u, p, t) -> (out[1] = du[1] + λ * u[1]; out[2] = du[2] - 1.0e-3 * u[2]; nothing)
+    foop = (du, u, p, t) -> [du[1] + λ * u[1], du[2] - 1.0e-3 * u[2]]
+    tol = 1.0e-8
+    for f in (fiip, foop)
+        # Forced first step in the asymptotic regime: accepted with the analytic
+        # error h²λ²u/2 (only u[1] contributes; RMS norm over two components).
+        h = 1.8e-12
+        prob = DAEProblem(f, du0, u0, (0.0, 1000.0); differential_vars = [true, true])
+        integ = init(prob, DFBDF(); dt = h, abstol = tol, reltol = tol)
+        step!(integ)
+        @test integ.t - integ.tprev == h
+        @test integ.stats.nreject == 0
+        @test integ.u[1] ≈ u0[1] / (1 + h * λ) rtol = 1.0e-10
+        EEst_exact = (h * λ)^2 * u0[1] / 2 / (tol + tol * u0[1]) / sqrt(2)
+        @test OrdinaryDiffEqCore.get_EEst(integ) ≈ EEst_exact rtol = 0.01
+
+        # At t0 = 14400 the first step must resolve the transient, and steps of a
+        # few eps(t0) must not be rejected for using the uncommitted dt.
+        t0 = 14400.0
+        prob = DAEProblem(f, du0, u0, (t0, t0 + 1000.0); differential_vars = [true, true])
+        for dt in (nothing, 1.0e-11)
+            kw = dt === nothing ? (;) : (; dt)
+            sol = solve(prob, DFBDF(); abstol = tol, reltol = tol, kw...)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.u[end][2] ≈ u0[2] * exp(1.0) rtol = 1.0e-7
+            # Dense output in the transient: an undetected O(h) first step is off by ~1e-4.
+            for s in (1.0e-10, 1.0e-9, 1.0e-8)
+                @test abs(sol(t0 + s)[1] - u0[1] * exp(-λ * s)) < 100 * tol
+            end
+        end
+    end
+end
+
+@testset "DFBDF start without a consistent du0 (#4791)" begin
+    function rober(out, du, u, p, t)
+        out[1] = -0.04u[1] + 1.0e4 * u[2] * u[3] - du[1]
+        out[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3] - du[2]
+        out[3] = u[1] + u[2] + u[3] - 1.0
+        return nothing
+    end
+    dv = [true, true, false]
+    t0 = 1.0e4
+    tspan = (t0, t0 + 100.0)
+    ref = solve(
+        DAEProblem(rober, [-0.04, 0.04, 0.0], [1.0, 0.0, 0.0], tspan; differential_vars = dv),
+        DFBDF(); abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    # The residual does not constrain the algebraic du0[3]; an inconsistent algebraic
+    # u0[3] fails the residual check and keeps the old first step.
+    for (du0, u0, init) in (
+            ([-0.04, 0.04, -1.0e6], [1.0, 0.0, 0.0], CheckInit()),
+            ([-0.04, 0.04, 0.0], [1.0, 0.0, 0.1], NoInit()),
+        )
+        prob = DAEProblem(rober, du0, u0, tspan; differential_vars = dv)
+        sol = solve(prob, DFBDF(); abstol = 1.0e-8, reltol = 1.0e-8, initializealg = init)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end][1] ≈ ref.u[end][1] rtol = 1.0e-5
+        @test sum(sol.u[end]) ≈ 1 atol = 1.0e-8
     end
 end

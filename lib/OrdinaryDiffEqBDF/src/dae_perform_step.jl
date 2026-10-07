@@ -246,6 +246,30 @@ end
     return
 end
 
+"""
+    _dfbdf_consistent_start(integrator, resid)
+
+Whether the residual `resid = f(duprev, uprev, p, t)` passes the `CheckInit` test.
+Only then is `duprev` trusted for the explicit-Euler predictor of a step without
+history, which makes `(u - u₀)/2` the BDF1 local error. Inconsistent starts (e.g. the
+algebraic states of DAE adjoints, or `NoInit`) keep the constant predictor and the
+`ts`-scaled estimate, so their first step is accepted as before.
+"""
+function _dfbdf_consistent_start(integrator, resid)
+    (; abstol, internalnorm) = integrator.opts
+    t = integrator.t
+    if abstol isa Number
+        return internalnorm(resid, t) <= abstol
+    else
+        return internalnorm(resid ./ abstol, t) <= 1
+    end
+end
+
+# Per component, the corrector minus the closer of the explicit-Euler and constant
+# predictors. The residual does not constrain `du` of algebraic variables, so their
+# explicit-Euler predictor can be arbitrarily wrong; the constant one then bounds them.
+_closer_predictor(z, Δu) = ifelse(abs(z) <= abs(Δu), z, Δu)
+
 function initialize!(integrator, cache::DFBDFConstantCache{max_order}) where {max_order}
     integrator.kshortsize = max_order + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -270,6 +294,18 @@ function perform_step!(
         integrator, cache::DFBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
+    # History is stored at the committed times fl(t + dt): step by that increment.
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    _dfbdf_perform_step!(integrator, cache, repeat_step)
+    integrator.dt = dt
+    return nothing
+end
+
+function _dfbdf_perform_step!(
+        integrator, cache::DFBDFConstantCache{max_order},
+        repeat_step
+    ) where {max_order}
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -284,11 +320,18 @@ function perform_step!(
     n_pred = k + 1
     pred_thetas = Vector{typeof(t)}(undef, n_pred)
     cache.u₀ = zero(u)
+    cold_start = false
+    if iters_from_event == 0
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        cold_start = _dfbdf_consistent_start(integrator, f(integrator.duprev, uprev, p, t))
+    end
     if iters_from_event >= 1
         for j in 1:n_pred
             pred_thetas[j] = (ts[j] - t) / dt
         end
         cache.u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
+    elseif cold_start
+        cache.u₀ = uprev + dt * integrator.duprev
     else
         cache.u₀ = u
     end
@@ -344,9 +387,13 @@ function perform_step!(
         end
     end
 
-    terkp1 = z
-    for j in 1:(k + 1)
-        terkp1 *= j * dt / (t + dt - ts[j])
+    if cold_start
+        terkp1 = @.. broadcast = false _closer_predictor(z, u - uprev)
+    else
+        terkp1 = z
+        for j in 1:(k + 1)
+            terkp1 *= j * dt / (t + dt - ts[j])
+        end
     end
 
     lte = -1 / (1 + k)
@@ -444,6 +491,17 @@ function perform_step!(
         integrator, cache::DFBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    _dfbdf_perform_step!(integrator, cache, repeat_step)
+    integrator.dt = dt
+    return nothing
+end
+
+function _dfbdf_perform_step!(
+        integrator, cache::DFBDFCache{max_order},
+        repeat_step
+    ) where {max_order}
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense,
@@ -457,11 +515,19 @@ function perform_step!(
     # using actual (variable) theta nodes. No need to fill integrator.k.
     n_pred = k + 1
     @.. broadcast = false u₀ = zero(u)
+    cold_start = false
+    if cache.iters_from_event == 0
+        f(tmp, integrator.duprev, uprev, p, t)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        cold_start = _dfbdf_consistent_start(integrator, tmp)
+    end
     if cache.iters_from_event >= 1
         for j in 1:n_pred
             equi_ts[j] = (ts[j] - t) / dt
         end
         _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
+    elseif cold_start
+        @.. broadcast = false u₀ = uprev + dt * integrator.duprev
     else
         @.. broadcast = false u₀ = u
     end
@@ -498,9 +564,13 @@ function perform_step!(
         end
     end
 
-    @.. broadcast = false terkp1_tmp = z
-    for j in 1:(k + 1)
-        @.. broadcast = false terkp1_tmp *= j * dt / (t + dt - ts[j])
+    if cold_start
+        @.. broadcast = false terkp1_tmp = _closer_predictor(z, u - uprev)
+    else
+        @.. broadcast = false terkp1_tmp = z
+        for j in 1:(k + 1)
+            @.. broadcast = false terkp1_tmp *= j * dt / (t + dt - ts[j])
+        end
     end
 
     lte = -1 / (1 + k)
