@@ -1001,6 +1001,17 @@ function _replace_dae_residual(f::DAEFunction{iip, specialize}, residual) where 
     return _widen_type_parameter(replaced, Val(:ID))
 end
 
+# An `f` wrapped by an earlier concretization (e.g. the `f` of `sol.prob`) is reused when
+# its wrapper has every signature the current algorithm calls. Otherwise, e.g. for the
+# duals of another ForwardDiff chunk size, it is unwrapped and wrapped again.
+function _is_reusable_wrapper_candidate(f::ODEFunction, u0, ::Val{specialize}) where {specialize}
+    auto = specialize === SciMLBase.AutoSpecialize ||
+        specialize === SciMLBase.AutoDespecialize
+    return auto && u0 isa AbstractArray &&
+        f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+end
+_is_reusable_wrapper_candidate(f, u0, ::Val) = false
+
 _promote_parameters(::Val{SciMLBase.AutoDespecialize}, p) =
     SciMLBase.DespecializedParameters(p)
 _promote_parameters(::Val, p) = p
@@ -1017,6 +1028,10 @@ function promote_f(
     uElType = u0 === nothing ? Float64 : eltype(u0)
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
+    end
+    if _is_reusable_wrapper_candidate(f, u0, Val(specialize))
+        covers_iip_signatures(f.f, (u0, u0, p_out, t), Val(CS)) && return (f, p_out)
+        f = unwrapped_f(f)
     end
     despecialize && !_is_concretized(f) && (f = _despecialize_auxiliary_functions(f))
     # Stochastic implicit methods use function-derived ForwardDiff tags that cannot be
@@ -1181,6 +1196,10 @@ function promote_f(
     uElType = u0 === nothing ? Float64 : eltype(u0)
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
+    end
+    if _is_reusable_wrapper_candidate(f, u0, Val(specialize))
+        _has_signature(f.f, typeof((u0, u0, p_out, t))) && return (f, p_out)
+        f = unwrapped_f(f)
     end
     despecialize && !_is_concretized(f) && (f = _despecialize_auxiliary_functions(f))
 
