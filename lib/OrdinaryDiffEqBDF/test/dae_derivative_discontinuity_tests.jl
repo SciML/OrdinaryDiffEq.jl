@@ -93,8 +93,9 @@ step!(int4)
     @test int6.u[1] + int6.u[2] + int6.u[3] ≈ 1.0 atol = 1.0e-10
 
     # Callback path after the first step still reinitializes (and must not
-    # double-count in the following loopheader!).
-    counter3 = CountingInit(DiffEqBase.CheckInit(), Ref(0))
+    # double-count in the following loopheader!). BrownFullBasicInit, because
+    # CheckInit rejects a BDF du whose residual is only at Newton tolerance.
+    counter3 = CountingInit(BrownFullBasicInit(), Ref(0))
     fired = Ref(false)
     condition3(u, t, integrator) = fired[]  # arm after first step
     affect3!(integrator) = (integrator.u .= integrator.u)
