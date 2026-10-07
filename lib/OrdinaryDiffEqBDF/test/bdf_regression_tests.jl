@@ -339,3 +339,41 @@ end
         @test sum(sol.u[end]) ≈ 1 atol = 1.0e-8
     end
 end
+
+@testset "DFBDF restart after a derivative discontinuity is a BDF1 cold start (#4791)" begin
+    λ = 8.6e8
+    u0 = [1.0e-3, 1.0e12]
+    du0 = [-λ * u0[1], 1.0e-3 * u0[2]]
+    fiip = (out, du, u, p, t) -> (out[1] = du[1] + λ * u[1]; out[2] = du[2] - 1.0e-3 * u[2]; nothing)
+    foop = (du, u, p, t) -> [du[1] + λ * u[1], du[2] - 1.0e-3 * u[2]]
+    tol = 1.0e-8
+    prob(f, t0) = DAEProblem(f, du0, u0, (t0, t0 + 1000.0); differential_vars = [true, true])
+    for f in (fiip, foop), t0 in (0.0, 14400.0), npre in (1, 4, 40), via_callback in (false, true)
+        fire = Ref(false)
+        cb = DiscreteCallback((u, t, integ) -> fire[], integ -> (fire[] = false; integ.u .= integ.u))
+        integ = init(
+            prob(f, t0), DFBDF(); abstol = tol, reltol = tol, callback = cb,
+            initializealg = BrownFullBasicInit()
+        )
+        for _ in 1:npre
+            step!(integ)
+        end
+        npre == 40 && @test integ.cache.order >= 2
+        if via_callback
+            fire[] = true
+            step!(integ)
+            @test !fire[]
+        else
+            derivative_discontinuity!(integ, true)
+        end
+        uprev = copy(integ.u)
+        set_proposed_dt!(integ, max(1.0e-3 / λ, 2 * eps(integ.t)))
+        nrej = integ.stats.nreject
+        step!(integ)
+        h = integ.t - integ.tprev
+        @test integ.stats.nreject == nrej
+        @test integ.u[1] ≈ uprev[1] / (1 + h * λ) rtol = 1.0e-8
+        w = tol + tol * abs(uprev[1])
+        @test OrdinaryDiffEqCore.get_EEst(integ) ≈ (h * λ)^2 * uprev[1] / 2 / w / sqrt(2) rtol = 0.01
+    end
+end

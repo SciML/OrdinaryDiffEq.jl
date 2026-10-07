@@ -306,6 +306,7 @@ function _dfbdf_perform_step!(
         integrator, cache::DFBDFConstantCache{max_order},
         repeat_step
     ) where {max_order}
+    reinitFBDF!(integrator, cache)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
@@ -313,7 +314,6 @@ function _dfbdf_perform_step!(
     (; t, dt, u, f, p, uprev) = integrator
 
     k = order
-    reinitFBDF!(integrator, cache)
 
     # Predictor: evaluate Lagrange interpolant through u_history at Θ=1
     # using actual (variable) theta nodes. No need to fill integrator.k.
@@ -502,13 +502,13 @@ function _dfbdf_perform_step!(
         integrator, cache::DFBDFCache{max_order},
         repeat_step
     ) where {max_order}
+    reinitFBDF!(integrator, cache)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense,
     ) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
-    reinitFBDF!(integrator, cache)
     k = order
 
     # Predictor: evaluate Lagrange interpolant through u_history at Θ=1
