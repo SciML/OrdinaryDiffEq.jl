@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
+using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, DiffEqBase, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
@@ -271,5 +271,78 @@ end
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.nreject < sol.stats.naccept / 10
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
+end
+
+# Regression for #4641: choose_order!'s order-lowering recompute of terkm2 must
+# use estimate_terk(..., k - 2) (fd_weights[1, k - 2] and dt^(k - 3)). Master
+# used the transposed index fd_weights[k - 2, 1] and dt^(k - 2); that only
+# matters when the order drops by three or more in one call (so the first
+# recompute shifts into the returned terk).
+@testset "choose_order! terkm2 recompute matches estimate_terk(k-2) (#4641)" begin
+    choose_order! = OrdinaryDiffEqBDF.choose_order!
+    estimate_terk = OrdinaryDiffEqBDF.estimate_terk
+    calc_finite_difference_weights! = OrdinaryDiffEqBDF.calc_finite_difference_weights!
+    calculate_residuals = DiffEqBase.calculate_residuals
+
+    function residual_norm(integ, terk_tmp)
+        atmp = calculate_residuals(
+            terk_tmp, integ.uprev, integ.u,
+            integ.opts.abstol, integ.opts.reltol,
+            integ.opts.internalnorm, integ.t
+        )
+        return integ.opts.internalnorm(atmp, integ.t)
+    end
+
+    function buggy_terkm2_norm(integ, k)
+        (; ts_tmp, u_history, fd_weights) = integ.cache
+        (; t, dt, u) = integ
+        calc_finite_difference_weights!(fd_weights, ts_tmp, t + dt, k - 2)
+        terk_tmp = fd_weights[k - 2, 1] * u
+        if u isa Number
+            for i in 2:(k - 2)
+                terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
+            end
+            terk_tmp *= abs(dt^(k - 2))
+        else
+            for i in 2:(k - 2)
+                terk_tmp = terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
+            end
+            terk_tmp = terk_tmp * abs(dt^(k - 2))
+        end
+        return residual_norm(integ, terk_tmp)
+    end
+
+    for (prob, alg) in (
+            (ODEProblem((u, p, t) -> -u, 1.0, (0.0, 2.0)), FBDF()),
+            (ODEProblem((du, u, p, t) -> (du[1] = -u[1]), [1.0], (0.0, 2.0)), FBDF()),
+        )
+        integ = init(prob, alg; abstol = 1.0e-10, reltol = 0.0, dt = 1.0e-2)
+        while integ.cache.order < 5 && integ.t < 1.0
+            step!(integ)
+        end
+        @test integ.cache.order >= 5
+
+        cache = integ.cache
+        k0 = 5
+        cache.order = k0
+        cache.qwait = 1 # block order raise
+        # Broken monotonicity chain forces the while-loop; with these values it
+        # drops to order 2, so the first recompute becomes the returned terk.
+        cache.terkm2 = 1.0
+        cache.terkm1 = 2.0
+        cache.terk = 3.0
+        cache.terkp1 = 4.0
+
+        correct = residual_norm(
+            integ, estimate_terk(integ, cache, k0 - 2, Val(5), integ.u)
+        )
+        buggy = buggy_terkm2_norm(integ, k0)
+        @test abs(correct - buggy) / abs(correct) > 0.5 # formulas disagree
+
+        knew, terk = choose_order!(alg, integ, cache, Val(5))
+        @test knew == 2
+        @test terk ≈ correct rtol = 1.0e-10
+        @test abs(terk - buggy) / abs(correct) > 0.5
     end
 end
