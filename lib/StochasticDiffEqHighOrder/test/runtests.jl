@@ -8,6 +8,7 @@ function activate_qa_env()
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
+    @time @safetestset "ThreeStageSRACache deleteat!" include("sosra_deleteat_tests.jl")
     @time @safetestset "Module loads and constructors" begin
         using StochasticDiffEqHighOrder
         using Test

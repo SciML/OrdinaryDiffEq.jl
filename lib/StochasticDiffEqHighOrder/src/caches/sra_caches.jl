@@ -290,7 +290,7 @@ function alg_cache(
     k3 = zero(rate_prototype)
     E₁ = zero(rate_prototype)
     E₂ = zero(rate_prototype)
-    tmp = k1
+    tmp = zero(rate_prototype)
     if typeof(noise_rate_prototype) == typeof(rate_prototype)
         gtmp = nothing
     else
@@ -319,7 +319,7 @@ function alg_cache(
     k3 = zero(rate_prototype)
     E₁ = zero(rate_prototype)
     E₂ = zero(rate_prototype)
-    tmp = k1
+    tmp = zero(rate_prototype)
     if typeof(noise_rate_prototype) == typeof(rate_prototype)
         gtmp = nothing
     else
@@ -348,7 +348,7 @@ function alg_cache(
     k3 = zero(rate_prototype)
     E₁ = zero(rate_prototype)
     E₂ = zero(rate_prototype)
-    tmp = k1
+    tmp = zero(rate_prototype)
     if typeof(noise_rate_prototype) == typeof(rate_prototype)
         gtmp = nothing
     else
