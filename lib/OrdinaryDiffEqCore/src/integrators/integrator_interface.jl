@@ -438,9 +438,8 @@ function addat_non_user_cache!(integrator::ODEIntegrator, cache, idxs)
     return resize_non_user_cache!(integrator, cache, i)
 end
 
-# Cache fields frequently alias each other and `fsalfirst`/`fsallast` often alias a
-# stage buffer, so each distinct array must be visited exactly once: `deleteat!`/`addat!`
-# are not idempotent the way `resize!` is.
+# Cache fields and `fsalfirst`/`fsallast` often alias, and `deleteat!`/`addat!` are not
+# idempotent like `resize!`, so each distinct array is visited exactly once.
 function foreach_unique_state_buffer(f, integrator::ODEIntegrator)
     seen = Any[]
     for c in Iterators.flatten(
