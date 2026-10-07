@@ -217,6 +217,7 @@ end
     # handle callbacks, rewind back to order one.
     if integrator.derivative_discontinuity || integrator.iter == 1
         cache.order = 1
+        cache.nextorder = 1
         z[1] = integrator.uprev
         z[2] = f(uprev, p, t) * dt
         increment_nf!(integrator.stats, 1)
@@ -228,11 +229,11 @@ end
         dts[i + 1] = dts[i]
     end
     dts[1] = dt
-    dt != dts[2] && nordsieck_adjust!(integrator, cache)
+    nordsieck_needs_adjust(integrator, cache) && nordsieck_adjust!(integrator, cache)
     integrator.k[1] = z[2] / dt
 
     perform_predict!(cache)
-    calc_coeff!(cache)
+    is_bdf(integrator.alg) ? calc_coeff_bdf!(cache) : calc_coeff!(cache)
     isucceed = nlsolve_functional!(integrator, cache)
     if !isucceed
         # rewind Nordsieck vector
@@ -277,6 +278,7 @@ end
     # handle callbacks, rewind back to order one.
     if integrator.derivative_discontinuity || integrator.iter == 1
         cache.order = 1
+        cache.nextorder = 1
         @.. broadcast = false z[1] = integrator.uprev
         f(z[2], uprev, p, t)
         increment_nf!(integrator.stats, 1)
@@ -290,11 +292,11 @@ end
     end
     dts[1] = dt
     # Rescale
-    dt != dts[2] && nordsieck_adjust!(integrator, cache)
+    nordsieck_needs_adjust(integrator, cache) && nordsieck_adjust!(integrator, cache)
     @.. broadcast = false integrator.k[1] = z[2] / dt
 
     perform_predict!(cache)
-    calc_coeff!(cache)
+    is_bdf(integrator.alg) ? calc_coeff_bdf!(cache) : calc_coeff!(cache)
     isucceed = nlsolve_functional!(integrator, cache)
     # TODO: Handle NLsolve better
     if !isucceed
