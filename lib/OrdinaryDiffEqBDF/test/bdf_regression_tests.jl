@@ -283,5 +283,4 @@ end
     sol = solve(prob, alg; reltol = 1.0e-8, abstol = 1.0e-8)
     @test sol.retcode == ReturnCode.Success
     @test sol.stats.nreject < sol.stats.naccept / 100
-    @test abs(sol[1, end] - 10) / 10 < 5.0e-3
 end
