@@ -62,3 +62,17 @@ r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
 @test ODE_DEFAULT_NORM(r, 0.0) ≈ 1.0
 # Unnormalised Euclidean norm would be sqrt(6) ≈ 2.449 — make sure we don't get that
 @test ODE_DEFAULT_NORM(r, 0.0) < 2.0
+
+# ArrayPartition mapreduce-with-init was not inferred for homogeneous or mixed
+# partition eltypes, boxing the Float64 result and dynamically dispatching the
+# subsequent / and sqrt_fast in ODE_DEFAULT_NORM.
+@testset "ArrayPartition ODE_DEFAULT_NORM allocations" begin
+    u_hom = ArrayPartition(ones(4), ones(4))
+    u_mix = ArrayPartition(ones(4), ones(Float32, 4))
+    ODE_DEFAULT_NORM(u_hom, 0.0)
+    ODE_DEFAULT_NORM(u_mix, 0.0)
+    @test (@allocated ODE_DEFAULT_NORM(u_hom, 0.0)) == 0
+    @test (@allocated ODE_DEFAULT_NORM(u_mix, 0.0)) == 0
+    @test (@allocated UNITLESS_ABS2(u_hom)) == 0
+    @test (@allocated UNITLESS_ABS2(u_mix)) == 0
+end

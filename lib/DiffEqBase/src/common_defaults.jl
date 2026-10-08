@@ -14,8 +14,15 @@ end
 function UNITLESS_ABS2(x::RecursiveArrayTools.AbstractVectorOfArray)
     return mapreduce(UNITLESS_ABS2, abs2_and_sum, x.u, init = zero(real(value(eltype(x)))))
 end
+
+@inline _tuple_map_sum(f::F, ::Tuple{}, init) where {F} = init
+@inline _tuple_map_sum(f::F, xs::Tuple{Any}, init) where {F} = f(xs[1])
+@inline function _tuple_map_sum(f::F, xs::Tuple, init) where {F}
+    return f(xs[1]) + _tuple_map_sum(f, Base.tail(xs), init)
+end
+
 function UNITLESS_ABS2(x::RecursiveArrayTools.ArrayPartition)
-    return mapreduce(UNITLESS_ABS2, abs2_and_sum, x.x, init = zero(real(value(eltype(x)))))
+    return _tuple_map_sum(UNITLESS_ABS2, x.x, zero(real(value(eltype(x)))))
 end
 
 function UNITLESS_ABS2(x::RecursiveArrayTools.AbstractRaggedVectorOfArray)
@@ -30,10 +37,7 @@ function UNITLESS_ABS2(f::F, x::AbstractArray) where {F}
     )
 end
 function UNITLESS_ABS2(f::F, x::RecursiveArrayTools.ArrayPartition) where {F}
-    return mapreduce(
-        UNITLESS_ABS2 ∘ f, abs2_and_sum, x.x;
-        init = zero(real(value(eltype(x))))
-    )
+    return _tuple_map_sum(UNITLESS_ABS2 ∘ f, x.x, zero(real(value(eltype(x)))))
 end
 
 recursive_length(u::AbstractArray{<:Number}) = length(u)
@@ -197,7 +201,16 @@ function INFINITE_OR_GIANT(
         INFINITE_OR_GIANT, x
     )
 end
-INFINITE_OR_GIANT(x::RecursiveArrayTools.ArrayPartition) = any(INFINITE_OR_GIANT, x.x)
+
+@inline _tuple_any(f::F, ::Tuple{}) where {F} = false
+@inline _tuple_any(f::F, xs::Tuple{Any}) where {F} = f(xs[1])
+@inline function _tuple_any(f::F, xs::Tuple) where {F}
+    return f(xs[1]) || _tuple_any(f, Base.tail(xs))
+end
+
+function INFINITE_OR_GIANT(x::RecursiveArrayTools.ArrayPartition)
+    return _tuple_any(INFINITE_OR_GIANT, x.x)
+end
 
 """
     ODE_DEFAULT_UNSTABLE_CHECK(dt, u, p, t) -> Bool
