@@ -1,6 +1,7 @@
 using Test, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, StaticArrays, ForwardDiff
 
-using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM
+using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM, abs2_and_sum,
+    value
 
 @test recursive_length(1.0) == 1
 
@@ -63,9 +64,8 @@ r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
 # Unnormalised Euclidean norm would be sqrt(6) ≈ 2.449 — make sure we don't get that
 @test ODE_DEFAULT_NORM(r, 0.0) < 2.0
 
-# ArrayPartition mapreduce-with-init was not inferred for homogeneous or mixed
-# partition eltypes, boxing the Float64 result and dynamically dispatching the
-# subsequent / and sqrt_fast in ODE_DEFAULT_NORM.
+# ArrayPartition UNITLESS_ABS2 / ODE_DEFAULT_NORM must be allocation-free and
+# bitwise-identical to mapreduce(..., init=) for 3+ partitions (left fold from init).
 @testset "ArrayPartition ODE_DEFAULT_NORM allocations" begin
     u_hom = ArrayPartition(ones(4), ones(4))
     u_mix = ArrayPartition(ones(4), ones(Float32, 4))
@@ -75,4 +75,25 @@ r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
     @test (@allocated ODE_DEFAULT_NORM(u_mix, 0.0)) == 0
     @test (@allocated UNITLESS_ABS2(u_hom)) == 0
     @test (@allocated UNITLESS_ABS2(u_mix)) == 0
+end
+
+@testset "ArrayPartition UNITLESS_ABS2 left-fold vs mapreduce" begin
+    mapreduce_ref(x) = mapreduce(
+        UNITLESS_ABS2, abs2_and_sum, x.x;
+        init = zero(real(value(eltype(x))))
+    )
+    cases = (
+        ArrayPartition(ones(4), ones(Float32, 3), ones(Float32, 2)),
+        ArrayPartition(ones(3), ones(3), ones(3), ones(3)),
+        ArrayPartition(ones(3), ArrayPartition(ones(2), ones(Float32, 2)), ones(4)),
+    )
+    for u in cases
+        @test UNITLESS_ABS2(u) === mapreduce_ref(u)
+        @test ODE_DEFAULT_NORM(u, 0.0) ===
+            Base.FastMath.sqrt_fast(mapreduce_ref(u) / max(recursive_length(u), 1))
+        UNITLESS_ABS2(u)
+        ODE_DEFAULT_NORM(u, 0.0)
+        @test (@allocated UNITLESS_ABS2(u)) == 0
+        @test (@allocated ODE_DEFAULT_NORM(u, 0.0)) == 0
+    end
 end

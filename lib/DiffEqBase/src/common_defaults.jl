@@ -15,10 +15,9 @@ function UNITLESS_ABS2(x::RecursiveArrayTools.AbstractVectorOfArray)
     return mapreduce(UNITLESS_ABS2, abs2_and_sum, x.u, init = zero(real(value(eltype(x)))))
 end
 
-@inline _tuple_map_sum(f::F, ::Tuple{}, init) where {F} = init
-@inline _tuple_map_sum(f::F, xs::Tuple{Any}, init) where {F} = f(xs[1])
-@inline function _tuple_map_sum(f::F, xs::Tuple, init) where {F}
-    return f(xs[1]) + _tuple_map_sum(f, Base.tail(xs), init)
+@inline _tuple_map_sum(f::F, ::Tuple{}, acc) where {F} = acc
+@inline function _tuple_map_sum(f::F, xs::Tuple, acc) where {F}
+    return _tuple_map_sum(f, Base.tail(xs), acc + f(xs[1]))
 end
 
 function UNITLESS_ABS2(x::RecursiveArrayTools.ArrayPartition)
