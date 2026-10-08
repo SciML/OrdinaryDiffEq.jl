@@ -1,5 +1,10 @@
 using OrdinaryDiffEqStabilizedIRK, Test, LinearAlgebra, Random
 using OrdinaryDiffEqStabilizedIRK: maxeig!
+import OrdinaryDiffEqCore
+
+@testset "alg_can_repeat_jac extends OrdinaryDiffEqCore" begin
+    @test OrdinaryDiffEqCore.alg_can_repeat_jac(IRKC()) == false
+end
 
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
     Random.seed!(123)
