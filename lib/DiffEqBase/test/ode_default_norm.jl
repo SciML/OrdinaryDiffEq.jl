@@ -1,4 +1,5 @@
-using Test, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, StaticArrays, ForwardDiff
+using Test, Random, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, StaticArrays,
+    ForwardDiff
 
 using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM, abs2_and_sum,
     value
@@ -82,10 +83,20 @@ end
         UNITLESS_ABS2, abs2_and_sum, x.x;
         init = zero(real(value(eltype(x))))
     )
+    # Minimal F64/F32/F32 case: left fold and right fold differ in the low bits
+    # (0.14000000640749932 vs 0.14000001013278962). Integer `ones(...)` inputs
+    # do not discriminate association order.
+    u_min = ArrayPartition([0.1], Float32[0.2], Float32[0.3])
+    @test UNITLESS_ABS2(u_min) === 0.14000000640749932
+    @test UNITLESS_ABS2(u_min) === mapreduce_ref(u_min)
+
+    rng = Xoshiro(1)
     cases = (
-        ArrayPartition(ones(4), ones(Float32, 3), ones(Float32, 2)),
-        ArrayPartition(ones(3), ones(3), ones(3), ones(3)),
-        ArrayPartition(ones(3), ArrayPartition(ones(2), ones(Float32, 2)), ones(4)),
+        ArrayPartition(rand(rng, 4), rand(rng, Float32, 3), rand(rng, Float32, 2)),
+        ArrayPartition(rand(rng, 3), rand(rng, 3), rand(rng, 3), rand(rng, 3)),
+        ArrayPartition(
+            rand(rng, 3), ArrayPartition(rand(rng, 2), rand(rng, Float32, 2)), rand(rng, 4)
+        ),
     )
     for u in cases
         @test UNITLESS_ABS2(u) === mapreduce_ref(u)
