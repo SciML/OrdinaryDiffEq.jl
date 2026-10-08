@@ -194,6 +194,9 @@ function _build_callback_cache(u, max_len, ::Val{true}, ::Type{uBottomEltype}) w
 end
 function _build_callback_cache(u, max_len, ::Val{false}, ::Type{uBottomEltype}) where {uBottomEltype}
     T = real(uBottomEltype)
+    if u isa AbstractArray && ismutable(u)
+        return DiffEqBase.CallbackCache(u, max_len, T, T)
+    end
     return DiffEqBase.CallbackCache(max_len, T, T)
 end
 
