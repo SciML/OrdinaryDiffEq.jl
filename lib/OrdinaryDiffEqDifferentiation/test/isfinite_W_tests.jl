@@ -7,7 +7,7 @@ end
 Base.isfinite(a::OnlyIsfinite) = isfinite(a.x)
 
 @testset "isfinite_W" begin
-    for T in (Float32, Float64, ComplexF64, BigFloat)
+    for T in (Float16, Float32, Float64, ComplexF32, ComplexF64, BigFloat)
         W = T[1 2; 3 4]
         @test isfinite_W(W)
         @test isfinite_W(view(W, :, 1:2))

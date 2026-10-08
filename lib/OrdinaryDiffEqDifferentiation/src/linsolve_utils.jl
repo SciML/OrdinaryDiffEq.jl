@@ -9,6 +9,8 @@ issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
 issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
+const IEEEFloats = Union{Float16, Float32, Float64}
+
 """
     isfinite_W(W) -> Bool
 
@@ -18,7 +20,7 @@ must be caught before it is factorized for the step to be rejected instead. Dens
 strided matrices and scalars are checked; other representations return `true`.
 """
 isfinite_W(W::StridedMatrix) = all(isfinite, W)
-function isfinite_W(W::StridedMatrix{<:Union{Base.IEEEFloat, Complex{<:Base.IEEEFloat}}})
+function isfinite_W(W::StridedMatrix{<:Union{IEEEFloats, Complex{<:IEEEFloats}}})
     # In IEEE arithmetic `0 * v` is `NaN` exactly when `v` is not finite; the branch-free
     # sum vectorizes, unlike the short-circuiting `all(isfinite, W)`.
     acc = zero(eltype(W))
