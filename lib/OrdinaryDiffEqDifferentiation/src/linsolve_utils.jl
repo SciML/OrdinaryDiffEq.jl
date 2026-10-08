@@ -17,9 +17,10 @@ LAPACK's dense LU throws an `ArgumentError` on non-finite input, so a non-finite
 must be caught before it is factorized for the step to be rejected instead. Dense
 strided matrices and scalars are checked; other representations return `true`.
 """
-function isfinite_W(W::StridedMatrix)
-    # `0 * v` is `NaN` exactly when `v` is not finite; the branch-free sum vectorizes,
-    # unlike the short-circuiting `all(isfinite, W)`.
+isfinite_W(W::StridedMatrix) = all(isfinite, W)
+function isfinite_W(W::StridedMatrix{<:Union{Base.IEEEFloat, Complex{<:Base.IEEEFloat}}})
+    # In IEEE arithmetic `0 * v` is `NaN` exactly when `v` is not finite; the branch-free
+    # sum vectorizes, unlike the short-circuiting `all(isfinite, W)`.
     acc = zero(eltype(W))
     @simd for v in W
         acc += zero(v) * v
