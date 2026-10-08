@@ -1115,7 +1115,7 @@ function handle_callbacks!(integrator)
         end
         if event_occurred
             integrator.event_last_time = idx
-            integrator.vector_event_last_time = Int(event_idx)
+            integrator.vector_event_last_time = event_idx
             continuous_modified,
                 saved_in_cb = apply_ith_callback!(
                 integrator,

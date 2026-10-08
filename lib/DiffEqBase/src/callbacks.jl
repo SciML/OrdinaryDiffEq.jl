@@ -267,15 +267,24 @@ end
 end
 
 
+# Map a signed crossing value to Int8 via comparisons (not `sign`/`Int8(sign(...))`).
+# Matches master semantics for event direction (`prev_sign < 0` / `> 0`): NaN and other
+# unordered values become 0 (no event branch), and Dual/Unitful/Measurements that compare
+# with zero but cannot convert through `Int8(sign(...))` stay usable.
+@inline function _crossing_int8(s)
+    return s < 0 ? Int8(-1) : s > 0 ? Int8(1) : Int8(0)
+end
+
 # A type-erased callback is called through `Base.invokelatest`, so the compiled loop holds
 # a plain dynamic dispatch instead of a method instance specialised on `Any` whose
 # abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
-# The callee runs on the concrete callback and hands back the two values the loop needs
-# typed: the event time and the residual, the latter already reduced and converted.
+# The callee runs on the concrete callback and hands back the four values the loop needs
+# typed: event time, crossing sign (`Int8`), event index (`Int`), and residual (already
+# reduced and converted).
 function _find_callback_time_erased(integrator, callback, callback_idx)
     tmin, upcrossing, event_occurred, event_idx, residual =
         find_callback_time(integrator, callback, callback_idx)
-    upc = upcrossing isa Number ? Int8(sign(value(upcrossing))) : Int8(0)
+    upc = upcrossing isa Number ? _crossing_int8(value(upcrossing)) : Int8(0)
     return (
         convert(typeof(integrator.t), tmin), upc, event_occurred::Bool, Int(event_idx),
         convert(typeof(integrator.last_event_error), value(residual)),
@@ -424,7 +433,7 @@ per-component event mask. The event time is found by rootfinding on the callback
                 if min_event_idx < 0
                     min_event_idx = i
                 end
-                simultaneous_events[i] = Int8(-sign(value(ArrayInterface.allowed_getindex(bottom_sign, i))))
+                simultaneous_events[i] = -_crossing_int8(value(ArrayInterface.allowed_getindex(bottom_sign, i)))
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -458,7 +467,7 @@ per-component event mask. The event time is found by rootfinding on the callback
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
-                    simultaneous_events[idx] = Int8(-sign(value(ArrayInterface.allowed_getindex(bottom_sign, idx))))
+                    simultaneous_events[idx] = -_crossing_int8(value(ArrayInterface.allowed_getindex(bottom_sign, idx)))
                 end
             end
         end

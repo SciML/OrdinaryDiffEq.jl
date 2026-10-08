@@ -86,3 +86,14 @@ handle_allocs(integrator)
     @test bytes_per_step(disc) == 0
     @test bytes_per_step(cont) <= 64
 end
+
+@testset "AutoSpecialize NaN continuous condition does not throw" begin
+    # Master treats NaN condition values as non-events (`is_event_occurrence` false).
+    # The erased path must map NaN to Int8(0) via comparisons, not Int8(sign(NaN)).
+    f_nan!(du, u, p, t) = (du[1] = u[2]; du[2] = -u[1]; nothing)
+    cond_nan(u, t, i) = u[1] > 0.9 ? NaN : u[1] - 0.5
+    cb = ContinuousCallback(cond_nan, i -> nothing, i -> nothing)
+    prob = ODEProblem{true, SciMLBase.AutoSpecialize}(f_nan!, [1.0, 0.0], (0.0, 10.0))
+    sol = solve(prob, Tsit5(); callback = cb)
+    @test SciMLBase.successful_retcode(sol)
+end
