@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqCore
+using OrdinaryDiffEqTsit5
 
 # Setup a simple ODE problem with several callbacks (to test LLVM code gen)
 # We will manually trigger the first callback and check its allocations.
@@ -51,3 +52,37 @@ function handle_allocs(integrator)
 end
 handle_allocs(integrator)
 @test_skip handle_allocs(integrator) == 0
+
+@testset "AutoSpecialize erased callback step! allocations" begin
+    noop!(integrator) = (derivative_discontinuity!(integrator, false); nothing)
+    cond_never(u, t, integrator) = u[1] + 10.0
+    f_alloc!(du, u, p, t) = (du .= .-u; nothing)
+    u0 = [1.0, 0.0]
+    tspan = (0.0, 1.0e6)
+    prob = ODEProblem{true, SciMLBase.AutoSpecialize}(f_alloc!, u0, tspan)
+
+    function measure_steps!(integ, n)
+        return @allocated begin
+            for _ in 1:n
+                step!(integ)
+            end
+        end
+    end
+    function bytes_per_step(callback::CB; nwarm = 200, n = 1000) where {CB}
+        integ = init(
+            prob, Tsit5(); callback = callback,
+            save_everystep = false, save_start = false, save_end = false, dense = false
+        )
+        for _ in 1:nwarm
+            step!(integ)
+        end
+        measure_steps!(integ, 10)
+        return measure_steps!(integ, n) / n
+    end
+
+    disc = DiscreteCallback((u, t, i) -> false, noop!; save_positions = (false, false))
+    cont = ContinuousCallback(cond_never, noop!; save_positions = (false, false))
+
+    @test bytes_per_step(disc) == 0
+    @test bytes_per_step(cont) <= 64
+end

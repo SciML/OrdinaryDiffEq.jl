@@ -1107,13 +1107,15 @@ function handle_callbacks!(integrator)
     if !isempty(continuous_callbacks)
         time, upcrossing, event_occurred, event_idx, idx, counter =
         if continuous_callbacks isa AbstractVector
-            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks)
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks)::Tuple{
+                typeof(integrator.t), Int8, Bool, Int, Int, Int,
+            }
         else
             DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks...)
         end
         if event_occurred
             integrator.event_last_time = idx
-            integrator.vector_event_last_time = event_idx
+            integrator.vector_event_last_time = Int(event_idx)
             continuous_modified,
                 saved_in_cb = apply_ith_callback!(
                 integrator,
