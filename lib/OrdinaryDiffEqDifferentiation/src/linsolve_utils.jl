@@ -20,9 +20,10 @@ must be caught before it is factorized for the step to be rejected instead. Dens
 strided matrices and scalars are checked; other representations return `true`.
 """
 isfinite_W(W::StridedMatrix) = all(isfinite, W)
-function isfinite_W(W::StridedMatrix{<:Union{IEEEFloats, Complex{<:IEEEFloats}}})
+function isfinite_W(W::Matrix{<:Union{IEEEFloats, Complex{<:IEEEFloats}}})
     # In IEEE arithmetic `0 * v` is `NaN` exactly when `v` is not finite; the branch-free
-    # sum vectorizes, unlike the short-circuiting `all(isfinite, W)`.
+    # sum vectorizes, unlike the short-circuiting `all(isfinite, W)`. Restricted to
+    # `Matrix`: GPU arrays are also strided but must not be iterated elementwise.
     acc = zero(eltype(W))
     @simd for v in W
         acc += zero(v) * v

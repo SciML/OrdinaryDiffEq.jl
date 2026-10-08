@@ -6,6 +6,15 @@ struct OnlyIsfinite <: Number
 end
 Base.isfinite(a::OnlyIsfinite) = isfinite(a.x)
 
+# A dense matrix without scalar indexing, standing in for GPU arrays (which are
+# `StridedMatrix` too): whole-array reductions work, elementwise iteration throws.
+struct NoScalarMatrix <: DenseMatrix{Float64}
+    data::Matrix{Float64}
+end
+Base.size(A::NoScalarMatrix) = size(A.data)
+Base.getindex(::NoScalarMatrix, ::Int...) = error("scalar indexing")
+Base.all(f::typeof(isfinite), A::NoScalarMatrix) = all(f, A.data)
+
 @testset "isfinite_W" begin
     for T in (Float16, Float32, Float64, ComplexF32, ComplexF64, BigFloat)
         W = T[1 2; 3 4]
@@ -29,6 +38,9 @@ Base.isfinite(a::OnlyIsfinite) = isfinite(a.x)
 
     @test isfinite_W(fill(OnlyIsfinite(1.0), 2, 2))
     @test !isfinite_W([OnlyIsfinite(1.0) OnlyIsfinite(NaN)])
+
+    @test isfinite_W(NoScalarMatrix([1.0 2.0; 3.0 4.0]))
+    @test !isfinite_W(NoScalarMatrix([1.0 NaN; 3.0 4.0]))
 
     @test isfinite_W(2.0)
     @test !isfinite_W(Inf)
