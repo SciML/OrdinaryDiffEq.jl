@@ -109,11 +109,10 @@ function _erases_callback_types(prob)
 end
 
 function _erase_problem_callback_types(prob)
-    if !_erases_callback_types(prob) || !has_kwargs(prob)
+    if !_erases_callback_types(prob) || !has_kwargs(prob) || !haskey(prob.kwargs, :callback)
         return prob
     end
-    callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
-    callback = _erase_callback_types(callback)
+    callback = _erase_callback_types(prob.kwargs[:callback])
     return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 

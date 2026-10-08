@@ -69,9 +69,8 @@ initialized_problem, init_stage = init(prepared_default_problem)
 @test solve_stage === :solve
 @test init_stage === :init
 
-# The despecializing levels store callbacks in type-erased vectors, so
-# `get_concrete_problem` gives every such problem a `callback` kwarg -- including one
-# built without any callback -- to keep the solver type constant as callbacks change.
+# Despecializing levels erase callbacks already on the problem; skip when absent
+# so merge_problem_kwargs does not hit the type-unstable CallbackSet merge path.
 despecialized_default_f(u, p, t) = p * u
 despecialized_default_problem = ODEProblem{false, SciMLBase.AutoSpecialize}(
     despecialized_default_f, 1.0, (0.0, 1.0), 2.0
@@ -91,14 +90,33 @@ despecialized_solved, despecialized_stage = solve(
     despecialized_default_problem; wrap = Val(false)
 )
 @test despecialized_stage === :solve
-@test despecialized_solved !== despecialized_default_problem
-@test despecialized_solved.f === despecialized_default_problem.f
-@test despecialized_solved.u0 == despecialized_default_problem.u0
-@test despecialized_solved.tspan == despecialized_default_problem.tspan
-@test despecialized_solved.kwargs[:callback] isa
-    SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
-@test isempty(despecialized_solved.kwargs[:callback].continuous_callbacks)
-@test isempty(despecialized_solved.kwargs[:callback].discrete_callbacks)
+@test despecialized_solved === despecialized_default_problem
+@test !haskey(despecialized_solved.kwargs, :callback)
+
+if VERSION >= v"1.12"
+    despecialized_cb = ContinuousCallback(
+        (u, t, integrator) -> u - 0.5, integrator -> nothing
+    )
+    despecialized_with_cb = ODEProblem{false, SciMLBase.AutoSpecialize}(
+        despecialized_default_f, 1.0, (0.0, 1.0), 2.0; callback = despecialized_cb
+    )
+    despecialized_cb_solved, = solve(despecialized_with_cb; wrap = Val(false))
+    @test despecialized_cb_solved.kwargs[:callback] isa
+        SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
+    @test only(despecialized_cb_solved.kwargs[:callback].continuous_callbacks) ===
+        despecialized_cb
+
+    f_alloc!(du, u, p, t) = (du[1] = -u[1]; nothing)
+    prob_alloc = ODEProblem{true, SciMLBase.AutoSpecialize}(f_alloc!, [1.0], (0.0, 1.0))
+    cb_alloc = ContinuousCallback((u, t, i) -> u[1], i -> nothing)
+    dcb_alloc = DiscreteCallback((u, t, i) -> false, i -> nothing)
+    cbs_alloc = CallbackSet(cb_alloc, dcb_alloc)
+    concrete_alloc = DiffEqBase.get_concrete_problem(prob_alloc, true)
+    @test !haskey(concrete_alloc.kwargs, :callback)
+    merge_once() = DiffEqBase.merge_problem_kwargs(concrete_alloc; callback = cbs_alloc)
+    merge_once()
+    @test (@allocated merge_once()) < 1500
+end
 
 # Problems that `ConstructionBase.setproperties` cannot rebuild are left untouched.
 rode_problem = RODEProblem((u, p, t, W) -> u + W, 1.0, (0.0, 1.0))
