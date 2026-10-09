@@ -55,7 +55,7 @@ end
     integrator.f.g(gt, uprev, p, t)
     integrator.f.g(gpdt, uprev, p, t + dt)
     integrator.f(k₁, uprev, p, t)
-    k₁ *= dt
+    @.. k₁ *= dt
     sqrt3 = sqrt(3one(eltype(W.dW)))
     if W.dW isa Union{SArray, Number}
         chi2 = (W.dW + W.dZ / sqrt3) / 2 #I_(1,0)/h
