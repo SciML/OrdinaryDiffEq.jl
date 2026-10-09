@@ -73,6 +73,54 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         order = log2(e_coarse / e_fine) / log2((1 // 2^4) / (1 // 2^8))
         @test order > 0.8
     end
+
+    @time @safetestset "RKMilGeneral Ito diagonal update (scalar iip + SA oop)" begin
+        using StochasticDiffEqMilstein
+        using StochasticDiffEqMilstein.SciMLBase
+        using DiffEqNoiseProcess
+        using LinearAlgebra, StaticArrays, Test
+
+        seed = UInt64(7)
+        A = [
+            -1.0 0.1 0.0 0.0
+            0.1 -1.0 0.1 0.0
+            0.0 0.1 -1.0 0.1
+            0.0 0.0 0.1 -1.0
+        ]
+        B = [0.1 0.05; 0.05 0.1; 0.02 0.03; 0.1 0.0]
+        p = (A = A, σ = 0.1, B = B)
+        u0 = [1.0, 0.5, 0.25, 0.125]
+        f!(du, u, p, t) = mul!(du, p.A, u)
+        gmul!(du, u, p, t) = (du .= p.σ .* u)
+        gnd!(du, u, p, t) = (du .= p.B .* u)
+        f_oop(u, p, t) = p.A * u
+        gnd_oop(u, p, t) = p.B .* u
+
+        T = eltype(u0)
+        prob_scalar = SDEProblem{true}(
+            f!, gmul!, copy(u0), (0.0, 1.0), p;
+            noise = WienerProcess(zero(T), zero(T), zero(T))
+        )
+        sol_scalar = solve(
+            prob_scalar, RKMilGeneral(); dt = 1 // 2^4, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_scalar)
+        @test all(isfinite, sol_scalar.u[end])
+
+        # OOP SVector + non-diagonal Ito must not mutate an immutable J.
+        u0_sa = SVector{4}(u0)
+        B_sa = SMatrix{4, 2}(B)
+        p_sa = (A = SMatrix{4, 4}(A), σ = 0.1, B = B_sa)
+        prob_sa = SDEProblem{false}(
+            f_oop, gnd_oop, u0_sa, (0.0, 1.0), p_sa;
+            noise_rate_prototype = zeros(SMatrix{4, 2, Float64})
+        )
+        sol_sa = solve(
+            prob_sa, RKMilGeneral(); dt = 1 // 2^6, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_sa)
+        @test all(isfinite, sol_sa.u[end])
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia

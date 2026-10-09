@@ -87,6 +87,83 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         order = log(e_coarse / e_fine) / log(Float64(dt_coarse / dt_fine))
         @test order > 0.75
     end
+
+    @time @safetestset "RKMilCommute Ito diagonal update (scalar iip + nondiag alloc)" begin
+        using StochasticDiffEqLowOrder
+        using StochasticDiffEqLowOrder.SciMLBase
+        using DiffEqNoiseProcess
+        using LinearAlgebra, StaticArrays, Test
+
+        seed = UInt64(7)
+        A = [
+            -1.0 0.1 0.0 0.0
+            0.1 -1.0 0.1 0.0
+            0.0 0.1 -1.0 0.1
+            0.0 0.0 0.1 -1.0
+        ]
+        B = [0.1 0.05; 0.05 0.1; 0.02 0.03; 0.1 0.0]
+        p = (A = A, σ = 0.1, B = B)
+        u0 = [1.0, 0.5, 0.25, 0.125]
+        f!(du, u, p, t) = mul!(du, p.A, u)
+        gmul!(du, u, p, t) = (du .= p.σ .* u)
+        gnd!(du, u, p, t) = (du .= p.B .* u)
+        f_oop(u, p, t) = p.A * u
+        gnd_oop(u, p, t) = p.B .* u
+        gmul_oop(u, p, t) = p.σ .* u
+
+        T = eltype(u0)
+        prob_scalar = SDEProblem{true}(
+            f!, gmul!, copy(u0), (0.0, 1.0), p;
+            noise = WienerProcess(zero(T), zero(T), zero(T))
+        )
+        sol_scalar = solve(
+            prob_scalar, RKMilCommute(); dt = 1 // 2^4, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_scalar)
+        @test all(isfinite, sol_scalar.u[end])
+
+        # Scalar IIP must match scalar OOP bitwise at fixed dt.
+        prob_scalar_oop = SDEProblem{false}(
+            f_oop, gmul_oop, copy(u0), (0.0, 1.0), p;
+            noise = WienerProcess(zero(T), zero(T), zero(T))
+        )
+        sol_scalar_oop = solve(
+            prob_scalar_oop, RKMilCommute(); dt = 1 // 2^4, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_scalar_oop)
+        @test sol_scalar.u[end] == sol_scalar_oop.u[end]
+
+        prob_nd = SDEProblem{true}(
+            f!, gnd!, copy(u0), (0.0, 1.0), p;
+            noise_rate_prototype = zeros(eltype(u0), length(u0), 2)
+        )
+        integ = init(
+            prob_nd, RKMilCommute(); dt = 1 // 2^6, adaptive = false,
+            save_everystep = false, seed
+        )
+        for _ in 1:5
+            step!(integ) # warmup compile / noise setup
+        end
+        allocs = @allocated step!(integ)
+        @test allocs < 48
+
+        # OOP SVector + non-diagonal Ito: J is an SMatrix and must not be mutated.
+        u0_sa = SVector{4}(u0)
+        B_sa = SMatrix{4, 2}(B)
+        p_sa = (A = SMatrix{4, 4}(A), σ = 0.1, B = B_sa)
+        prob_sa = SDEProblem{false}(
+            f_oop, gnd_oop, u0_sa, (0.0, 1.0), p_sa;
+            noise_rate_prototype = zeros(SMatrix{4, 2, Float64})
+        )
+        sol_sa_fixed = solve(
+            prob_sa, RKMilCommute(); dt = 1 // 2^6, adaptive = false, seed
+        )
+        sol_sa_adapt = solve(prob_sa, RKMilCommute(); seed)
+        @test SciMLBase.successful_retcode(sol_sa_fixed)
+        @test SciMLBase.successful_retcode(sol_sa_adapt)
+        @test all(isfinite, sol_sa_fixed.u[end])
+        @test all(isfinite, sol_sa_adapt.u[end])
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia

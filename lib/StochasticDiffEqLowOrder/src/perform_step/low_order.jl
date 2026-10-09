@@ -251,7 +251,7 @@ end
         if dW isa Number || is_diagonal_noise(integrator.sol.prob)
             J = J .- 1 // 2 .* abs(dt)
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            J = J - UniformScaling(abs(dt) / 2)
         end
     end
 
@@ -321,10 +321,12 @@ end
 
     @.. mil_correction = zero(u)
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
-        if dW isa Number || is_diagonal_noise(integrator.sol.prob)
+        if dW isa Number
+            J -= abs(dt) / 2
+        elseif is_diagonal_noise(integrator.sol.prob)
             @.. J -= 1 // 2 * abs(dt)
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            view(J, diagind(J)) .-= abs(dt) / 2
         end
     end
 
