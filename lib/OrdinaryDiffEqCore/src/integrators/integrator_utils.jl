@@ -94,6 +94,7 @@ function loopheader!(integrator)
     end
 
     # Accept or reject the step
+    accepted = false
     if integrator.iter > 0
         if (!integrator.force_stepfail) &&
                 (
@@ -107,6 +108,7 @@ function loopheader!(integrator)
             )
             integrator.success_iter += 1
             apply_step!(integrator)
+            accepted = true
         elseif (
                 integrator.opts.adaptive && !integrator.accept_step &&
                     !isaposteriori(integrator.alg)
@@ -120,6 +122,9 @@ function loopheader!(integrator)
     integrator.iter += 1
     choose_algorithm!(integrator, integrator.cache)
     fix_dt_at_bounds!(integrator)
+    # The step the controller asks for, before `modify_dt_for_tstops!` shortens it to land on
+    # a tstop. An accepted step recorded it in `apply_step!`, which already shortened `dt`.
+    accepted || _set_dt_before_tstop!(integrator, integrator.dt)
     modify_dt_for_tstops!(integrator)
     shrink_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
@@ -181,6 +186,7 @@ function apply_step!(integrator)
     elseif integrator.dt != integrator.dtpropose && !integrator.dtchangeable
         error("The current setup does not allow for changing dt.")
     end
+    _set_dt_before_tstop!(integrator, integrator.dt)
 
     update_fsal!(integrator)
 
@@ -267,6 +273,18 @@ end
 _set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
+
+# The step size of the current attempt before `modify_dt_for_tstops!` shortened it to land on
+# a tstop. `modify_dt_for_tstops!` runs both in `apply_step!` and in `loopheader!`, so the
+# `dtpropose` it records is the shortened step by the time the step is taken; this is recorded
+# before either call. Integrators without the field restore `dtpropose` as before.
+_get_dt_before_tstop(integrator::ODEIntegrator) = integrator.dt_before_tstop
+_get_dt_before_tstop(integrator) = integrator.dtpropose
+function _set_dt_before_tstop!(integrator::ODEIntegrator, dt)
+    integrator.dt_before_tstop = dt
+    return nothing
+end
+_set_dt_before_tstop!(integrator, dt) = nothing
 
 function modify_dt_for_tstops!(integrator)
     if has_tstop(integrator)
@@ -631,10 +649,12 @@ function _loopfooter!(integrator)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
 
-            if _get_next_step_tstop(integrator)
+            landed = _get_next_step_tstop(integrator)
+            dt_step = integrator.dt
+            if landed
                 # Step controller dt is overly pessimistic, since dt = time to tstop.
                 # Restore the original dt so the controller proposes a reasonable next step.
-                integrator.dt = integrator.dtpropose
+                integrator.dt = _get_dt_before_tstop(integrator)
             end
             integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
 
@@ -646,7 +666,15 @@ function _loopfooter!(integrator)
                 )
             ) *
                 oneunit(integrator.dt)
+            if landed && abs(dtnew) > abs(integrator.dt)
+                # The landing step's small error says nothing about a full step: resume with
+                # the step the controller had asked for, growing no further from it.
+                dtnew = integrator.dt
+            end
             calc_dt_propose!(integrator, dtnew)
+            # Callbacks see the accepted step: the current-step interpolant spans
+            # [tprev, t] = dt_step, not the restored dt.
+            landed && (integrator.dt = dt_step)
             handle_callbacks!(integrator)
         else # Reject
             increment_reject!(integrator.stats)
