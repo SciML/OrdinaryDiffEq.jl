@@ -1,4 +1,6 @@
 using OrdinaryDiffEqDifferentiation: isfinite_W
+using LinearAlgebra: Diagonal
+using SparseArrays: sparse
 using Test
 
 struct OnlyIsfinite <: Number
@@ -41,6 +43,16 @@ Base.all(f::typeof(isfinite), A::NoScalarMatrix) = all(f, A.data)
 
     @test isfinite_W(NoScalarMatrix([1.0 2.0; 3.0 4.0]))
     @test !isfinite_W(NoScalarMatrix([1.0 NaN; 3.0 4.0]))
+
+    for wrap in (transpose, adjoint)
+        @test isfinite_W(wrap([1.0 2.0; 3.0 4.0]))
+        @test !isfinite_W(wrap([1.0 NaN; 3.0 4.0]))
+        @test !isfinite_W(wrap(ComplexF64[1 2; complex(0, Inf) 4]))
+    end
+    @test isfinite_W(Diagonal([1.0, 2.0]))
+    @test !isfinite_W(Diagonal([1.0, Inf]))
+    @test isfinite_W(sparse([1.0 0.0; 3.0 4.0]))
+    @test !isfinite_W(sparse([1.0 0.0; NaN 4.0]))
 
     @test isfinite_W(2.0)
     @test !isfinite_W(Inf)
