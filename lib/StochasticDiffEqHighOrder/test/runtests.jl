@@ -33,6 +33,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
     @time @safetestset "SRA1 iip k₁ scale allocation" begin
         include("sra1_alloc_tests.jl")
     end
+
+    @time @safetestset "Float32 OOP stages and SRI() Vector OOP" begin
+        include("float32_oop_stages_tests.jl")
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
