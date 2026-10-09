@@ -95,6 +95,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         gnd!(du, u, p, t) = (du .= p.B .* u)
         f_oop(u, p, t) = p.A * u
         gnd_oop(u, p, t) = p.B .* u
+        gmul_oop(u, p, t) = p.σ .* u
 
         T = eltype(u0)
         prob_scalar = SDEProblem{true}(
@@ -106,6 +107,17 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         )
         @test SciMLBase.successful_retcode(sol_scalar)
         @test all(isfinite, sol_scalar.u[end])
+
+        # Scalar IIP must match scalar OOP bitwise at fixed dt.
+        prob_scalar_oop = SDEProblem{false}(
+            f_oop, gmul_oop, copy(u0), (0.0, 1.0), p;
+            noise = WienerProcess(zero(T), zero(T), zero(T))
+        )
+        sol_scalar_oop = solve(
+            prob_scalar_oop, RKMilGeneral(); dt = 1 // 2^4, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_scalar_oop)
+        @test sol_scalar.u[end] == sol_scalar_oop.u[end]
 
         # OOP SVector + non-diagonal Ito must not mutate an immutable J.
         u0_sa = SVector{4}(u0)

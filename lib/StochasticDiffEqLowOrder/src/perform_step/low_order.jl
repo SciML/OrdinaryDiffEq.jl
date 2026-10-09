@@ -325,6 +325,10 @@ end
             J -= abs(dt) / 2
         elseif is_diagonal_noise(integrator.sol.prob)
             @.. J -= 1 // 2 * abs(dt)
+        elseif ArrayInterface.fast_scalar_indexing(J)
+            @inbounds for i in diagind(J)
+                J[i] -= abs(dt) / 2
+            end
         else
             view(J, diagind(J)) .-= abs(dt) / 2
         end
