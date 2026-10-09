@@ -7,7 +7,8 @@ import OrdinaryDiffEqCore: perform_step!,
     alg_cache,
     isesdirk, issplit,
     only_diagonal_mass_matrix,
-    ssp_coefficient, get_fsalfirstlast
+    ssp_coefficient, get_fsalfirstlast,
+    alg_adaptive_order, beta1_default, beta2_default
 # OrdinaryDiffEqCore names used (called/referenced) but not extended here.
 using OrdinaryDiffEqCore: unwrap_alg,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

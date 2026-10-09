@@ -65,7 +65,10 @@ end
 
 alg_adaptive_order(alg::Trapezoid) = 1
 alg_adaptive_order(alg::ImplicitMidpoint) = 1
-alg_adaptive_order(alg::ImplicitEuler) = 0
+alg_adaptive_order(alg::ImplicitEuler) = 1
+# The PI gains follow the order of ImplicitEuler's O(dt²) error estimate, not `alg_order`.
+beta2_default(alg::ImplicitEuler) = 2 // (5 * (alg_adaptive_order(alg) + 1))
+beta1_default(alg::ImplicitEuler, beta2) = 7 // (10 * (alg_adaptive_order(alg) + 1))
 
 ssp_coefficient(alg::SSPSDIRK2) = 4
 
