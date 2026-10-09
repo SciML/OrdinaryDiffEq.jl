@@ -233,7 +233,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             copyto!(u_history[2], u_history[1])
             copyto!(u_history[1], uprev)
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 copyto!(u_history[i], u_history[i - 1])
@@ -250,7 +250,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             u_history[2] = u_history[1]
             u_history[1] = uprev
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 u_history[i] = u_history[i - 1]
@@ -592,6 +592,11 @@ end
 # NLSCOEF.
 error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
 
+# With `adaptive = false` no step controller runs, so each completed pass
+# records its order raise and step counters itself, and `t_old` marks the step
+# they belong to. DelayDiffEq's fixed-point iteration recomputes a step at the
+# same `t`; undoing that step's bookkeeping first gives every pass the order,
+# counters and history the first pass saw.
 function _fbdf_finish_fixed_step!(integrator, cache)
     if cache.time_filter && !integrator.opts.adaptive
         cache.prev_order = cache.order
@@ -599,6 +604,21 @@ function _fbdf_finish_fixed_step!(integrator, cache)
         cache.iters_from_event += 1
         cache.nconsteps += 1
         cache.consfailcnt = 0
+        cache.t_old = integrator.t
+    end
+    return nothing
+end
+
+function _fbdf_undo_fixed_step!(integrator, cache)
+    if cache.time_filter && !integrator.opts.adaptive &&
+            cache.iters_from_event > 0 && cache.consfailcnt == 0 &&
+            integrator.t == cache.t_old
+        cache.order = cache.prev_order
+        cache.iters_from_event -= 1
+        cache.nconsteps -= 1
+        # The recorded bookkeeping now belongs to the previous step. Without
+        # this, a retry after a failed recomputation would undo twice.
+        cache.t_old = cache.ts[2]
     end
     return nothing
 end

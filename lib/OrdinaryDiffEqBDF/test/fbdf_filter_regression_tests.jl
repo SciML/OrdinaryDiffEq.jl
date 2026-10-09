@@ -146,6 +146,29 @@ end
     end
 end
 
+@testset "FBDF fixed-step recomputation at the same t is idempotent" begin
+    fbdf_state(c) = (
+        c.order, c.prev_order, c.iters_from_event, c.nconsteps, c.filter_order,
+        copy(c.ts), deepcopy(c.u_history),
+    )
+    for iip in (false, true), nsteps in (0, 1, 2, 6)
+        f(u, p, t) = -u
+        f!(du, u, p, t) = (du .= -u; nothing)
+        prob = iip ? ODEProblem(f!, [1.0], (-1.0, 1.0)) : ODEProblem(f, 1.0, (-1.0, 1.0))
+        integ = init(prob, FBDF(time_filter = true); adaptive = false, dt = 0.01)
+        for _ in 1:nsteps
+            step!(integ)
+        end
+        OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+        first_pass = (fbdf_state(integ.cache), copy(integ.u))
+        for _ in 1:3
+            OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+            @test (fbdf_state(integ.cache), integ.u) == first_pass
+        end
+        @test integ.cache.iters_from_event == nsteps + 1
+    end
+end
+
 @testset "FBDF filtering with rejected steps and callbacks" begin
     for iip in (false, true)
         f(u, p, t) = -u
