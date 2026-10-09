@@ -233,7 +233,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             copyto!(u_history[2], u_history[1])
             copyto!(u_history[1], uprev)
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 copyto!(u_history[i], u_history[i - 1])
@@ -250,7 +250,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             u_history[2] = u_history[1]
             u_history[1] = uprev
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 u_history[i] = u_history[i - 1]
