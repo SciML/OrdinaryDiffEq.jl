@@ -6,27 +6,51 @@
 #   d₂ uses max(|Δf±ΔgMax|)/sk instead of Δf/sk
 # =============================================================================
 
-# Coerce `a == b` to a scalar `Bool`. Some array wrappers (notably PyCall
-# `PyObject` of arrays — JuliaPy/PyCall.jl#900) return `Vector{Bool}` from `==`,
-# which is not valid in a boolean context. See OrdinaryDiffEq.jl#1402.
+# PyCall wrappers may return arrays from `==` (https://github.com/JuliaPy/PyCall.jl/issues/900).
+# Reduce these arrays while preserving scalar Boolean / number types (incl. Reactant
+# TracedRNumber{Bool}, which is a Number but not a Bool).
 @inline function _bool_equal(a, b)
     r = a == b
-    return r isa Bool ? r : all(r)
+    return r isa Number ? r : all(r)
 end
 
-# A first guess below machine epsilon falls back only if the refined step is tiny too, so a
-# well-scaled Float32 problem keeps its refined step.
-function _fallback_if_tiny(dt, tiny_first, tdir, smalldt, dtmin, integrator)
-    _tType = typeof(dt)
-    if tiny_first && (!isfinite(dt) || abs(dt) < 10eps(_tType) * oneunit(_tType))
-        result_dt = tdir * max(smalldt, dtmin)
-        @SciMLMessage(
-            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
-            integrator.opts.verbose, :dt_epsilon
-        )
-        return result_dt
+# Use DiffEqBase.NAN_CHECK when a method exists (Number / AbstractArray /
+# ArrayPartition / …). Custom non-array states without a method rely on the
+# reduction-only check. (NAN_CHECK on Vector{<:Dual} only sees NaN values, not
+# NaN Dual partials — that is DiffEqBase's behavior.)
+@inline function _ode_nan_check(x)
+    return applicable(DiffEqBase.NAN_CHECK, x) ? DiffEqBase.NAN_CHECK(x) : false
+end
+
+# Machine-epsilon threshold in `dt`'s units. Unwrap via `SciMLBase.value` so
+# unitful / wrapper types (e.g. DynamicQuantities.Quantity) do not hit
+# `eps(::Type{<:Quantity})`. Safe to evaluate unconditionally under `&`/`|`
+# (needed for Reactant traced comparisons that cannot short-circuit).
+@inline function _dt_eps_threshold(dt)
+    T = typeof(dt)
+    return convert(T, oneunit(dt) * eps(typeof(SciMLBase.value(dt))))
+end
+
+@muladd function _initdt_euler_step!(u₁, u0, dt, f₀)
+    if u0 isa Array
+        @inbounds @simd ivdep for i in eachindex(u0)
+            u₁[i] = u0[i] + dt * f₀[i]
+        end
+    else
+        @.. broadcast = false u₁ = u0 + dt * f₀
     end
-    return dt
+    return u₁
+end
+
+@muladd function _initdt_scaled_diff!(tmp, u0, f₁, f₀, sk, oneunit_tType)
+    if u0 isa Array
+        @inbounds @simd ivdep for i in eachindex(u0)
+            tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+        end
+    else
+        @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
+    end
+    return tmp
 end
 
 @muladd function _ode_initdt_iip(
@@ -39,7 +63,7 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
+    dtmin = _initial_dtmin(t, integrator.opts.dtmin)
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -158,10 +182,11 @@ end
     =#
 
     ftmp = nothing
-    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
-            !(prob.f isa DynamicalODEFunction) ||
-                any(!_is_identity_massmatrix, prob.f.mass_matrix)
-        )
+    has_mass_matrix = !_is_identity_massmatrix(prob.f.mass_matrix) && (
+        !(prob.f isa DynamicalODEFunction) ||
+            any(!_is_identity_massmatrix, prob.f.mass_matrix)
+    )
+    if has_mass_matrix
         ftmp = zero(f₀)
         try
             integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
@@ -201,108 +226,124 @@ end
         d₁ = internalnorm(tmp, t)
     end
 
-    # Better than checking any(x->any(isnan, x), f₀)
-    # because it also checks if partials are NaN
+    # Use DiffEqBase.NAN_CHECK when a method exists; otherwise rely on the
+    # reduction-only check isnan(d₁) so custom non-array states need no new
+    # method. Complements the fast-math norm which can hide NaNs
+    # from a subsequent scalar isnan check:
     # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
-    if isnan(d₁)
+    has_nan = _ode_nan_check(f₀) | isnan(d₁)
+    warn_initial_dt = !ReactantCore.within_compile()
+    if warn_initial_dt && has_nan
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
-        return tdir * dtmin
     end
-
-    dt₀ = ifelse(
-        (d₀ < 1 // 10^(5)) |
-            (d₁ < 1 // 10^(5)), smalldt,
-        convert(
-            _tType,
-            oneunit_tType * SciMLBase.value(
-                (d₀ / d₁) /
-                    100
+    result_dt = tdir * dtmin
+    should_fallback = false
+    ReactantCore.@trace track_numbers = false if has_nan
+        result_dt = tdir * dtmin
+        should_fallback = false
+    else
+        dt₀ = ifelse(
+            (d₀ < 1 // 10^(5)) |
+                (d₁ < 1 // 10^(5)), smalldt,
+            convert(
+                _tType,
+                oneunit_tType * SciMLBase.value(
+                    (d₀ / d₁) /
+                        100
+                )
             )
         )
-    )
-    # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    #   dt₀ = smalldt
-    # else
-    #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
-    # end
-    dt₀ = min(dt₀, dtmax_tdir)
-    tiny_first = typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType) * oneunit(_tType)
+        # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
+        #   dt₀ = smalldt
+        # else
+        #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
+        # end
+        dt₀ = min(dt₀, dtmax_tdir)
+        # Use `&` (not `&&`) so traced comparisons stay out of a Bool context.
+        # Always refine (#4601); fall back only if both the first guess and the
+        # refined step are tiny.
+        tiny_first = (typeof(one(_tType)) <: AbstractFloat) &
+            (dt₀ < 10 * _dt_eps_threshold(dt₀))
 
-    dt₀_tdir = tdir * dt₀
+        # Return `(dt, should_fallback)` so the host path can emit the
+        # `:dt_epsilon` message outside `@trace`.
+        result_dt, should_fallback = let result_dt, tmp = tmp, tiny_first = tiny_first
+            dt₀_tdir = tdir * dt₀
 
-    u₁ = zero(u0) # required by DEDataArray
+            u₁ = zero(u0) # required by DEDataArray
 
-    if u0 isa Array
-        @inbounds @simd ivdep for i in eachindex(u0)
-            u₁[i] = u0[i] + dt₀_tdir * f₀[i]
-        end
-    else
-        @.. broadcast = false u₁ = u0 + dt₀_tdir * f₀
-    end
-    f₁ = zero(f₀)
-    f(f₁, u₁, p, t + dt₀_tdir)
+            u₁ = _initdt_euler_step!(u₁, u0, dt₀_tdir, f₀)
+            f₁ = zero(f₀)
+            f(f₁, u₁, p, t + dt₀_tdir)
 
-    if !_is_identity_massmatrix(prob.f.mass_matrix) && (
-            !(prob.f isa DynamicalODEFunction) ||
-                any(!_is_identity_massmatrix, prob.f.mass_matrix)
-        )
-        integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
-        copyto!(f₁, ftmp)
-    end
-
-    # Constant zone before callback
-    # Just return first guess
-    # Avoids AD issues.
-    # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
-    # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
-    # Coerce array-valued equality so the boolean context always receives a Bool.
-    length(u0) > 0 && _bool_equal(f₀, f₁) &&
-        return _fallback_if_tiny(tdir * max(dtmin, 100dt₀), tiny_first, tdir, smalldt, dtmin, integrator)
-
-    # d₂: fold in diffusion terms when g !== nothing
-    if g !== nothing
-        if noise_prototype !== nothing
-            g₁ = zero(noise_prototype)
-        else
-            g₁ = zero(u0)
-        end
-        g(g₁, u₁, p, t + dt₀_tdir)
-        g₁ .*= 3
-        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
-        d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
-            t
-        ) / dt₀
-    else
-        if u0 isa Array
-            @inbounds @simd ivdep for i in eachindex(u0)
-                tmp[i] = (f₁[i] - f₀[i]) / sk[i] * oneunit_tType
+            if has_mass_matrix
+                integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
+                copyto!(f₁, ftmp)
             end
-        else
-            @.. broadcast = false tmp = (f₁ - f₀) / sk * oneunit_tType
-        end
-        d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
-    end
-    # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
 
-    max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
-    else
-        dt₁ = convert(
-            _tType,
-            oneunit_tType *
-                SciMLBase.value(
-                10.0^(-(2 + log10(max_d₁d₂)) / order)
-            )
+            # Constant zone before callback
+            # Just return first guess
+            # Avoids AD issues.
+            # `==` is not guaranteed to return `Bool` (e.g. PyCall `PyObject` arrays
+            # return `Vector{Bool}` — JuliaPy/PyCall.jl#900 / OrdinaryDiffEq.jl#1402).
+            # Coerce array-valued equality so the boolean context always receives a Bool.
+            if _bool_equal(f₀, f₁)
+                result_dt = tdir * max(dtmin, 100dt₀)
+            else
+                result_dt = let
+                    # d₂: fold in diffusion terms when g !== nothing
+                    if g !== nothing
+                        if noise_prototype !== nothing
+                            g₁ = zero(noise_prototype)
+                        else
+                            g₁ = zero(u0)
+                        end
+                        g(g₁, u₁, p, t + dt₀_tdir)
+                        g₁ .*= 3
+                        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+                        d₂ = internalnorm(
+                            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+                            t
+                        ) / dt₀
+                    else
+                        tmp = _initdt_scaled_diff!(tmp, u0, f₁, f₀, sk, oneunit_tType)
+                        d₂ = internalnorm(tmp, t) / dt₀ * oneunit_tType
+                    end
+                    # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
+
+                    max_d₁d₂ = max(d₁, d₂)
+                    if max_d₁d₂ <= 1 // Int64(10)^(15)
+                        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
+                    else
+                        dt₁ = convert(
+                            _tType,
+                            oneunit_tType *
+                                SciMLBase.value(
+                                10.0^(-(2 + log10(max_d₁d₂)) / order)
+                            )
+                        )
+                    end
+                    tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+                end
+            end
+            fallback_dt = tdir * max(smalldt, dtmin)
+            tiny_refined = !isfinite(result_dt) |
+                (abs(result_dt) < 10 * _dt_eps_threshold(result_dt))
+            should_fallback = tiny_first & tiny_refined
+            (ifelse(should_fallback, fallback_dt, result_dt), should_fallback)
+        end
+    end
+    # Host-only warning for the tiny-step fallback (#4601).
+    if warn_initial_dt && !has_nan && should_fallback
+        @SciMLMessage(
+            lazy"Initial timestep too small (near machine epsilon), using default: dt = $(result_dt)",
+            integrator.opts.verbose, :dt_epsilon
         )
     end
-    return _fallback_if_tiny(
-        tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir)), tiny_first, tdir, smalldt, dtmin, integrator
-    )
+    return result_dt
 end
 
 # ODE iip entry point
@@ -361,7 +402,7 @@ end
     oneunit_tType = oneunit(t)
     dtmax_tdir = tdir * dtmax
 
-    dtmin = nextfloat(max(integrator.opts.dtmin, convert(_tType, oneunit_tType * eps(SciMLBase.value(t)))))
+    dtmin = _initial_dtmin(t, integrator.opts.dtmin)
     smalldt = max(dtmin, convert(_tType, oneunit_tType * 1 // 10^(6)))
 
     if integrator.isdae
@@ -379,17 +420,28 @@ end
 
     f₀ = f(u0, p, t)
 
-    # Use the overloadable DiffEqBase.NAN_CHECK hook (same intent as the IIP
-    # isnan(d₁) path) rather than nested any(isnan, ·), which custom array /
-    # field types cannot sensibly overload (OrdinaryDiffEq #1404).
-    if DiffEqBase.NAN_CHECK(f₀)
+    # Same NAN_CHECK-when-applicable policy as the IIP path (OrdinaryDiffEq #1404).
+    f0_nan = _ode_nan_check(f₀)
+    warn_initial_dt = !ReactantCore.within_compile()
+    if warn_initial_dt && f0_nan
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
-        return tdir * dtmin
     end
+    ReactantCore.@trace track_numbers = false if f0_nan
+        result_dt = tdir * dtmin
+    else
+        result_dt = _ode_initdt_oop_after_f0(prob, u0, t, tdir, sk, f₀, g, order, integrator, dtmin, smalldt, dtmax_tdir, d₀, internalnorm)
+    end
+    return result_dt
+end
 
+@muladd function _ode_initdt_oop_after_f0(prob, u0, t, tdir, sk, f₀, g, order, integrator, dtmin, smalldt, dtmax_tdir, d₀, internalnorm)
+    f = prob.f
+    p = prob.p
+    _tType = eltype(t)
+    oneunit_tType = oneunit(t)
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
     if !(f₀ isa inferredtype)
         throw(TypeNotConstantError(inferredtype, typeof(f₀)))
@@ -400,7 +452,7 @@ end
     g₀ = nothing
     if g !== nothing
         g₀ = 3g(u0, p, t)
-        if DiffEqBase.NAN_CHECK(g₀)
+        if _ode_nan_check(g₀)
             @SciMLMessage(
                 "First function call for g produced NaNs. Exiting.",
                 integrator.opts.verbose, :init_NaN
@@ -414,56 +466,65 @@ end
         d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
     end
 
-    # Also catch NaN AD partials that NAN_CHECK on values may miss (matches IIP).
-    if isnan(d₁)
+    # Match IIP: also reject when the norm itself is NaN (fast-math can hide
+    # elementwise NaNs from NAN_CHECK on some array types).
+    warn_initial_dt = !ReactantCore.within_compile()
+    if warn_initial_dt && isnan(d₁)
         @SciMLMessage(
             "First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.",
             integrator.opts.verbose, :init_NaN
         )
-        return tdir * dtmin
     end
-
-    if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
-        dt₀ = smalldt
+    ReactantCore.@trace track_numbers = false if isnan(d₁)
+        result_dt = tdir * dtmin
     else
-        dt₀ = convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
-    end
-    dt₀ = min(dt₀, dtmax_tdir)
-    dt₀_tdir = tdir * dt₀
-
-    u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
-    f₁ = f(u₁, p, t + dt₀_tdir)
-
-    # Constant zone before callback
-    # Just return first guess
-    # Avoids AD issues.
-    # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
-    _bool_equal(f₀, f₁) && return tdir * max(dtmin, 100dt₀)
-
-    # d₂: fold in diffusion terms when g !== nothing
-    if g !== nothing
-        g₁ = 3g(u₁, p, t + dt₀_tdir)
-        ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
-        d₂ = internalnorm(
-            max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
-            t
-        ) / dt₀
-    else
-        d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
-    end
-
-    max_d₁d₂ = max(d₁, d₂)
-    if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
-    else
-        dt₁ = _tType(
-            oneunit_tType *
-                SciMLBase.value(
-                10^(-(2 + log10(max_d₁d₂)) / order)
-            )
+        dt₀ = ifelse(
+            (d₀ < 1 // 10^(5)) | (d₁ < 1 // 10^(5)),
+            smalldt,
+            convert(_tType, oneunit_tType * SciMLBase.value((d₀ / d₁) / 100))
         )
+        dt₀ = min(dt₀, dtmax_tdir)
+        dt₀_tdir = tdir * dt₀
+
+        u₁ = @.. broadcast = false u0 + dt₀_tdir * f₀
+        f₁ = f(u₁, p, t + dt₀_tdir)
+
+        # Constant zone before callback
+        # Just return first guess
+        # Avoids AD issues.
+        # See iip path: coerce array-valued `==` (OrdinaryDiffEq.jl#1402).
+        if _bool_equal(f₀, f₁)
+            result_dt = tdir * max(dtmin, 100dt₀)
+        else
+            result_dt = let
+                # d₂: fold in diffusion terms when g !== nothing
+                if g !== nothing
+                    g₁ = 3g(u₁, p, t + dt₀_tdir)
+                    ΔgMax = max.(internalnorm.(g₀ .- g₁, t), internalnorm.(g₀ .+ g₁, t))
+                    d₂ = internalnorm(
+                        max.(internalnorm.(f₁ .- f₀ .+ ΔgMax, t), internalnorm.(f₁ .- f₀ .- ΔgMax, t)) ./ sk,
+                        t
+                    ) / dt₀
+                else
+                    d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType, t) / dt₀ * oneunit_tType
+                end
+
+                max_d₁d₂ = max(d₁, d₂)
+                if max_d₁d₂ <= 1 // Int64(10)^(15)
+                    dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
+                else
+                    dt₁ = _tType(
+                        oneunit_tType *
+                            SciMLBase.value(
+                            10^(-(2 + log10(max_d₁d₂)) / order)
+                        )
+                    )
+                end
+                tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+            end
+        end
     end
-    return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
+    return result_dt
 end
 
 # ODE oop entry point
@@ -530,4 +591,9 @@ function ode_determine_initdt(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, g, effective_order, integrator
     )
+end
+
+function _initial_dtmin(t, dtmin)
+    T = eltype(t)
+    return nextfloat(max(dtmin, convert(T, oneunit(t) * value_eps(SciMLBase.value(t)))))
 end

@@ -100,3 +100,16 @@ import SciMLBase
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_full; kwargs_in...)
     @test kwargs_out.callback === cb1
 end
+
+@testset "has_callbacks API" begin
+    @static if VERSION >= v"1.11"
+        @test Base.ispublic(DiffEqBase, :has_callbacks)
+    end
+    @test !DiffEqBase.has_callbacks((;))
+    @test !DiffEqBase.has_callbacks((; abstol = 1.0e-6))
+    @test !DiffEqBase.has_callbacks((; callback = nothing))
+    @test !DiffEqBase.has_callbacks((; callback = CallbackSet()))
+    cb = DiscreteCallback((u, t, integrator) -> false, integrator -> nothing)
+    @test DiffEqBase.has_callbacks((; callback = cb))
+    @test DiffEqBase.has_callbacks((; callback = CallbackSet(cb)))
+end

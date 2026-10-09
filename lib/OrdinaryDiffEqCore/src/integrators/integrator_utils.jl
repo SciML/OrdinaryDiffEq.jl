@@ -94,27 +94,8 @@ function loopheader!(integrator)
     end
 
     # Accept or reject the step
-    if integrator.iter > 0
-        if (!integrator.force_stepfail) &&
-                (
-                !integrator.opts.adaptive || integrator.accept_step ||
-                    isaposteriori(integrator.alg)
-            )
-            # ACCEPT
-            @SciMLMessage(
-                lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(get_EEst(integrator))",
-                integrator.opts.verbose, :step_accepted
-            )
-            integrator.success_iter += 1
-            apply_step!(integrator)
-        elseif (
-                integrator.opts.adaptive && !integrator.accept_step &&
-                    !isaposteriori(integrator.alg)
-            ) ||
-                integrator.force_stepfail
-            # REJECT
-            handle_step_rejection!(integrator)
-        end
+    ReactantCore.@trace track_numbers = false if integrator.iter > 0
+        _accept_or_reject_step!(integrator)
     end
 
     integrator.iter += 1
@@ -123,6 +104,30 @@ function loopheader!(integrator)
     modify_dt_for_tstops!(integrator)
     shrink_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
+    return nothing
+end
+
+function _accept_or_reject_step!(integrator)
+    ReactantCore.@trace track_numbers = false if (!integrator.force_stepfail) &&
+            (
+            !integrator.opts.adaptive || integrator.accept_step ||
+                isaposteriori(integrator.alg)
+        )
+        # ACCEPT
+        @SciMLMessage(
+            lazy"Step accepted: t = $(integrator.t), dt = $(integrator.dt), EEst = $(get_EEst(integrator))",
+            integrator.opts.verbose, :step_accepted
+        )
+        integrator.success_iter += 1
+        apply_step!(integrator)
+    elseif (
+            integrator.opts.adaptive && !integrator.accept_step &&
+                !isaposteriori(integrator.alg)
+        ) ||
+            integrator.force_stepfail
+        # REJECT
+        handle_step_rejection!(integrator)
+    end
     return nothing
 end
 
@@ -215,6 +220,41 @@ end
     return nothing
 end
 
+# Host path: always use the integrator's FSAL buffers (what `alg_cache` /
+# init wired). Calling `get_fsalfirstlast` here is wrong for caches whose
+# accessor allocates throwaways each call (ExpRK: `zero(cache.rtmp)`).
+#
+# Under Reactant compile, `_dealias_traced!` may break integrator↔cache aliasing
+# so `perform_step!` mutates cache fields while `integrator.fsalfirst` is a
+# detached copy. Resolve via `get_fsalfirstlast` once and accept those buffers
+# only when *both* are already owned by the cache (some caches return an owned
+# first buffer and a fresh last one); otherwise keep the integrator buffers.
+@inline function _cache_owns_buffer(cache, buf)
+    @inbounds for i in 1:nfields(cache)
+        getfield(cache, i) === buf && return true
+    end
+    return false
+end
+
+function _fsal_copy_buffers(integrator)
+    fsalfirst = integrator.fsalfirst
+    fsallast = integrator.fsallast
+    if !ReactantCore.within_compile()
+        return fsalfirst, fsallast
+    end
+    cache = integrator.cache
+    cache isa Union{CompositeCache, DefaultCache, OrdinaryDiffEqConstantCache} &&
+        return fsalfirst, fsallast
+    c_first, c_last = get_fsalfirstlast(cache, integrator.u)
+    if c_first === fsalfirst || c_last === fsallast
+        return fsalfirst, fsallast
+    end
+    if _cache_owns_buffer(cache, c_first) && _cache_owns_buffer(cache, c_last)
+        return c_first, c_last
+    end
+    return fsalfirst, fsallast
+end
+
 function update_fsal!(integrator)
     if has_discontinuity(integrator) &&
             first_discontinuity(integrator) == integrator.tdir * integrator.t
@@ -232,7 +272,8 @@ function update_fsal!(integrator)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
             if isinplace(integrator.sol.prob)
-                recursivecopy!(integrator.fsalfirst, integrator.fsallast)
+                fsalfirst, fsallast = _fsal_copy_buffers(integrator)
+                recursivecopy!(fsalfirst, fsallast)
             else
                 integrator.fsalfirst = integrator.fsallast
             end
@@ -249,22 +290,46 @@ step failed while `adaptive` is `false`). Used by the iterator interface to deci
 whether to stop.
 """
 function last_step_failed(integrator::ODEIntegrator)
-    return integrator.last_stepfail && !integrator.opts.adaptive
+    return integrator.last_stepfail & !integrator.opts.adaptive
 end
+
+# `DiffEqBase.staged_check_error` evaluates the same conditions for compiled solves.
+SciMLBase.check_error(integrator::ODEIntegrator) = DiffEqBase.de_check_error(integrator)
+
+DiffEqBase.check_error_dt_below_time_eps(integrator::ODEIntegrator) =
+    dt_below_time_eps(integrator.dt, integrator.t)
+
+"""
+    dt_below_time_eps(dt, t) -> Bool
+
+Whether `abs(dt) <= abs(eps(t))` for a floating-point time `t`, and `false` for other time
+types. The Reactant extension adds the exact comparison for traced floating-point times.
+"""
+dt_below_time_eps(dt, t::AbstractFloat) = abs(dt) <= abs(eps(t))
+dt_below_time_eps(dt, t) = false
+
+"""
+    value_eps(x)
+
+`eps(x)`, the spacing of floating-point numbers at `x`. The Reactant extension gives a
+traced float `x` its spacing, where Reactant's `eps` returns `eps` of the type; a subnormal
+spacing becomes `floatmin`, since compiled code flushes subnormals to zero.
+"""
+value_eps(x) = eps(x)
 
 # Accessor functions for tstop flag fields with fallbacks for non-ODE integrators
 # (e.g. DDEIntegrator in DelayDiffEq.jl which doesn't have these fields)
 _get_next_step_tstop(integrator::ODEIntegrator) = integrator.next_step_tstop
 _get_next_step_tstop(integrator) = false
 
-function _set_tstop_flag!(integrator::ODEIntegrator, is_tstop::Bool, target = nothing)
+function _set_tstop_flag!(integrator::ODEIntegrator, is_tstop, target = nothing)
     integrator.next_step_tstop = is_tstop
-    if is_tstop && target !== nothing
-        integrator.tstop_target = target
+    if target !== nothing
+        integrator.tstop_target = ifelse(is_tstop, target, integrator.tstop_target)
     end
     return nothing
 end
-_set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
+_set_tstop_flag!(integrator, is_tstop, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 
@@ -277,46 +342,41 @@ function modify_dt_for_tstops!(integrator)
         # distance_to_tstop to within rounding still triggers the tstop
         # branch.  Without this, accumulated `t + dt + dt + …` can drift
         # just past the last tstop and produce a spurious micro-step.
-        tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
-                isfinite(integrator.t)
-            100 * eps(
-                float(
-                    max(abs(integrator.t), abs(tdir_tstop)) /
-                        oneunit(integrator.t)
-                )
-            ) * oneunit(integrator.t)
-        else
-            zero(distance_to_tstop)
+        # `100 * eps(mag)`, as in DelayDiffEq's sync check. `100 * eps(T) * mag`
+        # is larger near typical times and lets the tstop snap exceed
+        # DelayDiffEq's tolerance ("unexpected time discrepancy"). Taking `eps`
+        # of the unitless magnitude keeps the `oneunit` scaling for Unitful times.
+        tstop_tol = zero(distance_to_tstop)
+        if eltype(integrator.sol.prob.tspan) <: AbstractFloat
+            ReactantCore.@trace track_numbers = false if isfinite(tdir_tstop) & isfinite(integrator.t)
+                t_mag = max(abs(integrator.t), abs(tdir_tstop))
+                tstop_tol = 100 * value_eps(float(t_mag / oneunit(integrator.t))) *
+                    oneunit(integrator.t)
+            end
         end
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
-            if original_dt + tstop_tol < distance_to_tstop
-                _set_tstop_flag!(integrator, false)
-            else
-                _set_tstop_flag!(
-                    integrator, true, integrator.tdir * tdir_tstop
-                )
-            end
-            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
-        elseif iszero(integrator.dtcache) && integrator.dtchangeable
-            integrator.dt = integrator.tdir * distance_to_tstop
             _set_tstop_flag!(
-                integrator, true, integrator.tdir * tdir_tstop
+                integrator, !(original_dt + tstop_tol < distance_to_tstop),
+                integrator.tdir * tdir_tstop
             )
-        elseif integrator.dtchangeable && !integrator.force_stepfail
-            # always try to step! with dtcache, but lower if a tstop
-            # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            if abs(integrator.dtcache) + tstop_tol < distance_to_tstop
-                _set_tstop_flag!(integrator, false)
-            else
-                _set_tstop_flag!(
-                    integrator, true, integrator.tdir * tdir_tstop
+            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
+        elseif integrator.dtchangeable
+            zero_dt = iszero(integrator.dtcache)
+            if integrator.force_stepfail
+                integrator.dt = ifelse(
+                    zero_dt, integrator.tdir * distance_to_tstop, integrator.dt
                 )
+                is_tstop = zero_dt
+            else
+                original_dt = ifelse(zero_dt, distance_to_tstop, abs(integrator.dtcache))
+                integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
+                is_tstop = !(original_dt + tstop_tol < distance_to_tstop)
             end
-            integrator.dt = integrator.tdir *
-                min(abs(integrator.dtcache), distance_to_tstop)
+            integrator.dtpropose = ifelse(zero_dt, integrator.dt, integrator.dtpropose)
+            _set_tstop_flag!(integrator, is_tstop, integrator.tdir * tdir_tstop)
         else
             _set_tstop_flag!(integrator, false)
         end
@@ -614,40 +674,16 @@ function _loopfooter!(integrator)
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
-        integrator.accept_step = (
-            !integrator.isout &&
-                accept_step_controller(
-                integrator,
-                integrator.alg
-            )
-        ) ||
-            (
-            integrator.opts.force_dtmin &&
-                abs(integrator.dt) <= timedepentdtmin(integrator)
-        )
-        if integrator.accept_step # Accept
-            increment_accept!(integrator.stats)
-            apply_solve_step_limiter!(integrator, ttmp)
-            integrator.last_stepfail = false
-            integrator.tprev = integrator.t
-
-            if _get_next_step_tstop(integrator)
-                # Step controller dt is overly pessimistic, since dt = time to tstop.
-                # Restore the original dt so the controller proposes a reasonable next step.
-                integrator.dt = integrator.dtpropose
-            end
-            integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
-
-            dtnew = SciMLBase.value(
-                step_accept_controller!(
-                    integrator,
-                    integrator.alg,
-                    q
-                )
-            ) *
-                oneunit(integrator.dt)
-            calc_dt_propose!(integrator, dtnew)
-            handle_callbacks!(integrator)
+        ReactantCore.@trace track_numbers = false if !integrator.isout
+            integrator.accept_step = accept_step_controller(integrator, integrator.alg)
+        else
+            integrator.accept_step = false
+        end
+        if integrator.opts.force_dtmin
+            integrator.accept_step = integrator.accept_step | (abs(integrator.dt) <= timedepentdtmin(integrator))
+        end
+        ReactantCore.@trace track_numbers = false if integrator.accept_step # Accept
+            _accept_step!(integrator, q, ttmp)
         else # Reject
             increment_reject!(integrator.stats)
         end
@@ -678,6 +714,32 @@ function _loopfooter!(integrator)
         cur_eigen_est > integrator.stats.maxeig &&
             (integrator.stats.maxeig = cur_eigen_est)
     end
+    return nothing
+end
+
+function _accept_step!(integrator, q, ttmp)
+    increment_accept!(integrator.stats)
+    apply_solve_step_limiter!(integrator, ttmp)
+    integrator.last_stepfail = false
+    integrator.tprev = integrator.t
+
+    ReactantCore.@trace track_numbers = false if _get_next_step_tstop(integrator)
+        # Step controller dt is overly pessimistic, since dt = time to tstop.
+        # Restore the original dt so the controller proposes a reasonable next step.
+        integrator.dt = integrator.dtpropose
+    end
+    integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
+
+    dtnew = SciMLBase.value(
+        step_accept_controller!(
+            integrator,
+            integrator.alg,
+            q
+        )
+    ) *
+        oneunit(integrator.dt)
+    calc_dt_propose!(integrator, dtnew)
+    handle_callbacks!(integrator)
     return nothing
 end
 
@@ -740,6 +802,9 @@ handle_force_stepfail!(integrator) = post_newton_controller!(integrator, integra
 Increment the accepted-step counter `stats.naccept` by one.
 """
 function increment_accept!(stats)
+    # DEStats counters are plain `Int`; Reactant forbids mutating untraced fields
+    # inside `@trace if` (EnzymeAD/Reactant.jl#3271). Compiled solves strip stats.
+    ReactantCore.within_compile() && return nothing
     return stats.naccept += 1
 end
 
@@ -749,6 +814,7 @@ end
 Increment the rejected-step counter `stats.nreject` by one.
 """
 function increment_reject!(stats)
+    ReactantCore.within_compile() && return nothing
     return stats.nreject += 1
 end
 
@@ -1030,12 +1096,13 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
 end
 
 function fixed_t_for_tstop_error!(integrator, ttmp)
-    if _get_next_step_tstop(integrator)
+    ReactantCore.@trace track_numbers = false if _get_next_step_tstop(integrator)
         _set_tstop_flag!(integrator, false)
-        return _get_tstop_target(integrator)
+        target = _get_tstop_target(integrator)
     else
-        return ttmp
+        target = ttmp
     end
+    return target
 end
 
 # Type-stable check: did the callback that fired have maybe_discontinuity = true?

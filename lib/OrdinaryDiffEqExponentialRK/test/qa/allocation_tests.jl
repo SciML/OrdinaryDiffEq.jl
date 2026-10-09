@@ -181,3 +181,51 @@ end
     # essentially flat, so a generous 3x bound cleanly separates the two.
     @test large < 3 * small
 end
+
+# FSAL refresh must not call allocating `get_fsalfirstlast` factories (ExpRK
+# returns fresh `zero(cache.rtmp)` each call). Assert `update_fsal!` stays at 0
+# bytes. Under `Pkg.test`'s `--check-bounds=yes`, ETDRK2 `step!` allocates a
+# small constant amount, so guard size-independence instead of absolute zero.
+@testset "ExpRK FSAL refresh does not allocate on warmed in-place steps" begin
+    f!(du, u, p, t) = (du .= .-u; nothing)
+    function warmed_etdrk2(n)
+        prob = SplitODEProblem(
+            MatrixOperator(Diagonal(fill(-1.0, n))),
+            (du, u, p, t) -> fill!(du, 0),
+            ones(n),
+            (0.0, 100.0)
+        )
+        integrator = init(
+            prob, ETDRK2(krylov = true);
+            dt = 0.01, adaptive = false, save_everystep = false, dense = false
+        )
+        for _ in 1:5
+            step!(integrator)
+        end
+        return integrator
+    end
+    for n in (10, 10000), alg in (LawsonEuler(krylov = true), ETDRK2(krylov = true))
+        prob = SplitODEProblem(
+            MatrixOperator(Diagonal(fill(-1.0, n))),
+            (du, u, p, t) -> fill!(du, 0),
+            ones(n),
+            (0.0, 100.0)
+        )
+        integrator = init(
+            prob, alg; dt = 0.01, adaptive = false, save_everystep = false, dense = false
+        )
+        for _ in 1:5
+            step!(integrator)  # warm up
+        end
+        @test (@allocated OrdinaryDiffEqCore.update_fsal!(integrator)) == 0
+    end
+    small = begin
+        i = warmed_etdrk2(10)
+        @allocated step!(i)
+    end
+    large = begin
+        i = warmed_etdrk2(10000)
+        @allocated step!(i)
+    end
+    @test small == large
+end
