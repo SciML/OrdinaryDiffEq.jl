@@ -815,7 +815,6 @@ function perform_step!(
 
     k = order
     κlist = alg.kappa
-    κ = κlist[k]
     if cache.consfailcnt > 0
         # Deep copy to avoid aliasing: D[i] and prevD[i] must not share arrays
         for i in eachindex(D)
@@ -833,6 +832,8 @@ function perform_step!(
             D[j] = D_new[j]
         end
     end
+    cold_start = _qndf_cold_start(f, D, k)
+    κ = cold_start ? zero(κlist[k]) : κlist[k]
 
     α₀ = 1
     β₀ = inv((1 - κ) * γₖ[k])
@@ -858,6 +859,10 @@ function perform_step!(
     else
         nlsolver.tmp = mass_matrix * @.. (u₀ / β₀ - ϕ) / dt
     end
+    if cold_start
+        u₀ = uprev + dt * integrator.fsalfirst
+        nlsolver.z = u₀
+    end
 
     nlsolver.γ = β₀
     nlsolver.α = α₀
@@ -867,6 +872,9 @@ function perform_step!(
     nlsolvefail(nlsolver) && return
     u = z
     dd = u - u₀
+    if cold_start
+        D[1] = dt * integrator.fsalfirst
+    end
     update_D!(D, dd, k)
 
     if integrator.opts.adaptive
@@ -881,7 +889,7 @@ function perform_step!(
         else
             atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
         end
-        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
+        OrdinaryDiffEqCore.set_EEst!(integrator, _qndf_error_constant(integrator, k, cold_start) * internalnorm(atmp, t))
         if k > 1
             atmpm1 = calculate_residuals(
                 D[k],
@@ -957,7 +965,6 @@ function perform_step!(
 
     k = order
     κlist = alg.kappa
-    κ = κlist[k]
     if cache.consfailcnt > 0
         for i in eachindex(D)
             copyto!(D[i], cache.prevD[i])
@@ -979,6 +986,8 @@ function perform_step!(
         cache.D = D
         cache.Dtmp = Dtmp
     end
+    cold_start = _qndf_cold_start(f, D, k)
+    κ = cold_start ? zero(κlist[k]) : κlist[k]
 
     α₀ = 1
     β₀ = inv((1 - κ) * γₖ[k])
@@ -1006,6 +1015,10 @@ function perform_step!(
         @.. broadcast = false tmp2 = (u₀ / β₀ - ϕ) / dt
         mul!(nlsolver.tmp, mass_matrix, tmp2)
     end
+    if cold_start
+        @.. broadcast = false u₀ = uprev + dt * integrator.fsalfirst
+        @.. broadcast = false nlsolver.z = u₀
+    end
 
     nlsolver.γ = β₀
     nlsolver.α = α₀
@@ -1015,6 +1028,10 @@ function perform_step!(
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = z
     @.. broadcast = false dd = u - u₀
+    if cold_start
+        # Seeded only after Newton succeeds, so a failed attempt leaves no history.
+        @.. broadcast = false D[1] = dt * integrator.fsalfirst
+    end
     update_D!(D, dd, k)
 
 
@@ -1030,7 +1047,7 @@ function perform_step!(
         else
             calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
         end
-        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
+        OrdinaryDiffEqCore.set_EEst!(integrator, _qndf_error_constant(integrator, k, cold_start) * internalnorm(atmp, t))
         if k > 1
             calculate_residuals!(
                 atmpm1, D[k], uprev, u, abstol,
@@ -1246,6 +1263,18 @@ function perform_step!(
         integrator, cache::FBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
+    # History is stored at the committed times fl(t + dt): step by that increment.
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    _fbdf_perform_step!(integrator, cache, repeat_step)
+    integrator.dt = dt
+    return nothing
+end
+
+function _fbdf_perform_step!(
+        integrator, cache::FBDFConstantCache{max_order},
+        repeat_step
+    ) where {max_order}
     reinitFBDF!(integrator, cache)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
@@ -1266,6 +1295,8 @@ function perform_step!(
             pred_thetas[j] = (ts[j] - t) / dt
         end
         u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
+    elseif f.mass_matrix === I
+        u₀ = uprev + dt * integrator.fsalfirst
     else
         u₀ = u
     end
@@ -1325,8 +1356,12 @@ function perform_step!(
     end
 
     terkp1 = (u - u₀)
-    for j in 1:(k + 1)
-        terkp1 *= j * dt / (tdt - ts[j])
+    # Mass-matrix cold starts keep the zero-filled ts[2] rescaling (estimate ≈ 0 for t ≫ dt);
+    # inconsistent algebraic starts (e.g. DAE adjoints) rely on that first step being accepted.
+    if iters_from_event >= 1 || mass_matrix !== I
+        for j in 1:(k + 1)
+            terkp1 *= j * dt / (tdt - ts[j])
+        end
     end
 
     lte = -1 / (1 + k)
@@ -1492,6 +1527,17 @@ function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
     ) where {max_order}
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    _fbdf_perform_step!(integrator, cache, repeat_step)
+    integrator.dt = dt
+    return nothing
+end
+
+function _fbdf_perform_step!(
+        integrator, cache::FBDFCache{max_order},
+        repeat_step
+    ) where {max_order}
     reinitFBDF!(integrator, cache)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
     (; t, dt, u, f, p, uprev) = integrator
@@ -1508,6 +1554,9 @@ function perform_step!(
             equi_ts[j] = (ts[j] - t) / dt
         end
         _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
+    elseif f.mass_matrix === I
+        # No history: explicit-Euler predictor, so (u - u₀)/2 is the BDF1 local error.
+        @.. broadcast = false u₀ = uprev + dt * integrator.fsalfirst
     else
         @.. broadcast = false u₀ = u
     end
@@ -1557,8 +1606,10 @@ function perform_step!(
 
     #for terkp1, we could use corrector and predictor to make an estimation.
     @.. broadcast = false terkp1_tmp = (u - u₀)
-    for j in 1:(k + 1)
-        @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
+    if cache.iters_from_event >= 1 || mass_matrix !== I
+        for j in 1:(k + 1)
+            @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
+        end
     end
 
     lte = -1 / (1 + k)
