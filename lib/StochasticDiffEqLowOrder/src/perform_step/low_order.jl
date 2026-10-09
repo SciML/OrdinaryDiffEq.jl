@@ -189,7 +189,7 @@ end
     if integrator.opts.adaptive
         du2 = integrator.f(K, p, t + dt)
         Ed = dt * (du2 - du1) / 2
-        En = W.dW .^ 3 .* ((du2 - L) / (integrator.sqdt)) .^ 2 / 6
+        En = W.dW .^ 3 .* ggprime .^ 2 / 6
 
         resids = calculate_residuals(
             Ed, En, uprev, u, integrator.opts.abstol,
