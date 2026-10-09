@@ -4,9 +4,15 @@
     sqrt3 = sqrt(3one(eltype(W.dW)))
     chi2 = (W.dW + W.dZ / sqrt3) / 2 #I_(1,0)/h
     k₁ = dt * integrator.f(uprev, p, t)
-    k₂ = dt * integrator.f(uprev + 3k₁ / 4 + 3chi2 .* gpdt / 2, p, t + 3dt / 4)
-    E₂ = chi2 .* (integrator.f.g(uprev, p, t) - gpdt) #Only for additive!
-    u = @.. uprev + k₁ / 3 + 2 * k₂ / 3 + E₂ + W.dW * gpdt
+    if is_diagonal_noise(integrator.sol.prob)
+        k₂ = dt * integrator.f(uprev + 3k₁ / 4 + 3chi2 .* gpdt / 2, p, t + 3dt / 4)
+        E₂ = chi2 .* (integrator.f.g(uprev, p, t) - gpdt) #Only for additive!
+        u = @.. uprev + k₁ / 3 + 2 * k₂ / 3 + E₂ + W.dW * gpdt
+    else
+        k₂ = dt * integrator.f(uprev + 3k₁ / 4 + 3 * (gpdt * chi2) / 2, p, t + 3dt / 4)
+        E₂ = (integrator.f.g(uprev, p, t) - gpdt) * chi2 #Only for additive!
+        u = uprev + k₁ / 3 + 2 * k₂ / 3 + E₂ + gpdt * W.dW
+    end
 
     if integrator.opts.adaptive
         E₁ = k₁ .+ k₂
