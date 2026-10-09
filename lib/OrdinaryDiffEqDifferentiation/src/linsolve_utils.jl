@@ -9,6 +9,34 @@ issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
 issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
+const IEEEFloats = Union{Float16, Float32, Float64}
+
+"""
+    isfinite_W(W) -> Bool
+
+Return whether the unfactorized system matrix `W` is free of `Inf`/`NaN` entries.
+LAPACK's dense LU throws an `ArgumentError` on non-finite input, so a non-finite `W`
+must be caught before it is factorized for the step to be rejected instead. Strided
+matrices (including GPU arrays), their `Transpose`/`Adjoint`, `Diagonal`, the stored
+entries of a `SparseMatrixCSC`, and scalars are checked; other representations, such as
+matrix-free operators, return `true`.
+"""
+isfinite_W(W::StridedMatrix) = all(isfinite, W)
+function isfinite_W(W::Matrix{<:Union{IEEEFloats, Complex{<:IEEEFloats}}})
+    # In IEEE arithmetic `0 * v` is `NaN` exactly when `v` is not finite; the branch-free
+    # sum vectorizes, unlike the short-circuiting `all(isfinite, W)`. Restricted to
+    # `Matrix`: GPU arrays are also strided but must not be iterated elementwise.
+    acc = zero(eltype(W))
+    @simd for v in W
+        acc += zero(v) * v
+    end
+    return isfinite(acc)
+end
+isfinite_W(W::Union{LinearAlgebra.Transpose, LinearAlgebra.Adjoint}) = isfinite_W(parent(W))
+isfinite_W(W::Diagonal) = all(isfinite, W.diag)
+isfinite_W(W::Number) = isfinite(W)
+isfinite_W(::Any) = true
+
 """
     set_linear_reltol!(linsolve, reltol; default_algorithm = false) -> linsolve
 
