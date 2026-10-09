@@ -29,6 +29,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
     @time @safetestset "SRA/SRI resize! stage buffers (issue 4720)" begin
         include("sra_resize_tests.jl")
     end
+
+    @time @safetestset "SRA1 iip k₁ scale allocation" begin
+        include("sra1_alloc_tests.jl")
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
