@@ -37,6 +37,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
     @time @safetestset "Float32 OOP stages and SRI() Vector OOP" begin
         include("float32_oop_stages_tests.jl")
     end
+    @time @safetestset "SRA1 OOP non-diagonal additive noise" begin
+        include("sra1_oop_nondiag_tests.jl")
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
