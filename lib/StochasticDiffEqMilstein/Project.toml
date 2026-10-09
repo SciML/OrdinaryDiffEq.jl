@@ -4,6 +4,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 version = "2.1.1"
 
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
@@ -27,6 +28,7 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 SciMLTesting = "2.8"
+ArrayInterface = "7.28"
 DiffEqBase = "7"
 DiffEqNoiseProcess = "5.30.0"
 StochasticDiffEqLevyArea = "2"
