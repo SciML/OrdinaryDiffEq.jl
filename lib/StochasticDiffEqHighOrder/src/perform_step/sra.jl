@@ -101,7 +101,7 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
     (; a21, b21, c02, c11, c12, α1, α2, beta12, beta21, beta22) = cache
     sqrt3 = sqrt(3one(eltype(W.dW)))
-    chi2 = 0.5 * (W.dW + W.dZ / sqrt3) #I_(1,0)/h
+    chi2 = (W.dW + W.dZ / sqrt3) / 2 #I_(1,0)/h
 
     g1 = integrator.f.g(uprev, p, t + c11 * dt)
     k1 = integrator.f(uprev, p, t)
@@ -183,7 +183,7 @@ end
         α3, beta11, beta12, beta13, beta21, beta22, beta23,
     ) = cache
     sqrt3 = sqrt(3one(eltype(W.dW)))
-    chi2 = 0.5 * (W.dW .+ W.dZ / sqrt3) #I_(1,0)/h
+    chi2 = (W.dW .+ W.dZ / sqrt3) / 2 #I_(1,0)/h
 
     g1 = integrator.f.g(uprev, p, t + c11 * dt)
     k1 = integrator.f(uprev, p, t)
@@ -430,7 +430,7 @@ end
     (; c₀, c₁, A₀, B₀, α, β₁, β₂, stages, H0) = cache
     (; t, dt, uprev, u, W, p, f) = integrator
     sqrt3 = sqrt(3one(eltype(W.dW)))
-    chi2 = 0.5 * (W.dW + W.dZ / sqrt3) #I_(1,0)/h
+    chi2 = (W.dW + W.dZ / sqrt3) / 2 #I_(1,0)/h
     H0[:] = fill(zero(u), stages)
 
     for i in 1:stages
