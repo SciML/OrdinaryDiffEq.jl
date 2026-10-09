@@ -1,4 +1,4 @@
-using DiffEqBase, Test
+using DiffEqBase, Test, ForwardDiff
 using Distributions
 import SciMLBase
 
@@ -110,4 +110,66 @@ bv_problem = BVProblem(
 for prob in (rode_problem, bv_problem)
     @test DiffEqBase.get_concrete_problem(prob, true) === prob
     @test !haskey(prob.kwargs, :callback)
+end
+
+@testset "Integer tspan promotion for tstops" begin
+    span = (0, 1)
+    promote_span(kw) = DiffEqBase.promote_tspan(nothing, nothing, span, nothing, kw)
+    @test promote_span((tstops = [0.33, 0.66, 1.0],)) === (0.0, 1.0)
+    @test promote_span((tstops = (0.33, 0.66, 1.0),)) === (0.0, 1.0)
+    @test promote_span((tstops = 0.33,)) === (0.0, 1.0)
+    @test promote_span((tstops = Any[0, 0.33, 1],)) === (0.0, 1.0)
+    @test promote_span((tstops = (0, 0.33, 1),)) === (0.0, 1.0)
+    @test promote_span((tstops = [1 // 3, 2 // 3],)) === (0 // 1, 1 // 1)
+    @test promote_span((tstops = [0, 1],)) === span
+    @test promote_span((tstops = Float64[],)) === span
+    @test promote_span((tstops = (),)) === span
+    @test promote_span((tstops = (p, tspan) -> [0.33],)) === span
+    @test promote_span((dt = 1 // 3, tstops = [1 // 3, 2 // 3])) === (0 // 1, 1 // 1)
+    @test promote_span((dt = 0.1, tstops = [0.33])) === (0.0, 1.0)
+    large_span = (2^53, 2^53 + 1)
+    for stops in ([0.5], (Float64(2^53),), Any[Float64(2^53 + 2)])
+        @test DiffEqBase.promote_tspan(nothing, nothing, large_span, nothing, (tstops = stops,)) === large_span
+    end
+    @test promote_span((tstops = [-0.5, 0.0, 1.0, 1.5],)) === span
+    @test DiffEqBase.promote_tspan(nothing, nothing, (0, 2), nothing, (tstops = [1.0],)) === (0, 2)
+    @test DiffEqBase.promote_tspan(nothing, nothing, (0, 2), nothing, (tstops = [1 // 1],)) === (0, 2)
+    @test promote_span((tstops = [0.0, 0.5],)) === (0.0, 1.0)
+    @test promote_span((tstops = (0.5f0, 0.25),)) === (0.0, 1.0)
+    @test DiffEqBase.promote_tspan(
+        nothing, nothing, (0.0f0, 1.0f0), nothing, (tstops = [0.33, 0.66],)
+    ) === (0.0f0, 1.0f0)
+end
+
+@testset "Problem time options before promotion" begin
+    tstops = [0.33, 0.66, 1.0]
+    ode = ODEProblem((du, u, p, t) -> du .= u, [1.0], (0, 1); tstops)
+    dae = DAEProblem((res, du, u, p, t) -> res .= du .- u, [1.0], [1.0], (0, 1); tstops)
+    dde = DDEProblem((du, u, h, p, t) -> du .= u, [1.0], (p, t) -> [1.0], (0, 1); tstops)
+    for prob in (ode, dae, dde)
+        @test DiffEqBase.get_concrete_problem(prob, false).tspan === (0.0, 1.0)
+        @test DiffEqBase.get_concrete_problem(prob, false; tstops = [1]).tspan === (0, 1)
+        @test DiffEqBase.get_concrete_problem(prob, false; tstops = [1 // 2]).tspan === (0 // 1, 1 // 1)
+        @test DiffEqBase.get_concrete_problem(prob, false; tstops = Float64[]).tspan === (0, 1)
+        @test DiffEqBase.get_concrete_problem(prob, false; tstops = ()).tspan === (0, 1)
+    end
+    dt32 = remake(ode; dt = 0.1f0)
+    @test DiffEqBase.get_concrete_problem(dt32, false).tspan === (0.0f0, 1.0f0)
+    dt64 = remake(ode; dt = 0.1)
+    @test DiffEqBase.get_concrete_problem(dt64, false; dt = 0.1f0).tspan === (0.0f0, 1.0f0)
+    span32 = remake(ode; tspan = (0.0f0, 1.0f0))
+    @test DiffEqBase.get_concrete_problem(span32, false).tspan === (0.0f0, 1.0f0)
+    tag = ForwardDiff.Tag(identity, Float32)
+    dual_u0 = [ForwardDiff.Dual{typeof(tag)}(1.0f0, 1.0f0)]
+    dual_prob = remake(ode; u0 = dual_u0)
+    @test DiffEqBase.get_concrete_problem(dual_prob, false).tspan === (0.0, 1.0)
+    complex_prob = remake(dt64; u0 = complex.(dual_u0))
+    complex_span = DiffEqBase.get_concrete_problem(complex_prob, false).tspan
+    @test typeof(ForwardDiff.value(complex_span[1])) === Float64
+    complex_span32 = DiffEqBase.get_concrete_problem(complex_prob, false; dt = 0.1f0).tspan
+    @test typeof(ForwardDiff.value(complex_span32[1])) === Float32
+    dual_span = (ForwardDiff.Dual{typeof(tag)}(0.0f0, 0.0f0), ForwardDiff.Dual{typeof(tag)}(1.0f0, 0.0f0))
+    dual_span_prob = remake(dt64; u0 = dual_u0, tspan = dual_span)
+    @test typeof(ForwardDiff.value(DiffEqBase.get_concrete_problem(dual_span_prob, false).tspan[1])) === Float64
+    @test typeof(ForwardDiff.value(DiffEqBase.get_concrete_problem(dual_span_prob, false; dt = 0.1f0).tspan[1])) === Float32
 end
