@@ -297,8 +297,8 @@ function choose_order!(
         cache::FBDFCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
+    (; t, u, uprev) = integrator
+    (; atmp, terkm2, terkm1, terk, terkp1, terk_tmp) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && cache.qwait == 0 &&
@@ -314,14 +314,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            calc_finite_difference_weights!(
-                fd_weights, ts_tmp, t + dt, k - 2
-            )
-            @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
-            for i in 2:(k - 2)
-                @.. broadcast = false terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
-            end
-            @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
+            estimate_terk!(integrator, cache, k - 2, Val(max_order))
             calculate_residuals!(
                 atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -339,8 +333,8 @@ function choose_order!(
         cache::FBDFConstantCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, uprev) = integrator
-    (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history, fd_weights) = cache
+    (; t, u, uprev) = integrator
+    (; terkm2, terkm1, terk, terkp1) = cache
     k = cache.order
     if k < max_order && cache.qwait == 0 &&
             (
@@ -355,25 +349,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            calc_finite_difference_weights!(
-                fd_weights, ts_tmp, t + dt, k - 2
-            )
-            local terk_tmp
-            if u isa Number
-                terk_tmp = fd_weights[k - 2, 1] * u
-                for i in 2:(k - 2)
-                    terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
-                end
-                terk_tmp *= abs(dt^(k - 2))
-            else
-                # we need terk_tmp to be mutable.
-                # so it can be updated
-                terk_tmp = fd_weights[k - 2, 1] * u
-                for i in 2:(k - 2)
-                    terk_tmp = @.. terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
-                end
-                terk_tmp = @.. terk_tmp * abs(dt^(k - 2))
-            end
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
+            terk_tmp = estimate_terk(integrator, cache, k - 2, Val(max_order), u)
             atmp = calculate_residuals(
                 terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -510,8 +487,8 @@ function choose_order!(
         cache::DFBDFCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, uprev) = integrator
-    (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history, fd_weights) = cache
+    (; t, u, uprev) = integrator
+    (; atmp, terkm2, terkm1, terk, terkp1, terk_tmp) = cache
     k = cache.order
     # Use CVODE-style qwait countdown: only consider order increase when qwait reaches 0
     if k < max_order && cache.qwait == 0 &&
@@ -527,14 +504,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            calc_finite_difference_weights!(
-                fd_weights, ts_tmp, t + dt, k - 2
-            )
-            @.. broadcast = false terk_tmp = fd_weights[k - 2, 1] * u
-            for i in 2:(k - 2)
-                @.. broadcast = false terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
-            end
-            @.. broadcast = false terk_tmp *= abs(dt^(k - 2))
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
+            estimate_terk!(integrator, cache, k - 2, Val(max_order))
             calculate_residuals!(
                 atmp, terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
@@ -552,8 +523,8 @@ function choose_order!(
         cache::DFBDFConstantCache,
         ::Val{max_order}
     ) where {max_order}
-    (; t, dt, u, uprev) = integrator
-    (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history, fd_weights) = cache
+    (; t, u, uprev) = integrator
+    (; terkm2, terkm1, terk, terkp1) = cache
     k = cache.order
     if k < max_order && cache.qwait == 0 &&
             (
@@ -568,21 +539,8 @@ function choose_order!(
             terkp1 = terk
             terk = terkm1
             terkm1 = terkm2
-            calc_finite_difference_weights!(
-                fd_weights, ts_tmp, t + dt, k - 2
-            )
-            terk_tmp = @.. broadcast = false fd_weights[k - 2, 1] * u
-            if u isa Number
-                for i in 2:(k - 2)
-                    terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
-                end
-                terk_tmp *= abs(dt^(k - 2))
-            else
-                for i in 2:(k - 2)
-                    terk_tmp = @.. terk_tmp + fd_weights[i, k - 2] * u_history[i - 1]
-                end
-                terk_tmp = @.. broadcast = false terk_tmp * abs(dt^(k - 2))
-            end
+            # terkm2 at the lowered order is ‖h^(k-3) u^(k-3)‖.
+            terk_tmp = estimate_terk(integrator, cache, k - 2, Val(max_order), u)
             atmp = calculate_residuals(
                 terk_tmp, uprev, u,
                 integrator.opts.abstol, integrator.opts.reltol,
