@@ -87,6 +87,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         order = log(e_coarse / e_fine) / log(Float64(dt_coarse / dt_fine))
         @test order > 0.75
     end
+    @time @safetestset "Lamba resize!" include("lamba_resize_tests.jl")
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
