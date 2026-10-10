@@ -36,6 +36,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test SMEB() isa StochasticDiffEqAlgorithm
         @test IRI1() isa StochasticDiffEqNewtonAdaptiveAlgorithm
     end
+    @time @safetestset "Noise-dimension stage buffers follow resize!" include("resize_tests.jl")
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "WeakConvergence1"
