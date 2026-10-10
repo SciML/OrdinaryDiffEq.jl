@@ -1,4 +1,5 @@
 using DelayDiffEq
+using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqTsit5
 using Test
 
@@ -233,5 +234,45 @@ using Test
 
         allocs_step = @allocated step!(integrator_uc)
         @test allocs_step < 5_000
+    end
+
+    @testset "Discontinuity tracking specialization" begin
+        function f_sd!(du, u, h, p, t)
+            tau = 17.0 * (1.0 + 0.1 * abs(sin(u[1])))
+            h(p.hb, p, t - tau)
+            @. du = 0.2 * p.hb / (1 + p.hb^10) - 0.1 * u
+            return nothing
+        end
+        h_sd(p, t) = fill(0.5, 10)
+        h_sd(out, p, t) = (fill!(out, 0.5); out)
+        deplag(u, p, t) = 17.0 * (1.0 + 0.1 * abs(sin(u[1])))
+        p_sd = (hb = zeros(10),)
+        prob_sd = DDEProblem(
+            f_sd!, fill(0.5, 10), h_sd, (0.0, 1.0e7), p_sd;
+            dependent_lags = (deplag,)
+        )
+        integ = init(prob_sd, MethodOfSteps(BS3()); save_everystep = false)
+        for _ in 1:3000
+            step!(integ)
+        end
+        lag = integ.sol.prob.dependent_lags[1]
+
+        # Barriers mirror the call sites: without `::L where {L}` / `::Type{D}`,
+        # Julia does not specialize pass-through function/`Type` args.
+        function disc_fn!(integ, lag::L) where {L}
+            DelayDiffEq.discontinuity_function(
+                integ, lag, 0.0, integ.t + 0.3 * integ.dt
+            )
+            return nothing
+        end
+        track_fn!(integ) = (DelayDiffEq.track_propagated_discontinuities!(integ); nothing)
+
+        disc_fn!(integ, lag)
+        @test (@allocated disc_fn!(integ, lag)) == 0
+
+        ic = deepcopy(integ)
+        track_fn!(ic)
+        ic = deepcopy(integ)
+        @test (@allocated track_fn!(ic)) == 0
     end
 end
