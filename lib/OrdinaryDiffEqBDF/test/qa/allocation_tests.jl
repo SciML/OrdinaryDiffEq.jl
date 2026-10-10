@@ -89,6 +89,23 @@ using Test
         @test allocs == 0
     end
 
+    function fbdf_dense_interp_allocs()
+        interp_prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 10.0))
+        sol = solve(
+            interp_prob, FBDF(); abstol = 1.0e-6, reltol = 1.0e-6, dense = true
+        )
+        out = similar(sol.u[1])
+        sol(out, 5.0)
+        sol(out, 5.0, Val{1})
+        val0 = @allocated sol(out, 5.0)
+        val1 = @allocated sol(out, 5.0, Val{1})
+        return val0, val1
+    end
+
+    @testset "FBDF sol(out, t) Runtime Allocation Check" begin
+        @test fbdf_dense_interp_allocs() == (0, 0)
+    end
+
     # Static analysis tests below. These use AllocCheck's check_allocs which
     # analyzes compiled code and may invalidate method caches.
     # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise.

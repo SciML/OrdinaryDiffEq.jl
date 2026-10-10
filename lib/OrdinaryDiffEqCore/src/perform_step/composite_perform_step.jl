@@ -220,6 +220,39 @@ function choose_algorithm!(
     end
 end
 
+function choose_algorithm!(integrator, cache::CompositeCache)
+    new_current = cache.choice_function(integrator)
+    old_current = cache.current
+    new_current == old_current && return nothing
+    u = integrator.u
+    cache.current = new_current
+    if new_current == 1
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[1], u)
+        !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
+        !isnothing(fsallast) && (integrator.fsallast = fsallast)
+        initialize!(integrator, @inbounds(cache.caches[1]))
+    elseif new_current == 2
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[2], u)
+        !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
+        !isnothing(fsallast) && (integrator.fsallast = fsallast)
+        initialize!(integrator, @inbounds(cache.caches[2]))
+    else
+        fsalfirst, fsallast = get_fsalfirstlast(cache.caches[new_current], u)
+        !isnothing(fsalfirst) && (integrator.fsalfirst = fsalfirst)
+        !isnothing(fsallast) && (integrator.fsallast = fsallast)
+        initialize!(integrator, @inbounds(cache.caches[new_current]))
+    end
+    reset_alg_dependent_opts!(
+        integrator, integrator.alg.algs[old_current],
+        integrator.alg.algs[new_current]
+    )
+    transfer_cache!(
+        integrator, cache.caches[old_current],
+        cache.caches[new_current]
+    )
+    return nothing
+end
+
 function choose_algorithm!(integrator, cache::DefaultCache)
     new_current = cache.choice_function(integrator)
     old_current = cache.current
