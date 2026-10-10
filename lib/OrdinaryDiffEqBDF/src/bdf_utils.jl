@@ -148,6 +148,94 @@ const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
     end
 end
 
+# A mass-matrix step that ends on a tstop can straddle a jump in the algebraic
+# equations, e.g. an input that switches at the tstop. The algebraic components of
+# the predictor-corrector difference then measure the jump, which does not shrink
+# with dt, and every shrunken retry stops short of the tstop, so the step onto the
+# tstop could never pass. Such a step is judged on the differential components
+# alone, in their usual units, and the multistep history is restarted after it
+# because it no longer describes the solution past the tstop.
+#
+# The relaxation applies only when all of these hold:
+#   - the step failed the full error test and ends on the next tstop;
+#   - the mass matrix is diagonal, so its zero diagonal entries identify both the
+#     algebraic equations and the algebraic variables (`get_differential_vars`
+#     gives no split for any other structure, which keeps the full error test);
+#   - an algebraic equation is discontinuous at the tstop itself, as seen by
+#     evaluating it at the step's solution just before the step's end. A smooth
+#     problem, or one whose jump lies inside the step rather than on the tstop,
+#     keeps the full error test.
+# Returns the algebraic mask when the step qualifies, otherwise `nothing`.
+function _algebraic_jump_at_tstop(integrator, u)
+    OrdinaryDiffEqCore.get_EEst(integrator) > 1 || return nothing
+    _step_reaches_tstop(integrator) || return nothing
+    ArrayInterface.fast_scalar_indexing(u) || return nothing
+    differential = OrdinaryDiffEqCore.get_differential_vars(integrator.f, u)
+    differential isa AbstractArray || return nothing
+    algebraic = .!differential
+    any(algebraic) || return nothing
+    return _algebraic_equation_jumps(integrator, u, algebraic) ? algebraic : nothing
+end
+
+# Evaluate f at the step's end t₀ and at t₀ - δ and t₀ - 2δ. On a smooth algebraic
+# equation the two differences agree to first order; a jump at t₀ makes the first
+# one dominate both the second and the residual left by the nonlinear solve.
+function _algebraic_equation_jumps(integrator, u, algebraic)
+    (; t, dt, tdir, p, f) = integrator
+    t isa AbstractFloat || return false
+    t₀ = t + dt
+    δ = min(abs(dt) / 4, sqrt(eps(typeof(t))) * max(abs(t₀), one(t)))
+    g₀ = _eval_rhs(integrator, f, u, p, t₀)
+    g₁ = _eval_rhs(integrator, f, u, p, t₀ - tdir * δ)
+    g₂ = _eval_rhs(integrator, f, u, p, t₀ - 2 * tdir * δ)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+    for i in eachindex(g₀, algebraic)
+        algebraic[i] || continue
+        abs(g₁[i] - g₀[i]) > 100 * (abs(g₂[i] - g₁[i]) + abs(g₀[i])) && return true
+    end
+    return false
+end
+
+function _eval_rhs(integrator, f, u, p, t)
+    SciMLBase.isinplace(f) || return f(u, p, t)
+    du = similar(integrator.fsalfirst)
+    f(du, u, p, t)
+    return du
+end
+
+# Whether the current step ends on the next tstop, within the rounding window
+# `modify_dt_for_tstops!` uses when it shortens a step onto a tstop.
+function _step_reaches_tstop(integrator)
+    SciMLBase.has_tstop(integrator) || return false
+    (; t, dt, tdir) = integrator
+    tstop = SciMLBase.first_tstop(integrator)
+    tol = if t isa AbstractFloat && isfinite(t) && isfinite(tstop)
+        100 * eps(float(max(abs(t), abs(tstop)) / oneunit(t))) * oneunit(t)
+    else
+        zero(t)
+    end
+    return tdir * (t + dt) >= tstop - tol
+end
+
+@inline function _bdf_error_norm!(atmp, buf, err, algebraic_rows, uprev, u, integrator)
+    t = integrator.t
+    (; abstol, reltol, internalnorm) = integrator.opts
+    if algebraic_rows === nothing
+        calculate_residuals!(atmp, err, uprev, u, abstol, reltol, internalnorm, t)
+    else
+        @.. broadcast = false buf = ifelse(algebraic_rows, zero(err), err)
+        calculate_residuals!(atmp, buf, uprev, u, abstol, reltol, internalnorm, t)
+    end
+    return internalnorm(atmp, t)
+end
+
+@inline function _bdf_error_norm(err, algebraic_rows, uprev, u, integrator)
+    t = integrator.t
+    (; abstol, reltol, internalnorm) = integrator.opts
+    e = algebraic_rows === nothing ? err : @. ifelse(algebraic_rows, zero(err), err)
+    return internalnorm(calculate_residuals(e, uprev, u, abstol, reltol, internalnorm, t), t)
+end
+
 function error_constant(integrator, alg::QNDF, k)
     (; γₖ) = integrator.cache
     κ = alg.kappa[k]
@@ -193,7 +281,7 @@ function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
     return c
 end
 
-function reinitFBDF!(integrator, cache)
+function reinitFBDF!(integrator, cache, restart = integrator.derivative_discontinuity)
     # This function is used to initialize arrays that store past history information.
     # It will be used in the first-time step advancing and event handling.
     (;
@@ -202,7 +290,7 @@ function reinitFBDF!(integrator, cache)
     ) = cache
     (; t, dt, uprev) = integrator
 
-    if integrator.derivative_discontinuity
+    if restart
         order = cache.order = 1
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         cache.qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs
