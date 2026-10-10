@@ -55,6 +55,33 @@ function constvalue(x)
 end
 
 """
+    eigen_est_from_stages(k, kprev, g, gprev)
+
+Estimate the magnitude of the dominant eigenvalue as `maxᵢ |(kᵢ - kprevᵢ) / (gᵢ - gprevᵢ)|`,
+where `k`, `kprev` are the derivatives at the stage values `g`, `gprev`. This is a
+componentwise variant of the estimate `‖k - kprev‖ / ‖g - gprev‖` in Hairer & Wanner,
+Solving Ordinary Differential Equations II, Section IV.2.
+
+Only primal values are used: dual numbers and units are stripped, so that e.g. the partials
+of ForwardDiff duals do not affect stiffness detection.
+"""
+function eigen_est_from_stages(k, kprev, g, gprev)
+    bc = Broadcast.instantiate(Broadcast.broadcasted(_eigen_est_quotient, k, kprev, g, gprev))
+    init = zero(_eigen_est_quotient(map(oneunit ∘ eltype, (k, kprev, g, gprev))...))
+    return maximum(bc; init)
+end
+
+# `value` does not strip e.g. `Complex{<:Dual}`, so `abs` may still return a dual
+function _eigen_est_quotient(k, kprev, g, gprev)
+    return SciMLBase.value(
+        abs(
+            (SciMLBase.value(k) - SciMLBase.value(kprev)) /
+                (SciMLBase.value(g) - SciMLBase.value(gprev))
+        )
+    )
+end
+
+"""
     diffdir(integrator) -> Int
 
 Return the finite-difference direction (`+1` or `-1`) to use for time

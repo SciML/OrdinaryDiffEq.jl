@@ -152,6 +152,7 @@ OrdinaryDiffEqCore.isdefaultalg
 OrdinaryDiffEqCore.is_composite_algorithm
 OrdinaryDiffEqCore.is_composite_cache
 OrdinaryDiffEqCore.is_constant_cache
+OrdinaryDiffEqCore.eigen_est_from_stages
 ```
 
 ## Algorithm trait functions

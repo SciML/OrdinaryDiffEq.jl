@@ -41,6 +41,8 @@ run_qa(
                 :NAN_CHECK,
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
+                # Base.Broadcast internals for a lazy, non-allocating reduction
+                :broadcasted, :instantiate,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
                 :EnzymeRules, :inactive_noinl, :inactive,
                 # SciMLBase internals with no public replacement yet

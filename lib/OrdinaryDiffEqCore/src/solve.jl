@@ -840,7 +840,7 @@ Base.@constprop :aggressive function _ode_init(
 
     # rate/state = (state/time)/state = 1/t units, internalnorm drops units
     # we don't want to differentiate through eigenvalue estimation
-    eigen_est = inv(one(tType))
+    eigen_est = inv(one(constvalue(tType)))
     tprev = t
     dtcache = tType(_dt)
     dtpropose = tType(_dt)
