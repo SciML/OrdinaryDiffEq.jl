@@ -18,3 +18,4 @@ end
 @time @safetestset "Stage predictors" include("predictor_tests.jl")
 @time @safetestset "Convergence" include("sdirk_convergence_tests.jl")
 @time @safetestset "DAE tests" include("dae_esdirk_test.jl")
+@time @safetestset "smooth_est scaling" include("smooth_est_scaling_tests.jl")
