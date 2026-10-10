@@ -153,9 +153,7 @@ end
     end
 end
 
-# Float32 tspan with Float64 constant_lags used to promote the discontinuity
-# time to Float64 and then fail converting into Discontinuity{Float32,Int}
-# when propagating the next lag stop (add_next_discontinuities!).
+# Float32 tspan with Float64 constant_lags keeps discontinuity times in Float32.
 @testset "Float32 tspan with Float64 constant_lags" begin
     function f!(du, u, h, p, t)
         du[1] = -h(p, t - 1)[1]
