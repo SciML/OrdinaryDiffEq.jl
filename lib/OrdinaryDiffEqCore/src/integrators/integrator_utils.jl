@@ -268,6 +268,14 @@ _set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 
+function _tstop_tol(t, tdir_tstop)
+    return if t isa AbstractFloat && isfinite(tdir_tstop) && isfinite(t)
+        100 * eps(float(max(abs(t), abs(tdir_tstop)) / oneunit(t))) * oneunit(t)
+    else
+        zero(abs(tdir_tstop - t))
+    end
+end
+
 function modify_dt_for_tstops!(integrator)
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
@@ -277,17 +285,7 @@ function modify_dt_for_tstops!(integrator)
         # distance_to_tstop to within rounding still triggers the tstop
         # branch.  Without this, accumulated `t + dt + dt + …` can drift
         # just past the last tstop and produce a spurious micro-step.
-        tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
-                isfinite(integrator.t)
-            100 * eps(
-                float(
-                    max(abs(integrator.t), abs(tdir_tstop)) /
-                        oneunit(integrator.t)
-                )
-            ) * oneunit(integrator.t)
-        else
-            zero(distance_to_tstop)
-        end
+        tstop_tol = _tstop_tol(integrator.t, tdir_tstop)
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
@@ -327,8 +325,12 @@ function modify_dt_for_tstops!(integrator)
 end
 
 function handle_tstop_step!(integrator)
-    return if integrator.t isa AbstractFloat && abs(integrator.dt) < eps(abs(integrator.t))
-        # Skip perform_step! entirely for tiny dt
+    t = integrator.t
+    return if t isa AbstractFloat &&
+            abs(integrator.dt) <= _tstop_tol(t, abs(t + integrator.dt))
+        # A tstop within rounding of the current one (e.g. `0.7` and `70 * 0.01`):
+        # move `t` onto it without a step, so an ulp-sized step does not enter
+        # the step size control or a multistep history.
         integrator.accept_step = true
     else
         perform_step!(integrator, integrator.cache)
