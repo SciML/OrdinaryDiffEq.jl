@@ -2127,7 +2127,7 @@ function ESDIRK547L2SA2Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     a75 = convert(T, 870612361811 // 2470410392208)
     a76 = convert(T, -1307970675534 // 8059683598661)
     c3 = convert(T2, 7121331996143 // 11335814405378)
-    c4 = convert(T2, 49 // 453)
+    c4 = convert(T2, 49 // 353)
     c5 = convert(T2, 3706679970760 // 5295570149437)
     c6 = convert(T2, 347 // 382)
     c7 = convert(T2, 1)
