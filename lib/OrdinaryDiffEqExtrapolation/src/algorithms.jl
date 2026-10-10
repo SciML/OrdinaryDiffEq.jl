@@ -18,8 +18,10 @@ is intended for smooth, non-stiff problems at tight tolerances.
 - `min_order::Integer = 1`: smallest extrapolation order the controller may select.
 - `init_order::Integer = 5`: extrapolation order used for the first step. Choose values
   satisfying `1 <= min_order <= init_order <= max_order`.
-- `threading = false`: enable concurrent internal extrapolation work when `true`; use
-  `false` for serial execution.
+- `threading = false`: use `true` for automatic threading of in-place steps. Steps
+  run sequentially when state length × estimated stage evaluations is below an
+  internal threshold or only one default thread is available. Use `BaseThreads()`
+  to force Base threading, or `false` for serial execution.
 
 # Returns
 
@@ -175,7 +177,10 @@ independent extrapolation columns can run concurrently.
   `init_order`.
 - `sequence::Symbol = :harmonic`: subdivision sequence. Supported values are
   `:harmonic`, `:romberg`, and `:bulirsch`; other values warn and use `:harmonic`.
-- `threading = true`: enable concurrent extrapolation columns when `true`.
+- `threading = true`: automatically thread in-place extrapolation columns. Steps
+  run sequentially when state length × estimated stage evaluations is below an
+  internal threshold or only one default thread is available. Use `BaseThreads()`
+  to force Base threading, or `false` for serial execution.
 - `sequence_factor::Integer = 2`: even multiplier applied to the subdivision
   sequence. Odd values warn and are replaced by `2`.
 
@@ -388,7 +393,10 @@ approximations, whose independent columns can run concurrently.
   that `init_order < max_order`.
 - `sequence::Symbol = :harmonic`: subdivision sequence. Supported values are
   `:harmonic`, `:romberg`, and `:bulirsch`; other values warn and use `:harmonic`.
-- `threading = true`: enable concurrent extrapolation columns when `true`.
+- `threading = true`: automatically thread in-place extrapolation columns. Steps
+  run sequentially when state length × estimated stage evaluations is below an
+  internal threshold or only one default thread is available. Use `BaseThreads()`
+  to force Base threading, or `false` for serial execution.
 - `sequence_factor::Integer = 2`: even multiplier applied to the subdivision
   sequence. Odd values warn and are replaced by `2`.
 

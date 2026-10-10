@@ -21,7 +21,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
 
     max_order = min(size(T, 1), cur_order + 1)
 
-    if !isthreaded(alg.threading)
+    if !_use_extrapolation_threads(alg.threading, length(uprev) * (2^max_order - 1))
         for i in 1:max_order
             dt_temp = dt / (2^(i - 1))
             # Solve using Euler method
@@ -820,7 +820,9 @@ function perform_step!(
     end
 
     #Compute the internal discretisations
-    if !isthreaded(alg.threading)
+    if !_use_extrapolation_threads(
+            alg.threading, length(uprev) * (stage_number[n_curr - alg.min_order + 1] - 1)
+        )
         for i in 0:n_curr
             j_int = sequence_factor * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2090,7 +2092,9 @@ function perform_step!(
     end
 
     #Compute the internal discretisations
-    if !isthreaded(alg.threading)
+    if !_use_extrapolation_threads(
+            alg.threading, length(uprev) * (cache.stage_number[n_curr + 1] - 1)
+        )
         for i in 0:n_curr
             j_int = sequence_factor * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
