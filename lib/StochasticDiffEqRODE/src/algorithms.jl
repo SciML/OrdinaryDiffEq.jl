@@ -132,6 +132,44 @@ measured rate is lower on coarser steps.
 struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
 
 """
+    RandomTaylor25()
+
+**RandomTaylor25: Derivative-free order 2.5 Taylor method (RODE)**
+
+Order 2.5 RODE-Taylor scheme for Random Ordinary Differential Equations driven by a Wiener
+process supplied as a stored path. It keeps every term of the Taylor expansion whose index
+satisfies `ι(a) + |a|/2 < 3.5`, thirteen in all, and replaces each derivative of `f` by a
+finite difference: five-point stencils of spacing `sqrt(dt)` in `W`, and differences in
+the state along the directions the scheme needs, with displacements of size `dt` or
+smaller. The integrals of the path over the step are taken from the supplied path.
+
+## Method Properties
+
+  - **Problem type**: RODEs driven by a `NoiseGrid` with scalar values
+  - **Pathwise order**: 2.5
+  - **Strong order**: 3 on Wiener paths, as measured
+  - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: 18 per step
+  - **Noise usage**: reads the driving path between the step endpoints
+
+## When to Use
+
+For small errors on a finely resolved path, where the cost of 18 evaluations per step is
+repaid by the higher order; at loose tolerances `RandomTaylor15` is cheaper. As for
+`RandomTaylor15`, the path must be resolved more finely than the solver steps, and with a
+path known only at the solver's own steps the order drops to 1. The error constant
+carries the fifth derivative of `f` in `W`, so for a right-hand side oscillating in `W`
+at frequency `a` the asymptotic rate is reached once `a^2 * dt` is well below 1. When `f`
+does not depend on `W` the step is a third-order Taylor method.
+
+## References
+
+  - Han, X., Kloeden, P. E., Random Ordinary Differential Equations and Their Numerical
+    Solution, Springer, 2017, Chapter 12, the scheme for `γ = 2.5` and `θ = 1/2`.
+"""
+struct RandomTaylor25 <: StochasticDiffEqRODEAlgorithm end
+
+"""
     BAOAB(; gamma = 1.0, scale_noise = true)
 
 **BAOAB: Langevin Dynamics Integrator (Specialized)**
