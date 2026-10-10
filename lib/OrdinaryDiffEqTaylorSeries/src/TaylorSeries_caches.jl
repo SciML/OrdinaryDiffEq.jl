@@ -105,6 +105,62 @@ function alg_cache(
     return ExplicitTaylorConstantCache(alg.order, jet_wrapped)
 end
 
+# Per-trial snapshot of controller-cache scratch (every scalar field except
+# `controller` / `EEst`, plus array fields elementwise). This is AdaptiveOrder's
+# analogue of `sync_controllers!`: new scratch fields are included automatically,
+# including non-isbits scalars (e.g. `BigFloat` QT). Immutable scalars may be
+# stored by reference; restore puts the pre-trial value back. Array history is
+# the fixed-length-3 `PIDControllerCache.err` (ones(QT,3) at construction);
+# `Val(3)` keeps Float64/Float32 isbits snapshots allocation-free.
+@inline function _snapshot_array(v::AbstractVector)
+    length(v) == 3 ||
+        throw(ArgumentError("AdaptiveOrder controller array snapshot expects length 3, got $(length(v))"))
+    return ntuple(i -> @inbounds(v[i]), Val(3))
+end
+
+@generated function snapshot_controller(cache::C) where {C}
+    pairs = Expr[]
+    for name in fieldnames(C)
+        name === :controller && continue
+        name === :EEst && continue
+        ft = fieldtype(C, name)
+        qname = QuoteNode(name)
+        if ft <: AbstractArray
+            push!(pairs, Expr(:kw, name, :(_snapshot_array(getfield(cache, $qname)))))
+        else
+            push!(pairs, Expr(:kw, name, :(getfield(cache, $qname))))
+        end
+    end
+    isempty(pairs) && return :(NamedTuple())
+    return :((; $(pairs...)))
+end
+
+@generated function restore_controller!(cache::C, snap::NamedTuple{N}) where {C, N}
+    body = Expr[]
+    for name in N
+        ft = fieldtype(C, name)
+        qname = QuoteNode(name)
+        if ft <: AbstractArray
+            push!(
+                body,
+                quote
+                    v = getfield(cache, $qname)
+                    s = getfield(snap, $qname)
+                    @inbounds for i in eachindex(s)
+                        v[i] = s[i]
+                    end
+                end
+            )
+        else
+            push!(body, :(setfield!(cache, $qname, getfield(snap, $qname))))
+        end
+    end
+    return quote
+        $(body...)
+        return nothing
+    end
+end
+
 @cache struct ExplicitTaylorAdaptiveOrderCache{
         P, Q,
         tType, uType, taylorType, coeffType, uNoUnitsType, StageLimiter, StepLimiter,
@@ -113,7 +169,6 @@ end
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
-    order_history::Vector{Int}
     jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, coeffType, uType, tType}}}
     coeffs::Vector{coeffType}
     u::uType
@@ -150,9 +205,8 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     current_order = Ref(max_order_value - 1)
-    order_history = Vector{Int}()
     return ExplicitTaylorAdaptiveOrderCache(
-        alg.min_order, alg.max_order, current_order, order_history,
+        alg.min_order, alg.max_order, current_order,
         jets, coeffs, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
@@ -160,8 +214,9 @@ end
 
 get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (nothing, nothing)
 
-struct ExplicitTaylorAdaptiveOrderConstantCache{P, Q, taylorType, uType, tType} <:
-    OrdinaryDiffEqConstantCache
+struct ExplicitTaylorAdaptiveOrderConstantCache{
+        P, Q, taylorType, uType, tType,
+    } <: OrdinaryDiffEqConstantCache
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
