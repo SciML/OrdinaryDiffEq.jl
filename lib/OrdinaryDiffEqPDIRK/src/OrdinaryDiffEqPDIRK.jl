@@ -7,8 +7,8 @@ import OrdinaryDiffEqCore: isfsal,
     @threaded, perform_step!, isthreaded,
     Sequential, BaseThreads, PolyesterThreads,
     get_fsalfirstlast,
-    _fixup_ad
-import SciMLBase: alg_order, _unwrap_val
+    _fixup_ad, ODEIntegrator, isnewton
+import SciMLBase: alg_order, _unwrap_val, resize_non_user_cache!
 import DiffEqBase: initialize!
 import MuladdMacro: @muladd
 import FastBroadcast: @..
