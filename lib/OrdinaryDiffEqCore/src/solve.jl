@@ -98,12 +98,22 @@ function _despecialize_callback(callback::ContinuousCallback, integrator)
     _has_default_callback_hooks(callback) || return callback
     I = typeof(integrator)
     signatures = _condition_signatures(callback.idxs, integrator)
-    callback = @reset callback.condition = _wrap_calls(
-        callback.condition, signatures,
-        map(sig -> _condition_return_type(callback.condition, sig), signatures)
-    )
+    callback = @reset callback.condition = _wrap_condition(callback.condition, signatures)
     callback = @reset callback.affect! = _wrap_affect(callback.affect!, (Tuple{I},))
     return @reset callback.affect_neg! = _wrap_affect(callback.affect_neg!, (Tuple{I},))
+end
+
+function _wrap_condition(condition, signatures)
+    return_types = map(sig -> _condition_return_type(condition, sig), signatures)
+    return _wrap_calls(condition, signatures, return_types)
+end
+
+# Wrap the condition and its derivative separately, so that the event root finding still
+# sees the derivative.
+function _wrap_condition(c::DiffEqBase.ConditionWithDerivative, signatures)
+    return DiffEqBase.ConditionWithDerivative(
+        _wrap_condition(c.condition, signatures), _wrap_condition(c.derivative, signatures)
+    )
 end
 
 function _despecialize_callback(callback::VectorContinuousCallback, integrator)
