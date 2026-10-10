@@ -273,3 +273,70 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+# A user-supplied dt = 0.1 has ~1.4% local error on u₁' = u₁²; the BDF1 estimate must reject it.
+@testset "issue #4740 first-step error control" begin
+    @testset "QNDF1/QNDF2 reject oversized first step (#4740)" begin
+        clock_oop(u, p, t) = [u[1]^2, one(t)]
+        clock_iip(du, u, p, t) = (du[1] = u[1]^2; du[2] = one(t); nothing)
+        u1exact(t) = inv(1 - t)
+        algs = (QNDF1(), QBDF1(), QNDF2(), QBDF2())
+        quiet = DEVerbosity(SciMLLogging.None())
+        for f in (clock_oop, clock_iip), alg in algs
+            integ = init(
+                ODEProblem(f, [1.0, 0.0], (0.0, 0.5)), alg;
+                dt = 0.1, abstol = 1.0e-10, reltol = 1.0e-10, adaptive = true,
+                verbose = quiet
+            )
+            step!(integ)
+            @test integ.t < 0.05
+            @test abs((integ.u[1] - u1exact(integ.t)) / u1exact(integ.t)) < 1.0e-4
+            @test OrdinaryDiffEqCore.get_EEst(integ) <= one(OrdinaryDiffEqCore.get_EEst(integ))
+            sol = solve(
+                ODEProblem(f, [1.0, 0.0], (0.0, 0.5)), alg;
+                dt = 0.1, abstol = 1.0e-8, reltol = 1.0e-8, adaptive = true,
+                verbose = quiet
+            )
+            @test sol.retcode == ReturnCode.Success
+            @test sol.stats.nreject > 0
+            @test abs((sol.u[end][1] - 2.0) / 2.0) < 1.0e-3
+        end
+
+        fI_oop(u, p, t) = -u
+        fM_oop(u, p, t) = -2u
+        fI_iip(du, u, p, t) = (du[1] = -u[1]; nothing)
+        fM_iip(du, u, p, t) = (du[1] = -2u[1]; nothing)
+        for (iip, fI, fM) in ((false, fI_oop, fM_oop), (true, fI_iip, fM_iip)), alg in algs
+            probI = ODEProblem(fI, [1.0], (0.0, 1.0))
+            probM = ODEProblem(ODEFunction{iip}(fM; mass_matrix = 2 * I), [1.0], (0.0, 1.0))
+            kw = (; dt = 0.1, abstol = 1.0e-8, reltol = 1.0e-8, adaptive = true, verbose = quiet)
+            integI = init(probI, alg; kw...)
+            integM = init(probM, alg; kw...)
+            step!(integI)
+            step!(integM)
+            @test 0.5 < integM.t / integI.t < 2
+            solI = solve(probI, alg; kw...)
+            solM = solve(probM, alg; kw...)
+            @test solI.retcode == ReturnCode.Success
+            @test solM.retcode == ReturnCode.Success
+            @test solM.stats.naccept ≈ solI.stats.naccept rtol = 0.05
+        end
+    end
+
+    @testset "QBDF2 ROBER rejects oversized first step (#4740)" begin
+        function rober!(du, u, p, t)
+            y₁, y₂, y₃ = u
+            du[1] = -0.04y₁ + 1.0e4 * y₂ * y₃
+            du[2] = 0.04y₁ - 3.0e7 * y₂^2 - 1.0e4 * y₂ * y₃
+            du[3] = 3.0e7 * y₂^2
+            return nothing
+        end
+        integ = init(
+            ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e3)), QBDF2();
+            dt = 1.0e-2, abstol = 1.0e-4, reltol = 1.0e-4, adaptive = true,
+            verbose = DEVerbosity(SciMLLogging.None())
+        )
+        step!(integ)
+        @test 0 < integ.t < 1.0e-2
+    end
+end
