@@ -72,6 +72,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "JumpProblem kwarg forwarding Tests" begin
             include("jump_kwarg_forwarding_tests.jl")
         end
+        @time @safetestset "JumpProblem jump state Tests" begin
+            include("jump_problem_state_tests.jl")
+        end
         @time @safetestset "saveat Tests" begin
             include("saveat_tests.jl")
         end
@@ -240,6 +243,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
     if !is_APPVEYOR && TEST_GROUP == "Multithreaded"
         @time @safetestset "Multithreaded Jump Thread Safety Tests" begin
             include("multithreaded_jump_test.jl")
+        end
+        @time @safetestset "Multithreaded Jump Ensemble Tests" begin
+            include("jump_ensemble_threads_tests.jl")
         end
     end
 

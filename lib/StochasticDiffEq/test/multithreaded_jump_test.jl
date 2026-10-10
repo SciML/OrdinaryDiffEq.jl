@@ -45,6 +45,5 @@ test_ensemsim = solve(
     EM(),
     dt = 0.01,
     EnsembleThreads();
-    trajectories = 1_000_000,
-    alias_jump = false
+    trajectories = 1_000_000
 )
