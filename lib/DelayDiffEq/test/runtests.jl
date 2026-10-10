@@ -2,7 +2,7 @@ using SafeTestsets
 
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface"
     @time @safetestset "AD Tests" begin
         include("interface/ad.jl")
     end
