@@ -29,7 +29,9 @@ iterates are already in the cache.
 
 On a `SplitODEProblem` the sweep is semi-implicit: `f1` goes through `QΔ` and a
 nonlinear solve per node as above, while `f2` goes through the strictly lower
-triangular `explicit_sweeper` and is only ever evaluated at solved node values.",
+triangular `explicit_sweeper` and is only ever evaluated at solved node values.
+
+Dense output is the collocation polynomial through the final sweep's node values.",
     "SDC",
     "Spectral Deferred Correction method.",
     """@article{dutt2000spectral,
