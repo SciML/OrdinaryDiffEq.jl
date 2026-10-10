@@ -23,6 +23,7 @@ import MuladdMacro: @muladd
 
 import SciMLBase
 
+using ArrayInterface: ArrayInterface
 using LinearAlgebra
 using StaticArrays
 using RecursiveArrayTools
