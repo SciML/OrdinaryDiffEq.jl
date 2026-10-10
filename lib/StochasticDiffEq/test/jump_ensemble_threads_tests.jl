@@ -29,8 +29,10 @@ function check_serial_matches_threads(ensemble; kwargs...)
         @test all(SciMLBase.successful_retcode, sols.u)
         @test all(sol -> sol.t[end] == T_END, sols.u)
     end
-    @test all(i -> serial.u[i].t == threaded.u[i].t, 1:TRAJECTORIES)
-    @test all(i -> serial.u[i].u == threaded.u[i].u, 1:TRAJECTORIES)
+    # Compare per trajectory without capturing the ensemble solutions: on failure, `@test`
+    # shows its arguments, and showing a ragged ensemble solution throws.
+    @test all(map((s, t) -> s.t == t.t, serial.u, threaded.u))
+    @test all(map((s, t) -> s.u == t.u, serial.u, threaded.u))
     # Each trajectory follows its own path.
     @test allunique(sol.u[end] for sol in serial.u)
     return nothing
