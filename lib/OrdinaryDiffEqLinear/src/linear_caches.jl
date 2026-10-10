@@ -401,7 +401,8 @@ function alg_cache(
     return MagnusGL8ConstantCache()
 end
 
-@cache struct MagnusNC6Cache{uType, rateType, WType, expType} <: LinearMutableCache
+@cache struct MagnusNC6Cache{uType, rateType, WType, expType, matType} <:
+    LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -410,6 +411,23 @@ end
     W::WType
     k::rateType
     exp_cache::expType
+    A0::matType
+    A1::matType
+    A2::matType
+    A3::matType
+    B0::matType
+    B1::matType
+    B2::matType
+    C1::matType
+    D::matType
+    E::matType
+    F::matType
+    G::matType
+    P1::matType
+    P2::matType
+    Ω2::matType
+    Ω3_4::matType
+    Ωtot::matType
 end
 
 function alg_cache(
@@ -422,7 +440,15 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusNC6Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    matbuf() = similar(W)
+    return MagnusNC6Cache(
+        u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache,
+        matbuf(), matbuf(), matbuf(), matbuf(), # A0, A1, A2, A3
+        matbuf(), matbuf(), matbuf(), # B0, B1, B2
+        matbuf(), matbuf(), matbuf(), matbuf(), matbuf(), # C1, D, E, F, G
+        matbuf(), matbuf(), # P1, P2
+        matbuf(), matbuf(), matbuf() # Ω2, Ω3_4, Ωtot
+    )
 end
 
 struct MagnusNC6ConstantCache <: OrdinaryDiffEqConstantCache
@@ -472,7 +498,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return MagnusGL6ConstantCache()
 end
-@cache struct MagnusGauss4Cache{uType, rateType, WType, expType} <:
+@cache struct MagnusGauss4Cache{uType, rateType, WType, expType, matType} <:
     LinearMutableCache
     u::uType
     uprev::uType
@@ -482,6 +508,10 @@ end
     W::WType
     k::rateType
     exp_cache::expType
+    A::matType
+    P1::matType
+    P2::matType
+    G::matType
 end
 
 function alg_cache(
@@ -494,7 +524,11 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusGauss4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    matbuf() = similar(W)
+    return MagnusGauss4Cache(
+        u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache,
+        matbuf(), matbuf(), matbuf(), matbuf()
+    )
 end
 
 struct MagnusGauss4ConstantCache <: OrdinaryDiffEqConstantCache

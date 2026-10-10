@@ -1,3 +1,12 @@
+# Writes the matrix commutator [X, Y] = X*Y - Y*X into `dest`, using `tmp1`/`tmp2`
+# as scratch for the two products so no new matrix is allocated.
+@inline function _magnus_commutator!(dest, X, Y, tmp1, tmp2)
+    mul!(tmp1, X, Y)
+    mul!(tmp2, Y, X)
+    @. dest = tmp1 - tmp2
+    return dest
+end
+
 function initialize!(integrator, cache::MagnusMidpointCache)
     integrator.kshortsize = 2
 
@@ -565,39 +574,63 @@ end
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; exp_cache) = cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A0 = deepcopy(convert(AbstractMatrix, L))
+    A0 = cache.A0
+    copyto!(A0, convert(AbstractMatrix, L))
     update_coefficients!(L, uprev, p, t + dt / 4)
-    A1 = deepcopy(convert(AbstractMatrix, L))
+    A1 = cache.A1
+    copyto!(A1, convert(AbstractMatrix, L))
     update_coefficients!(L, uprev, p, t + dt / 2)
-    A2 = deepcopy(convert(AbstractMatrix, L))
+    A2 = cache.A2
+    copyto!(A2, convert(AbstractMatrix, L))
     update_coefficients!(L, uprev, p, t + 3 * dt / 4)
-    A3 = deepcopy(convert(AbstractMatrix, L))
+    A3 = cache.A3
+    copyto!(A3, convert(AbstractMatrix, L))
     update_coefficients!(L, uprev, p, t + dt)
     A4 = convert(AbstractMatrix, L)
-    B0 = (1 / 90) * (7 * (A0 + A4) + 32 * (A1 + A3) + 12 * (A2))
-    B1 = (1 / 90) * ((7 / 2) * (A4 - A0) + 8 * (A3 - A1))
-    B2 = (1 / 90) * ((7 / 4) * (A0 + A4) + 2 * (A1 + A3))
-    Ω1 = dt * B0
-    Ω2 = (dt * dt) * (B1 * (3 * B0 / 2 - 6 * B2) - (3 * B0 / 2 - 6 * B2) * B1)
-    Ω3_4 = (dt * dt) *
-        (
-        B0 * (B0 * (dt * B2 / 2 - Ω2 / 60) - (dt * B2 / 2 - Ω2 / 60) * B0) -
-            (B0 * (dt * B2 / 2 - Ω2 / 60) - (dt * B2 / 2 - Ω2 / 60) * B0) * B0
-    ) +
-        (3 * dt / 5) * (B1 * Ω2 - Ω2 * B1)
+
+    B0 = cache.B0
+    B1 = cache.B1
+    B2 = cache.B2
+    @. B0 = (1 / 90) * (7 * (A0 + A4) + 32 * (A1 + A3) + 12 * (A2))
+    @. B1 = (1 / 90) * ((7 / 2) * (A4 - A0) + 8 * (A3 - A1))
+    @. B2 = (1 / 90) * ((7 / 4) * (A0 + A4) + 2 * (A1 + A3))
+
+    P1 = cache.P1
+    P2 = cache.P2
+    C1 = cache.C1
+    @. C1 = 3 * B0 / 2 - 6 * B2
+    Ω2 = cache.Ω2
+    _magnus_commutator!(Ω2, B1, C1, P1, P2)
+    @. Ω2 = (dt * dt) * Ω2
+
+    D = cache.D
+    @. D = dt * B2 / 2 - Ω2 / 60
+    E = cache.E
+    _magnus_commutator!(E, B0, D, P1, P2)
+    F = cache.F
+    _magnus_commutator!(F, B0, E, P1, P2)
+    G = cache.G
+    _magnus_commutator!(G, B1, Ω2, P1, P2)
+    Ω3_4 = cache.Ω3_4
+    @. Ω3_4 = (dt * dt) * F + (3 * dt / 5) * G
+
+    Ωtot = cache.Ωtot
+    @. Ωtot = dt * B0 + Ω2 + Ω3_4
+
     if alg.krylov
         u .= expv(
-            1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L, 1)),
+            1.0, Ωtot, uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
-        u .= exponential!(Ω1 + Ω2 + Ω3_4, exp_method, exp_cache) * uprev
+        expΩ = exponential!(Ωtot, exp_method, exp_cache)
+        mul!(u, expΩ, uprev)
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -663,28 +696,31 @@ end
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false)
     (; t, dt, uprev, u, p) = integrator
     alg = unwrap_alg(integrator, nothing)
-    (; W, k, tmp, exp_cache) = cache
+    (; exp_cache) = cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t + dt * (1 / 2 + sqrt(3) / 6))
-    A = deepcopy(convert(AbstractMatrix, L))
+    A = cache.A
+    copyto!(A, convert(AbstractMatrix, L))
     update_coefficients!(L, uprev, p, t + dt * (1 / 2 - sqrt(3) / 6))
     B = convert(AbstractMatrix, L)
+    P1 = cache.P1
+    P2 = cache.P2
+    G = cache.G
+    mul!(P1, B, A)
+    mul!(P2, A, B)
     if alg.krylov
+        @. G = (A + B) / 2 + (dt * sqrt(3)) * (P1 - P2) / 12
         u .= expv(
-            dt, (A + B) ./ 2 + (dt * sqrt(3)) .* (B * A - A * B) ./ 12, u;
-            m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
+            dt, G, u; m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
             alg.iop
         )
     else
-        u .= exponential!(
-            (dt / 2) .* (A + B) +
-                ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B),
-            exp_method,
-            exp_cache
-        ) * uprev
+        @. G = (dt / 2) * (A + B) + ((dt^2) * (sqrt(3) / 12)) * (P1 - P2)
+        expG = exponential!(G, exp_method, exp_cache)
+        mul!(u, expG, uprev)
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
