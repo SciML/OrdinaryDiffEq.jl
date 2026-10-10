@@ -254,6 +254,40 @@ end
     return sqrt(DiffEqBase.__sum(sse, u; init = sse(zero(T))) / DiffEqBase.totallength(u))
 end
 
+# The root is located on the primal values, and its partials are then set by the
+# implicit function theorem, dt/dp = -(∂g/∂p) / (∂g/∂t). ∂g/∂t is read off by seeding a
+# partial of `t`, since `f` may interpolate into buffers that only accept the type `D`.
+# `f` is evaluated away from the original bracket endpoints because the integrator
+# returns the stored state there, independent of the partials of `t`.
+function DiffEqBase.find_root(
+        f, tup::Tuple{D, D}, rootfind::SciMLBase.RootfindOpt
+    ) where {T, V <: AbstractFloat, N, D <: ForwardDiff.Dual{T, V, N}}
+    generic() = invoke(DiffEqBase.find_root, Tuple{Any, Any, SciMLBase.RootfindOpt}, f, tup, rootfind)
+    primal(t, p = nothing) = ForwardDiff.value(f(D(t)))
+    t0, t1 = ForwardDiff.value(tup[1]), ForwardDiff.value(tup[2])
+    tv = DiffEqBase.find_root(primal, (t0, t1), rootfind)
+    te = tv
+    if te == t0 || te == t1
+        other = rootfind == SciMLBase.LeftRootFind ? SciMLBase.RightRootFind :
+            SciMLBase.LeftRootFind
+        te = DiffEqBase.find_root(primal, (t0, t1), other)
+        (te == t0 || te == t1) && return generic()
+    end
+
+    y0 = f(D(te))
+    y0 isa ForwardDiff.Dual{T, <:Any, N} || return generic()
+    a = ForwardDiff.partials(y0)
+    k = argmax(abs.(Tuple(a)))
+    iszero(a[k]) && return D(tv)
+    seeded(c) = D(te, ForwardDiff.Partials(ntuple(i -> i == k ? c : zero(V), Val(N))))
+    slope(c) = (ForwardDiff.partials(f(seeded(c)))[k] - a[k]) / c
+    gt = slope(one(V))
+    (iszero(gt) || !isfinite(gt)) && return generic()
+    gt = slope(V(abs(a[k] / gt)))
+    (iszero(gt) || !isfinite(gt)) && return generic()
+    return D(tv, ForwardDiff.Partials(map(ai -> V(-ai / gt), Tuple(a))))
+end
+
 if !hasmethod(nextfloat, Tuple{ForwardDiff.Dual})
     # Type piracy. Should upstream
     function Base.nextfloat(d::ForwardDiff.Dual{T, V, N}) where {T, V, N}
