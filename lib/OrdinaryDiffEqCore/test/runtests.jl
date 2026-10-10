@@ -40,6 +40,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Left continuity at duplicated knots" include("left_continuity_knot_tests.jl")
     @time @safetestset "Bool Equal Coercion" include("bool_equal_tests.jl")
     @time @safetestset "dtmin Direction" include("dtmin_direction_tests.jl")
+    @time @safetestset "tstop snap" include("tstop_snap_tests.jl")
     @time @safetestset "save_discretes initialization" include("save_discretes_init_tests.jl")
     @time @safetestset "Instability Diagnostics" include("instability_diagnostics_tests.jl")
     @time @safetestset "Enzyme Interpolation" include("enzyme_interpolation_tests.jl")
