@@ -254,3 +254,68 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     @test_nowarn step!(integrator)
     @test length(integrator.u) == 2
 end
+
+# Grown history slots must be defined; leftover Array capacity is treated as poison.
+@testset "resize! initializes grown step history" begin
+    fdecay!(du, u, p, t) = (du .= -p[1] .* u; nothing)
+    poison = 2.4e77
+    v = resize!(fill!(Vector{Float64}(undef, 10), poison), 5)
+    resize!(v, 10)
+    @test all(==(poison), v[6:10])
+
+    integ = init(ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0), ImplicitEuler())
+    fill!(integ.uprev, poison)
+    fill!(integ.uprev2, poison)
+    resize!(integ, 5)
+    resize!(integ, 10)
+    @test integ.uprev[1:5] == fill(poison, 5)
+    @test all(iszero, integ.uprev[6:10])
+    @test all(iszero, integ.uprev2[6:10])
+
+    function grow_and_poison!(integ; poison_uprev3 = false)
+        resize!(integ, 15)
+        integ.uprev[11:15] .= poison
+        integ.uprev2[11:15] .= poison
+        poison_uprev3 && (integ.cache.uprev3[11:15] .= poison)
+        resize!(integ, 10)
+        resize!(integ, 15)
+        integ.u[11:15] .= 1.0
+        return nothing
+    end
+
+    grew = Ref(false)
+    cb = DiscreteCallback(
+        (u, t, integ) -> !grew[] && t >= 0.5,
+        function (integ)
+            grow_and_poison!(integ)
+            grew[] = true
+            derivative_discontinuity!(integ, true)
+        end
+    )
+    sol = solve(
+        ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0), ImplicitEuler();
+        callback = cb, tstops = [0.5], reltol = 1.0e-4, abstol = 1.0e-6
+    )
+    @test sol.retcode == ReturnCode.Success
+
+    integ = init(ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0), Trapezoid())
+    fill!(integ.cache.uprev3, poison)
+    resize!(integ, 5)
+    resize!(integ, 10)
+    @test all(iszero, integ.cache.uprev3[6:10])
+
+    grew[] = false
+    cb3 = DiscreteCallback(
+        (u, t, integ) -> !grew[] && t >= 0.5,
+        function (integ)
+            grow_and_poison!(integ; poison_uprev3 = true)
+            grew[] = true
+            derivative_discontinuity!(integ, true)
+        end
+    )
+    sol3 = solve(
+        ODEProblem(fdecay!, ones(10), (0.0, 1.0), 50.0), Trapezoid();
+        callback = cb3, tstops = [0.5], reltol = 1.0e-4, abstol = 1.0e-6
+    )
+    @test sol3.retcode == ReturnCode.Success
+end
