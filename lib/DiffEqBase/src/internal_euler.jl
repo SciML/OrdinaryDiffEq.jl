@@ -3,7 +3,8 @@
 
 module InternalEuler
 
-using DiffEqBase, LinearAlgebra
+using DiffEqBase
+using LinearAlgebra: LinearAlgebra, I, norm
 
 # make a algorithm type
 abstract type EulerAlgs <: DiffEqBase.AbstractODEAlgorithm end
