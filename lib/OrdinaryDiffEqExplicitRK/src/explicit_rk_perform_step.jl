@@ -168,7 +168,7 @@ end
     ) where {F}
     # Middle
     for i in 2:(stages - 1)
-        @.. broadcast = false utilde = zero(kk[1][1])
+        @.. broadcast = false utilde = zero(eltype(kk[1]))
         for j in 1:(i - 1)
             @.. broadcast = false utilde = utilde + A[j, i] * kk[j]
         end
@@ -177,7 +177,7 @@ end
     end
 
     #Last
-    @.. broadcast = false utilde = zero(kk[1][1])
+    @.. broadcast = false utilde = zero(eltype(kk[1]))
     for j in 1:(stages - 1)
         @.. broadcast = false utilde = utilde + A[j, end] * kk[j]
     end

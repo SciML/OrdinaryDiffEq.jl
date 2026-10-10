@@ -17,6 +17,8 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
@@ -29,6 +31,8 @@ Test = "<0.0.1, 1"
 FastBroadcast = "1.3"
 Random = "<0.0.1, 1"
 DiffEqDevTools = "3"
+JLArrays = "0.3"
+LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 SciMLBase = "3.39"
 OrdinaryDiffEqCore = "4"
@@ -39,4 +43,4 @@ DiffEqBase = "7"
 SafeTestsets = "0.1.0"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg", "SciMLTesting"]
+test = ["DiffEqDevTools", "JLArrays", "LinearAlgebra", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "Pkg", "SciMLTesting"]
