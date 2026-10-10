@@ -11,7 +11,6 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import FastBroadcast: @..
 import MuladdMacro: @muladd
 import RecursiveArrayTools: recursivefill!
-using DiffEqBase: @tight_loop_macros
 import OrdinaryDiffEqCore
 
 using Reexport: Reexport, @reexport
