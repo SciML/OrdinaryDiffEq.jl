@@ -1331,8 +1331,9 @@ function build_J_W(
         J = similar(f.jac_prototype)
         W = similar(J)
         if is_sparse(J)
-            set_all_nzval!(J, one(eltype(J)))
-            set_all_nzval!(W, one(eltype(W)))
+            # Zero stored entries so LinearSolve NonstructuralZeros.Auto defers until W is filled.
+            set_all_nzval!(J, zero(eltype(J)))
+            set_all_nzval!(W, zero(eltype(W)))
         else
             fill_stored!(J, one(eltype(J)))
             fill_stored!(W, one(eltype(W)))
