@@ -18,7 +18,7 @@ testTol = 0.2
 
     @show "Very low order"
 
-    sim11 = test_convergence(dts, prob, ImplicitEuler(extrapolant = :linear))
+    sim11 = test_convergence(dts, prob, ImplicitEuler(predictor = Predictor.Linear))
     @test sim11.𝒪est[:final] ≈ 1 atol = testTol
 
     sim112 = test_convergence(
