@@ -24,6 +24,22 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test SOSRA() isa StochasticDiffEqAdaptiveAlgorithm
         @test SOSRA2() isa StochasticDiffEqAdaptiveAlgorithm
     end
+    @time @safetestset "SRACache SciMLBase cache hooks" include("sra_cache_hooks_tests.jl")
+
+    @time @safetestset "SRA/SRI resize! stage buffers (issue 4720)" begin
+        include("sra_resize_tests.jl")
+    end
+
+    @time @safetestset "SRA1 iip k₁ scale allocation" begin
+        include("sra1_alloc_tests.jl")
+    end
+
+    @time @safetestset "Float32 OOP stages and SRI() Vector OOP" begin
+        include("float32_oop_stages_tests.jl")
+    end
+    @time @safetestset "SRA1 OOP non-diagonal additive noise" begin
+        include("sra1_oop_nondiag_tests.jl")
+    end
 end
 
 # Run QA tests (Aqua, JET) - skip on pre-release Julia
