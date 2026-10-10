@@ -61,7 +61,7 @@ end
 Evaluate function ``f(x) = T + lag(u(x), p, x) - x`` at time point `t`, where `T` is time
 point of a previous discontinuity and `lag` is a dependent delay.
 """
-function discontinuity_function(integrator::DDEIntegrator, lag, T, t)
+function discontinuity_function(integrator::DDEIntegrator, lag::L, T, t) where {L}
     tmp = get_tmp_cache(integrator)
     cache = tmp === nothing ? nothing : first(tmp)
 
@@ -91,7 +91,7 @@ discontinuity at time point `T`, or `nothing`.
 The interval is estimated by checking the signs of `T + lag(u(t), p, t) - t` for time points
 `integrator.t .+ θs` in the interval `[integrator.t, integrator.t + integrator.dt]`.
 """
-function discontinuity_interval(integrator::DDEIntegrator, lag, T, Θs)
+function discontinuity_interval(integrator::DDEIntegrator, lag::L, T, Θs) where {L}
     # use start and end point of last time interval to check for discontinuities
     previous_condition = discontinuity_function(integrator, lag, T, integrator.t)
     if isapprox(
@@ -143,7 +143,7 @@ Estimate time point of the propagated discontinuity induced by the dependent del
 `lag` and the discontinuity at time point `T` inside the `interval` of the current
 integration step of the `integrator`.
 """
-function discontinuity_time(integrator::DDEIntegrator, lag, T, (bottom_Θ, top_Θ))
+function discontinuity_time(integrator::DDEIntegrator, lag::L, T, (bottom_Θ, top_Θ)) where {L}
     if bottom_Θ == top_Θ
         # in that case we have already found the time point of a discontinuity
         Θ = top_Θ
