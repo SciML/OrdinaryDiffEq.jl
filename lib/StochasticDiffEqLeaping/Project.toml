@@ -27,6 +27,9 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
+# Temporary: test against the JumpProcesses 10 branch (SciML/JumpProcesses.jl#680). Remove
+# it, along with bumping the JumpProcesses compat to "10", before merging.
+JumpProcesses = {url = "https://github.com/isaacsas/DiffEqJump.jl.git", rev = "integration/v10-master-2026-09-22"}
 
 [compat]
 SciMLTesting = "2.8"

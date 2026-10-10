@@ -33,6 +33,9 @@ StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
 DiffEqBase = {path = "../DiffEqBase"}
 OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 StochasticDiffEqLevyArea = {path = "../StochasticDiffEqLevyArea"}
+# Temporary: test against the JumpProcesses 10 branch (SciML/JumpProcesses.jl#680). Remove
+# it, along with bumping the JumpProcesses compat to "10", before merging.
+JumpProcesses = {url = "https://github.com/isaacsas/DiffEqJump.jl.git", rev = "integration/v10-master-2026-09-22"}
 
 [compat]
 SciMLTesting = "2.8"
