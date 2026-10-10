@@ -289,7 +289,7 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
         for lag in constant_lags
             if integrator.tdir * lag < maxlag
                 # calculate discontinuity and add it to heap of discontinuities and time stops
-                d = Discontinuity(integrator.tdir * (t + lag), next_order)
+                d = Discontinuity{typeof(integrator.t), Int}(integrator.tdir * (t + lag), next_order)
                 push!(integrator.d_discontinuities_propagated, d)
                 push!(integrator.tstops_propagated, d.t)
             end

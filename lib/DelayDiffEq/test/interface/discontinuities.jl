@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqCore: PIController
 using SciMLBase: ReturnCode
@@ -149,6 +150,26 @@ end
     for t in 0:5
         @test t ∈ sol.t
         @test Discontinuity(Float64(t), t) ∈ integrator.tracked_discontinuities
+    end
+end
+
+# Float32 tspan with Float64 constant_lags used to promote the discontinuity
+# time to Float64 and then fail converting into Discontinuity{Float32,Int}
+# when propagating the next lag stop (add_next_discontinuities!).
+@testset "Float32 tspan with Float64 constant_lags" begin
+    function f!(du, u, h, p, t)
+        du[1] = -h(p, t - 1)[1]
+        return nothing
+    end
+    history(p, t) = ones(Float32, 1)
+    prob = DDEProblem(
+        f!, ones(Float32, 1), history, (0.0f0, 5.0f0); constant_lags = [1.0]
+    )
+    for alg in (Tsit5(), Rosenbrock23())
+        sol = solve(prob, MethodOfSteps(alg))
+        @test sol.retcode == ReturnCode.Success
+        @test eltype(sol.t) === Float32
+        @test sol.t[end] == 5.0f0
     end
 end
 
