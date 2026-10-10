@@ -100,6 +100,27 @@ function _erase_callback_types(callback)
     )
 end
 
+# Fast path for merge_problem_kwargs when the problem already holds an erased set:
+# erase the incoming callbacks and concatenate, avoiding the type-unstable
+# CallbackSet(erased, cbs) vararg construction followed by a second erasure.
+function _merge_erased_callbacks(
+        pcb::CallbackSet{Vector{Any}, Vector{Any}},
+        callback
+    )
+    Base.@nospecialize callback
+    erased = _erase_callback_types(callback)
+    if isempty(pcb.continuous_callbacks) && isempty(pcb.discrete_callbacks)
+        return erased
+    elseif isempty(erased.continuous_callbacks) && isempty(erased.discrete_callbacks)
+        return pcb
+    else
+        return CallbackSet(
+            vcat(pcb.continuous_callbacks, erased.continuous_callbacks),
+            vcat(pcb.discrete_callbacks, erased.discrete_callbacks)
+        )
+    end
+end
+
 rightfloat(t, tdir) = isone(tdir) ? nextfloat(t) : prevfloat(t)
 
 # Callback handling
