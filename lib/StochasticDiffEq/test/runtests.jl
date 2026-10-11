@@ -13,6 +13,12 @@ function activate_nopre_env()
     return Pkg.instantiate()
 end
 
+function activate_modelingtoolkit_env()
+    Pkg.activate("modelingtoolkit")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    return Pkg.instantiate()
+end
+
 const LONGER_TESTS = false
 
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
@@ -72,14 +78,14 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "JumpProblem kwarg forwarding Tests" begin
             include("jump_kwarg_forwarding_tests.jl")
         end
+        @time @safetestset "JumpProblem jump state Tests" begin
+            include("jump_problem_state_tests.jl")
+        end
         @time @safetestset "saveat Tests" begin
             include("saveat_tests.jl")
         end
         @time @safetestset "Oval2" begin
             include("oval2_test.jl")
-        end
-        @time @safetestset "Solver Reversal Tests" begin
-            include("reversal_tests.jl")
         end
     end
 
@@ -241,11 +247,25 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Multithreaded Jump Thread Safety Tests" begin
             include("multithreaded_jump_test.jl")
         end
+        @time @safetestset "Multithreaded Jump Ensemble Tests" begin
+            include("jump_ensemble_threads_tests.jl")
+        end
     end
 
     if TEST_GROUP == "ALL" || TEST_GROUP == "Allocations"
         @time @safetestset "Allocation Tests" begin
             include("alloc_tests.jl")
+        end
+    end
+
+    # Separate environment: ModelingToolkit is downstream of StochasticDiffEq, so having it
+    # in the main test environment lets a ModelingToolkit release that lags behind an
+    # upstream change (e.g. a new JumpProcesses major version) stop every other test group
+    # from resolving.
+    if !is_APPVEYOR && TEST_GROUP == "ModelingToolkit"
+        activate_modelingtoolkit_env()
+        @time @safetestset "Solver Reversal Tests" begin
+            include("modelingtoolkit/reversal_tests.jl")
         end
     end
 

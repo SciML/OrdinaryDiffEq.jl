@@ -152,15 +152,15 @@ prob = SDEProblem(f, g, u0, tspan)
         sol2 = solve(jprob, EM(); dt = 0.01, rng = Xoshiro(99))
         @test sol2.retcode == ReturnCode.Success
 
-        # Note: full JumpProblem reproducibility requires controlling the
-        # aggregation RNG too (Phase 4). Here we only verify the rng kwarg
-        # does not error or break jump-diffusion solves.
+        # Jumps draw from the integrator's RNG, so the same RNG gives the same path.
+        sol3 = solve(jprob, EM(); dt = 0.01, rng = Xoshiro(42))
+        @test sol3.t == sol.t
+        @test sol3.u == sol.u
     end
 
     @testset "VariableRateJump clock refresh with rng kwarg" begin
         # VariableRateJumps use ExtendedJumpArray, whose jump_u (jump clocks)
-        # must be refreshed on each init/solve. This tests that
-        # reset_jump_problem! is called even when rng is provided.
+        # must be refreshed on each init/solve, from the integrator's RNG.
         fv!(du, u, p, t) = (du[1] = 0.0)
         gv!(du, u, p, t) = (du[1] = 0.0)
         vr_rate(u, p, t) = 0.5
@@ -179,6 +179,10 @@ prob = SDEProblem(f, g, u0, tspan)
         jump_u2 = copy(integ2.u.jump_u)
 
         @test jump_u1 != jump_u2
+
+        # The same RNG gives the same clocks.
+        integ3 = init(jprob_vr, EM(); dt = 0.01, rng = Xoshiro(42))
+        @test integ3.u.jump_u == jump_u1
     end
 
     @testset "Ensemble explicitly passed noise process reseeding" begin

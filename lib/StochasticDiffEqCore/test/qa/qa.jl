@@ -33,14 +33,13 @@ const SCIMLBASE_INTERNAL = (
 const DIFFEQBASE_INTERNAL = (Symbol("@.."),)
 
 # Non-public names from other upstream packages.
-const JUMPPROCESSES_INTERNAL = (:reset_jump_problem!, :resetted_jump_problem)
 const DIFFEQNOISEPROCESS_INTERNAL = (:resize_stack!,)
 const FORWARDDIFF_INTERNAL = (:Tag, :pickchunksize)
 const BASE_INTERNAL = (Symbol("@pure"),)
 
 const NONPUBLIC_IGNORE = (
     ODEC_INTERNAL..., SCIMLBASE_INTERNAL..., DIFFEQBASE_INTERNAL...,
-    JUMPPROCESSES_INTERNAL..., DIFFEQNOISEPROCESS_INTERNAL...,
+    DIFFEQNOISEPROCESS_INTERNAL...,
     FORWARDDIFF_INTERNAL..., BASE_INTERNAL...,
 )
 

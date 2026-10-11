@@ -140,7 +140,7 @@ function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqRODEAlgorithm
 end
 
 function SciMLBase.__init(
-        _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
+        _prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         kwargs...
     )
@@ -241,18 +241,16 @@ function _sde_init(
     prob = concrete_prob(_prob)
 
     # ── RNG resolution ───────────────────────────────────────────────────
-    _rng, _seed, _rng_provided = _resolve_rng(rng, seed, prob)
+    _rng, _seed, _ = _resolve_rng(rng, seed, prob)
 
-    # ── JumpProblem reset ────────────────────────────────────────────────
+    # ── JumpProblem jump state ───────────────────────────────────────────
+    # Jumps draw from the integrator's RNG, and the jump callbacks are re-initialized
+    # when the integrator is set up, so the problem needs no reseeding or reset. Copy it
+    # unless its jump state may be reused.
     if _prob isa JumpProblem
         alias_jumps = isnothing(aliases.alias_jumps) ? Threads.threadid() == 1 :
             aliases.alias_jumps === true
-        _jump_seed = _rng_provided ? nothing : _seed
-        if !alias_jumps
-            _prob = JumpProcesses.resetted_jump_problem(_prob, _jump_seed)
-        else
-            JumpProcesses.reset_jump_problem!(_prob, _jump_seed)
-        end
+        alias_jumps || (_prob = deepcopy(_prob))
     end
     prob = concrete_prob(_prob)
 
