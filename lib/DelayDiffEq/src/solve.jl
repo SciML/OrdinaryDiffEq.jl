@@ -138,6 +138,19 @@ function SciMLBase.__init(
     tdir = sign(last(tspan) - t0)
     tTypeNoUnits = typeof(one(tType))
 
+    # an empty tspan has no direction to check the lags against
+    if has_constant_lags(prob) && !iszero(tdir)
+        for lag in constant_lags
+            if tdir * lag <= zero(lag)
+                throw(
+                    ArgumentError(
+                        "constant_lags must be nonzero and point back in time: positive for a forward tspan, negative for a reversed tspan. Got lag $lag for tspan $tspan."
+                    )
+                )
+            end
+        end
+    end
+
     # Allow positive dtmax, but auto-convert
     dtmax > zero(dtmax) && tdir < zero(tdir) && (dtmax *= tdir)
 

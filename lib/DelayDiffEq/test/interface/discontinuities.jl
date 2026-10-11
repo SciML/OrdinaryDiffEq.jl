@@ -178,3 +178,16 @@ end
         @test sol.t[end] == 10.0
     end
 end
+
+@testset "invalid constant lags (#4831)" begin
+    f(u, h, p, t) = -h(p, t - 1)
+    h(p, t) = 1.0
+    for lags in ([0.0], [-1.0], [1.0, -0.5])
+        prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = lags)
+        @test_throws ArgumentError init(prob, MethodOfSteps(Tsit5()))
+        @test_throws ArgumentError solve(prob, MethodOfSteps(BS3(); constrained = true))
+    end
+
+    prob = DDEProblem(f, 1.0, h, (0.0, 0.0); constant_lags = [1.0])
+    @test solve(prob, MethodOfSteps(Tsit5())).retcode == ReturnCode.Success
+end
