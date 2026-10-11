@@ -328,8 +328,8 @@ end
 end
 
 @testset "RandomTaylor25 integrates backwards in time" begin
-    n = 64
-    path = wiener_path(MersenneTwister(20261004))
+    n = 128
+    path = [sum(2.0^(-k / 2) * sin(2pi * 2.0^k * t + k) for k in 0:10) / 2 for t in FINE_GRID]
     exact = exact_decay(path)
     back_grid = collect(range(TEND, 0.0; length = FINE_POINTS + 1))
     prob = RODEProblem{false}(
@@ -337,7 +337,7 @@ end
     )
     sol = solve(prob, RandomTaylor25(), dt = -TEND / n, save_everystep = true, adaptive = false)
     stride = FINE_POINTS ÷ n
-    @test maximum(abs(sol.u[k + 1] - exact[end - k * stride]) for k in 0:n) < 2.0e-4
+    @test maximum(abs(sol.u[k + 1] - exact[end - k * stride]) for k in 0:n) < 1.5e-4
 end
 
 @testset "RandomTaylor25 rejects noise it cannot resolve" begin
