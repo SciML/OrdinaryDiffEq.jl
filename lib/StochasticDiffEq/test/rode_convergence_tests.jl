@@ -372,9 +372,8 @@ end
 end
 
 @testset "RandomAffineHeun converges with steps finer than the grid" begin
-    rng = MersenneTwister(20261004)
     grid = collect(range(0.0, TEND; length = 101))
-    path = [[0.5 + randn(rng) / 2, -0.3 + randn(rng) / 2] for _ in grid]
+    path = [[0.5 + sin(7k) / 2, -0.3 + cos(11k) / 2] for k in eachindex(grid)]
     step_counts = [384, 768, 1536]
     for (grid, path) in ((grid, path), (reverse(grid), reverse(path)))
         reference = affine_reference(affine_pair, AFFINE_U0, grid, path; substeps = 256)[end]
@@ -382,8 +381,8 @@ end
             sol = affine_solution(affine_pair!, copy(AFFINE_U0), grid, path, RandomAffineHeun(), n)
             maximum(abs, sol.u[end] - reference)
         end
-        @test abs(fitted_slope(step_counts, errors) - 2) < 0.3
-        @test errors[end] < 1.0e-6
+        @test abs(fitted_slope(step_counts, errors) - 2) < 0.2
+        @test errors[end] < 3.0e-7
     end
 end
 
