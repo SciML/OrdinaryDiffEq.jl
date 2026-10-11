@@ -3,10 +3,8 @@ using OrdinaryDiffEqBDF, OrdinaryDiffEqSymplecticRK, OrdinaryDiffEqFunctionMap, 
 @testset "Default dense output" begin
     res(du, u, p, t) = [du[1] + u[1], u[1] + u[2] - 1]
     dprob = DAEProblem(res, [-1.0, 0.0], [1.0, 0.0], (0.0, 1.0); differential_vars = [true, false])
-    @test !solve(dprob, DImplicitEuler()).dense
-    @test !solve(dprob, DABDF2()).dense
-    @test solve(dprob, DFBDF()).dense
-    @test solve(dprob, DNordsieckBDF()).dense
+    @test solve(dprob, DImplicitEuler()).dense
+    @test solve(dprob, DABDF2()).dense
 
     sprob = SecondOrderODEProblem((v, u, p, t) -> -u, [0.0], [1.0], (0.0, 1.0))
     @test !solve(sprob, VerletLeapfrog(); dt = 0.1).dense

@@ -1032,10 +1032,9 @@ end
     default_linear_interpolation(prob, alg) -> Bool
 
 Return whether the solver should default to (cheaper) linear interpolation instead
-of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for DAE
-algorithms without their own interpolant, discrete problems, and RODE/SDE problems.
+of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for discrete
+problems and RODE/SDE problems.
 """
 function default_linear_interpolation(prob, alg)
-    return (alg isa DAEAlgorithm && !has_stiff_interpolation(alg)) ||
-        prob isa DiscreteProblem || prob isa SciMLBase.AbstractRODEProblem
+    return prob isa DiscreteProblem || prob isa SciMLBase.AbstractRODEProblem
 end
