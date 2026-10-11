@@ -258,7 +258,10 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
     end
 
-    # Separate environment due to the heavy ModelingToolkit dependency
+    # Separate environment: ModelingToolkit is downstream of StochasticDiffEq, so having it
+    # in the main test environment lets a ModelingToolkit release that lags behind an
+    # upstream change (e.g. a new JumpProcesses major version) stop every other test group
+    # from resolving.
     if !is_APPVEYOR && TEST_GROUP == "ModelingToolkit"
         activate_modelingtoolkit_env()
         @time @safetestset "Solver Reversal Tests" begin
