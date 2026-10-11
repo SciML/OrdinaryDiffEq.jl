@@ -1541,11 +1541,47 @@ end
     return nothing
 end
 
+@muladd function rkv76iia_extra_state(i, k, uprev, dt, a)
+    s = a[i, 1] * k[1] + a[i, 4] * k[4] + a[i, 5] * k[5] + a[i, 6] * k[6] +
+        a[i, 7] * k[7] + a[i, 8] * k[8] + a[i, 9] * k[9]
+    i > 11 && (s += a[i, 11] * k[11])
+    i > 12 && (s += a[i, 12] * k[12])
+    i > 13 && (s += a[i, 13] * k[13])
+    return uprev + dt * s
+end
+
+@muladd function rkv76iia_extra_state!(tmp, i, k, uprev, dt, a, thread)
+    if i == 11
+        @.. broadcast = false thread = thread tmp = uprev + dt * (
+            a[i, 1] * k[1] + a[i, 4] * k[4] + a[i, 5] * k[5] + a[i, 6] * k[6] +
+                a[i, 7] * k[7] + a[i, 8] * k[8] + a[i, 9] * k[9]
+        )
+    elseif i == 12
+        @.. broadcast = false thread = thread tmp = uprev + dt * (
+            a[i, 1] * k[1] + a[i, 4] * k[4] + a[i, 5] * k[5] + a[i, 6] * k[6] +
+                a[i, 7] * k[7] + a[i, 8] * k[8] + a[i, 9] * k[9] + a[i, 11] * k[11]
+        )
+    elseif i == 13
+        @.. broadcast = false thread = thread tmp = uprev + dt * (
+            a[i, 1] * k[1] + a[i, 4] * k[4] + a[i, 5] * k[5] + a[i, 6] * k[6] +
+                a[i, 7] * k[7] + a[i, 8] * k[8] + a[i, 9] * k[9] + a[i, 11] * k[11] +
+                a[i, 12] * k[12]
+        )
+    else
+        @.. broadcast = false thread = thread tmp = uprev + dt * (
+            a[i, 1] * k[1] + a[i, 4] * k[4] + a[i, 5] * k[5] + a[i, 6] * k[6] +
+                a[i, 7] * k[7] + a[i, 8] * k[8] + a[i, 9] * k[9] + a[i, 11] * k[11] +
+                a[i, 12] * k[12] + a[i, 13] * k[13]
+        )
+    end
+    return nothing
+end
+
 function initialize!(integrator, cache::RKV76IIaConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     alg = unwrap_alg(integrator, false)
-    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 10)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -1606,11 +1642,24 @@ end
     integrator.k[10] = k10
 
     integrator.u = u
+
+    if !_unwrap_val(cache.lazy) && (
+            integrator.opts.adaptive == false ||
+                accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
+        )
+        (; interp) = cache
+        k = integrator.k
+        for i in 11:16
+            k[i] = f(rkv76iia_extra_state(i, k, uprev, dt, interp.a), p, t + interp.c[i] * dt)
+        end
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    end
+    return nothing
 end
 
 function initialize!(integrator, cache::RKV76IIaCache)
     alg = unwrap_alg(integrator, false)
-    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 10)
+    _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     (; k) = integrator
     resize!(k, integrator.kshortsize)
     k[1] = cache.k1
@@ -1623,6 +1672,11 @@ function initialize!(integrator, cache::RKV76IIaCache)
     k[8] = cache.k8
     k[9] = cache.k9
     k[10] = cache.k10
+    if !_unwrap_val(cache.lazy)
+        for i in 11:16
+            k[i] = similar(cache.k1)
+        end
+    end
     return
 end
 
@@ -1674,4 +1728,17 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+    if !_unwrap_val(cache.lazy) && (
+            integrator.opts.adaptive == false ||
+                accept_step_controller(integrator, integrator.controller_cache, integrator.alg)
+        )
+        (; interp) = cache
+        k = integrator.k
+        for i in 11:16
+            rkv76iia_extra_state!(tmp, i, k, uprev, dt, interp.a, thread)
+            f(k[i], tmp, p, t + interp.c[i] * dt)
+        end
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
+    end
+    return nothing
 end
