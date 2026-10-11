@@ -1,19 +1,10 @@
 [deps]
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
-ModelingToolkitBase = "7771a370-6774-4173-bd38-47e70ca0b839"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[sources]
-# Temporary: registered ModelingToolkit does not admit JumpProcesses 10, so test against
-# its JumpProcesses 10 branch (SciML/ModelingToolkit.jl#5269). Remove, along with
-# ModelingToolkitBase in [deps], before merging; this group then cannot resolve until a
-# ModelingToolkitBase release that admits JumpProcesses 10 is registered.
-ModelingToolkit = {url = "https://github.com/isaacsas/ModelingToolkit.jl.git", rev = "mtkbase/jumpprocesses-v10"}
-ModelingToolkitBase = {url = "https://github.com/isaacsas/ModelingToolkit.jl.git", rev = "mtkbase/jumpprocesses-v10", subdir = "lib/ModelingToolkitBase"}
 
 [compat]
 DiffEqNoiseProcess = "5.30.0"
