@@ -45,9 +45,6 @@ StochasticDiffEqMilstein = {path = "../StochasticDiffEqMilstein"}
 StochasticDiffEqROCK = {path = "../StochasticDiffEqROCK"}
 StochasticDiffEqRODE = {path = "../StochasticDiffEqRODE"}
 StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
-# Temporary: test against the JumpProcesses 10 branch (SciML/JumpProcesses.jl#680). Remove
-# it, along with bumping the JumpProcesses compat to "10", before merging.
-JumpProcesses = {url = "https://github.com/isaacsas/DiffEqJump.jl.git", rev = "integration/v10-master-2026-09-22"}
 
 [compat]
 ADTypes = "1.22.0"
