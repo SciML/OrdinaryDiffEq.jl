@@ -791,7 +791,7 @@ Base.@constprop :aggressive function _ode_init(
     stats = SciMLBase.DEStats(0)
     differential_vars = if prob isa DAEProblem
         prob.differential_vars
-    elseif !isnothing(W)
+    elseif !isnothing(W) || !is_mass_matrix_alg(alg)
         nothing
     else
         get_differential_vars(f, u)
