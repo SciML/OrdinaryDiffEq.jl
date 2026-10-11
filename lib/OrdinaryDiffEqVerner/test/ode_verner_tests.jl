@@ -138,6 +138,16 @@ let dt = 0.25
     @test iip.u[end][1] ≈ oop.u[end] rtol = 1.0e-10
 end
 
+let ts = range(0.0, 4.0, length = 81)
+    for prob in (prob_oop, prob_iip), alg in (RKV76IIa(), RKV76IIa(lazy = Val{false}()))
+        sol = solve(prob, alg; dt = 0.25, adaptive = false)
+        @test maximum(abs(first(sol(t)) - exp(-t)) for t in ts) < 1.0e-10
+        @test maximum(abs(first(sol(t, Val{1})) + exp(-t)) for t in ts) < 1.0e-9
+        sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, saveat = 0.3)
+        @test maximum(abs(first(sol.u[i]) - exp(-sol.t[i])) for i in eachindex(sol.t)) < 1.0e-9
+    end
+end
+
 # -------------------------------------------------------------
 ### Backward solve lazy interpolation dt sign regression test
 # Tests that lazy interpolation during a backward solve produces correct results.

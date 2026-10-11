@@ -3,6 +3,7 @@ const RK_WITH_SPECIAL_INTERPOLATIONS = Union{
     Vern7ConstantCache, Vern7Cache,
     Vern8ConstantCache, Vern8Cache,
     Vern9ConstantCache, Vern9Cache,
+    RKV76IIaConstantCache, RKV76IIaCache,
 }
 
 function _ode_interpolant(
@@ -1422,4 +1423,140 @@ end
             k[20][idxs] * b26Θdiff
     ) * invdt3
     out
+end
+
+## RKV76IIa
+@inline function rkv76iia_weights(Θ, r, ::Type{Val{0}})
+    return ntuple(Val(16)) do i
+        Θ * @evalpoly(Θ, r[i, 1], r[i, 2], r[i, 3], r[i, 4], r[i, 5], r[i, 6], r[i, 7])
+    end
+end
+
+@inline function rkv76iia_weights(Θ, r, ::Type{Val{1}})
+    return ntuple(Val(16)) do i
+        @evalpoly(
+            Θ, r[i, 1], 2 * r[i, 2], 3 * r[i, 3], 4 * r[i, 4], 5 * r[i, 5], 6 * r[i, 6],
+            7 * r[i, 7]
+        )
+    end
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::RKV76IIaConstantCache,
+        idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    return @inbounds y₀ + dt * (
+        k[1] * b[1] + k[4] * b[4] + k[5] * b[5] + k[6] * b[6] + k[7] * b[7] +
+            k[8] * b[8] + k[9] * b[9] + k[11] * b[11] + k[12] * b[12] +
+            k[13] * b[13] + k[14] * b[14] + k[15] * b[15] + k[16] * b[16]
+    )
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::RKV76IIaCache,
+        idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    return @inbounds @.. broadcast = false y₀ + dt * (
+        k[1] * b[1] + k[4] * b[4] + k[5] * b[5] + k[6] * b[6] + k[7] * b[7] +
+            k[8] * b[8] + k[9] * b[9] + k[11] * b[11] + k[12] * b[12] +
+            k[13] * b[13] + k[14] * b[14] + k[15] * b[15] + k[16] * b[16]
+    )
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::Union{RKV76IIaConstantCache, RKV76IIaCache},
+        idxs, T::Type{Val{0}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    return y₀[idxs] + dt * (
+        k[1][idxs] * b[1] + k[4][idxs] * b[4] + k[5][idxs] * b[5] +
+            k[6][idxs] * b[6] + k[7][idxs] * b[7] + k[8][idxs] * b[8] +
+            k[9][idxs] * b[9] + k[11][idxs] * b[11] + k[12][idxs] * b[12] +
+            k[13][idxs] * b[13] + k[14][idxs] * b[14] + k[15][idxs] * b[15] +
+            k[16][idxs] * b[16]
+    )
+end
+
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache::Union{RKV76IIaConstantCache, RKV76IIaCache},
+        idxs::Nothing, T::Type{Val{0}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    @inbounds @.. broadcast = false out = y₀ + dt * (
+        k[1] * b[1] + k[4] * b[4] + k[5] * b[5] + k[6] * b[6] + k[7] * b[7] +
+            k[8] * b[8] + k[9] * b[9] + k[11] * b[11] + k[12] * b[12] +
+            k[13] * b[13] + k[14] * b[14] + k[15] * b[15] + k[16] * b[16]
+    )
+    return out
+end
+
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache::Union{RKV76IIaConstantCache, RKV76IIaCache},
+        idxs, T::Type{Val{0}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    @views @.. broadcast = false out = y₀[idxs] + dt * (
+        k[1][idxs] * b[1] + k[4][idxs] * b[4] + k[5][idxs] * b[5] +
+            k[6][idxs] * b[6] + k[7][idxs] * b[7] + k[8][idxs] * b[8] +
+            k[9][idxs] * b[9] + k[11][idxs] * b[11] + k[12][idxs] * b[12] +
+            k[13][idxs] * b[13] + k[14][idxs] * b[14] + k[15][idxs] * b[15] +
+            k[16][idxs] * b[16]
+    )
+    return out
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::RKV76IIaConstantCache,
+        idxs::Nothing, T::Type{Val{1}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    return @inbounds k[1] * b[1] + k[4] * b[4] + k[5] * b[5] + k[6] * b[6] + k[7] * b[7] +
+        k[8] * b[8] + k[9] * b[9] + k[11] * b[11] + k[12] * b[12] + k[13] * b[13] +
+        k[14] * b[14] + k[15] * b[15] + k[16] * b[16]
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::RKV76IIaCache,
+        idxs::Nothing, T::Type{Val{1}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    return @inbounds @.. broadcast = false k[1] * b[1] + k[4] * b[4] + k[5] * b[5] + k[6] * b[6] + k[7] * b[7] +
+        k[8] * b[8] + k[9] * b[9] + k[11] * b[11] + k[12] * b[12] + k[13] * b[13] +
+        k[14] * b[14] + k[15] * b[15] + k[16] * b[16]
+end
+
+@muladd function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache::Union{RKV76IIaConstantCache, RKV76IIaCache},
+        idxs, T::Type{Val{1}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    return k[1][idxs] * b[1] + k[4][idxs] * b[4] + k[5][idxs] * b[5] + k[6][idxs] * b[6] +
+        k[7][idxs] * b[7] + k[8][idxs] * b[8] + k[9][idxs] * b[9] +
+        k[11][idxs] * b[11] + k[12][idxs] * b[12] + k[13][idxs] * b[13] +
+        k[14][idxs] * b[14] + k[15][idxs] * b[15] + k[16][idxs] * b[16]
+end
+
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache::Union{RKV76IIaConstantCache, RKV76IIaCache},
+        idxs::Nothing, T::Type{Val{1}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    @inbounds @.. broadcast = false out = k[1] * b[1] + k[4] * b[4] + k[5] * b[5] + k[6] * b[6] + k[7] * b[7] +
+        k[8] * b[8] + k[9] * b[9] + k[11] * b[11] + k[12] * b[12] + k[13] * b[13] +
+        k[14] * b[14] + k[15] * b[15] + k[16] * b[16]
+    return out
+end
+
+@muladd function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache::Union{RKV76IIaConstantCache, RKV76IIaCache},
+        idxs, T::Type{Val{1}}, differential_vars::Nothing
+    )
+    b = rkv76iia_weights(Θ, cache.interp.r, T)
+    @views @.. broadcast = false out = k[1][idxs] * b[1] + k[4][idxs] * b[4] + k[5][idxs] * b[5] + k[6][idxs] * b[6] +
+        k[7][idxs] * b[7] + k[8][idxs] * b[8] + k[9][idxs] * b[9] +
+        k[11][idxs] * b[11] + k[12][idxs] * b[12] + k[13][idxs] * b[13] +
+        k[14][idxs] * b[14] + k[15][idxs] * b[15] + k[16][idxs] * b[16]
+    return out
 end
