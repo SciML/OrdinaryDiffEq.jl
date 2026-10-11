@@ -67,9 +67,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V74 80-Core Processor
+  CPU: 4 × AMD EPYC 9V45 96-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver4)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
   GC: Built with stock GC
 Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl/docs/Manifest.toml`
   <span class="sgr90">[47edcb42] </span>ADTypes v1.24.0
@@ -121,7 +121,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   <span class="sgr90">[5b8099bc] </span>DomainSets v0.8.3
   <span class="sgr90">[7c1d4256] </span>DynamicPolynomials v0.6.8
   <span class="sgr90">[4e289a0a] </span>EnumX v1.0.7
-  <span class="sgr90">[f151be2c] </span>EnzymeCore v0.8.22
+  <span class="sgr90">[f151be2c] </span>EnzymeCore v0.8.23
   <span class="sgr90">[d4d017d3] </span>ExponentialUtilities v1.37.0
   <span class="sgr90">[e2ba6199] </span>ExprTools v0.1.11
   <span class="sgr90">[55351af7] </span>ExproniconLite v0.10.14
@@ -129,7 +129,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   <span class="sgr90">[9aa1b823] </span>FastClosures v0.3.2
   <span class="sgr90">[442a2c76] </span>FastGaussQuadrature v1.3.0
   <span class="sgr90">[a4df4552] </span>FastPower v1.5.0
-  <span class="sgr90">[1a297f60] </span>FillArrays v1.17.1
+  <span class="sgr90">[1a297f60] </span>FillArrays v1.18.0
   <span class="sgr90">[64ca27bc] </span>FindFirstFunctions v3.4.0
   <span class="sgr90">[6a86dc24] </span>FiniteDiff v2.33.0
   <span class="sgr90">[1fa38f19] </span>Format v1.3.7
@@ -157,7 +157,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   <span class="sgr90">[682c06a0] </span>JSON v1.10.0
   <span class="sgr90">[ae98c720] </span>Jieko v0.2.1
   <span class="sgr90">[ccbc3e58] </span>JumpProcesses v9.33.1
-  <span class="sgr90">[ba0b0d4f] </span>Krylov v0.10.10
+  <span class="sgr90">[ba0b0d4f] </span>Krylov v0.10.11
   <span class="sgr90">[2faa5264] </span>LHLFactorization v2.2.2
   <span class="sgr90">[b964fa9f] </span>LaTeXStrings v1.4.1
   <span class="sgr90">[23fbe1c1] </span>Latexify v0.16.12
@@ -170,7 +170,7 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   <span class="sgr90">[1914dd2f] </span>MacroTools v0.5.16
   <span class="sgr90">[d125e4d3] </span>ManualMemory v0.1.8
   <span class="sgr90">[d0879d2d] </span>MarkdownAST v0.1.3
-  <span class="sgr90">[a3b82374] </span>MatrixFactorizations v3.1.3
+  <span class="sgr90">[a3b82374] </span>MatrixFactorizations v3.2.0
   <span class="sgr90">[bb5d69b7] </span>MaybeInplace v0.1.8
   <span class="sgr90">[e1d29d7a] </span>Missings v1.2.0
   <span class="sgr90">[2e0e35c7] </span>Moshi v0.3.13
@@ -362,4 +362,4 @@ Threads: 1 default, 1 interactive, 1 GC (on 4 virtual cores)</code></pre></detai
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.67.1+0
   <span class="sgr90">[3f19e933] </span>p7zip_jll v17.8.2+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr33">⌅</span> have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Manifest.toml">manifest</a> and <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Project.toml">project</a> files.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Friday 9 October 2026 19:26">Friday 9 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr33">⌅</span> have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Manifest.toml">manifest</a> and <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v7.8.1/assets/Project.toml">project</a> files.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/controllers/">« Controller API</a><a class="docs-footer-nextpage" href="contributing/ecosystem_overview/">Ecosystem Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Sunday 11 October 2026 06:27">Sunday 11 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
