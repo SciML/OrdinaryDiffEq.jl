@@ -48,12 +48,6 @@ StochasticDiffEqWeak = {path = "../StochasticDiffEqWeak"}
 # Temporary: test against the JumpProcesses 10 branch (SciML/JumpProcesses.jl#680). Remove
 # it, along with bumping the JumpProcesses compat to "10", before merging.
 JumpProcesses = {url = "https://github.com/isaacsas/DiffEqJump.jl.git", rev = "integration/v10-master-2026-09-22"}
-# Temporary: registered ModelingToolkit (loaded by reversal_tests.jl) does not admit
-# JumpProcesses 10, so test against its JumpProcesses 10 branch
-# (SciML/ModelingToolkit.jl#5269). Remove, with the ModelingToolkitBase test extra, before
-# merging.
-ModelingToolkit = {url = "https://github.com/isaacsas/ModelingToolkit.jl.git", rev = "mtkbase/jumpprocesses-v10"}
-ModelingToolkitBase = {url = "https://github.com/isaacsas/ModelingToolkit.jl.git", rev = "mtkbase/jumpprocesses-v10", subdir = "lib/ModelingToolkitBase"}
 
 [compat]
 ADTypes = "1.22.0"
@@ -95,8 +89,6 @@ ImplicitDiscreteSolve = "3263718b-31ed-49cf-8a0f-35a466e8af96"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 LevyArea = "2d8b4e74-eb68-11e8-0fb9-d5eb67b50637"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
-ModelingToolkitBase = "7771a370-6774-4173-bd38-47e70ca0b839"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
@@ -114,4 +106,4 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "ImplicitDiscreteSolve", "LevyArea", "LinearSolve", "ModelingToolkit", "ModelingToolkitBase", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqRosenbrock", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test", "SciMLLogging"]
+test = ["AllocCheck", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqNoiseProcess", "ForwardDiff", "JumpProcesses", "ImplicitDiscreteSolve", "LevyArea", "LinearSolve", "OrdinaryDiffEq", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqRosenbrock", "Pkg", "Random", "RecursiveArrayTools", "SciMLOperators", "SDEProblemLibrary", "SafeTestsets", "SparseArrays", "Statistics", "StaticArrays", "Test", "SciMLLogging"]

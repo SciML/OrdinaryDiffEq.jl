@@ -7,6 +7,9 @@ versions = ["lts", "1", "pre"]
 [Interface3]
 versions = ["lts", "1", "pre"]
 
+[ModelingToolkit]
+versions = ["1"]
+
 [AlgConvergence]
 versions = ["1"]
 

@@ -13,6 +13,12 @@ function activate_nopre_env()
     return Pkg.instantiate()
 end
 
+function activate_modelingtoolkit_env()
+    Pkg.activate("modelingtoolkit")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    return Pkg.instantiate()
+end
+
 const LONGER_TESTS = false
 
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
@@ -80,9 +86,6 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Oval2" begin
             include("oval2_test.jl")
-        end
-        @time @safetestset "Solver Reversal Tests" begin
-            include("reversal_tests.jl")
         end
     end
 
@@ -252,6 +255,14 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
     if TEST_GROUP == "ALL" || TEST_GROUP == "Allocations"
         @time @safetestset "Allocation Tests" begin
             include("alloc_tests.jl")
+        end
+    end
+
+    # Separate environment due to the heavy ModelingToolkit dependency
+    if !is_APPVEYOR && TEST_GROUP == "ModelingToolkit"
+        activate_modelingtoolkit_env()
+        @time @safetestset "Solver Reversal Tests" begin
+            include("modelingtoolkit/reversal_tests.jl")
         end
     end
 
