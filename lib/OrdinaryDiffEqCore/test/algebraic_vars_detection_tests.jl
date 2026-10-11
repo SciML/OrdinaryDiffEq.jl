@@ -2,7 +2,9 @@ using Test
 using SparseArrays
 using OrdinaryDiffEqCore: find_algebraic_vars_eqs, get_differential_vars
 using LinearAlgebra
-using SciMLBase: ODEFunction
+using SciMLBase: ODEFunction, ODEProblem, init
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqRosenbrock: Rosenbrock23
 using SciMLOperators: IdentityOperator, ScalarOperator
 
 @testset "Sparse Algebraic Detection Performance" begin
@@ -123,6 +125,15 @@ end
     @test get_differential_vars(ff_alldiff, u) == Bool[1, 1, 1, 1]
     ff_allalg = ODEFunction(f!, mass_matrix = Diagonal(zeros(4)))
     @test get_differential_vars(ff_allalg, u) == Bool[0, 0, 0, 0]
+end
+
+@testset "differential_vars of a solver without mass matrix support" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    for mm in (Matrix(1.0I, 4, 4), Diagonal(ones(4)), sparse(1.0I, 4, 4))
+        prob = ODEProblem(ODEFunction(f!, mass_matrix = mm), ones(4), (0.0, 1.0))
+        @test init(prob, Tsit5()).differential_vars === nothing
+        @test init(prob, Rosenbrock23()).differential_vars == trues(4)
+    end
 end
 
 # Mimics GPU device-array semantics on the CPU: elementwise scalar `getindex`
