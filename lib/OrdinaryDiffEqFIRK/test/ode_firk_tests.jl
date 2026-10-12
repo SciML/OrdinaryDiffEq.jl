@@ -1,9 +1,85 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
+using SparseArrays
 using OrdinaryDiffEqTsit5: AutoTsit5
 using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
+
+@testset "Sparse FIRK stage matrix assembly" begin
+    J = sparse([1, 1, 2], [1, 2, 3], [2.0, 0.0, 4.0], 3, 3)
+    for (mass_matrix, scale) in (
+            (sparse([3, 2], [1, 2], [5.0, 0.0], 3, 3), -2.5),
+            (I, -2.5), (I, -2.5 - 0.4im),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5 - 0.4im),
+        )
+        T = scale isa Complex ? ComplexF64 : Float64
+        W = similar(J, T)
+        expected = similar(J, T)
+        OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
+        @inbounds for II in CartesianIndices(J)
+            expected[II] = muladd(scale, mass_matrix[Tuple(II)...], J[II])
+        end
+
+        @test W == expected
+        if !(scale isa Complex)
+            # entrywise setindex! densifies the pattern with signed zeros on
+            # complex scales; on real scales the merged pattern is identical
+            @test all(c -> nzrange(W, c) == nzrange(expected, c), axes(W, 2))
+            @test rowvals(W) == rowvals(expected)
+        end
+    end
+end
+
+@testset "Sparse FIRK solves vs dense jac_prototype" begin
+    n = 50
+    function firk_test_lin!(du, u, p, t)
+        @inbounds for i in 1:n
+            du[i] = -100u[i] + (i > 1 ? 10u[i - 1] : 0) + (i < n ? 10u[i + 1] : 0)
+        end
+    end
+    J = spdiagm(
+        -1 => fill(10.0, n - 1), 0 => fill(-100.0, n), 1 => fill(10.0, n - 1)
+    )
+    mass_matrix = spdiagm(0 => collect(range(0.8, 1.2; length = n)))
+    u0 = ones(n)
+    tspan = (0.0, 0.1)
+    ts = [0.01, 0.05, 0.1]
+    for (mm_sparse, mm_dense) in (
+                (I, I), (mass_matrix, Matrix(mass_matrix)),
+            ), alg in (
+                RadauIIA3(), RadauIIA5(), RadauIIA9(),
+                AdaptiveRadau(), AdaptiveRadau(threading = true),
+            )
+        prob_sparse = ODEProblem(
+            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix = mm_sparse),
+            u0, tspan
+        )
+        prob_dense = ODEProblem(
+            ODEFunction(
+                firk_test_lin!;
+                jac_prototype = Matrix(J), mass_matrix = mm_dense
+            ),
+            u0, tspan
+        )
+        sol_sparse = solve(
+            prob_sparse, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        sol_dense = solve(
+            prob_dense, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        @test sol_sparse.retcode == ReturnCode.Success
+        @test sol_sparse.u[end] ≈ sol_dense.u[end] atol = 1.0e-6
+        # Dense-output interpolation can differ between the sparse and dense LU
+        # paths by more than the solver tolerance (≈2e-5 for AdaptiveRadau here).
+        for t in ts
+            @test all(isapprox.(sol_sparse(t), sol_dense(t); atol = 1.0e-4))
+        end
+    end
+end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5(), dense_errors = true)

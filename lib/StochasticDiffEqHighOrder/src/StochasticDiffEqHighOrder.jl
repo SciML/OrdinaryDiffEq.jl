@@ -28,6 +28,10 @@ import MuladdMacro: @muladd
 
 import SciMLBase
 import SciMLBase: is_diagonal_noise
+# Without these imports, SRACache's accessors would bind new HighOrder-local
+# `u_cache`/`du_cache`/`user_cache` and shadow SciMLBase's exported functions,
+# causing an umbrella reexport clash / Aqua undefined-exports.
+import SciMLBase: u_cache, du_cache, user_cache
 
 using LinearAlgebra: LinearAlgebra, dot, mul!
 using StaticArrays: StaticArrays, SArray
