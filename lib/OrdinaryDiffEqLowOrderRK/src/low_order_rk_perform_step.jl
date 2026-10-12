@@ -895,7 +895,7 @@ end
 end
 
 function initialize!(integrator, cache::FRK65ConstantCache)
-    integrator.kshortsize = 9
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -963,32 +963,18 @@ end
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
-    integrator.k[8] = k8
-    integrator.k[9] = k9
+    integrator.k[2] = k9
     integrator.u = u
 end
 
 get_fsalfirstlast(cache::FRK65Cache, u) = (cache.k1, cache.k9)
 function initialize!(integrator, cache::FRK65Cache)
-    integrator.kshortsize = 9
+    integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
 
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
-    integrator.k[8] = cache.k8
-    integrator.k[9] = cache.k9
+    integrator.k[2] = cache.k9
 
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1069,7 +1055,7 @@ end
 end
 
 function initialize!(integrator, cache::RKMConstantCache)
-    integrator.kshortsize = 6
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1098,28 +1084,18 @@ end
 
     integrator.fsallast = f(u, p, t + dt) #interpolation then FSAL'd
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    # integrator.k[1] = integrator.fsalfirst
-    # integrator.k[2] = integrator.fsallast
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
 get_fsalfirstlast(cache::RKMCache, u) = (cache.k1, zero(cache.k1))
 function initialize!(integrator, cache::RKMCache)
     (; k, fsalfirst) = cache
-    integrator.kshortsize = 6
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
 
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
@@ -1409,7 +1385,7 @@ function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::MSRK5ConstantCache)
-    integrator.kshortsize = 9
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -1446,14 +1422,7 @@ function perform_step!(integrator, cache::MSRK5ConstantCache, repeat_step = fals
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
 
     integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
-    integrator.k[8] = k8
-    integrator.k[9] = k9
+    integrator.k[2] = k9
     return integrator.u = u
 end
 
@@ -1461,17 +1430,10 @@ get_fsalfirstlast(cache::MSRK5Cache, u) = (cache.k1, cache.k9)
 function initialize!(integrator, cache::MSRK5Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 9
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
-    integrator.k[8] = cache.k8
-    integrator.k[9] = cache.k9
+    integrator.k[2] = cache.k9
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k9
 
@@ -1532,7 +1494,7 @@ function perform_step!(integrator, cache::MSRK5Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::MSRK6ConstantCache)
-    integrator.kshortsize = 9
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -1569,14 +1531,7 @@ function perform_step!(integrator, cache::MSRK6ConstantCache, repeat_step = fals
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
 
     integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
-    integrator.k[8] = k8
-    integrator.k[9] = k9
+    integrator.k[2] = k9
     return integrator.u = u
 end
 
@@ -1584,17 +1539,10 @@ get_fsalfirstlast(cache::MSRK6Cache, u) = (cache.k1, cache.k9)
 function initialize!(integrator, cache::MSRK6Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 9
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
-    integrator.k[8] = cache.k8
-    integrator.k[9] = cache.k9
+    integrator.k[2] = cache.k9
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k9
 
@@ -1654,7 +1602,7 @@ function perform_step!(integrator, cache::MSRK6Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::Stepanov5ConstantCache)
-    integrator.kshortsize = 7
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -1701,12 +1649,7 @@ function perform_step!(integrator, cache::Stepanov5ConstantCache, repeat_step = 
     end
 
     integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
+    integrator.k[2] = k7
     return integrator.u = u
 end
 
@@ -1714,15 +1657,10 @@ get_fsalfirstlast(cache::Stepanov5Cache, u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::Stepanov5Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 7
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
+    integrator.k[2] = cache.k7
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k7
 
@@ -1782,7 +1720,7 @@ function perform_step!(integrator, cache::Stepanov5Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::SIR54ConstantCache)
-    integrator.kshortsize = 8
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -1831,13 +1769,7 @@ function perform_step!(integrator, cache::SIR54ConstantCache, repeat_step = fals
     end
 
     integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
-    integrator.k[8] = k8
+    integrator.k[2] = k8
     return integrator.u = u
 end
 
@@ -1845,16 +1777,10 @@ get_fsalfirstlast(cache::SIR54Cache, u) = (cache.k1, cache.k8)
 function initialize!(integrator, cache::SIR54Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 8
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
-    integrator.k[8] = cache.k8
+    integrator.k[2] = cache.k8
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k8
 
