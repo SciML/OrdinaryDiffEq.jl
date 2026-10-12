@@ -459,8 +459,8 @@ end
 """
     stage_predictor(alg::AbstractNLSolverAlgorithm)
 
-Return the stage-value guess `alg` carries for `nlsolve!` to seed its iterate from, or
-`nothing` for an algorithm without one.
+Return the callable `alg` carries for seeding each stage solve of `nlsolve!` (see the
+`predictor` keyword), or `nothing` if it has none.
 """
 stage_predictor(::AbstractNLSolverAlgorithm) = nothing
 stage_predictor(alg::NLFunctional) = alg.predictor
