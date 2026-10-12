@@ -30,11 +30,12 @@ iterates are already in the cache.
 On stiff problems the step update limits how few sweeps can be used. With
 `SDCStepUpdate.Quadrature` on Radau-right nodes the stability function exceeds
 one in the stiff limit until `num_sweeps ≥ num_nodes` for `SDCSweeper.LU` (two
-to five nodes), and until 4, 6 and 7 sweeps on 3, 4 and 5 nodes for
-`SDCSweeper.MIN_SR_S`. An adaptive solve needs one sweep more because the
-embedded solution is one sweep behind. `SDCSweeper.BE` is below one from two
-sweeps. With `SDCStepUpdate.LastNode`, `LU` and `BE` damp the stiff limit
-completely from the first sweep.
+to five nodes). `SDCSweeper.MIN_SR_S` needs 2, 4, 6 and 7 sweeps on 2, 3, 4 and
+5 nodes at `|λΔt| ≈ 1e8`, and more as `|λΔt|` grows, because its tabulated
+coefficients are only approximately nilpotent. An adaptive solve needs one
+sweep more because the embedded solution is one sweep behind. `SDCSweeper.BE`
+is below one from two sweeps. With `SDCStepUpdate.LastNode`, `LU` and `BE` damp
+the stiff limit completely from the first sweep.
 
 On a `SplitODEProblem` the sweep is semi-implicit: `f1` goes through `QΔ` and a
 nonlinear solve per node as above, while `f2` goes through the strictly lower
@@ -80,7 +81,8 @@ Dense output is the collocation polynomial through the final sweep's node values
         (Weiser's LU trick), `.Picard` (`QΔ = 0`), `.BEpar` (diagonal, implicit
         Euler from the step start to each node), `.MIN_SR_NS` (diagonal,
         `diag(τ)/M`), `.MIN_SR_S` (diagonal, tabulated for stiff problems) or
-        `.MIN_SR_FLEX` (diagonal, `diag(τ)/k` on sweep `k`).
+        `.MIN_SR_FLEX` (diagonal, `diag(τ)/k` on sweep `k`, falling back to
+        `.MIN_SR_S` past sweep `M`).
     - `explicit_sweeper`: the preconditioner for `f2` when the problem is a
         `SplitODEProblem`, `SDCSweeper.FE` (explicit Euler between the nodes) or
         `.Picard` (`f2` lagged a whole sweep). Ignored otherwise.
