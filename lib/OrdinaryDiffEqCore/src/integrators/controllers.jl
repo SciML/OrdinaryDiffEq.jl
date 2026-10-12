@@ -491,6 +491,28 @@ function post_newton_controller!(integrator, controller, alg)
 end
 
 """
+    domain_reject_controller!(integrator, alg)
+    domain_reject_controller!(integrator, cache::AbstractControllerCache, alg)
+
+Hook called when a step is rejected because the user's `isoutofdomain`
+returned `true`. The default behavior is to shrink `integrator.dt` by
+[`get_qmin`](@ref)`(integrator)` so the step is retried with a smaller dt.
+
+This is separate from [`step_reject_controller!`](@ref) because the error
+estimate of an out-of-domain step can be small, so an error-based controller
+need not reduce `dt`. Multistep methods override it to undo whatever the
+rejected step did to their history (e.g. the Nordsieck prediction, or FBDF's
+consecutive-failure bookkeeping) while still enforcing a smaller `dt`.
+"""
+function domain_reject_controller!(integrator, alg)
+    return domain_reject_controller!(integrator, integrator.controller_cache, alg)
+end
+function domain_reject_controller!(integrator, controller, alg)
+    integrator.dt = integrator.dt * get_qmin(integrator)
+    return nothing
+end
+
+"""
     DummyController()
 
 Placeholder controller for algorithms that manage step-size selection
@@ -557,6 +579,9 @@ end
     step_reject_controller!(integrator, alg)
 @inline post_newton_controller!(integrator, ::DummyControllerCache, alg) =
     post_newton_controller!(integrator, alg)
+# No `domain_reject_controller!` forwarding for `DummyControllerCache`: algorithms
+# on this path (e.g. TauLeaping) have no alg-level method, so forwarding would
+# recurse forever. They fall through to the generic `dt *= qmin` method instead.
 @inline accept_step_controller(integrator, cache::DummyControllerCache, alg) =
     get_EEst(cache) <= 1
 # DummyControllerCache is used by some SDE algorithms (e.g.
@@ -1299,6 +1324,7 @@ for (fname, extra_args) in (
         (:step_accept_controller!, (:q,)),
         (:step_reject_controller!, ()),
         (:post_newton_controller!, ()),
+        (:domain_reject_controller!, ()),
     )
     @eval begin
         @generated function $fname(
@@ -1385,6 +1411,10 @@ end
 @inline function post_newton_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
+end
+@inline function domain_reject_controller!(integrator, cache::CompositeCache, alg)
+    current_idx = integrator.cache.current
+    return domain_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
 
 for accessor in (
@@ -1473,6 +1503,23 @@ function step_reject_controller!(integrator, cache::DefaultCache, alg)
     elseif cache.current == 6
         step_reject_controller!(integrator, @inbounds(cache.cache6), alg)
     end
+end
+
+function domain_reject_controller!(integrator, cache::DefaultCache, alg)
+    if cache.current == 1
+        domain_reject_controller!(integrator, @inbounds(cache.cache1), alg)
+    elseif cache.current == 2
+        domain_reject_controller!(integrator, @inbounds(cache.cache2), alg)
+    elseif cache.current == 3
+        domain_reject_controller!(integrator, @inbounds(cache.cache3), alg)
+    elseif cache.current == 4
+        domain_reject_controller!(integrator, @inbounds(cache.cache4), alg)
+    elseif cache.current == 5
+        domain_reject_controller!(integrator, @inbounds(cache.cache5), alg)
+    elseif cache.current == 6
+        domain_reject_controller!(integrator, @inbounds(cache.cache6), alg)
+    end
+    return nothing
 end
 
 # This is a workaround to make the BDF methods work with composite algorithms
