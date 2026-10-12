@@ -24,6 +24,20 @@ all_algs = [
     end
 end
 
+@testset "A step ends with the derivative at the new solution" begin
+    forced!(du, u, p, t) = (du[1] = cos(t) - u[1]^2; nothing)
+    forced(u, p, t) = [cos(t) - u[1]^2]
+    cases = Any[(alg, forced!) for alg in all_algs]
+    append!(cases, [(alg, forced) for alg in (SDIRK2(), SSPSDIRK2(), SFSDIRK4())])
+    for (alg, rhs) in cases
+        @testset "$(nameof(typeof(alg)))" begin
+            integrator = init(ODEProblem(rhs, [1.0], (0.0, 1.0)), alg; dt = 0.1, adaptive = false)
+            step!(integrator)
+            @test integrator.fsallast ≈ forced(integrator.u, nothing, integrator.t)
+        end
+    end
+end
+
 @testset "Non-IMEX methods solve a SplitODEProblem as f1 + f2" begin
     # A method with no explicit part has nowhere to put `f2`, so it integrates the combined
     # right-hand side, the way a non-split solve of the same method does. Before #4149 the
