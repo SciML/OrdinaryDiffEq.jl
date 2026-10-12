@@ -138,13 +138,12 @@ function SciMLBase.__init(
     tdir = sign(last(tspan) - t0)
     tTypeNoUnits = typeof(one(tType))
 
-    # an empty tspan has no direction to check the lags against
-    if has_constant_lags(prob) && !iszero(tdir)
+    if has_constant_lags(prob)
         for lag in constant_lags
-            if tdir * lag <= zero(lag)
+            if tdir * lag < zero(lag)
                 throw(
                     ArgumentError(
-                        "constant_lags must be nonzero and point back in time: positive for a forward tspan, negative for a reversed tspan. Got lag $lag for tspan $tspan."
+                        "constant_lags must point back in time: nonnegative for a forward tspan, nonpositive for a reversed tspan. Got lag $lag for tspan $tspan."
                     )
                 )
             end
@@ -157,7 +156,7 @@ function SciMLBase.__init(
     # no fixed-point iterations for constrained algorithms,
     # and thus `dtmax` should match minimal lag
     if isconstrained(alg) && has_constant_lags(prob)
-        min_lag = minimum(abs, constant_lags)
+        min_lag = minimum(abs, Iterators.filter(!iszero, constant_lags); init = abs(dtmax))
         old_dtmax = abs(dtmax)
         dtmax = tdir * min(old_dtmax, min_lag)
         if min_lag < old_dtmax
@@ -702,7 +701,8 @@ function initialize_tstops_d_discontinuities_propagated(
         maxlag = tdir * (tf - t0)
         next_order = neutral ? order_discontinuity_t0 : order_discontinuity_t0 + 1
         for lag in constant_lags
-            if tdir * lag < maxlag
+            # a zero lag maps a discontinuity onto itself
+            if !iszero(lag) && tdir * lag < maxlag
                 t = tdir * (t0 + lag)
                 push!(tstops_propagated, t)
 

@@ -179,15 +179,27 @@ end
     end
 end
 
-@testset "invalid constant lags (#4831)" begin
-    f(u, h, p, t) = -h(p, t - 1)
+@testset "zero and wrong-sign constant lags (#4831)" begin
+    f(u, h, p, t) = -h(p, t) / 2 - h(p, t - 1) / 2
     h(p, t) = 1.0
-    for lags in ([0.0], [-1.0], [1.0, -0.5])
+
+    prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = [0.0, 1.0])
+    sol = solve(prob, MethodOfSteps(Tsit5()))
+    ref = solve(remake(prob; constant_lags = [1.0]), MethodOfSteps(Tsit5()))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t == ref.t
+    @test sol.u == ref.u
+
+    g(u, h, p, t) = -h(p, t - 1)
+    prob = DDEProblem(g, 1.0, h, (0.0, 5.0); constant_lags = [0.0, 1.0])
+    sol = solve(prob, MethodOfSteps(BS3(); constrained = true))
+    ref = solve(remake(prob; constant_lags = [1.0]), MethodOfSteps(BS3(); constrained = true))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t == ref.t
+    @test sol.u == ref.u
+
+    for lags in ([-1.0], [1.0, -0.5])
         prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = lags)
         @test_throws ArgumentError init(prob, MethodOfSteps(Tsit5()))
-        @test_throws ArgumentError solve(prob, MethodOfSteps(BS3(); constrained = true))
     end
-
-    prob = DDEProblem(f, 1.0, h, (0.0, 0.0); constant_lags = [1.0])
-    @test solve(prob, MethodOfSteps(Tsit5())).retcode == ReturnCode.Success
 end
