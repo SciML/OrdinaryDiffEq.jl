@@ -108,6 +108,25 @@ for n in (100, 600)
     @test unique(sol.alg_choice) == [1, stiffalg]
 end
 
+@testset "Default large sparse FBDF uses jac_prototype" begin
+    n = 600
+    dx = 1 / (n + 1)
+    function heat!(du, u, p, t)
+        @inbounds for i in eachindex(u)
+            du[i] = (
+                (i > 1 ? u[i - 1] : 0.0) - 2u[i] +
+                    (i < n ? u[i + 1] : 0.0)
+            ) / dx^2
+        end
+        return nothing
+    end
+    jac_prototype = sparse(Tridiagonal(ones(n - 1), ones(n), ones(n - 1)))
+    prob = ODEProblem(ODEFunction(heat!; jac_prototype), ones(n), (0.0, 0.05))
+
+    sol = solve(prob, DefaultODEAlgorithm(); abstol = 1.0e-10, reltol = 1.0e-8)
+    @test sol.stats.njacs > 0
+end
+
 function swaplinear(u, p, t)
     return [u[2], u[1]] .* p
 end
