@@ -152,9 +152,11 @@ function nonstiffchoice(reltol)
     return Int(x)
 end
 
-function stiffchoice(reltol, len, mass_matrix)
-    x = if len > MEDIUMSIZE
+function stiffchoice(reltol, len, mass_matrix, has_concrete_jac_prototype = false)
+    x = if len > MEDIUMSIZE && !has_concrete_jac_prototype
         DefaultSolverChoice.KrylovFBDF
+    elseif len > MEDIUMSIZE
+        DefaultSolverChoice.FBDF
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
     else
@@ -174,7 +176,10 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
     # Choose the starting method
     if AS.current == 0
         choice = if AS.stiffalgfirst || !_is_identity_massmatrix(integrator.f.mass_matrix)
-            stiffchoice(reltol, len, integrator.f.mass_matrix)
+            stiffchoice(
+                reltol, len, integrator.f.mass_matrix,
+                integrator.f.jac_prototype isa AbstractMatrix
+            )
         else
             nonstiffchoice(reltol)
         end
@@ -196,7 +201,10 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
     elseif (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
-        AS.current = stiffchoice(reltol, len, integrator.f.mass_matrix)
+        AS.current = stiffchoice(
+            reltol, len, integrator.f.mass_matrix,
+            integrator.f.jac_prototype isa AbstractMatrix
+        )
     elseif (AS.is_stiffalg && AS.count < -AS.maxnonstiffstep)
         integrator.dt = dt / AS.dtfac
         AS.is_stiffalg = false

@@ -91,8 +91,8 @@ function exrober(du, u, p, t)
 end
 
 for n in (100, 600)
-    stiffalg = n < 50 ? 4 : n < 500 ? 5 : 6
-    linsolve = n < 500 ? nothing : KrylovJL_GMRES()
+    stiffalg = n < 50 ? 4 : 5
+    linsolve = nothing
     jac_prototype = sparse(I(n + 3))
     jac_prototype[1:3, 1:3] .= 1.0
 
@@ -124,6 +124,7 @@ end
     prob = ODEProblem(ODEFunction(heat!; jac_prototype), ones(n), (0.0, 0.05))
 
     sol = solve(prob, DefaultODEAlgorithm(); abstol = 1.0e-10, reltol = 1.0e-8)
+    @test 5 in sol.alg_choice
     @test sol.stats.njacs > 0
 end
 

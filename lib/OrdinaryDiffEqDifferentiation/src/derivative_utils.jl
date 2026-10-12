@@ -1340,11 +1340,11 @@ function build_J_W(
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
                 alg.linsolve !== nothing &&
-                !LinearSolve.needs_concrete_A(alg.linsolve) &&
-                f.jac_prototype === nothing
+                !LinearSolve.needs_concrete_A(alg.linsolve)
         )
-        # Without a Jacobian prototype, assume that a dense Jacobian is a bad idea.
-        # This can be overridden with concrete_jac.
+        # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
+        # Jacobian is a bad idea and create a fully matrix-free solver. This can
+        # be overridden with concrete_jac.
         jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
         J = jacvec

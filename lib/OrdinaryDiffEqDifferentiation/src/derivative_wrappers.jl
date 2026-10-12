@@ -268,9 +268,10 @@ function build_jac_config(
             (
             (
                 concrete_jac(alg) === nothing && (
-                    !haslinsolve || alg.linsolve === nothing ||
-                        LinearSolve.needs_concrete_A(alg.linsolve) ||
-                        is_sparse_csc(f.jac_prototype)
+                    !haslinsolve || (
+                        haslinsolve &&
+                            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
+                    )
                 )
             ) ||
                 (concrete_jac(alg) !== nothing && concrete_jac(alg))
