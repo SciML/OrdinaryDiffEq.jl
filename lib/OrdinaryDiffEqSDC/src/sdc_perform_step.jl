@@ -199,11 +199,11 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         @.. broadcast = false nls.tmp = tmpm
         @.. broadcast = false nls.z = zk[m]
         (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
+        nls.γ != QΔ[m, m] && refactorize_next_solve!(nls)
         nls.γ = QΔ[m, m]
         nls.c = nodes[m]
         znode = nlsolve!(nls, integrator, cache, repeat_step)
-        cache.failed[m] = nlsolvefail(nls) &&
-            !sdc_sweep_converged(integrator, znode, zk[m], sweep)
+        cache.failed[m] = nlsolvefail(nls)
         @.. broadcast = false zk1[m] = znode
         @.. broadcast = false ubuf[m] = tmpm + QΔ[m, m] * znode
     end
@@ -215,12 +215,9 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
     return nothing
 end
 
-function sdc_sweep_converged(integrator, znode, zprev, sweep)
-    sweep == 1 && return false
-    (; abstol, reltol, internalnorm) = integrator.opts
-    (; uprev, t) = integrator
-    atmp = calculate_residuals(znode .- zprev, uprev, uprev, abstol, reltol, internalnorm, t)
-    return internalnorm(atmp, t) <= 1
+function refactorize_next_solve!(nls)
+    nls.status = Divergence
+    return nothing
 end
 
 @muladd function perform_step!(integrator, cache::SDCCache, repeat_step = false)
@@ -274,6 +271,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, sum(cache.nf))
         split && (integrator.stats.nf2 += sum(cache.nf2))
         if any(failed)
+            foreach(refactorize_next_solve!, cache.nlsolvers)
             integrator.force_stepfail = true
             return nothing
         end
@@ -355,11 +353,14 @@ end
                 nls.tmp = tmp
                 nls.z = zk[m]
                 (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
+                nls.γ != QΔ[m, m] && refactorize_next_solve!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
-                nlsolvefail(nls) &&
-                    !sdc_sweep_converged(integrator, znode, zk[m], sweep) && return
+                if nlsolvefail(nls)
+                    foreach(refactorize_next_solve!, nlsolvers)
+                    return
+                end
                 zk1[m] = znode
                 ulast = @.. broadcast = false tmp + QΔ[m, m] * znode
             end

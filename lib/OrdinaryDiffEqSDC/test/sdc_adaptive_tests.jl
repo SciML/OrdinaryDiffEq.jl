@@ -124,17 +124,18 @@ end
     end
 end
 
-@testset "SDC keeps going once the sweeps have converged" begin
+@testset "SDC refactorizes every node after a failed step" begin
     vdp!(du, u, μ, t) = (du[1] = u[2]; du[2] = μ * ((1 - u[1]^2) * u[2] - u[1]); nothing)
     vdp(u, μ, t) = [u[2], μ * ((1 - u[1]^2) * u[2] - u[1])]
     iip = ODEProblem(vdp!, [2.0, 0.0], (0.0, 2.0), 1000.0)
     oop = ODEProblem(vdp, [2.0, 0.0], (0.0, 2.0), 1000.0)
     for (prob, sweeper, K) in (
             (iip, SDCSweeper.LU, 12), (iip, SDCSweeper.LU, 16),
-            (iip, SDCSweeper.MIN_SR_S, 12), (oop, SDCSweeper.LU, 16),
+            (iip, SDCSweeper.MIN_SR_S, 12), (iip, SDCSweeper.MIN_SR_FLEX, 12),
+            (oop, SDCSweeper.LU, 16), (oop, SDCSweeper.MIN_SR_FLEX, 12),
         )
         alg = SDC(num_nodes = 5, num_sweeps = K, sweeper = sweeper)
-        sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+        sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6, maxiters = 10^4)
         @test SciMLBase.successful_retcode(sol)
         @test sol.u[end][1] ≈ 1.7632345402 rtol = 1.0e-4
     end
