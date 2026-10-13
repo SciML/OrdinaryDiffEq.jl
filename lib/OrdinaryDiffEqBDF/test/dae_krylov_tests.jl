@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, LinearSolve, Test
+using LinearAlgebra: I
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 using SciMLBase: DAEProblem, successful_retcode
 
@@ -38,4 +39,14 @@ end
         @test sol.stats.njacs == 0
         @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-6
     end
+
+    # User `precs` replace the residual weights, so the weighted Krylov `abstol` must not
+    # be applied to the unweighted solve. The tolerance is looser because an unweighted
+    # solve stops at LinearSolve's default `abstol`, as it does on the ODE path.
+    opts = (; abstol = 1.0e-6, reltol = 1.0e-6)
+    reference = solve(prob, DFBDF(); opts...)
+    linsolve = KrylovJL_GMRES(; precs = Returns((I, I)))
+    sol = solve(prob, DFBDF(; linsolve); opts...)
+    @test successful_retcode(sol)
+    @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-4
 end

@@ -237,8 +237,8 @@ end
 
 Callable `(Jv, v, u, p, t)` applying the DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)` to `v`
 as one pushforward of a `DAENewtonResidual`. The linearization point `(du, u0)` and `cj`
-are held in place and set by `set_dae_jvp_point!` and `set_dae_jvp_cj!`; `u0` is a copy of
-the point so that a backend perturbing `u` in place cannot move it.
+are held in place and set by `update_coefficients!(J, u, p, t; du)` and `set_dae_jvp_cj!`;
+`u0` is a copy of the point so that a backend perturbing `u` in place cannot move it.
 """
 struct DAEPushforward{F, R, U, C, B, P}
     residual::F
@@ -301,15 +301,9 @@ function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff)
     return JVPCache{eltype(u)}(op, f, res, u, p, t, 0, 0, true)
 end
 
-"""
-    set_dae_jvp_point!(J::JVPCache, du, u, p, t)
-
-Linearize the DAE Newton matrix of `dae_jvp_cache` at `(du, u)`.
-"""
-function set_dae_jvp_point!(J::JVPCache, du, u, p, t)
-    copyto!(J.jvp_op.du, du)
-    copyto!(J.jvp_op.u0, u)
-    update_coefficients!(J, u, p, t)
+function set_dae_point!(op::DAEPushforward, du, u)
+    copyto!(op.du, du)
+    copyto!(op.u0, u)
     return nothing
 end
 
@@ -334,7 +328,14 @@ function prepare_jvp(f::SciMLBase.AbstractDiffEqFunction, du, u, p, t, autodiff)
     return DIPushforward(f, du, autodiff, di_prep)
 end
 
-function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t)
+"""
+    update_coefficients!(J::JVPCache, u, p, t; du = nothing)
+
+Move the linearization point to `u`. For a `dae_jvp_cache` operator, `du` is the `du` paired
+with `u`, and the DAE Newton matrix is linearized at `(du, u)`.
+"""
+function SciMLOperators.update_coefficients!(J::JVPCache, u, p, t; du = nothing)
+    du === nothing || set_dae_point!(J.jvp_op, du, u)
     J.u = u
     J.p = p
     J.t = t

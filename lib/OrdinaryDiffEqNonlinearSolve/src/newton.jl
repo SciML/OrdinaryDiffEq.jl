@@ -779,7 +779,7 @@ end
     # update W
     if isdae && W isa JVPCache
         # `_compute_rhs!` left this iterate's `du` in `ztmp`.
-        set_dae_jvp_point!(W, ztmp, ustep, p, tstep)
+        update_coefficients!(W, ustep, p, tstep; du = ztmp)
     elseif W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator

@@ -946,8 +946,10 @@ function build_nlsolver(
             # is a small fraction of the Newton convergence threshold `κ`. A DAE residual
             # is evaluated at full precision, so a solve held only to `reltol` of a late,
             # tiny residual stalls at the roundoff floor `eps * cj * |dz|` and reports
-            # failure, though its `dz` is accurate far beyond what Newton needs.
-            linabstol = isdae && J isa JVPCache ?
+            # failure, though its `dz` is accurate far beyond what Newton needs. `κ` is a
+            # weighted norm, so this applies only when `wrapprecs` adds the weights.
+            weighted = hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
+            linabstol = isdae && J isa JVPCache && weighted ?
                 (; abstol = convert(uTolType, nlalg.κ / 20 * sqrt(length(u)))) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
