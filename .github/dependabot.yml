@@ -14,7 +14,6 @@ updates:
       - "/test/Downstream"
       - "/test/ODEInterfaceRegression"
       - "/test/gpu"
-      - "/test/modelingtoolkit"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
