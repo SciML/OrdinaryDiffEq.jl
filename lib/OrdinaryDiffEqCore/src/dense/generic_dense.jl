@@ -140,6 +140,14 @@ end
     return _searchsortedlast(v, x, lo, forward)
 end
 
+# Collapse :left zero-width duplicated knots at t to i₋ (pre-jump); skip when t ≠ knot (past-end).
+@inline function _collapse_left_duplicate_knot(i₋::Integer, i₊::Integer, ts, t)
+    if i₋ == i₊ || @inbounds(ts[i₋] != ts[i₊]) || t != @inbounds(ts[i₋])
+        return (i₋, i₊)
+    end
+    return (i₋, i₋)
+end
+
 """
     ode_addsteps!(k, integrator, ...)
     ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false, allow_calc_end = true, force_calc_end = false)
@@ -891,10 +899,10 @@ function ode_interpolation(
         t = tvals[j]
         (i₋, i₊) = i₋₊ref[]
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -957,10 +965,10 @@ function ode_interpolation!(
         t = tvals[j]
 
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -1205,10 +1213,10 @@ function ode_interpolation(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
@@ -1328,10 +1336,10 @@ function ode_interpolation!(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
