@@ -8,6 +8,7 @@ function activate_qa_env()
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
+    @time @safetestset "Native mass-action leaping" include("massaction.jl")
     @time @safetestset "Module loads and constructors" begin
         using StochasticDiffEqLeaping
         using Test

@@ -40,42 +40,13 @@ end
 """
     CaoTauLeaping()
 
-**CaoTauLeaping: Cao's Adaptive Tau-Leaping Method (Jump-Diffusion)**
+Tau leaping with a controller intended for Cao's adaptive step selection.
+The adaptive step-selection calculation is currently incomplete. Use
+`solve(prob, CaoTauLeaping(); dt, adaptive = false)` for fixed steps, or
+[`TauLeaping`](@ref) for implemented adaptive stepping.
 
-Advanced tau-leaping method with adaptive tau selection and improved error control.
-
-## Method Properties
-
-  - **Problem type**: Jump-diffusion processes
-  - **Approach**: Adaptive tau selection with error control
-  - **Time stepping**: Adaptive tau based on error estimates
-  - **Accuracy**: Superior to basic tau-leaping
-
-## When to Use
-
-  - Production jump-diffusion simulations requiring reliability
-  - When adaptive tau selection is needed
-  - Problems where basic TauLeaping gives poor accuracy
-  - Chemical reaction networks requiring precise control
-
-## Algorithm Features
-
-  - Adaptive tau selection based on error estimates
-  - Better stability and accuracy than basic tau-leaping
-  - Automatic step size control
-  - More sophisticated error estimation
-
-## Tau Selection
-
-Automatically adjusts tau based on:
-
-  - Local error estimates
-  - Jump rate variations
-  - Solution stability requirements
-
-## References
-
-  - Cao, Y., Gillespie, D.T., Petzold, L.R., "Efficient step size selection for the tau-leaping method"
+Accepts mass-action kinetics or a `RegularJump` with general rate and update
+functions.
 """
 @kwdef struct CaoTauLeaping{QT} <: StochasticDiffEqJumpAdaptiveAlgorithm
     gamma::QT = 9 // 10

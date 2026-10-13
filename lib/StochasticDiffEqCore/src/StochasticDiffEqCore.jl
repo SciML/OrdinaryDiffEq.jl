@@ -159,7 +159,7 @@ export resize_noise!, fill_new_noise_caches!,
 export _z_prototype, concrete_prob, _resolve_rng, _sde_init
 
 # Export TauLeapingDrift for Jump subpackage
-export TauLeapingDrift
+export TauLeapingDrift, jump_noise_data
 
 # General functions
 export solve, init, solve!, step!

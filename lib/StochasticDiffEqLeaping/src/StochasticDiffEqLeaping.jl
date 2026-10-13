@@ -35,6 +35,7 @@ import OrdinaryDiffEqNonlinearSolve
 
 include("algorithms.jl")
 include("alg_utils.jl")
+include("massaction.jl")
 include("stepsize_controllers.jl")
 include("integrator_utils.jl")
 include("caches/tau_caches.jl")
