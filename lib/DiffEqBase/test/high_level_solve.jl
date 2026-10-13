@@ -91,14 +91,20 @@ despecialized_solved, despecialized_stage = solve(
     despecialized_default_problem; wrap = Val(false)
 )
 @test despecialized_stage === :solve
-@test despecialized_solved !== despecialized_default_problem
-@test despecialized_solved.f === despecialized_default_problem.f
-@test despecialized_solved.u0 == despecialized_default_problem.u0
-@test despecialized_solved.tspan == despecialized_default_problem.tspan
-@test despecialized_solved.kwargs[:callback] isa
-    SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
-@test isempty(despecialized_solved.kwargs[:callback].continuous_callbacks)
-@test isempty(despecialized_solved.kwargs[:callback].discrete_callbacks)
+# Callback type erasure is only enabled on Julia >= 1.12 (see `_erases_callback_types`).
+if DiffEqBase._erases_callback_types(despecialized_default_problem)
+    @test despecialized_solved !== despecialized_default_problem
+    @test despecialized_solved.f === despecialized_default_problem.f
+    @test despecialized_solved.u0 == despecialized_default_problem.u0
+    @test despecialized_solved.tspan == despecialized_default_problem.tspan
+    @test despecialized_solved.kwargs[:callback] isa
+        SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
+    @test isempty(despecialized_solved.kwargs[:callback].continuous_callbacks)
+    @test isempty(despecialized_solved.kwargs[:callback].discrete_callbacks)
+else
+    @test VERSION < v"1.12"
+    @test despecialized_solved === despecialized_default_problem
+end
 
 if VERSION >= v"1.12"
     # Callback-free and callback-carrying Auto problems must share one concrete
