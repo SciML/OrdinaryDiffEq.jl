@@ -104,3 +104,24 @@ for adaptivealg in (:RSwM1, :RSwM2, :RSwM3)
     @test 0.331 ∈ i.sol.t
     @test i.sol.u[end] ≈ i.W.curW atol = 1.0e-12
 end
+
+@testset "Fixed-step reinit after callback termination" begin
+    f(u, p, t) = [0.0, 1.0]
+    g(u, p, t) = [0.1, 0.0]
+    prob = SDEProblem(f, g, [1.0, 0.0], (0.0, 1.0))
+    level = Ref(0.0)
+    cb = ContinuousCallback((u, t, integrator) -> u[2] - level[], terminate!)
+    integrator = init(prob, EM(); dt = 0.01, callback = cb)
+
+    for stop in (0.4908, 0.0092, 0.0632)
+        level[] = stop
+        reinit!(integrator)
+        @test integrator.dt == 0.01
+        @test integrator.W.dt == 0.01
+
+        solve!(integrator)
+        @test integrator.sol.retcode == ReturnCode.Terminated
+        @test integrator.W.curt == integrator.t
+        @test all(isfinite, integrator.u)
+    end
+end
