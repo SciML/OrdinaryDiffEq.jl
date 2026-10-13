@@ -591,7 +591,9 @@ end
 
 # Called at the end of solution_endpoint_match_cur_integrator!: save final discretes.
 function finalize_endpoint!(integrator)
-    return SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
+    return if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
+        SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
+    end
 end
 
 # Want to extend loopfooter! for DDEIntegrator
