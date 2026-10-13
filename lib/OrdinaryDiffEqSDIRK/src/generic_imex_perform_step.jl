@@ -55,8 +55,29 @@ end
 @inline _mmmul(z, ::Nothing) = z
 @inline _mmmul(z, d) = d * z
 
-function _mmdiag(tab, mass_matrix)
-    return (mass_matrix === I || !tab.explicit_first_stage) ? nothing : diag(mass_matrix)
+# A SciMLOperators mass matrix may depend on `(u, p, t)`, so its diagonal is read at
+# the point each conversion belongs to: `(uprev, t)` for the first stage and
+# `(u, t + dt)` for the FSAL. The out-of-place `update_coefficients` leaves the
+# operator itself untouched, so the nonlinear solves keep their own updates.
+function _mmdiag(tab, mass_matrix, u, p, t)
+    (mass_matrix === I || !tab.explicit_first_stage) && return nothing
+    return _mmdiag_values(mass_matrix, u, p, t)
+end
+
+# The end-of-step diagonal. A plain matrix is constant, so the first-stage `mmd` is reused.
+_mmdiag_end(mmd, ::Union{UniformScaling, AbstractMatrix}, u, p, t) = mmd
+function _mmdiag_end(mmd, mass_matrix, u, p, t)
+    return mmd === nothing ? nothing : _mmdiag_values(mass_matrix, u, p, t)
+end
+
+# A scalar mass matrix (`λ * I`, or a SciMLOperators `ScalarOperator`, which reports
+# `axes(M) == ()`) has no `diag`; its diagonal is the scalar itself, which
+# broadcasts in `_mmdiv`/`_mmmul`.
+_mmdiag_values(mass_matrix::UniformScaling, u, p, t) = mass_matrix.λ
+_mmdiag_values(mass_matrix::AbstractMatrix, u, p, t) = diag(mass_matrix)
+function _mmdiag_values(mass_matrix, u, p, t)
+    M = update_coefficients(mass_matrix, u, p, t)
+    return axes(M) == () ? convert(Number, M) : diag(M)
 end
 
 # ===========================================================================
@@ -121,7 +142,7 @@ end
     markfirststage!(nlsolver)
 
     # ---------------- Stage 1 ----------------
-    mmd = _mmdiag(tab, integrator.f.mass_matrix)
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, integrator.uprev, p, integrator.t)
     if tab.explicit_first_stage
         if is_imex && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
@@ -1355,7 +1376,8 @@ end
         # `mmd === nothing` leaves the plain `z_s/dt`. Otherwise this feeds an
         # explicit first stage next step, which wants `f(u)`: `M z_s = dt f(u_s)`
         # and `u == u_s` when stiffly accurate, so scale by the diagonal.
-        @.. broadcast = false integrator.fsallast = _mmmul(zs[s], mmd) / dt
+        mmd_end = _mmdiag_end(mmd, integrator.f.mass_matrix, u, p, t + dt)
+        @.. broadcast = false integrator.fsallast = _mmmul(zs[s], mmd_end) / dt
     end
 
     # ---------------- :ie_dd2-specific DAE EEst tail ----------------
@@ -1431,7 +1453,7 @@ end
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
-    mmd = _mmdiag(tab, integrator.f.mass_matrix)
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, integrator.uprev, p, integrator.t)
     if tab.explicit_first_stage
         if is_imex
             z1 = dt .* _mmdiv.(f_impl(uprev, p, t), mmd)
@@ -2437,7 +2459,8 @@ end
         if mmd !== nothing
             # The ladder leaves `z_s/dt`, but this feeds an explicit first stage
             # next step, which wants `f(u)`. See `_perform_step_iip!` above.
-            integrator.fsallast = _mmmul.(integrator.fsallast, mmd)
+            mmd_end = _mmdiag_end(mmd, integrator.f.mass_matrix, u, p, t + dt)
+            integrator.fsallast = _mmmul.(integrator.fsallast, mmd_end)
         end
         integrator.k[1] = integrator.fsalfirst
         integrator.k[2] = integrator.fsallast
