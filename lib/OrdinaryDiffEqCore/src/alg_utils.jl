@@ -1028,14 +1028,13 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     return print(io, ")")
 end
 
-# Defaults in the current system: currently opt out DAEAlgorithms until complete
 """
-    default_linear_interpolation(alg, prob) -> Bool
+    default_linear_interpolation(prob, alg) -> Bool
 
 Return whether the solver should default to (cheaper) linear interpolation instead
-of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for DAEs,
-discrete problems, and RODE/SDE problems.
+of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for discrete
+problems and RODE/SDE problems.
 """
-default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
-# RODE/SDE always uses linear interpolation (no dense output)
-default_linear_interpolation(prob::SciMLBase.AbstractRODEProblem, alg) = true
+function default_linear_interpolation(prob, alg)
+    return prob isa DiscreteProblem || prob isa SciMLBase.AbstractRODEProblem
+end
