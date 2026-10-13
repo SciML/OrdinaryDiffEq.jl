@@ -318,6 +318,38 @@ function set_dae_jvp_cj!(J::JVPCache, cj)
     return nothing
 end
 
+"""
+    DAEWOperator(jvp, concrete_form)
+
+DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)` for a Krylov solve with `concrete_jac = true`.
+Products go matrix-free through `jvp`, a `dae_jvp_cache`, so the Krylov solve sees the
+exact matrix at each Newton iterate. `convert(AbstractMatrix, W)` returns `concrete_form`,
+the assembled `J_u + cj * J_du` that `calc_W!` refreshes whenever it forms a new `W`, for a
+`precs` to build a preconditioner from, as the ODE `WOperator` exposes its concrete form.
+"""
+struct DAEWOperator{T, JV <: JVPCache{T}, C <: AbstractMatrix} <:
+    SciMLOperators.AbstractSciMLOperator{T}
+    jvp::JV
+    _concrete_form::C
+end
+
+Base.size(W::DAEWOperator) = size(W.jvp)
+SciMLBase.isinplace(::DAEWOperator) = true
+ArrayInterface.can_setindex(::DAEWOperator) = false
+SciMLOperators.isconvertible(::DAEWOperator) = true
+Base.convert(::Type{AbstractMatrix}, W::DAEWOperator) = W._concrete_form
+
+function LinearAlgebra.mul!(Jv::AbstractArray, W::DAEWOperator, v::AbstractArray)
+    return LinearAlgebra.mul!(Jv, W.jvp, v)
+end
+
+function SciMLOperators.update_coefficients!(W::DAEWOperator, u, p, t; du = nothing)
+    return update_coefficients!(W.jvp, u, p, t; du)
+end
+
+set_dae_jvp_cj!(W::DAEWOperator, cj) = set_dae_jvp_cj!(W.jvp, cj)
+jvp_counter(W::DAEWOperator) = W.jvp
+
 function prepare_jvp(f::SciMLBase.AbstractDiffEqFunction, du, u, p, t, autodiff)
     SciMLBase.has_jvp(f) && return f.jvp
     autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff

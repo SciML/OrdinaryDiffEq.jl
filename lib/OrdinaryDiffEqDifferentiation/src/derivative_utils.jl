@@ -894,9 +894,18 @@ function calc_W!(
     end
 
     # calculate W
-    if isdae && W isa JVPCache
-        # Matrix-free: compute_step! sets the point at each Newton iterate.
-        new_W && set_dae_jvp_cj!(W, dae_cj(nlsolver, integrator))
+    if isdae && W isa Union{JVPCache, DAEWOperator}
+        # Matrix-free: compute_step! sets the point at each Newton iterate. A
+        # `DAEWOperator` also keeps its concrete form current for `precs`.
+        if W isa DAEWOperator && new_jac
+            calc_J_dae!(J, lcache.dae_jacobians.J_du, integrator, lcache)
+        end
+        if new_W
+            cj = dae_cj(nlsolver, integrator)
+            set_dae_jvp_cj!(W, cj)
+            W isa DAEWOperator &&
+                dae_jacobian2W!(W._concrete_form, J, lcache.dae_jacobians.J_du, cj)
+        end
     elseif W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
@@ -1386,6 +1395,21 @@ function build_J_W(
             # producing the same concrete type as calc_W's
             # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
             StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
+        elseif f isa DAEFunction
+            # The concrete form holds placeholders until `calc_W!` forms the first `W`,
+            # and `precs` sees them once, when the linear cache is initialized. A DAE has
+            # no mass matrix to seed them from, so a sparse pattern gets distinct
+            # irrational values: those are nonsingular whenever the pattern is
+            # structurally nonsingular, as an index-1 Newton matrix is, where ones on the
+            # pattern can be singular.
+            concrete_form = if is_sparse(J)
+                nz = length(get_nzval(J))
+                set_all_nzval!(copy(J), sqrt.(eltype(J).(1:nz) .+ one(eltype(J)) / 2))
+            else
+                copyto!(similar(J), I)
+            end
+            jvp = dae_jvp_cache(f, u, p, t; autodiff = alg_autodiff(alg))
+            DAEWOperator(jvp, concrete_form)
         else
             jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 

@@ -777,7 +777,9 @@ end
     end
 
     # update W
-    if isdae && W isa JVPCache
+    if isdae && W isa AbstractSciMLOperator
+        # A DAE `W` is an operator only on the Krylov path, where it is applied matrix-free
+        # (a `JVPCache`, or a `DAEWOperator` under `concrete_jac = true`).
         # `_compute_rhs!` left this iterate's `du` in `ztmp`.
         update_coefficients!(W, ustep, p, tstep; du = ztmp)
     elseif W isa Union{WOperator, StaticWOperator}

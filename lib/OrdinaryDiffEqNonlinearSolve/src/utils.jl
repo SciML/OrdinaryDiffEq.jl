@@ -961,20 +961,23 @@ function build_nlsolver(
             # is evaluated at full precision, so a solve held only to `reltol` of a late,
             # tiny residual stalls at the roundoff floor `eps * cj * |dz|` and reports
             # failure, though its `dz` is accurate far beyond what Newton needs. `κ` is a
-            # weighted norm, so this applies only when `wrapprecs` adds the weights.
-            weighted = hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
-            linabstol = isdae && J isa JVPCache && weighted ?
+            # weighted norm, so this applies only when `wrapprecs` added the weights, by
+            # default or around a user `precs`.
+            weighted_linsolver = wrapprecs(linsolver, W, weight)
+            weighted = hasproperty(linsolver, :precs) &&
+                weighted_linsolver.precs !== linsolver.precs
+            linabstol = isdae && W isa AbstractSciMLOperator && weighted ?
                 (; abstol = convert(uTolType, nlalg.κ / 20 * sqrt(length(u)))) : (;)
             linsolve = init(
-                linprob, wrapprecs(linsolver, W, weight);
+                linprob, weighted_linsolver;
                 precs..., linabstol...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
             )
 
-            # Build separated DAE Jacobian cache if applicable. A matrix-free W never
-            # forms J_u or J_du.
+            # Build separated DAE Jacobian cache if applicable. Without `concrete_jac`, a
+            # matrix-free W never forms J_u or J_du.
             if isdae && !(J isa JVPCache)
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
