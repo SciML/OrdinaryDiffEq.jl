@@ -233,14 +233,16 @@ function (r::DAENewtonResidual)(res, x, du_buf, du, u0, cj, p, t)
 end
 
 """
-    DAEPushforward(residual, res, du, u0, cj, du_buf, backend, prep)
+    DAEPushforward(residual, res, du, u0, cj, du_buf, backend, prep, rowof)
 
 Callable `(Jv, v, u, p, t)` applying the DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)` to `v`
 as one pushforward of a `DAENewtonResidual`. The linearization point `(du, u0)` and `cj`
 are held in place and set by `update_coefficients!(J, u, p, t; du)` and `set_dae_jvp_cj!`;
 `u0` is a copy of the point so that a backend perturbing `u` in place cannot move it.
+`rowof` is the matrix's row matching from `dae_row_matching`, or `nothing`, for
+`wrapprecs` to build the default preconditioner from.
 """
-struct DAEPushforward{F, R, U, C, B, P}
+struct DAEPushforward{F, R, U, C, B, P, M}
     residual::F
     res::R
     du::U
@@ -249,6 +251,7 @@ struct DAEPushforward{F, R, U, C, B, P}
     du_buf::U
     backend::B
     prep::P
+    rowof::M
 end
 
 function dae_contexts(op::DAEPushforward, p, t)
@@ -274,32 +277,38 @@ function set_jvp_point!(op::DAEPushforward, u, p, t)
     )
     new_op = prep === op.prep ? op :
         DAEPushforward(
-            op.residual, op.res, op.du, op.u0, op.cj, op.du_buf, op.backend, prep
+            op.residual, op.res, op.du, op.u0, op.cj, op.du_buf, op.backend, prep, op.rowof
         )
     return new_op, base_evals_per_jvp_point(op.backend)
 end
 
 """
-    dae_jvp_cache(f::DAEFunction, u, p, t; autodiff) -> JVPCache
+    dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, rowof = nothing) -> JVPCache
 
 Matrix-free DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)`. A `DAEFunction` has no mass
 matrix, so the ODE form `WOperator(mass_matrix, γ, J)` does not apply; this operator is
-the whole `W`.
+the whole `W`. `rowof` is its row matching (see `DAEPushforward`).
 """
-function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff)
+function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, rowof = nothing)
     autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
     residual = DAENewtonResidual(f)
     res = similar(u)
     op = DAEPushforward(
-        residual, res, zero(u), copy(u), Ref(one(eltype(u))), similar(u), autodiff, nothing
+        residual, res, zero(u), copy(u), Ref(one(eltype(u))), similar(u), autodiff, nothing,
+        rowof
     )
     prep = DI.prepare_pushforward(
         residual, res, autodiff, u, (u,), dae_contexts(op, p, t)...
     )
-    op = DAEPushforward(residual, res, op.du, op.u0, op.cj, op.du_buf, autodiff, prep)
+    op = DAEPushforward(
+        residual, res, op.du, op.u0, op.cj, op.du_buf, autodiff, prep, rowof
+    )
     return JVPCache{eltype(u)}(op, f, res, u, p, t, 0, 0, true)
 end
+
+dae_rowof(J::JVPCache) = J.jvp_op isa DAEPushforward ? J.jvp_op.rowof : nothing
+dae_rowof(::Any) = nothing
 
 function set_dae_point!(op::DAEPushforward, du, u)
     copyto!(op.du, du)
