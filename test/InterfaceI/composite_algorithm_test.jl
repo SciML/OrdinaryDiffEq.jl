@@ -3,6 +3,7 @@ import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 using DiffEqDevTools, ADTypes
 using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqFIRK
+using OrdinaryDiffEqLowOrderRK
 import OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqCore: CompositeAlgorithm
 
@@ -137,4 +138,13 @@ sol = solve(prob_mm, DefaultODEAlgorithm(), callback = cb)
 
     integ = init(prob_stiff, AutoTsit5(RadauIIA5(autodiff = AutoFiniteDiff()); stiffalgfirst = true))
     @test @inferred(OrdinaryDiffEqCore.current_newton_iter(integ.cache)) isa Int
+end
+
+@testset "CompositeAlgorithm with 3+ algorithms (#4648)" begin
+    n = 3
+    choice3(integrator) = mod(integrator.iter, n) + 1
+    alg3 = CompositeAlgorithm((Tsit5(), Vern7(), BS3()), choice3)
+    sol3 = solve(prob_ode_linear, alg3)
+    @test sort(unique(sol3.alg_choice)) == [1, 2, 3]
+    @test sol3.retcode == ReturnCode.Success
 end

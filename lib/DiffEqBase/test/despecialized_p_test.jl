@@ -248,3 +248,64 @@ end
         collect_args, (wrapped, wrapped)
     )
 end
+
+# An algorithm that does not use ForwardDiff selects the single-signature wrapping path
+# of `promote_f`, the only path that wraps an `SDEFunction`.
+struct NonForwardDiffAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
+
+# The `promote_f` call of `get_concrete_problem`, without the `remake` that follows it.
+# SciMLBase's `remake` can restore the narrowed types of a re-widened function, which
+# would hide a non-idempotent `promote_f` from the problem-level checks.
+function promote_again(prob, alg)
+    f, _ = DiffEqBase._promote_f(
+        prob, prob.f, Val(SciMLBase.specialization(prob.f)), prob.u0, prob.p,
+        prob.tspan[1], Val(DiffEqBase._uses_forwarddiff(alg)),
+        DiffEqBase._forwarddiff_chunksize(alg)
+    )
+    return f
+end
+
+@testset "concretizing a concretized problem is idempotent" begin
+    p = DynamicP(0.5)
+    # Without `jac`/`tgrad` no `@set` in `promote_f` touches the function, so this
+    # covers the idempotency of the wrapping step on its own.
+    plain = ODEProblem(
+        ODEFunction{true, SciMLBase.AutoDespecialize}(dynamic_rhs!), [1.0], (0.0, 1.0), p
+    )
+    for alg in (nothing, NonForwardDiffAlgorithm())
+        once = concretize(plain, alg)
+        twice = concretize(once, alg)
+        @test SciMLBase.specialization(twice.f) === SciMLBase.AutoDespecialize
+        @test typeof(twice) === typeof(once)
+        @test typeof(promote_again(once, alg)) === typeof(once.f)
+    end
+
+    sde_p = DynamicSDEParameters(0.5, 0.1)
+    sde_f = SDEFunction{true, SciMLBase.AutoDespecialize}(
+        dynamic_sde_drift!, dynamic_sde_noise!
+    )
+    sde_prob = SDEProblem(sde_f, [1.0], (0.0, 1.0), sde_p)
+    once = concretize(sde_prob, NonForwardDiffAlgorithm())
+    @test once.f.f isa DiffEqBase.FunctionWrappersWrappers.FunctionWrappersWrapper
+    @test once.f.g isa DiffEqBase.FunctionWrappersWrappers.FunctionWrappersWrapper
+    twice = concretize(once, NonForwardDiffAlgorithm())
+    @test typeof(twice.f) === typeof(once.f)
+    @test typeof(twice) === typeof(once)
+    @test typeof(promote_again(once, NonForwardDiffAlgorithm())) === typeof(once.f)
+    du = zeros(1)
+    twice.f(du, [1.0], twice.p, 0.0)
+    @test du == [-0.5]
+    @test seen_sde_drift_parameter[] === DynamicSDEParameters
+
+    # Function types without an `f` field go through the same guard.
+    dynamical_f = DynamicalODEFunction{true, SciMLBase.AutoDespecialize}(
+        (dv, v, x, p, t) -> (dv .= -p.rate .* x; nothing),
+        (dx, v, x, p, t) -> (dx .= v; nothing)
+    )
+    dynamical = DynamicalODEProblem(dynamical_f, [0.0], [1.0], (0.0, 1.0), p)
+    for alg in (nothing, NonForwardDiffAlgorithm())
+        once = concretize(dynamical, alg)
+        @test once.p isa SciMLBase.DespecializedParameters
+        @test typeof(concretize(once, alg)) === typeof(once)
+    end
+end
