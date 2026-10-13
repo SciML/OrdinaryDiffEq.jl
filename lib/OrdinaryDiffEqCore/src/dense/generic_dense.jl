@@ -6,6 +6,48 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 @inline _get_val(vals::RecursiveArrayTools.AbstractVectorOfArray, j) = vals.u[j]
 @inline _set_val!(vals, j, v) = (vals[j] = v; nothing)
 @inline _set_val!(vals::RecursiveArrayTools.AbstractVectorOfArray, j, v) = (vals.u[j] = v; nothing)
+@inline _vals_indices(vals) = eachindex(vals)
+@inline _vals_indices(vals::RecursiveArrayTools.AbstractVectorOfArray) = eachindex(vals.u)
+
+@noinline function _throw_interpolant_length_mismatch(len_out, expected)
+    return throw(
+        DimensionMismatch(
+            "in-place interpolation `out` has length $len_out but expected length $expected"
+        )
+    )
+end
+
+@inline function _check_interpolant_idxs(u, idxs)
+    if idxs isa Union{Integer, AbstractVector{<:Integer}, AbstractVector{Bool}} &&
+            u isa AbstractArray
+        checkbounds(u, idxs)
+    end
+    return nothing
+end
+
+@inline _interpolant_idxs_count(idxs::AbstractVector{<:Integer}) = length(idxs)
+@inline _interpolant_idxs_count(idxs::AbstractVector{Bool}) = count(idxs)
+
+@inline function _check_interpolant_out_length(out, idxs)
+    if idxs isa Union{AbstractVector{<:Integer}, AbstractVector{Bool}}
+        n = _interpolant_idxs_count(idxs)
+        length(out) == n || _throw_interpolant_length_mismatch(length(out), n)
+    end
+    return nothing
+end
+
+@inline function _check_interpolant_idxs_out(u, out, idxs)
+    _check_interpolant_idxs(u, idxs)
+    if idxs === nothing
+        if !(u isa Number) && !(out isa Number)
+            length(out) == length(u) ||
+                _throw_interpolant_length_mismatch(length(out), length(u))
+        end
+    else
+        _check_interpolant_out_length(out, idxs)
+    end
+    return nothing
+end
 
 const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
 Derivative order too high for interpolation order. An interpolation derivative is
@@ -96,6 +138,14 @@ end
         ::Nothing, v::AbstractVector, x, lo::Integer, forward::Bool
     )
     return _searchsortedlast(v, x, lo, forward)
+end
+
+# Collapse :left zero-width duplicated knots at t to i₋ (pre-jump); skip when t ≠ knot (past-end).
+@inline function _collapse_left_duplicate_knot(i₋::Integer, i₊::Integer, ts, t)
+    if i₋ == i₊ || @inbounds(ts[i₋] != ts[i₊]) || t != @inbounds(ts[i₋])
+        return (i₋, i₊)
+    end
+    return (i₋, i₋)
 end
 
 """
@@ -300,6 +350,8 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs_out(integrator.uprev, val, idxs)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         ode_interpolant!(
             val, Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -520,6 +572,8 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs_out(integrator.uprev, val, idxs)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(
             val, Θ, integrator, integrator.cache.caches,
@@ -845,10 +899,10 @@ function ode_interpolation(
         t = tvals[j]
         (i₋, i₊) = i₋₊ref[]
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -879,6 +933,15 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    # `vals` slots are read only on the mutate-in-place path (array elements);
+    # on the `_set_val!` path they may be uninitialized (`Any`/`BigFloat` undef).
+    # Only the slots the main loop writes (`eachindex(tvals)`) are checked —
+    # `vals` may be longer than `tvals`, with untouched extra slots.
+    if idxs !== nothing && !isempty(vals) && _vals_eltype(vals) <: AbstractArray
+        for i in eachindex(tvals)
+            _check_interpolant_out_length(_get_val(vals, i), idxs)
+        end
+    end
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
 
@@ -897,14 +960,15 @@ function ode_interpolation!(
     else
         cache_i₊ = cache
     end
+    last_idxs_axes = nothing
     @inbounds for j in idx
         t = tvals[j]
 
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -912,6 +976,41 @@ function ode_interpolation!(
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+        # Mutate-in-place path (`vals` elements are arrays): read each slot and
+        # validate length. Replace-slot path (`_set_val!`): do not read the slot
+        # (may be uninitialized `Any`/`BigFloat`), but still validate idxs vs state.
+        ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
+        if _vals_eltype(vals) <: AbstractArray
+            out_j = _get_val(vals, j)
+            # `idxs` / full-state `out` validity depends only on the states' axes;
+            # skip the idxs rescan while consecutive intervals keep the axes already
+            # validated. For `idxs === nothing`, still O(1)-check each time's `out`
+            # length against those axes (not a rescan).
+            if ax != last_idxs_axes
+                _check_interpolant_idxs_out(timeseries[i₋], out_j, idxs)
+                _check_interpolant_idxs_out(timeseries[i₊], out_j, idxs)
+                last_idxs_axes = ax
+            elseif idxs === nothing
+                if !(timeseries[i₋] isa Number) && !(out_j isa Number)
+                    length(out_j) == length(timeseries[i₋]) ||
+                        _throw_interpolant_length_mismatch(
+                        length(out_j), length(timeseries[i₋])
+                    )
+                end
+                if !(timeseries[i₊] isa Number) && !(out_j isa Number)
+                    length(out_j) == length(timeseries[i₊]) ||
+                        _throw_interpolant_length_mismatch(
+                        length(out_j), length(timeseries[i₊])
+                    )
+                end
+            end
+        elseif idxs !== nothing
+            if ax != last_idxs_axes
+                _check_interpolant_idxs(timeseries[i₋], idxs)
+                _check_interpolant_idxs(timeseries[i₊], idxs)
+                last_idxs_axes = ax
+            end
+        end
 
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
@@ -1114,10 +1213,10 @@ function ode_interpolation(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
@@ -1233,13 +1332,14 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    _check_interpolant_out_length(out, idxs)
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
         i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
@@ -1247,6 +1347,8 @@ function ode_interpolation!(
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+    _check_interpolant_idxs_out(timeseries[i₋], out, idxs)
+    _check_interpolant_idxs_out(timeseries[i₊], out, idxs)
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
