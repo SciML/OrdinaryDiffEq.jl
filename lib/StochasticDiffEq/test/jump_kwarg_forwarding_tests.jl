@@ -69,6 +69,11 @@ noop_jump = ConstantRateJump(never_rate, noop_affect!)
         fire_count[] = 0
         sol = solve(jprob, EM(); dt = 0.01, tstops = [2.0])
         @test fire_count[] == 1
+
+        fire_count[] = 0
+        integrator = init(jprob, EM(); dt = 0.01, tstops = [2.0])
+        solve!(integrator)
+        @test fire_count[] == 1
     end
 
     @testset "callback merging between JumpProblem.kwargs and solve kwargs" begin

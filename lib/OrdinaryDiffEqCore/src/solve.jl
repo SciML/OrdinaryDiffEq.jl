@@ -1469,7 +1469,8 @@ function initialize_callbacks!(integrator, initialize_save = true)
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.derivative_discontinuity = false
 
-    return if initialize_save
+    return if initialize_save &&
+            (!isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes)
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
     end
 end

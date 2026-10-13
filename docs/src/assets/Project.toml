@@ -15,6 +15,7 @@ OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 OrdinaryDiffEqExplicitRK = "9286f039-9fbf-40e8-bf65-aa933bdc4db0"
+OrdinaryDiffEqExplicitTableaus = "3278f1b1-0f5c-4cde-98e0-ba5eb00db955"
 OrdinaryDiffEqFunctionMap = "d3585ca7-f5d3-4ba6-8057-292ed1abd90f"
 OrdinaryDiffEqExponentialRK = "e0540318-69ee-4070-8777-9e2de6de23de"
 OrdinaryDiffEqExtrapolation = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
@@ -70,6 +71,7 @@ OrdinaryDiffEqCore = {path = "../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqDefault = {path = "../lib/OrdinaryDiffEqDefault"}
 OrdinaryDiffEqDifferentiation = {path = "../lib/OrdinaryDiffEqDifferentiation"}
 OrdinaryDiffEqExplicitRK = {path = "../lib/OrdinaryDiffEqExplicitRK"}
+OrdinaryDiffEqExplicitTableaus = {path = "../lib/OrdinaryDiffEqExplicitTableaus"}
 OrdinaryDiffEqExtrapolation = {path = "../lib/OrdinaryDiffEqExtrapolation"}
 OrdinaryDiffEqFeagin = {path = "../lib/OrdinaryDiffEqFeagin"}
 OrdinaryDiffEqFunctionMap = {path = "../lib/OrdinaryDiffEqFunctionMap"}
@@ -126,6 +128,7 @@ OrdinaryDiffEqCore = "4.1"
 OrdinaryDiffEqDefault = "2.0.0"
 OrdinaryDiffEqDifferentiation = "3.3"
 OrdinaryDiffEqExplicitRK = "2.0.0"
+OrdinaryDiffEqExplicitTableaus = "2"
 OrdinaryDiffEqFunctionMap = "2"
 OrdinaryDiffEqExponentialRK = "2.0.0"
 OrdinaryDiffEqExtrapolation = "2.0.0"
