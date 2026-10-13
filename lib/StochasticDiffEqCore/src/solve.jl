@@ -127,11 +127,15 @@ function _z_prototype(alg, rand_prototype, iip::Bool, dt)
     return _z_prototype(alg, rand_prototype, iip)
 end
 
-function SciMLBase.__init(
-        _prob::JumpProblem,
-        alg::Union{StochasticDiffEqJumpAlgorithm, StochasticDiffEqJumpAdaptiveAlgorithm};
-        kwargs...
-    )
+# Separate methods (rather than one over the Union) so they are more specific than
+# JumpProcesses' `__init(::JumpProblem, ::Union{StochasticDiffEqAlgorithm,
+# StochasticDiffEqRODEAlgorithm})`, which merges `prob.kwargs` a second time after
+# `init_call` has already merged them.
+function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqAlgorithm; kwargs...)
+    return _sde_init(_prob, alg; kwargs...)
+end
+
+function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqRODEAlgorithm; kwargs...)
     return _sde_init(_prob, alg; kwargs...)
 end
 
@@ -254,10 +258,11 @@ function _sde_init(
 
     # ── SDE-specific validation ──────────────────────────────────────────
     if typeof(prob.f) <: Tuple
-        if any(mm != I for mm in prob.f.mass_matrix)
+        if any(!OrdinaryDiffEqCore._is_identity_massmatrix, prob.f.mass_matrix)
             error("This solver is not able to use mass matrices.")
         end
-    elseif prob isa SciMLBase.AbstractRODEProblem && prob.f.mass_matrix != I &&
+    elseif prob isa SciMLBase.AbstractRODEProblem &&
+            !OrdinaryDiffEqCore._is_identity_massmatrix(prob.f.mass_matrix) &&
             !alg_mass_matrix_compatible(alg)
         error("This solver is not able to use mass matrices.")
     end

@@ -138,8 +138,8 @@ end
         # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
         if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(algvar, fsallast, false) * invatol
+            # Divide in-place so vector abstol does not allocate a temporary reciprocal.
+            @.. atmp = ifelse(algvar, fsallast, false) / integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -239,8 +239,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if cache.algebraic_vars !== nothing
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
+            # Divide in-place so vector abstol does not allocate a temporary reciprocal.
+            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) / integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -319,9 +319,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
-                invatol
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -402,9 +401,10 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
-                invatol
+            # Also broadcasts ifelse over differential_vars (master used unbroadcasted
+            # ifelse(::BitVector, ...), which MethodErrors for any mass-matrix DAE).
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -882,8 +882,7 @@ end
         diff_vars = Int[]
     else
         n = length(uprev)
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
         has_alg = !isempty(alg_vars)
     end
 

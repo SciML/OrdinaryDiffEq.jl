@@ -3,8 +3,9 @@ module GlobalDiffEq
 using Reexport: @reexport
 @reexport using DiffEqBase
 
-import LinearAlgebra, OrdinaryDiffEqCore, OrdinaryDiffEqTsit5,
-    RecursiveArrayTools, Richardson, SciMLBase
+import ADTypes, DifferentiationInterface, ForwardDiff, LinearAlgebra,
+    OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, Random, RecursiveArrayTools,
+    Richardson, SciMLBase
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore: perform_step!, @cache
 import Accessors: @set
@@ -14,14 +15,31 @@ using PrecompileTools: @setup_workload, @compile_workload
 
 abstract type GlobalDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 
+# DiffEqBase gives despecialized problems an empty type-erased `callback` kwarg even
+# when the user passed none, so the presence of the key alone does not mean callbacks.
+_has_callbacks(kwargs) = haskey(kwargs, :callback) && !_is_empty_callback(kwargs[:callback])
+_is_empty_callback(::Nothing) = true
+function _is_empty_callback(cb::SciMLBase.CallbackSet)
+    return isempty(cb.continuous_callbacks) && isempty(cb.discrete_callbacks)
+end
+_is_empty_callback(cb) = false
+
 include("richardson.jl")
+include("companion.jl")
+include("estimation.jl")
+include("adjoint.jl")
 include("glee/tableaus.jl")
 include("glee/algorithms.jl")
 include("glee/solve.jl")
 include("glee/caches.jl")
 include("glee/perform_step.jl")
 
-export GlobalRichardson
+export GlobalRichardson, GlobalErrorEstimation
+export GlobalAdjoint, adjoint_error_estimate
+export GlobalAdjointScope, EndpointError, TrajectoryError
+export GlobalAdjointControl, ToleranceRefinement, StepGridRefinement
+export GlobalErrorEquation, DefectCorrection, ErrorTransport
+export GlobalErrorMode, InterpolatingMode, SimultaneousMode
 export GLEE23, GLEE24, GLEE35, MM5GEE, global_error_estimate
 
 @setup_workload begin

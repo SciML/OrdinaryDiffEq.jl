@@ -161,6 +161,10 @@ prob = ODEProblem(f, u0, tspan)
 
 sol = solve(prob, Tsit5(), callback = callback_single, adaptive = false, dt = 1 / 4)
 sol = solve(prob, Tsit5(), callback = callback_single, save_everystep = false)
+# Find the event time with a scalar `saveat` so that this solve and the `saveat` solves below
+# share one integrator type, and hence one compiled method. `@muladd` may fuse differently in
+# code compiled for different CPU targets (pkgimage vs JIT), which moves the root by ULPs.
+sol = solve(prob, Tsit5(), callback = callback_single, saveat = tspan[2])
 t = sol.t[end ÷ 2] # this is the callback time point
 sol = solve(prob, Tsit5(), callback = callback_single, saveat = t)
 @test count(x -> x == t, sol.t) == 2
@@ -193,6 +197,7 @@ callback_single = VectorContinuousCallback(
 
 sol = solve(prob, Tsit5(), callback = callback_single, adaptive = false, dt = 1 / 4)
 sol = solve(prob, Tsit5(), callback = callback_single, save_everystep = false)
+sol = solve(prob, Tsit5(), callback = callback_single, saveat = tspan[2])
 t = sol.t[end ÷ 2] # this is the callback time point
 sol = solve(prob, Tsit5(), callback = callback_single, saveat = t)
 @test count(x -> x == t, sol.t) == 2
@@ -395,7 +400,11 @@ sol = solve(prob, Tsit5(), callback = cb, adaptive = false, dt = 10.0)
 ode = ODEProblem((du, u, p, t) -> (@. du .= -u), ones(5), (0.0, 100.0))
 sol = solve(ode, AutoTsit5(Rosenbrock23()), callback = TerminateSteadyState())
 sol1 = solve(ode, Tsit5(), callback = TerminateSteadyState())
-@test sol.u == sol1.u
+# The two algorithms run different compiled code, where `@muladd` may fuse differently, so
+# the adaptive step sequences can drift apart at the rounding level (observed up to 7e-7
+# relative per step, against the solver's reltol of 1e-3).
+@test length(sol) == length(sol1)
+@test all(isapprox.(sol.u, sol1.u; rtol = 1.0e-5))
 
 # DiscreteCallback
 f = function (du, u, p, t)

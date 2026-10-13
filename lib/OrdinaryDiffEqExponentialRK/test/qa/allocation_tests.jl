@@ -27,7 +27,7 @@ using Test
     # Solvers that require SplitODEProblem
     exp_solvers = [
         LawsonEuler(), NorsettEuler(), ETD1(), ETDRK2(), ETDRK3(), ETDRK4(),
-        HochOst4(), ETD2(),
+        HochOst4(), Friedli(), ETD2(),
     ]
 
     # Exprb methods require regular ODEProblem with full function

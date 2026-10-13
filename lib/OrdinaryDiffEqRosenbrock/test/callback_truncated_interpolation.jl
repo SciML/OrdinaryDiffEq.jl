@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRosenbrock, DiffEqBase, LinearAlgebra, Test
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqNonlinearSolve, DiffEqBase, LinearAlgebra, Test
 
 function linear_dae!(du, u, p, t)
     du[1] = -1
@@ -30,6 +30,62 @@ callback = ContinuousCallback((u, t, integrator) -> u[1] - 0.3, terminate!)
             sol = solve(prob, alg; adaptive = false, dt = 1.0, callback)
             tmiddle = sol.t[end] / 2
             @test sol(tmiddle)[1] ≈ exp(tmiddle) rtol = 1.0e-2
+        end
+    end
+end
+
+
+@testset "Adaptive DAE callback interpolation" begin
+    function exponential_dae!(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[2] + u[1] - 1
+        return nothing
+    end
+    exponential_dae(u, p, t) = [-u[1], u[2] + u[1] - 1]
+    exact(t) = [exp(-t), 1 - exp(-t)]
+
+    @testset "$(nameof(typeof(alg))), inplace=$(f === exponential_dae!), terminate=$stop, saveat=$(saveat !== ())" for
+        alg in (Rodas4(), Rodas4P(), Rodas5P()),
+            f in (exponential_dae!, exponential_dae), stop in (true, false),
+            saveat in ((), range(0.0, stop ? 0.7 : 1.0; length = 101))
+        affect! = stop ? terminate! : integrator -> nothing
+        callback = ContinuousCallback((u, t, integrator) -> t - 0.7, affect!)
+        prob = ODEProblem(ODEFunction(f; mass_matrix), [1.0, 0.0], (0.0, 1.0))
+        sol = solve(prob, alg; callback, initializealg = CheckInit(), saveat)
+        @test sol.retcode == (stop ? SciMLBase.ReturnCode.Terminated : SciMLBase.ReturnCode.Success)
+        @test sol.t[end] ≈ (stop ? 0.7 : 1.0) atol = 1.0e-12
+        @test sol.u[end] ≈ exact(sol.t[end]) atol = 1.0e-4
+        for t in range(0.0, sol.t[end]; length = 101)
+            @test sol(t) ≈ exact(t) atol = 1.0e-2
+        end
+    end
+end
+
+# Nonlinear algebraic constraint so truncation leaves a residual that forces
+# BrownFullBasicInit to run (and previously overwrite uprev; #4485).
+@testset "BrownFullBasicInit saveat matches post-solve interpolant" begin
+    function cubic_dae!(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[2]^3 - u[1]
+        return nothing
+    end
+    callback = ContinuousCallback(
+        (u, t, integrator) -> u[1] - 0.2, terminate!;
+        save_positions = (true, false)
+    )
+    prob = ODEProblem(
+        ODEFunction(cubic_dae!; mass_matrix), [1.0, 1.0], (0.0, 10.0);
+        callback, initializealg = BrownFullBasicInit()
+    )
+    tgrid = range(0.0, 5.0; length = 101)
+    for alg in (Rodas4(), Rodas4P(), Rodas5P())
+        sol_saveat = solve(prob, alg; saveat = tgrid)
+        sol_dense = solve(prob, alg)
+        @test sol_saveat.retcode == SciMLBase.ReturnCode.Terminated
+        @test sol_dense.retcode == SciMLBase.ReturnCode.Terminated
+        @test sol_saveat.t[end] ≈ sol_dense.t[end] atol = 1.0e-10
+        for (t, u) in zip(sol_saveat.t, sol_saveat.u)
+            @test sol_dense(t) ≈ u atol = 1.0e-8
         end
     end
 end

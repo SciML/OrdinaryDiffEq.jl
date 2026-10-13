@@ -40,10 +40,10 @@ import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
 using ForwardDiff: Dual
-using RecursiveArrayTools: recursivecopy!
 import OrdinaryDiffEqCore
 
-import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator
+import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator,
+    mark_jacobian_updated!
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!,
     StatsDelta, charge_nf!, charge_nsolve!, charge_nnonliniter!, charge_nnonlinconvfail!,
     stats_sink, charge_njacs!, charge_nw!
@@ -59,7 +59,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     Convergence,
     Divergence, NLStatus,
     MethodType, error_constant,
-    alg_extrapolates, resize_J_W!, alg_autodiff,
+    resize_J_W!, alg_autodiff,
     find_algebraic_vars_eqs
 
 import OrdinaryDiffEqCore: _initialize_dae!,

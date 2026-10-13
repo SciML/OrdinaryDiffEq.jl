@@ -7,11 +7,11 @@ using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
 using OrdinaryDiffEqBDF: FBDF, DFBDF
 
-import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
+import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg,
+    _is_identity_massmatrix
 import ADTypes: AutoFiniteDiff
 import DiffEqBase
 import LinearSolve
-using LinearAlgebra: I
 using EnumX: EnumX
 
 import SciMLBase

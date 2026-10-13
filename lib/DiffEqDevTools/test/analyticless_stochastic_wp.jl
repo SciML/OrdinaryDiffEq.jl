@@ -35,6 +35,23 @@ setups = [
     )
     Dict(:alg => SRA1())
 ]
+
+threaded_prob = SDEProblem(
+    (du, u, p, t) -> (du .= u), (du, u, p, t) -> (du .= 0.1 .* u),
+    [1.0, 1.0], (0.0, 0.1)
+)
+threaded_setups = [
+    Dict(:alg => SRIW1()),
+    Dict(:alg => RKMil(), :dts => fill(0.001, length(reltols)), :adaptive => false),
+]
+threaded_wp = WorkPrecisionSet(
+    threaded_prob, abstols, reltols, threaded_setups, 0.01;
+    numruns = 1, numruns_error = max(32, Threads.nthreads()),
+    parallel_type = :threads, error_estimate = :final,
+    appxsol_setup = Dict(:alg => SRIW1(), :abstol => 1.0e-4, :reltol => 1.0e-4)
+)
+@test length(threaded_wp.wps) == 2
+
 _names = ["SRIW1", "EM", "RKMil", "SRIW1 Fixed", "SRA1 Fixed", "SRA1"]
 test_dt = 0.1
 wp = WorkPrecisionSet(

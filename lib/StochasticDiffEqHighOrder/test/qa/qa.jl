@@ -4,7 +4,6 @@ using JET
 run_qa(
     StochasticDiffEqHighOrder;
     reexports_allow = union(public_api_names(StochasticDiffEqCore), (:StochasticDiffEqCore,)),
-    jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (
         # `@..` is owned by FastBroadcast but reexported through DiffEqBase, and
