@@ -61,10 +61,10 @@ position_error = :final => [
 @test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 4.0 rtol = 1.0e-1
 
 # 2nd Order Tableaus
-sim = test_convergence(dts, prob, VerletLeapfrog(), dense_errors = true)
+sim = test_convergence(dts, prob, VerletLeapfrog(), dense_errors = true, dense = true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1.0e-1
-sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true)
+sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true, dense = true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1.0e-1
 sim = test_convergence(dts, prob, PseudoVerletLeapfrog(), dense_errors = true)
@@ -157,10 +157,10 @@ position_error = :final => [
 @test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 4.0 rtol = 1.0e-1
 
 # 2nd Order Tableaus
-sim = test_convergence(dts, prob, VerletLeapfrog(), dense_errors = true)
+sim = test_convergence(dts, prob, VerletLeapfrog(), dense_errors = true, dense = true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1.0e-1
-sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true)
+sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true, dense = true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1.0e-1
 sim = test_convergence(dts, prob, PseudoVerletLeapfrog(), dense_errors = true)
@@ -236,6 +236,6 @@ prob = DynamicalODEProblem(ff_v, v0, u0, (0.0, 5.0))
 
 dts = 1 .// 2 .^ (6:-1:3)
 # LeapfrogDriftKickDrift
-sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true)
+sim = test_convergence(dts, prob, LeapfrogDriftKickDrift(), dense_errors = true, dense = true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1.0e-1
