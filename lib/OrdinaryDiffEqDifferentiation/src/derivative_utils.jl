@@ -625,6 +625,8 @@ end
 @inline _use_allocating_sparse_W_path(W) =
     is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
 
+_update_sparse_diagonal!(W, λ, invdtgamma, J) = false
+
 
 """
     jacobian2W!(W, mass_matrix, dtgamma, J) -> nothing
@@ -655,7 +657,9 @@ function jacobian2W!(
             copyto!(W, J)
             idxs = diagind(W)
             λ = -_scalar_massmatrix_λ(mass_matrix)
-            if ArrayInterface.fast_scalar_indexing(J) &&
+            if is_sparse_csc(W) && _update_sparse_diagonal!(W, λ, invdtgamma, J)
+                nothing
+            elseif ArrayInterface.fast_scalar_indexing(J) &&
                     ArrayInterface.fast_scalar_indexing(W)
                 @inbounds for i in 1:size(J, 1)
                     W[i, i] = muladd(λ, invdtgamma, J[i, i])

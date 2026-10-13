@@ -1112,7 +1112,7 @@ function handle_starting_time_discontinuity!(integrator)
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
-    @inbounds while !isempty(integrator.opts.tstops)
+    while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first_tstop
             loopheader!(integrator)
@@ -1443,7 +1443,8 @@ function initialize_callbacks!(integrator, initialize_save = true)
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.derivative_discontinuity = false
 
-    return if initialize_save
+    return if initialize_save &&
+            (!isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes)
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
     end
 end

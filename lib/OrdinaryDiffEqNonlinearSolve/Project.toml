@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqNonlinearSolve"
 uuid = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "2.9.8"
+version = "2.9.9"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
@@ -39,6 +39,7 @@ OrdinaryDiffEqSDIRK = "2d112036-d095-4a1e-ab9a-08536f3ecdbf"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
+OrdinaryDiffEqPDIRK = "5dd0a6cf-3d4b-4314-aa06-06d4e299bc89"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
@@ -65,6 +66,7 @@ LinearAlgebra = "1.10"
 OrdinaryDiffEqDifferentiation = "3.10"
 OrdinaryDiffEqBDF = "2"
 OrdinaryDiffEqFIRK = "2"
+OrdinaryDiffEqPDIRK = "2"
 OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqSDIRK = "2.9"
 Statistics = "1.10.0"
@@ -89,4 +91,4 @@ SparseConnectivityTracer = "1"
 ConstructionBase = "1.5.8"
 
 [targets]
-test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
+test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
