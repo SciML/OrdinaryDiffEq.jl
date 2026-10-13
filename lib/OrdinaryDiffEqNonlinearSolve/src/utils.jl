@@ -942,16 +942,24 @@ function build_nlsolver(
             else
                 (;)
             end
+            # Inexact Newton, as in IDA: stop the Krylov solve once the weighted residual
+            # is a small fraction of the Newton convergence threshold `κ`. A DAE residual
+            # is evaluated at full precision, so a solve held only to `reltol` of a late,
+            # tiny residual stalls at the roundoff floor `eps * cj * |dz|` and reports
+            # failure, though its `dz` is accurate far beyond what Newton needs.
+            linabstol = isdae && J isa JVPCache ?
+                (; abstol = convert(uTolType, nlalg.κ / 20 * sqrt(length(u)))) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
-                precs...,
+                precs..., linabstol...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
             )
 
-            # Build separated DAE Jacobian cache if applicable
-            if isdae
+            # Build separated DAE Jacobian cache if applicable. A matrix-free W never
+            # forms J_u or J_du.
+            if isdae && !(J isa JVPCache)
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage

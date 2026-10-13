@@ -777,7 +777,10 @@ end
     end
 
     # update W
-    if W isa Union{WOperator, StaticWOperator}
+    if isdae && W isa JVPCache
+        # `_compute_rhs!` left this iterate's `du` in `ztmp`.
+        set_dae_jvp_point!(W, ztmp, ustep, p, tstep)
+    elseif W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
         # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
