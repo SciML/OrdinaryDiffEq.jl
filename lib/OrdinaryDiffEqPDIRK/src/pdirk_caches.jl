@@ -14,6 +14,19 @@ function SciMLBase.get_tmp_cache(integrator, ::PDIRK44, cache::PDIRK44Cache)
     return (first(cache.nlsolver).tmp, first(cache.nlsolver).z)
 end
 
+# Stage vectors and nested nlsolvers are not in `full_cache`.
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::PDIRK44Cache, i)
+    for x in Iterators.flatten((cache.k1, cache.k2))
+        resize!(x, i)
+    end
+    for nls in cache.nlsolver
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+        isnewton(nls) && (nls.cache.firstcall = true)
+    end
+    return nothing
+end
+
 struct PDIRK44ConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::TabType
