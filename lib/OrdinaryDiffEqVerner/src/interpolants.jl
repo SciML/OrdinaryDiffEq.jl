@@ -1,4 +1,4 @@
-RK_WITH_SPECIAL_INTERPOLATIONS = Union{
+const RK_WITH_SPECIAL_INTERPOLATIONS = Union{
     Vern6ConstantCache, Vern6Cache,
     Vern7ConstantCache, Vern7Cache,
     Vern8ConstantCache, Vern8Cache,

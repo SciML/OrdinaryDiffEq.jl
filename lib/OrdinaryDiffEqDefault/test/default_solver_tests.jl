@@ -240,3 +240,23 @@ end
     @test unique(sol.alg_choice) == choices
     @test inplace_matches_oop(sol)
 end
+
+# Regression: DefaultODEAlgorithm step! must be allocation-free after warm-up.
+@testset "DefaultODEAlgorithm step! allocation-free" begin
+    function lorenz_step_alloc!(du, u, p, t)
+        du[1] = 10 * (u[2] - u[1])
+        du[2] = u[1] * (28 - u[3]) - u[2]
+        du[3] = u[1] * u[2] - (8 / 3) * u[3]
+        return nothing
+    end
+    prob = ODEProblem(lorenz_step_alloc!, [1.0, 0.0, 0.0], (0.0, 100.0))
+    function default_step_bytes()
+        integ = init(prob, DefaultODEAlgorithm(); save_everystep = false)
+        for _ in 1:50
+            step!(integ)
+        end
+        @allocated step!(integ)
+        return @allocated step!(integ)
+    end
+    @test default_step_bytes() == 0
+end

@@ -23,13 +23,15 @@ Each sweep raises the order of the method by (at least) one until the order of
 the underlying collocation method is reached, so the accuracy is tuned by
 `num_sweeps` and `num_nodes` rather than by picking a different tableau.
 
-Adaptive. The embedded estimate is the difference between the step updates
+Adaptive whenever `num_sweeps > 0`. The embedded estimate is the difference between the step updates
 formed from the last two sweeps, which costs a handful of `axpy`s because both
 iterates are already in the cache.
 
 On a `SplitODEProblem` the sweep is semi-implicit: `f1` goes through `QΔ` and a
 nonlinear solve per node as above, while `f2` goes through the strictly lower
-triangular `explicit_sweeper` and is only ever evaluated at solved node values.",
+triangular `explicit_sweeper` and is only ever evaluated at solved node values.
+
+Dense output is the collocation polynomial through the final sweep's node values.",
     "SDC",
     "Spectral Deferred Correction method.",
     """@article{dutt2000spectral,

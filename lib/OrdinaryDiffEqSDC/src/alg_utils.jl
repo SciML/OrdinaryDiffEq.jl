@@ -33,6 +33,9 @@ end
 # one order lower until the collocation ceiling flattens both.
 alg_adaptive_order(alg::SDC) = max(1, alg_order(alg) - 1)
 
+# With no sweep there is no earlier step update to compare against.
+isadaptive(alg::SDC) = alg.num_sweeps > 0
+
 """
     sdc_validate_explicit(explicit_sweeper)
 
