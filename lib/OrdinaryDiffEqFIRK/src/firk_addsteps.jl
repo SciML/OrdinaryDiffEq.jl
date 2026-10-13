@@ -139,9 +139,7 @@ function _ode_addsteps!(integrator, cache::RadauIIA3Cache, repeat_step = false)
     αdt, βdt = α / dt, β / dt
     new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -(αdt + βdt * im))
         integrator.stats.nw += 1
     end
 
@@ -454,10 +452,8 @@ function _ode_addsteps!(integrator, cache::RadauIIA5Cache, repeat_step = false)
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -γdt)
+        firk_W!(W2, J, mass_matrix, -(αdt + βdt * im))
         integrator.stats.nw += 1
     end
 
@@ -946,11 +942,9 @@ function _ode_addsteps!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
     new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(α1dt + β1dt * im) * mass_matrix[Tuple(II)...] + J[II]
-            W3[II] = -(α2dt + β2dt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -γdt)
+        firk_W!(W2, J, mass_matrix, -(α1dt + β1dt * im))
+        firk_W!(W3, J, mass_matrix, -(α2dt + β2dt * im))
         integrator.stats.nw += 1
     end
 
@@ -1496,24 +1490,16 @@ function _ode_addsteps!(integrator, cache::AdaptiveRadauCache, repeat_step = fal
     #no new J
     new_jac = false
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -γdt)
         if !isthreaded(alg.threading)
-            @inbounds for II in CartesianIndices(J)
-                for i in 1:((num_stages - 1) ÷ 2)
-                    W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
-                end
+            for i in 1:((num_stages - 1) ÷ 2)
+                firk_W!(W2[i], J, mass_matrix, -(αdt[i] + βdt[i] * im))
             end
         else
-            let W1 = W1, W2 = W2, γdt = γdt, αdt = αdt, βdt = βdt,
-                    mass_matrix = mass_matrix, num_stages = num_stages, J = J
+            let W2 = W2, αdt = αdt, βdt = βdt, mass_matrix = mass_matrix, J = J
 
-                @inbounds @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
-                    for II in CartesianIndices(J)
-                        W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] +
-                            J[II]
-                    end
+                @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
+                    firk_W!(W2[i], J, mass_matrix, -(αdt[i] + βdt[i] * im))
                 end
             end
         end

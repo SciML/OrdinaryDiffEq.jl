@@ -1,9 +1,11 @@
 using OrdinaryDiffEqExplicitRK
-using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince
+using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince,
+    ExplicitRKConstantCache
 using OrdinaryDiffEqCore
 using DiffEqBase
 using Test
 import SciMLBase
+import JLArrays
 
 # ============================================================================
 # Test Problems
@@ -39,6 +41,24 @@ prob_ode_2Dlinear = ODEProblem(
         @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
+end
+
+@testset "Float32 in-place ExplicitRK" begin
+    function f32!(du, u, p, t)
+        du[1] = 1.01f0 * u[1]
+        return nothing
+    end
+    prob = ODEProblem(f32!, Float32[0.5], (0.0f0, 1.0f0))
+    sol = solve(prob, ExplicitRK())
+    @test SciMLBase.successful_retcode(sol)
+    @test eltype(sol.u[end]) === Float32
+    @test eltype(sol.t) === Float32
+end
+
+@testset "ExplicitRKConstantCache c eltype inference" begin
+    tab = constructDormandPrince(BigFloat)
+    cache = @inferred ExplicitRKConstantCache(tab, [1.0], Float64)
+    @test eltype(cache.c) === BigFloat
 end
 
 # ============================================================================
@@ -174,4 +194,39 @@ end
     integ2.sol(out, 0.0, Val{1})
     @test integ2.sol.k[1][1] ≈ [-1.0, -2.0]
     @test integ2.sol.k[1][2] ≈ [-1.0, -2.0]
+end
+
+@testset "fallback compute_stages! (>17 stages) on JLArray" begin
+    n = 19
+    A = zeros(n, n)
+    for i in 2:n, j in 1:(i - 1)
+        A[i, j] = 1 / (i - 1)
+    end
+    c = [0; fill(0.5, n - 1)]
+    α = zeros(n)
+    α[end] = 1.0
+    αEEst = zeros(n)
+    αEEst[end] = 0.5
+    αEEst[1] = -0.5
+    tab = DiffEqBase.ExplicitRKTableau(A, c, α, 2; αEEst, adaptiveorder = 1)
+    alg = ExplicitRK(tableau = tab)
+    f_jl!(du, u, p, t) = (du .= -0.5 .* u; nothing)
+
+    sol_cpu = solve(
+        ODEProblem(f_jl!, ones(10), (0.0, 1.0)), alg;
+        adaptive = false, dt = 0.1, dense = false,
+    )
+    @test SciMLBase.successful_retcode(sol_cpu)
+
+    JLArrays.allowscalar(false)
+    try
+        sol_jl = solve(
+            ODEProblem(f_jl!, JLArrays.JLVector(ones(10)), (0.0, 1.0)), alg;
+            adaptive = false, dt = 0.1, dense = false,
+        )
+        @test SciMLBase.successful_retcode(sol_jl)
+        @test Array(sol_jl.u[end]) == sol_cpu.u[end]
+    finally
+        JLArrays.allowscalar(true)
+    end
 end
