@@ -430,7 +430,7 @@ contract and must not be used by application code.
 """
 function du_cache(c::SRACache)
     return (
-        c.A0temp, c.B0temp, c.ftmp, c.gtmp, c.chi2, c.chi2, c.atemp,
+        c.A0temp, c.B0temp, c.ftmp, c.gtmp, c.chi2, c.atemp,
         c.btemp, c.E₁, c.E₁temp, c.E₂,
     )
 end

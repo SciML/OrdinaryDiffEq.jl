@@ -189,7 +189,7 @@ end
     if integrator.opts.adaptive
         du2 = integrator.f(K, p, t + dt)
         Ed = dt * (du2 - du1) / 2
-        En = W.dW .^ 3 .* ((du2 - L) / (integrator.sqdt)) .^ 2 / 6
+        En = W.dW .^ 3 .* ggprime .^ 2 / 6
 
         resids = calculate_residuals(
             Ed, En, uprev, u, integrator.opts.abstol,
@@ -251,7 +251,7 @@ end
         if dW isa Number || is_diagonal_noise(integrator.sol.prob)
             J = J .- 1 // 2 .* abs(dt)
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            J = J - UniformScaling(abs(dt) / 2)
         end
     end
 
@@ -321,10 +321,16 @@ end
 
     @.. mil_correction = zero(u)
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
-        if dW isa Number || is_diagonal_noise(integrator.sol.prob)
+        if dW isa Number
+            J -= abs(dt) / 2
+        elseif is_diagonal_noise(integrator.sol.prob)
             @.. J -= 1 // 2 * abs(dt)
+        elseif ArrayInterface.fast_scalar_indexing(J)
+            @inbounds for i in diagind(J)
+                J[i] -= abs(dt) / 2
+            end
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            view(J, diagind(J)) .-= abs(dt) / 2
         end
     end
 
