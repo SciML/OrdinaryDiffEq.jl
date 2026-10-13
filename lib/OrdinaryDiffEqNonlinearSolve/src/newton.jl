@@ -1057,6 +1057,7 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
+        dϕ0 < 0 || return dz
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
