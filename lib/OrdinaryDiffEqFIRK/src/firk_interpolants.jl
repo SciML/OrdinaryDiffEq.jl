@@ -1,8 +1,3 @@
-FIRK_WITH_INTERPOLATIONS = Union{
-    RadauIIA3ConstantCache, RadauIIA3Cache, RadauIIA5ConstantCache, RadauIIA5Cache,
-    RadauIIA9ConstantCache, RadauIIA9Cache, AdaptiveRadauConstantCache, AdaptiveRadauCache,
-}
-
 @muladd function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::Union{RadauIIA3ConstantCache, RadauIIA3Cache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars

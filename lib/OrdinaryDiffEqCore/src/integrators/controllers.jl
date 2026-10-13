@@ -1290,47 +1290,99 @@ function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache,
     return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
-@inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
+# Unrolled dispatch over the heterogeneous `caches` tuple. Runtime indexing
+# `caches[current]` is type-unstable and allocates on every composite / default
+# step (see `composite_ode_interpolant` and `DefaultCache` perform_step!).
+for (fname, extra_args) in (
+        (:accept_step_controller, ()),
+        (:stepsize_controller!, ()),
+        (:step_accept_controller!, (:q,)),
+        (:step_reject_controller!, ()),
+        (:post_newton_controller!, ()),
+    )
+    @eval begin
+        @generated function $fname(
+                integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm,
+                $(extra_args...)
+            ) where {T}
+            expr = Expr(:block)
+            for i in 1:length(T.types)
+                callexpr = Expr(
+                    :call, $(QuoteNode(fname)),
+                    :(integrator),
+                    :(@inbounds(cache.caches[$i])),
+                    :(@inbounds(alg.algs[$i])),
+                )
+                for a in $(QuoteNode(extra_args))
+                    push!(callexpr.args, a)
+                end
+                push!(
+                    expr.args,
+                    quote
+                        if integrator.cache.current == $i
+                            return $(callexpr)
+                        end
+                    end
+                )
+            end
+            push!(
+                expr.args,
+                quote
+                    throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+                end
+            )
+            return expr
+        end
+        @generated function $fname(
+                integrator, cache::CompositeControllerCache{T}, alg, $(extra_args...)
+            ) where {T}
+            expr = Expr(:block)
+            for i in 1:length(T.types)
+                callexpr = Expr(
+                    :call, $(QuoteNode(fname)),
+                    :(integrator),
+                    :(@inbounds(cache.caches[$i])),
+                    :(alg),
+                )
+                for a in $(QuoteNode(extra_args))
+                    push!(callexpr.args, a)
+                end
+                push!(
+                    expr.args,
+                    quote
+                        if integrator.cache.current == $i
+                            return $(callexpr)
+                        end
+                    end
+                )
+            end
+            push!(
+                expr.args,
+                quote
+                    throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+                end
+            )
+            return expr
+        end
+    end
 end
-@inline function accept_step_controller(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function accept_step_controller(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@inline function stepsize_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
-end
-@inline function stepsize_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function stepsize_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@inline function step_accept_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm, q)
-    current_idx = integrator.cache.current
-    return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]), q)
-end
-@inline function step_accept_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg, q)
+@inline function step_accept_controller!(integrator, cache::CompositeCache, alg, q)
     current_idx = integrator.cache.current
     return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), alg, q)
 end
-
-@inline function step_reject_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
-end
-@inline function step_reject_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function step_reject_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@inline function post_newton_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
-end
-@inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function post_newton_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
@@ -1340,9 +1392,25 @@ for accessor in (
         :get_gamma, :get_qsteady_min, :get_qsteady_max,
         :get_failfactor,
     )
-    @eval @inline function $accessor(integrator, cache::CompositeControllerCache)
-        current_idx = integrator.cache.current
-        return $accessor(integrator, @inbounds(cache.caches[current_idx]))
+    @eval @generated function $accessor(integrator, cache::CompositeControllerCache{T}) where {T}
+        expr = Expr(:block)
+        for i in 1:length(T.types)
+            push!(
+                expr.args,
+                quote
+                    if integrator.cache.current == $i
+                        return $($accessor)(integrator, @inbounds(cache.caches[$i]))
+                    end
+                end
+            )
+        end
+        push!(
+            expr.args,
+            quote
+                throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+            end
+        )
+        return expr
     end
 end
 
