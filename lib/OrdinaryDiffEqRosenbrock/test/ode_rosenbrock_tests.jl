@@ -618,3 +618,108 @@ end
     )
     @test SciMLBase.successful_retcode(sol)
 end
+
+# Regression test for issue #4598: the mass-matrix DAE error estimate scales the
+# algebraic-constraint residual by 1/abstol, which must work elementwise when
+# abstol is a vector. A vector abstol with equal entries must reproduce the
+# scalar-abstol trajectory bitwise. A non-uniform vector must not collapse to
+# inv(first(abstol)) (equal-entry tests alone cannot catch that).
+@testset "Vector abstol on mass-matrix DAEs (#4598)" begin
+    function rober_dae(du, u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+        du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+        du[3] = y₁ + y₂ + y₃ - 1
+        return nothing
+    end
+    function rober_dae(u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        return [
+            -k₁ * y₁ + k₃ * y₂ * y₃,
+            k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
+            y₁ + y₂ + y₃ - 1,
+        ]
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    u0 = [1.0, 0.0, 0.2]
+    p = (0.04, 3.0e7, 1.0e4)
+    abstol_vec = [1.0e-8, 1.0e-8, 1.0e-8]
+    # Tighter algebraic absolute tolerance: elementwise scaling changes the
+    # adaptive path vs equal-entry / scalar abstol (reviewer: Rosenbrock23
+    # ~213/1 vs ~211/0; Rodas5P ~181 vs ~112).
+    abstol_nu = [1.0e-8, 1.0e-8, 1.0e-12]
+
+    for prob in (
+            ODEProblem(ODEFunction{true}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
+            ODEProblem(ODEFunction{false}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
+        )
+        for Alg in (Rosenbrock23, Rodas5P)
+            sol_vec = solve(
+                prob, Alg(); abstol = abstol_vec, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            sol_scalar = solve(
+                prob, Alg(); abstol = 1.0e-8, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            @test SciMLBase.successful_retcode(sol_vec)
+            @test sol_vec.stats.naccept == sol_scalar.stats.naccept
+            @test sol_vec.stats.nreject == sol_scalar.stats.nreject
+            @test sol_vec.u[end] == sol_scalar.u[end]
+
+            sol_nu = solve(
+                prob, Alg(); abstol = abstol_nu, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            @test SciMLBase.successful_retcode(sol_nu)
+            @test (sol_nu.stats.naccept != sol_vec.stats.naccept) ||
+                (sol_nu.stats.nreject != sol_vec.stats.nreject)
+        end
+    end
+
+    # Hand-derived algebraic contribution after one Rosenbrock23 IIP step.
+    # perform_step! (adaptive path) overwrites cache.atmp with
+    # ifelse(algvar, fsallast, 0) ./ abstol, so atmp[3] must equal
+    # fsallast[3] / abstol_nu[3] — not fsallast[3] / abstol_nu[1]
+    # (the inv(first(abstol)) mistake). Use NoInit so the first residual is
+    # nonzero; the adaptive=false path skips this branch entirely.
+    prob_iip = ODEProblem(
+        ODEFunction{true}(rober_dae; mass_matrix = M), [1.0, 0.0, 0.5], (0.0, 1.0), p
+    )
+    integ = init(
+        prob_iip, Rosenbrock23();
+        abstol = abstol_nu, reltol = 1.0e-8,
+        adaptive = true, dt = 1.0e-4,
+        initializealg = SciMLBase.NoInit()
+    )
+    OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+    r_alg = integ.fsallast[3]
+    @test integ.cache.atmp[1] == 0
+    @test integ.cache.atmp[2] == 0
+    @test integ.cache.atmp[3] ≈ r_alg / abstol_nu[3]
+    @test integ.cache.atmp[3] != r_alg / abstol_nu[1]
+
+    # Rosenbrock32 must reject singular mass matrices (#4650), IIP and OOP.
+    dae_oop(u, p, t) = [-u[1], u[1] - u[2]]
+    function dae_iip(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[1] - u[2]
+        return nothing
+    end
+    M2 = Diagonal([1.0, 0.0])
+    for prob in (
+            ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
+            ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
+        )
+        @test_throws ArgumentError solve(prob, Rosenbrock32())
+    end
+    Mns = Diagonal([2.0, 1.0])
+    for prob in (
+            ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = Mns), [1.0, 1.0], (0.0, 1.0)),
+            ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = Mns), [1.0, 1.0], (0.0, 1.0)),
+        )
+        @test SciMLBase.successful_retcode(solve(prob, Rosenbrock32()))
+    end
+end
