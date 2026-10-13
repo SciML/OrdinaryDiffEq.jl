@@ -1628,22 +1628,35 @@ function perform_step!(
                 @.. broadcast = false linsolve_tmps[1] = fsalfirst
 
                 linsolve = cache.linsolve[1]
-                linres = dolinsolve(
-                    integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                    linu = _vec(k)
-                )
+
+                # `jacobian2W!` above overwrote W[1] in place, and the LU factors
+                # live in that same array, so the cached factorization must be
+                # invalidated by passing the new `A`.
+                if !repeat_step
+                    linres = dolinsolve(
+                        integrator, linsolve; A = W[1],
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k)
+                    )
+                else
+                    linres = dolinsolve(
+                        integrator, linsolve; A = nothing,
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k)
+                    )
+                end
 
                 integrator.stats.nsolve += 1
                 @.. broadcast = false u_temp1 = u_temp2 - k # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
                     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-                    @.. broadcast = false linsolve_tmps[1] = dt_int * k - (u_temp1 - u_temp2)
+                    # W is built for `dt_int`, so the residual is scaled the same
+                    # way as in the internal-discretisation loop above.
+                    @.. broadcast = false linsolve_tmps[1] = k - (u_temp1 - u_temp2) / dt_int
 
                     linsolve = cache.linsolve[1]
                     linres = dolinsolve(
-                        integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                        linu = _vec(k)
+                        integrator, linsolve; A = nothing,
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k)
                     )
 
                     integrator.stats.nsolve += 1

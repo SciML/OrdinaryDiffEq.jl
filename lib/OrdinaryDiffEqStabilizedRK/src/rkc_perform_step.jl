@@ -97,6 +97,7 @@ end
     (; k, tmp, uᵢ₋₁, atmp) = cache
     (; ms, fp1, fp2, recf) = cache.constantcache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
@@ -115,6 +116,7 @@ end
     uold, ucur, unext = tmp, uᵢ₋₁, u
     @.. broadcast = false uold = uprev
     @.. broadcast = false ucur = uprev + (dt * recf[ccache.start]) * fsalfirst
+    stage_limiter!(ucur, integrator, p, tᵢ₋₁)
     # for the second to the ms[ccache.mdeg] th stages
     for i in 2:(ccache.mdeg)
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
@@ -123,6 +125,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = dt * μ - ν * tᵢ₋₂ - κ * tᵢ₋₃
         @.. broadcast = false unext = (dt * μ) * k - ν * ucur - κ * uold
+        stage_limiter!(unext, integrator, p, tᵢ₋₁)
         if i < ccache.mdeg
             uold, ucur, unext = ucur, unext, uold
         end
@@ -143,11 +146,13 @@ end
     @.. broadcast = false e = -δt₂ * k
     c = value(sign(δt₁)) * integrator.opts.internalnorm(δt₁, t)
     tᵢ₋₁ += c
+    stage_limiter!(g1, integrator, p, tᵢ₋₁)
     f(k, g1, p, tᵢ₋₁)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     @.. broadcast = false e += δt₂ * k
     @.. broadcast = false u = g1 + δt₁ * k + e
+    stage_limiter!(u, integrator, p, t + dt)
 
     # error estimate
     if integrator.opts.adaptive
@@ -319,6 +324,7 @@ end
     (; uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k) = cache
     (; ms, fpa, fpb, fpbe, recf) = cache.constantcache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
@@ -337,6 +343,7 @@ end
     uold, ucur, unext = uᵢ₋₂, uᵢ₋₁, u
     @.. broadcast = false uold = uprev
     @.. broadcast = false ucur = uprev + (dt * recf[ccache.start]) * fsalfirst
+    stage_limiter!(ucur, integrator, p, tᵢ₋₁)
     # for the second to the ccache.mdeg th stages
     for i in 2:(ccache.mdeg)
         μ, κ = recf[ccache.start + (i - 2) * 2 + 1], recf[ccache.start + (i - 2) * 2 + 2]
@@ -345,6 +352,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         tᵢ₋₁ = (dt * μ) - ν * tᵢ₋₂ - κ * tᵢ₋₃
         @.. broadcast = false unext = (dt * μ) * k - ν * ucur - κ * uold
+        stage_limiter!(unext, integrator, p, tᵢ₋₁)
         if i < ccache.mdeg
             uold, ucur, unext = ucur, unext, uold
         end
@@ -391,6 +399,7 @@ end
     c₂ = a₂₁
     _c₂ = value(sign(c₂)) * integrator.opts.internalnorm(c₂, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₂
+    stage_limiter!(Y2, integrator, p, tᵢ₋₂)
     f(k, Y2, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false Y3 += a₃₂ * k
@@ -404,6 +413,7 @@ end
     c₃ = a₃₁ + a₃₂
     _c₃ = value(sign(c₃)) * integrator.opts.internalnorm(c₃, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₃
+    stage_limiter!(Y3, integrator, p, tᵢ₋₂)
     f(k, Y3, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false Y4 += a₄₃ * k
@@ -416,6 +426,7 @@ end
     c₄ = a₄₁ + a₄₂ + a₄₃
     _c₄ = value(sign(c₄)) * integrator.opts.internalnorm(c₄, t)
     tᵢ₋₂ = tᵢ₋₁ + _c₄
+    stage_limiter!(Y4, integrator, p, tᵢ₋₂)
     f(k, Y4, p, tᵢ₋₂)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false acc += B₄ * k
@@ -423,6 +434,7 @@ end
         @.. broadcast = false tmp += B̂₄ * k
     end
 
+    stage_limiter!(acc, integrator, p, t + dt)
     f(k, acc, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -544,6 +556,7 @@ end
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step = false)
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; k, tmp, gprev, atmp) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     maybe_maxeig!(integrator, cache, alg)
     T = typeof(one(t))
@@ -568,6 +581,7 @@ end
     @.. broadcast = false ucur = uprev + dt * μs * fsalfirst
     th2 = zero(T)
     th1 = μs
+    stage_limiter!(ucur, integrator, p, t + dt * th1)
     z1 = w0
     z2 = one(T)
     dz1 = one(T)
@@ -590,6 +604,7 @@ end
         @.. broadcast = false unext = μ * ucur + ν * uold + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (T(1) - νs)
+        stage_limiter!(unext, integrator, p, t + dt * th)
         if (iter < mdeg)
             uold, ucur, unext = ucur, unext, uold
             th2 = th1
@@ -724,6 +739,7 @@ end
     (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
     (; ms, Cᵤ, Cₑ) = cache.constantcache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -759,6 +775,7 @@ end
                 end
                 q = st ÷ internal_deg
                 r = tᵢ + α * (st^2 + q * internal_deg^2) * hᵢ
+                stage_limiter!(uᵢ, integrator, p, r)
                 @.. broadcast = false Sᵢ = Sᵢ + (cache.constantcache.Bᵢ[start + st]) * uᵢ
                 if st < mdeg
                     @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
@@ -768,6 +785,7 @@ end
 
             if j < i
                 tᵢ = tᵢ + hᵢ
+                stage_limiter!(Sᵢ, integrator, p, tᵢ)
                 @.. broadcast = false uᵢ₋₁ = Sᵢ
             end
         end
@@ -777,6 +795,7 @@ end
     end
 
     @.. broadcast = false u = u / 6
+    stage_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false tmp = tmp / 6
@@ -889,6 +908,7 @@ end
     (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
     (; ms, Cᵤ, Cₑ, Bᵢ) = cache.constantcache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
@@ -924,6 +944,7 @@ end
                 end
                 q = st ÷ internal_deg
                 r = tᵢ + α * (st^2 + q * internal_deg^2) * hᵢ
+                stage_limiter!(uᵢ, integrator, p, r)
                 @.. broadcast = false Sᵢ = Sᵢ + (Bᵢ[start + st]) * uᵢ
                 if st < mdeg
                     @.. broadcast = false uᵢ₋₂ = uᵢ₋₁
@@ -933,6 +954,7 @@ end
 
             if j < i
                 tᵢ = tᵢ + hᵢ
+                stage_limiter!(Sᵢ, integrator, p, tᵢ)
                 @.. broadcast = false uᵢ₋₁ = Sᵢ
             end
         end
@@ -942,6 +964,7 @@ end
     end
 
     @.. broadcast = false u = u / 24
+    stage_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast = false tmp = tmp / 24
@@ -1040,6 +1063,7 @@ end
     (; uᵢ₋₁, tmp, Sᵢ, atmp, k) = cache
     (; ms, Bᵢ) = cache.constantcache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     T = typeof(one(t))
@@ -1062,6 +1086,7 @@ end
         f(k, uᵢ₋₁, p, t + ((i - 1) * internal_deg^2) * α * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = uᵢ₋₁ + α * dt * k
+        stage_limiter!(u, integrator, p, t + (1 + (i - 1) * internal_deg^2) * α * dt)
         @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + (i - 1) * internal_deg + 1] * u
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
@@ -1069,6 +1094,7 @@ end
             f(k, uᵢ₋₁, p, t + ((j - 1)^2 + (i - 1) * internal_deg^2) * α * dt)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. broadcast = false u = 2 * uᵢ₋₁ - tmp + 2 * α * dt * k
+            stage_limiter!(u, integrator, p, t + (j^2 + (i - 1) * internal_deg^2) * α * dt)
             @.. broadcast = false Sᵢ = Sᵢ + Bᵢ[start + j + (i - 1) * internal_deg] * u
             if j * i < mdeg
                 @.. broadcast = false tmp = uᵢ₋₁
@@ -1077,6 +1103,7 @@ end
         end
     end
     @.. broadcast = false u = Sᵢ
+    stage_limiter!(u, integrator, p, t + dt)
     f(k, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -1192,6 +1219,7 @@ end
 @muladd function perform_step!(integrator, cache::TSRKC2Cache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
     (; k, tmp, gprev, atmp, constantcache) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
 
     T = typeof(one(t))
 
@@ -1218,6 +1246,7 @@ end
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
     th2 = zero(T)
     th1 = μs
+    stage_limiter!(gprev, integrator, p, t + dt * th1)
     z1 = w0
     z2 = one(T)
     z = T(2) * w0 * z1 - z2
@@ -1231,6 +1260,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μ * gprev + ν * tmp + dt * μs * k
         th = μ * th1 + ν * th2 + μs
+        stage_limiter!(u, integrator, p, t + dt * th)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
@@ -1245,6 +1275,7 @@ end
     g = (T(1) + q) * tsw0 / (q * tsw0 + w1 * dtsw0)
     μ = T(1) - g
     @.. broadcast = false u = μ * uprev2 + g * u
+    stage_limiter!(u, integrator, p, t + dt)
 
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1416,6 +1447,7 @@ end
 @muladd function perform_step!(integrator, cache::TSRKC3Cache, repeat_step = false)
     (; t, tprev, dt, uprev, u, f, p, fsalfirst, uprev2) = integrator
     (; k, tmp, gprev, atmp, constantcache) = cache
+    stage_limiter! = integrator.opts.stage_limiter!
 
     T = typeof(one(t))
 
@@ -1470,6 +1502,7 @@ end
     @.. broadcast = false gprev = uprev + dt * μs * fsalfirst
     th2 = zero(T)
     th1 = μs
+    stage_limiter!(gprev, integrator, p, t + dt * th1)
     z1 = w0
     z2 = one(T)
     dz1 = one(T)
@@ -1491,6 +1524,7 @@ end
         @.. broadcast = false u = μ * gprev + ν * tmp + (T(1) - μ - ν) * uprev +
             dt * μs * (k - νs * fsalfirst)
         th = μ * th1 + ν * th2 + μs * (T(1) - νs)
+        stage_limiter!(u, integrator, p, t + dt * th)
         if (iter < mdeg)
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
@@ -1519,6 +1553,7 @@ end
         b = a / (b * w1)
         μ = T(1) - g - b
         @.. broadcast = false u = μ * uprev + g * uprev2 + b * u
+        stage_limiter!(u, integrator, p, t + dt)
     end
 
     f(integrator.fsallast, u, p, t + dt)
@@ -1620,6 +1655,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -1640,6 +1676,7 @@ end
     # stage is internally consistent: cⱼ = (j² + j)/(s² + s)
     cⱼ₋₂ = zero(T)
     cⱼ₋₁ = w1
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * cⱼ₋₁)
 
     # stages 2 to s
     for j in 2:s
@@ -1650,6 +1687,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
         cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ
+        stage_limiter!(u, integrator, p, t + dt * cⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         cⱼ₋₂ = cⱼ₋₁
@@ -1772,6 +1810,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -1791,6 +1830,7 @@ end
     # stage is internally consistent: cⱼ = (j² + j - 2)/(s² + s - 2) for j >= 2
     cⱼ₋₂ = zero(T)
     cⱼ₋₁ = μ̃₁
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * cⱼ₋₁)
 
     # stages 2 to s
     for j in 2:s
@@ -1813,6 +1853,7 @@ end
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
         cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ + γ̃ⱼ
+        stage_limiter!(u, integrator, p, t + dt * cⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         cⱼ₋₂ = cⱼ₋₁
@@ -1926,6 +1967,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -1948,6 +1990,7 @@ end
     # stage is internally consistent
     cⱼ₋₂ = zero(T)
     cⱼ₋₁ = μ̃₁
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * cⱼ₋₁)
 
     # stages 2 to s
     for j in 2:s
@@ -1962,6 +2005,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = μⱼ * uᵢ₋₁ + νⱼ * tmp + (dt * μ̃ⱼ) * k
         cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ
+        stage_limiter!(u, integrator, p, t + dt * cⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         cⱼ₋₂ = cⱼ₋₁
@@ -2081,6 +2125,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; uᵢ₋₁, tmp, k, atmp) = cache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -2099,6 +2144,7 @@ end
     # stage is internally consistent
     cⱼ₋₂ = zero(T)
     cⱼ₋₁ = μ̃₁
+    stage_limiter!(uᵢ₋₁, integrator, p, t + dt * cⱼ₋₁)
 
     # stages 2 to s
     for j in 2:s
@@ -2123,6 +2169,7 @@ end
             (dt * μ̃ⱼ) * k +
             (dt * γ̃ⱼ) * fsalfirst
         cⱼ = μⱼ * cⱼ₋₁ + νⱼ * cⱼ₋₂ + μ̃ⱼ + γ̃ⱼ
+        stage_limiter!(u, integrator, p, t + dt * cⱼ)
         @.. broadcast = false tmp = uᵢ₋₁
         @.. broadcast = false uᵢ₋₁ = u
         cⱼ₋₂ = cⱼ₋₁
@@ -2262,6 +2309,7 @@ end
     (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     (; k, gprev, tmp, atmp) = cache
     ccache = cache.constantcache
+    stage_limiter! = integrator.opts.stage_limiter!
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -2302,6 +2350,7 @@ end
     th2 = zero(eltype(u))
     th1 = μs
     bs = bj₋₁
+    stage_limiter!(gprev, integrator, p, t + dt * th1)
 
     for j in 2:mdeg
         Tj = 2 * w0 * Tj₋₁ - Tj₋₂
@@ -2314,6 +2363,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         @.. broadcast = false u = (1 - μ - ν) * uprev + μ * gprev + ν * tmp + dt * μ̃ * (k - bj₋₁ * fsalfirst)
         th = μ * th1 + ν * th2 + μ̃ * (1 - bj₋₁)
+        stage_limiter!(u, integrator, p, t + dt * th)
         if j < mdeg
             @.. broadcast = false tmp = gprev
             @.. broadcast = false gprev = u
@@ -2330,6 +2380,7 @@ end
     γs = bj₋₁ / (2 * mdeg * w1)
     δs = -bj₋₁ / (2 * (mdeg - 2) * w1)
     @.. broadcast = false u = (1 - γs / bs - δs / bj₋₂) * uprev + (γs / bs) * u + (δs / bj₋₂) * tmp + dt * bj₋₁ * fsalfirst
+    stage_limiter!(u, integrator, p, t + dt)
 
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)

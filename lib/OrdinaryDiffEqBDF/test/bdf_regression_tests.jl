@@ -242,7 +242,7 @@ end
         @test c.order == 2
     end
 end
-  
+
 # Regression test for the backward-in-time step rejection path: for tdir < 0
 # (e.g. adjoint solves), `bdf_step_reject_controller!` must still shrink |dt|.
 # Previously `min(h, hₖ₋₁)`/`hₖ₋₁ > hₖ` compared signed (negative) step sizes,
@@ -261,5 +261,15 @@ end
         OrdinaryDiffEqCore.step_reject_controller!(integ, FBDF())
         @test signbit(integ.dt) == signbit(dt0)
         @test abs(integ.dt) <= abs(dt0) / 2
+    end
+end
+
+@testset "QNDF2 step size control does not thrash (#4332)" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
+    for alg in (QNDF2(), QBDF2())
+        sol = solve(prob, alg, reltol = 1.0e-8, abstol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject < sol.stats.naccept / 10
+        @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end

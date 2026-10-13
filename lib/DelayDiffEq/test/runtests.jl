@@ -75,6 +75,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Cache Tests" begin
         include("integrators/cache.jl")
     end
+    @time @safetestset "Resize Tests" begin
+        include("integrators/resize.jl")
+    end
     @time @safetestset "Event Tests" begin
         include("integrators/events.jl")
     end
@@ -93,6 +96,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Rosenbrock Tests" begin
         include("integrators/rosenbrock.jl")
     end
+    @time @safetestset "Nordsieck Tests" begin
+        include("integrators/nordsieck.jl")
+    end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
     end
@@ -104,6 +110,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     end
     @time @safetestset "Initialization" begin
         include("integrators/initialization.jl")
+    end
+    @time @safetestset "save_discretes" begin
+        include("integrators/save_discretes.jl")
     end
 end
 

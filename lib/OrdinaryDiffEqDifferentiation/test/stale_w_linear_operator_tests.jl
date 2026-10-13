@@ -92,3 +92,19 @@ end
     end
     @test integ.u == integ_exact.u
 end
+
+@testset "adaptive linear W takes every γdt change (#4370)" begin
+    A = [-20.0 1.0; 1.0 -20.0]
+    u0 = [1.0, 0.5]
+    prob = ODEProblem(ODEFunction(MatrixOperator(A)), u0, (0.0, 1.0))
+    solve_with(cutoff) = solve(
+        prob, SDIRK2(nlsolve = NLNewton(new_W_dt_cutoff = cutoff));
+        abstol = 1.0e-8, reltol = 1.0e-8
+    )
+
+    loose = solve_with(0.2)
+    exact = solve_with(0.0)
+    @test loose.u[end] == exact.u[end]
+    @test loose.stats.nw == exact.stats.nw
+    @test loose.stats.nnonliniter == exact.stats.nnonliniter
+end

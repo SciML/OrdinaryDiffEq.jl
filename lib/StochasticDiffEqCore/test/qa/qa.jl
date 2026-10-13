@@ -105,7 +105,6 @@ run_qa(
         (:DiffEqBase,), ODEC_PUBLIC_REEXPORTS, SDEC_TYPE_ALIASES,
     ),
     aqua_kwargs = (; piracies = (; treat_as_own = ODEC_STOCHASTIC_SURFACE)),
-    jet_kwargs = (; target_defined_modules = true),
     explicit_imports = true,
     ei_kwargs = (;
         # `@..` reaches StochasticDiffEqCore via DiffEqBase's re-export of

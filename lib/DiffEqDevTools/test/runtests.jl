@@ -8,14 +8,6 @@ function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
-# Run QA tests (Aqua) — skip on pre-release Julia
-if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-    activate_qa_env()
-    @time @testset "Aqua" begin
-        include("qa/qa.jl")
-    end
-end
-
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     # write your own tests here
     @time @testset "Benchmark Tests" begin
@@ -53,5 +45,18 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
     @time @testset "Timeout" begin
         include("timeout_tests.jl")
+    end
+end
+
+# Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
+# virtual module, so every method the package defines on a generic function owned by
+# another module is replaced by a copy bound to a module with no package extensions
+# loaded. Anything that runs afterwards in the same process then exercises those
+# copies instead of the real methods. `activate_qa_env()` also leaves the QA
+# environment active, so the groups above must resolve before it runs.
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @testset "Aqua" begin
+        include("qa/qa.jl")
     end
 end

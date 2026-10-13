@@ -331,6 +331,15 @@ Return whether `alg` post-processes the controller's proposed `dtnew` via a
 `dtnew_modification` hook (`false` by default).
 """
 has_dtnew_modification(alg) = false
+
+"""
+    dtnew_modification(integrator, alg, dtnew)
+
+Hook for algorithms that opt in via [`has_dtnew_modification`](@ref) to
+post-process the controller's proposed step size `dtnew` before it is applied
+(e.g. the stabilized RK methods cap it from their stage-count bound). Returns
+`dtnew` unchanged by default.
+"""
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
 # Whether the algorithm's alg_cache / perform_step! handle `u === nothing` directly.
@@ -640,7 +649,8 @@ stage (`false` by default). Algorithms that do set this to `true` so the
 integrator computes `uprev2`/extrapolant state for them.
 """
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
+# Prefer `any(f, itr)` over broadcast so this stays allocation-free on Julia LTS.
+alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates, alg.algs)
 # Generic fallback for non-ODE algorithms (SDE, RODE) calling __init
 alg_extrapolates(alg) = false
 """
@@ -1018,14 +1028,13 @@ function Base.show(io::IO, ::MIME"text/plain", alg::OrdinaryDiffEqAlgorithm)
     return print(io, ")")
 end
 
-# Defaults in the current system: currently opt out DAEAlgorithms until complete
 """
-    default_linear_interpolation(alg, prob) -> Bool
+    default_linear_interpolation(prob, alg) -> Bool
 
 Return whether the solver should default to (cheaper) linear interpolation instead
-of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for DAEs,
-discrete problems, and RODE/SDE problems.
+of the algorithm's Hermite/dense interpolant for `alg` on `prob`. `true` for discrete
+problems and RODE/SDE problems.
 """
-default_linear_interpolation(alg, prob) = alg isa DAEAlgorithm || prob isa DiscreteProblem
-# RODE/SDE always uses linear interpolation (no dense output)
-default_linear_interpolation(prob::SciMLBase.AbstractRODEProblem, alg) = true
+function default_linear_interpolation(prob, alg)
+    return prob isa DiscreteProblem || prob isa SciMLBase.AbstractRODEProblem
+end

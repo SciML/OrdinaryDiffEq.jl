@@ -20,13 +20,6 @@ function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
-# Run QA tests (JET, Aqua)
-if TEST_GROUP ∉ ("Core", "Sparse", "ModelingToolkit") && isempty(VERSION.prerelease)
-    activate_qa_env()
-    @time @safetestset "JET Tests" include("qa/jet.jl")
-    @time @safetestset "Aqua" include("qa/qa.jl")
-end
-
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
     @time @safetestset "DAE jacobian2W sparse" include("dae_jacobian2w_sparse_tests.jl")
@@ -40,6 +33,7 @@ if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
     @time @safetestset "Wrapped DAE chunk size" include("wrapped_dae_chunksize_tests.jl")
     @time @safetestset "Autodiff Error Tests" include("autodiff_error_tests.jl")
     @time @safetestset "No Jac Tests" include("nojac_tests.jl")
+    @time @safetestset "FD Jacobian Direction" include("fd_direction_tests.jl")
     @time @safetestset "Stale W Linear Operator Tests" include("stale_w_linear_operator_tests.jl")
     @time @safetestset "Krylov warm_start default" include("warm_start_default_tests.jl")
     @time @safetestset "Krylov nf accounting" include("nf_accounting_tests.jl")
@@ -57,4 +51,17 @@ end
 if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
     activate_modelingtoolkit_env()
     @time @safetestset "Jacobian Tests" include("modelingtoolkit/jacobian_tests.jl")
+end
+
+# Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
+# virtual module, so every method the package defines on a generic function owned by
+# another module is replaced by a copy bound to a module with no package extensions
+# loaded. Anything that runs afterwards in the same process then exercises those
+# copies instead of the real methods. `activate_qa_env()` also leaves the QA
+# environment active, so the groups above must resolve before it runs.
+if TEST_GROUP ∉ ("Core", "Sparse", "ModelingToolkit") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @safetestset "JET Tests" include("qa/jet.jl")
+    @time @safetestset "Aqua" include("qa/qa.jl")
+    @time @safetestset "JVPCache allocation" include("qa/jvp_alloc_tests.jl")
 end
