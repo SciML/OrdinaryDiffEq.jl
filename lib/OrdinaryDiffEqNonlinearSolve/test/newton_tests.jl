@@ -35,3 +35,18 @@ end
     @test relax!(dz, nlsolver, integrator, f) === dz
     @test dz == dz0
 end
+
+# Backward Euler for u' = -2 - u^3 from u = 0 with dt = 1 solves u^3 + u + 2 = 0,
+# whose unique real root is -1.
+# The Newton solve stops at abstol = 1e-6, so the endpoint is only determined to that tolerance.
+@testset "Float32 BackTracking damps Newton steps" begin
+    f!(du, u, p, t) = (du[1] = -2 - u[1]^3)
+    prob = ODEProblem(f!, [0.0f0], (0.0f0, 1.0f0))
+    sol = solve(
+        prob, ImplicitEuler(nlsolve = NLNewton(relax = BackTracking(), max_iter = 50));
+        adaptive = false, dt = 1.0f0, abstol = 1.0f-6, reltol = 1.0f-6
+    )
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+    @test sol.t[end] == 1.0f0
+    @test sol.u[end][1] ≈ -1.0f0 atol = 1.0f-6
+end
