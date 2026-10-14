@@ -13,7 +13,7 @@ const LOW_TOL = 1.0e-6
 const MED_TOL = 1.0e-2
 const EXTREME_TOL = 1.0e-9
 const SMALLSIZE = 50
-const MEDIUMSIZE = 500
+const MEDIUMSIZE = 2000
 const STABILITY_SIZES = (alg_stability_size(Tsit5()), alg_stability_size(Vern7()))
 const DEFAULTBETA2S = (
     beta2_default(Tsit5()), beta2_default(Vern7()), beta2_default(Rosenbrock23()),
