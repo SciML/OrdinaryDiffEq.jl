@@ -13,6 +13,10 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 
 [compat]
 SciMLTesting = "2.8"
+OrdinaryDiffEqRosenbrock = "2"
+Pkg = "1"
+SciMLSensitivity = "7.116"
+Test = "<0.0.1, 1"
 LinearAlgebra = "1.10"
 SafeTestsets = "0.1.0"
 LinearSolve = "5.1"
