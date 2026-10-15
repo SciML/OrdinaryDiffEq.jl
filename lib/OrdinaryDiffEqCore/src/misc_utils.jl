@@ -62,8 +62,7 @@ where `k`, `kprev` are the derivatives at the stage values `g`, `gprev`. This is
 componentwise variant of the estimate `‖k - kprev‖ / ‖g - gprev‖` in Hairer & Wanner,
 Solving Ordinary Differential Equations II, Section IV.2.
 
-Only primal values are used: dual numbers and units are stripped, so that e.g. the partials
-of ForwardDiff duals do not affect stiffness detection.
+Only primal values are used. Components with identical stage values are skipped.
 """
 function eigen_est_from_stages(k, kprev, g, gprev)
     bc = Broadcast.instantiate(Broadcast.broadcasted(_eigen_est_quotient, k, kprev, g, gprev))
@@ -71,15 +70,15 @@ function eigen_est_from_stages(k, kprev, g, gprev)
     return maximum(bc; init)
 end
 
-# `value` does not strip e.g. `Complex{<:Dual}`, so `abs` may still return a dual
 function _eigen_est_quotient(k, kprev, g, gprev)
-    return SciMLBase.value(
-        abs(
-            (SciMLBase.value(k) - SciMLBase.value(kprev)) /
-                (SciMLBase.value(g) - SciMLBase.value(gprev))
-        )
-    )
+    Δk = abs(_value(k) - _value(kprev))
+    Δg = abs(_value(g) - _value(gprev))
+    return iszero(Δk) && iszero(Δg) ? zero(Δk / oneunit(Δg)) : Δk / Δg
 end
+
+# `SciMLBase.value` does not strip `Complex{<:Dual}`
+_value(x) = SciMLBase.value(x)
+_value(x::Complex) = complex(SciMLBase.value(real(x)), SciMLBase.value(imag(x)))
 
 """
     diffdir(integrator) -> Int
