@@ -296,7 +296,7 @@ isdtchangeable(alg) = true
 Return whether `alg` is a multistep method (uses solution history from more than
 the previous step). `false` by default.
 """
-ismultistep(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
+ismultistep(alg) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
 
 """
