@@ -129,7 +129,7 @@ end
         ũ::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
         u₀::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
         u₁::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
-        α, ρ, internalnorm, t, thread::Union{Serial, Threaded} = Serial()
+        α::Number, ρ::Number, internalnorm, t, thread::Union{Serial, Threaded} = Serial()
     )
     map(out.x, ũ.x, u₀.x, u₁.x) do o, e, a, b
         calculate_residuals!(o, e, a, b, α, ρ, internalnorm, t, thread)
