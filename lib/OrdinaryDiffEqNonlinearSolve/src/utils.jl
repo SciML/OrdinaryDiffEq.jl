@@ -398,11 +398,7 @@ is_split_W(W) = W isa WOperator && W.J isa AbstractMatrix
 """
     build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
                    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
-                   iip, verbose) -> AbstractNLSolver
-
-Pass `stats_delta = StatsDelta()` to buffer a solver's statistics privately. The
-caller must merge the buffer after its worker joins; buffered solvers do not write
-`integrator.force_stepfail`. The default `nothing` updates the integrator directly.
+                   iip, verbose; stats_delta = nothing) -> AbstractNLSolver
 
 Construct the nonlinear solver used by an implicit integrator algorithm.
 
@@ -424,6 +420,14 @@ Construct the nonlinear solver used by an implicit integrator algorithm.
   - `iip`: `Val(true)` for an in-place problem and `Val(false)` for an
     out-of-place problem.
   - `verbose`: the integrator's differential-equation verbosity configuration.
+
+# Keyword arguments
+
+  - `stats_delta`: `nothing` (default) to update `integrator.stats` and
+    `integrator.force_stepfail` directly, or a `StatsDelta()` to buffer the
+    solver's statistics privately. The caller of a buffered solver must merge
+    the buffer with `merge_stats_deltas!` after its worker joins and set
+    `integrator.force_stepfail` itself.
 
 # Returns
 

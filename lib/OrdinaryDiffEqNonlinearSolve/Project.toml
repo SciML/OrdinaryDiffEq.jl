@@ -71,7 +71,7 @@ OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqSDIRK = "2.9"
 Statistics = "1.10.0"
 SciMLBase = "3.46"
-OrdinaryDiffEqCore = "4.19"
+OrdinaryDiffEqCore = "4.20"
 SimpleNonlinearSolve = "2.11.1"
 FastClosures = "0.3.2"
 SparseArrays = "1"
@@ -95,3 +95,6 @@ test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "Or
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"
+
+[sources.OrdinaryDiffEqDifferentiation]
+path = "../OrdinaryDiffEqDifferentiation"
