@@ -13,6 +13,7 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     using ForwardDiff
+    import OrdinaryDiffEqCore
     using OrdinaryDiffEqCore: PIDController
     @time @safetestset "SciMLBase reexport" begin
         using OrdinaryDiffEqTaylorSeries, Test
@@ -506,6 +507,56 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
             allocs = min(allocs, @allocated step!(integrator))
         end
         @test allocs == ref_bytes
+    end
+
+    struct TaylorHistoryController <: OrdinaryDiffEqCore.AbstractController end
+    mutable struct TaylorHistoryControllerCache{E} <: OrdinaryDiffEqCore.AbstractControllerCache
+        EEst::E
+        history::Vector{Float64}
+        naccept::Int
+    end
+    function OrdinaryDiffEqCore.setup_controller_cache(
+            alg, cache, ::TaylorHistoryController, ::Type{E}, disco_probs
+        ) where {E}
+        return TaylorHistoryControllerCache(oneunit(E), zeros(4), 0)
+    end
+    OrdinaryDiffEqCore.stepsize_controller!(integrator, ::TaylorHistoryControllerCache, alg) = 1.0
+    function OrdinaryDiffEqCore.step_accept_controller!(
+            integrator, cache::TaylorHistoryControllerCache, alg, q
+        )
+        pop!(cache.history)
+        pushfirst!(cache.history, OrdinaryDiffEqCore.get_EEst(integrator))
+        cache.naccept += 1
+        return integrator.dt
+    end
+    function OrdinaryDiffEqCore.step_reject_controller!(
+            integrator, ::TaylorHistoryControllerCache, alg
+        )
+        return integrator.dt /= 2
+    end
+    function OrdinaryDiffEqCore.sync_controllers!(
+            dst::TaylorHistoryControllerCache, src::TaylorHistoryControllerCache
+        )
+        copyto!(dst.history, src.history)
+        dst.naccept = src.naccept
+        return nothing
+    end
+
+    # Order-selection pseudo-steps call `step_accept_controller!`; the cache must
+    # come back through `sync_controllers!`, so only real accepts are counted.
+    @testset "AdaptiveOrder custom controller cache with length-4 history" begin
+        for iip in (true, false)
+            f = iip ? ((du, u, p, t) -> (du .= -u; nothing)) : ((u, p, t) -> -u)
+            prob = ODEProblem{iip}(f, [1.0, 2.0], (0.0, 0.1))
+            integrator = init(
+                prob, ExplicitTaylorAdaptiveOrder();
+                controller = TaylorHistoryController(), dt = 0.01
+            )
+            solve!(integrator)
+            @test SciMLBase.successful_retcode(integrator.sol)
+            @test integrator.u ≈ exp(-0.1) .* [1.0, 2.0] rtol = 1.0e-6
+            @test integrator.controller_cache.naccept == integrator.stats.naccept
+        end
     end
 
     # Test AutoSpecialize (default ODEProblem wraps in FunctionWrappers)

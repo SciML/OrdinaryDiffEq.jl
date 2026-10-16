@@ -105,20 +105,27 @@ function alg_cache(
     return ExplicitTaylorConstantCache(alg.order, jet_wrapped)
 end
 
-# Per-trial snapshot of controller-cache scratch (every scalar field except
-# `controller` / `EEst`, plus array fields elementwise). This is AdaptiveOrder's
-# analogue of `sync_controllers!`: new scratch fields are included automatically,
-# including non-isbits scalars (e.g. `BigFloat` QT). Immutable scalars may be
-# stored by reference; restore puts the pre-trial value back. Array history is
-# the fixed-length-3 `PIDControllerCache.err` (ones(QT,3) at construction);
-# `Val(3)` keeps Float64/Float32 isbits snapshots allocation-free.
+# AdaptiveOrder pseudo-steps the controller once per candidate order and must
+# roll its state back afterwards. Any controller cache goes through the
+# documented protocol: a `deepcopy` restored with `sync_controllers!`.
+snapshot_controller(cache) = deepcopy(cache)
+restore_controller!(cache, snap) = OrdinaryDiffEqCore.sync_controllers!(cache, snap)
+
+# The in-tree caches get an allocation-free snapshot of the fields their
+# `sync_controllers!` copies: everything except `controller` / `EEst`. Scalars
+# are stored as-is (immutable values, including `BigFloat`); the only array is
+# `PIDControllerCache.err`, which is always `ones(QT, 3)`.
+const InTreeControllerCache = Union{
+    IControllerCache, PIControllerCache, PIDControllerCache, PredictiveControllerCache,
+}
+
 @inline function _snapshot_array(v::AbstractVector)
     length(v) == 3 ||
         throw(ArgumentError("AdaptiveOrder controller array snapshot expects length 3, got $(length(v))"))
     return ntuple(i -> @inbounds(v[i]), Val(3))
 end
 
-@generated function snapshot_controller(cache::C) where {C}
+@generated function snapshot_controller(cache::C) where {C <: InTreeControllerCache}
     pairs = Expr[]
     for name in fieldnames(C)
         name === :controller && continue
@@ -135,7 +142,9 @@ end
     return :((; $(pairs...)))
 end
 
-@generated function restore_controller!(cache::C, snap::NamedTuple{N}) where {C, N}
+@generated function restore_controller!(
+        cache::C, snap::NamedTuple{N}
+    ) where {C <: InTreeControllerCache, N}
     body = Expr[]
     for name in N
         ft = fieldtype(C, name)

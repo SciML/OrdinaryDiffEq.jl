@@ -20,6 +20,10 @@ run_qa(
                 # OrdinaryDiffEqCore limiter default, deliberately kept
                 # non-public (codegen/perf helper, not extension API).
                 :trivial_limiter!,
+                # OrdinaryDiffEqCore — owner-internal concrete controller caches,
+                # no public alternative; AdaptiveOrder snapshots them allocation-free.
+                :IControllerCache, :PIControllerCache, :PIDControllerCache,
+                :PredictiveControllerCache,
                 # other-package internals with no public alias
                 Symbol("@truncate_stacktrace"), :FunctionWrapper,
             ),
