@@ -235,7 +235,7 @@ function jacobian!(
 
     config = jac_config[1]
     backend = gpu_safe_autodiff(alg_autodiff(alg), x)
-    shrunk = shrunk_forwarddiff_backend(backend, x, integrator)
+    shrunk = shrunk_forwarddiff_backend(backend, x, jac_config)
 
     if integrator.iter == 1
         try
@@ -260,30 +260,38 @@ unwrap_jac_f(f::UJacobianWrapper) = SciMLBase.@set f.f = SciMLBase.unwrapped_f(f
 unwrap_jac_f(f) = f
 
 """
-    shrunk_forwarddiff_backend(backend, x, integrator)
+    shrunk_forwarddiff_backend(backend, x, jac_config)
 
 Return `nothing` when the prepared Jacobian config can differentiate at `x`, and otherwise
-an `AutoForwardDiff` backend whose chunk fits `length(x)`.
+an `AutoForwardDiff` backend with chunk size `length(x)`.
 
-The chunk of a ForwardDiff config is part of its type, so `resize_jac_config!`
-keeps the chunk chosen at `init`: the explicit `chunksize` of the backend, or
-`ForwardDiff.pickchunksize` of the initial state length. ForwardDiff rejects a chunk longer
-than the input, so once the state shrinks below that chunk the Jacobian is computed without
-the prepared config, with the explicit chunk clamped to `length(x)` or, for an automatic
-chunk, one picked for `length(x)`.
+The chunk of a ForwardDiff config is part of its type, so `resize_jac_config!` keeps the
+chunk that `build_jac_config` prepared and recorded in `jac_config[3]`. ForwardDiff rejects
+a chunk longer than the input, so once the state shrinks below that chunk the Jacobian is
+computed without the prepared config. An automatic chunk never exceeds ForwardDiff's chunk
+threshold, so `ForwardDiff.pickchunksize(length(x))` is `length(x)` in that case too.
 """
-shrunk_forwarddiff_backend(backend, x, integrator) = nothing
+shrunk_forwarddiff_backend(backend, x, jac_config) = nothing
 
-function shrunk_forwarddiff_backend(backend::AutoForwardDiff, x, integrator)
+function shrunk_forwarddiff_backend(
+        backend::AutoForwardDiff, x, jac_config::Tuple{Any, Any, Integer}
+    )
     n = length(x)
-    k = OrdinaryDiffEqCore._get_fwd_chunksize_int(backend)
-    if k == 0
-        u0 = integrator.sol.prob.u0
-        u0 isa AbstractArray && ForwardDiff.pickchunksize(length(u0)) > n || return nothing
-        return AutoForwardDiff(; tag = backend.tag)
-    end
-    k <= n && return nothing
+    jac_config[3] <= n && return nothing
     return AutoForwardDiff(; chunksize = n, tag = backend.tag)
+end
+
+"""
+    prepared_chunksize(backend, u)
+
+Chunk size of a dense ForwardDiff Jacobian config prepared with `backend` at `u`, or
+`nothing` for any other backend.
+"""
+prepared_chunksize(backend, u) = nothing
+
+function prepared_chunksize(backend::AutoForwardDiff, u)
+    k = OrdinaryDiffEqCore._get_fwd_chunksize_int(backend)
+    return k == 0 ? ForwardDiff.pickchunksize(length(u)) : k
 end
 
 """
@@ -293,7 +301,9 @@ Construct the differentiation configuration used to compute the state Jacobian o
 `f` via [`jacobian!`](@ref) (a DifferentiationInterface preparation, or `nothing`
 when the problem supplies its own `jac`/`Wfact`). The state Jacobian perturbs
 `u`, not `t`, so the finite-difference direction does not depend on the
-integration direction; the returned tuple holds the same config twice.
+integration direction; the returned tuple holds the same config twice. A prepared config
+is followed by the chunk size of a dense ForwardDiff config (`nothing` for other
+backends), which `jacobian!` checks against the state length after a `resize!`.
 """
 function build_jac_config(
         alg, f::F1, uf::F2, du1, uprev,
@@ -331,7 +341,7 @@ function build_jac_config(
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
         jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
-        jac_config = (jac_config1, jac_config1)
+        jac_config = (jac_config1, jac_config1, prepared_chunksize(autodiff_alg, u))
 
     else
         jac_config = (nothing, nothing)
@@ -385,6 +395,7 @@ function resize_jac_config!(cache, integrator)
                         (ad_right, ad_left), cache.jac_config
                     )
             ]...,
+            Base.tail(Base.tail(cache.jac_config))...,
         )
     end
     return cache.jac_config

@@ -12,20 +12,28 @@ end
 resize_shrink!(integ) = resize!(integ, 2)
 deleteat_shrink!(integ) = deleteat!(integ, 3:10)
 cases = (
-    (Rodas5P(), resize_shrink!),
-    (Rodas5P(), deleteat_shrink!),
-    (Rodas5P(autodiff = AutoForwardDiff(chunksize = 5)), resize_shrink!),
-    (Rodas5P(autodiff = AutoForwardDiff(chunksize = 5)), deleteat_shrink!),
-    (TRBDF2(), resize_shrink!),
-    (KenCarp4(), resize_shrink!),
-    (TRBDF2(autodiff = AutoForwardDiff(chunksize = 2)), resize_shrink!),
+    (Rodas5P(), resize_shrink!, false),
+    (Rodas5P(), deleteat_shrink!, false),
+    (Rodas5P(autodiff = AutoForwardDiff(chunksize = 5)), resize_shrink!, false),
+    (Rodas5P(autodiff = AutoForwardDiff(chunksize = 5)), deleteat_shrink!, false),
+    (TRBDF2(), resize_shrink!, false),
+    (KenCarp4(), resize_shrink!, false),
+    (TRBDF2(autodiff = AutoForwardDiff(chunksize = 2)), resize_shrink!, false),
+    # With `alias_u0` the shrink also shrinks `prob.u0`.
+    (Rodas5P(), resize_shrink!, true),
+    (Rodas5P(), deleteat_shrink!, true),
+    (Rodas5P(autodiff = AutoForwardDiff(chunksize = 5)), resize_shrink!, true),
+    (TRBDF2(), resize_shrink!, true),
 )
 
-@testset "$(nameof(typeof(alg))) $spec $shrink!" for (alg, shrink!) in cases,
+@testset "$(nameof(typeof(alg))) $spec $shrink! alias_u0=$alias_u0" for (alg, shrink!, alias_u0) in cases,
         spec in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize)
 
     prob = ODEProblem{true, spec}(f!, collect(1.0:10.0), (0.0, 1.0))
-    integ = init(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, tstops = [0.5])
+    integ = init(
+        prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, tstops = [0.5],
+        alias = ODEAliasSpecifier(; alias_u0)
+    )
     while integ.t < 0.5
         step!(integ)
     end
