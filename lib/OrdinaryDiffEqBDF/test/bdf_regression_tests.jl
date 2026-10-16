@@ -3,6 +3,7 @@ using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
 using RecursiveArrayTools: ArrayPartition
+import Random
 
 foop = (u, p, t) -> u * p
 proboop = ODEProblem(foop, ones(2), (0.0, 1000.0), 1.0)
@@ -271,5 +272,93 @@ end
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.nreject < sol.stats.naccept / 10
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
+end
+
+@testset "FBDF/QNDF first step: O(h²) BDF1 error estimate" begin
+    f!(du, u, p, t) = (du[1] = -8.6e8 * u[1]; du[2] = 1.0e-3 * u[2]; nothing)
+    f(u, p, t) = [-8.6e8 * u[1], 1.0e-3 * u[2]]
+
+    # A BDF1 step of eps(14400.0) ≈ 1.8e-12 is within tol 1e-8.
+    t0 = 14400.0
+    for alg in (FBDF(), QNDF()), ff in (f!, f)
+        prob = ODEProblem(ff, [1.0e-3, 1.0e12], (t0, t0 + 1000.0))
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == t0 + 1000
+    end
+
+    # True BDF1 local error of this step is ≈ 1.2e-9 < tol, so it must be accepted.
+    for alg in (FBDF(), QNDF()), ff in (f!, f)
+        prob0 = ODEProblem(ff, [1.0e-3, 1.0e12], (0.0, 1000.0))
+        integ = init(prob0, alg; abstol = 1.0e-8, reltol = 1.0e-8, dt = 1.8e-12, save_everystep = false)
+        step!(integ)
+        @test integ.stats.nreject == 0
+        @test integ.t == 1.8e-12
+    end
+end
+
+@testset "QNDF first step after a Newton failure matches a fresh BDF1 start" begin
+    # dt = 0.8 fails Newton for u' = u², so the accepted first step is a retry.
+    for f in ((u, p, t) -> u .^ 2, (du, u, p, t) -> (du .= u .^ 2))
+        prob = ODEProblem(f, [1.0], (0.0, 2.0))
+        alg = QNDF(nlsolve = NLNewton(κ = 1.0e-10, max_iter = 30))
+        integ = init(prob, alg; dt = 0.8, abstol = 0.1, reltol = 0.1)
+        step!(integ)
+        @test integ.stats.nnonlinconvfail > 0
+        h = integ.t
+        fresh = init(prob, alg; dt = h, abstol = 0.1, reltol = 0.1)
+        step!(fresh)
+        @test fresh.t == h
+        # Backward-Euler root of u = 1 + h u².
+        @test integ.u[1] ≈ 2 / (1 + sqrt(1 - 4h)) rtol = 1.0e-8
+        @test integ.u[1] ≈ fresh.u[1] rtol = 1.0e-8
+        @test OrdinaryDiffEqCore.get_EEst(integ) ≈ OrdinaryDiffEqCore.get_EEst(fresh) rtol = 1.0e-6
+    end
+end
+
+@testset "FBDF mass-matrix start from an inconsistent algebraic state" begin
+    # The first step's jump of u₂ onto u₂ = u₁ must not force dt below eps(t0).
+    f!(du, u, p, t) = (du[1] = -u[1]; du[2] = 1.0e7 * (u[2] - u[1]); nothing)
+    f(u, p, t) = [-u[1], 1.0e7 * (u[2] - u[1])]
+    M = [1.0 0; 0 0]
+    t0 = 1.0e4
+    for ff in (f!, f)
+        prob = ODEProblem(ODEFunction(ff, mass_matrix = M), [1.0, 0.0], (t0, t0 + 1))
+        sol = solve(
+            prob, FBDF(); abstol = 1.0e-8, reltol = 1.0e-8,
+            initializealg = SciMLBase.NoInit()
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ exp(-1) rtol = 1.0e-6
+    end
+end
+
+@testset "FBDF steps that land on a tstop across t = 0" begin
+    # fl(b - a) overshoots b by one ulp here; the core commits t = b exactly.
+    a, b = -0.9175594033000789, 0.8958939067577941
+    f_oop(u, p, t) = -0.01 .* u
+    f_iip(du, u, p, t) = (du .= -0.01 .* u; nothing)
+    for f in (f_oop, f_iip)
+        for (tspan, kw) in (
+                ((a, b), (;)), ((a, b), (; dt = 5.0)),
+                ((a, 2.0), (; tstops = [b], dt = 5.0)), ((-a, -b), (; dt = 5.0)),
+            )
+            sol = solve(ODEProblem(f, [1.0], tspan), FBDF(); kw...)
+            @test SciMLBase.successful_retcode(sol)
+            @test b in abs.(sol.t)
+        end
+        rng = Random.Xoshiro(7)
+        failed = Tuple{Float64, Float64}[]
+        for _ in 1:300
+            t0, t1 = -10 * rand(rng), 10 * rand(rng)
+            for tspan in ((t0, t1), (t1, t0))
+                sol = solve(ODEProblem(f, [1.0], tspan), FBDF(); save_everystep = false)
+                ok = SciMLBase.successful_retcode(sol) &&
+                    isapprox(sol.u[end][1], exp(-0.01 * (tspan[2] - tspan[1])), rtol = 1.0e-3)
+                ok || push!(failed, tspan)
+            end
+        end
+        @test isempty(failed)
     end
 end
