@@ -37,7 +37,7 @@ using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-using LinearAlgebra: mul!, I, Diagonal
+using LinearAlgebra: mul!, I, Diagonal, lu, issuccess
 import ArrayInterface
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: default_controller
