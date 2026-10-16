@@ -328,15 +328,49 @@ end
     )
     # The residual does not constrain the algebraic du0[3]; an inconsistent algebraic
     # u0[3] fails the residual check and keeps the old first step.
-    for (du0, u0, init) in (
-            ([-0.04, 0.04, -1.0e6], [1.0, 0.0, 0.0], CheckInit()),
-            ([-0.04, 0.04, 0.0], [1.0, 0.0, 0.1], NoInit()),
-        )
-        prob = DAEProblem(rober, du0, u0, tspan; differential_vars = dv)
+    cases = (
+        ([-0.04, 0.04, -1.0e6], [1.0, 0.0, 0.0], CheckInit()),
+        ([-0.04, 0.04, 0.0], [1.0, 0.0, 0.1], NoInit()),
+    )
+    for (du0, u0, init) in cases, differential_vars in (dv, nothing)
+        prob = DAEProblem(rober, du0, u0, tspan; differential_vars)
         sol = solve(prob, DFBDF(); abstol = 1.0e-8, reltol = 1.0e-8, initializealg = init)
         @test sol.retcode == ReturnCode.Success
         @test sol.u[end][1] ≈ ref.u[end][1] rtol = 1.0e-5
         @test sum(sol.u[end]) ≈ 1 atol = 1.0e-8
+    end
+end
+
+@testset "DFBDF cold start: differential state whose increment vanishes (#4791)" begin
+    # du = t - c + ϵ: the BDF1 step from t₁ to c has u - uprev = (c - t₁)ϵ ≈ 0, but a
+    # local error of (c - t₁)²/2, which the explicit-Euler correction z/2 equals.
+    tol = 1.0e-6
+    c = 1.0
+    for ϵ in (1.5e-6, 0.0)
+        fiip = (out, du, u, p, t) -> (out[1] = du[1] - (t - c + ϵ); nothing)
+        foop = (du, u, p, t) -> [du[1] - (t - c + ϵ)]
+        U(t) = t^2 / 2 - (c - ϵ) * t
+        for f in (fiip, foop), differential_vars in ([true], nothing), restart in (false, true)
+            prob = DAEProblem(f, [ϵ - c], [0.0], (0.0, 2.0); differential_vars)
+            kw = (; abstol = tol, reltol = tol, initializealg = CheckInit())
+            if restart
+                integ = init(prob, DFBDF(); kw...)
+                for _ in 1:3
+                    step!(integ)
+                end
+                derivative_discontinuity!(integ, true)
+                @test integ.t < c / 2
+                set_proposed_dt!(integ, c - integ.t)
+            else
+                integ = init(prob, DFBDF(); dt = c, kw...)
+            end
+            t1, u1 = integ.t, integ.u[1]
+            step!(integ)
+            err = abs(integ.u[1] - (u1 + U(integ.t) - U(t1)))
+            @test err < 2 * tol
+            w = tol + tol * max(abs(u1), abs(integ.u[1]))
+            @test OrdinaryDiffEqCore.get_EEst(integ) ≈ err / w rtol = 0.01
+        end
     end
 end
 

@@ -1,5 +1,5 @@
 using OrdinaryDiffEqBDF, DiffEqBase, Test
-using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
 import OrdinaryDiffEqCore: _initialize_dae!
 
 # Test that derivative_discontinuity! triggers DAE initialization
@@ -93,19 +93,24 @@ step!(int4)
     @test int6.u[1] + int6.u[2] + int6.u[3] ≈ 1.0 atol = 1.0e-10
 
     # Callback path after the first step still reinitializes (and must not
-    # double-count in the following loopheader!). BrownFullBasicInit, because
-    # CheckInit rejects a BDF du whose residual is only at Newton tolerance.
-    counter3 = CountingInit(BrownFullBasicInit(), Ref(0))
-    fired = Ref(false)
-    condition3(u, t, integrator) = fired[]  # arm after first step
-    affect3!(integrator) = (integrator.u .= integrator.u)
-    cb3 = DiscreteCallback(condition3, affect3!)
-    int7 = init(prob2, DFBDF(), initializealg = counter3, callback = cb3)
-    step!(int7)  # no callback fire yet
-    count_before_fire = counter3.count[]
-    fired[] = true
-    step!(int7)  # callback fires → exactly one initialize_dae!
-    @test counter3.count[] == count_before_fire + 1
-    step!(int7)  # fires again on next accept → +1 more, not +2 from loopheader
-    @test counter3.count[] == count_before_fire + 2
+    # double-count in the following loopheader!). CheckInit checks the BDF du, whose
+    # residual is only at the Newton tolerance, so it runs with a tight one.
+    for (alg, initalg) in (
+            (DFBDF(), BrownFullBasicInit()),
+            (DFBDF(nlsolve = NLNewton(κ = 1.0e-6)), DiffEqBase.CheckInit()),
+        )
+        counter3 = CountingInit(initalg, Ref(0))
+        fired = Ref(false)
+        condition3(u, t, integrator) = fired[]  # arm after first step
+        affect3!(integrator) = (integrator.u .= integrator.u)
+        cb3 = DiscreteCallback(condition3, affect3!)
+        int7 = init(prob2, alg, initializealg = counter3, callback = cb3)
+        step!(int7)  # no callback fire yet
+        count_before_fire = counter3.count[]
+        fired[] = true
+        step!(int7)  # callback fires → exactly one initialize_dae!
+        @test counter3.count[] == count_before_fire + 1
+        step!(int7)  # fires again on next accept → +1 more, not +2 from loopheader
+        @test counter3.count[] == count_before_fire + 2
+    end
 end
