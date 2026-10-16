@@ -11,8 +11,7 @@ import OrdinaryDiffEqCore: alg_stability_size,
     get_fsalfirstlast, isfsal,
     DerivativeOrderNotPossibleError, unwrap_alg, step_accept_controller!,
     stepsize_controller!, get_current_adaptive_order, get_current_alg_order
-using OrdinaryDiffEqCore: IControllerCache, PIControllerCache, PIDControllerCache,
-    PredictiveControllerCache
+using OrdinaryDiffEqCore: snapshot_controller, restore_controller!
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..
