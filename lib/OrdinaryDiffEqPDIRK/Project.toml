@@ -16,6 +16,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [extras]
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -27,6 +28,7 @@ SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 
 [compat]
 NonlinearSolve = "4"
+LinearSolve = "5.15"
 Reexport = "1.2.2"
 SciMLTesting = "2.8"
 ADTypes = "1.22.0"
@@ -47,7 +49,7 @@ Test = "<0.0.1, 1"
 julia = "1.10"
 
 [targets]
-test = ["NonlinearSolve", "DiffEqDevTools", "LinearAlgebra", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg", "SciMLTesting"]
+test = ["NonlinearSolve", "LinearSolve", "DiffEqDevTools", "LinearAlgebra", "ODEProblemLibrary", "Random", "SafeTestsets", "Test", "Pkg", "SciMLTesting"]
 
 [sources.OrdinaryDiffEqCore]
 path = "../OrdinaryDiffEqCore"

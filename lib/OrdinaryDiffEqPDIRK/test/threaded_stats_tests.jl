@@ -2,6 +2,7 @@ using OrdinaryDiffEqPDIRK, OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLFunctional, NLAnderson,
     NonlinearSolveAlg, HomotopyNonlinearSolveAlg
 using NonlinearSolve: NewtonRaphson
+using LinearSolve: KrylovJL_GMRES
 using Test
 import OrdinaryDiffEqCore
 
@@ -41,6 +42,26 @@ stats_rhs(u, p, t) = -u .* u
                     @test stats_counters(threaded.stats) == expected
                 end
             end
+        end
+    end
+
+    @testset "Jacobian-free Krylov statistics agree across threading modes" begin
+        prob = ODEProblem(stats_rhs!, ones(8), (0.0, 1.0))
+        krylov(threading) = PDIRK44(;
+            threading, linsolve = KrylovJL_GMRES(), concrete_jac = false
+        )
+        serial = solve(
+            prob, krylov(false); dt = 0.01, adaptive = false, save_everystep = false
+        )
+        @test successful_retcode(serial)
+        expected = stats_counters(serial.stats)
+        for _ in 1:30
+            threaded = solve(
+                prob, krylov(true); dt = 0.01, adaptive = false, save_everystep = false
+            )
+            @test successful_retcode(threaded)
+            @test threaded.u[end] ≈ serial.u[end]
+            @test stats_counters(threaded.stats) == expected
         end
     end
 
