@@ -38,10 +38,12 @@ using Test
     # Runtime allocation tests run FIRST, before AllocCheck static analysis
     # which can invalidate compiled code and cause false positive allocations.
 
-    @testset "FBDF step!(save_everystep=false) Runtime Allocation Check" begin
+    @testset "FBDF step!(save_everystep=false) Runtime Allocation Check" for alg in (
+            FBDF(), FBDF(time_filter = true), FBDF(time_filter = true, max_order = Val(3)),
+        )
         long_prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 100.0))
         integrator = init(
-            long_prob, FBDF(), dt = 0.1, save_everystep = false,
+            long_prob, alg, dt = 0.1, save_everystep = false,
             abstol = 1.0e-6, reltol = 1.0e-6
         )
         # Warm up: take many steps so all caches are initialized and order ramps up
@@ -85,6 +87,23 @@ using Test
             allocs += @allocated step!(integrator)
         end
         @test allocs == 0
+    end
+
+    function fbdf_dense_interp_allocs()
+        interp_prob = ODEProblem(simple_system!, [1.0, 1.0], (0.0, 10.0))
+        sol = solve(
+            interp_prob, FBDF(); abstol = 1.0e-6, reltol = 1.0e-6, dense = true
+        )
+        out = similar(sol.u[1])
+        sol(out, 5.0)
+        sol(out, 5.0, Val{1})
+        val0 = @allocated sol(out, 5.0)
+        val1 = @allocated sol(out, 5.0, Val{1})
+        return val0, val1
+    end
+
+    @testset "FBDF sol(out, t) Runtime Allocation Check" begin
+        @test fbdf_dense_interp_allocs() == (0, 0)
     end
 
     # Static analysis tests below. These use AllocCheck's check_allocs which

@@ -14,7 +14,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
     _ode_addsteps!,
     DerivativeOrderNotPossibleError, _fixup_ad,
     copyat_or_push!, DifferentialVarsUndefined, resize_J_W!,
-    find_algebraic_vars_eqs
+    find_algebraic_vars_eqs, _diff_alg_vars
 using MuladdMacro: MuladdMacro, @muladd
 using FastBroadcast: FastBroadcast, @..
 using RecursiveArrayTools: RecursiveArrayTools, recursivefill!

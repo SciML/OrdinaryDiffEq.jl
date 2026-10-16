@@ -70,7 +70,51 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
 
+
+    if _erases_callback_types(prob)
+        callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
+        kwargs = merge(
+            (; kwargs...),
+            (; callback = _erase_callback_types(callback))
+        )
+    end
+
     return kwargs
+end
+
+
+# Erasure rewrites `prob.kwargs`, which rebuilds the problem through
+# `ConstructionBase.setproperties`. That works for these families but not for
+# `RODEProblem` or `BVProblem`, which SciMLBase gives no constructor it can use, so
+# those keep their callbacks as given.
+const _ERASABLE_CALLBACK_PROBLEMS = Union{
+    SciMLBase.AbstractODEProblem, SciMLBase.AbstractSDEProblem,
+    SciMLBase.AbstractDAEProblem, SciMLBase.AbstractDDEProblem,
+    SciMLBase.AbstractSDDEProblem,
+}
+
+# Restricted to Julia >= 1.12. On older versions Enzyme's forward mode is exercised
+# through continuous callbacks (see test/AD), and it aborts LLVM verification on the
+# erased vector's dynamic dispatch instead of throwing a catchable error; 1.11+ gates
+# Enzyme off, so erasure is enabled only where it has been validated.
+function _erases_callback_types(prob)
+    VERSION >= v"1.12" || return false
+    prob isa _ERASABLE_CALLBACK_PROBLEMS || return false
+    prob isa SciMLBase.AbstractBVProblem && return false
+    hasfield(typeof(prob), :f) || return false
+    specialize = SciMLBase.specialization(prob.f)
+    return specialize === SciMLBase.AutoSpecialize ||
+        specialize === SciMLBase.AutoDespecialize ||
+        specialize === SciMLBase.NoSpecialize
+end
+
+function _erase_problem_callback_types(prob)
+    if !_erases_callback_types(prob) || !has_kwargs(prob)
+        return prob
+    end
+    callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
+    callback = _erase_callback_types(callback)
+    return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
 const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
@@ -715,14 +759,18 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
         _forwarddiff_chunksize(alg)
     )
+    # Erase last: the promotions above read `prob.kwargs[:callback]`, and an erased set
+    # only answers "any continuous callbacks?" at run time, which would cost inference.
     if isconcreteu0(prob, tspan[1], kwargs) && prob.u0 === u0 &&
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return prob
+        return _erase_problem_callback_types(prob)
     else
-        return _remake_with_promoted_function(
-            prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
+        return _erase_problem_callback_types(
+            _remake_with_promoted_function(
+                prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
+            )
         )
     end
 end
@@ -772,11 +820,13 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return prob
+        return _erase_problem_callback_types(prob)
     else
-        return remake(
-            prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
-            tspan = tspan_promote
+        return _erase_problem_callback_types(
+            remake(
+                prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
+                tspan = tspan_promote
+            )
         )
     end
 end
@@ -869,6 +919,22 @@ function (wrapper::ParameterDespecializationWrapper)(args...)
     return _invoke_parameter_despecialization(wrapper.f, args)
 end
 
+# Whether `promote_f` already wrapped `f` on an earlier concretization. The auxiliary
+# despecialization widens the bounded type parameters, which only the `@set`s of the
+# wrapping step narrow back, and that step is skipped for a wrapped `f`. So an `f` that
+# is already wrapped must not be despecialized again, or concretizing a concretized
+# problem would change its type.
+# Functions without an `f` field (e.g. `DynamicalODEFunction`, which stores `f1`/`f2`)
+# are never wrapped here.
+_is_concretized(f) = hasfield(typeof(f), :f) &&
+    getfield(f, :f) isa FunctionWrappersWrappers.FunctionWrappersWrapper
+# An `SDEFunction` is only wrapped by the non-ForwardDiff path, and it counts as wrapped
+# when both the drift and the diffusion are, matching the skip condition of the wrapping
+# step below.
+_is_concretized(f::SDEFunction) =
+    f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper &&
+    f.g isa FunctionWrappersWrappers.FunctionWrappersWrapper
+
 function _despecialize_auxiliary_functions(f)
     if isdefined(f, :g) && f.g !== nothing &&
             !(f.g isa ParameterDespecializationWrapper)
@@ -952,7 +1018,7 @@ function promote_f(
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
-    despecialize && (f = _despecialize_auxiliary_functions(f))
+    despecialize && !_is_concretized(f) && (f = _despecialize_auxiliary_functions(f))
     # Stochastic implicit methods use function-derived ForwardDiff tags that cannot be
     # represented by the fixed dual signatures installed below.
     f isa SDEFunction && return (f, p_out)
@@ -1116,7 +1182,7 @@ function promote_f(
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
-    despecialize && (f = _despecialize_auxiliary_functions(f))
+    despecialize && !_is_concretized(f) && (f = _despecialize_auxiliary_functions(f))
 
     dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
         !(f.f isa AbstractSciMLOperator) &&

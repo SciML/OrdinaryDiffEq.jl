@@ -26,7 +26,7 @@ function SciMLBase.__init(
         save_discretes = true,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
-        calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
+        calck = (callback !== nothing && !isempty(callback)) || # Empty callback
             dense, # and no dense output
         seed = UInt64(0),
         dt = zero(eltype(prob.tspan)),
@@ -547,7 +547,8 @@ function SciMLBase.__init(
         SciMLBase.initialize_dae!(integrator)
         initialize_solution!(integrator)
         OrdinaryDiffEqCore.initialize_callbacks!(integrator, initialize_save)
-        if save_on && save_start
+        if save_on && save_start &&
+                (!isdefined(opts, :save_discretes) || opts.save_discretes)
             SciMLBase.save_discretes_if_enabled!(integrator, opts.callback; skip_duplicates = true)
         end
         DiffEqBase.initialize!(integrator)

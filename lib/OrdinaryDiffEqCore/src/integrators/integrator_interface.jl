@@ -11,6 +11,18 @@ function _change_t_via_interpolation!(
     # cache array which can be modified.
     if integrator.tdir * t < integrator.tdir * integrator.tprev
         error("Current interpolant only works between tprev and t")
+    elseif T !== true && integrator.saveiter > 0 &&
+            integrator.tdir * t <
+            integrator.tdir * integrator.sol.t[integrator.saveiter]
+        # The solution stores its times in order, so moving behind a point it already
+        # holds cannot be represented: the times invert and every later interpolation
+        # over that span reads the wrong side. `Val{true}` is the tstop rewind, which
+        # repairs the endpoint itself through `solution_endpoint_match_cur_integrator!`.
+        error(
+            "cannot change t to $t, the solution already holds a point at " *
+                "$(integrator.sol.t[integrator.saveiter]). Moving the integrator behind " *
+                "a saved point would leave the saved times out of order."
+        )
     elseif t != integrator.t
         if is_constant_cache(integrator.cache)
             integrator.u = integrator(t)
@@ -426,17 +438,37 @@ function addat_non_user_cache!(integrator::ODEIntegrator, cache, idxs)
     return resize_non_user_cache!(integrator, cache, i)
 end
 
-function deleteat!(integrator::ODEIntegrator, idxs)
-    for c in full_cache(integrator)
-        deleteat!(c, idxs)
+# Cache fields and `fsalfirst`/`fsallast` often alias, and `deleteat!`/`addat!` are not
+# idempotent like `resize!`, so each distinct array is visited exactly once.
+function foreach_unique_state_buffer(f, integrator::ODEIntegrator)
+    seen = Any[]
+    for c in Iterators.flatten(
+            (full_cache(integrator), (integrator.fsalfirst, integrator.fsallast))
+        )
+        (c === nothing || any(s -> s === c, seen)) && continue
+        push!(seen, c)
+        f(c)
     end
+    return nothing
+end
+
+function resize_solver_internals!(integrator::ODEIntegrator)
+    i = length(integrator.u)
+    resize_f!(integrator.f, i)
+    resize_nlsolver!(integrator, i)
+    resize_J_W!(integrator.cache, integrator, i)
+    return nothing
+end
+
+function deleteat!(integrator::ODEIntegrator, idxs)
+    foreach_unique_state_buffer(c -> deleteat!(c, idxs), integrator)
+    resize_solver_internals!(integrator)
     return deleteat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
 function addat!(integrator::ODEIntegrator, idxs)
-    for c in full_cache(integrator)
-        addat!(c, idxs)
-    end
+    foreach_unique_state_buffer(c -> addat!(c, idxs), integrator)
+    resize_solver_internals!(integrator)
     return addat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 

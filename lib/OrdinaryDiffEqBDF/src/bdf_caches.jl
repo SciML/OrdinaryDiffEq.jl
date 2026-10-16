@@ -89,7 +89,7 @@ end
 
 # SBDF
 
-@cache mutable struct SBDFConstantCache{rateType, N, uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct SBDFConstantCache{rateType, N, uType, dtType} <: OrdinaryDiffEqConstantCache
     cnt::Int
     ark::Bool
     k2::rateType
@@ -102,9 +102,10 @@ end
     k₃::rateType
     du₁::rateType
     du₂::rateType
+    dtprev::dtType
 end
 
-@cache mutable struct SBDFCache{uType, rateType, N} <: BDFMutableCache
+@cache mutable struct SBDFCache{uType, rateType, N, dtType} <: BDFMutableCache
     cnt::Int
     ark::Bool
     u::uType
@@ -119,6 +120,7 @@ end
     k₃::rateType
     du₁::rateType
     du₂::rateType
+    dtprev::dtType
 end
 
 function alg_cache(
@@ -143,10 +145,11 @@ function alg_cache(
     uprev2 = u
     uprev3 = u
     uprev4 = u
+    dtprev = zero(dt)
 
     return SBDFConstantCache(
         1, alg.ark, k2, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁,
-        du₂
+        du₂, dtprev
     )
 end
 
@@ -174,10 +177,11 @@ function alg_cache(
     uprev2 = zero(u)
     uprev3 = order >= 3 ? zero(u) : uprev2
     uprev4 = order == 4 ? zero(u) : uprev2
+    dtprev = zero(dt)
 
     return SBDFCache(
         1, alg.ark, u, uprev, fsalfirst, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃,
-        du₁, du₂
+        du₁, du₂, dtprev
     )
 end
 
@@ -307,6 +311,7 @@ end
     uprev3::uType
     fsalfirst::rateType
     D::coefType1
+    Dtmp::coefType1
     D2::coefType2
     R::coefType
     U::coefType
@@ -359,12 +364,15 @@ function alg_cache(
     fsalfirst = zero(rate_prototype)
 
     D = Array{typeof(u)}(undef, 1, 2)
+    Dtmp = Array{typeof(u)}(undef, 1, 2)
     D2 = Array{typeof(u)}(undef, 1, 3)
     R = fill(zero(t), 2, 2)
     U = fill(zero(t), 2, 2)
 
     D[1] = zero(u)
     D[2] = zero(u)
+    Dtmp[1] = zero(u)
+    Dtmp[2] = zero(u)
     D2[1] = zero(u)
     D2[2] = zero(u)
     D2[3] = zero(u)
@@ -380,7 +388,7 @@ function alg_cache(
     dtₙ₋₂ = zero(dt)
 
     return QNDF2Cache(
-        uprev2, uprev3, fsalfirst, D, D2, R, U, atmp,
+        uprev2, uprev3, fsalfirst, D, Dtmp, D2, R, U, atmp,
         utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!
     )
 end
@@ -629,6 +637,12 @@ end
     iters_from_event::Int
     fd_weights::fdWeightsType
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    ts_asc::tsType
+    α_bar::tsType
+    dd_c::fdWeightsType
+    dd_D::fdWeightsType
 end
 
 function alg_cache(
@@ -685,10 +699,22 @@ function alg_cache(
 
     fd_weights = zeros(typeof(t), max_order + 1, max_order + 1)
 
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
+    ts_asc = zeros(typeof(t), n_filt)
+    α_bar = zeros(typeof(t), n_filt)
+    dd_c = zeros(typeof(t), n_filt, n_filt)
+    dd_D = zeros(typeof(t), n_filt, n_filt)
+
     return FBDFConstantCache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
-        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald
+        terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald,
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 
@@ -728,6 +754,12 @@ end
     step_limiter!::StepLimiter
     fd_weights::fdWeightsType
     stald::staldType
+    time_filter::Bool
+    filter_order::Int
+    ts_asc::tsType
+    α_bar::tsType
+    dd_c::fdWeightsType
+    dd_D::fdWeightsType
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -793,11 +825,23 @@ function alg_cache(
         tiny = alg.stald_tiny,
     )
 
+    alg.time_filter && f.mass_matrix !== I && throw(
+        ArgumentError(
+            "FBDF(time_filter=true) requires the identity mass matrix; use time_filter=false for mass-matrix problems."
+        )
+    )
+    n_filt = alg.time_filter ? max_order + 2 : 0
+    ts_asc = zeros(typeof(t), n_filt)
+    α_bar = zeros(typeof(t), n_filt)
+    dd_c = zeros(typeof(t), n_filt, n_filt)
+    dd_D = zeros(typeof(t), n_filt, n_filt)
+
     return FBDFCache(
         fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!, fd_weights, stald
+        iters_from_event, dense, alg.step_limiter!, fd_weights, stald,
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
     )
 end
 

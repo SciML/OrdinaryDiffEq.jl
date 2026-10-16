@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRosenbrock, DiffEqBase, LinearAlgebra, Test
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqNonlinearSolve, DiffEqBase, LinearAlgebra, Test
 
 function linear_dae!(du, u, p, t)
     du[1] = -1
@@ -57,6 +57,35 @@ end
         @test sol.u[end] ≈ exact(sol.t[end]) atol = 1.0e-4
         for t in range(0.0, sol.t[end]; length = 101)
             @test sol(t) ≈ exact(t) atol = 1.0e-2
+        end
+    end
+end
+
+# Nonlinear algebraic constraint so truncation leaves a residual that forces
+# BrownFullBasicInit to run (and previously overwrite uprev; #4485).
+@testset "BrownFullBasicInit saveat matches post-solve interpolant" begin
+    function cubic_dae!(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[2]^3 - u[1]
+        return nothing
+    end
+    callback = ContinuousCallback(
+        (u, t, integrator) -> u[1] - 0.2, terminate!;
+        save_positions = (true, false)
+    )
+    prob = ODEProblem(
+        ODEFunction(cubic_dae!; mass_matrix), [1.0, 1.0], (0.0, 10.0);
+        callback, initializealg = BrownFullBasicInit()
+    )
+    tgrid = range(0.0, 5.0; length = 101)
+    for alg in (Rodas4(), Rodas4P(), Rodas5P())
+        sol_saveat = solve(prob, alg; saveat = tgrid)
+        sol_dense = solve(prob, alg)
+        @test sol_saveat.retcode == SciMLBase.ReturnCode.Terminated
+        @test sol_dense.retcode == SciMLBase.ReturnCode.Terminated
+        @test sol_saveat.t[end] ≈ sol_dense.t[end] atol = 1.0e-10
+        for (t, u) in zip(sol_saveat.t, sol_saveat.u)
+            @test sol_dense(t) ≈ u atol = 1.0e-8
         end
     end
 end

@@ -25,6 +25,7 @@ for (Alg, Description, Ref) in [
         (:ETDRK3, "3rd order exponential-RK scheme.", REF1),
         (:ETDRK4, "4th order exponential-RK scheme (fixed timestepping)", REF1),
         (:HochOst4, "4th order exponential-RK scheme with stiff order 4.", REF1),
+        (:Friedli, "4th order (stiff order 3) exponential-RK scheme.", REF1),
     ]
     @eval begin
         @doc generic_solver_docstring(

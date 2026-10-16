@@ -1,10 +1,10 @@
 ### Type unions for dispatch
-QNDF_CACHES = Union{QNDFConstantCache, QNDFCache}
-FBDF_CACHES = Union{
+const QNDF_CACHES = Union{QNDFConstantCache, QNDFCache}
+const FBDF_CACHES = Union{
     FBDFConstantCache, FBDFCache, DFBDFConstantCache, DFBDFCache,
     MOOSE234ConstantCache, MOOSE234Cache,
 }
-BDF_CACHES_WITH_INTERPOLATIONS = Union{QNDF_CACHES, FBDF_CACHES}
+const BDF_CACHES_WITH_INTERPOLATIONS = Union{QNDF_CACHES, FBDF_CACHES}
 
 ### Fallbacks to capture unsupported derivative orders
 function _ode_interpolant(
@@ -229,6 +229,71 @@ function _bdf_active_order(k)
     return max(n, 1)
 end
 
+# Function barrier on the active order: _CHEB_NODES and _BARY_WEIGHTS are
+# tuples of differently sized tuples, so indexing them with a runtime `n`
+# is type-unstable and boxes the result. The unrolled branch dispatches
+# each kernel on a literal Val(1)..Val(6), giving it a statically known
+# order so the table lookups constant-fold to concrete NTuple types.
+# Orders above 6 throw BoundsError.
+function _ode_interpolant(
+        Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs, T::Type{Val{D}}, differential_vars
+    ) where {D}
+    n = _bdf_active_order(k)
+    return if n == 1
+        _fbdf_interp(Val(1), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 2
+        _fbdf_interp(Val(2), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 3
+        _fbdf_interp(Val(3), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 4
+        _fbdf_interp(Val(4), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 5
+        _fbdf_interp(Val(5), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 6
+        _fbdf_interp(Val(6), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    else
+        throw(BoundsError(_CHEB_NODES, n))
+    end
+end
+
+function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k,
+        cache::FBDF_CACHES,
+        idxs, T::Type{Val{D}}, differential_vars
+    ) where {D}
+    n = _bdf_active_order(k)
+    return if n == 1
+        _fbdf_interp!(Val(1), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 2
+        _fbdf_interp!(Val(2), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 3
+        _fbdf_interp!(Val(3), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 4
+        _fbdf_interp!(Val(4), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 5
+        _fbdf_interp!(Val(5), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    elseif n == 6
+        _fbdf_interp!(Val(6), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
+    else
+        throw(BoundsError(_CHEB_NODES, n))
+    end
+end
+
+# Keep DerivativeOrderNotPossibleError for derivative orders without a kernel
+function _fbdf_interp(
+        ::Val, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{D}}, differential_vars
+    ) where {D}
+    throw(DerivativeOrderNotPossibleError())
+end
+
+function _fbdf_interp!(
+        ::Val, out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{D}}, differential_vars
+    ) where {D}
+    throw(DerivativeOrderNotPossibleError())
+end
+
 ####################################################################
 # Lagrange basis functions on fixed Chebyshev nodes (and derivatives)
 #
@@ -316,12 +381,10 @@ end
 ####################################################################
 
 # Out-of-place, no idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{0}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     nodes = _CHEB_NODES[n]
     weights = _BARY_WEIGHTS[n]
 
@@ -349,12 +412,10 @@ end
 end
 
 # Out-of-place, with idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{0}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     nodes = _CHEB_NODES[n]
     weights = _BARY_WEIGHTS[n]
 
@@ -380,12 +441,10 @@ end
 end
 
 # In-place, no idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{0}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     nodes = _CHEB_NODES[n]
     weights = _BARY_WEIGHTS[n]
 
@@ -412,12 +471,10 @@ end
 end
 
 # In-place, with idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{0}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     nodes = _CHEB_NODES[n]
     weights = _BARY_WEIGHTS[n]
 
@@ -450,12 +507,10 @@ end
 ####################################################################
 
 # Out-of-place, no idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{1}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt = inv(dt)
 
     dL1 = _fbdf_lagrange_basis_deriv(Θ, 1, n)
@@ -470,12 +525,10 @@ end
 end
 
 # Out-of-place, with idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{1}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt = inv(dt)
 
     dL1 = _fbdf_lagrange_basis_deriv(Θ, 1, n)
@@ -490,12 +543,10 @@ end
 end
 
 # In-place, no idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{1}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt = inv(dt)
 
     dL1 = _fbdf_lagrange_basis_deriv(Θ, 1, n)
@@ -510,12 +561,10 @@ end
 end
 
 # In-place, with idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{1}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt = inv(dt)
 
     dL1 = _fbdf_lagrange_basis_deriv(Θ, 1, n)
@@ -536,12 +585,10 @@ end
 ####################################################################
 
 # Out-of-place, no idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{2}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt2 = inv(dt)^2
 
     d2L1 = _fbdf_lagrange_basis_deriv2(Θ, 1, n)
@@ -567,12 +614,10 @@ end
 end
 
 # Out-of-place, with idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{2}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt2 = inv(dt)^2
 
     d2L1 = _fbdf_lagrange_basis_deriv2(Θ, 1, n)
@@ -599,12 +644,10 @@ end
 end
 
 # In-place, no idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{2}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt2 = inv(dt)^2
 
     d2L1 = _fbdf_lagrange_basis_deriv2(Θ, 1, n)
@@ -624,12 +667,10 @@ end
 end
 
 # In-place, with idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{2}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt2 = inv(dt)^2
 
     d2L1 = _fbdf_lagrange_basis_deriv2(Θ, 1, n)
@@ -656,12 +697,10 @@ end
 ####################################################################
 
 # Out-of-place, no idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{3}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt3 = inv(dt)^3
 
     d3L1 = _fbdf_lagrange_basis_deriv3(Θ, 1, n)
@@ -687,12 +726,10 @@ end
 end
 
 # Out-of-place, with idxs
-@muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp(
+        ::Val{n}, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{3}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt3 = inv(dt)^3
 
     d3L1 = _fbdf_lagrange_basis_deriv3(Θ, 1, n)
@@ -719,12 +756,10 @@ end
 end
 
 # In-place, no idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs::Nothing, T::Type{Val{3}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt3 = inv(dt)^3
 
     d3L1 = _fbdf_lagrange_basis_deriv3(Θ, 1, n)
@@ -744,12 +779,10 @@ end
 end
 
 # In-place, with idxs
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k,
-        cache::FBDF_CACHES,
+@muladd function _fbdf_interp!(
+        ::Val{n}, out, Θ, dt, y₀, y₁, k,
         idxs, T::Type{Val{3}}, differential_vars
-    )
-    n = _bdf_active_order(k)
+    ) where {n}
     invdt3 = inv(dt)^3
 
     d3L1 = _fbdf_lagrange_basis_deriv3(Θ, 1, n)
@@ -867,12 +900,4 @@ for (TV, m) in ((Val{1}, 1), (Val{2}, 2), (Val{3}, 3))
         @.. broadcast = false out = out / dt^$m
         return out
     end
-end
-
-# `addsteps!` is a no-op: the interpolation data is written during the step.
-function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::NORDSIECK_CACHES,
-        always_calc_begin = false, allow_calc_end = true, force_calc_end = false
-    )
-    return nothing
 end
