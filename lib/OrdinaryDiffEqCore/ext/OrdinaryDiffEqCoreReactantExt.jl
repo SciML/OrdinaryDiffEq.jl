@@ -51,6 +51,14 @@ function OrdinaryDiffEqCore.value_eps(x::TracedRNumber{T}) where {T <: IEEEFloat
     return max(min(nextfloat(a) - a, eps(floatmax(T))), floatmin(T))
 end
 
+# A spacing that compiled code flushes to zero becomes `floatmin(T)`: `100 floatmin(T)` can
+# exceed the whole interval of a solve that ends below it.
+function OrdinaryDiffEqCore.tstop_tolerance(x::TracedRNumber{T}) where {T <: IEEEFloat}
+    a = abs(x)
+    spacing = min(nextfloat(a) - a, eps(floatmax(T)))
+    return ifelse(iszero(spacing), floatmin(T), 100 * spacing)
+end
+
 # The bits of `abs(convert(Float32, x))` as the host computes them. Below `floatmin(Float32)`
 # the conversion is subnormal, which compiled conversion flushes, so the significand is
 # rounded to the subnormal grid (nearest, ties to even) directly.

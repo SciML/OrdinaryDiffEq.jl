@@ -164,6 +164,19 @@ end
     end
 end
 
+# End times below `100 floatmin(T)`, where `t` has a subnormal spacing.
+@testset "End time $tend" for tend in (1.0f-37, 1.0f-36, 1.0e-306)
+    solver = (u, p) -> solve(ODEProblem(f, u, (zero(tend), tend), p), Tsit5())
+    u = [one(tend)]
+    p = [-inv(tend)]
+    host = solver(u, p)
+    traced = Reactant.@jit solver(Reactant.to_rarray(u), Reactant.to_rarray(p))
+    @test host.retcode == ReturnCode.Success
+    @test traced.retcode == host.retcode
+    @test traced.t == [tend]
+    @test Array(traced.u[end]) ≈ [exp(-one(tend))] rtol = 5.0e-4
+end
+
 @testset "Staged error check equals the host check" begin
     prob = ODEProblem(f, Float32[1], (0.0f0, 1.0f0), Float32[-1])
     nchecked = 0

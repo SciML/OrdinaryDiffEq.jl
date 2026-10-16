@@ -317,6 +317,16 @@ spacing becomes `floatmin`, since compiled code flushes subnormals to zero.
 """
 value_eps(x) = eps(x)
 
+"""
+    tstop_tolerance(x)
+
+`100 * eps(x)`, the distance within which a step that would end short of the next tstop
+snaps to it. The Reactant extension gives a traced float `x` the same value where compiled
+arithmetic represents its spacing, and `floatmin` where the spacing is subnormal and flushes
+to zero.
+"""
+tstop_tolerance(x) = 100 * eps(x)
+
 # Accessor functions for tstop flag fields with fallbacks for non-ODE integrators
 # (e.g. DDEIntegrator in DelayDiffEq.jl which doesn't have these fields)
 _get_next_step_tstop(integrator::ODEIntegrator) = integrator.next_step_tstop
@@ -350,7 +360,7 @@ function modify_dt_for_tstops!(integrator)
         if eltype(integrator.sol.prob.tspan) <: AbstractFloat
             ReactantCore.@trace track_numbers = false if isfinite(tdir_tstop) & isfinite(integrator.t)
                 t_mag = max(abs(integrator.t), abs(tdir_tstop))
-                tstop_tol = 100 * value_eps(float(t_mag / oneunit(integrator.t))) *
+                tstop_tol = tstop_tolerance(float(t_mag / oneunit(integrator.t))) *
                     oneunit(integrator.t)
             end
         end

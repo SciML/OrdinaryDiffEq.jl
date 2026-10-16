@@ -14,5 +14,5 @@ const ReactantExt = Base.get_extension(OrdinaryDiffEqCore, :OrdinaryDiffEqCoreRe
 ) === nothing
 
 @test check_all_qualified_accesses_are_public(
-    ReactantExt; ignore = (:controller_fastpower, :dt_below_time_eps, :value_eps)
+    ReactantExt; ignore = (:controller_fastpower, :dt_below_time_eps, :tstop_tolerance, :value_eps)
 ) === nothing
