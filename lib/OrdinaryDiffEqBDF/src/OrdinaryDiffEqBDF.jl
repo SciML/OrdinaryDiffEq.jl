@@ -31,7 +31,7 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
 import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
-    ImplicitEulerESDIRKIMEXTableau
+    ImplicitEulerESDIRKIMEXTableau, AlexanderSDIRK2ESDIRKIMEXTableau
 
 using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
