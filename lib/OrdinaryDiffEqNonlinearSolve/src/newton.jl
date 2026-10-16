@@ -337,8 +337,31 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     isdae = nlsolve_f(integrator) isa DAEFunction
     γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
     W_γdt ≈ γdt && return nothing
-    rmul!(get_fu(nlcache), 2 / (1 + γdt / W_γdt))
+    rmul!(get_fu(nlcache), stale_W_scale(nlsolver.method, isdae, γdt, W_γdt))
     return nothing
+end
+
+"""
+    stale_W_scale(method, isdae, γdt, W_γdt)
+
+Factor applied to a Newton increment computed with a `W` assembled at `W_γdt` when the
+stage needs `γdt` (Kennedy & Carpenter, "Diagonally Implicit Runge-Kutta Methods for
+Ordinary Differential Equations. A Review", 2016, eq. 90).
+
+For a DIRK stage of an ODE, `W = J - I/W_γdt` while the residual is scaled by the
+*current* `1/γdt`, so the multiplier the stale `W` leaves on an eigenmode runs from `1`
+(stiff) to `γdt/W_γdt` (nonstiff). The factor `2/(1 + W_γdt/γdt)` balances the two ends,
+bounding the contraction of a linear stage by `|r - 1|/(r + 1)` with `r = γdt/W_γdt`.
+
+The DAE (`W_γdt` stores `cj = α/(γdt)`) and coefficient-multistep (effective step
+`γdt/α`) conventions differ and keep `2/(1 + γdt/W_γdt)`.
+"""
+function stale_W_scale(method, isdae, γdt, W_γdt)
+    return if isdae || method === COEFFICIENT_MULTISTEP
+        2 / (1 + γdt / W_γdt)
+    else
+        2 / (1 + W_γdt / γdt)
+    end
 end
 
 """
@@ -817,7 +840,7 @@ end
     # page 54.
     γdt = isdae ? α * invγdt : γ * dt
 
-    !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
+    !(W_γdt ≈ γdt) && (rmul!(dz, stale_W_scale(method, isdae, γdt, W_γdt)))
     relax!(dz, nlsolver, integrator, f)
 
     calculate_residuals!(
