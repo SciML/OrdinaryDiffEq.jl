@@ -120,7 +120,7 @@ end
     # MOOSE234 — VSVO method, test_convergence with fixed dt is not applicable
     @test_nowarn solve(prob, MOOSE234())
 
-    sol = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
+    sol = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)
     @test sol.retcode == ReturnCode.Success
 end
 
@@ -128,11 +128,11 @@ end
     prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
     exact = exp(-1.0)
 
-    sol_mod = solve(prob, MOOSE234(), abstol = 1e-6, reltol = 1e-6)
-    @test isapprox(sol_mod[end], exact, rtol = 1e-4)
+    sol_mod = solve(prob, MOOSE234(), abstol = 1.0e-6, reltol = 1.0e-6)
+    @test isapprox(sol_mod[end], exact, rtol = 1.0e-4)
 
-    sol_tight = solve(prob, MOOSE234(), abstol = 1e-10, reltol = 1e-10)
-    @test isapprox(sol_tight[end], exact, rtol = 1e-6)
+    sol_tight = solve(prob, MOOSE234(), abstol = 1.0e-10, reltol = 1.0e-10)
+    @test isapprox(sol_tight[end], exact, rtol = 1.0e-6)
 
     @test abs(sol_tight[end] - exact) < abs(sol_mod[end] - exact)
 end
@@ -142,23 +142,23 @@ end
     u0 = [1.0, 2.0]
     prob = ODEProblem(fiip, u0, (0.0, 1.0), -1.0)
 
-    sol = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
+    sol = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)
     @test sol.retcode == ReturnCode.Success
-    @test isapprox(sol.u[end], exp(-1.0) .* u0, rtol = 1e-2)
+    @test isapprox(sol.u[end], exp(-1.0) .* u0, rtol = 1.0e-2)
 end
 
 @testset "MOOSE234 vs FBDF accuracy" begin
     prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
     exact = exp(-1.0)
 
-    sol_moose = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
-    sol_fbdf = solve(prob, FBDF(), abstol = 1e-8, reltol = 1e-8)
+    sol_moose = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)
+    sol_fbdf = solve(prob, FBDF(), abstol = 1.0e-8, reltol = 1.0e-8)
 
     err_moose = abs(sol_moose[end] - exact)
     err_fbdf = abs(sol_fbdf[end] - exact)
 
-    @test err_moose < 1e-6
-    @test err_fbdf < 1e-6
+    @test err_moose < 1.0e-6
+    @test err_fbdf < 1.0e-6
 end
 
 @testset "SBDF" begin

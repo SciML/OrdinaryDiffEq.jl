@@ -972,22 +972,6 @@ function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = f
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
 
-        if can_stab_filter
-            est2 = u isa Number ? (y2 - y3) : @.. y2 - y3
-            atmp = calculate_residuals(est2, uprev, y3, abstol, reltol, internalnorm, t)
-            cache.terkm1 = internalnorm(atmp, t)
-        else
-            cache.terkm1 = zero(cache.terk)
-        end
-
-        if can_fbdf4_filter
-            est3 = u isa Number ? (y4 - y3) : @.. y4 - y3
-            atmp = calculate_residuals(est3, uprev, y3, abstol, reltol, internalnorm, t)
-            cache.terkp1 = internalnorm(atmp, t)
-        else
-            cache.terkp1 = zero(cache.terk)
-        end
-
         # FBDF-style error for the BDF solve (predictor-corrector difference)
         if u isa Number
             bdf_err = y3 - u₀
@@ -1003,15 +987,30 @@ function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = f
             bdf_lte = @.. bdf_err * (-1 / (1 + bdf_order))
         end
 
-        # Select the error estimate for the current order
-        if k == 2 && can_stab_filter
-            lte = est2
-        elseif k >= 3 && can_fbdf4_filter
-            lte = est3
-        elseif k == 3 && can_stab_filter
-            lte = est2
+        # Error estimate for the current order: est2 at order 2 (and at order 3
+        # when the FBDF4 filter is unavailable), est3 at orders 3-4, else bdf_lte
+        lte = bdf_lte
+
+        if can_stab_filter
+            est2 = u isa Number ? (y2 - y3) : @.. y2 - y3
+            atmp = calculate_residuals(est2, uprev, y3, abstol, reltol, internalnorm, t)
+            cache.terkm1 = internalnorm(atmp, t)
+            if k == 2 || (k == 3 && !can_fbdf4_filter)
+                lte = est2
+            end
         else
-            lte = bdf_lte
+            cache.terkm1 = zero(cache.terk)
+        end
+
+        if can_fbdf4_filter
+            est3 = u isa Number ? (y4 - y3) : @.. y4 - y3
+            atmp = calculate_residuals(est3, uprev, y3, abstol, reltol, internalnorm, t)
+            cache.terkp1 = internalnorm(atmp, t)
+            if k >= 3
+                lte = est3
+            end
+        else
+            cache.terkp1 = zero(cache.terk)
         end
 
         atmp = calculate_residuals(lte, uprev, y3, abstol, reltol, internalnorm, t)

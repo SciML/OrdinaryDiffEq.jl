@@ -207,12 +207,12 @@ end
     end
 
     prob_mod = ODEProblem(vdp!, [2.0, 0.0], (0.0, 6.3), [100.0])
-    sol_mod = solve(prob_mod, MOOSE234(), abstol = 1e-6, reltol = 1e-6)
+    sol_mod = solve(prob_mod, MOOSE234(), abstol = 1.0e-6, reltol = 1.0e-6)
     @test sol_mod.retcode == ReturnCode.Success
     @test sol_mod.t[end] == 6.3
 
     prob_stiff = ODEProblem(vdp!, [2.0, 0.0], (0.0, 6.3), [1000.0])
-    sol_stiff = solve(prob_stiff, MOOSE234(), abstol = 1e-4, reltol = 1e-4)
+    sol_stiff = solve(prob_stiff, MOOSE234(), abstol = 1.0e-4, reltol = 1.0e-4)
     @test sol_stiff.retcode == ReturnCode.Success
     @test sol_stiff.t[end] == 6.3
 end
@@ -220,15 +220,15 @@ end
 @testset "MOOSE234 ROBER stiff system" begin
     function rober!(du, u, p, t)
         y1, y2, y3 = u
-        du[1] = -0.04 * y1 + 1e4 * y2 * y3
-        du[2] = 0.04 * y1 - 1e4 * y2 * y3 - 3e7 * y2^2
-        du[3] = 3e7 * y2^2
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
     end
-    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1e5))
-    sol = solve(prob, MOOSE234(), abstol = 1e-8, reltol = 1e-8)
+    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    sol = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)
     @test sol.retcode == ReturnCode.Success
-    @test sol.t[end] == 1e5
-    @test isapprox(sum(sol.u[end]), 1.0, atol = 1e-6)
+    @test sol.t[end] == 1.0e5
+    @test isapprox(sum(sol.u[end]), 1.0, atol = 1.0e-6)
 end
 
 if VERSION >= v"1.12"

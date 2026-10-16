@@ -880,7 +880,7 @@ function choose_order_moose!(
         terk_new = est3
     else
         terk_new = (est2 > zero(est2) && est3 > zero(est3) && est3 < est2) ?
-                   est3 * est3 / est2 : est3
+            est3 * est3 / est2 : est3
     end
 
     return kₙ, terk_new
