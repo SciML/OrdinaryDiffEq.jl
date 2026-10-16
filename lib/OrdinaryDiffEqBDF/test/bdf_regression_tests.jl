@@ -199,6 +199,28 @@ end
     @test all(o -> 2 <= o <= 4, orders_seen)
 end
 
+@testset "MOOSE234 startup error control: oversized dt and restart ($name)" for (
+        name, f, double!,
+    ) in (
+        ("out-of-place", (u, p, t) -> -u, integ -> (integ.u = 2 .* integ.u)),
+        ("in-place", (du, u, p, t) -> (du .= -u), integ -> (integ.u .*= 2)),
+    )
+    prob = ODEProblem(f, [1.0], (0.0, 1.0))
+
+    sol = solve(prob, MOOSE234(); dt = 1.0, abstol = 1.0e-10, reltol = 1.0e-10)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.stats.nreject > 0
+    @test abs(sol.u[end][1] - exp(-1.0)) < 1.0e-6
+
+    double_at_half = DiscreteCallback((u, t, integ) -> t == 0.5, double!)
+    sol = solve(
+        prob, MOOSE234(); callback = double_at_half, tstops = [0.5],
+        abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test sol.retcode == ReturnCode.Success
+    @test abs(sol.u[end][1] - 2 * exp(-1.0)) < 1.0e-6
+end
+
 @testset "MOOSE234 Van der Pol (stiff)" begin
     function vdp!(du, u, p, t)
         μ = p[1]

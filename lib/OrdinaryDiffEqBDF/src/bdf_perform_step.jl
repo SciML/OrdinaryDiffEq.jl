@@ -1143,11 +1143,10 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
 
     step_limiter!(u, integrator, p, t + dt)
 
-    # y3 is now in `u`. Store y2 in u₀, y4 in terk_tmp.
+    # y3 is now in `u`. Store y2 in terkp1_tmp, y4 in terk_tmp; u₀ keeps the predictor.
 
     # === BDF3-Stab filter → y² ===
-    # u₀ will hold y2 (overwriting the predictor, no longer needed)
-    @.. broadcast = false u₀ = u  # default: y2 = y3
+    @.. broadcast = false terkp1_tmp = u  # default: y2 = y3
 
     if can_stab_filter
         n_dd = 4
@@ -1169,8 +1168,8 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
             @.. broadcast = false tmp += c[4, i] * u_history[idx]
         end
 
-        # y2 = y3 + weight_stab * δ³y → stored in u₀
-        @.. broadcast = false u₀ = u + weight_stab * tmp
+        # y2 = y3 + weight_stab * δ³y → stored in terkp1_tmp
+        @.. broadcast = false terkp1_tmp = u + weight_stab * tmp
     end
 
     # === FBDF4 filter → y⁴ ===
@@ -1203,9 +1202,9 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
         (; abstol, reltol, internalnorm) = integrator.opts
 
         if can_stab_filter
-            # est2 = y2 - y3 → terkp1_tmp
-            @.. broadcast = false terkp1_tmp = u₀ - u
-            calculate_residuals!(atmp, terkp1_tmp, uprev, u, abstol, reltol, internalnorm, t)
+            # est2 = y2 - y3 → tmp
+            @.. broadcast = false tmp = terkp1_tmp - u
+            calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
             cache.terkm1 = internalnorm(atmp, t)
         else
             cache.terkm1 = zero(cache.terk)
@@ -1220,23 +1219,23 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
             cache.terkp1 = zero(cache.terk)
         end
 
-        # FBDF-style predictor-corrector error for startup
-        @.. broadcast = false terkp1_tmp = u - u₀
+        # FBDF-style predictor-corrector error for startup → u₀
+        @.. broadcast = false u₀ = u - u₀
         for j in 1:min(bdf_order + 1, n_hist)
             factor = j * dt / (tdt - ts[j])
-            @.. broadcast = false terkp1_tmp *= factor
+            @.. broadcast = false u₀ *= factor
         end
-        @.. broadcast = false terkp1_tmp *= (-1 / (1 + bdf_order))
+        @.. broadcast = false u₀ *= (-1 / (1 + bdf_order))
 
         # Select the error estimate based on active order
         if k == 2 && can_stab_filter
-            @.. broadcast = false tmp = u₀ - u
+            @.. broadcast = false tmp = terkp1_tmp - u
         elseif k >= 3 && can_fbdf4_filter
             @.. broadcast = false tmp = terk_tmp - u
         elseif k == 3 && can_stab_filter
-            @.. broadcast = false tmp = u₀ - u
+            @.. broadcast = false tmp = terkp1_tmp - u
         else
-            @.. broadcast = false tmp = terkp1_tmp
+            @.. broadcast = false tmp = u₀
         end
 
         calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
@@ -1248,7 +1247,7 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
     if k == 4 && can_fbdf4_filter
         @.. broadcast = false u = terk_tmp
     elseif k == 2 && can_stab_filter
-        @.. broadcast = false u = u₀
+        @.. broadcast = false u = terkp1_tmp
     end
     # else: u already has y3
 

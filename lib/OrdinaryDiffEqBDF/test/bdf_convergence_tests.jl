@@ -144,7 +144,7 @@ end
 
     sol = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)
     @test sol.retcode == ReturnCode.Success
-    @test isapprox(sol.u[end], exp(-1.0) .* u0, rtol = 1.0e-2)
+    @test isapprox(sol.u[end], exp(-1.0) .* u0, rtol = 1.0e-5)
 end
 
 @testset "MOOSE234 vs FBDF accuracy" begin
