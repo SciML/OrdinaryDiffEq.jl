@@ -47,22 +47,24 @@ and need to manually handle kwargs merging that would normally be done by `solve
 or `init_call`.
 """
 function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
+    erases = _erases_callback_types(prob)
 
     # Special handling for callback merging
     if has_kwargs(prob)
         if merge_callbacks && haskey(prob.kwargs, :callback) && haskey(kwargs, :callback)
             pcb = prob.kwargs[:callback]
-            # Empty erased set: solve-time callback overrides via the merge below
-            # (same end state as a missing problem callback). Non-empty erased
-            # sets take a typed concatenate path; otherwise use CallbackSet.
-            if !(pcb isa CallbackSet{Vector{Any}, Vector{Any}} && isempty(pcb))
+            # The erased fast paths match `CallbackSet(pcb, callback)` only because the
+            # erasure below normalizes the result; an empty erased set then lets the
+            # solve-time callback override, as if the problem had no callback.
+            erased_pcb = erases && pcb isa CallbackSet{Vector{Any}, Vector{Any}}
+            if !(erased_pcb && isempty(pcb))
                 kwargs_temp = NamedTuple{
                     Base.diff_names(
                         Base._nt_names(values(kwargs)),
                         (:callback,)
                     ),
                 }(values(kwargs))
-                merged_callback = if pcb isa CallbackSet{Vector{Any}, Vector{Any}}
+                merged_callback = if erased_pcb
                     _merge_erased_callbacks(pcb, values(kwargs).callback)
                 else
                     DiffEqBase.CallbackSet(pcb, values(kwargs).callback)
@@ -74,7 +76,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     end
 
 
-    if _erases_callback_types(prob)
+    if erases
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
         kwargs = merge(
             (; kwargs...),
