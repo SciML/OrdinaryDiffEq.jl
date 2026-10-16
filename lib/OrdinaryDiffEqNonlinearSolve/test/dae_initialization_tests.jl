@@ -206,3 +206,22 @@ end
     @test sol.u[i[2]][2] ≈ 2.0 - sol.u[i[1]][1] atol = 1.0e-10
     @test sol.u[i[1]][2] ≈ 1.0 - sol.u[i[1]][1] atol = 1.0e-8
 end
+
+@testset "BrownFullBasicInit out-of-place mutable u0 aliasing" begin
+    f_vec(u, p, t) = [-u[1] + u[2], u[1] + u[2] - 1.0]
+    fn = ODEFunction(f_vec, mass_matrix = [1.0 0.0; 0.0 0.0])
+
+    prob = ODEProblem(fn, [1.0, 0.5], (0.0, 1.0))
+    integ = init(
+        prob, Rodas5P(); initializealg = BrownFullBasicInit(),
+        alias = SciMLBase.ODEAliasSpecifier(alias_u0 = true)
+    )
+    @test integ.u === prob.u0
+    @test prob.u0 ≈ [1.0, 0.0] atol = 1.0e-10
+
+    prob = ODEProblem(fn, [1.0, 0.5], (0.0, 1.0))
+    integ = init(prob, Rodas5P(); initializealg = BrownFullBasicInit())
+    @test integ.u !== prob.u0
+    @test prob.u0 == [1.0, 0.5]
+    @test integ.u ≈ [1.0, 0.0] atol = 1.0e-10
+end

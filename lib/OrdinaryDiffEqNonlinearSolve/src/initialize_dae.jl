@@ -734,9 +734,7 @@ function _initialize_dae!(
     if u0 isa Number
         integrator.u = first(nlsol.u)
     elseif ArrayInterface.ismutable(u0)
-        u = copy(u0)
-        u[algebraic_vars] .= nlsol.u
-        integrator.u = u
+        u0[algebraic_vars] .= nlsol.u
     else
         u = similar(u0)
         copyto!(u, u0)
