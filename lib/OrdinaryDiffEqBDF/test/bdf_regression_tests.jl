@@ -273,3 +273,18 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+@testset "QNDF1 step size control matches its O(dt^2) error estimate (#4739)" begin
+    # u[1] = 1 / (1 - t). With the controller exponent one too large, the step size
+    # cycles between over-growth and rejection: nreject ≈ naccept. With the matched
+    # exponent only the start-up phase rejects (~25 steps, independent of tolerance).
+    f!(du, u, p, t) = (du[1] = u[1]^2; du[2] = 1.0; nothing)
+    prob = ODEProblem(f!, [1.0, 0.0], (0.0, 0.9))
+    for alg in (QNDF1(), QBDF1())
+        @test OrdinaryDiffEqCore.alg_adaptive_order(alg) == 1
+        sol = solve(prob, alg, reltol = 1.0e-8, abstol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject < sol.stats.naccept / 100
+        @test abs(sol.u[end][1] - 10) / 10 < 2.0e-3
+    end
+end
