@@ -243,9 +243,13 @@ function build_cases(;
 end
 
 function solve_kwargs(case::TestCase)
-    # These Hairer/Krylov cases amplify stage-predictor roundoff at default tolerances.
-    case.jac_name == "CSC" && case.solver ∈ (Hairer4, Hairer42) &&
-        return (; SOLVE_KWARGS..., reltol = 1.0e-8, abstol = 1.0e-6)
+    # These cases amplify roundoff to O(reltol) at default tolerances (Hairer/Krylov
+    # stage predictors; QNDF/QBDF order selection), so a 1e-14 perturbation alone moves
+    # the solution past GPU_MATCH_TOL. Converged solves make the CPU/GPU match meaningful.
+    (
+        case.solver ∈ (QNDF, QBDF) ||
+            case.jac_name == "CSC" && case.solver ∈ (Hairer4, Hairer42)
+    ) && return (; SOLVE_KWARGS..., reltol = 1.0e-8, abstol = 1.0e-6)
     return SOLVE_KWARGS
 end
 

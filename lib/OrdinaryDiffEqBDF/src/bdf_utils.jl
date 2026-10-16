@@ -130,6 +130,24 @@ end
 
 const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
 
+# SBDF uses fixed-coefficient formulas that assume uniformly spaced history, so a
+# genuine dt change restarts at first order (#4329). The final step is clipped to
+# land on tspan[2], so a 1-ulp perturbation of the end time changes dt by ~eps(t);
+# an exact `dt != dtprev` check mistakes that roundoff for a step-size change and
+# pays a full O(dt^2) first-order step (#4573). Tolerate differences within the
+# same 100*eps(t) window `modify_dt_for_tstops!` uses when clipping to a tstop.
+@inline function _sbdf_dt_changed(dt, dtprev, t)
+    dt == dtprev && return false
+    if t isa AbstractFloat && isfinite(t)
+        tdt = t + dt
+        isfinite(tdt) || return true
+        tol = 100 * eps(float(max(abs(t), abs(tdt)) / oneunit(t))) * oneunit(t)
+        return abs(dt - dtprev) > tol
+    else
+        return true
+    end
+end
+
 function error_constant(integrator, alg::QNDF, k)
     (; γₖ) = integrator.cache
     κ = alg.kappa[k]

@@ -134,6 +134,7 @@ function nlsolve!(
 
     (; maxiters, κ, fast_convergence_cutoff) = nlsolver
 
+    apply_predictor!(nlsolver, integrator)
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence
     η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
@@ -277,6 +278,66 @@ end
 ## default implementations
 
 initialize!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
+
+"""
+    apply_predictor!(nlsolver, integrator)
+
+Seed the stage solve's iterate from the nonlinear-solver algorithm's `predictor`
+callable, when one was supplied. The callable guesses the stage *value* —
+`predictor(uprev, p, t + c*dt, dt)` out of place and
+`predictor(upred, uprev, p, t + c*dt, dt)` in place — and the guess is mapped
+back onto the stage increment `z` through the inverse of the `ustep` map the
+residual uses (`tmp + γ⋅z` for `DIRK`, `z` for `COEFFICIENT_MULTISTEP`,
+`u₀ + z` for `DAEFunction`), so it applies uniformly to every implicit stage of
+any algorithm driven through [`nlsolve!`](@ref). Runs once per solve attempt,
+before [`initialize!`](@ref) — including a `TryAgain` retry, which restarts from
+the seed rather than the diverged iterate.
+"""
+apply_predictor!(::AbstractNLSolver, integrator::SciMLBase.DEIntegrator) = nothing
+
+function apply_predictor!(nlsolver::NLSolver{<:Any, false}, integrator::SciMLBase.DEIntegrator)
+    pred = stage_predictor(nlsolver.alg)
+    pred === nothing && return nothing
+    (; uprev, p, t, dt) = integrator
+    upred = pred(uprev, p, t + nlsolver.c * dt, dt)
+    nlsolver.z = _z_of_stage_guess(nlsolver, integrator, upred)
+    return nothing
+end
+
+function apply_predictor!(nlsolver::NLSolver{<:Any, true}, integrator::SciMLBase.DEIntegrator)
+    pred = stage_predictor(nlsolver.alg)
+    pred === nothing && return nothing
+    (; uprev, p, t, dt) = integrator
+    # `ztmp` is the next-iterate buffer; before the iteration it is scratch.
+    upred = nlsolver.ztmp
+    pred(upred, uprev, p, t + nlsolver.c * dt, dt)
+    _z_of_stage_guess!(nlsolver, integrator, upred)
+    return nothing
+end
+
+function _z_of_stage_guess(nlsolver, integrator, upred)
+    if integrator.f isa DAEFunction
+        return upred - get_dae_uprev(integrator, integrator.uprev)
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        return upred
+    else
+        return (upred - nlsolver.tmp) * inv(nlsolver.γ)
+    end
+end
+
+function _z_of_stage_guess!(nlsolver, integrator, upred)
+    z = nlsolver.z
+    if integrator.f isa DAEFunction
+        _uprev = get_dae_uprev(integrator, integrator.uprev)
+        @.. broadcast = false z = upred - _uprev
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        copyto!(z, upred)
+    else
+        invγ = inv(nlsolver.γ)
+        @.. broadcast = false z = (upred - nlsolver.tmp) * invγ
+    end
+    return z
+end
 
 """
     initial_η(nlsolver, integrator) -> η

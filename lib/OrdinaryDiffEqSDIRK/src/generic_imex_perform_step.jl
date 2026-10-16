@@ -30,6 +30,57 @@ end
 end
 
 # ===========================================================================
+# FSAL <-> stage-variable conversion under a mass matrix
+# ===========================================================================
+#
+# The stage variables are defined by `M zᵢ = dt f(uᵢ)` (see the Newton residual
+# in OrdinaryDiffEqNonlinearSolve), but the FSAL vectors always hold the plain
+# derivative `f(u)`: that is what `initialize!` below stores, and what Core's
+# `reset_fsal!` stores after a callback or discontinuity. The explicit first
+# stage consumes the FSAL as `z₁` and the stiffly-accurate tail produces the
+# next FSAL from `z_s`, so both ends convert. Getting this wrong costs a full
+# `O(dt)` blunder on the first step of every solve, i.e. global order 1.
+#
+# Both conversions are confined to the explicit-first-stage methods, which
+# `only_diagonal_mass_matrix` restricts to diagonal `M`, so they are elementwise.
+# `d === nothing` means "no conversion needed" — either `M === I`, or an
+# implicit-first-stage method, which solves for `z₁` and never consumes the FSAL
+# as a stage value. Those keep `fsallast = z_s/dt`, which is `du/dt` and so is
+# also what the Hermite interpolant wants; they retain general `M` support.
+#
+# An algebraic row (`d == 0`) maps to zero rather than `Inf`: `M z₁ = dt f₁`
+# constrains nothing there and the later stages' Newton solves absorb the choice.
+@inline _mmdiv(x, ::Nothing) = x
+@inline _mmdiv(x, d) = iszero(d) ? zero(x) : x / d
+@inline _mmmul(z, ::Nothing) = z
+@inline _mmmul(z, d) = d * z
+
+# A SciMLOperators mass matrix may depend on `(u, p, t)`, so its diagonal is read at
+# the point each conversion belongs to: `(uprev, t)` for the first stage and
+# `(u, t + dt)` for the FSAL. The out-of-place `update_coefficients` leaves the
+# operator itself untouched, so the nonlinear solves keep their own updates.
+function _mmdiag(tab, mass_matrix, u, p, t)
+    (mass_matrix === I || !tab.explicit_first_stage) && return nothing
+    return _mmdiag_values(mass_matrix, u, p, t)
+end
+
+# The end-of-step diagonal. A plain matrix is constant, so the first-stage `mmd` is reused.
+_mmdiag_end(mmd, ::Union{UniformScaling, AbstractMatrix}, u, p, t) = mmd
+function _mmdiag_end(mmd, mass_matrix, u, p, t)
+    return mmd === nothing ? nothing : _mmdiag_values(mass_matrix, u, p, t)
+end
+
+# A scalar mass matrix (`λ * I`, or a SciMLOperators `ScalarOperator`, which reports
+# `axes(M) == ()`) has no `diag`; its diagonal is the scalar itself, which
+# broadcasts in `_mmdiv`/`_mmmul`.
+_mmdiag_values(mass_matrix::UniformScaling, u, p, t) = mass_matrix.λ
+_mmdiag_values(mass_matrix::AbstractMatrix, u, p, t) = diag(mass_matrix)
+function _mmdiag_values(mass_matrix, u, p, t)
+    M = update_coefficients(mass_matrix, u, p, t)
+    return axes(M) == () ? convert(Number, M) : diag(M)
+end
+
+# ===========================================================================
 # Generic ESDIRK/IMEX perform_step bodies
 # ===========================================================================
 #
@@ -73,6 +124,10 @@ end
     # non-split solve of the same method does (#4149).
     is_imex = integrator.f isa SplitFunction && issplit(alg)
     predictor = _predictor(alg)
+    # A callable `predictor` on the nlsolve algorithm overwrites `nlsolver.z`
+    # inside `nlsolve!`; collapse to the zero fill so the interpolant work is
+    # not computed then thrown away.
+    stage_predictor(nlsolver.alg) === nothing || (predictor = Predictor.Trivial)
     s = tab.s
     γ = Ai[s, s]
 
@@ -87,16 +142,17 @@ end
     markfirststage!(nlsolver)
 
     # ---------------- Stage 1 ----------------
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, integrator.uprev, p, integrator.t)
     if tab.explicit_first_stage
         if is_imex && tab.fsal &&
                 !repeat_step && !integrator.last_stepfail
             f_impl(zs[1], integrator.uprev, p, integrator.t)
-            zs[1] .*= dt
+            @.. broadcast = false zs[1] = dt * _mmdiv(zs[1], mmd)
         else
-            @.. broadcast = false zs[1] = dt * integrator.fsalfirst
+            @.. broadcast = false zs[1] = dt * _mmdiv(integrator.fsalfirst, mmd)
         end
         if is_imex
-            @.. broadcast = false ks[1] = dt * integrator.fsalfirst - zs[1]
+            @.. broadcast = false ks[1] = dt * _mmdiv(integrator.fsalfirst, mmd) - zs[1]
         end
     else
         # Implicit first stage (explicit_first_stage = false): SDIRK2, Cash4,
@@ -1179,7 +1235,7 @@ end
     # ---------------- Output u ----------------
     if is_imex
         @.. broadcast = false u = tmp + γ * zs[s]
-        f2(ks[s], u, p, t + dt)
+        f2(ks[s], u, p, t + ce[s] * dt)
         ks[s] .*= dt
         integrator.stats.nf2 += 1
         if s == 1
@@ -1317,7 +1373,11 @@ end
         integrator.f(integrator.fsallast, u, p, t + tab.fsallast_c * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     else
-        @.. broadcast = false integrator.fsallast = zs[s] / dt
+        # `mmd === nothing` leaves the plain `z_s/dt`. Otherwise this feeds an
+        # explicit first stage next step, which wants `f(u)`: `M z_s = dt f(u_s)`
+        # and `u == u_s` when stiffly accurate, so scale by the diagonal.
+        mmd_end = _mmdiag_end(mmd, integrator.f.mass_matrix, u, p, t + dt)
+        @.. broadcast = false integrator.fsallast = _mmmul(zs[s], mmd_end) / dt
     end
 
     # ---------------- :ie_dd2-specific DAE EEst tail ----------------
@@ -1359,6 +1419,9 @@ end
     # non-split solve of the same method does (#4149).
     is_imex = integrator.f isa SplitFunction && issplit(alg)
     predictor = _predictor(alg)
+    # See `_perform_step_iip!` above: a callable nlsolve `predictor` makes all
+    # of this seeding dead work.
+    stage_predictor(nlsolver.alg) === nothing || (predictor = Predictor.Trivial)
     s = tab.s
     γ = Ai[s, s]
 
@@ -1390,12 +1453,13 @@ end
     tmp = uprev
 
     # ---------------- Stage 1 ----------------
+    mmd = _mmdiag(tab, integrator.f.mass_matrix, integrator.uprev, p, integrator.t)
     if tab.explicit_first_stage
         if is_imex
-            z1 = dt * f_impl(uprev, p, t)
-            k1 = dt * integrator.fsalfirst - z1
+            z1 = dt .* _mmdiv.(f_impl(uprev, p, t), mmd)
+            k1 = dt .* _mmdiv.(integrator.fsalfirst, mmd) - z1
         else
-            z1 = dt * integrator.fsalfirst
+            z1 = dt .* _mmdiv.(integrator.fsalfirst, mmd)
         end
     else
         # See the matching branch in `_perform_step_iip!` above. `u` is immutable
@@ -2151,62 +2215,62 @@ end
     if is_imex
         if s == 1
             u_last = tmp + γ * z1
-            k1 = dt * f2(u_last, p, t + dt)
+            k1 = dt * f2(u_last, p, t + ce[1] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + be[1] * k1
         elseif s == 2
             u_last = tmp + γ * z2
-            k2 = dt * f2(u_last, p, t + dt)
+            k2 = dt * f2(u_last, p, t + ce[2] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + be[1] * k1 + be[2] * k2
         elseif s == 3
             u_last = tmp + γ * z3
-            k3 = dt * f2(u_last, p, t + dt)
+            k3 = dt * f2(u_last, p, t + ce[3] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + be[1] * k1 + be[2] * k2 + be[3] * k3
         elseif s == 4
             u_last = tmp + γ * z4
-            k4 = dt * f2(u_last, p, t + dt)
+            k4 = dt * f2(u_last, p, t + ce[4] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4
         elseif s == 5
             u_last = tmp + γ * z5
-            k5 = dt * f2(u_last, p, t + dt)
+            k5 = dt * f2(u_last, p, t + ce[5] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5
         elseif s == 6
             u_last = tmp + γ * z6
-            k6 = dt * f2(u_last, p, t + dt)
+            k6 = dt * f2(u_last, p, t + ce[6] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6
         elseif s == 7
             u_last = tmp + γ * z7
-            k7 = dt * f2(u_last, p, t + dt)
+            k7 = dt * f2(u_last, p, t + ce[7] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7
         elseif s == 8
             u_last = tmp + γ * z8
-            k8 = dt * f2(u_last, p, t + dt)
+            k8 = dt * f2(u_last, p, t + ce[8] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8
         elseif s == 9
             u_last = tmp + γ * z9
-            k9 = dt * f2(u_last, p, t + dt)
+            k9 = dt * f2(u_last, p, t + ce[9] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9
         elseif s == 10
             u_last = tmp + γ * z10
-            k10 = dt * f2(u_last, p, t + dt)
+            k10 = dt * f2(u_last, p, t + ce[10] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10
         elseif s == 11
             u_last = tmp + γ * z11
-            k11 = dt * f2(u_last, p, t + dt)
+            k11 = dt * f2(u_last, p, t + ce[11] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10 + be[11] * k11
         elseif s == 12
             u_last = tmp + γ * z12
-            k12 = dt * f2(u_last, p, t + dt)
+            k12 = dt * f2(u_last, p, t + ce[12] * dt)
             integrator.stats.nf2 += 1
             u = uprev + bi[1] * z1 + bi[2] * z2 + bi[3] * z3 + bi[4] * z4 + bi[5] * z5 + bi[6] * z6 + bi[7] * z7 + bi[8] * z8 + bi[9] * z9 + bi[10] * z10 + bi[11] * z11 + bi[12] * z12 + be[1] * k1 + be[2] * k2 + be[3] * k3 + be[4] * k4 + be[5] * k5 + be[6] * k6 + be[7] * k7 + be[8] * k8 + be[9] * k9 + be[10] * k10 + be[11] * k11 + be[12] * k12
         end
@@ -2391,6 +2455,12 @@ end
             integrator.fsallast = z11 ./ dt
         elseif s == 12
             integrator.fsallast = z12 ./ dt
+        end
+        if mmd !== nothing
+            # The ladder leaves `z_s/dt`, but this feeds an explicit first stage
+            # next step, which wants `f(u)`. See `_perform_step_iip!` above.
+            mmd_end = _mmdiag_end(mmd, integrator.f.mass_matrix, u, p, t + dt)
+            integrator.fsallast = _mmmul.(integrator.fsallast, mmd_end)
         end
         integrator.k[1] = integrator.fsalfirst
         integrator.k[2] = integrator.fsallast

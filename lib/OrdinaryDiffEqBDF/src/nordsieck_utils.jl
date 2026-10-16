@@ -160,9 +160,13 @@ end
     nordsieck_predict!(cache, iip)
 
 CVODE `cvPredict`: advance the Nordsieck array to the new time by repeated
-addition (a Pascal-triangle shift). `zn[0]` becomes the predictor.
+addition (a Pascal-triangle shift). `zn[0]` becomes the predictor. Idempotent:
+DelayDiffEq's fixed-point iteration re-invokes `perform_step!` on the same
+uncommitted step, and `zn` must not be shifted again while it is already in
+the predicted state.
 """
 function nordsieck_predict!(cache, iip)
+    cache.predicted && return nothing
     _nord_shift!(cache.zn, cache.order, iip)
     cache.predicted = true
     return nothing

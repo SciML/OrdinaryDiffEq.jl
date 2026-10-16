@@ -1,6 +1,6 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, ODEProblemLibrary
 using SciMLBase: DAEProblem, ODEProblem, ODEFunction, successful_retcode, remake,
-    DiscreteCallback
+    DiscreteCallback, ContinuousCallback, NoInit
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NonlinearSolveAlg
 using LinearAlgebra, Test
 
@@ -257,4 +257,89 @@ end
     sol = solve(prob, NordsieckBDF(), abstol = 1.0e-10, reltol = 1.0e-10)
     @test successful_retcode(sol)
     @test isapprox(sol.u[end][1], 0.99, atol = 1.0e-3)
+end
+
+@testset "NordsieckBDF / DNordsieckBDF: dense output over a step truncated by a callback" begin
+    # A continuous callback shortens the accepted step. The stored Nordsieck
+    # columns must be rebased to the new endpoint, or sol(t) over that step
+    # is evaluated with the wrong centre and scaling.
+    tol = 1.0e-8
+    exact(t) = exp(-t)
+    t_ev = log(2.0)
+    function check_event_step(sol, first)
+        i = findfirst(t -> abs(t - t_ev) < 1.0e-6, sol.t)
+        t0, t1 = sol.t[i - 1], sol.t[i]
+        @test t1 - t0 > 1.0e-4                          # the step really was truncated
+        @test first(sol(t1)) ≈ first(sol.u[i]) atol = 1.0e-10
+        for τ in range(t0, t1, length = 11)[2:(end - 1)]
+            @test abs(first(sol(τ)) - exact(τ)) < 1.0e-6
+        end
+        return nothing
+    end
+
+    f_oop(u, p, t) = -u
+    f_iip(du, u, p, t) = (du[1] = -u[1]; nothing)
+    cb_oop = ContinuousCallback((u, t, integ) -> u - 0.5, integ -> nothing)
+    cb_iip = ContinuousCallback((u, t, integ) -> u[1] - 0.5, integ -> nothing)
+    sol = solve(
+        ODEProblem(f_oop, 1.0, (0.0, 3.0)), NordsieckBDF();
+        callback = cb_oop, abstol = tol, reltol = tol
+    )
+    check_event_step(sol, identity)
+    sol = solve(
+        ODEProblem(f_iip, [1.0], (0.0, 3.0)), NordsieckBDF();
+        callback = cb_iip, abstol = tol, reltol = tol
+    )
+    check_event_step(sol, first)
+
+    # u1' = -u1, 0 = u2 - u1, consistent initial data so no initialization is needed
+    dae_res!(res, du, u, p, t) = (res[1] = du[1] + u[1]; res[2] = u[2] - u[1]; nothing)
+    prob = DAEProblem(
+        dae_res!, [-1.0, -1.0], [1.0, 1.0], (0.0, 3.0); differential_vars = [true, false]
+    )
+    sol = solve(
+        prob, DNordsieckBDF();
+        callback = cb_iip, abstol = tol, reltol = tol, initializealg = NoInit()
+    )
+    check_event_step(sol, first)
+end
+
+@testset "NordsieckBDF: mid-step interpolation still sees committed data" begin
+    # step_limiter! runs inside perform_step!, while the Nordsieck array is in
+    # the predicted (uncommitted) state. Evaluating the integrator or the
+    # partially built solution there must still return the committed
+    # interpolation, and must not overwrite the saved columns.
+    tol = 1.0e-8
+    exact(t) = exp(-t)
+    scalar(u) = u isa Number ? u : u[1]
+    f_oop(u, p, t) = -u
+    f_iip(du, u, p, t) = (du[1] = -u[1]; nothing)
+    for (nm, prob) in (
+            ("out-of-place", ODEProblem(f_oop, 1.0, (0.0, 1.0))),
+            ("in-place", ODEProblem(f_iip, [1.0], (0.0, 1.0))),
+        )
+        nprobes = Ref(0)
+        maxerr = Ref(0.0)
+        function probe!(u, integrator, p, t)
+            t_old = (integrator.tprev + integrator.t) / 2
+            if integrator.t > 0.5 && nprobes[] < 4
+                maxerr[] = max(
+                    maxerr[], abs(scalar(integrator(t_old)) - exact(t_old)),
+                    abs(scalar(integrator.sol(t_old)) - exact(t_old))
+                )
+                nprobes[] += 1
+            end
+        end
+        sol = solve(
+            prob, NordsieckBDF();
+            step_limiter = probe!, abstol = tol, reltol = tol
+        )
+        @testset "$nm" begin
+            @test nprobes[] > 0
+            @test maxerr[] < 1.0e-6
+            @test maximum(
+                t -> abs(scalar(sol(t)) - exact(t)), range(0.01, 0.99, 99)
+            ) < 1.0e-6
+        end
+    end
 end

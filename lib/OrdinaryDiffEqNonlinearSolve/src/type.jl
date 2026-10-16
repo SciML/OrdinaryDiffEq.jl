@@ -28,6 +28,21 @@ function reject_conditioning(T, precondition, postcondition)
     )
 end
 
+# A `Predictor` enum value selects the algorithm's built-in stage-guess scheme, which
+# needs tableau/extrapolant context the nonlinear solver never sees. The `predictor`
+# here is a callable guessing the stage *value*; keep the two unconfusable.
+function check_predictor(T, predictor)
+    predictor isa OrdinaryDiffEqCore.Predictor.T || return nothing
+    throw(
+        ArgumentError(
+            "`predictor` on `$(nameof(T))` must be a callable returning a guess for \
+            the stage value. The `Predictor` enum is the stage-guess option of the \
+            ODE algorithm itself, e.g. `ImplicitEuler(predictor = Predictor.Linear)`."
+        )
+    )
+end
+check_predictor(T, ::Nothing) = nothing
+
 """
     NLFunctional(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5)
 
@@ -40,6 +55,9 @@ converges for mildly stiff problems.
   - `κ`: relative tolerance on the increment used in the convergence test.
   - `max_iter`: maximum number of fixed-point iterations per solve.
   - `fast_convergence_cutoff`: convergence-rate threshold for fast convergence.
+  - `predictor`: optional callable seeding each stage solve, `predictor(uprev, p, t, dt)`
+    out of place and `predictor(upred, uprev, p, t, dt)` in place, returning a guess
+    for the stage value at stage time `t`.
 
 # Examples
 
@@ -51,18 +69,20 @@ alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLFunctional())
 sol = solve(prob, alg)
 ```
 """
-struct NLFunctional{K, C} <: AbstractNLSolverAlgorithm
+struct NLFunctional{K, C, P} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C
     max_iter::Int
+    predictor::P
 end
 
 function NLFunctional(;
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
-        precondition = nothing, postcondition = nothing
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
     reject_conditioning(NLFunctional, precondition, postcondition)
-    return NLFunctional(κ, fast_convergence_cutoff, max_iter)
+    check_predictor(NLFunctional, predictor)
+    return NLFunctional(κ, fast_convergence_cutoff, max_iter, predictor)
 end
 
 """
@@ -81,6 +101,8 @@ least-squares update to accelerate convergence.
   - `max_history`: number of past iterates kept for the acceleration.
   - `aa_start`: iteration at which acceleration starts.
   - `droptol`: optional condition-number threshold for dropping history columns.
+  - `predictor`: optional callable seeding each stage solve, as in
+    [`NLFunctional`](@ref).
 
 # Examples
 
@@ -92,22 +114,26 @@ alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLAnderson())
 sol = solve(prob, alg)
 ```
 """
-struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
+struct NLAnderson{K, D, C, P} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C
     max_iter::Int
     max_history::Int
     aa_start::Int
     droptol::D
+    predictor::P
 end
 
 function NLAnderson(;
         κ = 1 // 100, max_iter = 10, max_history::Int = 5, aa_start::Int = 1,
         droptol = nothing, fast_convergence_cutoff = 1 // 5,
-        precondition = nothing, postcondition = nothing
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
     reject_conditioning(NLAnderson, precondition, postcondition)
-    return NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
+    check_predictor(NLAnderson, predictor)
+    return NLAnderson(
+        κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol, predictor
+    )
 end
 
 """
@@ -130,6 +156,10 @@ possible) to solve `g(z) = 0`.
   - `always_new`: force recomputation of `W` on every solve.
   - `check_div`: enable early divergence detection.
   - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+  - `predictor`: optional callable seeding each stage solve, `predictor(uprev, p, t, dt)`
+    out of place and `predictor(upred, uprev, p, t, dt)` in place, returning a guess
+    for the stage value at stage time `t`. Applied to every implicit stage of any
+    implicit algorithm, independent of the algorithm's own stage-guess scheme.
 
 # Examples
 
@@ -141,7 +171,7 @@ alg = ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLNewton())
 sol = solve(prob, alg)
 ```
 """
-struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
+struct NLNewton{K, C1, C2, R, P} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
     fast_convergence_cutoff::C1
@@ -149,21 +179,24 @@ struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
     always_new::Bool
     check_div::Bool
     relax::R
+    predictor::P
 end
 
 function NLNewton(;
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        relax = nothing, precondition = nothing, postcondition = nothing
+        relax = nothing, precondition = nothing, postcondition = nothing,
+        predictor = nothing
     )
     reject_conditioning(NLNewton, precondition, postcondition)
+    check_predictor(NLNewton, predictor)
     if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
     end
 
     return NLNewton(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        relax
+        relax, predictor
     )
 end
 
@@ -194,6 +227,10 @@ solver constructor.
   - `check_div`: enable early divergence detection.
   - `precondition`, `postcondition`: NonlinearSolve.jl's nonlinear preconditioning
     options, applied to the stage solve. See the section below.
+  - `predictor`: optional callable seeding each stage solve,
+    `predictor(uprev, p, t, dt)` out of place and `predictor(upred, uprev, p, t, dt)`
+    in place, returning a guess for the stage value at stage time `t`. A
+    `postcondition` corrector is applied on top of the seeded guess.
 
 # Nonlinear preconditioning of the stage solve
 
@@ -280,7 +317,7 @@ alg = ImplicitEuler(
 )
 ```
 """
-struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST} <: AbstractNLSolverAlgorithm
+struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST, P} <: AbstractNLSolverAlgorithm
     κ::K
     max_iter::Int
     fast_convergence_cutoff::C1
@@ -290,17 +327,19 @@ struct NonlinearSolveAlg{K, C1, C2, A, PRE, POST} <: AbstractNLSolverAlgorithm
     alg::A
     precondition::PRE
     postcondition::POST
+    predictor::P
 end
 
 function NonlinearSolveAlg(
         alg = NewtonRaphson(autodiff = AutoFiniteDiff());
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-        precondition = nothing, postcondition = nothing
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
+    check_predictor(NonlinearSolveAlg, predictor)
     return NonlinearSolveAlg(
         κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-        alg, precondition, postcondition
+        alg, precondition, postcondition, predictor
     )
 end
 
@@ -398,7 +437,7 @@ function HomotopyNonlinearSolveAlg(
         alg = HomotopySweep(inner = NewtonRaphson(autodiff = AutoFiniteDiff()));
         κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         abstol = nothing, reltol = nothing,
-        precondition = nothing, postcondition = nothing
+        precondition = nothing, postcondition = nothing, predictor = nothing
     )
     reject_conditioning(
         HomotopyNonlinearSolveAlg, precondition, postcondition,
@@ -406,10 +445,24 @@ function HomotopyNonlinearSolveAlg(
         solves is the λ-embedding of the stage equations rather than the stage residual \
         itself"
     )
+    predictor === nothing || throw(
+        ArgumentError(
+            "`predictor` is not supported by `HomotopyNonlinearSolveAlg`: continuation \
+            starts each stage from the exact λ = 0 anchor rather than an initial guess."
+        )
+    )
     return HomotopyNonlinearSolveAlg(
         κ, max_iter, fast_convergence_cutoff, abstol, reltol, alg
     )
 end
+
+# The stage-value guess an `AbstractNLSolverAlgorithm` may carry for `nlsolve!`
+# to seed its iterate from. Solvers without the field return `nothing` here.
+stage_predictor(::AbstractNLSolverAlgorithm) = nothing
+stage_predictor(alg::NLFunctional) = alg.predictor
+stage_predictor(alg::NLAnderson) = alg.predictor
+stage_predictor(alg::NLNewton) = alg.predictor
+stage_predictor(alg::NonlinearSolveAlg) = alg.predictor
 
 # solver
 
