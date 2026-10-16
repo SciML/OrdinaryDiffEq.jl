@@ -400,7 +400,9 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
     κ = alg.kappa
     cnt = integrator.iter
     k = 1
-    if cnt > 1
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    if cnt > 1 && !iszero(dtₙ₋₁)
         ρ = dt / dtₙ₋₁
         D[1] = uprev - uprev2   # backward diff
         if ρ != 1
@@ -442,19 +444,21 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
 
     nlsolvefail(nlsolver) && return
     if integrator.opts.adaptive
+        D2[1] = u - uprev
         if integrator.success_iter == 0
-            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
+            # Explicit-Euler predictor: startup analogue of the success_iter == 1 estimate.
+            D2[2] = mass_matrix === I ? D2[1] - dt * integrator.fsalfirst :
+                mass_matrix * D2[1] - dt * integrator.fsalfirst
         else
-            D2[1] = u - uprev
             D2[2] = D2[1] - D[1]
-            utilde = (κ + inv(k + 1)) * D2[2]
-            atmp = calculate_residuals(
-                utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm,
-                t
-            )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
+        utilde = (κ + inv(k + 1)) * D2[2]
+        atmp = calculate_residuals(
+            utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm,
+            t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         return
@@ -487,7 +491,9 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
     κ = alg.kappa
     cnt = integrator.iter
     k = 1
-    if cnt > 1
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    if cnt > 1 && !iszero(dtₙ₋₁)
         ρ = dt / dtₙ₋₁
         @.. broadcast = false D[1] = uprev - uprev2 # backward diff
         if ρ != 1
@@ -532,18 +538,23 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
+        @.. broadcast = false D2[1] = u - uprev
         if integrator.success_iter == 0
-            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
+            if mass_matrix === I
+                @.. broadcast = false D2[2] = D2[1] - dt * integrator.fsalfirst
+            else
+                mul!(utilde, mass_matrix, D2[1])
+                @.. broadcast = false D2[2] = utilde - dt * integrator.fsalfirst
+            end
         else
-            @.. broadcast = false D2[1] = u - uprev
             @.. broadcast = false D2[2] = D2[1] - D[1]
-            @.. broadcast = false utilde = (κ + inv(k + 1)) * D2[2]
-            calculate_residuals!(
-                atmp, utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t
-            )
-            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
+        @.. broadcast = false utilde = (κ + inv(k + 1)) * D2[2]
+        calculate_residuals!(
+            atmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
     if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
         return
@@ -573,7 +584,10 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     alg = unwrap_alg(integrator, true)
     cnt = integrator.iter
     k = 2
-    if cnt == 1 || cnt == 2
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    startup = cnt <= 2 || iszero(dtₙ₋₁)
+    if startup
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -586,7 +600,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 2 && dt != dtₙ₋₁
+    if !startup && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         d₁ = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -625,7 +639,15 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
+            Δu = u - uprev
+            utilde = mass_matrix === I ? Δu - dt * integrator.fsalfirst :
+                mass_matrix * Δu - dt * integrator.fsalfirst
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         elseif integrator.success_iter == 1
             utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             atmp = calculate_residuals(
@@ -683,7 +705,10 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     alg = unwrap_alg(integrator, true)
     cnt = integrator.iter
     k = 2
-    if cnt == 1 || cnt == 2
+    # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
+    # step must be BDF1 however many attempts were rejected.
+    startup = cnt <= 2 || iszero(dtₙ₋₁)
+    if startup
         κ = zero(alg.kappa)
         γ₁ = Int64(1) // 1
         γ₂ = Int64(1) // 1
@@ -696,7 +721,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
     # `D` stays at the step size its differences were formed with, so a change of
     # `dt` scales them through `R * U` instead of rebuilding them from the
     # solution history, and a rejected attempt leaves `D` untouched.
-    if cnt > 2 && dt != dtₙ₋₁
+    if !startup && dt != dtₙ₋₁
         R!(k, dt / dtₙ₋₁, cache)
         R .= R * U
         @.. broadcast = false Dtmp[1] = D[1] * R[1, 1] + D[2] * R[2, 1]
@@ -739,7 +764,18 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
     if integrator.opts.adaptive
         if integrator.success_iter == 0
-            OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
+            if mass_matrix === I
+                @.. broadcast = false utilde = (u - uprev) - dt * integrator.fsalfirst
+            else
+                @.. broadcast = false D2[1] = u - uprev
+                mul!(utilde, mass_matrix, D2[1])
+                @.. broadcast = false utilde = utilde - dt * integrator.fsalfirst
+            end
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         elseif integrator.success_iter == 1
             @.. broadcast = false utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             calculate_residuals!(
