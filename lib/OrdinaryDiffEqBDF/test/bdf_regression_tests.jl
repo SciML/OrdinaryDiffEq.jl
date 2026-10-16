@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
+using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, DiffEqBase, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
@@ -271,5 +271,79 @@ end
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.nreject < sol.stats.naccept / 10
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
+end
+
+# choose_order! recomputes terkm2 while lowering; that value enters the loop
+# condition on every drop from order ≥ 4. On u = exp(-t), terkm2 at order k
+# approximates ‖h^(k-2) u^(k-2)‖ when t and dt match the FD stencil.
+@testset "choose_order! terkm2 matches analytic h^(k-2) u^(k-2) on exp(-t)" begin
+    choose_order! = OrdinaryDiffEqBDF.choose_order!
+    calculate_residuals = DiffEqBase.calculate_residuals
+
+    function residual_norm(integ, terk_tmp)
+        atmp = calculate_residuals(
+            terk_tmp, integ.uprev, integ.u,
+            integ.opts.abstol, integ.opts.reltol,
+            integ.opts.internalnorm, integ.t
+        )
+        return integ.opts.internalnorm(atmp, integ.t)
+    end
+
+    # After step!, restore the pre-advance call-site state used by choose_order!:
+    # t is the step start and t + dt == ts_tmp[1].
+    function restore_call_site!(integ)
+        cache = integ.cache
+        t_end = cache.ts_tmp[1]
+        t_start = cache.ts_tmp[2]
+        integ.dt = t_end - t_start
+        integ.t = t_start
+        return nothing
+    end
+
+    dae_exp = DAEProblem(
+        (res, du, u, p, t) -> (res[1] = du[1] + u[1]),
+        [-1.0], [1.0], (0.0, 2.0);
+        differential_vars = [true]
+    )
+
+    for (prob, alg) in (
+            (ODEProblem((u, p, t) -> -u, 1.0, (0.0, 2.0)), FBDF()),
+            (ODEProblem((du, u, p, t) -> (du[1] = -u[1]), [1.0], (0.0, 2.0)), FBDF()),
+            (dae_exp, DFBDF()),
+        )
+        integ = init(prob, alg; abstol = 1.0e-10, reltol = 0.0, dt = 1.0e-2)
+        while integ.cache.order < 5 && integ.t < 1.0
+            step!(integ)
+        end
+        @test integ.cache.order >= 5
+        restore_call_site!(integ)
+        @test integ.t + integ.dt ≈ integ.cache.ts_tmp[1] atol = 1.0e-14
+
+        cache = integ.cache
+        cache.order = 5
+        cache.qwait = 1 # block order raise
+        # Non-monotone terk chain forces lowering; from order 5 the returned
+        # terk is the first recomputed terkm2, i.e. terkm2 at order 4.
+        cache.terkm2 = 1.0
+        cache.terkm1 = 2.0
+        cache.terk = 3.0
+        cache.terkp1 = 4.0
+
+        # At order k = 4, terkm2 ≈ h^(k-2) u^(k-2) = h^2 u''. For u = exp(-t),
+        # u'' = exp(-t), evaluated at the stencil point t + dt.
+        k = 4
+        m = k - 2
+        tdt = integ.t + integ.dt
+        analytic = (
+            integ.u isa Number ? one(integ.u) :
+                ones(eltype(integ.u), size(integ.u))
+        ) *
+            (abs(integ.dt)^m * exp(-tdt))
+        analytic_res = residual_norm(integ, analytic)
+
+        knew, terk = choose_order!(alg, integ, cache, Val(5))
+        @test knew == 2
+        @test terk ≈ analytic_res rtol = 1.0e-2
     end
 end
