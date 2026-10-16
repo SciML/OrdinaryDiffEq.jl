@@ -409,3 +409,26 @@ end
         @test maximum(abs(sol(1 - k * w)[2] - y(1 - k * w)) for k in (1, 2, 5)) < 10 * reltol
     end
 end
+
+@testset "A jump at a tstop keeps the error test of algebraic variables it does not move" begin
+    # u₂ jumps at the tstop; u₃ follows a smooth layer of width w and is independent
+    # of u₂. In `crossed` the jumping equation is the one in u₃'s row.
+    reltol, abstol = 1.0e-6, 1.0e-8
+    load = t -> t < 1 ? 0.0 : 1.0
+    for crossed in (false, true), w in (1.0e-2, 1.0e-9), iip in (true, false),
+            alg in (FBDF(), QNDF())
+
+        y = t -> exp((t - 1) / w)
+        g = (u, t) -> (u[2] - load(t), u[3] - y(t))
+        f = (u, p, t) -> [0.0, (crossed ? reverse(g(u, t)) : g(u, t))...]
+        f! = (du, u, p, t) -> (du .= f(u, p, t); nothing)
+        prob = ODEProblem(
+            ODEFunction(iip ? f! : f; mass_matrix = Diagonal([1.0, 0.0, 0.0])),
+            zeros(3), (0.0, 1.0)
+        )
+        sol = solve(prob, alg; dt = 0.1, tstops = [1.0], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end][2] ≈ 1
+        @test maximum(abs(sol(1 - k * w)[3] - y(1 - k * w)) for k in (1, 2, 5)) < 10 * reltol
+    end
+end
