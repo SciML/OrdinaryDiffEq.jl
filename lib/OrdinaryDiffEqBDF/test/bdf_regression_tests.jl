@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
+using SciMLBase: CheckInit, NoInit
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
@@ -271,5 +272,145 @@ end
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.nreject < sol.stats.naccept / 10
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
+    end
+end
+
+@testset "DFBDF first step: O(h²) BDF1 error estimate (#4791)" begin
+    λ = 8.6e8
+    u0 = [1.0e-3, 1.0e12]
+    du0 = [-λ * u0[1], 1.0e-3 * u0[2]]
+    fiip = (out, du, u, p, t) -> (out[1] = du[1] + λ * u[1]; out[2] = du[2] - 1.0e-3 * u[2]; nothing)
+    foop = (du, u, p, t) -> [du[1] + λ * u[1], du[2] - 1.0e-3 * u[2]]
+    tol = 1.0e-8
+    for f in (fiip, foop)
+        # Forced first step in the asymptotic regime: accepted with the analytic
+        # error h²λ²u/2 (only u[1] contributes; RMS norm over two components).
+        h = 1.8e-12
+        prob = DAEProblem(f, du0, u0, (0.0, 1000.0); differential_vars = [true, true])
+        integ = init(prob, DFBDF(); dt = h, abstol = tol, reltol = tol)
+        step!(integ)
+        @test integ.t - integ.tprev == h
+        @test integ.stats.nreject == 0
+        @test integ.u[1] ≈ u0[1] / (1 + h * λ) rtol = 1.0e-10
+        EEst_exact = (h * λ)^2 * u0[1] / 2 / (tol + tol * u0[1]) / sqrt(2)
+        @test OrdinaryDiffEqCore.get_EEst(integ) ≈ EEst_exact rtol = 0.01
+
+        # At t0 = 14400 the first step must resolve the transient, and steps of a
+        # few eps(t0) must not be rejected for using the uncommitted dt.
+        t0 = 14400.0
+        prob = DAEProblem(f, du0, u0, (t0, t0 + 1000.0); differential_vars = [true, true])
+        for dt in (nothing, 1.0e-11)
+            kw = dt === nothing ? (;) : (; dt)
+            sol = solve(prob, DFBDF(); abstol = tol, reltol = tol, kw...)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.u[end][2] ≈ u0[2] * exp(1.0) rtol = 1.0e-7
+            # Dense output in the transient: an undetected O(h) first step is off by ~1e-4.
+            for s in (1.0e-10, 1.0e-9, 1.0e-8)
+                @test abs(sol(t0 + s)[1] - u0[1] * exp(-λ * s)) < 100 * tol
+            end
+        end
+    end
+end
+
+@testset "DFBDF start without a consistent du0 (#4791)" begin
+    function rober(out, du, u, p, t)
+        out[1] = -0.04u[1] + 1.0e4 * u[2] * u[3] - du[1]
+        out[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3] - du[2]
+        out[3] = u[1] + u[2] + u[3] - 1.0
+        return nothing
+    end
+    dv = [true, true, false]
+    t0 = 1.0e4
+    tspan = (t0, t0 + 100.0)
+    ref = solve(
+        DAEProblem(rober, [-0.04, 0.04, 0.0], [1.0, 0.0, 0.0], tspan; differential_vars = dv),
+        DFBDF(); abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    # The residual does not constrain the algebraic du0[3]; an inconsistent algebraic
+    # u0[3] fails the residual check and keeps the old first step.
+    for (du0, u0, init) in (
+            ([-0.04, 0.04, -1.0e6], [1.0, 0.0, 0.0], CheckInit()),
+            ([-0.04, 0.04, 0.0], [1.0, 0.0, 0.1], NoInit()),
+        )
+        prob = DAEProblem(rober, du0, u0, tspan; differential_vars = dv)
+        sol = solve(prob, DFBDF(); abstol = 1.0e-8, reltol = 1.0e-8, initializealg = init)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end][1] ≈ ref.u[end][1] rtol = 1.0e-5
+        @test sum(sol.u[end]) ≈ 1 atol = 1.0e-8
+    end
+end
+
+@testset "DFBDF cold start: differential state whose increment vanishes (#4791)" begin
+    # du = t - c + ϵ: the BDF1 step from t₁ to c has u - uprev = (c - t₁)ϵ ≈ 0, but a
+    # local error of (c - t₁)²/2, which the explicit-Euler correction z/2 equals. The
+    # nonlinear residual has the same solution; at t = 0 it also vanishes at du = ϵ.
+    tol = 1.0e-6
+    c = 1.0
+    for ϵ in (2.0^-19, 0.0)
+        turn(du, t) = du - ϵ - (t - c)
+        residuals = (turn, (du, t) -> turn(du, t) * ((c - t) * (du - ϵ) - t))
+        U(t) = t^2 / 2 - (c - ϵ) * t
+        for r in residuals, iip in (true, false), differential_vars in ([true], nothing),
+                restart in (false, true)
+            f = iip ? (out, du, u, p, t) -> (out[1] = r(du[1], t); nothing) :
+                (du, u, p, t) -> [r(du[1], t)]
+            prob = DAEProblem(f, [ϵ - c], [0.0], (0.0, 2.0); differential_vars)
+            kw = (; abstol = tol, reltol = tol, initializealg = CheckInit())
+            if restart
+                integ = init(prob, DFBDF(); kw...)
+                for _ in 1:3
+                    step!(integ)
+                end
+                derivative_discontinuity!(integ, true)
+                @test integ.t < c / 2
+                set_proposed_dt!(integ, c - integ.t)
+            else
+                integ = init(prob, DFBDF(); dt = c, kw...)
+            end
+            t1, u1 = integ.t, integ.u[1]
+            step!(integ)
+            err = abs(integ.u[1] - (u1 + U(integ.t) - U(t1)))
+            @test err < 2 * tol
+            w = tol + tol * max(abs(u1), abs(integ.u[1]))
+            @test OrdinaryDiffEqCore.get_EEst(integ) ≈ err / w rtol = 0.01
+        end
+    end
+end
+
+@testset "DFBDF restart after a derivative discontinuity is a BDF1 cold start (#4791)" begin
+    λ = 8.6e8
+    u0 = [1.0e-3, 1.0e12]
+    du0 = [-λ * u0[1], 1.0e-3 * u0[2]]
+    fiip = (out, du, u, p, t) -> (out[1] = du[1] + λ * u[1]; out[2] = du[2] - 1.0e-3 * u[2]; nothing)
+    foop = (du, u, p, t) -> [du[1] + λ * u[1], du[2] - 1.0e-3 * u[2]]
+    tol = 1.0e-8
+    prob(f, t0) = DAEProblem(f, du0, u0, (t0, t0 + 1000.0); differential_vars = [true, true])
+    for f in (fiip, foop), t0 in (0.0, 14400.0), npre in (1, 4, 40), via_callback in (false, true)
+        fire = Ref(false)
+        cb = DiscreteCallback((u, t, integ) -> fire[], integ -> (fire[] = false; integ.u .= integ.u))
+        integ = init(
+            prob(f, t0), DFBDF(); abstol = tol, reltol = tol, callback = cb,
+            initializealg = BrownFullBasicInit()
+        )
+        for _ in 1:npre
+            step!(integ)
+        end
+        npre == 40 && @test integ.cache.order >= 2
+        if via_callback
+            fire[] = true
+            step!(integ)
+            @test !fire[]
+        else
+            derivative_discontinuity!(integ, true)
+        end
+        uprev = copy(integ.u)
+        set_proposed_dt!(integ, max(1.0e-3 / λ, 2 * eps(integ.t)))
+        nrej = integ.stats.nreject
+        step!(integ)
+        h = integ.t - integ.tprev
+        @test integ.stats.nreject == nrej
+        @test integ.u[1] ≈ uprev[1] / (1 + h * λ) rtol = 1.0e-8
+        w = tol + tol * abs(uprev[1])
+        @test OrdinaryDiffEqCore.get_EEst(integ) ≈ (h * λ)^2 * uprev[1] / 2 / w / sqrt(2) rtol = 0.01
     end
 end
