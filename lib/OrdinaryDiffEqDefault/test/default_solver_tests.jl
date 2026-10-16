@@ -90,6 +90,13 @@ function exrober(du, u, p, t)
     )
 end
 
+# Unpreconditioned Krylov FBDF drifts from the true solution after t ≈ 30, so the interval ends at 10.
+rober_tspan = (0.0, 10.0)
+rober_p = (0.04, 3.0e7, 1.0e4)
+rober_ref = solve(
+    ODEProblem(exrober, [1.0, 0.0, 0.0], rober_tspan, rober_p), Rodas5P();
+    abstol = 1.0e-14, reltol = 1.0e-12
+)
 sparse_rober_prototype(n) = (jp = sparse(I(n + 3)); jp[1:3, 1:3] .= 1.0; jp)
 # An all-zero dense prototype is read as an empty sparsity pattern, so the dense case uses `ones`.
 for n in (100, 600), jac_prototype in (sparse_rober_prototype(n), nothing, ones(n + 3, n + 3))
@@ -99,11 +106,12 @@ for n in (100, 600), jac_prototype in (sparse_rober_prototype(n), nothing, ones(
 
     prob_ex_rober = ODEProblem(
         ODEFunction(exrober; jac_prototype),
-        vcat([1.0, 0.0, 0.0], ones(n)), (0.0, 100.0), (0.04, 3.0e7, 1.0e4)
+        vcat([1.0, 0.0, 0.0], ones(n)), rober_tspan, rober_p
     )
     global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = AutoFiniteDiff(), linsolve)))
     @test SciMLBase.successful_retcode(sol)
+    @test sol.u[end][1:3] ≈ rober_ref.u[end] rtol = 1.0e-2
     # test that default has the same performance as AutoTsit5(FBDF()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
