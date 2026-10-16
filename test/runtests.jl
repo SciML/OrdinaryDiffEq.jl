@@ -215,6 +215,7 @@ end
 function reactant_group()
     is_APPVEYOR && return
     activate_reactant_env()
+    @time @safetestset "Reactant Extension Imports" include("Reactant/explicit_imports.jl")
     return @time @safetestset "Reactant Tests" include("Reactant/reactant_tests.jl")
 end
 
