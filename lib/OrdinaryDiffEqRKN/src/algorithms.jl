@@ -55,6 +55,22 @@ In particular, this method allows the acceleration equation to depend on the vel
 struct FineRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 @doc generic_solver_docstring(
+    "A 6th order explicit method which can be applied directly to second order ODEs.
+In particular, this method allows the acceleration equation to depend on the velocity.",
+    "SharpFineRKN6",
+    "Improved Runge-Kutta-Nyström method",
+    "@article{SHARP1992279,
+    title={Some Nystr{\"o}m pairs for the general second-order initial-value problem},
+    author={P.W. Sharp and J.M. Fine},
+    journal={Journal of Computational and Applied Mathematics},
+    volume={42},
+    number={3},
+    pages={279--291},
+    year={1992}", "", ""
+)
+struct SharpFineRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
+
+@doc generic_solver_docstring(
     "A 4th order explicit method.
 Used directly on second order ODEs, where the acceleration is independent from velocity
 (ODE Problem is not dependent on the first derivative).",
