@@ -584,15 +584,14 @@ a single implicit solve per step.",
     journal={arXiv preprint arXiv:1810.06670},
     year={2018}}""",
     extra_keyword_description = """
-    - `nlsolve`: TBD
-    - `extrapolant`: TBD
-    - `controller`: TBD
-    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `nlsolve`: nonlinear solver algorithm used for the BDF3 implicit solve of each
+      step. The initial guess is the Lagrange extrapolation of the stored solution
+      history, or the current state on the first step after a start or restart.
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`, applied to
+      the BDF3 solution before the filters. Only in-place problems call it.
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),
-    extrapolant = :linear,
-    controller = :Standard,
     step_limiter! = trivial_limiter!,
     """
 )
@@ -600,8 +599,6 @@ struct MOOSE234{AD, F, F2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     linsolve::F
     nlsolve::F2
-    extrapolant::Symbol
-    controller::Symbol
     step_limiter!::StepLimiter
     autodiff::AD
     concrete_jac::CJ
@@ -609,14 +606,12 @@ end
 
 function MOOSE234(;
         autodiff = AutoForwardDiff(), concrete_jac = nothing,
-        linsolve = nothing, nlsolve = NLNewton(),
-        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!
+        linsolve = nothing, nlsolve = NLNewton(), step_limiter! = trivial_limiter!
     )
     autodiff = _fixup_ad(autodiff)
 
     return MOOSE234(
-        linsolve, nlsolve, extrapolant,
-        controller, step_limiter!, autodiff, _unwrap_val(concrete_jac),
+        linsolve, nlsolve, step_limiter!, autodiff, _unwrap_val(concrete_jac),
     )
 end
 
