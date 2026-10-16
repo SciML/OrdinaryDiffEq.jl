@@ -103,6 +103,31 @@ end
     end
 end
 
+# IMEX split problems: the error estimate is a displacement over the step, so solving
+# v(τ) = u(sτ) with dt/s must reproduce the same EEst. `W \ err` without the 1/γdt
+# factor scales it by 1/s, which made error control depend on the time unit.
+@testset "smooth_est split problems are time-scale invariant (#2902)" begin
+    f1!(du, u, p, t) = (du[1] = -p[2] * p[1] * u[1]; nothing)
+    f2!(du, u, p, t) = (du[1] = p[2] * cos(p[2] * t); nothing)
+    f1(u, p, t) = [-p[2] * p[1] * u[1]]
+    f2(u, p, t) = [p[2] * cos(p[2] * t)]
+    λ = 1.0e3
+    dt = 1.0e-2
+    for ALG in (KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58),
+            (label, F1, F2) in (("iip", f1!, f2!), ("oop", f1, f2))
+
+        function scaled_EEst(s)
+            prob = SplitODEProblem(F1, F2, [1.0], (0.0, 1.0 / s), (λ, s))
+            return first(first_step_EEst(prob, ALG(); dt = dt / s))
+        end
+        e1 = scaled_EEst(1.0)
+        @test isfinite(e1) && e1 > 0
+        for s in (1.0e-3, 1.0e6)
+            @test scaled_EEst(s) ≈ e1 rtol = 1.0e-6
+        end
+    end
+end
+
 # Scalar linear u' = λu, M = I. With abstol=1, reltol=0, EEst = |est|.
 # Closed form: W = λ − 1/(γ_diag·dt), W ERR = (γ_diag·dt)⁻¹ err
 # ⇒ |ERR| = |err| / |1 − γ_diag·z| with z = λ·dt. True local error = |φ(z) − eᶻ|
