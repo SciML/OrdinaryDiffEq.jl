@@ -1,4 +1,6 @@
 using OrdinaryDiffEqSDIRK, Test, SparseArrays, LinearAlgebra
+using OrdinaryDiffEqTsit5: AutoTsit5
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 f_oop(u, p, t) = -1000 * u
 prob = ODEProblem(f_oop, 1.0, (0.0, 1.0))
@@ -81,6 +83,23 @@ bertolazzi_iip!(du, u, p, t) = (du .= bertolazzi_rhs(SVector{3}(u), p, t); nothi
     sol = solve(svprob, ImplicitEuler(); dt = 1.0e-3)
     @test sol.retcode == ReturnCode.Success
     @test abs(sum(sol.u[end]) - 3.0) < 1.0e-6
+end
+
+@testset "OOP conservation through algorithm wrappers" begin
+    u0 = [0.0, 1.0, 2.0]
+    wrapped_algs = (
+        CompositeAlgorithm((TRBDF2(), TRBDF2()), i -> 1),
+        AutoTsit5(TRBDF2(); stiffalgfirst = true, maxnonstiffstep = typemax(Int)),
+    )
+    for prob in (
+                ODEProblem(bertolazzi_rhs, SVector{3}(u0), (0.0, 1.0)),
+                ODEProblem(bertolazzi_vec, u0, (0.0, 1.0)),
+            ), alg in wrapped_algs
+        sol = solve(prob, alg; dt = 1.0e-3)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 1.0
+        @test abs(sum(sol.u[end]) - 3.0) < 1.0e-6
+    end
 end
 
 function long_rober!(du, u, p, t)

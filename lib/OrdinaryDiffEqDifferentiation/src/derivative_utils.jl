@@ -1186,15 +1186,17 @@ function update_W!(
         if newJW === nothing
             new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, repeat_step)
             t = integrator.t
-            if !repeat_step && integrator.alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
-                    SciMLBase.alg_order(integrator.alg) > 1 && t isa AbstractFloat &&
+            alg = unwrap_alg(integrator, true)
+            if !repeat_step && alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
+                    SciMLBase.alg_order(alg) > 1 && t isa AbstractFloat &&
                     abs(integrator.dt) <= sqrt(eps(typeof(t))) * max(abs(t), one(t))
                 new_jac, new_W = true, true
             end
         else
             new_jac, new_W = newJW
         end
-        # Match master's out-of-place DDE J refresh; otherwise SDIRK2 Robertson hits DtLessThanMin.
+        # A DDE right-hand side reads the history interpolant, which a cached J does not
+        # track, so J is rebuilt whenever W is.
         if integrator isa SciMLBase.AbstractDDEIntegrator && new_W
             new_jac = true
         end
