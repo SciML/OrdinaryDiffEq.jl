@@ -90,11 +90,11 @@ function exrober(du, u, p, t)
     )
 end
 
-for n in (100, 600)
-    stiffalg = n < 50 ? 4 : 5
-    linsolve = nothing
-    jac_prototype = sparse(I(n + 3))
-    jac_prototype[1:3, 1:3] .= 1.0
+sparse_rober_prototype(n) = (jp = sparse(I(n + 3)); jp[1:3, 1:3] .= 1.0; jp)
+for n in (100, 600), jac_prototype in (sparse_rober_prototype(n), nothing, zeros(n + 3, n + 3))
+    krylov = n > 500 && !(jac_prototype isa SparseMatrixCSC)
+    stiffalg = krylov ? 6 : 5
+    linsolve = krylov ? KrylovJL_GMRES() : nothing
 
     prob_ex_rober = ODEProblem(
         ODEFunction(exrober; jac_prototype),
@@ -102,13 +102,13 @@ for n in (100, 600)
     )
     global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = AutoFiniteDiff(), linsolve)))
-    # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
+    # test that default has the same performance as AutoTsit5(FBDF()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
     @test unique(sol.alg_choice) == [1, stiffalg]
 end
 
-@testset "Default large sparse FBDF uses jac_prototype" begin
+@testset "Default large FBDF uses sparse and structured jac_prototype" begin
     n = 600
     dx = 1 / (n + 1)
     function heat!(du, u, p, t)
@@ -120,12 +120,20 @@ end
         end
         return nothing
     end
-    jac_prototype = sparse(Tridiagonal(ones(n - 1), ones(n), ones(n - 1)))
-    prob = ODEProblem(ODEFunction(heat!; jac_prototype), ones(n), (0.0, 0.05))
+    x = (1:n) .* dx
+    λ(k) = -4 / dx^2 * sin(k * π * dx / 2)^2
+    heat_exact(t) = exp(λ(1) * t) .* sin.(π .* x) .+ exp(λ(2) * t) .* sin.(2π .* x)
+    tridiag = Tridiagonal(ones(n - 1), ones(n), ones(n - 1))
 
-    sol = solve(prob, DefaultODEAlgorithm(); abstol = 1.0e-10, reltol = 1.0e-8)
-    @test 5 in sol.alg_choice
-    @test sol.stats.njacs > 0
+    for jac_prototype in (sparse(tridiag), tridiag)
+        prob = ODEProblem(ODEFunction(heat!; jac_prototype), heat_exact(0.0), (0.0, 0.05))
+        sol = solve(prob, DefaultODEAlgorithm(); abstol = 1.0e-10, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test unique(sol.alg_choice) == [2, 5]
+        @test sol.stats.njacs > 0
+        # FBDF inside the composite does not reject steps (#4854), which limits accuracy here.
+        @test maximum(abs, sol.u[end] .- heat_exact(0.05)) < 1.0e-5
+    end
 end
 
 function swaplinear(u, p, t)
