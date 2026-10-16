@@ -91,7 +91,8 @@ function exrober(du, u, p, t)
 end
 
 sparse_rober_prototype(n) = (jp = sparse(I(n + 3)); jp[1:3, 1:3] .= 1.0; jp)
-for n in (100, 600), jac_prototype in (sparse_rober_prototype(n), nothing, zeros(n + 3, n + 3))
+# An all-zero dense prototype is read as an empty sparsity pattern, so the dense case uses `ones`.
+for n in (100, 600), jac_prototype in (sparse_rober_prototype(n), nothing, ones(n + 3, n + 3))
     krylov = n > 500 && !(jac_prototype isa SparseMatrixCSC)
     stiffalg = krylov ? 6 : 5
     linsolve = krylov ? KrylovJL_GMRES() : nothing
@@ -102,6 +103,7 @@ for n in (100, 600), jac_prototype in (sparse_rober_prototype(n), nothing, zeros
     )
     global sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(; autodiff = AutoFiniteDiff(), linsolve)))
+    @test SciMLBase.successful_retcode(sol)
     # test that default has the same performance as AutoTsit5(FBDF()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
