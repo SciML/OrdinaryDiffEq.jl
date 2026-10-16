@@ -237,7 +237,7 @@ end
     if !isucceed
         # rewind Nordsieck vector
         integrator.force_stepfail = true
-        nordsieck_rewind!(cache)
+        nordsieck_restore_failed_step!(cache, tmp)
         return nothing
     end
 
@@ -248,17 +248,10 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-        if get_EEst(integrator) > one(get_EEst(integrator))
-            for i in 1:12
-                dts[i] = dts[i + 1]
-            end
-            dts[13] = tmp
-        end
     end
 
     ################################### Finalize
-    nordsieck_finalize!(integrator, cache)
-    nordsieck_prepare_next!(integrator, cache)
+    nordsieck_complete_step!(integrator, cache, tmp)
     integrator.k[2] = cache.z[2] / dt
     return nothing
 end
@@ -307,7 +300,7 @@ end
     if !isucceed
         integrator.force_stepfail = true
         # rewind Nordsieck vector
-        nordsieck_rewind!(cache)
+        nordsieck_restore_failed_step!(cache, tmp)
         return nothing
     end
 
@@ -319,18 +312,11 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-        if get_EEst(integrator) > one(get_EEst(integrator))
-            for i in 1:12
-                dts[i] = dts[i + 1]
-            end
-            dts[13] = tmp
-        end
     end
 
     ################################### Finalize
 
-    nordsieck_finalize!(integrator, cache)
-    nordsieck_prepare_next!(integrator, cache)
+    nordsieck_complete_step!(integrator, cache, tmp)
     @.. broadcast = false integrator.k[2] = cache.z[2] / dt
     return nothing
 end
