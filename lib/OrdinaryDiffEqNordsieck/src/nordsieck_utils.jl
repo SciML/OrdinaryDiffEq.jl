@@ -170,9 +170,10 @@ function calc_coeff!(cache::T) where {T}
     end # end @inbounds
 end
 
-# Fixed-leading-coefficient BDF coefficients `l` and error constants, following
-# `cvSetBDF` and `cvSetTqBDF` in SUNDIALS CVODE. CVODE's `l[i]` is `l[i + 1]` here
-# and its `tau[j]` (the j-th previous step size) is `dts[j + 1]`.
+# Fixed-leading-coefficient BDF coefficients `l` and error constants, translated from
+# `cvSetBDF` and `cvSetTqBDF` in SUNDIALS v7.9.0 `src/cvode/cvode.c` (BSD-3-Clause; see
+# the SUNDIALS section of LICENSE.md). CVODE's `l[i]` is `l[i + 1]` here and its
+# `tau[j]` (the j-th previous step size) is `dts[j + 1]`.
 function calc_coeff_bdf!(cache)
     @inbounds begin
         (; l, dts, order) = cache
@@ -432,9 +433,10 @@ function nordsieck_adjust_order!(cache::T, dorder) where {T}
     end # @inbound
 end
 
-# BDF order change of the Nordsieck vector, following `cvIncreaseBDF` and
-# `cvDecreaseBDF` in SUNDIALS CVODE. It runs before the rescale, so `z` is still
-# scaled to the previous step `dts[2]`, and CVODE's `tau[j]` is `dts[j + 1]`.
+# BDF order change of the Nordsieck vector, translated from `cvIncreaseBDF` and
+# `cvDecreaseBDF` in SUNDIALS v7.9.0 `src/cvode/cvode.c` (BSD-3-Clause; see the SUNDIALS
+# section of LICENSE.md). It runs before the rescale, so `z` is still scaled to the
+# previous step `dts[2]`, and CVODE's `tau[j]` is `dts[j + 1]`.
 function nordsieck_adjust_order_bdf!(cache::T, dorder) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     (; z, l, order, dts) = cache
