@@ -301,3 +301,14 @@ end
         @test solve(prob, alg; dt = 0.1).retcode == ReturnCode.Success
     end
 end
+
+@testset "ImplicitEuler step size control matches its O(dt^2) error estimate (#4808)" begin
+    alg = ImplicitEuler()
+    @test OrdinaryDiffEqCore.alg_adaptive_order(alg) == 1
+    # u1 = 1/(1 - t): a mismatched controller gain gives nreject ≈ naccept / 2 here.
+    f! = (du, u, p, t) -> (du[1] = u[1]^2; du[2] = 1.0; nothing)
+    prob = ODEProblem(f!, [1.0, 0.0], (0.0, 0.9))
+    sol = solve(prob, alg; reltol = 1.0e-8, abstol = 1.0e-8)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.stats.nreject < sol.stats.naccept / 100
+end
