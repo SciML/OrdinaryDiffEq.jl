@@ -328,12 +328,11 @@ end
     )
     # The residual does not constrain the algebraic du0[3]; an inconsistent algebraic
     # u0[3] fails the residual check and keeps the old first step.
-    cases = (
-        ([-0.04, 0.04, -1.0e6], [1.0, 0.0, 0.0], CheckInit()),
-        ([-0.04, 0.04, 0.0], [1.0, 0.0, 0.1], NoInit()),
-    )
-    for (du0, u0, init) in cases, differential_vars in (dv, nothing)
-        prob = DAEProblem(rober, du0, u0, tspan; differential_vars)
+    for (du0, u0, init) in (
+            ([-0.04, 0.04, -1.0e6], [1.0, 0.0, 0.0], CheckInit()),
+            ([-0.04, 0.04, 0.0], [1.0, 0.0, 0.1], NoInit()),
+        )
+        prob = DAEProblem(rober, du0, u0, tspan; differential_vars = dv)
         sol = solve(prob, DFBDF(); abstol = 1.0e-8, reltol = 1.0e-8, initializealg = init)
         @test sol.retcode == ReturnCode.Success
         @test sol.u[end][1] ≈ ref.u[end][1] rtol = 1.0e-5
@@ -343,14 +342,18 @@ end
 
 @testset "DFBDF cold start: differential state whose increment vanishes (#4791)" begin
     # du = t - c + ϵ: the BDF1 step from t₁ to c has u - uprev = (c - t₁)ϵ ≈ 0, but a
-    # local error of (c - t₁)²/2, which the explicit-Euler correction z/2 equals.
+    # local error of (c - t₁)²/2, which the explicit-Euler correction z/2 equals. The
+    # nonlinear residual has the same solution; at t = 0 it also vanishes at du = ϵ.
     tol = 1.0e-6
     c = 1.0
-    for ϵ in (1.5e-6, 0.0)
-        fiip = (out, du, u, p, t) -> (out[1] = du[1] - (t - c + ϵ); nothing)
-        foop = (du, u, p, t) -> [du[1] - (t - c + ϵ)]
+    for ϵ in (2.0^-19, 0.0)
+        turn(du, t) = du - ϵ - (t - c)
+        residuals = (turn, (du, t) -> turn(du, t) * ((c - t) * (du - ϵ) - t))
         U(t) = t^2 / 2 - (c - ϵ) * t
-        for f in (fiip, foop), differential_vars in ([true], nothing), restart in (false, true)
+        for r in residuals, iip in (true, false), differential_vars in ([true], nothing),
+                restart in (false, true)
+            f = iip ? (out, du, u, p, t) -> (out[1] = r(du[1], t); nothing) :
+                (du, u, p, t) -> [r(du[1], t)]
             prob = DAEProblem(f, [ϵ - c], [0.0], (0.0, 2.0); differential_vars)
             kw = (; abstol = tol, reltol = tol, initializealg = CheckInit())
             if restart

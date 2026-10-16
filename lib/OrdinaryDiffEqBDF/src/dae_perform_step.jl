@@ -269,49 +269,33 @@ _closer_predictor(z, Δu) = ifelse(abs(z) <= abs(Δu), z, Δu)
 
 """
     _dfbdf_cold_start_error(integrator, z, u)
-    _dfbdf_cold_start_error!(terkp1, integrator, cache, z)
+    _dfbdf_cold_start_error!(terkp1, integrator, z)
 
 The BDF1 error term of a consistent step without history: the Newton correction
 `z = u - u₀` against the explicit-Euler predictor `u₀ = uprev + dt*duprev`.
 
 The residual does not determine `duprev` of algebraic states, so for those `z` can be
 arbitrarily wrong, and the term is the smaller of `z` and the constant-predictor
-increment `u - uprev`. Differential states always keep `z`. The algebraic states are
-the `false` entries of `differential_vars`. Without `differential_vars`, the fallback
-applies only if `f(duprev, uprev, p, t)` is unchanged when `duprev` is replaced by
-`(u - uprev)/dt` on every component where the fallback would change the term, i.e.
-the `du` of those components do not enter `f`.
+increment `u - uprev`. The algebraic states are the `false` entries of
+`differential_vars`. Without `differential_vars`, every state is treated as
+differential and keeps `z`.
 """
 function _dfbdf_cold_start_error(integrator, z, u)
-    (; uprev, duprev, dt, p, t, f, differential_vars) = integrator
-    Δu = u - uprev
-    closer = @.. broadcast = false _closer_predictor(z, Δu)
-    if differential_vars !== nothing
-        u isa Number && return only(differential_vars) ? z : closer
-        return @.. broadcast = false ifelse(differential_vars, z, closer)
-    end
-    du_probe = @.. broadcast = false ifelse(abs(z) <= abs(Δu), duprev, Δu / dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
-    return f(du_probe, uprev, p, t) == f(duprev, uprev, p, t) ? closer : z
+    (; uprev, differential_vars) = integrator
+    differential_vars === nothing && return z
+    closer = @.. broadcast = false _closer_predictor(z, u - uprev)
+    u isa Number && return only(differential_vars) ? z : closer
+    return @.. broadcast = false ifelse(differential_vars, z, closer)
 end
 
-function _dfbdf_cold_start_error!(terkp1, integrator, cache, z)
-    (; u, uprev, duprev, dt, p, t, f, differential_vars) = integrator
-    if differential_vars !== nothing
+function _dfbdf_cold_start_error!(terkp1, integrator, z)
+    (; u, uprev, differential_vars) = integrator
+    if differential_vars === nothing
+        @.. broadcast = false terkp1 = z
+    else
         @.. broadcast = false terkp1 = ifelse(
             differential_vars, z, _closer_predictor(z, u - uprev)
         )
-        return nothing
-    end
-    resid_probe = cache.terk_tmp
-    @.. broadcast = false terkp1 = ifelse(abs(z) <= abs(u - uprev), duprev, (u - uprev) / dt)
-    f(resid_probe, terkp1, uprev, p, t)
-    f(terkp1, duprev, uprev, p, t)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
-    if resid_probe == terkp1
-        @.. broadcast = false terkp1 = _closer_predictor(z, u - uprev)
-    else
-        @.. broadcast = false terkp1 = z
     end
     return nothing
 end
@@ -611,7 +595,7 @@ function _dfbdf_perform_step!(
     end
 
     if cold_start
-        _dfbdf_cold_start_error!(terkp1_tmp, integrator, cache, z)
+        _dfbdf_cold_start_error!(terkp1_tmp, integrator, z)
     else
         @.. broadcast = false terkp1_tmp = z
         for j in 1:(k + 1)
