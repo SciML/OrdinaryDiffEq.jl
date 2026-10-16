@@ -349,9 +349,11 @@ stage needs `γdt` (Kennedy & Carpenter, "Diagonally Implicit Runge-Kutta Method
 Ordinary Differential Equations. A Review", 2016, eq. 90).
 
 For a DIRK stage of an ODE, `W = J - I/W_γdt` while the residual is scaled by the
-*current* `1/γdt`, so the multiplier the stale `W` leaves on an eigenmode runs from `1`
-(stiff) to `γdt/W_γdt` (nonstiff). The factor `2/(1 + W_γdt/γdt)` balances the two ends,
-bounding the contraction of a linear stage by `|r - 1|/(r + 1)` with `r = γdt/W_γdt`.
+*current* `1/γdt`, so on an eigenmode `λ` the stale iteration matrix `W(W_γdt)⁻¹ W(γdt)` is
+`(λ - 1/γdt)/(λ - 1/W_γdt)`, running from `1` (stiff) to `1/r` (nonstiff) with
+`r = γdt/W_γdt`. The factor `2/(1 + W_γdt/γdt) = 2r/(1 + r)` balances the two ends: for an
+unchanged `J`, `r > 0` and real `λ ≤ 0`, a linear stage contracts by at most
+`|r - 1|/(r + 1)`.
 
 The DAE (`W_γdt` stores `cj = α/(γdt)`) and coefficient-multistep (effective step
 `γdt/α`) conventions differ and keep `2/(1 + γdt/W_γdt)`.
