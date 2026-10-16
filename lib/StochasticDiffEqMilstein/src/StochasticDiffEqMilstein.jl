@@ -1,10 +1,11 @@
 module StochasticDiffEqMilstein
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!
+import OrdinaryDiffEqCore: perform_step!
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, is_split_step,
@@ -15,20 +16,23 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     _z_prototype,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
+import DiffEqBase
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+import SciMLBase: is_diagonal_noise
+import FastBroadcast: @..
 
 import MuladdMacro: @muladd
 
 import SciMLBase
 
 using ArrayInterface: ArrayInterface
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
-using StochasticDiffEqLevyArea
-using DiffEqNoiseProcess
+using LinearAlgebra: LinearAlgebra, UniformScaling, diagind, mul!
+using StaticArrays: StaticArrays
+using RecursiveArrayTools: RecursiveArrayTools
+using StochasticDiffEqLevyArea: StochasticDiffEqLevyArea, MronRoe, levyarea,
+    LevyAreaCoefficients
+using DiffEqNoiseProcess: DiffEqNoiseProcess
 
 include("algorithms.jl")
 include("alg_utils.jl")
