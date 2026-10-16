@@ -163,8 +163,9 @@ end
 #     gives no split for any other structure, which keeps the full error test);
 #   - an algebraic equation is discontinuous at the tstop itself, as seen by
 #     evaluating it at the step's solution just before the step's end. A smooth
-#     problem, or one whose jump lies inside the step rather than on the tstop,
-#     keeps the full error test.
+#     problem, including a boundary layer at the tstop that is wider than about a
+#     hundred rounding units of t, or one whose jump lies inside the step rather
+#     than on the tstop, keeps the full error test.
 # Returns the algebraic mask when the step qualifies, otherwise `nothing`.
 function _algebraic_jump_at_tstop(integrator, u)
     OrdinaryDiffEqCore.get_EEst(integrator) > 1 || return nothing
@@ -179,7 +180,9 @@ end
 
 # Evaluate f at the step's end t₀ and at t₀ - δ and t₀ - 2δ. On a smooth algebraic
 # equation the two differences agree to first order; a jump at t₀ makes the first
-# one dominate both the second and the residual left by the nonlinear solve.
+# one dominate both the second and the residual left by the nonlinear solve. A smooth
+# layer narrower than δ looks the same, so the jump must also persist at t₀ - δₛ, a
+# hundred rounding units of t before t₀, where such a layer has nearly vanished.
 function _algebraic_equation_jumps(integrator, u, algebraic)
     (; t, dt, tdir, p, f) = integrator
     t isa AbstractFloat || return false
@@ -189,11 +192,13 @@ function _algebraic_equation_jumps(integrator, u, algebraic)
     g₁ = _eval_rhs(integrator, f, u, p, t₀ - tdir * δ)
     g₂ = _eval_rhs(integrator, f, u, p, t₀ - 2 * tdir * δ)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    for i in eachindex(g₀, algebraic)
-        algebraic[i] || continue
-        abs(g₁[i] - g₀[i]) > 100 * (abs(g₂[i] - g₁[i]) + abs(g₀[i])) && return true
-    end
-    return false
+    jumps(i) = algebraic[i] && abs(g₁[i] - g₀[i]) > 100 * (abs(g₂[i] - g₁[i]) + abs(g₀[i]))
+    any(jumps, eachindex(g₀, algebraic)) || return false
+    δₛ = min(δ / 2, 100 * eps(max(abs(t), abs(t₀))))
+    gₛ = _eval_rhs(integrator, f, u, p, t₀ - tdir * δₛ)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    persists(i) = jumps(i) && 2 * abs(gₛ[i] - g₀[i]) > abs(g₁[i] - g₀[i])
+    return any(persists, eachindex(g₀, algebraic))
 end
 
 function _eval_rhs(integrator, f, u, p, t)

@@ -391,3 +391,21 @@ end
         @test maximum(err(t, u) for (t, u) in zip(sol.t, sol.u)) < 100 * reltol
     end
 end
+
+@testset "A smooth boundary layer at a tstop keeps the full error test" begin
+    # 0 = y - exp((t - 1) / w) is continuous, but y changes by O(1) within w of the
+    # tstop, far closer to it than a √eps-scale finite difference can resolve.
+    reltol, abstol = 1.0e-6, 1.0e-8
+    for w in (1.0e-9, 1.0e-11), iip in (true, false), alg in (FBDF(), QNDF())
+        y = t -> exp((t - 1) / w)
+        f! = (du, u, p, t) -> (du[1] = 0.0; du[2] = u[2] - y(t); nothing)
+        f = (u, p, t) -> [0.0, u[2] - y(t)]
+        prob = ODEProblem(
+            ODEFunction(iip ? f! : f; mass_matrix = Diagonal([1.0, 0.0])),
+            [0.0, 0.0], (0.0, 1.0)
+        )
+        sol = solve(prob, alg; dt = 0.1, tstops = [1.0], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(abs(sol(1 - k * w)[2] - y(1 - k * w)) for k in (1, 2, 5)) < 10 * reltol
+    end
+end
