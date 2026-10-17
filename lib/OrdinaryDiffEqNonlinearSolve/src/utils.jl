@@ -312,6 +312,20 @@ struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
     uf_du::ufduType
 end
 
+# `J_u` and `J_du` are stored in `J`'s sparsity pattern (the union of dF/du and dF/d(du)),
+# and sparse AD decompresses only into the exact pattern it colored, so the separated
+# configs must color `J`'s pattern rather than detect their own.
+function with_jac_sparsity(alg, J)
+    ad = alg_autodiff(alg)
+    (ad isa ADTypes.AutoSparse && is_sparse_csc(J)) || return alg
+    autodiff = ADTypes.AutoSparse(
+        ADTypes.dense_ad(ad);
+        sparsity_detector = ADTypes.KnownJacobianSparsityDetector(J),
+        coloring_algorithm = ADTypes.coloring_algorithm(ad)
+    )
+    return remake(alg; autodiff)
+end
+
 function _nlalg_with_linsolve(inner_alg, linsolve)
     linsolve === nothing && return inner_alg
     !hasfield(typeof(inner_alg), :descent) && return inner_alg
@@ -942,16 +956,29 @@ function build_nlsolver(
             else
                 (;)
             end
+            # Inexact Newton, as in IDA: stop the Krylov solve once the weighted residual
+            # is a small fraction of the Newton convergence threshold `κ`. A DAE residual
+            # is evaluated at full precision, so a solve held only to `reltol` of a late,
+            # tiny residual stalls at the roundoff floor `eps * cj * |dz|` and reports
+            # failure, though its `dz` is accurate far beyond what Newton needs. `κ` is a
+            # weighted norm, so this applies only when `wrapprecs` added the weights, by
+            # default or around a user `precs`.
+            weighted_linsolver = wrapprecs(linsolver, W, weight)
+            weighted = hasproperty(linsolver, :precs) &&
+                weighted_linsolver.precs !== linsolver.precs
+            linabstol = isdae && W isa AbstractSciMLOperator && weighted ?
+                (; abstol = convert(uTolType, nlalg.κ / 20 * sqrt(length(u)))) : (;)
             linsolve = init(
-                linprob, wrapprecs(linsolver, W, weight);
-                precs...,
+                linprob, weighted_linsolver;
+                precs..., linabstol...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
             )
 
-            # Build separated DAE Jacobian cache if applicable
-            if isdae
+            # Build separated DAE Jacobian cache if applicable. Without `concrete_jac`, a
+            # matrix-free W never forms J_u or J_du.
+            if isdae && !(J isa JVPCache)
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
@@ -962,11 +989,12 @@ function build_nlsolver(
                 else
                     uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
                     uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
+                    dae_jac_alg = with_jac_sparsity(alg, J)
                     jac_config_u = build_jac_config(
-                        alg, nf, uf_u, du1, uprev, u, ztmp, dz
+                        dae_jac_alg, nf, uf_u, du1, uprev, u, ztmp, dz
                     )
                     jac_config_du = build_jac_config(
-                        alg, nf, uf_du, du1, uprev, u, ztmp, dz
+                        dae_jac_alg, nf, uf_du, du1, uprev, u, ztmp, dz
                     )
                     J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(

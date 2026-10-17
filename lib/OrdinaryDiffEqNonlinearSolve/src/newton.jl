@@ -777,7 +777,12 @@ end
     end
 
     # update W
-    if W isa Union{WOperator, StaticWOperator}
+    if isdae && W isa AbstractSciMLOperator
+        # A DAE `W` is an operator only on the Krylov path, where it is applied matrix-free
+        # (a `JVPCache`, or a `DAEWOperator` under `concrete_jac = true`).
+        # `_compute_rhs!` left this iterate's `du` in `ztmp`.
+        update_coefficients!(W, ustep, p, tstep; du = ztmp)
+    elseif W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
         # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
