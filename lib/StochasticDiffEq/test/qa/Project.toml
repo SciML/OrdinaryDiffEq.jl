@@ -1,0 +1,58 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+OrdinaryDiffEqNonlinearSolve = "127b3ac7-2247-4354-8eb6-78cf4e7c58e8"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
+StochasticDiffEqCore = "19c5a474-6cd1-4a5f-be79-46dc34e54d7f"
+StochasticDiffEqHighOrder = "0520c28c-50fd-4d16-9c96-902fc80b3bab"
+StochasticDiffEqIIF = "ebf54054-c36b-4494-9aba-657e36df524f"
+StochasticDiffEqImplicit = "5080b986-4c76-4669-b5dc-373a41579d5b"
+StochasticDiffEqLeaping = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
+StochasticDiffEqLowOrder = "d15fe365-ce7f-450a-828a-7985bd5b681b"
+StochasticDiffEqMilstein = "8c95a807-c8e7-4581-8419-890d001af53e"
+StochasticDiffEqROCK = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
+StochasticDiffEqRODE = "49714585-0aa1-4f53-b1e6-a9b8c0d5e03f"
+StochasticDiffEqWeak = "af2a2fcd-1c36-4cbe-a6d0-5afda784a085"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+DiffEqBase = {path = "../../../DiffEqBase"}
+OrdinaryDiffEqNonlinearSolve = {path = "../../../OrdinaryDiffEqNonlinearSolve"}
+StochasticDiffEqCore = {path = "../../../StochasticDiffEqCore"}
+StochasticDiffEqHighOrder = {path = "../../../StochasticDiffEqHighOrder"}
+StochasticDiffEqIIF = {path = "../../../StochasticDiffEqIIF"}
+StochasticDiffEqImplicit = {path = "../../../StochasticDiffEqImplicit"}
+StochasticDiffEqLeaping = {path = "../../../StochasticDiffEqLeaping"}
+StochasticDiffEqLowOrder = {path = "../../../StochasticDiffEqLowOrder"}
+StochasticDiffEqMilstein = {path = "../../../StochasticDiffEqMilstein"}
+StochasticDiffEqROCK = {path = "../../../StochasticDiffEqROCK"}
+StochasticDiffEqRODE = {path = "../../../StochasticDiffEqRODE"}
+StochasticDiffEqWeak = {path = "../../../StochasticDiffEqWeak"}
+
+[compat]
+Aqua = "0.8"
+CommonSolve = "0.2"
+DiffEqBase = "7"
+DiffEqNoiseProcess = "5"
+JET = "0.9, 0.10, 0.11, 0.12"
+OrdinaryDiffEqNonlinearSolve = "2"
+SciMLBase = "3"
+SciMLTesting = "2.8"
+StochasticDiffEq = "7"
+StochasticDiffEqCore = "2"
+StochasticDiffEqHighOrder = "2"
+StochasticDiffEqIIF = "2"
+StochasticDiffEqImplicit = "2"
+StochasticDiffEqLeaping = "2"
+StochasticDiffEqLowOrder = "2"
+StochasticDiffEqMilstein = "2"
+StochasticDiffEqROCK = "2"
+StochasticDiffEqRODE = "2"
+StochasticDiffEqWeak = "2"
+Test = "1"
+julia = "1.10"
