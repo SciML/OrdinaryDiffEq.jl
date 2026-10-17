@@ -112,6 +112,76 @@ the matrix exponential actions are approximated in a Krylov subspace.
 """
 const ETD1 = NorsettEuler # alias
 
+REF6 = """
+Zoto, Thoma, and John C. Bowman. "Robust Exponential Runge-Kutta Embedded Pairs."
+  arXiv:2303.12139 (2023). (https://arxiv.org/abs/2303.12139)
+"""
+
+for (Alg, Description, Ref) in [
+        (
+            :ERK32ZB,
+            "3rd order exponential-RK scheme with a robust embedded 2nd order estimate.",
+            REF6,
+        ),
+        (
+            :ERK43ZB,
+            "4th order exponential-RK scheme with a robust embedded 3rd order estimate.",
+            REF6,
+        ),
+    ]
+    @eval begin
+        @doc generic_solver_docstring(
+            $Description,
+            $(string(Alg)),
+            "Semilinear ODE solver",
+            $Ref,
+            """
+            - `krylov`: Determines whether Krylov approximation or operator caching is used, the latter only available for semilinear problems.
+                `krylov=true` is much faster for larger systems and is thus recommended whenever there are >100 ODEs.
+                With operator caching the operators are rebuilt whenever the step size changes, so `krylov=true` is usually the faster choice for an adaptive solve.
+            - `m`: Controls the size of Krylov subspace.
+            - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
+                    Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.
+            """,
+            """
+            krylov = false,
+            m = 30,
+            iop = 0,
+            """
+        )
+        struct $Alg{StepLimiter, AD, CJ} <:
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm
+            step_limiter!::StepLimiter
+            krylov::Bool
+            m::Int
+            iop::Int
+            autodiff::AD
+
+            concrete_jac::CJ
+        end
+        $Alg(krylov::Bool, m::Int, iop::Int, autodiff, concrete_jac) = $Alg(
+            trivial_limiter!, krylov, m, iop, autodiff, concrete_jac
+        )
+    end
+    @eval function $Alg(;
+            krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
+            concrete_jac = nothing, step_limiter = trivial_limiter!, kwargs...
+        )
+        autodiff = _fixup_ad(autodiff)
+        step_limiter = _resolve_step_limiter_keyword(step_limiter, kwargs)
+
+        return $Alg(
+            step_limiter,
+            krylov,
+            m,
+            iop,
+            autodiff,
+            _unwrap_val(concrete_jac)
+
+        )
+    end
+end
+
 REF2 = """
 Hochbruck, M., & Ostermann, A. (2010). Exponential integrators. Acta Numerica, 19, 209-286. (https://doi.org/10.1017/S0962492910000048)
 """
