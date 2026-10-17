@@ -1045,15 +1045,12 @@ function relax!(
             return res
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            # Small Newton corrections can round away a sqrt(eps()) perturbation in α.
+            ϵ = cbrt(eps())
+            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return ϕ(α), dϕ(α)
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
@@ -1113,15 +1110,11 @@ function relax(
             return resid(z)
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            ϵ = cbrt(eps())
+            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return ϕ(α), dϕ(α)
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
