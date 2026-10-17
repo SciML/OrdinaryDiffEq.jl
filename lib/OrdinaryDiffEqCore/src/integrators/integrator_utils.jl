@@ -273,10 +273,7 @@ function modify_dt_for_tstops!(integrator)
         tdir_t = integrator.tdir * integrator.t
         tdir_tstop = first_tstop(integrator)
         distance_to_tstop = abs(tdir_tstop - tdir_t)
-        # Floating-point tolerance so that a dt whose nominal value matches
-        # distance_to_tstop to within rounding still triggers the tstop
-        # branch.  Without this, accumulated `t + dt + dt + …` can drift
-        # just past the last tstop and produce a spurious micro-step.
+        # Snap window covers accumulated `t + dt` drift; on snap dt equals distance_to_tstop.
         tstop_tol = if integrator.t isa AbstractFloat && isfinite(tdir_tstop) &&
                 isfinite(integrator.t)
             100 * eps(
@@ -292,14 +289,19 @@ function modify_dt_for_tstops!(integrator)
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
-            if original_dt + tstop_tol < distance_to_tstop
+            step_tol = min(tstop_tol, original_dt / 2)
+            # Do not re-lengthen after a rejection (else forever); first step exempt (10x shrink).
+            reject_retry = !integrator.accept_step && integrator.success_iter > 0
+            if original_dt + step_tol < distance_to_tstop ||
+                    (reject_retry && original_dt < distance_to_tstop)
                 _set_tstop_flag!(integrator, false)
+                integrator.dt = integrator.tdir * original_dt
             else
                 _set_tstop_flag!(
                     integrator, true, integrator.tdir * tdir_tstop
                 )
+                integrator.dt = integrator.tdir * distance_to_tstop
             end
-            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
         elseif iszero(integrator.dtcache) && integrator.dtchangeable
             integrator.dt = integrator.tdir * distance_to_tstop
             _set_tstop_flag!(
@@ -308,15 +310,17 @@ function modify_dt_for_tstops!(integrator)
         elseif integrator.dtchangeable && !integrator.force_stepfail
             # always try to step! with dtcache, but lower if a tstop
             # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            if abs(integrator.dtcache) + tstop_tol < distance_to_tstop
+            dtcache_abs = abs(integrator.dtcache)
+            step_tol = min(tstop_tol, dtcache_abs / 2)
+            if dtcache_abs + step_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
+                integrator.dt = integrator.tdir * dtcache_abs
             else
                 _set_tstop_flag!(
                     integrator, true, integrator.tdir * tdir_tstop
                 )
+                integrator.dt = integrator.tdir * distance_to_tstop
             end
-            integrator.dt = integrator.tdir *
-                min(abs(integrator.dtcache), distance_to_tstop)
         else
             _set_tstop_flag!(integrator, false)
         end
