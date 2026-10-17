@@ -232,9 +232,8 @@ function initialize!(
             end
             cache.prob = new_prob
             if cache.cache isa NonlinearSolveNoInitCache
-                # A no-init cache is `solve!`-driven, so it must keep terminating on its own
-                # (nonzero, default) tolerances here exactly as on the build path: rebuilding
-                # it with the zeroed tolerances below would leave every complete inner solve
+                # A no-init cache is `solve!`-driven, so it is rebuilt exactly as on the build
+                # path: the zeroed tolerances below would leave every complete inner solve
                 # returning `MaxIters`.
                 cache.cache = init(
                     new_prob, cache.cache.alg;
@@ -478,6 +477,101 @@ function residual_to_z_scale(nlsolver, isdae)
         inv(cache.invγdt)
 end
 
+"""
+    StageConvergenceMode(norm, κ, γΔt, owner)
+
+Termination mode for a complete inner solve on a `NonlinearSolveNoInitCache` that applies,
+to every inner iteration, the test `nlsolve!` applies to every outer one: with `ndz` the
+iteration's displacement in the integrator's weighted `norm`, an iteration converges when
+`θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` (or `θ ≈ 1` at `ndz ≤ 1`, the floating-point
+limit), or at once when `γΔt⋅fu` has fallen to the roundoff floor of the iterate, as in
+`stage_unsolved` — at the root a trust-region solver cannot take another step, since its
+reduction ratio is all roundoff.
+
+A no-init cache cannot be stepped, so each outer iteration is a whole inner solve, and it
+ends on the inner solver's own criterion. Left at its default, `max|r| ≤ eps^(4/5)` on a
+residual that carries a `1/(γΔt)` factor, that criterion is unrelated to the integrator's
+tolerances: on a problem of small magnitude it accepts a stage the `κ`/`η` test would
+reject, and on one of large magnitude it lies below roundoff, so every solve returns
+`MaxIters` and the step is rejected until `dt` collapses. A residual bound in the weighted
+norm is not enough either: on a stiff, non-normal Jacobian a small weighted residual can
+still leave a large weighted displacement.
+
+The first iteration never converges on its own, unlike in `nlsolve!` (`ndz < 1e-5`), because
+every outer iteration is a new inner solve and needs its own rate `θ`. An unmoved iterate is
+not a first iteration either: a trust-region solver checks its initial point before it has
+taken a step.
+"""
+struct StageConvergenceMode{N, K, S, O} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
+    norm::N
+    κ::K
+    γΔt::S
+    owner::O
+end
+
+# The previous displacement lives in the owning `NonlinearSolveCache`, so that neither the mode
+# nor this cache is heap-allocated per inner solve.
+struct StageConvergenceCache{M}
+    mode::M
+end
+
+function CommonSolve.init(
+        ::AbstractNonlinearProblem, mode::StageConvergenceMode, du, u, args...; kwargs...
+    )
+    mode.owner.inner_ndzprev = -one(mode.owner.inner_ndzprev)
+    return StageConvergenceCache(mode)
+end
+
+function (cache::StageConvergenceCache)(fu, u, uprev)
+    (; norm, κ, γΔt, owner) = cache.mode
+    resid = abs(γΔt) * maxabs(fu)
+    resid <= roundoff_level(typeof(resid)) * max(maxabs_axpy(γΔt, u, fu), maxabs(u)) &&
+        return true
+    ndz = norm(u .- uprev)
+    ndzprev = owner.inner_ndzprev
+    if ndzprev < 0
+        iszero(ndz) || (owner.inner_ndzprev = ndz)
+        return false
+    end
+    owner.inner_ndzprev = ndz
+    θ = ndz / ndzprev
+    abs(θ - one(θ)) <= eps_around_one(θ) && return ndz <= one(ndz)
+    return θ < 1 && θ / (1 - θ) * ndz < κ
+end
+
+"""
+    StageDisplacementNorm(uprev, abstol, reltol, internalnorm, t)
+
+The integrator's error norm of a stage displacement, weighted by `abstol + reltol⋅|uprev|`.
+"""
+struct StageDisplacementNorm{U, A, R, N, T}
+    uprev::U
+    abstol::A
+    reltol::R
+    internalnorm::N
+    t::T
+end
+function (n::StageDisplacementNorm)(dz)
+    atmp = calculate_residuals(dz, n.uprev, n.uprev, n.abstol, n.reltol, n.internalnorm, n.t)
+    return n.internalnorm(atmp, n.t)
+end
+
+# Inner algorithms whose every step solves the Newton system with the true (or reused `W`)
+# Jacobian, so that the displacement measures the distance to the root. The quasi-Newton ones
+# (`SimpleBroyden`, `SimpleKlement`, ...) restart each solve from a scaled identity, and their
+# steps can be small far from the root; external wrappers reject a custom mode outright.
+const StageConvergenceAlgorithm = Union{SimpleNewtonRaphson, SimpleTrustRegion}
+
+function noinit_termination_kwargs(nlsolver, integrator)
+    nlsolver.cache.cache.alg isa StageConvergenceAlgorithm || return (;)
+    (; opts, uprev, t) = integrator
+    norm = StageDisplacementNorm(uprev, opts.abstol, opts.reltol, opts.internalnorm, t)
+    κ = convert(real(eltype(nlsolver.z)), nlsolver.κ)
+    γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+    mode = StageConvergenceMode(norm, κ, γΔt, nlsolver.cache)
+    return (; termination_condition = mode)
+end
+
 function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
     if new_jac
         nlcache.J = calc_J(integrator, nlcache)
@@ -506,7 +600,7 @@ end
         end
         innersol = solve(
             NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg;
-            conditioning_kwargs(cache)...
+            conditioning_kwargs(cache)..., noinit_termination_kwargs(nlsolver, integrator)...
         )
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
@@ -581,6 +675,14 @@ end
         # either: the reused `W` only serves as the inner Newton's Jacobian (`WReuseJac`),
         # where staleness costs convergence rate, not the root the full solve lands on. A
         # complete solve leaves no half-taken step behind, so nothing for the residual to veto.
+        # Each solve starts from the current iterate: restarting from the predictor stored by
+        # `initialize!` would reproduce the previous solve, so the second outer iteration would
+        # always see a zero displacement and accept.
+        if nlstep_data === nothing
+            SciMLBase.reinit!(
+                nlcache, copy(z); noinit_termination_kwargs(nlsolver, integrator)...
+            )
+        end
         innersol = solve!(nlcache)
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(atmp), Inf)
