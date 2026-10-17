@@ -64,7 +64,7 @@ for (ff_time_derivative, u0) in (
 
         @show Rosenbrock23
         sol = solve(prob, Rosenbrock32(autodiff = _autodiff), reltol = 1.0e-9, abstol = 1.0e-9)
-        @test sol.errors[:final] < 1.0e-5 * 10^(!prec)
+        @test sol.errors[:final] < 1.0e-10 * 10_000^(!prec)
         sol = solve(prob, Rosenbrock23(autodiff = _autodiff), reltol = 1.0e-9, abstol = 1.0e-9)
         @test sol.errors[:final] < 1.0e-10 * 10_000^(!prec)
 
