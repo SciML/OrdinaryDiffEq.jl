@@ -199,7 +199,7 @@ end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
     SBDF, SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
-    DABDF2, DImplicitEuler, DFBDF,
+    DABDF2, DImplicitEuler, DFBDF, MOOSE234,
     NordsieckBDF, DNordsieckBDF
 
 end
