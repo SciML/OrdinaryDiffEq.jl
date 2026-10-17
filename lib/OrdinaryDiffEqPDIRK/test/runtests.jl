@@ -4,7 +4,14 @@ using SafeTestsets
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+    lib_dir = dirname(dirname(@__DIR__))
+    return activate_group_env(
+        joinpath(@__DIR__, "qa"); parent = [
+            dirname(@__DIR__), dirname(lib_dir),
+            joinpath(lib_dir, "OrdinaryDiffEqNonlinearSolve"),
+            joinpath(lib_dir, "OrdinaryDiffEqDifferentiation"),
+        ]
+    )
 end
 
 @time @safetestset "SciMLBase reexport" begin
@@ -27,6 +34,16 @@ end
 @time @safetestset "nlsolve! Arguments" include("nlsolve_argument_tests.jl")
 @time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
 @time @safetestset "PDIRK Resize Cache Tests" include("pdirk_resize_tests.jl")
+
+@time @safetestset "Threaded statistics" begin
+    if Threads.nthreads() >= 4
+        include("threaded_stats_tests.jl")
+    else
+        using Test
+        testfile = joinpath(@__DIR__, "threaded_stats_tests.jl")
+        @test success(`$(Base.julia_cmd()) --threads=4 --project=$(dirname(Base.active_project())) $testfile`)
+    end
+end
 
 # Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
 # virtual module, so every method the package defines on a generic function owned by

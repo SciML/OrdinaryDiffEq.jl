@@ -26,6 +26,7 @@ function activate_qa_env()
         parent = [
             dirname(@__DIR__),
             joinpath(lib_dir, "OrdinaryDiffEqCore"),
+            joinpath(lib_dir, "OrdinaryDiffEqDifferentiation"),
             joinpath(lib_dir, "OrdinaryDiffEqBDF"),
             joinpath(lib_dir, "OrdinaryDiffEqRosenbrock"),
         ],
