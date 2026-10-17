@@ -641,8 +641,12 @@ function SciMLBase.reinit!(
     if reset_dt
         auto_dt_reset!(integrator)
     elseif !integrator.opts.adaptive && !iszero(integrator.dtcache)
-        integrator.dt = integrator.dtcache
-        integrator.dtpropose = integrator.dtcache
+        integrator.dt = integrator.tdir * abs(integrator.dtcache)
+        integrator.dtpropose = integrator.dt
+        if !isnothing(_get_W(integrator))
+            modify_dt_for_tstops!(integrator)
+            integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        end
     end
 
     if reinit_dae && !implicit_discrete &&
