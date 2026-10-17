@@ -1142,10 +1142,39 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     resize_jac_config!(nlcache, integrator)
     resize!(nlcache.weight, i)
+    resize_dae_jacobians!(nlcache, integrator, i)
 
     # resize J and W (or rather create new ones of appropriate size and type)
     resize_J_W!(nlcache, integrator, i)
 
+    return nothing
+end
+
+# The `uf`/`jac_config`/`du1` fields `resize_jac_config!` reads and writes.
+mutable struct JacConfigResizeTarget{U, C, D}
+    uf::U
+    jac_config::C
+    du1::D
+end
+
+function resized_jac_config(uf, jac_config, du1, integrator)
+    target = JacConfigResizeTarget(uf, jac_config, du1)
+    resize_jac_config!(target, integrator)
+    return target.jac_config
+end
+
+# `resize_J_W!` resizes `J_du`; the wrappers' fixed arguments and their configs are resized here.
+function resize_dae_jacobians!(nlcache::NLNewtonCache, integrator, i::Int)
+    dae_jac = nlcache.dae_jacobians
+    (dae_jac isa DAEJacobiansCache && dae_jac.uf_u !== nothing) || return nothing
+    (; J_du, uf_u, uf_du, jac_config_u, jac_config_du) = dae_jac
+    resize!(uf_u.du_fixed, i)
+    resize!(uf_du.u_fixed, i)
+    nlcache.dae_jacobians = DAEJacobiansCache(
+        J_du, uf_u, uf_du,
+        resized_jac_config(uf_u, jac_config_u, nlcache.du1, integrator),
+        resized_jac_config(uf_du, jac_config_du, nlcache.du1, integrator)
+    )
     return nothing
 end
 
