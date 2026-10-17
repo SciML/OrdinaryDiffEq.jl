@@ -30,6 +30,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
 
     @time @safetestset "BDF Inference Tests" include("inference_tests.jl")
     @time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")
+    @time @safetestset "BDF Restart Tests" include("bdf_restart_tests.jl")
     @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
     @time @safetestset "BDF Time Reversal Tests" include("bdf_time_reversal_tests.jl")
     @time @safetestset "FBDF Time Filter Tests" include("fbdf_time_filter_tests.jl")
