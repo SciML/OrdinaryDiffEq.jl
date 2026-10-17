@@ -70,7 +70,7 @@ import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_
     build_jac_config, dolinsolve, set_linear_reltol!,
     resize_jac_config!, jacobian2W!, jacobian!, calc_J
 
-import StaticArraysCore: StaticArray
+import StaticArraysCore: StaticArray, MArray
 
 include("type.jl")
 include("utils.jl")

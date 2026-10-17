@@ -712,11 +712,12 @@ function _initialize_dae!(
         nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
     end
 
-    if u0 isa Number
-        # This doesn't fix static arrays!
-        u = [u0]
+    u = if u0 isa Number
+        [u0]
+    elseif u0 isa StaticArray
+        MArray(u0)
     else
-        u = u0
+        u0
     end
 
     nlequation = @closure (x, _) -> begin
@@ -740,11 +741,12 @@ function _initialize_dae!(
 
     u[algebraic_vars] .= nlsol.u
 
-    if u0 isa Number
-        # This doesn't fix static arrays!
-        integrator.u = first(u)
+    integrator.u = if u0 isa Number
+        first(u)
+    elseif u0 isa StaticArray
+        typeof(u0)(u)
     else
-        integrator.u = u
+        u
     end
 
 
