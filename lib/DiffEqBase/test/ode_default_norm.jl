@@ -79,6 +79,8 @@ r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
 end
 
 @testset "ArrayPartition UNITLESS_ABS2 left-fold vs mapreduce" begin
+    allocated_unitless_abs2(u) = @allocated UNITLESS_ABS2(u)
+    allocated_ode_default_norm(u) = @allocated ODE_DEFAULT_NORM(u, 0.0)
     mapreduce_ref(x) = mapreduce(
         UNITLESS_ABS2, abs2_and_sum, x.x;
         init = zero(real(value(eltype(x))))
@@ -102,9 +104,9 @@ end
         @test UNITLESS_ABS2(u) === mapreduce_ref(u)
         @test ODE_DEFAULT_NORM(u, 0.0) ===
             Base.FastMath.sqrt_fast(mapreduce_ref(u) / max(recursive_length(u), 1))
-        UNITLESS_ABS2(u)
-        ODE_DEFAULT_NORM(u, 0.0)
-        @test (@allocated UNITLESS_ABS2(u)) == 0
-        @test (@allocated ODE_DEFAULT_NORM(u, 0.0)) == 0
+        allocated_unitless_abs2(u)
+        allocated_ode_default_norm(u)
+        @test allocated_unitless_abs2(u) == 0
+        @test allocated_ode_default_norm(u) == 0
     end
 end
