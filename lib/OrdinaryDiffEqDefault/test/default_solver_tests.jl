@@ -260,3 +260,33 @@ end
     end
     @test default_step_bytes() == 0
 end
+
+@testset "DefaultODEAlgorithm stiff step! allocations" begin
+    function vdp_step_alloc!(du, u, p, t)
+        du[1] = u[2]
+        du[2] = p * (1 - u[1]^2) * u[2] - u[1]
+        return nothing
+    end
+    function rober_step_alloc!(du, u, p, t)
+        du[1] = -0.04u[1] + 1.0e4u[2] * u[3]
+        du[2] = 0.04u[1] - 1.0e4u[2] * u[3] - 3.0e7u[2]^2
+        du[3] = 3.0e7u[2]^2
+        return nothing
+    end
+    probs = (
+        ODEProblem(vdp_step_alloc!, [2.0, 0.0], (0.0, 1.0e8), 1.0e6),
+        ODEProblem(rober_step_alloc!, [1.0, 0.0, 0.0], (0.0, 1.0e8)),
+    )
+    function stiff_step_bytes(prob)
+        integ = init(prob, DefaultODEAlgorithm(autodiff = AutoFiniteDiff()); save_everystep = false)
+        for _ in 1:100
+            step!(integ)
+        end
+        @allocated step!(integ)
+        return @allocated step!(integ)
+    end
+    for prob in probs
+        bytes = stiff_step_bytes(prob)
+        @test bytes < 1000
+    end
+end
