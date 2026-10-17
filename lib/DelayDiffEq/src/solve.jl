@@ -26,8 +26,9 @@ function SciMLBase.__init(
         save_discretes = true,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
-        calck = (callback !== nothing && !isempty(callback)) || # Empty callback
-            dense, # and no dense output
+        # The history function interpolates the current and past steps, so the
+        # interpolation data must be computed even when no dense output is saved.
+        calck = true,
         seed = UInt64(0),
         dt = zero(eltype(prob.tspan)),
         dtmin = DiffEqBase.prob2dtmin(prob; use_end_time = false),
