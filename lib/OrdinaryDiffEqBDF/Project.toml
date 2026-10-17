@@ -38,6 +38,8 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+SparseConnectivityTracer = "9f842d2f-2579-4b1d-911e-f412cf18a3f5"
+SparseMatrixColorings = "0a514795-09f3-496d-8182-132a7b665d35"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
@@ -83,7 +85,9 @@ DiffEqBase = "7"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 SparseArrays = "1.10"
+SparseConnectivityTracer = "1"
+SparseMatrixColorings = "0.4.23"
 StaticArrays = "1.9.18"
 
 [targets]
-test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "SciMLTesting", "OrdinaryDiffEqRosenbrock", "SparseArrays", "SciMLOperators"]
+test = ["DiffEqDevTools", "DifferentiationInterface", "ForwardDiff", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "NonlinearSolve", "Enzyme", "LinearSolve", "Pkg", "SciMLTesting", "OrdinaryDiffEqRosenbrock", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings", "SciMLOperators"]
