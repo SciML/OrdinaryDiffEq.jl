@@ -104,3 +104,50 @@ for adaptivealg in (:RSwM1, :RSwM2, :RSwM3)
     @test 0.331 ∈ i.sol.t
     @test i.sol.u[end] ≈ i.W.curW atol = 1.0e-12
 end
+
+@testset "Fixed-step reinit after callback termination" begin
+    f(u, p, t) = [0.0, 1.0]
+    g(u, p, t) = [0.1, 0.0]
+    prob = SDEProblem(f, g, [1.0, 0.0], (0.0, 1.0))
+    level = Ref(0.0)
+    cb = ContinuousCallback((u, t, integrator) -> u[2] - level[], terminate!)
+    for alg in (EM(), RKMilCommute())
+        integrator = init(prob, alg; dt = 0.01, adaptive = false, callback = cb, seed = 1)
+
+        for stop in (0.4908, 0.0092, 0.0632)
+            level[] = stop
+            reinit!(integrator)
+            @test integrator.dt == 0.01
+            @test integrator.W.dt == 0.01
+            @test integrator.sqdt ≈ sqrt(abs(integrator.dt))
+
+            solve!(integrator)
+            @test integrator.sol.retcode == ReturnCode.Terminated
+            @test integrator.W.curt == integrator.t
+            @test all(isfinite, integrator.u)
+        end
+    end
+end
+
+@testset "Fixed-step noise reinit direction and tstops" begin
+    f(u, p, t) = [0.0, 1.0]
+    g(u, p, t) = [0.1, 0.0]
+    for alg in (EM(), RKMilCommute()), tspan in ((0.0, 1.0), (1.0, 0.0)),
+            shorten in (false, true)
+        tdir = sign(tspan[2] - tspan[1])
+        tstops = shorten ? [tspan[1] + tdir * 0.003] : Float64[]
+        expected_dt = shorten ? only(tstops) - tspan[1] : tdir * 0.01
+        prob = SDEProblem(f, g, [1.0, tspan[1]], tspan)
+        integrator = init(prob, alg; dt = 0.01, adaptive = false, tstops, seed = 1)
+        reinit!(integrator)
+        @test integrator.dt == expected_dt
+        @test integrator.dtpropose == tdir * 0.01
+        @test integrator.W.dt == expected_dt
+        @test integrator.sqdt ≈ tdir * sqrt(abs(integrator.dt))
+
+        solve!(integrator)
+        @test integrator.sol.retcode == ReturnCode.Success
+        @test integrator.W.curt == integrator.t == tspan[2]
+        @test all(isfinite, integrator.u)
+    end
+end
