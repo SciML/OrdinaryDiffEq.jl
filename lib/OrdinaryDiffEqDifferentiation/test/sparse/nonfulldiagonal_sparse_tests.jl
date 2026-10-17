@@ -156,7 +156,7 @@ solve(sparseodeprob, TRBDF2());
 solve(sparseodeprob, Rosenbrock23(linsolve = KLUFactorization()));
 solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
 
-@testset "Sparse Jacobian caches are initialized with stored values" begin
+@testset "Sparse Jacobian caches are initialized with stored zeros" begin
     function sparse_cache_f!(du, u, p, t)
         return du .= u
     end
@@ -170,6 +170,28 @@ solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
     )
     integ = init(prob, Rodas5P())
 
-    @test all(==(1), nonzeros(integ.cache.J))
-    @test all(==(1), nonzeros(integ.cache.W))
+    @test all(iszero, nonzeros(integ.cache.J))
+    @test all(iszero, nonzeros(integ.cache.W))
+end
+
+@testset "Sparse W zero-init with PureKLU stiff solve" begin
+    n = 4
+    jp = spdiagm(-1 => ones(n - 1), 0 => ones(n), 1 => ones(n - 1))
+    f!(du, u, p, t) = (du .= (-u); nothing)
+    function jac!(J, u, p, t)
+        nonzeros(J) .= 0.0
+        for i in 1:n
+            J[i, i] = -1.0
+        end
+        return nothing
+    end
+
+    prob = ODEProblem(ODEFunction(f!; jac = jac!, jac_prototype = jp), ones(n), (0.0, 1.0))
+    integ = init(prob, Rodas5P(linsolve = PureKLUFactorization()))
+    @test all(iszero, nonzeros(integ.cache.J))
+    @test all(iszero, nonzeros(integ.cache.W))
+
+    sol = solve!(integ)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[end] ≈ exp(-1) .* ones(n) rtol = 1.0e-6
 end
