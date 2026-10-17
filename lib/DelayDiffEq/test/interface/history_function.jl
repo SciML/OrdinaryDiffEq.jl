@@ -152,3 +152,16 @@ end
         @test history_inplace.isout
     end
 end
+
+# Ordinary ODE wrappers must keep using problem tspan as the history boundary.
+# save_start=false makes sol.t[1] a later saved time, not the initial time.
+@testset "HistoryFunction with ODE save_start=false" begin
+    it = init(
+        ODEProblem((u, p, t) -> 1.0, 2.0, (0.0, 1.0)), Tsit5();
+        dt = 0.1, adaptive = false, save_start = false
+    )
+    history = DelayDiffEq.HistoryFunction((p, t) -> -100.0, it)
+    step!(it)
+    step!(it)
+    @test history(nothing, 0.05) ≈ 2.05
+end
