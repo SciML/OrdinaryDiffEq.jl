@@ -98,4 +98,5 @@ StochasticDiffEqRODE.RandomEM
 StochasticDiffEqRODE.RandomHeun
 StochasticDiffEqRODE.RandomTamedEM
 StochasticDiffEqRODE.RandomTaylor15
+StochasticDiffEqRODE.RandomTaylor25
 ```
