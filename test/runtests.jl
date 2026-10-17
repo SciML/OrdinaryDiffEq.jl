@@ -1,4 +1,5 @@
 using Pkg
+
 using SafeTestsets, Test
 using SciMLTesting
 
@@ -205,6 +206,19 @@ function qa_group()
     return @time @safetestset "Quality Assurance Tests" include("qa/qa_tests.jl")
 end
 
+function activate_reactant_env()
+    Pkg.activate(joinpath(@__DIR__, "Reactant"))
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    return Pkg.instantiate()
+end
+
+function reactant_group()
+    is_APPVEYOR && return
+    activate_reactant_env()
+    @time @safetestset "Reactant Extension Imports" include("Reactant/explicit_imports.jl")
+    return @time @safetestset "Reactant Tests" include("Reactant/reactant_tests.jl")
+end
+
 function activate_gpu_env()
     Pkg.activate(joinpath(@__DIR__, "gpu"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -316,6 +330,7 @@ end
                 "AD" => ad_group,
                 "ODEInterfaceRegression" => odeinterface_group,
                 "GPU" => gpu_group,
+                "Reactant" => reactant_group,
             ),
             # QA runs in the root test environment (no per-group Project.toml);
             # its body is the ExplicitImports testset, not the standard
