@@ -5,10 +5,6 @@ using Reexport: Reexport, @reexport
 using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-# `perform_step!`, `issplit`, `current_extrapolant`, `current_extrapolant!` are part
-# of OrdinaryDiffEqCore's solver-author interface but are not (yet) declared `public`,
-# so they are tightly ignored in the QA explicit-imports checks. (`initialize!` is
-# owned by DiffEqBase and imported from its public owner there.)
 import OrdinaryDiffEqCore: perform_step!, issplit,
     current_extrapolant, current_extrapolant!
 
