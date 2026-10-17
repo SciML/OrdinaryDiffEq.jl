@@ -753,7 +753,8 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     tspan = get_concrete_tspan(prob, isadapt, kwargs, p)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
     u0_promote = promote_u0(u0, p, tspan[1])
-    tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
+    time_kwargs = has_kwargs(prob) ? (; prob.kwargs..., kwargs...) : kwargs
+    tspan_promote = promote_tspan(u0_promote, p, tspan, prob, time_kwargs)
     f_promote, p_promote = _promote_f(
         prob, prob.f, Val(SciMLBase.specialization(prob.f)), u0_promote, p,
         tspan_promote[1], Val(_uses_forwarddiff(alg)),
@@ -809,7 +810,8 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
 
     u0_promote = promote_u0(u0, p, tspan[1])
     du0_promote = promote_u0(du0, p, tspan[1])
-    tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
+    time_kwargs = has_kwargs(prob) ? (; prob.kwargs..., kwargs...) : kwargs
+    tspan_promote = promote_tspan(u0_promote, p, tspan, prob, time_kwargs)
 
     f_promote, p_promote = promote_f(
         prob.f, Val(SciMLBase.specialization(prob.f)), u0_promote, p,
@@ -848,7 +850,8 @@ function get_concrete_problem(prob::DDEProblem, isadapt; kwargs...)
     end
 
     u0 = promote_u0(u0, p, tspan[1])
-    tspan = promote_tspan(u0, p, tspan, prob, kwargs)
+    time_kwargs = has_kwargs(prob) ? (; prob.kwargs..., kwargs...) : kwargs
+    tspan = promote_tspan(u0, p, tspan, prob, time_kwargs)
 
     p = _promote_parameters(Val(SciMLBase.specialization(prob.f)), p)
     return remake(prob; u0, tspan, p, constant_lags)
@@ -859,10 +862,28 @@ promote_tspan(u0, p, tspan, prob, kwargs) = _promote_tspan(tspan, kwargs)
 function _promote_tspan(tspan, kwargs)
     if (dt = get(kwargs, :dt, nothing)) !== nothing
         tspan1, tspan2, _ = promote(tspan..., dt)
-        return (tspan1, tspan2)
-    else
-        return tspan
+        tspan = (tspan1, tspan2)
     end
+    tstops = get(kwargs, :tstops, ())
+    if eltype(tspan) <: Integer && tstops isa Union{AbstractArray, Tuple, Number} && !isempty(tstops)
+        t0, tf = tspan
+        lower, upper = minmax(t0, tf)
+        T = promote_type(typeof(t0), typeof(tf))
+        promote_stops = false
+        for tstop in tstops
+            lower < tstop < upper || continue
+            if tstop isa Integer ||
+                    (tstop isa Union{AbstractFloat, Rational} && isinteger(tstop))
+                continue
+            end
+            T = promote_type(T, typeof(tstop))
+            promote_stops = true
+        end
+        if promote_stops
+            tspan = (convert(T, t0), convert(T, tf))
+        end
+    end
+    return tspan
 end
 
 # Helper to get the effective ForwardDiff chunk size from the algorithm.
