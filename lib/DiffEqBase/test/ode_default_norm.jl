@@ -4,6 +4,22 @@ using Test, Random, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, Static
 using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM, abs2_and_sum,
     value
 
+@testset "Nested ArrayPartition norm in a fresh process" begin
+    code = """
+    using Test, DiffEqBase, RecursiveArrayTools
+    u = ArrayPartition(ones(3), ArrayPartition(ones(2), ones(Float32, 2)), ones(4))
+    allocated_norm(u) = @allocated DiffEqBase.ODE_DEFAULT_NORM(u, 0.0)
+    allocated_norm(u)
+    @test allocated_norm(u) == 0
+    """
+    @test success(
+        pipeline(
+            `$(Base.julia_cmd()) --startup-file=no --project=$(dirname(Base.active_project())) -e $code`;
+            stdout, stderr
+        )
+    )
+end
+
 @test recursive_length(1.0) == 1
 
 n = UNITLESS_ABS2(3.0 + 4.0im)

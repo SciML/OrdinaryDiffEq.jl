@@ -42,7 +42,7 @@ end
 recursive_length(u::AbstractArray{<:Number}) = length(u)
 recursive_length(u::Number) = length(u)
 recursive_length(u::AbstractArray{<:AbstractArray}) = sum(recursive_length, u)
-recursive_length(u::RecursiveArrayTools.ArrayPartition) = sum(recursive_length, u.x)
+recursive_length(u::RecursiveArrayTools.ArrayPartition) = _tuple_map_sum(recursive_length, u.x, 0)
 recursive_length(u::RecursiveArrayTools.VectorOfArray) = sum(recursive_length, u.u)
 recursive_length(u::RecursiveArrayTools.AbstractRaggedVectorOfArray) = sum(recursive_length, u.u; init = 0)
 function recursive_length(
