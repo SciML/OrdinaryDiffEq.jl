@@ -6,6 +6,7 @@ using DiffEqBase: Void, FunctionWrappersWrappers, OrdinaryDiffEqTag,
     AbstractTimeseriesSolution,
     RecursiveArrayTools, _promote_tspan, has_continuous_callback
 import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, wrapfun_dae_iip,
+    covers_iip_signatures,
     wrapfun_iip_opaque,
     prob2dtmin, promote_tspan, ODE_DEFAULT_NORM
 import SciMLBase: isdualtype, DualEltypeChecker, sse, __sum
@@ -138,6 +139,12 @@ function wrapfun_iip(
         inputs::Tuple{T1, T2, T3, T4},
         ::Val{CS}
     ) where {T1, T2, T3, T4, CS}
+    return _make_fww(Void(ff), _iip_signatures(inputs, Val(CS))...)
+end
+
+@inline function _iip_signatures(
+        ::Tuple{T1, T2, T3, T4}, ::Val{CS}
+    ) where {T1, T2, T3, T4, CS}
     T = eltype(T2)
 
     # Jacobian (u-derivative) uses chunk=CS
@@ -150,13 +157,18 @@ function wrapfun_iip(
     dualT1_time = ArrayInterface.promote_eltype(T1, dualT_time)
     dualT4_time = dualgen(promote_type(T, T4))
 
-    return _make_fww(
-        Void(ff),
+    return (
         Tuple{T1, T2, T3, T4},
         Tuple{dualT1_jac, dualT2_jac, T3, T4},
         Tuple{dualT1_time, T2, T3, dualT4_time},
-        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time}
+        Tuple{dualT1_jac, dualT2_jac, T3, dualT4_time},
     )
+end
+
+function covers_iip_signatures(
+        w::FunctionWrappersWrappers.FunctionWrappersWrapper, inputs::Tuple, ::Val{CS}
+    ) where {CS}
+    return all(S -> DiffEqBase._has_signature(w, S), _iip_signatures(inputs, Val(CS)))
 end
 
 # Opaque-p variant of the 3-arg wrapfun_iip: same matrix of (du, u, p, t)

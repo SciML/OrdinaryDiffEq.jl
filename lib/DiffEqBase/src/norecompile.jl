@@ -37,6 +37,15 @@ end
 # 3-arg fallback: when ForwardDiff extension is not loaded, ignore chunk size
 wrapfun_iip(ff, inputs, ::Val) = wrapfun_iip(ff, inputs)
 
+_signature(::FunctionWrapper{R, A}) where {R, A} = A
+function _has_signature(w::FunctionWrappersWrappers.FunctionWrappersWrapper, ::Type{S}) where {S}
+    return any(fw -> _signature(fw) === S, w.fw)
+end
+
+# Whether the wrapper `w` has every signature that `wrapfun_iip(ff, inputs, Val(CS))`
+# would install, so that `w` can be reused instead of wrapping again.
+covers_iip_signatures(w, inputs, ::Val) = _has_signature(w, typeof(inputs))
+
 function wrapfun_dae_iip(ff, inputs)
     return FunctionWrappersWrappers.FunctionWrappersWrapper(
         Void(ff), (typeof(inputs),), (Nothing,)

@@ -51,6 +51,7 @@ end
         @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
         @time @safetestset "Despecialized-p Hook" include("despecialized_p_test.jl")
         @time @safetestset "Despecialized mass-matrix problems" include("despecialize_mass_matrix.jl")
+        @time @safetestset "Rewrapping concretized functions" include("rewrap_concretized_f.jl")
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 
