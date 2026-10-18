@@ -112,10 +112,6 @@ end
     end
 end
 
-# Coupled linear resize: grow 2→3 and shrink back, restarting Nordsieck
-# history at order 1. New `uprev` slots must not be consumed uninitialized
-# (#4722); Core copies after an accepted step, and a resize before the first
-# step is synchronized on the next restart.
 const A_resize = [-1.0 0.35 0.1; 0.2 -1.4 0.25; 0.15 0.3 -1.2]
 const U0_resize = [1.0, -0.5]
 const UNEW_resize = 0.3
@@ -135,9 +131,11 @@ end
 
 resize_cases = (
     (AN5(), 1.0e-10, 1.0e-12, 1.0e-7),
-    (JVODE_Adams(), 1.0e-4, 1.0e-7, 5.0e-3),
+    (JVODE_Adams(), 1.0e-8, 1.0e-10, 1.0e-6),
+    (JVODE_BDF(), 1.0e-8, 1.0e-10, 1.0e-6),
 )
-@testset "Nordsieck state resizing ($alg)" for (alg, reltol, abstol, check_rtol) in resize_cases
+@testset "Nordsieck state resizing ($alg, u_modified=$modified)" for
+    (alg, reltol, abstol, check_rtol) in resize_cases, modified in (true, false)
     grew = Ref(false)
     shrank = Ref(false)
     restart_orders = Int[]
@@ -145,6 +143,7 @@ resize_cases = (
         n = grew[] ? 2 : 3
         resize!(integrator, n)
         n == 3 && (integrator.u[3] = UNEW_resize)
+        u_modified!(integrator, modified)
         push!(restart_orders, integrator.cache.order)
         grew[] ? (shrank[] = true) : (grew[] = true)
         return nothing
@@ -165,7 +164,7 @@ resize_cases = (
 end
 
 @testset "resize before first step initializes restart state" begin
-    for alg in (AN5(), JVODE_Adams())
+    for alg in (AN5(), JVODE_Adams(), JVODE_BDF())
         it = init(ODEProblem(f_resize!, [1.0, -0.5], (0.0, 0.1)), alg; adaptive = false, dt = 1.0e-4)
         resize!(it, 3)
         it.u[3] = 0.3
