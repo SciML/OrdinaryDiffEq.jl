@@ -101,12 +101,12 @@ end
 
         if mass_matrix === I
             @.. broadcast = false linsolve_tmp = fsallast - c₃₂ * (k₂ - f₁) -
-                2(k₁ - fsalfirst) + dt * dT
+                2(k₁ - fsalfirst) + dtγ * dT
         else
             @.. broadcast = false du2 = c₃₂ * k₂ + 2k₁
             mul!(_vec(du1), mass_matrix, _vec(du2))
             @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst +
-                dt * dT
+                dtγ * dT
         end
 
         linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
@@ -213,11 +213,11 @@ end
 
     if mass_matrix === I
         @.. broadcast = false linsolve_tmp = fsallast - c₃₂ * (k₂ - f₁) - 2(k₁ - fsalfirst) +
-            dt * dT
+            dtγ * dT
     else
         @.. broadcast = false du2 = c₃₂ * k₂ + 2k₁
         mul!(_vec(du1), mass_matrix, _vec(du2))
-        @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
+        @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dtγ * dT
     end
 
     linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
@@ -295,13 +295,13 @@ end
         if mass_matrix === I
             linsolve_tmp = @.. (
                 integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                    2 * (k₁ - integrator.fsalfirst) + dt * dT
+                    2 * (k₁ - integrator.fsalfirst) + dtγ * dT
             )
         else
             linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
             linsolve_tmp = @.. (
                 integrator.fsallast - linsolve_tmp +
-                    c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
+                    c₃₂ * f₁ + 2 * integrator.fsalfirst + dtγ * dT
             )
         end
         k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
@@ -379,13 +379,13 @@ end
     if mass_matrix === I
         linsolve_tmp = @.. (
             integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                2(k₁ - integrator.fsalfirst) + dt * dT
+                2(k₁ - integrator.fsalfirst) + dtγ * dT
         )
     else
         linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
         linsolve_tmp = @.. (
             integrator.fsallast - linsolve_tmp +
-                c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
+                c₃₂ * f₁ + 2 * integrator.fsalfirst + dtγ * dT
         )
     end
     k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
