@@ -1642,7 +1642,7 @@ version = "2.9.9"
 deps = ["DiffEqBase", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqTsit5", "RecursiveArrayTools", "Reexport", "SciMLBase"]
 path = "../lib/OrdinaryDiffEqNordsieck"
 uuid = "c9986a66-5c92-4813-8696-a7ec84c806c8"
-version = "2.3.1"
+version = "2.3.2"
 
 [[deps.OrdinaryDiffEqPDIRK]]
 deps = ["ADTypes", "DiffEqBase", "FastBroadcast", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqNonlinearSolve", "Reexport", "SciMLBase"]
@@ -2400,19 +2400,19 @@ version = "2.1.1"
 deps = ["ArrayInterface", "DiffEqBase", "DiffEqNoiseProcess", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
 path = "../lib/StochasticDiffEqLowOrder"
 uuid = "d15fe365-ce7f-450a-828a-7985bd5b681b"
-version = "2.0.6"
+version = "2.0.7"
 
 [[deps.StochasticDiffEqMilstein]]
 deps = ["ArrayInterface", "DiffEqBase", "DiffEqNoiseProcess", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore", "StochasticDiffEqLevyArea"]
 path = "../lib/StochasticDiffEqMilstein"
 uuid = "8c95a807-c8e7-4581-8419-890d001af53e"
-version = "2.1.2"
+version = "2.1.3"
 
 [[deps.StochasticDiffEqROCK]]
 deps = ["DiffEqBase", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
 path = "../lib/StochasticDiffEqROCK"
 uuid = "db241ea8-0e6b-4abc-8f2d-1adff2294fd9"
-version = "2.1.1"
+version = "2.1.2"
 
 [[deps.StochasticDiffEqRODE]]
 deps = ["DiffEqBase", "DiffEqNoiseProcess", "FastBroadcast", "LinearAlgebra", "MuladdMacro", "OrdinaryDiffEqCore", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "StochasticDiffEqCore"]
