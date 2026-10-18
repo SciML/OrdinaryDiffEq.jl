@@ -32,6 +32,7 @@ end
 
 @time @safetestset "Convergence Tests" include("pdirk_convergence_tests.jl")
 @time @safetestset "nlsolve! Arguments" include("nlsolve_argument_tests.jl")
+@time @safetestset "External nonlinear-solver factories" include("external_nlsolve_tests.jl")
 @time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
 @time @safetestset "PDIRK Resize Cache Tests" include("pdirk_resize_tests.jl")
 

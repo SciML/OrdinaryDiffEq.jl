@@ -427,7 +427,9 @@ Construct the nonlinear solver used by an implicit integrator algorithm.
     `integrator.force_stepfail` directly, or a `StatsDelta()` to buffer the
     solver's statistics privately. The caller of a buffered solver must merge
     the buffer with `merge_stats_deltas!` after its worker joins and set
-    `integrator.force_stepfail` itself.
+    `integrator.force_stepfail` itself. Unbuffered calls forward no keywords
+    to custom factories. Buffered calls require custom factories to accept
+    `stats_delta` and honor the same private-buffer contract.
 
 # Returns
 
@@ -464,10 +466,11 @@ function build_nlsolver(
         ::Type{tTypeNoUnits}, γ, c,
         iip, verbose; stats_delta = nothing
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    kwargs = stats_delta === nothing ? (;) : (; stats_delta)
     return build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
-        tTypeNoUnits, γ, c, 1, iip, verbose; stats_delta
+        tTypeNoUnits, γ, c, 1, iip, verbose; kwargs...
     )
 end
 
@@ -478,9 +481,10 @@ function build_nlsolver(
         ::Type{tTypeNoUnits}, γ, c, α,
         iip, verbose; stats_delta = nothing
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    kwargs = stats_delta === nothing ? (;) : (; stats_delta)
     return build_nlsolver(
         alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose; stats_delta
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose; kwargs...
     )
 end
 
