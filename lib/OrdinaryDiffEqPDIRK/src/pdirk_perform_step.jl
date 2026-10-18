@@ -6,6 +6,39 @@ function initialize!(integrator, cache::PDIRK44ConstantCache) end
     (; nlsolver, tab) = cache
     (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
 
+    if !isthreaded(alg.threading)
+        _nlsolver = nlsolver[1]
+        _nlsolver.z = zero(u)
+        _nlsolver.tmp = uprev
+        _nlsolver.γ = γs[1]
+        _nlsolver.c = cs[1]
+        markfirststage!(_nlsolver)
+        k11 = copy(nlsolve!(_nlsolver, integrator, cache, repeat_step))
+        nlsolvefail(_nlsolver) && return
+        _nlsolver.z = zero(u)
+        _nlsolver.tmp = uprev
+        _nlsolver.γ = γs[2]
+        _nlsolver.c = cs[2]
+        markfirststage!(_nlsolver)
+        k12 = copy(nlsolve!(_nlsolver, integrator, cache, repeat_step))
+        nlsolvefail(_nlsolver) && return
+        _nlsolver.z = zero(u)
+        _nlsolver.tmp = uprev + α1[1] * k11 + α2[1] * k12
+        _nlsolver.γ = γs[1]
+        _nlsolver.c = cs[3]
+        markfirststage!(_nlsolver)
+        k21 = copy(nlsolve!(_nlsolver, integrator, cache, repeat_step))
+        nlsolvefail(_nlsolver) && return
+        _nlsolver.z = zero(u)
+        _nlsolver.tmp = uprev + α1[2] * k11 + α2[2] * k12
+        _nlsolver.γ = γs[2]
+        _nlsolver.c = cs[4]
+        markfirststage!(_nlsolver)
+        k22 = copy(nlsolve!(_nlsolver, integrator, cache, repeat_step))
+        nlsolvefail(_nlsolver) && return
+        integrator.u = uprev + b1 * k11 + b2 * k21 + b3 * k12 + b4 * k22
+        return nothing
+    end
     k2 = Array{typeof(u)}(undef, 2)
     k1 = Array{typeof(u)}(undef, 2)
     let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
@@ -51,6 +84,39 @@ function initialize!(integrator, cache::PDIRK44Cache) end
     alg = unwrap_alg(integrator, true)
     (; nlsolver, k1, k2, tab) = cache
     (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
+    if !isthreaded(alg.threading)
+        _nlsolver = nlsolver[1]
+        _nlsolver.z .= zero(eltype(u))
+        _nlsolver.tmp .= uprev
+        _nlsolver.γ = γs[1]
+        _nlsolver.c = cs[1]
+        markfirststage!(_nlsolver)
+        k1[1] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(_nlsolver) && return
+        _nlsolver.z .= zero(eltype(u))
+        _nlsolver.tmp .= uprev
+        _nlsolver.γ = γs[2]
+        _nlsolver.c = cs[2]
+        markfirststage!(_nlsolver)
+        k1[2] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(_nlsolver) && return
+        _nlsolver.z .= zero(eltype(u))
+        @.. broadcast = false _nlsolver.tmp = uprev + α1[1] * k1[1] + α2[1] * k1[2]
+        _nlsolver.γ = γs[1]
+        _nlsolver.c = cs[3]
+        markfirststage!(_nlsolver)
+        k2[1] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(_nlsolver) && return
+        _nlsolver.z .= zero(eltype(u))
+        @.. broadcast = false _nlsolver.tmp = uprev + α1[2] * k1[1] + α2[2] * k1[2]
+        _nlsolver.γ = γs[2]
+        _nlsolver.c = cs[4]
+        markfirststage!(_nlsolver)
+        k2[2] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
+        nlsolvefail(_nlsolver) && return
+        @.. broadcast = false u = uprev + b1 * k1[1] + b2 * k2[1] + b3 * k1[2] + b4 * k2[2]
+        return nothing
+    end
     let nlsolver = nlsolver, u = u, uprev = uprev, integrator = integrator,
             cache = cache, dt = dt, repeat_step = repeat_step,
             k1 = k1

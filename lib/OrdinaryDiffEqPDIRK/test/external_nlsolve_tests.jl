@@ -18,38 +18,24 @@ end
 
 using .ExternalNLSolverFactoryClient: PositionalNewton, BufferedNewton
 using OrdinaryDiffEqPDIRK
+using OrdinaryDiffEqSDIRK: TRBDF2
 using Test
 
 @testset "External nonlinear-solver factories" begin
     oop = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
     iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0))
-    for (inplace, prob) in ((false, oop), (true, iip))
-        reference = solve(
-            prob, PDIRK44(threading = false); dt = 0.01, adaptive = false
-        )
+    for (inplace, prob) in ((false, oop), (true, iip)),
+            alg in (PDIRK44(threading = false), PDIRK44(threading = true), TRBDF2())
+        reference = solve(prob, alg; dt = 0.01, adaptive = false)
         @test successful_retcode(reference)
-        @testset "Positional factory, $(inplace)" begin
-            sol = solve(
-                prob, PDIRK44(threading = false, nlsolve = PositionalNewton());
-                dt = 0.01, adaptive = false
-            )
-            @test successful_retcode(sol)
-            @test sol.u[end] ≈ [exp(-1)] atol = 1.0e-8
-            @test sol.u == reference.u
-            for field in fieldnames(typeof(reference.stats))
-                @test getfield(sol.stats, field) == getfield(reference.stats, field)
-            end
-            @test_throws MethodError init(
-                prob, PDIRK44(threading = true, nlsolve = PositionalNewton()); dt = 0.01
-            )
-        end
-        @testset "Buffer-aware factory, $(inplace)" begin
-            for threading in (false, true)
-                sol = solve(
-                    prob, PDIRK44(; threading, nlsolve = BufferedNewton());
-                    dt = 0.01, adaptive = false
-                )
+        for factory in (PositionalNewton(), BufferedNewton())
+            @testset "$(typeof(alg)), $(typeof(factory)), $(inplace)" begin
+                custom_alg = alg isa PDIRK44 ?
+                    PDIRK44(threading = alg.threading, nlsolve = factory) :
+                    TRBDF2(nlsolve = factory)
+                sol = solve(prob, custom_alg; dt = 0.01, adaptive = false)
                 @test successful_retcode(sol)
+                @test sol.u[end] ≈ [exp(-1)] atol = 2.0e-6
                 @test sol.u == reference.u
                 for field in fieldnames(typeof(reference.stats))
                     @test getfield(sol.stats, field) == getfield(reference.stats, field)

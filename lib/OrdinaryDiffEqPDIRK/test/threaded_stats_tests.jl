@@ -8,22 +8,23 @@ import OrdinaryDiffEqCore
 
 @test Threads.nthreads() >= 4
 
-stats_counters(stats) = NamedTuple{fieldnames(typeof(stats))}(
-    Tuple(getfield(stats, field) for field in fieldnames(typeof(stats)))
-)
+using Serialization
+using Polyester
+using OrdinaryDiffEqCore: BaseThreads, PolyesterThreads
+include("threaded_stats_reference.jl")
 
-function stats_rhs!(du, u, p, t)
-    @. du = -u * u
-    return nothing
+# One thread runs the two-cache schedule without concurrent counter updates.
+references = mktemp() do filename, io
+    close(io)
+    reference_file = joinpath(@__DIR__, "threaded_stats_reference.jl")
+    script = "using Serialization; include(ARGS[1]); serialize(ARGS[2], threaded_stats_reference())"
+    run(`$(Base.julia_cmd()) --threads=1 --project=$(dirname(Base.active_project())) -e $script $reference_file $filename`)
+    return deserialize(filename)
 end
-stats_rhs(u, p, t) = -u .* u
 
 @testset "PDIRK concurrency" begin
     @testset "PDIRK statistics agree across threading modes" begin
-        for rhs in (stats_rhs!, stats_rhs), nl in (
-                    NLNewton(), NLFunctional(), NLAnderson(), NonlinearSolveAlg(NewtonRaphson()),
-                    HomotopyNonlinearSolveAlg(),
-                )
+        for rhs in (stats_rhs!, stats_rhs), nl in stats_nonlinear_solvers
             @testset "$(nameof(typeof(nl))), $(rhs)" begin
                 prob = ODEProblem(rhs, ones(8), (0.0, 1.0))
                 serial = solve(
@@ -31,10 +32,10 @@ stats_rhs(u, p, t) = -u .* u
                     dt = 0.01, adaptive = false, save_everystep = false
                 )
                 @test successful_retcode(serial)
-                expected = stats_counters(serial.stats)
-                for _ in 1:30
+                expected = references[(nameof(rhs), nameof(typeof(nl)))]
+                for mode in (true, BaseThreads(), PolyesterThreads()), _ in 1:30
                     threaded = solve(
-                        prob, PDIRK44(; threading = true, nlsolve = nl);
+                        prob, PDIRK44(; threading = mode, nlsolve = nl);
                         dt = 0.01, adaptive = false, save_everystep = false
                     )
                     @test successful_retcode(threaded)
@@ -54,10 +55,10 @@ stats_rhs(u, p, t) = -u .* u
             prob, krylov(false); dt = 0.01, adaptive = false, save_everystep = false
         )
         @test successful_retcode(serial)
-        expected = stats_counters(serial.stats)
-        for _ in 1:30
+        expected = references[:krylov]
+        for mode in (true, BaseThreads(), PolyesterThreads()), _ in 1:30
             threaded = solve(
-                prob, krylov(true); dt = 0.01, adaptive = false, save_everystep = false
+                prob, krylov(mode); dt = 0.01, adaptive = false, save_everystep = false
             )
             @test successful_retcode(threaded)
             @test threaded.u[end] ≈ serial.u[end]
@@ -93,29 +94,21 @@ stats_rhs(u, p, t) = -u .* u
 
 
     @testset "always-new Newton keeps worker Jacobian state private" begin
-        function rhs(u, p, t)
-            yield()
-            return -u .* u
-        end
-        function rhs!(du, u, p, t)
-            yield()
-            @. du = -u * u
-            return nothing
-        end
-        for f in (rhs!, rhs)
+        for f in (yielding_stats_rhs!, yielding_stats_rhs)
             prob = ODEProblem(f, ones(8), (0.0, 1.0))
             serial = solve(
                 prob, PDIRK44(; threading = false, nlsolve = NLNewton(; always_new = true));
                 dt = 0.01, adaptive = false
             )
             @test successful_retcode(serial)
-            expected = stats_counters(serial.stats)
+            expected = references[nameof(f)]
             for _ in 1:30
                 threaded = solve(
                     prob, PDIRK44(; threading = true, nlsolve = NLNewton(; always_new = true));
                     dt = 0.01, adaptive = false
                 )
                 @test stats_counters(threaded.stats) == expected
+                @test threaded.u[end] ≈ serial.u[end]
                 @test successful_retcode(threaded)
             end
         end

@@ -36,6 +36,8 @@ end
 @time @safetestset "Core Interface Tests" include("core_interface_tests.jl")
 @time @safetestset "PDIRK Resize Cache Tests" include("pdirk_resize_tests.jl")
 
+@time @safetestset "Serial statistics" include("serial_stats_tests.jl")
+
 @time @safetestset "Threaded statistics" begin
     if Threads.nthreads() >= 4
         include("threaded_stats_tests.jl")

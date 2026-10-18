@@ -72,17 +72,26 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    nlsolver1 = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype,
-        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-        Val(true), verbose; stats_delta = alg.threading ? StatsDelta() : nothing
-    )
-    nlsolver2 = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype,
-        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-        Val(true), verbose; stats_delta = alg.threading ? StatsDelta() : nothing
-    )
-    nlsolver = [nlsolver1, nlsolver2]
+    if isthreaded(alg.threading)
+        nlsolver1 = build_nlsolver(
+            alg, u, uprev, p, t, dt, f, rate_prototype,
+            uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
+            Val(true), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
+        )
+        nlsolver2 = build_nlsolver(
+            alg, u, uprev, p, t, dt, f, rate_prototype,
+            uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
+            Val(true), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
+        )
+        nlsolver = [nlsolver1, nlsolver2]
+    else
+        _nlsolver = build_nlsolver(
+            alg, u, uprev, p, t, dt, f, rate_prototype,
+            uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
+            Val(true), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
+        )
+        nlsolver = [_nlsolver]
+    end
     tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = [zero(rate_prototype) for i in 1:2]
     k2 = [zero(rate_prototype) for i in 1:2]
@@ -96,17 +105,26 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    nlsolver1 = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype,
-        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-        Val(false), verbose; stats_delta = alg.threading ? StatsDelta() : nothing
-    )
-    nlsolver2 = build_nlsolver(
-        alg, u, uprev, p, t, dt, f, rate_prototype,
-        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-        Val(false), verbose; stats_delta = alg.threading ? StatsDelta() : nothing
-    )
-    nlsolver = [nlsolver1, nlsolver2]
+    if isthreaded(alg.threading)
+        nlsolver1 = build_nlsolver(
+            alg, u, uprev, p, t, dt, f, rate_prototype,
+            uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
+            Val(false), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
+        )
+        nlsolver2 = build_nlsolver(
+            alg, u, uprev, p, t, dt, f, rate_prototype,
+            uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
+            Val(false), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
+        )
+        nlsolver = [nlsolver1, nlsolver2]
+    else
+        _nlsolver = build_nlsolver(
+            alg, u, uprev, p, t, dt, f, rate_prototype,
+            uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
+            Val(false), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
+        )
+        nlsolver = [_nlsolver]
+    end
     tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     return PDIRK44ConstantCache(nlsolver, tab)
 end

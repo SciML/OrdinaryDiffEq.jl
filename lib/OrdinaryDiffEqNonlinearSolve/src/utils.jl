@@ -428,8 +428,9 @@ Construct the nonlinear solver used by an implicit integrator algorithm.
     solver's statistics privately. The caller of a buffered solver must merge
     the buffer with `merge_stats_deltas!` after its worker joins and set
     `integrator.force_stepfail` itself. Unbuffered calls forward no keywords
-    to custom factories. Buffered calls require custom factories to accept
-    `stats_delta` and honor the same private-buffer contract.
+    to custom factories. For buffered calls, factories accepting `stats_delta`
+    receive the keyword and must honor the private-buffer contract. A positional-only
+    factory returning a built-in nonlinear solver has its cache buffered after construction.
 
 # Returns
 
@@ -481,10 +482,28 @@ function build_nlsolver(
         ::Type{tTypeNoUnits}, γ, c, α,
         iip, verbose; stats_delta = nothing
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    kwargs = stats_delta === nothing ? (;) : (; stats_delta)
-    return build_nlsolver(
+    args = (
         alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose; kwargs...
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose,
+    )
+    stats_delta === nothing && return build_nlsolver(args...)
+    argtypes = Tuple{map(arg -> arg isa Type ? Type{arg} : typeof(arg), args)...}
+    if hasmethod(build_nlsolver, argtypes, (:stats_delta,))
+        return build_nlsolver(args...; stats_delta)
+    end
+    return with_stats_delta(build_nlsolver(args...), stats_delta)
+end
+
+function with_stats_delta(nlsolver::NLSolver{A, iip}, stats_delta) where {A, iip}
+    cache = ConstructionBase.setproperties(nlsolver.cache, (; stats_delta))
+    return NLSolver{
+        A, iip, typeof(nlsolver.z), typeof(nlsolver.γ), typeof(nlsolver.tmp2),
+        typeof(nlsolver.c), typeof(cache), typeof(nlsolver.prev_θ),
+    }(
+        nlsolver.z, nlsolver.tmp, nlsolver.tmp2, nlsolver.ztmp, nlsolver.γ,
+        nlsolver.c, nlsolver.α, nlsolver.alg, nlsolver.κ, nlsolver.fast_convergence_cutoff,
+        nlsolver.ηold, nlsolver.iter, nlsolver.maxiters, nlsolver.status, cache,
+        nlsolver.method, nlsolver.nfails, nlsolver.prev_θ
     )
 end
 
