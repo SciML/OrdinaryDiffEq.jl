@@ -169,7 +169,7 @@ end
 #     than on the tstop, keeps the full error test;
 #   - the linearized jump of some algebraic variable exceeds its tolerance.
 # Returns the mask of those variables when the step qualifies, otherwise `nothing`.
-function _algebraic_jump_at_tstop(integrator, u)
+function _algebraic_jump_at_tstop(integrator, u, predictor)
     OrdinaryDiffEqCore.get_EEst(integrator) > 1 || return nothing
     _step_reaches_tstop(integrator) || return nothing
     ArrayInterface.fast_scalar_indexing(u) || return nothing
@@ -178,7 +178,7 @@ function _algebraic_jump_at_tstop(integrator, u)
     differential isa AbstractArray || return nothing
     algebraic = .!differential
     any(algebraic) || return nothing
-    return _algebraic_jump_mask(integrator, u, algebraic)
+    return _algebraic_jump_mask(integrator, u, predictor, algebraic)
 end
 
 # Evaluate f at the step's end t₀ and at t₀ - δ and t₀ - 2δ. On a smooth algebraic
@@ -186,7 +186,7 @@ end
 # one dominate both the second and the residual left by the nonlinear solve. A smooth
 # layer narrower than δ looks the same, so the jump must also persist at t₀ - δₛ, a
 # hundred rounding units of t before t₀, where such a layer has nearly vanished.
-function _algebraic_jump_mask(integrator, u, algebraic)
+function _algebraic_jump_mask(integrator, u, predictor, algebraic)
     (; t, dt, tdir, p, f) = integrator
     t isa AbstractFloat || return nothing
     t₀ = t + dt
@@ -205,7 +205,39 @@ function _algebraic_jump_mask(integrator, u, algebraic)
             if jumps(i) && 2 * abs(gₛ[i] - g₀[i]) > abs(g₁[i] - g₀[i])
     ]
     isempty(rows) && return nothing
+    _algebraic_predictor_is_accurate(integrator, predictor, algebraic, t₀, t₀ - tdir * δₛ) ||
+        return nothing
     return _algebraic_vars_moved(integrator, u, algebraic, g₀, gₛ, rows, t₀)
+end
+
+# The predictor must resolve the smooth part of every algebraic variable before
+# its error can be masked at a jump. Scale the residual by the pre-jump Jacobian.
+# Extrapolate the one-sided residual to the endpoint to remove the probe's offset.
+function _algebraic_predictor_is_accurate(integrator, predictor, algebraic, t₀, t)
+    (; f, p, uprev) = integrator
+    (; abstol, reltol) = integrator.opts
+    vars = findall(algebraic)
+    g = _eval_rhs(integrator, f, predictor, p, t)
+    g₂ = _eval_rhs(integrator, f, predictor, p, t - (t₀ - t))
+    A = zeros(eltype(g), length(vars), length(vars))
+    for (k, j) in enumerate(vars)
+        perturbed = _perturbed(
+            predictor, j, sqrt(eps(eltype(predictor))) * max(abs(predictor[j]), one(eltype(predictor)))
+        )
+        h = perturbed[j] - predictor[j]
+        gj = _eval_rhs(integrator, f, perturbed, p, t)
+        for (i, v) in enumerate(vars)
+            A[i, k] = (gj[v] - g[v]) / h
+        end
+    end
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, length(vars) + 2)
+    F = lu(A; check = false)
+    issuccess(F) || return false
+    correction = F \ (2g[vars] - g₂[vars])
+    return all(enumerate(vars)) do (k, j)
+        tol = _entry(abstol, j) + _entry(reltol, j) * max(abs(uprev[j]), abs(predictor[j]))
+        abs(correction[k]) <= tol
+    end
 end
 
 # A jump Δg in the algebraic equations `rows` moves the algebraic variables by

@@ -433,6 +433,34 @@ end
     end
 end
 
+@testset "An algebraic jump preserves smooth variation in the variables it moves" begin
+    reltol, abstol = 1.0e-6, 1.0e-8
+    load(t) = t < 1 ? 0.0 : 1.0
+    # Resolve the nonlinear constraint more tightly than the endpoint assertion.
+    algs = (FBDF(nlsolve = NLNewton(κ = 1.0e-6)), QNDF(nlsolve = NLNewton(κ = 1.0e-6)))
+    for layout in (:additive, :chained, :nonlinear), w in (1.0e-2, 1.0e-9),
+            iip in (true, false), alg in algs
+        y(t) = exp((t - 1) / w)
+        if layout === :additive
+            f = (u, p, t) -> [0.0, u[2] - load(t) - y(t)]
+            u0, final, component = [0.0, y(0.0)], 2.0, 2
+            exact = y
+        else
+            coupling = layout === :chained ? identity : exp
+            f = (u, p, t) -> [0.0, u[2] - load(t), u[3] - coupling(u[2]) - y(t)]
+            u0, final, component = [0.0, 0.0, coupling(0.0) + y(0.0)], coupling(1.0) + 1, 3
+            exact = t -> coupling(0.0) + y(t)
+        end
+        f! = (du, u, p, t) -> (du .= f(u, p, t); nothing)
+        M = Diagonal([1.0; zeros(length(u0) - 1)])
+        prob = ODEProblem(ODEFunction(iip ? f! : f; mass_matrix = M), u0, (0.0, 1.0))
+        sol = solve(prob, alg; dt = 0.1, tstops = [1.0], reltol, abstol)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end][component] ≈ final
+        @test maximum(abs(sol(1 - k * w)[component] - exact(1 - k * w)) for k in (1, 2, 5)) < 10 * reltol
+    end
+end
+
 @testset "QNDF1/QNDF2 startup completes after rejected attempts" begin
     function rober!(du, u, p, t)
         y₁, y₂, y₃ = u
