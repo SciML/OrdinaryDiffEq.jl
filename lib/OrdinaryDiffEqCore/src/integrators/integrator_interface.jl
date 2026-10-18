@@ -667,7 +667,15 @@ function SciMLBase.reinit!(
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 
-    reinit_noise!(_get_W(integrator), integrator.dt)
+    W = _get_W(integrator)
+    noise_dt = integrator.dt
+    if !isnothing(W) && !integrator.opts.adaptive && !iszero(integrator.dtcache)
+        noise_dt = integrator.dtpropose
+    end
+    reinit_noise!(W, noise_dt)
+    if !isnothing(W) && abs(integrator.dt) < abs(noise_dt)
+        shrink_noise_to_integrator_dt!(integrator)
+    end
 
     # Starting-time discontinuity handling: mirrors `__init`.
     handle_starting_time_discontinuity!(integrator)

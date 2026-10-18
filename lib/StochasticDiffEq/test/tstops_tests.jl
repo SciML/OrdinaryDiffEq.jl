@@ -1,5 +1,5 @@
 using StochasticDiffEq, Test, Random
-using DiffEqNoiseProcess: WienerProcess, RSWM
+using DiffEqNoiseProcess: NoiseGrid, WienerProcess, RSWM
 using SDEProblemLibrary: prob_sde_linear
 Random.seed!(100)
 prob = prob_sde_linear
@@ -9,6 +9,26 @@ integrator = init(prob, EM(), dt = 1 // 2^(4), tstops = [0.33])
 # SciMLBase v3: `tuples(integrator)` removed; iterate integrator directly.
 for integ in integrator
     @show integ.u, integ.t
+end
+
+@testset "Fixed-step NoiseGrid reinit prepares shortened increment" begin
+    for advance in (step!, solve!)
+        W = NoiseGrid([0.0, 0.01, 0.02, 0.1], [0.0, 0.2, 0.15, 0.3])
+        level = Ref(0.0092)
+        cb = ContinuousCallback((u, t, integrator) -> t - level[], terminate!)
+        prob = SDEProblem((u, p, t) -> 0.0, (u, p, t) -> 1.0, 0.0, (0.0, 0.1); noise = W)
+        integrator = init(prob, EM(); dt = 0.01, tstops = [0.003], callback = cb)
+        solve!(integrator)
+
+        level[] = 2.0
+        reinit!(integrator; tf = 0.003)
+        @test integrator.dt == integrator.W.dt == 0.003
+        @test integrator.W.dW == 0.06
+
+        advance(integrator)
+        @test integrator.t == 0.003
+        @test integrator.u ≈ 0.06
+    end
 end
 
 sol = solve(prob, EM(), dt = 1 // 2^(4), tstops = [0.33])
