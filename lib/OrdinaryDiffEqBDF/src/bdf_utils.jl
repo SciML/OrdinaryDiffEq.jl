@@ -310,6 +310,29 @@ function _step_reaches_tstop(integrator)
     return tdir * (t + dt) >= tstop - tol
 end
 
+# A landing polynomial ends at the pre-jump predictor in the moved variables;
+# the accepted state at the tstop contains the post-jump constraint value.
+function _bdf_interpolation_endpoint(u, predictor, moved)
+    return @. ifelse(moved, predictor, u)
+end
+
+function _qndf_jump_interpolation!(integrator, u, predictor, moved, order, max_order)
+    offset = integrator.k[max_order + 1]
+    if moved !== nothing
+        endpoint = _bdf_interpolation_endpoint(u, predictor, moved)
+        @.. broadcast = false offset = u - endpoint
+        for j in 1:order
+            kj = integrator.k[j]
+            @.. broadcast = false kj = kj - offset
+        end
+    elseif ArrayInterface.ismutable(offset)
+        fill!(offset, zero(eltype(offset)))
+    else
+        integrator.k[max_order + 1] = zero(u)
+    end
+    return nothing
+end
+
 @inline function _bdf_error_norm!(atmp, buf, err, algebraic_rows, uprev, u, integrator)
     t = integrator.t
     (; abstol, reltol, internalnorm) = integrator.opts

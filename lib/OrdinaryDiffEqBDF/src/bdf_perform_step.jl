@@ -789,14 +789,14 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order
+    integrator.kshortsize = max_order + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
-    for i in 1:max_order
+    for i in 1:(max_order + 1)
         integrator.k[i] = zero(integrator.fsalfirst)
     end
     return nothing
@@ -931,17 +931,19 @@ function perform_step!(
                 integrator.k[j] = zero(u)
             end
         end
+        _qndf_jump_interpolation!(integrator, u, u₀, cache.restart_at_tstop ? rows : nothing, k, max_order)
     end
     return integrator.u = u
 end
 
 function initialize!(integrator, cache::QNDFCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order
+    integrator.kshortsize = max_order + 1
 
     resize!(integrator.k, integrator.kshortsize)
     for i in 1:max_order
         integrator.k[i] = cache.dense[i]
     end
+    integrator.k[max_order + 1] = zero(integrator.fsalfirst)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
@@ -1073,13 +1075,14 @@ function perform_step!(
         end
     end
     if integrator.opts.calck
-        for j in 1:length(integrator.k)
+        for j in 1:max_order
             if j <= k
                 copyto!(integrator.k[j], D[j])
             else
                 fill!(integrator.k[j], zero(eltype(u)))
             end
         end
+        _qndf_jump_interpolation!(integrator, u, u₀, cache.restart_at_tstop ? rows : nothing, k, max_order)
     end
     return nothing
 end
@@ -1405,7 +1408,7 @@ function perform_step!(
             calck_thetas[1 + j] = (ts[j] - t) / dt
         end
         calck_values = Vector{typeof(u)}(undef, n)
-        calck_values[1] = u isa Number ? u : copy(u)
+        calck_values[1] = cache.restart_at_tstop ? _bdf_interpolation_endpoint(u, u₀, rows) : u
         for j in 1:min(dense_order, max_order)
             calck_values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
         end
@@ -1637,7 +1640,8 @@ function perform_step!(
         for j in 1:min(dense_order, max_order)
             equi_ts[1 + j] = (ts[j] - t) / dt
         end
-        _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, n)
+        endpoint = cache.restart_at_tstop ? _bdf_interpolation_endpoint(u, u₀, rows) : u
+        _resample_at_chebyshev_direct_iip!(integrator.k, endpoint, u_history, equi_ts, n)
         for j in (n + 1):(max_order + 1)
             fill!(integrator.k[j], zero(eltype(u)))
         end

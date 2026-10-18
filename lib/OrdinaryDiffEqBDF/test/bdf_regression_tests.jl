@@ -303,6 +303,35 @@ end
     end
 end
 
+@testset "Algebraic tstop jumps preserve pre-jump dense and saved values" begin
+    f(u, p, t) = [0.0, u[2] - (t < 1.0 ? 0.0 : 1.0)]
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    times = [0.25, 0.9, prevfloat(1.0), 1.0, 1.1, 2.0]
+    exact(t) = t < 1.0 ? 0.0 : 1.0
+    for alg in (FBDF(), QNDF()), rhs in (f, f!), discontinuities in (Float64[], [1.0])
+        prob = ODEProblem(
+            ODEFunction(rhs; mass_matrix = Diagonal([1.0, 0.0])), zeros(2), (0.0, 2.0)
+        )
+        kw = (;
+            dt = 0.1, tstops = [1.0], d_discontinuities = discontinuities,
+            reltol = 1.0e-9, abstol = 1.0e-11,
+        )
+        sol = solve(prob, alg; kw...)
+        @test sol.retcode == ReturnCode.Success
+        for t in times
+            @test sol(t)[2] ≈ exact(t) atol = 1.0e-9
+            @test sol(t; idxs = 2) ≈ exact(t) atol = 1.0e-9
+            out = zeros(2)
+            sol(out, t)
+            @test out[2] ≈ exact(t) atol = 1.0e-9
+        end
+        saved = solve(prob, alg; kw..., saveat = times)
+        @test saved.retcode == ReturnCode.Success
+        @test saved.t == times
+        @test [u[2] for u in saved.u] ≈ exact.(times) atol = 1.0e-9
+    end
+end
+
 @testset "History restart after an algebraic jump at a high-order tstop landing" begin
     # x' = y, 0 = y - sin(t) - 2 * (t >= 3): smooth until t = 3, so the solvers reach
     # high order before the jump lands on the tstop.
