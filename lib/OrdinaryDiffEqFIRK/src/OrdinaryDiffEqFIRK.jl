@@ -28,7 +28,7 @@ using MuladdMacro: @muladd
 using RecursiveArrayTools: recursivefill!
 import Polyester
 import LinearAlgebra
-using LinearAlgebra: I, Diagonal, UniformScaling, mul!, lu, dot
+using LinearAlgebra: I, Diagonal, Tridiagonal, UniformScaling, mul!, lu, dot
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
