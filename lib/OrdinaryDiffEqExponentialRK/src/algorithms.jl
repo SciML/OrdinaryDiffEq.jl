@@ -3,6 +3,12 @@ Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
   Numerica 19 (2010): 209–286. doi:10.1017/S0962492910000048.
 """
 
+REF6 = """
+Luan, Vu Thai, and Trky Alhsmy. "Sixth-order exponential Runge--Kutta methods
+for stiff systems." Applied Mathematics Letters 153 (2024): 109036.
+doi:10.1016/j.aml.2024.109036.
+"""
+
 function _resolve_step_limiter_keyword(step_limiter, kwargs)
     kwargs_nt = values(kwargs)
     old_kw = Symbol("step_limiter!")
@@ -26,6 +32,7 @@ for (Alg, Description, Ref) in [
         (:ETDRK4, "4th order exponential-RK scheme (fixed timestepping)", REF1),
         (:HochOst4, "4th order exponential-RK scheme with stiff order 4.", REF1),
         (:Friedli, "4th order (stiff order 3) exponential-RK scheme.", REF1),
+        (:ExpRK6s16, "6th order exponential-RK scheme with stiff order 6.", REF6),
     ]
     @eval begin
         @doc generic_solver_docstring(

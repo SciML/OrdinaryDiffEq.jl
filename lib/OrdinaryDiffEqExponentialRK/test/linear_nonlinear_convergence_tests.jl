@@ -24,6 +24,7 @@ using SciMLOperators: MatrixOperator, ScalarOperator
             ETDRK4,
             HochOst4,
             Friedli,
+            ExpRK6s16,
             ETD2,
             KenCarp3,
             CFNLIRK3,
@@ -59,6 +60,7 @@ end
             ETDRK4(),
             HochOst4(),
             Friedli(),
+            ExpRK6s16(),
             ETD2(),
         ]
         sim = test_convergence(dts, prob, Alg)
@@ -74,6 +76,25 @@ end
     sim = test_convergence(dts, prob, ETDRK4(), dense_errors = true)
     @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
     @test sim.𝒪est[:L2] ≈ 4 atol = 0.1
+end
+
+@testset "ExpRK6s16 reaction-diffusion convergence" begin
+    n = 32
+    x = (1:n) ./ (n + 1)
+    dx = inv(n + 1)
+    A = diagm(
+        -1 => fill(inv(dx^2), n - 1), 0 => fill(-2inv(dx^2), n),
+        1 => fill(inv(dx^2), n - 1),
+    )
+    exact(t) = x .* (1 .- x) .* exp(t)
+    source(t) = exact(t) - A * exact(t) .- inv.(1 .+ exact(t) .^ 2)
+    f2 = (u, p, t) -> inv.(1 .+ u .^ 2) .+ source(t)
+    prob = SplitODEProblem(SplitFunction(MatrixOperator(A), f2), exact(0), (0.0, 1.0))
+
+    dts = 1 ./ 2 .^ (2:5)
+    errors = [norm(solve(prob, ExpRK6s16(), dt, adaptive = false).u[end] - exact(1)) for dt in dts]
+    orders = log2.(errors[1:(end - 1)] ./ errors[2:end])
+    @test all(orders .> 5.4)
 end
 
 @info "CFNLIRK3() is broken"
