@@ -48,6 +48,7 @@ For problems `du/dt = Au + f(u,t)`, exponential methods compute the exact soluti
 
   - **`HochOst4`**: Fourth-order exponential RK with enhanced stability
   - **`Friedli`**: Fourth-order (stiff order 3) exponential RK scheme
+  - **`ExpRK6s16`**: Sixth-order exponential RK scheme with stiff order 6
   - **`Exp4`**: Fourth-order EPIRK scheme
 
 ### Adaptive exponential Rosenbrock
@@ -109,6 +110,7 @@ ETDRK3
 ETDRK4
 HochOst4
 Friedli
+ExpRK6s16
 ```
 
 ### Adaptive Exponential Rosenbrock Methods

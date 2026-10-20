@@ -45,4 +45,5 @@ ETDRK3
 ETDRK4
 HochOst4
 Friedli
+ExpRK6s16
 ```
