@@ -986,13 +986,23 @@ end
 
 ## relax!
 
-# FD slope of the residual norm is roundoff-dominated near convergence; use the Newton-model slope.
 function linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
     ϕ0, dϕ0 = ϕdϕ(zero(α0))
-    if dϕ0 > zero(dϕ0) || !isfinite(dϕ0)
-        dϕ0 = -ϕ0
+    fallback = dϕ0 > zero(dϕ0) || !isfinite(dϕ0)
+    if fallback
+        iszero(ϕ0) && return zero(α0)
+        # Resolve roundoff in the slope without assuming the Newton direction descends.
+        δ = cbrt(eps(real(α0)))
+        dϕ0 = (ϕ(δ) - ϕ0) / δ
+        if !isfinite(dϕ0) || dϕ0 >= zero(dϕ0)
+            error("Line search failed: the Newton direction does not decrease the residual.")
+        end
     end
-    return linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)[1]
+    α, ϕα = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+    if fallback && (!(ϕα < ϕ0) || α <= eps(real(α0)))
+        error("Line search failed to make residual progress.")
+    end
+    return α
 end
 
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
