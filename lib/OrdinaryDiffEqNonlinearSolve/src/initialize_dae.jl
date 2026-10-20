@@ -26,13 +26,22 @@ function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
     return AutoForwardDiff{CS}(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
 end
 
+function _default_nonlinear_polyalg(prob, autodiff, ::Val{CS}) where {CS}
+    u0 = state_values(prob)
+    chunksize = CS === nothing || CS === 0 ? 1 : CS
+    return FastShortcutNonlinearPolyalg(
+        eltype(u0);
+        must_use_jacobian = Val(SciMLBase.has_jac(prob.f)),
+        autodiff = autodiff ? AutoForwardDiff(chunksize = chunksize) : AutoFiniteDiff(),
+        u0_len = length(u0)
+    )
+end
+
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{true}, u, prob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
-    return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
-    )
+    return _default_nonlinear_polyalg(prob, autodiff, chunksize)
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem,
@@ -43,12 +52,10 @@ function default_nlsolve(
     )
 end
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{false}, u, prob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
-    return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
-    )
+    return _default_nonlinear_polyalg(prob, autodiff, chunksize)
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u, ::NonlinearLeastSquaresProblem,
