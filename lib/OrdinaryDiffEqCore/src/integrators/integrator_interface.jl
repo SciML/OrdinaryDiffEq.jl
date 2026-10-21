@@ -506,8 +506,20 @@ function SciMLBase.set_rng!(integrator::ODEIntegrator, rng)
 end
 
 SciMLBase.has_reinit(integrator::ODEIntegrator) = true
+function SciMLBase.reinit!(integrator::ODEIntegrator; kwargs...)
+    prob = integrator.sol.prob
+    if prob isa SciMLBase.DAEProblem
+        if isinplace(prob)
+            recursivecopy!(integrator.du, prob.du0)
+        else
+            integrator.du = recursivecopy(prob.du0)
+        end
+    end
+    return SciMLBase.reinit!(integrator, prob.u0; kwargs...)
+end
+
 function SciMLBase.reinit!(
-        integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
+        integrator::ODEIntegrator, u0;
         t0 = integrator.sol.prob.tspan[1],
         tf = integrator.sol.prob.tspan[2],
         erase_sol = true,
