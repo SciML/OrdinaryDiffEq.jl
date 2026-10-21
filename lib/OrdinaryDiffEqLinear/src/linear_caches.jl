@@ -616,6 +616,12 @@ end
 
 struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
 
+mutable struct LinearExponentialMatrixCache{dtType, matrixType}
+    dt::dtType
+    matrix::matrixType
+    valid::Bool
+end
+
 function alg_cache(
         alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
@@ -625,7 +631,7 @@ function alg_cache(
     return LinearExponentialConstantCache()
 end
 
-@cache struct LinearExponentialCache{uType, rateType, KsType, expType} <:
+@cache struct LinearExponentialCache{uType, rateType, KsType, expType, matrixCacheType} <:
     LinearMutableCache
     u::uType
     uprev::uType
@@ -633,6 +639,7 @@ end
     rtmp::rateType
     KsCache::KsType # different depending on alg.krylov
     exp_cache::expType
+    exp_matrix_cache::matrixCacheType
 end
 
 get_fsalfirstlast(cache::LinearExponentialCache, u) = (zero(u), zero(u))
@@ -664,15 +671,23 @@ function alg_cache(
 
     if alg.krylov == :off
         KsCache = nothing
+        matrix_type = Matrix{eltype(dt * convert(AbstractMatrix, f.f))}
+        exp_matrix_cache = LinearExponentialMatrixCache(
+            dt, matrix_type(undef, 0, 0), false
+        )
     elseif alg.krylov == :simple
         Ks = KrylovSubspace{T, T, typeof(similar(u, size(u, 1), 2))}(n, m)
         expv_cache = ExpvCache{T}(m)
         KsCache = (Ks, expv_cache)
+        exp_matrix_cache = nothing
     elseif alg.krylov == :adaptive
         KsCache = _phiv_timestep_caches(u, m, 0)
+        exp_matrix_cache = nothing
     else
         throw(ArgumentError("Unknown krylov setting $(alg.krylov). Can be :off, :simple or :adaptive."))
     end
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return LinearExponentialCache(u, uprev, tmp, rtmp, KsCache, exp_cache)
+    return LinearExponentialCache(
+        u, uprev, tmp, rtmp, KsCache, exp_cache, exp_matrix_cache
+    )
 end
