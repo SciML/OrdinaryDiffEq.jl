@@ -38,8 +38,9 @@ an explicit algorithm for an ODE problem.
 
 `DefaultODEAlgorithm` starts with explicit nonstiff methods and switches to stiff
 methods when stiffness is detected. It chooses among `Tsit5`, `Vern7`,
-`Rosenbrock23`, `Rodas5P`, and `FBDF`, using Krylov-based `FBDF` for larger stiff
-systems.
+`Rosenbrock23`, `Rodas5P`, and `FBDF`. Stiff systems with more than 500 states use
+Krylov-based (matrix-free) `FBDF`, unless `f.jac_prototype` is a sparse or structured
+(non-dense) matrix, in which case `FBDF` factorizes the Jacobian built from that prototype.
 
 # Keywords
 
@@ -152,8 +153,11 @@ function nonstiffchoice(reltol)
     return Int(x)
 end
 
-function stiffchoice(reltol, len, mass_matrix)
-    x = if len > MEDIUMSIZE
+has_structured_jac_prototype(jac_prototype::AbstractMatrix) = !(jac_prototype isa DenseMatrix)
+has_structured_jac_prototype(jac_prototype) = false
+
+function stiffchoice(reltol, len, mass_matrix, structured_jac_prototype = false)
+    x = if len > MEDIUMSIZE && !structured_jac_prototype
         DefaultSolverChoice.KrylovFBDF
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
@@ -174,7 +178,10 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
     # Choose the starting method
     if AS.current == 0
         choice = if AS.stiffalgfirst || !_is_identity_massmatrix(integrator.f.mass_matrix)
-            stiffchoice(reltol, len, integrator.f.mass_matrix)
+            stiffchoice(
+                reltol, len, integrator.f.mass_matrix,
+                has_structured_jac_prototype(integrator.f.jac_prototype)
+            )
         else
             nonstiffchoice(reltol)
         end
@@ -196,7 +203,10 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
     elseif (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
-        AS.current = stiffchoice(reltol, len, integrator.f.mass_matrix)
+        AS.current = stiffchoice(
+            reltol, len, integrator.f.mass_matrix,
+            has_structured_jac_prototype(integrator.f.jac_prototype)
+        )
     elseif (AS.is_stiffalg && AS.count < -AS.maxnonstiffstep)
         integrator.dt = dt / AS.dtfac
         AS.is_stiffalg = false
