@@ -59,7 +59,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
             }(values(kwargs))
             callbacks = NamedTuple{(:callback,)}(
                 (
-                    DiffEqBase.CallbackSet(
+                    CallbackSet(
                         prob.kwargs[:callback],
                         values(kwargs).callback
                     ),
