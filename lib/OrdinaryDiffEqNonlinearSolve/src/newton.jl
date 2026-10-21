@@ -482,7 +482,7 @@ end
 
 Termination mode for a complete inner solve on a `NonlinearSolveNoInitCache` that applies,
 to every inner iteration, the test `nlsolve!` applies to every outer one: with `ndz` the
-iteration's displacement in the integrator's weighted `norm`, an iteration converges when
+iteration's displacement in the integrator's weighted `norm`, a later iteration converges when
 `θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` (or `θ ≈ 1` at `ndz ≤ 1`, the floating-point
 limit).
 
@@ -495,8 +495,9 @@ reject, and on one of large magnitude it lies below roundoff, so every solve ret
 norm is not enough either: on a stiff, non-normal Jacobian a small weighted residual can
 still leave a large weighted displacement.
 
-The first iteration never converges on its own, unlike in `nlsolve!` (`ndz < 1e-5`), because
-every outer iteration is a new inner solve and needs its own rate `θ`.
+With no rate yet, the first iteration converges on `nlsolve!`'s own first-iteration test,
+`ndz < 1e-5`. That correction is a full Newton step, so a stage whose correction rounds to
+zero is certified rather than left iterating on rounding noise until `MaxIters`.
 
 The test is only meaningful for an inner solver whose every step is a full Newton step, so
 that the displacement estimates the distance to the root (see `StageConvergenceAlgorithm`).
@@ -527,11 +528,8 @@ function (cache::StageConvergenceCache)(fu, u, uprev)
     (; norm, κ, owner) = cache.mode
     ndz = norm(u .- uprev)
     ndzprev = owner.inner_ndzprev
-    if ndzprev < 0
-        iszero(ndz) || (owner.inner_ndzprev = ndz)
-        return false
-    end
     owner.inner_ndzprev = ndz
+    ndzprev < 0 && return ndz < 1.0e-5
     θ = ndz / ndzprev
     abs(θ - one(θ)) <= eps_around_one(θ) && return ndz <= one(ndz)
     return θ < 1 && θ / (1 - θ) * ndz < κ

@@ -1,8 +1,9 @@
 # NonlinearSolveAlg with inner algorithms that have no `init` (every SimpleNonlinearSolve
 # algorithm): these land in `NonlinearSolveBase.NonlinearSolveNoInitCache`, a fallback with
 # no iteration state, so `step!`, `get_fu`, `.stats` and `not_terminated` are all
-# unavailable and the cache can only be driven by complete `solve!` calls, each ending on a
-# criterion in the integrator's own weighted norm.
+# unavailable and the cache can only be driven by complete `solve!` calls. A
+# SimpleNewtonRaphson solve ends on the integrator's own κ/η test; the others end on their
+# own default criterion.
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
@@ -276,4 +277,41 @@ end
     )
     @test SciMLBase.successful_retcode(retcode)
     @test err < 1
+end
+
+# A stage whose Newton correction rounds to zero is converged, not stuck: warm-started at the
+# previous inner solve's root, the stage of `u' = -u²` from `u₀ = 1`, `h = 1`
+# (root `(√5 - 1)/2`) must be accepted down to `tol = eps`.
+@testset "zero first correction ($(iip ? "iip" : "oop"), tol = $tol)" for iip in (true, false),
+        tol in (1.0e-12, eps(1.0))
+    f(u, p, t) = -u .^ 2
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    integ = init(
+        ODEProblem(iip ? f! : f, [1.0], (0.0, 1.0)),
+        ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson()));
+        dt = 1.0, adaptive = false, abstol = tol, reltol = tol
+    )
+    step!(integ)
+    @test SciMLBase.successful_retcode(integ.sol.retcode)
+    @test integ.t == 1.0
+    @test integ.u[1] ≈ (sqrt(5.0) - 1) / 2 rtol = 1.0e-12
+end
+
+# `sin(x) = 0` from floating-point π: the Newton correction is stationary at rounding level,
+# so only a first-iteration certificate can end the solve.
+mutable struct ZeroCorrectionOwner
+    inner_ndzprev::Float64
+end
+@testset "stationary roundoff" begin
+    owner = ZeroCorrectionOwner(-1.0)
+    norm_w = OrdinaryDiffEqNonlinearSolve.StageDisplacementNorm(
+        [3.0], 1.0e-12, 1.0e-12, (x, t) -> norm(x), 0.0
+    )
+    mode = OrdinaryDiffEqNonlinearSolve.StageConvergenceMode(norm_w, 0.01, owner)
+    sol = solve(
+        NonlinearProblem((x, p) -> sin.(x), [Float64(pi)]), SimpleNewtonRaphson();
+        termination_condition = mode
+    )
+    @test SciMLBase.successful_retcode(sol.retcode)
+    @test abs(sol.u[1] - Float64(pi)) <= eps(Float64(pi))
 end

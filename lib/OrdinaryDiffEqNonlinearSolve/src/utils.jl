@@ -908,8 +908,9 @@ function build_nlsolver(
                 # into a complete `solve` per outer iteration — it cannot be driven one
                 # `step!` at a time. The zeroed tolerances above would then make every inner
                 # solve run to `MaxIters` (except when the residual lands on exactly 0.0), so
-                # rebuild without them; `compute_step!` passes each solve a criterion in the
-                # integrator's own norm (`noinit_termination_kwargs`).
+                # rebuild without them. For SimpleNewtonRaphson `compute_step!` passes each solve
+                # the integrator's own κ/η test (`noinit_termination_kwargs`); other algorithms
+                # keep their default criterion.
                 cache = init(
                     prob, inner_alg; verbose = verbose.nonlinear_verbosity,
                     conditioning_kwargs(precondition, postcondition)...
