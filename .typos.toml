@@ -73,6 +73,7 @@ arXiv = "arXiv"
 # Technical variable names
 hom = "hom"  # homotopy abbreviation (scc_hom, HomotopyProblem)
 dorder = "dorder"  # Parameter for delta order / order change
+thist = "thist"  # Time of the stored implicit Taylor extrapolation history
 
 
 # Common variable patterns in Julia/SciML
