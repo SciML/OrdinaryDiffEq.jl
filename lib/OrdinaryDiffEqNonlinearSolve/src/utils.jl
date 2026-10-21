@@ -956,20 +956,14 @@ function build_nlsolver(
             else
                 (;)
             end
-            # Inexact Newton, as in IDA: stop the Krylov solve once the weighted residual
-            # is a small fraction of the Newton convergence threshold `κ`. A DAE residual
-            # is evaluated at full precision, so a solve held only to `reltol` of a late,
-            # tiny residual stalls at the roundoff floor `eps * cj * |dz|` and reports
-            # failure, though its `dz` is accurate far beyond what Newton needs. `κ` is a
-            # weighted norm, so this applies only when `wrapprecs` added the weights, by
-            # default or around a user `precs`.
-            weighted_linsolver = wrapprecs(linsolver, W, weight)
-            weighted = hasproperty(linsolver, :precs) &&
-                weighted_linsolver.precs !== linsolver.precs
-            linabstol = isdae && W isa AbstractSciMLOperator && weighted ?
-                (; abstol = convert(uTolType, nlalg.κ / 20 * sqrt(length(u)))) : (;)
+            # A DAE `W` is an operator only on the Krylov path (a `dae_jvp_cache`, or a
+            # `DAEWOperator` under `concrete_jac = true`). `compute_step!` sets its Krylov
+            # `abstol` relative to each step's residual; a fixed one would be in the units
+            # of `F`, which the user can scale freely.
+            linabstol = isdae && W isa AbstractSciMLOperator ?
+                (; abstol = zero(uTolType)) : (;)
             linsolve = init(
-                linprob, weighted_linsolver;
+                linprob, wrapprecs(linsolver, W, weight);
                 precs..., linabstol...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
@@ -978,7 +972,7 @@ function build_nlsolver(
 
             # Build separated DAE Jacobian cache if applicable. Without `concrete_jac`, a
             # matrix-free W never forms J_u or J_du.
-            if isdae && !(J isa JVPCache)
+            if isdae && !(J isa AbstractSciMLOperator)
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage

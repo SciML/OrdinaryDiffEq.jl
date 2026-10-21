@@ -1,7 +1,9 @@
-using OrdinaryDiffEqBDF, LinearSolve, SparseArrays, Test
+using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, SparseArrays, Test
 using LinearAlgebra: I, lu, mul!, norm
 using ADTypes: AutoForwardDiff, AutoFiniteDiff, AutoSparse
-using SciMLBase: DAEProblem, successful_retcode
+using SciMLBase: DAEProblem, DAEFunction, successful_retcode
+using SciMLOperators: update_coefficients!
+using OrdinaryDiffEqDifferentiation: dae_jvp_cache, set_dae_jvp_cj!
 using SparseConnectivityTracer: TracerSparsityDetector
 using SparseMatrixColorings: GreedyColoringAlgorithm
 
@@ -42,8 +44,8 @@ end
         @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-6
     end
 
-    # User `precs` are wrapped in the residual weights, so the weighted Krylov `abstol`
-    # holds for them as it does for the default preconditioner.
+    # User `precs` are wrapped in the residual weights, so the Krylov stopping test
+    # measures the same weighted norm as with the default preconditioner.
     linsolve = KrylovJL_GMRES(; precs = Returns((I, I)))
     sol = solve(prob, DFBDF(; linsolve); opts...)
     @test successful_retcode(sol)
@@ -101,5 +103,49 @@ end
         @test mismatch[] < 1.0e-12
         # An exact preconditioner leaves GMRES about one iteration per solve.
         @test iterations[] / sol.stats.nsolve < 2
+    end
+end
+
+# The Krylov stopping test must scale with the residual: a residual scaled by 1e-12 once
+# satisfied a fixed `abstol` at `dz = 0` and returned `Success` with `u = u0`.
+f!(r, d, u, p, t) = (@. r = 1.0e-12 * (d + u); nothing)
+p = DAEProblem(f!, -ones(4), ones(4), (0.0, 1.0))
+@testset "Residual scale must not change solution" begin
+    for ad in (AutoForwardDiff(), AutoFiniteDiff())
+        sol = solve(p, DFBDF(; linsolve = KrylovJL_GMRES(), autodiff = ad); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end] ≈ fill(exp(-1), 4) rtol = 1.0e-5
+    end
+end
+
+# Nonlinear in `du`, with exact solution `[exp(-t), exp(-2t)]` (the second factor of the
+# first residual is positive). At `u = [1, 1]`, `du = [-1, -2]` its Newton matrix is
+# `[3(cj + 1) 0; -2 1]`.
+function manufactured!(r, d, u, p, t)
+    r[1] = (d[1] + u[1]) * (1 + d[1]^2 + u[2]^2)
+    r[2] = u[2] - u[1]^2
+    return nothing
+end
+
+@testset "Matrix-free DAE Newton matrix at a large cj" begin
+    u, du, v = [1.0, 1.0], [-1.0, -2.0], [1.0, 0.5]
+    for autodiff in (AutoForwardDiff(), AutoFiniteDiff()), cj in (1.0, 1.0e6, 1.0e10)
+        J = dae_jvp_cache(DAEFunction{true}(manufactured!), copy(u), nothing, 0.0; autodiff)
+        update_coefficients!(J, copy(u), nothing, 0.0; du = copy(du))
+        set_dae_jvp_cj!(J, cj)
+        exact = [3(cj + 1) 0; -2 1] * v
+        @test norm(mul!(zeros(2), J, v) - exact) <= 1.0e-6 * norm(exact)
+    end
+
+    prob = DAEProblem(
+        manufactured!, [-1.0, -2.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, false]
+    )
+    for autodiff in (AutoForwardDiff(), AutoFiniteDiff())
+        sol = solve(
+            prob, DFBDF(; autodiff, linsolve = KrylovJL_GMRES()); abstol = 1.0e-7, reltol = 1.0e-7
+        )
+        @test successful_retcode(sol)
+        @test maximum(maximum(abs, u .- [exp(-t), exp(-2t)]) for (u, t) in zip(sol.u, sol.t)) <
+            1.0e-6
     end
 end
