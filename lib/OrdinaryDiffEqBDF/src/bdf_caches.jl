@@ -418,6 +418,7 @@ end
     EEst1::EEstType #Error Estimator for k-1 order
     EEst2::EEstType #Error Estimator for k+1 order
     γₖ::gammaType
+    restart_at_tstop::Bool
 end
 
 function alg_cache(
@@ -459,7 +460,7 @@ function alg_cache(
 
     return QNDFConstantCache(
         nlsolver, U, R, RU, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
-        EEst2, γₖ
+        EEst2, γₖ, false
     )
 end
 
@@ -499,6 +500,7 @@ end
     atmpp1::uNoUnitsType
     dense::Vector{uType}
     step_limiter!::StepLimiter
+    restart_at_tstop::Bool
 end
 
 @truncate_stacktrace QNDFCache 1
@@ -552,7 +554,7 @@ function alg_cache(
     return QNDFCache(
         u, uprev, fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, R, RU,
         D, Dtmp, tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
-        atmpm1, atmpp1, dense, alg.step_limiter!
+        atmpm1, atmpp1, dense, alg.step_limiter!, false
     )
 end
 
@@ -643,6 +645,7 @@ end
     α_bar::tsType
     dd_c::fdWeightsType
     dd_D::fdWeightsType
+    restart_at_tstop::Bool
 end
 
 function alg_cache(
@@ -714,7 +717,7 @@ function alg_cache(
         nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, terkm2,
         terkm1, terk, terkp1, r, weights, iters_from_event, fd_weights, stald,
-        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D, false
     )
 end
 
@@ -760,6 +763,7 @@ end
     α_bar::tsType
     dd_c::fdWeightsType
     dd_D::fdWeightsType
+    restart_at_tstop::Bool
 end
 
 @truncate_stacktrace FBDFCache 1
@@ -841,7 +845,7 @@ function alg_cache(
         u_corrector, u₀, bdf_coeffs, Val(MO), nconsteps, consfailcnt, qwait, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
         iters_from_event, dense, alg.step_limiter!, fd_weights, stald,
-        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D
+        alg.time_filter, 0, ts_asc, α_bar, dd_c, dd_D, false
     )
 end
 
