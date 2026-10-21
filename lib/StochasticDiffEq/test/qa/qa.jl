@@ -50,13 +50,11 @@ run_qa(
     StochasticDiffEq;
     reexports_allow = STOCHASTICDIFFEQ_REEXPORTS,
     # Narrow piracy allowlist for the Nothing-algorithm default-solver hook
-    # (StochasticDiffEqCore uses treat_as_own similarly). Missing test-extras
-    # [compat] entries are a follow-up (DiffEqDevTools uses check_extras=false).
+    # (StochasticDiffEqCore uses treat_as_own similarly).
     aqua_kwargs = (;
         piracies = (;
             treat_as_own = (SciMLBase.supports_solve_rng, SciMLBase.AbstractSDEProblem),
         ),
-        deps_compat = (; check_extras = false),
     ),
     jet_kwargs = (; target_modules = (StochasticDiffEq,), mode = :typo),
     explicit_imports = true,
