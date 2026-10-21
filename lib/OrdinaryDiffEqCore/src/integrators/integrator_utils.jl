@@ -1219,10 +1219,7 @@ function calc_dt_propose!(integrator, dtnew)
     else
         dtnew
     end
-    # DDE integrators must take the proposed step verbatim: their lag and
-    # discontinuity bookkeeping is tied to the un-shifted step size.
-    if integrator.opts.adaptive && !(integrator isa SciMLBase.AbstractDDEIntegrator) &&
-            integrator.t isa AbstractFloat && dtnew isa AbstractFloat
+    if integrator.opts.adaptive && integrator.t isa AbstractFloat && dtnew isa AbstractFloat
         # Use the same interval for the state update and the floating-point clock.
         # Otherwise, rounding t + dt can accumulate a drift in the integrated time.
         dtnew = integrator.tdir * abs(dtnew)
