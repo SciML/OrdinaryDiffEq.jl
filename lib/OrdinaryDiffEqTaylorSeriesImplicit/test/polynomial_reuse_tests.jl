@@ -11,13 +11,16 @@ import OrdinaryDiffEqTaylorSeries
             return nothing
         end
         f = ODEFunction(rate!)
-        coefficients = ((0.0, 0.5, 1 / 6), (0.0, -0.5, 1 / 6),
-            (0.0, 1 / 3), (0.0, -2 / 3, 1 / 3))
+        coefficients = (
+            (0.0, 0.5, 1 / 6), (0.0, -0.5, 1 / 6),
+            (0.0, 1 / 3), (0.0, -2 / 3, 1 / 3),
+        )
         joint = ODTS.build_polynomial_bundle(f, -2.0, coefficients, 2)
         @test joint === ODTS.build_polynomial_bundle(f, -2.0, coefficients, 2)
         pair = ODTS.build_polynomial_bundle(f, -2.0, coefficients[1:2], 2)
         with_jacobian = ODTS.build_polynomial_bundle(
-            f, -2.0, (coefficients[2],), 2; jacobian = true)
+            f, -2.0, (coefficients[2],), 2; jacobian = true
+        )
         for u in ([0.4, 0.2], ComplexF64[0.4 + 0.1im, 0.2 - 0.05im])
             t, h = 0.3, 0.07
             outputs = ntuple(_ -> fill!(similar(u), NaN), 4)
@@ -55,16 +58,20 @@ import OrdinaryDiffEqTaylorSeries
         rate!(du, u, p, t) = (du .= t .* u .+ u .^ 2; nothing)
         problem = ODEProblem(rate!, [0.2, 0.3], (0.0, 0.2))
         for alg in (TaylorGaussA4(), TaylorRadauLA3())
-            options = (dt = 0.05, abstol = [1e-6, 2e-6], reltol = 1e-3)
+            options = (dt = 0.05, abstol = [1.0e-6, 2.0e-6], reltol = 1.0e-3)
             together, separate = init(problem, alg; options...), init(problem, alg; options...)
             high = similar(problem.u0)
-            @test ODTI.implicit_taylor_step!(together, together.cache,
-                0.0, 0.05, problem.u0, together.u)
-            @test ODTI.implicit_taylor_stage!(separate, separate.cache,
-                0.0, 0.05, problem.u0, high)
-            @test together.u ≈ high rtol = 1e-13
+            @test ODTI.implicit_taylor_step!(
+                together, together.cache,
+                0.0, 0.05, problem.u0, together.u
+            )
+            @test ODTI.implicit_taylor_stage!(
+                separate, separate.cache,
+                0.0, 0.05, problem.u0, high
+            )
+            @test together.u ≈ high rtol = 1.0e-13
             # The embedded estimate is formed from the converged state and the
-            # already factorized Newton matrix.
+            # filter shared with the convergence check.
             EEst = OrdinaryDiffEqCore.get_EEst(together)
             @test isfinite(EEst) && EEst > 0
         end

@@ -88,11 +88,14 @@ function alg_cache(
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {P, Q, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return implicit_taylor_cache(alg, u, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, uprev, uprev2, f, t, dt, p)
+    return implicit_taylor_cache(
+        alg, u, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, uprev, uprev2, f, t, dt, p
+    )
 end
 
-function implicit_taylor_cache(alg::ImplicitTaylor{P, Q}, u, rate_prototype,
+function implicit_taylor_cache(
+        alg::ImplicitTaylor{P, Q}, u, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, uprev, uprev2, f, t, dt, p;
         linear_u = u
     ) where {P, Q, uEltypeNoUnits, uBottomEltypeNoUnits}
@@ -115,10 +118,14 @@ function implicit_taylor_cache(alg::ImplicitTaylor{P, Q}, u, rate_prototype,
             build_polynomial_bundle(polynomial_f, Val(true), p, (tuple_A, tuple_A1, tuple_B), n) :
             nothing
         polynomial_iter = build_polynomial_bundle(polynomial_f, Val(true), p, (tuple_B, tuple_B1), n)
-        polynomial_jac = build_polynomial_bundle(polynomial_f, Val(true), p, (tuple_B, tuple_B1), n;
-            coefficient_jacobians = Q)
-        polynomial_check = build_polynomial_bundle(polynomial_f, Val(true), p,
-            (tuple_B, tuple_B1), n; coefficient_jacobians = 1)
+        polynomial_jac = build_polynomial_bundle(
+            polynomial_f, Val(true), p, (tuple_B, tuple_B1), n;
+            coefficient_jacobians = Q
+        )
+        polynomial_check = build_polynomial_bundle(
+            polynomial_f, Val(true), p,
+            (tuple_B, tuple_B1), n; coefficient_jacobians = 1
+        )
         degree = Q
     else
         # μ-Taylor: z + T_inc(uprev + z, t + μh, -μh) = 0, then
@@ -127,10 +134,14 @@ function implicit_taylor_cache(alg::ImplicitTaylor{P, Q}, u, rate_prototype,
         tuple_L = taylor_last_coefficients(Val(P))
         polynomial_prev = nothing
         polynomial_iter = build_polynomial_bundle(polynomial_f, Val(true), p, (tuple_T, tuple_L), n)
-        polynomial_jac = build_polynomial_bundle(polynomial_f, Val(true), p, (tuple_T, tuple_L), n;
-            coefficient_jacobians = P)
-        polynomial_check = build_polynomial_bundle(polynomial_f, Val(true), p,
-            (tuple_T, tuple_L), n; coefficient_jacobians = 1)
+        polynomial_jac = build_polynomial_bundle(
+            polynomial_f, Val(true), p, (tuple_T, tuple_L), n;
+            coefficient_jacobians = P
+        )
+        polynomial_check = build_polynomial_bundle(
+            polynomial_f, Val(true), p,
+            (tuple_T, tuple_L), n; coefficient_jacobians = 1
+        )
         degree = P
     end
     fsalfirst = zero(rate_prototype)
@@ -256,8 +267,10 @@ function alg_cache(
         end
         return nothing
     end
-    cache = implicit_taylor_cache(alg, state, rates, uEltypeNoUnits,
-        uBottomEltypeNoUnits, copy(state), copy(state), SciMLBase.ODEFunction{true}(f!), t, dt, p; linear_u = u)
+    cache = implicit_taylor_cache(
+        alg, state, rates, uEltypeNoUnits,
+        uBottomEltypeNoUnits, copy(state), copy(state), SciMLBase.ODEFunction{true}(f!), t, dt, p; linear_u = u
+    )
     return ImplicitTaylorConstantCache(cache)
 end
 

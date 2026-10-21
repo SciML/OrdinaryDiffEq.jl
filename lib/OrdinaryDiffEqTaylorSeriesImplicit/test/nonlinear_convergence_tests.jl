@@ -15,8 +15,8 @@ import OrdinaryDiffEqCore
             @test i.cache.κ == 0.01
             @test alg.extrapolant === :extrapolate
         end
-        custom = init(square_prob, TaylorGaussA4(κ = 1e-5); dt = 0.05)
-        @test custom.cache.κ == 1e-5
+        custom = init(square_prob, TaylorGaussA4(κ = 1.0e-5); dt = 0.05)
+        @test custom.cache.κ == 1.0e-5
     end
 
     @testset "Stage solutions match the Padé formulas" begin
@@ -44,7 +44,7 @@ import OrdinaryDiffEqCore
         # contraction tends to 8/13. At iteration 6 (κ = 0.01) or 20
         # (κ = 1e-5), the correction is below κ, but its remaining tail is
         # still above κ.
-        for (κ, early_stop) in ((0.01, 6), (1e-5, 20)), maxiters in (early_stop, 40)
+        for (κ, early_stop) in ((0.01, 6), (1.0e-5, 20)), maxiters in (early_stop, 40)
             i = init(
                 square_prob, ImplicitTaylor1L1(; κ, maxiters, extrapolant = :constant);
                 dt = 0.24, adaptive = false, abstol = 1.0, reltol = 0.0
@@ -73,8 +73,10 @@ import OrdinaryDiffEqCore
         cycling!(du, u, p, t) = (du .= 1 .- u .^ 2; nothing)
         problem = ODEProblem(cycling!, [0.0], (0.0, 1.0))
         for adaptive in (false, true)
-            i = init(problem, ImplicitTaylor1L1(extrapolant = :constant, maxiters = 3);
-                dt = 1.0, adaptive, abstol = 1.0, reltol = 0.0)
+            i = init(
+                problem, ImplicitTaylor1L1(extrapolant = :constant, maxiters = 3);
+                dt = 1.0, adaptive, abstol = 1.0, reltol = 0.0
+            )
             @test !ODTI.implicit_taylor_stage!(i, i.cache, 0.0, 1.0, [0.0], i.u)
             @test i.force_stepfail
         end
@@ -85,11 +87,13 @@ import OrdinaryDiffEqCore
         # step exhausts a short Newton budget. Reducing h changes the
         # linear predictor, and the retry must evaluate J_k there even
         # though the start time and state are unchanged.
-        for make in (TaylorGaussA4, TaylorRadauLA3, TaylorRadauLA5,
+        for make in (
+                TaylorGaussA4, TaylorRadauLA3, TaylorRadauLA5,
                 TaylorLobattoLA4, ImplicitTaylor1L1, ImplicitTaylor1A2,
-                ImplicitTaylor2A4)
+                ImplicitTaylor2A4,
+            )
             alg = make(extrapolant = :linear, maxiters = 3)
-            options = (abstol = 1e-6, reltol = 1e-6)
+            options = (abstol = 1.0e-6, reltol = 1.0e-6)
             i = init(square_prob, alg; dt = 0.4, options...)
             c = i.cache
             out = similar(i.u)
@@ -121,7 +125,7 @@ import OrdinaryDiffEqCore
     @testset "Error rejection preserves coefficient Jacobian reuse" begin
         # This linear stage converges, but its error estimate rejects the
         # large step. Retrying it must not be treated as a Newton failure.
-        i = init(decay_prob, TaylorRadauLA3(); dt = 0.5, abstol = 1e-8, reltol = 1e-6)
+        i = init(decay_prob, TaylorRadauLA3(); dt = 0.5, abstol = 1.0e-8, reltol = 1.0e-6)
         c = i.cache
         out = similar(i.u)
         @test ODTI.implicit_taylor_step!(i, c, 0.0, 0.5, [1.0], out)
@@ -140,7 +144,7 @@ import OrdinaryDiffEqCore
     @testset "Adaptive mu-Taylor accuracy" begin
         for make in (ImplicitTaylor1A2, ImplicitTaylor2A4)
             errors = Float64[]
-            for tol in (1e-3, 1e-6)
+            for tol in (1.0e-3, 1.0e-6)
                 sol = solve(square_prob, make(); abstol = tol / 100, reltol = tol)
                 @test SciMLBase.successful_retcode(sol)
                 err = maximum(abs(only(u) - 1 / (1 - t)) for (t, u) in zip(sol.t, sol.u))
@@ -172,7 +176,7 @@ import OrdinaryDiffEqCore
             for _ in 1:30
                 correction = ForwardDiff.jacobian(residual, z) \ residual(z)
                 z -= correction
-                if norm(correction, Inf) < 1e-14
+                if norm(correction, Inf) < 1.0e-14
                     return uprev + z
                 end
             end
@@ -182,7 +186,7 @@ import OrdinaryDiffEqCore
         # the remaining error in both the main and embedded solves.
         cases = (
             (
-                t = 108.06757323055373, h = 4.702933562660071, κ = 1e-5,
+                t = 108.06757323055373, h = 4.702933562660071, κ = 1.0e-5,
                 u = [
                     0.004376219796853137, 0.0008556386996123897,
                     0.0007689288265462751, 0.007558171943033635,
@@ -207,7 +211,7 @@ import OrdinaryDiffEqCore
             make = embedded ? TaylorRadauLA3 : TaylorGaussA4
             i = init(
                 hires, make(κ = case.κ, extrapolant = :polynomial);
-                dt = case.h, abstol = 1e-6, reltol = 1e-3, adaptive
+                dt = case.h, abstol = 1.0e-6, reltol = 1.0e-3, adaptive
             )
             out = similar(case.u)
             success = ODTI.implicit_taylor_stage!(
@@ -216,7 +220,7 @@ import OrdinaryDiffEqCore
             @test success
             if success
                 reference = reference_stage(case.u, case.t, case.h, out, embedded)
-                scale = 1e-6 .+ 1e-3 .* max.(abs.(case.u), abs.(out))
+                scale = 1.0e-6 .+ 1.0e-3 .* max.(abs.(case.u), abs.(out))
                 actual_tail = norm((out - reference) ./ scale) / sqrt(length(out))
                 @test actual_tail < case.κ
                 @test i.cache.iter > 2
@@ -234,13 +238,13 @@ import OrdinaryDiffEqCore
         problem = stiff_prob
         for alg in (TaylorGaussA4(), TaylorRadauLA3())
             errors = Float64[]
-            for tol in (1e-3, 1e-7)
+            for tol in (1.0e-3, 1.0e-7)
                 sol = solve(problem, alg; dt = 0.1, abstol = tol / 100, reltol = tol)
                 @test SciMLBase.successful_retcode(sol)
                 push!(errors, maximum(abs.(sol.u .- cos.(sol.t))))
             end
             @test errors[2] < errors[1]
-            @test errors[2] < 1e-6
+            @test errors[2] < 1.0e-6
         end
     end
 
@@ -248,14 +252,14 @@ import OrdinaryDiffEqCore
         @test TaylorGaussA4().controller === :Predictive
         @test_throws ArgumentError TaylorGaussA4(controller = :I)
         for (controller, cachetype) in (
-                (:Predictive, OrdinaryDiffEqCore.PredictiveControllerCache),
-                (:PI, OrdinaryDiffEqCore.PIControllerCache),
-            ), make in (TaylorGaussA4, TaylorRadauLA3)
-            i = init(stiff_prob, make(; controller); dt = 0.1, abstol = 1e-9, reltol = 1e-7)
+                    (:Predictive, OrdinaryDiffEqCore.PredictiveControllerCache),
+                    (:PI, OrdinaryDiffEqCore.PIControllerCache),
+                ), make in (TaylorGaussA4, TaylorRadauLA3)
+            i = init(stiff_prob, make(; controller); dt = 0.1, abstol = 1.0e-9, reltol = 1.0e-7)
             @test i.controller_cache isa cachetype
             sol = solve!(i)
             @test SciMLBase.successful_retcode(sol)
-            @test maximum(abs.(sol.u .- cos.(sol.t))) < 1e-5
+            @test maximum(abs.(sol.u .- cos.(sol.t))) < 1.0e-5
         end
     end
 
@@ -269,7 +273,7 @@ import OrdinaryDiffEqCore
             @test ODTI.alg_adaptive_order(alg) == 2
             steps = Int[]
             errors = Float64[]
-            for tol in (1e-3, 1e-6)
+            for tol in (1.0e-3, 1.0e-6)
                 sol = solve(problem, alg; abstol = tol, reltol = tol)
                 @test SciMLBase.successful_retcode(sol)
                 push!(steps, sol.stats.naccept)
@@ -278,8 +282,8 @@ import OrdinaryDiffEqCore
             # Errors per step accumulate over the 20 time units (by about
             # 1/(2h) on this problem); the global error still scales with
             # the tolerance.
-            @test errors[2] < 100 * 1e-6
-            @test errors[2] / errors[1] < 1e-2
+            @test errors[2] < 100 * 1.0e-6
+            @test errors[2] / errors[1] < 1.0e-2
             # An estimate of the right order grows the step count like
             # tol^(-1/3): 1000× tighter means about 10× more steps, not the
             # ~30× of a first-order estimate.
@@ -312,14 +316,14 @@ import OrdinaryDiffEqCore
             w = -10h
             r1 = (polyval(D1, w) * polyval(N, w) - polyval(N1, w) * polyval(D, w)) / polyval(D, w)
             expected = r1 / (1 - w / (P + Q))^Q
-            i = init(decay_prob, alg; dt = h, abstol = 1e-8, reltol = 1e-6)
+            i = init(decay_prob, alg; dt = h, abstol = 1.0e-8, reltol = 1.0e-6)
             out = similar(i.u)
             factorizations = i.stats.nw
             @test ODTI.implicit_taylor_step!(i, i.cache, 0.0, h, [1.0], out)
             u = only(out)
             @test u ≈ polyval(N, w) / polyval(D, w)
-            scale = 1e-8 + 1e-6 * max(1.0, abs(u))
-            @test OrdinaryDiffEqCore.get_EEst(i) ≈ abs(expected) / scale rtol = 1e-6
+            scale = 1.0e-8 + 1.0e-6 * max(1.0, abs(u))
+            @test OrdinaryDiffEqCore.get_EEst(i) ≈ abs(expected) / scale rtol = 1.0e-6
             # The Newton matrix, and the filter unless it is the Newton matrix.
             @test i.stats.nw - factorizations == (Q == 1 ? 1 : 2)
         end
@@ -385,12 +389,12 @@ import OrdinaryDiffEqCore
         # this at initialization and copies.
         LS = ODTI.LinearSolve
         for make in (TaylorGaussA4, TaylorRadauLA5)
-            i = init(stiff_prob, make(linsolve = LS.SimpleLUFactorization()); dt = 0.1, abstol = 1e-9, reltol = 1e-7)
+            i = init(stiff_prob, make(linsolve = LS.SimpleLUFactorization()); dt = 0.1, abstol = 1.0e-9, reltol = 1.0e-7)
             c = i.cache isa ODTI.ImplicitTaylorConstantCache ? i.cache.stage_cache : i.cache
             @test c.detached_solution
             sol = solve!(i)
             @test SciMLBase.successful_retcode(sol)
-            @test maximum(abs.(sol.u .- cos.(sol.t))) < 1e-5
+            @test maximum(abs.(sol.u .- cos.(sol.t))) < 1.0e-5
         end
         c = init(stiff_prob, TaylorGaussA4(); dt = 0.1).cache.stage_cache
         @test !c.detached_solution && !c.detached_filter
@@ -412,7 +416,7 @@ import OrdinaryDiffEqCore
             (polyval(D1, w) * polyval(N, w) - polyval(N1, w) * polyval(D, w)) / polyval(D, w) /
                 (1 - w_filter / 4)^3 * y
         )
-        i = init(decay_prob, TaylorLobattoLA4(); dt = 1.0, abstol = 1e-8, reltol = 1e-6)
+        i = init(decay_prob, TaylorLobattoLA4(); dt = 1.0, abstol = 1.0e-8, reltol = 1.0e-6)
         c = i.cache
         t = 0.0
         y = 1.0
@@ -420,16 +424,18 @@ import OrdinaryDiffEqCore
         # (h, Newton matrix refactorized, filter refactorized): an unchanged
         # h changes neither; h = 1.1 changes D(hJ) by 26% but the filter
         # factor 2.5 of the first step by 0.25 < 0.5; h = 1.4 changes both.
-        for (h, newton, filter) in ((1.0, true, true), (1.0, false, false), (1.1, true, false),
-                (1.4, true, true), (1.4, false, false))
+        for (h, newton, filter) in (
+                (1.0, true, true), (1.0, false, false), (1.1, true, false),
+                (1.4, true, true), (1.4, false, false),
+            )
             out = similar(i.u)
             factorizations = i.stats.nw
             @test ODTI.implicit_taylor_step!(i, c, t, h, [y], out)
             @test i.stats.nw - factorizations == newton + filter
             filter && (h_filter = h)
             u = only(out)
-            scale = 1e-8 + 1e-6 * max(abs(y), abs(u))
-            @test OrdinaryDiffEqCore.get_EEst(i) ≈ estimate(-10h, -10h_filter, y) / scale rtol = 1e-6
+            scale = 1.0e-8 + 1.0e-6 * max(abs(y), abs(u))
+            @test OrdinaryDiffEqCore.get_EEst(i) ≈ estimate(-10h, -10h_filter, y) / scale rtol = 1.0e-6
             t += h
             y = u
         end
@@ -450,10 +456,10 @@ import OrdinaryDiffEqCore
         @test ODTI.embedded_degrees(1, 2) == (0, 2)
         @test ODTI.embedded_degrees(0, 2) == (0, 1)
         hires = ODEProblemLibrary.prob_ode_hires
-        reference = solve(hires, Rodas5P(); abstol = 1e-11, reltol = 1e-11, dense = true)
-        scaled_error(u, e) = sqrt(sum(abs2, (u .- e) ./ (1e-6 .+ 1e-3 .* abs.(e))) / length(u))
+        reference = solve(hires, Rodas5P(); abstol = 1.0e-11, reltol = 1.0e-11, dense = true)
+        scaled_error(u, e) = sqrt(sum(abs2, (u .- e) ./ (1.0e-6 .+ 1.0e-3 .* abs.(e))) / length(u))
         for alg in (TaylorLobattoLA4(), TaylorRadauLA5())
-            sol = solve(hires, alg; abstol = 1e-6, reltol = 1e-3)
+            sol = solve(hires, alg; abstol = 1.0e-6, reltol = 1.0e-3)
             @test SciMLBase.successful_retcode(sol)
             worst = maximum(scaled_error(u, reference(t)) for (t, u) in zip(sol.t, sol.u))
             @test worst < 5
@@ -483,7 +489,7 @@ import OrdinaryDiffEqCore
         for (t0, h, extrapolant) in cases
             u0 = reference(t0)
             problem = SciMLBase.remake(hires; u0 = copy(u0), tspan = (t0, t0 + h))
-            i = init(problem, TaylorLobattoLA4(; extrapolant, maxiters = 50); dt = h, abstol = 1e-6, reltol = 1e-3)
+            i = init(problem, TaylorLobattoLA4(; extrapolant, maxiters = 50); dt = h, abstol = 1.0e-6, reltol = 1.0e-3)
             c = i.cache
             if extrapolant === :extrapolate
                 h1, h2 = h / 2, h / 2.4
@@ -530,9 +536,11 @@ import OrdinaryDiffEqCore
             abs(correction) < big"1e-40" && break
         end
         @test root > 10
-        @test abs(root - 1 - BigFloat(a[2]) * BigFloat(h) +
-            sum(BigFloat(b[k + 1]) * BigFloat(h)^k * root^(k + 1) for k in 1:3)) < big"1e-35"
-        i = init(square_prob, TaylorLobattoLA4(); dt = h, abstol = 1e-6, reltol = 1e-3)
+        @test abs(
+            root - 1 - BigFloat(a[2]) * BigFloat(h) +
+                sum(BigFloat(b[k + 1]) * BigFloat(h)^k * root^(k + 1) for k in 1:3)
+        ) < big"1e-35"
+        i = init(square_prob, TaylorLobattoLA4(); dt = h, abstol = 1.0e-6, reltol = 1.0e-3)
         c = i.cache
         c.polynomial_prev(c.rhs, c.rhs_embedded, c.predictor, [1.0], 0.0, h)
         c.uintermediate[1] = Float64(root)

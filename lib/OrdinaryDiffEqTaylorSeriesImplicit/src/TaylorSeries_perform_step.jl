@@ -280,7 +280,8 @@ function implicit_taylor_stage!(integrator, cache, t, dt, uprev, u)
             # Norm of the correction, scaled by the integration tolerances.
             iter > 1 && (ndwprev = ndw)
             @.. broadcast = false atmp = calculate_residuals(
-                abs(correction), uprev, uintermediate, abstol, reltol, internalnorm, t)
+                abs(correction), uprev, uintermediate, abstol, reltol, internalnorm, t
+            )
             ndw = internalnorm(atmp, t)
             if !isfinite(ndw)
                 cache.status = Divergence
@@ -292,8 +293,10 @@ function implicit_taylor_stage!(integrator, cache, t, dt, uprev, u)
             bad_convergence = false
             if iter >= θ_from
                 θ = ndw / ndwprev
-                bad_convergence = θ > 2 || (adaptive &&
-                    (θ >= one(θ) || (!(jac_fresh && factorized) && θ > θ_slow)))
+                bad_convergence = θ > 2 || (
+                    adaptive &&
+                        (θ >= one(θ) || (!(jac_fresh && factorized) && θ > θ_slow))
+                )
                 η = θ / (1 - θ)
             end
 
@@ -307,7 +310,8 @@ function implicit_taylor_stage!(integrator, cache, t, dt, uprev, u)
             if adaptive && candidate
                 degree = size(Jk, 3)
                 defect, changed, paired = check_stage_defect!(
-                    integrator, cache, t, tc, distance, uprev, weights)
+                    integrator, cache, t, tc, distance, uprev, weights
+                )
                 if !isfinite(defect)
                     cache.nvalidation_fail += 1
                     validation_failed = true
@@ -326,7 +330,8 @@ function implicit_taylor_stage!(integrator, cache, t, dt, uprev, u)
                     if endpoint_refresh_used && degree > 1 && iter < maxiters
                         converged, trials = recover_filtered_stage!(
                             integrator, cache, t, tc, distance, uprev, weights,
-                            defect, maxiters - iter)
+                            defect, maxiters - iter
+                        )
                         iter += trials
                         total_iter += trials
                         # Not a chord correction: reset η.
@@ -432,10 +437,13 @@ end
     if paired
         @. tmp_embedded = utilde + tmp_embedded - rhs_embedded
     end
-    filter_error!(integrator, cache, cache.stage_error, degree, weights[2], distance,
-        degree > 1 ? cache.Mtmp : nothing, paired ? tmp_embedded : nothing)
+    filter_error!(
+        integrator, cache, cache.stage_error, degree, weights[2], distance,
+        degree > 1 ? cache.Mtmp : nothing, paired ? tmp_embedded : nothing
+    )
     @.. broadcast = false atmp = calculate_residuals(
-        abs(cache.stage_error), uprev, uintermediate, abstol, reltol, internalnorm, t)
+        abs(cache.stage_error), uprev, uintermediate, abstol, reltol, internalnorm, t
+    )
     return internalnorm(atmp, t), changed, paired
 end
 
@@ -443,7 +451,8 @@ end
 # along the filtered residual with fixed filter factors; only a fresh
 # validation accepts the result.
 @noinline function recover_filtered_stage!(
-        integrator, cache, t, tc, distance, uprev, weights, defect, budget)
+        integrator, cache, t, tc, distance, uprev, weights, defect, budget
+    )
     budget > 0 || return false, 0
     (; utilde, uintermediate, tmp, tmp_embedded, stage_error, atmp, κ) = cache
     (; abstol, reltol, internalnorm) = integrator.opts
@@ -467,13 +476,15 @@ end
             @. stage_error = utilde + tmp - cache.rhs
             apply_filter_factors!(integrator, cache, stage_error, degree)
             @.. broadcast = false atmp = calculate_residuals(
-                abs(stage_error), uprev, start_state, abstol, reltol, internalnorm, t)
+                abs(stage_error), uprev, start_state, abstol, reltol, internalnorm, t
+            )
             trial_defect = internalnorm(atmp, t)
             # Sufficient decrease; stop at the first such trial.
             if isfinite(trial_defect) && trial_defect <= (1 - α / 2) * defect
                 if trial_defect <= κ
                     checked, changed, paired = check_stage_defect!(
-                        integrator, cache, t, tc, distance, uprev, weights)
+                        integrator, cache, t, tc, distance, uprev, weights
+                    )
                     if isfinite(checked) && !changed && checked <= κ
                         cache.embedded_filtered = paired
                         # An error retry must not reuse the old linearization.
@@ -598,8 +609,10 @@ function implicit_taylor_error!(integrator, cache, t, dt, uprev, u)
         dt4 = (tprev - tprev2) * (t - tprev2)
         dt5 = t + dt - tprev2
         r = (7 // 12) * 6 * pade_error_constant(P, Q) * dt^3
-        @. tmp = r * (((u - uprev) / dt1 - (uprev - uprev2) / dt2) -
-                      ((uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4)) / dt5
+        @. tmp = r * (
+            ((u - uprev) / dt1 - (uprev - uprev2) / dt2) -
+                ((uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4)
+        ) / dt5
     else
         # dt²/2 y'' from second divided differences (factor 7/12).
         if integrator.success_iter > 0
@@ -701,8 +714,10 @@ end
 function filter_outdated(cache, γ, cutoff, Jf = nothing)
     cache.filter_valid || return true
     (; JW, Jk) = cache
-    return rows_changed(Jf === nothing ? @view(Jk[:, :, 1]) : Jf, JW, cutoff,
-        cache.JWrow_norm, cache.row_change, γ)
+    return rows_changed(
+        Jf === nothing ? @view(Jk[:, :, 1]) : Jf, JW, cutoff,
+        cache.JWrow_norm, cache.row_change, γ
+    )
 end
 
 # Step size feedback from the Newton iteration. Beyond some dt the stage
