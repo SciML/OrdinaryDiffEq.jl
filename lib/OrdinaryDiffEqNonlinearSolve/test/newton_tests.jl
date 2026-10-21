@@ -127,3 +127,41 @@ let
     @test sol.retcode == SciMLBase.ReturnCode.Success
     @test sol.u[end][1] ≈ log(2) rtol = 1.0e-6
 end
+
+# A stage whose Jacobian at the predictor/root differs sharply from its Jacobian at
+# `uprev` (so a reused, non-`always_new` W is a poor local model there): a well-resolved
+# positive slope must not be accepted as a full step just because it reads as a false
+# positive elsewhere (Orego's case, above). `always_new = true` gets a Jacobian
+# evaluated at the current iterate and converges to the unique root; a reused W cannot
+# make that same guarantee and must not silently report a wrong answer as `Success`.
+let
+    ϵ = 1.0e-5
+    Bmat = [1.0 2 / ϵ; 0.0 1.0]
+    Amat = Bmat * [1.0 0.0; -ϵ 1 - (1 - ϵ)]
+    cvec = [1.0, 0.0]
+    hswitch(x) = x <= 0.25 ? 0.0 : x >= 0.75 ? 1.0 : (y = 2 * (x - 0.25); y * y * (3 - 2y))
+    Fstage(u) = Amat * u + cvec + hswitch(u[2]) * (Bmat - Amat) * (u .- 1)
+    f!(du, u, p, t) = (du .= u .- 1 .- Fstage(u))
+    zero_predictor!(u, uprev, p, t, dt) = fill!(u, 0.0)
+    prob = ODEProblem(f!, ones(2), (0.0, 1.0))
+
+    fresh_alg = ImplicitEuler(
+        nlsolve = NLNewton(
+            relax = BackTracking(), predictor = zero_predictor!,
+            always_new = true, max_iter = 50
+        )
+    )
+    sol_fresh = solve(prob, fresh_alg; dt = 1.0, adaptive = false, abstol = 1.0e-3, reltol = 0.0)
+    @test sol_fresh.retcode == SciMLBase.ReturnCode.Success
+    @test sol_fresh.u[end] ≈ [-1.0, -1.0] atol = 1.0e-3
+
+    reused_alg = ImplicitEuler(
+        nlsolve = NLNewton(
+            relax = BackTracking(), predictor = zero_predictor!,
+            always_new = false, max_iter = 50
+        )
+    )
+    sol_reused = solve(prob, reused_alg; dt = 1.0, adaptive = false, abstol = 1.0e-3, reltol = 0.0)
+    @test sol_reused.retcode != SciMLBase.ReturnCode.Success ||
+        isapprox(sol_reused.u[end], [-1.0, -1.0], atol = 1.0e-3)
+end
