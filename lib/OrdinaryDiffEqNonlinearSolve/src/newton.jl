@@ -1019,15 +1019,14 @@ function relax!(
 
         (; uprev, t, p, dt, opts, isdae) = integrator
         (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
-        (; ustep, atmp, tstep, k, invγdt, weight) = cache
+        (; ustep, atmp, tstep, k, invγdt) = cache
         # Freeze the tolerance weights at this (pre-relaxation) iterate for the whole
-        # search below. `calculate_residuals!` would otherwise recompute them from the
-        # trial `ustep2` at every α, making ϕ a different weighted norm at each point,
-        # so a finite-difference slope of it is not ϕ's true derivative: it can read as
-        # ascent along a genuine descent direction, or the reverse.
-        calculate_residuals!(
-            weight, fill!(weight, one(eltype(ustep))), uprev, ustep,
-            opts.abstol, opts.reltol, opts.internalnorm, t
+        # search below: `calculate_residuals!` would otherwise recompute them from the
+        # trial `ustep2` at every α, making ϕ a different weighted norm at each point.
+        # A fresh buffer, not `cache.weight`, because that one is aliased into a
+        # Krylov preconditioner elsewhere and must not change mid-solve.
+        weight = calculate_residuals(
+            one.(ustep), uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
         )
         function resid(z)
             # recompute residual (rhs)
@@ -1069,12 +1068,15 @@ function relax!(
         catch e
             # A policy with no descent precondition (e.g. LineSearches' `Static`)
             # never throws here and is unaffected. One that does impose a
-            # precondition signals it with `LineSearchException`; translate that into
-            # the same non-finite-`ndz` divergence signal `compute_step!` already
-            # uses for a failed linear solve, rather than depending on LineSearches
-            # (only a test dependency here) to name its exception type.
+            # precondition signals it with `LineSearchException` (matched by name:
+            # LineSearches is only a test dependency here). `dϕ0`'s fixed-step
+            # finite difference is unreliable once `dz` is small relative to the
+            # iterate (a probe near machine precision can get the wrong sign even
+            # for a genuine descent direction), so a caught exception does not by
+            # itself mean this correction is bad: take it undamped. A direction
+            # that is genuinely bad is still caught by `nlsolve!`'s own
+            # convergence/divergence test on the next iteration.
             nameof(typeof(e)) === :LineSearchException || rethrow()
-            @.. dz = dz * convert(eltype(dz), NaN)
             return dz
         end
         @.. dz = dz * α
@@ -1152,7 +1154,7 @@ function relax(
         catch e
             # See the matching catch in `relax!`.
             nameof(typeof(e)) === :LineSearchException || rethrow()
-            return dz * convert(eltype(dz), NaN)
+            return dz
         end
         dz = dz * α
         return dz

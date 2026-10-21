@@ -17,6 +17,11 @@ for prob in (prob_ode_lorenz, prob_ode_orego)
     )
     @test sol2.retcode == SciMLBase.ReturnCode.Success
     @test sol2.stats.nf <= sol1.stats.nf + 20
+    # A wrong-sign `dϕ0` from the fixed-step finite-difference probe (the Newton
+    # correction can be tiny relative to the iterate late in a stiff solve) must not
+    # be treated as divergence: that inflates W evaluations by two orders of
+    # magnitude by perturbing the whole subsequent trajectory, not just the one step.
+    @test sol2.stats.nw <= sol1.stats.nw + 100
 end
 
 # A predictor that overshoots the stage far enough that the finite-difference slope
