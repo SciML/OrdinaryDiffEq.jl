@@ -953,8 +953,12 @@ function build_nlsolver(
             # Build separated DAE Jacobian cache if applicable
             if isdae
                 # cuSPARSE matrices have no `fill!`, so sparse J_du is zeroed through its stored values
-                J_du = is_sparse(J) ? set_all_nzval!(similar(J), false) :
-                    fill!(similar(J), false)
+                J_du = similar(J)
+                if J isa AbstractSparseMatrix
+                    nonzeros(J_du) .= false
+                else
+                    fill!(J_du, false)
+                end
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage

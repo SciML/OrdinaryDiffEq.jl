@@ -1,6 +1,7 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+using SparseArrays: AbstractSparseMatrix, nonzeros
 using CommonSolve: init, solve, solve!, step!
 
 import SciMLBase
@@ -68,7 +69,7 @@ import OrdinaryDiffEqCore: _initialize_dae!,
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
     build_jac_config, dolinsolve, set_linear_reltol!,
-    resize_jac_config!, jacobian2W!, jacobian!, calc_J, is_sparse, set_all_nzval!
+    resize_jac_config!, jacobian2W!, jacobian!, calc_J
 
 import StaticArraysCore: StaticArray
 

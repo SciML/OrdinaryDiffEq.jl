@@ -42,7 +42,7 @@ Base.getindex(M::NoSetindexSparse, i::Int, j::Int) = M.A[i, j]
 Base.similar(M::NoSetindexSparse, ::Type{T}) where {T} = NoSetindexSparse(similar(M.A, T))
 SparseArrays.nonzeros(M::NoSetindexSparse) = nonzeros(M.A)
 SparseArrays.rowvals(M::NoSetindexSparse) = rowvals(M.A)
-SparseArrays.getcolptr(M::NoSetindexSparse) = SparseArrays.getcolptr(M.A)
+SparseArrays.nzrange(M::NoSetindexSparse, j::Integer) = nzrange(M.A, j)
 SparseArrays.nnz(M::NoSetindexSparse) = nnz(M.A)
 
 @testset "DAE J_du for a sparse jac_prototype without setindex!" begin
@@ -60,7 +60,8 @@ SparseArrays.nnz(M::NoSetindexSparse) = nnz(M.A)
             J_du = integrator.cache.nlsolver.cache.dae_jacobians.J_du
             @test J_du isa NoSetindexSparse{Float64}
             @test rowvals(J_du) == rowvals(pattern)
-            @test SparseArrays.getcolptr(J_du) == SparseArrays.getcolptr(pattern)
+            @test [nzrange(J_du, j) for j in axes(J_du, 2)] ==
+                [nzrange(pattern, j) for j in axes(pattern, 2)]
             @test all(iszero, nonzeros(J_du))
         end
     end
