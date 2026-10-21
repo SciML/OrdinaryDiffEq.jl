@@ -985,6 +985,26 @@ function _compute_rhs!(
 end
 
 ## relax!
+
+function linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
+    ϕ0, dϕ0 = ϕdϕ(zero(α0))
+    fallback = dϕ0 > zero(dϕ0) || !isfinite(dϕ0)
+    if fallback
+        iszero(ϕ0) && return zero(α0)
+        # Resolve roundoff in the slope without assuming the Newton direction descends.
+        δ = cbrt(eps(real(α0)))
+        dϕ0 = (ϕ(δ) - ϕ0) / δ
+        if !isfinite(dϕ0) || dϕ0 >= zero(dϕ0)
+            error("Line search failed: the Newton direction does not decrease the residual.")
+        end
+    end
+    α, ϕα = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+    if fallback && (!(ϕα < ϕ0) || α <= eps(real(α0)))
+        error("Line search failed to make residual progress.")
+    end
+    return α
+end
+
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
     return relax!(dz, nlsolver, integrator, f, relax(nlsolver))
 end
@@ -1056,8 +1076,7 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
         @.. dz = dz * α
         return dz
     end
@@ -1124,8 +1143,7 @@ function relax(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
         dz = dz * α
         return dz
     end
