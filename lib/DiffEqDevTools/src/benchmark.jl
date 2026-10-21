@@ -1196,13 +1196,12 @@ end
 Estimate an approximate 95% confidence half-width for the sampling error of an RODE
 solver setup. `numruns` may be one sample count or a collection of counts; the return
 value is respectively a scalar or a collection of sampling-error estimates.
-`solution_runs` controls the number of independent estimates used to measure their
-variation.
-
-When an analytic solution is available, `sample_error_runs` controls the Monte Carlo
-estimate of its expected endpoint. Otherwise, repeated numerical solution means provide
-the endpoint reference. Set `parallel_type = :threads` to parallelize the solution
-samples.
+`solution_runs` controls the number of independent sample means of the endpoint that
+are drawn for each count; the half-width is `1.96` times their standard deviation (the
+square root of the summed componentwise variances for array-valued states), so it
+scales like `1/sqrt(numruns)` and does not include the discretization bias of `setup`.
+`sample_error_runs` is accepted for compatibility and does not affect the result. Set
+`parallel_type = :threads` to parallelize the solution samples.
 """
 function get_sample_errors(
         prob::AbstractRODEProblem, setup, test_dt = nothing;
@@ -1243,50 +1242,17 @@ function get_sample_errors(
         tmp_solutions = vec(tmp_solutions)
     end
 
-    if SciMLBase.has_analytic(prob.f)
-        analytical_mean_end = mean(1:sample_error_runs) do i
-            _dt = prob.tspan[2] - prob.tspan[1]
-            if prob.u0 isa Number
-                W = sqrt(_dt) * randn()
-            else
-                W = sqrt(_dt) * randn(size(prob.u0))
-            end
-            prob.f.analytic(prob.u0, prob.p, prob.tspan[2], W)
-        end
-    else
-        # Use the mean of the means as the analytical mean
-        analytical_mean_end = mean(
-            mean(
-                tmp_solutions[i].u[end]
-                    for i in 1:length(tmp_solutions)
-            )
-                for tmp_solutions in tmp_solutions_full
-        )
-    end
-
-    if numruns isa Number
-        mean_solution_ends = [
-            mean([tmp_solutions[i].u[end] for i in 1:maxnumruns])
+    sample_error(n) = 1.96 * _sample_mean_spread(
+        [
+            mean(tmp_solutions[i].u[end] for i in 1:n)
                 for tmp_solutions in tmp_solutions_full
         ]
-        return sample_error = 1.96std(
-            norm(mean_sol_end - analytical_mean_end)
-                for mean_sol_end in mean_solution_ends
-        ) /
-            sqrt(numruns)
-    else
-        map(1:length(numruns)) do i
-            mean_solution_ends = [
-                mean([tmp_solutions[i].u[end] for i in 1:numruns[i]])
-                    for tmp_solutions in tmp_solutions_full
-            ]
-            sample_error = 1.96std(
-                norm(mean_sol_end - analytical_mean_end)
-                    for mean_sol_end in mean_solution_ends
-            ) /
-                sqrt(numruns[i])
-        end
-    end
+    )
+    return numruns isa Number ? sample_error(numruns) : map(sample_error, numruns)
+end
+
+function _sample_mean_spread(means)
+    return sqrt(sum(var(getindex.(means, k)) for k in eachindex(first(means))))
 end
 
 ## Tagging and filtering
