@@ -1019,14 +1019,16 @@ function relax!(
 
         (; uprev, t, p, dt, opts, isdae) = integrator
         (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
-        (; ustep, atmp, tstep, k, invγdt) = cache
+        (; ustep, atmp, tstep, k, invγdt, lsweight) = cache
         # Freeze the tolerance weights at this (pre-relaxation) iterate for the whole
         # search below: `calculate_residuals!` would otherwise recompute them from the
         # trial `ustep2` at every α, making ϕ a different weighted norm at each point.
-        # A fresh buffer, not `cache.weight`, because that one is aliased into a
-        # Krylov preconditioner elsewhere and must not change mid-solve.
-        weight = calculate_residuals(
-            one.(ustep), uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
+        # `lsweight` is a cache field dedicated to this (not `cache.weight`, which is
+        # aliased into a Krylov preconditioner elsewhere and must not change
+        # mid-solve), so recomputing it every call does not allocate.
+        calculate_residuals!(
+            lsweight, fill!(lsweight, one(eltype(ustep))), uprev, ustep,
+            opts.abstol, opts.reltol, opts.internalnorm, t
         )
         function resid(z)
             # recompute residual (rhs)
@@ -1040,7 +1042,7 @@ function relax!(
                     tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f, z
                 )
             end
-            @.. atmp = b * weight
+            @.. atmp = b * lsweight
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
@@ -1062,23 +1064,18 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        local α
-        try
-            α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        catch e
-            # A policy with no descent precondition (e.g. LineSearches' `Static`)
-            # never throws here and is unaffected. One that does impose a
-            # precondition signals it with `LineSearchException` (matched by name:
-            # LineSearches is only a test dependency here). `dϕ0`'s fixed-step
-            # finite difference is unreliable once `dz` is small relative to the
-            # iterate (a probe near machine precision can get the wrong sign even
-            # for a genuine descent direction), so a caught exception does not by
-            # itself mean this correction is bad: take it undamped. A direction
-            # that is genuinely bad is still caught by `nlsolve!`'s own
+        if dϕ0 > 0
+            # Not a descent direction for ϕ in this frozen norm -- or, far more
+            # often, `dϕ0`'s fixed `sqrt(eps())` finite-difference step is unreliable
+            # once `dz` is tiny relative to the iterate and gets the wrong sign.
+            # Either way, skip the configured search rather than calling it on a
+            # precondition it may reject outright: a policy with no such
+            # precondition (e.g. `Static`) would take this full step regardless, and
+            # a direction that is genuinely bad is still caught by `nlsolve!`'s own
             # convergence/divergence test on the next iteration.
-            nameof(typeof(e)) === :LineSearchException || rethrow()
             return dz
         end
+        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
     end
@@ -1148,14 +1145,9 @@ function relax(
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        local α
-        try
-            α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        catch e
-            # See the matching catch in `relax!`.
-            nameof(typeof(e)) === :LineSearchException || rethrow()
-            return dz
-        end
+        # See the matching guard in `relax!`.
+        dϕ0 > 0 && return dz
+        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         dz = dz * α
         return dz
     end
@@ -1172,6 +1164,7 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
 
     resize_jac_config!(nlcache, integrator)
     resize!(nlcache.weight, i)
+    resize!(nlcache.lsweight, i)
 
     # resize J and W (or rather create new ones of appropriate size and type)
     resize_J_W!(nlcache, integrator, i)
