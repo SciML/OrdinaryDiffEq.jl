@@ -314,10 +314,25 @@ end
 
 # `J_u` and `J_du` are stored in `J`'s sparsity pattern (the union of dF/du and dF/d(du)),
 # and sparse AD decompresses only into the exact pattern it colored, so the separated
-# configs must color `J`'s pattern rather than detect their own.
-function with_jac_sparsity(alg, J)
+# configs must color `J`'s pattern rather than detect their own. That is only sound if `J`
+# stores every entry of a known pattern, stored zeros included; otherwise the derivatives
+# missing from `J` would be silently skipped.
+function with_jac_sparsity(alg, J, uf, du1, u)
     ad = alg_autodiff(alg)
-    (ad isa ADTypes.AutoSparse && is_sparse_csc(J)) || return alg
+    (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
+    detector = ADTypes.sparsity_detector(ad)
+    if detector isa ADTypes.KnownJacobianSparsityDetector
+        known = sparse(ADTypes.jacobian_sparsity(uf, du1, u, detector))
+        stored(A) = zip(findnz(A)[1], findnz(A)[2])
+        issubset(stored(known), Set(stored(J))) || throw(
+            DimensionMismatch(
+                "The Jacobian storage does not hold every entry of the known sparsity \
+                pattern (stored zeros included), so the DAE Jacobians cannot be \
+                decompressed into it. Make `jac_prototype` cover the sparsity pattern, or \
+                update OrdinaryDiffEqDifferentiation."
+            )
+        )
+    end
     autodiff = ADTypes.AutoSparse(
         ADTypes.dense_ad(ad);
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(J),
@@ -976,7 +991,7 @@ function build_nlsolver(
                 else
                     uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
                     uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
-                    dae_jac_alg = with_jac_sparsity(alg, J)
+                    dae_jac_alg = with_jac_sparsity(alg, J, uf, du1, u)
                     jac_config_u = build_jac_config(
                         dae_jac_alg, nf, uf_u, du1, uprev, u, ztmp, dz
                     )

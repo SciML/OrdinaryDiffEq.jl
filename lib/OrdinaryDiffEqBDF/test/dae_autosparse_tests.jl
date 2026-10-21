@@ -1,6 +1,7 @@
 using OrdinaryDiffEqBDF, SparseArrays, Test
-using ADTypes: AutoForwardDiff, AutoSparse
-using SciMLBase: DAEProblem, NoInit, isinplace, successful_retcode
+import ADTypes, SciMLBase
+using ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse
+using SciMLBase: DAEFunction, DAEProblem, NoInit, isinplace, successful_retcode
 using SparseConnectivityTracer: TracerSparsityDetector
 using SparseMatrixColorings: GreedyColoringAlgorithm
 
@@ -65,4 +66,36 @@ end
     @test solve(
         problems[1], DFBDF(; autodiff = sparse_fd); abstol = 1.0e-10, reltol = 1.0e-10
     ).u[end][1] ≈ cos(1) rtol = 1.0e-6
+end
+
+function decay!(r, du, u, p, t)
+    r[1] = du[1] + u[1]
+    r[2] = u[2] - u[1]
+    nothing
+end
+
+@testset "Known sparsity pattern with stored zeros" begin
+    # The pattern's entries are all stored zeros; they are still structural.
+    P = sparse([1, 2, 2], [1, 1, 2], [0.0, 0.0, 0.0], 2, 2)
+    backend = AutoSparse(AutoFiniteDiff(); sparsity_detector = ADTypes.KnownJacobianSparsityDetector(P), coloring_algorithm = GreedyColoringAlgorithm())
+    prob = DAEProblem(decay!, [-1.0, -1.0], [1.0, 1.0], (0.0, 0.4); differential_vars = [true, false])
+    sol = solve(prob, DFBDF(autodiff = backend); initializealg = SciMLBase.NoInit(), abstol = 1.0e-10, reltol = 1.0e-10)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.u[end] ≈ fill(exp(-0.4), 2) atol = 1.0e-7 rtol = 1.0e-7
+
+    integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+    nlcache = integrator.cache.nlsolver.cache
+    pattern(A) = findnz(A)[1:2]
+    @test pattern(nlcache.J) == pattern(P)
+    @test pattern(nlcache.dae_jacobians.J_du) == pattern(P)
+    @test pattern(nlcache.W) == pattern(P)
+    solve!(integrator)
+    # After a step, `J` holds ∂F/∂u and `J_du` holds ∂F/∂(du).
+    @test Matrix(nlcache.J) ≈ [1.0 0.0; -1.0 1.0]
+    @test Matrix(nlcache.dae_jacobians.J_du) ≈ [1.0 0.0; 0.0 0.0] atol = 1.0e-12
+
+    # Storage that cannot hold the known pattern must fail rather than skip derivatives.
+    f_short = DAEFunction(decay!; jac_prototype = sparse([1, 2], [1, 2], [1.0, 1.0]))
+    prob_short = DAEProblem(f_short, [-1.0, -1.0], [1.0, 1.0], (0.0, 0.4); differential_vars = [true, false])
+    @test_throws DimensionMismatch init(prob_short, DFBDF(autodiff = backend); initializealg = NoInit())
 end

@@ -1359,12 +1359,10 @@ function build_J_W(
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
                     !isnothing(jac_config) ?
-                        convert.(
-                            eltype(u), sparsity_pattern(jac_config[1])
-                        ) :
+                        jac_from_pattern(eltype(u), sparsity_pattern(jac_config[1])) :
                         spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
-                    convert.(eltype(u), f.sparsity)
+                    jac_from_pattern(eltype(u), f.sparsity)
                 else
                     f.sparsity
                 end
@@ -1394,10 +1392,10 @@ function build_J_W(
         elseif f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
-                    !isnothing(jac_config) ? convert.(eltype(u), sparsity_pattern(jac_config[1])) :
+                    !isnothing(jac_config) ? jac_from_pattern(eltype(u), sparsity_pattern(jac_config[1])) :
                         spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
-                    convert.(eltype(u), f.sparsity)
+                    jac_from_pattern(eltype(u), f.sparsity)
                 else
                     f.sparsity
                 end
