@@ -504,8 +504,8 @@ away, and a zero displacement would then certify a stage however far it is from 
 The displacement stands in for the correction while half an ulp of the iterate is under 1% of
 it in the weighted norm, which bounds their difference. Otherwise `correction(fu, uprev)`
 recomputes the step from the residual at the previous iterate, with the Jacobian the inner
-solver used; if there is none (`correction === nothing`) the stage cannot be certified, and the
-solve runs out of iterations.
+solver used, so the mode is only used where the adapter can reproduce that Jacobian (see
+`stage_convergence_correction`).
 
 The test is only meaningful for an inner solver whose every step is a full Newton step, so
 that the displacement estimates the distance to the root (see `StageConvergenceAlgorithm`).
@@ -536,14 +536,7 @@ end
 function (cache::StageConvergenceCache)(fu, u, uprev)
     (; norm, κ, owner, correction) = cache.mode
     disp = norm(u .- uprev)
-    ndz = if norm(eps.(u) ./ 2) <= disp / 100
-        disp
-    elseif correction === nothing
-        owner.inner_ndzprev = disp
-        return false
-    else
-        norm(correction(fu, uprev))
-    end
+    ndz = norm(eps.(u) ./ 2) <= disp / 100 ? disp : norm(correction(fu, uprev))
     ndzprev = owner.inner_ndzprev
     owner.inner_ndzprev = ndz
     ndzprev < 0 && return ndz < 1.0e-5
@@ -606,8 +599,11 @@ function (c::ForwardDiffCorrection)(fu, x)
     return x isa AbstractVector ? δ : reshape(δ, size(x))
 end
 
-# The Jacobian the inner solver steps with, when the adapter can reproduce it.
-function stage_correction(nlcache, residual)
+# The Newton step of the inner solver, when the adapter can reproduce its Jacobian; otherwise
+# `nothing`, and the solve keeps the inner algorithm's own termination and predictor start.
+function stage_convergence_correction(nlsolver, residual)
+    nlcache = nlsolver.cache
+    nlcache.cache.alg isa StageConvergenceAlgorithm || return nothing
     nlcache.precondition === nothing || return nothing
     W = nlcache.W
     W isa Base.RefValue && return ReusedWCorrection(W)
@@ -619,11 +615,11 @@ function stage_correction(nlcache, residual)
 end
 
 function noinit_termination_kwargs(nlsolver, integrator, residual = nothing)
-    nlsolver.cache.cache.alg isa StageConvergenceAlgorithm || return (;)
+    correction = stage_convergence_correction(nlsolver, residual)
+    correction === nothing && return (;)
     (; opts, uprev, t) = integrator
     norm = StageDisplacementNorm(uprev, opts.abstol, opts.reltol, opts.internalnorm, t)
     κ = convert(real(eltype(nlsolver.z)), nlsolver.κ)
-    correction = stage_correction(nlsolver.cache, residual)
     mode = StageConvergenceMode(norm, κ, nlsolver.cache, correction)
     return (; termination_condition = mode)
 end
@@ -734,9 +730,9 @@ end
         # complete solve leaves no half-taken step behind, so nothing for the residual to veto.
         # Under `StageConvergenceMode` each solve starts from the current iterate: restarting
         # from the predictor stored by `initialize!` would reproduce the previous solve, so the
-        # second outer iteration would always see a zero displacement and accept. Any other
-        # inner algorithm stops on its own criterion regardless, so it keeps the predictor start.
-        if nlstep_data === nothing && nlcache.alg isa StageConvergenceAlgorithm
+        # second outer iteration would always see a zero displacement and accept. An inner solve
+        # without the mode stops on its own criterion regardless, so it keeps the predictor start.
+        if nlstep_data === nothing && stage_convergence_correction(nlsolver, nothing) !== nothing
             SciMLBase.reinit!(
                 nlcache, copy(z); noinit_termination_kwargs(nlsolver, integrator)...
             )
