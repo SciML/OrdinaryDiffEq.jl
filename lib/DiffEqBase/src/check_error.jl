@@ -81,61 +81,135 @@ failure_message(integ, ::Val{:instability}) = "Instability detected. Aborting."
 failure_message(integ, ::Val{:newton_convergence}) =
     "Newton steps could not converge and algorithm is not adaptive. Use a lower dt."
 
+# `a && b()` and `a || b()` for the conditions below. A non-`Bool` operand, such as a boolean traced
+# by a compiler, cannot short-circuit, so both sides are evaluated.
+@inline check_error_and(b, a::Bool) = a && b()
+@inline check_error_and(b, a) = a & b()
+@inline check_error_or(b, a::Bool) = a || b()
+@inline check_error_or(b, a) = a | b()
+
+check_error_step_accepted(integrator) =
+    !hasproperty(integrator, :accept_step) || integrator.accept_step
+
+"""
+    check_error_failed_retcode(integrator) -> Bool
+
+Whether `integrator.sol.retcode` already records a failure, i.e. is neither
+`ReturnCode.Success` nor `ReturnCode.Default`. `de_check_error` returns such a code
+unchanged before checking anything else.
+"""
+check_error_failed_retcode(integrator) =
+    integrator.sol.retcode ∉ (ReturnCode.Success, ReturnCode.Default)
+
+"""
+    check_error_dt_below_time_eps(integrator) -> Bool
+
+Whether `abs(integrator.dt) <= abs(eps(integrator.t))`, the comparison of the `dt_epsilon`
+failure check of `de_check_error`; `false` when the time is not an `AbstractFloat`.
+Integrators whose time can be a non-`AbstractFloat` wrapper of a float, such as a traced
+number, extend this with the exact comparison.
+"""
+check_error_dt_below_time_eps(integrator) =
+    integrator.t isa AbstractFloat && abs(integrator.dt) <= abs(eps(integrator.t))
+
+check_error_dt_nan(integrator, step_accepted) = isnan(integrator.dt)
+
+check_error_maxiters(integrator, step_accepted) = integrator.iter > integrator.opts.maxiters
+
+# Bail out if we take a step with dt less than the minimum value (which may be time
+# dependent), except when such a small timestep is successfully hitting a tstop exactly.
+function check_error_dtmin(integrator, step_accepted)
+    opts = integrator.opts
+    (!opts.force_dtmin && opts.adaptive) || return false
+    return check_error_and(abs(integrator.dt) <= abs(opts.dtmin)) do
+        check_error_or(!step_accepted) do
+            hasproperty(opts, :tstops) ?
+                integrator.t + integrator.dt < integrator.tdir * first(opts.tstops) : true
+        end
+    end
+end
+
+function check_error_dt_epsilon(integrator, step_accepted)
+    opts = integrator.opts
+    (!opts.force_dtmin && opts.adaptive) || return false
+    return check_error_and(() -> check_error_dt_below_time_eps(integrator), !step_accepted)
+end
+
+# Only judge accepted steps as unstable, to avoid bailing out as unstable when we just took
+# way too big a step.
+function check_error_instability(integrator, step_accepted)
+    return check_error_and(step_accepted) do
+        integrator.opts.unstable_check(integrator.dt, integrator.u, integrator.p, integrator.t)
+    end
+end
+
+check_error_newton_convergence(integrator, step_accepted) = last_step_failed(integrator)
+
+# The failure conditions after an existing failure code, in priority order: the first that
+# holds determines the code and the diagnostic.
+const CHECK_ERROR_CONDITIONS = (
+    (check_error_dt_nan, ReturnCode.DtNaN, Val(:dt_NaN)),
+    (check_error_maxiters, ReturnCode.MaxIters, Val(:max_iters)),
+    (check_error_dtmin, ReturnCode.DtLessThanMin, Val(:dt_min_unstable)),
+    (check_error_dt_epsilon, ReturnCode.Unstable, Val(:dt_epsilon)),
+    (check_error_instability, ReturnCode.Unstable, Val(:instability)),
+    (check_error_newton_convergence, ReturnCode.ConvergenceFailure, Val(:newton_convergence)),
+)
+
+@inline report_first_check_error_failure(integrator, step_accepted, ::Tuple{}) =
+    ReturnCode.Success
+@inline function report_first_check_error_failure(integrator, step_accepted, conditions)
+    condition, code, reason = first(conditions)
+    if condition(integrator, step_accepted)
+        SciMLBase.report_integrator_failure(integrator, reason)
+        return code
+    end
+    return report_first_check_error_failure(integrator, step_accepted, Base.tail(conditions))
+end
+
 """
     de_check_error(integrator::DEIntegrator)
 
 The `DEIntegrator` implementation of [`SciMLBase.check_error`](@ref): inspect `integrator`
 and return the `ReturnCode` describing whether integration may continue, reporting any
 failure through `SciMLBase.report_integrator_failure`. Does not mutate the solution.
+Intended for ODE and SDE integrators. `staged_check_error` evaluates the same
+conditions without branching.
 """
 function de_check_error(integrator::DEIntegrator)
-    if integrator.sol.retcode ∉ (ReturnCode.Success, ReturnCode.Default)
-        return integrator.sol.retcode
-    end
-    opts = integrator.opts
-    # This implementation is intended to be used for ODEIntegrator and SDEIntegrator.
+    check_error_failed_retcode(integrator) && return integrator.sol.retcode
+    return report_first_check_error_failure(
+        integrator, check_error_step_accepted(integrator), CHECK_ERROR_CONDITIONS
+    )
+end
 
-    if isnan(integrator.dt)
-        SciMLBase.report_integrator_failure(integrator, Val(:dt_NaN))
-        return ReturnCode.DtNaN
-    end
-    if integrator.iter > opts.maxiters
-        SciMLBase.report_integrator_failure(integrator, Val(:max_iters))
-        return ReturnCode.MaxIters
-    end
+@inline staged_first_check_error_failure(integrator, step_accepted, ::Tuple{}) =
+    (false, ReturnCode.Success)
+@inline function staged_first_check_error_failure(integrator, step_accepted, conditions)
+    condition, code, _ = first(conditions)
+    holds = condition(integrator, step_accepted)
+    later_failed, later_code = staged_first_check_error_failure(
+        integrator, step_accepted, Base.tail(conditions)
+    )
+    return holds | later_failed, ifelse(holds, code, later_code)
+end
 
-    # Bail out if we take a step with dt less than the minimum value (which may be time
-    # dependent), except when such a small timestep is successfully hitting a tstop exactly.
-    # We also exit if the ODE is unstable according to a user chosen callback, but only if we
-    # accepted the step, to avoid bailing out as unstable when we just took way too big a step.
-    step_accepted = !hasproperty(integrator, :accept_step) || integrator.accept_step
-    if !opts.force_dtmin && opts.adaptive
-        if abs(integrator.dt) <= abs(opts.dtmin) &&
-                (
-                !step_accepted || (
-                    hasproperty(opts, :tstops) ?
-                        integrator.t + integrator.dt < integrator.tdir * first(opts.tstops) :
-                        true
-                )
-            )
-            SciMLBase.report_integrator_failure(integrator, Val(:dt_min_unstable))
-            return ReturnCode.DtLessThanMin
-        elseif !step_accepted && integrator.t isa AbstractFloat &&
-                abs(integrator.dt) <= abs(eps(integrator.t))
-            SciMLBase.report_integrator_failure(integrator, Val(:dt_epsilon))
-            return ReturnCode.Unstable
-        end
-    end
-    if step_accepted &&
-            opts.unstable_check(integrator.dt, integrator.u, integrator.p, integrator.t)
-        SciMLBase.report_integrator_failure(integrator, Val(:instability))
-        return ReturnCode.Unstable
-    end
-    if last_step_failed(integrator)
-        SciMLBase.report_integrator_failure(integrator, Val(:newton_convergence))
-        return ReturnCode.ConvergenceFailure
-    end
-    return ReturnCode.Success
+"""
+    staged_check_error(integrator::DEIntegrator) -> (failed, code)
+
+Evaluate every condition of `de_check_error` and select the code of the first that
+holds with `ifelse` instead of returning early, so that a tracing compiler can stage the
+check when the integrator state is traced. `code` equals `de_check_error(integrator)` and
+`failed` is `code != ReturnCode.Success`; no diagnostic is reported. Conditions are
+evaluated even when an earlier one holds, so the integrator's `unstable_check` must be free
+of side effects.
+"""
+function staged_check_error(integrator::DEIntegrator)
+    failed, code = staged_first_check_error_failure(
+        integrator, check_error_step_accepted(integrator), CHECK_ERROR_CONDITIONS
+    )
+    stored = check_error_failed_retcode(integrator)
+    return stored | failed, ifelse(stored, integrator.sol.retcode, code)
 end
 
 """

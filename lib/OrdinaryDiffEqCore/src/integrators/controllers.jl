@@ -1,4 +1,13 @@
 """
+    controller_fastpower(x, y)
+
+`FastPower.fastpower(x, y)`, the approximate power the step-size controllers use. The
+Reactant extension gives traced floats the same approximation; `fastpower` itself falls back
+to `x^y` for them, which is NaN or Inf where the approximation is finite.
+"""
+controller_fastpower(x, y) = fastpower(x, y)
+
+"""
     AbstractController
 
 Supertype of every step-size controller. A concrete subtype is a small
@@ -286,10 +295,7 @@ on normal steps but 10^4 on the first step.
 See also: https://github.com/SciML/DifferentialEquations.jl/issues/299
 """
 @inline function get_current_qmax(integrator, qmax)
-    if integrator.success_iter == 0
-        return get_qmax_first_step(integrator)
-    end
-    return qmax
+    return ifelse(iszero(integrator.success_iter), get_qmax_first_step(integrator), qmax)
 end
 
 """
@@ -657,7 +663,7 @@ mutable struct IControllerCache{T, E, NLPType} <: AbstractControllerCache
 end
 
 function setup_controller_cache(alg, cache, controller::IController, ::Type{E}, disco_probs) where {E}
-    QT = _resolved_QT(controller.basic)
+    QT = typeof(_maybe_traced(zero(_resolved_QT(controller.basic))))
     resolved = IController(resolve_basic(controller.basic, alg, QT; disco_probs))
     T = QT
     return IControllerCache{T, E, eltype(disco_probs)}(resolved, T(1 // 10^4), oneunit(E))
@@ -668,11 +674,11 @@ end
     qmax = get_current_qmax(integrator, qmax)
     EEst = SciMLBase.value(get_EEst(integrator))
 
-    if iszero(EEst)
+    expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
+    ReactantCore.@trace track_numbers = false if iszero(EEst)
         q = inv(qmax)
     else
-        expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = fastpower(EEst, expo) / gamma
+        qtmp = controller_fastpower(EEst, expo) / gamma
         @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
         cache.dtreject = SciMLBase.value(integrator.dt) / q
@@ -686,9 +692,7 @@ function step_accept_controller!(integrator, cache::IControllerCache, alg, q)
 
     t = integrator.t
     dt = integrator.dt
-    if qsteady_min <= q <= qsteady_max
-        q = one(q)
-    end
+    q = ifelse((qsteady_min <= q) & (q <= qsteady_max), one(q), q)
     return handle_disco_accept!(integrator, cache.controller.basic, t, dt / q)
 end
 
@@ -791,7 +795,7 @@ mutable struct PIControllerCache{T, E, NLPType} <: AbstractControllerCache
 end
 
 function setup_controller_cache(alg, cache, controller::PIController, ::Type{E}, disco_probs) where {E}
-    QT = _resolved_QT(controller.basic)
+    QT = typeof(_maybe_traced(zero(_resolved_QT(controller.basic))))
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIController{typeof(basic), QT}(
         basic, QT(controller.beta1), QT(controller.beta2), QT(controller.qoldinit)
@@ -809,11 +813,11 @@ end
     (; beta1, beta2) = controller
     EEst = SciMLBase.value(get_EEst(integrator))
 
-    if iszero(EEst)
+    ReactantCore.@trace track_numbers = false if iszero(EEst)
         q = inv(qmax)
     else
-        q11 = fastpower(EEst, beta1)
-        q = q11 / fastpower(errold, beta2)
+        q11 = controller_fastpower(EEst, beta1)
+        q = q11 / controller_fastpower(errold, beta2)
         cache.q11 = q11
         @fastmath q = clamp(q / gamma, inv(qmax), inv(qmin))
     end
@@ -828,9 +832,7 @@ function step_accept_controller!(integrator, cache::PIControllerCache, alg, q)
 
     t = integrator.t
     dt = integrator.dt
-    if qsteady_min <= q <= qsteady_max
-        q = one(q)
-    end
+    q = ifelse((qsteady_min <= q) & (q <= qsteady_max), one(q), q)
     cache.errold = max(EEst, qoldinit)
     return handle_disco_accept!(integrator, controller.basic, t, dt / q)
 end
@@ -986,24 +988,24 @@ the resolved `controller`, its limiter, the error history, and the scalar `EEst`
 """
 mutable struct PIDControllerCache{T, Limiter, E, NLPType} <: AbstractControllerCache
     controller::PIDController{CommonControllerOptions{T, NLPType}, T, Limiter}
-    err::Vector{T} # history of the error estimates
+    err::NTuple{3, T} # history of the error estimates
     dt_factor::T
     EEst::E
 end
 
 function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::PIDControllerCache{T}) where {T}
-    cache.err = ones(T, 3)
+    cache.err = (one(T), one(T), one(T))
     cache.dt_factor = one(T)
     return nothing
 end
 
 function setup_controller_cache(alg, cache, controller::PIDController, ::Type{E}, disco_probs) where {E}
-    QT = _resolved_QT(controller.basic)
+    QT = typeof(_maybe_traced(zero(_resolved_QT(controller.basic))))
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIDController{typeof(basic), QT, typeof(controller.limiter)}(
         basic, map(QT, controller.beta), QT(controller.accept_safety), controller.limiter,
     )
-    err = ones(QT, 3)
+    err = (one(QT), one(QT), one(QT))
     return PIDControllerCache{QT, typeof(controller.limiter), E, eltype(disco_probs)}(
         resolved, err, one(QT), oneunit(E),
     )
@@ -1033,12 +1035,12 @@ end
     # ```
     EEst = max(EEst, EEst_min)
 
-    cache.err[1] = inv(EEst)
+    cache.err = (inv(EEst), cache.err[2], cache.err[3])
     err1, err2, err3 = cache.err
 
     k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
     dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
-    if isnan(dt_factor)
+    if !ReactantCore.within_compile() && isnan(dt_factor)
         @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
     end
     cache.dt_factor = controller.limiter(dt_factor)
@@ -1062,13 +1064,11 @@ function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_
 
     t = integrator.t
     dt = integrator.dt
-    if qsteady_min <= inv(dt_factor) <= qsteady_max
-        dt_factor = one(dt_factor)
-    end
-    @inbounds begin
-        cache.err[3] = cache.err[2]
-        cache.err[2] = cache.err[1]
-    end
+    dt_factor = ifelse(
+        (qsteady_min <= inv(dt_factor)) & (inv(dt_factor) <= qsteady_max),
+        one(dt_factor), dt_factor
+    )
+    cache.err = (cache.err[1], cache.err[1], cache.err[2])
     return handle_disco_accept!(integrator, controller.basic, t, dt * dt_factor)
 end
 
@@ -1102,7 +1102,7 @@ fac = min(
         (niters + 2 * integrator.cache.nlsolver.maxiters)
 )
 expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-qtmp = fastpower(get_EEst(integrator), expo) / fac
+qtmp = controller_fastpower(get_EEst(integrator), expo) / fac
 @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
 cache.qold = q
 q
@@ -1120,7 +1120,7 @@ When the step is accepted, the following logic is applied:
 qmax = get_current_qmax(integrator, qmax)
 if integrator.success_iter > 0
     expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-    qgus = (dtacc / integrator.dt) * fastpower((get_EEst(integrator)^2) / erracc, expo)
+    qgus = (dtacc / integrator.dt) * controller_fastpower((get_EEst(integrator)^2) / erracc, expo)
     qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
     qacc = max(q, qgus)
 else
@@ -1220,7 +1220,7 @@ end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = fastpower(EEst, expo) / fac
+        qtmp = controller_fastpower(EEst, expo) / fac
         @fastmath q = SciMLBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         cache.qold = q
     end
@@ -1237,7 +1237,7 @@ function step_accept_controller!(integrator, cache::PredictiveControllerCache, a
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qgus = (dtacc / integrator.dt) *
-            fastpower((EEst^2) / erracc, expo)
+            controller_fastpower((EEst^2) / erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
