@@ -1057,14 +1057,17 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        # dz is not a descent direction for the residual norm at the current iterate:
-        # no line search can improve on it (recent LineSearches releases throw here
-        # rather than vacuously backtracking to a near-zero step). Mark the candidate
-        # non-finite so the `ndz` computed downstream in `compute_step!` reports this
-        # as a failed iteration, the same signal already used for a failed linear
-        # solve, letting `nlsolve!` retry with a fresh Jacobian or the integrator
-        # reject/shrink `dt`.
         if dϕ0 > 0
+            # ϕ's weights (via `ustep2` in `resid`) move with α, so this
+            # finite-difference slope at α=0 can read as ascent even when the full
+            # step reduces the residual (e.g. an exact Newton step on a current
+            # Jacobian). Take the full step if it does; some LineSearches versions
+            # reject the precondition outright, so only call into the line search
+            # when the slope is non-positive. Report divergence, the same way
+            # `compute_step!` already does for a failed linear solve, only if even
+            # the full step fails to reduce the residual.
+            ϕ1 = ϕ(α0)
+            ϕ1 <= ϕ0 && return dz
             @.. dz = dz * convert(eltype(dz), NaN)
             return dz
         end
@@ -1136,10 +1139,10 @@ function relax(
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        # See the matching guard in `relax!`: dz is not a descent direction, so mark
-        # it non-finite to report a failed iteration instead of calling into a line
-        # search that may throw on this precondition.
         if dϕ0 > 0
+            # See the matching guard in `relax!`.
+            ϕ1 = ϕ(α0)
+            ϕ1 <= ϕ0 && return dz
             return dz * convert(eltype(dz), NaN)
         end
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
