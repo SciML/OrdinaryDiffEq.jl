@@ -935,10 +935,10 @@ function _compute_rhs!(
         tmp::Array, ztmp::Array, ustep::Array, α, tstep, k,
         invγdt, p, uprev, f::TF, z
     ) where {TF <: DAEFunction}
-    @inbounds @simd ivdep for i in eachindex(z)
+    @simd ivdep for i in eachindex(z)
         ztmp[i] = (tmp[i] + α * z[i]) * invγdt
     end
-    @inbounds @simd ivdep for i in eachindex(z)
+    @simd ivdep for i in eachindex(z)
         ustep[i] = uprev[i] + z[i]
     end
     f(k, ztmp, ustep, p, tstep)
@@ -955,27 +955,27 @@ function _compute_rhs!(
     if method === COEFFICIENT_MULTISTEP
         f(k, z, p, tstep)
         if mass_matrix === I
-            @inbounds @simd ivdep for i in eachindex(z)
+            @simd ivdep for i in eachindex(z)
                 ztmp[i] = tmp[i] + k[i] - (α * invγdt) * z[i]
             end
         else
             update_coefficients!(mass_matrix, ustep, p, tstep)
             mul!(_vec(ztmp), mass_matrix, _vec(z))
 
-            @inbounds @simd ivdep for i in eachindex(z)
+            @simd ivdep for i in eachindex(z)
                 ztmp[i] = tmp[i] + k[i] - (α * invγdt) * ztmp[i]
             end
         end
     else
         f(k, ustep, p, tstep)
         if mass_matrix === I
-            @inbounds @simd ivdep for i in eachindex(z)
+            @simd ivdep for i in eachindex(z)
                 ztmp[i] = (dt * k[i] - z[i]) * invγdt
             end
         else
             update_coefficients!(mass_matrix, ustep, p, tstep)
             mul!(_vec(ztmp), mass_matrix, _vec(z))
-            @inbounds @simd ivdep for i in eachindex(z)
+            @simd ivdep for i in eachindex(z)
                 ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
             end
         end
