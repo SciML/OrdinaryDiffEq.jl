@@ -41,6 +41,8 @@ function _change_t_via_interpolation!(
             SciMLBase.reeval_internals_due_to_modification!(
                 integrator; callback_initializealg = reinitialize_alg
             )
+            # Rebuilding interpolation stages does not rebuild multistep history.
+            integrator.derivative_discontinuity = true
         else
             integrator.sqdt = sqrt(abs(integrator.dt))
         end
