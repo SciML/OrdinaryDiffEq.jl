@@ -67,7 +67,7 @@ import OrdinaryDiffEqCore: _initialize_dae!,
 
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
-    build_jac_config, dolinsolve, set_linear_reltol!,
+    build_jac_config, dolinsolve, set_linear_reltol!, isfinite_W,
     resize_jac_config!, jacobian2W!, jacobian!, calc_J
 
 import StaticArraysCore: StaticArray

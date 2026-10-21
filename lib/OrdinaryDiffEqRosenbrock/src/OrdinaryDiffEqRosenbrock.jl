@@ -33,7 +33,7 @@ using SciMLBase: @def, LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation
 
 using OrdinaryDiffEqDifferentiation: wrapprecs, calc_tderivative, build_grad_config,
-    build_jac_config, issuccess_W, jacobian2W!,
+    build_jac_config, issuccess_W, isfinite_W, jacobian2W!,
     resize_jac_config!, resize_grad_config!,
     calc_rosenbrock_differentiation!, build_J_W,
     dolinsolve

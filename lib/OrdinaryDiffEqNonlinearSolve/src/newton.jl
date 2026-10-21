@@ -791,6 +791,7 @@ end
     end
 
     if is_always_new(nlsolver) || (iter == 1 && new_W)
+        isfinite_W(W) || return convert(eltype(atmp), Inf)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
             reltol
