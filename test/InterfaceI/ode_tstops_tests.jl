@@ -314,3 +314,22 @@ end
     step!(integrator)
     @test integrator.tprev == nextfloat(5.0)
 end
+
+@testset "tstops an ulp apart do not take an ulp step" begin
+    t1, t2 = 0.7, 70 * 0.01
+    @test nextfloat(t1) == t2
+    f(u, p, t) = -u
+    for alg in (Tsit5(), Rodas5P(), FBDF())
+        hits = Float64[]
+        affect!(integrator) = (push!(hits, integrator.t); u_modified!(integrator, false))
+        cb = DiscreteCallback((u, t, integrator) -> t == t1 || t == t2, affect!)
+        kw = (; callback = cb, abstol = 1.0e-8, reltol = 1.0e-8)
+        sol1 = solve(ODEProblem(f, 1.0, (0.0, t1)), alg; kw...)
+        empty!(hits)
+        sol2 = solve(ODEProblem(f, 1.0, (0.0, t2)), alg; tstops = [t1], kw...)
+        @test hits == [t1, t2]
+        @test sol2.t[end] == t2
+        @test sol2.stats.nf == sol1.stats.nf
+        @test sol2.u[end] == sol1.u[end]
+    end
+end
