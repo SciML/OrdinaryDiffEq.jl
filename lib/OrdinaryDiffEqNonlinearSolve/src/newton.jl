@@ -1065,38 +1065,17 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        if dϕ0 > 0
-            # `dϕ0` is a finite difference with a fixed `sqrt(eps())` step in α; that
-            # only resolves the true sign when the resulting state perturbation,
-            # ‖dz‖·sqrt(eps()), is above the precision floor of ‖z‖ itself, i.e. when
-            # ‖dz‖/‖z‖ ≳ sqrt(eps()). Below that, the probe is noise and the step is
-            # tiny enough that taking it regardless cannot do much damage. Above it,
-            # the sign is resolved and trustworthy: declare this a failed candidate,
-            # the same signal `compute_step!` already uses for a failed linear solve,
-            # so `nlsolve!` can retry with a fresh Jacobian instead of silently
-            # accepting a wrong stage.
-            relstep = opts.internalnorm(dz, t) / opts.internalnorm(nlsolver.z, t)
-            if relstep < sqrt(eps())
-                return dz
-            end
-            # Attempted here, and found infeasible without a larger, separate change:
-            # refreshing `W` at the current iterate (mimicking what `always_new` does
-            # every iteration) would let a persisting positive slope be trusted as
-            # roundoff per the same descent-direction argument. But `calc_J!`/`calc_W!`
-            # pick their linearization point (`uprev` vs. the current iterate) solely
-            # from `is_always_new(nlsolver)`, a static algorithm flag -- not from
-            # `integrator.u`, so mutating it here before forcing a rebuild has no
-            # effect when `always_new` is false, and there is no existing utility to
-            # rebuild `J`/`W` at an arbitrary point across the DAE/sparse/split-W/
-            # WOperator cases this cache can hold. Declare this a failed candidate
-            # instead, the same signal `compute_step!` already uses for a failed
-            # linear solve: `nlsolve!` reports it rather than silently accepting a
-            # wrong stage. A solve configured with `always_new = true` gets the
-            # correct per-iterate linearization natively and is unaffected.
-            @.. dz = dz * convert(eltype(dz), NaN)
-            return dz
-        end
+        ϕ0 = ϕ(zero(α0))
+        # dz solves W*dz = b with b = R(z), so d/dα R(z - α*dz)|_0 = -J*dz ≈ -b, and
+        # for a norm built from a fixed inner product (`internalnorm`'s weighted RMS
+        # norm, a scalar multiple of the Euclidean norm, is), d/dα‖D*R‖ at α=0 is then
+        # exactly -ϕ0: never positive, so BackTracking's precondition always holds.
+        # This replaces a finite-difference estimate of the same quantity, which
+        # rounds 1-6 found unreliable in both directions regardless of any threshold
+        # on it: a fixed probe step can misresolve the sign whether `dz` is tiny
+        # relative to `z` (false ascent) or `z` is tiny/stationary relative to the
+        # probe (false descent), and no rescaling of the threshold fixes both.
+        dϕ0 = -ϕ0
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
@@ -1166,13 +1145,9 @@ function relax(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        if dϕ0 > 0
-            # See the matching guard in `relax!`.
-            relstep = opts.internalnorm(dz, t) / opts.internalnorm(nlsolver.z, t)
-            relstep < sqrt(eps()) && return dz
-            return dz * convert(eltype(dz), NaN)
-        end
+        ϕ0 = ϕ(zero(α0))
+        # See the matching analytic slope in `relax!`.
+        dϕ0 = -ϕ0
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         dz = dz * α
         return dz
