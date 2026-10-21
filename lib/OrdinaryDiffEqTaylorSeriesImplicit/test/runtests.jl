@@ -60,3 +60,8 @@ testTol = 0.2
     sim1v3 = analyticless_test_convergence(dts, prob_stiff, ImplicitTaylor(order = Val(1), order_q = Val(3)), ref_setup)
     @test sim1v3.𝒪est[:final] ≈ 4 atol = testTol
 end
+
+include("nonlinear_convergence_tests.jl")
+include("polynomial_reuse_tests.jl")
+include("newton_recovery_tests.jl")
+include("stage_accuracy_tests.jl")
