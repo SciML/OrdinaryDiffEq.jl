@@ -1019,7 +1019,16 @@ function relax!(
 
         (; uprev, t, p, dt, opts, isdae) = integrator
         (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
-        (; ustep, atmp, tstep, k, invγdt) = cache
+        (; ustep, atmp, tstep, k, invγdt, weight) = cache
+        # Freeze the tolerance weights at this (pre-relaxation) iterate for the whole
+        # search below. `calculate_residuals!` would otherwise recompute them from the
+        # trial `ustep2` at every α, making ϕ a different weighted norm at each point,
+        # so a finite-difference slope of it is not ϕ's true derivative: it can read as
+        # ascent along a genuine descent direction, or the reverse.
+        calculate_residuals!(
+            weight, fill!(weight, one(eltype(ustep))), uprev, ustep,
+            opts.abstol, opts.reltol, opts.internalnorm, t
+        )
         function resid(z)
             # recompute residual (rhs)
             if isdae
@@ -1032,10 +1041,7 @@ function relax!(
                     tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f, z
                 )
             end
-            calculate_residuals!(
-                atmp, b, uprev, ustep2, opts.abstol, opts.reltol,
-                opts.internalnorm, t
-            )
+            @.. atmp = b * weight
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
@@ -1057,21 +1063,20 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        if dϕ0 > 0
-            # ϕ's weights (via `ustep2` in `resid`) move with α, so this
-            # finite-difference slope at α=0 can read as ascent even when the full
-            # step reduces the residual (e.g. an exact Newton step on a current
-            # Jacobian). Take the full step if it does; some LineSearches versions
-            # reject the precondition outright, so only call into the line search
-            # when the slope is non-positive. Report divergence, the same way
-            # `compute_step!` already does for a failed linear solve, only if even
-            # the full step fails to reduce the residual.
-            ϕ1 = ϕ(α0)
-            ϕ1 <= ϕ0 && return dz
+        local α
+        try
+            α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        catch e
+            # A policy with no descent precondition (e.g. LineSearches' `Static`)
+            # never throws here and is unaffected. One that does impose a
+            # precondition signals it with `LineSearchException`; translate that into
+            # the same non-finite-`ndz` divergence signal `compute_step!` already
+            # uses for a failed linear solve, rather than depending on LineSearches
+            # (only a test dependency here) to name its exception type.
+            nameof(typeof(e)) === :LineSearchException || rethrow()
             @.. dz = dz * convert(eltype(dz), NaN)
             return dz
         end
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
     end
@@ -1107,6 +1112,11 @@ function relax(
         (; uprev, t, p, dt, opts) = integrator
         (; z, tmp, ztmp, γ, iter, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt) = cache
+        # See the matching freeze in `relax!`.
+        weight = calculate_residuals(
+            one.(ustep), uprev, ustep, opts.abstol, opts.reltol,
+            opts.internalnorm, t
+        )
         function resid(z)
             # recompute residual (rhs)
             if f isa DAEFunction
@@ -1115,10 +1125,7 @@ function relax(
             else
                 ztmp, ustep2 = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, f, z)
             end
-            atmp = calculate_residuals(
-                b, uprev, ustep2, opts.abstol, opts.reltol,
-                opts.internalnorm, t
-            )
+            atmp = ztmp .* weight
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
@@ -1139,13 +1146,14 @@ function relax(
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        if dϕ0 > 0
-            # See the matching guard in `relax!`.
-            ϕ1 = ϕ(α0)
-            ϕ1 <= ϕ0 && return dz
+        local α
+        try
+            α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        catch e
+            # See the matching catch in `relax!`.
+            nameof(typeof(e)) === :LineSearchException || rethrow()
             return dz * convert(eltype(dz), NaN)
         end
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         dz = dz * α
         return dz
     end
