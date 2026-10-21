@@ -674,10 +674,11 @@ end
         # either: the reused `W` only serves as the inner Newton's Jacobian (`WReuseJac`),
         # where staleness costs convergence rate, not the root the full solve lands on. A
         # complete solve leaves no half-taken step behind, so nothing for the residual to veto.
-        # Each solve starts from the current iterate: restarting from the predictor stored by
-        # `initialize!` would reproduce the previous solve, so the second outer iteration would
-        # always see a zero displacement and accept.
-        if nlstep_data === nothing
+        # Under `StageConvergenceMode` each solve starts from the current iterate: restarting
+        # from the predictor stored by `initialize!` would reproduce the previous solve, so the
+        # second outer iteration would always see a zero displacement and accept. Any other
+        # inner algorithm stops on its own criterion regardless, so it keeps the predictor start.
+        if nlstep_data === nothing && nlcache.alg isa StageConvergenceAlgorithm
             SciMLBase.reinit!(
                 nlcache, copy(z); noinit_termination_kwargs(nlsolver, integrator)...
             )
