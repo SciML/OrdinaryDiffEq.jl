@@ -942,15 +942,11 @@ function build_nlsolver(
             else
                 (;)
             end
-            # Inexact Newton, as in IDA: stop the Krylov solve once the weighted residual
-            # is a small fraction of the Newton convergence threshold `κ`. A DAE residual
-            # is evaluated at full precision, so a solve held only to `reltol` of a late,
-            # tiny residual stalls at the roundoff floor `eps * cj * |dz|` and reports
-            # failure, though its `dz` is accurate far beyond what Newton needs. `κ` is a
-            # weighted norm, so this applies only when `wrapprecs` adds the weights.
-            weighted = hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
-            linabstol = isdae && J isa JVPCache && weighted ?
-                (; abstol = convert(uTolType, nlalg.κ / 20 * sqrt(length(u)))) : (;)
+            # A `DAEFunction`'s only operator `W` is the matrix-free `dae_jvp_cache`.
+            # `compute_step!` sets its Krylov `abstol` relative to each step's residual;
+            # a fixed one would be in the units of `F`, which the user can scale freely.
+            matrix_free_dae = isdae && J isa AbstractSciMLOperator
+            linabstol = matrix_free_dae ? (; abstol = zero(uTolType)) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
                 precs..., linabstol...,
@@ -961,7 +957,7 @@ function build_nlsolver(
 
             # Build separated DAE Jacobian cache if applicable. A matrix-free W never
             # forms J_u or J_du.
-            if isdae && !(J isa JVPCache)
+            if isdae && !matrix_free_dae
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage

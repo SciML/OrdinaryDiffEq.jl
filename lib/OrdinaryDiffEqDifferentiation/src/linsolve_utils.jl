@@ -36,17 +36,19 @@ function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
 end
 
 """
-    dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing, reltol = …) -> linres
+    dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing, reltol = …, abstol = nothing) -> linres
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
-resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerance
-`reltol` (see `set_linear_reltol!`). Charges `stats.nf` for the Jacobian-vector
+resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerances
+`reltol` (see `set_linear_reltol!`) and `abstol` (left unchanged when `nothing`; set only
+for an iterative solver). Charges `stats.nf` for the Jacobian-vector
 products the solve applied (see `drain_jvp_count!`) and returns the LinearSolve
 result.
 """
 function dolinsolve(
         integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        reltol = integrator === nothing ? nothing : integrator.opts.reltol
+        reltol = integrator === nothing ? nothing : integrator.opts.reltol,
+        abstol = nothing
     )
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
@@ -65,6 +67,9 @@ function dolinsolve(
         linsolve, reltol;
         default_algorithm = hasproperty(_alg, :linsolve) && isnothing(_alg.linsolve)
     )
+    if abstol !== nothing && !LinearSolve.needs_concrete_A(linsolve.alg)
+        LinearSolve.update_tolerances!(linsolve; abstol)
+    end
     linres = solve!(linsolve)
 
     # TODO: this ignores the add of the `f` count for add_steps!
