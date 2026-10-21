@@ -478,15 +478,13 @@ function residual_to_z_scale(nlsolver, isdae)
 end
 
 """
-    StageConvergenceMode(norm, κ, γΔt, owner)
+    StageConvergenceMode(norm, κ, owner)
 
 Termination mode for a complete inner solve on a `NonlinearSolveNoInitCache` that applies,
 to every inner iteration, the test `nlsolve!` applies to every outer one: with `ndz` the
 iteration's displacement in the integrator's weighted `norm`, an iteration converges when
 `θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` (or `θ ≈ 1` at `ndz ≤ 1`, the floating-point
-limit), or at once when `γΔt⋅fu` has fallen to the roundoff floor of the iterate, as in
-`stage_unsolved` — at the root a trust-region solver cannot take another step, since its
-reduction ratio is all roundoff.
+limit).
 
 A no-init cache cannot be stepped, so each outer iteration is a whole inner solve, and it
 ends on the inner solver's own criterion. Left at its default, `max|r| ≤ eps^(4/5)` on a
@@ -498,14 +496,17 @@ norm is not enough either: on a stiff, non-normal Jacobian a small weighted resi
 still leave a large weighted displacement.
 
 The first iteration never converges on its own, unlike in `nlsolve!` (`ndz < 1e-5`), because
-every outer iteration is a new inner solve and needs its own rate `θ`. An unmoved iterate is
-not a first iteration either: a trust-region solver checks its initial point before it has
-taken a step.
+every outer iteration is a new inner solve and needs its own rate `θ`.
+
+The test is only meaningful for an inner solver whose every step is a full Newton step, so
+that the displacement estimates the distance to the root (see `StageConvergenceAlgorithm`).
+The residual alone cannot stand in for it: neither a weighted residual bound nor a residual at
+the roundoff floor bounds the Newton correction when `W` is ill-conditioned, or when one large
+component sets the floor for all of them.
 """
-struct StageConvergenceMode{N, K, S, O} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
+struct StageConvergenceMode{N, K, O} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
     norm::N
     κ::K
-    γΔt::S
     owner::O
 end
 
@@ -523,10 +524,7 @@ function CommonSolve.init(
 end
 
 function (cache::StageConvergenceCache)(fu, u, uprev)
-    (; norm, κ, γΔt, owner) = cache.mode
-    resid = abs(γΔt) * maxabs(fu)
-    resid <= roundoff_level(typeof(resid)) * max(maxabs_axpy(γΔt, u, fu), maxabs(u)) &&
-        return true
+    (; norm, κ, owner) = cache.mode
     ndz = norm(u .- uprev)
     ndzprev = owner.inner_ndzprev
     if ndzprev < 0
@@ -556,19 +554,20 @@ function (n::StageDisplacementNorm)(dz)
     return n.internalnorm(atmp, n.t)
 end
 
-# Inner algorithms whose every step solves the Newton system with the true (or reused `W`)
-# Jacobian, so that the displacement measures the distance to the root. The quasi-Newton ones
-# (`SimpleBroyden`, `SimpleKlement`, ...) restart each solve from a scaled identity, and their
-# steps can be small far from the root; external wrappers reject a custom mode outright.
-const StageConvergenceAlgorithm = Union{SimpleNewtonRaphson, SimpleTrustRegion}
+# Inner algorithms whose every step is a full Newton step with the true (or reused `W`)
+# Jacobian. A trust-region solver can never certify a stage this way: at the root its
+# reduction ratio is all roundoff, it rejects every further step, and it stops on
+# `ShrinkThresholdExceeded`. Quasi-Newton solvers (`SimpleBroyden`, `SimpleKlement`, ...)
+# restart each solve from a scaled identity, and their steps can be small far from the root.
+# External wrappers reject a custom mode outright.
+const StageConvergenceAlgorithm = SimpleNewtonRaphson
 
 function noinit_termination_kwargs(nlsolver, integrator)
     nlsolver.cache.cache.alg isa StageConvergenceAlgorithm || return (;)
     (; opts, uprev, t) = integrator
     norm = StageDisplacementNorm(uprev, opts.abstol, opts.reltol, opts.internalnorm, t)
     κ = convert(real(eltype(nlsolver.z)), nlsolver.κ)
-    γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
-    mode = StageConvergenceMode(norm, κ, γΔt, nlsolver.cache)
+    mode = StageConvergenceMode(norm, κ, nlsolver.cache)
     return (; termination_condition = mode)
 end
 

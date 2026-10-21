@@ -130,8 +130,12 @@ end
         # The post-resize rebuild must preserve the no-init tolerances exactly as the
         # build path does; the only termination criterion is the per-solve one.
         @test !iszero(NonlinearSolveBase.get_abstol(nlcache))
-        @test nlcache.kwargs[:termination_condition] isa
-            OrdinaryDiffEqNonlinearSolve.StageConvergenceMode
+        if ialg isa SimpleNewtonRaphson
+            @test nlcache.kwargs[:termination_condition] isa
+                OrdinaryDiffEqNonlinearSolve.StageConvergenceMode
+        else
+            @test !haskey(nlcache.kwargs, :termination_condition)
+        end
     end
 end
 
@@ -199,9 +203,7 @@ end
 
 # The integrator's κ/η test accepts a stage once its estimated weighted error is below
 # κ = 1/100 (NLNewton stays under 0.04 here), so an accepted stage a whole tolerance unit off
-# the root was accepted by some other criterion. SimpleTrustRegion is checked for accuracy
-# only: it stalls on ROBER at every scale through repeated outer convergence failures, which
-# is unrelated to how its inner solve terminates.
+# the root was accepted by some other criterion.
 @testset "inner termination follows the integrator's tolerances (s = $s)" for s in
     (1.0e-10, 1.0e6)
     tspan = (0.0, 1.0e3)
@@ -212,11 +214,11 @@ end
             reltol, abstol
         ).t
     )
-    for iip in (true, false), ialg in (SimpleNewtonRaphson(), SimpleTrustRegion())
+    for iip in (true, false)
         prob = iip ? ODEProblem(rober_scaled!, [s, 0.0, 0.0], tspan, s) :
             ODEProblem(rober_scaled_oop, [s, 0.0, 0.0], tspan, s)
         integ = init(
-            prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(ialg));
+            prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson()));
             reltol, abstol, maxiters = 3 * ref_steps
         )
         worst = 0.0
@@ -226,11 +228,52 @@ end
             integ.accept_step || continue
             worst = max(worst, implicit_euler_stage_error(integ, s))
         end
-        @testset "$(nameof(typeof(ialg))) $(iip ? "iip" : "oop")" begin
+        @testset "$(iip ? "iip" : "oop")" begin
             @test worst < 1
-            if ialg isa SimpleNewtonRaphson
-                @test SciMLBase.successful_retcode(integ.sol.retcode)
-            end
+            @test SciMLBase.successful_retcode(integ.sol.retcode)
         end
     end
+end
+
+# Weighted RMS distance of one fixed ImplicitEuler step from the stage root.
+function one_step_stage_error(f, f!, u0, root, iip, inner; abstol, reltol)
+    prob = ODEProblem(iip ? f! : f, u0, (0.0, 1.0))
+    integ = init(
+        prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(inner));
+        dt = 1.0, adaptive = false, abstol, reltol
+    )
+    step!(integ)
+    w = abstol .+ reltol .* max.(abs.(integ.uprev), abs.(integ.u))
+    return integ.sol.retcode, sqrt(sum(abs2, (integ.u .- root) ./ w) / length(root))
+end
+
+# One large component must not set the convergence floor for a small one: the stage root of
+# `u' = [-u₁, -u₂²]`, `u₀ = [1e16, 1]`, `h = 1` is `[5e15, (√5 - 1)/2]`, and the Jacobian is
+# well conditioned.
+@testset "mixed-scale stage ($(nameof(typeof(inner))) $(iip ? "iip" : "oop"))" for inner in
+        (SimpleNewtonRaphson(), SimpleTrustRegion()), iip in (true, false)
+    f(u, p, t) = [-u[1], -u[2]^2]
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    retcode, err = one_step_stage_error(
+        f, f!, [1.0e16, 1.0], [5.0e15, (sqrt(5.0) - 1) / 2], iip, inner;
+        abstol = 1.0e-8, reltol = 1.0e-6
+    )
+    @test SciMLBase.successful_retcode(retcode)
+    @test err < 1
+end
+
+# A residual at the roundoff floor says nothing when `W` is ill-conditioned: the stage of
+# `u' = [(1 - δ)u₁ + 2δ, 1]` from `u₀ = 0` with `h = 1` is linear, `W = diag(δ, 1)`, and its root
+# is exactly `[2, 1]`.
+@testset "ill-conditioned stage (δ = $δ, $(iip ? "iip" : "oop"))" for δ in
+        (1.0e-12, eps(1.0)), iip in (true, false)
+    f(u, p, t) = [(1 - δ) * u[1] + 2δ, 1.0]
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    root = [2δ / (1 - (1 - δ)), 1.0]
+    retcode, err = one_step_stage_error(
+        f, f!, [0.0, 0.0], root, iip, SimpleNewtonRaphson();
+        abstol = 1.0e-10, reltol = 1.0e-8
+    )
+    @test SciMLBase.successful_retcode(retcode)
+    @test err < 1
 end
