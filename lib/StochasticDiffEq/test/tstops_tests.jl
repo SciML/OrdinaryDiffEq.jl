@@ -1,5 +1,5 @@
 using StochasticDiffEq, Test, Random
-using DiffEqNoiseProcess: WienerProcess, RSWM
+using DiffEqNoiseProcess: NoiseGrid, WienerProcess, RSWM
 using SDEProblemLibrary: prob_sde_linear
 Random.seed!(100)
 prob = prob_sde_linear
@@ -9,6 +9,26 @@ integrator = init(prob, EM(), dt = 1 // 2^(4), tstops = [0.33])
 # SciMLBase v3: `tuples(integrator)` removed; iterate integrator directly.
 for integ in integrator
     @show integ.u, integ.t
+end
+
+@testset "Fixed-step NoiseGrid reinit prepares shortened increment" begin
+    for advance in (step!, solve!)
+        W = NoiseGrid([0.0, 0.01, 0.02, 0.1], [0.0, 0.2, 0.15, 0.3])
+        level = Ref(0.0092)
+        cb = ContinuousCallback((u, t, integrator) -> t - level[], terminate!)
+        prob = SDEProblem((u, p, t) -> 0.0, (u, p, t) -> 1.0, 0.0, (0.0, 0.1); noise = W)
+        integrator = init(prob, EM(); dt = 0.01, tstops = [0.003], callback = cb)
+        solve!(integrator)
+
+        level[] = 2.0
+        reinit!(integrator; tf = 0.003)
+        @test integrator.dt == integrator.W.dt == 0.003
+        @test integrator.W.dW == 0.06
+
+        advance(integrator)
+        @test integrator.t == 0.003
+        @test integrator.u ≈ 0.06
+    end
 end
 
 sol = solve(prob, EM(), dt = 1 // 2^(4), tstops = [0.33])
@@ -103,4 +123,51 @@ for adaptivealg in (:RSwM1, :RSwM2, :RSwM3)
     @test 0.01 ∈ i.sol.t
     @test 0.331 ∈ i.sol.t
     @test i.sol.u[end] ≈ i.W.curW atol = 1.0e-12
+end
+
+@testset "Fixed-step reinit after callback termination" begin
+    f(u, p, t) = [0.0, 1.0]
+    g(u, p, t) = [0.1, 0.0]
+    prob = SDEProblem(f, g, [1.0, 0.0], (0.0, 1.0))
+    level = Ref(0.0)
+    cb = ContinuousCallback((u, t, integrator) -> u[2] - level[], terminate!)
+    for alg in (EM(), RKMilCommute())
+        integrator = init(prob, alg; dt = 0.01, adaptive = false, callback = cb, seed = 1)
+
+        for stop in (0.4908, 0.0092, 0.0632)
+            level[] = stop
+            reinit!(integrator)
+            @test integrator.dt == 0.01
+            @test integrator.W.dt == 0.01
+            @test integrator.sqdt ≈ sqrt(abs(integrator.dt))
+
+            solve!(integrator)
+            @test integrator.sol.retcode == ReturnCode.Terminated
+            @test integrator.W.curt == integrator.t
+            @test all(isfinite, integrator.u)
+        end
+    end
+end
+
+@testset "Fixed-step noise reinit direction and tstops" begin
+    f(u, p, t) = [0.0, 1.0]
+    g(u, p, t) = [0.1, 0.0]
+    for alg in (EM(), RKMilCommute()), tspan in ((0.0, 1.0), (1.0, 0.0)),
+            shorten in (false, true)
+        tdir = sign(tspan[2] - tspan[1])
+        tstops = shorten ? [tspan[1] + tdir * 0.003] : Float64[]
+        expected_dt = shorten ? only(tstops) - tspan[1] : tdir * 0.01
+        prob = SDEProblem(f, g, [1.0, tspan[1]], tspan)
+        integrator = init(prob, alg; dt = 0.01, adaptive = false, tstops, seed = 1)
+        reinit!(integrator)
+        @test integrator.dt == expected_dt
+        @test integrator.dtpropose == tdir * 0.01
+        @test integrator.W.dt == expected_dt
+        @test integrator.sqdt ≈ tdir * sqrt(abs(integrator.dt))
+
+        solve!(integrator)
+        @test integrator.sol.retcode == ReturnCode.Success
+        @test integrator.W.curt == integrator.t == tspan[2]
+        @test all(isfinite, integrator.u)
+    end
 end
