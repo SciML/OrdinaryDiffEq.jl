@@ -40,6 +40,7 @@ end
         @time @safetestset "DiffEqFunction tests" include("diffeqfunction_tests.jl")
         @time @safetestset "Internal Euler" include("internal_euler_test.jl")
         @time @safetestset "Norm" include("norm.jl")
+        @time @safetestset "Calculate Residuals" include("calculate_residuals.jl")
         @time @safetestset "Utils" include("utils.jl")
         @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
         @time @safetestset "ForwardDiff Dual Detection" include("forwarddiff_dual_detection.jl")
