@@ -106,6 +106,7 @@ end
         @time @safetestset "Callback BigFloats" include("downstream/bigfloat_events.jl")
         @time @safetestset "DE stats" include("downstream/stats_tests.jl")
         @time @safetestset "Community Callback Tests" include("downstream/community_callback_tests.jl")
+        @time @safetestset "ForwardDiff Event Time" include("downstream/forwarddiff_event_time.jl")
         @time @testset "Distributed Ensemble Tests" include("downstream/distributed_ensemble.jl")
     end
 
