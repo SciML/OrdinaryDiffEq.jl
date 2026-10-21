@@ -307,11 +307,34 @@ end
     norm_w = OrdinaryDiffEqNonlinearSolve.StageDisplacementNorm(
         [3.0], 1.0e-12, 1.0e-12, (x, t) -> norm(x), 0.0
     )
-    mode = OrdinaryDiffEqNonlinearSolve.StageConvergenceMode(norm_w, 0.01, owner)
+    newton_step(fu, x) = fu ./ cos.(x)
+    mode = OrdinaryDiffEqNonlinearSolve.StageConvergenceMode(norm_w, 0.01, owner, newton_step)
     sol = solve(
         NonlinearProblem((x, p) -> sin.(x), [Float64(pi)]), SimpleNewtonRaphson();
         termination_condition = mode
     )
     @test SciMLBase.successful_retcode(sol.retcode)
     @test abs(sol.u[1] - Float64(pi)) <= eps(Float64(pi))
+end
+
+# A correction that rounds away is not a converged one. The stage of
+# `u' = (u - 10¹⁶) - (u - 2) - 10⁻⁸(u - 2)²` from `u₀ = 10¹⁶`, `h = 1`, has the exact root 2, but
+# the predictor 4 sits where the in-place reused-`W` correction is below half an ulp of the
+# increment `z ≈ -10¹⁶`: the stored iterate does not move. The stage must not be accepted at 4.
+@testset "rounded-away correction ($(iip ? "iip" : "oop"))" for iip in (true, false)
+    function f(u, p, t)
+        x = u[1] - 2.0
+        return [(u[1] - 1.0e16) - (x + 1.0e-8 * x * x)]
+    end
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    predictor = iip ? ((u, uprev, p, t, dt) -> (u[1] = 4.0; nothing)) :
+        ((uprev, p, t, dt) -> [4.0])
+    integ = init(
+        ODEProblem(iip ? f! : f, [1.0e16], (0.0, 1.0)),
+        ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson(); predictor));
+        dt = 1.0, adaptive = false, abstol = 1.0e-12, reltol = 0.0
+    )
+    step!(integ)
+    @test !SciMLBase.successful_retcode(integ.sol.retcode) ||
+        abs(integ.u[1] - 2.0) <= 1.0e-12
 end
