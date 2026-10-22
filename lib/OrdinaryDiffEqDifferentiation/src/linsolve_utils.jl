@@ -36,17 +36,19 @@ function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
 end
 
 """
-    dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing, reltol = …) -> linres
+    dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing, reltol = …, abstol = nothing) -> linres
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
-resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerance
-`reltol` (see `set_linear_reltol!`). Charges `stats.nf` for the Jacobian-vector
+resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerances
+`reltol` (see `set_linear_reltol!`) and `abstol` (left unchanged when `nothing`; set only
+for an iterative solver). Charges `stats.nf` for the Jacobian-vector
 products the solve applied (see `drain_jvp_count!`) and returns the LinearSolve
 result.
 """
 function dolinsolve(
         integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        reltol = integrator === nothing ? nothing : integrator.opts.reltol
+        reltol = integrator === nothing ? nothing : integrator.opts.reltol,
+        abstol = nothing
     )
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
@@ -65,6 +67,9 @@ function dolinsolve(
         linsolve, reltol;
         default_algorithm = hasproperty(_alg, :linsolve) && isnothing(_alg.linsolve)
     )
+    if abstol !== nothing && !LinearSolve.needs_concrete_A(linsolve.alg)
+        LinearSolve.update_tolerances!(linsolve; abstol)
+    end
     linres = solve!(linsolve)
 
     # TODO: this ignores the add of the `f` count for add_steps!
@@ -109,11 +114,17 @@ end
 Attach a diagonal (`weight`-based) left/right preconditioner to `linsolver` when it
 supports `precs` and none was supplied, returning the reconfigured solver;
 otherwise return `linsolver` unchanged.
+
+For a matrix-free DAE `W` carrying a row matching (see `dae_row_matching`), the left
+preconditioner also permutes the residual rows onto the unknowns they are matched to.
 """
 function wrapprecs(linsolver, W, weight)
     if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
-        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
-        Pr = Diagonal(_vec(weight))
+        w = _vec(weight)
+        rowof = dae_rowof(W)
+        Pl = rowof === nothing ? LinearSolve.InvPreconditioner(Diagonal(w)) :
+            RowMatchedWeights(w, rowof, similar(w))
+        Pr = Diagonal(w)
         precs = Returns((Pl, Pr))
         return remake(linsolver; precs)
     else
@@ -122,3 +133,84 @@ function wrapprecs(linsolver, W, weight)
 end
 
 Base.resize!(p::LinearSolve.LinearCache, i) = p
+
+"""
+    RowMatchedWeights(weight, rowof, buffer)
+
+Left preconditioner applying `x -> weight .* x[rowof]`: the residual row `rowof[j]` is moved
+to position `j` and weighted as unknown `j`. With `rowof` a row matching of the DAE Newton
+matrix `W`, the permuted `W[rowof, :]` has a structurally nonzero diagonal, which for a DAE
+whose residual rows are ordered independently of its unknowns turns a GMRES solve needing
+about one iteration per unknown into one needing a handful.
+"""
+struct RowMatchedWeights{W, P}
+    weight::W
+    rowof::P
+    buffer::W
+end
+
+function LinearAlgebra.ldiv!(y::AbstractVector, P::RowMatchedWeights, x::AbstractVector)
+    P.buffer .= view(x, P.rowof)
+    y .= P.weight .* P.buffer
+    return y
+end
+LinearAlgebra.ldiv!(P::RowMatchedWeights, x::AbstractVector) = LinearAlgebra.ldiv!(x, P, x)
+
+"""
+    dae_row_matching(f::DAEFunction, alg, u, p, t) -> Vector{Int} or nothing
+
+A row matching `rowof` of the DAE Newton matrix `W = ∂F/∂u + cj * ∂F/∂(du)`: `rowof[j]` is
+the residual row matched to unknown `j`, and `W[rowof[j], j]` is structurally nonzero.
+Entries of `∂F/∂(du)` are matched first, since `cj * ∂F/∂(du)` dominates `W` at the step
+sizes a stiff solve takes, and a diagonal entry is preferred to any other, so a DAE whose
+rows are already ordered like its unknowns matches to the identity.
+
+The pattern of `W` is `f.sparsity` (which defaults to `f.jac_prototype`) or, failing that,
+the one traced by the sparsity detector of an `AutoSparse` `alg_autodiff(alg)`. Returns
+`nothing`, and the caller keeps the rows in place, when neither is available, when
+detecting the pattern or evaluating `∂F/∂(du)` on it throws, when `W` is structurally
+singular, or when the matching is the identity.
+"""
+function dae_row_matching(f::DAEFunction, alg, u, p, t)
+    ad = alg_autodiff(alg)
+    (f.sparsity isa AbstractMatrix || ad isa AutoSparse) || return nothing
+    pattern, J_du = try
+        dae_newton_pattern(f, ad, u, p, t)
+    catch
+        return nothing
+    end
+    rowof = row_matching(pattern, J_du)
+    (rowof === nothing || rowof == eachindex(rowof)) && return nothing
+    return rowof
+end
+
+# The sparsity pattern of `W`, and `∂F/∂(du)` evaluated on it at `du = 0`.
+function dae_newton_pattern(f, ad, u, p, t)
+    pattern = if f.sparsity isa AbstractMatrix
+        f.sparsity
+    else
+        # The Jacobian pattern of `F(x, x)` is that of `∂F/∂u + ∂F/∂(du)`.
+        ADTypes.jacobian_sparsity(
+            (res, x) -> f(res, x, x, p, t), similar(u), copy(u),
+            ADTypes.sparsity_detector(ad)
+        )
+    end
+    backend = AutoSparse(
+        ad isa AutoSparse ? ADTypes.dense_ad(ad) : ad;
+        sparsity_detector = ADTypes.KnownJacobianSparsityDetector(pattern),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    J_du = DI.jacobian((res, du) -> f(res, du, u, p, t), similar(u), backend, zero(u))
+    return pattern, J_du
+end
+
+"""
+    row_matching(pattern, preferred = nothing) -> Vector{Int} or nothing
+
+Maximum transversal of the square sparse `pattern` (MC21: depth-first augmenting paths),
+returning `rowof` with `rowof[j]` the row matched to column `j`, or `nothing` when `pattern`
+is structurally singular. The nonzero entries of `preferred`, a sub-pattern of `pattern`,
+are matched first, and each column tries its diagonal before its other rows. Defined for
+`SparseMatrixCSC` by the SparseArrays extension.
+"""
+row_matching(pattern, preferred = nothing) = nothing
