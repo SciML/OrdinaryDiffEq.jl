@@ -23,11 +23,13 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "DAE Convergence Tests" include("dae_convergence_tests.jl")
     @time @safetestset "DAE AD Tests" include("dae_ad_tests.jl")
+    @time @safetestset "DAE AutoSparse Tests" include("dae_autosparse_tests.jl")
     @time @safetestset "DAE Event Tests" include("dae_event.jl")
     @time @safetestset "DAE derivative_discontinuity! Tests" include("dae_derivative_discontinuity_tests.jl")
     @time @safetestset "DAE Initialization Tests" include("dae_initialization_tests.jl")
     @time @safetestset "DAE Nonlinear Solve Path Tests" include("dae_nlsolve_path_tests.jl")
     @time @safetestset "DAE Sparse Jacobian Tests" include("dae_sparse_jacobian_tests.jl")
+    @time @safetestset "DAE Krylov Tests" include("dae_krylov_tests.jl")
 
     @time @safetestset "BDF Inference Tests" include("inference_tests.jl")
     @time @safetestset "BDF Convergence Tests" include("bdf_convergence_tests.jl")
