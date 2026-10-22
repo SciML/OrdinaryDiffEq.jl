@@ -50,7 +50,7 @@ run_qa(
                 Symbol("prepare!_derivative"), Symbol("prepare!_jacobian"),
                 # this sublib's own internal sparse-handling API, accessed
                 # qualified from OrdinaryDiffEqDifferentiationSparseArraysExt
-                :get_nzval, :is_sparse, :is_sparse_csc, :nonzeros,
+                :get_nzval, :is_sparse, :is_sparse_csc, :jac_from_pattern, :nonzeros,
                 Symbol("set_all_nzval!"), :spzeros, :_update_sparse_diagonal!,
             ),
         ),
