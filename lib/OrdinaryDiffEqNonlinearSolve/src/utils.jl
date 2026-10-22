@@ -942,16 +942,22 @@ function build_nlsolver(
             else
                 (;)
             end
+            # A `DAEFunction`'s only operator `W` is the matrix-free `dae_jvp_cache`.
+            # `compute_step!` sets its Krylov `abstol` relative to each step's residual;
+            # a fixed one would be in the units of `F`, which the user can scale freely.
+            matrix_free_dae = isdae && J isa AbstractSciMLOperator
+            linabstol = matrix_free_dae ? (; abstol = zero(uTolType)) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
-                precs...,
+                precs..., linabstol...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
             )
 
-            # Build separated DAE Jacobian cache if applicable
-            if isdae
+            # Build separated DAE Jacobian cache if applicable. A matrix-free W never
+            # forms J_u or J_du.
+            if isdae && !matrix_free_dae
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
