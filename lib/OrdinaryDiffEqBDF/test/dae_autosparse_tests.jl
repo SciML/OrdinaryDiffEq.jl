@@ -71,7 +71,7 @@ end
 function decay!(r, du, u, p, t)
     r[1] = du[1] + u[1]
     r[2] = u[2] - u[1]
-    nothing
+    return nothing
 end
 
 @testset "Known sparsity pattern with stored zeros" begin
