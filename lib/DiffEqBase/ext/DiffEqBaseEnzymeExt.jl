@@ -2,7 +2,7 @@ module DiffEqBaseEnzymeExt
 
 @static if isempty(VERSION.prerelease)
     using DiffEqBase
-    import DiffEqBase: value
+    import DiffEqBase: value, SciMLStructures
     using Enzyme
     import Enzyme: Const, MixedDuplicated
     using ChainRulesCore
@@ -96,6 +96,37 @@ module DiffEqBaseEnzymeExt
         nothing
     end
 
+    # The returned solution's `prob.p` is built from the `p` argument (possibly wrapped
+    # in `DespecializedParameters`), so whatever the caller computed from `sol.prob.p`
+    # — e.g. an observed variable read with `sol[sym]` — left its derivative in
+    # `dval.prob.p`. The ChainRules pullback never reads it, so route its tunable part
+    # into the shadow of `p` here, and zero what was read so it is consumed exactly once.
+    function _accumulate_solution_p!(p, dval, rta)
+        p isa Union{Duplicated, MixedDuplicated} || return nothing
+        (hasproperty(dval, :prob) && hasproperty(dval.prob, :p)) || return nothing
+        pdval = p isa MixedDuplicated ? p.dval[] : p.dval
+        rta && pdval === p.val && return nothing
+        _accumulate_shadow!(pdval, SciMLBase.unwrap_parameters(dval.prob.p))
+        return nothing
+    end
+
+    # Parameter types not handled below (tuples, plain structs, ...) keep the previous
+    # behavior: this part of the gradient is not propagated.
+    function _accumulate_shadow!(dp, ds)
+        if dp isa AbstractArray{<:Number} && ds isa AbstractArray{<:Number}
+            dp .+= ds
+            fill!(ds, false)
+        elseif typeof(dp) === typeof(ds) && SciMLStructures.isscimlstructure(dp)
+            tp, _, aliases = SciMLStructures.canonicalize(SciMLStructures.Tunable(), dp)
+            ts, _, aliases_s = SciMLStructures.canonicalize(SciMLStructures.Tunable(), ds)
+            if aliases && aliases_s
+                tp .+= ts
+                fill!(ts, false)
+            end
+        end
+        return nothing
+    end
+
     function Enzyme.EnzymeRules.reverse(
             config::Enzyme.EnzymeRules.RevConfigWidth{1},
             func::Const{typeof(DiffEqBase.solve_up)}, ::Union{Type{Duplicated{RT}}, Type{MixedDuplicated{RT}}}, tape, prob,
@@ -110,11 +141,13 @@ module DiffEqBaseEnzymeExt
             # MixedDuplicated case; unwrap before handing the cotangent to the
             # ChainRules pullback (which expects the bare ODESolution tangent).
             dval = dres isa Base.RefValue ? dres[] : dres
+            rta = Enzyme.EnzymeRules.runtime_activity(config) # detect runtime activity
+            # Before the pullback, so it never sees (and cannot count again) this part.
+            _accumulate_solution_p!(p, dval, rta)
             dargs = clos(dval)
             # `sensealg` is inactive (see augmented_primal note); skip its slot
             # whether it arrived as Const or as a runtime-activity-promoted
             # Duplicated/MixedDuplicated/Active.
-            rta = Enzyme.EnzymeRules.runtime_activity(config) # detect runtime activity
             for (darg, ptr) in zip(dargs, (func, prob, sensealg, u0, p, args...))
                 if ptr isa Enzyme.Const
                     continue

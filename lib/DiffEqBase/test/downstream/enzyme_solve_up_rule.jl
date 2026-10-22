@@ -55,3 +55,33 @@ end
     g = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_active, copy(x0), Const(q))[1]
     @test g ≈ g_ref rtol = 1.0e-5
 end
+
+@testset "parameter derivative read from the solution's problem" begin
+    # A loss can depend on `p` through the returned solution, e.g. an observed variable
+    # evaluated with `sol.prob.p` (SciML/SciMLSensitivity.jl#1714). Enzyme accumulates
+    # that part into the shadow of `sol.prob.p`, which the rule must route back to `p`
+    # exactly once.
+    function loss_prob_p(p, q, sensealg)
+        sol = solve(remake(q[1]; p), Vern7(); sensealg, solve_kwargs...)
+        return sum(abs2, Array(sol)) + sum(abs2, sol.prob.p)
+    end
+
+    q = (prob,)
+    @testset "$(nameof(typeof(sensealg)))" for sensealg in (
+            GaussAdjoint(autojacvec = EnzymeVJP()),
+            InterpolatingAdjoint(autojacvec = EnzymeVJP()),
+            QuadratureAdjoint(autojacvec = EnzymeVJP()),
+        )
+        g_ref = ForwardDiff.gradient(p -> loss_prob_p(p, q, nothing), p_init)
+        g1 = Enzyme.gradient(
+            set_runtime_activity(Enzyme.Reverse), loss_prob_p, copy(p_init), Const(q),
+            Const(sensealg)
+        )[1]
+        @test g1 ≈ g_ref rtol = 1.0e-5
+        g2 = Enzyme.gradient(
+            set_runtime_activity(Enzyme.Reverse), loss_prob_p, copy(p_init), Const(q),
+            Const(sensealg)
+        )[1]
+        @test g2 ≈ g1
+    end
+end
