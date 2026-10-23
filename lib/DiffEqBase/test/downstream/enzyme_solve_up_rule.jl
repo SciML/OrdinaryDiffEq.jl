@@ -4,7 +4,8 @@
 # "shadow" IS the primal). First gradient call used to be correct while silently
 # corrupting `prob.u0`; the second call then returned garbage.
 #
-# Deps: SciMLSensitivity (real adjoint), OrdinaryDiffEqVerner, Enzyme, ForwardDiff.
+# Deps: SciMLSensitivity (real adjoint), OrdinaryDiffEqVerner, Enzyme, ForwardDiff,
+# ModelingToolkit, SymbolicIndexingInterface.
 
 using DiffEqBase, Enzyme, Test
 using SciMLSensitivity
@@ -83,5 +84,59 @@ end
             Const(sensealg)
         )[1]
         @test g2 ≈ g1
+    end
+end
+
+# The case from SciML/SciMLSensitivity.jl#1714: an MTK observed variable read from the
+# solution. MTK problems default to `AutoDespecialize`, so the shadow of `sol.prob.p` is a
+# `DespecializedParameters` around an `MTKParameters`, and the rule has to route its
+# tunable buffer back to `p`.
+using ModelingToolkit, SymbolicIndexingInterface
+import SciMLBase
+using ModelingToolkit: t_nounits as t, D_nounits as D
+
+@parameters k = 1.0 c = 0.5
+@variables x(t) = 1.0 y(t)
+obs_sys = mtkcompile(System([D(x) ~ -k * x, y ~ x + c], t; name = :obs))
+obs_prob = ODEProblem(obs_sys, [], (0.0, 2.0))
+const obs_setter = setsym_oop(obs_prob, [obs_sys.k, obs_sys.c])
+const get_x = getsym(obs_prob, obs_sys.x)
+const get_y = getsym(obs_prob, obs_sys.y)
+
+function obs_solve(θ, prob, sensealg)
+    u0, p = obs_setter(prob, θ)
+    return solve(remake(prob; u0, p), Vern7(); saveat = 0.1, sensealg, solve_kwargs...)
+end
+# `y = x + c` over 21 save points, so ∂L/∂c = 21 exactly; `c` only enters through `y`.
+loss_observed(θ, prob, sensealg) = sum(get_y(obs_solve(θ, prob, sensealg)))
+# Mixed: the state part goes through the adjoint, the observed part through `sol.prob.p`.
+function loss_mixed(θ, prob, sensealg)
+    sol = obs_solve(θ, prob, sensealg)
+    return sum(abs2, get_x(sol)) + sum(abs2, get_y(sol))
+end
+
+@testset "MTK observed variable read from the solution" begin
+    @test SciMLBase.unwrap_parameters(obs_prob.p) isa ModelingToolkit.MTKParameters
+    θ = [1.0, 0.5]
+    @testset "$(sensealg === nothing ? "automatic" : nameof(typeof(sensealg)))" for sensealg in (
+            nothing,
+            GaussAdjoint(autojacvec = EnzymeVJP()),
+            InterpolatingAdjoint(autojacvec = EnzymeVJP()),
+            QuadratureAdjoint(autojacvec = EnzymeVJP()),
+        )
+        @testset "$(nameof(loss))" for loss in (loss_observed, loss_mixed)
+            g_ref = ForwardDiff.gradient(θ -> loss(θ, obs_prob, nothing), θ)
+            g1 = Enzyme.gradient(
+                set_runtime_activity(Enzyme.Reverse), loss, copy(θ), Const(obs_prob),
+                Const(sensealg)
+            )[1]
+            @test g1 ≈ g_ref rtol = 1.0e-5
+            loss === loss_observed && @test g1[2] ≈ 21 rtol = 1.0e-8
+            g2 = Enzyme.gradient(
+                set_runtime_activity(Enzyme.Reverse), loss, copy(θ), Const(obs_prob),
+                Const(sensealg)
+            )[1]
+            @test g2 ≈ g1
+        end
     end
 end
