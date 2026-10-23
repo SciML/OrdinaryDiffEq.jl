@@ -106,9 +106,10 @@ const get_y = getsym(obs_prob, obs_sys.y)
 
 function obs_solve(θ, prob, sensealg)
     u0, p = obs_setter(prob, θ)
-    return solve(remake(prob; u0, p), Vern7(); saveat = 0.1, sensealg, solve_kwargs...)
+    return solve(remake(prob; u0, p), Vern7(); sensealg, solve_kwargs...)
 end
-# `y = x + c` over 21 save points, so ∂L/∂c = 21 exactly; `c` only enters through `y`.
+# `y = x + c` summed over the save points, so ∂L/∂c is exactly their number; `c` only
+# enters through `y`.
 loss_observed(θ, prob, sensealg) = sum(get_y(obs_solve(θ, prob, sensealg)))
 # Mixed: the state part goes through the adjoint, the observed part through `sol.prob.p`.
 function loss_mixed(θ, prob, sensealg)
@@ -132,7 +133,9 @@ end
                 Const(sensealg)
             )[1]
             @test g1 ≈ g_ref rtol = 1.0e-5
-            loss === loss_observed && @test g1[2] ≈ 21 rtol = 1.0e-8
+            if loss === loss_observed
+                @test g1[2] ≈ length(obs_solve(θ, obs_prob, nothing).t) rtol = 1.0e-8
+            end
             g2 = Enzyme.gradient(
                 set_runtime_activity(Enzyme.Reverse), loss, copy(θ), Const(obs_prob),
                 Const(sensealg)
