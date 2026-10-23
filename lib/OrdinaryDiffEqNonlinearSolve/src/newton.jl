@@ -733,10 +733,11 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         )
     end
     dz = _restructure_state(ztmp, W \ _vec(ztmp))
-    dz = relax(dz, nlsolver, integrator, f)
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end
+    dz = relax(dz, nlsolver, integrator, f)
+    dz === nothing && return convert(eltype(ztmp), Inf)
 
     atmp = calculate_residuals(
         dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -818,7 +819,7 @@ end
     γdt = isdae ? α * invγdt : γ * dt
 
     !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
-    relax!(dz, nlsolver, integrator, f)
+    relax!(dz, nlsolver, integrator, f) === nothing && return convert(eltype(atmp), Inf)
 
     calculate_residuals!(
         atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -1020,12 +1021,8 @@ function relax!(
         (; uprev, t, p, dt, opts, isdae) = integrator
         (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt, lsweight) = cache
-        # Freeze the tolerance weights at this (pre-relaxation) iterate for the whole
-        # search below: `calculate_residuals!` would otherwise recompute them from the
-        # trial `ustep2` at every α, making ϕ a different weighted norm at each point.
-        # `lsweight` is a cache field dedicated to this (not `cache.weight`, which is
-        # aliased into a Krylov preconditioner elsewhere and must not change
-        # mid-solve), so recomputing it every call does not allocate.
+        # Keep the merit's weights fixed during the search, independently of the
+        # Krylov preconditioner's cache.weight buffer.
         calculate_residuals!(
             lsweight, fill!(lsweight, one(eltype(ustep))), uprev, ustep,
             opts.abstol, opts.reltol, opts.internalnorm, t
@@ -1066,17 +1063,18 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0 = ϕ(zero(α0))
-        # dz solves W*dz = b with b = R(z), so d/dα R(z - α*dz)|_0 = -J*dz ≈ -b, and
-        # for a norm built from a fixed inner product (`internalnorm`'s weighted RMS
-        # norm, a scalar multiple of the Euclidean norm, is), d/dα‖D*R‖ at α=0 is then
-        # exactly -ϕ0: never positive, so BackTracking's precondition always holds.
-        # This replaces a finite-difference estimate of the same quantity, which
-        # rounds 1-6 found unreliable in both directions regardless of any threshold
-        # on it: a fixed probe step can misresolve the sign whether `dz` is tiny
-        # relative to `z` (false ascent) or `z` is tiny/stationary relative to the
-        # probe (false descent), and no rescaling of the threshold fixes both.
+        # The Newton model has norm derivative -ϕ0; a stale W can disagree with it.
         dϕ0 = -ϕ0
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        @.. atmp = dz * lsweight
+        ndz_undamped = opts.internalnorm(atmp, t)
+        if has_special_newton_error(integrator.alg)
+            ndz_undamped *= error_constant(integrator, alg_order(integrator.alg))
+        end
+        α, ϕ_accepted = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        # Armijo can round to equality at a tiny α despite an unconverged correction.
+        if α < 1 && ϕ_accepted >= ϕ0 && ndz_undamped > 1
+            return nothing
+        end
         @.. dz = dz * α
         return dz
     end
@@ -1110,8 +1108,10 @@ function relax(
             linesearch = linesearch
 
         (; uprev, t, p, dt, opts) = integrator
-        (; z, tmp, ztmp, γ, iter, cache, method) = nlsolver
-        (; ustep, atmp, tstep, k, invγdt) = cache
+        (; z, tmp, ztmp, γ, α, iter, cache, method) = nlsolver
+        (; tstep, invγdt) = cache
+        ustep = f isa DAEFunction ? get_dae_uprev(integrator, uprev) .+ z :
+            compute_ustep(tmp, γ, z, method)
         # See the matching freeze in `relax!`.
         weight = calculate_residuals(
             one.(ustep), uprev, ustep, opts.abstol, opts.reltol,
@@ -1121,9 +1121,9 @@ function relax(
             # recompute residual (rhs)
             if f isa DAEFunction
                 _uprev = get_dae_uprev(integrator, uprev)
-                ztmp, ustep2 = _compute_rhs(tmp, α, tstep, invγdt, p, dt, _uprev, f, z)
+                ztmp, ustep2 = _compute_rhs(tmp, α, tstep, invγdt, p, _uprev, f, z)
             else
-                ztmp, ustep2 = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, f, z)
+                ztmp, ustep2 = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, dt, f, z)
             end
             atmp = ztmp .* weight
             ndz = opts.internalnorm(atmp, t)
@@ -1146,9 +1146,16 @@ function relax(
         end
         α0 = one(eltype(dz))
         ϕ0 = ϕ(zero(α0))
-        # See the matching analytic slope in `relax!`.
+        # See the matching Newton model and convergence scaling in `relax!`.
         dϕ0 = -ϕ0
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        ndz_undamped = opts.internalnorm(dz .* weight, t)
+        if has_special_newton_error(integrator.alg)
+            ndz_undamped *= error_constant(integrator, alg_order(integrator.alg))
+        end
+        α, ϕ_accepted = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        if α < 1 && ϕ_accepted >= ϕ0 && ndz_undamped > 1
+            return nothing
+        end
         dz = dz * α
         return dz
     end
