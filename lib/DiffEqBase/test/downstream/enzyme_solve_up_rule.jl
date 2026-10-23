@@ -5,7 +5,7 @@
 # corrupting `prob.u0`; the second call then returned garbage.
 #
 # Deps: SciMLSensitivity (real adjoint), OrdinaryDiffEqVerner, Enzyme, ForwardDiff,
-# ModelingToolkit, SymbolicIndexingInterface.
+# ModelingToolkit, ModelingToolkitBase, SymbolicIndexingInterface.
 
 using DiffEqBase, Enzyme, Test
 using SciMLSensitivity
@@ -93,6 +93,7 @@ end
 # tunable buffer back to `p`.
 using ModelingToolkit, SymbolicIndexingInterface
 import SciMLBase
+using ModelingToolkitBase: MTKParameters
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
 @parameters k = 1.0 c = 0.5
@@ -116,7 +117,7 @@ function loss_mixed(θ, prob, sensealg)
 end
 
 @testset "MTK observed variable read from the solution" begin
-    @test SciMLBase.unwrap_parameters(obs_prob.p) isa ModelingToolkit.MTKParameters
+    @test SciMLBase.unwrap_parameters(obs_prob.p) isa MTKParameters
     θ = [1.0, 0.5]
     @testset "$(sensealg === nothing ? "automatic" : nameof(typeof(sensealg)))" for sensealg in (
             nothing,
