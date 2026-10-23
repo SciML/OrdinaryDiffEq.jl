@@ -1065,7 +1065,12 @@ function relax!(
         ϕ0 = ϕ(zero(α0))
         # The Newton model has norm derivative -ϕ0; a stale W can disagree with it.
         dϕ0 = -ϕ0
-        @.. atmp = dz * lsweight
+        # Coefficient-multistep ODEs keep their current state in z.
+        norm_ustep = !isdae && method === COEFFICIENT_MULTISTEP ? z : ustep
+        calculate_residuals!(
+            atmp, dz, uprev, norm_ustep, opts.abstol, opts.reltol,
+            opts.internalnorm, t
+        )
         ndz_undamped = opts.internalnorm(atmp, t)
         if has_special_newton_error(integrator.alg)
             ndz_undamped *= error_constant(integrator, alg_order(integrator.alg))

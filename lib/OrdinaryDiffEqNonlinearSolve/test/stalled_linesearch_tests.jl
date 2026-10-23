@@ -1,6 +1,6 @@
 using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqSDIRK, DiffEqBase, LineSearches, LinearAlgebra, Test
-using OrdinaryDiffEqBDF: DImplicitEuler, QNDF
+using OrdinaryDiffEqBDF: DImplicitEuler, QNDF, QBDF
 
 @testset "Stalled Newton line search" begin
     ϵ = 1.0e-5
@@ -44,6 +44,21 @@ using OrdinaryDiffEqBDF: DImplicitEuler, QNDF
             @test sol.retcode != SciMLBase.ReturnCode.Success ||
                 norm(Fstage(sol.u[end][1:2]), Inf) <= 1.0e-3
         end
+    end
+end
+
+@testset "Coefficient-multistep correction tolerance" begin
+    magnitude = 1.0e16
+    f!(du, u, p, t) = (du[1] = 5 * (u[1] - magnitude) + magnitude + 2)
+    jac!(J, u, p, t) = (J[1, 1] = 5)
+    predictor!(u, uprev, p, t, dt) = fill!(u, magnitude)
+    prob = ODEProblem(ODEFunction(f!; jac = jac!), [1.0], (0.0, 1.0))
+    # The correction is below one ULP of the predictor and within its relative tolerance.
+    for relax in (nothing, BackTracking(), LineSearches.Static()), always_new in (false, true)
+        alg = QBDF(nlsolve = NLNewton(; relax, predictor = predictor!, always_new))
+        sol = solve(prob, alg; dt = 1.0, adaptive = false, abstol = 1.0e-3, reltol = 1.0e-6)
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end] == [magnitude]
     end
 end
 
