@@ -4,7 +4,8 @@ using OrdinaryDiffEqCore: DEVerbosity, SciMLLogging   # SciMLLogging is not a te
 # `find_discontinuity` reads the step state through the zero function of a discontinuity problem,
 # which `__init` keeps behind a `FunctionWrapper`. For a tuple of callbacks that function's type is
 # known from the integrator, so the reads are static and the bracket is a `Tuple`; the root is the
-# same as through the wrapper.
+# same as through the wrapper. A `FullSpecialize` problem keeps its callbacks in a tuple; the other
+# specializations store them type-erased on Julia 1.12 and later.
 f!(du, u, p, t) = (du[1] = 1.0; nothing)
 cond(u, t, integrator) = t - 1.0
 vcond(out, u, t, integrator) = (out[1] = t - 1.0; out[2] = u[1] - 10.0; nothing)
@@ -24,7 +25,7 @@ const DYNAMIC = (
 )
 
 @testset "typed discontinuity detection" begin
-    prob = ODEProblem(f!, [0.0], (0.0, 2.0))
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(f!, [0.0], (0.0, 2.0))
     for (cb, name) in (
             (ContinuousCallback(cond, noop!), "scalar"),
             (VectorContinuousCallback(vcond, vnoop!, 2), "vector"),
