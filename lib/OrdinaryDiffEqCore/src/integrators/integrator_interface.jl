@@ -667,6 +667,9 @@ function SciMLBase.reinit!(
     end
 
     if reinit_cache
+        integrator.eigen_est = inv(one(integrator.eigen_est))
+        reinit_choice_function!(integrator.alg)
+        reinit_nlsolver!(integrator.cache)
         initialize!(integrator, integrator.cache)
     end
 
