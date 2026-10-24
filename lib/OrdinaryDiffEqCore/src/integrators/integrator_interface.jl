@@ -505,6 +505,27 @@ function SciMLBase.set_rng!(integrator::ODEIntegrator, rng)
     return nothing
 end
 
+function reinit_nlsolver!(cache)
+    isdefined(cache, :nlsolver) || return nothing
+    nlsolver = cache.nlsolver
+    for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
+        hasfield(typeof(nls), :prev_θ) && (nls.prev_θ = one(nls.prev_θ))
+        hasfield(typeof(nls), :cache) && hasfield(typeof(nls.cache), :firstcall) &&
+            (nls.cache.firstcall = true)
+    end
+    return nothing
+end
+reinit_nlsolver!(cache::CompositeCache) = foreach(reinit_nlsolver!, cache.caches)
+function reinit_nlsolver!(cache::DefaultCache)
+    isdefined(cache, :cache1) && reinit_nlsolver!(cache.cache1)
+    isdefined(cache, :cache2) && reinit_nlsolver!(cache.cache2)
+    isdefined(cache, :cache3) && reinit_nlsolver!(cache.cache3)
+    isdefined(cache, :cache4) && reinit_nlsolver!(cache.cache4)
+    isdefined(cache, :cache5) && reinit_nlsolver!(cache.cache5)
+    isdefined(cache, :cache6) && reinit_nlsolver!(cache.cache6)
+    return nothing
+end
+
 SciMLBase.has_reinit(integrator::ODEIntegrator) = true
 function SciMLBase.reinit!(
         integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
