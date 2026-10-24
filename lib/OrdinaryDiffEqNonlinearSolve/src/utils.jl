@@ -1373,38 +1373,6 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
     return nothing
 end
 
-## reinit
-
-function reinit_nlsolver!(cache::OrdinaryDiffEqCore.OrdinaryDiffEqCache)
-    isdefined(cache, :nlsolver) || return nothing
-    (; nlsolver) = cache
-    for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
-        reinit_nlsolver!(nls)
-    end
-    return nothing
-end
-
-function reinit_nlsolver!(cache::OrdinaryDiffEqCore.CompositeCache)
-    foreach(reinit_nlsolver!, cache.caches)
-    return nothing
-end
-
-function reinit_nlsolver!(cache::OrdinaryDiffEqCore.DefaultCache)
-    isdefined(cache, :cache1) && reinit_nlsolver!(cache.cache1)
-    isdefined(cache, :cache2) && reinit_nlsolver!(cache.cache2)
-    isdefined(cache, :cache3) && reinit_nlsolver!(cache.cache3)
-    isdefined(cache, :cache4) && reinit_nlsolver!(cache.cache4)
-    isdefined(cache, :cache5) && reinit_nlsolver!(cache.cache5)
-    isdefined(cache, :cache6) && reinit_nlsolver!(cache.cache6)
-    return nothing
-end
-
-function reinit_nlsolver!(nlsolver::AbstractNLSolver)
-    hasfield(typeof(nlsolver), :prev_θ) && (nlsolver.prev_θ = one(nlsolver.prev_θ))
-    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
-    return nothing
-end
-
 function Base.resize!(nlsolver::AbstractNLSolver, integrator, i::Int)
     resize!(nlsolver.z, i)
     resize!(nlsolver.tmp, i)
