@@ -37,6 +37,7 @@ end
             "ModelingToolkit", "Sundials",
         )
         @time @safetestset "Callbacks" include("callbacks.jl")
+        @time @safetestset "Callback root solve verbosity" include("callback_root_verbosity.jl")
         @time @safetestset "Plot Vars" include("plot_vars.jl")
         @time @safetestset "Problem Creation Tests" include("problem_creation_tests.jl")
         @time @safetestset "Export tests" include("export_tests.jl")

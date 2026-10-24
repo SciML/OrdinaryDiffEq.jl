@@ -443,9 +443,9 @@ per-component event mask. The event time is found by rootfinding on the callback
                     cbi_t = top_t
                 else
                     if integrator.event_last_time == callback_idx && prev_simultaneous_events[idx]
-                        cbi_t = find_root(zero_func, (nudged_t, top_t), callback.rootfind)
+                        cbi_t = find_root(zero_func, (nudged_t, top_t), callback.rootfind; root_verbosity(integrator)...)
                     else
-                        cbi_t = find_root(zero_func, (bottom_t, top_t), callback.rootfind)
+                        cbi_t = find_root(zero_func, (bottom_t, top_t), callback.rootfind; root_verbosity(integrator)...)
                     end
                 end
                 if integrator.tdir * cbi_t < integrator.tdir * callback_t
@@ -507,7 +507,7 @@ end
     else
         # Find callback time
         zero_func(abst, p = nothing) = get_condition(integrator, callback, abst)
-        callback_t = find_root(zero_func, (bottom_t, top_t), callback.rootfind)
+        callback_t = find_root(zero_func, (bottom_t, top_t), callback.rootfind; root_verbosity(integrator)...)
         residual = zero_func(callback_t)
     end
 
@@ -590,10 +590,10 @@ Assumes that:
  - `tup[1] > tup[2]` for a backward integration
  - The nonlinear solver return left/right roots in the same order as `tup[1]`/`tup[2]`
 """
-function find_root(f, tup, rootfind::SciMLBase.RootfindOpt)
+function find_root(f, tup, rootfind::SciMLBase.RootfindOpt; kwargs...)
     sol = solve(
         IntervalNonlinearProblem{false}(f, tup),
-        ModAB(), abstol = 0.0, reltol = 0.0
+        ModAB(); abstol = 0.0, reltol = 0.0, kwargs...
     )
     if rootfind == SciMLBase.LeftRootFind
         return sol.left
@@ -601,6 +601,20 @@ function find_root(f, tup, rootfind::SciMLBase.RootfindOpt)
         return sol.right
     end
 end
+
+"""
+    root_verbosity(integrator)
+
+Keyword arguments giving a callback's root solve the integrator's nonlinear verbosity:
+`(; verbose = integrator.opts.verbose.nonlinear_verbosity)` when the integrator's options hold
+a `DEVerbosity`, otherwise none (the root solver's default).
+"""
+function root_verbosity(integrator)
+    v = _options_verbose(integrator)
+    return v isa DEVerbosity ? (; verbose = v.nonlinear_verbosity) : (;)
+end
+_options_verbose(integrator) = hasproperty(integrator, :opts) ? _verbose_field(integrator.opts) : nothing
+_verbose_field(opts) = hasproperty(opts, :verbose) ? opts.verbose : nothing
 
 """
 findall_events!(next_sign, prev_sign)
