@@ -247,6 +247,13 @@ Resize the nonlinear solver's internal buffers to state length `i` after the sta
 size changes. No-op fallback.
 """
 resize_nlsolver!(args...) = nothing
+"""
+    reinit_nlsolver!(cache)
+
+Reset the nonlinear solver state that carries over between solves (convergence rate
+estimate, Jacobian and `W` freshness) for `reinit!`. No-op fallback.
+"""
+reinit_nlsolver!(args...) = nothing
 
 """
     MethodType
@@ -447,7 +454,7 @@ include("precompilation_setup.jl")
             :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
             :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
             :PIDController, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
-            :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
+            :qmax_default, :qmin_default, :reinit_controller!, :reinit_nlsolver!, :resize_J_W!, :resize_nlsolver!,
             :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
             :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
             :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
