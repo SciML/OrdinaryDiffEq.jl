@@ -69,5 +69,8 @@ decay = ODEProblem(decay!, [1.0], (0.0, 1.0))
     )
     integ = init(decay, DefaultODEAlgorithm(); callback = stop)
     solve!(integ)
-    @test (reinit!(integ); true)
+    reinit!(integ)
+    @test integ.sol.retcode == SciMLBase.ReturnCode.Terminated
+    solve!(integ)
+    @test integ.sol.retcode == SciMLBase.ReturnCode.Terminated
 end
