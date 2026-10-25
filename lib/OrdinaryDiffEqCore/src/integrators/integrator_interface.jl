@@ -685,6 +685,11 @@ function SciMLBase.reinit!(
         update_uprev!(integrator)
     end
 
+    # before the callbacks are initialized, so that a status one of them sets (`terminate!`) is kept
+    if reinit_retcode && !(reinit_dae && implicit_discrete)
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
+    end
+
     if reinit_callbacks
         initialize_callbacks!(integrator, initialize_save)
     end
@@ -698,10 +703,6 @@ function SciMLBase.reinit!(
 
     if reset_dt && iszero(integrator.dt) && !isempty(integrator.opts.tstops)
         auto_dt_reset!(integrator)
-    end
-
-    if reinit_retcode && !(reinit_dae && implicit_discrete)
-        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 
     reinit_noise!(_get_W(integrator), integrator.dt)
