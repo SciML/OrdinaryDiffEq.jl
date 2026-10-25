@@ -68,17 +68,25 @@ const DYNAMIC = (
     )
     straddle!(vinteg, 1.5)
     @test OrdinaryDiffEqCore.find_discontinuity(vinteg) ≈ 2 / 3 atol = 1.0e-8
-    # end to end with the detection on: the time root is hit and the solve succeeds
-    sols = map((SciMLLogging.Standard(), SciMLLogging.None())) do v
-        integ = init(
-            prob, Tsit5(); callback = ContinuousCallback(cond, noop!), verbose = DEVerbosity(v),
-            controller = OrdinaryDiffEqCore.PIController(Float64, Tsit5(); discontinuity_detection = true)
-        )
-        solve!(integ)
+    # end to end: OrdinaryDiffEq's kinked test problem with the event on the kink. With the detection on,
+    # a rejected step straddling the event runs `find_discontinuity`, which evaluates the condition
+    # through the zero function (its third argument); without it the condition never sees one.
+    kink!(du, u, p, t) = (du[1] = u[1] < 1 ? 2u[1] : 5 - 3u[1]; nothing)
+    kprob = ODEProblem{true, SciMLBase.FullSpecialize}(kink!, [0.1], (0.0, 1.5))
+    zero_func_calls = Ref(0)
+    function kcond(u, t, integ)
+        integ isa OrdinaryDiffEqCore.zero_func_struct && (zero_func_calls[] += 1)
+        return u[1] - 1
     end
-    for sol in sols
-        @test sol.retcode == ReturnCode.Success
-        @test any(t -> abs(t - 1.0) < 1.0e-6, sol.t)
-    end
-    @test sols[1].t == sols[2].t && sols[1].u == sols[2].u
+    kcb = ContinuousCallback(kcond, noop!)
+    disco = solve(
+        kprob, Tsit5(); callback = kcb, reltol = 1.0e-6,
+        controller = OrdinaryDiffEqCore.PIController(Tsit5(); discontinuity_detection = true)
+    )
+    @test disco.retcode == ReturnCode.Success
+    @test zero_func_calls[] > 0
+    zero_func_calls[] = 0
+    plain = solve(kprob, Tsit5(); callback = kcb, reltol = 1.0e-6)
+    @test zero_func_calls[] == 0
+    @test disco.stats.nreject <= plain.stats.nreject
 end
