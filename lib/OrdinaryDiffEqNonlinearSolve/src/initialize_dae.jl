@@ -662,7 +662,11 @@ function _initialize_dae!(
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!; jac_prototype = J
     )
-    nlprob = NonlinearProblem(nlfunc, alg_u, p)
+    # The unknowns as a Vector, not the view: NonlinearSolve copies its u0 unless asked to alias it,
+    # and with a view that is a Union of the view and a Vector when the alias flag is not a constant
+    # (it comes through keyword arguments), which leaves the solver's cache and solution types
+    # abstract. A Vector copies to a Vector either way; the iterates are the same.
+    nlprob = NonlinearProblem(nlfunc, collect(alg_u), p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
