@@ -53,8 +53,11 @@ in a vector are wrapped after `__init` (`_despecialize_callbacks!`) and are read
     integrator.opts.callback.continuous_callbacks isa Tuple || return disco_prob.f.f.obj.x
     uT = typeof(integrator.u)
     O = Base.promote_op(_disco_outs, uT, typeof(cb))
+    U1 = Base.promote_op(_disco_u1, uT)
+    # an inferred type that isn't concrete may differ from the stored one: read untyped then
+    (isconcretetype(O) && isconcretetype(U1)) || return disco_prob.f.f.obj.x
     Z = zero_func_struct{
-        Base.promote_op(_disco_u1, uT), uT, typeof(integrator.dt), typeof(integrator.k),
+        U1, uT, typeof(integrator.dt), typeof(integrator.k),
         typeof(integrator.cache), typeof(integrator.opts.save_idxs),
         typeof(integrator.differential_vars), typeof(cb), fieldtype(O, 1), fieldtype(O, 2),
         typeof(integrator.f), typeof(integrator.tprev), typeof(integrator.p),
