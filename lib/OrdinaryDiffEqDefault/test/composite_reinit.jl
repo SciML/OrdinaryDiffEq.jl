@@ -54,15 +54,19 @@ decay!(du, u, p, t) = (du[1] = -u[1]; nothing)
 decay = ODEProblem(decay!, [1.0], (0.0, 1.0))
 @testset "reinit! with callback initializations that set dt or terminate" begin
     inits = Ref(0)
-    set_dt = SciMLBase.DiscreteCallback((u, t, integ) -> false, integ -> nothing;
-        initialize = (c, u, t, integ) -> (inits[] += 1; inits[] > 1 && (integ.dt = 0.0123); nothing))
+    set_dt = SciMLBase.DiscreteCallback(
+        (u, t, integ) -> false, integ -> nothing;
+        initialize = (c, u, t, integ) -> (inits[] += 1; inits[] > 1 && (integ.dt = 0.0123); nothing)
+    )
     integ = init(decay, DefaultODEAlgorithm(); callback = set_dt)
     solve!(integ)
     reinit!(integ)
     @test integ.dt == 0.0123
     inits[] = 0
-    stop = SciMLBase.DiscreteCallback((u, t, integ) -> false, integ -> nothing;
-        initialize = (c, u, t, integ) -> (inits[] += 1; inits[] > 1 && SciMLBase.terminate!(integ); nothing))
+    stop = SciMLBase.DiscreteCallback(
+        (u, t, integ) -> false, integ -> nothing;
+        initialize = (c, u, t, integ) -> (inits[] += 1; inits[] > 1 && SciMLBase.terminate!(integ); nothing)
+    )
     integ = init(decay, DefaultODEAlgorithm(); callback = stop)
     solve!(integ)
     @test (reinit!(integ); true)
