@@ -140,7 +140,7 @@ function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqRODEAlgorithm
 end
 
 function SciMLBase.__init(
-        _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
+        _prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         kwargs...
     )
