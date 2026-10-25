@@ -660,9 +660,9 @@ function SciMLBase.reinit!(
         SciMLBase.set_rng!(integrator, rng)
     end
 
-    if reset_dt
-        auto_dt_reset!(integrator)
-    end
+    # as in `__init`, the callbacks and the cache are initialized with dt = 0 and the initial dt is
+    # chosen after them (for a composite algorithm, with the algorithm `initialize!` selects)
+    reset_dt && (integrator.dt = zero(integrator.dt))
 
     if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
@@ -679,6 +679,10 @@ function SciMLBase.reinit!(
         reinit_choice_function!(integrator.alg)
         reinit_nlsolver!(integrator.cache)
         initialize!(integrator, integrator.cache)
+    end
+
+    if reset_dt
+        auto_dt_reset!(integrator)
     end
 
     if reinit_retcode && !(reinit_dae && implicit_discrete)
