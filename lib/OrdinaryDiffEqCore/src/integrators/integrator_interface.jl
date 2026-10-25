@@ -660,8 +660,9 @@ function SciMLBase.reinit!(
         SciMLBase.set_rng!(integrator, rng)
     end
 
-    # as in `__init`, the callbacks and the cache are initialized with dt = 0 and the initial dt is
-    # chosen after them (for a composite algorithm, with the algorithm `initialize!` selects)
+    # as in `__init`, the callbacks and the cache are initialized with dt = 0, and the initial dt is
+    # chosen after them (for a composite algorithm, with the algorithm `initialize!` selects) unless
+    # one of them set it or terminated the integration
     reset_dt && (integrator.dt = zero(integrator.dt))
 
     if reinit_dae && !implicit_discrete &&
@@ -681,7 +682,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reset_dt
+    if reset_dt && iszero(integrator.dt) && !isempty(integrator.opts.tstops)
         auto_dt_reset!(integrator)
     end
 
