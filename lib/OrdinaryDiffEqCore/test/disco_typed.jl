@@ -79,14 +79,15 @@ const DYNAMIC = (
         return u[1] - 1
     end
     kcb = ContinuousCallback(kcond, noop!)
+    # a first step of 1.4 spans the kink (crossed at t ≈ 1.15), so it straddles the event and is rejected
     disco = solve(
-        kprob, Tsit5(); callback = kcb, reltol = 1.0e-6,
+        kprob, Tsit5(); callback = kcb, reltol = 1.0e-6, dt = 1.4,
         controller = OrdinaryDiffEqCore.PIController(Tsit5(); discontinuity_detection = true)
     )
     @test disco.retcode == ReturnCode.Success
     @test zero_func_calls[] > 0
     zero_func_calls[] = 0
-    plain = solve(kprob, Tsit5(); callback = kcb, reltol = 1.0e-6)
+    plain = solve(kprob, Tsit5(); callback = kcb, reltol = 1.0e-6, dt = 1.4)
     @test zero_func_calls[] == 0
     @test disco.stats.nreject <= plain.stats.nreject
 end
