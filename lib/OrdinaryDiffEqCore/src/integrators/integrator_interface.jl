@@ -653,6 +653,7 @@ function SciMLBase.reinit!(
     # full re-initialize the controller in timestepping
     if reinit_controller
         reinit_controller!(integrator, integrator.controller_cache)
+        set_EEst!(integrator, oneunit(get_EEst(integrator)))
     end
 
     if rng !== nothing
