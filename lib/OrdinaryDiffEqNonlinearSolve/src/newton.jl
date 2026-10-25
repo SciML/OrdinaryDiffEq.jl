@@ -777,7 +777,13 @@ end
     end
 
     # update W
-    if W isa Union{WOperator, StaticWOperator}
+    matrix_free_dae = isdae && W isa AbstractSciMLOperator
+    if matrix_free_dae
+        # A DAE `W` is an operator only on the Krylov path, where it is applied matrix-free
+        # (a `JVPCache`, or a `DAEWOperator` under `concrete_jac = true`), linearized at
+        # this iterate's `(du, u)`; `_compute_rhs!` left `du` in `ztmp`.
+        update_coefficients!(W, ustep, p, tstep; du = ztmp)
+    elseif W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
         # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
@@ -790,15 +796,28 @@ end
         reltol = eps(real(one(eltype(dz))))
     end
 
+    # Inexact Newton for the matrix-free DAE `W`: every Krylov solve of the step stops at
+    # `‖P(b - W dz)‖ ≤ reltol * (‖P b‖ + ‖P b₁‖)`, where `b₁` is the step's first Newton
+    # residual. Both terms scale with `F`, so a rescaled residual gets the same `dz`, and
+    # `dz = 0` is accepted only once `F` has fallen to `reltol` of its value at the
+    # predictor. `‖P b₁‖` keeps a late iterate, whose `b` is near the roundoff floor of
+    # `W * dz`, from being held to `reltol` of that floor, which it cannot reach.
+    linabstol = if matrix_free_dae && iter == 1 && reltol isa Number
+        ldiv!(_vec(atmp), linsolve.Pl, _vec(b))
+        (; abstol = reltol * norm(atmp))
+    else
+        (;)
+    end
+
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-            reltol
+            reltol, linabstol...
         )
     else
         linres = dolinsolve(
             integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-            reltol
+            reltol, linabstol...
         )
     end
 
