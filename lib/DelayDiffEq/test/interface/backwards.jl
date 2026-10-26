@@ -21,7 +21,7 @@ end
 @testset "Constant lags" begin
     @testset "incorrect" begin
         prob = DDEProblem(dde_f, h, tspan; constant_lags = [1.0])
-        @test_throws ErrorException solve(prob, MethodOfSteps(Tsit5()))
+        @test_throws ArgumentError solve(prob, MethodOfSteps(Tsit5()))
     end
 
     @testset "correct" begin
