@@ -715,7 +715,7 @@ function _initialize_dae!(
     u = if u0 isa Number
         [u0]
     elseif u0 isa StaticArray
-        MArray(u0)
+        Array(u0)
     else
         u0
     end
