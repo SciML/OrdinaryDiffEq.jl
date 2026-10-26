@@ -26,6 +26,56 @@ _discontinuity_detection_enabled(cache::DummyControllerCache) =
 _discontinuity_detection_enabled(cache::CompositeControllerCache) =
     _discontinuity_detection_enabled(first(cache.caches))
 
+# The interpolation buffer and the condition buffers of a discontinuity problem's zero function
+# (`__init` builds them with these, `_disco_zero` derives their types from them).
+_disco_u1(u) = u isa AbstractArray ? similar(u) : zero(u)
+function _disco_outs(u, cb)
+    if cb isa VectorContinuousCallback
+        arr = u isa AbstractArray ? similar(u, cb.len) : zeros(typeof(u), cb.len)
+        return arr, similar(arr), similar(arr)
+    else
+        return nothing, zeros(Float64, 1), zeros(Float64, 1)
+    end
+end
+
+"""
+    _disco_zero(disco_prob, integrator, cb)
+
+The zero function of the discontinuity problem of callback `cb`. `__init` stores it behind a
+`FunctionWrapper` so that every problem in `disco_probs` has one concrete type whatever the
+callback's type, and a `FunctionWrapper` keeps its payload in an untyped field. When the
+integrator's callbacks are a tuple they are the objects `__init` built the zero functions with,
+so the zero function's type is determined by the integrator and `cb` and is asserted here,
+which makes every load and store of its fields in `find_discontinuity` static. Callbacks held
+in a vector are wrapped after `__init` (`_despecialize_callbacks!`) and are read untyped.
+"""
+@inline function _disco_zero(disco_prob, integrator, cb)
+    integrator.opts.callback.continuous_callbacks isa Tuple || return disco_prob.f.f.obj.x
+    uT = typeof(integrator.u)
+    O = Base.promote_op(_disco_outs, uT, typeof(cb))
+    U1 = Base.promote_op(_disco_u1, uT)
+    # an inferred type that isn't concrete may differ from the stored one: read untyped then
+    (isconcretetype(O) && isconcretetype(U1)) || return disco_prob.f.f.obj.x
+    Z = zero_func_struct{
+        U1, uT, typeof(integrator.dt), typeof(integrator.k),
+        typeof(integrator.cache), typeof(integrator.opts.save_idxs),
+        typeof(integrator.differential_vars), typeof(cb), fieldtype(O, 1), fieldtype(O, 2),
+        typeof(integrator.f), typeof(integrator.tprev), typeof(integrator.p),
+    }
+    return (disco_prob.f.f.obj::Base.RefValue{Z}).x
+end
+
+"""
+    _disco_bracket(disco_prob, θ)
+
+`disco_prob` with the bracket `(0, θ)`: the same function and parameters, a tuple `tspan`.
+The stored problem's `tspan` is never written, so the bracket is a `Tuple` wherever the
+bracketing solver splats it.
+"""
+@inline function _disco_bracket(disco_prob, θ)
+    return IntervalNonlinearProblem{false}(disco_prob.f, (zero(θ), θ), disco_prob.p)
+end
+
 function find_discontinuity(integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
@@ -46,7 +96,7 @@ function find_discontinuity(integrator)
             continue
         end
         disco_prob = disco_probs[idx]
-        disco_zero = disco_prob.f.f.obj.x
+        disco_zero = _disco_zero(disco_prob, integrator, i)
         _load_disco_state!(disco_zero, dt, uprev, u, k, t, p)
         if (i isa VectorContinuousCallback)
             len_cb = i.len::Int
@@ -62,8 +112,7 @@ function find_discontinuity(integrator)
                         )
                     end
                     _set_disco_index!(disco_zero, j)
-                    disco_prob.tspan[2] = breakpointθ
-                    sol = solve(disco_prob)
+                    sol = solve(_disco_bracket(disco_prob, breakpointθ))
                     tmp = sol[]
                     if (!isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
@@ -83,8 +132,7 @@ function find_discontinuity(integrator)
                         disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false
                     )
                 end
-                disco_prob.tspan[2] = breakpointθ
-                sol = solve(disco_prob)
+                sol = solve(_disco_bracket(disco_prob, breakpointθ))
                 tmp = sol[]
                 if (!isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp

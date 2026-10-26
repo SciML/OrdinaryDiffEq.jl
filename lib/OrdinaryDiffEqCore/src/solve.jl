@@ -896,13 +896,8 @@ Base.@constprop :aggressive function _ode_init(
     idx = 1
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity::Bool
-            u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
-            out, out_low, out_high = if i isa VectorContinuousCallback
-                arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
-                arr, similar(arr), similar(arr)
-            else
-                nothing, zeros(Float64, 1), zeros(Float64, 1)
-            end
+            u₁ = _disco_u1(u)
+            out, out_low, out_high = _disco_outs(u, i)
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
             zero_func_wrapped = disco_zero_wrapper(zero_func)
             disco_prob = IntervalNonlinearProblem{false}(
