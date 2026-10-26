@@ -275,6 +275,7 @@ OrdinaryDiffEqNonlinearSolve.nlsolvefail
 OrdinaryDiffEqNonlinearSolve.markfirststage!
 OrdinaryDiffEqNonlinearSolve.du_alias_or_new
 OrdinaryDiffEqNonlinearSolve.can_smooth_est
+OrdinaryDiffEqNonlinearSolve.stage_predictor
 OrdinaryDiffEqNonlinearSolve.compute_step!
 OrdinaryDiffEqNonlinearSolve.initial_η
 OrdinaryDiffEqNonlinearSolve.anderson
