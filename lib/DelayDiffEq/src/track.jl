@@ -32,20 +32,22 @@ function track_propagated_discontinuities!(integrator::DDEIntegrator)
 
             # add new discontinuity of correct order at the estimated time point
             if integrator.sol.prob.neutral
-                d = Discontinuity(t, discontinuity.order)
+                d = Discontinuity(integrator.tdir * t, discontinuity.order)
                 @SciMLMessage(
                     lazy"Propagated discontinuity found at t = $t with order $(discontinuity.order) (neutral DDE)",
                     integrator.opts.verbose, :discontinuity_tracking
                 )
             else
-                d = Discontinuity(t, discontinuity.order + 1)
+                d = Discontinuity(integrator.tdir * t, discontinuity.order + 1)
                 @SciMLMessage(
                     lazy"Propagated discontinuity found at t = $t with order $(discontinuity.order + 1)",
                     integrator.opts.verbose, :discontinuity_tracking
                 )
             end
-            push!(integrator.opts.d_discontinuities, d)
-            push!(integrator.opts.tstops, t)
+            # solver-generated, so `handle_discontinuities!` may coalesce it with a
+            # discontinuity it is handling within `10eps` (unlike user tstops)
+            push!(integrator.d_discontinuities_propagated, d)
+            push!(integrator.tstops_propagated, d.t)
 
             # analogously to RADAR5 we do not strive for finding the first discontinuity
             break
@@ -61,7 +63,7 @@ end
 Evaluate function ``f(x) = T + lag(u(x), p, x) - x`` at time point `t`, where `T` is time
 point of a previous discontinuity and `lag` is a dependent delay.
 """
-function discontinuity_function(integrator::DDEIntegrator, lag, T, t)
+function discontinuity_function(integrator::DDEIntegrator, lag::L, T, t) where {L}
     tmp = get_tmp_cache(integrator)
     cache = tmp === nothing ? nothing : first(tmp)
 
@@ -91,7 +93,7 @@ discontinuity at time point `T`, or `nothing`.
 The interval is estimated by checking the signs of `T + lag(u(t), p, t) - t` for time points
 `integrator.t .+ θs` in the interval `[integrator.t, integrator.t + integrator.dt]`.
 """
-function discontinuity_interval(integrator::DDEIntegrator, lag, T, Θs)
+function discontinuity_interval(integrator::DDEIntegrator, lag::L, T, Θs) where {L}
     # use start and end point of last time interval to check for discontinuities
     previous_condition = discontinuity_function(integrator, lag, T, integrator.t)
     if isapprox(
@@ -143,7 +145,7 @@ Estimate time point of the propagated discontinuity induced by the dependent del
 `lag` and the discontinuity at time point `T` inside the `interval` of the current
 integration step of the `integrator`.
 """
-function discontinuity_time(integrator::DDEIntegrator, lag, T, (bottom_Θ, top_Θ))
+function discontinuity_time(integrator::DDEIntegrator, lag::L, T, (bottom_Θ, top_Θ)) where {L}
     if bottom_Θ == top_Θ
         # in that case we have already found the time point of a discontinuity
         Θ = top_Θ
