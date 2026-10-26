@@ -414,7 +414,7 @@ end
 end
 
 function initialize!(integrator, cache::Anas5ConstantCache)
-    integrator.kshortsize = 7
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -458,26 +458,16 @@ end
     integrator.fsallast = k7
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
+    integrator.k[2] = k7
     integrator.u = u
 end
 
 get_fsalfirstlast(cache::Anas5Cache, u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::Anas5Cache)
-    integrator.kshortsize = 7
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
+    integrator.k[2] = cache.k7
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k7  # setup pointers
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
