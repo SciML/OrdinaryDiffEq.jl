@@ -66,6 +66,16 @@ is_sparse_csc(::Any) = false
 concrete_mass_matrix(mm) = mm
 concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
 
+"""
+    has_mass_matrix(f)
+
+Whether `f` is a function type that carries a `mass_matrix` field. `DAEFunction` is fully
+implicit — its residual already contains the `du` coefficients — so it has none, and the
+mass-matrix seeding below is skipped for it entirely: a DAE `jac_prototype` must already
+be the complete pattern of `∂F/∂u + γ ∂F/∂(du)`.
+"""
+has_mass_matrix(f) = hasfield(typeof(f), :mass_matrix)
+
 # These will error if called without the extension, but should never be called
 # on non-sparse types due to the is_sparse checks
 function nonzeros end
