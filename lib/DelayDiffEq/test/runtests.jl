@@ -2,7 +2,7 @@ using SafeTestsets
 
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface"
     @time @safetestset "AD Tests" begin
         include("interface/ad.jl")
     end
@@ -99,6 +99,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Nordsieck Tests" begin
         include("integrators/nordsieck.jl")
     end
+    @time @safetestset "FBDF Tests" begin
+        include("integrators/fbdf.jl")
+    end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
     end
@@ -131,6 +134,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     end
     @time @safetestset "DDE/SDIRK stage-1 tmp aliasing" begin
         include("regression/dde_sdirk_stage1_tmp_aliasing.jl")
+    end
+    @time @safetestset "Tracked discontinuity coalescing" begin
+        include("regression/tracked_discontinuity_coalescing.jl")
     end
 end
 
