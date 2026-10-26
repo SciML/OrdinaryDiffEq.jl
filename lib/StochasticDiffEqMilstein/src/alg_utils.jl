@@ -58,7 +58,7 @@ end
 function StochasticDiffEqCore._z_prototype(alg::RKMilGeneral, rand_prototype, iip::Bool, dt)
     rand_prototype isa Number && return rand_prototype
     m = length(rand_prototype)
-    n_coeffs = StochasticDiffEqLevyArea.norv(m, _levyarea_terms(alg, m, dt), MronRoe())
+    n_coeffs = coefficient_length(m, _levyarea_terms(alg, m, dt), MronRoe())
     rp2 = similar(rand_prototype, n_coeffs)
     rp2 .= false
     return rp2

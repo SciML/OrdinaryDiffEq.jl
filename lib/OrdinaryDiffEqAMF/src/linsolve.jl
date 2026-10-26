@@ -1,3 +1,10 @@
+"""
+    SciMLOpFactorization()
+
+LinearSolve algorithm for systems whose matrix is a `SciMLOperator`. It factors
+the operator into a reusable cache and applies the factorization with `ldiv!`,
+preserving structured operator solves when supported by the operator.
+"""
 struct SciMLOpFactorization <: LinearSolve.SciMLLinearSolveAlgorithm end
 
 function LinearSolve.init_cacheval(
