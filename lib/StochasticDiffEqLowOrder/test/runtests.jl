@@ -87,6 +87,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         order = log(e_coarse / e_fine) / log(Float64(dt_coarse / dt_fine))
         @test order > 0.75
     end
+    @time @safetestset "Lamba resize!" include("lamba_resize_tests.jl")
 
     @time @safetestset "RKMilCommute Ito diagonal update (scalar iip + nondiag alloc)" begin
         using StochasticDiffEqLowOrder
