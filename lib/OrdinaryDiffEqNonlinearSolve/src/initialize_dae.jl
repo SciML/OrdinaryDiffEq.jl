@@ -739,14 +739,15 @@ function _initialize_dae!(
 
     nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
 
-    u[algebraic_vars] .= nlsol.u
-
-    integrator.u = if u0 isa Number
-        first(u)
-    elseif u0 isa StaticArray
-        typeof(u0)(u)
+    if u0 isa Number
+        integrator.u = first(nlsol.u)
+    elseif ArrayInterface.ismutable(u0)
+        u0[algebraic_vars] .= nlsol.u
     else
-        u
+        u = similar(u0)
+        copyto!(u, u0)
+        u[algebraic_vars] .= nlsol.u
+        integrator.u = convert(typeof(u0), u)
     end
 
 

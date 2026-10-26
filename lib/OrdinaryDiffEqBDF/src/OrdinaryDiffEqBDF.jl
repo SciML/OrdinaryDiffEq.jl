@@ -22,13 +22,14 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     setup_controller_cache, get_qmax, get_qmin, get_gamma, get_qsteady_min, get_qsteady_max,
     get_failfactor, CommonControllerOptions, resolve_basic, _resolved_QT,
     AbstractControllerCache,
+    resize_nlsolver!,
     DAEAlgorithm,
     get_fsalfirstlast, generic_solver_docstring, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
     DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
     find_algebraic_vars_eqs
-import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache
+import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache, resize_non_user_cache!
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
@@ -70,6 +71,7 @@ include("stald.jl")
 include("nordsieck_utils.jl")
 include("bdf_caches.jl")
 include("dae_caches.jl")
+include("resize.jl")
 include("controllers.jl")
 include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
