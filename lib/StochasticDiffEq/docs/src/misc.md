@@ -36,6 +36,12 @@ RandomTamedEM
 RandomTaylor15
 ```
 
+### RandomTaylor25 - Derivative-Free Order 2.5 Taylor Method
+
+```@docs
+RandomTaylor25
+```
+
 ## Langevin Dynamics
 
 ### BAOAB - Langevin Integrator
