@@ -834,7 +834,7 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test sim.𝒪est[:final] ≈ 1 atol = testTol          # The CI plot is linear but the evaluated order is 1
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
@@ -926,15 +926,15 @@ end
     dts = BigFloat(1) ./ 2 .^ (8:-1:4)
     for prob in test_problems_only_time_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_linear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     for prob in test_problems_nonlinear_BigFloat
         sim = test_convergence(dts, prob, alg)
-        @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
+        @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
     integ = init(
         prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
@@ -1442,6 +1442,8 @@ end
         sim = test_convergence(dts, prob, alg)
         @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
+    sol = solve(prob_ode_sin, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+    @test sol.stats.naccept < 20
     integ = init(
         prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
         save_end = false, save_everystep = false
