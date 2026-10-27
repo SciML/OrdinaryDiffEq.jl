@@ -157,10 +157,10 @@ function initialize!(integrator, cache::RadauIIA3Cache)
     if integrator.opts.adaptive
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
-            cache.rtol = reltol^(2 / 3) / 10
+            cache.rtol = reltol^(3 / 4) / 10
             cache.atol = cache.rtol * (abstol / reltol)
         else
-            @.. cache.rtol = reltol^(2 / 3) / 10
+            @.. cache.rtol = reltol^(3 / 4) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
         end
     end
