@@ -124,6 +124,10 @@ isthreaded(::BaseThreads) = true
 isthreaded(::PolyesterThreads) = true
 
 @inline function _threaded_execute(f, ::Union{BaseThreads, Bool}, range)
+    if ccall(:jl_in_threaded_region, Cint, ()) != 0
+        foreach(f, range)
+        return nothing
+    end
     return Threads.@threads :static for i in range
         f(i)
     end
