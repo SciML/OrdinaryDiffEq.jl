@@ -1,7 +1,7 @@
 name = "DiffEqBase"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "7.21.4"
+version = "7.21.5"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -80,7 +80,7 @@ DiffEqCallbacks = "4"
 DifferentiationInterface = "0.7.18"
 Distributed = "1.9"
 Distributions = "0.25"
-DocStringExtensions = "0.9.5"
+DocStringExtensions = "0.9.5, 0.10"
 DynamicQuantities = "1"
 Enzyme = "0.13.100"
 FastBroadcast = "1.3"
