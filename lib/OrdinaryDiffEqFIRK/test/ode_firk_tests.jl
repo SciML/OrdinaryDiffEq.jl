@@ -312,6 +312,19 @@ end
     end
 end
 
+@testset "Unsmoothed error estimate (smooth_est = false)" begin
+    f!(du, u, p, t) = (du .= -50 .* (u .- cos(t)); nothing)
+    f(u, p, t) = -50 .* (u .- cos(t))
+    for prob in (ODEProblem(f!, [0.0, 1.0], (0.0, 2.0)), ODEProblem(f, [0.0, 1.0], (0.0, 2.0))),
+            Alg in (RadauIIA5, RadauIIA9, AdaptiveRadau)
+        smoothed = solve(prob, Alg(); reltol = 1.0e-8, abstol = 1.0e-8)
+        unsmoothed = solve(prob, Alg(smooth_est = false); reltol = 1.0e-8, abstol = 1.0e-8, maxiters = 1000)
+        @test unsmoothed.retcode == ReturnCode.Success
+        @test unsmoothed.stats.naccept < 2 * smoothed.stats.naccept
+        @test unsmoothed.u[end] ≈ smoothed.u[end] atol = 1.0e-6
+    end
+end
+
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
     function rober_firk!(du, u, p, t)
         y1, y2, y3 = u

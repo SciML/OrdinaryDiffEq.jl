@@ -768,6 +768,8 @@ end
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
+        else
+            utilde = @.. -utilde / γdt
         end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
@@ -780,6 +782,7 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
             alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+            alg.smooth_est || (utilde = @.. -utilde / γdt)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
@@ -1026,6 +1029,8 @@ end
                 linu = _vec(utilde)
             )
             integrator.stats.nsolve += 1
+        else
+            @.. utilde = -ubuff / γdt
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -1046,6 +1051,8 @@ end
                     linu = _vec(utilde)
                 )
                 integrator.stats.nsolve += 1
+            else
+                @.. utilde = -ubuff / γdt
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -1329,6 +1336,8 @@ end
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
+        else
+            utilde = @.. -utilde / γdt
         end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
@@ -1339,6 +1348,7 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
             alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+            alg.smooth_est || (utilde = @.. -utilde / γdt)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
@@ -1710,6 +1720,8 @@ end
                 linu = _vec(utilde)
             )
             integrator.stats.nsolve += 1
+        else
+            @.. utilde = -ubuff / γdt
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -1730,6 +1742,8 @@ end
                     linu = _vec(utilde)
                 )
                 integrator.stats.nsolve += 1
+            else
+                @.. utilde = -ubuff / γdt
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -1977,6 +1991,8 @@ end
         if alg.smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
+        else
+            utilde = @.. -utilde / γdt
         end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
@@ -1990,6 +2006,8 @@ end
             if alg.smooth_est
                 utilde = _reshape(LU1 \ _vec(utilde), axes(u))
                 integrator.stats.nsolve += 1
+            else
+                utilde = @.. -utilde / γdt
             end
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
@@ -2310,6 +2328,8 @@ end
                 linu = _vec(utilde)
             )
             integrator.stats.nsolve += 1
+        else
+            @.. utilde = -ubuff / γdt
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -2331,6 +2351,8 @@ end
                     linu = _vec(utilde)
                 )
                 integrator.stats.nsolve += 1
+            else
+                @.. utilde = -ubuff / γdt
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)

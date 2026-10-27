@@ -18,7 +18,9 @@ doi={10.1109/HPEC67600.2025.11196706}}"""
 
 extra_keyword_description = """
 - `extrapolant`: TBD
-- `smooth_est`: TBD
+- `smooth_est`: when `true`, the embedded error estimate is `(J - γ/dt M)⁻¹ (f₀ + M Σ eᵢzᵢ/dt)`, filtered
+  as in Hairer's RADAU5. When `false`, the linear solve is skipped and `-(dt/γ) (f₀ + M Σ eᵢzᵢ/dt)`, its
+  limit for small `dt J`, is used instead.
 - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`"""
 extra_keyword_default = """
 extrapolant = :dense,
