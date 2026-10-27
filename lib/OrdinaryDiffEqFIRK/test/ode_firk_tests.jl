@@ -339,3 +339,15 @@ end
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end
+
+@testset "In-place solve with a vector abstol" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
+    for alg in (RadauIIA3(), RadauIIA5(), RadauIIA9(), AdaptiveRadau(), GaussLegendre()),
+            reltol in (1.0e-6, [1.0e-6, 1.0e-6])
+
+        sol = solve(prob, alg; abstol = [1.0e-8, 1.0e-6], reltol)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end] ≈ exp(-1) .* [1.0, 2.0] rtol = 1.0e-5
+    end
+end

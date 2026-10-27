@@ -158,7 +158,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^(2 / 3) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -197,7 +197,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^(2 / 3) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -240,7 +240,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(3 / 5) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^(3 / 5) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -2021,8 +2021,9 @@ end
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
+    atol = reltol isa Number && abstol isa Number ? first(cache.atol) : cache.atol
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
@@ -2038,7 +2039,7 @@ end
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -2398,7 +2399,7 @@ function initialize!(integrator, cache::GaussLegendreCache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^((cache.num_stages + 1) / (2 * cache.num_stages)) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^((cache.num_stages + 1) / (2 * cache.num_stages)) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
