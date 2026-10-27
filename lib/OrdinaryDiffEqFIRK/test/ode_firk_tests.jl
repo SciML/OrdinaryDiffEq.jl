@@ -339,3 +339,16 @@ end
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end
+
+@testset "In-place FIRK stays accurate after a callback" begin
+    f!(du, u, p, t) = (du[1] = -3u[1] + 1; nothing)
+    exact(t) = (1 - exp(-3t)) / 3
+    callback = DiscreteCallback((u, t, integrator) -> t == 0.5, integrator -> nothing)
+    for alg in (RadauIIA5(), RadauIIA9(), AdaptiveRadau())
+        sol = solve(
+            ODEProblem(f!, [0.0], (0.0, 1.0)), alg; reltol = 1.0e-8, abstol = 1.0e-11,
+            callback, tstops = [0.5]
+        )
+        @test maximum(abs(u[1] - exact(t)) for (t, u) in zip(sol.t, sol.u)) < 1.0e-8
+    end
+end
