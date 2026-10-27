@@ -8,15 +8,18 @@
     """
     - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `thread`: determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = Serial()`) or use multiple threads (`thread = Threaded()`) when Julia is started with multiple threads.
     """,
     """
     stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    thread = Serial(),
     """
 )
-Base.@kwdef struct Euler{StageLimiter, StepLimiter} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct Euler{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = Serial()
 end
 
 @doc generic_solver_docstring(
