@@ -19,12 +19,19 @@ doi={10.1109/HPEC67600.2025.11196706}}"""
 extra_keyword_description = """
 - `extrapolant`: TBD
 - `smooth_est`: when `true`, the embedded error estimate is `(J - γ/dt M)⁻¹ (f₀ + M Σ eᵢzᵢ/dt)`, filtered
-  as in Hairer's RADAU5. When `false`, the linear solve is skipped and `-(dt/γ) (f₀ + M Σ eᵢzᵢ/dt)`, its
-  limit for small `dt J`, is used instead.
+  as in Hairer's RADAU5. When `false` and the mass matrix is `I`, the linear solve is skipped and
+  `-(dt/γ) (f₀ + Σ eᵢzᵢ/dt)`, its limit for small `dt J`, is used instead. With any other mass matrix that
+  limit needs `M⁻¹`, so the filtered estimate is always used.
 - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`"""
 extra_keyword_default = """
 extrapolant = :dense,
 smooth_est = true,
+step_limiter! = trivial_limiter!"""
+radau3_extra_keyword_description = """
+- `extrapolant`: TBD
+- `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`"""
+radau3_extra_keyword_default = """
+extrapolant = :dense,
 step_limiter! = trivial_limiter!"""
 
 @doc differentiation_rk_docstring(
@@ -33,8 +40,8 @@ Similar to Hairer's SEULEX.",
     "RadauIIA3",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,
-    extra_keyword_description,
-    extra_keyword_default
+    extra_keyword_description = radau3_extra_keyword_description,
+    extra_keyword_default = radau3_extra_keyword_default
 )
 struct RadauIIA3{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm

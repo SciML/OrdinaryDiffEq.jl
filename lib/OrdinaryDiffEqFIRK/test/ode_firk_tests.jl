@@ -323,6 +323,18 @@ end
         @test unsmoothed.stats.naccept < 2 * smoothed.stats.naccept
         @test unsmoothed.u[end] ≈ smoothed.u[end] atol = 1.0e-6
     end
+    g!(du, u, p, t) = (du[1] = -u[1] + sin(t); du[2] = -2u[2] + u[1]; nothing)
+    mm = ODEFunction((du, u, p, t) -> (du .= -0.5 .* (u .- cos(t)); nothing); mass_matrix = Diagonal([0.01, 0.01]))
+    for Alg in (RadauIIA5, RadauIIA9, AdaptiveRadau)
+        eest = map((true, false)) do smooth_est
+            integ = init(ODEProblem(g!, [1.0, 0.5], (0.0, 1.0)), Alg(; smooth_est); dt = 0.01, reltol = 1.0e-6, abstol = 1.0e-6)
+            step!(integ)
+            OrdinaryDiffEqCore.get_EEst(integ)
+        end
+        @test eest[2] ≈ eest[1] rtol = 0.02
+        prob = ODEProblem(mm, [0.0, 1.0], (0.0, 2.0))
+        @test solve(prob, Alg(smooth_est = false)).u == solve(prob, Alg()).u
+    end
 end
 
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
