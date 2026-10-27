@@ -300,6 +300,16 @@ end
     @test integ.kshortsize == bare.kshortsize
 end
 
+@testset "AdaptiveRadau dense output across stage-count changes" begin
+    f!(du, u, p, t) = (du .= cos(t) .* u; nothing)
+    f(u, p, t) = cos(t) .* u
+    exact(t) = exp(sin(t)) .* [1.0, 2.0]
+    for prob in (ODEProblem(f!, [1.0, 2.0], (0.0, 4.0)), ODEProblem(f, [1.0, 2.0], (0.0, 4.0)))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+        @test maximum(maximum(abs.(sol(t) - exact(t))) for t in 0:0.01:4) < 1.0e-5
+    end
+end
+
 @testset "AdaptiveRadau Newton tolerance follows the stage count" begin
     prob = prob_ode_rober
     ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
