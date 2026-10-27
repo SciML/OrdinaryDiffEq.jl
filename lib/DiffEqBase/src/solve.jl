@@ -411,8 +411,9 @@ section at the end of this page for some example usage.
   of the vector field `f`. Each entry `t_d` is added as a tstop, and when the
   integrator lands on `t_d` it advances `t` by one ULP in the integration direction
   and re-evaluates the FSAL cache on the post-discontinuity side. The convention
-  is *left-continuous*: `f` evaluated at `t_d` must still give the "old" regime and
-  `f` at `nextfloat(t_d)` the "new" one, so user code should be written as
+  is *left-continuous* in the integration direction: `f` evaluated at `t_d` must
+  still give the "old" regime and `f` one ULP past `t_d` the "new" one, so for a
+  forward solve user code should be written as
   ```julia
   if t > t_d
       # new regime
@@ -423,7 +424,9 @@ section at the end of this page for some example usage.
   A right-hand side that already gives the new regime at `t_d` (`t >= t_d`) is
   evaluated on the wrong side in the step that lands on `t_d`. Depending on the
   method this costs many rejected steps, or gives a wrong solution without any
-  rejected step. For such a right-hand side, give `prevfloat(t_d)` instead. A
+  rejected step. For such a right-hand side, give `prevfloat(t_d)` instead. In a
+  backward solve (`tspan[2] < tspan[1]`) all of this is mirrored: the new regime is
+  `t < t_d`, and `nextfloat(t_d)` replaces `prevfloat(t_d)`. A
   `d_discontinuities` entry at
   `tspan[1]` is supported (the starting-time case), in which case the first step
   begins at `nextfloat(tspan[1])`; this is useful for callbacks that need to
