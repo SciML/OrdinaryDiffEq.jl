@@ -15,6 +15,10 @@ SciMLBase.allowscomplex(alg::GlobalRichardson) =
     SciMLBase.allowscomplex(alg.alg)
 SciMLBase.isautodifferentiable(alg::GlobalRichardson) =
     SciMLBase.isautodifferentiable(alg.alg)
+SciMLBase.forwarddiffs_model(alg::GlobalRichardson) =
+    SciMLBase.forwarddiffs_model(alg.alg)
+SciMLBase.forwarddiff_chunksize(alg::GlobalRichardson) =
+    SciMLBase.forwarddiff_chunksize(alg.alg)
 
 function SciMLBase.__solve(
         prob::Union{SciMLBase.AbstractODEProblem, SciMLBase.AbstractDAEProblem},

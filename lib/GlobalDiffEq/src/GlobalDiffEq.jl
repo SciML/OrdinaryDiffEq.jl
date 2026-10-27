@@ -5,7 +5,7 @@ using Reexport: @reexport
 
 import ADTypes, DifferentiationInterface, ForwardDiff, LinearAlgebra,
     OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, Random, RecursiveArrayTools,
-    Richardson, SciMLBase
+    Richardson, SciMLBase, SymbolicIndexingInterface
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore: perform_step!, @cache
 import Accessors: @set
@@ -26,6 +26,7 @@ _is_empty_callback(cb) = false
 
 include("richardson.jl")
 include("companion.jl")
+include("defect_correction.jl")
 include("estimation.jl")
 include("adjoint.jl")
 include("glee/tableaus.jl")

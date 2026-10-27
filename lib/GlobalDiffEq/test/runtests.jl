@@ -14,6 +14,9 @@ run_tests(;
         @safetestset "Companion error estimators" begin
             include("companion_tests.jl")
         end
+        @safetestset "Companion error estimators with events" begin
+            include("companion_events_tests.jl")
+        end
         @safetestset "Adjoint error estimation and control" begin
             include("adjoint_tests.jl")
         end
