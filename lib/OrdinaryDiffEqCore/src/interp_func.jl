@@ -126,7 +126,8 @@ end
 Return a lightweight copy of `cache` with all fields set to `nothing`, used by
 `SciMLBase.strip_interpolation` to drop the (potentially large) working buffers
 from a solution's interpolation object before serialization. Has a special path
-for [`DefaultCache`](@ref).
+for [`DefaultCache`](@ref), and a `CompositeCache` keeps its sub-caches, each
+stripped, and its `current` index.
 
 # Developer API
 
@@ -152,4 +153,8 @@ function strip_cache(cache)
     end
 
     return cache
+end
+
+function strip_cache(cache::CompositeCache)
+    return CompositeCache(map(strip_cache, cache.caches), nothing, cache.current)
 end
