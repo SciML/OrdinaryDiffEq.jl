@@ -48,3 +48,14 @@ end
 end
 
 @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_sol)
+
+@testset "Composite Solution Stripping" begin
+    composite_sol = solve(prob, AutoTsit5(Rosenbrock23()))
+    @test all(==(1), composite_sol.alg_choice)
+    stripped_sol = SciMLBase.strip_solution(composite_sol)
+    @test isnothing(stripped_sol.interp.f)
+    @test isnothing(stripped_sol.interp.cache.choice_function)
+    @test isnothing(stripped_sol.interp.cache.caches[2].jac_config)
+    @test stripped_sol(0.33) == composite_sol(0.33)
+    @test SciMLBase.strip_solution(solve(prob, AutoVern7(Rosenbrock23(); lazy = false))) isa ODESolution
+end
