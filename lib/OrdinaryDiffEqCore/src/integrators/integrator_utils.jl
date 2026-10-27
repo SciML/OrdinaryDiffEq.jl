@@ -220,6 +220,7 @@ function update_fsal!(integrator)
             first_discontinuity(integrator) == integrator.tdir * integrator.t
         handle_discontinuities!(integrator)
         shift_past_discontinuity!(integrator)
+        integrator.derivative_discontinuity = true
         get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
     elseif all_fsal(integrator.alg, integrator.cache) ||
             get_current_isfsal(integrator.alg, integrator.cache)

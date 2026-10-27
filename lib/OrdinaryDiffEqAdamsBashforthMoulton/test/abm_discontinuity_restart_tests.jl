@@ -64,3 +64,19 @@ end
             for i in eachindex(sol.t) if sol.t[i] != tjump
     )
 end
+
+@testset "d_discontinuities restart the history as a callback does" begin
+    sw = [0.5, 1.0, 1.5, 2.0, 2.5]
+    f!(du, u, p, t) = (du[1] = -3 * u[1] + isodd(count(<(t), sw)); nothing)
+    prob = ODEProblem(f!, [0.0], (0.0, 3.0))
+    cb = DiscreteCallback(
+        (u, t, integrator) -> t in sw, integrator -> nothing; save_positions = (false, false)
+    )
+    for alg in (VCABM3(), VCABM4(), VCABM5())
+        kw = (; reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
+        sol = solve(prob, alg; kw...)
+        restarted = solve(prob, alg; kw..., callback = cb)
+        @test sol.t == restarted.t
+        @test sol.u == restarted.u
+    end
+end
