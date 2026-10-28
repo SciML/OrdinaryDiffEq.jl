@@ -6,7 +6,7 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats,
     alg_cache, @cache, isfsal,
-    constvalue,
+    constvalue, eigen_est_from_stages,
     explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
     _ode_interpolant!, _ode_addsteps!, @fold,
     @OnDemandTableauExtract, AutoAlgSwitch,
@@ -19,7 +19,6 @@ using MuladdMacro: @muladd
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivecopy,
     recursivefill!, copyat_or_push!
 using TruncatedStacktraces: @truncate_stacktrace
-using LinearAlgebra: norm
 import OrdinaryDiffEqCore
 using Reexport: @reexport
 @reexport using SciMLBase

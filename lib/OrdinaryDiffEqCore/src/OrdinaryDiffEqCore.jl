@@ -432,7 +432,7 @@ include("precompilation_setup.jl")
             :beta1_default, :beta2_default, Symbol("@cache"), Symbol("@fold"), Symbol("@OnDemandTableauExtract"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
             :CompositeController, :constvalue, :Convergence, :current_extrapolant,
             :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
-            :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
+            :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController, :eigen_est_from_stages,
             :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,
             :get_current_adaptive_order, :get_current_alg_autodiff, :get_differential_vars, :get_EEst, :get_failfactor, :get_fsalfirstlast,
             :get_fresh_jacobian, :get_gamma, :get_new_W_γdt_cutoff, :get_qmax, :get_qmax_first_step, :get_qmin, :get_qsteady_max,
