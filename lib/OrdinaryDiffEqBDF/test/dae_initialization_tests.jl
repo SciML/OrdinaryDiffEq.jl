@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes, SciMLBase
+using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes, SciMLBase, ForwardDiff
 using OrdinaryDiffEqNonlinearSolve
 
 f = function (du, u, p, t)
@@ -188,4 +188,24 @@ end
         sol = solve(prob, alg; abstol, reltol = 1.0e-6)
         @test SciMLBase.successful_retcode(sol)
     end
+end
+
+@testset "In-place BrownFullBasicInit keeps the partials of u0 (#4936)" begin
+    function r!(res, du, u, p, t)
+        res[1] = du[1] + p[1] * u[1] * u[2]
+        res[2] = u[2]^3 + u[2] - p[2] * u[1]
+        return nothing
+    end
+    prob = DAEProblem(
+        r!, [0.0, 0.0], [1.0, 0.3], (0.0, 0.5), [1.2, 2.5]; differential_vars = [true, false]
+    )
+    function init_state(s)
+        integ = init(
+            remake(prob; u0 = [s, 0.3 * one(s)], du0 = zeros(typeof(s), 2)), DFBDF();
+            initializealg = BrownFullBasicInit(), abstol = 1.0e-12, reltol = 1.0e-12
+        )
+        return [integ.u[2], integ.du[1]]
+    end
+    # y = 1, dy/ds = 2.5 / (3y^2 + 1) and du[1] = -1.2 s y
+    @test ForwardDiff.derivative(init_state, 0.8) ≈ [0.625, -1.2 * (1 + 0.8 * 0.625)] rtol = 1.0e-8
 end
