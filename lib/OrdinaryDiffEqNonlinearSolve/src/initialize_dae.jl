@@ -665,8 +665,10 @@ function _initialize_dae!(
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
+    # The solution is written back into `alg_u` anyway, so the solver needn't copy it first
     nlsol = solve(
         nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
+        alias = SciMLBase.NonlinearAliasSpecifier(alias_u0 = true),
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
     alg_u .= nlsol.u
