@@ -26,7 +26,7 @@ end
         dϕ(α) = one(α)
         ϕdϕ(α) = (ϕ(α), dϕ(α))
         @test_throws ErrorException OrdinaryDiffEqNonlinearSolve.linesearch_step(
-            BackTracking(), ϕ, dϕ, ϕdϕ, one(T)
+            BackTracking(), ϕ, dϕ, ϕdϕ, one(T), [one(T)], [one(T)]
         )
     end
 
@@ -70,14 +70,14 @@ end
         @test ϕ(one(ϕ0)) > ϕ0
 
         α = OrdinaryDiffEqNonlinearSolve.linesearch_step(
-            BackTracking(), ϕ, dϕ, ϕdϕ, one(ϕ0)
+            BackTracking(), ϕ, dϕ, ϕdϕ, one(ϕ0), [one(ϕ0)], [one(ϕ0)]
         )
         @test α < one(α)
         @test ϕ(α) < ϕ0
 
         stalled(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0) = (eps(α0) / 2, ϕ(eps(α0) / 2))
         @test_throws ErrorException OrdinaryDiffEqNonlinearSolve.linesearch_step(
-            stalled, ϕ, dϕ, ϕdϕ, one(ϕ0)
+            stalled, ϕ, dϕ, ϕdϕ, one(ϕ0), [one(ϕ0)], [one(ϕ0) / 2]
         )
     end
 
@@ -86,7 +86,7 @@ end
         dϕ = α -> -2.0e-5
         ϕdϕ = α -> (ϕ(α), slope)
         @test OrdinaryDiffEqNonlinearSolve.linesearch_step(
-            BackTracking(), ϕ, dϕ, ϕdϕ, 1.0
+            BackTracking(), ϕ, dϕ, ϕdϕ, 1.0, [1.0], [1.0]
         ) == 1.0
     end
 
@@ -95,7 +95,7 @@ end
     ϕdϕ = α -> (ϕ(α), dϕ(α))
     @test iszero(
         OrdinaryDiffEqNonlinearSolve.linesearch_step(
-            BackTracking(), ϕ, dϕ, ϕdϕ, 1.0
+            BackTracking(), ϕ, dϕ, ϕdϕ, 1.0, [1.0], [1.0]
         )
     )
 end
@@ -121,7 +121,7 @@ end
         @test dϕ(zero(T)) > 0
         for search in (halving_search, BackTracking())
             α = OrdinaryDiffEqNonlinearSolve.linesearch_step(
-                search, ϕ, dϕ, ϕdϕ, one(T)
+                search, ϕ, dϕ, ϕdϕ, one(T), [one(T)], [one(T)]
             )
             @test α > 0
             @test ϕ(α) < ϕ(zero(T))
@@ -140,5 +140,39 @@ end
         @test SciMLBase.successful_retcode(sol)
         @test sol.u[end][1] ≈ 0.1 / (0.8 + 1.0e-9)
         @test abs((0.8 + 1.0e-9) * sol.u[end][1] - 0.1) < 1.0e-12
+    end
+end
+
+@testset "sub-epsilon line-search minimum" begin
+    # A Jacobian stale by ~eps makes the Newton direction overshoot so far that
+    # the line minimum sits below eps(1); only sub-epsilon steps make progress.
+    function deep_halving(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        iszero(ϕ0) && return zero(α0), ϕ0
+        α = α0
+        while α > eps(α0)^2
+            ϕα = ϕ(α)
+            ϕα < ϕ0 && return α, ϕα
+            α /= 2
+        end
+        error("No decreasing step found")
+    end
+
+    for (T, detune, stiffen, abstol, exact) in (
+            (Float32, 1.0e-6, 8000, 1.0e-6, 0.00125),
+            (Float64, 1.0e-15, 80, 1.0e-12, 0.125),
+            (Float64, 1.0e-15, 8000, 1.0e-12, 0.00125),
+        )
+        function rhs!(du, u, p, t)
+            du[1] = (10 - p[1] - stiffen * t) * u[1] + 1
+        end
+        prob = ODEProblem(rhs!, T[0], (T(0), T(0.1)), T[detune])
+        for search in (deep_halving, BackTracking())
+            sol = solve(
+                prob, ImplicitEuler(nlsolve = NLNewton(relax = search, max_iter = 100));
+                dt = T(0.1), adaptive = false, abstol = abstol, reltol = 0.0
+            )
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.u[end][1] ≈ exact
+        end
     end
 end
