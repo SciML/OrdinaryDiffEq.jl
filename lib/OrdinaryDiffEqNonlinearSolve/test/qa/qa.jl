@@ -80,7 +80,7 @@ run_qa(
                 :value, :anyeltypedual, :forwarddiff_chunksize,
                 :has_Wfact, :has_Wfact_t, :has_jac_u, :has_jac_du, :postamble!,
                 # ForwardDiff internals.
-                :Tag, :pickchunksize,
+                :Tag, :pickchunksize, :jacobian, :JacobianConfig, :Chunk,
             ),
         ),
     ),

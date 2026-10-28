@@ -1,5 +1,5 @@
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqNonlinearSolve,
-    StaticArrays, LinearAlgebra, Test, ADTypes
+    StaticArrays, LinearAlgebra, Test, ADTypes, ForwardDiff
 
 ## Mass Matrix
 
@@ -224,4 +224,23 @@ end
     @test integ.u !== prob.u0
     @test prob.u0 == [1.0, 0.5]
     @test integ.u ≈ [1.0, 0.0] atol = 1.0e-10
+end
+
+@testset "In-place BrownFullBasicInit keeps the partials of u0 (#4936)" begin
+    function f!(du, u, p, t)
+        du[1] = -p[1] * u[1] * u[2]
+        du[2] = u[2]^3 + u[2] - p[2] * u[1]
+        return nothing
+    end
+    fn = ODEFunction(f!; mass_matrix = [1.0 0.0; 0.0 0.0])
+    prob = ODEProblem(fn, [1.0, 0.3], (0.0, 0.5), [1.2, 2.5])
+    function y0(v)
+        integ = init(
+            remake(prob; u0 = [v[1], 0.3 * one(v[1])], p = [1.2, v[2]]), Rodas5P();
+            initializealg = BrownFullBasicInit(), abstol = 1.0e-12, reltol = 1.0e-12
+        )
+        return integ.u[2]
+    end
+    # y^3 + y = c s gives y = 1 and a gradient (c, s) / (3y^2 + 1)
+    @test ForwardDiff.gradient(y0, [0.8, 2.5]) ≈ [0.625, 0.2] rtol = 1.0e-8
 end
