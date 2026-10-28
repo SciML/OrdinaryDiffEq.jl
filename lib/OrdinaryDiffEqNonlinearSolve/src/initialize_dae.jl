@@ -714,10 +714,10 @@ function _initialize_dae!(
 
     u = if u0 isa Number
         [u0]
-    elseif u0 isa StaticArray
-        Array(u0)
-    else
+    elseif ArrayInterface.ismutable(u0)
         u0
+    else
+        Array(u0)
     end
 
     nlequation = @closure (x, _) -> begin
