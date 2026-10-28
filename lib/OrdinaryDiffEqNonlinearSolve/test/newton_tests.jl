@@ -99,3 +99,46 @@ end
         )
     )
 end
+
+@testset "nearby line-search minimum" begin
+    function halving_search(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        iszero(ϕ0) && return zero(α0), ϕ0
+        α = α0
+        while α > eps(α0)
+            ϕα = ϕ(α)
+            ϕα < ϕ0 && return α, ϕα
+            α /= 2
+        end
+        error("No decreasing step found")
+    end
+
+    @testset "helper $T" for (T, root) in (
+            (Float32, sqrt(eps(Float32)) / 16), (Float64, 1.0e-9),
+        )
+        ϕ(α) = abs(one(T) - α / root)
+        dϕ(α) = (ϕ(α + sqrt(eps(T))) - ϕ(α)) / sqrt(eps(T))
+        ϕdϕ(α) = (ϕ(α), dϕ(α))
+        @test dϕ(zero(T)) > 0
+        for search in (halving_search, BackTracking())
+            α = OrdinaryDiffEqNonlinearSolve.linesearch_step(
+                search, ϕ, dϕ, ϕdϕ, one(T)
+            )
+            @test α > 0
+            @test ϕ(α) < ϕ(zero(T))
+        end
+    end
+
+    @testset "analytic implicit stage" begin
+        function rhs!(du, u, p, t)
+            du[1] = (10 - 1.0e-8 - 80t) * u[1] + 1
+        end
+        prob = ODEProblem(rhs!, [0.0], (0.0, 0.1))
+        sol = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton(relax = halving_search, max_iter = 100));
+            dt = 0.1, adaptive = false, abstol = 1.0e-12, reltol = 0.0
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ 0.1 / (0.8 + 1.0e-9)
+        @test abs((0.8 + 1.0e-9) * sol.u[end][1] - 0.1) < 1.0e-12
+    end
+end

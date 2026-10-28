@@ -991,9 +991,13 @@ function linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0)
     fallback = dϕ0 > zero(dϕ0) || !isfinite(dϕ0)
     if fallback
         iszero(ϕ0) && return zero(α0)
-        # Resolve roundoff in the slope without assuming the Newton direction descends.
+        # Shrink probes that can overshoot a nearby residual minimum.
         δ = cbrt(eps(real(α0)))
-        dϕ0 = (ϕ(δ) - ϕ0) / δ
+        while δ > eps(real(α0))
+            dϕ0 = (ϕ(δ) - ϕ0) / δ
+            isfinite(dϕ0) && dϕ0 < zero(dϕ0) && break
+            δ /= 2
+        end
         if !isfinite(dϕ0) || dϕ0 >= zero(dϕ0)
             error("Line search failed: the Newton direction does not decrease the residual.")
         end
