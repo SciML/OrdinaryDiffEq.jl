@@ -135,3 +135,22 @@ end
         end
     end
 end
+
+using DiffEqBase: ConditionWithDerivative
+@testset "Event times from a condition with its derivative" begin
+    # u' = -u crosses 1/2 at t = log(2).
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 2.0))
+    condition(u, t, integrator) = u - 0.5
+    derivative(u, t, integrator) = -u
+    for rootfind in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        times = Float64[]
+        # No interior points, so that the counts below come from the root finding.
+        callback(c) = ContinuousCallback(c, integrator -> push!(times, integrator.t); rootfind, interp_points = 0)
+        solve_with(c) = solve(prob, Tsit5(); callback = callback(c), abstol = 1.0e-12, reltol = 1.0e-12)
+        sol_modab = solve_with(condition)
+        sol_newton = solve_with(ConditionWithDerivative(condition, derivative))
+        @test times[1] ≈ log(2) rtol = 1.0e-10
+        @test abs(times[2] - times[1]) <= 4 * eps(log(2))
+        @test sol_newton.stats.ncondition < sol_modab.stats.ncondition
+    end
+end
