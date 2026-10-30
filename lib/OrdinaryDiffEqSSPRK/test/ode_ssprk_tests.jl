@@ -631,3 +631,29 @@ end
         @test solve(prob, alg; dt = 0.05).retcode == ReturnCode.Success
     end
 end
+
+@testset "SSP multistep start-up slopes" begin
+    prob_oop = ODEProblem(
+        ODEFunction((u, p, t) -> cos(t); analytic = (u0, p, t) -> sin(t) - sin(1.0)),
+        0.0, (1.0, 2.0)
+    )
+    prob_iip = ODEProblem(
+        ODEFunction((du, u, p, t) -> du[1] = cos(t); analytic = (u0, p, t) -> [sin(t) - sin(1.0)]),
+        [0.0], (1.0, 2.0)
+    )
+    for prob in (prob_oop, prob_iip)
+        sim = test_convergence(1 .// 2 .^ (8:-1:4), prob, SSPRKMSVS43())
+        @test sim.𝒪est[:final] ≈ 3 atol = testTol
+    end
+    sol_oop = solve(prob_oop, SSPRKMSVS32(); dt = 1 // 16)
+    sol_iip = solve(prob_iip, SSPRKMSVS32(); dt = 1 // 16)
+    @test sol_oop.u[end] ≈ sol_iip.u[end][1]
+end
+
+@testset "SSPRK932 error estimate" begin
+    for prob in test_problems_only_time
+        sol = solve(prob, SSPRK932(); abstol = 1.0e-6, reltol = 1.0e-6)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.naccept < 100
+    end
+end
