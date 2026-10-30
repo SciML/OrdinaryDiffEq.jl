@@ -108,6 +108,14 @@ function GlobalDiffEq._adjoint_defect_projection(
         sensealg isa SciMLSensitivity.InterpolatingAdjoint ||
         return _plain_adjoint_projection(data, sensealg, adjoint_alg, direction; abstol, reltol, terminal_time)
     sensealg = something(sensealg, SciMLSensitivity.InterpolatingAdjoint(autojacvec = SciMLSensitivity.ReverseDiffVJP()))
+    # The dual must follow the dense output P itself; a checkpointed adjoint solves the
+    # forward problem again between its checkpoints, which gives another curve.
+    sensealg.checkpointing && throw(
+        ArgumentError(
+            "GlobalAdjoint does not support InterpolatingAdjoint(checkpointing = true): the " *
+                "adjoint must follow the stored forward solution"
+        )
+    )
     f = SciMLBase.unwrapped_f(prob.f)
     iip = SciMLBase.isinplace(prob)
     M = prob.f.mass_matrix

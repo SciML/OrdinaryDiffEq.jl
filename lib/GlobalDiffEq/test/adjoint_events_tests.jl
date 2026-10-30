@@ -284,6 +284,9 @@ end
     prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0); callback = cb)
     @test_throws ArgumentError solve(prob, GlobalAdjoint(Tsit5(); gtol = 1.0e-4, control = StepGridRefinement))
     @test_throws ArgumentError adjoint_error_estimate(prob, GlobalAdjoint(Tsit5(); sensealg = QuadratureAdjoint()))
+    @test_throws ArgumentError adjoint_error_estimate(
+        prob, GlobalAdjoint(Tsit5(); sensealg = InterpolatingAdjoint(checkpointing = true))
+    )
     full = ODEProblem(
         ODEFunction((u, p, t) -> -u; mass_matrix = [1.0 0.5; 0.0 0.0]), [1.0, 1.0], (0.0, 1.0)
     )

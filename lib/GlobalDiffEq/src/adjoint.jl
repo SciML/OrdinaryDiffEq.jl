@@ -122,8 +122,9 @@ components of the error enter the identity; an algebraic component of a projecti
 direction is moved to the differential ones through the constraint at the final time, and
 the adjoint solver needs a Jacobian that does not differentiate through the ReverseDiff
 adjoint (for example `Rodas5P(autodiff = AutoFiniteDiff())` as `adjoint_alg`). Events, DAEs
-and the jump terms need an `InterpolatingAdjoint` `sensealg` (the default);
-`StepGridRefinement` does not support callbacks.
+and the jump terms need an `InterpolatingAdjoint` `sensealg` (the default), without
+`checkpointing` (the adjoint must follow the stored forward solution, not a solve again from
+checkpoints); `StepGridRefinement` does not support callbacks.
 
 This implementation supports forward-time problems with real vector states. The wrapped
 solver must provide a dense first-derivative interpolation.
