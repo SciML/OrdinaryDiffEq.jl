@@ -2,7 +2,9 @@ using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqDefault
 using OrdinaryDiffEqCore: CompositeAlgorithm
+using OrdinaryDiffEqNonlinearSolve: NLAnderson
 import SciMLBase
 using Test
 
@@ -23,6 +25,20 @@ using Test
 
     # compare interpolation
     @test sol1(0:0.1:1) == sol2(0:0.1:1)
+end
+
+@testset "AutoSwitch keeps constrained and fpsolve" begin
+    prob = prob_dde_constant_1delay_ip
+
+    for alg in (AutoTsit5(Rosenbrock23()), DefaultODEAlgorithm())
+        integrator = init(prob, MethodOfSteps(alg; constrained = true))
+        @test integrator.opts.dtmax == 1
+
+        fpsolve = NLAnderson()
+        integrator = init(prob, MethodOfSteps(alg; fpsolve))
+        @test integrator.opts.dtmax == 10
+        @test integrator.fpsolver.alg === fpsolve
+    end
 end
 
 @testset "issue #148" begin
