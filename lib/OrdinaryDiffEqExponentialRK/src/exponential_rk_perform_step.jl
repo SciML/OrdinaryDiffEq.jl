@@ -8,6 +8,18 @@
     return G .-= Au_cache
 end
 
+# Error estimate of an embedded ExpRK pair. Called where `utilde` is formed, so
+# that it is never read on a path that does not define it.
+@inline function _expRK_EEst!(integrator, utilde, u)
+    atmp = calculate_residuals(
+        utilde, integrator.uprev, u, integrator.opts.abstol,
+        integrator.opts.reltol, integrator.opts.internalnorm, integrator.t
+    )
+    return OrdinaryDiffEqCore.set_EEst!(
+        integrator, integrator.opts.internalnorm(atmp, integrator.t)
+    )
+end
+
 ##########################################
 # Common initializers for ExpRK integrators
 function initialize!(integrator, cache::ExpRKConstantCache)
@@ -880,6 +892,563 @@ function perform_step!(integrator, cache::FriedliCache, repeat_step = false)
         mul!(rtmp2, B4, F4)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false u = uprev + dt * rtmp
+    end
+
+    # Update integrator state
+    f(integrator.fsallast, u, p, t + dt)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    # integrator.k is automatically set due to aliasing
+end
+
+#############################################
+# Embedded ExpRK pair integrators
+
+function perform_step!(integrator, cache::ERK32ZBConstantCache, repeat_step = false)
+    (; t, dt, uprev, f, p) = integrator
+    A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator, cache) # get linear operator
+    alg = unwrap_alg(integrator, true)
+    update_expRK_operators!(cache, alg, f, dt)
+
+    Au = A * uprev
+    F1 = integrator.fsalfirst
+    halfdt = dt / 2
+    threequarterdt = 3dt / 4
+    nf2 = 2
+    if alg.krylov
+        kwargs = _arnoldi_kwargs(alg, A, integrator, nothing)
+        # Krylov on F1 (first column)
+        Ks = arnoldi(A, F1; kwargs...)
+        w1 = phiv(dt, Ks, 3)
+        w1h = phiv(halfdt, Ks, 3)
+        w1q = phiv(threequarterdt, Ks, 2)
+        U2 = uprev + dt * ((1 // 2) * w1h[:, 2])
+        F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
+        # Krylov on F2 (second column)
+        Ks = arnoldi(A, F2; kwargs...)
+        w2 = phiv(dt, Ks, 3)
+        w2h = phiv(halfdt, Ks, 3)
+        w2q = phiv(threequarterdt, Ks, 2)
+        U3 = uprev +
+            dt * (
+            -(3 // 8) * w1h[:, 3] + (3 // 4) * w1q[:, 2] - (9 // 8) * w1q[:, 3] +
+                (3 // 8) * w2h[:, 3] + (9 // 8) * w2q[:, 3]
+        )
+        F3 = _compute_nl(f, U3, p, t + threequarterdt, A) + Au
+        # Krylov on F3 (third column)
+        Ks = arnoldi(A, F3; kwargs...)
+        w3 = phiv(dt, Ks, 3)
+        # update u with the third order estimate
+        u = uprev +
+            dt * (
+            w1[:, 2] - (19 // 12) * w1[:, 3] + (1 // 12) * w1[:, 4] +
+                (3 // 4) * w2[:, 3] - (1 // 4) * w2[:, 4] +
+                (5 // 6) * w3[:, 3] + (1 // 6) * w3[:, 4]
+        )
+        if integrator.opts.adaptive
+            # the second order estimate uses the nonlinearity at the new solution
+            w3h = phiv(halfdt, Ks, 3)
+            w3q = phiv(threequarterdt, Ks, 2)
+            F4 = _compute_nl(f, u, p, t + dt, A) + Au
+            nf2 += 1
+            Ks = arnoldi(A, F4; kwargs...)
+            w4 = phiv(dt, Ks, 3)
+            w4h = phiv(halfdt, Ks, 3)
+            w4q = phiv(threequarterdt, Ks, 2)
+            utilde = dt * (
+                -(11 // 18) * w1[:, 2] - (7 // 3) * w1[:, 3] +
+                    (1353 // 70) * w1[:, 4] - (9 // 14) * w1h[:, 2] -
+                    (1 // 12) * w1h[:, 3] - (11 // 30) * w1h[:, 4] -
+                    (7 // 6) * w1q[:, 2] - (2 // 7) * w1q[:, 3] +
+                    (1 // 9) * w2[:, 2] + (5 // 4) * w2[:, 3] -
+                    (5 // 12) * w2[:, 4] + (1 // 3) * w2h[:, 3] -
+                    (1 // 6) * w2h[:, 4] + (1 // 6) * w2q[:, 2] +
+                    (1 // 7) * w2q[:, 3] -
+                    (2 // 3) * w3[:, 2] + (1 // 2) * w3[:, 3] +
+                    (1 // 6) * w3[:, 4] + (1 // 7) * w3h[:, 2] +
+                    (1 // 5) * w3h[:, 4] + (1 // 2) * w3q[:, 2] +
+                    (1 // 7) * w3q[:, 3] +
+                    (7 // 6) * w4[:, 2] + (7 // 12) * w4[:, 3] -
+                    (2671 // 140) * w4[:, 4] + (1 // 2) * w4h[:, 2] -
+                    (1 // 4) * w4h[:, 3] + (1 // 3) * w4h[:, 4] +
+                    (1 // 2) * w4q[:, 2]
+            )
+            _expRK_EEst!(integrator, utilde, u)
+        end
+    else
+        A21, A31, A32, B1, B2, B3, E1, E2, E3, E4 = cache.ops
+        # stage 1 (fsaled)
+        # stage 2
+        U2 = uprev + dt * (A21 * F1)
+        F2 = f.f2(U2, p, t + halfdt) + Au
+        # stage 3
+        U3 = uprev + dt * (A31 * F1 + A32 * F2)
+        F3 = f.f2(U3, p, t + threequarterdt) + Au
+        # update u with the third order estimate
+        u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3)
+        if integrator.opts.adaptive
+            # the second order estimate uses the nonlinearity at the new solution
+            F4 = f.f2(u, p, t + dt) + Au
+            nf2 += 1
+            utilde = dt * (E1 * F1 + E2 * F2 + E3 * F3 + E4 * F4)
+            _expRK_EEst!(integrator, utilde, u)
+        end
+    end
+    if isa(f, SplitFunction)
+        integrator.stats.nf2 += nf2
+    else
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, nf2)
+    end
+
+    # Update integrator state
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return integrator.u = u
+end
+
+function perform_step!(integrator, cache::ERK32ZBCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; utilde, tmp, rtmp, rtmp2, Au, F2, F3, F4, J, KsCache) = cache
+    A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
+    alg = unwrap_alg(integrator, true)
+    update_expRK_operators!(cache, alg, f, dt)
+
+    F1 = integrator.fsalfirst
+    mul!(Au, A, uprev)
+    halfdt = dt / 2
+    threequarterdt = 3dt / 4
+    nf2 = 2
+    if alg.krylov
+        Ks, phiv_cache, ws, herm = KsCache
+        w1, w1h, w1q, w2, w2h, w2q, w3, w3h, w3q, w4, w4h, w4q = ws
+        kwargs = _arnoldi_kwargs(alg, A, integrator, herm)
+        # Krylov on F1 (first column)
+        arnoldi!(Ks, A, F1; kwargs...)
+        phiv!(w1, dt, Ks, 3; cache = phiv_cache)
+        phiv!(w1h, halfdt, Ks, 3; cache = phiv_cache)
+        phiv!(w1q, threequarterdt, Ks, 2; cache = phiv_cache)
+        @muladd @.. broadcast = false @views tmp = uprev + dt * ((1 // 2) * w1h[:, 2]) # tmp is U2
+        _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp)
+        F2 .+= Au
+        # Krylov on F2 (second column)
+        arnoldi!(Ks, A, F2; kwargs...)
+        phiv!(w2, dt, Ks, 3; cache = phiv_cache)
+        phiv!(w2h, halfdt, Ks, 3; cache = phiv_cache)
+        phiv!(w2q, threequarterdt, Ks, 2; cache = phiv_cache)
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt * (
+            -(3 // 8) * w1h[:, 3] + (3 // 4) * w1q[:, 2] - (9 // 8) * w1q[:, 3] +
+                (3 // 8) * w2h[:, 3] + (9 // 8) * w2q[:, 3]
+        ) # tmp is U3
+        _compute_nl!(F3, f, tmp, p, t + threequarterdt, A, rtmp)
+        F3 .+= Au
+        # Krylov on F3 (third column)
+        arnoldi!(Ks, A, F3; kwargs...)
+        phiv!(w3, dt, Ks, 3; cache = phiv_cache)
+        # update u with the third order estimate
+        @muladd @.. broadcast = false @views u = uprev +
+            dt * (
+            w1[:, 2] - (19 // 12) * w1[:, 3] + (1 // 12) * w1[:, 4] +
+                (3 // 4) * w2[:, 3] - (1 // 4) * w2[:, 4] +
+                (5 // 6) * w3[:, 3] + (1 // 6) * w3[:, 4]
+        )
+        if integrator.opts.adaptive
+            # the second order estimate uses the nonlinearity at the new solution
+            phiv!(w3h, halfdt, Ks, 3; cache = phiv_cache)
+            phiv!(w3q, threequarterdt, Ks, 2; cache = phiv_cache)
+            _compute_nl!(F4, f, u, p, t + dt, A, rtmp)
+            F4 .+= Au
+            nf2 += 1
+            arnoldi!(Ks, A, F4; kwargs...)
+            phiv!(w4, dt, Ks, 3; cache = phiv_cache)
+            phiv!(w4h, halfdt, Ks, 3; cache = phiv_cache)
+            phiv!(w4q, threequarterdt, Ks, 2; cache = phiv_cache)
+            @muladd @.. broadcast = false @views utilde = dt * (
+                -(11 // 18) * w1[:, 2] - (7 // 3) * w1[:, 3] +
+                    (1353 // 70) * w1[:, 4] - (9 // 14) * w1h[:, 2] -
+                    (1 // 12) * w1h[:, 3] - (11 // 30) * w1h[:, 4] -
+                    (7 // 6) * w1q[:, 2] - (2 // 7) * w1q[:, 3] +
+                    (1 // 9) * w2[:, 2] + (5 // 4) * w2[:, 3] -
+                    (5 // 12) * w2[:, 4] + (1 // 3) * w2h[:, 3] -
+                    (1 // 6) * w2h[:, 4] + (1 // 6) * w2q[:, 2] +
+                    (1 // 7) * w2q[:, 3] -
+                    (2 // 3) * w3[:, 2] + (1 // 2) * w3[:, 3] +
+                    (1 // 6) * w3[:, 4] + (1 // 7) * w3h[:, 2] +
+                    (1 // 5) * w3h[:, 4] + (1 // 2) * w3q[:, 2] +
+                    (1 // 7) * w3q[:, 3] +
+                    (7 // 6) * w4[:, 2] + (7 // 12) * w4[:, 3] -
+                    (2671 // 140) * w4[:, 4] + (1 // 2) * w4h[:, 2] -
+                    (1 // 4) * w4h[:, 3] + (1 // 3) * w4h[:, 4] +
+                    (1 // 2) * w4q[:, 2]
+            )
+        end
+    else
+        A21, A31, A32, B1, B2, B3, E1, E2, E3, E4 = cache.ops
+        # stage 1 (fsaled)
+        # stage 2
+        mul!(rtmp, A21, F1)
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
+        f.f2(F2, tmp, p, t + halfdt)
+        F2 .+= Au
+        # stage 3
+        mul!(rtmp, A31, F1)
+        mul!(rtmp2, A32, F2)
+        rtmp .+= rtmp2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
+        f.f2(F3, tmp, p, t + threequarterdt)
+        F3 .+= Au
+        # update u with the third order estimate
+        mul!(rtmp, B1, F1)
+        mul!(rtmp2, B2, F2)
+        rtmp .+= rtmp2
+        mul!(rtmp2, B3, F3)
+        rtmp .+= rtmp2
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
+        if integrator.opts.adaptive
+            # the second order estimate uses the nonlinearity at the new solution
+            f.f2(F4, u, p, t + dt)
+            F4 .+= Au
+            nf2 += 1
+            mul!(rtmp, E1, F1)
+            mul!(rtmp2, E2, F2)
+            rtmp .+= rtmp2
+            mul!(rtmp2, E3, F3)
+            rtmp .+= rtmp2
+            mul!(rtmp2, E4, F4)
+            rtmp .+= rtmp2
+            @.. broadcast = false utilde = dt * rtmp
+        end
+    end
+    if isa(f, SplitFunction)
+        integrator.stats.nf2 += nf2
+    else
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, nf2)
+    end
+
+    if integrator.opts.adaptive
+        calculate_residuals!(
+            tmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
+    end
+
+    # Update integrator state
+    f(integrator.fsallast, u, p, t + dt)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    # integrator.k is automatically set due to aliasing
+end
+
+function perform_step!(integrator, cache::ERK43ZBConstantCache, repeat_step = false)
+    (; t, dt, uprev, f, p) = integrator
+    A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator, cache) # get linear operator
+    alg = unwrap_alg(integrator, true)
+    update_expRK_operators!(cache, alg, f, dt)
+
+    Au = A * uprev
+    F1 = integrator.fsalfirst
+    halfdt = dt / 2
+    sixthdt = dt / 6
+    if alg.krylov
+        kwargs = _arnoldi_kwargs(alg, A, integrator, nothing)
+        # Krylov on F1 (first column)
+        Ks = arnoldi(A, F1; kwargs...)
+        w1 = phiv(dt, Ks, 3)
+        w1h = phiv(halfdt, Ks, 3)
+        w1s = phiv(sixthdt, Ks, 2)
+        U2 = uprev + dt * ((1 // 6) * w1s[:, 2])
+        F2 = _compute_nl(f, U2, p, t + sixthdt, A) + Au
+        # Krylov on F2 (second column)
+        Ks = arnoldi(A, F2; kwargs...)
+        w2 = phiv(dt, Ks, 3)
+        w2h = phiv(halfdt, Ks, 3)
+        w2s = phiv(sixthdt, Ks, 2)
+        U3 = uprev +
+            dt * (
+            (1 // 2) * w1h[:, 2] - (3 // 2) * w1h[:, 3] - (1 // 2) * w1s[:, 3] +
+                (3 // 2) * w2h[:, 3] + (1 // 2) * w2s[:, 3]
+        )
+        F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
+        # Krylov on F3 (third column)
+        Ks = arnoldi(A, F3; kwargs...)
+        w3 = phiv(dt, Ks, 3)
+        w3h = phiv(halfdt, Ks, 3)
+        w3s = phiv(sixthdt, Ks, 2)
+        U4 = uprev +
+            dt * (
+            -(19 // 90) * w1[:, 2] + (1 // 6) * w1h[:, 2] - (11 // 6) * w1h[:, 3] -
+                (2 // 5) * w1h[:, 4] - (1 // 3) * w1s[:, 2] - (41 // 18) * w1s[:, 3] +
+                (19 // 60) * w2[:, 2] + (1 // 2) * w2h[:, 2] + 2 * w2h[:, 3] +
+                (3 // 5) * w2h[:, 4] + (1 // 2) * w2s[:, 2] + (13 // 6) * w2s[:, 3] -
+                (19 // 180) * w3[:, 2] - (1 // 6) * w3h[:, 2] - (1 // 6) * w3h[:, 3] -
+                (1 // 5) * w3h[:, 4] - (1 // 6) * w3s[:, 2] + (1 // 9) * w3s[:, 3]
+        )
+        F4 = _compute_nl(f, U4, p, t + halfdt, A) + Au
+        # Krylov on F4 (fourth column)
+        Ks = arnoldi(A, F4; kwargs...)
+        w4 = phiv(dt, Ks, 3)
+        w4h = phiv(halfdt, Ks, 3)
+        # stage 5 is the third order estimate
+        U5 = uprev +
+            dt * (
+            (71 // 90) * w1[:, 2] - 8 * w1[:, 3] + 24 * w1[:, 4] -
+                (1 // 3) * w1h[:, 2] - (7 // 3) * w1h[:, 3] + (58 // 5) * w1h[:, 4] -
+                (1 // 3) * w1s[:, 2] + (2 // 9) * w1s[:, 3] +
+                (19 // 60) * w2[:, 2] + 9 * w2[:, 3] - 36 * w2[:, 4] +
+                (1 // 2) * w2h[:, 2] + (7 // 2) * w2h[:, 3] - (87 // 5) * w2h[:, 4] +
+                (1 // 2) * w2s[:, 2] - (1 // 3) * w2s[:, 3] -
+                (19 // 180) * w3[:, 2] - 2 * w3[:, 3] + 18 * w3[:, 4] -
+                (1 // 6) * w3h[:, 2] - (13 // 6) * w3h[:, 3] + (44 // 5) * w3h[:, 4] -
+                (1 // 6) * w3s[:, 2] + (1 // 9) * w3s[:, 3] +
+                w4[:, 3] - 6 * w4[:, 4] + w4h[:, 3] - 3 * w4h[:, 4]
+        )
+        F5 = _compute_nl(f, U5, p, t + dt, A) + Au
+        if isa(f, SplitFunction)
+            integrator.stats.nf2 += 4
+        else
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
+        end
+        # Krylov on F5 (fifth column)
+        Ks = arnoldi(A, F5; kwargs...)
+        w5 = phiv(dt, Ks, 3)
+        # update u with the fourth order estimate
+        u = uprev +
+            dt * (
+            w1[:, 2] - (67 // 9) * w1[:, 3] + (52 // 3) * w1[:, 4] +
+                8 * w2[:, 3] - 24 * w2[:, 4] -
+                (11 // 9) * w3[:, 3] + (26 // 3) * w3[:, 4] +
+                (7 // 9) * w4[:, 3] - (10 // 3) * w4[:, 4] -
+                (1 // 9) * w5[:, 3] + (4 // 3) * w5[:, 4]
+        )
+        if integrator.opts.adaptive
+            utilde = dt * (
+                (19 // 90) * w1[:, 2] + (5 // 9) * w1[:, 3] - (20 // 3) * w1[:, 4] +
+                    (1 // 3) * w1h[:, 2] + (7 // 3) * w1h[:, 3] -
+                    (58 // 5) * w1h[:, 4] + (1 // 3) * w1s[:, 2] -
+                    (2 // 9) * w1s[:, 3] -
+                    (19 // 60) * w2[:, 2] - w2[:, 3] + 12 * w2[:, 4] -
+                    (1 // 2) * w2h[:, 2] - (7 // 2) * w2h[:, 3] +
+                    (87 // 5) * w2h[:, 4] - (1 // 2) * w2s[:, 2] +
+                    (1 // 3) * w2s[:, 3] +
+                    (19 // 180) * w3[:, 2] + (7 // 9) * w3[:, 3] -
+                    (28 // 3) * w3[:, 4] + (1 // 6) * w3h[:, 2] +
+                    (13 // 6) * w3h[:, 3] - (44 // 5) * w3h[:, 4] +
+                    (1 // 6) * w3s[:, 2] - (1 // 9) * w3s[:, 3] -
+                    (2 // 9) * w4[:, 3] + (8 // 3) * w4[:, 4] - w4h[:, 3] +
+                    3 * w4h[:, 4] -
+                    (1 // 9) * w5[:, 3] + (4 // 3) * w5[:, 4]
+            )
+            _expRK_EEst!(integrator, utilde, u)
+        end
+    else
+        A21, A31, A32, A41, A42, A43, A51, A52, A53, A54,
+            B1, B2, B3, B4, B5, E1, E2, E3, E4, E5 = cache.ops
+        # stage 1 (fsaled)
+        # stage 2
+        U2 = uprev + dt * (A21 * F1)
+        F2 = f.f2(U2, p, t + sixthdt) + Au
+        # stage 3
+        U3 = uprev + dt * (A31 * F1 + A32 * F2)
+        F3 = f.f2(U3, p, t + halfdt) + Au
+        # stage 4
+        U4 = uprev + dt * (A41 * F1 + A42 * F2 + A43 * F3)
+        F4 = f.f2(U4, p, t + halfdt) + Au
+        # stage 5 is the third order estimate
+        U5 = uprev + dt * (A51 * F1 + A52 * F2 + A53 * F3 + A54 * F4)
+        F5 = f.f2(U5, p, t + dt) + Au
+        integrator.stats.nf2 += 4
+        # update u with the fourth order estimate
+        u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3 + B4 * F4 + B5 * F5)
+        if integrator.opts.adaptive
+            utilde = dt * (E1 * F1 + E2 * F2 + E3 * F3 + E4 * F4 + E5 * F5)
+            _expRK_EEst!(integrator, utilde, u)
+        end
+    end
+
+    # Update integrator state
+    integrator.fsallast = f(u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return integrator.u = u
+end
+
+function perform_step!(integrator, cache::ERK43ZBCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p) = integrator
+    (; utilde, tmp, rtmp, rtmp2, Au, F2, F3, F4, F5, J, KsCache) = cache
+    A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J) # get linear operator
+    alg = unwrap_alg(integrator, true)
+    update_expRK_operators!(cache, alg, f, dt)
+
+    F1 = integrator.fsalfirst
+    mul!(Au, A, uprev)
+    halfdt = dt / 2
+    sixthdt = dt / 6
+    if alg.krylov
+        Ks, phiv_cache, ws, herm = KsCache
+        w1, w1h, w1s, w2, w2h, w2s, w3, w3h, w3s, w4, w4h, w5 = ws
+        kwargs = _arnoldi_kwargs(alg, A, integrator, herm)
+        # Krylov on F1 (first column)
+        arnoldi!(Ks, A, F1; kwargs...)
+        phiv!(w1, dt, Ks, 3; cache = phiv_cache)
+        phiv!(w1h, halfdt, Ks, 3; cache = phiv_cache)
+        phiv!(w1s, sixthdt, Ks, 2; cache = phiv_cache)
+        @muladd @.. broadcast = false @views tmp = uprev + dt * ((1 // 6) * w1s[:, 2]) # tmp is U2
+        _compute_nl!(F2, f, tmp, p, t + sixthdt, A, rtmp)
+        F2 .+= Au
+        # Krylov on F2 (second column)
+        arnoldi!(Ks, A, F2; kwargs...)
+        phiv!(w2, dt, Ks, 3; cache = phiv_cache)
+        phiv!(w2h, halfdt, Ks, 3; cache = phiv_cache)
+        phiv!(w2s, sixthdt, Ks, 2; cache = phiv_cache)
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt * (
+            (1 // 2) * w1h[:, 2] - (3 // 2) * w1h[:, 3] - (1 // 2) * w1s[:, 3] +
+                (3 // 2) * w2h[:, 3] + (1 // 2) * w2s[:, 3]
+        ) # tmp is U3
+        _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp)
+        F3 .+= Au
+        # Krylov on F3 (third column)
+        arnoldi!(Ks, A, F3; kwargs...)
+        phiv!(w3, dt, Ks, 3; cache = phiv_cache)
+        phiv!(w3h, halfdt, Ks, 3; cache = phiv_cache)
+        phiv!(w3s, sixthdt, Ks, 2; cache = phiv_cache)
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt * (
+            -(19 // 90) * w1[:, 2] + (1 // 6) * w1h[:, 2] - (11 // 6) * w1h[:, 3] -
+                (2 // 5) * w1h[:, 4] - (1 // 3) * w1s[:, 2] - (41 // 18) * w1s[:, 3] +
+                (19 // 60) * w2[:, 2] + (1 // 2) * w2h[:, 2] + 2 * w2h[:, 3] +
+                (3 // 5) * w2h[:, 4] + (1 // 2) * w2s[:, 2] + (13 // 6) * w2s[:, 3] -
+                (19 // 180) * w3[:, 2] - (1 // 6) * w3h[:, 2] - (1 // 6) * w3h[:, 3] -
+                (1 // 5) * w3h[:, 4] - (1 // 6) * w3s[:, 2] + (1 // 9) * w3s[:, 3]
+        ) # tmp is U4
+        _compute_nl!(F4, f, tmp, p, t + halfdt, A, rtmp)
+        F4 .+= Au
+        # Krylov on F4 (fourth column)
+        arnoldi!(Ks, A, F4; kwargs...)
+        phiv!(w4, dt, Ks, 3; cache = phiv_cache)
+        phiv!(w4h, halfdt, Ks, 3; cache = phiv_cache)
+        # stage 5 is the third order estimate
+        @muladd @.. broadcast = false @views tmp = uprev +
+            dt * (
+            (71 // 90) * w1[:, 2] - 8 * w1[:, 3] + 24 * w1[:, 4] -
+                (1 // 3) * w1h[:, 2] - (7 // 3) * w1h[:, 3] + (58 // 5) * w1h[:, 4] -
+                (1 // 3) * w1s[:, 2] + (2 // 9) * w1s[:, 3] +
+                (19 // 60) * w2[:, 2] + 9 * w2[:, 3] - 36 * w2[:, 4] +
+                (1 // 2) * w2h[:, 2] + (7 // 2) * w2h[:, 3] - (87 // 5) * w2h[:, 4] +
+                (1 // 2) * w2s[:, 2] - (1 // 3) * w2s[:, 3] -
+                (19 // 180) * w3[:, 2] - 2 * w3[:, 3] + 18 * w3[:, 4] -
+                (1 // 6) * w3h[:, 2] - (13 // 6) * w3h[:, 3] + (44 // 5) * w3h[:, 4] -
+                (1 // 6) * w3s[:, 2] + (1 // 9) * w3s[:, 3] +
+                w4[:, 3] - 6 * w4[:, 4] + w4h[:, 3] - 3 * w4h[:, 4]
+        ) # tmp is U5
+        _compute_nl!(F5, f, tmp, p, t + dt, A, rtmp)
+        F5 .+= Au
+        if isa(f, SplitFunction)
+            integrator.stats.nf2 += 4
+        else
+            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
+        end
+        # Krylov on F5 (fifth column)
+        arnoldi!(Ks, A, F5; kwargs...)
+        phiv!(w5, dt, Ks, 3; cache = phiv_cache)
+        # update u with the fourth order estimate
+        @muladd @.. broadcast = false @views u = uprev +
+            dt * (
+            w1[:, 2] - (67 // 9) * w1[:, 3] + (52 // 3) * w1[:, 4] +
+                8 * w2[:, 3] - 24 * w2[:, 4] -
+                (11 // 9) * w3[:, 3] + (26 // 3) * w3[:, 4] +
+                (7 // 9) * w4[:, 3] - (10 // 3) * w4[:, 4] -
+                (1 // 9) * w5[:, 3] + (4 // 3) * w5[:, 4]
+        )
+        if integrator.opts.adaptive
+            @muladd @.. broadcast = false @views utilde = dt * (
+                (19 // 90) * w1[:, 2] + (5 // 9) * w1[:, 3] - (20 // 3) * w1[:, 4] +
+                    (1 // 3) * w1h[:, 2] + (7 // 3) * w1h[:, 3] -
+                    (58 // 5) * w1h[:, 4] + (1 // 3) * w1s[:, 2] -
+                    (2 // 9) * w1s[:, 3] -
+                    (19 // 60) * w2[:, 2] - w2[:, 3] + 12 * w2[:, 4] -
+                    (1 // 2) * w2h[:, 2] - (7 // 2) * w2h[:, 3] +
+                    (87 // 5) * w2h[:, 4] - (1 // 2) * w2s[:, 2] +
+                    (1 // 3) * w2s[:, 3] +
+                    (19 // 180) * w3[:, 2] + (7 // 9) * w3[:, 3] -
+                    (28 // 3) * w3[:, 4] + (1 // 6) * w3h[:, 2] +
+                    (13 // 6) * w3h[:, 3] - (44 // 5) * w3h[:, 4] +
+                    (1 // 6) * w3s[:, 2] - (1 // 9) * w3s[:, 3] -
+                    (2 // 9) * w4[:, 3] + (8 // 3) * w4[:, 4] - w4h[:, 3] +
+                    3 * w4h[:, 4] -
+                    (1 // 9) * w5[:, 3] + (4 // 3) * w5[:, 4]
+            )
+        end
+    else
+        A21, A31, A32, A41, A42, A43, A51, A52, A53, A54,
+            B1, B2, B3, B4, B5, E1, E2, E3, E4, E5 = cache.ops
+        # stage 1 (fsaled)
+        # stage 2
+        mul!(rtmp, A21, F1)
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
+        f.f2(F2, tmp, p, t + sixthdt)
+        F2 .+= Au
+        # stage 3
+        mul!(rtmp, A31, F1)
+        mul!(rtmp2, A32, F2)
+        rtmp .+= rtmp2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
+        f.f2(F3, tmp, p, t + halfdt)
+        F3 .+= Au
+        # stage 4
+        mul!(rtmp, A41, F1)
+        mul!(rtmp2, A42, F2)
+        rtmp .+= rtmp2
+        mul!(rtmp2, A43, F3)
+        rtmp .+= rtmp2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U4
+        f.f2(F4, tmp, p, t + halfdt)
+        F4 .+= Au
+        # stage 5 is the third order estimate
+        mul!(rtmp, A51, F1)
+        mul!(rtmp2, A52, F2)
+        rtmp .+= rtmp2
+        mul!(rtmp2, A53, F3)
+        rtmp .+= rtmp2
+        mul!(rtmp2, A54, F4)
+        rtmp .+= rtmp2
+        @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U5
+        f.f2(F5, tmp, p, t + dt)
+        F5 .+= Au
+        integrator.stats.nf2 += 4
+        # update u with the fourth order estimate
+        mul!(rtmp, B1, F1)
+        mul!(rtmp2, B2, F2)
+        rtmp .+= rtmp2
+        mul!(rtmp2, B3, F3)
+        rtmp .+= rtmp2
+        mul!(rtmp2, B4, F4)
+        rtmp .+= rtmp2
+        mul!(rtmp2, B5, F5)
+        rtmp .+= rtmp2
+        @muladd @.. broadcast = false u = uprev + dt * rtmp
+        if integrator.opts.adaptive
+            mul!(rtmp, E1, F1)
+            mul!(rtmp2, E2, F2)
+            rtmp .+= rtmp2
+            mul!(rtmp2, E3, F3)
+            rtmp .+= rtmp2
+            mul!(rtmp2, E4, F4)
+            rtmp .+= rtmp2
+            mul!(rtmp2, E5, F5)
+            rtmp .+= rtmp2
+            @.. broadcast = false utilde = dt * rtmp
+        end
+    end
+
+    if integrator.opts.adaptive
+        calculate_residuals!(
+            tmp, utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(tmp, t))
     end
 
     # Update integrator state
