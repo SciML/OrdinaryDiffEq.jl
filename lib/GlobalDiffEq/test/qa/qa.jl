@@ -19,8 +19,9 @@ run_qa(
                 # functions of its parent package.
                 :_adjoint_defect_projection, :_default_adjoint_sensealg,
                 # Internal helpers of GlobalDiffEq that the extension calls (the
-                # right-hand side, its Jacobian, and the parameters by event interval).
-                :_rhs, :_rhs_jacobian, :_parameters_at,
+                # right-hand side, its Jacobian, the parameters by event interval, and the event
+                # calls before a saved entry).
+                :_rhs, :_rhs_jacobian, :_parameters_at, :_calls_before_entry,
             ),
         ),
     ),

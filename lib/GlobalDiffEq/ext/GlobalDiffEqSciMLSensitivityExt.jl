@@ -67,7 +67,7 @@ function _bridged_adjoint(
         for w in active
             w.b == t || continue
             zb = integrator.u[dif]
-            za = w.S' * zb
+            za = w.St(zb)
             push!(pair_terms, dot(zb, w.eb[dif]) - dot(za, w.ea[dif]))
             integrator.u[dif] .= za
             target = prevfloat(w.a)
@@ -124,23 +124,26 @@ function GlobalDiffEq._adjoint_defect_projection(
         SciMLBase.ODEFunction{false}(F; mass_matrix = M), sol.prob.u0, sol.prob.tspan,
         [zero(eltype(sol.prob.u0))]
     )
-    after_event = terminal_index > firstindex(sol.t) && sol.t[terminal_index - 1] == terminal_time
+    # The calls at the terminal time that act before the saved entry. With none, the entry is
+    # the state before the events there (the left side). Otherwise the dual first crosses
+    # those calls, in reverse order, with their source terms (as the bridge does), and the
+    # entry is the state after them: after all calls at that time it is P(t⁺) up to the
+    # saved state, else the state between two calls.
+    before_entry = GlobalDiffEq._calls_before_entry(data, terminal_index)
+    after_event = !isempty(before_entry)
+    between = after_event && length(before_entry) < count(w -> w.b == terminal_time, data.calls)
     terminal_side = after_event ? :right : :left
-    PT = sol(terminal_time; continuity = terminal_side)
+    PT = between ? sol.u[terminal_index] : sol(terminal_time; continuity = terminal_side)
     A = isempty(alg_idx) ? nothing :
         GlobalDiffEq._rhs_jacobian(f, iip, PT, p_at(terminal_time, terminal_side), terminal_time)
     vterm, endpoint_term = _terminal_value(direction, A, rhs(PT, terminal_time, terminal_side), dif, alg_idx)
     # The identity gives the error against P(t∓); the saved state can differ from it (a dense
     # output that does not end at the step's state, such as Rosenbrock32's).
     shift = dot(direction, PT .- sol.u[terminal_index])
-    # After an event the dual crosses it at once, with its source term (as the bridge does).
-    if after_event
-        for w in windows
-            w.b == terminal_time || continue
-            za = w.S' * vterm[dif]
-            endpoint_term += dot(vterm[dif], w.eb[dif]) - dot(za, w.ea[dif])
-            vterm[dif] .= za
-        end
+    for w in reverse(before_entry)
+        za = w.St(vterm[dif])
+        endpoint_term += dot(vterm[dif], w.eb[dif]) - dot(za, w.ea[dif])
+        vterm[dif] .= za
     end
     # The dual starts one ulp before an interior terminal time, so that its first step reads
     # the forward solution and the parameters before the knot (as at the other knots).

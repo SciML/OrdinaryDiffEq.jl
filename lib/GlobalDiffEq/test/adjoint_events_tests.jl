@@ -150,6 +150,29 @@ end
     @test all(j -> relerr(sol.global_error[j], abs(exact(sol.t[j]) - sol.u[j][1])) < 1.0e-3, away)
 end
 
+@testset "GlobalAdjoint: TrajectoryError with several calls or one-sided saves" begin
+    # Doublings at t = 0.5. A callback can save before its affect, after it, or both, and
+    # two callbacks at one time give four saves; each entry is the state after the calls that
+    # come before it. The exact value of an entry follows from its number of doublings.
+    double(i) = (i.u .*= 2; nothing)
+    cases = (
+        DiscreteCallback((u, t, i) -> t == 0.5, double; save_positions = (true, false)),
+        DiscreteCallback((u, t, i) -> t == 0.5, double; save_positions = (false, true)),
+        CallbackSet(
+            DiscreteCallback((u, t, i) -> t == 0.5, double), DiscreteCallback((u, t, i) -> t == 0.5, double)
+        ),
+    )
+    for callback in cases
+        sol = solve(
+            ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0)), GlobalAdjoint(Tsit5(); gtol = 1.0, scope = TrajectoryError, samples = 1, adjoint_alg = Tsit5());
+            callback, tstops = [0.5], abstol = 1.0e-6, reltol = 1.0e-6
+        )
+        doublings = [round(Int, log2(u[1] / exp(-t))) for (t, u) in zip(sol.t, sol.u)]
+        actual = [2.0^k * exp(-t) - u[1] for (k, t, u) in zip(doublings, sol.t, sol.u)]
+        @test all(abs(e - abs(a)) <= 1.0e-2 * abs(a) + 1.0e-14 for (e, a) in zip(sol.global_error, actual))
+    end
+end
+
 @testset "GlobalAdjoint: event edge cases" begin
     decay(u, p, t) = -p[1] .* u
     two(u, p, t) = [-p[1] * u[1], -u[2]]
@@ -206,6 +229,54 @@ end
         stop = ODEProblem(decay, [1.0], (0.0, 100.0), [1.0]; callback)
         @test relerr(compare(stop, Tsit5(), tol, t -> [exp(-t)])...) < 1.0e-5
     end
+end
+
+@testset "GlobalAdjoint: VJP through the events" begin
+    # The default autojacvec (ReverseDiffVJP) gives Sᵀλ from AD products of the affect and the
+    # condition; autojacvec = false the finite-difference saltation matrix. The estimates agree.
+    estimate(prob, autojacvec; tol = 1.0e-6) = adjoint_error_estimate(
+        prob, GlobalAdjoint(
+            Tsit5(); samples = length(prob.u0), adjoint_alg = Tsit5(),
+            sensealg = InterpolatingAdjoint(; autojacvec)
+        );
+        abstol = tol, reltol = tol
+    )
+    problems = (
+        ODEProblem(
+            (u, p, t) -> [1.5u[1] - u[1] * u[2], -3.0u[2] + u[1] * u[2]], [1.0, 1.0], (0.0, 10.0);
+            callback = ContinuousCallback((u, t, i) -> u[1] - 3.0, i -> (i.u[1] = 1.5; nothing), nothing)
+        ),
+        ODEProblem(
+            (u, p, t) -> [u[2], -u[1] - p[1] * u[2]], [1.0, 0.0], (0.0, 10.0), [0.1];
+            callback = ContinuousCallback((u, t, i) -> u[1], i -> (i.p[1] = i.p[1] == 0.1 ? 1.0 : 0.1; nothing))
+        ),
+        ODEProblem(
+            (u, p, t) -> [u[2], -u[1]], [0.0, 1.0], (0.0, 10.0);
+            callback = VectorContinuousCallback(
+                (out, u, t, i) -> (out[1] = u[1] - 0.8; out[2] = u[1] + 0.8; nothing),
+                (i, idx) -> (i.u[2] = -0.9 * i.u[2]; nothing), 2
+            )
+        ),
+        ODEProblem(
+            (u, p, t) -> -u, [1.0], (0.0, 1.0);
+            callback = CallbackSet(
+                DiscreteCallback((u, t, i) -> t == 0.5, i -> (i.u .*= 2; nothing)),
+                DiscreteCallback((u, t, i) -> t == 0.5, i -> (i.u .*= 2; nothing))
+            ), tstops = [0.5]
+        ),
+    )
+    for prob in problems
+        @test relerr(estimate(prob, ReverseDiffVJP()), estimate(prob, false)) < 1.0e-5
+    end
+
+    # An affect that ForwardDiff and ReverseDiff cannot run: finite differences, with a warning.
+    rigid = ODEProblem(
+        (u, p, t) -> -u, [1.0], (0.0, 2.0);
+        callback = ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 2 * Float64(i.u[1]); nothing))
+    )
+    fallback = @test_logs (:warn, r"finite-difference saltation") match_mode = :any estimate(rigid, ReverseDiffVJP())
+    # The two runs differ only in the VJP of the adjoint ODE, at the adjoint tolerance.
+    @test fallback ≈ estimate(rigid, false) rtol = 1.0e-6
 end
 
 @testset "GlobalAdjoint: unsupported combinations" begin

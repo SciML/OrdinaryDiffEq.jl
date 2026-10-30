@@ -210,6 +210,29 @@ end
     end
 end
 
+@testset "Error trajectory with several calls or one-sided saves: $mode" for mode in MODES
+    # Doublings at t = 0.5. A callback can save before its affect, after it, or both, and
+    # two callbacks at one time give four saves; each entry is the state after the calls that
+    # come before it. The exact value of an entry follows from its number of doublings.
+    double(i) = (i.u .*= 2; nothing)
+    cases = (
+        DiscreteCallback((u, t, i) -> t == 0.5, double; save_positions = (true, false)),
+        DiscreteCallback((u, t, i) -> t == 0.5, double; save_positions = (false, true)),
+        CallbackSet(
+            DiscreteCallback((u, t, i) -> t == 0.5, double), DiscreteCallback((u, t, i) -> t == 0.5, double)
+        ),
+    )
+    for callback in cases
+        sol = solve(
+            ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0)), GlobalErrorEstimation(Tsit5(); mode);
+            callback, tstops = [0.5], abstol = 1.0e-6, reltol = 1.0e-6
+        )
+        doublings = [round(Int, log2(u[1] / exp(-t))) for (t, u) in zip(sol.t, sol.u)]
+        actual = [2.0^k * exp(-t) - u[1] for (k, t, u) in zip(doublings, sol.t, sol.u)]
+        @test all(abs(e[1] - a) <= 1.0e-2 * abs(a) + 1.0e-14 for (e, a) in zip(sol.global_error, actual))
+    end
+end
+
 @testset "Terminating callbacks: $mode" for mode in MODES
     # The solve ends at the forward event; the estimate is the error at that time, so the
     # true state does not terminate (the true event can come first). TerminateSteadyState

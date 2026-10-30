@@ -106,8 +106,15 @@ Events (`ContinuousCallback`, `VectorContinuousCallback`, `DiscreteCallback`) an
 semi-explicit mass-matrix DAEs (a diagonal mass matrix of zeros and ones) are supported.
 At each event of the forward solve the adjoint jumps with the saltation matrix of the
 event, `λ ← Sᵀ λ`: the linearized map of an error from just before the event to just after
-it, including the shift of the event time. `S` is computed by finite differences of the
-user callbacks. An affect can change the parameters: the adjoint uses the parameters of the
+it, including the shift of the event time. As in SciMLSensitivity's callback adjoints, the
+`autojacvec` of the `sensealg` selects how: by default (`ReverseDiffVJP()`, or any VJP
+choice) `Sᵀλ` is computed without `S`, from one ReverseDiff product through the user affect
+for each `λ`, ForwardDiff products, and the gradient of the condition, so the cost per event
+does not grow with the number of states `n`. The affect and the condition must then be
+differentiable by ReverseDiff and ForwardDiff; an event where they are not uses finite
+differences, with a warning. With `autojacvec = false`, and for every event of a DAE, `S` is
+computed by finite differences of the user callbacks: about `n` trial runs of the affect
+and of the condition per event, and an `n × n` matrix. An affect can change the parameters: the adjoint uses the parameters of the
 forward solve on each interval between events. Like the rest of the estimate this is a
 linearization at the forward solution, so it assumes that the true solution has the same sequence of events (an event
 that the forward solve misses or adds is not seen). For a DAE, only the differential
@@ -191,6 +198,15 @@ end
 function _resolve_sensealg(alg::GlobalAdjoint)
     _require_adjoint_ext()
     return alg.sensealg
+end
+
+# The events use the VJP choice of the adjoint method, as SciMLSensitivity's callback
+# adjoints do: `autojacvec = false` gives the finite-difference saltation matrix, any other
+# choice (the default `ReverseDiffVJP()`) a ReverseDiff VJP (see `_saltation_vjp`).
+function _event_vjp(alg::GlobalAdjoint)
+    sensealg = alg.sensealg
+    sensealg === nothing && return true
+    return !hasproperty(sensealg, :autojacvec) || sensealg.autojacvec !== false
 end
 
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
@@ -287,6 +303,8 @@ function _adjoint_trajectory_errors(data, alg, directions; adjoint_abstol, adjoi
     sol = data.sol
     errors = zeros(eltype(sol.prob.u0), length(sol.t))
     for j in 2:length(sol.t)
+        # The true solution starts at the saved state (also after a change in initialize).
+        sol.t[j] == sol.t[1] && continue
         errors[j] = _adjoint_error_estimate(
             data, alg, directions;
             adjoint_abstol, adjoint_reltol, terminal_index = j
@@ -348,7 +366,10 @@ function adjoint_error_estimate(
     )
     _require_adjoint_ext()
     _validate_adjoint_problem(prob)
-    data = _recorded_forward_solve(prob, alg.alg, "GlobalAdjoint", args...; abstol, reltol, kwargs...)
+    data = _recorded_forward_solve(
+        prob, alg.alg, "GlobalAdjoint", args...;
+        abstol, reltol, event_vjp = _event_vjp(alg), kwargs...
+    )
     _validate_adjoint_solution(data.sol)
     directions = _orthogonal_directions(prob.u0, alg.samples, alg.rng)
     return _adjoint_error_estimate(data, alg, directions; adjoint_abstol, adjoint_reltol)
@@ -392,7 +413,8 @@ function SciMLBase.__solve(
     for _ in 1:options.maxiters
         trial = _recorded_forward_solve(
             prob, alg.alg, "GlobalAdjoint", args...;
-            abstol = local_abstol, reltol = local_reltol, _with_copied_callback(kwargs)...
+            abstol = local_abstol, reltol = local_reltol, event_vjp = _event_vjp(alg),
+            _with_copied_callback(kwargs)...
         )
         trial_sol = trial.sol
         _validate_adjoint_solution(trial_sol)
@@ -418,7 +440,8 @@ function SciMLBase.__solve(
             elseif alg.scope === TrajectoryError
                 final_data = _recorded_forward_solve(
                     prob, alg.alg, "GlobalAdjoint", args...;
-                    abstol = local_abstol, reltol = local_reltol, kwargs...
+                    abstol = local_abstol, reltol = local_reltol,
+                    event_vjp = _event_vjp(alg), kwargs...
                 )
                 final_data.sol
             else
