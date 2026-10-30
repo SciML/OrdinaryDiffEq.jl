@@ -233,6 +233,18 @@ end
     end
 end
 
+@testset "Initialization affects: $mode" for mode in MODES
+    # The forward initialization doubles u; the true solution starts with the same affect, so
+    # it is not applied again to the true state.
+    callback = () -> PeriodicCallback(i -> (i.u .*= 2; nothing), 10.0; initial_affect = true)
+    prob = ODEProblem(decay!, [1.0], (0.0, T))
+    est = global_error_estimate(
+        prob, GlobalErrorEstimation(Tsit5(); mode); callback = callback(), abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    sol = solve(prob, Tsit5(); callback = callback(), abstol = 1.0e-6, reltol = 1.0e-6)
+    @test est / abs(2exp(-T) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
+end
+
 @testset "Terminating callbacks: $mode" for mode in MODES
     # The solve ends at the forward event; the estimate is the error at that time, so the
     # true state does not terminate (the true event can come first). TerminateSteadyState

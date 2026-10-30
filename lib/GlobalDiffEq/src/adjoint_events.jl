@@ -1,6 +1,5 @@
-# Events and semi-explicit DAEs in the adjoint error estimators (GlobalAdjoint, and
-# CompanionAdjoint). An event of the forward solve is a jump of P; for the dual it is a jump
-# z ← Sᵀ z across the event, with S the saltation matrix of the event (the linearized map of a
+# Events and semi-explicit DAEs in the adjoint error estimator GlobalAdjoint. An event of the
+# forward solve is a jump of P; for the dual it is a jump z ← Sᵀ z across the event, with S the saltation matrix of the event (the linearized map of a
 # small error from just before the event to just after it, including the shift of the event
 # time). The bridge, the knot terms and the DAE parts of the adjoint solve are in the
 # SciMLSensitivity extension.
@@ -91,19 +90,29 @@ end
 
 # The user affect of one call, applied to a copy of the true state u (and of the callback,
 # which can hold state, such as the next time of a PresetTimeCallback, and of the
-# parameters). Returns the state and the parameters after the affect.
-function _trial_affect(callback, labels, u, t, parent, p, sol, P)
+# parameters). Returns the state and the parameters after the affect. `args` are the
+# arguments of the forward call after the integrator: for a VectorContinuousCallback the
+# vector of the fired components and their signs (without them, one built from `labels`).
+function _trial_affect(callback, labels, u, t, parent, p, sol, P; args = nothing)
     callback = deepcopy(callback)
     integrator = _TrueStateIntegrator(copy(u), deepcopy(p), t, parent, sol, P)
     _, kind = first(labels)
     if callback isa SciMLBase.ContinuousCallback
         (kind == 1 ? callback.affect! : callback.affect_neg!)(integrator)
     elseif callback isa SciMLBase.VectorContinuousCallback
-        callback.affect!(integrator, kind)
+        callback.affect!(integrator, args === nothing ? _fired_mask(callback, labels) : copy(only(args)))
     else
         callback.affect!(integrator)
     end
     return integrator.u, integrator.p
+end
+
+function _fired_mask(callback, labels)
+    mask = zeros(Int8, callback.len)
+    for (_, component) in labels
+        mask[component] = 1
+    end
+    return mask
 end
 
 function _trial_condition(callback, labels, u, t, parent, p, sol, P)
@@ -123,15 +132,13 @@ end
 # (∇γ ⋅ φ⁻ + γ_t) for a condition γ₀ = γ(x_f) that is not zero at the forward event (the
 # forward root finding reads an interpolant; for a condition on an algebraic variable that
 # interpolant is not consistent): the linearized error after the event is S e⁻ + c.
-# A DiscreteCallback does not move its event time: S = A, c = 0. For CompanionAdjoint any S
-# keeps the estimate exact (a poor S only makes the terms larger); GlobalAdjoint needs S and c.
-# `p` holds the parameters before the call. An affect can change them: the algebraic
+# A DiscreteCallback does not move its event time: S = A, c = 0. `p` holds the parameters before the call. An affect can change them: the algebraic
 # equations after the affect use the parameters of the trial run, and φ⁺ uses the state
 # `u_after` and the parameters `p_after` after the call (by default P(t⁺) and the parameters
 # of the trial run; another call at the same time comes in between).
 function _event_saltation(
         callback, labels, t, p, parent, P, sol, prob, dif, alg_idx;
-        u_event = nothing, p_after = nothing, u_after = nothing
+        u_event = nothing, p_after = nothing, u_after = nothing, args = nothing
     )
     f = SciMLBase.unwrapped_f(prob.f)
     iip = SciMLBase.isinplace(prob)
@@ -143,7 +150,7 @@ function _event_saltation(
     full = x -> (u = copy(Pm); u[dif] .= x; _project_algebraic(fu, u, alg_idx))
     xm = Pm[dif]
     affected = function (x)
-        u, q = _trial_affect(callback, labels, full(x), t, parent, p, sol, P)
+        u, q = _trial_affect(callback, labels, full(x), t, parent, p, sol, P; args)
         return _project_algebraic(rhs_with(q), u, alg_idx)[dif]
     end
     A = _fd_jacobian(affected, xm)
@@ -155,7 +162,7 @@ function _event_saltation(
         _trial_condition(callback, labels, Pm, t - h, parent, p, sol, P)) / (2h)
     φm = fu(full(xm))[dif]
     p_after = p_after === nothing ?
-        last(_trial_affect(callback, labels, full(xm), t, parent, p, sol, P)) : p_after
+        last(_trial_affect(callback, labels, full(xm), t, parent, p, sol, P; args)) : p_after
     φp = rhs_with(p_after)(Pp)[dif]
     jump = (φp .- A * φm) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
     S = A .+ jump * ∇γ'
@@ -170,23 +177,23 @@ end
 # event) and x ↦ S x (the source of an earlier call at the same time goes through S).
 _saltation_maps(S) = (z -> S' * z, x -> S * x)
 
-# The VJP choice of the adjoint method (`_event_vjp`): the two products without S. With S = A + j ∇γᵀ and
-# j = (φ⁺ - A φ⁻) / (∇γ ⋅ φ⁻ + γ_t), Sᵀz = Aᵀz + ∇γ (j ⋅ z) and S x = A x + j (∇γ ⋅ x): one
+# The VJP choice of the adjoint method (`_event_vjp`): the two products without S. With
+# S = A + j ∇γᵀ and j = (φ⁺ - A φ⁻) / (∇γ ⋅ φ⁻ + γ_t), Sᵀz = Aᵀz + ∇γ (j ⋅ z) and S x = A x + j (∇γ ⋅ x): one
 # VJP of the affect for each z (ReverseDiff, which SciMLSensitivity loads; the state is a
 # vector of tracked reals, so an affect can write into it), JVPs of the affect (ForwardDiff),
 # one gradient of the condition, and γ_t; c = j γ₀. The cost per event does not grow with
 # the size of the state, and S is not stored. ODEs only. Returns nothing if the AD fails on
-# the user callback (a trial product runs here, not later in the adjoint solve).
+# the user callback (trial products run here, not later in the adjoint solve).
 function _saltation_vjp(
         callback, labels, t, p, parent, P, sol, prob;
-        u_event, p_after = nothing, u_after = nothing
+        u_event, p_after = nothing, u_after = nothing, args = nothing
     )
     f = SciMLBase.unwrapped_f(prob.f)
     iip = SciMLBase.isinplace(prob)
     p = deepcopy(p)
     Pm = sol(t; continuity = :left)
     Pp = u_after === nothing ? sol(t; continuity = :right) : u_after
-    affect = x -> first(_trial_affect(callback, labels, x, t, parent, p, sol, P))
+    affect = x -> first(_trial_affect(callback, labels, x, t, parent, p, sol, P; args))
     condition = (x, s) -> _trial_condition(callback, labels, x, s, parent, p, sol, P)
     Atz = z -> DifferentiationInterface.gradient(
         x -> LinearAlgebra.dot(z, affect(collect(x))), ADTypes.AutoReverseDiff(), Pm
@@ -196,9 +203,11 @@ function _saltation_vjp(
     )
     return try
         Atz(one.(Pm))
+        Ax(one.(Pm))
         callback isa SciMLBase.DiscreteCallback && return Atz, Ax, zero(Pm)
         φm = _rhs(f, iip, Pm, p, t)
-        p_after = p_after === nothing ? last(_trial_affect(callback, labels, Pm, t, parent, p, sol, P)) : p_after
+        p_after = p_after === nothing ?
+            last(_trial_affect(callback, labels, Pm, t, parent, p, sol, P; args)) : p_after
         φp = _rhs(f, iip, Pp, p_after, t)
         ∇γ = DifferentiationInterface.gradient(
             x -> condition(collect(x), t), ADTypes.AutoReverseDiff(), Pm
@@ -215,29 +224,21 @@ function _saltation_vjp(
     end
 end
 
-# Merge windows that overlap (events closer together than their windows, as in a bouncing
-# ball, or several events at one time): the merged window spans both, starts with the
-# earlier e(a⁻), ends with the later e(b⁺), and its bridge is the composition of the two
-# saltation maps, in time order (`St` applies Sᵀ, `Sx` applies S). Two windows of zero width at one time (GlobalAdjoint,
-# several calls at one event time) act in order, so the source of the first one goes through
-# the second: e(b⁺) = S₂ e₁(b⁺) + e₂(b⁺) on the differential components `dif`.
-function _merge_windows(windows; dif = nothing)
+# Merge the windows of several calls at one event time (each window has zero width). They act
+# in order, so the bridge is the composition of the saltation maps (`St` applies Sᵀ, `Sx`
+# applies S), the first call's e(a⁻) stays, and the source of an earlier call goes through
+# the later ones: e(b⁺) = S₂ e₁(b⁺) + e₂(b⁺) on the differential components `dif`.
+function _merge_windows(windows, dif)
     merged = Any[]
     for w in sort(windows; by = w -> w.a)
-        if !isempty(merged) && w.a <= merged[end].b
+        if !isempty(merged) && w.a == merged[end].b
             m = merged[end]
-            eb = if w.a == w.b == m.b
-                d = something(dif, eachindex(w.eb))
-                e = copy(w.eb)
-                e[d] .+= w.Sx(m.eb[d])
-                e
-            else
-                w.b > m.b ? w.eb : m.eb
-            end
+            eb = copy(w.eb)
+            eb[dif] .+= w.Sx(m.eb[dif])
             St1, St2, Sx1, Sx2 = m.St, w.St, m.Sx, w.Sx
             merged[end] = (;
-                a = m.a, b = max(m.b, w.b), ea = m.ea, eb,
-                St = z -> St1(St2(z)), Sx = x -> Sx2(Sx1(x)), paired = m.paired || w.paired,
+                a = m.a, b = w.b, ea = m.ea, eb,
+                St = z -> St1(St2(z)), Sx = x -> Sx2(Sx1(x)),
             )
         else
             push!(merged, w)
@@ -247,9 +248,9 @@ function _merge_windows(windows; dif = nothing)
 end
 
 # The forward solve of GlobalAdjoint with its event records: each forward event is a window
-# of zero width at its time, with the saltation matrix of the event as the bridge of the dual
-# (the linearized limit of the CompanionAdjoint bridge). A snapshot of the integrator before
-# each affect serves the trial runs of the callbacks. The affect acts on the integrator state
+# of zero width at its time, with the saltation matrix of the event as the bridge of the dual.
+# A snapshot of the integrator and of the callback before each affect serves the trial runs
+# of the callback (a callback can hold state that changes at each call, such as a counter). The affect acts on the integrator state
 # u_f, which can differ from the left limit P(t_f⁻) of the dense output (the interpolant of a
 # step that the event cuts short); then e⁺ = S (e⁻ + m) + c with m = P(t_f⁻) - u_f and the
 # condition offset c (see `_event_saltation`), and the window's pair term z⁺ᵀ (e(b⁺) - S e(a⁻))
@@ -259,22 +260,32 @@ function _recorded_forward_solve(
     )
     dif, alg_idx = _semiexplicit_components(prob, name)
     callback_list = _callback_list(_user_callbacks(prob, kwargs))
-    trial_list = deepcopy(callback_list)
     events = Tuple{Int, Int}[]
     marks = Tuple{eltype(prob.tspan), Int}[]
     snapshots = Any[]
     # The number of saved states before each call, which places the saved entries at an
     # event time between the calls there (a callback can save before or after its affect).
     saves = Int[]
-    # The state after each affect: the solution does not save it when the callback saves only
+    # The state after each affect (the solution does not save it when the callback saves only
     # before its affect, and then the dense output after the event starts from the state
-    # before it.
+    # before it), and whether the affect changed the state or the parameters.
     after_states = Any[]
-    after = integrator -> (push!(after_states, copy(integrator.u)); nothing)
-    before = function (integrator)
+    after = function (integrator)
+        before_call = snapshots[end]
+        changed = integrator.u != before_call.u || !_same_parameters(before_call.p, integrator.p)
+        push!(after_states, (; u = copy(integrator.u), changed))
+        return nothing
+    end
+    before = function (integrator, label, args...)
         push!(marks, (integrator.t, length(events)))
         push!(saves, length(integrator.sol.t))
-        push!(snapshots, (deepcopy(integrator.p), _frozen_parent(integrator, zero(integrator.u)), copy(integrator.u)))
+        push!(
+            snapshots, (;
+                p = deepcopy(integrator.p), parent = _frozen_parent(integrator, zero(integrator.u)),
+                u = copy(integrator.u), callback = deepcopy(callback_list[first(label)]),
+                args = deepcopy(args),
+            )
+        )
         return after
     end
     forward_prob, forward_callbacks = _forward_setup(prob, callback_list, events, before)
@@ -284,28 +295,41 @@ function _recorded_forward_solve(
         abstol, reltol, callback = forward_callbacks,
         merge(_without_callback(kwargs), _DENSE_SOLVE_KWARGS)...
     )
+    # The state after the initialization of the callbacks: the error at t₀ is the difference
+    # to the start of the dense output (zero unless an initialization changes the state and
+    # the solution does not save the result).
+    u_init = copy(integrator.u)
     sol = SciMLBase.solve!(integrator)
     _validate_estimation_solution(sol, name)
     knots, jumps = _knot_jumps(sol)
     P = _IntervalInterp(sol, [knots; sol.t[end]], 1)
+    e0 = u_init .- sol(sol.t[1]; continuity = :right)
     calls = _forward_calls(marks, events)
     params = _parameter_record(calls, snapshots, deepcopy(integrator.p))
     zero_e = zero(prob.u0)
     # Several calls at one time act in order: the state and the parameters after a call are
     # those before the next one; only the first call has the cut-step mismatch. After the
     # last call, the dense output starts at P(t⁺), which is not the state after the affect
-    # when the callback does not save that state: e(t⁺) has the offset u⁺ - P(t⁺) too.
+    # when the callback does not save that state: e(t⁺) has the offset u⁺ - P(t⁺) too. An
+    # affect that changes neither the state nor the parameters (a SavingCallback) has S = I
+    # and no source, to first order, and needs no trial runs.
     windows = map(enumerate(calls)) do (k, (tf, labels))
-        p, parent, u_f = snapshots[k]
+        (; p, parent, callback, args) = snapshots[k]
+        u_f = snapshots[k].u
         next = k < length(calls) && first(calls[k + 1]) == tf ? snapshots[k + 1] : nothing
         first_at_time = k == 1 || first(calls[k - 1]) != tf
-        callback = trial_list[first(first(labels))]
-        p_after = next === nothing ? _parameters_at(params, tf, :right) : first(next)
-        u_after = next === nothing ? nothing : last(next)
-        vjp = event_vjp && isempty(alg_idx)
-        maps = vjp ? _saltation_vjp(
-                callback, labels, tf, p, parent, P, sol, prob; u_event = u_f, p_after, u_after
-            ) : nothing
+        p_after = next === nothing ? _parameters_at(params, tf, :right) : next.p
+        u_after = next === nothing ? nothing : next.u
+        vjp = event_vjp && isempty(alg_idx) && after_states[k].changed
+        maps = if !after_states[k].changed
+            identity, identity, zero(u_f[dif])
+        elseif vjp
+            _saltation_vjp(
+                callback, labels, tf, p, parent, P, sol, prob; u_event = u_f, p_after, u_after, args
+            )
+        else
+            nothing
+        end
         if maps === nothing
             vjp && @warn(
                 "GlobalAdjoint uses the finite-difference saltation matrix at the event at " *
@@ -315,7 +339,7 @@ function _recorded_forward_solve(
             )
             S, c = _event_saltation(
                 callback, labels, tf, p, parent, P, sol, prob, dif, alg_idx;
-                u_event = u_f, p_after, u_after
+                u_event = u_f, p_after, u_after, args
             )
             St, Sx = _saltation_maps(S)
         else
@@ -323,14 +347,14 @@ function _recorded_forward_solve(
         end
         eb = copy(zero_e)
         eb[dif] .= c
-        next === nothing && (eb .+= after_states[k] .- sol(tf; continuity = :right))
+        next === nothing && (eb .+= after_states[k].u .- sol(tf; continuity = :right))
         eb[alg_idx] .= 0
         ea = first_at_time ? u_f .- sol(tf; continuity = :left) : copy(zero_e)
-        (; a = tf, b = tf, ea, eb, St, Sx, paired = true, saves = saves[k])
+        (; a = tf, b = tf, ea, eb, St, Sx, saves = saves[k])
     end
     return (;
-        prob, sol, knots, jumps, windows = _merge_windows(windows; dif), calls = windows, dif,
-        alg_idx, params,
+        prob, sol, knots, jumps, windows = _merge_windows(windows, dif), calls = windows, dif,
+        alg_idx, params, e0,
     )
 end
 
@@ -347,7 +371,7 @@ end
 function _parameter_record(calls, snapshots, p_end)
     times = unique(first.(calls))
     first_call = [findfirst(c -> first(c) == t, calls) for t in times]
-    values = [[first(snapshots[k]) for k in first_call]; [p_end]]
+    values = [[snapshots[k].p for k in first_call]; [p_end]]
     return (; times, values = map(identity, values))
 end
 
@@ -364,5 +388,18 @@ function _unrecorded_data(prob, sol)
     dif, alg_idx = _semiexplicit_components(prob, "GlobalAdjoint")
     knots, jumps = _knot_jumps(sol)
     params = (; times = eltype(sol.t)[], values = [sol.prob.p])
-    return (; prob, sol, knots, jumps, windows = Any[], calls = Any[], dif, alg_idx, params)
+    return (;
+        prob, sol, knots, jumps, windows = Any[], calls = Any[], dif, alg_idx, params,
+        e0 = zero(sol.u[1]),
+    )
+end
+
+# Whether an affect left the parameters as they were (an error in the comparison counts as a
+# change, which only costs the trial runs).
+function _same_parameters(a, b)
+    return try
+        isequal(a, b)
+    catch
+        false
+    end
 end

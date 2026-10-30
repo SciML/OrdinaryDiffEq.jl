@@ -93,7 +93,8 @@ controls each local-tolerance reduction. The `adjoint_abstol` and
 The adjoint machinery lives in a package extension: SciMLSensitivity must be
 loaded to solve with `GlobalAdjoint`. `sensealg` selects the adjoint sensitivity
 algorithm. The default (`nothing`) is `InterpolatingAdjoint(autojacvec = ReverseDiffVJP())`
-in one backward solve with the jump terms of the knots and the events; another
+in one backward solve with the jump terms of the knots and the events (with a numerical VJP,
+and a warning, if ReverseDiff cannot run the model, as `adjoint_sensitivities` chooses); another
 `InterpolatingAdjoint` is used the same way. Any other adjoint method is passed to
 `SciMLSensitivity.adjoint_sensitivities`, without jump terms, events or DAEs. `adjoint_alg`
 selects the solver for the reverse-time adjoint problems.
@@ -408,7 +409,6 @@ function SciMLBase.__solve(
     directions = _orthogonal_directions(prob.u0, alg.samples, alg.rng)
     local_abstol = abstol
     local_reltol = reltol
-    trial_kwargs = merge((; kwargs...), _DENSE_SOLVE_KWARGS)
     last_estimate = oftype(float(gtol), Inf)
 
     for _ in 1:options.maxiters

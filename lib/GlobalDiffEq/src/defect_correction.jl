@@ -60,11 +60,9 @@ end
 _is_step_end(P::_IntervalInterp, t) = insorted(t, P.ends)
 _forward_solution(P::_IntervalInterp) = P.sol
 
-# P and P' on the current step of the forward integrator in SimultaneousMode. The
-# integrator is set after the forward integrator exists, because the forward callbacks
-# need the companion and the companion needs the forward integrator.
-mutable struct _LiveInterp
-    integrator::Any
+# P and P' on the current step of the forward integrator in SimultaneousMode.
+struct _LiveInterp{I}
+    integrator::I
 end
 
 (P::_LiveInterp)(t) = P.integrator(t)
@@ -432,12 +430,12 @@ end
 # The forward solve runs the user callbacks unchanged, except that each affect also
 # records its event label, for the comparison with the companion events, and first calls
 # `before(integrator)` (SimultaneousMode advances the companion there, while the
-# interpolant of the step that the event cuts is still valid). If `before` returns a
-# function, it runs after the affect.
+# interpolant of the step that the event cuts is still valid). `before` gets the label and
+# the arguments of the affect too; if it returns a function, that runs after the affect.
 function _recording_affect(affect!, events, label, before)
     affect! === nothing && return nothing
     return function (integrator, args...)
-        after = before === nothing ? nothing : before(integrator)
+        after = before === nothing ? nothing : before(integrator, label, args...)
         _record_event!(events, label, args...)
         result = affect!(integrator, args...)
         after === nothing || after(integrator)
@@ -600,13 +598,16 @@ function _defect_correction_estimate(
     companion_list = deepcopy(callback_list)
     forward_events = Tuple{Int, Int}[]
     marks = Tuple{eltype(prob.tspan), Int, Int}[]
-    record_call = trajectory ? integrator -> _mark_call!(marks, forward_events, integrator) : nothing
+    record_call = trajectory ?
+        (integrator, _...) -> _mark_call!(marks, forward_events, integrator) : nothing
     forward_prob, forward_callbacks = _forward_setup(prob, callback_list, forward_events, record_call)
     solve_kwargs = merge(_without_callback(kwargs), _DENSE_SOLVE_KWARGS)
-    sol = SciMLBase.solve(
+    forward = SciMLBase.init(
         forward_prob, inner_alg, args...;
         abstol, reltol, callback = forward_callbacks, solve_kwargs...
     )
+    u_init = copy(forward.u)
+    sol = SciMLBase.solve!(forward)
     _validate_estimation_solution(sol, name)
 
     knots, jumps = _knot_jumps(sol)
@@ -620,7 +621,7 @@ function _defect_correction_estimate(
     )
     records, first_recorder, last_recorder, after_call =
         _trajectory_recorders(P, trajectory, eltype(sol.t))
-    companion_sol = SciMLBase.solve(
+    companion = SciMLBase.init(
         _companion_problem(prob, P, (prob.tspan[1], T)), companion_alg;
         abstol = companion_abstol, reltol = companion_reltol,
         callback = SciMLBase.CallbackSet(
@@ -634,6 +635,12 @@ function _defect_correction_estimate(
         tstops = knots, dense = false, save_everystep = false, save_start = false,
         save_end = true, initializealg = SciMLBase.NoInit()
     )
+    # The initializations of the callbacks are exact (the true solution starts at the same
+    # state), so the error after them is the state of the forward integrator after its
+    # initialization minus P(t₀). The companion's own initializations set the internal state
+    # of its copies of the callbacks; a change that they make to e is replaced here.
+    SciMLBase.set_u!(companion, u_init .- P(prob.tspan[1]))
+    companion_sol = SciMLBase.solve!(companion)
     _check_companion_retcode(companion_sol.retcode)
     _warn_if_events_differ(name, forward_events, companion_events)
 
@@ -662,10 +669,13 @@ mutable struct _StreamingCompanion{C, V}
     storage::IdDict{Any, Any}
 end
 
-# Run `f()` with `storage` as the task-local storage, then restore it. A callback can keep
-# its state in task-local storage under a key that its copies share (the DiffEqCallbacks
-# PeriodicCallback does), so in SimultaneousMode, where the forward solve and the companion
-# run in one task, the companion's copies of the callbacks get their own storage.
+# A callback can keep its state in task-local storage under a key that its copies share
+# (the DiffEqCallbacks PeriodicCallback does), so in SimultaneousMode, where the forward solve
+# and the companion run in one task, the companion's copies of the callbacks get their own
+# entries. The companion initialization runs with an empty storage (`_with_task_storage`),
+# which shows the keys that its callbacks use; each companion step then swaps only those
+# keys (`_with_companion_keys`, nothing for most callbacks), so other task-local state stays
+# visible.
 function _with_task_storage(f, storage)
     tls = task_local_storage()
     outer = copy(tls)
@@ -678,6 +688,25 @@ function _with_task_storage(f, storage)
         merge!(storage, tls)
         empty!(tls)
         merge!(tls, outer)
+    end
+end
+
+const _NO_ENTRY = gensym(:no_entry)
+
+function _with_companion_keys(f, storage)
+    isempty(storage) && return f()
+    tls = task_local_storage()
+    outer = Dict{Any, Any}(k => get(tls, k, _NO_ENTRY) for k in keys(storage))
+    merge!(tls, storage)
+    try
+        return f()
+    finally
+        for k in keys(storage)
+            storage[k] = tls[k]
+        end
+        for (k, v) in outer
+            v === _NO_ENTRY ? delete!(tls, k) : (tls[k] = v)
+        end
     end
 end
 
@@ -697,7 +726,7 @@ function _advance_streaming_companion!(state, forward)
     if state.started
         SciMLBase.set_u!(companion, companion.u .- (forward(forward.tprev) .- state.last_end))
     end
-    _with_task_storage(() -> SciMLBase.step!(companion, t - companion.t, true), state.storage)
+    _with_companion_keys(() -> SciMLBase.step!(companion, t - companion.t, true), state.storage)
     _check_companion_retcode(SciMLBase.check_error(companion))
     state.last_end = forward(t)
     state.started = true
@@ -715,10 +744,9 @@ function _defect_correction_estimate_streaming(
     companion_events = Tuple{Int, Int}[]
     state_ref = Ref{Any}(nothing)
     # A forward affect advances the companion to the event time first. An affect during
-    # the forward initialization (before the companion exists) needs no advance: the
-    # companion initialization applies the same affect to the true state.
+    # the forward initialization (before the companion exists) needs no advance.
     marks = Tuple{eltype(prob.tspan), Int, Int}[]
-    before = function (forward)
+    before = function (forward, _...)
         trajectory && _mark_call!(marks, forward_events, forward)
         state_ref[] === nothing || _advance_streaming_companion!(state_ref[], forward)
         return nothing
@@ -757,6 +785,9 @@ function _defect_correction_estimate_streaming(
             initializealg = SciMLBase.NoInit()
         )
     end
+    # As in InterpolatingMode: the error after the initializations is the forward state after
+    # them minus P(t₀), here zero (the first step of the live P starts at that state).
+    SciMLBase.set_u!(companion, zero(companion.u))
     state = _StreamingCompanion(companion, copy(prob.u0), false, storage)
     state_ref[] = state
     for _ in forward

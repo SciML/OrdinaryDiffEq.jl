@@ -4,21 +4,22 @@ import GlobalDiffEq, SciMLBase, SciMLSensitivity
 import Accessors: @set
 import LinearAlgebra: dot
 
-# The adjoint error identity (GlobalAdjoint; with the secant Jacobian also CompanionAdjoint).
-# For the dual -Mᵀ ż = Jᵀ z along a trajectory, z(T) = v,
+# The adjoint error identity of GlobalAdjoint. For the dual -Mᵀ ż = Jᵀ z along the forward
+# solution, z(T) = v,
 #
-#     ⟨v, M e(T)⟩ = ∫ zᵀ r dt - Σⱼ z(tⱼ)ᵀ M [P]ⱼ + (event terms),
+#     ⟨v, M e(T)⟩ = z(t₀)ᵀ M e(t₀) + ∫ zᵀ r dt - Σⱼ z(tⱼ)ᵀ M [P]ⱼ + (event terms),
 #
 # with r = f(P) - M P' the defect of the dense output P and [P]ⱼ its jump at the knot tⱼ.
 # The integral is the sensitivity of ⟨v, u(T)⟩ to a scalar forcing ε that adds r to the
 # dynamics (`u' = f(u) + ε r(t)`): SciMLSensitivity returns it as the parameter gradient.
 
-# Skip from the current time to `t`: drop the tstops in between (the heap holds tdir·t, and
-# the integrator checks after the callbacks that it passed none), then move the time.
+# Skip from the current time to `t`: drop the tstops in between (`first_tstop` gives tdir·t,
+# and the integrator checks after the callbacks that it passed none), then move the time. A
+# tstop at `t` itself stays; the caller handles a stop there before it skips.
 function _skip_to!(integrator, t)
-    tstops = integrator.opts.tstops
-    while !isempty(tstops) && first(tstops) <= integrator.tdir * t
-        pop!(tstops)
+    while SciMLBase.has_tstop(integrator) &&
+            SciMLBase.first_tstop(integrator) < integrator.tdir * t
+        SciMLBase.pop_tstop!(integrator)
     end
     SciMLBase.set_t!(integrator, t)
     SciMLBase.u_modified!(integrator, true)
@@ -41,8 +42,10 @@ end
 # terminal time a callback records z and skips one ulp, so that the step below reads the
 # forward state and P on its own side (and an FSAL solver does not reuse the evaluation on
 # the knot). At the end b of each event window it records the pair term, applies the bridge
-# z_d ← Sᵀ z_d, and moves to just before a: the dual does not enter the window. For a DAE
-# the callback's initialization makes z_a consistent at the new time.
+# z_d ← Sᵀ z_d, and moves to just before a: the dual does not enter the window. A stop at the
+# time it moves to (a knot one ulp below another one) is handled in the same call. For a DAE
+# the callback's initialization makes z_a consistent at the new time. Returns the integral,
+# the knot and pair terms, and z(t₀).
 function _bridged_adjoint(
         forced_sol, sensealg, adjoint_alg, vterm, terminal_time;
         M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol
@@ -57,8 +60,8 @@ function _bridged_adjoint(
     stops = sort(unique([outer_knots; [w.b for w in active]]))
     z_at_knots = Dict{eltype(knots), typeof(vterm)}()
     pair_terms = eltype(vterm)[]
-    affect! = function (integrator)
-        t = integrator.t
+    # The knot record and the bridges at the stop t; returns the time to move to.
+    cross! = function (integrator, t)
         target = nothing
         if insorted(t, outer_knots)
             z_at_knots[t] = integrator.u[1:n]
@@ -71,6 +74,13 @@ function _bridged_adjoint(
             push!(pair_terms, dot(zb, w.eb[dif]) - dot(za, w.ea[dif]))
             integrator.u[dif] .= za
             target = prevfloat(w.a)
+        end
+        return target
+    end
+    affect! = function (integrator)
+        target = cross!(integrator, integrator.t)
+        while target !== nothing && insorted(target, stops)
+            target = cross!(integrator, target)
         end
         target === nothing || _skip_to!(integrator, target)
         return nothing
@@ -89,7 +99,7 @@ function _bridged_adjoint(
     )
     integral = asol.u[end][end]
     knot_terms = [-dot(z_at_knots[t][dif], (M * J)[dif]) for (t, J) in zip(knots, jumps) if t in keys(z_at_knots)]
-    return (; integral, knot_terms, pair_terms)
+    return (; integral, knot_terms, pair_terms, z0 = asol.u[end][1:n])
 end
 
 # GlobalAdjoint: the dual of the error equation linearized at P, along the forward solution.
@@ -107,6 +117,10 @@ function GlobalDiffEq._adjoint_defect_projection(
     sensealg === nothing ||
         sensealg isa SciMLSensitivity.InterpolatingAdjoint ||
         return _plain_adjoint_projection(data, sensealg, adjoint_alg, direction; abstol, reltol, terminal_time)
+    # The default: a ReverseDiff VJP, and a numerical VJP (finite differences, which need no
+    # AD through the model) if ReverseDiff cannot run the model, as `adjoint_sensitivities`
+    # chooses for an out-of-place problem with callbacks.
+    automatic = sensealg === nothing
     sensealg = something(sensealg, SciMLSensitivity.InterpolatingAdjoint(autojacvec = SciMLSensitivity.ReverseDiffVJP()))
     # The dual must follow the dense output P itself; a checkpointed adjoint solves the
     # forward problem again between its checkpoints, which gives another curve.
@@ -156,19 +170,33 @@ function GlobalDiffEq._adjoint_defect_projection(
     # The dual starts one ulp before an interior terminal time, so that its first step reads
     # the forward solution and the parameters before the knot (as at the other knots).
     start = terminal_time < T ? prevfloat(terminal_time) : terminal_time
-    solve_terms(tol) = _bridged_adjoint(
+    solve_terms(sensealg, tol) = _bridged_adjoint(
         (@set sol.prob = forced), sensealg, adjoint_alg, vterm, start;
         M, dif, alg_idx, knots, jumps, windows, abstol = tol, reltol, reinit_abstol = abstol
     )
+    # z(t₀)ᵀ M e(t₀): an initialization of a callback can change the state at t₀ without a
+    # save, so that the dense output starts at another state.
+    e0 = data.e0
     total(terms) = terms.integral + sum(terms.knot_terms; init = zero(terms.integral)) +
-        sum(terms.pair_terms; init = zero(terms.integral)) + endpoint_term + shift
+        sum(terms.pair_terms; init = zero(terms.integral)) + endpoint_term + shift +
+        dot(terms.z0[dif], (M * e0)[dif])
     # The integral (last component of the adjoint state) is a quadrature of the size of the
     # error, which is not known before the solve. If the result is small against its abstol,
     # solve again with an abstol of 1e-6 times the result for the integral.
-    value = total(solve_terms(abstol))
+    value, sensealg = try
+        total(solve_terms(sensealg, abstol)), sensealg
+    catch err
+        (automatic && !(err isa InterruptException)) || rethrow()
+        @warn(
+            "GlobalAdjoint: the adjoint solve with a ReverseDiff VJP failed; it uses a " *
+                "numerical VJP (pass a `sensealg` to choose)", maxlog = 1
+        )
+        numerical = SciMLSensitivity.InterpolatingAdjoint(autojacvec = false, autodiff = false)
+        total(solve_terms(numerical, abstol)), numerical
+    end
     if abs(value) < 1.0e4 * abstol
         n = length(direction)
-        value = total(solve_terms([fill(abstol, n); max(1.0e-6 * abs(value), floatmin(abs(value)))]))
+        value = total(solve_terms(sensealg, [fill(abstol, n); max(1.0e-6 * abs(value), floatmin(abs(value)))]))
     end
     return value
 end

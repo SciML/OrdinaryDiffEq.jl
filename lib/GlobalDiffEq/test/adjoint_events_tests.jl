@@ -279,6 +279,54 @@ end
     @test fallback ≈ estimate(rigid, false) rtol = 1.0e-6
 end
 
+@testset "GlobalAdjoint: affect arguments, callback state, initialization, default VJP" begin
+    # A VectorContinuousCallback affect gets the vector of the fired components and their
+    # signs, as in the forward solve.
+    walls = () -> ODEProblem(
+        (u, p, t) -> [u[2], -u[1]], [0.0, 1.0], (0.0, 10.0);
+        callback = VectorContinuousCallback(
+            (out, u, t, i) -> (out[1] = u[1] - 0.8; out[2] = u[1] + 0.8; nothing),
+            (i, ev) -> (ev[1] != 0 && (i.u[2] = -0.9 * i.u[2]); ev[2] != 0 && (i.u[2] = -0.8 * i.u[2]); nothing), 2
+        )
+    )
+    wallref = solve(walls(), Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
+    @test relerr(compare(walls(), Tsit5(), 1.0e-6, wallref)...) < 1.0e-4
+
+    # An affect with internal state: it halves the velocity only at its second call. The trial
+    # runs use the state of the callback before each call. (Each solve gets a new problem:
+    # the forward solve advances the user's counter.)
+    counted = function ()
+        calls = Ref(0)
+        affect! = i -> (calls[] += 1; calls[] == 2 && (i.u[2] *= 0.5); nothing)
+        return ODEProblem(
+            (u, p, t) -> [u[2], -u[1]], [1.0, 0.0], (0.0, 10.0);
+            callback = ContinuousCallback((u, t, i) -> u[1], affect!)
+        )
+    end
+    countref = solve(counted(), Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
+    counted_estimate = adjoint_error_estimate(
+        counted(), GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5()); abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    counted_actual = norm(countref.u[end] .- solve(counted(), Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6).u[end])
+    @test relerr(counted_estimate, counted_actual) < 1.0e-4
+
+    # An affect at the initialization: the true solution starts with it too.
+    initial = ODEProblem(
+        (u, p, t) -> -u, [1.0], (0.0, 1.0);
+        callback = PeriodicCallback(i -> (i.u .*= 2; nothing), 10.0; initial_affect = true)
+    )
+    @test relerr(compare(initial, Tsit5(), 1.0e-6, t -> [2exp(-t)])...) < 1.0e-5
+
+    # A right-hand side that ReverseDiff cannot run (a Float64 cache): the default sensealg
+    # uses a numerical VJP, with a warning.
+    cache = zeros(2)
+    cached = ODEProblem((u, p, t) -> (cache .= (-u[1], -2u[2]); copy(cache)), [1.0, 1.0], (0.0, 1.0))
+    estimate, actual = @test_logs (:warn, r"numerical VJP") match_mode = :any compare(
+        cached, Tsit5(), 1.0e-6, t -> [exp(-t), exp(-2t)]
+    )
+    @test relerr(estimate, actual) < 1.0e-4
+end
+
 @testset "GlobalAdjoint: unsupported combinations" begin
     cb = ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> nothing)
     prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0); callback = cb)
