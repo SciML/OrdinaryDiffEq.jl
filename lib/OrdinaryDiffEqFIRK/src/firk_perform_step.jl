@@ -447,6 +447,7 @@ end
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
     if is_lazy_W(W1)
         set_W_gamma!(W1, αdt + βdt * im)
         integrator.stats.nw += 1
@@ -825,6 +826,7 @@ end
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         set_W_gamma!(W2, αdt + βdt * im)
@@ -1403,6 +1405,7 @@ end
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2, W3); cache.W_γdt = dt)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         set_W_gamma!(W2, α1dt + β1dt * im)
@@ -2052,6 +2055,7 @@ end
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         for i in 1:((num_stages - 1) ÷ 2)
