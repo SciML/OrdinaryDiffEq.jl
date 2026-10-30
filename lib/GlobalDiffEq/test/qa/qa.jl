@@ -18,6 +18,9 @@ run_qa(
                 # SciMLSensitivity extension adds methods to these internal
                 # functions of its parent package.
                 :_adjoint_defect_projection, :_default_adjoint_sensealg,
+                # Internal helpers of GlobalDiffEq that the extension calls (the
+                # right-hand side, its Jacobian, and the parameters by event interval).
+                :_rhs, :_rhs_jacobian, :_parameters_at,
             ),
         ),
     ),

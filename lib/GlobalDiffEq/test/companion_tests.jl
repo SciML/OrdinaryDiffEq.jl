@@ -162,3 +162,11 @@ end
         )
     end
 end
+
+@testset "Companion solver warning" begin
+    # The companion runs at tight tolerances, which a low-order default solver meets poorly.
+    @test_logs (:warn, r"solves the companion with Rosenbrock32") GlobalErrorEstimation(Rosenbrock32())
+    @test_logs GlobalErrorEstimation(Rosenbrock32(); companion_alg = Tsit5())
+    @test_logs GlobalErrorEstimation(Tsit5())
+    @test GlobalErrorEstimation(Tsit5()).companion_alg isa Tsit5
+end

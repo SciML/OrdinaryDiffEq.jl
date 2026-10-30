@@ -50,8 +50,12 @@ time, and the second entry the error after them. Under global error control, the
 solve that gives the trajectory costs one more companion solve.
 [`global_error_estimate`](@ref) gives only the endpoint error 2-norm, with no
 solution. `companion_alg` selects the solver for the
-companion equation, and `companion_abstol` / `companion_reltol` control its
-tolerances. The companion state is the global error itself. `companion_reltol`
+companion equation (by default the forward solver `alg`, as SciMLSensitivity uses the
+forward solver for its adjoint solve), and `companion_abstol` / `companion_reltol` control its
+tolerances. The companion runs at much tighter tolerances than the forward solve, so with a
+low-order forward solver (order 3 or lower, such as Rosenbrock23 or Rosenbrock32) pass a
+higher-order `companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff problem or a
+DAE; the constructor warns in that case. The companion state is the global error itself. `companion_reltol`
 defaults to `1e-8`: the error can pass through a transient peak much larger than its
 final value (for example at a fast transition of a stiff problem), so a loose relative
 tolerance can give a wrong estimate. `companion_abstol` must be below the size of the
@@ -101,7 +105,7 @@ function GlobalErrorEstimation(
         alg;
         equation = DefectCorrection,
         mode = InterpolatingMode,
-        companion_alg = alg,
+        companion_alg = nothing,
         autodiff = ADTypes.AutoForwardDiff(),
         gtol = nothing,
         maxiters = 6,
@@ -118,7 +122,27 @@ function GlobalErrorEstimation(
     options = _companion_options(
         gtol, maxiters, safety, companion_abstol, companion_reltol
     )
-    return GlobalErrorEstimation(alg, companion_alg, equation, mode, autodiff, gtol, options)
+    companion_alg === nothing && _warn_if_low_order_companion(alg)
+    return GlobalErrorEstimation(
+        alg, something(companion_alg, alg), equation, mode, autodiff, gtol, options
+    )
+end
+
+# The companion is solved at much tighter tolerances than the forward problem, which a
+# low-order solver meets poorly or with very many steps: with Rosenbrock32 as the companion
+# solver the estimate was 3 to 31% off, with Tsit5 1e-7.
+function _warn_if_low_order_companion(alg)
+    order = try
+        SciMLBase.alg_order(alg)
+    catch
+        return nothing
+    end
+    order isa Integer && order <= 3 && @warn(
+        "GlobalErrorEstimation solves the companion with $(nameof(typeof(alg))) (order " *
+            "$order) at tight tolerances, which can give a poor estimate. Pass a higher-order " *
+            "`companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff problem or a DAE."
+    )
+    return nothing
 end
 
 SciMLBase.allows_arbitrary_number_types(::GlobalErrorEstimation) = false

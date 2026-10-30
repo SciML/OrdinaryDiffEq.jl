@@ -20,6 +20,9 @@ run_tests(;
         @safetestset "Adjoint error estimation and control" begin
             include("adjoint_tests.jl")
         end
+        @safetestset "Adjoint error estimation with events and DAEs" begin
+            include("adjoint_events_tests.jl")
+        end
         @safetestset "GLEE solvers" begin
             include("glee_tests.jl")
         end

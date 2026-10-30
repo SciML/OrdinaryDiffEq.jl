@@ -1,7 +1,8 @@
 using GlobalDiffEq, OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, LinearAlgebra
 # Loads the BrownFullBasicInit method.
 import OrdinaryDiffEqNonlinearSolve
-using DiffEqCallbacks: PresetTimeCallback, SavingCallback, SavedValues
+using DiffEqCallbacks: PresetTimeCallback, PeriodicCallback, SavingCallback, SavedValues,
+    TerminateSteadyState
 using Test
 import SciMLBase
 
@@ -119,6 +120,12 @@ const CASES = [
         () -> PresetTimeCallback(0.5, i -> (i.u[1] *= 2; nothing)), [2exp(-T)], (;), Tsit5(),
     ),
     (
+        # Its state is in task-local storage, which the companion's copy would share with
+        # the forward solve in SimultaneousMode. Events at 0.6, 1.2 and 1.8.
+        "PeriodicCallback", () -> ODEProblem(decay!, [1.0], (0.0, T)),
+        () -> PeriodicCallback(i -> (i.u[1] *= 1.5; nothing), 0.6), [1.5^3 * exp(-T)], (;), Tsit5(),
+    ),
+    (
         # The saved state at T is after the affect, P(T⁻) is before it.
         "event at the final time", () -> ODEProblem(decay!, [1.0], (0.0, T)),
         () -> DiscreteCallback((u, t, i) -> t == T, i -> (i.u[1] *= 2; nothing)),
@@ -163,21 +170,25 @@ end
 
 @testset "A missed event is estimated and reported: $mode" for mode in MODES
     # The two components of the vector callback cross at the same time (t = log 2). At
-    # 1e-4 the forward solve fires only the first one, so its second state is wrong by
-    # O(1); the companion fires both.
+    # 1e-4 the forward solve can fire only the first one (Julia 1.13 does; Julia 1.10 fires
+    # both, which depends on rounding), so its second state is wrong by O(1); the companion
+    # fires both, and the estimator warns.
     prob = ODEProblem(decay_and_switch!, [1.0, 0.0], (0.0, T), [2.0])
     callback = VectorContinuousCallback(
         (out, u, t, i) -> (out[1] = u[1] - 0.5; out[2] = u[2] - 1.0; nothing),
         reset_and_switch!, 2
     )
-    alg = GlobalErrorEstimation(Tsit5(); mode)
-    est = @test_logs (:warn, r"events of the forward solve") global_error_estimate(
-        prob, alg; callback, abstol = 1.0e-4, reltol = 1.0e-4
-    )
-    sol = solve(prob, Tsit5(); callback, abstol = 1.0e-4, reltol = 1.0e-4)
+    sol = solve(deepcopy(prob), Tsit5(); callback = deepcopy(callback), abstol = 1.0e-4, reltol = 1.0e-4)
     actual = norm([exp(-(T - 2log(2))), exp(-(T - log(2)))] - sol.u[end])
-    @test actual > 0.1
-    @test est / actual ≈ 1 rtol = 1.0e-3
+    alg = GlobalErrorEstimation(Tsit5(); mode)
+    estimate() = global_error_estimate(prob, alg; callback, abstol = 1.0e-4, reltol = 1.0e-4)
+    if actual > 0.1
+        est = @test_logs (:warn, r"events of the forward solve") estimate()
+        @test est / actual ≈ 1 rtol = 1.0e-3
+    else
+        est = @test_logs estimate()
+        @test est / actual ≈ 1 rtol = 1.0e-2
+    end
 end
 
 @testset "DiscreteCallback with a state condition: $mode" for mode in MODES
@@ -196,6 +207,25 @@ end
         t_switch = step_ends[findfirst(t -> x_before(t) >= 1, step_ends)]
         actual = abs(x_before(t_switch) * exp(-(T - t_switch)) - sol.u[end][1])
         @test est / actual ≈ 1 rtol = 1.0e-2
+    end
+end
+
+@testset "Terminating callbacks: $mode" for mode in MODES
+    # The solve ends at the forward event; the estimate is the error at that time, so the
+    # true state does not terminate (the true event can come first). TerminateSteadyState
+    # also reads the derivative of the true state.
+    callbacks = (
+        () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, SciMLBase.terminate!),
+        () -> TerminateSteadyState(1.0e-4, 1.0e-4),
+    )
+    for make_callback in callbacks, tol in (1.0e-4, 1.0e-6)
+        prob = ODEProblem(decay!, [1.0], (0.0, 100.0))
+        est = global_error_estimate(
+            prob, GlobalErrorEstimation(Tsit5(); mode); callback = make_callback(), abstol = tol, reltol = tol
+        )
+        sol = solve(prob, Tsit5(); callback = make_callback(), abstol = tol, reltol = tol)
+        @test sol.t[end] < 100
+        @test est / abs(exp(-sol.t[end]) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
     end
 end
 

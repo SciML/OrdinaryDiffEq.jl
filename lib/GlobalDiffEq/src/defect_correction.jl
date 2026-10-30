@@ -203,10 +203,29 @@ SciMLBase.reeval_internals_due_to_modification!(::_TrueStateIntegrator, args...;
 function SciMLBase.add_tstop!(integrator::_TrueStateIntegrator, t)
     return SciMLBase.add_tstop!(integrator.parent, t)
 end
+# PeriodicCallback reads the last tstop before it adds the next one.
+DiffEqBase.get_tstops_max(integrator::_TrueStateIntegrator) = DiffEqBase.get_tstops_max(integrator.parent)
+# A terminating affect ends the forward solve at its event; the estimate is the error at that
+# time, so the true state goes on to it (the companion ends with the forward solve).
+SciMLBase.terminate!(::_TrueStateIntegrator, args...; kwargs...) = nothing
+# The derivative of the true state of an ODE is f(u, p, t) (TerminateSteadyState reads it).
+# For a DAE it has no value in the algebraic components.
+function SciMLBase.get_du(integrator::_TrueStateIntegrator)
+    prob = integrator.sol.prob
+    prob.f.mass_matrix isa LinearAlgebra.UniformScaling || throw(
+        ArgumentError(
+            "GlobalErrorEstimation applies the user callbacks to the true state in its " *
+                "companion solve; a callback that calls `get_du` is not supported for a " *
+                "problem with a mass matrix"
+        )
+    )
+    return _rhs(SciMLBase.unwrapped_f(prob.f), SciMLBase.isinplace(prob), integrator.u, integrator.p, integrator.t)
+end
+SciMLBase.get_du!(out, integrator::_TrueStateIntegrator) = (out .= SciMLBase.get_du(integrator))
 
 for name in (
-        :terminate!, :add_saveat!, :set_proposed_dt!, :get_proposed_dt, :reinit!,
-        :auto_dt_reset!, :savevalues!, :set_u!, :set_t!, :get_du,
+        :add_saveat!, :set_proposed_dt!, :get_proposed_dt, :reinit!,
+        :auto_dt_reset!, :savevalues!, :set_u!, :set_t!,
     )
     @eval function SciMLBase.$name(::_TrueStateIntegrator, args...; kwargs...)
         throw(
@@ -598,6 +617,26 @@ mutable struct _StreamingCompanion{C, V}
     # first step is done.
     last_end::V
     started::Bool
+    storage::IdDict{Any, Any}
+end
+
+# Run `f()` with `storage` as the task-local storage, then restore it. A callback can keep
+# its state in task-local storage under a key that its copies share (the DiffEqCallbacks
+# PeriodicCallback does), so in SimultaneousMode, where the forward solve and the companion
+# run in one task, the companion's copies of the callbacks get their own storage.
+function _with_task_storage(f, storage)
+    tls = task_local_storage()
+    outer = copy(tls)
+    empty!(tls)
+    merge!(tls, storage)
+    try
+        return f()
+    finally
+        empty!(storage)
+        merge!(storage, tls)
+        empty!(tls)
+        merge!(tls, outer)
+    end
 end
 
 # Advance the companion over the forward step that just completed, [tprev, t], against
@@ -616,7 +655,7 @@ function _advance_streaming_companion!(state, forward)
     if state.started
         SciMLBase.set_u!(companion, companion.u .- (forward(forward.tprev) .- state.last_end))
     end
-    SciMLBase.step!(companion, t - companion.t, true)
+    _with_task_storage(() -> SciMLBase.step!(companion, t - companion.t, true), state.storage)
     _check_companion_retcode(SciMLBase.check_error(companion))
     state.last_end = forward(t)
     state.started = true
@@ -656,21 +695,24 @@ function _defect_correction_estimate_streaming(
     records, first_recorder, last_recorder = _trajectory_recorders(
         P, trajectory, eltype(forward.sol.t)
     )
-    companion = SciMLBase.init(
-        _companion_problem(prob, P, prob.tspan), companion_alg;
-        abstol = companion_abstol, reltol = companion_reltol,
-        callback = SciMLBase.CallbackSet(
-            _companion_callbacks(
-                companion_list, P, companion_events,
-                alg -> _companion_reinit(alg, prob, kwargs, companion_abstol),
-                first_recorder...
-            ),
-            last_recorder...
-        ), dense = false,
-        save_everystep = false, save_start = false, save_end = false,
-        initializealg = SciMLBase.NoInit()
-    )
-    state = _StreamingCompanion(companion, copy(prob.u0), false)
+    storage = IdDict{Any, Any}()
+    companion = _with_task_storage(storage) do
+        SciMLBase.init(
+            _companion_problem(prob, P, prob.tspan), companion_alg;
+            abstol = companion_abstol, reltol = companion_reltol,
+            callback = SciMLBase.CallbackSet(
+                _companion_callbacks(
+                    companion_list, P, companion_events,
+                    alg -> _companion_reinit(alg, prob, kwargs, companion_abstol),
+                    first_recorder...
+                ),
+                last_recorder...
+            ), dense = false,
+            save_everystep = false, save_start = false, save_end = false,
+            initializealg = SciMLBase.NoInit()
+        )
+    end
+    state = _StreamingCompanion(companion, copy(prob.u0), false, storage)
     state_ref[] = state
     for _ in forward
         _advance_streaming_companion!(state, forward)
