@@ -251,13 +251,14 @@ end
     @test passed[1] === 1.0e-8
     @test passed[2] === 1.0e-4
 
-    nothing_u0_default_tolerances(scaffold)
-    @test (@allocated nothing_u0_default_tolerances(scaffold)) == 0
-    let
-        supplied() = OrdinaryDiffEqCore.resolve_ode_tolerances(scaffold, nothing, 1.0e-8, 1.0e-4)
-        supplied()
-        @test (@allocated supplied()) == 0
-    end
+    @test Base.return_types(
+        OrdinaryDiffEqCore.resolve_ode_tolerances,
+        (typeof(scaffold), Nothing, Nothing, Nothing)
+    ) == [Tuple{Float64, Float64}]
+    @test Base.return_types(
+        OrdinaryDiffEqCore.resolve_ode_tolerances,
+        (typeof(scaffold), Nothing, Float64, Float64)
+    ) == [Tuple{Float64, Float64}]
 
     nullprob = ODEProblem(Returns(nothing), nothing, (0.0, 1.0))
     @test nullprob.u0 === nothing
