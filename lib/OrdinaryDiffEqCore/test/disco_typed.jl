@@ -90,4 +90,33 @@ const DYNAMIC = (
     plain = solve(kprob, Tsit5(); callback = kcb, reltol = 1.0e-6, dt = 1.4)
     @test zero_func_calls[] == 0
     @test disco.stats.nreject <= plain.stats.nreject
+    # the kinked problem's solution: u = 0.1exp(2t) up to the kink at τ = log(10)/2 where u = 1,
+    # then u' = 5 - 3u from u(τ) = 1
+    τ = log(10) / 2
+    uref(t) = t <= τ ? 0.1exp(2t) : 5 / 3 - (2 / 3) * exp(-3(t - τ))
+    @test isapprox(disco(1.5)[1], uref(1.5); rtol = 1.0e-5, atol = 1.0e-8)
+    @test isapprox(disco.u[end][1], uref(1.5); rtol = 1.0e-5, atol = 1.0e-8)
+end
+
+@testset "several callbacks, repeated detection" begin
+    # time conditions (`straddle!` sets `u` but not the interpolant); t - 0.8 and t - 0.3 both cross on [0, 1]
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(f!, [0.0], (0.0, 2.0))
+    c08(u, t, integrator) = t - 0.8
+    c03(u, t, integrator) = t - 0.3
+    for cbs in ((c08, c03),)
+        integ = init(
+            prob, Tsit5(); callback = CallbackSet(map(c -> ContinuousCallback(c, noop!), cbs)...),
+            dt = 0.5, adaptive = false, verbose = DEVerbosity(SciMLLogging.None())
+        )
+        @test integ.opts.callback.continuous_callbacks isa Tuple
+        straddle!(integ, 1.0)
+        @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 0.3 atol = 1.0e-8
+        dps = OrdinaryDiffEqCore.get_disco_probs(integ.controller_cache)
+        @test length(dps) == 2
+        @test all(dp -> dp.tspan == [0.0, 1.0], dps)
+        # a later, shorter step: the root at t = 0.3 is θ = 0.6 of a step of 0.5, whatever the last bracket was
+        straddle!(integ, 0.5)
+        @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 0.6 atol = 1.0e-8
+        @test all(dp -> dp.tspan == [0.0, 1.0], dps)
+    end
 end
