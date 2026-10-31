@@ -169,25 +169,37 @@ function OrdinaryDiffEqCore.perform_step!(
     )
     algs = integrator.alg.algs
     OrdinaryDiffEqCore.init_ith_default_cache(cache, algs, cache.current)
+    history_cache = integrator.history.integrator.cache
     return if cache.current == 1
-        integrator.history.integrator.cache.cache1 = cache.cache1
+        share_history_cache!(history_cache, Val(:cache1), cache.cache1, algs, 1)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache1), repeat_step)
     elseif cache.current == 2
-        integrator.history.integrator.cache.cache2 = cache.cache2
+        share_history_cache!(history_cache, Val(:cache2), cache.cache2, algs, 2)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache2), repeat_step)
     elseif cache.current == 3
-        integrator.history.integrator.cache.cache3 = cache.cache3
+        share_history_cache!(history_cache, Val(:cache3), cache.cache3, algs, 3)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache3), repeat_step)
     elseif cache.current == 4
-        integrator.history.integrator.cache.cache4 = cache.cache4
+        share_history_cache!(history_cache, Val(:cache4), cache.cache4, algs, 4)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache4), repeat_step)
     elseif cache.current == 5
-        integrator.history.integrator.cache.cache5 = cache.cache5
+        share_history_cache!(history_cache, Val(:cache5), cache.cache5, algs, 5)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache5), repeat_step)
     elseif cache.current == 6
-        integrator.history.integrator.cache.cache6 = cache.cache6
+        share_history_cache!(history_cache, Val(:cache6), cache.cache6, algs, 6)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache6), repeat_step)
     end
+end
+
+# The history integrator's sub-caches wrap `prob.h` instead of the history function, so a
+# sub-cache that stores `f` has a different type and the history needs its own instance.
+function share_history_cache!(history_cache, ::Val{name}, subcache, algs, i) where {name}
+    if fieldtype(typeof(history_cache), name) === typeof(subcache)
+        setfield!(history_cache, name, subcache)
+    else
+        OrdinaryDiffEqCore.init_ith_default_cache(history_cache, algs, i)
+    end
+    return nothing
 end
 
 # initialize the integrator
