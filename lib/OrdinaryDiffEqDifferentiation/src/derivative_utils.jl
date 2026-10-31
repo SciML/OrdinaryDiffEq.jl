@@ -472,7 +472,9 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
             f.jac(J_du, duprev, uprev, p, cj_one, t)
         end
         # J_du currently holds J_u + 1*J_du, subtract J_u to get pure J_du
-        @.. broadcast = false J_du = J_du - J_u
+        if !_sparse_pattern_stable_sub!(J_du, J_u)
+            @.. broadcast = false J_du = J_du - J_u
+        end
     else
         dae_jac = cache.dae_jacobians
         (; uf_u, uf_du, jac_config_u, jac_config_du) = dae_jac
@@ -625,7 +627,9 @@ end
 @inline _use_allocating_sparse_W_path(W) =
     is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
 
-_update_sparse_diagonal!(W, λ, invdtgamma, J) = false
+# In-place `A -= B` that keeps `A`'s sparsity pattern fixed. The SparseArrays
+# extension implements it for CPU `SparseMatrixCSC`; everything else broadcasts.
+_sparse_pattern_stable_sub!(A, B) = false
 
 
 """
@@ -634,6 +638,7 @@ _update_sparse_diagonal!(W, λ, invdtgamma, J) = false
 Form the linear-system matrix `W = M/dtgamma - J` in place from the Jacobian `J`
 and mass matrix `M` (with `M = I` handled specially), using scalar-indexed,
 broadcast, or allocating paths depending on the array type (dense, sparse, GPU).
+CPU `SparseMatrixCSC` takes a pattern-stable path in the SparseArrays extension.
 """
 function jacobian2W!(
         W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix
@@ -657,9 +662,7 @@ function jacobian2W!(
             copyto!(W, J)
             idxs = diagind(W)
             λ = -_scalar_massmatrix_λ(mass_matrix)
-            if is_sparse_csc(W) && _update_sparse_diagonal!(W, λ, invdtgamma, J)
-                nothing
-            elseif ArrayInterface.fast_scalar_indexing(J) &&
+            if ArrayInterface.fast_scalar_indexing(J) &&
                     ArrayInterface.fast_scalar_indexing(W)
                 @inbounds for i in 1:size(J, 1)
                     W[i, i] = muladd(λ, invdtgamma, J[i, i])
