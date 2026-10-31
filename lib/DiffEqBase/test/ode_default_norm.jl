@@ -1,6 +1,24 @@
-using Test, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, StaticArrays, ForwardDiff
+using Test, Random, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays, StaticArrays,
+    ForwardDiff
 
-using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM
+using DiffEqBase: UNITLESS_ABS2, recursive_length, ODE_DEFAULT_NORM, abs2_and_sum,
+    value
+
+@testset "Nested ArrayPartition norm in a fresh process" begin
+    code = """
+    using Test, DiffEqBase, RecursiveArrayTools
+    u = ArrayPartition(ones(3), ArrayPartition(ones(2), ones(Float32, 2)), ones(4))
+    allocated_norm(u) = @allocated DiffEqBase.ODE_DEFAULT_NORM(u, 0.0)
+    allocated_norm(u)
+    @test allocated_norm(u) == 0
+    """
+    @test success(
+        pipeline(
+            `$(Base.julia_cmd()) --startup-file=no --project=$(dirname(Base.active_project())) -e $code`;
+            stdout, stderr
+        )
+    )
+end
 
 @test recursive_length(1.0) == 1
 
@@ -62,3 +80,49 @@ r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
 @test ODE_DEFAULT_NORM(r, 0.0) ≈ 1.0
 # Unnormalised Euclidean norm would be sqrt(6) ≈ 2.449 — make sure we don't get that
 @test ODE_DEFAULT_NORM(r, 0.0) < 2.0
+
+# ArrayPartition UNITLESS_ABS2 / ODE_DEFAULT_NORM must be allocation-free and
+# bitwise-identical to mapreduce(..., init=) for 3+ partitions (left fold from init).
+@testset "ArrayPartition ODE_DEFAULT_NORM allocations" begin
+    u_hom = ArrayPartition(ones(4), ones(4))
+    u_mix = ArrayPartition(ones(4), ones(Float32, 4))
+    ODE_DEFAULT_NORM(u_hom, 0.0)
+    ODE_DEFAULT_NORM(u_mix, 0.0)
+    @test (@allocated ODE_DEFAULT_NORM(u_hom, 0.0)) == 0
+    @test (@allocated ODE_DEFAULT_NORM(u_mix, 0.0)) == 0
+    @test (@allocated UNITLESS_ABS2(u_hom)) == 0
+    @test (@allocated UNITLESS_ABS2(u_mix)) == 0
+end
+
+@testset "ArrayPartition UNITLESS_ABS2 left-fold vs mapreduce" begin
+    allocated_unitless_abs2(u) = @allocated UNITLESS_ABS2(u)
+    allocated_ode_default_norm(u) = @allocated ODE_DEFAULT_NORM(u, 0.0)
+    mapreduce_ref(x) = mapreduce(
+        UNITLESS_ABS2, abs2_and_sum, x.x;
+        init = zero(real(value(eltype(x))))
+    )
+    # Minimal F64/F32/F32 case: left fold and right fold differ in the low bits
+    # (0.14000000640749932 vs 0.14000001013278962). Integer `ones(...)` inputs
+    # do not discriminate association order.
+    u_min = ArrayPartition([0.1], Float32[0.2], Float32[0.3])
+    @test UNITLESS_ABS2(u_min) === 0.14000000640749932
+    @test UNITLESS_ABS2(u_min) === mapreduce_ref(u_min)
+
+    rng = Xoshiro(1)
+    cases = (
+        ArrayPartition(rand(rng, 4), rand(rng, Float32, 3), rand(rng, Float32, 2)),
+        ArrayPartition(rand(rng, 3), rand(rng, 3), rand(rng, 3), rand(rng, 3)),
+        ArrayPartition(
+            rand(rng, 3), ArrayPartition(rand(rng, 2), rand(rng, Float32, 2)), rand(rng, 4)
+        ),
+    )
+    for u in cases
+        @test UNITLESS_ABS2(u) === mapreduce_ref(u)
+        @test ODE_DEFAULT_NORM(u, 0.0) ===
+            Base.FastMath.sqrt_fast(mapreduce_ref(u) / max(recursive_length(u), 1))
+        allocated_unitless_abs2(u)
+        allocated_ode_default_norm(u)
+        @test allocated_unitless_abs2(u) == 0
+        @test allocated_ode_default_norm(u) == 0
+    end
+end

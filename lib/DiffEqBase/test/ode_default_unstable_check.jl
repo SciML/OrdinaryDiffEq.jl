@@ -1,6 +1,6 @@
 using Test, RecursiveArrayTools, StaticArrays, SparseArrays
 
-using DiffEqBase: DiffEqBase, NAN_CHECK
+using DiffEqBase: DiffEqBase, NAN_CHECK, INFINITE_OR_GIANT
 
 @static if VERSION >= v"1.11"
     @test Base.ispublic(DiffEqBase, :NAN_CHECK)
@@ -45,3 +45,16 @@ u5 = spzeros(1, 1)
 @test !NAN_CHECK(u5)
 u5[1, 1] = NaN
 @test NAN_CHECK(u5)
+
+@testset "ArrayPartition INFINITE_OR_GIANT" begin
+    u_hom = ArrayPartition(ones(4), ones(4))
+    u_mix = ArrayPartition(ones(4), ones(4), ones(Float32, 3))
+    @test !INFINITE_OR_GIANT(u_hom)
+    @test !INFINITE_OR_GIANT(u_mix)
+    @test INFINITE_OR_GIANT(ArrayPartition([1.0, Inf], ones(2)))
+    @test INFINITE_OR_GIANT(ArrayPartition(ones(2), ones(2), Float32[1.0f0, Inf32]))
+    INFINITE_OR_GIANT(u_hom)
+    INFINITE_OR_GIANT(u_mix)
+    @test (@allocated INFINITE_OR_GIANT(u_hom)) == 0
+    @test (@allocated INFINITE_OR_GIANT(u_mix)) == 0
+end
