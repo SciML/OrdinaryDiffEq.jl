@@ -12,12 +12,6 @@ struct EvalFunc{F} <: Function
 end
 (f::EvalFunc)(args...) = f.f(args...)
 
-NO_TSPAN_PROBS = Union{
-    AbstractLinearProblem, AbstractNonlinearProblem,
-    AbstractIntegralProblem, AbstractSteadyStateProblem,
-    AbstractJumpProblem,
-}
-
 """
     has_callbacks(kwargs)
 
