@@ -2,6 +2,7 @@ using Test
 using SparseArrays
 using LinearAlgebra
 using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqBDF
 using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian,
     BrownFullBasicInit, alg_autodiff, _isforwarddiff_alg
 using NonlinearSolve: NewtonRaphson, FastShortcutNonlinearPolyalg
@@ -301,4 +302,44 @@ using SciMLBase: ReturnCode
             @test abs(sol.u[1][1] - sol.u[1][2]^3) < 1.0e-6
         end
     end
+end
+
+# `prepare_alg` wraps the solver's AD choice in `AutoSparse` when the `DAEFunction` has a
+# sparse `jac_prototype`. NonlinearSolve rejects an `AutoSparse` autodiff outright, so the
+# `NewtonRaphson` that `BrownFullBasicInit` builds for a `DAEProblem` must be handed the
+# dense backend. A user `jac` is supplied so the sparsity seeding in `prepare_user_sparsity`
+# (SciML/OrdinaryDiffEq.jl#4479) is not on the path this test exercises.
+@testset "DAEProblem BrownFullBasicInit with sparse jac_prototype" begin
+    # x' = -x + y, 0 = x + y - 1  =>  x(t) = 1/2 + (x0 - 1/2) exp(-2t), y = 1 - x
+    function dae!(res, du, u, p, t)
+        res[1] = du[1] + u[1] - u[2]
+        res[2] = u[1] + u[2] - 1
+        return nothing
+    end
+    function dae_jac!(J, du, u, p, gamma, t)
+        J[1, 1] = 1 + gamma
+        J[1, 2] = -1
+        J[2, 1] = 1
+        J[2, 2] = 1
+        return nothing
+    end
+    f = DAEFunction(dae!; jac = dae_jac!, jac_prototype = sparse(ones(2, 2)))
+    # Both the derivative and the algebraic variable are inconsistent on purpose.
+    u0 = [0.0, 0.3]
+    du0 = [0.0, 0.0]
+    prob = DAEProblem(f, du0, u0, (0.0, 1.0); differential_vars = [true, false])
+
+    integ = init(prob, DFBDF(); initializealg = BrownFullBasicInit())
+    @test alg_autodiff(integ.alg) isa AutoSparse
+    @test integ.sol.retcode != ReturnCode.InitialFailure
+    @test integ.u ≈ [0.0, 1.0] atol = 1.0e-8
+    @test integ.du[1] ≈ 1.0 atol = 1.0e-8
+
+    sol = solve(
+        prob, DFBDF(); initializealg = BrownFullBasicInit(),
+        reltol = 1.0e-8, abstol = 1.0e-10
+    )
+    @test sol.retcode == ReturnCode.Success
+    x1 = 1 / 2 - exp(-2) / 2
+    @test sol.u[end] ≈ [x1, 1 - x1] rtol = 1.0e-6
 end
