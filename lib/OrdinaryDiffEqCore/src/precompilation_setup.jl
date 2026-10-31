@@ -1,7 +1,8 @@
 function lorenz(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 
 function lorenz_oop(u, p, t)
@@ -15,7 +16,8 @@ end
 function lorenz_p(du, u, p, t)
     du[1] = p.σ * (u[2] - u[1])
     du[2] = u[1] * (p.ρ - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - p.β * u[3]
+    du[3] = u[1] * u[2] - p.β * u[3]
+    return
 end
 
 const lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
@@ -29,7 +31,8 @@ const lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
 function lorenz_pref(du, u, p, t)
     du[1] = p[1] * (u[2] - u[1])
     du[2] = u[1] * (p[2] - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - p[3] * u[3]
+    du[3] = u[1] * u[2] - p[3] * u[3]
+    return
 end
 
 const lorenz_pref_params = [10.0, 28.0, 8 / 3]

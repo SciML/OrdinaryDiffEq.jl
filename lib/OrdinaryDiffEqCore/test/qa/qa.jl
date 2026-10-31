@@ -29,7 +29,8 @@ run_qa(
             ignore = (
                 :BrownFullBasicInit, :ShampineCollocationInit, :DEVerbosity,
                 :Minimal, :_vec, :_reshape, :unwrap_cache, :_unwrap_val,
-                :calculate_residuals, :calculate_residuals!,
+                :calculate_residuals, :calculate_residuals!, :DynamicalODEProblem,
+                :ODEFunction,
             ),
         ),
         # Internal (non-`public`) names of upstream packages that OrdinaryDiffEqCore
@@ -41,12 +42,13 @@ run_qa(
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
-                :EnzymeRules, :inactive_noinl,
+                :EnzymeRules, :inactive_noinl, :inactive,
                 # SciMLBase internals with no public replacement yet
                 :enable_interpolation_sensitivitymode,
                 :forwarddiff_chunksize, :get_root_indp,
                 :get_save_idxs_and_saved_subsystem, :has_initializeprob,
-                :has_lazy_interpolation, :late_binding_update_u0_p, :remaker_of,
+                :has_lazy_interpolation, :has_mtk_sys, :late_binding_update_u0_p,
+                :log_numerical_instability, :remaker_of,
                 :save_discretes_if_enabled!, :save_final_discretes!,
                 :strip_interpolation, :struct_as_namedtuple, :unitfulvalue,
                 :unwrap_cache, :value,

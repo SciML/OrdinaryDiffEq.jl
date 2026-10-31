@@ -6,11 +6,13 @@ using Base.Threads
 @test Threads.nthreads() > 1
 
 function testdrift!(du, u, p, t)
-    return du[1] = u[1]
+    du[1] = u[1]
+    return
 end
 
 function testdiffusion!(du, u, p, t)
-    return du[1] = u[1]
+    du[1] = u[1]
+    return
 end
 
 function testrate(u, p, t)

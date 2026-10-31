@@ -17,7 +17,7 @@ end
 for i in 1:2
     prob = probArr[i]
     dt = 1 // 256
-    integrator = init(prob, VCAB3(), dt = dt, adaptive = false)
+    integrator = init(prob, VCAB3(); dt, adaptive = false)
     for i in 1:3
         step!(integrator)
     end
@@ -51,4 +51,14 @@ for i in 1:2
     sol1 = solve(prob, VCAB5(), dt = 1 // 256, adaptive = false)
     sol2 = solve(prob, AB5(), dt = 1 // 256)
     @test sol1.u ≈ sol2.u
+end
+
+@testset "Float32 in-place Ralston start" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    prob = ODEProblem(f!, Float32[1, 0.5], (0.0f0, 1.0f0))
+    for alg in (AB3(), ABM32())
+        sol = solve(prob, alg; dt = 0.01f0)
+        @test eltype(sol.u[end]) == Float32
+        @test sol.u[end] ≈ Float32[1, 0.5] * exp(-1.0f0) rtol = 1.0e-4
+    end
 end

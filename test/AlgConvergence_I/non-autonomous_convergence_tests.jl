@@ -31,31 +31,31 @@ tspan = (0.0, 1.0)
 prob1 = ODEProblem(
     ODEFunction{true}(
         (du, u, p, t) -> du .= nonauto1(u, p, t) .+
-            nonauto2(u, p, t),
-        analytic = analytic
+            nonauto2(u, p, t);
+        analytic
     ),
     u0, tspan
 )
 prob2 = ODEProblem(
     ODEFunction{false}(
-        (u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t),
-        analytic = analytic
+        (u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t);
+        analytic
     ),
     u0, tspan
 )
 prob3 = SplitODEProblem(
     SplitFunction{true}(
         (du, u, p, t) -> du .= nonauto1(u, p, t),
-        (du, u, p, t) -> du .= nonauto2(u, p, t),
-        analytic = analytic
+        (du, u, p, t) -> du .= nonauto2(u, p, t);
+        analytic
     ),
     u0, tspan
 )
 prob4 = SplitODEProblem(
     SplitFunction{false}(
         nonauto1,
-        nonauto2,
-        analytic = analytic
+        nonauto2;
+        analytic
     ),
     u0, tspan
 )

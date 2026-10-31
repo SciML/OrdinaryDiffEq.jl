@@ -1,7 +1,8 @@
-using SciMLTesting, OrdinaryDiffEqFunctionMap, Test
+using SciMLTesting, OrdinaryDiffEqFunctionMap, SciMLBase, Test
 
 run_qa(
     OrdinaryDiffEqFunctionMap;
+    reexports_allow = intersect(names(SciMLBase), names(OrdinaryDiffEqFunctionMap)),
     aqua_kwargs = (; piracies = false),  # piracy is needed for default-algorithm dispatch
     explicit_imports = true,
     ei_kwargs = (;

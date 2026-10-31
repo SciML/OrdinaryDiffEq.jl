@@ -87,7 +87,7 @@ function _ode_addsteps!(
         end
 
         num_stages = size(A, 1)
-        du = f(u, p, t)
+        du = f(uprev, p, t)
         linsolve_tmp = @.. du + dtd[1] * dT
         k1 = _restructure_state(uprev, W \ _vec(linsolve_tmp))
         # constant number for type stability make sure this is greater than num_stages
@@ -168,7 +168,7 @@ function _ode_addsteps!(
         linsolve = cache.linsolve
 
         linres = dolinsolve(
-            cache, linsolve; A = W, b = _vec(linsolve_tmp), reltol = cache.reltol
+            cache, linsolve; A = W, b = _vec(linsolve_tmp), cache.reltol
         )
         @.. $(_vec(ks[1])) = -linres.u
         # Last stage affect's ks for Rodas5,5P,6P
@@ -185,7 +185,7 @@ function _ode_addsteps!(
                     @.. linsolve_tmp += dtC[stage, i] * _vec(ks[i])
                 end
             else
-                du1 .= du
+                fill!(du1, zero(eltype(du1)))
                 for i in 1:(stage - 1)
                     @.. du1 += dtC[stage, i] * _vec(ks[i])
                 end
@@ -194,7 +194,7 @@ function _ode_addsteps!(
             end
 
             linres = dolinsolve(
-                cache, linsolve; b = _vec(linsolve_tmp), reltol = cache.reltol
+                cache, linsolve; b = _vec(linsolve_tmp), cache.reltol
             )
             @.. $(_vec(ks[stage])) = -linres.u
         end

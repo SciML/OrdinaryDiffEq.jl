@@ -1056,9 +1056,16 @@ end
     m = length(W.dW)
     sq3dt = sqrt(3 * dt)
     # define three-point distributed random variables
-    @.. chi1 = W.dW / integrator.sqdt
-    calc_threepoint_random!(_dW, sq3dt, NORMAL_ONESIX_QUANTILE, chi1)
-    map!(x -> (x^2 - dt) / 4, chi1, _dW)
+    if W.dW isa Number
+        _dW = calc_threepoint_random(
+            sq3dt, NORMAL_ONESIX_QUANTILE, W.dW / integrator.sqdt
+        )
+        chi1 = (_dW^2 - dt) / 4
+    else
+        @.. chi1 = W.dW / integrator.sqdt
+        calc_threepoint_random!(_dW, sq3dt, NORMAL_ONESIX_QUANTILE, chi1)
+        map!(x -> (x^2 - dt) / 4, chi1, _dW)
+    end
     if !(W.dW isa Number) || m > 1
         # define two-point distributed random variables
         calc_twopoint_random!(_dZ, integrator.sqdt, W.dZ)
@@ -1068,18 +1075,18 @@ end
     integrator.f.g(g1, uprev, p, t)
 
     # Y, Yp, Ym
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if W.dW isa Number
+        @.. tmp1 = g1 * _dW
+        @.. Y = uprev + k1 * dt + tmp1
+        @.. Yp[1] = uprev + k1 * dt + g1 * integrator.sqdt
+        @.. Ym[1] = uprev + k1 * dt - g1 * integrator.sqdt
+    elseif !is_diagonal_noise(integrator.sol.prob)
         mul!(tmp1, g1, _dW)
         @.. Y = uprev + k1 * dt + tmp1
-        if W.dW isa Number
-            @.. Yp = uprev + k1 * dt + g1 * integrator.sqdt
-            @.. Ym = uprev + k1 * dt - g1 * integrator.sqdt
-        else
-            for k in 1:m
-                g1k = @view g1[:, k]
-                @.. Yp[k] = uprev + k1 * dt + g1k * integrator.sqdt
-                @.. Ym[k] = uprev + k1 * dt - g1k * integrator.sqdt
-            end
+        for k in 1:m
+            g1k = @view g1[:, k]
+            @.. Yp[k] = uprev + k1 * dt + g1k * integrator.sqdt
+            @.. Ym[k] = uprev + k1 * dt - g1k * integrator.sqdt
         end
     else
         @.. Y = uprev + k1 * dt + g1 * _dW
@@ -1096,8 +1103,8 @@ end
 
     # add noise
     if W.dW isa Number
-        integrator.f.g(tmpg1, Yp, p, t)
-        integrator.f.g(tmpg2, Ym, p, t)
+        integrator.f.g(tmpg1, Yp[1], p, t)
+        integrator.f.g(tmpg2, Ym[1], p, t)
         @.. u = u + 1 // 4 * (tmpg1 + tmpg2 + 2 * g1) * _dW + (tmpg1 - tmpg2) * chi1 / integrator.sqdt #(1.1)
     else
         if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
@@ -1192,18 +1199,26 @@ end
 
     sq3dt = sqrt(3 * dt)
     # define three-point distributed random variables
-    @.. chi1 = W.dW / integrator.sqdt
-    calc_threepoint_random!(_dW, sq3dt, NORMAL_ONESIX_QUANTILE, chi1)
+    if W.dW isa Number
+        _dW = calc_threepoint_random(
+            sq3dt, NORMAL_ONESIX_QUANTILE, W.dW / integrator.sqdt
+        )
+    else
+        @.. chi1 = W.dW / integrator.sqdt
+        calc_threepoint_random!(_dW, sq3dt, NORMAL_ONESIX_QUANTILE, chi1)
+    end
 
     # compute stage values
     integrator.f(k1, uprev, p, t)
     integrator.f.g(g1, uprev, p, t)
 
     # Y, Yp, Ym
-    if !is_diagonal_noise(integrator.sol.prob) || W.dW isa Number
+    if W.dW isa Number
+        @.. tmp1 = g1 * _dW
+        @.. Y = uprev + k1 * dt + tmp1
+    elseif !is_diagonal_noise(integrator.sol.prob)
         mul!(tmp1, g1, _dW)
         @.. Y = uprev + k1 * dt + tmp1
-
     else
         @.. tmp1 = g1 * _dW
         @.. Y = uprev + k1 * dt + tmp1

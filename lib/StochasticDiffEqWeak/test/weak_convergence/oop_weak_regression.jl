@@ -47,7 +47,7 @@ prob_nd = SDEProblem(fd, gn, copy(U0), (0.0, T_END), noise_rate_prototype = zero
 function weak_mean(prob, alg, dt, N)
     ep = EnsembleProblem(prob)
     sol = solve(
-        ep, alg, EnsembleThreads(); trajectories = N, dt = dt,
+        ep, alg, EnsembleThreads(); trajectories = N, dt,
         save_everystep = false, save_start = false, adaptive = false
     )
     us = [sol.u[i].u[end] for i in 1:N]

@@ -2,7 +2,7 @@ module OrdinaryDiffEqStabilizedRK
 
 import OrdinaryDiffEqCore: alg_adaptive_order,
     gamma_default, qmax_default, alg_extrapolates,
-    fac_default_gamma, has_dtnew_modification,
+    fac_default_gamma, has_dtnew_modification, dtnew_modification,
     perform_step!, unwrap_alg,
     default_controller, PredictiveController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,

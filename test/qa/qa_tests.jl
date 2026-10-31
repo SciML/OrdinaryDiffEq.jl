@@ -1,8 +1,14 @@
+using Pkg
 using SciMLTesting, OrdinaryDiffEq
 using ADTypes, CommonSolve, DiffEqBase, OrdinaryDiffEqBDF, OrdinaryDiffEqDefault,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     SciMLBase, SciMLLogging
 using Test
+
+@testset "GPU test group timeout" begin
+    groups = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "test_groups.toml"))
+    @test groups["GPU"]["timeout"] >= 120
+end
 
 @testset "PureKLU-compatible MuladdMacro floors" begin
     lib_dir = joinpath(@__DIR__, "..", "..", "lib")
@@ -17,7 +23,7 @@ using Test
             occursin(r"(?m)^OrdinaryDiffEqCore = ", project)
         has_muladdmacro && uses_core
     end
-    @test length(projects) == 40
+    @test length(projects) == 43
     for package in projects
         project = read(joinpath(lib_dir, package, "Project.toml"), String)
         floor_match = match(r"(?m)^MuladdMacro = \"([0-9]+\.[0-9]+\.[0-9]+)", project)
@@ -41,12 +47,17 @@ const ORDINARYDIFFEQ_REEXPORTS = intersect(
         public_api_names(OrdinaryDiffEqVerner),
         public_api_names(SciMLBase),
         public_api_names(SciMLLogging),
-        (:SciMLBase, :SciMLLogging),
+        # `successful_retcode` is intentionally available from the umbrella
+        # package for the documented `solve` workflow, although older SciMLBase
+        # releases expose it through `public` rather than `export`.
+        (:SciMLBase, :SciMLLogging, :successful_retcode),
         # `public` on a Core-owned name counts as a public reexport; listed by
         # name so the check still rejects the rest of Core's surface.
         (:Sequential, :BaseThreads, :PolyesterThreads),
     ),
 )
+
+include("reexport_tests.jl")
 
 # The umbrella package's QA lane historically ran only the ExplicitImports checks
 # (no Aqua/JET), so keep `aqua = false` to preserve that scope.

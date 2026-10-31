@@ -35,7 +35,7 @@ tspan = (0.0, 100.0)
 prob = SDEProblem(f, g, u0, tspan)
 
 Random.seed!(3)
-sol = solve(prob, SRIW1(), callback = callback)
+sol = solve(prob, SRIW1(); callback)
 
 #=
 using Plots; pyplot()
@@ -47,8 +47,8 @@ plot(p1,p2,layout=(2,1),size=(600,1000))
 =#
 
 Random.seed!(3)
-sol = solve(prob, EM(), callback = callback, dt = 1 / 4)
-sol = solve(prob, RKMil(), callback = callback, dt = 1 / 4)
+sol = solve(prob, EM(); callback, dt = 1 / 4)
+sol = solve(prob, RKMil(); callback, dt = 1 / 4)
 
 function g(du, u, p, t)
     for i in 1:length(u)
@@ -58,4 +58,4 @@ function g(du, u, p, t)
 end
 prob = SDEProblem(f, g, u0, tspan)
 
-sol = solve(prob, SRA1(), callback = callback)
+sol = solve(prob, SRA1(); callback)

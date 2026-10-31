@@ -58,7 +58,7 @@ end
     f(k1, uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
-    out1 = make_taylor(k1, k2)
+    out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
@@ -108,9 +108,9 @@ end
         integrator, cache::ExplicitTaylorCache{P}, repeat_step = false
     ) where {P}
     (; t, dt, uprev, u, f, p) = integrator
-    (; jet, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jet, coeffs, utaylor, utilde, tmp, atmp, thread) = cache
 
-    jet(utaylor, uprev, t)
+    jet(utaylor, coeffs, uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end
@@ -148,7 +148,7 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jets, coeffs, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)
@@ -156,7 +156,7 @@ end
     jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
-    jet(utaylor, uprev, t)
+    jet(utaylor, coeffs[jet_index + 1], uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end

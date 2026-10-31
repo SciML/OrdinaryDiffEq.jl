@@ -93,7 +93,7 @@ All implicit methods share common configuration parameters:
 # Linear solver options
 ImplicitEM(linsolve = KrylovJL_GMRES())
 
-# Nonlinear solver options  
+# Nonlinear solver options
 ImplicitEM(nlsolve = NLNewton(max_iter = 20))
 
 # Jacobian computation

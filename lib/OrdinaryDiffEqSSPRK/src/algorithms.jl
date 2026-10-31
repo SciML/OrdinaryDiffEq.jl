@@ -126,7 +126,7 @@ size.",
     [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)"
 )
 Base.@kwdef struct SSPRKMSVS32{StageLimiter, StepLimiter, Thread} <:
-    OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()
@@ -203,7 +203,7 @@ size.",
     [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)"
 )
 Base.@kwdef struct SSPRKMSVS43{StageLimiter, StepLimiter, Thread} <:
-    OrdinaryDiffEqAdaptiveAlgorithm
+    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = Serial()

@@ -7,27 +7,45 @@ using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
 using OrdinaryDiffEqBDF: FBDF, DFBDF
 
-import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg
+import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch, isdefaultalg,
+    _is_identity_massmatrix
 import ADTypes: AutoFiniteDiff
+import DiffEqBase
 import LinearSolve
-using LinearAlgebra: I
 using EnumX: EnumX
 
 import SciMLBase
-using SciMLBase: ODEProblem, DAEProblem, solve
+
+using Reexport: Reexport, @reexport
+# Kept in sync with docs/src/api/reexports.md by test/qa/reexport_tests.jl.
+@reexport using SciMLBase: DAEProblem, DiscreteProblem, DynamicalODEProblem,
+    EnsembleProblem, ODEProblem, SecondOrderODEProblem, SplitODEProblem, DAEFunction,
+    DiscreteFunction, DynamicalODEFunction, ODEFunction, SplitFunction, solve, solve!, init,
+    step!, remake, ReturnCode, successful_retcode, DEStats, NLStats, NullParameters,
+    AutoSpecialize, FullSpecialize, NoSpecialize, FunctionWrapperSpecialize, CheckInit,
+    NoInit, OverrideInit, CallbackSet, ContinuousCallback, DiscreteCallback,
+    VectorContinuousCallback, LeftRootFind, RightRootFind, NoRootFind, add_saveat!,
+    add_tstop!, auto_dt_reset!, change_t_via_interpolation!, check_error, check_error!,
+    first_tstop, get_dt, get_du, get_du!, get_proposed_dt, get_tmp_cache, pop_tstop!,
+    reinit!, savevalues!, set_abstol!, set_proposed_dt!, set_reltol!, set_t!, set_u!,
+    set_ut!, terminate!, u_modified!, EnsembleAnalysis, EnsembleDistributed, EnsembleSerial,
+    EnsembleSplitThreads, EnsembleSummary, EnsembleThreads
+using SciMLBase: SciMLBase
 
 include("default_alg.jl")
 
 function _lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 
 function _lorenz_p!(du, u, p, t)
     du[1] = p.σ * (u[2] - u[1])
     du[2] = u[1] * (p.ρ - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - p.β * u[3]
+    du[3] = u[1] * u[2] - p.β * u[3]
+    return
 end
 
 const _lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
@@ -35,10 +53,16 @@ const _lorenz_p_params = (σ = 10.0, ρ = 28.0, β = 8 / 3)
 function _lorenz_pref!(du, u, p, t)
     du[1] = p[1] * (u[2] - u[1])
     du[2] = u[1] * (p[2] - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - p[3] * u[3]
+    du[3] = u[1] * u[2] - p[3] * u[3]
+    return
 end
 
 const _lorenz_pref_params = [10.0, 28.0, 8 / 3]
+
+function _dae_p!(resid, du, u, p, t)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
+end
 
 import PrecompileTools
 import Preferences
@@ -95,6 +119,10 @@ PrecompileTools.@compile_workload begin
             (0.0, 1.0), _lorenz_p_params
         )
         push!(parameter_generic_prob_list, prob)
+
+        dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(_dae_p!)
+        dae_prob = DAEProblem(dae_f, [-0.5], [1.0], (0.0, 0.1), (rate = 0.5,))
+        solve(dae_prob)
     end
 
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)

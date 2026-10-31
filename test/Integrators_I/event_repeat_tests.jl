@@ -7,11 +7,12 @@ cond(u, p, t) = u - exp(70eps(1.0))
 
 c = Ref(0)
 function affect!(integrator)
-    return c[] += 1
+    c[] += 1
+    return
 end
 cb = ContinuousCallback(cond, affect!)
 @info "Event Repeat Test 1"
-sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt = dt, save_everystep = false)
+sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt, save_everystep = false)
 @test c[] == 1
 
 function condition_v(out, u, t, integrator)
@@ -19,7 +20,8 @@ function condition_v(out, u, t, integrator)
     out[2] = u - exp(60eps(1.0))
     out[3] = u - exp(70eps(1.0))
     out[4] = u - exp(80eps(1.0))
-    return out[5] = u - exp(90eps(1.0))
+    out[5] = u - exp(90eps(1.0))
+    return
 end
 
 c1 = Ref(0)
@@ -48,7 +50,7 @@ end
 
 cb = VectorContinuousCallback(condition_v, affect_v!, 5)
 @info "Event Repeat Test 2"
-sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt = dt, save_everystep = false)
+sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt, save_everystep = false)
 
 @test c1[] == 1
 @test c2[] == 1

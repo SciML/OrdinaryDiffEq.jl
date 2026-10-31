@@ -147,7 +147,7 @@ For reference, relevant fields of the `ODEIntegrator` are:
 For example, to modify the absolute tolerance for the future timesteps, one can do:
 
 ```julia
-integrator.opts.abstol = 1e-9
+integrator.opts.abstol = 1.0e-9
 ```
 
 For more info see the linked documentation page.

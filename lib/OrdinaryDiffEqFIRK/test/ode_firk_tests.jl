@@ -1,7 +1,85 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol
+using SparseArrays
+using OrdinaryDiffEqTsit5: AutoTsit5
+using ADTypes: AutoFiniteDiff
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
+
+@testset "Sparse FIRK stage matrix assembly" begin
+    J = sparse([1, 1, 2], [1, 2, 3], [2.0, 0.0, 4.0], 3, 3)
+    for (mass_matrix, scale) in (
+            (sparse([3, 2], [1, 2], [5.0, 0.0], 3, 3), -2.5),
+            (I, -2.5), (I, -2.5 - 0.4im),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5 - 0.4im),
+        )
+        T = scale isa Complex ? ComplexF64 : Float64
+        W = similar(J, T)
+        expected = similar(J, T)
+        OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
+        @inbounds for II in CartesianIndices(J)
+            expected[II] = muladd(scale, mass_matrix[Tuple(II)...], J[II])
+        end
+
+        @test W == expected
+        if !(scale isa Complex)
+            # entrywise setindex! densifies the pattern with signed zeros on
+            # complex scales; on real scales the merged pattern is identical
+            @test all(c -> nzrange(W, c) == nzrange(expected, c), axes(W, 2))
+            @test rowvals(W) == rowvals(expected)
+        end
+    end
+end
+
+@testset "Sparse FIRK solves vs dense jac_prototype" begin
+    n = 50
+    function firk_test_lin!(du, u, p, t)
+        @inbounds for i in 1:n
+            du[i] = -100u[i] + (i > 1 ? 10u[i - 1] : 0) + (i < n ? 10u[i + 1] : 0)
+        end
+    end
+    J = spdiagm(
+        -1 => fill(10.0, n - 1), 0 => fill(-100.0, n), 1 => fill(10.0, n - 1)
+    )
+    mass_matrix = spdiagm(0 => collect(range(0.8, 1.2; length = n)))
+    u0 = ones(n)
+    tspan = (0.0, 0.1)
+    ts = [0.01, 0.05, 0.1]
+    for (mm_sparse, mm_dense) in (
+                (I, I), (mass_matrix, Matrix(mass_matrix)),
+            ), alg in (
+                RadauIIA3(), RadauIIA5(), RadauIIA9(),
+                AdaptiveRadau(), AdaptiveRadau(threading = true),
+            )
+        prob_sparse = ODEProblem(
+            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix = mm_sparse),
+            u0, tspan
+        )
+        prob_dense = ODEProblem(
+            ODEFunction(
+                firk_test_lin!;
+                jac_prototype = Matrix(J), mass_matrix = mm_dense
+            ),
+            u0, tspan
+        )
+        sol_sparse = solve(
+            prob_sparse, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        sol_dense = solve(
+            prob_dense, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        @test sol_sparse.retcode == ReturnCode.Success
+        @test sol_sparse.u[end] ≈ sol_dense.u[end] atol = 1.0e-6
+        # Dense-output interpolation can differ between the sparse and dense LU
+        # paths by more than the solver tolerance (≈2e-5 for AdaptiveRadau here).
+        for t in ts
+            @test all(isapprox.(sol_sparse(t), sol_dense(t); atol = 1.0e-4))
+        end
+    end
+end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5(), dense_errors = true)
@@ -56,7 +134,8 @@ function vanderpol_firk(du, u, p, t)
     x, y = u[1], u[2]
     μ = p[1]
     du[1] = y                           # dx/dt = y
-    return du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    du[2] = μ * ((1 - x^2) * y - x)     # dy/dt = μ * ((1 - x^2) * y - x)
+    return
 end
 
 function vanderpol_firk(u, p, t)
@@ -132,6 +211,13 @@ sim_gl3 = test_convergence(
 )
 @test sim_gl3.𝒪est[:final] ≈ 6 atol = testTol
 
+@testset "GaussLegendre with one stage is fixed-step" begin
+    @test !SciMLBase.isadaptive(GaussLegendre(num_stages = 1))
+    @test SciMLBase.isadaptive(GaussLegendre(num_stages = 2))
+    sol = solve(prob_ode_linear, GaussLegendre(num_stages = 1); dt = 1 // 64)
+    @test SciMLBase.successful_retcode(sol)
+end
+
 # GaussLegendre: fixed-step accuracy at s = 4 (order 8)
 @testset "GaussLegendre fixed-dt accuracy (s = 4)" begin
     s = 4
@@ -152,7 +238,7 @@ end
         abstol = 1.0e-9
         sol = solve(
             prob_ode_linear, GaussLegendre(num_stages = s);
-            reltol = reltol, abstol = abstol
+            reltol, abstol
         )
         @test SciMLBase.successful_retcode(sol)
         exact = prob_ode_linear.u0 * exp(1.01 * (sol.t[end] - sol.t[1]))
@@ -201,4 +287,55 @@ end
     vanstiff = ODEProblem(vanderpol_firk, [sqrt(3), 0.0], (0.0, 1.0), [1.0e6])
     integ = init(vanstiff, AdaptiveRadau())
     @test all(x -> all(iszero, x), integ.k[3:(integ.kshortsize)])
+end
+
+@testset "AdaptiveRadau as a composite member (#4367)" begin
+    f_comp = (du, u, p, t) -> (du[1] = -1000u[1] + u[2]; du[2] = u[1] - 2u[2]; nothing)
+    prob_comp = ODEProblem(f_comp, [1.0, 1.0], (0.0, 1.0))
+
+    integ = init(prob_comp, AutoTsit5(AdaptiveRadau(); stiffalgfirst = true))
+    @test integ isa SciMLBase.DEIntegrator
+
+    bare = init(prob_comp, AdaptiveRadau())
+    @test integ.kshortsize == bare.kshortsize
+end
+
+@testset "AdaptiveRadau Newton tolerance follows the stage count" begin
+    prob = prob_ode_rober
+    ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
+    for alg in (AdaptiveRadau(), AdaptiveRadau(; min_order = 13, max_order = 13))
+        sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, save_everystep = false)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.naccept < 500
+        @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
+        @test abs(sum(sol.u[end]) - 1) < 1.0e-8
+    end
+end
+
+@testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
+    function rober_firk!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+        return nothing
+    end
+    prob_rober = ODEProblem(rober_firk!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    reference = solve(prob_rober, RadauIIA5(); abstol = 1.0e-10, reltol = 1.0e-10).u[end]
+
+    for stiffalg in (
+            RadauIIA3(autodiff = AutoFiniteDiff()),
+            RadauIIA5(autodiff = AutoFiniteDiff()),
+            AdaptiveRadau(autodiff = AutoFiniteDiff()),
+        )
+        sol = solve(prob_rober, AutoTsit5(stiffalg); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test count(==(2), sol.alg_choice) > 0
+        @test sol.u[end] ≈ reference rtol = 1.0e-4
+    end
+
+    integ = init(
+        prob_rober, AutoTsit5(AdaptiveRadau(autodiff = AutoFiniteDiff()); stiffalgfirst = true)
+    )
+    @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end

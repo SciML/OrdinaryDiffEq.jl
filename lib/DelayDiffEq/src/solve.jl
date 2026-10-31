@@ -26,7 +26,7 @@ function SciMLBase.__init(
         save_discretes = true,
         callback = nothing,
         dense = save_everystep && isempty(saveat),
-        calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
+        calck = (callback !== nothing && !isempty(callback)) || # Empty callback
             dense, # and no dense output
         seed = UInt64(0),
         dt = zero(eltype(prob.tspan)),
@@ -138,13 +138,25 @@ function SciMLBase.__init(
     tdir = sign(last(tspan) - t0)
     tTypeNoUnits = typeof(one(tType))
 
+    if has_constant_lags(prob)
+        for lag in constant_lags
+            if tdir * lag < zero(lag)
+                throw(
+                    ArgumentError(
+                        "constant_lags must point back in time: nonnegative for a forward tspan, nonpositive for a reversed tspan. Got lag $lag for tspan $tspan."
+                    )
+                )
+            end
+        end
+    end
+
     # Allow positive dtmax, but auto-convert
     dtmax > zero(dtmax) && tdir < zero(tdir) && (dtmax *= tdir)
 
     # no fixed-point iterations for constrained algorithms,
     # and thus `dtmax` should match minimal lag
     if isconstrained(alg) && has_constant_lags(prob)
-        min_lag = minimum(abs, constant_lags)
+        min_lag = minimum(abs, Iterators.filter(!iszero, constant_lags); init = abs(dtmax))
         old_dtmax = abs(dtmax)
         dtmax = tdir * min(old_dtmax, min_lag)
         if min_lag < old_dtmax
@@ -156,8 +168,8 @@ function SciMLBase.__init(
     end
 
     # get absolute and relative tolerances
-    abstol_internal = get_abstol(u0, tspan, alg.alg; abstol = abstol)
-    reltol_internal = get_reltol(u0, tspan, alg.alg; reltol = reltol)
+    abstol_internal = get_abstol(u0, tspan, alg.alg; abstol)
+    reltol_internal = get_reltol(u0, tspan, alg.alg; reltol)
 
     # get rate prototype
     rate_prototype = rate_prototype_of(u0, tspan)
@@ -180,10 +192,10 @@ function SciMLBase.__init(
     u, uprev,
         uprev2 = u_uprev_uprev2(
         u0, alg;
-        alias_u0 = alias_u0,
-        adaptive = adaptive,
-        allow_extrapolation = allow_extrapolation,
-        calck = calck
+        alias_u0,
+        adaptive,
+        allow_extrapolation,
+        calck
     )
     uEltypeNoUnits = recursive_unitless_eltype(u)
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
@@ -201,8 +213,8 @@ function SciMLBase.__init(
     history = build_history_function(
         prob, alg, rate_prototype, reltol_internal,
         differential_vars;
-        dt = dt, dtmin = dtmin, calck = false,
-        adaptive = adaptive, internalnorm = internalnorm
+        dt, dtmin, calck = false,
+        adaptive, internalnorm
     )
     f_with_history = if is_stochastic
         SDEFunctionWrapper(f, history)
@@ -228,12 +240,12 @@ function SciMLBase.__init(
     ts, timeseries,
         ks = solution_arrays(
         u, tspan, rate_prototype;
-        timeseries_init = timeseries_init,
-        ts_init = ts_init,
-        ks_init = ks_init,
-        save_idxs = save_idxs,
-        save_start = save_start,
-        is_stochastic = is_stochastic
+        timeseries_init,
+        ts_init,
+        ks_init,
+        save_idxs,
+        save_start,
+        is_stochastic
     )
 
     # build cache
@@ -271,16 +283,16 @@ function SciMLBase.__init(
     sol = if is_stochastic
         SciMLBase.build_solution(
             prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats, W = W
+            dense, k = ks, interp = id, saved_subsystem,
+            id.alg_choice, calculate_error = false,
+            stats, W,
         )
     else
         SciMLBase.build_solution(
             prob, alg.alg, ts, timeseries;
-            dense = dense, k = ks, interp = id, saved_subsystem = saved_subsystem,
-            alg_choice = id.alg_choice, calculate_error = false,
-            stats = stats
+            dense, k = ks, interp = id, saved_subsystem,
+            id.alg_choice, calculate_error = false,
+            stats,
         )
     end
 
@@ -315,8 +327,8 @@ function SciMLBase.__init(
     # reserve capacity for the solution
     _sizehint_solution!(
         sol, alg, tspan, tstops_internal, saveat_internal;
-        save_everystep = save_everystep, adaptive = adaptive, dt = tType(dt),
-        dtmin = dtmin, internalnorm = internalnorm
+        save_everystep, adaptive, dt = tType(dt),
+        dtmin, internalnorm
     )
 
     # create array of tracked discontinuities
@@ -547,7 +559,8 @@ function SciMLBase.__init(
         SciMLBase.initialize_dae!(integrator)
         initialize_solution!(integrator)
         OrdinaryDiffEqCore.initialize_callbacks!(integrator, initialize_save)
-        if save_on && save_start
+        if save_on && save_start &&
+                (!isdefined(opts, :save_discretes) || opts.save_discretes)
             SciMLBase.save_discretes_if_enabled!(integrator, opts.callback; skip_duplicates = true)
         end
         DiffEqBase.initialize!(integrator)
@@ -606,8 +619,8 @@ function DiffEqBase.solve!(integrator::DDEIntegrator)
     if SciMLBase.has_analytic(f)
         SciMLBase.calculate_solution_errors!(
             sol;
-            timeseries_errors = opts.timeseries_errors,
-            dense_errors = opts.dense_errors
+            opts.timeseries_errors,
+            opts.dense_errors
         )
     end
     sol.retcode == ReturnCode.Default || return sol
@@ -688,7 +701,8 @@ function initialize_tstops_d_discontinuities_propagated(
         maxlag = tdir * (tf - t0)
         next_order = neutral ? order_discontinuity_t0 : order_discontinuity_t0 + 1
         for lag in constant_lags
-            if tdir * lag < maxlag
+            # a zero lag maps a discontinuity onto itself
+            if !iszero(lag) && tdir * lag < maxlag
                 t = tdir * (t0 + lag)
                 push!(tstops_propagated, t)
 

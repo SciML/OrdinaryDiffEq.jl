@@ -12,6 +12,21 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqTaylorSeries, Test
+        exported = (
+            :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+            :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+            :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), exported))
+        internal = (
+            :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+            :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+            :ConvexOptimizationProblem,
+        )
+        @test !any(Base.isexported.(Ref(OrdinaryDiffEqTaylorSeries), internal))
+    end
     @testset "ExplicitTaylor2 Convergence Tests" begin
         # Test convergence
         dts = 2.0 .^ (-8:-4)
@@ -20,6 +35,33 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
         sim = test_convergence(dts, prob_ode_2Dlinear, ExplicitTaylor2())
         @test sim.𝒪est[:final] ≈ 2 atol = testTol
+    end
+
+    # The in-place step evaluates `f` into a Taylor buffer whose value slot used to be
+    # `k1` -- which is also the first-order partial of the input. An RHS that zeroes
+    # `du` before accumulating into it therefore wiped its own Taylor seed, leaving
+    # `k2 == 0` and dropping the method to first order. The library problems above
+    # assign `du` directly, so they never exercised it.
+    @testset "ExplicitTaylor2 with a zero-then-accumulate RHS" begin
+        dts = 2.0 .^ (-8:-4)
+        testTol = 0.2
+        analytic = (u0, p, t) -> u0 * exp(-t)
+
+        direct! = (du, u, p, t) -> (@. du = -u; nothing)
+        accumulate! = (du, u, p, t) -> (fill!(du, 0); @. du = du - u; nothing)
+
+        for rhs! in (direct!, accumulate!)
+            prob = ODEProblem(ODEFunction(rhs!; analytic = analytic), [1.0], (0.0, 1.0))
+            sim = test_convergence(dts, prob, ExplicitTaylor2())
+            @test sim.𝒪est[:final] ≈ 2 atol = testTol
+        end
+
+        # Both spellings are the same ODE, so they must give the same answer.
+        pd = ODEProblem(ODEFunction(direct!; analytic = analytic), [1.0], (0.0, 1.0))
+        pa = ODEProblem(ODEFunction(accumulate!; analytic = analytic), [1.0], (0.0, 1.0))
+        sd = solve(pd, ExplicitTaylor2(); dt = 2.0^-6, adaptive = false)
+        sa = solve(pa, ExplicitTaylor2(); dt = 2.0^-6, adaptive = false)
+        @test sd.u[end] ≈ sa.u[end] rtol = 1.0e-12
     end
 
     @testset "ExplicitTaylorN Convergence Tests" begin
@@ -68,7 +110,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         # that many nonzero coefficients on top of the value
         for (i, jet) in enumerate(cache.jets)
             fill!(cache.utaylor, zero(eltype(cache.utaylor)))
-            jet(cache.utaylor, integ.uprev, integ.t)
+            jet(cache.utaylor, cache.coeffs[i], integ.uprev, integ.t)
             @test count(!iszero, TaylorDiff.flatten(cache.utaylor[1])) == i + 2
         end
     end
@@ -130,7 +172,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         for prob in (prob_ode_linear, prob_ode_2Dlinear)
             exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
             errors = map(dts) do dt
-                integrator = init(prob, alg; dt = dt, adaptive = false)
+                integrator = init(prob, alg; dt, adaptive = false)
                 integrator.cache.current_order[] = 3
                 solve!(integrator)
                 maximum(abs.(integrator.sol.u[end] .- exact))

@@ -19,16 +19,17 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     step_accept_controller!,
     step_reject_controller!, post_newton_controller!,
     get_EEst,
-    setup_controller_cache, get_qmax, get_gamma, get_qsteady_min, get_qsteady_max,
+    setup_controller_cache, get_qmax, get_qmin, get_gamma, get_qsteady_min, get_qsteady_max,
     get_failfactor, CommonControllerOptions, resolve_basic, _resolved_QT,
     AbstractControllerCache,
+    resize_nlsolver!,
     DAEAlgorithm,
     get_fsalfirstlast, generic_solver_docstring, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
     DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
     find_algebraic_vars_eqs
-import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache
+import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache, resize_non_user_cache!
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
@@ -59,7 +60,8 @@ import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport
 import SciMLBase
-using SciMLBase: ODEProblem, ODEFunction, derivative_discontinuity!, solve
+using SciMLBase: DAEFunction, DAEProblem, ODEProblem, ODEFunction,
+    derivative_discontinuity!, solve
 @reexport using SciMLBase
 
 include("algorithms.jl")
@@ -69,6 +71,7 @@ include("stald.jl")
 include("nordsieck_utils.jl")
 include("bdf_caches.jl")
 include("dae_caches.jl")
+include("resize.jl")
 include("controllers.jl")
 include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
@@ -85,7 +88,13 @@ import Preferences
 function precompile_mm_dae(du, u, p, t)
     du[1] = -0.04u[1] + 1.0e4 * u[2] * u[3]
     du[2] = 0.04u[1] - 3.0e7 * u[2]^2 - 1.0e4 * u[2] * u[3]
-    return du[3] = u[1] + u[2] + u[3] - 1.0
+    du[3] = u[1] + u[2] + u[3] - 1.0
+    return
+end
+
+function precompile_dae(resid, du, u, p, t)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
 end
 
 PrecompileTools.@compile_workload begin
@@ -139,6 +148,15 @@ PrecompileTools.@compile_workload begin
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )
         )
+    end
+
+    if Preferences.@load_preference("PrecompileAutoDespecialize", true)
+        dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(precompile_dae)
+        dae_prob = DAEProblem(
+            dae_f, [-0.5], [1.0], (0.0, 0.1), (rate = 0.5,)
+        )
+        solve(dae_prob, DFBDF())
+        solve(dae_prob, DNordsieckBDF())
     end
 
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)

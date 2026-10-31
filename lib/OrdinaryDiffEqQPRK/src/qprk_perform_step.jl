@@ -134,7 +134,7 @@ end
     stage_limiter!(tmp, integrator, p, t + d4 * dt)
     f(k4, tmp, p, t + d4 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (b51 * k1 + b53 * k3 + b54 * k4)
-    stage_limiter!(uprev, integrator, p, t + d5 * dt)
+    stage_limiter!(tmp, integrator, p, t + d5 * dt)
     f(k5, tmp, p, t + d5 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (b61 * k1 + b64 * k4 + b65 * k5)
     stage_limiter!(tmp, integrator, p, t + d6 * dt)
@@ -212,7 +212,7 @@ end
             + b16_10 * k10 + b16_11 * k11 + b16_12 * k12
             + b16_13 * k13 + b16_14 * k14
     )
-    stage_limiter!(u, integrator, p, t + dt)
+    stage_limiter!(tmp, integrator, p, t + dt)
     f(k16, tmp, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 16)

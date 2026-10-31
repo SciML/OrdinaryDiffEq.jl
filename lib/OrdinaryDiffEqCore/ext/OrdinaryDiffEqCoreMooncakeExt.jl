@@ -1,8 +1,8 @@
 module OrdinaryDiffEqCoreMooncakeExt
 
 using OrdinaryDiffEqCore, Mooncake
-using Mooncake: @zero_adjoint, @is_primitive, MinimalCtx, CoDual, Dual, NoRData,
-    MutableTangent, NoTangent, primal, lazy_zero_rdata, instantiate
+using Mooncake: @zero_adjoint, @zero_derivative, @is_primitive, MinimalCtx, CoDual, Dual,
+    NoRData, MutableTangent, NoTangent, primal, lazy_zero_rdata, instantiate
 
 # Most of these rules mirror the inactive_noinl rules in
 # OrdinaryDiffEqCoreEnzymeCoreExt. They cover bookkeeping/logging/error
@@ -47,14 +47,19 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.final_progress), Vararg,
 }
 # NOTE: ode_determine_initdt depends on `u0`, so its return value (dt0) IS
-# mathematically a function of `u0`. Marking it @zero_adjoint is therefore
+# mathematically a function of `u0`. Marking it zero-derivative is therefore
 # not strictly correct — it drops the (small) contribution of dt0 to the
 # gradient. We keep it because the underlying `_ode_initdt_iip` contains
 # try/catch blocks that Mooncake cannot trace through (UpsilonNode error).
 # In practice the introduced error is at the level of the controller's
 # first-step correction and the resulting gradient still matches ForwardDiff
 # to ~10 digits in the tests below.
-Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
+#
+# Both modes, not just @zero_adjoint (ReverseMode only): HVP forward-differentiates
+# whatever reverse rule gets built, so a ReverseMode-only primitive still lets the outer
+# forward pass recurse into this function's body under HVP, hitting the same
+# UpsilonNode/try-catch error one level up instead of avoiding it.
+Mooncake.@zero_derivative Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.ode_determine_initdt), Vararg,
 }
 

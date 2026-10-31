@@ -2,7 +2,6 @@ using SciMLTesting, OrdinaryDiffEqStabilizedIRK, Test
 
 run_qa(
     OrdinaryDiffEqStabilizedIRK;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqStabilizedIRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (;

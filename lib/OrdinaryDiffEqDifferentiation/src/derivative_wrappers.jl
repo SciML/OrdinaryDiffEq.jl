@@ -109,10 +109,6 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
         integrator.stats.nf += 1
     end
 
-    if dense isa AutoFiniteDiff
-        dense = SciMLBase.@set dense.dir = diffdir(integrator)
-    end
-
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
     dense = gpu_safe_autodiff(dense, x)
 
@@ -155,10 +151,6 @@ function jacobian(f::F, x, integrator) where {F}
         end
     else
         integrator.stats.nf += 1
-    end
-
-    if dense isa AutoFiniteDiff
-        dense = SciMLBase.@set dense.dir = diffdir(integrator)
     end
 
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
@@ -241,11 +233,7 @@ function jacobian!(
         integrator.stats.nf += 1
     end
 
-    if dense isa AutoFiniteDiff
-        config = diffdir(integrator) > 0 ? jac_config[1] : jac_config[2]
-    else
-        config = jac_config[1]
-    end
+    config = jac_config[1]
 
     if integrator.iter == 1
         try
@@ -265,9 +253,9 @@ end
 
 Construct the differentiation configuration used to compute the state Jacobian of
 `f` via [`jacobian!`](@ref) (a DifferentiationInterface preparation, or `nothing`
-when the problem supplies its own `jac`/`Wfact`). For finite differencing it
-returns forward/backward-direction configs so [`diffdir`](@ref) can pick the
-in-domain stencil.
+when the problem supplies its own `jac`/`Wfact`). The state Jacobian perturbs
+`u`, not `t`, so the finite-difference direction does not depend on the
+integration direction; the returned tuple holds the same config twice.
 """
 function build_jac_config(
         alg, f::F1, uf::F2, du1, uprev,
@@ -290,7 +278,7 @@ function build_jac_config(
         )
         jac_prototype = f.jac_prototype
 
-        if is_sparse_csc(jac_prototype)
+        if is_sparse_csc(jac_prototype) && has_mass_matrix(f)
             if f.mass_matrix isa UniformScaling
                 idxs = diagind(jac_prototype)
                 @. @view(jac_prototype[idxs]) = 1
@@ -304,30 +292,8 @@ function build_jac_config(
         autodiff_alg = gpu_safe_autodiff(alg_autodiff(alg), u)
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
-        if dense isa AutoFiniteDiff
-            dir_forward = @set dense.dir = 1
-            dir_reverse = @set dense.dir = -1
-
-            if autodiff_alg isa AutoSparse
-                autodiff_alg_forward = @set autodiff_alg.dense_ad = dir_forward
-                autodiff_alg_reverse = @set autodiff_alg.dense_ad = dir_reverse
-            else
-                autodiff_alg_forward = dir_forward
-                autodiff_alg_reverse = dir_reverse
-            end
-
-            jac_config_forward = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_forward, u, strict = Val(false)
-            )
-            jac_config_reverse = DI.prepare_jacobian(
-                uf, du1, autodiff_alg_reverse, u, strict = Val(false)
-            )
-
-            jac_config = (jac_config_forward, jac_config_reverse)
-        else
-            jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
-            jac_config = (jac_config1, jac_config1)
-        end
+        jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
+        jac_config = (jac_config1, jac_config1)
 
     else
         jac_config = (nothing, nothing)
@@ -374,8 +340,8 @@ function resize_jac_config!(cache, integrator)
         cache.jac_config = (
             [
                 DI.prepare!_jacobian(
-                        uf, cache.du1, config, ad, integrator.u
-                    )
+                    uf, cache.du1, config, ad, integrator.u
+                )
                     for (ad, config) in zip(
                         (ad_right, ad_left), cache.jac_config
                     )
@@ -407,8 +373,8 @@ function resize_grad_config!(cache, integrator)
         cache.grad_config = (
             [
                 DI.prepare!_derivative(
-                        cache.tf, cache.du1, config, ad, integrator.t
-                    )
+                    cache.tf, cache.du1, config, ad, integrator.t
+                )
                     for (ad, config) in zip(
                         (ad_right, ad_left), cache.grad_config
                     )
@@ -476,7 +442,7 @@ end
 function sparsity_colorvec(f::F, x) where {F}
     sparsity = f.sparsity
 
-    if is_sparse_csc(sparsity)
+    if is_sparse_csc(sparsity) && has_mass_matrix(f)
         if f.mass_matrix isa UniformScaling
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1

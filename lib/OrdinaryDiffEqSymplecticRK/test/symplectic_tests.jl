@@ -1,6 +1,7 @@
 using Test, LinearAlgebra
 using OrdinaryDiffEqSymplecticRK, DiffEqBase
 using OrdinaryDiffEqRKN
+using Unitful
 
 # algorithm, dq(p) != p, convergence order
 const ALGOS = (
@@ -61,13 +62,13 @@ end
     prob = DynamicalODEProblem(dynfun, p0, q0, tspan, pa)
 
     if x || pa[1] == 1
-        sol = solve(prob, alg(); dt = dt)
+        sol = solve(prob, alg(); dt)
         calc = sol(t1)
         # printerrors("$alg-$iip-$pa", calc, solution, pa, t1)
         @test calc[1] ≈ solution(t1, pa)[1] rtol = errorbound(dt, d, calc[1])
         @test calc[2] ≈ solution(t1, pa)[2] rtol = errorbound(dt, d, calc[2])
     else
-        @test_throws ArgumentError solve(prob, alg(); dt = dt)
+        @test_throws ArgumentError solve(prob, alg(); dt)
     end
 end
 
@@ -75,7 +76,8 @@ function motionfuncDirect1(dv, v, u, p, t)
     # 1:Electron, 2: Be
     ω_1, ω_2, γ, m_1, m_2, η, ω_d = p
     dv[1] = -ω_1^2 * u[1] * (1 + η * cos(ω_d * t)) - γ * u[2] / m_1
-    return dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
+    dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
+    return
 end
 
 function motionfuncDirect1(v, u, p, t)
@@ -101,10 +103,38 @@ ref = solve(
 )
 
 @testset "symplectic time-dependent $alg" for (alg, x, d) in ALGOS
-    sol = solve(prob_direct, alg(), dt = dt, saveat = 0.01)
+    sol = solve(prob_direct, alg(); dt, saveat = 0.01)
     if alg <: Yoshida6
         @test maximum(ref[4, :] - sol[4, :]) < 9.0e-3
     else
         @test maximum(ref[4, :] - sol[4, :]) < 3.0e-3
     end
+end
+
+accel_units!(dv, v, u, p, t) = dv .= 0.0u"m/s^2"
+accel_units(v, u, p, t) = 0.0u"1/s" .* v
+gravity_units!(dv, v, u, p, t) = dv .= [-9.81, 0.0]u"m/s^2"
+gravity_units(v, u, p, t) = [-9.81, 0.0]u"m/s^2"
+
+@testset "VelocityVerlet with units iip=$iip" for iip in IIPS
+    initial_positions = [0.0, 0.1]u"m"
+    initial_velocities = [0.5, 0.0]u"m/s"
+    tspan_units = (0.0u"s", 100.0u"s")
+    T = tspan_units[2] - tspan_units[1]
+    prob = SecondOrderODEProblem(
+        iip ? accel_units! : accel_units,
+        initial_velocities, initial_positions, tspan_units
+    )
+    sol = solve(prob, VelocityVerlet(), dt = 0.1u"s")
+    @test sol.u[end].x[1] ≈ initial_velocities
+    @test sol.u[end].x[2] ≈ initial_positions .+ initial_velocities .* T
+
+    g = [-9.81, 0.0]u"m/s^2"
+    prob_g = SecondOrderODEProblem(
+        iip ? gravity_units! : gravity_units,
+        initial_velocities, initial_positions, tspan_units
+    )
+    sol_g = solve(prob_g, VelocityVerlet(), dt = 0.1u"s")
+    @test sol_g.u[end].x[1] ≈ initial_velocities .+ g .* T
+    @test sol_g.u[end].x[2] ≈ initial_positions .+ initial_velocities .* T .+ g .* T .^ 2 ./ 2
 end

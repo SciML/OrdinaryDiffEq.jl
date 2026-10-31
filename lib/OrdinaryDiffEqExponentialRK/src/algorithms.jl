@@ -25,6 +25,7 @@ for (Alg, Description, Ref) in [
         (:ETDRK3, "3rd order exponential-RK scheme.", REF1),
         (:ETDRK4, "4th order exponential-RK scheme (fixed timestepping)", REF1),
         (:HochOst4, "4th order exponential-RK scheme with stiff order 4.", REF1),
+        (:Friedli, "4th order (stiff order 3) exponential-RK scheme.", REF1),
     ]
     @eval begin
         @doc generic_solver_docstring(
@@ -79,8 +80,10 @@ for (Alg, Description, Ref) in [
 end
 
 """
-    ETD1(; krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
-           concrete_jac = nothing, step_limiter = trivial_limiter!)
+    ETD1(;
+        krylov = false, m = 30, iop = 0, autodiff = AutoForwardDiff(),
+        concrete_jac = nothing, step_limiter = trivial_limiter!
+    )
 
 **ETD1: First Order Exponential Time Differencing (Semilinear ODE Solver)**
 

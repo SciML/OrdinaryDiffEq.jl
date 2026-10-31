@@ -51,9 +51,9 @@ function setup_adjoint_fd2d(; A = 0.1, B = 0.1, N = 10, final_t = 1.0)
     # Add vjp field (build_amf_function doesn't support it yet)
     amf_func_with_vjp = ODEFunction{true, SciMLBase.FullSpecialize}(
         f!;
-        jac_prototype = amf_func.jac_prototype,
-        W_prototype = amf_func.W_prototype,
-        sparsity = amf_func.sparsity,
+        amf_func.jac_prototype,
+        amf_func.W_prototype,
+        amf_func.sparsity,
         vjp = f_vjp!,
     )
 

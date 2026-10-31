@@ -45,10 +45,12 @@ end
         @time @safetestset "ForwardDiff Dual Detection" include("forwarddiff_dual_detection.jl")
         @time @safetestset "ODE default norm" include("ode_default_norm.jl")
         @time @safetestset "DynamicQuantities extension" include("dynamicquantities_ext.jl")
+        @time @safetestset "Unitful extension" include("unitful_ext.jl")
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
         @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
         @time @safetestset "Despecialized-p Hook" include("despecialized_p_test.jl")
+        @time @safetestset "Despecialized mass-matrix problems" include("despecialize_mass_matrix.jl")
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 
@@ -111,6 +113,7 @@ end
     if TEST_GROUP == "ModelingToolkit" && isempty(VERSION.prerelease)
         activate_modelingtoolkit_env()
         @time @safetestset "Null DE Handling" include("modelingtoolkit/null_de.jl")
+        @time @safetestset "ModelingToolkit events" include("modelingtoolkit/events.jl")
     end
 
     # Sundials tests — only run when DiffEqBase itself changes

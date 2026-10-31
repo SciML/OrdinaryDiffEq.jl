@@ -17,6 +17,25 @@ struct DynamicSDEParameters
     sigma::Float64
 end
 
+struct DynamicDAEResidual{ID} end
+struct DynamicInitializationResidual{ID} end
+
+function (::DynamicDAEResidual)(resid, du, u, p, t)
+    seen_dae_parameter[] = typeof(p)
+    resid[1] = du[1] + p.rate * u[1]
+    return nothing
+end
+
+function (::DynamicInitializationResidual)(resid, u, p)
+    resid[1] = u[1]
+    return nothing
+end
+
+function dynamic_initialization_data(::Val{ID}, p) where {ID}
+    initprob = NonlinearProblem{true}(DynamicInitializationResidual{ID}(), [0.0], p)
+    return SciMLBase.OverrideInitData(initprob, nothing, nothing, nothing)
+end
+
 const seen_rhs_parameter = Ref{DataType}()
 const seen_jac_parameter = Ref{DataType}()
 const seen_tgrad_parameter = Ref{DataType}()
@@ -140,15 +159,27 @@ end
 @testset "other differential equation functions use the dynamic path" begin
     p = DynamicP(0.5)
 
-    function dae_rhs!(resid, du, u, p, t)
-        seen_dae_parameter[] = typeof(p)
-        resid[1] = du[1] + p.rate * u[1]
-        return nothing
-    end
-    dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(dae_rhs!)
+    dae_initdata = dynamic_initialization_data(Val(1), p)
+    dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(
+        DynamicDAEResidual{1}(); initialization_data = dae_initdata
+    )
     dae_prob = DAEProblem(dae_f, [0.0], [1.0], (0.0, 1.0), p)
     dae_concrete = concretize(dae_prob)
+    other_p = OtherDynamicP(1.5, 1)
+    other_dae_initdata = dynamic_initialization_data(Val(2), other_p)
+    other_dae_f = DAEFunction{true, SciMLBase.AutoDespecialize}(
+        DynamicDAEResidual{2}(); initialization_data = other_dae_initdata
+    )
+    other_dae_prob = DAEProblem(
+        other_dae_f, [0.0], [1.0], (0.0, 1.0), other_p
+    )
+    other_dae_concrete = concretize(other_dae_prob)
     @test dae_concrete.p isa SciMLBase.DespecializedParameters
+    @test typeof(dae_concrete.f) === typeof(other_dae_concrete.f)
+    @test typeof(dae_concrete) === typeof(other_dae_concrete)
+    @test dae_concrete.f.initialization_data === dae_initdata
+    @test other_dae_concrete.f.initialization_data === other_dae_initdata
+    @test SciMLBase.unwrapped_f(dae_concrete.f.f) isa DynamicDAEResidual{1}
     resid = zeros(1)
     dae_concrete.f(resid, [0.0], [1.0], dae_concrete.p, 0.0)
     @test resid == [0.5]
@@ -176,6 +207,10 @@ end
     sde_prob = SDEProblem(sde_f, [1.0], (0.0, 1.0), sde_p)
     sde_concrete = concretize(sde_prob)
     @test sde_concrete.p isa SciMLBase.DespecializedParameters
+    @test SciMLBase.specialization(sde_concrete.f) === SciMLBase.AutoDespecialize
+    sde_reconcrete = concretize(sde_concrete)
+    @test typeof(sde_reconcrete.f) === typeof(sde_concrete.f)
+    @test typeof(sde_reconcrete) === typeof(sde_concrete)
     sde_concrete.f(du, [1.0], sde_concrete.p, 0.0)
     @test du == [-0.5]
     @test seen_sde_drift_parameter[] === DynamicSDEParameters
@@ -197,4 +232,80 @@ end
     @test du == [0.1]
     @test seen_sdde_noise_parameter[] === DynamicSDEParameters
     @test SciMLBase.unwrapped_f(sdde_concrete.f.g) === dynamic_sdde_noise!
+end
+
+@testset "the barrier accepts already-unwrapped parameters" begin
+    p = DynamicP(0.5)
+    collect_args(args...) = args
+
+    wrapped = SciMLBase.DespecializedParameters(p)
+    @test DiffEqBase._invoke_parameter_despecialization(collect_args, (1, wrapped, 2)) ==
+        (1, p, 2)
+
+    @test DiffEqBase._invoke_parameter_despecialization(collect_args, (1, p, 2)) == (1, p, 2)
+
+    @test_throws "at most one parameter wrapper" DiffEqBase._invoke_parameter_despecialization(
+        collect_args, (wrapped, wrapped)
+    )
+end
+
+# An algorithm that does not use ForwardDiff selects the single-signature wrapping path
+# of `promote_f`, the only path that wraps an `SDEFunction`.
+struct NonForwardDiffAlgorithm <: SciMLBase.AbstractSDEAlgorithm end
+
+# The `promote_f` call of `get_concrete_problem`, without the `remake` that follows it.
+# SciMLBase's `remake` can restore the narrowed types of a re-widened function, which
+# would hide a non-idempotent `promote_f` from the problem-level checks.
+function promote_again(prob, alg)
+    f, _ = DiffEqBase._promote_f(
+        prob, prob.f, Val(SciMLBase.specialization(prob.f)), prob.u0, prob.p,
+        prob.tspan[1], Val(DiffEqBase._uses_forwarddiff(alg)),
+        DiffEqBase._forwarddiff_chunksize(alg)
+    )
+    return f
+end
+
+@testset "concretizing a concretized problem is idempotent" begin
+    p = DynamicP(0.5)
+    # Without `jac`/`tgrad` no `@set` in `promote_f` touches the function, so this
+    # covers the idempotency of the wrapping step on its own.
+    plain = ODEProblem(
+        ODEFunction{true, SciMLBase.AutoDespecialize}(dynamic_rhs!), [1.0], (0.0, 1.0), p
+    )
+    for alg in (nothing, NonForwardDiffAlgorithm())
+        once = concretize(plain, alg)
+        twice = concretize(once, alg)
+        @test SciMLBase.specialization(twice.f) === SciMLBase.AutoDespecialize
+        @test typeof(twice) === typeof(once)
+        @test typeof(promote_again(once, alg)) === typeof(once.f)
+    end
+
+    sde_p = DynamicSDEParameters(0.5, 0.1)
+    sde_f = SDEFunction{true, SciMLBase.AutoDespecialize}(
+        dynamic_sde_drift!, dynamic_sde_noise!
+    )
+    sde_prob = SDEProblem(sde_f, [1.0], (0.0, 1.0), sde_p)
+    once = concretize(sde_prob, NonForwardDiffAlgorithm())
+    @test once.f.f isa DiffEqBase.FunctionWrappersWrappers.FunctionWrappersWrapper
+    @test once.f.g isa DiffEqBase.FunctionWrappersWrappers.FunctionWrappersWrapper
+    twice = concretize(once, NonForwardDiffAlgorithm())
+    @test typeof(twice.f) === typeof(once.f)
+    @test typeof(twice) === typeof(once)
+    @test typeof(promote_again(once, NonForwardDiffAlgorithm())) === typeof(once.f)
+    du = zeros(1)
+    twice.f(du, [1.0], twice.p, 0.0)
+    @test du == [-0.5]
+    @test seen_sde_drift_parameter[] === DynamicSDEParameters
+
+    # Function types without an `f` field go through the same guard.
+    dynamical_f = DynamicalODEFunction{true, SciMLBase.AutoDespecialize}(
+        (dv, v, x, p, t) -> (dv .= -p.rate .* x; nothing),
+        (dx, v, x, p, t) -> (dx .= v; nothing)
+    )
+    dynamical = DynamicalODEProblem(dynamical_f, [0.0], [1.0], (0.0, 1.0), p)
+    for alg in (nothing, NonForwardDiffAlgorithm())
+        once = concretize(dynamical, alg)
+        @test once.p isa SciMLBase.DespecializedParameters
+        @test typeof(concretize(once, alg)) === typeof(once)
+    end
 end

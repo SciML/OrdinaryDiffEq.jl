@@ -34,7 +34,8 @@ get_jacobian_backends() = [AutoForwardDiff()]
 
 function f(du, u, p, t)
     du[1] = u[2]
-    return du[2] = -p[1]
+    du[2] = -p[1]
+    return
 end
 
 function condition(u, t, integrator) # Event when event_f(u,t) == 0
@@ -44,7 +45,8 @@ end
 function affect!(integrator)
     @show integrator.t
     println("bounced.")
-    return integrator.u[2] = -integrator.p[2] * integrator.u[2]
+    integrator.u[2] = -integrator.p[2] * integrator.u[2]
+    return
 end
 
 cb = ContinuousCallback(condition, affect!)
@@ -52,7 +54,7 @@ p = [9.8, 0.8]
 prob = ODEProblem(f, eltype(p).([1.0, 0.0]), eltype(p).((0.0, 1.0)), copy(p))
 
 function test_f(p)
-    _prob = remake(prob, p = p)
+    _prob = remake(prob; p)
     return solve(
         _prob, Tsit5(), abstol = 1.0e-14, reltol = 1.0e-14, callback = cb,
         save_everystep = false
@@ -76,21 +78,34 @@ expected = [
     end
 end
 
-# Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
-@testset "Enzyme callback limitation (jacobian)" begin
-    @test_broken (
-        ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
-        ad ≈ expected
-    )
+# On Julia < 1.12 callbacks stay concretely typed and the discontinuity zero-function
+# state is written through a typed setter (not a dynamic `setproperty!` on the
+# FunctionWrapper payload), which lets Enzyme forward mode differentiate through the
+# ContinuousCallback. On 1.12+ callbacks are type-erased and Enzyme forward cannot yet
+# handle the resulting dynamic dispatch, as it could not before this change.
+@static if VERSION < v"1.12"
+    @testset "Enzyme callback jacobian" begin
+        @test (
+            ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
+            ad ≈ expected
+        )
+    end
+else
+    @testset "Enzyme callback jacobian" begin
+        @test_broken (
+            ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
+            ad ≈ expected
+        )
+    end
 end
 
 function test_f2(
         p, sensealg = ForwardDiffSensitivity(), controller = nothing,
         alg = Tsit5()
     )
-    _prob = remake(prob, p = p)
+    _prob = remake(prob; p)
     u = solve(
-        _prob, alg, sensealg = sensealg, controller = controller,
+        _prob, alg; sensealg, controller,
         abstol = 1.0e-14, reltol = 1.0e-14, callback = cb, save_everystep = false
     )
     return u[end]
@@ -165,9 +180,9 @@ end
 # define a Mooncake-only variant that reaches into `sol.u` directly to avoid
 # the SciMLBase getindex rrule entirely.
 function test_f2_mc(p, sensealg, controller = nothing, alg = Tsit5())
-    _prob = remake(prob, p = p)
+    _prob = remake(prob; p)
     sol = solve(
-        _prob, alg, sensealg = sensealg, controller = controller,
+        _prob, alg; sensealg, controller,
         abstol = 1.0e-14, reltol = 1.0e-14, callback = cb, save_everystep = false
     )
     return sol.u[end][end]

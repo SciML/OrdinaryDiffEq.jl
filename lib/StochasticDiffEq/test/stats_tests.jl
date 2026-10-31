@@ -14,7 +14,7 @@ using StochasticDiffEq, Test
         f(u, p, t) = (nf[] += 1; 1.0 * u)
         g(u, p, t) = (ng[] += 1; 1.0 * u)
         prob = SDEProblem(f, g, 0.5, tspan)
-        sol = solve(prob, EM(); dt = dt)
+        sol = solve(prob, EM(); dt)
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.naccept == nsteps
         @test sol.stats.nf == nf[] == nsteps
@@ -35,7 +35,7 @@ using StochasticDiffEq, Test
             return nothing
         end
         prob = SDEProblem(f!, g!, [0.5], tspan)
-        sol = solve(prob, EM(); dt = dt)
+        sol = solve(prob, EM(); dt)
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.naccept == nsteps
         @test sol.stats.nf == nf[] == nsteps
@@ -48,7 +48,7 @@ using StochasticDiffEq, Test
         f(u, p, t) = (nf[] += 1; -u)
         g(u, p, t) = (ng[] += 1; 0.1 * u)
         prob = SDEProblem(f, g, 1.0, tspan)
-        sol = solve(prob, EulerHeun(); dt = dt)
+        sol = solve(prob, EulerHeun(); dt)
         @test sol.retcode == ReturnCode.Success
         @test sol.stats.naccept == nsteps
         @test sol.stats.nf == nf[] == 2 * nsteps

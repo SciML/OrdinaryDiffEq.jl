@@ -138,8 +138,8 @@ end
         # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
         if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(algvar, fsallast, false) * invatol
+            # Divide in-place so vector abstol does not allocate a temporary reciprocal.
+            @.. atmp = ifelse(algvar, fsallast, false) / integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -239,8 +239,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if cache.algebraic_vars !== nothing
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
+            # Divide in-place so vector abstol does not allocate a temporary reciprocal.
+            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) / integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -319,9 +319,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
-                invatol
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -402,9 +401,10 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
-                invatol
+            # Also broadcasts ifelse over differential_vars (master used unbroadcasted
+            # ifelse(::BitVector, ...), which MethodErrors for any mass-matrix DAE).
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -579,10 +579,15 @@ end
 # Rodas6P's late stages) the fallback path is used as well.
 
 @inline function _madd_terms(acc, idx, cs::Tuple, karrs::Tuple)
-    return _madd_terms(
-        muladd(first(cs), (@inbounds first(karrs)[idx]), acc),
-        idx, Base.tail(cs), Base.tail(karrs)
-    )
+    c = first(cs)
+    # Exact-zero coefficients (e.g. Rodas5P's btilde = [0,0,0,0,0,0,0,1]) must
+    # skip their term rather than multiply through: 0 * NaN/Inf is NaN, so a
+    # transient non-finite value in an unrelated, zero-weighted stage (from an
+    # ill-conditioned early-stage solve, e.g. right after a callback-driven
+    # parameter jump) would otherwise silently poison the whole accumulation
+    # even though the mathematically correct result never depends on that term.
+    newacc = iszero(c) ? acc : muladd(c, (@inbounds first(karrs)[idx]), acc)
+    return _madd_terms(newacc, idx, Base.tail(cs), Base.tail(karrs))
 end
 @inline _madd_terms(acc, idx, ::Tuple{}, ::Tuple{}) = acc
 
@@ -877,8 +882,7 @@ end
         diff_vars = Int[]
     else
         n = length(uprev)
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
         has_alg = !isempty(alg_vars)
     end
 

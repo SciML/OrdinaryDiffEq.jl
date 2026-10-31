@@ -69,7 +69,7 @@ end
     jac! = (J, u, p, t) -> (J[1, 1] = 1 / t; J[2, 2] = 1 / t; J[1, 2] = 0; J[2, 1] = 0; nothing)
 
     for jac_prototype in (Diagonal(zeros(2)), Tridiagonal(zeros(1), zeros(2), zeros(1)))
-        fun = ODEFunction(f!; jac = jac!, jac_prototype = jac_prototype)
+        fun = ODEFunction(f!; jac = jac!, jac_prototype)
         prob = ODEProblem(fun, ones(2), (1.0, 10.0))
         integ = init(prob, Rosenbrock23())
         ones_prototype = fill_stored!(copy(jac_prototype), 1.0)

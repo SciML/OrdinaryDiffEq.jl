@@ -31,8 +31,8 @@ Similar to Hairer's SEULEX.",
     "RadauIIA3",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,
-    extra_keyword_description = extra_keyword_description,
-    extra_keyword_default = extra_keyword_default
+    extra_keyword_description,
+    extra_keyword_default
 )
 struct RadauIIA3{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
@@ -77,8 +77,8 @@ end
     "RadauIIA5",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,
-    extra_keyword_description = extra_keyword_description,
-    extra_keyword_default = extra_keyword_default
+    extra_keyword_description,
+    extra_keyword_default
 )
 struct RadauIIA5{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
@@ -126,8 +126,8 @@ Similar to Hairer's SEULEX.",
     "RadauIIA9",
     "Fully-Implicit Runge-Kutta Method.";
     references = hairer1999stiff,
-    extra_keyword_description = extra_keyword_description,
-    extra_keyword_default = extra_keyword_default
+    extra_keyword_description,
+    extra_keyword_default
 )
 struct RadauIIA9{AD, F, Tol, C1, C2, StepLimiter, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
@@ -174,8 +174,8 @@ end
     "AdaptiveRadau",
     "Fully-Implicit Runge-Kutta Method.";
     references = AdaptiveRadauPaper,
-    extra_keyword_description = extra_keyword_description,
-    extra_keyword_default = extra_keyword_default
+    extra_keyword_description,
+    extra_keyword_default
 )
 struct AdaptiveRadau{AD, F, Tol, C1, C2, StepLimiter, TO, CJ} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm

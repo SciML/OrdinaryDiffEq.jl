@@ -47,12 +47,12 @@ function rober(du, u, p, t)
     du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
     du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
     du[3] = y₁ + y₂ + y₃ - 1
-    nothing
+    return
 end
 M = Diagonal([1.0, 1.0, 0])  # Singular mass matrix
 f = ODEFunction(rober, mass_matrix = M)
-prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
-sol = solve(prob_mm, FBDF(), reltol = 1e-8, abstol = 1e-8)
+prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4))
+sol = solve(prob_mm, FBDF(), reltol = 1.0e-8, abstol = 1.0e-8)
 ```
 
 ## Solver Selection Guide

@@ -1,6 +1,8 @@
 """
-    ExplicitTaylor2(; stage_limiter! = trivial_limiter!,
-        step_limiter! = trivial_limiter!, thread = Serial())
+    ExplicitTaylor2(;
+        stage_limiter! = trivial_limiter!,
+        step_limiter! = trivial_limiter!, thread = Serial()
+    )
 
 Second-order explicit Taylor series method. `ExplicitTaylor2` evaluates the first two
 time derivatives of the solution with TaylorDiff.jl and advances with a fixed step size.
@@ -53,8 +55,10 @@ end
 @truncate_stacktrace ExplicitTaylor2 3
 
 """
-    ExplicitTaylor(; order = Val{1}(), stage_limiter! = trivial_limiter!,
-        step_limiter! = trivial_limiter!, thread = Serial())
+    ExplicitTaylor(;
+        order = Val{1}(), stage_limiter! = trivial_limiter!,
+        step_limiter! = trivial_limiter!, thread = Serial()
+    )
 
 Fixed-order explicit Taylor series method with adaptive step-size control. The method
 symbolically constructs a Taylor jet of the requested order and reuses it while solving.
@@ -115,9 +119,11 @@ Base.@kwdef struct ExplicitTaylor{P, StageLimiter, StepLimiter, Thread} <:
 end
 
 """
-    ExplicitTaylorAdaptiveOrder(; min_order = Val{1}(), max_order = Val{10}(),
+    ExplicitTaylorAdaptiveOrder(;
+        min_order = Val{1}(), max_order = Val{10}(),
         stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-        thread = Serial())
+        thread = Serial()
+    )
 
 Explicit Taylor series method that adapts both the expansion order and the step size. At
 each accepted step, the controller compares nearby orders and selects the estimated

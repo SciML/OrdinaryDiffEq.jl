@@ -855,9 +855,11 @@ end
 
 # PID step size controller
 """
-    PIDController(beta1, beta2, beta3=zero(beta1);
-                  limiter=default_dt_factor_limiter,
-                  accept_safety=0.81)
+    PIDController(
+        beta1, beta2, beta3 = zero(beta1);
+        limiter = default_dt_factor_limiter,
+        accept_safety = 0.81
+    )
 
 The proportional-integral-derivative (PID) controller is a generalization of the
 [`PIController`](@ref) and can have improved stability and efficiency properties.
@@ -1094,9 +1096,11 @@ for algorithms like the (E)SDIRK methods.
 (; qmin, qmax, gamma) = controller
 qmax = get_current_qmax(integrator, qmax)
 niters = integrator.cache.nlsolver.iter
-fac = min(gamma,
+fac = min(
+    gamma,
     (1 + 2 * integrator.cache.nlsolver.maxiters) * gamma /
-    (niters + 2 * integrator.cache.nlsolver.maxiters))
+        (niters + 2 * integrator.cache.nlsolver.maxiters)
+)
 expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
 qtmp = fastpower(get_EEst(integrator), expo) / fac
 @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
@@ -1126,7 +1130,7 @@ if qsteady_min <= qacc <= qsteady_max
     qacc = one(qacc)
 end
 cache.dtacc = integrator.dt
-cache.erracc = max(1e-2, get_EEst(integrator))
+cache.erracc = max(1.0e-2, get_EEst(integrator))
 integrator.dt / qacc
 ```
 
@@ -1188,6 +1192,15 @@ function setup_controller_cache(alg, cache, controller::PredictiveController, ::
     )
 end
 
+current_newton_iter(cache) = cache.iter
+function current_newton_iter(cache::CompositeCache)
+    return _eval_index(current_newton_iter, cache.caches, cache.current)::Int
+end
+current_nlsolver_iters(cache) = (cache.nlsolver.iter, cache.nlsolver.maxiters)
+function current_nlsolver_iters(cache::CompositeCache)
+    return _eval_index(current_nlsolver_iters, cache.caches, cache.current)::Tuple{Int, Int}
+end
+
 @inline function stepsize_controller!(integrator, cache::PredictiveControllerCache, alg)
     (; qmin, qmax, gamma) = cache.controller.basic
     qmax = get_current_qmax(integrator, qmax)
@@ -1199,10 +1212,10 @@ end
             fac = gamma
         else
             if isfirk(alg)
-                (; iter) = integrator.cache
+                iter = current_newton_iter(integrator.cache)
                 (; maxiters) = alg
             else
-                (; iter, maxiters) = integrator.cache.nlsolver
+                iter, maxiters = current_nlsolver_iters(integrator.cache)
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
@@ -1277,47 +1290,99 @@ function setup_controller_cache(alg::CompositeAlgorithm, caches::CompositeCache,
     return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
-@inline function accept_step_controller(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
+# Unrolled dispatch over the heterogeneous `caches` tuple. Runtime indexing
+# `caches[current]` is type-unstable and allocates on every composite / default
+# step (see `composite_ode_interpolant` and `DefaultCache` perform_step!).
+for (fname, extra_args) in (
+        (:accept_step_controller, ()),
+        (:stepsize_controller!, ()),
+        (:step_accept_controller!, (:q,)),
+        (:step_reject_controller!, ()),
+        (:post_newton_controller!, ()),
+    )
+    @eval begin
+        @generated function $fname(
+                integrator, cache::CompositeControllerCache{T}, alg::CompositeAlgorithm,
+                $(extra_args...)
+            ) where {T}
+            expr = Expr(:block)
+            for i in 1:length(T.types)
+                callexpr = Expr(
+                    :call, $(QuoteNode(fname)),
+                    :(integrator),
+                    :(@inbounds(cache.caches[$i])),
+                    :(@inbounds(alg.algs[$i])),
+                )
+                for a in $(QuoteNode(extra_args))
+                    push!(callexpr.args, a)
+                end
+                push!(
+                    expr.args,
+                    quote
+                        if integrator.cache.current == $i
+                            return $(callexpr)
+                        end
+                    end
+                )
+            end
+            push!(
+                expr.args,
+                quote
+                    throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+                end
+            )
+            return expr
+        end
+        @generated function $fname(
+                integrator, cache::CompositeControllerCache{T}, alg, $(extra_args...)
+            ) where {T}
+            expr = Expr(:block)
+            for i in 1:length(T.types)
+                callexpr = Expr(
+                    :call, $(QuoteNode(fname)),
+                    :(integrator),
+                    :(@inbounds(cache.caches[$i])),
+                    :(alg),
+                )
+                for a in $(QuoteNode(extra_args))
+                    push!(callexpr.args, a)
+                end
+                push!(
+                    expr.args,
+                    quote
+                        if integrator.cache.current == $i
+                            return $(callexpr)
+                        end
+                    end
+                )
+            end
+            push!(
+                expr.args,
+                quote
+                    throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+                end
+            )
+            return expr
+        end
+    end
 end
-@inline function accept_step_controller(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function accept_step_controller(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return accept_step_controller(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@inline function stepsize_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
-end
-@inline function stepsize_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function stepsize_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return stepsize_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@inline function step_accept_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm, q)
-    current_idx = integrator.cache.current
-    return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]), q)
-end
-@inline function step_accept_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg, q)
+@inline function step_accept_controller!(integrator, cache::CompositeCache, alg, q)
     current_idx = integrator.cache.current
     return step_accept_controller!(integrator, @inbounds(cache.caches[current_idx]), alg, q)
 end
-
-@inline function step_reject_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
-end
-@inline function step_reject_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function step_reject_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return step_reject_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
-
-@inline function post_newton_controller!(integrator, cache::CompositeControllerCache, alg::CompositeAlgorithm)
-    current_idx = integrator.cache.current
-    return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), @inbounds(alg.algs[current_idx]))
-end
-@inline function post_newton_controller!(integrator, cache::Union{CompositeCache, CompositeControllerCache}, alg)
+@inline function post_newton_controller!(integrator, cache::CompositeCache, alg)
     current_idx = integrator.cache.current
     return post_newton_controller!(integrator, @inbounds(cache.caches[current_idx]), alg)
 end
@@ -1327,9 +1392,25 @@ for accessor in (
         :get_gamma, :get_qsteady_min, :get_qsteady_max,
         :get_failfactor,
     )
-    @eval @inline function $accessor(integrator, cache::CompositeControllerCache)
-        current_idx = integrator.cache.current
-        return $accessor(integrator, @inbounds(cache.caches[current_idx]))
+    @eval @generated function $accessor(integrator, cache::CompositeControllerCache{T}) where {T}
+        expr = Expr(:block)
+        for i in 1:length(T.types)
+            push!(
+                expr.args,
+                quote
+                    if integrator.cache.current == $i
+                        return $($accessor)(integrator, @inbounds(cache.caches[$i]))
+                    end
+                end
+            )
+        end
+        push!(
+            expr.args,
+            quote
+                throw("Cache $(integrator.cache.current) is not available. There are only $(length(cache.caches)) caches.")
+            end
+        )
+        return expr
     end
 end
 

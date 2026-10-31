@@ -23,7 +23,7 @@ end
 @testset "not every step (save_start=$save_start)" for save_start in (false, true)
     # for time(s) as scalar (implicitly adds end point as well!) and vectors
     for saveat in (25.0, [25.0, 50.0, 75.0])
-        dde_int2 = init(prob, alg; saveat = saveat, save_start = save_start)
+        dde_int2 = init(prob, alg; saveat, save_start)
 
         # end point is saved if saveat is a scalar
         @test dde_int2.opts.save_end == (saveat isa Number)
@@ -52,7 +52,7 @@ end
 @testset "not every step (save_end=$save_end)" for save_end in (false, true)
     # for time(s) as scalar (implicitly adds end point as well!) and vectors
     for saveat in (25.0, [25.0, 50.0, 75.0])
-        dde_int2 = init(prob, alg; saveat = saveat, save_end = save_end)
+        dde_int2 = init(prob, alg; saveat, save_end)
 
         # start point is saved if saveat is a scalar
         @test dde_int2.opts.save_start == (saveat isa Number)
@@ -81,8 +81,8 @@ end
 @testset "every step (save_start=$save_start)" for save_start in (false, true)
     for saveat in (25.0, [25.0, 50.0, 75.0])
         dde_int2 = init(
-            prob, alg; saveat = saveat, save_everystep = true,
-            save_start = save_start
+            prob, alg; saveat, save_everystep = true,
+            save_start
         )
 
         # end point is saved implicitly
@@ -108,8 +108,8 @@ end
 @testset "every step (save_end=$save_end)" for save_end in (false, true)
     for saveat in (25.0, [25.0, 50.0, 75.0])
         dde_int2 = init(
-            prob, alg; saveat = saveat, save_everystep = true,
-            save_end = save_end
+            prob, alg; saveat, save_everystep = true,
+            save_end
         )
 
         # start point is saved implicitly

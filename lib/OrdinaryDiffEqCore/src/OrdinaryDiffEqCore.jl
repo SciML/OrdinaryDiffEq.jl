@@ -33,7 +33,7 @@ import DiffEqBase: DefaultInit, ShampineCollocationInit, BrownFullBasicInit
 
 # Specialization level owned by SciMLBase (declared `public` there, not
 # exported). The umbrella package imports and exports it directly.
-import SciMLBase: AutoDespecialize, AutoDePSpecialize
+import SciMLBase: AutoDePSpecialize
 
 # Internal utils. `DEVerbosity` is re-exported for dependent sublibraries.
 import DiffEqBase: ODE_DEFAULT_NORM,
@@ -72,15 +72,19 @@ using SciMLBase: check_error!, _vec, _reshape, unwrap_cache
 using FastBroadcast: @..
 
 using FunctionWrappers: FunctionWrapper
+import FunctionWrappersWrappers
 
 using SciMLBase: NoInit, CheckInit, OverrideInit, AbstractDEProblem, _unwrap_val,
     ODEAliasSpecifier
 
 # Names previously relied on implicitly through `@reexport using SciMLBase`.
+# `ODEFunction` and `DynamicalODEProblem` are also imported here for external
+# solver extensions such as TaylorIntegrationDiffEqExt, which intentionally
+# depends on OrdinaryDiffEqCore rather than the umbrella package.
 using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
-    DAESolution, DiscreteProblem, DynamicalODEFunction,
+    DAESolution, DiscreteProblem, DynamicalODEFunction, DynamicalODEProblem,
     IntervalNonlinearProblem, NonlinearLeastSquaresProblem,
-    ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
+    ODEFunction, ODEProblem, ReturnCode, SplitFunction, SplitSDEFunction,
     VectorContinuousCallback, auto_dt_reset!, derivative_discontinuity!,
     get_tmp_cache, isinplace, reinit!
 const LinearAliasSpecifier = SciMLBase.LinearAliasSpecifier
@@ -459,6 +463,7 @@ include("precompilation_setup.jl")
             # Algorithm-trait predicates extended/queried by solver sublibs.
             :has_stage_limiter,
             :standardtag, :concrete_jac, :has_autodiff, :has_dtnew_modification,
+            :dtnew_modification,
             :has_special_newton_error, :has_stiff_interpolation, :alg_can_repeat_jac,
             :allows_null_u0, :isaposteriori, :isdiscretealg, :isdp8,
             :isesdirk, :isfirk, :isnewton, :only_diagonal_mass_matrix, :fsal_typeof,
@@ -470,6 +475,7 @@ include("precompilation_setup.jl")
             # Integrator step / cache / initialization hooks.
             :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
             :find_algebraic_vars_eqs, :apply_step!, :reset_alg_dependent_opts!,
+            :_is_identity_massmatrix, :_is_zero_massmatrix, :_diff_alg_vars,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
             :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
             :initialize_saveat, :initialize_tstops,

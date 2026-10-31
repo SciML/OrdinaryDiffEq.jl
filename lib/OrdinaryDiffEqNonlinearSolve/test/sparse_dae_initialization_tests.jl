@@ -2,7 +2,10 @@ using Test
 using SparseArrays
 using LinearAlgebra
 using OrdinaryDiffEqSDIRK
-using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian, BrownFullBasicInit
+using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian,
+    BrownFullBasicInit, alg_autodiff, _isforwarddiff_alg
+using NonlinearSolve: NewtonRaphson, FastShortcutNonlinearPolyalg
+using ADTypes: AutoSparse
 using SciMLBase: ReturnCode
 
 @testset "Sparse jac_prototype in BrownFullBasicInit" begin
@@ -262,5 +265,40 @@ using SciMLBase: ReturnCode
             abs.(sol.u[1][1:N] .- sol.u[1][(N + 1):(2N)] .^ 3)
         )
         @test max_violation < 1.0e-4
+    end
+
+    # A ForwardDiff `nlsolve` has to keep working when a `jac_prototype` is set.
+    @testset "ForwardDiff nlsolve with sparse jac_prototype" begin
+        function f_fd!(du, u, p, t)
+            du[1] = -u[1] + u[2]
+            du[2] = u[1] - u[2]^3
+            nothing
+        end
+        M = Diagonal([1.0, 0.0])
+        jac_proto = sparse([1.0 1.0; 1.0 1.0])
+        u0 = [1.0, 0.5]  # inconsistent
+        f_ode = ODEFunction(f_fd!; mass_matrix = M, jac_prototype = jac_proto)
+        makeprob(nlsolve) = ODEProblem(
+            f_ode, u0, (0.0, 1.0); initializealg = BrownFullBasicInit(; nlsolve)
+        )
+
+        # A `jac_prototype` makes `prepare_alg` wrap the AD choice in `AutoSparse`.
+        # Initialization has to see the ForwardDiff underneath, otherwise it hands the
+        # residual plain `Float64` buffers and any Dual written into them errors.
+        integ = init(makeprob(nothing), Trapezoid())
+        @test alg_autodiff(integ.alg) isa AutoSparse
+        @test _isforwarddiff_alg(integ.alg)
+
+        # `must_use_jacobian` skips the Jacobian-free head of the polyalgorithm, so the
+        # default `nlsolve` reaches the same Newton path a user-supplied one takes.
+        nlsolves = (
+            NewtonRaphson(),
+            FastShortcutNonlinearPolyalg(; must_use_jacobian = Val(true)),
+        )
+        for nlsolve in nlsolves
+            sol = solve(makeprob(nlsolve), Trapezoid())
+            @test sol.retcode == ReturnCode.Success
+            @test abs(sol.u[1][1] - sol.u[1][2]^3) < 1.0e-6
+        end
     end
 end

@@ -344,10 +344,12 @@ end
 ################################################################################
 
 """
-    HybridExplicitImplicitRK(tab; order, autodiff = AutoForwardDiff(),
+    HybridExplicitImplicitRK(
+        tab; order, autodiff = AutoForwardDiff(),
         concrete_jac = nothing, linsolve = nothing,
         step_limiter! = trivial_limiter!, stage_limiter! = trivial_limiter!,
-        max_jac_age = 20, jac_reuse_gamma_tol = 0.03)
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
+    )
 
 Generic tableau-based hybrid explicit/linear-implicit Runge-Kutta method for
 semi-explicit index-1 DAEs. Differential variables are advanced with explicit

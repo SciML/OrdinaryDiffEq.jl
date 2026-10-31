@@ -50,7 +50,7 @@ end
 function BrownFullBasicInit(; abstol = 1.0e-10, nlsolve = nothing)
     return BrownFullBasicInit(abstol, nlsolve)
 end
-BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
+BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol, nlsolve = nothing)
 
 """
     struct ShampineCollocationInit{T, F} <: DAEInitializationAlgorithm
@@ -83,7 +83,7 @@ function ShampineCollocationInit(; initdt = nothing, nlsolve = nothing)
     return ShampineCollocationInit(initdt, nlsolve)
 end
 function ShampineCollocationInit(initdt)
-    return ShampineCollocationInit(; initdt = initdt, nlsolve = nothing)
+    return ShampineCollocationInit(; initdt, nlsolve = nothing)
 end
 
 export DefaultInit, BrownFullBasicInit, ShampineCollocationInit

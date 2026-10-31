@@ -55,6 +55,7 @@ using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -u[1]
+    return
 end
 
 prob = ODEProblem(f!, [1.0], (0.0, 1.0))
@@ -62,7 +63,7 @@ sol = solve(prob, DefaultODEAlgorithm(); reltol = 1.0e-6, abstol = 1.0e-8)
 ```
 """
 function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs...)
-    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    nonstiff = (Tsit5(), Vern7(; lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
         FBDF(; linsolve = LinearSolve.KrylovJL_GMRES(), kwargs...),
@@ -80,6 +81,11 @@ end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractODEProblem, ::Nothing) = true
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractDAEProblem, ::Nothing) = true
+
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::ODEProblem) =
+    DefaultODEAlgorithm(autodiff = AutoFiniteDiff())
+DiffEqBase.prepare_alg(::Nothing, u0, p, ::DAEProblem) =
+    DFBDF(autodiff = AutoFiniteDiff())
 
 function SciMLBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     return SciMLBase.__init(
@@ -152,7 +158,7 @@ function stiffchoice(reltol, len, mass_matrix)
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
     else
-        if reltol < LOW_TOL || mass_matrix != I
+        if reltol < LOW_TOL || !_is_identity_massmatrix(mass_matrix)
             DefaultSolverChoice.Rodas5P
         else
             DefaultSolverChoice.Rosenbrock23
@@ -167,7 +173,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
 
     # Choose the starting method
     if AS.current == 0
-        choice = if AS.stiffalgfirst || integrator.f.mass_matrix != I
+        choice = if AS.stiffalgfirst || !_is_identity_massmatrix(integrator.f.mass_matrix)
             stiffchoice(reltol, len, integrator.f.mass_matrix)
         else
             nonstiffchoice(reltol)
@@ -185,7 +191,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
         ) ?
         AS.count < 0 ? 1 : AS.count + 1 :
         AS.count > 0 ? -1 : AS.count - 1
-    if integrator.f.mass_matrix != I
+    if !_is_identity_massmatrix(integrator.f.mass_matrix)
         #don't change anything
     elseif (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac
@@ -232,6 +238,7 @@ using SciMLBase: ODEProblem, solve
 
 function f!(du, u, p, t)
     du[1] = -1000u[1]
+    return
 end
 
 prob = ODEProblem(f!, [1.0], (0.0, 1.0))
@@ -239,7 +246,7 @@ sol = solve(prob, DefaultImplicitODEAlgorithm(); reltol = 1.0e-8, abstol = 1.0e-
 ```
 """
 function DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
-    nonstiff = (Tsit5(), Vern7(lazy = lazy))
+    nonstiff = (Tsit5(), Vern7(; lazy))
     stiff = (
         Rosenbrock23(; kwargs...), Rodas5P(; kwargs...),
         FBDF(; kwargs...),

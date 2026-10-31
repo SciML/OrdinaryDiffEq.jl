@@ -217,7 +217,8 @@ end
 function f!(out, u, p, t)
     out[1] = 0
     out[2] = u[3]
-    return out[3] = -1.0 * (u[2] - u[1])
+    out[3] = -1.0 * (u[2] - u[1])
+    return
 end
 u0 = [0, 0, 1.0]
 function cond!(out, u, t, i)
@@ -225,7 +226,7 @@ function cond!(out, u, t, i)
     return nothing
 end
 function terminate_affect!(int, events)
-    return any(isone, events) && terminate!(int)
+    return any(!iszero, events) && terminate!(int)
 end
 cb = VectorContinuousCallback(cond!, terminate_affect!, 1)
 

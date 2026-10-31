@@ -22,15 +22,15 @@ tspan = (0.0, 1.0)
 prob1 = ODEProblem(
     ODEFunction{true}(
         (du, u, p, t) -> du .= nonauto1(u, p, t) .+
-            nonauto2(u, p, t),
-        analytic = analytic
+            nonauto2(u, p, t);
+        analytic
     ),
     u0, tspan
 )
 prob2 = ODEProblem(
     ODEFunction{false}(
-        (u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t),
-        analytic = analytic
+        (u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t);
+        analytic
     ),
     u0, tspan
 )

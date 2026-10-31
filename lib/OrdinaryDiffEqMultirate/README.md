@@ -43,11 +43,11 @@ using SciMLBase
 f1!(du, u, p, t) = (@. du = -50 * u)    # fast, stiff-ish
 f2!(du, u, p, t) = (@. du = -u)         # slow
 
-u0    = [1.0, 2.0, 3.0]
+u0 = [1.0, 2.0, 3.0]
 tspan = (0.0, 1.0)
 
 prob = SplitODEProblem(f1!, f2!, u0, tspan)
-sol  = solve(prob, MREEF())               # defaults: m=4, order=4, :harmonic
+sol = solve(prob, MREEF())               # defaults: m=4, order=4, :harmonic
 
 # Tune the substep count / extrapolation order explicitly:
 sol = solve(prob, MREEF(m = 8, order = 6, seq = :romberg))

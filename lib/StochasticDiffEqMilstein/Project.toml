@@ -1,11 +1,13 @@
 name = "StochasticDiffEqMilstein"
 uuid = "8c95a807-c8e7-4581-8419-890d001af53e"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.3"
+version = "2.1.3"
 
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqNoiseProcess = "77a26b50-5914-5dd7-bc55-306e6241c503"
+FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 StochasticDiffEqLevyArea = "90dbc90e-856a-4131-af2c-e8c5aa0f35b5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
@@ -27,8 +29,10 @@ DiffEqBase = {path = "../DiffEqBase"}
 
 [compat]
 SciMLTesting = "2.8"
+ArrayInterface = "7.28"
 DiffEqBase = "7"
 DiffEqNoiseProcess = "5.30.0"
+FastBroadcast = "1.3"
 StochasticDiffEqLevyArea = "2"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"

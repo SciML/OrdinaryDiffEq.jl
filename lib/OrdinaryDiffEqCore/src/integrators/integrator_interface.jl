@@ -11,6 +11,18 @@ function _change_t_via_interpolation!(
     # cache array which can be modified.
     if integrator.tdir * t < integrator.tdir * integrator.tprev
         error("Current interpolant only works between tprev and t")
+    elseif T !== true && integrator.saveiter > 0 &&
+            integrator.tdir * t <
+            integrator.tdir * integrator.sol.t[integrator.saveiter]
+        # The solution stores its times in order, so moving behind a point it already
+        # holds cannot be represented: the times invert and every later interpolation
+        # over that span reads the wrong side. `Val{true}` is the tstop rewind, which
+        # repairs the endpoint itself through `solution_endpoint_match_cur_integrator!`.
+        error(
+            "cannot change t to $t, the solution already holds a point at " *
+                "$(integrator.sol.t[integrator.saveiter]). Moving the integrator behind " *
+                "a saved point would leave the saved times out of order."
+        )
     elseif t != integrator.t
         if is_constant_cache(integrator.cache)
             integrator.u = integrator(t)
@@ -56,12 +68,12 @@ function SciMLBase.reeval_internals_due_to_modification!(
         callback_initializealg = nothing
     )
     if integrator.isdae
+        # Reinitialization changes the right endpoint; uprev must still describe tprev.
         SciMLBase.initialize_dae!(
             integrator,
             isnothing(callback_initializealg) ? integrator.initializealg :
                 callback_initializealg
         )
-        update_uprev!(integrator)
     end
 
     if continuous_modification && integrator.opts.calck
@@ -426,17 +438,37 @@ function addat_non_user_cache!(integrator::ODEIntegrator, cache, idxs)
     return resize_non_user_cache!(integrator, cache, i)
 end
 
-function deleteat!(integrator::ODEIntegrator, idxs)
-    for c in full_cache(integrator)
-        deleteat!(c, idxs)
+# Cache fields and `fsalfirst`/`fsallast` often alias, and `deleteat!`/`addat!` are not
+# idempotent like `resize!`, so each distinct array is visited exactly once.
+function foreach_unique_state_buffer(f, integrator::ODEIntegrator)
+    seen = Any[]
+    for c in Iterators.flatten(
+            (full_cache(integrator), (integrator.fsalfirst, integrator.fsallast))
+        )
+        (c === nothing || any(s -> s === c, seen)) && continue
+        push!(seen, c)
+        f(c)
     end
+    return nothing
+end
+
+function resize_solver_internals!(integrator::ODEIntegrator)
+    i = length(integrator.u)
+    resize_f!(integrator.f, i)
+    resize_nlsolver!(integrator, i)
+    resize_J_W!(integrator.cache, integrator, i)
+    return nothing
+end
+
+function deleteat!(integrator::ODEIntegrator, idxs)
+    foreach_unique_state_buffer(c -> deleteat!(c, idxs), integrator)
+    resize_solver_internals!(integrator)
     return deleteat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
 function addat!(integrator::ODEIntegrator, idxs)
-    for c in full_cache(integrator)
-        addat!(c, idxs)
-    end
+    foreach_unique_state_buffer(c -> addat!(c, idxs), integrator)
+    resize_solver_internals!(integrator)
     return addat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
@@ -474,8 +506,20 @@ function SciMLBase.set_rng!(integrator::ODEIntegrator, rng)
 end
 
 SciMLBase.has_reinit(integrator::ODEIntegrator) = true
+function SciMLBase.reinit!(integrator::ODEIntegrator; kwargs...)
+    prob = integrator.sol.prob
+    if prob isa SciMLBase.DAEProblem
+        if isinplace(prob)
+            recursivecopy!(integrator.du, prob.du0)
+        else
+            integrator.du = recursivecopy(prob.du0)
+        end
+    end
+    return SciMLBase.reinit!(integrator, prob.u0; kwargs...)
+end
+
 function SciMLBase.reinit!(
-        integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
+        integrator::ODEIntegrator, u0;
         t0 = integrator.sol.prob.tspan[1],
         tf = integrator.sol.prob.tspan[2],
         erase_sol = true,
@@ -487,6 +531,7 @@ function SciMLBase.reinit!(
         reinit_dae = true,
         reinit_callbacks = true, initialize_save = true,
         reinit_cache = true,
+        reinit_controller = true,
         reinit_retcode = true,
         rng = nothing
     )
@@ -597,7 +642,9 @@ function SciMLBase.reinit!(
     integrator.derivative_discontinuity = false
 
     # full re-initialize the controller in timestepping
-    reinit_controller!(integrator, integrator.controller_cache)
+    if reinit_controller
+        reinit_controller!(integrator, integrator.controller_cache)
+    end
 
     if rng !== nothing
         SciMLBase.set_rng!(integrator, rng)
@@ -642,9 +689,13 @@ Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
 `integrator` (state, tolerances, norm, problem).
 """
 function _determine_initdt(integrator)
+    tdir = integrator.tdir
+    dtmax = tdir * min(
+        abs(integrator.opts.dtmax), abs(first_tstop(integrator) - tdir * integrator.t)
+    )
     return ode_determine_initdt(
         integrator.u, integrator.t,
-        integrator.tdir, integrator.opts.dtmax,
+        tdir, dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator
@@ -679,7 +730,8 @@ function SciMLBase.set_t!(integrator::ODEIntegrator, t::Real)
             t0 = t,
             reset_dt = false,
             reinit_callbacks = false,
-            reinit_cache = false
+            reinit_cache = false,
+            reinit_controller = false
         )
     else
         integrator.t = t

@@ -12,7 +12,6 @@ using SciMLTesting, OrdinaryDiffEqSDIRK, Test
 #     `@truncate_stacktrace`).
 run_qa(
     OrdinaryDiffEqSDIRK;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqSDIRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:Predictor, :SciMLBase)),
     explicit_imports = true,
     ei_kwargs = (

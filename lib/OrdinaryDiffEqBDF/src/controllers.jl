@@ -1,6 +1,7 @@
 """
-    BDFController(; qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step,
-                  failfactor)
+    BDFController(;
+        qmin, qmax, qsteady_min, qsteady_max, gamma, qmax_first_step, failfactor
+    )
 
 Step-size controller for the variable-order BDF family (`QNDF`, `FBDF`,
 `DFBDF`). Composes the standard step-size knobs via [`CommonControllerOptions`](@ref);
@@ -63,9 +64,9 @@ function default_controller(QT, alg::Union{QNDF, FBDF, DFBDF})
     # `QNDF(qmax = 20)` keeps working (qmax = 20 ends up on the controller).
     return BDFController(
         QT, alg;
-        qmax = alg.qmax,
-        qsteady_min = alg.qsteady_min,
-        qsteady_max = alg.qsteady_max,
+        alg.qmax,
+        alg.qsteady_min,
+        alg.qsteady_max
     )
 end
 
@@ -95,7 +96,10 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
         est = OrdinaryDiffEqCore.get_EEst(integrator)
         estₖ₋₁ = cache.EEst1
         estₖ₊₁ = cache.EEst2
-        h = integrator.dt
+        # Work on |dt|: the candidate step sizes below are ranked with `>` and a
+        # `0` sentinel marks "this order is not viable".  With a signed dt the
+        # sentinel wins every comparison when tdir < 0.
+        h = abs(integrator.dt)
         k = cache.order
         prefer_const_step = cache.nconsteps < cache.order + 2
         zₛ = get_gamma(integrator)
@@ -151,15 +155,16 @@ function step_accept_controller!(integrator, cache::Union{QNDFCache, QNDFConstan
             end
         end
         cache.order = kₙ
-        q = integrator.dt / hₙ
+        q = h / hₙ
 
-        if prefer_const_step && 0.6 < q < 1.2
+        hnew = if prefer_const_step && 0.6 < q < 1.2
             h
         elseif q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
             h
         else
             h / q
         end
+        integrator.tdir * hnew
     end
     if is_disco
         return min((integrator.disco_checkpoint - integrator.t) / 4, new_dt)
@@ -172,7 +177,7 @@ end
 
 Restart the order and constant-step estimates for a step that straddles a derivative
 discontinuity, where the history behind it and the solution ahead belong to different
-regimes. We do this because the BDF step-size and order logic is based on the history of the solution, 
+regimes. We do this because the BDF step-size and order logic is based on the history of the solution,
 and we have effectively entered a new regime where old estimates no longer apply.
 """
 function bdf_restart_estimates!(cache)
@@ -184,9 +189,12 @@ function bdf_restart_estimates!(cache)
     return nothing
 end
 
-function bdf_step_reject_controller!(integrator, cache, EEst1)
+function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cache.order)
     k = cache.order
-    h = integrator.dt
+    # dt is negative for backward-in-time integration, so all step-size
+    # selection below is done on magnitudes and the direction is restored
+    # when writing back integrator.dt.
+    h = abs(integrator.dt)
     cache.consfailcnt += 1
     cache.nconsteps = 0
 
@@ -210,7 +218,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
         h = h / 2
     end
     zₛ = get_gamma(integrator)
-    expo = 1 / (k + 1)
+    expo = 1 / (error_order + 1)
     z = zₛ * ((OrdinaryDiffEqCore.get_EEst(integrator))^expo)
     F = inv(z)
     if z <= 10
@@ -229,8 +237,8 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
         else # zₖ₋₁ > 10
             hₖ₋₁ = 0.1 * h
         end
-        if cache.consfailcnt > 2 || hₖ₋₁ > hₖ
-            hₙ = min(h, hₖ₋₁)
+        if cache.consfailcnt > 2 || abs(hₖ₋₁) > abs(hₖ)
+            hₙ = sign(h) * min(abs(h), abs(hₖ₋₁))
             kₙ = k - 1
         end
     end
@@ -238,7 +246,7 @@ function bdf_step_reject_controller!(integrator, cache, EEst1)
     if kₙ == 1 && cache.consfailcnt > 3
         derivative_discontinuity!(integrator, true)
     end
-    integrator.dt = hₙ
+    integrator.dt = integrator.tdir * hₙ
     return cache.order = kₙ
 end
 
@@ -265,6 +273,9 @@ function step_reject_controller!(integrator, alg::FBDF)
     return step_reject_controller!(integrator, integrator.cache, alg)
 end
 function step_reject_controller!(integrator, cache::Union{FBDFCache, FBDFConstantCache}, ::FBDF)
+    if cache.filter_order > 0
+        return bdf_step_reject_controller!(integrator, cache, oftype(cache.terkm1, Inf), cache.filter_order)
+    end
     return bdf_step_reject_controller!(integrator, cache, cache.terkm1)
 end
 
@@ -390,6 +401,11 @@ function stepsize_controller!(
         max_order,
     }
     cache.prev_order = cache.order
+    if cache.filter_order > 0
+        stald_reset!(cache.stald)
+        q = get_gamma(integrator) / _filt_step_ratio(OrdinaryDiffEqCore.get_EEst(integrator), cache.filter_order)
+        return clamp(q, inv(get_current_qmax(integrator, get_qmax(integrator))), inv(get_qmin(integrator)))
+    end
 
     # CVODE-style Stability Limit Detection (STALD)
     # Collect data and check BEFORE order selection, using the step's order and norms.
@@ -441,6 +457,10 @@ function step_accept_controller!(
         q
     ) where {max_order}
     cache.consfailcnt = 0
+    if cache.filter_order > cache.order
+        cache.order = min(cache.filter_order, max_order)
+        cache.nconsteps = 0
+    end
     is_disco = integrator.is_disco_step
     if is_disco
         integrator.is_disco_step = false
@@ -762,8 +782,8 @@ gamma_default(::NordsieckBDFAlgs) = 1 // 1
 
 function default_controller(QT, alg::NordsieckBDFAlgs)
     return BDFController(
-        QT, alg; qmax = alg.qmax,
-        qsteady_min = alg.qsteady_min, qsteady_max = alg.qsteady_max
+        QT, alg; alg.qmax,
+        alg.qsteady_min, alg.qsteady_max
     )
 end
 

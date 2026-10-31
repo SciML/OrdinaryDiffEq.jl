@@ -82,12 +82,12 @@ W_reverse = reverse(W_forward)
 
     for solver in additive_noise_solver
         println("solver: ", solver)
-        sol_forward = solve(prob_forward, solver, dt = dt, adaptive = false)
+        sol_forward = solve(prob_forward, solver; dt, adaptive = false)
 
         prob_reverse = remake(
             prob_forward, noise = W_reverse, tspan = reverse(prob.tspan), u0 = sol_forward.u[end]
         )
-        sol_reverse = solve(prob_reverse, solver, dt = dt, adaptive = false)
+        sol_reverse = solve(prob_reverse, solver; dt, adaptive = false)
 
         @test sol_forward(ts).u ≈ sol_reverse(ts).u rtol = 1.0e-3
         @test length(sol_forward.t) == length(sol_reverse.t)
@@ -107,12 +107,12 @@ end
 
     for solver in Stratonovich_solver
         println("solver: ", solver)
-        sol_forward = solve(prob_forward, solver, dt = dt, adaptive = false)
+        sol_forward = solve(prob_forward, solver; dt, adaptive = false)
 
         prob_reverse = remake(
             prob_forward, noise = W_reverse, tspan = reverse(prob.tspan), u0 = sol_forward.u[end]
         )
-        sol_reverse = solve(prob_reverse, solver, dt = dt, adaptive = false)
+        sol_reverse = solve(prob_reverse, solver; dt, adaptive = false)
 
         @test sol_forward(ts).u ≈ sol_reverse(ts).u rtol = 1.0e-2
         @test length(sol_forward.t) == length(sol_reverse.t)
@@ -138,7 +138,7 @@ end
 
     for solver in Ito_solver
         println("solver: ", solver)
-        sol_forward = solve(prob_forward, solver, dt = dt, adaptive = false)
+        sol_forward = solve(prob_forward, solver; dt, adaptive = false)
         if i == 1
             _u0 = [sol_forward.u[end]]
         else
@@ -148,7 +148,7 @@ end
             prob_forward, f = SDEFunction(fdrift, fdif), noise = W_reverse,
             tspan = reverse(prob.tspan), u0 = _u0, p = mtkps
         )
-        sol_reverse = solve(prob_reverse, solver, dt = dt, adaptive = false)
+        sol_reverse = solve(prob_reverse, solver; dt, adaptive = false)
 
         if i == 1
             @test sol_forward(ts).u ≈ vcat(sol_reverse(ts).u...) rtol = 1.0e-2
