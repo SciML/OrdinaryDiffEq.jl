@@ -54,7 +54,9 @@ For linear systems `du/dt = A(t) * u`, the exact solution is `u(t) = exp(∫A(s)
   - **`LieEuler`**: First-order Lie group method
   - **`RKMK2`**: Second-order Runge-Kutta-Munthe-Kaas method
   - **`RKMK4`**: Fourth-order Runge-Kutta-Munthe-Kaas method
-  - **`LieRK4`**: Fourth-order Lie Runge-Kutta method
+  - **`LieRK4`**: Fourth-order commutator-free Lie group method, equivalent to `CFLie4`
+  - **`CFLie3`**: Third-order commutator-free Lie group method
+  - **`CFLie4`**: Fourth-order commutator-free Lie group method
   - **`CG2`**: Second-order Crouch-Grossman method
   - **`CG4a`**: Fourth-order Crouch-Grossman method
   - **`CayleyEuler`**: First-order method using Cayley transformations
@@ -65,7 +67,11 @@ For linear systems `du/dt = A(t) * u`, the exact solution is `u(t) = exp(∫A(s)
 
 ### Time and state-dependent (A(t,u))
 
+  - **`CFLie3`**: Third-order commutator-free Lie group method
+  - **`LieRK4`** / **`CFLie4`**: Fourth-order commutator-free Lie group method
   - **`CG3`**: Third-order Crouch-Grossman method for most general case
+
+`CFLie3` and `LieRK4` / `CFLie4` implement the third- and fourth-order commutator-free methods of Celledoni, Marthinsen, and Owren. They support autonomous and non-autonomous operators, including the state-independent case `A(t)`. `LieRK4` and `CFLie4` use the same implementation. These methods currently require an in-place operator such as `MatrixOperator` with `update_func!`, and a fixed step size supplied through `dt`.
 
 ## Method Selection Guidelines
 
@@ -152,5 +158,7 @@ CayleyEuler
 ### Time and State-Dependent Operators
 
 ```@docs
+CFLie3
+CFLie4
 CG3
 ```
