@@ -960,9 +960,10 @@ Base.@constprop :aggressive function _ode_init(
     # rather than built, so no problem is constructed for a solve that has no use for it.
     # The zero function reads everything, `p` included, from its own state, so the
     # problem carries no parameters and its type does not depend on `p`.
+    # The bracket holds the step fraction θ, which has the unitless type of `one(tType)`.
     disco_zero_wrapper = FunctionWrapper{Float64, Tuple{Float64, SciMLBase.NullParameters}}
     disco_prob_type = Base.promote_op(
-        IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{tType},
+        IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{typeof(one(tType))},
         SciMLBase.NullParameters
     )
     isconcretetype(disco_prob_type) || (disco_prob_type = IntervalNonlinearProblem)
@@ -980,7 +981,7 @@ Base.@constprop :aggressive function _ode_init(
             zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
             zero_func_wrapped = disco_zero_wrapper(zero_func)
             disco_prob = IntervalNonlinearProblem{false}(
-                zero_func_wrapped, [zero(tType), one(tType)], SciMLBase.NullParameters()
+                zero_func_wrapped, [zero(one(tType)), one(tType)], SciMLBase.NullParameters()
             )
             disco_probs[idx] = disco_prob
             idx += 1
