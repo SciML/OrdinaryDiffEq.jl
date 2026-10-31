@@ -60,3 +60,6 @@ versions = ["1"]
 
 [QA]
 versions = ["lts", "1"]
+# Aqua+ExplicitImports+JET on the umbrella peaks well above the 16GB github/ARC
+# runners on Julia 1.13; use the larger self-hosted pool like other heavy groups.
+runner = ["self-hosted", "Linux", "X64"]
