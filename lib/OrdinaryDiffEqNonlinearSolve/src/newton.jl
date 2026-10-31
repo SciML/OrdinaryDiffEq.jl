@@ -985,6 +985,47 @@ function _compute_rhs!(
 end
 
 ## relax!
+
+# A step that leaves the iterate unchanged can neither be measured nor make progress.
+_movesiterate(z::Number, dz::Number, α) = z - α * dz != z
+function _movesiterate(z, dz, α)
+    @inbounds for i in eachindex(z, dz)
+        z[i] - α * dz[i] != z[i] && return true
+    end
+    return false
+end
+
+function linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0, z, dz)
+    ϕ0, dϕ0 = ϕdϕ(zero(α0))
+    fallback = dϕ0 > zero(dϕ0) || !isfinite(dϕ0)
+    if fallback
+        iszero(ϕ0) && return zero(α0)
+        # Shrink probes that can overshoot a nearby residual minimum; absent a
+        # measured descent slope, pass Kelley's Newton-model slope instead.
+        δ = cbrt(eps(real(α0)))
+        dϕ0 = -ϕ0
+        while δ > eps(real(α0)) && _movesiterate(z, dz, δ)
+            s = (ϕ(δ) - ϕ0) / δ
+            if isfinite(s) && s < zero(s)
+                dϕ0 = s
+                break
+            end
+            δ /= 2
+        end
+        α, ϕα = try
+            linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        catch e
+            e isa InterruptException && rethrow()
+            error("Line search failed to make residual progress.")
+        end
+        (ϕα < ϕ0 && _movesiterate(z, dz, α)) ||
+            error("Line search failed to make residual progress.")
+        return α
+    end
+    α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+    return α
+end
+
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
     return relax!(dz, nlsolver, integrator, f, relax(nlsolver))
 end
@@ -1056,8 +1097,7 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0, z, dz)
         @.. dz = dz * α
         return dz
     end
@@ -1124,8 +1164,7 @@ function relax(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0, nlsolver.z, dz)
         dz = dz * α
         return dz
     end
