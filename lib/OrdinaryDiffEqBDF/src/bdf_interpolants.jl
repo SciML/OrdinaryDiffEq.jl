@@ -23,13 +23,13 @@ end
 ####################################################################
 # QNDF: Newton backward difference interpolation
 #
-# k stores backward differences D[:,j].
-# p(Θ) = y₁ + Σ_{j=1}^{order} φ_j(Θ-1) * k[j]
+# k[1:end-1] stores backward differences D[:,j]; k[end] is the endpoint jump.
+# p(Θ) = y₁ - k[end] + Σ_{j=1}^{order} φ_j(Θ-1) * k[j] for Θ < 1.
 #
 # where φ_j(σ) = σ*(σ+1)*...*(σ+j-1)/j! and σ = Θ-1.
 # Recurrence: φ₁(σ) = σ, φ_{j+1}(σ) = φ_j(σ) * (σ+j)/(j+1)
 #
-# At Θ=0: σ=-1, φ₁(-1)=-1, φ_j(-1)=0 for j≥2, so p(0) = y₁ - k[1] = y₀
+# At Θ=0: σ=-1, φ₁(-1)=-1, φ_j(-1)=0 for j≥2, so p(0) = y₁ - k[end] - k[1] = y₀
 # At Θ=1: σ=0, all φ_j(0)=0, so p(1) = y₁
 ####################################################################
 
@@ -42,9 +42,10 @@ end
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     φ = σ
-    out = @.. y₁ + φ * k[1]
+    c = Θ == 1 ? zero(Θ) : one(Θ)
+    out = @.. y₁ - c * k[end] + φ * k[1]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         out = @.. out + φ * k[j]
@@ -59,9 +60,10 @@ end
         idxs, T::Type{Val{0}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     φ = σ
-    out = @.. y₁[idxs] + φ * k[1][idxs]
+    c = Θ == 1 ? zero(Θ) : one(Θ)
+    out = @.. y₁[idxs] - c * k[end][idxs] + φ * k[1][idxs]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         out = @.. out + φ * k[j][idxs]
@@ -76,9 +78,10 @@ end
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     φ = σ
-    @.. out = y₁ + φ * k[1]
+    c = Θ == 1 ? zero(Θ) : one(Θ)
+    @.. out = y₁ - c * k[end] + φ * k[1]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         @.. out = out + φ * k[j]
@@ -93,9 +96,10 @@ end
         idxs, T::Type{Val{0}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     φ = σ
-    @views @.. out = y₁[idxs] + φ * k[1][idxs]
+    c = Θ == 1 ? zero(Θ) : one(Θ)
+    @views @.. out = y₁[idxs] - c * k[end][idxs] + φ * k[1][idxs]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         @views @.. out = out + φ * k[j][idxs]
@@ -116,7 +120,7 @@ end
         idxs::Nothing, T::Type{Val{1}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     invdt = inv(dt)
     φ = σ
     dφ = one(Θ)
@@ -137,7 +141,7 @@ end
         idxs, T::Type{Val{1}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     invdt = inv(dt)
     φ = σ
     dφ = one(Θ)
@@ -158,7 +162,7 @@ end
         idxs::Nothing, T::Type{Val{1}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     invdt = inv(dt)
     φ = σ
     dφ = one(Θ)
@@ -180,7 +184,7 @@ end
         idxs, T::Type{Val{1}}, differential_vars
     )
     σ = Θ - 1
-    num_k = length(k)
+    num_k = length(k) - 1
     invdt = inv(dt)
     φ = σ
     dφ = one(Θ)
@@ -237,6 +241,9 @@ function _ode_interpolant(
         cache::FBDF_CACHES,
         idxs, T::Type{Val{D}}, differential_vars
     ) where {D}
+    if D == 0 && Θ isa AbstractFloat && Θ == 1
+        return idxs === nothing ? copy(y₁) : y₁[idxs]
+    end
     n = _bdf_active_order(k)
     return if n == 1
         _fbdf_interp(Val(1), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
@@ -260,6 +267,10 @@ function _ode_interpolant!(
         cache::FBDF_CACHES,
         idxs, T::Type{Val{D}}, differential_vars
     ) where {D}
+    if D == 0 && Θ isa AbstractFloat && Θ == 1
+        out .= idxs === nothing ? y₁ : @view(y₁[idxs])
+        return out
+    end
     n = _bdf_active_order(k)
     return if n == 1
         _fbdf_interp!(Val(1), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
