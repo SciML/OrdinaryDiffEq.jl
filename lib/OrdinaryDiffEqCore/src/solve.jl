@@ -54,8 +54,16 @@ _set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
 function (z::zero_func_struct)(θ, p)
     iszero(θ) && return z.out_low[z.ind]
     isone(θ) && return z.out_high[z.ind]
+    u = _disco_interpolant(z, θ)
+    return zero_condition(z.callback, z.out, u, z.tprev + θ * z.dt, z, z.ind)
+end
+
+function _disco_interpolant(z::zero_func_struct, θ)
+    ArrayInterface.ismutable(z.u₁) || return ode_interpolant(
+        θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars
+    )
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
-    return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)
+    return z.u₁
 end
 
 @inline zero_condition(cb::ContinuousCallback, out::Nothing, u, t, z, ind) = cb.condition(u, t, z)
