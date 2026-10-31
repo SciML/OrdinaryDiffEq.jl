@@ -38,7 +38,8 @@ end
 
 function f(du, u, p, t)
     du[1] = -p[1]
-    return du[2] = p[2]
+    du[2] = p[2]
+    return
 end
 
 # Callback tests with mutable closures
@@ -98,7 +99,8 @@ end
 
 function f2(du, u, p, t)
     du[1] = -u[2]
-    return du[2] = p[2]
+    du[2] = p[2]
+    return
 end
 
 # Callback tests with mutable closures (f2 variant)
@@ -160,7 +162,8 @@ for x in 1.0:0.001:2.5
         x, y = u
         α, β, δ, γ = p
         du[1] = dx = α * x - β * x * y
-        return du[2] = dy = -δ * y + γ * x * y
+        du[2] = dy = -δ * y + γ * x * y
+        return
     end
     u0 = [1.0, 1.0]
     tspan = (0.0, 10.0)
@@ -279,7 +282,7 @@ sol2 = solve(prob, KenCarp4(); dt = 0.5, saveat = times)
 
 # Enzyme fails on SplitODEProblem jacobians (mixed activity for jl_new_struct)
 function difffunc(p)
-    tmp_prob = remake(prob, p = p)
+    tmp_prob = remake(prob; p)
     return vec(solve(tmp_prob, KenCarp4(), saveat = times))
 end
 DI.jacobian(difffunc, AutoForwardDiff(), ones(5))
@@ -287,7 +290,8 @@ DI.jacobian(difffunc, AutoForwardDiff(), ones(5))
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1221
 
 f_a = function (du, u, p, t)
-    return du[1] = -p[1] * u[1] + exp(-t)
+    du[1] = -p[1] * u[1] + exp(-t)
+    return
 end
 
 # Enzyme fails on this due to ODEProblem construction inside differentiated function
@@ -384,7 +388,7 @@ end
 #least squares objective function
 function objfun(x, prob, data, solver, reltol, abstol)
     prob = remake(prob, p = x)
-    sol = solve(prob, solver, reltol = reltol, abstol = abstol)
+    sol = solve(prob, solver; reltol, abstol)
     ofv = 0.0
     if !SciMLBase.successful_retcode(sol)
         ofv = 1.0e12
@@ -400,8 +404,8 @@ u0 = 2 * ones(4)
 saveat = 0.0:0.01:1.0
 reltol = 1.0e-14
 abstol = 1.0e-14
-prob = ODEProblem{true}(foo!, u0, tspan, p0, saveat = saveat)
-data = solve(prob, Tsit5(), reltol = reltol, abstol = abstol)
+prob = ODEProblem{true}(foo!, u0, tspan, p0; saveat)
+data = solve(prob, Tsit5(); reltol, abstol)
 fn(x, solver) = objfun(x, prob, data, solver, reltol, abstol)
 
 @test norm(DI.gradient(x -> fn(x, Tsit5()), AutoForwardDiff(), p0)) < 1.0e-9
@@ -483,6 +487,52 @@ end ≈ [6.765310476296564]
     @test grad_mc ≈ ref_grad rtol = 1.0e-6
 end
 
+# SciML/SciMLSensitivity.jl#1680: erased callbacks make `callback_cache` Union-typed.
+@testset "Mooncake HVP through MooncakeAdjoint" begin
+    f(u, p, t) = [p[1] * u[1] + p[2] * u[2], -p[2] * u[1] + p[1] * u[2]]
+    prob = ODEProblem(f, [1.0, 0.0], (0.0, 1.0), [-0.2, 2.0])
+    loss(p) = sum(
+        abs2, Array(
+            solve(
+                prob, Tsit5(); p, saveat = 0.1, sensealg = MooncakeAdjoint(),
+                abstol = 1.0e-10, reltol = 1.0e-10
+            )
+        )
+    )
+    loss_fd(p) = sum(
+        abs2, Array(
+            solve(
+                remake(prob; p, u0 = eltype(p).(prob.u0)), Tsit5();
+                saveat = 0.1, abstol = 1.0e-10, reltol = 1.0e-10
+            )
+        )
+    )
+    p, v = [-0.2, 2.0], [0.3, -0.7]
+    _, _, hv = Mooncake.value_and_hvp!!(Mooncake.prepare_hvp_cache(loss, p), loss, v, p)
+    @test hv ≈ ForwardDiff.hessian(loss_fd, p) * v rtol = 1.0e-5
+end
+
+# Event times differentiate through a concretely typed `callback_cache`.
+# Closed form: [-1.0, 285.6].
+@testset "Mooncake gradient through a VectorContinuousCallback event" begin
+    ball!(du, u, p, t) = (du[1] = u[2]; du[2] = -p[1]; nothing)
+    floor!(out, u, t, integrator) = (out[1] = u[1]; out[2] = u[1] - 50; nothing)
+    bounce!(integrator, events) = (
+        events[1] != 0 && (integrator.u[2] = -integrator.p[2] * integrator.u[2]); nothing
+    )
+    cb = VectorContinuousCallback(floor!, bounce!, 2)
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(ball!, [10.0, 0.0], (0.0, 2.0), [9.8, 0.9])
+    loss(p) = sum(
+        abs2, solve(
+            prob, Tsit5(); p, callback = cb, sensealg = MooncakeAdjoint(),
+            abstol = 1.0e-12, reltol = 1.0e-12
+        ).u[end]
+    )
+    p = [9.8, 0.9]
+    _, g = Mooncake.value_and_gradient!!(Mooncake.prepare_gradient_cache(loss, p), loss, p)
+    @test g[2] ≈ [-1.0, 285.6] rtol = 1.0e-6
+end
+
 # Tests migrated from DiffEqBase downstream to cover complex numbers, StaticArrays,
 # and ensemble AD scenarios (previously tested via SciMLSensitivity integration).
 
@@ -560,7 +610,8 @@ end
 @testset "Ensemble AD" begin
     function lv!(du, u, p, t)
         du[1] = p[1] * u[1] - p[2] * u[1] * u[2]
-        return du[2] = -p[3] * u[2] + p[4] * u[1] * u[2]
+        du[2] = -p[3] * u[2] + p[4] * u[1] * u[2]
+        return
     end
 
     p_lv = [1.5, 1.0, 3.0, 1.0]

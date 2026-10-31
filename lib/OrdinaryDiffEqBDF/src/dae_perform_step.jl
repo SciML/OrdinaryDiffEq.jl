@@ -23,6 +23,7 @@ end
     nlsolver.z = zero(u)
     nlsolver.tmp = zero(u)
     nlsolver.γ = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     u = uprev + z
@@ -68,6 +69,7 @@ end
     @. nlsolver.z = false
     @. nlsolver.tmp = false
     nlsolver.γ = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = uprev + z
@@ -134,6 +136,7 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
 
     nlsolver.z = zero(uₙ)
 
@@ -207,6 +210,7 @@ end
 
     nlsolver.γ = (1 + ρ) / (1 + 2ρ)
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     @.. broadcast = false nlsolver.tmp = -c1 * uₙ₋₁ + c1 * uₙ₋₂
     nlsolver.z .= zero(eltype(z))
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -328,6 +332,7 @@ function perform_step!(
     nlsolver.z = zero(nlsolver.z)
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     u = z + cache.u₀
@@ -481,6 +486,7 @@ function perform_step!(
     @.. broadcast = false nlsolver.z = zero(eltype(nlsolver.z))
     nlsolver.γ = bdf_coeffs[k, 1]
     nlsolver.α = Int64(1) // 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast = false u = z + u₀
@@ -641,6 +647,7 @@ function perform_step!(integrator, cache::DNordsieckBDFCache, repeat_step = fals
     fill!(nlsolver.z, zero(eltype(nlsolver.z)))
     nlsolver.γ = inv(l1)
     nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
@@ -678,6 +685,7 @@ function perform_step!(integrator, cache::DNordsieckBDFConstantCache, repeat_ste
     nlsolver.z = zero(cache.ypred)
     nlsolver.γ = inv(l1)
     nlsolver.α = one(l1)
+    nlsolver.method = COEFFICIENT_MULTISTEP
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 

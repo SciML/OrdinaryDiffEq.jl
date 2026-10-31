@@ -184,7 +184,7 @@ function appxtrue(sim::EnsembleSolution, appx_setup; kwargs...)
     end
     new_sols = convert(Vector{typeof(_new_sols[1])}, _new_sols)
     calculate_ensemble_errors(
-        new_sols; converged = sim.converged,
-        elapsedTime = sim.elapsedTime, kwargs...
+        new_sols; sim.converged,
+        sim.elapsedTime, kwargs...
     )
 end

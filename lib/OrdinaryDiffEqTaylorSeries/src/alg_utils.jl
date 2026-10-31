@@ -34,6 +34,8 @@ function order_window(alg::ExplicitTaylorAdaptiveOrder)
 end
 
 JET_CACHE = IdDict()
+# f -> (coeffs, params, polynomial, d_polynomial)
+POLYNOMIAL_CACHE = IdDict()
 
 # Helper functions to unwrap Symbolics.Num to concrete values (needed for Symbolics v7+)
 # After build_function evaluation, results may be wrapped in Num and need explicit unwrapping
@@ -77,6 +79,12 @@ end
 # `ExplicitTaylor` always jets straight into a buffer of its own order; rebuilding the
 # `TaylorScalar` there is a copy that the compiler does not always elide.
 @inline set_taylor_order(t::TaylorScalar{T, Q}, ::Val{Q}) where {T, Q} = t
+
+@inline function taylor_from_coefficients(coeffs, i, ::Val{P}, buffer_order) where {P}
+    offset = (i - 1) * (P + 1)
+    taylor = TaylorScalar(ntuple(j -> coeffs[offset + j], Val(P + 1)))
+    return set_taylor_order(taylor, buffer_order)
+end
 
 function build_jet(
         f::ODEFunction{iip}, p, order, length = nothing, buffer_order = order
@@ -123,34 +131,28 @@ function build_jet(
     if u isa TaylorScalar
         # Scalar case: build function for array of coefficients
         coeffs = collect(TaylorDiff.flatten(u))
-        jet_coeffs = build_function(coeffs, u0, t0; expression = Val(false), cse = true)
+        scalar_jet_coeffs = build_function(
+            coeffs, u0, t0; expression = Val(false), cse = true
+        )
         # Wrap to return TaylorScalar
         jet = (u0_val, t0_val) -> set_taylor_order(
-            TaylorScalar(Tuple(jet_coeffs[1](u0_val, t0_val))), buffer_order
+            TaylorScalar(Tuple(scalar_jet_coeffs[1](u0_val, t0_val))), buffer_order
         )
     elseif u isa AbstractArray && eltype(u) <: TaylorScalar
-        # Array case: build function for matrix of coefficients
-        # Each row is the coefficients of one TaylorScalar
         n = Base.length(u)
-        coeffs_matrix = [TaylorDiff.flatten(u[i])[j] for i in 1:n, j in 1:(P + 1)]
-        jet_coeffs = build_function(coeffs_matrix, u0, t0; expression = Val(false), cse = true)
-        # Wrap to return array of TaylorScalars
+        coeffs = [TaylorDiff.flatten(u[i])[j] for i in 1:n for j in 1:(P + 1)]
+        array_jet_coeffs = build_function(
+            coeffs, u0, t0; expression = Val(false), cse = true
+        )
         jet = (
             (u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[1](u0_val, t0_val)
-                return [
-                    set_taylor_order(TaylorScalar(Tuple(coeffs_out[i, :])), buffer_order)
-                        for i in 1:n
-                ]
+                coeffs_out = array_jet_coeffs[1](u0_val, t0_val)
+                return [taylor_from_coefficients(coeffs_out, i, order, buffer_order) for i in 1:n]
             end,
-            (out, u0_val, t0_val) -> begin
-                coeffs_out = jet_coeffs[2](
-                    similar(coeffs_matrix, eltype(u0_val)), u0_val, t0_val
-                )
+            (out, coeffs_out, u0_val, t0_val) -> begin
+                array_jet_coeffs[2](coeffs_out, u0_val, t0_val)
                 for i in 1:n
-                    out[i] = set_taylor_order(
-                        TaylorScalar(Tuple(coeffs_out[i, :])), buffer_order
-                    )
+                    out[i] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
                 end
                 return out
             end,
@@ -167,6 +169,50 @@ function build_jet(
     return jet
 end
 
+function build_polynomial(f::ODEFunction{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
+    f = unwrapped_f(f)
+    return build_polynomial(f, Val{iip}(), p, coeffs, length)
+end
+
+function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
+    P = P1 - 1
+    if haskey(POLYNOMIAL_CACHE, f)
+        list = POLYNOMIAL_CACHE[f]
+        index = findfirst(x -> x[1] == coeffs && x[2] == p, list)
+        index !== nothing && return list[index][3], list[index][4]
+    end
+    @variables t0::Real dt::Real
+    u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
+    if iip
+        f0 = similar(u0)
+        f(f0, u0, p, t0)
+    else
+        f0 = f(u0, p, t0)
+    end
+    u = TaylorDiff.make_seed(u0, f0, Val(1))
+    for index in 2:P
+        t = TaylorScalar{index - 1}(t0, one(t0))
+        if iip
+            fu = similar(u)
+            f(fu, u, p, t)
+        else
+            fu = f(u, p, t)
+        end
+        d = TaylorDiff.get_coefficient(fu, index - 1) / index
+        u = TaylorDiff.append_coefficient(u, d)
+    end
+    ut = eval_taylor_polynomial(u, coeffs, dt)
+    polynomial = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
+    jacobian = Symbolics.jacobian(ut, u0)
+    d_polynomial = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
+
+    if !haskey(POLYNOMIAL_CACHE, f)
+        POLYNOMIAL_CACHE[f] = []
+    end
+    push!(POLYNOMIAL_CACHE[f], (coeffs, p, polynomial, d_polynomial))
+    return polynomial, d_polynomial
+end
+
 # evaluate using Qin Jiushao's algorithm
 @generated function evaluate_polynomial(t::TaylorScalar{T, P}, z) where {T, P}
     ex = :(v[$(P + 1)])
@@ -180,3 +226,7 @@ end
 @inline eval_taylor_polynomial(utaylor::TaylorScalar, dt) = evaluate_polynomial(utaylor, dt)
 # Evaluate polynomial for array of TaylorScalars (returns array)
 @inline eval_taylor_polynomial(utaylor::AbstractArray, dt) = map(x -> evaluate_polynomial(x, dt), utaylor)
+
+# Evaluate a weighted Taylor polynomial for scalar or array states.
+@inline eval_taylor_polynomial(u::TaylorScalar, coeffs, dt) = evalpoly(dt, map(*, coeffs, TaylorDiff.flatten(u)))
+@inline eval_taylor_polynomial(us::AbstractArray, coeffs, dt) = map(x -> eval_taylor_polynomial(x, coeffs, dt), us)

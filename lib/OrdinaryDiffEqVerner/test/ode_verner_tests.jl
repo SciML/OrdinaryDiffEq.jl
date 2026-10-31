@@ -13,7 +13,8 @@ testTol = 2.0
 
 # Custom ODE functions for testing
 function f!(du, u, p, t)
-    return du[1] = -u[1]
+    du[1] = -u[1]
+    return
 end
 
 function f(u, p, t)
@@ -129,6 +130,13 @@ println("RKV76IIa")
 dts = [2, 1, 0.5, 0.25]
 
 check_convergence(dts, prob_oop, RKV76IIa(), 7)
+check_convergence(dts, prob_iip, RKV76IIa(), 7)
+
+let dt = 0.25
+    oop = solve(prob_oop, RKV76IIa(); dt = dt, adaptive = false)
+    iip = solve(prob_iip, RKV76IIa(); dt = dt, adaptive = false)
+    @test iip.u[end][1] ≈ oop.u[end] rtol = 1.0e-10
+end
 
 # -------------------------------------------------------------
 ### Backward solve lazy interpolation dt sign regression test
@@ -139,7 +147,8 @@ println("Backward solve lazy interpolation")
 
 function backward_ode!(du, u, p, t)
     du[1] = -u[1]
-    return du[2] = -2 * u[2]
+    du[2] = -2 * u[2]
+    return
 end
 
 prob_back = ODEProblem(backward_ode!, [1.0, 1.0], (1.0, 0.0))

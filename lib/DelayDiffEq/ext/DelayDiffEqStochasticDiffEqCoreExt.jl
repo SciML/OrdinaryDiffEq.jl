@@ -86,7 +86,7 @@ function DelayDiffEq._create_sdde_noise(
             error("Higher order SDE solver requires extra Brownian process Z. Use `WienerProcess(t, W0, Z0)` instead of `WienerProcess(t, W0)`.")
         end
         if W.curt != t0
-            reinit!(W, t0, t0 = t0)
+            reinit!(W, t0; t0)
         end
     end
 

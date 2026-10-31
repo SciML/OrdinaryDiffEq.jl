@@ -14,9 +14,11 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
 end
 
 """
-    AutoSwitch(nonstiffalg, stiffalg; maxstiffstep = 10, maxnonstiffstep = 3,
-               nonstifftol = 9//10, stifftol = 9//10, dtfac = 2,
-               stiffalgfirst = false, switch_max = 5)
+    AutoSwitch(
+        nonstiffalg, stiffalg; maxstiffstep = 10, maxnonstiffstep = 3,
+        nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
+        stiffalgfirst = false, switch_max = 5
+    )
 
 Choice function that switches a [`StochasticCompositeAlgorithm`](@ref) between a
 nonstiff and a stiff method based on an online stiffness estimate.

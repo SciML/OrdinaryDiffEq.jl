@@ -220,7 +220,6 @@ function perform_step!(integrator, cache::MREILCache, repeat_step = false)
                 f.f1(k_fast, Tj, p, t_fast)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-                # Every column restarts from (uprev, t), so the first substep of the
                 # first one has already evaluated the whole right-hand side there —
                 # the left endpoint the Hermite interpolant needs. MREIL is not FSAL,
                 # so nothing else refreshes k[1] between steps.
@@ -288,7 +287,6 @@ function perform_step!(integrator, cache::MREILCache, repeat_step = false)
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
-    # Right endpoint derivative for the Hermite interpolant (k[2]).
     f.f1(integrator.fsallast, u, p, t + dt)
     f.f2(k_slow, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -336,7 +334,6 @@ end
                 k_fast = f.f1(u_cur, p, t_fast)
                 OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-                # Every column restarts from (uprev, t), so the first substep of the
                 # first one has already evaluated the whole right-hand side there —
                 # the left endpoint the Hermite interpolant needs. MREIL is not FSAL,
                 # so nothing else refreshes k[1] between steps.
@@ -379,7 +376,6 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
-    # Right endpoint derivative for the Hermite interpolant (k[2]).
     integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.stats.nf2 += 1
@@ -419,6 +415,13 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
     (; t, dt, uprev, u, f, p) = integrator
     (; tmp, atmp, z, fS, zemb, nlsolver, tab) = cache
     (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
+
+    f.f1(integrator.fsalfirst, uprev, p, t)
+    f.f2(cache.f1eval, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsalfirst = integrator.fsalfirst + cache.f1eval
+
     alg = unwrap_alg(integrator, true)
     m = alg.m
     s = length(Δc)
@@ -454,7 +457,7 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
     end
     @.. broadcast = false u = z[s + 1]
 
-    return if integrator.opts.adaptive
+    if integrator.opts.adaptive
         if isempty(Wemb0)
             @.. broadcast = false tmp = u - z[s]
         else
@@ -472,6 +475,13 @@ function perform_step!(integrator, cache::MRIGARKImplicitCache, repeat_step = fa
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    f.f1(integrator.fsallast, u, p, t + dt)
+    f.f2(cache.f1eval, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    @.. broadcast = false integrator.fsallast = integrator.fsallast + cache.f1eval
+    return nothing
 end
 
 @muladd function perform_step!(
@@ -480,6 +490,11 @@ end
     (; t, dt, uprev, f, p) = integrator
     (; nlsolver, tab, z, fS) = cache
     (; Δc, W0, W1, Wemb0, Wemb1, γ0, q) = tab
+
+    integrator.fsalfirst = f.f1(uprev, p, t) + f.f2(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+
     alg = unwrap_alg(integrator, true)
     m = alg.m
     s = length(Δc)
@@ -534,4 +549,11 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
+
+    integrator.fsallast = f.f1(integrator.u, p, t + dt) + f.f2(integrator.u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    return nothing
 end

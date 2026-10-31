@@ -45,7 +45,7 @@ the initial value rather than the correct near-zero result. Use inputs where
 julia> stability_region(typemin(Float64), ImplicitEuler())
 ┌ Warning: Newton steps could not converge and algorithm is not adaptive. Use a lower dt.
 
-julia> abs(stability_region(-1e16, ImplicitEuler())) < eps(Float64)
+julia> abs(stability_region(-1.0e16, ImplicitEuler())) < eps(Float64)
 true
 ```
 """
@@ -76,8 +76,10 @@ function stability_region(
 end
 
 """
-    imaginary_stability_interval(tab::ODERKTableau;
-                                 initial_guess = length(tab) - 1)
+    imaginary_stability_interval(
+        tab::ODERKTableau;
+        initial_guess = length(tab) - 1
+    )
 
 Calculates the length of the imaginary stability interval, i.e.,
 the size of the stability region on the imaginary axis.
@@ -95,8 +97,7 @@ function imaginary_stability_interval(
 end
 
 """
-    imaginary_stability_interval(alg::ODERKTableau;
-                                 initial_guess = 20.0)
+    imaginary_stability_interval(alg::ODERKTableau; initial_guess = 20.0)
 
 Calculates the length of the imaginary stability interval, i.e.,
 the size of the stability region on the imaginary axis.

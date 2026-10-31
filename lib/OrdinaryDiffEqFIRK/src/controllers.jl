@@ -1,10 +1,20 @@
+with_current_cache(f::F, cache, args...) where {F} = f(cache, args...)
+function with_current_cache(f::F, cache::CompositeCache, args...) where {F}
+    return _eval_index(f, cache.caches, cache.current, args...)
+end
+
 function step_accept_controller!(
         integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau, q
+    )
+    return with_current_cache(firk_step_accept_controller!, integrator.cache, integrator, ccache, alg, q)
+end
+
+function firk_step_accept_controller!(
+        cache, integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau, q
     )
     (; controller) = ccache
     (; qmin, qmax, gamma, qsteady_min, qsteady_max) = controller.basic
     qmax = get_current_qmax(integrator, qmax)
-    (; cache) = integrator
     (; num_stages, step, iter, hist_iter, index) = cache
 
     EEst = value(OrdinaryDiffEqCore.get_EEst(integrator))
@@ -56,9 +66,16 @@ end
 function step_reject_controller!(
         integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau
     )
+    with_current_cache(firk_step_reject_controller!, integrator.cache, integrator, ccache, alg)
+    return nothing
+end
+
+function firk_step_reject_controller!(
+        cache, integrator, ccache::PredictiveControllerCache, alg::AdaptiveRadau
+    )
     (; controller) = ccache
     (; discontinuity_detection) = controller.basic
-    (; dt, success_iter, cache) = integrator
+    (; dt, success_iter) = integrator
     (; num_stages, step, iter, hist_iter) = cache
     integrator.dt = success_iter == 0 ? 0.1 * dt : dt / ccache.qold
     cache.step = step + 1

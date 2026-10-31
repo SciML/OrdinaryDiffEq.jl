@@ -2,13 +2,16 @@ using SciMLTesting, OrdinaryDiffEqExponentialRK, Test
 
 run_qa(
     OrdinaryDiffEqExponentialRK;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqExponentialRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
     explicit_imports = true,
     ei_kwargs = (
         all_qualified_accesses_are_public = (;
-            # Base — owner-internal, no public alternative
-            ignore = (:structdiff,),
+            ignore = (
+                # Base — owner-internal, no public alternative
+                :structdiff,
+                # OrdinaryDiffEqCore — internal dispatch hook extended for ETD2 caches
+                :reset_fsal!,
+            ),
         ),
         all_explicit_imports_are_public = (;
             ignore = (

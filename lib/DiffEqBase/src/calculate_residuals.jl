@@ -90,7 +90,7 @@ end
 # Inplace Versions
 
 """
-    DiffEqBase.calculate_residuals!(out, ũ, u₀, u₁, α, ρ, thread=Serial())
+    DiffEqBase.calculate_residuals!(out, ũ, u₀, u₁, α, ρ, thread = Serial())
 
 Save element-wise residuals
 ```math
@@ -125,7 +125,7 @@ end
 end
 
 """
-    calculate_residuals!(out, u₀, u₁, α, ρ, thread=Serial())
+    calculate_residuals!(out, u₀, u₁, α, ρ, thread = Serial())
 
 Save element-wise residuals
 ```math
@@ -147,7 +147,7 @@ with multiple threads.
 end
 
 """
-    calculate_residuals!(out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, thread=Serial())
+    calculate_residuals!(out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, thread = Serial())
 
 Calculate element-wise residuals
 ```math

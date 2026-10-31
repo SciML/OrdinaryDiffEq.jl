@@ -23,7 +23,7 @@ solve_kwargs = (; saveat = 0.25, abstol = 1.0e-8, reltol = 1.0e-8)
     # `setsym_oop`/`remake` pattern of MTK loss functions.
     function loss_aliased(p, q)
         prob = q[1]
-        prob2 = remake(prob; u0 = prob.u0, p = p)
+        prob2 = remake(prob; prob.u0, p)
         sol = solve(prob2, Vern7(); sensealg = GaussAdjoint(), solve_kwargs...)
         return sum(abs2, Array(sol))
     end

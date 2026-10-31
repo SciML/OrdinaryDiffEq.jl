@@ -16,6 +16,10 @@ end
     end
 end
 
+# A `jac_prototype` makes `prepare_alg` wrap the AD choice in `AutoSparse`, so ask the dense
+# type underneath whether the initialization residual will be called with Duals.
+_isforwarddiff_alg(alg) = ADTypes.dense_ad(alg_autodiff(alg)) isa AutoForwardDiff
+
 _tagged_autodiff(u, ::Val{nothing}) = _tagged_autodiff(u, Val(1))
 _tagged_autodiff(u, ::Val{0}) = _tagged_autodiff(u, Val(1))
 function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
@@ -196,6 +200,8 @@ The method:
 du = (u-u0)/h
 Solve for `u`
 
+Same as BrownFullBasicInit: do not assign `integrator.uprev` here (#4485).
+
 =#
 
 function _initialize_dae!(
@@ -215,7 +221,8 @@ function _initialize_dae!(
 
     initdt = alg.initdt
     dt = if initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        integrator.dt != 0 ?
+            copysign(min(abs(integrator.dt) / 5, abs(dtmax)), integrator.dt) :
             (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         initdt
@@ -259,8 +266,7 @@ function _initialize_dae!(
             tmp = copy(_u0)
         end
 
-        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff ||
-            typeof(u0) !== typeof(_u0)
+        isAD = _isforwarddiff_alg(integrator.alg) || typeof(u0) !== typeof(_u0)
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
             _tmp = DiffCache(tmp, chunk)
@@ -299,8 +305,8 @@ function _initialize_dae!(
 
         nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
             nlequation!;
-            jac_prototype = f.jac_prototype,
-            jac = jac
+            f.jac_prototype,
+            jac
         )
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
         nlsolve = default_nlsolve(
@@ -308,15 +314,11 @@ function _initialize_dae!(
             SciMLBase.forwarddiff_chunksize(integrator.alg)
         )
         nlsol = solve(
-            nlprob, nlsolve; abstol = integrator.opts.abstol,
-            reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+            nlprob, nlsolve; integrator.opts.abstol,
+            integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
         )
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
-    end
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
     end
 
     if failed
@@ -344,7 +346,8 @@ function _initialize_dae!(
 
     initdt = alg.initdt
     dt = if initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        integrator.dt != 0 ?
+            copysign(min(abs(integrator.dt) / 5, abs(dtmax)), integrator.dt) :
             (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         initdt
@@ -390,28 +393,24 @@ function _initialize_dae!(
 
         nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
             nlequation_oop;
-            jac_prototype = f.jac_prototype,
-            jac = jac
+            f.jac_prototype,
+            jac
         )
         nlprob = NonlinearProblem(nlfunc, u0)
-        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+        isAD = _isforwarddiff_alg(integrator.alg)
         nlsolve = default_nlsolve(
             alg.nlsolve, isinplace, u0, nlprob, isAD,
             SciMLBase.forwarddiff_chunksize(integrator.alg)
         )
 
         nlsol = solve(
-            nlprob, nlsolve; abstol = integrator.opts.abstol,
-            reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+            nlprob, nlsolve; integrator.opts.abstol,
+            integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
         )
         integrator.u = nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
 
     if failed
         @SciMLMessage(
@@ -453,7 +452,7 @@ function _initialize_dae!(
         tmp = copy(_u0)
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u0) !== typeof(_u0)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = DiffCache(tmp, chunk)
@@ -486,8 +485,8 @@ function _initialize_dae!(
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!;
-        jac_prototype = f.jac_prototype,
-        jac = jac
+        f.jac_prototype,
+        jac
     )
     nlprob = NonlinearProblem(nlfunc, u0, p)
     nlsolve = default_nlsolve(
@@ -495,15 +494,11 @@ function _initialize_dae!(
         SciMLBase.forwarddiff_chunksize(integrator.alg)
     )
     nlsol = solve(
-        nlprob, nlsolve; abstol = integrator.opts.abstol,
-        reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+        nlprob, nlsolve; integrator.opts.abstol, integrator.opts.reltol,
+        verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
     integrator.u = nlsol.u
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
     if nlsol.retcode != ReturnCode.Success
         @SciMLMessage(
             lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
@@ -544,31 +539,27 @@ function _initialize_dae!(
         end
     end
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
-        nlequation; jac_prototype = f.jac_prototype,
-        jac = jac
+        nlequation; f.jac_prototype,
+        jac
     )
     nlprob = NonlinearProblem(nlfunc, u0)
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = _isforwarddiff_alg(integrator.alg)
     nlsolve = default_nlsolve(
         alg.nlsolve, isinplace, u0, nlprob, isAD,
         SciMLBase.forwarddiff_chunksize(integrator.alg)
     )
 
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
-        nlequation; jac_prototype = f.jac_prototype
+        nlequation; f.jac_prototype
     )
     nlprob = NonlinearProblem(nlfunc, u0)
     nlsol = solve(
-        nlprob, nlsolve; abstol = integrator.opts.abstol,
-        reltol = integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
+        nlprob, nlsolve; integrator.opts.abstol,
+        integrator.opts.reltol, verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
     integrator.u = nlsol.u
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
     if nlsol.retcode != ReturnCode.Success
         @SciMLMessage(
             lazy"ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`.",
@@ -589,6 +580,11 @@ The method:
 
 Keep differential variables constant
 Solve for the algebraic variables
+
+Do not assign `integrator.uprev` here. Callback truncation reinitializes the
+right endpoint while `uprev` must still be the left endpoint of the shortened
+step (see #4466 / #4485). Initial `uprev` sync happens in `solve` via
+`update_uprev!` after `initialize_dae!`.
 
 =#
 
@@ -630,7 +626,7 @@ function _initialize_dae!(
         tmp = SciMLBase.value.(tmp)
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u) !== typeof(_u)
     if isAD
         # A larger chunksize, calibrated according to count(algebraic_vars),
         # would be more efficient but cannot be inferred from types
@@ -670,15 +666,11 @@ function _initialize_dae!(
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
-        nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
+        nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
     alg_u .= nlsol.u
 
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -706,7 +698,7 @@ function _initialize_dae!(
 
     check_dae_tolerance(integrator, resid, alg.abstol, t, isinplace) && return
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = _isforwarddiff_alg(integrator.alg)
     if isAD
         # A larger chunksize, calibrated according to count(algebraic_vars),
         # would be more efficient but cannot be inferred from types
@@ -718,13 +710,6 @@ function _initialize_dae!(
         _tmp = similar(u0)
         # This was called anyway as an argument to default_nlsolve
         nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
-    end
-
-    if u0 isa Number
-        # This doesn't fix static arrays!
-        u = [u0]
-    else
-        u = u0
     end
 
     nlequation = @closure (x, _) -> begin
@@ -746,19 +731,17 @@ function _initialize_dae!(
 
     nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
 
-    u[algebraic_vars] .= nlsol.u
-
     if u0 isa Number
-        # This doesn't fix static arrays!
-        integrator.u = first(u)
+        integrator.u = first(nlsol.u)
+    elseif ArrayInterface.ismutable(u0)
+        u0[algebraic_vars] .= nlsol.u
     else
-        integrator.u = u
+        u = similar(u0)
+        copyto!(u, u0)
+        u[algebraic_vars] .= nlsol.u
+        integrator.u = convert(typeof(u0), u)
     end
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -802,7 +785,7 @@ function _initialize_dae!(
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u) !== typeof(_u)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = DiffCache(tmp, chunk)
@@ -835,21 +818,17 @@ function _initialize_dae!(
     end
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
-        nlequation!; jac_prototype = f.jac_prototype
+        nlequation!; f.jac_prototype
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     nlsol = solve(
-        nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol,
+        nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
     @. du = ifelse(differential_vars, nlsol.u, du)
     @. u = ifelse(differential_vars, u, nlsol.u)
 
-    recursivecopy!(integrator.uprev, integrator.u)
-    if alg_extrapolates(integrator.alg)
-        recursivecopy!(integrator.uprev2, integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -891,11 +870,11 @@ function _initialize_dae!(
     end
 
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
-        nlequation; jac_prototype = f.jac_prototype
+        nlequation; f.jac_prototype
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = _isforwarddiff_alg(integrator.alg)
     nlsolve = default_nlsolve(
         alg.nlsolve, isinplace, integrator.u, nlprob, isAD,
         SciMLBase.forwarddiff_chunksize(integrator.alg)
@@ -915,10 +894,6 @@ function _initialize_dae!(
         integrator.du = du
     end
 
-    integrator.uprev = copy(integrator.u)
-    if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = copy(integrator.uprev)
-    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(

@@ -48,14 +48,14 @@ end
 # Per-part Jacobians, expressed as SciMLOperators.
 J1_op = MatrixOperator(UpperTriangular(zeros(N, N)); update_func! = fjac_upper)
 J2_op = MatrixOperator(LowerTriangular(zeros(N, N)); update_func! = fjac_lower)
-J_op  = cache_operator(J1_op + J2_op, zeros(N))
+J_op = cache_operator(J1_op + J2_op, zeros(N))
 
 # Build the ODEFunction with AMF-aware jac_prototype / W_prototype.
 func = build_amf_function(f!; jac = J_op, split = (J1_op, J2_op))
 
-u0    = zeros(N)
+u0 = zeros(N)
 tspan = (0.0, 1.0)
-prob  = ODEProblem(func, u0, tspan)
+prob = ODEProblem(func, u0, tspan)
 
 sol = solve(prob, AMF(ROS34PW1a))
 ```

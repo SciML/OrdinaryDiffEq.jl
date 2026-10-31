@@ -30,7 +30,7 @@ function alg_cache(
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
     return RadauIIA3ConstantCache(
-        uf, tab, κ, one(uToltype), 10000, u, u, dt, dt,
+        uf, tab, κ, one(uToltype), 10000, u, u, one(dt), dt,
         Convergence, J
     )
 end
@@ -112,8 +112,8 @@ function alg_cache(
 
     linprob = LinearProblem(W1, _vec(cubuff), (nothing, u, p, t); u0 = _vec(dw12))
     linsolve = init(
-        linprob, alg.linsolve, alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        linprob, alg.linsolve; alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
@@ -129,7 +129,7 @@ function alg_cache(
         du1, fsalfirst, k, k2, fw1, fw2,
         J, W1,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
+        tmp, atmp, jac_config, linsolve, rtol, atol, one(dt), dt,
         Convergence, alg.step_limiter!
     )
 end
@@ -164,7 +164,7 @@ function alg_cache(
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
     return RadauIIA5ConstantCache(
-        uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
+        uf, tab, κ, one(uToltype), 10000, u, u, u, one(dt), dt,
         Convergence, J
     )
 end
@@ -286,7 +286,7 @@ function alg_cache(
         du1, fsalfirst, k, k1, k2, k3, fw1, fw2, fw3,
         J, W1, W2,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
+        tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, one(dt), dt,
         Convergence, alg.step_limiter!
     )
 end
@@ -323,7 +323,7 @@ function alg_cache(
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
     return RadauIIA9ConstantCache(
-        uf, tab, κ, one(uToltype), 10000, u, u, u, u, u, dt, dt,
+        uf, tab, κ, one(uToltype), 10000, u, u, u, u, u, one(dt), dt,
         Convergence, J
     )
 end
@@ -496,7 +496,7 @@ function alg_cache(
         J, W1, W2, W3,
         uf, tab, κ, one(uToltype), 10000,
         tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
-        linsolve1, linsolve2, linsolve3, rtol, atol, dt, dt,
+        linsolve1, linsolve2, linsolve3, rtol, atol, one(dt), dt,
         Convergence, alg.step_limiter!
     )
 end
@@ -553,7 +553,7 @@ function alg_cache(
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
     return AdaptiveRadauConstantCache(
-        uf, tabs, κ, one(uToltype), 10000, cont, dt, dt,
+        uf, tabs, κ, one(uToltype), 10000, cont, one(dt), dt,
         Convergence, J, num_stages, 1, 0.0, index
     )
 end
@@ -689,12 +689,12 @@ function alg_cache(
 
     linsolve2 = [
         init(
-                LinearProblem(W2[i], _vec(cubuff[i]), (nothing, u, p, t); u0 = _vec(dw2[i])),
-                alg.linsolve, alias = LinearAliasSpecifier(
-                    alias_A = true, alias_b = true
-                ),
-                assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
-            )
+            LinearProblem(W2[i], _vec(cubuff[i]), (nothing, u, p, t); u0 = _vec(dw2[i])),
+            alg.linsolve, alias = LinearAliasSpecifier(
+                alias_A = true, alias_b = true
+            ),
+            assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
+        )
             for i in 1:((max_stages - 1) ÷ 2)
     ]
 
@@ -708,7 +708,7 @@ function alg_cache(
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
-        linsolve1, linsolve2, rtol, atol, dt, dt,
+        linsolve1, linsolve2, rtol, atol, one(dt), dt,
         Convergence, alg.step_limiter!, num_stages, 1, 0.0, index
     )
 end
@@ -745,7 +745,7 @@ function alg_cache(
         cont[i] = zero(u)
     end
     return GaussLegendreConstantCache(
-        uf, tab, κ, one(uToltype), 10000, cont, dt, dt,
+        uf, tab, κ, one(uToltype), 10000, cont, one(dt), dt,
         Convergence, J, num_stages
     )
 end
@@ -861,7 +861,7 @@ function alg_cache(
         du1, fsalfirst, k, ks, fw,
         J, W,
         uf, tab, κ, one(uToltype), 10000,
-        tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
+        tmp, atmp, jac_config, linsolve, rtol, atol, one(dt), dt,
         Convergence, alg.step_limiter!, num_stages
     )
 end

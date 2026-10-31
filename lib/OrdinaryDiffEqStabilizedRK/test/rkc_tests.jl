@@ -9,7 +9,7 @@ probArr[2] = prob_ode_2Dlinear
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
     Random.seed!(123)
     eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
-    for iip in [true, false], alg in [ROCK4(), ROCK4(eigen_est = eigen_est)]
+    for iip in [true, false], alg in [ROCK4(), ROCK4(; eigen_est)]
         println(typeof(alg))
         A = randn(20, 20)
         test_f(u, p, t) = A * u
@@ -33,8 +33,8 @@ probArr[2] = prob_ode_2Dlinear
         Random.seed!(456)
         eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
         for iip in [true, false], alg in [
-                    RKL2(), RKL2(eigen_est = eigen_est),
-                    RKL1(), RKL1(eigen_est = eigen_est),
+                    RKL2(), RKL2(; eigen_est),
+                    RKL1(), RKL1(; eigen_est),
                 ]
             println(typeof(alg))
             A = randn(20, 20)
@@ -54,8 +54,8 @@ probArr[2] = prob_ode_2Dlinear
         Random.seed!(789)
         eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
         for iip in [true, false], alg in [
-                    RKG2(), RKG2(eigen_est = eigen_est),
-                    RKG1(), RKG1(eigen_est = eigen_est),
+                    RKG2(), RKG2(; eigen_est),
+                    RKG1(), RKG1(; eigen_est),
                 ]
             println(typeof(alg))
             A = randn(20, 20)
@@ -101,43 +101,43 @@ end
 
         println("RKC")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKC(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKC(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKC(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKC(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
-        sim = test_convergence(dts, prob, RKC(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKC(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         println("RKMC2")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKMC2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKMC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKMC2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKMC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
-        sim = test_convergence(dts, prob, RKMC2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKMC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         println("TSRKC2")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         println("TSRKC3")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC3(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC3(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC3(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         println("SERK2")
         sim = test_convergence(dts, prob, SERK2())
@@ -148,45 +148,45 @@ end
 
         println("RKL1")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKL1(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL1(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKL1(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL1(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
         println("RKL2")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKL2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKL2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKL2(min_stages = 3, eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL2(; min_stages = 3, eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
-        sim = test_convergence(dts, prob, RKL2(min_stages = 5, eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL2(; min_stages = 5, eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
-        sim = test_convergence(dts, prob, RKL2(min_stages = 11, eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKL2(; min_stages = 11, eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
 
         println("RKG1")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKG1(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKG1(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKG1(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKG1(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
 
         println("RKG2")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKG2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKG2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKG2(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKG2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
-        sim = test_convergence(dts, prob, RKG2(min_stages = 3, eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKG2(; min_stages = 3, eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
-        sim = test_convergence(dts, prob, RKG2(min_stages = 5, eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKG2(; min_stages = 5, eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
     end
     dts = 1 .// 2 .^ (6:-1:2)
@@ -216,13 +216,13 @@ end
     eigen_est = (integrator) -> integrator.eigen_est = lam
 
     algs = [
-        ROCK2(eigen_est = eigen_est), ROCK4(eigen_est = eigen_est),
-        RKC(eigen_est = eigen_est), RKMC2(eigen_est = eigen_est),
-        TSRKC2(eigen_est = eigen_est), TSRKC3(eigen_est = eigen_est),
-        SERK2(eigen_est = eigen_est), ESERK4(eigen_est = eigen_est),
-        ESERK5(eigen_est = eigen_est), RKL1(eigen_est = eigen_est),
-        RKL2(eigen_est = eigen_est), RKG1(eigen_est = eigen_est),
-        RKG2(eigen_est = eigen_est),
+        ROCK2(; eigen_est), ROCK4(; eigen_est),
+        RKC(; eigen_est), RKMC2(; eigen_est),
+        TSRKC2(; eigen_est), TSRKC3(; eigen_est),
+        SERK2(; eigen_est), ESERK4(; eigen_est),
+        ESERK5(; eigen_est), RKL1(; eigen_est),
+        RKL2(; eigen_est), RKG1(; eigen_est),
+        RKG2(; eigen_est),
     ]
     @testset "$alg" for alg in algs
         sol_oop = solve(
@@ -425,19 +425,19 @@ end
     @testset "$prob" for prob in [probop, probip]
         eigen_est = (integrator) -> integrator.eigen_est = 500
         algs = [
-            ROCK2(), ROCK2(eigen_est = eigen_est),
-            ROCK4(), ROCK4(eigen_est = eigen_est),
-            RKC(), RKC(eigen_est = eigen_est),
-            RKMC2(), RKMC2(eigen_est = eigen_est),
-            TSRKC2(), TSRKC2(eigen_est = eigen_est),
-            TSRKC3(), TSRKC3(eigen_est = eigen_est),
-            SERK2(), SERK2(eigen_est = eigen_est),
-            ESERK4(), ESERK4(eigen_est = eigen_est),
-            ESERK5(), ESERK5(eigen_est = eigen_est),
-            RKL1(), RKL1(eigen_est = eigen_est),
-            RKL2(), RKL2(eigen_est = eigen_est),
-            RKG1(), RKG1(eigen_est = eigen_est),
-            RKG2(), RKG2(eigen_est = eigen_est),
+            ROCK2(), ROCK2(; eigen_est),
+            ROCK4(), ROCK4(; eigen_est),
+            RKC(), RKC(; eigen_est),
+            RKMC2(), RKMC2(; eigen_est),
+            TSRKC2(), TSRKC2(; eigen_est),
+            TSRKC3(), TSRKC3(; eigen_est),
+            SERK2(), SERK2(; eigen_est),
+            ESERK4(), ESERK4(; eigen_est),
+            ESERK5(), ESERK5(; eigen_est),
+            RKL1(), RKL1(; eigen_est),
+            RKL2(), RKL2(; eigen_est),
+            RKG1(), RKG1(; eigen_est),
+            RKG2(), RKG2(; eigen_est),
         ]
         @testset "$alg" for alg in algs
             x[] = 0
@@ -457,19 +457,19 @@ end
 
     eigen_est = (integrator) -> integrator.eigen_est = 500
     algs = [
-        ROCK2(), ROCK2(eigen_est = eigen_est),
-        ROCK4(), ROCK4(eigen_est = eigen_est),
-        RKC(), RKC(eigen_est = eigen_est),
-        RKMC2(), RKMC2(eigen_est = eigen_est),
-        TSRKC2(), TSRKC2(eigen_est = eigen_est),
-        TSRKC3(), TSRKC3(eigen_est = eigen_est),
-        SERK2(), SERK2(eigen_est = eigen_est),
-        ESERK4(), ESERK4(eigen_est = eigen_est),
-        ESERK5(), ESERK5(eigen_est = eigen_est),
-        RKL1(), RKL1(eigen_est = eigen_est),
-        RKL2(), RKL2(eigen_est = eigen_est),
-        RKG1(), RKG1(eigen_est = eigen_est),
-        RKG2(), RKG2(eigen_est = eigen_est),
+        ROCK2(), ROCK2(; eigen_est),
+        ROCK4(), ROCK4(; eigen_est),
+        RKC(), RKC(; eigen_est),
+        RKMC2(), RKMC2(; eigen_est),
+        TSRKC2(), TSRKC2(; eigen_est),
+        TSRKC3(), TSRKC3(; eigen_est),
+        SERK2(), SERK2(; eigen_est),
+        ESERK4(), ESERK4(; eigen_est),
+        ESERK5(), ESERK5(; eigen_est),
+        RKL1(), RKL1(; eigen_est),
+        RKL2(), RKL2(; eigen_est),
+        RKG1(), RKG1(; eigen_est),
+        RKG2(), RKG2(; eigen_est),
     ]
     @testset "$alg" for alg in algs
         # compile once
@@ -525,7 +525,7 @@ end
         tspan = (0.0, 0.1)
         prob = ODEProblem((du, u, p, t) -> (@. du = -100 * u), u0, tspan)
         eigen_est = (integrator) -> (integrator.eigen_est = 100.0)
-        integrator = init(prob, RKL2(eigen_est = eigen_est); save_everystep = false)
+        integrator = init(prob, RKL2(; eigen_est); save_everystep = false)
         while integrator.t < tspan[2] - 100 * eps(typeof(tspan[2]))
             step!(integrator)
             cc = integrator.cache

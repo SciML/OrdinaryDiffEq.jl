@@ -45,7 +45,7 @@ using Test
     n = 25
     mass_matrix = Matrix(Diagonal([ones(n); zeros(n)]))
     dae_prob = ODEProblem(
-        ODEFunction{true, FullSpecialize}(dae_system!; mass_matrix = mass_matrix),
+        ODEFunction{true, FullSpecialize}(dae_system!; mass_matrix),
         ones(2n), (0.0, 1.0)
     )
 
@@ -55,6 +55,11 @@ using Test
         )
         @testset "$label" begin
             for solver in rosenbrock_solvers
+                # Rosenbrock32 rejects singular mass matrices at cache construction.
+                if label == "DAE" && solver isa Rosenbrock32
+                    @test_throws ArgumentError init(prob, solver, dt = 0.05)
+                    continue
+                end
                 @testset "$(typeof(solver).name.name) perform_step! inference" begin
                     integrator = init(
                         prob, solver, dt = 0.05, save_everystep = false,

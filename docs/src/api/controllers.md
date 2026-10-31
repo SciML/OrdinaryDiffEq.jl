@@ -196,11 +196,11 @@ controllers should too so they compose with each other and with
 ```julia
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache,
-                         CommonControllerOptions, resolve_basic,
-                         _resolved_QT, get_EEst, get_current_adaptive_order,
-                         get_current_qmax, fastpower
+    CommonControllerOptions, resolve_basic,
+    _resolved_QT, get_EEst, get_current_adaptive_order,
+    get_current_qmax, fastpower
 import OrdinaryDiffEqCore: setup_controller_cache, stepsize_controller!,
-                          step_accept_controller!, step_reject_controller!
+    step_accept_controller!, step_reject_controller!
 
 # Type-stability trick: `basic` is either a `NamedTuple` of user-supplied
 # overrides (before setup_controller_cache resolves it) or a fully-resolved

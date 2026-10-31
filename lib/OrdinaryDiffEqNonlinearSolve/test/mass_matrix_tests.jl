@@ -42,8 +42,8 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
 end
 
 function _norm_dsol(alg, prob, prob2, dt = 1 / 10)
-    sol = solve(prob, alg, dt = dt, adaptive = false)
-    sol2 = solve(prob2, alg, dt = dt, adaptive = false)
+    sol = solve(prob, alg; dt, adaptive = false)
+    sol2 = solve(prob2, alg; dt, adaptive = false)
     return norm(sol .- sol2)
 end
 
@@ -56,7 +56,8 @@ function update_func1!(A, u, p, t)
     A[3, 2] = sin(t) * u[2]
     A[1, 3] = sin(t)
     A[2, 3] = t^2
-    return A[3, 3] = t * cos(t) + 1
+    A[3, 3] = t * cos(t) + 1
+    return
 end
 
 function update_func1(A, u, p, t)
@@ -74,7 +75,8 @@ function update_func2!(A, u, p, t)
     A[3, 2] = sin(t)
     A[1, 3] = sin(t)
     A[2, 3] = t^2
-    return A[3, 3] = t * cos(t) + 1
+    A[3, 3] = t * cos(t) + 1
+    return
 end
 
 function update_func2(A, u, p, t)
@@ -177,8 +179,8 @@ end
             ImplicitMidpoint(
                 extrapolant = :constant,
                 nlsolve = NLFunctional()
-            ), dt = 1 / 10, reltol = 1.0e-7,
-            abstol = 1.0e-10
+            ),
+            dt = 1 / 10, reltol = 1.0e-7, abstol = 1.0e-10
         )
         sol2 = solve(
             prob2,
@@ -326,8 +328,8 @@ end
             ImplicitMidpoint(
                 extrapolant = :constant,
                 nlsolve = NLFunctional()
-            ), dt = 1 / 10, reltol = 1.0e-7,
-            abstol = 1.0e-10
+            ),
+            dt = 1 / 10, reltol = 1.0e-7, abstol = 1.0e-10
         )
         sol2 = solve(
             prob2,

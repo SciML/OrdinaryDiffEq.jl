@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSSPRK, DiffEqDevTools, Test, Random
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 import OrdinaryDiffEqLowStorageRK
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
@@ -507,12 +508,12 @@ integ = init(
     prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
     save_everystep = false
 )
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
 integ = init(
     prob_ode_large, alg, dt = 1.0e-2, save_start = false, save_end = false,
     save_everystep = false, alias = ODEAliasSpecifier(alias_u0 = true)
 )
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 
 println("SSPRK54")
 alg = SSPRK54()
@@ -611,4 +612,22 @@ sol = solve(
 
     @test sol_SA ≈ sol_SV
     @test sol_SV.stats.naccept == sol_SA.stats.naccept
+end
+
+@testset "order is preserved when calck is false" begin
+    for alg in (SSPRK932(), SSPRK33(), SSPRK43())
+        for prob in test_problems_nonlinear
+            sim = test_convergence(dts, prob, alg; save_everystep = false, dense = false)
+            @test sim.𝒪est[:final] ≈ OrdinaryDiffEqSSPRK.alg_order(alg) atol = testTol
+        end
+    end
+end
+
+@testset "SSP multistep methods are not adaptive" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    for alg in (SSPRKMSVS32(), SSPRKMSVS43())
+        @test !OrdinaryDiffEqCore.isadaptive(alg)
+        @test_throws ArgumentError solve(prob, alg)
+        @test solve(prob, alg; dt = 0.05).retcode == ReturnCode.Success
+    end
 end

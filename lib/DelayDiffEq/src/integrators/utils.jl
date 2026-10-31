@@ -287,9 +287,12 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
         maxlag = integrator.tdir * (integrator.sol.prob.tspan[end] - t)
 
         for lag in constant_lags
-            if integrator.tdir * lag < maxlag
+            # a zero lag maps a discontinuity onto itself
+            if !iszero(lag) && integrator.tdir * lag < maxlag
                 # calculate discontinuity and add it to heap of discontinuities and time stops
-                d = Discontinuity(integrator.tdir * (t + lag), next_order)
+                d = eltype(integrator.d_discontinuities_propagated)(
+                    integrator.tdir * (t + lag), next_order
+                )
                 push!(integrator.d_discontinuities_propagated, d)
                 push!(integrator.tstops_propagated, d.t)
             end
@@ -303,13 +306,13 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
 end
 
 # Interface for accessing and removing next time stops and discontinuities
-function OrdinaryDiffEqCore.has_tstop(integrator::DDEIntegrator)
+function SciMLBase.has_tstop(integrator::DDEIntegrator)
     return _has(integrator.opts.tstops, integrator.tstops_propagated)
 end
-function OrdinaryDiffEqCore.first_tstop(integrator::DDEIntegrator)
+function SciMLBase.first_tstop(integrator::DDEIntegrator)
     return _first(integrator.opts.tstops, integrator.tstops_propagated)
 end
-function OrdinaryDiffEqCore.pop_tstop!(integrator::DDEIntegrator)
+function SciMLBase.pop_tstop!(integrator::DDEIntegrator)
     return _pop!(integrator.opts.tstops, integrator.tstops_propagated)
 end
 

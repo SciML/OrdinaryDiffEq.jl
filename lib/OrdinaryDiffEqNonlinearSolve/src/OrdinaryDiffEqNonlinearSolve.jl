@@ -40,10 +40,10 @@ import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
 using ForwardDiff: Dual
-using RecursiveArrayTools: recursivecopy!
 import OrdinaryDiffEqCore
 
-import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator
+import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator,
+    mark_jacobian_updated!
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
 import OrdinaryDiffEqCore: default_nlsolve
@@ -57,7 +57,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     Convergence,
     Divergence, NLStatus,
     MethodType, error_constant,
-    alg_extrapolates, resize_J_W!, alg_autodiff,
+    resize_J_W!, alg_autodiff,
     find_algebraic_vars_eqs
 
 import OrdinaryDiffEqCore: _initialize_dae!,
@@ -67,8 +67,8 @@ import OrdinaryDiffEqCore: _initialize_dae!,
 
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
-    build_jac_config, dolinsolve,
-    resize_jac_config!, jacobian2W!, jacobian!
+    build_jac_config, dolinsolve, set_linear_reltol!,
+    resize_jac_config!, jacobian2W!, jacobian!, calc_J
 
 import StaticArraysCore: StaticArray
 

@@ -71,3 +71,38 @@ sol = solve(prob, RDPK3SpFSAL49())
     ctrl_pred = OrdinaryDiffEqCore.PredictiveController(Tsit5(), qmax_first_step = 300)
     @test ctrl_pred.basic.qmax_first_step == 300.0
 end
+
+@testset "reinit! can preserve the PI controller history (#4371)" begin
+    decay(u, p, t) = -20u
+    prob_decay = ODEProblem(decay, 1.0, (0.0, 1.0))
+
+    function stepped(n)
+        integ = init(
+            prob_decay, Tsit5(); controller = PIController(7 // 20, 1 // 5),
+            abstol = 1.0e-8, reltol = 1.0e-8
+        )
+        for _ in 1:n
+            step!(integ)
+        end
+        return integ
+    end
+
+    mid_reinit!(integ; kwargs...) = reinit!(
+        integ, integ.u; t0 = integ.t, erase_sol = false, reset_dt = false,
+        reinit_dae = false, reinit_callbacks = false, reinit_cache = false, kwargs...
+    )
+
+    integ = stepped(12)
+    qoldinit = integ.controller_cache.controller.qoldinit
+    mid_reinit!(integ)
+    @test integ.controller_cache.errold == qoldinit
+    @test isone(integ.controller_cache.q11)
+
+    integ = stepped(12)
+    errold_before = integ.controller_cache.errold
+    q11_before = integ.controller_cache.q11
+    @test errold_before != qoldinit
+    mid_reinit!(integ; reinit_controller = false)
+    @test integ.controller_cache.errold == errold_before
+    @test integ.controller_cache.q11 == q11_before
+end

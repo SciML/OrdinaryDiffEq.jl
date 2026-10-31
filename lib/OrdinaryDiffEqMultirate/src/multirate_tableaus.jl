@@ -37,7 +37,8 @@ function MRIGARKERK22aTableau(::Type{T}) where {T}
     Δc = T[1 // 2, 1 // 2]
     W0 = T[1 // 2 0; -1 // 2 1]
     W1 = zeros(T, 2, 2)
-    return MRIGARKTableau{T}(Δc, W0, W1, T[], T[], zeros(T, 2), 2)
+    Wemb0 = T[1 // 2, 0]
+    return MRIGARKTableau{T}(Δc, W0, W1, Wemb0, T[], zeros(T, 2), 2)
 end
 
 function MRIGARKERK22bTableau(::Type{T}) where {T}
@@ -96,6 +97,14 @@ struct MISTableau{T}
     d::Vector{T}   # inner-interval lengths, d_i = Σ_j β[i,j]
     c::Vector{T}   # stage abscissae, (I − α − γ)⁻¹ d
     ctilde::Vector{T}  # inner start abscissae, α c
+    bhat::Vector{T}    # b − b̃, slow-quadrature weights of the error estimate
+end
+
+function mis_bhat(α, β, γ, ::Type{T}) where {T}
+    A = (LinearAlgebra.I(size(β, 1)) - α - γ) \ β
+    bhat = Vector{T}(A[end, :])
+    bhat[1] -= one(T)
+    return bhat
 end
 
 function MIS2Tableau(::Type{T}) where {T}
@@ -120,5 +129,5 @@ function MIS2Tableau(::Type{T}) where {T}
     d = T[sum(@view β[i, :]) for i in axes(β, 1)]
     c = (LinearAlgebra.I(length(d)) - α - γ) \ d
     ctilde = α * c
-    return MISTableau{T}(α, β, γ, d, c, ctilde)
+    return MISTableau{T}(α, β, γ, d, c, ctilde, mis_bhat(α, β, γ, T))
 end

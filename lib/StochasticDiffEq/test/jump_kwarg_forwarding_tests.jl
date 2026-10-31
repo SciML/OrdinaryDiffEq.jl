@@ -6,11 +6,13 @@ using StochasticDiffEq, JumpProcesses, DiffEqBase, Test
 # --- Shared setup ---
 # Zero-drift, zero-noise SDE so u stays constant (deterministic for testing).
 function f!(du, u, p, t)
-    return du[1] = 0.0
+    du[1] = 0.0
+    return
 end
 
 function g!(du, u, p, t)
-    return du[1] = 0.0
+    du[1] = 0.0
+    return
 end
 
 # A jump that never fires (rate = 0).
@@ -66,6 +68,11 @@ noop_jump = ConstantRateJump(never_rate, noop_affect!)
         jprob = JumpProblem(prob, Direct(), noop_jump; callback = cb)
         fire_count[] = 0
         sol = solve(jprob, EM(); dt = 0.01, tstops = [2.0])
+        @test fire_count[] == 1
+
+        fire_count[] = 0
+        integrator = init(jprob, EM(); dt = 0.01, tstops = [2.0])
+        solve!(integrator)
         @test fire_count[] == 1
     end
 

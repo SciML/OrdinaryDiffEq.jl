@@ -44,23 +44,43 @@ function initialize!(
     # A no-init cache has no `stats` (SimpleNonlinearSolve builds every solution with
     # `stats === nothing`), and its `reinit!` only remakes the problem without evaluating
     # the residual, so neither the copies below nor the `+1` apply: nothing is counted and
-    # nothing is invented.
     if SciMLBase.has_stats(integrator) && !(cache.cache isa NonlinearSolveNoInitCache)
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
         integrator.stats.nf += cache.cache.stats.nf + 1
-        # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
-        # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
-        # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
-        # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
         if cache.W === nothing
             integrator.stats.njacs += cache.cache.stats.njacs
         end
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
+
+    if cache.W !== nothing
+        dtgamma = method === DIRK ? γ * dt : γ * dt / α
+        W_γdt = cache.W_γdt
+        first_call = iszero(W_γdt)
+        # Same `do_newJW` split as the in-place `initialize!` below: a fresh `J` only on
+        # first use, failure, retry, or non-adaptive integration; a `γΔt` drift or an
+        # error-test rejection only reassembles `W` from the stored `J`.
+        new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
+            nlsolver.status === TryAgain || !integrator.opts.adaptive
+        new_w = new_jac ||
+            abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff) ||
+            (errorfail(integrator) && !(W_γdt ≈ dtgamma))
+        if new_w
+            _update_nlsolvealg_W_oop!(cache, integrator, dtgamma, new_jac)
+            cache.new_W = true
+        else
+            cache.new_W = false
+        end
+    end
+
+    if cache.cache isa NonlinearSolveNoInitCache
+        return nothing
+    end
+
     if f isa DAEFunction
-        nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
+        nlp_params = (tmp, α, tstep, invγdt, p, get_dae_uprev(integrator, uprev), f)
     else
         nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, f)
     end
@@ -111,20 +131,47 @@ function initialize!(
         integrator.stats.nsolve += cache.cache.stats.nsolve
     end
 
-    nlstep_data = f.nlstep_data
+    nlstep_data = get_nlstep_data(f)
     if nlstep_data !== nothing
         atmp .= 0
-        if method === COEFFICIENT_MULTISTEP
-            nlstep_data.set_γ_c(nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep))
+        if f isa DAEFunction
+            # Fully implicit: `_compute_rhs!` states the stage residual as `F(du, u, p, t)`
+            # at `du = (tmp + α z) * invγdt` and `u = get_dae_uprev(integrator, uprev) + z`,
+            # so the coefficient lands on the derivative argument and the state argument
+            # carries the predictor base -- `cache.u₀` for a multistep method, not `uprev`.
+            # There is no `M z` term, so `γ₃` stays 1.
+            @.. broadcast = false ustep = tmp * invγdt
+            nlstep_data.set_γ_c(nlstep_data.nlprob, (α * invγdt, one(t), one(t), tstep))
+            nlstep_data.set_inner_tmp(nlstep_data.nlprob, get_dae_uprev(integrator, uprev))
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
+        elseif method === COEFFICIENT_MULTISTEP
+            # Adaptive rejection needs a solution-scaled residual; fixed-step convergence
+            # retains the raw scaling so nonlinear accuracy tightens with `dt`.
+            if opts.adaptive
+                s = inv(α * invγdt)
+                @.. broadcast = false ustep = tmp * s
+                nlstep_data.set_γ_c(nlstep_data.nlprob, (s, one(t), one(t), tstep))
+            else
+                @.. broadcast = false ustep = tmp
+                nlstep_data.set_γ_c(
+                    nlstep_data.nlprob, (one(t), one(t), α * invγdt, tstep)
+                )
+            end
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, atmp)
-            nlstep_data.set_outer_tmp(nlstep_data.nlprob, tmp)
+            nlstep_data.set_outer_tmp(nlstep_data.nlprob, ustep)
         else
             nlstep_data.set_γ_c(nlstep_data.nlprob, (dt, γ, one(t), tstep))
             nlstep_data.set_inner_tmp(nlstep_data.nlprob, tmp)
             nlstep_data.set_outer_tmp(nlstep_data.nlprob, atmp)
         end
         nlstep_data.nlprob.u0 .= @view z[nlstep_data.u0perm]
-        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlstep_data.nlprob.p)
+        nlprob_p = if SciMLBase.specialization(nlstep_data.nlprob.f) ===
+                SciMLBase.AutoDespecialize
+            SciMLBase.DespecializedParameters(nlstep_data.nlprob.p)
+        else
+            nlstep_data.nlprob.p
+        end
+        SciMLBase.reinit!(cache.cache, nlstep_data.nlprob.u0, p = nlprob_p)
     else
         if cache.W !== nothing
             dtgamma = method === DIRK ? γ * dt : γ * dt / α
@@ -135,13 +182,26 @@ function initialize!(
             # reassembling W = J - M/γdt from the stored J (jacobian2W! is O(nnz), a
             # Jacobian evaluation is not). Without adaptivity there is no error test to
             # catch the step a stale Jacobian degrades and no way to pull it back, so
-            # `do_newJW` refuses to freeze `J` there and this must too.
+            # `do_newJW` refuses to freeze `J` there and this must too. `TryAgain` is
+            # `nlsolve!` re-entering to retry a stale-Jacobian divergence, which must get a
+            # fresh `J` — and hence a fresh `J_t` — or it would loop.
             new_jac = first_call || alg.always_new || nlsolver.status === Divergence ||
+                nlsolver.status === TryAgain ||
                 !integrator.opts.adaptive
             # `oftype`: `new_W_dt_cutoff` defaults to a `Rational`, and comparing a `Float64`
-            # against one goes through the slow mixed-type path on every stage.
+            # against one goes through the slow mixed-type path on every stage. A split `W`
+            # takes every `γΔt` change, as in `do_newJW`: the update is a scalar write plus
+            # an O(n²) re-shift, so there is nothing to save by tolerating a stale one.
+            #
+            # `errorfail` is `do_newJW`'s: the `dt` cut after a rejected step usually moves
+            # `γΔt` too little to trip the cutoff but far enough to cost the chord iteration
+            # its convergence rate. The `γΔt` inequality stands in for `isfirststage` — later
+            # stages run at the `γΔt` `W` was just assembled at.
+            cutoff = is_split_W(cache.W) ? zero(dtgamma) :
+                oftype(dtgamma, alg.new_W_dt_cutoff)
             new_w = new_jac ||
-                abs(inv(dtgamma) / inv(W_γdt) - 1) > oftype(dtgamma, alg.new_W_dt_cutoff)
+                abs(inv(dtgamma) / inv(W_γdt) - 1) > cutoff ||
+                (errorfail(integrator) && !(W_γdt ≈ dtgamma))
             if new_w
                 _update_nlsolvealg_W!(cache, integrator, dtgamma, tstep, new_jac)
                 cache.new_W = true
@@ -150,7 +210,10 @@ function initialize!(
             end
         end
         if f isa DAEFunction
-            nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            nlp_params = (
+                tmp, ustep, α, tstep, k, invγdt, p,
+                get_dae_uprev(integrator, uprev), f,
+            )
         else
             nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, method, p, dt, f)
         end
@@ -212,12 +275,14 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     (; J, W, uf, jac_config, du1) = nlcache
     (; f, p, uprev, alg) = integrator
     mass_matrix = f.mass_matrix
-    if W isa AbstractSciMLOperator
+    if W isa AbstractSciMLOperator && !is_split_W(W)
         # Matrix-free reused W: refresh its state and gamma in place; its own `mul!`
         # supplies the Jacobian action to the inner (Krylov) solve, so there is no
         # concrete J to reassemble.
         update_coefficients!(W, uprev, p, tstep; gamma = dtgamma)
     else
+        # A split `W` reaches here too: `J` is its own `W.J`, and `jacobian2W!` on a
+        # `WOperator` only writes `gamma`.
         if new_jac
             if SciMLBase.has_jac(f)
                 f.jac(J, uprev, p, tstep)
@@ -232,12 +297,15 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
             # `calc_J!` is bypassed here, so this is the only place the reused-`W`
             # path can record a Jacobian evaluation.
             integrator.stats.njacs += 1
+            # A solver caching a reduction of `J` cannot see an in-place write.
+            mark_jacobian_updated!(W)
         end
         jacobian2W!(W, mass_matrix, dtgamma, J)
     end
     # No estimator refresh needed: the smoothed estimate reuses the inner solver's own W
     # factorization, which the inner Newton re-factorizes itself when it refreshes W.
     nlcache.W_γdt = dtgamma
+    new_jac && (nlcache.J_t = integrator.t)
     integrator.stats.nw += 1
     return nothing
 end
@@ -252,8 +320,12 @@ current step needs, the Newton direction it produces is off by that ratio.
 `NLNewton` scales the increment it just computed. `NonlinearSolveAlg` cannot: the inner
 solver computes *and* applies the increment inside `step!`. Scaling the right-hand side
 beforehand is equivalent for the Newton descent `δu = -W \\ fu`, and unlike rewriting
-`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent — the
-inner solver re-evaluates `fu` at the end of `step!`, so the scaling does not persist.
+`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent.
+
+The scaled residual belongs to the iterate the step starts from, so it must not outlive that
+step. Every reader calls `sync_inner_residual!` first, which re-evaluates at the current
+iterate whenever the step deferred its own evaluation, and the next `initialize!`
+reinitializes the cache in any case.
 """
 function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     cache = nlsolver.cache
@@ -266,6 +338,56 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
     W_γdt ≈ γdt && return nothing
     rmul!(get_fu(nlcache), 2 / (1 + γdt / W_γdt))
+    return nothing
+end
+
+"""
+    defers_residual(nlcache) -> Bool
+
+Whether the inner cache can end a `step!` without evaluating the residual at the iterate that
+step landed on.
+
+A stage that converges in `m` Newton iterations needs the residual at the `m` points its steps
+are taken *from*. `step!` evaluates it at the point each step lands *on*, so the last of the
+`m` evaluations has no reader: nothing in this file looks at it, and the next stage's `reinit!`
+overwrites it. Skipping it costs the stage one `f` call less than driving the solver naively.
+"""
+function defers_residual end
+
+"""
+    sync_inner_residual!(nlcache)
+
+Bring the inner cache's residual forward to its current iterate when a `step!` left it behind.
+A no-op unless an evaluation is actually outstanding, so it is cheap to call ahead of any read
+of `get_fu`.
+"""
+function sync_inner_residual! end
+
+# Shims: the `NonlinearSolveBase` API these forward to postdates this package's compat floor,
+# and without it the inner solver evaluates on every step as it always has.
+if isdefined(NonlinearSolveBase, :supports_deferred_residual)
+    defers_residual(nlcache) = NonlinearSolveBase.supports_deferred_residual(nlcache)
+    sync_inner_residual!(nlcache) = NonlinearSolveBase.refresh_residual!(nlcache)
+else
+    defers_residual(nlcache) = false
+    sync_inner_residual!(nlcache) = nothing
+end
+
+"""
+    step_inner!(nlcache, recompute_jacobian, defer_residual)
+
+Advance the inner cache by one Newton iteration, asking it to skip the residual evaluation
+that ends the step when `defer_residual` says [`sync_inner_residual!`](@ref) will supply it.
+
+The keyword only goes where it is understood: an older `NonlinearSolveBase` has no such
+keyword and would reject the call.
+"""
+function step_inner!(nlcache, recompute_jacobian, defer_residual)
+    if defer_residual
+        step!(nlcache; recompute_jacobian, evaluate_residual = false)
+    else
+        step!(nlcache; recompute_jacobian)
+    end
     return nothing
 end
 
@@ -343,6 +465,7 @@ stood before the step.
 """
 function stalled_inner_step(nlcache, ndisp, nz, fnorm_prev, γΔt)
     ndisp > roundoff_level(typeof(ndisp)) * nz && return false
+    sync_inner_residual!(nlcache)
     maxabs(get_fu(nlcache)) < fnorm_prev && return false
     return stage_unsolved(nlcache, γΔt)
 end
@@ -355,6 +478,17 @@ function residual_to_z_scale(nlsolver, isdae)
         inv(cache.invγdt)
 end
 
+function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
+    if new_jac
+        nlcache.J = calc_J(integrator, nlcache)
+        nlcache.J_t = integrator.t
+    end
+    nlcache.W[] = nlcache.J - integrator.f.mass_matrix * inv(dtgamma)
+    nlcache.W_γdt = dtgamma
+    integrator.stats.nw += 1
+    return nothing
+end
+
 ## compute_step!
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, false}, integrator)
@@ -364,14 +498,16 @@ end
 
     nlcache = nlsolver.cache.cache
     if nlcache isa NonlinearSolveNoInitCache
-        # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
-        # time: `solve!` runs the complete inner solve and its returned solution is the only
-        # trustworthy record of it (`get_u` on the cache still reads the *initial* iterate,
-        # and `.stats`/`get_fu` do not exist). Each outer iteration therefore costs one full
-        # inner solve; an unsuccessful one is a genuine failure and reaches the step
-        # controller the way `NLNewton` reports a failed linear solve. A complete solve
-        # leaves no half-taken step behind, so there is nothing for the residual to veto.
-        innersol = solve!(nlcache)
+        # A no-init cache can only run a complete inner solve.
+        if integrator.f isa DAEFunction
+            nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, integrator.f)
+        else
+            nlp_params = (tmp, γ, α, tstep, invγdt, method, p, dt, integrator.f)
+        end
+        innersol = solve(
+            NonlinearProblem(nlcache.prob.f, z, nlp_params), nlcache.alg;
+            conditioning_kwargs(cache)...
+        )
         if !SciMLBase.successful_retcode(innersol.retcode)
             return convert(eltype(z), Inf)
         end
@@ -380,25 +516,38 @@ end
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
         inner_solve_failed(nlcache) && return convert(eltype(z), Inf)
+        sync_inner_residual!(nlcache)
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
-        step!(nlcache; recompute_jacobian)
+        set_inner_linear_reltol!(nlcache, integrator)
+        step_inner!(nlcache, recompute_jacobian, defers_residual(nlcache))
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
         # An inner solver can also give up *because* there is nothing left to correct — a
         # line search collapses on a stage that is already solved — so the residual, not the
         # retcode alone, has the say.
-        inner_solve_failed(nlcache) && stage_unsolved(nlcache, γΔt) &&
-            return convert(eltype(z), Inf)
+        if inner_solve_failed(nlcache)
+            sync_inner_residual!(nlcache)
+            stage_unsolved(nlcache, γΔt) && return convert(eltype(z), Inf)
+        end
         active_u = get_u(nlcache)
         cache.stalled = stalled_inner_step(
             nlcache, maxabs(z .- active_u), maxabs(z), fnorm_prev, γΔt
         )
     end
-    nlsolver.ztmp = active_u
+    # `active_u` is the inner cache's own iterate and `step!` updates it in place, so storing
+    # it here would leave `apply_step!` aliasing `nlsolver.z` to that buffer: from the next
+    # iteration on, `z .- active_u` below is identically zero however far the inner solver
+    # moved, and `_uninformative_step` reads that as "made no progress" until the stage runs
+    # out of iterations.
+    nlsolver.ztmp = copy(active_u)
 
-    ustep = compute_ustep(tmp, γ, z, method)
+    ustep = if nlsolve_f(integrator) isa DAEFunction
+        get_dae_uprev(integrator, uprev) .+ z
+    else
+        compute_ustep(tmp, γ, z, method)
+    end
     atmp = calculate_residuals(
         z .- active_u, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t
@@ -417,8 +566,11 @@ end
     (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
     (; tstep, invγdt, atmp, ustep) = cache
 
-    nlstep_data = integrator.f.nlstep_data
+    nlstep_data = get_nlstep_data(integrator.f)
     nlcache = nlsolver.cache.cache
+    innersol = nothing
+    fnorm_prev = nothing
+    γΔt = nothing
     if nlcache isa NonlinearSolveNoInitCache
         # A no-init cache holds no iteration state, so it cannot be driven one `step!` at a
         # time: `solve!` runs the complete inner solve and its returned solution is the only
@@ -437,21 +589,29 @@ end
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
         inner_solve_failed(nlcache) && return convert(eltype(atmp), Inf)
-        # Read before `rescale_stale_W_rhs!`, which rewrites `fu` in place: the unscaled
-        # residual is the one `step!` will produce again, so it is the like-for-like
-        # comparison.
+        # Both must precede `rescale_stale_W_rhs!`, which rewrites `fu` in place: a deferred
+        # evaluation settled after it would overwrite the rescaled residual, and the unscaled
+        # residual is the one `step!` will produce again, so it is the like-for-like read.
+        sync_inner_residual!(nlcache)
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
         rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
-        step!(nlcache; recompute_jacobian)
+        set_inner_linear_reltol!(nlcache, integrator)
+        # The `nlstep_data` branch below reads the residual on every iteration, so deferring
+        # there would only move the same evaluation a few lines later.
+        step_inner!(
+            nlcache, recompute_jacobian, nlstep_data === nothing && defers_residual(nlcache)
+        )
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
         # An inner solver can also give up *because* there is nothing left to correct — a
         # line search collapses on a stage that is already solved — so the residual, not the
         # retcode alone, has the say.
-        inner_solve_failed(nlcache) && stage_unsolved(nlcache, γΔt) &&
-            return convert(eltype(atmp), Inf)
+        if inner_solve_failed(nlcache)
+            sync_inner_residual!(nlcache)
+            stage_unsolved(nlcache, γΔt) && return convert(eltype(atmp), Inf)
+        end
     end
 
     if nlstep_data !== nothing
@@ -461,8 +621,9 @@ end
             # in a no-init cache here too. The solution `solve!` already returned is used
             # as-is instead of rebuilding one from `nlcache.retcode`/`nlcache.stats`/
             # `get_fu`, none of which exist on this cache.
-            active_fu = innersol.resid
-            nlstepsol = innersol
+            inner_solution = something(innersol)
+            active_fu = inner_solution.resid
+            nlstepsol = inner_solution
         else
             active_fu = get_fu(nlcache)
             # No `trace` is attached: this solution only feeds `nlprobmap` right below, and
@@ -491,13 +652,22 @@ end
         # no displacement to be misled by.
         cache.stalled = false
     else
-        active_u = nlcache isa NonlinearSolveNoInitCache ? innersol.u : get_u(nlcache)
+        active_u = if nlcache isa NonlinearSolveNoInitCache
+            something(innersol).u
+        else
+            get_u(nlcache)
+        end
         @.. broadcast = false ztmp = active_u
-        ustep = compute_ustep!(ustep, tmp, γ, z, method)
+        ustep = if nlsolve_f(integrator) isa DAEFunction
+            _uprev = get_dae_uprev(integrator, uprev)
+            @.. broadcast = false ustep = _uprev + z
+        else
+            compute_ustep!(ustep, tmp, γ, z, method)
+        end
         @.. broadcast = false atmp = z - ztmp
         if !(nlcache isa NonlinearSolveNoInitCache)
             cache.stalled = stalled_inner_step(
-                nlcache, maxabs(atmp), maxabs(z), fnorm_prev, γΔt
+                nlcache, maxabs(atmp), maxabs(z), something(fnorm_prev), something(γΔt)
             )
         end
         calculate_residuals!(
@@ -623,12 +793,12 @@ end
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-            reltol = reltol
+            reltol
         )
     else
         linres = dolinsolve(
             integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-            reltol = reltol
+            reltol
         )
     end
 
@@ -987,12 +1157,13 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.weight === nothing || resize!(nlcache.weight, i)
     nlcache.dz === nothing || resize!(nlcache.dz, i)
     nlcache.jac_config === nothing || resize_jac_config!(nlcache, integrator)
-    nlcache.W === nothing || resize_J_W!(nlcache, integrator, i)
+    nlcache.W === nothing || nlcache.W isa Ref || resize_J_W!(nlcache, integrator, i)
     resize_conditioner!(nlcache.precondition, i)
     resize_conditioner!(nlcache.postcondition, i)
     # `nlcache.linsolve` is re-pointed by `initialize!` when it rebuilds the inner cache on the
     # next length mismatch, before any estimator solve — nothing to rebuild here.
     nlcache.W_γdt = zero(nlcache.W_γdt)
     nlcache.new_W = true
+    nlcache.J_t = zero(nlcache.J_t)
     return nothing
 end

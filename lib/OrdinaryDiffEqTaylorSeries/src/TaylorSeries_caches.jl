@@ -46,11 +46,12 @@ end
 get_fsalfirstlast(cache::ExplicitTaylor2Cache, u) = (cache.k1, cache.k1)
 
 @cache struct ExplicitTaylorCache{
-        P, tType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
+        P, jetType, uType, taylorType, coeffType, uNoUnitsType, StageLimiter,
+        StepLimiter, Thread,
     } <: OrdinaryDiffEqMutableCache
     order::Val{P}
-    jet::FunctionWrapper{Nothing, Tuple{taylorType, uType, tType}}
+    jet::jetType
+    coeffs::coeffType
     u::uType
     uprev::uType
     utaylor::taylorType
@@ -70,13 +71,13 @@ function alg_cache(
     ) where {P, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     _, jet_iip = build_jet(f, p, alg.order, length(u))
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.order)
-    jet_wrapped = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}(jet_iip)
+    coeffs = Vector{eltype(u)}(undef, length(u) * (P + 1))
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
     return ExplicitTaylorCache(
-        alg.order, jet_wrapped, u, uprev, utaylor, utilde, tmp, atmp,
+        alg.order, jet_iip, coeffs, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end
@@ -106,14 +107,15 @@ end
 
 @cache struct ExplicitTaylorAdaptiveOrderCache{
         P, Q,
-        tType, uType, taylorType, uNoUnitsType, StageLimiter, StepLimiter,
+        tType, uType, taylorType, coeffType, uNoUnitsType, StageLimiter, StepLimiter,
         Thread,
     } <: OrdinaryDiffEqMutableCache
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
     order_history::Vector{Int}
-    jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, uType, tType}}}
+    jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, coeffType, uType, tType}}}
+    coeffs::Vector{coeffType}
     u::uType
     uprev::uType
     utaylor::taylorType
@@ -132,11 +134,16 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     min_order_value, max_order_value = order_window(alg)
     utaylor = TaylorDiff.make_seed(u, zero(u), alg.max_order)
-    jets = FunctionWrapper{Nothing, Tuple{typeof(utaylor), typeof(u), typeof(t)}}[]
+    coeffType = Vector{eltype(u)}
+    jets = FunctionWrapper{
+        Nothing, Tuple{typeof(utaylor), coeffType, typeof(u), typeof(t)},
+    }[]
+    coeffs = coeffType[]
     # every order shares the single `max_order` buffer, so the jets have to fill it
     for order in min_order_value:max_order_value
         jet_iip = build_jet(f, p, Val(order), length(u), alg.max_order)[2]
         push!(jets, jet_iip)
+        push!(coeffs, coeffType(undef, length(u) * (order + 1)))
     end
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
@@ -146,7 +153,7 @@ function alg_cache(
     order_history = Vector{Int}()
     return ExplicitTaylorAdaptiveOrderCache(
         alg.min_order, alg.max_order, current_order, order_history,
-        jets, u, uprev, utaylor, utilde, tmp, atmp,
+        jets, coeffs, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
 end

@@ -23,7 +23,7 @@ struct RoesslerRI{T, T2} <: Tableau
 end
 
 """
-    constructDRI1([T=Float64], [T2=Float64])
+    constructDRI1([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `DRI1`, with coefficient element
 type `T` and abscissa element type `T2`.
@@ -79,7 +79,7 @@ function constructDRI1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    constructRI1([T=Float64], [T2=Float64])
+    constructRI1([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RI1`, with coefficient element type
 `T` and abscissa element type `T2`.
@@ -135,7 +135,7 @@ function constructRI1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    constructRI3([T=Float64], [T2=Float64])
+    constructRI3([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RI3`, with coefficient element type
 `T` and abscissa element type `T2`.
@@ -191,7 +191,7 @@ function constructRI3(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    constructRI5([T=Float64], [T2=Float64])
+    constructRI5([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RI5`, with coefficient element type
 `T` and abscissa element type `T2`.
@@ -247,7 +247,7 @@ function constructRI5(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    constructRI6([T=Float64], [T2=Float64])
+    constructRI6([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RI6`, with coefficient element type
 `T` and abscissa element type `T2`.
@@ -303,7 +303,7 @@ function constructRI6(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    constructRDI1WM([T=Float64], [T2=Float64])
+    constructRDI1WM([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RDI1WM`, with coefficient element
 type `T` and abscissa element type `T2`.
@@ -353,7 +353,7 @@ function constructRDI1WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2
 end
 
 """
-    constructRDI2WM([T=Float64], [T2=Float64])
+    constructRDI2WM([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RDI2WM`, with coefficient element
 type `T` and abscissa element type `T2`.
@@ -409,7 +409,7 @@ function constructRDI2WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2
 end
 
 """
-    constructRDI3WM([T=Float64], [T2=Float64])
+    constructRDI3WM([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RDI3WM`, with coefficient element
 type `T` and abscissa element type `T2`.
@@ -465,7 +465,7 @@ function constructRDI3WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2
 end
 
 """
-    constructRDI4WM([T=Float64], [T2=Float64])
+    constructRDI4WM([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRI` tableau used by `RDI4WM`, with coefficient element
 type `T` and abscissa element type `T2`.
@@ -521,7 +521,7 @@ function constructRDI4WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2
 end
 
 """
-    checkRIOrder(tableau; tol=1e-6, ps=2)
+    checkRIOrder(tableau; tol = 1.0e-6, ps = 2)
 
 Evaluate the weak order conditions of a `RoesslerRI` tableau through order
 `ps`. Returns one Boolean per condition, using `tol` for coefficient
@@ -628,7 +628,7 @@ struct RoesslerRS{T, T2} <: Tableau
 end
 
 """
-    constructRS1([T=Float64], [T2=Float64])
+    constructRS1([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRS` tableau used by `RS1`, with coefficient element type
 `T` and abscissa element type `T2`.
@@ -694,7 +694,7 @@ function constructRS1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    constructRS2([T=Float64], [T2=Float64])
+    constructRS2([T = Float64], [T2 = Float64])
 
 Construct the `RoesslerRS` tableau used by `RS2`, with coefficient element type
 `T` and abscissa element type `T2`.
@@ -760,7 +760,7 @@ function constructRS2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
 end
 
 """
-    checkRSOrder(tableau; tol=1e-6, ps=2)
+    checkRSOrder(tableau; tol = 1.0e-6, ps = 2)
 
 Evaluate the weak order conditions of a `RoesslerRS` tableau through order
 `ps`. Returns one Boolean per condition, using `tol` for coefficient
@@ -864,7 +864,7 @@ struct KomoriNON{T} <: Tableau
 end
 
 """
-    constructNON([T=Float64])
+    constructNON([T = Float64])
 
 Construct the `KomoriNON` tableau used by `NON`, with coefficient element type
 `T`.
@@ -933,7 +933,7 @@ function constructNON(::Type{T} = Float64) where {T}
 end
 
 """
-    checkNONOrder(tableau; tol=1e-6)
+    checkNONOrder(tableau; tol = 1.0e-6)
 
 Evaluate the weak and deterministic order conditions of a `KomoriNON` or
 `KomoriNON2` tableau. Returns one Boolean per condition, using `tol` for
@@ -1033,7 +1033,7 @@ struct KomoriNON2{T} <: Tableau
 end
 
 """
-    constructNON2([T=Float64])
+    constructNON2([T = Float64])
 
 Construct the `KomoriNON2` tableau used by `NON2`, with coefficient element
 type `T`.

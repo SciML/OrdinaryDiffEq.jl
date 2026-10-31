@@ -93,7 +93,7 @@ function key_to_label(key::Symbol)
     elseif key == :maxeig
         return "Maximum eigenvalue recorded"
     else
-        return key
+        return String(key)
     end
 end
 
@@ -102,21 +102,57 @@ end
         x = wp_set.error_estimate,
         y = :times,
         view = :benchmark,
-        color = nothing
+        color = nothing,
+        tags = nothing,
+        include_tags = nothing,
+        exclude_tags = nothing,
+        reference_tags = nothing,
+        reference_style = (linestyle = :dash, linewidth = 1, alpha = 0.5)
     )
+    if tags !== nothing || include_tags !== nothing || exclude_tags !== nothing
+        wp_set = _subset_wps(
+            wp_set,
+            _selected_indices(wp_set; tags, include_tags, exclude_tags)
+        )
+    end
     if view == :benchmark
         seriestype --> :path
-        linewidth --> 3
         xscale --> :log10
         yscale --> :log10
         markershape --> :auto
-        xs = [get_val_from_wp(wp, x) for wp in wp_set.wps]
-        ys = [get_val_from_wp(wp, y) for wp in wp_set.wps]
         xguide --> key_to_label(x)
         yguide --> key_to_label(y)
         legend --> :outerright
-        label --> reshape(wp_set.names, 1, length(wp_set))
-        return xs, ys
+
+        ref_indices = reference_tags === nothing ? Int[] :
+            findall(wp -> _has_any_tag(wp, _as_tags(reference_tags)), wp_set.wps)
+        main_indices = filter(i -> i ∉ ref_indices, eachindex(wp_set.wps))
+        if isempty(ref_indices) || isempty(main_indices)
+            # One uniform group: nothing to contrast the references against.
+            linewidth --> 3
+            label --> reshape([wp.name for wp in wp_set.wps], 1, length(wp_set.wps))
+            return [get_val_from_wp(wp, x) for wp in wp_set.wps],
+                [get_val_from_wp(wp, y) for wp in wp_set.wps]
+        end
+        # One series per curve, references first: a matrix-valued attribute would be
+        # cycled by the plot-wide series index and so would not line up with two
+        # groups of different sizes.
+        for i in ref_indices
+            @series begin
+                linewidth --> get(reference_style, :linewidth, 1)
+                linestyle --> get(reference_style, :linestyle, :dash)
+                seriesalpha --> get(reference_style, :alpha, 0.5)
+                label --> wp_set.wps[i].name
+                get_val_from_wp(wp_set.wps[i], x), get_val_from_wp(wp_set.wps[i], y)
+            end
+        end
+        for i in main_indices
+            @series begin
+                linewidth --> 3
+                label --> wp_set.wps[i].name
+                get_val_from_wp(wp_set.wps[i], x), get_val_from_wp(wp_set.wps[i], y)
+            end
+        end
     elseif view == :dt_convergence
         idts = filter(i -> haskey(wp_set.setups[i], :dts), 1:length(wp_set))
         length(idts) > 0 ||
@@ -176,11 +212,11 @@ end
 
     if order_star
         f = (u, v) -> abs(
-            stability_region(u + v * im, tab; embedded = embedded) /
+            stability_region(u + v * im, tab; embedded) /
                 exp(u + v * im)
         ) < 1
     else
-        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded = embedded)) < 1
+        f = (u, v) -> abs(stability_region(u + v * im, tab; embedded)) < 1
     end
     seriestype --> :contour
     fill --> true

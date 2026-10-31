@@ -315,7 +315,7 @@ Create an `DEVerbosity` using a preset configuration:
 - `SciMLLogging.Detailed()`: Comprehensive debugging information
 - `SciMLLogging.All()`: Maximum verbosity
 
-    DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
+    DEVerbosity(; preset = nothing, error_control = nothing, performance = nothing, numerical = nothing, sde_specific = nothing, dde_specific = nothing, kwargs...)
 
 Create an `DEVerbosity` with group-level or individual field control.
 

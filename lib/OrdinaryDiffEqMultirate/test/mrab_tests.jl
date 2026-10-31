@@ -11,7 +11,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
             (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u, 1.0, (0.0, 1.0)
         )
         for k in 1:4
-            sol = solve(prob, MRAB(k = k, m = 10), dt = 0.02, adaptive = false)
+            sol = solve(prob, MRAB(; k, m = 10), dt = 0.02, adaptive = false)
             @test abs(sol.u[end] - exp(-1.0)) < 2.0e-2
         end
 
@@ -26,7 +26,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
         prob = SplitODEProblem(f1!, f2!, u0, (0.0, 1.0))
 
         for k in 1:4
-            sol = solve(prob, MRAB(k = k, m = 10), dt = 0.02, adaptive = false)
+            sol = solve(prob, MRAB(; k, m = 10), dt = 0.02, adaptive = false)
             @test norm(sol.u[end] - u0 .* exp(-1.0)) < 5.0e-2
         end
 
@@ -40,13 +40,13 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
         analytic(u0, p, t) = u0 * exp(-t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u; analytic = analytic
+                (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u; analytic
             ),
             1.0, (0.0, 1.0)
         )
         dts = 1 ./ 2 .^ (8:-1:4)
         for k in 1:4
-            sim = test_convergence(dts, prob, MRAB(k = k, m = 4))
+            sim = test_convergence(dts, prob, MRAB(; k, m = 4))
             @test sim.𝒪est[:l∞] ≈ 1 atol = 0.2
         end
     end

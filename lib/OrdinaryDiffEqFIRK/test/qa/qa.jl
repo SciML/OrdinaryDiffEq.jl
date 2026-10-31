@@ -12,14 +12,13 @@ const THREADING_PUBLIC = (:Sequential, :BaseThreads, :PolyesterThreads)
 # See SciML/OrdinaryDiffEq.jl#3776.
 run_qa(
     OrdinaryDiffEqFIRK;
-    api_docs_kwargs = (; docs_src = joinpath(pkgdir(OrdinaryDiffEqFIRK), "..", "..", "docs", "src")),
     reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,), THREADING_PUBLIC),
     explicit_imports = true,
     ei_kwargs = (
         all_explicit_imports_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore — owner-internal, no public alternative
-                :PredictiveControllerCache,
+                :PredictiveControllerCache, :_eval_index,
                 # OrdinaryDiffEqCore — private codegen macro / default no-op limiter,
                 # kept owner-internal (no public alternative).
                 Symbol("@threaded"), :trivial_limiter!,
@@ -28,6 +27,9 @@ run_qa(
                 # Genuine external deps, non-public in their owner.
                 :fastpower,               # FastPower
                 :AbstractSciMLOperator,   # SciMLOperators
+                # OrdinaryDiffEqDifferentiation — matrix-free Jacobian operator,
+                # owner-internal like `jvp_counter`'s tally it carries.
+                :JVPCache,
             ),
         ),
         all_qualified_accesses_are_public = (;

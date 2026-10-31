@@ -18,8 +18,7 @@ function imex_first_steps(name, solver)
         one for stiff (implicit) terms and one for non-stiff (explicit) terms.
 
         ```julia
-        using $name
-        using SciMLBase: SplitODEProblem, solve
+        using $name: SplitODEProblem, solve
 
         # Example: A 1D reaction-diffusion system
         # du/dt = f₁(u,p,t) + f₂(u,p,t)

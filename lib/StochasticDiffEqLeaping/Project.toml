@@ -1,7 +1,7 @@
 name = "StochasticDiffEqLeaping"
 uuid = "aefaaa88-39f2-4e89-b162-d61b7e8cc81b"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.0.3"
+version = "2.1.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -34,7 +34,7 @@ ADTypes = "1.22.0"
 DiffEqBase = "7"
 FiniteDiff = "2.27.0"
 ForwardDiff = "1.3.3"
-JumpProcesses = "9.26.0"
+JumpProcesses = "9.26.0, 10"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 OrdinaryDiffEqCore = "4"

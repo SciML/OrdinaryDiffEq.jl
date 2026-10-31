@@ -1,6 +1,10 @@
 using Test
 using OrdinaryDiffEq, StochasticDiffEq, DiffEqDevTools, Plots
 import SDEProblemLibrary: prob_sde_additivesystem
+import ODEProblemLibrary: prob_ode_linear
+using OrdinaryDiffEqLowOrderRK: Euler, Heun, BS3, DP5
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqRosenbrock: Rosenbrock23
 
 using Random
 Random.seed!(123)
@@ -87,6 +91,52 @@ gr()
     )
 end
 
+@testset "Tag-based plotting" begin
+    prob = prob_ode_linear
+    abstols = 1.0 ./ 10.0 .^ (3:6)
+    reltols = 1.0 ./ 10.0 .^ (3:6)
+
+    setups = [
+        Dict{Symbol, Any}(:alg => DP5(), :tags => [:rk, :fifth_order]),
+        Dict{Symbol, Any}(:alg => Tsit5(), :tags => [:rk, :fifth_order]),
+        Dict{Symbol, Any}(:alg => BS3(), :tags => [:rk, :third_order]),
+        Dict{Symbol, Any}(:alg => Rosenbrock23(), :tags => [:rosenbrock, :reference]),
+    ]
+    wp = WorkPrecisionSet(
+        prob, abstols, reltols, setups; numruns = 2, error_estimates = [:final, :l2]
+    )
+    @test available_errors(wp) == [:final, :l2]
+
+    labels(plt) = [series[:label] for series in plt.series_list]
+
+    @test labels(@test_nowarn plot(wp, tags = [:fifth_order])) == ["DP5", "Tsit5"]
+    @test labels(@test_nowarn plot(wp, exclude_tags = [:reference])) ==
+        ["DP5", "Tsit5", "BS3"]
+    @test labels(@test_nowarn plot(wp, tags = [:third_order], include_tags = [:reference])) ==
+        ["BS3", "Rosenbrock23"]
+    @test labels(@test_nowarn plot(wp, tags = :fifth_order)) == ["DP5", "Tsit5"]
+
+    @testset "reference styling" begin
+        plt = @test_nowarn plot(
+            wp, reference_tags = [:reference],
+            reference_style = (linestyle = :dot, linewidth = 2, alpha = 0.25)
+        )
+        # References are drawn first, in their own style
+        @test labels(plt) == ["Rosenbrock23", "DP5", "Tsit5", "BS3"]
+        @test plt[1][1][:linestyle] == :dot
+        @test plt[1][1][:linewidth] == 2
+        @test plt[1][1][:seriesalpha] == 0.25
+        @test plt[1][2][:linewidth] == 3
+        @test plt[1][1][:x] ≈ getproperty(wp[4].errors, wp[4].error_estimate)
+    end
+
+    # With nothing to contrast against, references are still drawn
+    @test labels(@test_nowarn plot(wp, tags = [:reference], reference_tags = [:reference])) ==
+        ["Rosenbrock23"]
+
+    @test labels(@test_nowarn plot(wp, x = :l2, tags = [:rk])) == ["DP5", "Tsit5", "BS3"]
+end
+
 @testset "SDE WorkPrecisionSet" begin
     prob = remake(prob_sde_additivesystem, tspan = (0.0, 1.0))
 
@@ -112,7 +162,7 @@ end
     names = ["SRIW1", "EM", "RKMil", "SRIW1 Fixed", "SRA1 Fixed", "SRA1"]
     wp = WorkPrecisionSet(
         prob, abstols, reltols, setups; numruns = 10,
-        names = names, maxiters = 1.0e7, error_estimate = :l2
+        names, maxiters = 1.0e7, error_estimate = :l2
     )
 
     plt = @test_nowarn plot(wp)
@@ -120,4 +170,28 @@ end
         @test plt[1][i][:x] ≈ getproperty(wp[i].errors, wp[i].error_estimate)
         @test plt[1][i][:label] == names[i]
     end
+end
+
+@testset "Ensemble weak WorkPrecisionSet" begin
+    f!(du, u, p, t) = (du[1] = -u[1]; nothing)
+    g!(du, u, p, t) = (du[1] = u[1]; nothing)
+    prob = SDEProblem(f!, g!, [1.0], (0.0, 0.1))
+    seeds = rand(UInt, 4)
+    ensemble_prob = EnsembleProblem(
+        prob;
+        output_func = (sol, ctx) -> (sol.u[end][1], false),
+        prob_func = (prob, ctx) -> remake(prob; seed = seeds[ctx.sim_id])
+    )
+    tolerances = 1.0 ./ 4.0 .^ (1:2)
+    setups = [Dict(:alg => EM(), :dts => [0.05, 0.025], :adaptive => false)]
+    wp = WorkPrecisionSet(
+        ensemble_prob, tolerances, tolerances, setups;
+        numruns = 1, trajectories = 4, expected_value = exp(-0.1),
+        save_everystep = false, save_start = false, error_estimate = :weak_final,
+        ensemblealg = EnsembleSerial()
+    )
+
+    @test propertynames(wp[1].errors) == (:weak_final,)
+    plt = plot(wp)
+    @test plt[1][1][:x] == wp[1].errors.weak_final
 end

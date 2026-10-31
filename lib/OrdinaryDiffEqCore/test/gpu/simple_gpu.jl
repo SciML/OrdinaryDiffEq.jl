@@ -17,7 +17,7 @@ end
 function tgrad(u, p, t)
     return zero(u)
 end
-ff = ODEFunction(f, jac = jac, tgrad = tgrad)
+ff = ODEFunction(f; jac, tgrad)
 CUDA.allowscalar(false)
 A = cu(-rand(3, 3))
 u0 = cu([1.0; 0.0; 0.0])

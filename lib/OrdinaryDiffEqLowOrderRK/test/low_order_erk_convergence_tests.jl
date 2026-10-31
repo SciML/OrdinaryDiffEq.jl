@@ -89,3 +89,23 @@ prob_ode_nonlinear = ODEProblem(
     sim160 = test_convergence(dts, prob, Anas5(w = 2))
     @test sim160.𝒪est[:l2] ≈ 4 atol = 2 * testTol
 end
+
+@testset "adaptive error estimates are embedded differences (#4403)" begin
+    prob_const = ODEProblem((u, p, t) -> one(u), 0.0, (0.0, 1.0))
+    prob_decay = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+
+    for alg in (Alshina2(), FRK65())
+        sol = solve(prob_const, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.stats.naccept < 20
+        @test sol.u[end] ≈ 1.0
+
+        errs = map((1.0e-4, 1.0e-6, 1.0e-8)) do tol
+            s = solve(prob_decay, alg; abstol = tol, reltol = tol)
+            @test SciMLBase.successful_retcode(s)
+            abs(s.u[end] - exp(-1.0))
+        end
+        @test errs[1] > errs[3]
+        @test errs[3] < 1.0e-7
+    end
+end

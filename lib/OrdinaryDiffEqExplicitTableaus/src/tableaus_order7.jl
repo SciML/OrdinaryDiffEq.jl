@@ -84,7 +84,7 @@ function EnrightVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_tim
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 4.499873870264921
         )
     )
@@ -186,7 +186,7 @@ function VernerRobust7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 4.635489309972309
         )
     )
@@ -306,7 +306,7 @@ function VernerEfficient7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_t
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 4.640792701835124
         )
     )
@@ -429,7 +429,7 @@ function SharpVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6, fsal = true,
+            A, c, α, 7; αEEst, adaptiveorder = 6, fsal = true,
             stability_size = 4.622084785418665
         )
     )
@@ -545,7 +545,7 @@ function SharpSmart7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 3.8994534847171285
         )
     )
@@ -682,7 +682,7 @@ function TanakaYamashitaEfficient7(::Type{T} = Float64, ::Type{T_time} = T) wher
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 4.912538831797948
         )
     )
@@ -803,7 +803,7 @@ function TanakaYamashitaStable7(::Type{T} = Float64, ::Type{T_time} = T) where {
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 9.29902700964581
         )
     )

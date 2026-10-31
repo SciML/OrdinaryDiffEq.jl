@@ -5,7 +5,7 @@ using Test
 const prob = prob_dde_constant_1delay_long_ip
 
 @testset "constrained: $constrained" for constrained in (false, true)
-    sol = solve(prob, MethodOfSteps(Tsit5(); constrained = constrained))
+    sol = solve(prob, MethodOfSteps(Tsit5(); constrained))
 
     @test allunique(sol.t)
 end

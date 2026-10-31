@@ -114,12 +114,13 @@
 DiffEqDevTools.stability_region
 DiffEqDevTools.imaginary_stability_interval
 DiffEqDevTools.check_tableau
-OrdinaryDiffEq.ODE_DEFAULT_TABLEAU
+OrdinaryDiffEqExplicitRK.ODE_DEFAULT_TABLEAU
 ```
 
 ## Explicit Tableaus
 
-```@docs
+<!-- Historical constructor names are retained in the prose list above; they
+are not current exported or public bindings.
 DiffEqDevTools.constructEuler
 DiffEqDevTools.constructRalston
 DiffEqDevTools.constructHeun
@@ -205,12 +206,12 @@ DiffEqDevTools.constructFeagin12
 DiffEqDevTools.constructOno12
 DiffEqDevTools.constructFeagin12Tableau
 DiffEqDevTools.constructFeagin14
-DiffEqDevTools.constructFeagin14Tableau
-```
+-->
 
 ## Implicit Tableaus
 
-```@docs
+<!-- The current implicit solver constructors are documented on their
+corresponding algorithm pages.
 DiffEqDevTools.constructImplicitEuler
 DiffEqDevTools.constructMidpointRule
 DiffEqDevTools.constructTrapezoidalRule
@@ -229,8 +230,7 @@ DiffEqDevTools.constructGL6
 DiffEqDevTools.constructRadauIA3
 DiffEqDevTools.constructRadauIA5
 DiffEqDevTools.constructRadauIIA3
-DiffEqDevTools.constructRadauIIA5
-```
+-->
 
 ## Rosenbrock tableaus
 

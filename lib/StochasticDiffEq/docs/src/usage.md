@@ -16,7 +16,7 @@ function f(u, p, t)  # drift
     return μ * u
 end
 
-function g(u, p, t)  # diffusion  
+function g(u, p, t)  # diffusion
     return σ * u
 end
 
@@ -24,11 +24,13 @@ end
 function f!(du, u, p, t)
     du[1] = μ * u[1]
     du[2] = -ν * u[2]
+    return
 end
 
 function g!(du, u, p, t)
     du[1] = σ₁ * u[1]
     du[2] = σ₂ * u[2]
+    return
 end
 
 # Create problem
@@ -45,7 +47,7 @@ sol = solve(prob)
 
 # Specify solver explicitly
 sol = solve(prob, SOSRI())          # Recommended for diagonal noise
-sol = solve(prob, SOSRA())          # Optimal for additive noise  
+sol = solve(prob, SOSRA())          # Optimal for additive noise
 sol = solve(prob, SKenCarp())       # For stiff problems
 sol = solve(prob, EM())             # For maximum efficiency
 ```
@@ -70,7 +72,7 @@ sol = solve(prob, SKenCarp(linsolve = KrylovJL_GMRES()))
 Set absolute and relative tolerances:
 
 ```julia
-sol = solve(prob, SOSRI(), abstol = 1e-6, reltol = 1e-3)
+sol = solve(prob, SOSRI(), abstol = 1.0e-6, reltol = 1.0e-3)
 ```
 
 For fixed time stepping:
@@ -89,6 +91,7 @@ Most common case - each component has independent noise:
 function g!(du, u, p, t)
     du[1] = σ₁ * u[1]
     du[2] = σ₂ * u[2]
+    return
 end
 ```
 
@@ -100,6 +103,7 @@ Single noise source affects all components:
 function g!(du, u, p, t)
     du[1] = σ * u[1]
     du[2] = σ * u[2]
+    return
 end
 ```
 
@@ -111,6 +115,7 @@ Multiple noise sources with cross-terms:
 function g!(du, u, p, t)
     du[1] = σ₁₁ * u[1] + σ₁₂ * u[2]
     du[2] = σ₂₁ * u[1] + σ₂₂ * u[2]
+    return
 end
 ```
 
@@ -122,6 +127,7 @@ Noise independent of solution:
 function g!(du, u, p, t)
     du[1] = σ₁
     du[2] = σ₂
+    return
 end
 ```
 
@@ -133,7 +139,7 @@ Specify interpretation when creating problems or choosing solvers:
 # Itô interpretation (default)
 prob = SDEProblem(f!, g!, u0, tspan, interpretation = :Ito)
 
-# Stratonovich interpretation  
+# Stratonovich interpretation
 prob = SDEProblem(f!, g!, u0, tspan, interpretation = :Stratonovich)
 
 # Or at solver level

@@ -150,7 +150,7 @@ function _initialize_dae!(
     u0, p,
         success = SciMLBase.get_initial_values(
         prob, integrator, prob.f, alg, isinplace; nlsolve_alg,
-        abstol = integrator.opts.abstol, reltol = integrator.opts.reltol
+        integrator.opts.abstol, integrator.opts.reltol
     )
 
     if isinplace === Val{true}()
@@ -179,6 +179,6 @@ function _initialize_dae!(
         isinplace::Union{Val{true}, Val{false}}
     )
     return SciMLBase.get_initial_values(
-        prob, integrator, prob.f, alg, isinplace; abstol = integrator.opts.abstol
+        prob, integrator, prob.f, alg, isinplace; integrator.opts.abstol
     )
 end

@@ -30,11 +30,11 @@ reset_oop!(integrator) = (integrator.u = u0_oop)
         dt = 0.5
         cb = DiscreteCallback((u, t, integrator) -> t == tjump, affect!)
         reference = solve(
-            ODEProblem(f, u0, (0.0, tjump)), alg; adaptive = false, dt = dt
+            ODEProblem(f, u0, (0.0, tjump)), alg; adaptive = false, dt
         )
         sol = solve(
             ODEProblem(f, u0, (0.0, 2tjump)), alg;
-            callback = cb, tstops = [tjump], adaptive = false, dt = dt
+            callback = cb, tstops = [tjump], adaptive = false, dt
         )
 
         # `save_positions` stores the jump twice; the later save holds the reset state.

@@ -2,6 +2,12 @@
 # This allows nlsolver to work with DiscreteFunction which lacks mass_matrix
 get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
 
+# Not every `AbstractSciMLFunction` has an `nlstep_data` field: a `DynamicalODEFunction`
+# has none, so reading it outright threw before the first step. Mirrors the field check
+# `get_mass_matrix` already uses for `DiscreteFunction`; it constant-folds on a concrete
+# `f`, so the branch selecting `prob` stays resolved at compile time.
+get_nlstep_data(f) = hasfield(typeof(f), :nlstep_data) ? f.nlstep_data : nothing
+
 # Map a flat linear-solve result back onto the state container. Delegates to
 # ArrayInterface.restructure (which preserves ArrayPartition / other wrappers that
 # plain reshape collapses); Number states need a convert because restructure
@@ -10,6 +16,14 @@ get_mass_matrix(f) = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
 @inline _restructure_state(template::Number, x) = oftype(template, x)
 
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
+
+# Whether the error test rejected the step this one is retrying. `EEst` is written once per
+# step, in the footer, so every stage of a step reads the same value.
+function errorfail(integrator)
+    eest = OrdinaryDiffEqCore.get_EEst(integrator)
+    return eest > one(eest)
+end
+
 get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
 get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
@@ -43,6 +57,12 @@ relax(_) = 0 // 1
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true
+
+# Whether the cache records the `t` at which `J` was taken, so `isJcurrent` is meaningful and
+# a diverged solve can be retried with a fresh Jacobian.
+tracks_J_age(nlsolver::AbstractNLSolver) = tracks_J_age(nlsolver.cache)
+tracks_J_age(cache::AbstractNLSolverCache) = isnewton(cache)
+tracks_J_age(cache::NonlinearSolveCache) = cache.W !== nothing
 
 """
     can_smooth_est(nlsolver::AbstractNLSolver) -> Bool
@@ -298,7 +318,7 @@ function _nlalg_with_linsolve(inner_alg, linsolve)
     descent = inner_alg.descent
     !hasfield(typeof(descent), :linsolve) && return inner_alg
     descent.linsolve !== nothing && return inner_alg
-    return remake(inner_alg; descent = remake(descent; linsolve = linsolve))
+    return remake(inner_alg; descent = remake(descent; linsolve))
 end
 
 # Analytic jacobian that copies the reused ODE `W` into the inner solver's own buffer each
@@ -337,12 +357,43 @@ _inner_termination() = NonlinearSolveBase.AbsNormTerminationMode(Base.Fix1(maxim
 # a usable tolerance for the linear solve alone.
 _inner_lintol(::Type{T}) where {T} = eps(real(one(T)))^(4 // 5)
 
-function reuse_jac_kwargs(W)
-    Wr = W isa WOperator && W.J !== nothing && !(W.J isa AbstractSciMLOperator) ?
-        W._concrete_form : W
-    return Wr isa AbstractSciMLOperator ? (; jac_prototype = Wr) :
-        (; jac = WReuseJac(Ref(Wr)), jac_prototype = (Z = similar(Wr); fill!(Z, 0); Z))
+"""
+    set_inner_linear_reltol!(nlcache, integrator)
+
+Point the inner solver's iterative linear solve at the integrator's relative tolerance,
+the way `dolinsolve` does for `NLNewton`.
+
+The `linsolve_kwargs` tolerance above is a fixed `eps^(4//5)`, so a Krylov descent solve
+runs to ~1e-13 however loose the integrator is — at `reltol = 1e-3` that is ten orders
+tighter than the step can use, and it is paid in Jacobian-vector products. Direct solvers
+keep the fixed tolerance: `set_linear_reltol!` skips anything that needs a concrete `A`,
+for which there is no tolerance to set.
+"""
+function set_inner_linear_reltol!(nlcache, integrator)
+    lincache = get_linear_cache(nlcache)
+    lincache === nothing && return nothing
+    opts = integrator.opts
+    # A fixed-step run has no `reltol` to inherit; `NLNewton` uses `eps` there.
+    reltol = opts.adaptive ? opts.reltol : eps(real(eltype(get_u(nlcache))))
+    set_linear_reltol!(lincache, reltol)
+    return nothing
 end
+
+function reuse_jac_kwargs(W)
+    return W isa AbstractSciMLOperator ? (; jac_prototype = W) :
+        (; jac = WReuseJac(Ref(W)), jac_prototype = (Z = similar(W); fill!(Z, 0); Z))
+end
+
+"""
+    is_split_W(W) -> Bool
+
+Whether `W` is kept split as a concrete Jacobian `J` and a scalar shift `gamma` — a
+`WOperator` over a plain matrix, which `build_J_W` only produces for a linear solver that
+consumes the split form (`LHLFactorization`). Such a `W` is reused as the operator itself:
+the linear solver reduces `J` once and reads each new `gamma` off the operator, and both
+are lost the moment `W` is assembled.
+"""
+is_split_W(W) = W isa WOperator && W.J isa AbstractMatrix
 
 """
     build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
@@ -425,9 +476,26 @@ function build_nlsolver(
     )
 end
 
-function daenlf(ztmp, z, p)
-    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
-    return _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+# A DAE stage never reuses `W`, so the inner solver differentiates this residual itself and a
+# dual-number backend calls it with a dual `z`; the cache's stage buffers hold the problem's
+# own element type and cannot take the duals.
+@inline function dae_stage_buffers(
+        ustep::AbstractArray{T}, dustep::AbstractArray{T}, ::AbstractArray{T}
+    ) where {T}
+    return ustep, dustep
+end
+@inline function dae_stage_buffers(ustep, dustep, resid)
+    R = eltype(resid)
+    return similar(ustep, R), similar(dustep, R)
+end
+
+# The DAE kernel writes `du` at the stage into its second argument and the residual into its
+# sixth, the reverse of the ODE kernel's single output: `dustep` is scratch, and the residual
+# goes to the buffer the inner solver owns.
+function daenlf(resid, z, p)
+    tmp, ustep, α, tstep, dustep, invγdt, _p, uprev, f = p
+    us, dus = dae_stage_buffers(ustep, dustep, resid)
+    return _compute_rhs!(tmp, dus, us, α, tstep, resid, invγdt, _p, uprev, f, z)[1]
 end
 
 function odenlf(ztmp, z, p)
@@ -780,29 +848,22 @@ function build_nlsolver(
             # linear solver) is reused as an operator: NonlinearSolve applies it via
             # `mul!` rather than rebuilding a residual-derived AD JVP.
             matrixfree_W = W isa WOperator && W.J isa AbstractSciMLOperator
-            W_for_reuse = if W isa WOperator && W.J !== nothing &&
-                    !(W.J isa AbstractSciMLOperator)
-                W._concrete_form
-            else
-                W
-            end
             # `W` is the Jacobian of the *raw* stage residual, so handing it to the inner
             # solver as the Jacobian of a preconditioned one would be a lie; let the inner
             # solver differentiate the composition it actually solves.
-            use_w_reuse = !isdae && f.nlstep_data === nothing &&
+            nlstep_data = get_nlstep_data(f)
+            use_w_reuse = !isdae && nlstep_data === nothing &&
                 precondition === nothing &&
                 (
-                (
-                    W_for_reuse isa AbstractMatrix &&
-                        !(W_for_reuse isa AbstractSciMLOperator)
-                ) || matrixfree_W
+                (W isa AbstractMatrix && !(W isa AbstractSciMLOperator)) ||
+                    matrixfree_W || is_split_W(W)
             )
-            prob = if f.nlstep_data !== nothing
-                f.nlstep_data.nlprob
+            prob = if nlstep_data !== nothing
+                nlstep_data.nlprob
             else
                 nlf = isdae ? daenlf : odenlf
                 nlp_params = if isdae
-                    (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+                    (tmp, ustep, α, tstep, k, invγdt, p, uprev, f)
                 else
                     (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
                 end
@@ -861,20 +922,29 @@ function build_nlsolver(
             nlcache = NonlinearSolveCache(
                 ustep, tstep, k, atmp, invγdt, prob, cache,
                 use_w_reuse ? J : nothing,
-                use_w_reuse ? W_for_reuse : nothing,
+                use_w_reuse ? W : nothing,
                 use_w_reuse ? uf : nothing,
                 use_w_reuse ? jac_config : nothing,
                 (use_w_reuse && uf !== nothing) ? du1 : nothing,
                 weight,
-                use_w_reuse ? dz : nothing,
+                dz,
                 est_linsolve,
-                zero(tstep), true, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
+            linsolver = default_krylov_warm_start(alg.linsolve)
+            precs = if isnothing(linsolver)
+                Pl = LinearSolve.InvPreconditioner(_WeightPreconditioner(_vec(weight)))
+                Pr = _WeightPreconditioner(_vec(weight))
+                (; Pl, Pr)
+            else
+                (;)
+            end
             linsolve = init(
-                linprob, wrapprecs(default_krylov_warm_start(alg.linsolve), W, weight),
+                linprob, wrapprecs(linsolver, W, weight);
+                precs...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
@@ -944,8 +1014,8 @@ function build_nlsolver(
 end
 
 function oopdaenlf(z, p)
-    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
-    return _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+    tmp, α, tstep, invγdt, _p, uprev, f = p
+    return _compute_rhs(tmp, α, tstep, invγdt, _p, uprev, f, z)[1]
 end
 
 function oopodenlf(z, p)
@@ -1033,15 +1103,15 @@ function build_nlsolver(
             )
             nlf = isdae ? oopdaenlf : oopodenlf
             nlp_params = if isdae
-                (tmp, α, tstep, invγdt, p, dt, uprev, f)
+                (tmp, α, tstep, invγdt, p, uprev, f)
             else
                 (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
             end
+            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
             prob = NonlinearProblem(
                 NonlinearFunction{false, SciMLBase.FullSpecialize}(nlf),
                 copy(ztmp), nlp_params
             )
-            inner_alg = _nlalg_with_linsolve(nlalg.alg, alg.linsolve)
             # Zero tolerances: the integrator owns convergence (see the in-place branch above).
             cache = init(
                 prob, inner_alg; verbose = verbose.nonlinear_verbosity,
@@ -1052,7 +1122,21 @@ function build_nlsolver(
                 ),
                 conditioning_kwargs(precondition, postcondition)...
             )
+            W_ref = nothing
             if cache isa NonlinearSolveNoInitCache
+                if !isdae && f.nlstep_data === nothing && precondition === nothing &&
+                        W isa StaticWOperator
+                    W_ref = Ref(W.W)
+                    nlf_jac = let W_ref = W_ref
+                        (z, p) -> W_ref[]
+                    end
+                    prob = NonlinearProblem(
+                        NonlinearFunction{false, SciMLBase.FullSpecialize}(
+                            nlf; jac = nlf_jac, jac_prototype = W.W
+                        ),
+                        copy(ztmp), nlp_params
+                    )
+                end
                 # `solve!`-driven fallback cache: it must keep terminating on its own
                 # default (nonzero) tolerances (see the in-place branch above).
                 cache = init(
@@ -1062,8 +1146,10 @@ function build_nlsolver(
             end
             nlcache = NonlinearSolveCache(
                 nothing, tstep, nothing, nothing, invγdt, prob, cache,
-                nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, false, precondition, postcondition
+                W_ref === nothing ? nothing : J, W_ref,
+                W_ref === nothing ? nothing : uf,
+                nothing, nothing, nothing, nothing, nothing,
+                zero(tstep), true, t, false, precondition, postcondition
             )
         else
             # Build separated DAE Jacobian cache if applicable
@@ -1276,18 +1362,13 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
 
     (; nlsolver) = integrator.cache
 
-    if nlsolver isa AbstractArray
-        for idx in eachindex(nlsolver)
-            resize!(nlsolver[idx], integrator, i)
-        end
-    else
-        resize!(nlsolver, integrator, i)
+    for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+
+        # make it reset everything since the caches changed size!
+        isnewton(nls) && (nls.cache.firstcall = true)
     end
-
-    nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve, i)
-
-    # make it reset everything since the caches changed size!
-    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
 
     return nothing
 end

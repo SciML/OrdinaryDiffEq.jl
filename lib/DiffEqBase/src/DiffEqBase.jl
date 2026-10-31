@@ -40,7 +40,7 @@ using SciMLBase
 
 using SciMLLogging: SciMLLogging, AbstractVerbositySpecifier, AbstractVerbosityPreset,
     None, Minimal, Standard, Detailed, All, Silent, InfoLevel, WarnLevel, ErrorLevel,
-    MessageLevel, @verbosity_specifier, verbosity_to_bool
+    MessageLevel, @verbosity_specifier, verbosity_to_bool, @SciMLMessage
 
 using SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator, DEFAULT_UPDATE_FUNC
 using SciMLOperators: isconstant, islinear
@@ -158,6 +158,7 @@ include("internal_euler.jl")
 include("norecompile.jl")
 include("integrator_accessors.jl")
 include("verbosity.jl")
+include("check_error.jl")
 
 # This is only used for oop stiff solvers
 """
@@ -208,7 +209,8 @@ export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
             # Callback API (DiffEqBase-owned shared functionality used by downstream solvers)
             :apply_callback!, :apply_discrete_callback!, :CallbackCache,
             :find_first_continuous_callback, :find_callback_time,
-            :max_vector_callback_length, :max_vector_callback_length_int, :get_condition,
+            :findall_events!, :max_vector_callback_length, :max_vector_callback_length_int,
+            :get_condition,
             # Default-callback API (integrator defaults overridable via solver keywords)
             :ODE_DEFAULT_NORM, :ODE_DEFAULT_ISOUTOFDOMAIN, :ODE_DEFAULT_PROG_MESSAGE,
             :ODE_DEFAULT_UNSTABLE_CHECK, :NAN_CHECK,
@@ -220,7 +222,9 @@ export AutoDespecialize, AutoRespecialize, AutoDePSpecialize
             :prepare_alg, :prob2dtmin, :timedepentdtmin, :check_prob_alg_pairing,
             :default_factorize, :stripunits, Symbol("@tight_loop_macros"),
             # Solver-author wrapper/tag types and convergence-testing entry type
-            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup
+            :EvalFunc, :OrdinaryDiffEqTag, :ConvergenceSetup,
+            # Bounded rendering of user data for diagnostics, used by solver packages
+            :truncate_str
         )
     )
 end

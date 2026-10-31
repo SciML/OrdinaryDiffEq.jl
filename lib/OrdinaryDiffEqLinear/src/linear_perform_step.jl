@@ -21,7 +21,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = fal
     if alg.krylov
         u .= expv(
             dt, L, u; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         A = convert(AbstractMatrix, L)
@@ -72,7 +72,7 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
         u .= expv(
             (1 / 12), (-k1 + 2 * k2 + 2 * k3 + 3 * k4), y1_2;
             m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop
+            alg.iop
         )
     else
         u .= exponential!(
@@ -122,7 +122,7 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
         u .= expv(
             1 / 6, (k1 + 2 * k2 + 2 * k3 + k4 - (k1 * k4 - k4 * k1) / 2), uprev;
             m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop
+            alg.iop
         )
     else
         u .= exponential!(
@@ -161,7 +161,7 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
     if alg.krylov
         u .= expv(
             1 / 2, (k1 + k2), uprev; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!((1 / 2) * (k1 + k2), exp_method, exp_cache) * uprev
@@ -431,7 +431,7 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
     if alg.krylov
         u .= expv(
             1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!(Ω1 + Ω2 + Ω3_4_5_6, exp_method, exp_cache) * uprev
@@ -468,7 +468,7 @@ function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
     if alg.krylov
         u .= expv(
             1.0, Ω, uprev; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!(Ω, exp_method, exp_cache) * uprev
@@ -543,7 +543,7 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
     if alg.krylov
         u .= expv(
             1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!(Ω1 + Ω2 + Ω3_4_5_6, exp_method, exp_cache) * uprev
@@ -594,7 +594,7 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
     if alg.krylov
         u .= expv(
             1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!(Ω1 + Ω2 + Ω3_4, exp_method, exp_cache) * uprev
@@ -641,7 +641,7 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
     if alg.krylov
         u .= expv(
             1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!(Ω1 + Ω2 + Ω3_4, exp_method, exp_cache) * uprev
@@ -676,7 +676,7 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false
         u .= expv(
             dt, (A + B) ./ 2 + (dt * sqrt(3)) .* (B * A - A * B) ./ 12, u;
             m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
-            iop = alg.iop
+            alg.iop
         )
     else
         u .= exponential!(
@@ -713,7 +713,7 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
     if alg.krylov
         u .= expv(
             dt, L, u; m = min(alg.m, size(L, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u .= exponential!(dt * convert(AbstractMatrix, L), exp_method, exp_cache) * u
@@ -749,7 +749,7 @@ function perform_step!(
         if alg.krylov
             u .= expv(
                 dt, L, u; m = min(alg.m, size(L, 1)),
-                opnorm = integrator.opts.internalopnorm, iop = alg.iop
+                opnorm = integrator.opts.internalopnorm, alg.iop
             )
         else
             A = convert(AbstractMatrix, L)
@@ -765,7 +765,7 @@ function perform_step!(
         if alg.krylov
             u .= expv(
                 2 * dt, L, uprev2; m = min(alg.m, size(L, 1)),
-                opnorm = integrator.opts.internalopnorm, iop = alg.iop
+                opnorm = integrator.opts.internalopnorm, alg.iop
             )
         else
             A = convert(AbstractMatrix, L)
@@ -803,11 +803,11 @@ function perform_step!(
     elseif alg.krylov == :simple
         u = expv(
             dt, A, integrator.u; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
     else
         u = expv_timestep(
-            dt, A, integrator.u; m = min(alg.m, size(A, 1)), iop = alg.iop,
+            dt, A, integrator.u; m = min(alg.m, size(A, 1)), alg.iop,
             tol = integrator.opts.reltol
         )
     end
@@ -848,13 +848,13 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
         Ks, expv_cache = KsCache
         arnoldi!(
             Ks, A, u; m = min(alg.m, size(A, 1)),
-            opnorm = integrator.opts.internalopnorm, iop = alg.iop
+            opnorm = integrator.opts.internalopnorm, alg.iop
         )
         expv!(tmp, dt, Ks; cache = expv_cache)
     else
         expv_timestep!(
             tmp, dt, A, u; adaptive = true, caches = KsCache,
-            m = min(alg.m, size(A, 1)), iop = alg.iop,
+            m = min(alg.m, size(A, 1)), alg.iop,
             tol = integrator.opts.reltol
         )
     end

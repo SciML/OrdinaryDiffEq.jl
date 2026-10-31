@@ -41,8 +41,8 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         g_iip(du, u, p, t) = (du .= 0.87 .* u)
         prob_iip = SDEProblem(f_iip, g_iip, [0.5, 0.25], (0.0, 1.0))
         for seed in (UInt64(7), UInt64(42))
-            s_oop = solve(prob, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed = seed)
-            s_iip = solve(prob_iip, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed = seed)
+            s_oop = solve(prob, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed)
+            s_iip = solve(prob_iip, RKMilGeneral(); dt = 1 // 2^8, adaptive = false, seed)
             @test SciMLBase.successful_retcode(s_oop)
             @test SciMLBase.successful_retcode(s_iip)
             @test s_oop.u[end] ≈ s_iip.u[end] rtol = 1.0e-10
@@ -58,7 +58,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
             total = 0.0
             for k in 1:ntraj
                 sol = solve(
-                    gbm, RKMilGeneral(); dt = dt, adaptive = false,
+                    gbm, RKMilGeneral(); dt, adaptive = false,
                     seed = UInt64(1000 + k), save_noise = true
                 )
                 WT = sol.W.W[end]
@@ -72,6 +72,66 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test e_fine < e_coarse
         order = log2(e_coarse / e_fine) / log2((1 // 2^4) / (1 // 2^8))
         @test order > 0.8
+    end
+
+    @time @safetestset "RKMilGeneral Ito diagonal update (scalar iip + SA oop)" begin
+        using StochasticDiffEqMilstein
+        using StochasticDiffEqMilstein.SciMLBase
+        using DiffEqNoiseProcess
+        using LinearAlgebra, StaticArrays, Test
+
+        seed = UInt64(7)
+        A = [
+            -1.0 0.1 0.0 0.0
+            0.1 -1.0 0.1 0.0
+            0.0 0.1 -1.0 0.1
+            0.0 0.0 0.1 -1.0
+        ]
+        B = [0.1 0.05; 0.05 0.1; 0.02 0.03; 0.1 0.0]
+        p = (A = A, σ = 0.1, B = B)
+        u0 = [1.0, 0.5, 0.25, 0.125]
+        f!(du, u, p, t) = mul!(du, p.A, u)
+        gmul!(du, u, p, t) = (du .= p.σ .* u)
+        gnd!(du, u, p, t) = (du .= p.B .* u)
+        f_oop(u, p, t) = p.A * u
+        gnd_oop(u, p, t) = p.B .* u
+        gmul_oop(u, p, t) = p.σ .* u
+
+        T = eltype(u0)
+        prob_scalar = SDEProblem{true}(
+            f!, gmul!, copy(u0), (0.0, 1.0), p;
+            noise = WienerProcess(zero(T), zero(T), zero(T))
+        )
+        sol_scalar = solve(
+            prob_scalar, RKMilGeneral(); dt = 1 // 2^4, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_scalar)
+        @test all(isfinite, sol_scalar.u[end])
+
+        # Scalar IIP must match scalar OOP bitwise at fixed dt.
+        prob_scalar_oop = SDEProblem{false}(
+            f_oop, gmul_oop, copy(u0), (0.0, 1.0), p;
+            noise = WienerProcess(zero(T), zero(T), zero(T))
+        )
+        sol_scalar_oop = solve(
+            prob_scalar_oop, RKMilGeneral(); dt = 1 // 2^4, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_scalar_oop)
+        @test sol_scalar.u[end] == sol_scalar_oop.u[end]
+
+        # OOP SVector + non-diagonal Ito must not mutate an immutable J.
+        u0_sa = SVector{4}(u0)
+        B_sa = SMatrix{4, 2}(B)
+        p_sa = (A = SMatrix{4, 4}(A), σ = 0.1, B = B_sa)
+        prob_sa = SDEProblem{false}(
+            f_oop, gnd_oop, u0_sa, (0.0, 1.0), p_sa;
+            noise_rate_prototype = zeros(SMatrix{4, 2, Float64})
+        )
+        sol_sa = solve(
+            prob_sa, RKMilGeneral(); dt = 1 // 2^6, adaptive = false, seed
+        )
+        @test SciMLBase.successful_retcode(sol_sa)
+        @test all(isfinite, sol_sa.u[end])
     end
 end
 

@@ -6,7 +6,7 @@ using SciMLBase: SciMLBase, ImplicitDiscreteProblem, NonlinearFunction,
 import SciMLBase: alg_order, isadaptive
 using NonlinearSolveBase: NonlinearSolveBase
 using NonlinearSolveFirstOrder: NewtonRaphson
-using CommonSolve: init
+using CommonSolve: init, solve!
 using DiffEqBase: DefaultInit
 import DiffEqBase: initialize!
 using SymbolicIndexingInterface: state_values

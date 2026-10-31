@@ -83,9 +83,9 @@ The method evaluates the equations of motion at interpolated states:
 
 where:
 
-    aₙ₊αₘ = (1 - αₘ)·aₙ₊₁ + αₘ·aₙ
-    uₙ₊αf = (1 - αf)·uₙ₊₁  + αf·uₙ
-    vₙ₊αf = (1 - αf)·vₙ₊₁  + αf·vₙ
+    aₙ₊αₘ = (1 - αₘ) · aₙ₊₁ + αₘ · aₙ
+    uₙ₊αf = (1 - αf) · uₙ₊₁ + αf · uₙ
+    vₙ₊αf = (1 - αf) · vₙ₊₁ + αf · vₙ
 
 with the standard Newmark update formulas for uₙ₊₁ and vₙ₊₁.
 

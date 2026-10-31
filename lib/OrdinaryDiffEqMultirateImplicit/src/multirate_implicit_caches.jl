@@ -61,7 +61,7 @@ get_fsalfirstlast(cache::MREILCache, u) = (cache.fsalfirst, cache.k)
 function _mreil_jac_function(f::SplitFunction, nf)
     return SciMLBase.remake(
         nf;
-        mass_matrix = f.mass_matrix,
+        f.mass_matrix,
         jac = something(nf.jac, f.jac, Some(nothing)),
         jac_prototype = something(nf.jac_prototype, f.jac_prototype, Some(nothing)),
         sparsity = something(nf.sparsity, f.sparsity, Some(nothing)),
@@ -145,9 +145,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(dz))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )

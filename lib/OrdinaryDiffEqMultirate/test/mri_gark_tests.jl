@@ -35,13 +35,23 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
             analytic(u0, p, t) = u0 * exp(-3t)
             prob = SplitODEProblem(
                 SplitFunction(
-                    (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                    (u, p, t) -> -2u, (u, p, t) -> -u; analytic
                 ),
                 1.0, (0.0, 1.0)
             )
             dts = 1 ./ 2 .^ (6:-1:2)
             sim = test_convergence(dts, prob, MRIGARKERK22a(m = 8))
             @test sim.𝒪est[:l∞] ≈ 2 atol = 0.3
+        end
+
+        @testset "Embedded estimate drives a usable step size" begin
+            prob = SplitODEProblem(
+                (u, p, t) -> -0.9 * u, (u, p, t) -> -0.1 * u, 1.0, (0.0, 1.0)
+            )
+            sol = solve(prob, MRIGARKERK22a(m = 10), reltol = 1.0e-6, abstol = 1.0e-6)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.stats.naccept < 2000
+            @test abs(sol.u[end] - exp(-1.0)) < 1.0e-5
         end
     end
 
@@ -79,7 +89,7 @@ using OrdinaryDiffEqMultirate, DiffEqDevTools, Test, LinearAlgebra
             analytic(u0, p, t) = u0 * exp(-3t)
             prob = SplitODEProblem(
                 SplitFunction(
-                    (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                    (u, p, t) -> -2u, (u, p, t) -> -u; analytic
                 ),
                 1.0, (0.0, 1.0)
             )
@@ -125,7 +135,7 @@ end
         analytic(u0, p, t) = u0 * exp(-3t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                (u, p, t) -> -2u, (u, p, t) -> -u; analytic
             ),
             1.0, (0.0, 1.0)
         )
@@ -169,7 +179,7 @@ end
         analytic(u0, p, t) = u0 * exp(-3t)
         prob = SplitODEProblem(
             SplitFunction(
-                (u, p, t) -> -2u, (u, p, t) -> -u; analytic = analytic
+                (u, p, t) -> -2u, (u, p, t) -> -u; analytic
             ),
             1.0, (0.0, 1.0)
         )

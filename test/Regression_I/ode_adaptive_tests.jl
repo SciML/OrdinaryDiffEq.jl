@@ -46,7 +46,8 @@ sol = solve(prob, FBDF())
 function lorenz(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -61,13 +62,14 @@ sol = solve(prob, FBDF())
 function lorenz(out, du, u, p, t)
     out[1] = 10.0(u[2] - u[1]) - du[1]
     out[2] = u[1] * (28.0 - u[3]) - u[2] - du[2]
-    return out[3] = u[1] * u[2] - (8 / 3) * u[3] - du[3]
+    out[3] = u[1] * u[2] - (8 / 3) * u[3] - du[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
-prob = DAEProblem(lorenz, du0, u0, tspan, differential_vars = differential_vars)
+prob = DAEProblem(lorenz, du0, u0, tspan; differential_vars)
 sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
@@ -83,7 +85,7 @@ u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
 differential_vars = [true, true, true]
-prob = DAEProblem{false}(lorenz, du0, u0, tspan, differential_vars = differential_vars)
+prob = DAEProblem{false}(lorenz, du0, u0, tspan; differential_vars)
 sol = solve(prob, DFBDF(); initializealg = BrownFullBasicInit())
 @test length(sol.t) < 8000
 @test SciMLBase.successful_retcode(sol)
@@ -164,7 +166,7 @@ sol_lorenz = solve(prob_lorenz, ESDIRK659L2SA())
 # Adaptivity tests for Alshina2, 3
 
 for prob in [prob_ode_2Dlinear, prob_ode_linear]
-    sol = solve(prob, Alshina2())
+    sol = solve(prob, Alshina2(); abstol = 1.0e-7, reltol = 1.0e-7)
     val = maximum(abs.(sol.u[end] - sol.u_analytic[end]))
     @test val < 1.0e-6
 

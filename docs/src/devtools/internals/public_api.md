@@ -29,6 +29,7 @@ DiffEqBase.default_factorize
 DiffEqBase.finalize!
 DiffEqBase.find_callback_time
 DiffEqBase.find_first_continuous_callback
+DiffEqBase.findall_events!
 DiffEqBase.get_condition
 DiffEqBase.get_tstops
 DiffEqBase.get_tstops_array
@@ -58,6 +59,37 @@ OrdinaryDiffEqCore.@fold
 ## Algorithm type hierarchy
 
 Every solver subtypes one of these abstract algorithm types.
+
+### Minimal algorithm contract
+
+Solver packages should subtype the narrowest applicable algorithm type, define
+the order, and then implement the cache and stepping hooks. The generic trait
+defaults are intentional: an explicit fixed-step method needs only the methods
+below before adding its cache and stepping implementation.
+
+```julia
+using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm
+
+struct MyEuler <: OrdinaryDiffEqAlgorithm end
+OrdinaryDiffEqCore.alg_order(::MyEuler) = 1
+OrdinaryDiffEqCore.isfsal(::MyEuler) = false
+
+@assert !OrdinaryDiffEqCore.isadaptive(MyEuler())
+@assert !OrdinaryDiffEqCore.isimplicit(MyEuler())
+```
+
+The complete solver implementation then supplies:
+
+1. `alg_cache(alg, ...)`, returning an `OrdinaryDiffEqConstantCache` or
+   `OrdinaryDiffEqMutableCache`.
+2. `initialize!(integrator, cache)`, initializing FSAL and cache state.
+3. `perform_step!(integrator, cache, repeat_step = false)`, writing the candidate
+   state to `integrator.u` and the error estimate to `integrator.EEst`.
+
+Adaptive methods subtype `OrdinaryDiffEqAdaptiveAlgorithm` and must provide an
+embedded error estimate suitable for the controller. Implicit methods subtype
+`OrdinaryDiffEqImplicitAlgorithm` and must provide the nonlinear-solver cache
+and stage operations expected by the selected `nlsolve` configuration.
 
 ```@docs
 OrdinaryDiffEqCore.OrdinaryDiffEqAlgorithm
@@ -146,6 +178,7 @@ OrdinaryDiffEqCore.uses_uprev
 OrdinaryDiffEqCore.has_autodiff
 OrdinaryDiffEqCore.has_special_newton_error
 OrdinaryDiffEqCore.has_dtnew_modification
+OrdinaryDiffEqCore.dtnew_modification
 OrdinaryDiffEqCore.has_stiff_interpolation
 OrdinaryDiffEqCore.allows_null_u0
 OrdinaryDiffEqCore.isaposteriori
@@ -303,10 +336,21 @@ OrdinaryDiffEqCore.get_fsalfirstlast
 OrdinaryDiffEqCore.get_fresh_jacobian
 OrdinaryDiffEqCore.perform_step!
 OrdinaryDiffEqCore.apply_step!
-SciMLBase.postamble!
-SciMLBase.last_step_failed
-SciMLBase.check_error
-SciMLBase.check_error!
+```
+
+```@autodocs
+Modules = [SciMLBase]
+Public = true
+Private = false
+Filter = x -> x in [
+    SciMLBase.postamble!,
+    SciMLBase.last_step_failed,
+    SciMLBase.check_error,
+    SciMLBase.check_error!
+]
+```
+
+```@docs
 OrdinaryDiffEqCore.set_discontinuity
 OrdinaryDiffEqCore.increment_accept!
 OrdinaryDiffEqCore.increment_reject!
@@ -317,6 +361,9 @@ OrdinaryDiffEqCore._ode_init
 OrdinaryDiffEqCore._initialize_dae!
 OrdinaryDiffEqCore.find_algebraic_vars_eqs
 OrdinaryDiffEqCore.get_differential_vars
+OrdinaryDiffEqCore._is_identity_massmatrix
+OrdinaryDiffEqCore._is_zero_massmatrix
+OrdinaryDiffEqCore._diff_alg_vars
 OrdinaryDiffEqCore.handle_callback_modifiers!
 OrdinaryDiffEqCore.resolve_stage_step_limiters
 OrdinaryDiffEqCore.trivial_limiter!
@@ -405,6 +452,9 @@ StochasticDiffEqCore.JDiagonal_oop
 StochasticDiffEqCore.NLSOLVEJL_SETUP
 StochasticDiffEqCore.SDEAlgTypes
 StochasticDiffEqCore.SDEIntegrator
+StochasticDiffEqCore.SDEOptions
+StochasticDiffEqCore.DiffCache
+StochasticDiffEqCore.@cache
 StochasticDiffEqCore.StochasticCompositeAlgorithm
 StochasticDiffEqCore.StochasticCompositeCache
 StochasticDiffEqCore.TauLeapingDrift
@@ -416,6 +466,8 @@ StochasticDiffEqCore.alg_cache
 StochasticDiffEqCore.alg_compatible
 StochasticDiffEqCore.alg_control_rate
 StochasticDiffEqCore.alg_mass_matrix_compatible
+StochasticDiffEqCore.alg_stability_size
+StochasticDiffEqCore.alg_can_repeat_jac
 StochasticDiffEqCore.alg_needs_extra_process
 StochasticDiffEqCore.calc_threepoint_random
 StochasticDiffEqCore.calc_threepoint_random!

@@ -21,6 +21,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 
 @time begin
     if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface1"
+        @time @safetestset "Precompile Workload Tests" begin
+            include("precompilation_tests.jl")
+        end
         @time @safetestset "Default Solver Tests" begin
             include("default_solver_test.jl")
         end
@@ -164,6 +167,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Dynamical SDE Tests" begin
             include("sde/sde_dynamical.jl")
+        end
+        @time @safetestset "RODE Convergence Tests" begin
+            include("rode_convergence_tests.jl")
         end
     end
 
