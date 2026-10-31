@@ -1426,6 +1426,12 @@ function setup_controller_cache(alg::CompositeAlgorithm, caches::DefaultCache, c
     return CompositeControllerCache{typeof(sub), E}(sub, oneunit(E))
 end
 
+function reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::CompositeControllerCache)
+    foreach(c -> reinit_controller!(integrator, c), cache.caches)
+    cache.EEst = oneunit(cache.EEst)
+    return nothing
+end
+
 # Default alg
 function stepsize_controller!(integrator, cache::DefaultCache, alg)
     return if cache.current == 1
