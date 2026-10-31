@@ -56,8 +56,8 @@ run_qa(
             treat_as_own = (SciMLBase.supports_solve_rng, SciMLBase.AbstractSDEProblem),
         ),
     ),
-    jet_kwargs = (; target_modules = (StochasticDiffEq,), mode = :typo),
     explicit_imports = true,
+    jet = false,
     ei_kwargs = (;
         no_implicit_imports = (;
             skip = REEXPORT_SKIP,
@@ -69,3 +69,27 @@ run_qa(
         ),
     ),
 )
+
+# JET.test_package analyzes every signature defined in the umbrella in one
+# shared inference session; on Julia 1.13 that session exceeds 25 GB, over the
+# memory limit of the CI runners. Analyzing the same methods on concrete calls
+# bounds each inference session while keeping the report scope unchanged.
+@testset "JET" begin
+    f(u, p, t) = u
+    g(u, p, t) = u
+    prob = SDEProblem(f, g, 0.0, (0.0, 1.0))
+    JET.@test_call mode = :typo target_modules = (StochasticDiffEq,) StochasticDiffEq.default_algorithm(
+        prob
+    )
+    JET.@test_call mode = :typo target_modules = (StochasticDiffEq,) SciMLBase.__init(
+        prob, nothing
+    )
+    JET.@test_call mode = :typo target_modules = (StochasticDiffEq,) SciMLBase.__solve(
+        prob, nothing
+    )
+    JET.@test_call mode = :typo target_modules = (StochasticDiffEq,) SciMLBase.supports_solve_rng(
+        prob, nothing
+    )
+    JET.@test_call mode = :typo target_modules = (StochasticDiffEq,) AutoSOSRI2(SOSRI2())
+    JET.@test_call mode = :typo target_modules = (StochasticDiffEq,) AutoSOSRA2(SOSRA2())
+end
