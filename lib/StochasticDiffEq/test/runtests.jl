@@ -1,6 +1,5 @@
 using SafeTestsets
 using Pkg
-using SciMLTesting
 using Test
 
 function activate_gpu_env()
@@ -13,13 +12,6 @@ function activate_nopre_env()
     Pkg.activate("nopre")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
-end
-
-function activate_qa_env()
-    return activate_group_env(
-        joinpath(@__DIR__, "qa");
-        parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")],
-    )
 end
 
 const LONGER_TESTS = false
@@ -265,12 +257,13 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
     end
 
-    # QA last: activate_qa_env() switches the active project; JET re-evaluates src.
+    # QA last, in a subprocess: loading the QA dependency tree under
+    # --code-coverage pushes the test process past CI runner memory, so the
+    # group env is activated and run_qa is run without coverage instrumentation.
     if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
-        activate_qa_env()
-        # Plain @testset: SafeTestsets is unreachable after the env switch.
+        qa_cmd = `$(Base.julia_cmd()) --project=$(Base.active_project()) --startup-file=no $(joinpath(@__DIR__, "qa", "run.jl"))`
         @time @testset "QA (Aqua, ExplicitImports, JET)" begin
-            include("qa/qa.jl")
+            @test success(run(ignorestatus(qa_cmd)))
         end
     end
 end
