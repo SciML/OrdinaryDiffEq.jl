@@ -5,6 +5,23 @@ using OrdinaryDiffEqBDF
 using Unitful
 using Test
 
+function nothing_u_specialization_count()
+    n = 0
+    for m in methods(OrdinaryDiffEqCore.resolve_ode_tolerances)
+        length(m.sig.parameters) >= 3 || continue
+        m.sig.parameters[3] === Nothing || continue
+        specs = Base.specializations(m)
+        specs === nothing && continue
+        n += count(!isnothing, specs)
+    end
+    return n
+end
+
+@testset "nothing-u0 tolerance method is precompiled" begin
+    # Count only. Calling the method would create the instance in this process.
+    @test nothing_u_specialization_count() > 0
+end
+
 function expected_default_tolerances(u::AbstractArray{T}) where {T <: Number}
     abstol = real(convert(T, oneunit(T) * 1 // 10^6))
     reltol = real(convert(T, oneunit(T) * 1 // 10^3))

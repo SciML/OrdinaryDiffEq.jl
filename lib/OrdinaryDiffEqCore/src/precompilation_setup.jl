@@ -79,4 +79,11 @@ PrecompileTools.@compile_workload begin
     lorenz_pref([1.0; 0.0; 0.0], [1.0; 0.0; 0.0], lorenz_pref_params, 0.0)
     lorenz_oop([1.0; 0.0; 0.0], SciMLBase.NullParameters(), 0.0)
     lorenz_oop([1.0; 0.0; 0.0], Float64[], 0.0)
+
+    # Omitted tolerances, and a nothing state, resolve to concrete defaults.
+    tol_prob = ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0))
+    resolve_ode_tolerances(tol_prob, tol_prob.u0, nothing, nothing)
+    resolve_ode_tolerances(tol_prob, nothing, nothing, nothing)
+    null_prob = ODEProblem(Returns(nothing), nothing, (0.0, 1.0))
+    resolve_ode_tolerances(null_prob, nothing, nothing, nothing)
 end
