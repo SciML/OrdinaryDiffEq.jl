@@ -22,3 +22,11 @@ for alg in [
     @test_throws OrdinaryDiffEqCore.DerivativeOrderNotPossibleError sol(0.5, Val{10})
     @test_throws OrdinaryDiffEqCore.DerivativeOrderNotPossibleError sol(out, 0.5, Val{10})
 end
+
+sol = solve(prob, Rosenbrock23())
+err = try
+    sol(0.5, Val{10})
+catch e
+    e
+end
+@test sprint(showerror, err) == OrdinaryDiffEqCore.DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE
