@@ -1,7 +1,13 @@
 # Helper function to compute the G_nj factors for the classical ExpRK methods
 @inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
 @inline _compute_nl(f, u, p, t, A) = f(u, p, t) - A * u
-@inline _compute_nl!(G, f::SplitFunction, u, p, t, A, Au_cache) = f.f2(G, u, p, t)
+# `G` is a reused cache buffer, so components that `f2` leaves alone would otherwise
+# carry over from the previous call.
+@inline function _f2!(f, G, u, p, t)
+    fill!(G, false)
+    return f.f2(G, u, p, t)
+end
+@inline _compute_nl!(G, f::SplitFunction, u, p, t, A, Au_cache) = _f2!(f, G, u, p, t)
 @inline function _compute_nl!(G, f, u, p, t, A, Au_cache)
     f(G, u, p, t)
     mul!(Au_cache, A, u)
@@ -224,9 +230,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
         mul!(rtmp, phi1, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
         # Compute G2 - G1, storing result in the cache F2
-        f.f2(rtmp, uprev, p, t)
+        _f2!(f, rtmp, uprev, p, t)
         integrator.stats.nf2 += 1
-        f.f2(F2, tmp, p, t + dt)
+        _f2!(f, F2, tmp, p, t + dt)
         integrator.stats.nf2 += 1
         F2 .-= rtmp # "F2" is G2 - G1
         # Update u
@@ -340,14 +346,14 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
         # stage 2
         mul!(rtmp, A21, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
-        f.f2(F2, tmp, p, t + halfdt)
+        _f2!(f, F2, tmp, p, t + halfdt)
         F2 .+= Au
         integrator.stats.nf2 += 1
         # stage 3
         @muladd @.. broadcast = false F3 = 2 * F2 - F1 # use F3 temporarily as cache
         mul!(rtmp, A3, F3)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
-        f.f2(F3, tmp, p, t + dt)
+        _f2!(f, F3, tmp, p, t + dt)
         F3 .+= Au
         integrator.stats.nf2 += 1
         # update u
@@ -491,18 +497,18 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
         # stage 2
         mul!(rtmp, A21, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
-        f.f2(F2, tmp, p, t + halfdt)
+        _f2!(f, F2, tmp, p, t + halfdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A21, F2) # A32 = A21
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
-        f.f2(F3, tmp, p, t + halfdt)
+        _f2!(f, F3, tmp, p, t + halfdt)
         F3 .+= Au
         # stage 4
         @.. broadcast = false tmp = uprev
         axpy!(dt, mul!(rtmp, A41, F1), tmp)
         axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
-        f.f2(F4, tmp, p, t + dt)
+        _f2!(f, F4, tmp, p, t + dt)
         F4 .+= Au
         integrator.stats.nf2 += 3
         # update u
@@ -681,14 +687,14 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         # stage 2
         mul!(rtmp, A21, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
-        f.f2(F2, tmp, p, t + halfdt)
+        _f2!(f, F2, tmp, p, t + halfdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A31, F1)
         mul!(rtmp2, A32, F2)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
-        f.f2(F3, tmp, p, t + halfdt)
+        _f2!(f, F3, tmp, p, t + halfdt)
         F3 .+= Au
         # stage 4
         F2 .+= F3 # F2 now stores F2 + F3
@@ -696,7 +702,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         mul!(rtmp2, A42, F2)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U4
-        f.f2(F4, tmp, p, t + dt)
+        _f2!(f, F4, tmp, p, t + dt)
         F4 .+= Au
         # stage 5
         mul!(rtmp, A51, F1)
@@ -705,7 +711,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         mul!(rtmp2, A54, F4)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U5
-        f.f2(F5, tmp, p, t + halfdt)
+        _f2!(f, F5, tmp, p, t + halfdt)
         F5 .+= Au
         integrator.stats.nf2 += 4
         # update u
@@ -854,14 +860,14 @@ function perform_step!(integrator, cache::FriedliCache, repeat_step = false)
         # stage 2
         mul!(rtmp, A21, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
-        f.f2(F2, tmp, p, t + halfdt)
+        _f2!(f, F2, tmp, p, t + halfdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A31, F1)
         mul!(rtmp2, A32, F2)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
-        f.f2(F3, tmp, p, t + halfdt)
+        _f2!(f, F3, tmp, p, t + halfdt)
         F3 .+= Au
         # stage 4
         mul!(rtmp, A41, F1)
@@ -870,7 +876,7 @@ function perform_step!(integrator, cache::FriedliCache, repeat_step = false)
         mul!(rtmp2, A43, F3)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U4
-        f.f2(F4, tmp, p, t + dt)
+        _f2!(f, F4, tmp, p, t + dt)
         F4 .+= Au
         integrator.stats.nf2 += 3
         # update u
