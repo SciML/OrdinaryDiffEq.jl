@@ -5,6 +5,8 @@ prob = ODEProblem(f, [1.0], (0.0, 1.0))
 integ = init(prob, DefaultODEAlgorithm(autodiff = AutoForwardDiff(chunksize = 1)))
 
 @test isconcretetype(fieldtype(typeof(integ.cache), :args))
+# the element-type arguments are stored as singletons, so their types alone determine `alg_cache`'s method
+@test all(Base.issingletontype, fieldtype(typeof(integ.cache), :args).parameters[3:5])
 
 function dynamic_alg_cache_calls(cache, algs)
     ci, _ = only(
