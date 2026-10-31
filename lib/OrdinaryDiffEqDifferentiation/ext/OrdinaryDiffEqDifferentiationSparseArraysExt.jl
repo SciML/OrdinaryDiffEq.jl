@@ -7,6 +7,8 @@ import SparseArrays: nonzeros, nzrange, rowvals, spzeros, SparseMatrixCSC, Abstr
 # Override the sparse checking functions
 OrdinaryDiffEqDifferentiation.is_sparse(::AbstractSparseMatrix) = true
 OrdinaryDiffEqDifferentiation.is_sparse_csc(::SparseMatrixCSC) = true
+OrdinaryDiffEqDifferentiation.jac_from_pattern(::Type{T}, pattern::SparseMatrixCSC) where {T} =
+    SparseMatrixCSC{T}(pattern)
 
 # Override the sparse array manipulation functions
 OrdinaryDiffEqDifferentiation.nonzeros(A::AbstractSparseMatrix) = nonzeros(A)
