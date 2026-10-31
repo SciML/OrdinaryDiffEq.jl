@@ -213,3 +213,55 @@ end
     @test integ.opts.abstol == 1.0e-6
     @test integ.opts.reltol == 1.0e-4
 end
+
+function nothing_u0_default_tolerances(prob)
+    return OrdinaryDiffEqCore.resolve_ode_tolerances(prob, nothing, nothing, nothing)
+end
+
+@testset "nothing u0 resolves scalar defaults without an empty vector" begin
+    # Same numbers as the empty Float64 state, with no Vector allocation.
+    scaffold = ODEProblem(decay!, [1.0, 2.0], (0.0, 1.0))
+    via_empty = OrdinaryDiffEqCore.resolve_ode_tolerances(scaffold, Float64[], nothing, nothing)
+    via_nothing = nothing_u0_default_tolerances(scaffold)
+    @test via_nothing == via_empty
+    @test via_nothing == (1.0e-6, 1.0e-3)
+    @test via_nothing[1] isa Float64
+    @test via_nothing[2] isa Float64
+    @test !(via_nothing[1] isa AbstractArray)
+    @test !(via_nothing[2] isa AbstractArray)
+
+    passed = OrdinaryDiffEqCore.resolve_ode_tolerances(scaffold, nothing, 1.0e-8, 1.0e-4)
+    @test passed[1] === 1.0e-8
+    @test passed[2] === 1.0e-4
+
+    nothing_u0_default_tolerances(scaffold)
+    @test (@allocated nothing_u0_default_tolerances(scaffold)) == 0
+    let
+        supplied() = OrdinaryDiffEqCore.resolve_ode_tolerances(scaffold, nothing, 1.0e-8, 1.0e-4)
+        supplied()
+        @test (@allocated supplied()) == 0
+    end
+
+    nullprob = ODEProblem(Returns(nothing), nothing, (0.0, 1.0))
+    @test nullprob.u0 === nothing
+    @test nothing_u0_default_tolerances(nullprob) == via_empty
+    dprob = DiscreteProblem((u, p, t) -> u, nothing, (0, 1))
+    @test OrdinaryDiffEqCore.resolve_ode_tolerances(dprob, nothing, nothing, nothing) ==
+        (false, false)
+    @test OrdinaryDiffEqCore.resolve_ode_tolerances(dprob, Float64[], nothing, nothing) ==
+        (false, false)
+    # `init`/`solve` return a null integrator when u0 is nothing and there is
+    # no callback. `__init` is the path that resolves tolerances.
+    integ = OrdinaryDiffEqCore.SciMLBase.__init(nullprob, Tsit5())
+    @test integ.opts.abstol == via_empty[1]
+    @test integ.opts.reltol == via_empty[2]
+    integ_direct = OrdinaryDiffEqCore._ode_init(nullprob, Tsit5())
+    @test integ_direct.opts.abstol == via_empty[1]
+    @test integ_direct.opts.reltol == via_empty[2]
+
+    m = which(
+        OrdinaryDiffEqCore.resolve_ode_tolerances,
+        (typeof(nullprob), Nothing, Nothing, Nothing)
+    )
+    @test m.sig.parameters[3] === Nothing
+end

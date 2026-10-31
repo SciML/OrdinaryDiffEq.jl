@@ -331,9 +331,16 @@ function _sde_init(
     # ── Type computations (needed for cache) ─────────────────────────────
     tType = eltype(prob.tspan)
     uType = typeof(u)
-    uBottomEltype = recursive_bottom_eltype(u)
-    uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
-    uEltypeNoUnits = recursive_unitless_eltype(u)
+    # A nothing state has no eltype; tolerances use scalar Float64.
+    if u === nothing
+        uBottomEltype = Float64
+        uBottomEltypeNoUnits = Float64
+        uEltypeNoUnits = Float64
+    else
+        uBottomEltype = recursive_bottom_eltype(u)
+        uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+        uEltypeNoUnits = recursive_unitless_eltype(u)
+    end
     tTypeNoUnits = typeof(one(tType))
     noise = prob isa SciMLBase.AbstractRODEProblem ? prob.noise : nothing
     tspan = prob.tspan

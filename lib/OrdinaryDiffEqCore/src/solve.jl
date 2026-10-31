@@ -220,11 +220,8 @@ Base.@constprop :aggressive function SciMLBase.__init(
     # Resolve before the heavy `_ode_init` keyword body so `solve`/`init` always
     # specialize that body on concrete types (TTFX). StochasticDiffEqCore applies
     # SDE defaults + `real.(...)` then calls public `_ode_init` the same way.
-    u = prob.u0
-    if u === nothing
-        u = Float64[]
-    end
-    abstol, reltol = resolve_ode_tolerances(prob, u, abstol, reltol)
+    # A nothing state dispatches on `Nothing` (scalar Float64 defaults).
+    abstol, reltol = resolve_ode_tolerances(prob, prob.u0, abstol, reltol)
     return _ode_init(
         prob, alg, timeseries_init, ts_init, ks_init; abstol, reltol, kwargs...
     )
@@ -282,10 +279,35 @@ end
 
 Internal: replace `nothing` absolute/relative tolerances with the concrete
 defaults used by OrdinaryDiffEq (`1 // 10^6` / `1 // 10^3` in
-the state eltype, or `false` for discrete problems). User-supplied values are
+the state eltype, or `false` for discrete problems). A `nothing` state uses
+the scalar `Float64` defaults. User-supplied values are
 passed through `real.(...)` so complex tolerances (including from SDE callers)
 become real for residual calculations.
 """
+function resolve_ode_tolerances(prob, ::Nothing, abstol, reltol)
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
+        abstol_out = false
+    elseif abstol === nothing
+        abstol_out = unitfulvalue(
+            real(convert(Float64, oneunit(Float64) * 1 // 10^6))
+        )
+    else
+        abstol_out = real.(abstol)
+    end
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
+        reltol_out = false
+    elseif reltol === nothing
+        reltol_out = unitfulvalue(
+            real(convert(Float64, oneunit(Float64) * 1 // 10^3))
+        )
+    else
+        reltol_out = real.(reltol)
+    end
+
+    return abstol_out, reltol_out
+end
+
 function resolve_ode_tolerances(prob, u, abstol, reltol)
     uBottomEltype = recursive_bottom_eltype(u)
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
@@ -593,7 +615,7 @@ Base.@constprop :aggressive function _ode_init(
     # `real.(...)`. Callers that already passed concrete tolerances
     # (`SciMLBase.__init`, StochasticDiffEqCore) are unchanged; public direct
     # callers that omit tolerances get the concrete defaults here.
-    u_for_tol = _u !== nothing ? _u : (prob.u0 === nothing ? Float64[] : prob.u0)
+    u_for_tol = _u !== nothing ? _u : prob.u0
     abstol, reltol = resolve_ode_tolerances(prob, u_for_tol, abstol, reltol)
     abstol_internal, reltol_internal = abstol, reltol
 
