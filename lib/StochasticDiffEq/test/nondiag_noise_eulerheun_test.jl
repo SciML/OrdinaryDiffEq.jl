@@ -1,5 +1,6 @@
 using StochasticDiffEq, DiffEqNoiseProcess, SparseArrays, LinearAlgebra,
     AllocCheck
+using OrdinaryDiffEqCore
 using DiffEqBase: @..
 using SciMLBase: FullSpecialize
 
@@ -83,7 +84,7 @@ using SciMLBase: FullSpecialize
 
         cache = integ.cache
         allocs = AllocCheck.check_allocs(
-            StochasticDiffEq.perform_step!, (typeof(integ), typeof(cache))
+            OrdinaryDiffEqCore.perform_step!, (typeof(integ), typeof(cache))
         )
         @test isempty(allocs)
     end
@@ -103,8 +104,8 @@ using SciMLBase: FullSpecialize
         # `check_allocs` flags throw-only branches in LinearAlgebra’s generic gemv!/mul!,
         # while the BLAS hot path is allocation-free at runtime. We keep `check_allocs`
         # for the sparse/non-diagonal tests.
-        StochasticDiffEq.perform_step!(integ, cache) # warm-up
-        @test @allocated(StochasticDiffEq.perform_step!(integ, cache)) == 0
+        OrdinaryDiffEqCore.perform_step!(integ, cache) # warm-up
+        @test @allocated(OrdinaryDiffEqCore.perform_step!(integ, cache)) == 0
     end
 
     make_integrator_dense(16)
