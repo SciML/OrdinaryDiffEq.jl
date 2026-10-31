@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Adding Algorithms · OrdinaryDiffEq.jl</title><meta name="title" content="Adding Algorithms · OrdinaryDiffEq.jl"/><meta property="og:title" content="Adding Algorithms · OrdinaryDiffEq.jl"/><meta property="twitter:title" content="Adding Algorithms · OrdinaryDiffEq.jl"/><meta name="description" content="Documentation for OrdinaryDiffEq.jl."/><meta property="og:description" content="Documentation for OrdinaryDiffEq.jl."/><meta property="twitter:description" content="Documentation for OrdinaryDiffEq.jl."/><meta property="og:url" content="https://ordinarydiffeq.sciml.ai/stable/devtools/contributing/adding_algorithms/"/><meta property="twitter:url" content="https://ordinarydiffeq.sciml.ai/stable/devtools/contributing/adding_algorithms/"/><link rel="canonical" href="https://ordinarydiffeq.sciml.ai/stable/devtools/contributing/adding_algorithms/"/><script async src="https://www.googletagmanager.com/gtag/js?id=UA-90474609-3"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-90474609-3', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../../assets/documenter.js"></script><script src="../../../search_index.js"></script><script src="../../../siteinfo.js"></script><script src="../../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../../assets/themeswap.js"></script><link href="../../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../../"><img src="../../../assets/logo.png" alt="OrdinaryDiffEq.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../../">OrdinaryDiffEq.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../../">OrdinaryDiffEq.jl: ODE solvers and utilities</a></li><li><a class="tocitem" href="../../../usage/">Usage</a></li><li><span class="tocitem">Explicit Solvers</span><ul><li><a class="tocitem" href="../../../explicit/Tsit5/">OrdinaryDiffEqTsit5</a></li><li><a class="tocitem" href="../../../explicit/Verner/">OrdinaryDiffEqVerner</a></li><li><a class="tocitem" href="../../../explicit/AdamsBashforthMoulton/">OrdinaryDiffEqAdamsBashforthMoulton</a></li><li><a class="tocitem" href="../../../explicit/LowStorageRK/">OrdinaryDiffEqLowStorageRK</a></li><li><a class="tocitem" href="../../../explicit/SSPRK/">OrdinaryDiffEqSSPRK</a></li><li><a class="tocitem" href="../../../explicit/LowOrderRK/">OrdinaryDiffEqLowOrderRK</a></li><li><a class="tocitem" href="../../../explicit/HighOrderRK/">OrdinaryDiffEqHighOrderRK</a></li><li><a class="tocitem" href="../../../explicit/Feagin/">OrdinaryDiffEqFeagin</a></li><li><a class="tocitem" href="../../../explicit/PRK/">OrdinaryDiffEqPRK</a></li><li><a class="tocitem" href="../../../explicit/QPRK/">OrdinaryDiffEqQPRK</a></li><li><a class="tocitem" href="../../../explicit/TaylorSeries/">OrdinaryDiffEqTaylorSeries</a></li><li><a class="tocitem" href="../../../explicit/Extrapolation/">OrdinaryDiffEqExtrapolation</a></li></ul></li><li><span class="tocitem">Semi-Implicit Solvers</span><ul><li><a class="tocitem" href="../../../semiimplicit/Rosenbrock/">OrdinaryDiffEqRosenbrock</a></li><li><a class="tocitem" href="../../../semiimplicit/AMF/">OrdinaryDiffEqAMF</a></li><li><a class="tocitem" href="../../../semiimplicit/StabilizedRK/">OrdinaryDiffEqStabilizedRK</a></li><li><a class="tocitem" href="../../../semiimplicit/ExponentialRK/">OrdinaryDiffEqExponentialRK</a></li></ul></li><li><span class="tocitem">Implicit Solvers</span><ul><li><a class="tocitem" href="../../../implicit/SDIRK/">OrdinaryDiffEqSDIRK</a></li><li><a class="tocitem" href="../../../implicit/FIRK/">OrdinaryDiffEqFIRK</a></li><li><a class="tocitem" href="../../../implicit/BDF/">OrdinaryDiffEqBDF</a></li><li><a class="tocitem" href="../../../implicit/Extrapolation/">OrdinaryDiffEqExtrapolation</a></li><li><a class="tocitem" href="../../../implicit/PDIRK/">OrdinaryDiffEqPDIRK</a></li><li><a class="tocitem" href="../../../implicit/Nordsieck/">OrdinaryDiffEqNordsieck</a></li></ul></li><li><span class="tocitem">IMEX Solvers</span><ul><li><a class="tocitem" href="../../../imex/IMEXMultistep/">OrdinaryDiffEqIMEXMultistep</a></li><li><a class="tocitem" href="../../../imex/StabilizedIRK/">OrdinaryDiffEqStabilizedIRK</a></li><li><a class="tocitem" href="../../../imex/IMEXBDF/">OrdinaryDiffEqBDF</a></li></ul></li><li><span class="tocitem">Dynamical ODE Explicit Solvers</span><ul><li><a class="tocitem" href="../../../dynamicalodeexplicit/RKN/">OrdinaryDiffEqRKN</a></li><li><a class="tocitem" href="../../../dynamicalodeexplicit/SymplecticRK/">OrdinaryDiffEqSymplecticRK</a></li></ul></li><li><span class="tocitem">Semilinear ODE Solvers</span><ul><li><a class="tocitem" href="../../../semilinear/ExponentialRK/">OrdinaryDiffEqExponentialRK</a></li><li><a class="tocitem" href="../../../semilinear/Linear/">OrdinaryDiffEqLinear</a></li></ul></li><li><span class="tocitem">Mass Matrix DAE Solvers</span><ul><li><a class="tocitem" href="../../../massmatrixdae/Rosenbrock/">OrdinaryDiffEqRosenbrock</a></li><li><a class="tocitem" href="../../../massmatrixdae/BDF/">OrdinaryDiffEqBDF</a></li></ul></li><li><span class="tocitem">Fully Implicit DAE Solvers</span><ul><li><a class="tocitem" href="../../../fullyimplicitdae/BDF/">OrdinaryDiffEqBDF</a></li></ul></li><li><span class="tocitem">Misc Solvers</span><ul><li><a class="tocitem" href="../../../misc/">Miscellaneous Solvers</a></li></ul></li><li><span class="tocitem">Developer Documentation</span><ul><li><a class="tocitem" href="../../">SciML Scientific Machine Learning Developer Documentation</a></li><li><input class="collapse-toggle" id="menuitem-12-2" type="checkbox" checked/><label class="tocitem" for="menuitem-12-2"><span class="docs-label">Contributor Guide</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../ecosystem_overview/">Ecosystem Overview</a></li><li><a class="tocitem" href="../adding_packages/">Adding a new package to the common interface</a></li><li class="is-active"><a class="tocitem" href>Adding Algorithms</a><ul class="internal"><li><a class="tocitem" href="#Adding-new-algorithms-to-OrdinaryDiffEq"><span>Adding new algorithms to OrdinaryDiffEq</span></a></li></ul></li><li><a class="tocitem" href="../defining_problems/">Developing A New Problem</a></li><li><a class="tocitem" href="../diffeq_internals/">The DiffEq Internals</a></li><li><a class="tocitem" href="../type_traits/">Type Traits</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-12-3" type="checkbox"/><label class="tocitem" for="menuitem-12-3"><span class="docs-label">Algorithm Development Tools</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../alg_dev/test_problems/">Test Problems</a></li><li><a class="tocitem" href="../../alg_dev/convergence/">Convergence Simulations</a></li><li><a class="tocitem" href="../../alg_dev/benchmarks/">Benchmark Suite</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-12-4" type="checkbox"/><label class="tocitem" for="menuitem-12-4"><span class="docs-label">Internal Documentation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../internals/notes_on_algorithms/">Notes on Algorithms</a></li><li><a class="tocitem" href="../../internals/tableaus/">ODE Tableaus</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Developer Documentation</a></li><li><a class="is-disabled">Contributor Guide</a></li><li class="is-active"><a href>Adding Algorithms</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Adding Algorithms</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SciML/OrdinaryDiffEq.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SciML/OrdinaryDiffEq.jl/blob/master/docs/src/devtools/contributing/adding_algorithms.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Adding-Algorithms"><a class="docs-heading-anchor" href="#Adding-Algorithms">Adding Algorithms</a><a id="Adding-Algorithms-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-Algorithms" title="Permalink"></a></h1><p>New algorithms can either be added by extending one of the current solver (or add-on packages), or by contributing a new package to the organization. If it&#39;s a new problem (a new PDE, a new type of differential equation, a new subclass of problems for which special methods exist, etc.) then the problem and solution types should be added to <code>DiffEqBase</code> first.</p><p>After the problem and solutions are defined, the <code>__solve</code> method should be implemented. It should take in keyword arguments which match the common interface (implement &quot;as many as possible&quot;). One should note and document the amount of compatibility with the common interface and Julia-defined types. After that, testing should be done using <code>DiffEqDevTools</code>. Convergence tests and benchmarks should be included to show the effectiveness of the algorithm and the correctness. Do not worry if the algorithm is not &quot;effective&quot;: the implementation can improve over time and some algorithms are useful just for the comparison they give!</p><p>After some development, one may want to document the algorithm in DiffEqBenchmarks and DiffEqTutorials.</p><h2 id="Adding-new-algorithms-to-OrdinaryDiffEq"><a class="docs-heading-anchor" href="#Adding-new-algorithms-to-OrdinaryDiffEq">Adding new algorithms to OrdinaryDiffEq</a><a id="Adding-new-algorithms-to-OrdinaryDiffEq-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-new-algorithms-to-OrdinaryDiffEq" title="Permalink"></a></h2><p>This recipe has been used to add the strong stability preserving Runge-Kutta methods <code>SSPRK22</code>, <code>SSPRK33</code>, and <code>SSPRK104</code> to <code>OrdinaryDiffEq</code>. <code>SSPRK22</code> will be used as an example.</p><ul><li>To create a new solver, two (three) types have to be created. The first is the algorithm <code>SSPRK22</code> used for dispatch, the other ones are the corresponding caches <code>SSPRK22Cache</code> (for inplace updates) and <code>SSPRK22ConstantCache</code>.</li><li>The algorithm is defined in <code>algorithms.jl</code> as <code>struct SSPRK22 &lt;: OrdinaryDiffEqAlgorithm end</code>. Although it does not have the FSAL property, this is set to true since the derivative at the start and the end of the interval are used for the Hermite interpolation, and so this is FSAL&#39;d so that way only a single extra function evaluation occurs over the whole integration. This is done in <code>alg_utils.jl</code> via <code>isfsal(alg::SSPRK22) = true</code>. Additionally, the order is set in the same file via <code>alg_order(alg::SSPRK22) = 2</code>.</li><li>The algorithm <code>SSPRK22</code> is exported in <code>OrdinaryDiffEq.jl</code>.</li><li>In <code>caches.jl</code>, the two cache types <code>SSPRK22Cache</code> (for inplace updates) and <code>SSPRK22ConstantCache</code> are defined, similarly to the other ones. Note: <code>u_cache(c::SSPRK22Cache) = ()</code> and <code>du_cache(c::SSPRK22Cache) = (c.k,c.du,c.fsalfirst)</code> return the parts of the modifiable cache that are changed if the size of the ODE changes.</li><li>A new file <code>perform_step/ssprk_perform_step.jl</code> has been used for the new implementations. For both types of caches, the functions <code>initialize!</code> and <code>perform_step!</code> are defined there.</li><li>Finally, tests are added. A new file <code>test/ode/ode_ssprk_tests.jl</code> is created and included in <code>tests/runtests.jl</code> via <code>@time @testset &quot;SSPRK Tests&quot; begin include(&quot;ode/ode_ssprk_tests.jl&quot;) end</code>.</li><li>Additionally, regression tests for the dense output are added in <code>test/ode/ode_dense_tests.jl</code>.</li></ul><p>For more details, refer to https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/40</p><h3 id="Self-Contained-Example"><a class="docs-heading-anchor" href="#Self-Contained-Example">Self-Contained Example</a><a id="Self-Contained-Example-1"></a><a class="docs-heading-anchor-permalink" href="#Self-Contained-Example" title="Permalink"></a></h3><pre><code class="language-julia hljs">using OrdinaryDiffEq
+import OrdinaryDiffEq:
+                       OrdinaryDiffEqAlgorithm, OrdinaryDiffEqMutableCache,
+                       OrdinaryDiffEqConstantCache,
+                       alg_order, alg_cache, initialize!, perform_step!, trivial_limiter!,
+                       constvalue,
+                       @muladd, @unpack, @cache, @..
+
+struct RK_ALG{StageLimiter, StepLimiter} &lt;: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+end
+RK_ALG(stage_limiter! = trivial_limiter!) = RK_ALG(stage_limiter!, trivial_limiter!)
+export RK_ALG
+alg_order(alg::RK_ALG) = 3
+
+@cache struct RK_ALGCache{uType, rateType, StageLimiter, StepLimiter, TabType} &lt;:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    tmp::uType
+    u₂::uType
+    fsalfirst::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    tab::TabType
+end
+
+struct RK_ALGConstantCache{T, T2} &lt;: OrdinaryDiffEqConstantCache
+    α40::T
+    α41::T
+    α43::T
+    α62::T
+    α65::T
+    β10::T
+    β21::T
+    β32::T
+    β43::T
+    β54::T
+    β65::T
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+end
+
+function RK_ALGConstantCache(T, T2)
+    α40 = T(0.476769811285196)
+    α41 = T(0.098511733286064)
+    α43 = T(0.424718455428740)
+    α62 = T(0.155221702560091)
+    α65 = T(0.844778297439909)
+    β10 = T(0.284220721334261)
+    β21 = T(0.284220721334261)
+    β32 = T(0.284220721334261)
+    β43 = T(0.120713785765930)
+    β54 = T(0.284220721334261)
+    β65 = T(0.240103497065900)
+    c1 = T2(0.284220721334261)
+    c2 = T2(0.568441442668522)
+    c3 = T2(0.852662164002783)
+    c4 = T2(0.510854218958172)
+    c5 = T2(0.795074940292433)
+
+    RK_ALGConstantCache(
+        α40, α41, α43, α62, α65, β10, β21, β32, β43, β54, β65, c1, c2, c3, c4, c5)
+end
+
+function alg_cache(alg::RK_ALG, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true})
+    tmp = similar(u)
+    u₂ = similar(u)
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    tab = RK_ALGConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+    RK_ALGCache(u, uprev, k, tmp, u₂, fsalfirst, alg.stage_limiter!, alg.step_limiter!, tab)
+end
+
+function alg_cache(alg::RK_ALG, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false})
+    RK_ALGConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+function initialize!(integrator, cache::RK_ALGConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.destats.nf += 1
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::RK_ALGConstantCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack α40, α41, α43, α62, α65, β10, β21, β32, β43, β54, β65, c1, c2, c3, c4,
+    c5 = cache
+
+    # u1 -&gt; stored as u
+    u = uprev + β10 * dt * integrator.fsalfirst
+    k = f(u, p, t + c1 * dt)
+    # u2
+    u₂ = u + β21 * dt * k
+    k = f(u₂, p, t + c2 * dt)
+    # u3
+    tmp = u₂ + β32 * dt * k
+    k = f(tmp, p, t + c3 * dt)
+    # u4
+    tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
+    k = f(tmp, p, t + c4 * dt)
+    # u5
+    tmp = tmp + β54 * dt * k
+    k = f(tmp, p, t + c5 * dt)
+    # u
+    u = α62 * u₂ + α65 * tmp + β65 * dt * k
+
+    integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL&#39;d
+    integrator.destats.nf += 6
+    integrator.k[1] = integrator.fsalfirst
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::RK_ALGCache)
+    @unpack k, fsalfirst = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    integrator.kshortsize = 1
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
+    integrator.destats.nf += 1
+end
+
+@muladd function perform_step!(integrator, cache::RK_ALGCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k, tmp, u₂, fsalfirst, stage_limiter!, step_limiter! = cache
+    @unpack α40, α41, α43, α62, α65, β10, β21, β32, β43, β54, β65, c1, c2, c3, c4,
+    c5 = cache.tab
+
+    # u1 -&gt; stored as u
+    @.. u = uprev + β10 * dt * integrator.fsalfirst
+    stage_limiter!(u, f, p, t + c1 * dt)
+    f(k, u, p, t + c1 * dt)
+    # u2
+    @.. u₂ = u + β21 * dt * k
+    stage_limiter!(u₂, f, p, t + c2 * dt)
+    f(k, u₂, p, t + c2 * dt)
+    # u3
+    @.. tmp = u₂ + β32 * dt * k
+    stage_limiter!(tmp, f, p, t + c3 * dt)
+    f(k, tmp, p, t + c3 * dt)
+    # u4
+    @.. tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
+    stage_limiter!(tmp, f, p, t + c4 * dt)
+    f(k, tmp, p, t + c4 * dt)
+    # u5
+    @.. tmp = tmp + β54 * dt * k
+    stage_limiter!(tmp, f, p, t + c5 * dt)
+    f(k, tmp, p, t + c5 * dt)
+    # u
+    @.. u = α62 * u₂ + α65 * tmp + β65 * dt * k
+    stage_limiter!(u, f, p, t + dt)
+    step_limiter!(u, f, p, t + dt)
+    integrator.destats.nf += 6
+    f(k, u, p, t + dt)
+end
+
+#oop test
+f = ODEFunction((u, p, t) -&gt; 1.01u,
+    analytic = (u0, p, t) -&gt; u0 * exp(1.01t))
+prob = ODEProblem(f, 1.01, (0.0, 1.0))
+sol = solve(prob, RK_ALG(), dt = 0.1)
+
+using Plots
+plot(sol)
+plot(sol, denseplot = false, plot_analytic = true)
+
+using DiffEqDevTools
+dts = (1 / 2) .^ (8:-1:1)
+sim = test_convergence(dts, prob, RK_ALG())
+sim.𝒪est[:final]
+plot(sim)
+
+# Example of a good one!
+sim = test_convergence(dts, prob, BS3())
+sim.𝒪est[:final]
+plot(sim)
+
+#iip test
+f = ODEFunction((du, u, p, t) -&gt; (du .= 1.01 .* u),
+    analytic = (u0, p, t) -&gt; u0 * exp(1.01t))
+prob = ODEProblem(f, [1.01], (0.0, 1.0))
+sol = solve(prob, RK_ALG(), dt = 0.1)
+
+plot(sol)
+plot(sol, denseplot = false, plot_analytic = true)
+
+dts = (1 / 2) .^ (8:-1:1)
+sim = test_convergence(dts, prob, RK_ALG())
+sim.𝒪est[:final]
+plot(sim)
+
+# Example of a good one!
+sim = test_convergence(dts, prob, BS3())
+sim.𝒪est[:final]
+plot(sim)</code></pre><h3 id="Adding-new-exponential-algorithms"><a class="docs-heading-anchor" href="#Adding-new-exponential-algorithms">Adding new exponential algorithms</a><a id="Adding-new-exponential-algorithms-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-new-exponential-algorithms" title="Permalink"></a></h3><p>The exponential algorithms follow the same recipe as the general algorithms, but there are automation utilities that make this easier. It is recommended that you refer to one of the model algorithms for reference:</p><ul><li>For traditional exponential Runge-Kutta type methods (that come with a corresponding Butcher table), refer to <code>ETDRK2</code>.</li><li>For adaptive exponential Rosenbrock type methods, refer to <code>Exprb32</code>.</li><li>For exponential propagation iterative Runge-Kutta methods (EPIRK), refer to <code>EPIRK5P1</code>.</li></ul><p>The first two classes support two modes of operation: operator caching and Krylov approximation. The <code>perform_step!</code> method in <code>perform_step/exponential_rk_perform_step.jl</code>, as a result, is split into two branches depending on whether <code>alg.krylov</code> is true. The caching branch utilizes precomputed operators, which are calculated by the <code>expRK_operators</code> method in <code>caches/linear_nonlinear_caches.jl</code>. Both <code>expRK_operators</code> and the <code>arnoldi</code>/<code>phiv</code> methods in <code>perform_step!</code> comes from the <a href="https://github.com/JuliaDiffEq/ExponentialUtilities.jl">ExponentialUtilities</a> package.</p><p>The EPIRK methods can only use Krylov approximation, and unlike the previous two they use the timestepping variant <code>phiv_timestep</code>. The timestepping method follows the convention of Neisen &amp; Wright, and can be toggled to use adaptation by <code>alg.adaptive_krylov</code>.</p><p>Although the exponential integrators (especially the in-place version) can seem complex, they share similar structures. The infrastructure for the existing exponential methods utilize the fact to reduce boilerplate code. In particular, the cache construction code in <code>caches/linear_nonlinear_caches.jl</code> and the <code>initialize!</code> method in <code>perform_step/exponential_rk_perform_step.jl</code> can be mostly automated and only <code>perform_step!</code> needs implementing.</p><p>Finally, to construct tests for the new exponential algorithm, append the new algorithm to the corresponding algorithm class in <code>test/linear_nonlinear_convergence_tests.jl</code> and <code>test/linear_nonlinear_krylov_tests.jl</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../adding_packages/">« Adding a new package to the common interface</a><a class="docs-footer-nextpage" href="../defining_problems/">Developing A New Problem »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 25 April 2026 00:15">Saturday 25 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
