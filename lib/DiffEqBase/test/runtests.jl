@@ -46,6 +46,7 @@ end
         @time @safetestset "ODE default norm" include("ode_default_norm.jl")
         @time @safetestset "DynamicQuantities extension" include("dynamicquantities_ext.jl")
         @time @safetestset "Unitful extension" include("unitful_ext.jl")
+        @time @safetestset "Extension ODE_DEFAULT_NORM" include("extension_norm_ext.jl")
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
         @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
