@@ -1,8 +1,9 @@
 # NonlinearSolveAlg with inner algorithms that have no `init` (every SimpleNonlinearSolve
 # algorithm): these land in `NonlinearSolveBase.NonlinearSolveNoInitCache`, a fallback with
 # no iteration state, so `step!`, `get_fu`, `.stats` and `not_terminated` are all
-# unavailable and the cache can only be driven by complete `solve!` calls that must
-# terminate on their own (nonzero) tolerances.
+# unavailable and the cache can only be driven by complete `solve!` calls. A
+# SimpleNewtonRaphson solve ends on the integrator's own κ/η test; the others end on their
+# own default criterion.
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
@@ -128,9 +129,14 @@ end
         nlcache = noinit_cache(integ).cache
         @test nlcache isa NonlinearSolveBase.NonlinearSolveNoInitCache
         # The post-resize rebuild must preserve the no-init tolerances exactly as the
-        # build path does.
+        # build path does; the only termination criterion is the per-solve one.
         @test !iszero(NonlinearSolveBase.get_abstol(nlcache))
-        @test !haskey(nlcache.kwargs, :termination_condition)
+        if ialg isa SimpleNewtonRaphson
+            @test nlcache.kwargs[:termination_condition] isa
+                OrdinaryDiffEqNonlinearSolve.StageConvergenceMode
+        else
+            @test !haskey(nlcache.kwargs, :termination_condition)
+        end
     end
 end
 
@@ -161,4 +167,174 @@ end
         reltol = 1.0e-8, abstol = 1.0e-10
     )
     @test SciMLBase.successful_retcode(sol.retcode)
+end
+
+# ROBER in units scaled by `s` (`y = s⋅Y`): identical dynamics, so tolerances scaled with it
+# must give the same steps and the same weighted stage accuracy at every `s`.
+function rober_scaled(u, s)
+    y₁, y₂, y₃ = u ./ s
+    return s .* [
+        -0.04y₁ + 1.0e4 * y₂ * y₃,
+        0.04y₁ - 1.0e4 * y₂ * y₃ - 3.0e7 * y₂^2,
+        3.0e7 * y₂^2,
+    ]
+end
+function rober_scaled_jac(u, s)
+    y₁, y₂, y₃ = u ./ s
+    return [
+        -0.04 1.0e4 * y₃ 1.0e4 * y₂
+        0.04 (-1.0e4 * y₃ - 6.0e7 * y₂) -1.0e4 * y₂
+        0.0 6.0e7 * y₂ 0.0
+    ]
+end
+rober_scaled!(du, u, s, t) = (du .= rober_scaled(u, s); nothing)
+rober_scaled_oop(u, s, t) = rober_scaled(u, s)
+
+# Weighted distance of an accepted ImplicitEuler step from the exact root of
+# `u = uprev + h⋅f(u)`, in the integrator's own norm.
+function implicit_euler_stage_error(integ, s)
+    uprev, u, h = collect(integ.uprev), collect(integ.u), integ.t - integ.tprev
+    x = copy(u)
+    for _ in 1:30
+        x = x .- (I - h * rober_scaled_jac(x, s)) \ (x .- uprev .- h .* rober_scaled(x, s))
+    end
+    w = integ.opts.abstol .+ integ.opts.reltol .* max.(abs.(uprev), abs.(u))
+    return sqrt(sum(abs2, (u .- x) ./ w) / length(u))
+end
+
+# The integrator's κ/η test accepts a stage once its estimated weighted error is below
+# κ = 1/100 (NLNewton stays under 0.04 here), so an accepted stage a whole tolerance unit off
+# the root was accepted by some other criterion.
+@testset "inner termination follows the integrator's tolerances (s = $s)" for s in
+    (1.0e-10, 1.0e6)
+    tspan = (0.0, 1.0e3)
+    reltol, abstol = 1.0e-4, 1.0e-8 * s
+    ref_steps = length(
+        solve(
+            ODEProblem(rober_scaled!, [s, 0.0, 0.0], tspan, s), ImplicitEuler();
+            reltol, abstol
+        ).t
+    )
+    for iip in (true, false)
+        prob = iip ? ODEProblem(rober_scaled!, [s, 0.0, 0.0], tspan, s) :
+            ODEProblem(rober_scaled_oop, [s, 0.0, 0.0], tspan, s)
+        integ = init(
+            prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson()));
+            reltol, abstol, maxiters = 3 * ref_steps
+        )
+        worst = 0.0
+        for _ in integ
+            # The iterator also yields the state a `MaxIters` abort leaves behind, whose `u` is
+            # a rejected trial value rather than a stage the nonlinear solver accepted.
+            integ.accept_step || continue
+            worst = max(worst, implicit_euler_stage_error(integ, s))
+        end
+        @testset "$(iip ? "iip" : "oop")" begin
+            @test worst < 1
+            @test SciMLBase.successful_retcode(integ.sol.retcode)
+        end
+    end
+end
+
+# Weighted RMS distance of one fixed ImplicitEuler step from the stage root.
+function one_step_stage_error(f, f!, u0, root, iip, inner; abstol, reltol)
+    prob = ODEProblem(iip ? f! : f, u0, (0.0, 1.0))
+    integ = init(
+        prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(inner));
+        dt = 1.0, adaptive = false, abstol, reltol
+    )
+    step!(integ)
+    w = abstol .+ reltol .* max.(abs.(integ.uprev), abs.(integ.u))
+    return integ.sol.retcode, sqrt(sum(abs2, (integ.u .- root) ./ w) / length(root))
+end
+
+# One large component must not set the convergence floor for a small one: the stage root of
+# `u' = [-u₁, -u₂²]`, `u₀ = [1e16, 1]`, `h = 1` is `[5e15, (√5 - 1)/2]`, and the Jacobian is
+# well conditioned.
+@testset "mixed-scale stage ($(nameof(typeof(inner))) $(iip ? "iip" : "oop"))" for inner in
+        (SimpleNewtonRaphson(), SimpleTrustRegion()), iip in (true, false)
+    f(u, p, t) = [-u[1], -u[2]^2]
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    retcode, err = one_step_stage_error(
+        f, f!, [1.0e16, 1.0], [5.0e15, (sqrt(5.0) - 1) / 2], iip, inner;
+        abstol = 1.0e-8, reltol = 1.0e-6
+    )
+    @test SciMLBase.successful_retcode(retcode)
+    @test err < 1
+end
+
+# A residual at the roundoff floor says nothing when `W` is ill-conditioned: the stage of
+# `u' = [(1 - δ)u₁ + 2δ, 1]` from `u₀ = 0` with `h = 1` is linear, `W = diag(δ, 1)`, and its root
+# is exactly `[2, 1]`.
+@testset "ill-conditioned stage (δ = $δ, $(iip ? "iip" : "oop"))" for δ in
+        (1.0e-12, eps(1.0)), iip in (true, false)
+    f(u, p, t) = [(1 - δ) * u[1] + 2δ, 1.0]
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    root = [2δ / (1 - (1 - δ)), 1.0]
+    retcode, err = one_step_stage_error(
+        f, f!, [0.0, 0.0], root, iip, SimpleNewtonRaphson();
+        abstol = 1.0e-10, reltol = 1.0e-8
+    )
+    @test SciMLBase.successful_retcode(retcode)
+    @test err < 1
+end
+
+# A stage whose Newton correction rounds to zero is converged, not stuck: warm-started at the
+# previous inner solve's root, the stage of `u' = -u²` from `u₀ = 1`, `h = 1`
+# (root `(√5 - 1)/2`) must be accepted down to `tol = eps`.
+@testset "zero first correction ($(iip ? "iip" : "oop"), tol = $tol)" for iip in (true, false),
+        tol in (1.0e-12, eps(1.0))
+    f(u, p, t) = -u .^ 2
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    integ = init(
+        ODEProblem(iip ? f! : f, [1.0], (0.0, 1.0)),
+        ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson()));
+        dt = 1.0, adaptive = false, abstol = tol, reltol = tol
+    )
+    step!(integ)
+    @test SciMLBase.successful_retcode(integ.sol.retcode)
+    @test integ.t == 1.0
+    @test integ.u[1] ≈ (sqrt(5.0) - 1) / 2 rtol = 1.0e-12
+end
+
+# `sin(x) = 0` from floating-point π: the Newton correction is stationary at rounding level,
+# so only a first-iteration certificate can end the solve.
+mutable struct ZeroCorrectionOwner
+    inner_ndzprev::Float64
+end
+@testset "stationary roundoff" begin
+    owner = ZeroCorrectionOwner(-1.0)
+    norm_w = OrdinaryDiffEqNonlinearSolve.StageDisplacementNorm(
+        [3.0], 1.0e-12, 1.0e-12, (x, t) -> norm(x), 0.0
+    )
+    newton_step(fu, x) = fu ./ cos.(x)
+    mode = OrdinaryDiffEqNonlinearSolve.StageConvergenceMode(norm_w, 0.01, owner, newton_step)
+    sol = solve(
+        NonlinearProblem((x, p) -> sin.(x), [Float64(pi)]), SimpleNewtonRaphson();
+        termination_condition = mode
+    )
+    @test SciMLBase.successful_retcode(sol.retcode)
+    @test abs(sol.u[1] - Float64(pi)) <= eps(Float64(pi))
+end
+
+# A correction that rounds away is not a converged one. The stage of
+# `u' = (u - 10¹⁶) - (u - 2) - 10⁻⁸(u - 2)²` from `u₀ = 10¹⁶`, `h = 1`, has the exact root 2, but
+# the predictor 4 sits where the in-place reused-`W` correction is below half an ulp of the
+# increment `z ≈ -10¹⁶`: the stored iterate does not move. The stage must not be accepted at 4.
+@testset "rounded-away correction ($(iip ? "iip" : "oop"))" for iip in (true, false)
+    function f(u, p, t)
+        x = u[1] - 2.0
+        return [(u[1] - 1.0e16) - (x + 1.0e-8 * x * x)]
+    end
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    predictor = iip ? ((u, uprev, p, t, dt) -> (u[1] = 4.0; nothing)) :
+        ((uprev, p, t, dt) -> [4.0])
+    integ = init(
+        ODEProblem(iip ? f! : f, [1.0e16], (0.0, 1.0)),
+        ImplicitEuler(nlsolve = NonlinearSolveAlg(SimpleNewtonRaphson(); predictor));
+        dt = 1.0, adaptive = false, abstol = 1.0e-12, reltol = 0.0
+    )
+    step!(integ)
+    @test !SciMLBase.successful_retcode(integ.sol.retcode) ||
+        abs(integ.u[1] - 2.0) <= 1.0e-12
 end
