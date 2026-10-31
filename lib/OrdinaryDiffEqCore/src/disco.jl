@@ -65,7 +65,7 @@ function find_discontinuity(integrator)
                     disco_prob.tspan[2] = breakpointθ
                     sol = solve(disco_prob)
                     tmp = sol[]
-                    if (!isnan(tmp) && tmp < breakpointθ)
+                    if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
                         integrator.is_disco_step = true
                         integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step too far past this
@@ -86,7 +86,7 @@ function find_discontinuity(integrator)
                 disco_prob.tspan[2] = breakpointθ
                 sol = solve(disco_prob)
                 tmp = sol[]
-                if (!isnan(tmp) && tmp < breakpointθ)
+                if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp
                     integrator.is_disco_step = true
                     integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step past this
