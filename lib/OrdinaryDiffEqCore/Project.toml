@@ -78,6 +78,7 @@ Logging = "1.10"
 MacroTools = "0.5.6"
 Mooncake = "0.4, 0.5"
 MuladdMacro = "0.2.4"
+OrdinaryDiffEqBDF = "2"
 OrdinaryDiffEqFIRK = "2.8.1"
 OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqTsit5 = "2.1.4"
@@ -98,12 +99,14 @@ SparseArrays = "1"
 SymbolicIndexingInterface = "0.3.43"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4"
+Unitful = "1"
 julia = "1.10"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 OrdinaryDiffEqFIRK = "5960d6e9-dd7a-4743-88e7-cf307b64f125"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
@@ -112,13 +115,17 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["DiffEqDevTools", "Enzyme", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting"]
+test = ["DiffEqDevTools", "Enzyme", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting", "Unitful"]
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
 DiffEqDevTools = {path = "../DiffEqDevTools"}
+
+[sources.OrdinaryDiffEqBDF]
+path = "../OrdinaryDiffEqBDF"
 
 [sources.OrdinaryDiffEqFIRK]
 path = "../OrdinaryDiffEqFIRK"
