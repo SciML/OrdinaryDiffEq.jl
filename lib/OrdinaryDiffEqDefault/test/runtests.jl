@@ -34,6 +34,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     end
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
     @time @safetestset "Composite reinit!" include("composite_reinit.jl")
+    @time @safetestset "Composite reinit! with ForwardDiff" include("composite_reinit_ad.jl")
 end
 
 # Run QA tests (JET, Aqua)
