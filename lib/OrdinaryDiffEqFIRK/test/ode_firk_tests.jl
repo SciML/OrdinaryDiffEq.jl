@@ -276,6 +276,15 @@ for iip in (true, false)
     @test SciMLBase.successful_retcode(sol)
 end
 
+@testset "RadauIIA3 in place and out of place transform the tolerance alike" begin
+    vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 10 * ((1 - u[1]^2) * u[2] - u[1]); nothing)
+    vdp(u, p, t) = [u[2], 10 * ((1 - u[1]^2) * u[2] - u[1])]
+    kw = (; reltol = 1.0e-4, abstol = 1.0e-4)
+    iip = solve(ODEProblem(vdp!, [2.0, 0.0], (0.0, 10.0)), RadauIIA3(); kw...)
+    oop = solve(ODEProblem(vdp, [2.0, 0.0], (0.0, 10.0)), RadauIIA3(); kw...)
+    @test abs(iip.stats.naccept - oop.stats.naccept) < 0.05 * oop.stats.naccept
+end
+
 @testset "AdaptiveRadau initializes every stage-value slot" begin
     # `integrator.k[3:end]` holds one stage value per possible stage; the extrapolated
     # initial guess reads all `num_stages` of them, so the slots above the starting stage
