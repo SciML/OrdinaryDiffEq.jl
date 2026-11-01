@@ -1,5 +1,6 @@
 using SafeTestsets
 using Pkg
+using Test
 
 function activate_gpu_env()
     Pkg.activate("gpu")
@@ -256,6 +257,16 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         activate_nopre_env()
         @time @safetestset "JET Static Analysis Tests" begin
             include("nopre/jet_tests.jl")
+        end
+    end
+
+    # QA last, in a subprocess: loading the QA dependency tree under
+    # --code-coverage pushes the test process past CI runner memory, so the
+    # group env is activated and run_qa is run without coverage instrumentation.
+    if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+        qa_cmd = `$(Base.julia_cmd()) --project=$(Base.active_project()) --startup-file=no $(joinpath(@__DIR__, "qa", "run.jl"))`
+        @time @testset "QA (Aqua, ExplicitImports, JET)" begin
+            @test success(run(ignorestatus(qa_cmd)))
         end
     end
 end
