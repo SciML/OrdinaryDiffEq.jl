@@ -13,6 +13,7 @@ end
 if TEST_GROUP == "GPU"
     activate_gpu_env()
     @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
+    @time @safetestset "Composite reinit! GPU" include("gpu/composite_reinit.jl")
 end
 
 # Run functional tests
