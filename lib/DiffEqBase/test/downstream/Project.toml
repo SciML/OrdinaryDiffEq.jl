@@ -1,5 +1,6 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+BracketingNonlinearSolve = "70df07ce-3d50-431d-a3e7-ca6ddb60ac1e"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
@@ -22,6 +23,7 @@ OrdinaryDiffEqSymplecticRK = "fa646aed-7ef9-47eb-84c4-9443fc8cbfa8"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 SDEProblemLibrary = "c72e72a9-a271-4b2b-8966-303ed956772e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLLogging = "a6db7da4-7206-11f0-1eab-35f2a5dbe1d1"
 SciMLSensitivity = "1ed8b502-d754-442c-8d5d-10ac956f44a1"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
@@ -42,11 +44,13 @@ StochasticDiffEq = {path = "../../../StochasticDiffEq"}
 
 [compat]
 ADTypes = "1"
+BracketingNonlinearSolve = "1.12.1"
 DifferentiationInterface = "0.7"
 Enzyme = "0.13.100"
 ForwardDiff = "0.10, 1"
 GTPSA = "1.4"
 MultiScaleArrays = "1.8"
 OrdinaryDiffEq = "7"
+SciMLLogging = "2"
 SciMLSensitivity = "7"
 StochasticDiffEq = "7"
