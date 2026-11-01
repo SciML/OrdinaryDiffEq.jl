@@ -1290,6 +1290,21 @@ function perform_step!(
         integrator, cache::FBDFConstantCache{max_order},
         repeat_step = false
     ) where {max_order}
+    # History is stored at the committed times fl(t + dt), so step by that increment.
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    try
+        _fbdf_perform_step!(integrator, cache, repeat_step)
+    finally
+        integrator.dt = dt
+    end
+    return nothing
+end
+
+function _fbdf_perform_step!(
+        integrator, cache::FBDFConstantCache{max_order},
+        repeat_step
+    ) where {max_order}
     reinitFBDF!(integrator, cache)
     (;
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
@@ -1535,6 +1550,20 @@ end
 function perform_step!(
         integrator, cache::FBDFCache{max_order},
         repeat_step = false
+    ) where {max_order}
+    dt = integrator.dt
+    integrator.dt = (integrator.t + dt) - integrator.t
+    try
+        _fbdf_perform_step!(integrator, cache, repeat_step)
+    finally
+        integrator.dt = dt
+    end
+    return nothing
+end
+
+function _fbdf_perform_step!(
+        integrator, cache::FBDFCache{max_order},
+        repeat_step
     ) where {max_order}
     reinitFBDF!(integrator, cache)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
