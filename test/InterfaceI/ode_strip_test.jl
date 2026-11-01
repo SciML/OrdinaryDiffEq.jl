@@ -77,4 +77,21 @@ end
         @test isnothing(stripped_sol.interp.f)
         @test all(isapprox(stripped_sol(t), sol(t); rtol = 1.0e-12) for t in ts)
     end
+
+    holds(x, y, seen = IdDict()) = x === y || (
+        !(x isa Union{Module, Type}) && !haskey(seen, x) && (seen[x] = true;
+            x isa Array ? any(i -> isassigned(x, i) && holds(x[i], y, seen), eachindex(x)) :
+            any(i -> isdefined(x, i) && holds(getfield(x, i), y, seen), 1:nfields(x)))
+    )
+    parameter_rate(t) = 1.0
+    growth = ODEProblem((du, u, p, t) -> (du .= p.rate(t) .* u), [1.0], (0.0, 1.0), (rate = parameter_rate,))
+    ts = range(0.013, 0.987; length = 50)
+    for alg in (AdaptiveRadau(), RadauIIA5(), DefaultODEAlgorithm(lazy = Val(false)))
+        sol = solve(growth, alg; reltol = 1.0e-10, abstol = 1.0e-10)
+        stripped_sol = SciMLBase.strip_solution(sol; strip_alg = true)
+        @test !holds(stripped_sol.interp, parameter_rate)
+        @test all(stripped_sol(t) == sol(t) for t in ts)
+    end
+    sol = SciMLBase.strip_solution(solve(growth, DefaultODEAlgorithm(lazy = Val(false)); reltol = 1.0e-10, abstol = 1.0e-10))
+    @test maximum(t -> abs(sol(t)[1] - exp(t)), ts) < 1.0e-11
 end
