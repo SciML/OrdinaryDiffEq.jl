@@ -606,13 +606,19 @@ end
     root_verbosity(integrator)
 
 Keyword arguments giving a callback's root solve the integrator's nonlinear verbosity:
-`(; verbose = integrator.opts.verbose.nonlinear_verbosity)` when the integrator's options hold
-a `DEVerbosity`, otherwise none (the root solver's default).
+`(; verbose = NonlinearVerbosity(integrator.opts.verbose.nonlinear_verbosity))` when the
+integrator's options hold a `DEVerbosity` whose `nonlinear_verbosity` is a preset or a
+`NonlinearVerbosity` (passed through as is), otherwise none (the root solver's default).
 """
 function root_verbosity(integrator)
     v = _options_verbose(integrator)
-    return v isa DEVerbosity ? (; verbose = v.nonlinear_verbosity) : (;)
+    v isa DEVerbosity || return (;)
+    nv = _nonlinear_verbosity(v.nonlinear_verbosity)
+    return nv === nothing ? (;) : (; verbose = nv)
 end
+_nonlinear_verbosity(v::NonlinearVerbosity) = v
+_nonlinear_verbosity(v::AbstractVerbosityPreset) = NonlinearVerbosity(v)
+_nonlinear_verbosity(_) = nothing
 _options_verbose(integrator) = hasproperty(integrator, :opts) ? _verbose_field(integrator.opts) : nothing
 _verbose_field(opts) = hasproperty(opts, :verbose) ? opts.verbose : nothing
 
