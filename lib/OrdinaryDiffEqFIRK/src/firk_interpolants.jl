@@ -104,8 +104,8 @@ end
         Θ, dt, y₀, y₁, k, cache::Union{AdaptiveRadauConstantCache, AdaptiveRadauCache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
-    (; num_stages, index) = cache
-    (; c) = cache.tabs[index]
+    (; c) = cache.tabs[end]
+    num_stages = length(c)
 
     for i in 1:num_stages
         tmp = k[i + 2]
@@ -123,8 +123,8 @@ end
         out, Θ, dt, y₀, y₁, k, cache::Union{AdaptiveRadauConstantCache, AdaptiveRadauCache},
         idxs::Nothing, T::Type{Val{0}}, differential_vars
     )
-    (; num_stages, index) = cache
-    (; c) = cache.tabs[index]
+    (; c) = cache.tabs[end]
+    num_stages = length(c)
 
     tmp = similar(out)
     out .= y₀
@@ -138,4 +138,12 @@ end
         @.. out += tmp * Θ / c[i]
     end
     out
+end
+
+function _stage_weight(c, i, θ)
+    weight = θ / c[i]
+    for j in eachindex(c)
+        j != i && (weight *= (θ - c[j]) / (c[i] - c[j]))
+    end
+    return weight
 end
