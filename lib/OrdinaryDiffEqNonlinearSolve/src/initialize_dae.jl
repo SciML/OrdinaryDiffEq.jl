@@ -588,6 +588,19 @@ step (see #4466 / #4485). Initial `uprev` sync happens in `solve` via
 
 =#
 
+# A Newton step in Dual arithmetic moves the partials of `x` to the implicit-function derivative.
+function _implicit_partials!(x, r, g!, ::Val{chunk}) where {chunk}
+    xv = SciMLBase.value.(x)
+    y = similar(xv, length(r))
+    J = ForwardDiff.jacobian(g!, y, xv, ForwardDiff.JacobianConfig(g!, y, xv, ForwardDiff.Chunk{chunk}()))
+    x .-= reshape(J \ vec(r .- SciMLBase.value.(r)), size(x))
+    return nothing
+end
+
+_primal(p::Union{Number, AbstractArray}) = SciMLBase.value.(p)
+_primal(p::Union{Tuple, NamedTuple}) = map(_primal, p)
+_primal(p) = p
+
 algebraic_jacobian(::Nothing, algebraic_eqs, algebraic_vars) = nothing
 function algebraic_jacobian(
         jac_prototype::T, algebraic_eqs,
@@ -673,6 +686,12 @@ function _initialize_dae!(
     )
     alg_u .= nlsol.u
 
+    if typeof(u) !== typeof(_u)
+        pv = _primal(p)
+        res = similar(u)
+        f(res, u, p, t)
+        _implicit_partials!(alg_u, res[algebraic_eqs], (out, x) -> nlequation!(out, x, pv), nlchunk)
+    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
@@ -831,6 +850,16 @@ function _initialize_dae!(
     @. du = ifelse(differential_vars, nlsol.u, du)
     @. u = ifelse(differential_vars, u, nlsol.u)
 
+    if typeof(u) !== typeof(_u)
+        pv = _primal(p)
+        res = similar(u)
+        f(res, du, u, p, t)
+        x = ifelse.(differential_vars, du, u)
+        g! = (out, x) -> nlequation!(out, x, pv)
+        _implicit_partials!(x, _vec(res), g!, Val(ForwardDiff.pickchunksize(length(x))))
+        @. du = ifelse(differential_vars, x, du)
+        @. u = ifelse(differential_vars, u, x)
+    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(
