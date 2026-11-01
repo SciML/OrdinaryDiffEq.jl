@@ -40,7 +40,7 @@ run_qa(
                 # DiffEqBase — owner-internal, no public alternative
                 :NAN_CHECK,
                 # Base / Core internals
-                Symbol("@max_methods"), :Experimental, :RefValue, :Typeof, :promote_op,
+                Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
                 :EnzymeRules, :inactive_noinl, :inactive,
                 # SciMLBase internals with no public replacement yet
