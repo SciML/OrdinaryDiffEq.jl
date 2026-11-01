@@ -328,3 +328,17 @@ end
         @test sol.u[end] ≈ [1.0, 2.0] .* exp(-1) rtol = 1.0e-6
     end
 end
+
+@testset "Threaded extrapolation inside another threaded loop" begin
+    prob_iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    prob_oop = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    for prob in (prob_iip, prob_oop),
+            Alg in (ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner)
+        serial = solve(prob, Alg(threading = false))
+        sols = Vector{Any}(undef, 2)
+        Threads.@threads for i in 1:2
+            sols[i] = solve(prob, Alg(threading = true))
+        end
+        @test all(sol -> sol.u == serial.u, sols)
+    end
+end

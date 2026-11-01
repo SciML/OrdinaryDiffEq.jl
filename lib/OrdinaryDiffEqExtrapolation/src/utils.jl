@@ -20,6 +20,13 @@
     _float_controller_type(promote_type(map(typeof, values(overrides))...))
 
 @inline function _threaded_foreach(f, ::Union{Bool, BaseThreads}, range)
+    if ccall(:jl_in_threaded_region, Cint, ()) != 0
+        # Bodies index buffers by threadid, so pin the serial loop to one thread.
+        t = Task(() -> foreach(f, range))
+        t.sticky = true
+        wait(schedule(t))
+        return nothing
+    end
     return Threads.@threads :static for i in range
         f(i)
     end
