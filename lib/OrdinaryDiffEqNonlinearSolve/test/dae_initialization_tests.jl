@@ -243,4 +243,9 @@ end
     end
     # y^3 + y = c s gives y = 1 and a gradient (c, s) / (3y^2 + 1)
     @test ForwardDiff.gradient(y0, [0.8, 2.5]) ≈ [0.625, 0.2] rtol = 1.0e-8
+    y0t(c) = init(
+        remake(prob; u0 = [0.8, 0.3], p = (1.2, c)), Rodas5P();
+        initializealg = BrownFullBasicInit(), abstol = 1.0e-12, reltol = 1.0e-12
+    ).u[2]
+    @test ForwardDiff.derivative(y0t, 2.5) ≈ 0.2 rtol = 1.0e-8
 end
