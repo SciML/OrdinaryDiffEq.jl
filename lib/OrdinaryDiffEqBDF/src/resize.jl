@@ -42,3 +42,39 @@ function resize_non_user_cache!(
     integrator.derivative_discontinuity = true
     return nothing
 end
+
+# `FBDFCache` holds no `u`/`uprev` and keeps its history in vectors of state-sized
+# arrays, none of which `full_cache` reaches. `deleteat!`/`addat!` are not idempotent, so
+# each array is edited once and arrays the generic pass already edited are skipped.
+function edit_fbdf_state!(edit!, integrator, cache)
+    seen = Any[integrator.fsalfirst, integrator.fsallast]
+    append!(seen, full_cache(integrator))
+    for a in Iterators.flatten(
+            (
+                (integrator.u, integrator.uprev),
+                cache.u_history, cache.u_corrector, cache.dense,
+            )
+        )
+        (a isa AbstractArray && ArrayInterface.ismutable(a)) || continue
+        any(s -> s === a, seen) && continue
+        push!(seen, a)
+        edit!(a)
+    end
+    return nothing
+end
+
+function deleteat_non_user_cache!(
+        integrator::OrdinaryDiffEqCore.ODEIntegrator,
+        cache::FBDFCache, idxs
+    )
+    edit_fbdf_state!(a -> deleteat!(a, idxs), integrator, cache)
+    return resize_non_user_cache!(integrator, cache, length(integrator.u))
+end
+
+function addat_non_user_cache!(
+        integrator::OrdinaryDiffEqCore.ODEIntegrator,
+        cache::FBDFCache, idxs
+    )
+    edit_fbdf_state!(a -> SciMLBase.addat!(a, idxs), integrator, cache)
+    return resize_non_user_cache!(integrator, cache, length(integrator.u))
+end

@@ -29,7 +29,8 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
     DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
     find_algebraic_vars_eqs
-import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache, resize_non_user_cache!
+import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache, resize_non_user_cache!,
+    deleteat_non_user_cache!, addat_non_user_cache!
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
 using OrdinaryDiffEqSDIRK: ESDIRKIMEXConstantCache, ESDIRKIMEXCache,
     ImplicitEulerESDIRKIMEXTableau
