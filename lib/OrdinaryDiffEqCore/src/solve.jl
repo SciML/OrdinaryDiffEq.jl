@@ -52,10 +52,10 @@ end
 _set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
 
 function (z::zero_func_struct)(θ, p)
-    iszero(θ) && return SciMLBase.value(z.out_low[z.ind])
-    isone(θ) && return SciMLBase.value(z.out_high[z.ind])
+    iszero(θ) && return z.out_low[z.ind]
+    isone(θ) && return z.out_high[z.ind]
     u = _disco_interpolant(z, θ)
-    return SciMLBase.value(zero_condition(z.callback, z.out, u, z.tprev + θ * z.dt, z, z.ind))
+    return zero_condition(z.callback, z.out, u, z.tprev + θ * z.dt, z, z.ind)
 end
 
 function _disco_interpolant(z::zero_func_struct, θ)

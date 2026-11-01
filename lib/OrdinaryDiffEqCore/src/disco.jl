@@ -79,8 +79,7 @@ function find_discontinuity(integrator)
     p = integrator.p
     t = integrator.t
     k = integrator.k
-    # the root fraction only places the retried step, so it is found on primal values
-    breakpointθ = one(SciMLBase.value(dt))
+    breakpointθ = one(dt)
     disco_probs = get_disco_probs(integrator.controller_cache)
     idx = 1
     addsteps_called = false
@@ -115,8 +114,8 @@ function find_discontinuity(integrator)
                 end
             end
         else
-            disco_zero.out_low[1] = SciMLBase.value(i.condition(uprev, t, integrator))
-            disco_zero.out_high[1] = SciMLBase.value(i.condition(u, t + dt, integrator))
+            disco_zero.out_low[1] = i.condition(uprev, t, integrator)
+            disco_zero.out_high[1] = i.condition(u, t + dt, integrator)
             if (disco_zero.out_low[1] * disco_zero.out_high[1] < zero(disco_zero.out_low[1]))
                 if (!addsteps_called)
                     addsteps_called = true
