@@ -1,6 +1,6 @@
 using OrdinaryDiffEqLinear, Test, DiffEqDevTools
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner, OrdinaryDiffEqTsit5
-using LinearAlgebra, Random
+using LinearAlgebra, Random, SparseArrays, Unitful
 using SciMLOperators: MatrixOperator
 
 # Linear exponential solvers
@@ -308,3 +308,41 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 
 sim = analyticless_test_convergence(dts, prob, CayleyEuler(), test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol = 0.2
+
+@testset "MagnusNC6 and MagnusGauss4 operator matrix types" begin
+    Au = [-0.1 0.0; 0.0 -0.2]
+    prob_unitful = ODEProblem(MatrixOperator(Au), [1.0, 2.0]u"m", (0.0, 1.0))
+    @testset "unitful state, $(nameof(typeof(alg)))" for alg in (MagnusNC6(), MagnusGauss4())
+        sol = solve(prob_unitful, alg; dt = 0.1, adaptive = false)
+        @test sol.retcode == ReturnCode.Success
+        @test ustrip.(u"m", sol.u[end]) ≈ exp(Au) * [1.0, 2.0]
+    end
+
+    function tridiag_update!(A, u, p, t)
+        for j in axes(A, 2), i in max(1, j - 1):min(size(A, 1), j + 1)
+            A[i, j] = i == j ? -0.1 * i : (i < j ? 0.01 : 0.01 * sin(t))
+        end
+        return nothing
+    end
+    N = 300
+    pattern = spdiagm(-1 => ones(N - 1), 0 => ones(N), 1 => ones(N - 1))
+    tridiag_prob(A) = ODEProblem(
+        MatrixOperator(A; update_func! = tridiag_update!), ones(N), (0.0, 0.1)
+    )
+    prob_dense = tridiag_prob(Matrix(pattern))
+    @testset "$(nameof(typeof(A))) operator, $(nameof(typeof(alg))) krylov=$(alg.krylov)" for (A, alg) in (
+            (pattern, MagnusNC6(krylov = true)),
+            (pattern, MagnusGauss4(krylov = true)),
+            (Tridiagonal(Matrix(pattern)), MagnusNC6()),
+            (Tridiagonal(Matrix(pattern)), MagnusGauss4()),
+        )
+        integrator = init(tridiag_prob(A), alg; dt = 0.01, adaptive = false)
+        if A isa SparseMatrixCSC
+            # The cache already holds one dense N×N matrix (`W`); the stages must not add more.
+            @test Base.summarysize(integrator.cache) < 2 * N^2 * sizeof(Float64)
+        end
+        solve!(integrator)
+        sol_dense = solve(prob_dense, alg; dt = 0.01, adaptive = false)
+        @test integrator.sol.u[end] ≈ sol_dense.u[end] rtol = 1.0e-12
+    end
+end
