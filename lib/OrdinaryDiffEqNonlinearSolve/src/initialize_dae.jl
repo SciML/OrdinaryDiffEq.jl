@@ -662,7 +662,9 @@ function _initialize_dae!(
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!; jac_prototype = J
     )
-    nlprob = NonlinearProblem(nlfunc, alg_u, p)
+    # A dense copy of the algebraic variables, so the nonlinear cache has one concrete
+    # iterate type whether or not the solver aliases `u0`; the solution is written back below.
+    nlprob = NonlinearProblem(nlfunc, u[algebraic_vars], p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
