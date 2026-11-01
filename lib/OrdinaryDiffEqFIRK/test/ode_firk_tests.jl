@@ -312,6 +312,32 @@ end
     end
 end
 
+@testset "Unsmoothed error estimate (smooth_est = false)" begin
+    f!(du, u, p, t) = (du .= -50 .* (u .- cos(t)); nothing)
+    f(u, p, t) = -50 .* (u .- cos(t))
+    for prob in (ODEProblem(f!, [0.0, 1.0], (0.0, 2.0)), ODEProblem(f, [0.0, 1.0], (0.0, 2.0))),
+            Alg in (RadauIIA5, RadauIIA9, AdaptiveRadau)
+        smoothed = solve(prob, Alg(); reltol = 1.0e-8, abstol = 1.0e-8)
+        unsmoothed = solve(prob, Alg(smooth_est = false); reltol = 1.0e-8, abstol = 1.0e-8, maxiters = 1000)
+        @test unsmoothed.retcode == ReturnCode.Success
+        @test unsmoothed.stats.naccept < 2 * smoothed.stats.naccept
+        @test unsmoothed.u[end] ≈ smoothed.u[end] atol = 1.0e-6
+        @test unsmoothed.u[end] ≈ 50 * (50 * cos(2.0) + sin(2.0)) / 2501 .+ ([0.0, 1.0] .- 2500 / 2501) * exp(-100.0) atol = 1.0e-7
+    end
+    g!(du, u, p, t) = (du[1] = -u[1] + sin(t); du[2] = -2u[2] + u[1]; nothing)
+    mm = ODEFunction((du, u, p, t) -> (du .= -0.5 .* (u .- cos(t)); nothing); mass_matrix = Diagonal([0.01, 0.01]))
+    for Alg in (RadauIIA5, RadauIIA9, AdaptiveRadau)
+        eest = map((true, false)) do smooth_est
+            integ = init(ODEProblem(g!, [1.0, 0.5], (0.0, 1.0)), Alg(; smooth_est); dt = 0.01, reltol = 1.0e-6, abstol = 1.0e-6)
+            step!(integ)
+            OrdinaryDiffEqCore.get_EEst(integ)
+        end
+        @test eest[2] ≈ eest[1] rtol = 0.02
+        prob = ODEProblem(mm, [0.0, 1.0], (0.0, 2.0))
+        @test solve(prob, Alg(smooth_est = false)).u == solve(prob, Alg()).u
+    end
+end
+
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
     function rober_firk!(du, u, p, t)
         y1, y2, y3 = u

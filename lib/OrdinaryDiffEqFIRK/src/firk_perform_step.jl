@@ -615,6 +615,7 @@ end
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
+    smooth_est = alg.smooth_est || mass_matrix !== I
 
     # precalculations
     rtol = @.. reltol^(2 / 3) / 10
@@ -765,9 +766,11 @@ end
         tmp = @.. e1dt * z1 + e2dt * z2 + e3dt * z3
         !_is_identity_massmatrix(mass_matrix) && (tmp = mass_matrix * tmp)
         utilde = @.. integrator.fsalfirst + tmp
-        if alg.smooth_est
+        if smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
+        else
+            utilde = @.. -utilde / γdt
         end
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
@@ -779,7 +782,8 @@ end
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
-            alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+            smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+            smooth_est || (utilde = @.. -utilde / γdt)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
@@ -816,6 +820,7 @@ end
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
+    smooth_est = alg.smooth_est || mass_matrix !== I
 
     # precalculations
     c1m1 = c1 - 1
@@ -1020,12 +1025,14 @@ end
         !_is_identity_massmatrix(mass_matrix) && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
         @.. ubuff = integrator.fsalfirst + tmp
 
-        if alg.smooth_est
+        if smooth_est
             linres1 = dolinsolve(
                 integrator, cache.linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
             integrator.stats.nsolve += 1
+        else
+            @.. utilde = -ubuff / γdt
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -1040,12 +1047,14 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. ubuff = fsallast + tmp
 
-            if alg.smooth_est
+            if smooth_est
                 linres1 = dolinsolve(
                     integrator, cache.linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
                 integrator.stats.nsolve += 1
+            else
+                @.. utilde = -ubuff / γdt
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -1087,6 +1096,7 @@ end
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
+    smooth_est = alg.smooth_est || mass_matrix !== I
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
     rtol = @.. reltol^(3 / 5) / 10
@@ -1326,9 +1336,11 @@ end
         tmp = @.. e1dt * z1 + e2dt * z2 + e3dt * z3 + e4dt * z4 + e5dt * z5
         !_is_identity_massmatrix(mass_matrix) && (tmp = mass_matrix * tmp)
         utilde = @.. integrator.fsalfirst + tmp
-        if alg.smooth_est
+        if smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
+        else
+            utilde = @.. -utilde / γdt
         end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
@@ -1338,7 +1350,8 @@ end
             f0 = f(uprev .+ utilde, p, t)
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             utilde = @.. f0 + tmp
-            alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+            smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
+            smooth_est || (utilde = @.. -utilde / γdt)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
         end
@@ -1386,6 +1399,7 @@ end
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
+    smooth_est = alg.smooth_est || mass_matrix !== I
 
     # precalculations
     c1m1 = c1 - 1
@@ -1704,12 +1718,14 @@ end
         !_is_identity_massmatrix(mass_matrix) && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
         @.. ubuff = integrator.fsalfirst + tmp
 
-        if alg.smooth_est
+        if smooth_est
             linres1 = dolinsolve(
                 integrator, cache.linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
             integrator.stats.nsolve += 1
+        else
+            @.. utilde = -ubuff / γdt
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -1724,12 +1740,14 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             @.. ubuff = fsallast + tmp
 
-            if alg.smooth_est
+            if smooth_est
                 linres1 = dolinsolve(
                     integrator, cache.linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
                 integrator.stats.nsolve += 1
+            else
+                @.. utilde = -ubuff / γdt
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -1766,6 +1784,7 @@ end
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
+    smooth_est = alg.smooth_est || mass_matrix !== I
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
     rtol = @.. reltol^((num_stages + 1) / (num_stages * 2)) / 10
@@ -1974,9 +1993,11 @@ end
         !_is_identity_massmatrix(mass_matrix) && (tmp = mass_matrix * tmp)
         #utilde = @..  1 / γ * dt * integrator.fsalfirst + tmp
         utilde = @.. integrator.fsalfirst + tmp
-        if alg.smooth_est
+        if smooth_est
             utilde = _reshape(LU1 \ _vec(utilde), axes(u))
             integrator.stats.nsolve += 1
+        else
+            utilde = @.. -utilde / γdt
         end
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
@@ -1987,9 +2008,11 @@ end
             OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
             #utilde = @..  1 / γ * dt * f0 + tmp
             utilde = @.. f0 + tmp
-            if alg.smooth_est
+            if smooth_est
                 utilde = _reshape(LU1 \ _vec(utilde), axes(u))
                 integrator.stats.nsolve += 1
+            else
+                utilde = @.. -utilde / γdt
             end
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             OrdinaryDiffEqCore.set_EEst!(integrator, internalnorm(atmp, t))
@@ -2026,6 +2049,7 @@ end
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
+    smooth_est = alg.smooth_est || mass_matrix !== I
 
     # precalculations
     γdt = γ / dt
@@ -2304,12 +2328,14 @@ end
         #@.. ubuff=1 / γ * dt * integrator.fsalfirst + tmp
         @.. ubuff = integrator.fsalfirst + tmp
 
-        if alg.smooth_est
+        if smooth_est
             dolinsolve(
                 integrator, linsolve1; b = _vec(ubuff),
                 linu = _vec(utilde)
             )
             integrator.stats.nsolve += 1
+        else
+            @.. utilde = -ubuff / γdt
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -2325,12 +2351,14 @@ end
             #@..  ubuff = 1 / γ * dt * fsallast + tmp
             @.. ubuff = fsallast + tmp
 
-            if alg.smooth_est
+            if smooth_est
                 dolinsolve(
                     integrator, linsolve1; b = _vec(ubuff),
                     linu = _vec(utilde)
                 )
                 integrator.stats.nsolve += 1
+            else
+                @.. utilde = -ubuff / γdt
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
