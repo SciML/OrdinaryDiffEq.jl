@@ -2611,7 +2611,7 @@ function alg_cache(
 end
 
 @cache struct W2Ito1Cache{
-        uType, randType, tabType, rateNoiseType, rateType, possibleRateType,
+        uType, randType, rand2Type, tabType, rateNoiseType, rateType, possibleRateType,
     } <:
     StochasticDiffEqMutableCache
     u::uType
@@ -2619,7 +2619,7 @@ end
     uhat::uType
 
     _dW::randType
-    _dZ::randType
+    _dZ::rand2Type
     chi1::randType
 
     tab::tabType

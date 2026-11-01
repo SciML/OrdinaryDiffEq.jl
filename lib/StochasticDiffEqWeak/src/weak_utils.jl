@@ -49,3 +49,44 @@ function Ihat2(cache::Union{NONConstantCache, NONCache}, _dW, _dZ, sqdt, k, l)
         return _dW[k]
     end
 end
+
+# With diagonal noise these per-noise-dimension vectors track the state length. Their
+# elements are scratch that `perform_step!` overwrites, so only lengths are fixed.
+
+noise_stage_vectors(c::Union{DRI1Cache, IRI1Cache}) =
+    (c.g2, c.g3, c.H12, c.H13, c.H22, c.H23)
+noise_stage_vectors(c::RSCache) = (c.g2, c.g3, c.g4, c.H12, c.H13, c.H14, c.H22, c.H23)
+noise_stage_vectors(c::W2Ito1Cache) = (c.H12, c.H13)
+noise_stage_vectors(c::PL1WMCache) = (c.Yp, c.Ym)
+
+const NoiseStageCache = Union{DRI1Cache, IRI1Cache, RSCache, W2Ito1Cache, PL1WMCache}
+
+function fit_stage_vector!(v, n)
+    isempty(v) && return v
+    while length(v) > n
+        pop!(v)
+    end
+    while length(v) < n
+        push!(v, similar(v[1]))
+    end
+    for x in v
+        length(x) == n || resize!(x, n)
+        fill!(x, zero(eltype(x)))
+    end
+    return v
+end
+
+function fit_noise_stages!(integrator, cache::NoiseStageCache)
+    is_diagonal_noise(integrator.sol.prob) || return nothing
+    n = length(integrator.u)
+    foreach(v -> fit_stage_vector!(v, n), noise_stage_vectors(cache))
+    hasproperty(cache, :_dZ) && resize!(cache._dZ, length(integrator.W.dZ))
+    return nothing
+end
+
+for f in (:resize_non_user_cache!, :deleteat_non_user_cache!, :addat_non_user_cache!)
+    @eval function SciMLBase.$f(integrator::SDEIntegrator, cache::NoiseStageCache, i)
+        invoke(SciMLBase.$f, Tuple{SDEIntegrator, Any, Any}, integrator, cache, i)
+        return fit_noise_stages!(integrator, cache)
+    end
+end
