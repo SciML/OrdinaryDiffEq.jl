@@ -39,6 +39,7 @@ if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
     @time @safetestset "Krylov nf accounting" include("nf_accounting_tests.jl")
     @time @safetestset "Operator Jacobian staleness" include("operator_jac_staleness_tests.jl")
     @time @safetestset "Krylov linear tolerance" include("krylov_linear_tolerance_tests.jl")
+    @time @safetestset "Resize below ForwardDiff chunk" include("resize_chunksize_tests.jl")
 end
 
 # Run sparse tests (separate environment due to ComponentArrays dep conflicts)
