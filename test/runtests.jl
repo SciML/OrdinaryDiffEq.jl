@@ -190,6 +190,7 @@ function ad_group()
     activate_ad_env()
     @time @safetestset "AD Tests" include("AD/ad_tests.jl")
     @time @safetestset "Autodiff Events Tests" include("AD/autodiff_events.jl")
+    @time @safetestset "Discontinuity Detection ForwardDiff Tests" include("AD/disco_forwarddiff.jl")
     return @time @safetestset "Discrete Adjoint Tests" include("AD/discrete_adjoints.jl")
 end
 
