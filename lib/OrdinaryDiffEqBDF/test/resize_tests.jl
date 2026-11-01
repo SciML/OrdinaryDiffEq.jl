@@ -48,3 +48,22 @@ end
         @test restart_orders == [1, 1]
     end
 end
+
+@testset "QNDF resize clears its difference history" begin
+    cleared = Bool[]
+    grew = Ref(false)
+    function affect(integrator)
+        grew[] = true
+        resize!(integrator, 3)
+        integrator.u[3] = UNEW
+        push!(cleared, all(d -> all(iszero, d), (integrator.cache.D..., integrator.cache.prevD...)))
+        return derivative_discontinuity!(integrator, false)
+    end
+    callback = DiscreteCallback((u, t, integrator) -> !grew[] && t >= TG, affect)
+    sol = solve(
+        ODEProblem(f!, copy(U0), (0.0, TS)), QNDF(); callback, tstops = [TG],
+        reltol = 1.0e-10, abstol = 1.0e-12
+    )
+    @test cleared == [true]
+    @test sol.u[end] ≈ exact(TS) rtol = 1.0e-7 atol = 1.0e-10
+end
