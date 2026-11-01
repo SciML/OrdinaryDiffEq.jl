@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, SciMLBase, Test
 using DiffEqBase: DEVerbosity, root_verbosity
+using BracketingNonlinearSolve: NonlinearVerbosity
 using SciMLLogging: None, Standard
 
 # u' = 1 from u(t0) = t0 gives u(t) = t, which Tsit5 and its interpolant reproduce exactly, so the
@@ -11,7 +12,7 @@ kw(v) = v === nothing ? (;) : (; verbose = v)
 @testset "root_verbosity of a real integrator" begin
     for v in VERBOSITIES
         integ = init(ODEProblem(f, 0.0, (0.0, 1.0)), Tsit5(); kw(v)...)
-        expected = something(v, DEVerbosity()).nonlinear_verbosity
+        expected = NonlinearVerbosity(something(v, DEVerbosity()).nonlinear_verbosity)
         @test root_verbosity(integ) == (; verbose = expected)
         @test (@inferred root_verbosity(integ)) isa NamedTuple{(:verbose,), Tuple{typeof(expected)}}
     end
