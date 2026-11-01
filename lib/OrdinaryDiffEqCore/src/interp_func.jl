@@ -127,8 +127,8 @@ Return a lightweight copy of `cache` for `SciMLBase.strip_interpolation`, which
 drops function information and working buffers from a solution's interpolation
 object before serialization. Fields are set to `nothing` except the tableau
 (`tab`, `tabs`), numbers and fields whose type cannot hold `nothing`,
-since the interpolant reads these. [`DefaultCache`](@ref) and `CompositeCache`
-strip each of their sub-caches.
+since the interpolant reads these; kept arrays of non-numbers are emptied.
+[`DefaultCache`](@ref) and `CompositeCache` strip each of their sub-caches.
 
 # Developer API
 
@@ -155,9 +155,13 @@ function strip_cache(cache)
         keep[pinned] = true
     end
     return ConstructionBase.constructorof(T)(
-        (keep[i] && isdefined(cache, i) ? getfield(cache, i) : nothing for i in 1:fieldcount(T))...
+        (keep[i] && isdefined(cache, i) ? _strip_kept(fieldname(T, i), getfield(cache, i)) : nothing for i in 1:fieldcount(T))...
     )
 end
+
+# Arrays the interpolant does not read, such as per-stage linear solvers, are emptied.
+_strip_kept(name, value) = name in (:tab, :tabs) || !(value isa Array) || eltype(value) <: Number ?
+    value : similar(value, ntuple(_ -> 0, ndims(value)))
 
 function _declared_fieldtypes(T)
     wrapper = T.name.wrapper
