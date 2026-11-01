@@ -148,3 +148,13 @@ end
     @test sort(unique(sol3.alg_choice)) == [1, 2, 3]
     @test sol3.retcode == ReturnCode.Success
 end
+
+@testset "QNDF inside a CompositeAlgorithm (#4953)" begin
+    f(u, p, t) = -1000 .* (u .- 0.5)
+    f!(du, u, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
+    for prob in (ODEProblem(f!, [1.0], (0.0, 1.0)), ODEProblem(f, [1.0], (0.0, 1.0)))
+        sol = solve(prob, AutoTsit5(QNDF()))
+        @test sol.retcode == ReturnCode.Success
+        @test 2 in sol.alg_choice
+    end
+end

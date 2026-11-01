@@ -868,7 +868,7 @@ function perform_step!(
     end
     if dt != dtprev || cache.prevorder != k
         ρ = dt / dtprev
-        integrator.cache.nconsteps = 0
+        cache.nconsteps = 0
         (; U, R, RU) = cache
         calc_R!(R, ρ, k)
         mul!(RU, R, U)
