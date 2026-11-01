@@ -13,7 +13,7 @@
 ####################################################################
 # QNDF: Rebuild backward differences for interpolation
 #
-# Layout: k[1..max_order] = backward differences D[j]
+# Layout: k[1..max_order] = backward differences D[j], k[end] = endpoint jump.
 # Interpolation: p(Θ) = y₁ + Σ φ_j(Θ-1) * k[j]
 # where y₁ = u (step endpoint).
 #
