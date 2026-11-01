@@ -148,3 +148,10 @@ end
     @test sort(unique(sol3.alg_choice)) == [1, 2, 3]
     @test sol3.retcode == ReturnCode.Success
 end
+
+@testset "Out-of-place Rosenbrock member before an explicit one (#4951)" begin
+    prob = ODEProblem((u, p, t) -> -1000 .* (u .- 0.5), [1.0], (0.0, 1.0))
+    sol = solve(prob, CompositeAlgorithm((Rosenbrock23(), Tsit5()), _ -> 1))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[end] == solve(prob, Rosenbrock23()).u[end]
+end
