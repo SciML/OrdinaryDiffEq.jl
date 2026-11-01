@@ -149,7 +149,7 @@ const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
 end
 
 function error_constant(integrator, alg::QNDF, k)
-    (; γₖ) = integrator.cache
+    (; γₖ) = SciMLBase.unwrap_cache(integrator, true)
     κ = alg.kappa[k]
     return κ * γₖ[k] + inv(k + 1)
 end
@@ -590,7 +590,7 @@ end
 # NordsieckBDF scales the Newton increment by the test quantity tq[2], which puts
 # it in the units of the local error test, so `NLNewton(κ = …)` means CVODE's
 # NLSCOEF.
-error_constant(integrator, alg::NordsieckBDFAlgs, k) = integrator.cache.tq[2]
+error_constant(integrator, alg::NordsieckBDFAlgs, k) = SciMLBase.unwrap_cache(integrator, true).tq[2]
 
 function _fbdf_finish_fixed_step!(integrator, cache)
     if cache.time_filter && !integrator.opts.adaptive
