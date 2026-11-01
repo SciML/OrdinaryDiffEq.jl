@@ -56,7 +56,7 @@ asserted, so the field reads in `find_discontinuity` are static.
         typeof(integrator.differential_vars), typeof(cb), fieldtype(O, 1), fieldtype(O, 2),
         typeof(integrator.f), typeof(integrator.tprev), typeof(integrator.p),
     }
-    return (disco_prob.f.f.obj::Base.RefValue{Z}).x
+    return (disco_prob.f.f.obj::typeof(Ref{Z}()))[]
 end
 
 """
