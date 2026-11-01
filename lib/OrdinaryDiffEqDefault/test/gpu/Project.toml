@@ -1,10 +1,24 @@
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[sources]
+OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
+
+[sources.OrdinaryDiffEqDefault]
+path = "../.."
+
 [compat]
+ADTypes = "1.22.0"
 CUDA = "6"
 OrdinaryDiffEq = "7"
+OrdinaryDiffEqCore = "4.17.1"
+OrdinaryDiffEqDefault = "2"
 OrdinaryDiffEqLowOrderRK = "2"
+SciMLBase = "3.46"
