@@ -37,6 +37,7 @@ end
             "ModelingToolkit", "Sundials",
         )
         @time @safetestset "Callbacks" include("callbacks.jl")
+        @time @safetestset "Callback root solve verbosity" include("callback_root_verbosity.jl")
         @time @safetestset "Plot Vars" include("plot_vars.jl")
         @time @safetestset "Problem Creation Tests" include("problem_creation_tests.jl")
         @time @safetestset "Export tests" include("export_tests.jl")
@@ -96,6 +97,7 @@ end
         @time @safetestset "Default linsolve with structure" include("downstream/default_linsolve_structure.jl")
         @time @safetestset "Callback Merging Tests" include("downstream/callback_merging.jl")
         @time @safetestset "Callback Detection Tests" include("downstream/callback_detection.jl")
+        @time @safetestset "Callback root solve verbosity (integrator)" include("downstream/callback_root_verbosity.jl")
         @time @safetestset "LabelledArrays Tests" include("downstream/labelledarrays.jl")
         @time @safetestset "GTPSA Tests" include("downstream/gtpsa.jl")
         @time @safetestset "SubArray Support" include("downstream/subarray_support.jl")
