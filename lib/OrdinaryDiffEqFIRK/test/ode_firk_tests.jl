@@ -322,6 +322,7 @@ end
         @test unsmoothed.retcode == ReturnCode.Success
         @test unsmoothed.stats.naccept < 2 * smoothed.stats.naccept
         @test unsmoothed.u[end] ≈ smoothed.u[end] atol = 1.0e-6
+        @test unsmoothed.u[end] ≈ 50 * (50 * cos(2.0) + sin(2.0)) / 2501 .+ ([0.0, 1.0] .- 2500 / 2501) * exp(-100.0) atol = 1.0e-7
     end
     g!(du, u, p, t) = (du[1] = -u[1] + sin(t); du[2] = -2u[2] + u[1]; nothing)
     mm = ODEFunction((du, u, p, t) -> (du .= -0.5 .* (u .- cos(t)); nothing); mass_matrix = Diagonal([0.01, 0.01]))
