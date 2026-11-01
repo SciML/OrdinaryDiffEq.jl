@@ -75,7 +75,28 @@ function expRK_operators(::Friedli, dt, A)
     return A21, A31, A32, A41, A42, A43, B1, B3, B4
 end
 
-# Unified constructor for constant caches
+# Compute the cached operators, reporting unsupported linear operators clearly.
+# Only `LawsonEuler` caches `exp(dt * A)`; the `phi`-based methods keep their
+# own behavior. Trying the actual operation keeps every supported structured
+# or element type working while turning the deep `MethodError` of unsupported
+# ones (sparse storage, element types without a dense exponential) into an
+# `ArgumentError` that points at `krylov = true`.
+_cached_expRK_operators(alg, A, dt) = expRK_operators(alg, dt, A)
+
+function _cached_expRK_operators(::LawsonEuler, A, dt)
+    try
+        return exp(dt * A)
+    catch e
+        e isa MethodError || rethrow()
+        if issparse(A)
+            throw(ArgumentError("LawsonEuler with krylov = false does not support sparse linear operators (got $(typeof(A))). Use LawsonEuler(krylov = true) instead."))
+        else
+            T = promote_type(eltype(A), typeof(dt))
+            throw(ArgumentError("LawsonEuler with krylov = false does not support linear operators with element type $T (got $(typeof(A)) with timestep $(typeof(dt))). Use LawsonEuler(krylov = true) instead."))
+        end
+    end
+end
+
 for (Alg, Cache) in [
         (:LawsonEuler, :LawsonEulerConstantCache),
         (:NorsettEuler, :NorsettEulerConstantCache),
@@ -106,7 +127,7 @@ for (Alg, Cache) in [
                 throw(ArgumentError("Caching can only be used with SplitFunction"))
             A = size(f.f1.f) == () ? convert(Number, f.f1.f) :
                 convert(AbstractMatrix, f.f1.f)
-            ops = expRK_operators(alg, dt, A)
+            ops = _cached_expRK_operators(alg, A, dt)
         end
         if isa(f, SplitFunction) || SciMLBase.has_jac(f)
             uf = nothing
@@ -218,7 +239,7 @@ function alg_cache_expRK(
         KsCache = nothing
         # Precompute the operators
         A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
-        ops = expRK_operators(alg, dt, A)
+        ops = _cached_expRK_operators(alg, A, dt)
     end
     return uf, jac_config, J, ops, KsCache
 end
@@ -277,7 +298,7 @@ function alg_cache(
     else
         KsCache = nothing
         A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
-        exphA = expRK_operators(alg, dt, A)
+        exphA = _cached_expRK_operators(alg, A, dt)
     end
     return LawsonEulerCache(u, uprev, tmp, dz, rtmp, G, du1, jac_config, uf, J, exphA, KsCache)
 end
