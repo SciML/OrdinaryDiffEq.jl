@@ -352,7 +352,7 @@ end
     end
     vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 100 * ((1 - u[1]^2) * u[2] - u[1]); nothing)
     prob = ODEProblem(vdp!, [2.0, 0.0], (0.0, 2.0))
-    for alg in (RadauIIA3(), RadauIIA5(), RadauIIA9(), GaussLegendre())
+    for alg in (RadauIIA3(), RadauIIA5(), RadauIIA9(), AdaptiveRadau(), GaussLegendre())
         scalar = solve(prob, alg; reltol = 1.0e-6, abstol = 1.0e-7)
         for reltol in (1.0e-6, [1.0e-6, 1.0e-6])
             @test solve(prob, alg; reltol, abstol = [1.0e-7, 1.0e-7]).u == scalar.u

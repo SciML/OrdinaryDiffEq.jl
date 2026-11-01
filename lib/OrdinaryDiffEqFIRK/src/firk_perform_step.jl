@@ -2021,9 +2021,8 @@ end
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
-    atol = reltol isa Number && abstol isa Number ? first(cache.atol) : cache.atol
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
     mass_matrix = integrator.f.mass_matrix
@@ -2049,6 +2048,8 @@ end
         end
         κ = cache.κ
     end
+    rtol = cache.rtol
+    atol = reltol isa Number && abstol isa Number ? first(cache.atol) : cache.atol
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)
