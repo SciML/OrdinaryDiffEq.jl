@@ -285,6 +285,13 @@ end
 
 DiffEqBase.resize_non_user_cache!(integrator::DDEIntegrator, cache, i) = nothing
 
+function DiffEqBase.resize_non_user_cache!(integrator::DDEIntegrator, cache::OrdinaryDiffEqCore.CompositeCache, i)
+    for _cache in cache.caches
+        DiffEqBase.resize_non_user_cache!(integrator, _cache, i)
+    end
+    return nothing
+end
+
 function DiffEqBase.resize_non_user_cache!(
         integrator::DDEIntegrator,
         cache::RosenbrockMutableCache, i
