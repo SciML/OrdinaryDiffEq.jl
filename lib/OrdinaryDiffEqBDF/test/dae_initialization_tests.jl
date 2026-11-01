@@ -208,4 +208,15 @@ end
     end
     # y = 1, dy/ds = 2.5 / (3y^2 + 1) and du[1] = -1.2 s y
     @test ForwardDiff.derivative(init_state, 0.8) ≈ [0.625, -1.2 * (1 + 0.8 * 0.625)] rtol = 1.0e-8
+    tprob = remake(prob; u0 = [0.8, 0.3], p = (1.2, 2.5))
+    mprob = DAEProblem(
+        r!, [0.0 0.0], [0.8 0.3], (0.0, 0.5), [1.2, 2.5]; differential_vars = [true false]
+    )
+    for (pr, pc) in ((tprob, c -> (1.2, c)), (mprob, c -> [1.2, c]))
+        yc(c) = init(
+            remake(pr; p = pc(c)), DFBDF();
+            initializealg = BrownFullBasicInit(), abstol = 1.0e-12, reltol = 1.0e-12
+        ).u[2]
+        @test ForwardDiff.derivative(yc, 2.5) ≈ 0.2 rtol = 1.0e-8
+    end
 end
