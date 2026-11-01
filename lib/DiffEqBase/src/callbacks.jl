@@ -267,16 +267,26 @@ end
 end
 
 
+# Map a signed crossing value to Int8 via comparisons (not `sign`/`Int8(sign(...))`).
+# Matches master semantics for event direction (`prev_sign < 0` / `> 0`): NaN and other
+# unordered values become 0 (no event branch), and Dual/Unitful/Measurements that compare
+# with zero but cannot convert through `Int8(sign(...))` stay usable.
+@inline function _crossing_int8(s)
+    return s < 0 ? Int8(-1) : s > 0 ? Int8(1) : Int8(0)
+end
+
 # A type-erased callback is called through `Base.invokelatest`, so the compiled loop holds
 # a plain dynamic dispatch instead of a method instance specialised on `Any` whose
 # abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
-# The callee runs on the concrete callback and hands back the two values the loop needs
-# typed: the event time and the residual, the latter already reduced and converted.
+# The callee runs on the concrete callback and hands back the four values the loop needs
+# typed: event time, crossing sign (`Int8`), event index (`Int`), and residual (already
+# reduced and converted).
 function _find_callback_time_erased(integrator, callback, callback_idx)
     tmin, upcrossing, event_occurred, event_idx, residual =
         find_callback_time(integrator, callback, callback_idx)
+    upc = upcrossing isa Number ? _crossing_int8(value(upcrossing)) : Int8(0)
     return (
-        convert(typeof(integrator.t), tmin), upcrossing, event_occurred::Bool, event_idx,
+        convert(typeof(integrator.t), tmin), upc, event_occurred::Bool, Int(event_idx),
         convert(typeof(integrator.last_event_error), value(residual)),
     )
 end
@@ -295,7 +305,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     end
 
     tmin, upcrossing, event_occurred, event_idx, residual =
-        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Any, Bool, Any, errType}
+        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Int8, Bool, Int, errType}
     identified_idx = 1
     if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
         copyto!(
@@ -307,7 +317,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     for callback_idx in 2:callback_count
         callback = callbacks[callback_idx]
         tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
-            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Any, Bool, Any, errType}
+            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Int8, Bool, Int, errType}
         if event_occurred2 &&
                 (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
             tmin = tmin2
@@ -334,7 +344,9 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     if event_occurred
         integrator.last_event_error = residual
     end
-    return tmin, upcrossing, event_occurred, event_idx, identified_idx, callback_count
+    return (tmin, upcrossing, event_occurred, event_idx, identified_idx, callback_count)::Tuple{
+        tType, Int8, Bool, Int, Int, Int,
+    }
 end
 
 """
@@ -421,7 +433,7 @@ per-component event mask. The event time is found by rootfinding on the callback
                 if min_event_idx < 0
                     min_event_idx = i
                 end
-                simultaneous_events[i] = Int8(-sign(value(ArrayInterface.allowed_getindex(bottom_sign, i))))
+                simultaneous_events[i] = -_crossing_int8(value(ArrayInterface.allowed_getindex(bottom_sign, i)))
             end
         end
         residual = zero(eltype(bottom_condition))
@@ -455,7 +467,7 @@ per-component event mask. The event time is found by rootfinding on the callback
                     min_event_idx = idx
                     callback_t = cbi_t
                     residual = zero_func(cbi_t)
-                    simultaneous_events[idx] = Int8(-sign(value(ArrayInterface.allowed_getindex(bottom_sign, idx))))
+                    simultaneous_events[idx] = -_crossing_int8(value(ArrayInterface.allowed_getindex(bottom_sign, idx)))
                 end
             end
         end
@@ -829,12 +841,17 @@ end
 end
 
 
+function _apply_discrete_packed(integrator, callback)
+    m, sv = apply_discrete_callback!(integrator, callback)
+    return UInt8(m) | (UInt8(sv) << 1)
+end
 function apply_discrete_callback!(integrator, callbacks::AbstractVector)
     discrete_modified = false
     saved_in_cb = false
     for callback in callbacks
-        modified, saved =
-            Base.invokelatest(apply_discrete_callback!, integrator, callback)::Tuple{Bool, Bool}
+        packed = Base.invokelatest(_apply_discrete_packed, integrator, callback)::UInt8
+        modified = (packed & 0x01) != 0x00
+        saved = (packed & 0x02) != 0x00
         discrete_modified |= modified
         saved_in_cb |= saved
     end
