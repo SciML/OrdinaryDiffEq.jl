@@ -1293,8 +1293,11 @@ function perform_step!(
     # History is stored at the committed times fl(t + dt), so step by that increment.
     dt = integrator.dt
     integrator.dt = (integrator.t + dt) - integrator.t
-    _fbdf_perform_step!(integrator, cache, repeat_step)
-    integrator.dt = dt
+    try
+        _fbdf_perform_step!(integrator, cache, repeat_step)
+    finally
+        integrator.dt = dt
+    end
     return nothing
 end
 
@@ -1550,8 +1553,11 @@ function perform_step!(
     ) where {max_order}
     dt = integrator.dt
     integrator.dt = (integrator.t + dt) - integrator.t
-    _fbdf_perform_step!(integrator, cache, repeat_step)
-    integrator.dt = dt
+    try
+        _fbdf_perform_step!(integrator, cache, repeat_step)
+    finally
+        integrator.dt = dt
+    end
     return nothing
 end
 
