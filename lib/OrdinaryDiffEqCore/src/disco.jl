@@ -26,8 +26,7 @@ _discontinuity_detection_enabled(cache::DummyControllerCache) =
 _discontinuity_detection_enabled(cache::CompositeControllerCache) =
     _discontinuity_detection_enabled(first(cache.caches))
 
-# The interpolation buffer and the condition buffers of a discontinuity problem's zero function
-# (`__init` builds them with these, `_disco_zero` derives their types from them).
+# Buffers of a discontinuity problem's zero function; `_disco_zero` derives their types from these.
 _disco_u1(u) = u isa AbstractArray ? similar(u) : zero(u)
 function _disco_outs(u, cb)
     if cb isa VectorContinuousCallback
@@ -41,20 +40,15 @@ end
 """
     _disco_zero(disco_prob, integrator, cb)
 
-The zero function of the discontinuity problem of callback `cb`. `__init` stores it behind a
-`FunctionWrapper` so that every problem in `disco_probs` has one concrete type whatever the
-callback's type, and a `FunctionWrapper` keeps its payload in an untyped field. When the
-integrator's callbacks are a tuple they are the objects `__init` built the zero functions with,
-so the zero function's type is determined by the integrator and `cb` and is asserted here,
-which makes every load and store of its fields in `find_discontinuity` static. Callbacks held
-in a vector are wrapped after `__init` (`_despecialize_callbacks!`) and are read untyped.
+The zero function of `cb`'s discontinuity problem. It sits behind an untyped `FunctionWrapper`
+payload; for tuple-held callbacks its concrete type follows from `integrator` and `cb` and is
+asserted, so the field reads in `find_discontinuity` are static.
 """
 @inline function _disco_zero(disco_prob, integrator, cb)
     integrator.opts.callback.continuous_callbacks isa Tuple || return disco_prob.f.f.obj.x
     uT = typeof(integrator.u)
     O = Base.promote_op(_disco_outs, uT, typeof(cb))
     U1 = Base.promote_op(_disco_u1, uT)
-    # an inferred type that isn't concrete may differ from the stored one: read untyped then
     (isconcretetype(O) && isconcretetype(U1)) || return disco_prob.f.f.obj.x
     Z = zero_func_struct{
         U1, uT, typeof(integrator.dt), typeof(integrator.k),
@@ -68,9 +62,7 @@ end
 """
     _disco_bracket(disco_prob, θ)
 
-`disco_prob` with the bracket `(0, θ)`: the same function and parameters, a tuple `tspan`.
-The stored problem's `tspan` is never written, so the bracket is a `Tuple` wherever the
-bracketing solver splats it.
+`disco_prob` with the tuple bracket `(0, θ)`; the stored problem is not mutated.
 """
 @inline function _disco_bracket(disco_prob, θ)
     return IntervalNonlinearProblem{false}(disco_prob.f, (zero(θ), θ), disco_prob.p)
