@@ -33,6 +33,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test !any(Base.isexported.(Ref(OrdinaryDiffEqDefault), internal))
     end
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
+    @time @safetestset "DefaultCache argument types" include("default_cache_argtypes.jl")
 end
 
 # Run QA tests (JET, Aqua)
