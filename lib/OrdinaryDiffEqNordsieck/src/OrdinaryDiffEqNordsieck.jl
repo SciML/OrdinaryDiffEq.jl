@@ -1,7 +1,7 @@
 module OrdinaryDiffEqNordsieck
 
 # `alg_order` is owned (and public) by SciMLBase; import it from its owner.
-import SciMLBase: alg_order
+import SciMLBase: alg_order, resize_non_user_cache!
 # `initialize!`, `calculate_residuals`, `calculate_residuals!` are owned by
 # DiffEqBase (re-provided through OrdinaryDiffEqCore); import them from the owner
 # so the ExplicitImports owner check passes. `initialize!` is public in
@@ -22,7 +22,8 @@ import OrdinaryDiffEqCore: alg_adaptive_order,
     CommonControllerOptions, resolve_basic, _resolved_QT,
     get_current_adaptive_order, get_fsalfirstlast,
     ode_interpolant, ode_interpolant!, trivial_limiter!,
-    generic_solver_docstring, default_controller
+    generic_solver_docstring, default_controller,
+    @cache, ODEIntegrator, reinit_controller!
 using MuladdMacro: @muladd
 using FastBroadcast: @.., Serial
 using RecursiveArrayTools: recursivefill!
