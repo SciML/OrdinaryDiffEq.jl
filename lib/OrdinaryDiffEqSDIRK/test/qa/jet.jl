@@ -18,6 +18,12 @@ using JET
             OrdinaryDiffEqSDIRK; target_modules = (OrdinaryDiffEqSDIRK,), mode = :typo
         )
         @test isempty(filter(!known, JET.get_reports(result)))
+        # A real typo in a `_perform_step_oop!` method must still be reported.
+        Core.eval(OrdinaryDiffEqSDIRK, :(_perform_step_oop!(::Val{:jet_control}) = reviewer_misspelled_stage))
+        control = JET.get_reports(
+            JET.report_call(OrdinaryDiffEqSDIRK._perform_step_oop!, (Val{:jet_control},); mode = :typo)
+        )
+        @test !isempty(control) && !any(known, control)
     else
         test_package(
             OrdinaryDiffEqSDIRK, target_modules = (OrdinaryDiffEqSDIRK,), mode = :typo
