@@ -52,7 +52,7 @@ import RecursiveArrayTools
 using BinaryHeaps: BinaryHeap, FasterForward
 using ArrayInterface: ArrayInterface
 
-import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
+import TruncatedStacktraces: @truncate_stacktrace
 
 # Integrator Interface
 import Base: resize!, deleteat!
