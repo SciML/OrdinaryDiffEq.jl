@@ -675,7 +675,9 @@ function _initialize_dae!(
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!; jac_prototype = J
     )
-    nlprob = NonlinearProblem(nlfunc, alg_u, p)
+    # A dense copy of the algebraic variables, so the nonlinear cache has one concrete
+    # iterate type whether or not the solver aliases `u0`; the solution is written back below.
+    nlprob = NonlinearProblem(nlfunc, u[algebraic_vars], p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
@@ -726,13 +728,6 @@ function _initialize_dae!(
         nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
     end
 
-    if u0 isa Number
-        # This doesn't fix static arrays!
-        u = [u0]
-    else
-        u = u0
-    end
-
     nlequation = @closure (x, _) -> begin
         uu = isAD ? get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
@@ -755,13 +750,15 @@ function _initialize_dae!(
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
-    u[algebraic_vars] .= nlsol.u
-
     if u0 isa Number
-        # This doesn't fix static arrays!
-        integrator.u = first(u)
+        integrator.u = first(nlsol.u)
+    elseif ArrayInterface.ismutable(u0)
+        u0[algebraic_vars] .= nlsol.u
     else
-        integrator.u = u
+        u = similar(u0)
+        copyto!(u, u0)
+        u[algebraic_vars] .= nlsol.u
+        integrator.u = convert(typeof(u0), u)
     end
 
 
@@ -837,7 +834,7 @@ function _initialize_dae!(
     if nlsolve_alg !== nothing
         nlsolve = nlsolve_alg
     else
-        nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
+        nlsolve = NewtonRaphson(autodiff = ADTypes.dense_ad(alg_autodiff(integrator.alg)))
     end
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(

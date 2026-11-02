@@ -31,7 +31,7 @@ using LinearAlgebra: LinearAlgebra, UniformScaling, diagind, mul!
 using StaticArrays: StaticArrays
 using RecursiveArrayTools: RecursiveArrayTools
 using StochasticDiffEqLevyArea: StochasticDiffEqLevyArea, MronRoe, levyarea,
-    LevyAreaCoefficients
+    LevyAreaCoefficients, coefficient_length
 using DiffEqNoiseProcess: DiffEqNoiseProcess
 
 include("algorithms.jl")
