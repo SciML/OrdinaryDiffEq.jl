@@ -73,8 +73,7 @@ than the interpolant supports (Hermite interpolation supports up to order 3).
 struct DerivativeOrderNotPossibleError <: Exception end
 
 function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
-    print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
-    return println(io, VERBOSE_MSG)
+    return print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
 end
 
 ## Integrator Dispatches
