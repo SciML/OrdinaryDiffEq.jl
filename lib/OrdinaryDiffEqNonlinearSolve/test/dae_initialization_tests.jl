@@ -253,6 +253,8 @@ end
         init(prob, alg; abstol = 1.0e-3)
         @test get(spy.kwargs[], :abstol, nothing) == 1.0e-3
     end
+end
+
 @testset "BrownFullBasicInit with out-of-place static arrays" begin
     f_static(u, p, t) = SA[-u[1] + u[2], u[1] + u[2] - p]
     fn = ODEFunction(f_static, mass_matrix = [1.0 0.0; 0.0 0.0])
