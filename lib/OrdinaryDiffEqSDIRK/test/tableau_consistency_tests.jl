@@ -1,4 +1,4 @@
-using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqSDIRK, LinearAlgebra
 using Test
 
 const SDIRK = OrdinaryDiffEqSDIRK
@@ -34,6 +34,23 @@ end
             integrator = init(ODEProblem(rhs, [1.0], (0.0, 1.0)), alg; dt = 0.1, adaptive = false)
             step!(integrator)
             @test integrator.fsallast ≈ forced(integrator.u, nothing, integrator.t)
+        end
+    end
+    # `2u' = -2u`: storing `f(u)` instead of `du/dt` drops the dense output to first order.
+    decay!(du, u, p, t) = (du[1] = -2 * u[1]; nothing)
+    decay(u, p, t) = [-2 * u[1]]
+    mm_algs = (
+        SFSDIRK4(), SFSDIRK5(), SFSDIRK6(), SFSDIRK7(), SFSDIRK8(),
+        SDIRK2(), SSPSDIRK2(), ImplicitMidpoint(),
+    )
+    for alg in mm_algs, rhs in (decay!, decay)
+        @testset "$(nameof(typeof(alg))) mass matrix, $(nameof(rhs))" begin
+            errs = map((1 / 32, 1 / 64)) do dt
+                f = ODEFunction(rhs; mass_matrix = Diagonal([2.0]))
+                sol = solve(ODEProblem(f, [1.0], (0.0, 1.0)), alg; dt, adaptive = false)
+                maximum(t -> abs(sol(t)[1] - exp(-t)), (0.5:dt:(1 - dt)) .+ dt / 4)
+            end
+            @test log2(errs[1] / errs[2]) > 1.5
         end
     end
 end
