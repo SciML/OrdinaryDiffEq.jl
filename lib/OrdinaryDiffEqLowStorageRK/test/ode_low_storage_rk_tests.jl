@@ -1,4 +1,4 @@
-using OrdinaryDiffEqLowStorageRK, DiffEqDevTools, Test, Random
+using OrdinaryDiffEqLowStorageRK, DiffEqDevTools, Test, Random, JLArrays
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
 Random.seed!(100)
@@ -2208,5 +2208,20 @@ end
         step!(fresh)
         @test fresh.stats.nreject == 0
         @test fresh.u ≈ retried.u
+    end
+
+    A = [0.0 1.0; -1.0 0.0]
+    lin!(du, u, A, t) = (du .= A * u; nothing)
+    linprobs = (
+        ODEProblem((u, A, t) -> A * u, [1.0, 0.0], (0.0, 6.0), A),
+        ODEProblem(lin!, [1.0, 0.0], (0.0, 6.0), A),
+        ODEProblem(lin!, JLArray([1.0, 0.0]), (0.0, 6.0), JLArray(A)),
+    )
+    JLArrays.allowscalar(false)
+    for alg in algs, prob in linprobs, save_everystep in (true, false)
+        integ = init(prob, alg; dt = 3.0, abstol = 1.0e-7, reltol = 1.0e-7, save_everystep)
+        step!(integ)
+        @test integ.stats.nreject > 0
+        @test Array(integ.u) ≈ [cos(integ.t), -sin(integ.t)] atol = 2.0e-6
     end
 end
