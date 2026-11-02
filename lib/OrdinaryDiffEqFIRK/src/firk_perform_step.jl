@@ -23,10 +23,14 @@ fixed Jacobian error. So carry the last measurement rescaled by `dt/dt_meas`.
 """
 function firk_initial_η(cache, dt, κ, operator_changed)
     T = typeof(cache.ηold)
+    # `value` strips Dual/Measurement wrappers off the step sizes. θ is a convergence
+    # diagnostic that steers control flow, not a differentiated quantity, and `ηold` is
+    # a plain real — under ForwardDiff with a Dual `dt` the ratio would otherwise be a
+    # Dual and fail to convert.
     θ = if operator_changed || iszero(cache.θ_meas) || iszero(cache.dt_meas)
         one(T)
     else
-        convert(T, cache.θ_meas * abs(dt / cache.dt_meas))
+        convert(T, cache.θ_meas * abs(value(dt) / value(cache.dt_meas)))
     end
     θ = min(θ, convert(T, 0.99))
     return max(θ / (1 - θ), convert(T, κ))
