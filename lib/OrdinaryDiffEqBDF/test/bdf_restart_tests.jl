@@ -47,8 +47,7 @@ end
     @test sol.stats.nreject == 1
 end
 
-# `reinit!` must not leave QNDF2 event anchors stale relative to reset `iter`,
-# and must not wipe cold-start history on `initialize!` (see #4655).
+# `reinit!` must not leave QNDF2 event anchors stale relative to reset `iter`.
 @testset "QNDF2 reinit! preserves Success on Robertson" begin
     function rober!(du, u, p, t)
         y₁, y₂, y₃ = u
