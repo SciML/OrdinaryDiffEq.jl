@@ -1,10 +1,11 @@
-using OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, ForwardDiff, SciMLBase, Test
+using OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, ForwardDiff, SciMLBase, StaticArrays, Test
 using OrdinaryDiffEqCore: PIController, zero_func_struct
 
 # u' = p for t < 1/2 and u' = 2p after, u(0) = 0: u(1) = 3p/2.
 kink!(du, u, p, t) = (du[1] = (t < 0.5 ? 1 : 2) * p[1]; nothing)
 # u' = p while u < 1/2 and u' = 2p after, u(0) = 0: the crossing is at t = 1/(2p), u(1) = 2p - 1/2.
 state_kink!(du, u, p, t) = (du[1] = (u[1] < 0.5 ? 1 : 2) * p[1]; nothing)
+static_state_kink(u, p, t) = SVector((u[1] < 0.5 ? 1 : 2) * p[1])
 
 const ZERO_FUNC_CALLS = Ref(0)
 count_zero_func(integ) = (integ isa zero_func_struct && (ZERO_FUNC_CALLS[] += 1); nothing)
@@ -16,9 +17,13 @@ function vcond(out, u, t, integ)
     return nothing
 end
 state_condition(u, t, integ) = (count_zero_func(integ); u[1] - 0.5)
+static_state_condition(u::SVector, t, integ) = (count_zero_func(integ); u[1] - 0.5)
+
+state0(f, p) = [zero(p)]
+state0(::typeof(static_state_kink), p) = SVector(zero(p))
 
 function u_end(f!, p, spec, cb)
-    prob = ODEProblem{true, spec}(f!, [zero(p)], (0.0, 1.0), [p])
+    prob = ODEProblem{SciMLBase.isinplace(f!, 4), spec}(f!, state0(f!, p), (0.0, 1.0), [p])
     sol = solve(
         prob, Tsit5(); callback = cb, dt = 0.8, reltol = 1.0e-10, abstol = 1.0e-12,
         controller = PIController(Tsit5(); discontinuity_detection = true)
@@ -34,6 +39,10 @@ end
         ("scalar", kink!, ContinuousCallback(scalar_condition, integ -> nothing), 1.5p),
         ("vector", kink!, VectorContinuousCallback(vcond, (integ, i) -> nothing, 2), 1.5p),
         ("state", state_kink!, ContinuousCallback(state_condition, integ -> nothing), 2p - 0.5),
+        (
+            "static state", static_state_kink,
+            ContinuousCallback(static_state_condition, integ -> nothing), 2p - 0.5,
+        ),
     )
     @testset "$name, $spec" for (name, f!, cb, expected) in cases,
             spec in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize)

@@ -27,7 +27,8 @@ _discontinuity_detection_enabled(cache::CompositeControllerCache) =
     _discontinuity_detection_enabled(first(cache.caches))
 
 # Buffers of a discontinuity problem's zero function; `_disco_zero` derives their types from these.
-_disco_u1(u) = u isa AbstractArray ? similar(u) : zero(u)
+# `u₁` is the interpolation target of a mutable state; an immutable state is interpolated by value.
+_disco_u1(u) = u isa AbstractArray && ArrayInterface.ismutable(u) ? similar(u) : zero(u)
 function _disco_outs(u, cb)
     if cb isa VectorContinuousCallback
         arr = u isa AbstractArray ? similar(u, cb.len) : zeros(typeof(u), cb.len)
