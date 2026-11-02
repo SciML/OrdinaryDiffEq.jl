@@ -33,7 +33,7 @@ function _disco_outs(u, cb)
         arr = u isa AbstractArray ? similar(u, cb.len) : zeros(typeof(u), cb.len)
         return arr, similar(arr), similar(arr)
     else
-        return nothing, zeros(Float64, 1), zeros(Float64, 1)
+        return nothing, 0.0, 0.0
     end
 end
 
@@ -114,9 +114,10 @@ function find_discontinuity(integrator)
                 end
             end
         else
-            disco_zero.out_low[1] = i.condition(uprev, t, integrator)
-            disco_zero.out_high[1] = i.condition(u, t + dt, integrator)
-            if (disco_zero.out_low[1] * disco_zero.out_high[1] < zero(disco_zero.out_low[1]))
+            _set_disco_outs!(
+                disco_zero, i.condition(uprev, t, integrator), i.condition(u, t + dt, integrator)
+            )
+            if (disco_zero.out_low * disco_zero.out_high < zero(disco_zero.out_low))
                 if (!addsteps_called)
                     addsteps_called = true
                     _ode_addsteps!(

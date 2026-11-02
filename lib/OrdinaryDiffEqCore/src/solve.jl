@@ -50,10 +50,14 @@ function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
     return nothing
 end
 _set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
+_set_disco_outs!(z::zero_func_struct, low, high) = (z.out_low = low; z.out_high = high; nothing)
+
+_disco_out(out::Number, ind) = out
+_disco_out(out, ind) = out[ind]
 
 function (z::zero_func_struct)(θ, p)
-    iszero(θ) && return z.out_low[z.ind]
-    isone(θ) && return z.out_high[z.ind]
+    iszero(θ) && return _disco_out(z.out_low, z.ind)
+    isone(θ) && return _disco_out(z.out_high, z.ind)
     u = _disco_interpolant(z, θ)
     return zero_condition(z.callback, z.out, u, z.tprev + θ * z.dt, z, z.ind)
 end

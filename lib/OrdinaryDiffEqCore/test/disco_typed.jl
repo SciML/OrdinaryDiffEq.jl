@@ -17,7 +17,7 @@ end
 
 const DYNAMIC = (
     :getproperty, :setproperty!, :getindex, :setindex!, :_load_disco_state!,
-    :_ode_addsteps!, :solve, :_typevar,
+    :_set_disco_outs!, :_ode_addsteps!, :solve, :_typevar,
 )
 
 @testset "typed discontinuity detection" begin
@@ -106,4 +106,26 @@ end
         @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 0.6 atol = 1.0e-8
         @test all(dp -> dp.tspan == [0.0, 1.0], dps)
     end
+end
+
+warm_bytes(integ) = (OrdinaryDiffEqCore.find_discontinuity(integ); @allocated OrdinaryDiffEqCore.find_discontinuity(integ))
+
+@testset "scalar callback end values" begin
+    cb = ContinuousCallback(cond, noop!)
+    @test only(
+        Base.return_types(OrdinaryDiffEqCore._disco_outs, (Vector{Float64}, typeof(cb)))
+    ) === Tuple{Nothing, Float64, Float64}
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(f!, [0.0], (0.0, 2.0))
+    integ = init(
+        prob, Tsit5(); callback = cb, dt = 0.5, adaptive = false,
+        verbose = DEVerbosity(SciMLLogging.None())
+    )
+    straddle!(integ, 1.5)
+    @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 2 / 3 atol = 1.0e-8
+    z = only(OrdinaryDiffEqCore.get_disco_probs(integ.controller_cache)).f.f.obj.x
+    @test fieldtype(typeof(z), :out_low) === Float64
+    @test fieldtype(typeof(z), :out_high) === Float64
+    @test z(0.0, SciMLBase.NullParameters()) === cond(integ.uprev, 0.0, integ) === -1.0
+    @test z(1.0, SciMLBase.NullParameters()) === cond(integ.u, 1.5, integ) === 0.5
+    @test warm_bytes(integ) == 0
 end
