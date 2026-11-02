@@ -1657,14 +1657,15 @@ end
     return nothing
 end
 
-function OrdinaryDiffEqCore.resize_non_user_cache!(
+function resize_non_user_cache!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator, cache::RKV76IIaCache, i::Int
     )
-    # Eager interpolation stages live only in integrator.k.
-    if !_unwrap_val(cache.lazy)
-        for j in 11:16
-            resize!(integrator.k[j], i)
-        end
+    active = integrator.cache isa OrdinaryDiffEqCore.CompositeCache ?
+        integrator.cache.caches[integrator.cache.current] : integrator.cache
+    # Eager interpolation stages live only in integrator.k, which belongs to the active member.
+    (active === cache && !_unwrap_val(cache.lazy)) || return nothing
+    for j in 11:16
+        resize!(integrator.k[j], i)
     end
     return nothing
 end

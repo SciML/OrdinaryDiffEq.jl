@@ -151,7 +151,11 @@ let ts = range(0.0, 4.0, length = 81)
 end
 
 let prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 2.0))
-    for alg in (RKV76IIa(), RKV76IIa(lazy = Val{false}()))
+    eager = RKV76IIa(lazy = Val{false}())
+    for alg in (
+            RKV76IIa(), eager, OrdinaryDiffEqCore.CompositeAlgorithm((Vern6(), eager), _ -> 1),
+            OrdinaryDiffEqCore.CompositeAlgorithm((Vern6(), eager), _ -> 2),
+        )
         integrator = init(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
         step!(integrator, 1.0, true)
         resize!(integrator, 2)
