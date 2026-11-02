@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, SciMLBase, Test
+using OrdinaryDiffEqCore, OrdinaryDiffEqTsit5, SciMLBase, StaticArrays, Test
 using OrdinaryDiffEqCore: DEVerbosity, SciMLLogging
 
 # FullSpecialize keeps callbacks in a tuple (typed zero-function reads); a vector of callbacks is read untyped.
@@ -128,4 +128,67 @@ warm_bytes(integ) = (OrdinaryDiffEqCore.find_discontinuity(integ); @allocated Or
     @test z(0.0, SciMLBase.NullParameters()) === cond(integ.uprev, 0.0, integ) === -1.0
     @test z(1.0, SciMLBase.NullParameters()) === cond(integ.u, 1.5, integ) === 0.5
     @test warm_bytes(integ) == 0
+end
+
+# u' = (1, 2) from the origin: the first component crosses 1 at θ = 2/3 of a step of 1.5.
+# The conditions take the state type of the problem; the step is a real one, so the
+# zero function interpolates through its stages.
+static_f(u, p, t) = SVector(1.0, 2.0)
+static_cond(u::SVector, t, integrator) = u[1] - 1.0
+function static_vcond(out, u::SVector, t, integrator)
+    out[1] = u[1] - 1.0
+    out[2] = u[2] - 10.0
+    return nothing
+end
+
+@testset "static array state, $name, $spec" for spec in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize),
+        (name, cb) in (
+            ("scalar", ContinuousCallback(static_cond, noop!)),
+            ("vector", VectorContinuousCallback(static_vcond, vnoop!, 2)),
+        )
+
+    prob = ODEProblem{false, spec}(static_f, SVector(0.0, 0.0), (0.0, 2.0))
+    integ = init(
+        prob, Tsit5(); callback = cb, dt = 1.5, adaptive = false,
+        verbose = DEVerbosity(SciMLLogging.None())
+    )
+    OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+    @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 2 / 3 atol = 1.0e-8
+    @test integ.is_disco_step
+    dp = only(OrdinaryDiffEqCore.get_disco_probs(integ.controller_cache))
+    @test dp.f.f.obj.x.u₁ isa SVector{2, Float64}
+    if spec === SciMLBase.FullSpecialize
+        icb = only(integ.opts.callback.continuous_callbacks)
+        @test only(
+            Base.return_types(
+                OrdinaryDiffEqCore._disco_zero, (typeof(dp), typeof(integ), typeof(icb))
+            )
+        ) === typeof(dp.f.f.obj.x)
+        @test warm_bytes(integ) == 0
+    end
+
+    kink(u, p, t) = SVector(u[1] < 1 ? 2u[1] : 5 - 3u[1], 0.0)
+    τ = log(10) / 2
+    kprob = ODEProblem{false, spec}(kink, SVector(0.1, 0.0), (0.0, 1.5))
+    disco = solve(
+        kprob, Tsit5(); callback = cb, reltol = 1.0e-6, dt = 1.4,
+        controller = OrdinaryDiffEqCore.PIController(Tsit5(); discontinuity_detection = true)
+    )
+    @test disco.retcode == ReturnCode.Success
+    @test isapprox(disco.u[end][1], 5 / 3 - (2 / 3) * exp(-3(1.5 - τ)); rtol = 1.0e-5)
+end
+
+@testset "mutable static array state keeps the interpolation buffer" begin
+    mutable_f!(du, u, p, t) = (du[1] = 1.0; du[2] = 2.0; nothing)
+    mutable_cond(u::MVector, t, integrator) = u[1] - 1.0
+    prob = ODEProblem{true, SciMLBase.FullSpecialize}(mutable_f!, MVector(0.0, 0.0), (0.0, 2.0))
+    integ = init(
+        prob, Tsit5(); callback = ContinuousCallback(mutable_cond, noop!), dt = 1.5,
+        adaptive = false, verbose = DEVerbosity(SciMLLogging.None())
+    )
+    OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+    @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 2 / 3 atol = 1.0e-8
+    z = only(OrdinaryDiffEqCore.get_disco_probs(integ.controller_cache)).f.f.obj.x
+    @test z.u₁ isa MVector{2, Float64}
+    @test z.u₁ !== integ.u
 end
