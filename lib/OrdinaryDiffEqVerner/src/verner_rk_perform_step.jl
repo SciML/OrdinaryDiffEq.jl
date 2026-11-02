@@ -1673,9 +1673,12 @@ function initialize!(integrator, cache::RKV76IIaCache)
     k[9] = cache.k9
     k[10] = cache.k10
     if !_unwrap_val(cache.lazy)
-        for i in 11:16
-            k[i] = similar(cache.k1)
-        end
+        k[11] = cache.k11
+        k[12] = cache.k12
+        k[13] = cache.k13
+        k[14] = cache.k14
+        k[15] = cache.k15
+        k[16] = cache.k16
     end
     return
 end

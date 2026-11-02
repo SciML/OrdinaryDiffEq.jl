@@ -143,8 +143,24 @@ let ts = range(0.0, 4.0, length = 81)
         sol = solve(prob, alg; dt = 0.25, adaptive = false)
         @test maximum(abs(first(sol(t)) - exp(-t)) for t in ts) < 1.0e-10
         @test maximum(abs(first(sol(t, Val{1})) + exp(-t)) for t in ts) < 1.0e-9
+        @test maximum(abs(first(sol(t, Val{2})) - exp(-t)) for t in ts) < 1.0e-8
+        @test maximum(abs(first(sol(t, Val{3})) + exp(-t)) for t in ts) < 1.0e-6
         sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, saveat = 0.3)
         @test maximum(abs(first(sol.u[i]) - exp(-sol.t[i])) for i in eachindex(sol.t)) < 1.0e-9
+    end
+end
+
+let prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 2.0))
+    for alg in (RKV76IIa(), RKV76IIa(lazy = Val{false}()))
+        integrator = init(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
+        step!(integrator, 1.0, true)
+        resize!(integrator, 2)
+        integrator.u[2] = integrator.u[1]
+        derivative_discontinuity!(integrator, true)
+        sol = solve!(integrator)
+        @test SciMLBase.successful_retcode(sol)
+        @test maximum(abs.(sol.u[end] .- exp(-2.0))) < 1.0e-10
+        @test abs(sol(1.5)[2] - exp(-1.5)) < 1.0e-10
     end
 end
 

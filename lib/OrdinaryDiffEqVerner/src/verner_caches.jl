@@ -319,6 +319,12 @@ end
     k8::rateType
     k9::rateType
     k10::rateType
+    k11::rateType
+    k12::rateType
+    k13::rateType
+    k14::rateType
+    k15::rateType
+    k16::rateType
     utilde::uType
     tmp::uType
     rtmp::rateType
@@ -352,14 +358,21 @@ function alg_cache(
     k8 = zero(rate_prototype)
     k9 = zero(rate_prototype)
     k10 = zero(rate_prototype)
+    k11 = zero(rate_prototype)
+    k12 = zero(rate_prototype)
+    k13 = zero(rate_prototype)
+    k14 = zero(rate_prototype)
+    k15 = zero(rate_prototype)
+    k16 = zero(rate_prototype)
     utilde = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
     return RKV76IIaCache(
-        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, tab,
-        interp, alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
+        u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16,
+        utilde, tmp, rtmp, atmp, tab, interp, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread, alg.lazy
     )
 end
 
