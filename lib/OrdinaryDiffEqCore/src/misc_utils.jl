@@ -66,7 +66,7 @@ Only primal values are used. Components with identical stage values are skipped.
 """
 function eigen_est_from_stages(k, kprev, g, gprev)
     bc = Broadcast.instantiate(Broadcast.broadcasted(_eigen_est_quotient, k, kprev, g, gprev))
-    init = zero(_eigen_est_quotient(map(oneunit ∘ eltype, (k, kprev, g, gprev))...))
+    init = zero(_eigen_est_quotient(map(oneunit ∘ recursive_unitless_bottom_eltype, (k, kprev, g, gprev))...))
     return maximum(bc; init)
 end
 
