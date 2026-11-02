@@ -38,11 +38,13 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Interpolation Search Hint" include("interpolation_hint_tests.jl")
     @time @safetestset "Interpolation idxs/out validation" include("interpolation_idxs_bounds_tests.jl")
     @time @safetestset "Left continuity at duplicated knots" include("left_continuity_knot_tests.jl")
+    @time @safetestset "Discontinuity detection with non-mutable states" include("disco_scalar_state_tests.jl")
     @time @safetestset "Bool Equal Coercion" include("bool_equal_tests.jl")
     @time @safetestset "dtmin Direction" include("dtmin_direction_tests.jl")
     @time @safetestset "save_discretes initialization" include("save_discretes_init_tests.jl")
     @time @safetestset "Instability Diagnostics" include("instability_diagnostics_tests.jl")
     @time @safetestset "Enzyme Interpolation" include("enzyme_interpolation_tests.jl")
+    @time @safetestset "Tolerance Default Equality" include("tolerance_default_equality_tests.jl")
 end
 
 # Run QA tests LAST. `JET.test_package` re-evaluates this package's source into a
