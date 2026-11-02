@@ -1657,6 +1657,18 @@ end
     return nothing
 end
 
+function OrdinaryDiffEqCore.resize_non_user_cache!(
+        integrator::OrdinaryDiffEqCore.ODEIntegrator, cache::RKV76IIaCache, i::Int
+    )
+    # Eager interpolation stages live only in integrator.k.
+    if !_unwrap_val(cache.lazy)
+        for j in 11:16
+            resize!(integrator.k[j], i)
+        end
+    end
+    return nothing
+end
+
 function initialize!(integrator, cache::RKV76IIaCache)
     alg = unwrap_alg(integrator, false)
     _unwrap_val(cache.lazy) ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
@@ -1673,12 +1685,9 @@ function initialize!(integrator, cache::RKV76IIaCache)
     k[9] = cache.k9
     k[10] = cache.k10
     if !_unwrap_val(cache.lazy)
-        k[11] = cache.k11
-        k[12] = cache.k12
-        k[13] = cache.k13
-        k[14] = cache.k14
-        k[15] = cache.k15
-        k[16] = cache.k16
+        for i in 11:16
+            k[i] = similar(cache.k1)
+        end
     end
     return
 end
