@@ -95,5 +95,8 @@ end
         @test sol.t[end] == 1.0
         @test all(isfinite, sol.u[end])
         @test sum(sol.u[end]) ≈ 1.0 atol = 1.0e-12
+        if f === robertson
+            @test sol.stats.njacs == sol.stats.nw
+        end
     end
 end
