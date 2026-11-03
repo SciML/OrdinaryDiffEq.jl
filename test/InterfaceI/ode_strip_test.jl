@@ -79,9 +79,11 @@ end
     end
 
     holds(x, y, seen = IdDict()) = x === y || (
-        !(x isa Union{Module, Type}) && !haskey(seen, x) && (seen[x] = true;
+        !(x isa Union{Module, Type}) && !haskey(seen, x) && (
+            seen[x] = true;
             x isa Array ? any(i -> isassigned(x, i) && holds(x[i], y, seen), eachindex(x)) :
-            any(i -> isdefined(x, i) && holds(getfield(x, i), y, seen), 1:nfields(x)))
+                any(i -> isdefined(x, i) && holds(getfield(x, i), y, seen), 1:nfields(x))
+        )
     )
     parameter_rate(t) = 1.0
     growth = ODEProblem((du, u, p, t) -> (du .= p.rate(t) .* u), [1.0], (0.0, 1.0), (rate = parameter_rate,))
