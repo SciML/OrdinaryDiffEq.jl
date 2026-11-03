@@ -94,7 +94,7 @@ end
     prob_const = ODEProblem((u, p, t) -> one(u), 0.0, (0.0, 1.0))
     prob_decay = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
 
-    for alg in (Alshina2(), FRK65())
+    for alg in (Alshina2(), FRK65(), SIR54())
         sol = solve(prob_const, alg; abstol = 1.0e-6, reltol = 1.0e-6)
         @test SciMLBase.successful_retcode(sol)
         @test sol.stats.naccept < 20
@@ -108,4 +108,11 @@ end
         @test errs[1] > errs[3]
         @test errs[3] < 1.0e-7
     end
+end
+
+@testset "Anas5 in-place matches out-of-place" begin
+    prob_iip = ODEProblem((du, u, p, t) -> du .= sin.(u), [1.0], (0.0, 0.5))
+    sol_oop = solve(prob_ode_nonlinear, Anas5(); dt = 1 // 16)
+    sol_iip = solve(prob_iip, Anas5(); dt = 1 // 16)
+    @test sol_iip.u[end][1] ≈ sol_oop.u[end]
 end
