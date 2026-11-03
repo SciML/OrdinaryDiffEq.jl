@@ -1157,24 +1157,20 @@ end
 end
 
 function initialize!(integrator, cache::PSRK4p7q6ConstantCache)
-    integrator.kshortsize = 6
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = zero(integrator.fsalfirst)
-    integrator.k[3] = zero(integrator.fsalfirst)
-    integrator.k[4] = zero(integrator.fsalfirst)
-    integrator.k[5] = zero(integrator.fsalfirst)
-    return integrator.k[6] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::PSRK4p7q6ConstantCache, repeat_step = false)
     (; u, uprev, f, p, dt, t) = integrator
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, b6, c2, c3, c4, c5, c6) = cache
 
-    k1 = f(uprev, p, t)
+    k1 = integrator.fsalfirst
     tmp = uprev + dt * (a21 * k1)
     k2 = f(tmp, p, t + c2 * dt)
     tmp = uprev + dt * (a31 * k1 + a32 * k2)
@@ -1188,14 +1184,10 @@ function perform_step!(integrator, cache::PSRK4p7q6ConstantCache, repeat_step = 
     u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5 + b6 * k6)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
-    integrator.fsallast = k6
 
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     return integrator.u = u
 end
 
@@ -1203,14 +1195,15 @@ get_fsalfirstlast(cache::PSRK4p7q6Cache, u) = (cache.k1, cache.k6)
 function initialize!(integrator, cache::PSRK4p7q6Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 6
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    return integrator.k[6] = cache.k6
+    integrator.k[2] = cache.k6
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k6
+
+    f(integrator.fsalfirst, uprev, p, t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::PSRK4p7q6Cache, repeat_step = false)
@@ -1219,7 +1212,6 @@ function perform_step!(integrator, cache::PSRK4p7q6Cache, repeat_step = false)
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, b6, c2, c3, c4, c5, c6) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
-    f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a21 * k1)
     stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k2, tmp, p, t + c2 * dt)
@@ -1248,28 +1240,25 @@ function perform_step!(integrator, cache::PSRK4p7q6Cache, repeat_step = false)
     )
     stage_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
-    integrator.fsallast = k6
+    f(k6, u, p, t + dt)
     return nothing
 end
 
 function initialize!(integrator, cache::PSRK3p6q5ConstantCache)
-    integrator.kshortsize = 5
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = zero(integrator.fsalfirst)
-    integrator.k[3] = zero(integrator.fsalfirst)
-    integrator.k[4] = zero(integrator.fsalfirst)
-    return integrator.k[5] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::PSRK3p6q5ConstantCache, repeat_step = false)
     (; u, uprev, f, p, dt, t) = integrator
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, c2, c3, c4, c5) = cache
 
-    k1 = f(uprev, p, t)
+    k1 = integrator.fsalfirst
     tmp = uprev + dt * (a21 * k1)
     k2 = f(tmp, p, t + c2 * dt)
     tmp = uprev + dt * (a31 * k1 + a32 * k2)
@@ -1281,13 +1270,10 @@ function perform_step!(integrator, cache::PSRK3p6q5ConstantCache, repeat_step = 
     u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
-    integrator.fsallast = k5
 
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     return integrator.u = u
 end
 
@@ -1295,13 +1281,15 @@ get_fsalfirstlast(cache::PSRK3p6q5Cache, u) = (cache.k1, cache.k5)
 function initialize!(integrator, cache::PSRK3p6q5Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 5
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    return integrator.k[5] = cache.k5
+    integrator.k[2] = cache.k5
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k5
+
+    f(integrator.fsalfirst, uprev, p, t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::PSRK3p6q5Cache, repeat_step = false)
@@ -1310,7 +1298,6 @@ function perform_step!(integrator, cache::PSRK3p6q5Cache, repeat_step = false)
     (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, c2, c3, c4, c5) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
-    f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a21 * k1)
     stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k2, tmp, p, t + c2 * dt)
@@ -1329,27 +1316,25 @@ function perform_step!(integrator, cache::PSRK3p6q5Cache, repeat_step = false)
         (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5)
     stage_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 5)
-    integrator.fsallast = k5
+    f(k5, u, p, t + dt)
     return nothing
 end
 
 function initialize!(integrator, cache::PSRK3p5q4ConstantCache)
-    integrator.kshortsize = 4
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = zero(integrator.fsalfirst)
-    integrator.k[3] = zero(integrator.fsalfirst)
-    return integrator.k[4] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::PSRK3p5q4ConstantCache, repeat_step = false)
     (; u, uprev, f, p, dt, t) = integrator
     (; a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, c2, c3, c4) = cache
 
-    k1 = f(uprev, p, t)
+    k1 = integrator.fsalfirst
     tmp = uprev + dt * (a21 * k1)
     k2 = f(tmp, p, t + c2 * dt)
     tmp = uprev + dt * (a31 * k1 + a32 * k2)
@@ -1358,13 +1343,11 @@ function perform_step!(integrator, cache::PSRK3p5q4ConstantCache, repeat_step = 
     k4 = f(tmp, p, t + dt * c4)
     u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
 
-    integrator.fsallast = k4
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
 
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     return integrator.u = u
 end
 
@@ -1372,14 +1355,15 @@ get_fsalfirstlast(cache::PSRK3p5q4Cache, u) = (cache.k1, cache.k4)
 function initialize!(integrator, cache::PSRK3p5q4Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 4
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
+    integrator.k[2] = cache.k4
     integrator.fsalfirst = cache.k1
-    return integrator.fsallast = cache.k4
+    integrator.fsallast = cache.k4
+
+    f(integrator.fsalfirst, uprev, p, t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
@@ -1388,7 +1372,6 @@ function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
     (; a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, c2, c3, c4) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
-    f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a21 * k1)
     stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k2, tmp, p, t + c2 * dt)
@@ -1404,7 +1387,7 @@ function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
     stage_limiter!(u, integrator, p, t + dt)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 4)
-    integrator.fsallast = k4
+    f(k4, u, p, t + dt)
     return nothing
 end
 
@@ -2007,21 +1990,20 @@ function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::Alshina3ConstantCache)
-    integrator.kshortsize = 3
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = zero(integrator.fsalfirst)
-    return integrator.k[3] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::Alshina3ConstantCache, repeat_step = false)
     (; u, uprev, f, p, dt, t) = integrator
     (; a21, a32, b1, b2, b3, b2tilde, c2, c3) = cache
 
-    k1 = f(uprev, p, t)
+    k1 = integrator.fsalfirst
     tmp = uprev + dt * (a21 * k1)
     k2 = f(tmp, p, t + c2 * dt)
     tmp = uprev + dt * (a32 * k2)
@@ -2038,11 +2020,10 @@ function perform_step!(integrator, cache::Alshina3ConstantCache, repeat_step = f
     end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    integrator.fsallast = k3
 
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     return integrator.u = u
 end
 
@@ -2050,11 +2031,10 @@ get_fsalfirstlast(cache::Alshina3Cache, u) = (cache.k1, cache.k3)
 function initialize!(integrator, cache::Alshina3Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 3
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
+    integrator.k[2] = cache.k3
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k3
 
@@ -2068,7 +2048,6 @@ function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
     (; a21, a32, b1, b2, b3, b2tilde, c2, c3) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
-    f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a21 * k1)
     stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k2, tmp, p, t + c2 * dt)
@@ -2089,24 +2068,19 @@ function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
     end
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-    integrator.fsallast = k3
+    f(k3, u, p, t + dt)
 
     return nothing
 end
 
 function initialize!(integrator, cache::Alshina6ConstantCache)
-    integrator.kshortsize = 7
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = zero(integrator.fsalfirst)
-    integrator.k[3] = zero(integrator.fsalfirst)
-    integrator.k[4] = zero(integrator.fsalfirst)
-    integrator.k[5] = zero(integrator.fsalfirst)
-    integrator.k[6] = zero(integrator.fsalfirst)
-    return integrator.k[7] = integrator.fsallast
+    return integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::Alshina6ConstantCache, repeat_step = false)
@@ -2116,7 +2090,7 @@ function perform_step!(integrator, cache::Alshina6ConstantCache, repeat_step = f
         b1, b5, b6, b7, c2, c3, c4, c5, c6, c7,
     ) = cache
 
-    k1 = f(uprev, p, t)
+    k1 = integrator.fsalfirst
     tmp = uprev + dt * (a21 * k1)
     k2 = f(tmp, p, t + c2 * dt)
     tmp = uprev + dt * (a31 * k1 + a32 * k2)
@@ -2130,19 +2104,14 @@ function perform_step!(integrator, cache::Alshina6ConstantCache, repeat_step = f
     tmp = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
     k7 = f(tmp, p, t + dt * c7)
 
-    integrator.fsallast = k7
 
     u = uprev + dt * (b1 * k1 + b5 * k5 + b6 * k6 + b7 * k7)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
 
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     return integrator.u = u
 end
 
@@ -2150,17 +2119,15 @@ get_fsalfirstlast(cache::Alshina6Cache, u) = (cache.k1, cache.k7)
 function initialize!(integrator, cache::Alshina6Cache)
     (; uprev, f, p, t) = integrator
 
-    integrator.kshortsize = 7
+    integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = cache.k1
-    integrator.k[2] = cache.k2
-    integrator.k[3] = cache.k3
-    integrator.k[4] = cache.k4
-    integrator.k[5] = cache.k5
-    integrator.k[6] = cache.k6
-    integrator.k[7] = cache.k7
+    integrator.k[2] = cache.k7
     integrator.fsalfirst = cache.k1
-    return integrator.fsallast = cache.k7
+    integrator.fsallast = cache.k7
+
+    f(integrator.fsalfirst, uprev, p, t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
 function perform_step!(integrator, cache::Alshina6Cache, repeat_step = false)
@@ -2172,7 +2139,6 @@ function perform_step!(integrator, cache::Alshina6Cache, repeat_step = false)
     ) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
-    f(k1, uprev, p, t)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a21 * k1)
     stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k2, tmp, p, t + c2 * dt)
@@ -2205,7 +2171,7 @@ function perform_step!(integrator, cache::Alshina6Cache, repeat_step = false)
         (b1 * k1 + b5 * k5 + b6 * k6 + b7 * k7)
     stage_limiter!(u, integrator, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 7)
-    integrator.fsallast = k7
+    f(k7, u, p, t + dt)
     return nothing
 end
 

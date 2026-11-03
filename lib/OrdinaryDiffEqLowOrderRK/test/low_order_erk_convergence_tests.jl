@@ -109,3 +109,22 @@ end
         @test errs[3] < 1.0e-7
     end
 end
+
+@testset "PSRK and Alshina dense output gets the slopes at both ends of the step" begin
+    rhs!(du, u, p, t) = (du[1] = cos(t) - u[1]^2; nothing)
+    rhs(u, p, t) = [cos(t) - u[1]^2]
+    algs = (PSRK3p5q4(), PSRK3p6q5(), PSRK4p7q6(), Alshina3(), Alshina6())
+    for alg in algs, f in (rhs!, rhs)
+        integrator = init(ODEProblem(f, [1.0], (0.0, 1.0)), alg; dt = 0.1, adaptive = false)
+        step!(integrator)
+        step!(integrator)
+        @test integrator.k[1] ≈ rhs(integrator.uprev, nothing, integrator.tprev)
+        @test integrator.k[2] ≈ rhs(integrator.u, nothing, integrator.t)
+    end
+
+    decay = ODEProblem((u, p, t) -> -u^2, 1.0, (0.0, 4.0))
+    for alg in algs
+        sol = solve(decay, alg; dt = 0.1, adaptive = false, saveat = 0.02)
+        @test maximum(abs.(sol.u .- 1 ./ (1 .+ sol.t))) < 2.0e-4
+    end
+end

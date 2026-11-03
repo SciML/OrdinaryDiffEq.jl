@@ -30,9 +30,6 @@ SciMLBase.has_lazy_interpolation(alg::BS5) = _unwrap_val(alg.lazy)
 
 isfsal(alg::FRK65) = true
 isfsal(alg::RKO65) = false
-isfsal(alg::PSRK3p5q4) = false
-isfsal(alg::PSRK3p6q5) = false
-isfsal(alg::PSRK4p7q6) = false
 
 beta2_default(alg::DP5) = 4 // 100
 
