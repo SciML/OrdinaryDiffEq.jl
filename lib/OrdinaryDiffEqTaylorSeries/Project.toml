@@ -27,17 +27,21 @@ TaylorDiff = "b36ab563-344f-407b-a36a-4f200bebf99c"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
 [extras]
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 # DiffEqDevTools brings Latexify; releases compatible with Symbolics 7 require OrderedCollections 1.
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+ComponentArrays = "0.15"
 Reexport = "1.2.2"
 SciMLTesting = "2.4"
 CommonSolve = "0.2.6"
@@ -48,6 +52,7 @@ FunctionWrappers = "1.1.3"
 LinearAlgebra = "1.10"
 MuladdMacro = "0.2.4"
 ODEProblemLibrary = "1"
+OffsetArrays = "1"
 OrdinaryDiffEqCore = "4"
 OrderedCollections = "2"
 Pkg = "1"
@@ -57,6 +62,7 @@ Random = "<0.0.1, 1"
 RecursiveArrayTools = "4.2.0"
 SafeTestsets = "0.1.0"
 SciMLBase = "3.39"
+StaticArrays = "1"
 SymbolicUtils = "4.10.0"
 Symbolics = "7.6.0"
 TaylorDiff = "0.3.5"
@@ -65,4 +71,4 @@ TruncatedStacktraces = "1.4"
 julia = "1.10"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "ODEProblemLibrary", "OrderedCollections", "Pkg", "SciMLTesting"]
+test = ["ComponentArrays", "DiffEqDevTools", "OffsetArrays", "Random", "SafeTestsets", "StaticArrays", "Test", "ODEProblemLibrary", "OrderedCollections", "Pkg", "SciMLTesting"]

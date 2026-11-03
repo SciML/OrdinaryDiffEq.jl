@@ -12,6 +12,35 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @testset "Taylor methods preserve array axes and structure" begin
+        using OffsetArrays, StaticArrays, ComponentArrays
+
+        offset_iip!(du, u, p, t) = (du[0] = -u[0]; du[1] = -u[1]; nothing)
+        offset_oop(u, p, t) = OffsetArray([-u[0], -u[1]], axes(u, 1))
+        component_iip!(du, u, p, t) = (du.x = -u.x; du.y = -u.y; nothing)
+        component_oop(u, p, t) = ComponentArray(x = -u.x, y = -u.y)
+        static_oop(u, p, t) = -u
+
+        cases = (
+            (OffsetArray([1.0, 2.0], 0:1), offset_iip!, true),
+            (OffsetArray([1.0, 2.0], 0:1), offset_oop, false),
+            (Vector([1.0, 2.0]), static_oop, false),
+            (SVector(1.0, 2.0), static_oop, false),
+            (ComponentArray(x = 1.0, y = 2.0), component_iip!, true),
+            (ComponentArray(x = 1.0, y = 2.0), component_oop, false),
+        )
+        for (u0, f, iip) in cases
+            prob = ODEProblem{iip, SciMLBase.FullSpecialize}(f, u0, (0.0, 0.1))
+            for alg in (ExplicitTaylor2(), ExplicitTaylor(order = Val(5)))
+                sol = solve(prob, alg; dt = 0.01, adaptive = false)
+                @test SciMLBase.successful_retcode(sol)
+                @test typeof(sol.u[end]) == typeof(u0)
+                @test axes(sol.u[end]) == axes(u0)
+                @test parent(sol.u[end]) ≈ exp(-0.1) .* parent(u0) rtol = 2.0e-6
+            end
+        end
+    end
+
     @time @safetestset "SciMLBase reexport" begin
         using OrdinaryDiffEqTaylorSeries, Test
         exported = (
