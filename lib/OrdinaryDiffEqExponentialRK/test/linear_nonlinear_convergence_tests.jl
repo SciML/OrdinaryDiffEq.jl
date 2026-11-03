@@ -294,7 +294,8 @@ end
     N = 3
     K = [1.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 2.0]
     F0 = [20.0, 20.0, 0.0]
-    A = MatrixOperator([zeros(N, N) I; -K -0.01K])
+    Amat = [zeros(N, N) I; -K -0.01K]
+    A = MatrixOperator(Amat)
 
     f2_partial!(du, u, p, t) = (du[(N + 1):end] .= F0)
     function f2_full!(du, u, p, t)
@@ -304,10 +305,20 @@ end
 
     u0 = zeros(2N)
     tspan = (0.0, 1.0)
-    for Alg in (ETDRK2, ETDRK3, ETDRK4, HochOst4)
-        sol_partial = solve(SplitODEProblem(A, f2_partial!, u0, tspan), Alg(); dt = 0.1)
-        sol_full = solve(SplitODEProblem(A, f2_full!, u0, tspan), Alg(); dt = 0.1)
+    # u' = Au + b with constant b and u(0) = 0, so the augmented matrix exponential is
+    # the exact solution and the two callbacks cannot agree on a shared error
+    b = [zeros(N); F0]
+    aug = [Amat b; zeros(1, 2N + 1)]
+    exact(t) = (exp(t * aug) * [zeros(2N); 1.0])[1:(2N)]
+
+    for Alg in (ETDRK2, ETDRK3, ETDRK4, HochOst4), krylov in (false, true)
+        prob_partial = SplitODEProblem(A, f2_partial!, u0, tspan)
+        prob_full = SplitODEProblem(A, f2_full!, u0, tspan)
+        sol_partial = solve(prob_partial, Alg(; krylov); dt = 0.1)
+        sol_full = solve(prob_full, Alg(; krylov); dt = 0.1)
         @test sol_partial.u[end] ≈ sol_full.u[end]
         @test sol_partial(0.55) ≈ sol_full(0.55)
+        @test norm(sol_partial.u[end] - exact(1.0), Inf) < 1.0e-10
+        @test norm(sol_partial(0.55) - exact(0.55), Inf) < 1.0e-4
     end
 end
