@@ -120,6 +120,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
+    @time @safetestset "DDE clock alignment" begin
+        include("regression/clock_alignment.jl")
+    end
     @time @safetestset "Allocation Tests" begin
         include("regression/allocations.jl")
     end
