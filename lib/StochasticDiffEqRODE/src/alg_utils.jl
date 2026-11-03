@@ -7,5 +7,6 @@ alg_order(alg::BAOAB) = 1 // 1
 alg_compatible(prob::SciMLBase.AbstractSDEProblem, alg::BAOAB) = is_diagonal_noise(prob)
 
 function alg_compatible(prob::SciMLBase.AbstractRODEProblem, alg::RandomTaylor15)
-    return prob.noise isa DiffEqNoiseProcess.NoiseGrid && eltype(prob.noise.W) <: Number
+    return prob.noise isa DiffEqNoiseProcess.NoiseGrid &&
+        eltype(prob.noise.W) <: Union{Number, AbstractVector{<:Number}}
 end

@@ -102,10 +102,11 @@ does not depend on `W`, and its order does not depend on the amplitude of the pa
 
 ## Method Properties
 
-  - **Problem type**: RODEs driven by a `NoiseGrid` with scalar values
+  - **Problem type**: RODEs driven by a `NoiseGrid` with scalar or vector values
   - **Pathwise order**: 1.5
   - **Time stepping**: Fixed step size
-  - **Right-hand side evaluations**: 4 per step
+  - **Right-hand side evaluations**: 4 per step for scalar noise, `m^2 + m + 2` for a
+    noise with `m` components
   - **Noise usage**: reads the driving path between the step endpoints
 
 ## When to Use
