@@ -1,6 +1,7 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+using SparseArrays: AbstractSparseMatrix, nonzeros
 using CommonSolve: init, solve, solve!, step!
 
 import SciMLBase
