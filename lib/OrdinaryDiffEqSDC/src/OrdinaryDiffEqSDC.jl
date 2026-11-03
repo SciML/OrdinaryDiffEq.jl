@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: isfsal, issplit,
     @cache, alg_cache, get_fsalfirstlast,
     constvalue, _fixup_ad, _ode_interpolant, _ode_interpolant!, _ode_addsteps!,
     hermite_interpolant, hermite_interpolant!, interpolation_differential_vars,
-    @threaded, isthreaded, ODEIntegrator, isnewton
+    @threaded, isthreaded, ODEIntegrator, isnewton, Divergence
 import OrdinaryDiffEqCore
 # `alg_order`, `full_cache`, `isadaptive` and `resize_non_user_cache!` are owned by
 # SciMLBase and extended here, so they need `import`; `initialize!` is owned by DiffEqBase.
