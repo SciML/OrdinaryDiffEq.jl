@@ -563,6 +563,7 @@ mutable struct NLNewtonCache{
     jac_config::jcType
     linsolve::lsType
     weight::uType
+    lsweight::uType
     invγdt::tType2
     new_W_γdt_cutoff::tType
     J_t::tType
