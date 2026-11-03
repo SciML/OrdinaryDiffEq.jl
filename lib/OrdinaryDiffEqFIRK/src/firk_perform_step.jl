@@ -397,7 +397,7 @@ end
         z2 = @. T21 * w1 + T22 * w2
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -562,7 +562,7 @@ end
         @. z2 = T21 * w1 + T22 * w2
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -742,7 +742,7 @@ end
         z3 = @.. T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -995,7 +995,7 @@ end
         @.. z3 = T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -1302,7 +1302,7 @@ end
         z5 = @.. T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -1677,7 +1677,7 @@ end
         @.. z5 = T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -1947,7 +1947,7 @@ end
         end
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -2274,7 +2274,7 @@ end
         end
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -2482,7 +2482,7 @@ end
             z[i] = @.. z[i] - dw[i]
         end
 
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
             success = true
             break
@@ -2676,7 +2676,7 @@ end
             @.. z[i] = z[i] - dw[i]
         end
 
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
             success = true
             break
