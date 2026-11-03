@@ -1020,6 +1020,7 @@ function relax!(
         (; uprev, t, p, dt, opts, isdae) = integrator
         (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt) = cache
+        ϵ = sqrt(eps(real(one(eltype(ustep)))))
         function resid(z)
             # recompute residual (rhs)
             if isdae
@@ -1045,11 +1046,9 @@ function relax!(
             return res
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
             return (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
             ϕ_1 = ϕ(α)
             ϕ_2 = ϕ(α + ϵ)
             ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
@@ -1057,6 +1056,7 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
+        dϕ0 > 0 && return dz
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
@@ -1093,6 +1093,7 @@ function relax(
         (; uprev, t, p, dt, opts) = integrator
         (; z, tmp, ztmp, γ, iter, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt) = cache
+        ϵ = sqrt(eps(real(one(eltype(dz)))))
         function resid(z)
             # recompute residual (rhs)
             if f isa DAEFunction
@@ -1113,11 +1114,9 @@ function relax(
             return resid(z)
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
             return (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
             ϕ_1 = ϕ(α)
             ϕ_2 = ϕ(α + ϵ)
             ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
