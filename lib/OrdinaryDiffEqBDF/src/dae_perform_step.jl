@@ -290,7 +290,7 @@ function perform_step!(
         end
         cache.u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
     else
-        cache.u₀ = u
+        cache.u₀ = uprev
     end
     markfirststage!(nlsolver)
 
@@ -463,7 +463,7 @@ function perform_step!(
         end
         _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
     else
-        @.. broadcast = false u₀ = u
+        @.. broadcast = false u₀ = uprev
     end
     markfirststage!(nlsolver)
 
