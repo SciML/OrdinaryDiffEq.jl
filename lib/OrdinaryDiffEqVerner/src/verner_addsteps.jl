@@ -1340,3 +1340,95 @@ end
     end
     nothing
 end
+
+@muladd function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::RKV76IIaCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    if length(k) < 10 || always_calc_begin
+        (;
+            c2, c3, c4, c5, c6, c7, c8, c9, c10,
+            a21, a31, a32, a41, a42, a43, a51, a52, a53, a54,
+            a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
+            a81, a82, a83, a84, a85, a86, a87,
+            a91, a92, a93, a94, a95, a96, a97, a98,
+            a101, a102, a103, a104, a105, a106, a107, a108, a109,
+        ) = cache.tab
+        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp, thread) = cache
+        f(k1, uprev, p, t)
+        @.. broadcast = false thread = thread tmp = uprev + dt * a21 * k1
+        f(k2, tmp, p, t + c2 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a31 * k1 + a32 * k2)
+        f(k3, tmp, p, t + c3 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+        f(k4, tmp, p, t + c4 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+        f(k5, tmp, p, t + c5 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
+        f(k6, tmp, p, t + c6 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
+        f(k7, tmp, p, t + c7 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a81 * k1 + a82 * k2 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 + a87 * k7)
+        f(k8, tmp, p, t + c8 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a91 * k1 + a92 * k2 + a93 * k3 + a94 * k4 + a95 * k5 + a96 * k6 + a97 * k7 + a98 * k8)
+        f(k9, tmp, p, t + c9 * dt)
+        @.. broadcast = false thread = thread tmp = uprev + dt * (a101 * k1 + a102 * k2 + a103 * k3 + a104 * k4 + a105 * k5 + a106 * k6 + a107 * k7 + a108 * k8 + a109 * k9)
+        f(k10, tmp, p, t + c10 * dt)
+        copyat_or_push!(k, 1, k1)
+        copyat_or_push!(k, 2, k2)
+        copyat_or_push!(k, 3, k3)
+        copyat_or_push!(k, 4, k4)
+        copyat_or_push!(k, 5, k5)
+        copyat_or_push!(k, 6, k6)
+        copyat_or_push!(k, 7, k7)
+        copyat_or_push!(k, 8, k8)
+        copyat_or_push!(k, 9, k9)
+        copyat_or_push!(k, 10, k10)
+    end
+    if (allow_calc_end && length(k) < 16) || force_calc_end
+        (; tmp, rtmp, thread, interp) = cache
+        for i in 11:16
+            rkv76iia_extra_state!(tmp, i, k, uprev, dt, interp.a, thread)
+            f(rtmp, tmp, p, t + interp.c[i] * dt)
+            copyat_or_push!(k, i, rtmp)
+        end
+    end
+    return nothing
+end
+
+@muladd function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::RKV76IIaConstantCache,
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    if length(k) < 10 || always_calc_begin
+        (;
+            c2, c3, c4, c5, c6, c7, c8, c9, c10,
+            a21, a31, a32, a41, a42, a43, a51, a52, a53, a54,
+            a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
+            a81, a82, a83, a84, a85, a86, a87,
+            a91, a92, a93, a94, a95, a96, a97, a98,
+            a101, a102, a103, a104, a105, a106, a107, a108, a109,
+        ) = cache.tab
+        copyat_or_push!(k, 1, f(uprev, p, t))
+        copyat_or_push!(k, 2, f(uprev + dt * a21 * k[1], p, t + c2 * dt))
+        copyat_or_push!(k, 3, f(uprev + dt * (a31 * k[1] + a32 * k[2]), p, t + c3 * dt))
+        copyat_or_push!(k, 4, f(uprev + dt * (a41 * k[1] + a42 * k[2] + a43 * k[3]), p, t + c4 * dt))
+        copyat_or_push!(k, 5, f(uprev + dt * (a51 * k[1] + a52 * k[2] + a53 * k[3] + a54 * k[4]), p, t + c5 * dt))
+        copyat_or_push!(k, 6, f(uprev + dt * (a61 * k[1] + a62 * k[2] + a63 * k[3] + a64 * k[4] + a65 * k[5]), p, t + c6 * dt))
+        copyat_or_push!(k, 7, f(uprev + dt * (a71 * k[1] + a72 * k[2] + a73 * k[3] + a74 * k[4] + a75 * k[5] + a76 * k[6]), p, t + c7 * dt))
+        copyat_or_push!(k, 8, f(uprev + dt * (a81 * k[1] + a82 * k[2] + a83 * k[3] + a84 * k[4] + a85 * k[5] + a86 * k[6] + a87 * k[7]), p, t + c8 * dt))
+        copyat_or_push!(k, 9, f(uprev + dt * (a91 * k[1] + a92 * k[2] + a93 * k[3] + a94 * k[4] + a95 * k[5] + a96 * k[6] + a97 * k[7] + a98 * k[8]), p, t + c9 * dt))
+        copyat_or_push!(k, 10, f(uprev + dt * (a101 * k[1] + a102 * k[2] + a103 * k[3] + a104 * k[4] + a105 * k[5] + a106 * k[6] + a107 * k[7] + a108 * k[8] + a109 * k[9]), p, t + c10 * dt))
+    end
+    if (allow_calc_end && length(k) < 16) || force_calc_end
+        (; interp) = cache
+        for i in 11:16
+            copyat_or_push!(
+                k, i, f(rkv76iia_extra_state(i, k, uprev, dt, interp.a), p, t + interp.c[i] * dt)
+            )
+        end
+    end
+    return nothing
+end
