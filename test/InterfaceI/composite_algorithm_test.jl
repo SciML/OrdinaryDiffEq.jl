@@ -4,6 +4,7 @@ using DiffEqDevTools, ADTypes
 using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqFIRK
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqBDF: QNDF
 import OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqCore: CompositeAlgorithm
 

@@ -14,6 +14,8 @@ run_qa(
                 # Precompile-workload test problems in OrdinaryDiffEqCore, kept
                 # non-public on purpose (test fixtures, not solver-author API).
                 :lorenz, :lorenz_oop, :lorenz_p, :lorenz_p_params,
+                # SciMLBase internal, as in OrdinaryDiffEqCore.
+                :unwrap_cache,
             ),
         ),
         all_explicit_imports_are_public = (;
