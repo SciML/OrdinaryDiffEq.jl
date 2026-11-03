@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg, NLNewton
 using NonlinearSolve: NewtonRaphson, TrustRegion
@@ -50,20 +50,46 @@ refsol = solve(prob, FBDF(); reltol = 1.0e-12, abstol = 1.0e-14)
 end
 
 @testset "stale-W Newton directions are rescaled" begin
-    # `W` is reused while `γΔt` drifts within `new_W_dt_cutoff`, which leaves the Newton
-    # direction it produces scaled wrong; `NLNewton` corrects for that. Reproducing it
-    # needs `dt` to range over many orders of magnitude, hence the long tspan, and an
-    # AD Jacobian rather than the analytic one used above.
-    staleprob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e11), [0.04, 3.0e7, 1.0e4])
-    tight = solve(staleprob, Rodas5P(); reltol = 1.0e-13, abstol = 1.0e-15)
-    err(sol) = maximum(abs.(sol.u[end] .- tight.u[end]))
-
-    ref = solve(staleprob, KenCarp4(); reltol = 1.0e-9, abstol = 1.0e-12)
-    sol = solve(staleprob, KenCarp4(nlsolve = nsa); reltol = 1.0e-9, abstol = 1.0e-12)
-    @test SciMLBase.successful_retcode(sol)
-    # Uncorrected directions cost ~1.5x NLNewton's steps for ~9x its error here.
-    @test err(sol) < 3 * err(ref)
-    @test sol.stats.naccept < 1.25 * ref.stats.naccept
+    # A stage that reuses `W` from `h₀ = W_γdt` at `h = γdt = r h₀` contracts each mode of a
+    # linear problem by `1 - s (λ - 1/h)/(λ - 1/h₀)`. The balanced `s = 2r/(1 + r)` gives
+    # `(r - 1)/(r + 1) ⋅ (1 + h₀λ)/(1 - h₀λ)`; no correction (`s = 1`) or the reciprocal
+    # orientation `s = 2/(1 + r)` give different contractions in at least one regime.
+    # The iterates are read off the points `f` is evaluated at, on Prothero-Robinson
+    # `u' = λ(u - cos t) - sin t`, whose implicit Euler stage root is known exactly.
+    pts = Float64[]
+    λ = Ref(0.0)
+    function pr!(du, u, p, t)
+        u[1] isa Float64 && push!(pts, u[1])
+        du[1] = λ[] * (u[1] - cos(t)) - sin(t)
+        return nothing
+    end
+    for nl in (nsa, NLNewton()), λval in (-1.0e6, -1.0e-2), r in (0.9, 1.1)
+        λ[] = λval
+        integ = init(
+            ODEProblem(pr!, [1.0], (0.0, 10.0)), ImplicitEuler(nlsolve = nl);
+            dt = 1.0e-2, reltol = 1.0e-2, abstol = 1.0e-2
+        )
+        for _ in 1:3
+            step!(integ)
+        end
+        h₀ = integ.cache.nlsolver.cache.W_γdt
+        set_proposed_dt!(integ, r * h₀)
+        t₀, uprev = integ.t, integ.u[1]
+        empty!(pts)
+        step!(integ)
+        h = integ.t - t₀
+        iterates = pts[[true; diff(pts) .!= 0]]
+        ustar = (uprev - h * (sin(integ.t) + λval * cos(integ.t))) / (1 - h * λval)
+        e = iterates .- ustar
+        rh = h / h₀
+        expected = (rh - 1) / (rh + 1) * (1 + h₀ * λval) / (1 - h₀ * λval)
+        @testset "$(nameof(typeof(nl))) λ=$λval r=$r" begin
+            @test integ.cache.nlsolver.cache.W_γdt == h₀
+            @test rh ≈ r
+            @test length(e) >= 2
+            @test e[2] / e[1] ≈ expected rtol = 1.0e-4
+        end
+    end
 end
 
 @testset "globalized inner solver does not converge on a rejected step" begin
