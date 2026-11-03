@@ -51,7 +51,10 @@ run_qa(
                 # this sublib's own internal sparse-handling API, accessed
                 # qualified from OrdinaryDiffEqDifferentiationSparseArraysExt
                 :get_nzval, :is_sparse, :is_sparse_csc, :nonzeros,
-                Symbol("set_all_nzval!"), :spzeros, :_update_sparse_diagonal!,
+                Symbol("set_all_nzval!"), :spzeros,
+                :_sparse_pattern_stable_sub!, :_is_scalar_massmatrix,
+                :_scalar_massmatrix_λ, :_throwWJerror, :_throwWMerror,
+                :jacobian2W!, :dae_jacobian2W!,
             ),
         ),
     ),
