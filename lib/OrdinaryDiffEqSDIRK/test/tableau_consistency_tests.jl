@@ -24,6 +24,15 @@ all_algs = [
     end
 end
 
+@testset "Stage times match the implicit row sums" begin
+    for alg in all_algs
+        tab = SDIRK.ESDIRKIMEXTableau(alg, Float64, Float64)
+        @testset "$(nameof(typeof(alg)))" begin
+            @test tab.c ≈ vec(sum(tab.Ai; dims = 2)) atol = 1.0e-9
+        end
+    end
+end
+
 @testset "Non-IMEX methods solve a SplitODEProblem as f1 + f2" begin
     # A method with no explicit part has nowhere to put `f2`, so it integrates the combined
     # right-hand side, the way a non-split solve of the same method does. Before #4149 the
