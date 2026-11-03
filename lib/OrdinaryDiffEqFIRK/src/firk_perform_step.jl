@@ -33,6 +33,18 @@ function firk_W!(W, J, mass_matrix, scale)
     return W
 end
 
+function firk_W!(
+        W::Tridiagonal, J::Tridiagonal, mass_matrix::Union{UniformScaling, Diagonal}, scale
+    )
+    offdiag = zero(eltype(mass_matrix))
+    @. W.dl = muladd(scale, offdiag, J.dl)
+    @. W.du = muladd(scale, offdiag, J.du)
+    @inbounds for i in eachindex(W.d)
+        W.d[i] = muladd(scale, mass_matrix[i, i], J.d[i])
+    end
+    return W
+end
+
 # Sparse W: merge J's stored pattern with the mass matrix's contribution column by
 # column. Positions in J's pattern are always kept (matching entrywise setindex!,
 # which stores the computed value even when it is zero); positions only in the mass

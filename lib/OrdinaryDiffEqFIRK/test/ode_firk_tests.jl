@@ -32,6 +32,49 @@ testTol = 0.5
     end
 end
 
+@testset "Tridiagonal FIRK stage matrix assembly" begin
+    J = Tridiagonal([1.0, 0.0, 3.0], [2.0, -1.0, 0.0, 4.0], [0.5, 0.0, -2.0])
+    for mass_matrix in (I, Diagonal([1.2, 0.0, 0.8, 2.0])),
+            scale in (-2.5, -2.5 - 0.4im, NaN)
+
+        W = similar(J, typeof(scale))
+        expected = similar(Matrix(J), typeof(scale))
+        OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
+        OrdinaryDiffEqFIRK.firk_W!(expected, Matrix(J), mass_matrix, scale)
+        @test isequal(W.dl, diag(expected, -1))
+        @test isequal(W.d, diag(expected))
+        @test isequal(W.du, diag(expected, 1))
+    end
+end
+
+@testset "Tridiagonal FIRK solves vs dense jac_prototype" begin
+    n = 50
+    function firk_test_tri!(du, u, p, t)
+        @inbounds for i in 1:n
+            du[i] = -100u[i] + (i > 1 ? 10u[i - 1] : 0) + (i < n ? 10u[i + 1] : 0)
+        end
+    end
+    J = Tridiagonal(fill(10.0, n - 1), fill(-100.0, n), fill(10.0, n - 1))
+    mass_matrix = Diagonal(collect(range(0.8, 1.2; length = n)))
+    for mm in (I, mass_matrix), alg in (
+                RadauIIA3(), RadauIIA5(), RadauIIA9(),
+                AdaptiveRadau(), AdaptiveRadau(threading = true),
+            )
+        prob_tri = ODEProblem(
+            ODEFunction(firk_test_tri!; jac_prototype = J, mass_matrix = mm),
+            ones(n), (0.0, 0.1)
+        )
+        prob_dense = ODEProblem(
+            ODEFunction(firk_test_tri!; jac_prototype = Matrix(J), mass_matrix = mm),
+            ones(n), (0.0, 0.1)
+        )
+        sol_tri = solve(prob_tri, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        sol_dense = solve(prob_dense, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol_tri.retcode == ReturnCode.Success
+        @test sol_tri.u[end] ≈ sol_dense.u[end] atol = 1.0e-6
+    end
+end
+
 @testset "Sparse FIRK solves vs dense jac_prototype" begin
     n = 50
     function firk_test_lin!(du, u, p, t)
