@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
-using NonlinearSolve: DFSane, NewtonRaphson, Broyden
+using NonlinearSolve: DFSane, NewtonRaphson, Broyden, Klement, TrustRegion
 using LineSearch: BackTracking
 using ADTypes, LinearAlgebra, SciMLBase
 using Test
@@ -65,6 +65,42 @@ relerr(sol, ref) = norm(sol.u[end] .- ref) / norm(ref)
             reltol = 1.0e-6, abstol = 1.0e-9, maxiters = 10^5
         )
         @test !SciMLBase.successful_retcode(sol) || relerr(sol, ref) < 1.0e-3
+    end
+end
+
+# Issue #4283: displacement-only Convergence (θ ≈ 1) with a large residual. The
+# maintainer-approved fix is a residual veto only — not nested inner stepping. With that
+# veto alone, TRBDF2 + Broyden/Klement on u′ = -u still return Unstable near u0 (same
+# retcode family as master); they must not be turned into a silent Success at u0, and
+# Newton-type inners must keep solving.
+@testset "quasi-Newton residual veto does not claim Success at u0" begin
+    exact = exp(-1)
+    prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0))
+    for inner in (Broyden(), Klement())
+        sol = solve(prob, TRBDF2(nlsolve = NonlinearSolveAlg(inner)))
+        # Veto-only: still Unstable stuck at u0. A false Success at u0 would be the bug.
+        @test !SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ 1.0 atol = 1.0e-6
+    end
+    for inner in (NewtonRaphson(), TrustRegion())
+        sol = solve(prob, TRBDF2(nlsolve = NonlinearSolveAlg(inner)))
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ exact rtol = 2.0e-2
+    end
+end
+
+# Nested inner stepping must not bypass NonlinearSolveAlg.max_iter or under-count work.
+@testset "NonlinearSolveAlg.max_iter bounds inner steps and reported iterations" begin
+    prob = ODEProblem((du, u, p, t) -> (du .= -u .^ 3), [1.0], (0.0, 1.0))
+    for inner in (Broyden(), NewtonRaphson(), TrustRegion())
+        integ = init(
+            prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(inner; max_iter = 1));
+            dt = 1.0, adaptive = false, abstol = 1.0e-12, reltol = 1.0e-12
+        )
+        step!(integ)
+        nc = integ.cache.nlsolver.cache.cache
+        @test nc.nsteps <= 1
+        @test integ.stats.nnonliniter <= 1
     end
 end
 
