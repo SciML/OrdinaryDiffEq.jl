@@ -473,6 +473,36 @@ reinit_controller!(integrator::SciMLBase.DEIntegrator, cache::OrdinaryDiffEqCach
 sync_controllers!(::OrdinaryDiffEqCache, ::OrdinaryDiffEqCache) = nothing
 
 """
+    snapshot_controller(cache)
+
+Capture the per-solve state of the controller cache `cache` so that
+[`restore_controller!`](@ref) can put it back. Solvers use the pair to
+pseudo-step the controller, e.g. to compare the step size each candidate
+order would get, without leaking that state into the real step.
+
+The default returns `deepcopy(cache)`, which `restore_controller!` writes
+back with [`sync_controllers!`](@ref), so a custom controller only has to
+implement `sync_controllers!` for its state to be restored. The built-in
+`IController`, `PIController`, `PIDController` and `PredictiveController`
+caches return an allocation-free `NamedTuple` of the fields their
+`sync_controllers!` copies. Override both methods together when a custom
+cache can snapshot its state more cheaply than `deepcopy`.
+"""
+snapshot_controller(cache) = deepcopy(cache)
+
+"""
+    restore_controller!(cache, snapshot)
+
+Write `snapshot`, taken from `cache` by [`snapshot_controller`](@ref), back
+into `cache`. The default calls `sync_controllers!(cache, snapshot)`.
+Returns `nothing`.
+"""
+function restore_controller!(cache, snapshot)
+    sync_controllers!(cache, snapshot)
+    return nothing
+end
+
+"""
     post_newton_controller!(integrator, alg)
     post_newton_controller!(integrator, cache::AbstractControllerCache, alg)
 
@@ -704,6 +734,13 @@ function sync_controllers!(cache1::IControllerCache, cache2::IControllerCache)
     return nothing
 end
 
+snapshot_controller(cache::IControllerCache) = (; dtreject = cache.dtreject)
+
+function restore_controller!(cache::IControllerCache, snapshot::NamedTuple)
+    cache.dtreject = snapshot.dtreject
+    return nothing
+end
+
 # PI step size controller
 """
     PIController(beta1, beta2)
@@ -850,6 +887,14 @@ end
 function sync_controllers!(cache1::PIControllerCache, cache2::PIControllerCache)
     cache1.q11 = cache2.q11
     cache1.errold = cache2.errold
+    return nothing
+end
+
+snapshot_controller(cache::PIControllerCache) = (; q11 = cache.q11, errold = cache.errold)
+
+function restore_controller!(cache::PIControllerCache, snapshot::NamedTuple)
+    cache.q11 = snapshot.q11
+    cache.errold = snapshot.errold
     return nothing
 end
 
@@ -1083,6 +1128,19 @@ function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCach
     return nothing
 end
 
+# `err` always has the three entries allocated by `setup_controller_cache` / `reinit_controller!`.
+function snapshot_controller(cache::PIDControllerCache)
+    (; err) = cache
+    return (; err = (err[1], err[2], err[3]), dt_factor = cache.dt_factor)
+end
+
+function restore_controller!(cache::PIDControllerCache, snapshot::NamedTuple)
+    (; err) = cache
+    err[1], err[2], err[3] = snapshot.err
+    cache.dt_factor = snapshot.dt_factor
+    return nothing
+end
+
 # Gustafsson predictive step size controller
 """
     PredictiveController()
@@ -1179,6 +1237,17 @@ function sync_controllers!(cache1::PredictiveControllerCache, cache2::Predictive
     cache1.dtacc = cache2.dtacc
     cache1.erracc = cache2.erracc
     cache1.qold = cache2.qold
+    return nothing
+end
+
+function snapshot_controller(cache::PredictiveControllerCache)
+    return (; dtacc = cache.dtacc, erracc = cache.erracc, qold = cache.qold)
+end
+
+function restore_controller!(cache::PredictiveControllerCache, snapshot::NamedTuple)
+    cache.dtacc = snapshot.dtacc
+    cache.erracc = snapshot.erracc
+    cache.qold = snapshot.qold
     return nothing
 end
 
