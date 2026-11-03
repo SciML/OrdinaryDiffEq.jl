@@ -197,6 +197,9 @@ function bdf_step_reject_controller!(integrator, cache, EEst1, error_order = cac
     h = abs(integrator.dt)
     cache.consfailcnt += 1
     cache.nconsteps = 0
+    if hasfield(typeof(cache), :restart_at_tstop)
+        cache.restart_at_tstop = false
+    end
 
     controller_cache = integrator.controller_cache
     discontinuity_detection = if controller_cache isa OrdinaryDiffEqCore.CompositeControllerCache
