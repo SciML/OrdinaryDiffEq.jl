@@ -3,30 +3,19 @@ module OrdinaryDiffEqTaylorSeriesImplicit
 import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_autodiff, calculate_residuals!,
     initialize!, perform_step!, unwrap_alg,
     calculate_residuals, alg_extrapolates,
-    OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-    OrdinaryDiffEqNewtonAlgorithm,
-    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-    constvalue, _unwrap_val, _ode_interpolant,
-    trivial_limiter!, _ode_interpolant!, isesdirk, issplit,
-    ssp_coefficient, get_fsalfirstlast, generic_solver_docstring
-using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
-using SciMLBase: SplitFunction, SciMLBase
-using LinearAlgebra: mul!, I
+    OrdinaryDiffEqAdaptiveAlgorithm,
+    alg_cache, _vec, _reshape, @cache,
+    constvalue, _unwrap_val,
+    trivial_limiter!, get_fsalfirstlast, generic_solver_docstring,
+    Convergence, NLStatus, VerySlowConvergence, Divergence
 import OrdinaryDiffEqCore
-
-using OrdinaryDiffEqDifferentiation: UJacobianWrapper, dolinsolve
-using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, markfirststage!, build_nlsolver,
-    nlsolve!, nlsolvefail, isnewton, get_W, set_new_W!,
-    NLNewton, COEFFICIENT_MULTISTEP, Convergence,
-    NLStatus, Divergence, get_new_W_γdt_cutoff
+using FastBroadcast: @..
+using RecursiveArrayTools: recursivefill!
+using SciMLBase: SciMLBase, LinearProblem, LinearAliasSpecifier, init
+using OrdinaryDiffEqDifferentiation: dolinsolve
 import ADTypes: AutoForwardDiff
-using FunctionWrappers
 import FunctionWrappers: FunctionWrapper
-using TaylorDiff
-using TaylorDiff: make_seed, get_coefficient, append_coefficient, flatten
 import LinearSolve
 import ArrayInterface
 

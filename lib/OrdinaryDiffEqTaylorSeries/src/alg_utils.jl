@@ -37,6 +37,43 @@ JET_CACHE = IdDict()
 # f -> (coeffs, params, polynomial, d_polynomial)
 POLYNOMIAL_CACHE = IdDict()
 
+# Opt-in joint evaluators used by the implicit solver.
+POLYNOMIAL_BUNDLE_CACHE = IdDict()
+
+# Symbolics' nested in-place output writes each buffer back to its container.
+# Keep heterogeneous buffers concretely typed, while retaining their storage.
+struct PolynomialOutputs{T}
+    arrays::T
+end
+@inline Base.getindex(out::PolynomialOutputs, i::Int) = out.arrays[i]
+@inline function Base.setindex!(out::PolynomialOutputs, value, i::Int)
+    value === out.arrays[i] || copyto!(out.arrays[i], value)
+    return value
+end
+
+# A joint kernel evaluating several weighted Taylor polynomials (and optionally
+# the Jacobian of the first one) from a single jet at `(u, t)`. The outputs
+# come first, then `u, t, h`.
+struct PolynomialBundle{F}
+    f::F
+end
+@inline function (bundle::PolynomialBundle)(a, u, t, h)
+    bundle.f(PolynomialOutputs((a,)), u, t, h)
+    return nothing
+end
+@inline function (bundle::PolynomialBundle)(a, b, u, t, h)
+    bundle.f(PolynomialOutputs((a, b)), u, t, h)
+    return nothing
+end
+@inline function (bundle::PolynomialBundle)(a, b, c, u, t, h)
+    bundle.f(PolynomialOutputs((a, b, c)), u, t, h)
+    return nothing
+end
+@inline function (bundle::PolynomialBundle)(a, b, c, d, u, t, h)
+    bundle.f(PolynomialOutputs((a, b, c, d)), u, t, h)
+    return nothing
+end
+
 # Helper functions to unwrap Symbolics.Num to concrete values (needed for Symbolics v7+)
 # After build_function evaluation, results may be wrapped in Num and need explicit unwrapping
 
@@ -175,12 +212,28 @@ function build_polynomial(f::ODEFunction{iip}, p, coeffs::NTuple{P1, Float64}, l
 end
 
 function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length = nothing) where {P1, iip}
-    P = P1 - 1
     if haskey(POLYNOMIAL_CACHE, f)
         list = POLYNOMIAL_CACHE[f]
         index = findfirst(x -> x[1] == coeffs && x[2] == p, list)
         index !== nothing && return list[index][3], list[index][4]
     end
+    expressions, u0, t0, dt, _ = polynomial_expressions(f, Val(iip), p, (coeffs,), length)
+    ut = only(expressions)
+    polynomial = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
+    jacobian = Symbolics.jacobian(ut, u0)
+    d_polynomial = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
+
+    if !haskey(POLYNOMIAL_CACHE, f)
+        POLYNOMIAL_CACHE[f] = []
+    end
+    push!(POLYNOMIAL_CACHE[f], (coeffs, p, polynomial, d_polynomial))
+    return polynomial, d_polynomial
+end
+
+# Build the Taylor coefficients once, including total time derivatives, then
+# form any number of weighted polynomials at the same state and time.
+function polynomial_expressions(f, ::Val{iip}, p, coefficient_sets, length) where {iip}
+    P = maximum(Base.length, coefficient_sets) - 1
     @variables t0::Real dt::Real
     u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
     if iip
@@ -201,16 +254,71 @@ function build_polynomial(f, ::Val{iip}, p, coeffs::NTuple{P1, Float64}, length 
         d = TaylorDiff.get_coefficient(fu, index - 1) / index
         u = TaylorDiff.append_coefficient(u, d)
     end
-    ut = eval_taylor_polynomial(u, coeffs, dt)
-    polynomial = build_function(ut, u0, t0, dt; expression = Val(false), cse = true)
-    jacobian = Symbolics.jacobian(ut, u0)
-    d_polynomial = build_function(jacobian, u0, t0, dt; expression = Val(false), cse = true)
-
-    if !haskey(POLYNOMIAL_CACHE, f)
-        POLYNOMIAL_CACHE[f] = []
+    expressions = map(coefficient_sets) do coeffs
+        padded = ntuple(k -> k <= Base.length(coeffs) ? coeffs[k] : 0.0, P + 1)
+        eval_taylor_polynomial(u, padded, dt)
     end
-    push!(POLYNOMIAL_CACHE[f], (coeffs, p, polynomial, d_polynomial))
-    return polynomial, d_polynomial
+    return expressions, u0, t0, dt, u
+end
+
+# Jacobians ∂c_k/∂u of the Taylor coefficients c_k = y^(k)/k!, k = 1:Q, of
+# a jet `u`, stacked into one n×n×Q array so that the generated kernel
+# writes them in place as a single output. They do not depend on the step
+# size, so a Newton matrix I + Σ_k w_k h^k ∂c_k/∂u can be assembled for any
+# h from one evaluation.
+function coefficient_jacobians_of(u, u0, Q)
+    jacobians = [
+        Symbolics.jacobian([TaylorDiff.flatten(u[i])[k + 1] for i in eachindex(u)], u0)
+            for k in 1:Q
+    ]
+    return cat(jacobians...; dims = 3)
+end
+
+function build_polynomial_bundle(
+        f::ODEFunction{iip}, p, coefficient_sets::Tuple, length;
+        jacobian = false, coefficient_jacobians = 0
+    ) where {iip}
+    return build_polynomial_bundle(
+        unwrapped_f(f), Val(iip), p, coefficient_sets,
+        length; jacobian, coefficient_jacobians
+    )
+end
+
+# Build one in-place kernel `bundle(out_1, ..., out_n[, J], u, t, h)` that
+# evaluates every weighted polynomial in `coefficient_sets` at the same state
+# and time from a single Taylor jet. With `jacobian = true` the Jacobian of
+# the first polynomial with respect to `u` is appended as the last output;
+# with `coefficient_jacobians = Q` the Jacobians of the Taylor coefficients
+# c_1, …, c_Q are appended instead as one n×n×Q output. Joint code generation
+# shares common expressions across the polynomial and Jacobian outputs.
+function build_polynomial_bundle(
+        f, ::Val{iip}, p, coefficient_sets::Tuple, length;
+        jacobian = false, coefficient_jacobians = 0
+    ) where {iip}
+    kernels = get!(Dict{Tuple, Vector{Any}}, POLYNOMIAL_BUNDLE_CACHE, f)
+    key = (coefficient_sets, length, jacobian, coefficient_jacobians, iip)
+    entries = get!(Vector{Any}, kernels, key)
+    index = findfirst(entry -> entry[1] == p, entries)
+    index === nothing || return entries[index][2]
+    expressions, u0, t0, dt, jet = polynomial_expressions(
+        f, Val(iip), p, coefficient_sets, length
+    )
+    outputs = if jacobian
+        [expressions..., Symbolics.jacobian(first(expressions), u0)]
+    elseif coefficient_jacobians > 0
+        [expressions..., coefficient_jacobians_of(jet, u0, coefficient_jacobians)]
+    else
+        collect(expressions)
+    end
+    # Nested outputs write directly into preallocated buffers. A single CSE pass
+    # shares expressions across all outputs without copying a combined matrix.
+    _, joint! = build_function(
+        outputs, u0, t0, dt;
+        expression = Val(false), cse = true, skipzeros = false
+    )
+    bundle = PolynomialBundle(joint!)
+    push!(entries, (p, bundle))
+    return bundle
 end
 
 # evaluate using Qin Jiushao's algorithm
