@@ -12,6 +12,7 @@ import Accessors: @set
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using PrecompileTools: @setup_workload, @compile_workload
+using SciMLLogging: AbstractVerbosityPreset, @SciMLMessage
 
 abstract type GlobalDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 
@@ -23,6 +24,16 @@ function _is_empty_callback(cb::SciMLBase.CallbackSet)
     return isempty(cb.continuous_callbacks) && isempty(cb.discrete_callbacks)
 end
 _is_empty_callback(cb) = false
+
+# The verbosity of a solve, from its `verbose` keyword as in DiffEqBase: by default
+# `DEVerbosity()`, and a SciMLLogging preset gives the `DEVerbosity` of that preset. The
+# messages of GlobalDiffEq are its `global_error` group.
+_verbosity(kwargs) = _verbosity_spec(get(kwargs, :verbose, DEVerbosity()))
+_verbosity_spec(verbose::DEVerbosity) = verbose
+_verbosity_spec(verbose::AbstractVerbosityPreset) = DEVerbosity(verbose)
+_verbosity_spec(verbose) = throw(
+    ArgumentError("`verbose` must be a `DEVerbosity` or a SciMLLogging preset, not $(typeof(verbose))")
+)
 
 include("richardson.jl")
 include("companion.jl")

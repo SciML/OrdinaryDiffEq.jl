@@ -58,7 +58,7 @@ forward solver for its adjoint solve), and `companion_abstol` / `companion_relto
 tolerances. The companion runs at much tighter tolerances than the forward solve, so with a
 low-order forward solver (order 3 or lower, such as Rosenbrock23 or Rosenbrock32) pass a
 higher-order `companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff problem or a
-DAE; the constructor warns in that case. The companion state is the global error itself. `companion_reltol`
+DAE; the solve warns in that case. The companion state is the global error itself. `companion_reltol`
 defaults to `1e-8`: the error can pass through a transient peak much larger than its
 final value (for example at a fast transition of a stiff problem), so a loose relative
 tolerance can give a wrong estimate. `companion_abstol` must be below the size of the
@@ -85,6 +85,12 @@ time where the forward solve stops, and a warning reports when the true solution
 companion computes it, does not terminate at the same event (or terminates where the forward
 solve does not). Callbacks that change the step size are not supported in the companion.
 `ErrorTransport` supports only standard-mass-matrix ODEs without callbacks.
+
+Its warnings follow the `verbose` keyword of `solve` and of `global_error_estimate` (a
+[`DEVerbosity`](@ref)), with these toggles: `global_error_event_mismatch` (the events or
+the terminations of the forward solve and of the true solution differ),
+`global_error_companion_order` (a companion solver of order 3 or lower) and
+`global_error_final_solve` (the final forward solve does not repeat the accepted one).
 
 ## References
 
@@ -129,7 +135,6 @@ function GlobalErrorEstimation(
     options = _companion_options(
         gtol, maxiters, safety, companion_abstol, companion_reltol
     )
-    companion_alg === nothing && _warn_if_low_order_companion(alg)
     return GlobalErrorEstimation(
         alg, something(companion_alg, alg), equation, mode, autodiff, gtol, options
     )
@@ -137,17 +142,20 @@ end
 
 # The companion is solved at much tighter tolerances than the forward problem, which a
 # low-order solver meets poorly or with very many steps: with Rosenbrock32 as the companion
-# solver the estimate was 3 to 31% off, with Tsit5 1e-7.
-function _warn_if_low_order_companion(alg)
+# solver the estimate was 3 to 31% off, with Tsit5 1e-7. Checked once for each solve or
+# estimate (the `global_error_companion_order` toggle of `verbose`).
+function _warn_if_low_order_companion(alg::GlobalErrorEstimation, kwargs)
     order = try
-        SciMLBase.alg_order(alg)
+        SciMLBase.alg_order(alg.companion_alg)
     catch
         return nothing
     end
-    order isa Integer && order <= 3 && @warn(
-        "GlobalErrorEstimation solves the companion with $(nameof(typeof(alg))) (order " *
-            "$order) at tight tolerances, which can give a poor estimate. Pass a higher-order " *
-            "`companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff problem or a DAE."
+    order isa Integer && order <= 3 && @SciMLMessage(
+        "GlobalErrorEstimation solves the companion with $(nameof(typeof(alg.companion_alg))) " *
+            "(order $order) at tight tolerances, which can give a poor estimate. Pass a " *
+            "higher-order `companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff " *
+            "problem or a DAE.",
+        _verbosity(kwargs), :global_error_companion_order
     )
     return nothing
 end
@@ -176,6 +184,7 @@ function global_error_estimate(
         companion_reltol = alg.options.companion_reltol,
         kwargs...
     )
+    _warn_if_low_order_companion(alg, kwargs)
     return _estimate(prob, alg, args...; abstol, reltol, companion_abstol, companion_reltol, kwargs...)
 end
 
@@ -227,11 +236,12 @@ function _final_solve(prob, alg, accepted, args...; abstol, reltol, kwargs...)
     )
     sol.t == accepted.sol.t && sol.u == accepted.sol.u &&
         return @set sol.global_error = accepted.sol.global_error
-    @warn(
+    @SciMLMessage(
         "GlobalErrorEstimation: the final forward solve does not repeat the accepted one (a " *
             "callback with state outside of it, or a solve that is not deterministic). The " *
             "returned solution comes from a new estimate on a copy of the callbacks, so the " *
-            "callback objects saw another solve."
+            "callback objects saw another solve.",
+        _verbosity(kwargs), :global_error_final_solve
     )
     return full_estimate(unused)
 end
@@ -251,6 +261,7 @@ function SciMLBase.__solve(
     _validate_tolerances(abstol, reltol, "local")
     alg.equation === DefectCorrection || !_has_callbacks(kwargs) ||
         throw(_callback_support_error("GlobalErrorEstimation"))
+    _warn_if_low_order_companion(alg, kwargs)
     # The solve pipeline has already merged the problem's callback into `kwargs`; remove
     # it from the problem so that the inner solves do not merge it a second time (an
     # affect such as x ← 2x would then run twice).

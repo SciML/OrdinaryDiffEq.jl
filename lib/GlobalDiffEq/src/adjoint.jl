@@ -138,6 +138,10 @@ checkpoints); `StepGridRefinement` does not support callbacks.
 This implementation supports forward-time problems with real vector states. The wrapped
 solver must provide a dense first-derivative interpolation.
 
+Its warnings follow the `verbose` keyword of `solve` (a [`DEVerbosity`](@ref)): the toggle
+`global_error_ad_fallback` controls the message when ReverseDiff or ForwardDiff cannot run
+the model or a callback and finite differences or a numerical VJP take their place.
+
 ## References
 
   - Y. Cao and L. Petzold, A posteriori error estimation and global error
@@ -490,7 +494,7 @@ function SciMLBase.__solve(
             end
             global_error = if alg.scope === TrajectoryError
                 # StepGridRefinement (no callbacks): the data of the fixed-grid solution.
-                data = final_data === nothing ? _unrecorded_data(prob, final_sol) : final_data
+                data = final_data === nothing ? _unrecorded_data(prob, final_sol, _verbosity(kwargs)) : final_data
                 _adjoint_trajectory_errors(
                     data, alg, directions;
                     adjoint_abstol = options.adjoint_abstol,

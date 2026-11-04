@@ -617,8 +617,8 @@ end
 # the companion does not go; so can the DiscreteCallback events after them, which the event
 # triggers at its step end. Other DiscreteCallback events at that time are checked at the
 # same time in both, so they must agree. Also warn if one of the two terminates at an event
-# and the other not.
-function _warn_if_events_differ(name, forward_events, record, marks, retcode, t_end)
+# and the other not (the `global_error_event_mismatch` toggle of `verbose`).
+function _warn_if_events_differ(name, forward_events, record, marks, retcode, t_end, verbose)
     companion_events = record.events
     terminated = retcode == SciMLBase.ReturnCode.Terminated
     final_call = findfirst(m -> m[1] == t_end, marks)
@@ -628,23 +628,26 @@ function _warn_if_events_differ(name, forward_events, record, marks, retcode, t_
     required = terminated ?
         [forward_events[1:(first_final - 1)]; final[1:(first_continuous - 1)]] : forward_events
     same = sort(companion_events) == sort(forward_events)
-    same || sort(companion_events) == sort(required) || @warn(
+    same || sort(companion_events) == sort(required) || @SciMLMessage(
         "$name: the events of the forward solve and of the true solution, as the " *
             "companion computes it, are different (forward: $(length(forward_events)), " *
             "true: $(length(companion_events))). The estimate includes the difference, " *
-            "but it is sensitive to the event times."
+            "but it is sensitive to the event times.",
+        verbose, :global_error_event_mismatch
     )
     if !terminated && !isempty(record.terminations)
-        @warn(
+        @SciMLMessage(
             "$name: the true solution, as the companion computes it, terminates at " *
                 "t = $(first(record.terminations)), but the forward solve does not. The " *
-                "estimate is the error at the end time of the forward solve."
+                "estimate is the error at the end time of the forward solve.",
+            verbose, :global_error_event_mismatch
         )
     elseif terminated && same && isempty(record.terminations)
-        @warn(
+        @SciMLMessage(
             "$name: the forward solve terminates at t = $t_end, but the true solution, as " *
                 "the companion computes it, does not terminate at the same event. The " *
-                "estimate is the error at the end time of the forward solve."
+                "estimate is the error at the end time of the forward solve.",
+            verbose, :global_error_event_mismatch
         )
     end
     return nothing
@@ -698,11 +701,14 @@ end
 # The result: the warning about the events, and the 2-norm of the endpoint error, or with
 # `trajectory` also the forward solution with the error of each saved state in
 # `global_error`, as `(; estimate, sol)`. `t_end` is the end time of the forward solve (a
-# solution that saves only some steps can end before it).
+# solution that saves only some steps can end before it). `verbose` is the verbosity of the
+# solve (`_verbosity`).
 function _defect_correction_result(
-        name, forward, callbacks, sol, endpoint_error, trajectory; t_end = sol.t[end]
+        name, forward, callbacks, sol, endpoint_error, trajectory; verbose, t_end = sol.t[end]
     )
-    _warn_if_events_differ(name, forward.events, callbacks.record, forward.marks, sol.retcode, t_end)
+    _warn_if_events_differ(
+        name, forward.events, callbacks.record, forward.marks, sol.retcode, t_end, verbose
+    )
     estimate = LinearAlgebra.norm(endpoint_error)
     trajectory || return estimate
     calls = _forward_call_saves(forward.marks, forward.events)
@@ -757,7 +763,9 @@ function _defect_correction_estimate(
     # The companion gives the error against P(T⁻); the saved state u(T) can differ from
     # P(T⁻), for example after an event at the final time.
     endpoint_error = companion_sol.u[end] .- (sol.u[end] .- sol(T; continuity = :left))
-    return _defect_correction_result(name, forward, callbacks, sol, endpoint_error, trajectory)
+    return _defect_correction_result(
+        name, forward, callbacks, sol, endpoint_error, trajectory; verbose = _verbosity(kwargs)
+    )
 end
 
 # Record a forward call: its time, the number of events before it, and the number of saved
@@ -909,6 +917,7 @@ function _defect_correction_estimate_streaming(
     # As in InterpolatingMode: the error against P(T⁻), corrected to the saved state.
     endpoint_error = companion.u .- (integrator.u .- state.last_end)
     return _defect_correction_result(
-        name, forward, callbacks, integrator.sol, endpoint_error, trajectory; t_end = integrator.t
+        name, forward, callbacks, integrator.sol, endpoint_error, trajectory;
+        verbose = _verbosity(kwargs), t_end = integrator.t
     )
 end

@@ -2,6 +2,7 @@ module GlobalDiffEqSciMLSensitivityExt
 
 import GlobalDiffEq, LinearAlgebra, SciMLBase, SciMLSensitivity
 import Accessors: @set
+using SciMLLogging: @SciMLMessage
 import LinearAlgebra: dot
 
 # The adjoint error identity of GlobalAdjoint. For the dual -Mᵀ ż = Jᵀ z along the forward
@@ -172,7 +173,7 @@ function GlobalDiffEq._adjoint_defect_projection(
     terminal_side = after_event ? :right : :left
     PT = between ? sol.u[terminal_index] : sol(terminal_time; continuity = terminal_side)
     A = isempty(alg_idx) ? nothing :
-        GlobalDiffEq._rhs_jacobian(f, iip, PT, p_at(terminal_time, terminal_side), terminal_time)
+        GlobalDiffEq._rhs_jacobian(f, iip, PT, p_at(terminal_time, terminal_side), terminal_time, data.verbose)
     vterm, endpoint_term = _terminal_value(direction, A, rhs(PT, terminal_time, terminal_side), dif, alg_idx)
     # The identity gives the error against P(t∓); the saved state can differ from it (a dense
     # output that does not end at the step's state, such as Rosenbrock32's).
@@ -219,9 +220,10 @@ function GlobalDiffEq._adjoint_defect_projection(
         total(solve_terms(sensealg, abstol)), sensealg
     catch err
         (automatic && !(err isa InterruptException)) || rethrow()
-        @warn(
+        @SciMLMessage(
             "GlobalAdjoint: the adjoint solve with a ReverseDiff VJP failed; it uses a " *
-                "numerical VJP (pass a `sensealg` to choose)", maxlog = 1
+                "numerical VJP (pass a `sensealg` to choose)",
+            data.verbose, :global_error_ad_fallback, maxlog = 1
         )
         numerical = SciMLSensitivity.InterpolatingAdjoint(autojacvec = false, autodiff = false)
         # If the numerical VJP fails too, the first error is the cause (for example a missing
@@ -231,9 +233,10 @@ function GlobalDiffEq._adjoint_defect_projection(
             total(solve_terms(numerical, abstol))
         catch second
             second isa InterruptException && rethrow()
-            @warn(
+            @SciMLMessage(
                 "GlobalAdjoint: the adjoint solve with a numerical VJP failed too; the error " *
-                    "of the ReverseDiff VJP follows", exception = (second, catch_backtrace())
+                    "of the ReverseDiff VJP follows",
+                data.verbose, :global_error_ad_fallback, exception = (second, catch_backtrace())
             )
             nothing
         end

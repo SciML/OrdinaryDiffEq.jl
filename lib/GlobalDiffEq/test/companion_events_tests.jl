@@ -4,7 +4,7 @@ import OrdinaryDiffEqNonlinearSolve
 using DiffEqCallbacks: PresetTimeCallback, PeriodicCallback, SavingCallback, SavedValues,
     TerminateSteadyState
 using Test
-import SciMLBase
+import SciMLBase, SciMLLogging
 
 # DefectCorrection with callbacks, in both modes. The companion applies the user
 # callbacks to the true state, so the estimate follows the true event times, which differ
@@ -286,6 +286,11 @@ end
         est = @test_logs (:warn, message) global_error_estimate(
             prob, GlobalErrorEstimation(Tsit5(); mode); callback = cb, abstol = tol, reltol = tol
         )
+        # The `global_error_event_mismatch` toggle of `DEVerbosity` silences it.
+        @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+            prob, GlobalErrorEstimation(Tsit5(); mode); callback = cb, abstol = tol, reltol = tol,
+            verbose = DEVerbosity(global_error_event_mismatch = SciMLLogging.Silent())
+        )
         sol = solve(prob, Tsit5(); callback = cb, abstol = tol, reltol = tol)
         @test sol.t[end] == (below ? 2.0 : ts)
         @test est / abs(exp(-sol.t[end]) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
@@ -459,6 +464,12 @@ end
     # The new estimate ran on a copy of the callbacks made before the forward solve: the
     # user's SavingCallback has the values of that one solve.
     @test values.t == unique(sol.t)
+    # The `global_error_final_solve` toggle of `DEVerbosity` silences the warning.
+    @test_logs min_level = Base.CoreLogging.Warn GlobalDiffEq._final_solve(
+        ODEProblem(decay!, [1.0], (0.0, T)), GlobalErrorEstimation(Tsit5()), accepted;
+        callback = reset_callback(), abstol = 1.0e-6, reltol = 1.0e-6,
+        verbose = DEVerbosity(global_error_final_solve = SciMLLogging.Silent())
+    )
     @test sol.global_error[end][1] / (RESET_EXACT - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
 end
 

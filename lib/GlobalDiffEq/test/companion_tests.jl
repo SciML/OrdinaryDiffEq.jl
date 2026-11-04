@@ -1,6 +1,6 @@
 using GlobalDiffEq, OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, LinearAlgebra
 using Test
-import SciMLBase
+import SciMLBase, SciMLLogging
 
 lv!(du, u, p, t) = (du[1] = 1.5u[1] - u[1] * u[2]; du[2] = -3.0u[2] + u[1] * u[2]; nothing)
 lv(u, p, t) = [1.5u[1] - u[1] * u[2], -3.0u[2] + u[1] * u[2]]
@@ -164,9 +164,26 @@ end
 end
 
 @testset "Companion solver warning" begin
-    # The companion runs at tight tolerances, which a low-order default solver meets poorly.
-    @test_logs (:warn, r"solves the companion with Rosenbrock32") GlobalErrorEstimation(Rosenbrock32())
-    @test_logs GlobalErrorEstimation(Rosenbrock32(); companion_alg = Tsit5())
-    @test_logs GlobalErrorEstimation(Tsit5())
+    # The companion runs at tight tolerances, which a low-order solver meets poorly. The
+    # solve warns (the `global_error_companion_order` toggle of `DEVerbosity`), not the
+    # constructor, which has no `verbose`.
+    decay = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
+    @test_logs GlobalErrorEstimation(Rosenbrock32())
+    @test_logs (:warn, r"solves the companion with Rosenbrock32") match_mode = :any global_error_estimate(
+        decay, GlobalErrorEstimation(Rosenbrock32())
+    )
+    @test_logs (:warn, r"solves the companion with Rosenbrock32") match_mode = :any solve(
+        decay, GlobalErrorEstimation(Rosenbrock32())
+    )
+    @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+        decay, GlobalErrorEstimation(Rosenbrock32(); companion_alg = Tsit5())
+    )
+    # Silenced by the toggle, or by a preset.
+    for verbose in (DEVerbosity(global_error_companion_order = SciMLLogging.Silent()), SciMLLogging.None())
+        @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+            decay, GlobalErrorEstimation(Rosenbrock32()); verbose
+        )
+    end
+    @test_throws ArgumentError global_error_estimate(decay, GlobalErrorEstimation(Tsit5()); verbose = false)
     @test GlobalErrorEstimation(Tsit5()).companion_alg isa Tsit5
 end

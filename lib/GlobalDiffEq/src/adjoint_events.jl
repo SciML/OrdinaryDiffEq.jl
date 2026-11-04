@@ -27,17 +27,17 @@ end
 _rhs(f, iip, u, p, t) = iip ? (du = similar(u); f(du, u, p, t); du) : f(u, p, t)
 # The Jacobian of f with ForwardDiff, or with finite differences if ForwardDiff cannot run f
 # (the default sensealg also falls back to a numerical VJP then). An error of f itself comes
-# again from the finite differences.
-function _rhs_jacobian(f, iip, u, p, t)
+# again from the finite differences. `verbose` is the verbosity of the solve.
+function _rhs_jacobian(f, iip, u, p, t, verbose)
     g = x -> _rhs(f, iip, x, p, t)
     return try
         DifferentiationInterface.jacobian(g, ADTypes.AutoForwardDiff(), u)
     catch err
         err isa InterruptException && rethrow()
-        @warn(
+        @SciMLMessage(
             "GlobalAdjoint: ForwardDiff cannot differentiate the right-hand side; the " *
-                "Jacobian of the DAE at the final time uses finite differences", exception = err,
-            maxlog = 1
+                "Jacobian of the DAE at the final time uses finite differences",
+            verbose, :global_error_ad_fallback, exception = err, maxlog = 1
         )
         _fd_jacobian(g, u)
     end
@@ -298,6 +298,7 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     inner_alg = alg.alg
     event_vjp = _event_vjp(alg)
     supports_events = _supports_events(alg.sensealg)
+    verbose = _verbosity(kwargs)
     dif, alg_idx = _semiexplicit_components(prob, name)
     # Without support for events (an adjoint method other than InterpolatingAdjoint), fail
     # before the solve for a DAE, and at the first call that changes the state or the
@@ -433,11 +434,12 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
                 nothing
             end
             if maps === nothing
-                vjp && @warn(
+                vjp && @SciMLMessage(
                     "GlobalAdjoint uses the finite-difference saltation matrix at the event at " *
                         "t = $tf: ReverseDiff and ForwardDiff cannot differentiate the callback. " *
                         "Set `autojacvec = false` in the `sensealg` to use finite differences " *
-                        "without this warning.", maxlog = 1
+                        "without this warning.",
+                    verbose, :global_error_ad_fallback, maxlog = 1
                 )
                 S, c = _event_saltation(
                     callback, labels, tf, p, parent, P, sol, prob, dif, alg_idx;
@@ -471,7 +473,7 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     end
     return (;
         prob, sol, knots, jumps, windows = _merge_windows(windows, dif), calls = windows, dif,
-        alg_idx, params, e0,
+        alg_idx, params, e0, verbose,
     )
 end
 
@@ -589,12 +591,12 @@ end
 
 # The same data for a solution without callbacks (no events), such as the fixed-grid solve of
 # StepGridRefinement.
-function _unrecorded_data(prob, sol)
+function _unrecorded_data(prob, sol, verbose)
     dif, alg_idx = _semiexplicit_components(prob, "GlobalAdjoint")
     knots, jumps = _knot_jumps(sol)
     params = (; times = eltype(sol.t)[], values = [sol.prob.p])
     return (;
         prob, sol, knots, jumps, windows = Any[], calls = Any[], dif, alg_idx, params,
-        e0 = zero(sol.u[1]),
+        e0 = zero(sol.u[1]), verbose,
     )
 end

@@ -3,7 +3,7 @@ using SciMLSensitivity, LinearAlgebra, Test
 using Random: Xoshiro
 using DiffEqCallbacks: PresetTimeCallback, PeriodicCallback, SavingCallback, SavedValues,
     TerminateSteadyState
-import ADTypes, SciMLBase
+import ADTypes, SciMLBase, SciMLLogging
 
 relerr(estimate, actual) = abs(estimate - actual) / abs(actual)
 
@@ -489,6 +489,11 @@ end
         cached, Tsit5(), 1.0e-6, t -> [exp(-t), exp(-2t)]
     )
     @test relerr(estimate, actual) < 1.0e-4
+    # The `global_error_ad_fallback` toggle of `DEVerbosity` silences it.
+    @test_logs min_level = Base.CoreLogging.Warn adjoint_error_estimate(
+        cached, GlobalAdjoint(Tsit5()); abstol = 1.0e-6, reltol = 1.0e-6,
+        verbose = DEVerbosity(global_error_ad_fallback = SciMLLogging.Silent())
+    )
     # The same for a DAE: the Jacobian at the final time uses finite differences, and the
     # numerical VJP an in-place right-hand side (SciMLSensitivity's finite-difference
     # Jacobian of an out-of-place DAE fails).
