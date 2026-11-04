@@ -14,6 +14,10 @@ mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     W_γdt::Dt
     status::NLStatus
     J::JType
+    θ_meas::Tol #last contraction measured
+    dt_meas::Dt #dt of that contraction
+    nomeas::Int #steps since we measured
+    jage::Int #age of jac
 end
 
 function alg_cache(
@@ -31,7 +35,8 @@ function alg_cache(
 
     return RadauIIA3ConstantCache(
         uf, tab, κ, one(uToltype), 10000, u, u, one(dt), dt,
-        Convergence, J
+        Convergence, J,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -70,6 +75,10 @@ mutable struct RadauIIA3Cache{
     W_γdt::Dt
     status::NLStatus
     step_limiter!::StepLimiter
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -130,7 +139,8 @@ function alg_cache(
         J, W1,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve, rtol, atol, one(dt), dt,
-        Convergence, alg.step_limiter!
+        Convergence, alg.step_limiter!,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -148,6 +158,10 @@ mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     W_γdt::Dt
     status::NLStatus
     J::JType
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -165,7 +179,8 @@ function alg_cache(
 
     return RadauIIA5ConstantCache(
         uf, tab, κ, one(uToltype), 10000, u, u, u, one(dt), dt,
-        Convergence, J
+        Convergence, J,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -214,6 +229,10 @@ mutable struct RadauIIA5Cache{
     W_γdt::Dt
     status::NLStatus
     step_limiter!::StepLimiter
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -287,7 +306,8 @@ function alg_cache(
         J, W1, W2,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, one(dt), dt,
-        Convergence, alg.step_limiter!
+        Convergence, alg.step_limiter!,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -307,6 +327,10 @@ mutable struct RadauIIA9ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     W_γdt::Dt
     status::NLStatus
     J::JType
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -324,7 +348,8 @@ function alg_cache(
 
     return RadauIIA9ConstantCache(
         uf, tab, κ, one(uToltype), 10000, u, u, u, u, u, one(dt), dt,
-        Convergence, J
+        Convergence, J,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -394,6 +419,10 @@ mutable struct RadauIIA9Cache{
     W_γdt::Dt
     status::NLStatus
     step_limiter!::StepLimiter
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -497,7 +526,8 @@ function alg_cache(
         uf, tab, κ, one(uToltype), 10000,
         tmp, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9, tmp10, atmp, jac_config,
         linsolve1, linsolve2, linsolve3, rtol, atol, one(dt), dt,
-        Convergence, alg.step_limiter!
+        Convergence, alg.step_limiter!,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -517,6 +547,10 @@ mutable struct AdaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType} <:
     step::Int
     hist_iter::Float64
     index::Int
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -554,7 +588,8 @@ function alg_cache(
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
     return AdaptiveRadauConstantCache(
         uf, tabs, κ, one(uToltype), 10000, cont, one(dt), dt,
-        Convergence, J, num_stages, 1, 0.0, index
+        Convergence, J, num_stages, 1, 0.0, index,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -604,6 +639,10 @@ mutable struct AdaptiveRadauCache{
     step::Int
     hist_iter::Float64
     index::Int
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -709,7 +748,8 @@ function alg_cache(
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
         linsolve1, linsolve2, rtol, atol, one(dt), dt,
-        Convergence, alg.step_limiter!, num_stages, 1, 0.0, index
+        Convergence, alg.step_limiter!, num_stages, 1, 0.0, index,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -726,6 +766,10 @@ mutable struct GaussLegendreConstantCache{F, Tab, Tol, Dt, U, JType} <:
     status::NLStatus
     J::JType
     num_stages::Int
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -746,7 +790,8 @@ function alg_cache(
     end
     return GaussLegendreConstantCache(
         uf, tab, κ, one(uToltype), 10000, cont, one(dt), dt,
-        Convergence, J, num_stages
+        Convergence, J, num_stages,
+        zero(uToltype), zero(dt), 0, 0
     )
 end
 
@@ -787,6 +832,10 @@ mutable struct GaussLegendreCache{
     status::NLStatus
     step_limiter!::StepLimiter
     num_stages::Int
+    θ_meas::Tol
+    dt_meas::Dt
+    nomeas::Int
+    jage::Int
 end
 
 function alg_cache(
@@ -862,6 +911,7 @@ function alg_cache(
         J, W,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve, rtol, atol, one(dt), dt,
-        Convergence, alg.step_limiter!, num_stages
+        Convergence, alg.step_limiter!, num_stages,
+        zero(uToltype), zero(dt), 0, 0
     )
 end

@@ -1,3 +1,41 @@
+const FIRK_MEASURE_EVERY = 16 #oldest the θ measurement can be
+const FIRK_JAGE_MAX = 50 #oldest the jac can be (backstop only)
+# tuned on vdp/rober/orego/hires/bruss.
+const FIRK_REUSE_FACTOR = 5
+
+# Reuse J only when a fresh measurement shows contraction FIRK_REUSE_FACTOR times
+# better than the stopping threshold κ.
+firk_reuse_cutoff(cache, alg, κ) = κ / FIRK_REUSE_FACTOR
+
+firk_jage(cache) = 0 #jac age
+function firk_jage(cache::Union{RadauIIA3Cache, RadauIIA5Cache, RadauIIA9Cache, AdaptiveRadauCache})
+    return cache.jage
+end
+
+"""
+    firk_initial_η(cache, dt, κ, operator_changed)
+
+The contraction estimate a step starts with
+
+In the stiff limit the simplified-Newton iteration matrix is `W⁻¹(J - J_true)` with
+`W = J - (γ/dt)M`, so `‖W⁻¹‖ ≈ (dt/γ)‖M⁻¹‖` and θ scales linearly with dt for a
+fixed Jacobian error. So carry the last measurement rescaled by `dt/dt_meas`.
+"""
+function firk_initial_η(cache, dt, κ, operator_changed)
+    T = typeof(cache.ηold)
+    # `value` strips Dual/Measurement wrappers off the step sizes. θ is a convergence
+    # diagnostic that steers control flow, not a differentiated quantity, and `ηold` is
+    # a plain real — under ForwardDiff with a Dual `dt` the ratio would otherwise be a
+    # Dual and fail to convert.
+    θ = if operator_changed || iszero(cache.θ_meas) || iszero(cache.dt_meas)
+        one(T)
+    else
+        convert(T, cache.θ_meas * abs(value(dt) / value(cache.dt_meas)))
+    end
+    θ = min(θ, convert(T, 0.99))
+    return max(θ / (1 - θ), convert(T, κ))
+end
+
 function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     integrator.iter <= 1 && return true
     repeat_step && return false
@@ -7,6 +45,7 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     integrator.derivative_discontinuity && return true
     # below is Newton specific logic, so we return non-Newton algs here
     alg isa NewtonAlgorithm || return true
+    firk_jage(cache) >= FIRK_JAGE_MAX && return true
     nlstatus = cache.status
     Int8(nlstatus) < 0 && return true
     # no reuse when the cutoff is 0
@@ -342,7 +381,8 @@ end
     ndw = one(eltype(u))
     ff1 = zero(u)
     ff2 = zero(u)
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, false)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -387,6 +427,9 @@ end
                 break
             end
             η = θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         w1 = @. w1 - dw1
@@ -397,9 +440,9 @@ end
         z2 = @. T21 * w1 + T22 * w2
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -408,6 +451,8 @@ end
 
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     u = @. uprev + z2
 
@@ -445,8 +490,10 @@ end
     # precalculations
     αdt, βdt = α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt)
+        (firk_new_J!(J, W1, integrator, cache); cache.W_γdt = dt; cache.jage = 0)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
+    operator_changed = new_jac || new_W
     if is_lazy_W(W1)
         set_W_gamma!(W1, αdt + βdt * im)
         integrator.stats.nw += 1
@@ -479,7 +526,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, operator_changed)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -552,6 +600,9 @@ end
                 break
             end
             η = θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         @. w1 = w1 - dw1
@@ -562,9 +613,9 @@ end
         @. z2 = T21 * w1 + T22 * w2
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -577,6 +628,8 @@ end
     end
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     @. u = uprev + z2
 
@@ -678,7 +731,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, false)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -730,6 +784,9 @@ end
                 break
             end
             η = θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         w1 = @.. w1 - dw1
@@ -742,9 +799,9 @@ end
         z3 = @.. T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -757,6 +814,8 @@ end
     end
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     u = @.. uprev + z3
 
@@ -823,8 +882,10 @@ end
     c1mc2 = c1 - c2
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)
+        (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt; cache.jage = 0)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
+    operator_changed = new_jac || new_W
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         set_W_gamma!(W2, αdt + βdt * im)
@@ -880,7 +941,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, operator_changed)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -983,6 +1045,9 @@ end
                 break
             end
             η = θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         @.. w1 = w1 - dw1
@@ -995,9 +1060,9 @@ end
         @.. z3 = T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -1010,6 +1075,8 @@ end
     end
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     @.. u = uprev + z3
 
@@ -1216,7 +1283,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, false)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -1286,6 +1354,9 @@ end
                 break
             end
             η = θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         w1 = @.. w1 - dw1
@@ -1302,9 +1373,9 @@ end
         z5 = @.. T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -1318,6 +1389,8 @@ end
     end
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     u = @.. uprev + z5
 
@@ -1401,8 +1474,10 @@ end
 
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (firk_new_J!(J, W1, integrator, cache, W2, W3); cache.W_γdt = dt)
+        (firk_new_J!(J, W1, integrator, cache, W2, W3); cache.W_γdt = dt; cache.jage = 0)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
+    operator_changed = new_jac || new_W
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         set_W_gamma!(W2, α1dt + β1dt * im)
@@ -1517,7 +1592,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, operator_changed)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -1661,6 +1737,9 @@ end
                 break
             end
             η = θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         @.. w1 = w1 - dw1
@@ -1677,9 +1756,9 @@ end
         @.. z5 = T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -1693,6 +1772,8 @@ end
 
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     @.. u = uprev + z5
 
@@ -1853,7 +1934,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, false)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -1925,6 +2007,9 @@ end
                 break
             end
             η = iszero(ndw) ? η : θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         for i in 1:num_stages
@@ -1947,9 +2032,9 @@ end
         end
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -1963,6 +2048,8 @@ end
     end
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     u = @.. uprev + z[num_stages]
 
@@ -2050,8 +2137,9 @@ end
     end
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)
+        (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt; cache.jage = 0)
     new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    new_W && (cache.W_γdt = dt)
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         for i in 1:((num_stages - 1) ÷ 2)
@@ -2128,7 +2216,8 @@ end
     # Newton iteration
     # Initialize variables for JET
     ndw = one(eltype(u))
-    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    η = firk_initial_η(cache, dt, κ, new_jac || new_W)
+    must_measure = cache.nomeas >= FIRK_MEASURE_EVERY
     fail_convergence = true
     iter = 0
     while iter < maxiters
@@ -2251,6 +2340,9 @@ end
                 break
             end
             η = iszero(ndw) ? η : θ / (1 - θ)
+            cache.θ_meas = θ
+            cache.dt_meas = dt
+            cache.nomeas = 0
         end
 
         @.. w[1] = w[1] - dw1
@@ -2274,9 +2366,9 @@ end
         end
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !must_measure)
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+            cache.status = η < firk_reuse_cutoff(cache, alg, κ) ? FastConvergence :
                 Convergence
             fail_convergence = false
             break
@@ -2290,6 +2382,8 @@ end
 
     cache.ηold = η
     cache.iter = iter
+    cache.iter == 1 && (cache.nomeas += 1)
+    cache.jage += 1
 
     @.. u = uprev + z[num_stages]
 
