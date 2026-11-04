@@ -138,6 +138,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     @time @safetestset "Tracked discontinuity coalescing" begin
         include("regression/tracked_discontinuity_coalescing.jl")
     end
+    @time @safetestset "Fixed-point recompute without repeat_step" begin
+        include("regression/fixed_point_two_arg_perform_step.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "SDDE"
