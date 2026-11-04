@@ -112,7 +112,9 @@ function SciMLBase.__init(
                     auto.stiffalgfirst,
                     auto.switch_max
                 )
-            )
+            );
+            constrained = isconstrained(alg),
+            fpsolve = alg.fpsolve
         )
     end
 
