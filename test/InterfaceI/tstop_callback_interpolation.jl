@@ -121,3 +121,17 @@ end
         @test u ≈ [1 + t]
     end
 end
+
+@testset "Dense output after a callback interpolates while save_on = false (#4967)" begin
+    off = DiscreteCallback((u, t, i) -> t == 1.0, i -> (i.opts.save_on = false); save_positions = (false, false))
+    on = DiscreteCallback((u, t, i) -> t == 2.0, i -> (i.opts.save_on = true); save_positions = (false, false))
+    never = ContinuousCallback((u, t, i) -> u[1] + 1, i -> nothing; save_positions = (false, false))
+    for f in ((u, p, t) -> -u, (du, u, p, t) -> (du .= -u)), alg in (Vern7(), Vern9())
+        sol = solve(
+            ODEProblem(f, [1.0], (0.0, 3.0)), alg; callback = CallbackSet(never, off, on),
+            tstops = [1.0, 2.0], saveat = 2.05:0.05:3.0
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test maximum(abs(u[1] - exp(-t)) / exp(-t) for (t, u) in zip(sol.t, sol.u)) < 1.0e-6
+    end
+end

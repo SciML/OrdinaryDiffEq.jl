@@ -342,7 +342,10 @@ end
 
 function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
     saved, savedexactly = false, false
-    !integrator.opts.save_on && return saved, savedexactly
+    if !integrator.opts.save_on
+        post_savevalues!(integrator, reduce_size)
+        return saved, savedexactly
+    end
     tdir_t = integrator.tdir * integrator.t
     saveat = integrator.opts.saveat
     while !isempty(saveat) && first(saveat) <= tdir_t # Perform saveat
