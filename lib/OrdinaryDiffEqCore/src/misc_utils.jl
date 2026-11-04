@@ -72,9 +72,9 @@ end
     error_constant(integrator, order) -> Real
 
 Return the leading error constant of the current method at the given `order`, used
-when scaling the local error estimate. Dispatches on `integrator.alg`.
+when scaling the local error estimate. Dispatches on the active algorithm.
 """
-error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
+error_constant(integrator, order) = error_constant(integrator, unwrap_alg(integrator, true), order)
 
 """
     AbstractThreadingOption
