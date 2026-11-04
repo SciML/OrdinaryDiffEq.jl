@@ -13,8 +13,8 @@ import DiffEqBase: SciMLBase
     @test SciMLBase.allowscomplex(alg) == SciMLBase.allowscomplex(alg_inner)
     @test SciMLBase.isautodifferentiable(alg) == SciMLBase.isautodifferentiable(alg_inner)
 
-    # The outer solve wraps f for these traits; an implicit inner solver needs the dual
-    # signatures for its Jacobian.
+    # The outer solve wraps f according to these traits. An implicit inner solver needs the
+    # dual signatures for its Jacobian.
     for inner in (SSPRK33(), Rodas5P(), Rodas5P(autodiff = AutoForwardDiff(chunksize = 2)))
         for alg in (GlobalRichardson(inner), GlobalErrorEstimation(inner), GlobalAdjoint(inner))
             @test SciMLBase.forwarddiffs_model(alg) == SciMLBase.forwarddiffs_model(inner)

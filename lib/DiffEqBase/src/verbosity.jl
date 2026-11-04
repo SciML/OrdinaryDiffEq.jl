@@ -23,6 +23,7 @@
         :global_error_companion_order,
         :global_error_final_solve,
         :global_error_ad_fallback,
+        :global_error_grazing_event,
     )
 
     presets = (
@@ -69,6 +70,7 @@
             global_error_companion_order = Silent(),
             global_error_final_solve = Silent(),
             global_error_ad_fallback = Silent(),
+            global_error_grazing_event = Silent(),
         ),
         Minimal = (
             linear_verbosity = Minimal(),
@@ -113,6 +115,7 @@
             global_error_companion_order = Silent(),
             global_error_final_solve = WarnLevel(),
             global_error_ad_fallback = Silent(),
+            global_error_grazing_event = WarnLevel(),
         ),
         Standard = (
             linear_verbosity = Minimal(),
@@ -157,6 +160,7 @@
             global_error_companion_order = WarnLevel(),
             global_error_final_solve = WarnLevel(),
             global_error_ad_fallback = WarnLevel(),
+            global_error_grazing_event = WarnLevel(),
         ),
         Detailed = (
             linear_verbosity = Detailed(),
@@ -201,6 +205,7 @@
             global_error_companion_order = WarnLevel(),
             global_error_final_solve = WarnLevel(),
             global_error_ad_fallback = WarnLevel(),
+            global_error_grazing_event = WarnLevel(),
         ),
         All = (
             linear_verbosity = All(),
@@ -245,6 +250,7 @@
             global_error_companion_order = WarnLevel(),
             global_error_final_solve = WarnLevel(),
             global_error_ad_fallback = WarnLevel(),
+            global_error_grazing_event = WarnLevel(),
         ),
     )
 
@@ -280,6 +286,7 @@
             :global_error_companion_order,
             :global_error_final_solve,
             :global_error_ad_fallback,
+            :global_error_grazing_event,
         ),
     )
 end
@@ -345,6 +352,7 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `global_error_companion_order`: Messages when `GlobalErrorEstimation` solves its companion with a solver of order 3 or lower, which meets the tight companion tolerances poorly
 - `global_error_final_solve`: Messages when the final forward solve under global error control does not repeat the accepted solve (a callback with state outside of it, or a solve that is not deterministic)
 - `global_error_ad_fallback`: Messages when `GlobalAdjoint` cannot differentiate the model or a callback with ReverseDiff or ForwardDiff, and uses finite differences or a numerical VJP
+- `global_error_grazing_event`: Messages when an event of `GlobalAdjoint` is grazing (the vector field is tangent to the event surface), so that its saltation matrix has no time-shift term
 
 # Constructors
 

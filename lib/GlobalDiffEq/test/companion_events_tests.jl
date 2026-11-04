@@ -27,7 +27,7 @@ function cubic_z(x)
     return z
 end
 reset_callback() = ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; nothing))
-# x' = -x from 1 with a reset to 1 at x = 0.5: resets at log 2 and 2 log 2.
+# x' = -x from x = 1, with a reset to 1 at x = 0.5. The resets are at log 2 and 2 log 2.
 const RESET_EXACT = exp(-(T - 2log(2)))
 
 # A VectorContinuousCallback affect gets the index of the fired component, or a mask of
@@ -87,8 +87,8 @@ const CASES = [
         [exp(-(T - log(2)))], (;), Tsit5(),
     ),
     (
-        # Up-crossing of x = 1 at log 2: jump to 1.5 and switch off the source. Down-crossing
-        # at log 2 + log 1.5: switch the source to 0.5.
+        # Up-crossing of x = 1 at log 2: jump to 1.5 and switch off the source.
+        # Down-crossing at log 2 + log 1.5: switch the source to 0.5.
         "up- and down-crossing affects",
         () -> ODEProblem(switch!, [0.0], (0.0, T), [2.0]),
         () -> ContinuousCallback(
@@ -120,13 +120,13 @@ const CASES = [
         () -> PresetTimeCallback(0.5, i -> (i.u[1] *= 2; nothing)), [2exp(-T)], (;), Tsit5(),
     ),
     (
-        # Its state is in task-local storage, which the companion's copy would share with
-        # the forward solve in SimultaneousMode. Events at 0.6, 1.2 and 1.8.
+        # Its state is in task-local storage. In SimultaneousMode, the copy in the companion
+        # must not share that state with the forward solve. Events at 0.6, 1.2 and 1.8.
         "PeriodicCallback", () -> ODEProblem(decay!, [1.0], (0.0, T)),
         () -> PeriodicCallback(i -> (i.u[1] *= 1.5; nothing), 0.6), [1.5^3 * exp(-T)], (;), Tsit5(),
     ),
     (
-        # The saved state at T is after the affect, P(T⁻) is before it.
+        # The saved state at T is after the affect; P(T⁻) is before it.
         "event at the final time", () -> ODEProblem(decay!, [1.0], (0.0, T)),
         () -> DiscreteCallback((u, t, i) -> t == T, i -> (i.u[1] *= 2; nothing)),
         [2exp(-T)], (;), Tsit5(),
@@ -140,8 +140,8 @@ const CASES = [
     for tol in (1.0e-4, 1.0e-6)
         prob = make_prob()
         p_before = deepcopy(prob.p)
-        # The VectorContinuousCallback case fires its two components at the same time;
-        # at 1e-4 the forward solve misses one of them and warns.
+        # In the VectorContinuousCallback case, both components fire at the same time. At
+        # 1e-4 the forward solve can miss one of them, and the estimate then warns.
         est = global_error_estimate(
             prob, alg; callback = make_callback(), abstol = tol, reltol = tol, extra...
         )
@@ -169,10 +169,9 @@ const CASES = [
 end
 
 @testset "A missed event is estimated and reported: $mode" for mode in MODES
-    # The two components of the vector callback cross at the same time (t = log 2). At
-    # 1e-4 the forward solve can fire only the first one (Julia 1.13 does; Julia 1.10 fires
-    # both, which depends on rounding), so its second state is wrong by O(1); the companion
-    # fires both, and the estimator warns.
+    # Both components of the vector callback cross at t = log 2. At 1e-4 the forward solve
+    # can fire only the first one, which depends on rounding and on the Julia version. Its
+    # second state is then wrong by O(1); the companion fires both, and the estimator warns.
     prob = ODEProblem(decay_and_switch!, [1.0, 0.0], (0.0, T), [2.0])
     callback = VectorContinuousCallback(
         (out, u, t, i) -> (out[1] = u[1] - 0.5; out[2] = u[2] - 1.0; nothing),
@@ -211,9 +210,9 @@ end
 end
 
 @testset "Error trajectory with several calls or one-sided saves: $mode" for mode in MODES
-    # Doublings at t = 0.5. A callback can save before its affect, after it, or both, and
-    # two callbacks at one time give four saves; each entry is the state after the calls that
-    # come before it. The exact value of an entry follows from its number of doublings.
+    # Each case doubles u at t = 0.5. A callback can save before its affect, after it, or
+    # both; two callbacks at one time give four saves. Each entry is the state after the
+    # calls before it, so its exact value follows from its number of doublings.
     double(i) = (i.u .*= 2; nothing)
     cases = (
         DiscreteCallback((u, t, i) -> t == 0.5, double; save_positions = (true, false)),
@@ -234,8 +233,8 @@ end
 end
 
 @testset "Initialization affects: $mode" for mode in MODES
-    # The forward initialization doubles u; the true solution starts with the same affect, so
-    # it is not applied again to the true state.
+    # The forward initialization doubles u. The true solution starts with the same affect,
+    # so the companion does not apply it to the true state again.
     callback = () -> PeriodicCallback(i -> (i.u .*= 2; nothing), 10.0; initial_affect = true)
     prob = ODEProblem(decay!, [1.0], (0.0, T))
     est = global_error_estimate(
@@ -246,15 +245,15 @@ end
 end
 
 @testset "Terminating callbacks: $mode" for mode in MODES
-    # The solve ends at the forward event; the estimate is the error at that time, so the
-    # true state does not terminate (the true event can come first). TerminateSteadyState
-    # also reads the derivative of the true state.
+    # The solve ends at the forward event, and the estimate is the error at that time. The
+    # true state must not terminate, even if the true event comes first.
+    # TerminateSteadyState also reads the derivative of the true state.
     callbacks = (
         () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, SciMLBase.terminate!),
         () -> TerminateSteadyState(1.0e-4, 1.0e-4),
     )
     # No warning: when the true event comes after the forward one, the companion does not
-    # reach it, which is not a difference of the events.
+    # reach it, and that is not an event mismatch.
     for make_callback in callbacks, tol in (1.0e-4, 1.0e-6)
         prob = ODEProblem(decay!, [1.0], (0.0, 100.0))
         est = @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
@@ -265,8 +264,8 @@ end
         @test est / abs(exp(-sol.t[end]) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
     end
 
-    # A DiscreteCallback at a forward step end that terminates if x is below (or above) a
-    # value between the forward and the true state there: the two decisions differ, and a
+    # At a forward step end, a DiscreteCallback terminates if x is below (or above) a value
+    # between the forward and the true state. The two solutions decide differently, and a
     # warning reports it.
     tol = 1.0e-3
     prob = ODEProblem(decay!, [1.0], (0.0, 2.0))
@@ -316,12 +315,12 @@ end
     # changes nothing.
     @test reinit(nothing) === SciMLBase.NoInit()
     @test reinit(SciMLBase.CheckInit()) === SciMLBase.NoInit()
-    # The solve's initializealg applies when the callback has none, and the companion
-    # solves to its own tolerance.
+    # The initializealg of the solve applies when the callback has none. The companion uses
+    # its own tolerance.
     @test reinit(BrownFullBasicInit(abstol = 1.0e-7)).abstol == 1.0e-12
     @test reinit(nothing, (; initializealg = BrownFullBasicInit())) isa BrownFullBasicInit
     # OverrideInit (the default for a ModelingToolkit problem) solves for u, not for the
-    # companion state. Only a DAE reinitializes.
+    # companion state, so a DAE rejects it. An ODE does not reinitialize.
     @test_throws ArgumentError GlobalDiffEq._reinitialize_true_state!(
         (; isdae = true), SciMLBase.OverrideInit()
     )
@@ -343,10 +342,9 @@ end
 end
 
 @testset "A DiscreteCallback that a continuous event triggers: $mode" for mode in MODES
-    # At x = 0.5 the continuous event doubles x and sets a flag; at the same step end a
-    # DiscreteCallback adds x² to y and clears it. The true event ends a step of the true
-    # solution, so the companion checks the DiscreteCallbacks there too (at the next knot of
-    # P only, the estimate was 1e6 times the error).
+    # At x = 0.5 the continuous event doubles x and sets a flag. At the same step end, a
+    # DiscreteCallback adds x² to y and clears the flag. The true event ends a step of the
+    # true solution, so the companion must check the DiscreteCallbacks there too.
     tied = () -> CallbackSet(
         ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] *= 2; i.p[1] = 1.0; nothing)),
         DiscreteCallback((u, t, i) -> i.p[1] == 1.0, i -> (i.u[2] += i.u[1]^2; i.p[1] = 0.0; nothing))
@@ -363,9 +361,9 @@ end
 end
 
 @testset "Callbacks at the forward event knots, integer time span, termination: $mode" for mode in MODES
-    # A callback that acts at each step (a SavingCallback) is not called at the forward event
-    # time in the companion: the true solution ends a step at its own event time instead.
-    # Before, the companion called it one more time and warned that the events differ.
+    # The companion does not call a callback that acts at each step, such as a
+    # SavingCallback, at the forward event time. The true solution ends a step at its own
+    # event time instead. An extra call would give a false event-mismatch warning.
     reset = () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; nothing))
     saving = () -> SavingCallback((u, t, i) -> copy(u), SavedValues(Float64, Vector{Float64}))
     prob = ODEProblem((u, p, t) -> [-u[1]], [1.0], (0.0, 2.0))
@@ -373,18 +371,18 @@ end
     est = @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
         prob, alg; callback = CallbackSet(reset(), saving()), abstol = 1.0e-6, reltol = 1.0e-6
     )
-    # (The companion's copy of the SavingCallback acts at each knot, which can change the
-    # steps of the companion slightly: 2e-5 relative on Julia 1.10.)
+    # The copy of the SavingCallback in the companion acts at each knot, which can change
+    # the companion steps slightly.
     est_reset = global_error_estimate(prob, alg; callback = reset(), abstol = 1.0e-6, reltol = 1.0e-6)
     @test est ≈ est_reset rtol = 1.0e-3
 
-    # An integer time span (the times of the events are floats).
+    # An integer time span gives the same estimate; the event times are floats.
     int_prob = ODEProblem((u, p, t) -> [-u[1]], [1.0], (0, 2))
     @test global_error_estimate(int_prob, alg; callback = reset(), abstol = 1.0e-6, reltol = 1.0e-6) ≈
         est_reset rtol = 1.0e-6
 
-    # A terminating event that triggers a DiscreteCallback at its step end: when the true
-    # event comes after the forward end, the companion has neither, with no warning.
+    # A terminating event triggers a DiscreteCallback at its step end. When the true event
+    # comes after the forward end, the companion runs neither callback and does not warn.
     triggered = () -> CallbackSet(
         ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.p[1] = 1.0; SciMLBase.terminate!(i))),
         DiscreteCallback((u, t, i) -> i.p[1] == 1.0, i -> (i.u[1] += 0.1; i.p[1] = 0.0; nothing))
@@ -424,7 +422,7 @@ end
         reset_callback(), SavingCallback((u, t, i) -> u[1], values; saveat)
     )
     make_prob() = ODEProblem(decay!, [1.0], (0.0, T))
-    # The estimate: the same saved values as a plain solve.
+    # The estimate saves the same values as a plain solve.
     values = SavedValues(Float64, Float64)
     est = global_error_estimate(
         make_prob(), GlobalErrorEstimation(Tsit5(); mode);
@@ -435,8 +433,8 @@ end
     @test values.t == plain.t
     @test values.saveval == plain.saveval
     @test est / abs(RESET_EXACT - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
-    # Global error control: only the values of the final solve, which repeats the accepted
-    # one (no warning).
+    # Under global error control, only the final solve saves values. It repeats the
+    # accepted solve, so it does not warn.
     values = SavedValues(Float64, Float64)
     sol = @test_logs min_level = Base.CoreLogging.Warn solve(
         make_prob(), GlobalErrorEstimation(Tsit5(); mode, gtol = 1.0e-7);
@@ -449,10 +447,10 @@ end
 end
 
 @testset "A final forward solve that does not repeat the accepted one" begin
-    # The branch for a callback with state outside of it, or a solve that is not
-    # deterministic: an accepted solve that the forward solve does not repeat. (A global
-    # counter in an affect gives another state in each solve, but also another true event
-    # in the companion, so that the control loop does not meet gtol.)
+    # A callback with outside state, or a solve that is not deterministic, can make the
+    # final forward solve differ from the accepted one. The test calls `_final_solve`
+    # directly: a global counter in an affect would also move the true event, and the
+    # control loop would not meet gtol.
     accepted = (; estimate = 0.0, sol = (; t = [0.0], u = [[1.0]]))
     values = SavedValues(Float64, Float64)
     callback = CallbackSet(reset_callback(), SavingCallback((u, t, i) -> u[1], values))
@@ -461,8 +459,8 @@ end
         callback, abstol = 1.0e-6, reltol = 1.0e-6
     )
     @test length(sol.global_error) == length(sol.t)
-    # The new estimate ran on a copy of the callbacks made before the forward solve: the
-    # user's SavingCallback has the values of that one solve.
+    # The new estimate runs on a copy of the callbacks made before the forward solve, so
+    # the SavingCallback of the user has the values of the forward solve only.
     @test values.t == unique(sol.t)
     # The `global_error_final_solve` toggle of `DEVerbosity` silences the warning.
     @test_logs min_level = Base.CoreLogging.Warn GlobalDiffEq._final_solve(
@@ -474,9 +472,9 @@ end
 end
 
 @testset "Error trajectory with events: $mode" for mode in MODES
-    # The true solution resets at log 2 and 2 log 2, the forward solution at other times.
-    # It saves each of its event times two times, and between a true and a forward event
-    # the error is 0.5.
+    # The true solution resets at log 2 and 2 log 2, and the forward solution at nearby
+    # times. The solution saves each forward event time twice. Between a true and a forward
+    # event, the error is 0.5.
     reset_x(t) = exp(-(t - fld(t, log(2)) * log(2)))
     for tol in (1.0e-4, 1.0e-6)
         sol = solve(

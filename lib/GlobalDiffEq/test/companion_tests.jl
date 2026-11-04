@@ -90,8 +90,8 @@ end
 
 @testset "Stiff problem with an implicit solver" begin
     # Van der Pol with mu = 1000. At the fast transition near t = 807 the global error
-    # passes through a peak 1e7 times its final value, so a loose default companion
-    # reltol gives a wrong estimate.
+    # passes through a peak 1e7 times its final value, so a loose default reltol for the
+    # companion gives a wrong estimate.
     svdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 1.0e3 * ((1 - u[1]^2) * u[2]) - u[1]; nothing)
     prob = ODEProblem(svdp!, [2.0, 0.0], (0.0, 1000.0))
     ref = solve(prob, Rodas5P(); abstol = 1.0e-12, reltol = 1.0e-12)
@@ -165,8 +165,8 @@ end
 
 @testset "Companion solver warning" begin
     # The companion runs at tight tolerances, which a low-order solver meets poorly. The
-    # solve warns (the `global_error_companion_order` toggle of `DEVerbosity`), not the
-    # constructor, which has no `verbose`.
+    # solve warns, not the constructor, because only the solve has `verbose`. The
+    # `global_error_companion_order` toggle of `DEVerbosity` controls the warning.
     decay = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
     @test_logs GlobalErrorEstimation(Rosenbrock32())
     @test_logs (:warn, r"solves the companion with Rosenbrock32") match_mode = :any global_error_estimate(
@@ -178,7 +178,7 @@ end
     @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
         decay, GlobalErrorEstimation(Rosenbrock32(); companion_alg = Tsit5())
     )
-    # Silenced by the toggle, or by a preset.
+    # The toggle or a preset silences the warning.
     for verbose in (DEVerbosity(global_error_companion_order = SciMLLogging.Silent()), SciMLLogging.None())
         @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
             decay, GlobalErrorEstimation(Rosenbrock32()); verbose

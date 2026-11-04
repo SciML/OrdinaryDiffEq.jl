@@ -70,20 +70,18 @@ small-sample estimate in Cao and Petzold (2004).
 The estimate is a dual-weighted residual: for a projection direction `v`, the
 error component `⟨v, y(T) - P(T)⟩` equals `∫ λ(t)ᵀ (f(P(t)) - P'(t)) dt`, where
 `P` is the dense numerical solution, `d(t) = f(P) - P'` its defect, and `λ` the
-adjoint with terminal condition `λ(T) = v`. This is computed by the adjoint
-system itself (via `SciMLSensitivity.adjoint_sensitivities`), not by a
-hand-rolled quadrature: the defect is introduced as a scalar forcing whose
-sensitivity is exactly that integral.
+adjoint with terminal condition `λ(T) = v`. One backward adjoint solve of
+SciMLSensitivity computes it: the defect enters the problem as a scalar forcing
+`ε d(t)`, and the sensitivity to `ε` is that integral.
 
 When solved with a `gtol`, the returned solution carries the estimate in its
 `global_error` field (`SciMLBase.has_global_error` is `true` for `GlobalAdjoint`).
 `scope` ([`GlobalAdjointScope`](@ref)) selects what is estimated:
 [`EndpointError`](@ref) (default) fills only `sol.global_error[end]`, while
 [`TrajectoryError`](@ref) fills `sol.global_error[i]` at every saved time. The
-`TrajectoryError` solution is dense and saved at each step; an event time is saved twice
-(the error before and after the event), and the state after each event that changes the
-state is saved also when the callback does not save it (`save_positions`), because the
-estimate needs it.
+`TrajectoryError` solution is dense and saved at each step. An event time is saved twice,
+with the error before and after the event. The state after each event that changes the
+state is saved even if the callback's `save_positions` does not save it.
 `control` ([`GlobalAdjointControl`](@ref)) selects how `gtol` is met:
 [`ToleranceRefinement`](@ref) (default) tightens tolerances and re-solves
 adaptively, while [`StepGridRefinement`](@ref) re-solves non-adaptively on the
@@ -97,50 +95,58 @@ controls each local-tolerance reduction. The `adjoint_abstol` and
 The adjoint machinery lives in a package extension: SciMLSensitivity must be
 loaded to solve with `GlobalAdjoint`. `sensealg` selects the adjoint sensitivity
 algorithm. The default (`nothing`) is `InterpolatingAdjoint(autojacvec = ReverseDiffVJP())`
-in one backward solve with the jump terms of the knots and the events (with a numerical VJP,
-and a warning, if ReverseDiff cannot run the model, as `adjoint_sensitivities` chooses); another
-`InterpolatingAdjoint` is used the same way. Any other adjoint method is passed to
-`SciMLSensitivity.adjoint_sensitivities`, without jump terms, events or DAEs. `adjoint_alg`
-selects the solver for the reverse-time adjoint problems.
+in one backward solve with the jump terms of the knots and the events. If ReverseDiff
+cannot run the model, it uses a numerical VJP with a warning, as `adjoint_sensitivities`
+does. Any other `InterpolatingAdjoint` works the same way. Other adjoint methods go to
+`SciMLSensitivity.adjoint_sensitivities`, without jump terms, events or DAEs.
+`adjoint_alg` selects the solver for the reverse-time adjoint problems.
 
-The identity also has a term for each jump of the dense output at a step end
-(`-⟨λ(tⱼ), M [P]ⱼ⟩`), so solvers whose dense output is not continuous between steps (for
+The identity also has a term `-⟨λ(tⱼ), M [P]ⱼ⟩` for each jump of the dense output at a
+step end. So solvers with a dense output that is not continuous between steps (for
 example Rosenbrock32) are supported.
+
+## Events and DAEs
 
 Events (`ContinuousCallback`, `VectorContinuousCallback`, `DiscreteCallback`) and
 semi-explicit mass-matrix DAEs (a diagonal mass matrix of zeros and ones) are supported.
-At each event of the forward solve the adjoint jumps with the saltation matrix of the
-event, `λ ← Sᵀ λ`: the linearized map of an error from just before the event to just after
-it, including the shift of the event time. As in SciMLSensitivity's callback adjoints, the
-`autojacvec` of the `sensealg` selects how: by default (`ReverseDiffVJP()`, or any VJP
-choice) `Sᵀλ` is computed without `S`, from one ReverseDiff product through the user affect
-for each `λ`, ForwardDiff products, and the gradient of the condition, so the cost per event
-does not grow with the number of states `n`. The affect and the condition must then be
-differentiable by ReverseDiff and ForwardDiff; an event where they are not uses finite
-differences, with a warning. With `autojacvec = false`, and for every event of a DAE, `S` is
-computed by finite differences of the user callbacks: about `n` trial runs of the affect
-and of the condition per event, and an `n × n` matrix. An affect can change the parameters: the adjoint uses the parameters of the
-forward solve on each interval between events. As in SciMLSensitivity, an affect must be a
-function of the state, the parameters and the time: the trial runs use one copy of the
-callbacks for the whole solve, not the state of the callback at each event. An affect that
-depends on state kept in the callback (for example a counter) gives an `ArgumentError`;
-[`GlobalErrorEstimation`](@ref) supports such affects. Like the rest of the estimate this is a
-linearization at the forward solution, so it assumes that the true solution has the same sequence of events (an event
-that the forward solve misses or adds is not seen). For a DAE, only the differential
-components of the error enter the identity; an algebraic component of a projection
-direction is moved to the differential ones through the constraint at the final time, and
-the adjoint solver needs a Jacobian that does not differentiate through the ReverseDiff
-adjoint (for example `Rodas5P(autodiff = AutoFiniteDiff())` as `adjoint_alg`). Events, DAEs
-and the jump terms need an `InterpolatingAdjoint` `sensealg` (the default), without
-`checkpointing` (the adjoint must follow the stored forward solution, not a solve again from
-checkpoints); `StepGridRefinement` does not support callbacks.
+At each event, the adjoint jumps with the saltation matrix `S` of the event, `λ ← Sᵀ λ`.
+`S` is the linearized map of an error across the event, with the shift of the event time.
+
+As in SciMLSensitivity's callback adjoints, the `autojacvec` of the `sensealg` selects how
+`Sᵀλ` is computed. With a VJP choice (the default `ReverseDiffVJP()`), ReverseDiff and
+ForwardDiff products through the affect and the condition give `Sᵀλ` without `S`. The cost
+per event then does not grow with the number of states `n`. An event where the affect or
+the condition is not differentiable uses finite differences, with a warning. With
+`autojacvec = false`, and for every event of a DAE, finite differences of the callbacks
+give `S`: about `n` runs of the affect and the condition per event, and an `n × n` matrix.
+
+An affect can change the parameters; the adjoint uses the forward parameters on each
+interval between events. As in SciMLSensitivity, an affect must be a function of the
+state, the parameters and the time, and it can run more than once. The trial runs use one
+copy of the callbacks for the whole solve. An affect that depends on state kept in the
+callback (for example a counter) gives an `ArgumentError`; [`GlobalErrorEstimation`](@ref)
+supports such affects.
+
+Like the rest of the estimate, this is a linearization at the forward solution. It assumes
+that the true solution has the same sequence of events, so it does not see an event that
+the forward solve misses or adds. For a DAE, only the differential components of the error
+enter the identity. The constraint at the final time moves an algebraic component of a
+projection direction to the differential ones. The adjoint solver of a DAE needs a
+Jacobian that does not differentiate through the ReverseDiff adjoint (for example
+`Rodas5P(autodiff = AutoFiniteDiff())` as `adjoint_alg`).
+
+Events, DAEs and the jump terms need an `InterpolatingAdjoint` `sensealg` (the default)
+without `checkpointing`, because the adjoint must follow the stored forward solution.
+`StepGridRefinement` does not support callbacks.
 
 This implementation supports forward-time problems with real vector states. The wrapped
 solver must provide a dense first-derivative interpolation.
 
-Its warnings follow the `verbose` keyword of `solve` (a [`DEVerbosity`](@ref)): the toggle
+Warnings follow the `verbose` keyword of `solve` (a [`DEVerbosity`](@ref)). The toggle
 `global_error_ad_fallback` controls the message when ReverseDiff or ForwardDiff cannot run
-the model or a callback and finite differences or a numerical VJP take their place.
+the model or a callback, and finite differences or a numerical VJP replace it. The toggle
+`global_error_grazing_event` controls the message at an event where the vector field is
+tangent to the event surface; the saltation matrix then has no time-shift term.
 
 ## References
 
@@ -214,25 +220,24 @@ function _resolve_sensealg(alg::GlobalAdjoint)
     return alg.sensealg
 end
 
-# The events use the VJP choice of the adjoint method, as SciMLSensitivity's callback
-# adjoints do: `autojacvec = false` gives the finite-difference saltation matrix, any other
-# choice (the default `ReverseDiffVJP()`) a ReverseDiff VJP (see `_saltation_vjp`).
+# The events follow the VJP choice of the adjoint method, as in SciMLSensitivity's callback
+# adjoints: `autojacvec = false` gives the finite-difference saltation matrix, and any other
+# choice a ReverseDiff VJP (see `_saltation_vjp`).
 function _event_vjp(alg::GlobalAdjoint)
     sensealg = alg.sensealg
     sensealg === nothing && return true
     return !hasproperty(sensealg, :autojacvec) || sensealg.autojacvec !== false
 end
 
-# Whether the adjoint method supports DAEs and events that change the state: the default and
-# InterpolatingAdjoint (the extension adds that method); the others go through
-# `adjoint_sensitivities` without the event terms.
+# Only the default and InterpolatingAdjoint (a method in the extension) support DAEs and
+# events that change the state. The others use `adjoint_sensitivities` without event terms.
 _supports_events(sensealg) = sensealg === nothing
 
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
 SciMLBase.allowscomplex(::GlobalAdjoint) = false
 SciMLBase.isautodifferentiable(::GlobalAdjoint) = false
-# As for GlobalErrorEstimation: an implicit inner solver (needed for a DAE) finds no dual
-# signature in the wrapper of `f` without these traits.
+# As for GlobalErrorEstimation: without these traits, an implicit inner solver (needed for
+# a DAE) finds no dual signature in the wrapper of `f`.
 SciMLBase.forwarddiffs_model(alg::GlobalAdjoint) = SciMLBase.forwarddiffs_model(alg.alg)
 SciMLBase.forwarddiff_chunksize(alg::GlobalAdjoint) = SciMLBase.forwarddiff_chunksize(alg.alg)
 SciMLBase.has_global_error(::GlobalAdjoint) = true
@@ -296,16 +301,14 @@ function _sphere_projection_expectation(dimension, ::Type{T}) where {T}
     return expectation
 end
 
-# `data` is the recorded forward solve (`_recorded_forward_solve`): the solution, its knots
-# with the jumps of the dense output, and its events. `terminal_index` is the saved entry
-# whose error is estimated.
+# `data` is the recorded forward solve (`_recorded_forward_solve`). `terminal_index` is the
+# saved entry whose error is estimated.
 function _adjoint_error_estimate(data, alg, directions; kwargs...)
     return _adjoint_projections(data, alg, directions; kwargs...).estimate
 end
 
-# The estimate and the projections. Each projection is `(; value, refine)`: with an
-# `error_floor` (in the global error control loop), the value can be accurate only against
-# that floor, and `refine()` then gives the accurate value (`_refine_estimate`).
+# Each projection is `(; value, refine)`. With an `error_floor` (in the control loop), the
+# value can be accurate only relative to that floor; `refine()` then gives the full value.
 function _adjoint_projections(
         data, alg, directions;
         adjoint_abstol, adjoint_reltol, terminal_index = lastindex(data.sol.t),
@@ -317,8 +320,7 @@ function _adjoint_projections(
     sample_count = length(directions)
     factor = _sphere_projection_expectation(sample_count, T) /
         _sphere_projection_expectation(length(sol.prob.u0), T)
-    # The estimate is factor times the norm of the projections, so an error δ in each
-    # projection gives up to factor·sqrt(samples)·δ: the floor of one projection is smaller.
+    # An error δ in each projection gives up to factor·sqrt(samples)·δ in the estimate.
     projection_floor = error_floor / (factor * sqrt(T(sample_count)))
     projections = map(directions) do direction
         _adjoint_defect_projection(
@@ -330,7 +332,7 @@ function _adjoint_projections(
     return (; estimate = factor * LinearAlgebra.norm(map(p -> p.value, projections)), factor, projections)
 end
 
-# The accurate estimate from the projections of an estimate with an error floor.
+# The accurate estimate from projections computed with an error floor.
 function _refine_estimate(result)
     values = [p.refine === nothing ? p.value : p.refine() for p in result.projections]
     return result.factor * LinearAlgebra.norm(values)
@@ -338,13 +340,14 @@ end
 
 # Per-time global error along the trajectory: the estimate at each saved time,
 # obtained by placing the adjoint's discrete cost at that time. `sol.t[1]` (the
-# initial time) carries no error. An event time is saved twice: the first entry has the
-# error before the event, the second the error after it.
+# initial time) carries no error. At an event time, the first entry has the error before
+# the event and the second the error after it.
 function _adjoint_trajectory_errors(data, alg, directions; adjoint_abstol, adjoint_reltol)
     sol = data.sol
     errors = zeros(eltype(sol.prob.u0), length(sol.t))
     for j in 2:length(sol.t)
-        # The true solution starts at the saved state (also after a change in initialize).
+        # The true solution starts at the saved state, even if a callback initialization
+        # changed it.
         sol.t[j] == sol.t[1] && continue
         errors[j] = _adjoint_error_estimate(
             data, alg, directions;
@@ -437,8 +440,8 @@ function SciMLBase.__solve(
     alg.control === StepGridRefinement && _has_callbacks(kwargs) && throw(
         ArgumentError("GlobalAdjoint does not support StepGridRefinement with callbacks")
     )
-    # As for GlobalErrorEstimation: the solve pipeline has merged the problem's callback into
-    # `kwargs`, so it is removed from the problem.
+    # As for GlobalErrorEstimation: the solve pipeline has already merged the problem's
+    # callback into `kwargs`, so remove it from the problem.
     prob = @set prob.kwargs = _without_callback(prob.kwargs)
     gtol = alg.gtol
     options = alg.options
@@ -454,10 +457,9 @@ function SciMLBase.__solve(
         )
         trial_sol = trial.sol
         _validate_adjoint_solution(trial_sol)
-        # The estimates of the loop only have to be accurate against gtol: to about gtol / 10
-        # plus 0.5 % of the value (see the second adjoint solve in the extension). The
-        # accurate estimate decides near gtol, and it is the reported endpoint error. (The
-        # reported trajectory below is accurate relative to each value.)
+        # The loop estimate is accurate to about gtol / 10 plus 0.5 % of the value (see the
+        # second adjoint solve in the extension). Refine it near gtol and for the reported
+        # endpoint error.
         loop_projections = _adjoint_projections(
             trial, alg, directions;
             adjoint_abstol = options.adjoint_abstol,
@@ -493,7 +495,7 @@ function SciMLBase.__solve(
                 )
             end
             global_error = if alg.scope === TrajectoryError
-                # StepGridRefinement (no callbacks): the data of the fixed-grid solution.
+                # StepGridRefinement has no callbacks, so no recorded data.
                 data = final_data === nothing ? _unrecorded_data(prob, final_sol, _verbosity(kwargs)) : final_data
                 _adjoint_trajectory_errors(
                     data, alg, directions;

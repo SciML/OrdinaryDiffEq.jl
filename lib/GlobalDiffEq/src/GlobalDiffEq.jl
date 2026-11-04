@@ -8,7 +8,7 @@ import ADTypes, DifferentiationInterface, ForwardDiff, LinearAlgebra,
     Richardson, SciMLBase, SymbolicIndexingInterface
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore: perform_step!, @cache
-import Accessors: @set
+import Accessors: @set, setproperties
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using PrecompileTools: @setup_workload, @compile_workload
@@ -25,9 +25,8 @@ function _is_empty_callback(cb::SciMLBase.CallbackSet)
 end
 _is_empty_callback(cb) = false
 
-# The verbosity of a solve, from its `verbose` keyword as in DiffEqBase: by default
-# `DEVerbosity()`, and a SciMLLogging preset gives the `DEVerbosity` of that preset. The
-# messages of GlobalDiffEq are its `global_error` group.
+# The `DEVerbosity` of a solve from its `verbose` keyword, as in DiffEqBase. A SciMLLogging
+# preset maps to its `DEVerbosity`. GlobalDiffEq messages use the `global_error` group.
 _verbosity(kwargs) = _verbosity_spec(get(kwargs, :verbose, DEVerbosity()))
 _verbosity_spec(verbose::DEVerbosity) = verbose
 _verbosity_spec(verbose::AbstractVerbosityPreset) = DEVerbosity(verbose)

@@ -95,8 +95,8 @@ error. One of [`DefectCorrection`](@ref) or [`ErrorTransport`](@ref).
 Integrate the nonlinear correction equation `M ε' = f(P + ε, p, t) - M P'(t)`,
 `ε(t₀) = 0`, where `P` is the numerical solution's dense interpolant and `M` the
 mass matrix. Requires no Jacobian, only extra evaluations of `f` on the perturbed
-argument `P + ε`. `P + ε` is the exact solution, so the user's callbacks are applied
-to it, and the estimate follows the true event times.
+argument `P + ε`. The user's callbacks act on `P + ε`, the estimate of the exact
+solution, so the estimate follows the true event times.
 The "solving for the correction" technique of Zadunaisky (1976) and Dormand,
 Duckers and Prince (1984).
 """ DefectCorrection
@@ -134,7 +134,10 @@ and runs a second solve.
 Co-integrate the error estimate in a single forward pass: drive the forward
 integrator one accepted step at a time and, over each just-completed step,
 advance the companion ODE using that step's live dense output as the interpolant.
-Stores no dense solution (`O(1)` extra memory) and runs no second solve. Gives an
+For [`global_error_estimate`](@ref) and in the `gtol` control loop, it stores no dense
+solution (`O(1)` extra memory) and runs no second solve. The solution from `solve` has
+the error of each saved state (`sol.global_error`) and saves each step; under `gtol`,
+this costs one more estimate after the control loop. Gives an
 estimate closely agreeing with [`InterpolatingMode`](@ref).
 """ SimultaneousMode
 
@@ -178,7 +181,7 @@ function _error_transport_rhs(prob, interp, right_continuity, autodiff)
 end
 
 # Return `make_rhs(interp, prob, right_continuity)` for the ErrorTransport companion.
-# (DefectCorrection has its own implementation with callbacks; see defect_correction.jl.)
+# DefectCorrection has its own implementation with callbacks in defect_correction.jl.
 function _companion_rhs_builder(equation::GlobalErrorEquation, autodiff)
     equation === ErrorTransport ||
         throw(ArgumentError("only ErrorTransport uses the generic companion"))
@@ -196,9 +199,9 @@ const _DENSE_SOLVE_KWARGS = (;
 
 # Endpoint-error refinement loop: solve, estimate the endpoint global error, and
 # tighten the local tolerances until the estimate is at most gtol; then redo the
-# solve, with `final_solve(abstol, reltol, result)` if given, else with the user's original
-# saving options. The estimator returns the estimate, or `(; estimate, ...)`; that `result`
-# of the accepted tolerances goes to `final_solve`.
+# solve with the user's original saving options. If given, `final_solve(abstol, reltol,
+# result)` does that solve instead, with the estimator result at the accepted tolerances.
+# The estimator returns a number or `(; estimate, ...)`.
 function _refine_to_gtol(
         estimator, prob, inner_alg, gtol, options, args...;
         final_solve = nothing, abstol, reltol, kwargs...
@@ -236,15 +239,10 @@ function _refine_to_gtol(
     )
 end
 
-# Default companion tolerances. The companion state is the global error itself, but its
-# `reltol` is not the relative accuracy of the estimate: the error can pass through a
-# transient peak much larger than its final value (on stiff Van der Pol, mu = 1000, the
-# peak is 1e7 times the final error), and the companion errors made at the peak do not
-# shrink with it. `reltol = 1e-3` gave an estimate 29 times too large there; `1e-8`
-# gives four digits and costs at most about 3 times more than `1e-3`. Its `abstol`
-# must be below the size of the error, which the forward tolerance bounds only roughly,
-# so it is four orders of magnitude below the forward `abstol` (and below gtol / 100
-# under global error control).
+# Default companion tolerances. The companion `reltol` does not set the relative accuracy
+# of the estimate: the error can have a transient peak much larger than its final value,
+# and the companion errors at the peak do not shrink with it. The companion `abstol` must
+# be below the size of the error, which the forward `abstol` bounds only roughly.
 const _DEFAULT_COMPANION_RELTOL = 1.0e-8
 const _COMPANION_ABSTOL_FACTOR = 1.0e-4
 

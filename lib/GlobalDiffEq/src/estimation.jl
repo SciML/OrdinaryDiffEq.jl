@@ -42,51 +42,49 @@ error 2-norm is at most `gtol`. Without `gtol`, the solve does one estimate at t
 given `abstol` and `reltol`, with no control.
 
 With `equation = DefectCorrection`, the returned solution has the error trajectory
-(`SciMLBase.has_global_error` is `true`): `sol.global_error[i]` is the estimated
-global error `y(sol.t[i]) - sol.u[i]` of each saved state, as a vector. The solution is
-dense and saved at each step of the forward solve (`saveat` does not apply). Where it
-saves an event time two times, the first entry has the error before the events at that
-time, and the second entry the error after them. Under global error control, the final
-solution costs one more forward solve in `InterpolatingMode` (the error trajectory comes from
-the accepted estimate), and one more estimate in `SimultaneousMode` (which keeps its `O(1)`
-memory during the control loop). The callback objects of the user see only that final
-solve, if the solve is deterministic.
-[`global_error_estimate`](@ref) gives only the endpoint error 2-norm, with no
-solution. `companion_alg` selects the solver for the
-companion equation (by default the forward solver `alg`, as SciMLSensitivity uses the
-forward solver for its adjoint solve), and `companion_abstol` / `companion_reltol` control its
-tolerances. The companion runs at much tighter tolerances than the forward solve, so with a
-low-order forward solver (order 3 or lower, such as Rosenbrock23 or Rosenbrock32) pass a
-higher-order `companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff problem or a
-DAE; the solve warns in that case. The companion state is the global error itself. `companion_reltol`
-defaults to `1e-8`: the error can pass through a transient peak much larger than its
-final value (for example at a fast transition of a stiff problem), so a loose relative
-tolerance can give a wrong estimate. `companion_abstol` must be below the size of the
-error and defaults to `1e-4` times the forward `abstol` (and at most `gtol / 100` under
-global error control).
+(`SciMLBase.has_global_error` is `true`): `sol.global_error[i]` is the estimated global
+error `y(sol.t[i]) - sol.u[i]` of each saved state, as a vector. The solution is dense
+and saved at each step of the forward solve (`saveat` does not apply). If an event time
+is saved twice, the first entry has the error before the events at that time and the
+second the error after them. Under global error control, the final solution costs one
+more forward solve in `InterpolatingMode` and one more estimate in `SimultaneousMode`.
+If the solve is deterministic, the user's callback objects see only that final solve.
+[`global_error_estimate`](@ref) gives only the endpoint error 2-norm, with no solution.
+
+`companion_alg` selects the solver for the companion equation (by default the forward
+solver `alg`), and `companion_abstol` / `companion_reltol` control its tolerances. The
+companion runs at much tighter tolerances than the forward solve. So with a forward solver
+of order 3 or lower (such as Rosenbrock23 or Rosenbrock32), pass a higher-order
+`companion_alg`, for example `Tsit5()`, or `Rodas5P()` for a stiff problem or a DAE. The
+solve warns about such a low-order companion solver. The companion state is the global
+error itself. `companion_reltol` defaults to `1e-8`, because the error can have a
+transient peak much larger than its final value (for example at a fast transition of a
+stiff problem). `companion_abstol` must be below the size of the error. It defaults to
+`1e-4` times the forward `abstol`, and at most `gtol / 100` under global error control.
 
 Every combination **requires** the wrapped solver to provide a genuine dense
 first-derivative interpolation (a solver with only the trivial fallback
 interpolation is rejected), a forward time span, and a real vector state.
 
 `DefectCorrection` (the default, in either mode) also supports mass-matrix DAEs and
-callbacks (`ContinuousCallback`, `VectorContinuousCallback`,
-`DiscreteCallback`), for example ModelingToolkit models with events. The companion
-then applies the user's callbacks to the true state `P + ε` with its own copy of the
-parameters, so the estimate includes the effect of the event times and of events that
-the forward solve missed or added; a warning reports when the events of the forward
-solve and of the true solution differ. A `DiscreteCallback` is checked only at the step ends of the forward solve
-and at the times of the true continuous events, which end a step in every solve.
-After an event in a DAE, the companion reinitializes the true state with the same
-algorithm as the forward solve (for example `BrownFullBasicInit`); `OverrideInit`, the
-default for a ModelingToolkit problem when a callback has no `initializealg`, is not
-supported there. A callback can terminate the solve: the estimate is then the error at the
-time where the forward solve stops, and a warning reports when the true solution, as the
-companion computes it, does not terminate at the same event (or terminates where the forward
-solve does not). Callbacks that change the step size are not supported in the companion.
-`ErrorTransport` supports only standard-mass-matrix ODEs without callbacks.
+callbacks (`ContinuousCallback`, `VectorContinuousCallback`, `DiscreteCallback`), for
+example ModelingToolkit models with events. The companion applies the user's callbacks
+to the true state `P + ε`, with its own copy of the parameters. So the estimate includes
+the effect of the event times and of events that the forward solve missed or added. A
+warning reports when the events of the forward solve and of the true solution differ. A
+`DiscreteCallback` is checked only at the step ends of the forward solve and at the times
+of the true continuous events.
 
-Its warnings follow the `verbose` keyword of `solve` and of `global_error_estimate` (a
+After an event in a DAE, the companion reinitializes the true state with the algorithm of
+the forward solve (for example `BrownFullBasicInit`). `OverrideInit`, the default for a
+ModelingToolkit problem when a callback has no `initializealg`, is not supported there.
+A callback can terminate the solve; the estimate is then the error at the time where the
+forward solve stops. A warning reports when the true solution does not terminate at the
+same event, or terminates where the forward solve does not. Callbacks that change the
+step size are not supported in the companion. `ErrorTransport` supports only
+standard-mass-matrix ODEs without callbacks.
+
+Warnings follow the `verbose` keyword of `solve` and of `global_error_estimate` (a
 [`DEVerbosity`](@ref)), with these toggles: `global_error_event_mismatch` (the events or
 the terminations of the forward solve and of the true solution differ),
 `global_error_companion_order` (a companion solver of order 3 or lower) and
@@ -140,10 +138,8 @@ function GlobalErrorEstimation(
     )
 end
 
-# The companion is solved at much tighter tolerances than the forward problem, which a
-# low-order solver meets poorly or with very many steps: with Rosenbrock32 as the companion
-# solver the estimate was 3 to 31% off, with Tsit5 1e-7. Checked once for each solve or
-# estimate (the `global_error_companion_order` toggle of `verbose`).
+# The companion runs at much tighter tolerances than the forward problem, and a low-order
+# solver meets them poorly or with very many steps.
 function _warn_if_low_order_companion(alg::GlobalErrorEstimation, kwargs)
     order = try
         SciMLBase.alg_order(alg.companion_alg)
@@ -163,8 +159,8 @@ end
 SciMLBase.allows_arbitrary_number_types(::GlobalErrorEstimation) = false
 SciMLBase.allowscomplex(::GlobalErrorEstimation) = false
 SciMLBase.isautodifferentiable(::GlobalErrorEstimation) = false
-# The outer solve wraps `f` for these traits, and the inner solves of the wrapped
-# algorithm keep that wrapper; without them an implicit solver finds no dual signature.
+# The outer solve wraps `f` based on these traits, and the inner solves keep that wrapper.
+# Without them, an implicit solver finds no dual signature.
 SciMLBase.forwarddiffs_model(alg::GlobalErrorEstimation) = SciMLBase.forwarddiffs_model(alg.alg)
 SciMLBase.forwarddiff_chunksize(alg::GlobalErrorEstimation) = SciMLBase.forwarddiff_chunksize(alg.alg)
 
@@ -190,9 +186,8 @@ end
 
 SciMLBase.has_global_error(alg::GlobalErrorEstimation) = alg.equation === DefectCorrection
 
-# The estimate of `global_error_estimate`. With `trajectory = true` (DefectCorrection only)
-# `(; estimate, sol)`: also the forward solution with the estimated error of each saved
-# state in `global_error`.
+# With `trajectory = true` (DefectCorrection only), returns `(; estimate, sol)`, where `sol`
+# has the estimated error of each saved state in `global_error`.
 function _estimate(
         prob, alg::GlobalErrorEstimation, args...;
         abstol, reltol, companion_abstol = alg.options.companion_abstol,
@@ -218,16 +213,15 @@ function _estimate(
     )
 end
 
-# The solution under global error control with DefectCorrection. The accepted estimate ran
-# on a copy of the callbacks, so that the user's callback objects (for example the values of
-# a SavingCallback) see only the returned solve. In InterpolatingMode the accepted estimate
-# has the error trajectory: the forward solve runs again on the user's callbacks and gets
-# that trajectory (a companion solve costs several forward solves). In SimultaneousMode (the
-# estimate is only the norm, see `__solve`), the full estimate runs on the user's callbacks.
+# The returned solution under global error control with DefectCorrection. The accepted
+# estimate ran on a copy of the callbacks, so this solve runs on the user's callbacks. In
+# InterpolatingMode, only the forward solve runs again and reuses the accepted error
+# trajectory, because a companion solve costs several forward solves. In SimultaneousMode,
+# `accepted` is only the norm, so the full estimate runs again.
 function _final_solve(prob, alg, accepted, args...; abstol, reltol, kwargs...)
     full_estimate(kw) = _estimate(prob, alg, args...; abstol, reltol, trajectory = true, kw...).sol
     accepted isa Number && return full_estimate(kwargs)
-    # The callbacks before the forward solve changes them, for the full estimate below.
+    # Copy the callbacks before the forward solve changes them, for the fallback below.
     unused = _with_copied_callback(kwargs)
     # As in the estimate, the forward affects change their own copy of the parameters.
     sol = SciMLBase.solve(
@@ -262,18 +256,14 @@ function SciMLBase.__solve(
     alg.equation === DefectCorrection || !_has_callbacks(kwargs) ||
         throw(_callback_support_error("GlobalErrorEstimation"))
     _warn_if_low_order_companion(alg, kwargs)
-    # The solve pipeline has already merged the problem's callback into `kwargs`; remove
-    # it from the problem so that the inner solves do not merge it a second time (an
-    # affect such as x ← 2x would then run twice).
+    # The solve pipeline has already merged the problem's callback into `kwargs`. Remove it
+    # from the problem, or the inner solves merge it again and an affect runs twice.
     prob = @set prob.kwargs = _without_callback(prob.kwargs)
-    # Without gtol: one estimate at the given tolerances, with no control.
     alg.gtol === nothing &&
         return _estimate(prob, alg, args...; abstol, reltol, trajectory = true, kwargs...).sol
     # Each estimate runs on a copy of the callbacks, so that the user's callback objects
-    # (for example the values of a SavingCallback) see only the final solve. With
-    # DefectCorrection in InterpolatingMode it gives the error trajectory too, for the final
-    # solve; SimultaneousMode keeps its O(1) memory in the loop (the trajectory saves each
-    # step), and its final solve is a full estimate.
+    # (for example the values of a SavingCallback) see only the final solve. Only
+    # InterpolatingMode keeps the trajectory; SimultaneousMode keeps its O(1) memory.
     trajectory = alg.equation === DefectCorrection && alg.mode === InterpolatingMode
     estimator = (local_abstol, local_reltol) -> _estimate(
         prob, alg, args...;

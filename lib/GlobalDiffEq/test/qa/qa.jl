@@ -18,10 +18,8 @@ run_qa(
                 # SciMLSensitivity extension adds methods to these internal
                 # functions of its parent package.
                 :_adjoint_defect_projection, :_default_adjoint_sensealg,
-                # Internal helpers of GlobalDiffEq that the extension calls (the
-                # right-hand side, its Jacobian, the parameters by event interval, the event
-                # calls before a saved entry with their bridges, the adjoint methods with events,
-                # and the error that a call without event support gives).
+                # Internal helpers of GlobalDiffEq that the SciMLSensitivity
+                # extension calls.
                 :_rhs, :_rhs_jacobian, :_parameters_at, :_calls_before_entry, :_entry_bridge,
                 :_supports_events, :_unsupported_events_error,
             ),
