@@ -253,13 +253,41 @@ end
         () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, SciMLBase.terminate!),
         () -> TerminateSteadyState(1.0e-4, 1.0e-4),
     )
+    # No warning: when the true event comes after the forward one, the companion does not
+    # reach it, which is not a difference of the events.
     for make_callback in callbacks, tol in (1.0e-4, 1.0e-6)
         prob = ODEProblem(decay!, [1.0], (0.0, 100.0))
-        est = global_error_estimate(
+        est = @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
             prob, GlobalErrorEstimation(Tsit5(); mode); callback = make_callback(), abstol = tol, reltol = tol
         )
         sol = solve(prob, Tsit5(); callback = make_callback(), abstol = tol, reltol = tol)
         @test sol.t[end] < 100
+        @test est / abs(exp(-sol.t[end]) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
+    end
+
+    # A DiscreteCallback at a forward step end that terminates if x is below (or above) a
+    # value between the forward and the true state there: the two decisions differ, and a
+    # warning reports it.
+    tol = 1.0e-3
+    prob = ODEProblem(decay!, [1.0], (0.0, 2.0))
+    plain = solve(prob, Tsit5(); abstol = tol, reltol = tol)
+    k = findfirst(>(0.7), plain.t)
+    ts = plain.t[k]
+    c = (plain.u[k][1] + exp(-ts)) / 2
+    @test plain.u[k][1] > exp(-ts)
+    for (below, message) in (
+            (true, r"true solution.*terminates at t = .*but the forward solve does not"),
+            (false, r"forward solve terminates at t = .*does not terminate at the same event"),
+        )
+        cb = DiscreteCallback(
+            (u, t, i) -> t == ts,
+            i -> ((below ? i.u[1] < c : i.u[1] > c) && SciMLBase.terminate!(i); nothing)
+        )
+        est = @test_logs (:warn, message) global_error_estimate(
+            prob, GlobalErrorEstimation(Tsit5(); mode); callback = cb, abstol = tol, reltol = tol
+        )
+        sol = solve(prob, Tsit5(); callback = cb, abstol = tol, reltol = tol)
+        @test sol.t[end] == (below ? 2.0 : ts)
         @test est / abs(exp(-sol.t[end]) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
     end
 end
@@ -309,6 +337,81 @@ end
     end
 end
 
+@testset "A DiscreteCallback that a continuous event triggers: $mode" for mode in MODES
+    # At x = 0.5 the continuous event doubles x and sets a flag; at the same step end a
+    # DiscreteCallback adds x² to y and clears it. The true event ends a step of the true
+    # solution, so the companion checks the DiscreteCallbacks there too (at the next knot of
+    # P only, the estimate was 1e6 times the error).
+    tied = () -> CallbackSet(
+        ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] *= 2; i.p[1] = 1.0; nothing)),
+        DiscreteCallback((u, t, i) -> i.p[1] == 1.0, i -> (i.u[2] += i.u[1]^2; i.p[1] = 0.0; nothing))
+    )
+    prob = () -> ODEProblem((u, p, t) -> [-u[1], -u[2]], [1.0, 1.0], (0.0, 2.0), [0.0])
+    ref = solve(prob(), Tsit5(); callback = tied(), abstol = 1.0e-13, reltol = 1.0e-13)
+    for tol in (1.0e-5, 1.0e-7)
+        sol = solve(prob(), Tsit5(); callback = tied(), abstol = tol, reltol = tol)
+        est = global_error_estimate(
+            prob(), GlobalErrorEstimation(Tsit5(); mode); callback = tied(), abstol = tol, reltol = tol
+        )
+        @test est / norm(ref.u[end] .- sol.u[end]) ≈ 1 rtol = 1.0e-3
+    end
+end
+
+@testset "Callbacks at the forward event knots, integer time span, termination: $mode" for mode in MODES
+    # A callback that acts at each step (a SavingCallback) is not called at the forward event
+    # time in the companion: the true solution ends a step at its own event time instead.
+    # Before, the companion called it one more time and warned that the events differ.
+    reset = () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; nothing))
+    saving = () -> SavingCallback((u, t, i) -> copy(u), SavedValues(Float64, Vector{Float64}))
+    prob = ODEProblem((u, p, t) -> [-u[1]], [1.0], (0.0, 2.0))
+    alg = GlobalErrorEstimation(Tsit5(); mode)
+    est = @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+        prob, alg; callback = CallbackSet(reset(), saving()), abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    # (The companion's copy of the SavingCallback acts at each knot, which can change the
+    # steps of the companion slightly: 2e-5 relative on Julia 1.10.)
+    est_reset = global_error_estimate(prob, alg; callback = reset(), abstol = 1.0e-6, reltol = 1.0e-6)
+    @test est ≈ est_reset rtol = 1.0e-3
+
+    # An integer time span (the times of the events are floats).
+    int_prob = ODEProblem((u, p, t) -> [-u[1]], [1.0], (0, 2))
+    @test global_error_estimate(int_prob, alg; callback = reset(), abstol = 1.0e-6, reltol = 1.0e-6) ≈
+        est_reset rtol = 1.0e-6
+
+    # A terminating event that triggers a DiscreteCallback at its step end: when the true
+    # event comes after the forward end, the companion has neither, with no warning.
+    triggered = () -> CallbackSet(
+        ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.p[1] = 1.0; SciMLBase.terminate!(i))),
+        DiscreteCallback((u, t, i) -> i.p[1] == 1.0, i -> (i.u[1] += 0.1; i.p[1] = 0.0; nothing))
+    )
+    flagged = () -> ODEProblem((u, p, t) -> [-u[1]], [1.0], (0.0, 2.0), [0.0])
+    for tol in (1.0e-4, 1.0e-6)
+        sol = solve(flagged(), Tsit5(); callback = triggered(), abstol = tol, reltol = tol)
+        @test sol.t[end] < log(2)
+        @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+            flagged(), alg; callback = triggered(), abstol = tol, reltol = tol
+        )
+    end
+end
+
+# A forward step a → b with b > 2a: a + (b - a) is not b, so the companion must stop at b
+# itself, not at the end of a step of length b - a.
+@testset "SimultaneousMode stops the companion at the forward step end" begin
+    a, b = 0.008476769222961617, 0.34529383286546195
+    @test a + (b - a) != b
+    prob = ODEProblem((u, p, t) -> -0.1 .* u, [1.0, 2.0], (0.0, 1.0))
+    kwargs = (; abstol = 1.0e-3, reltol = 1.0e-3, tstops = [a, b])
+    @test b in solve(prob, Tsit5(); kwargs...).t
+    estimates = map(MODES) do mode
+        global_error_estimate(prob, GlobalErrorEstimation(Tsit5(); mode); kwargs...)
+    end
+    @test estimates[2] ≈ estimates[1] rtol = 1.0e-6
+    trajectories = map(MODES) do mode
+        solve(prob, GlobalErrorEstimation(Tsit5(); mode); kwargs...).global_error
+    end
+    @test trajectories[2] ≈ trajectories[1] rtol = 1.0e-6
+end
+
 @testset "SavingCallback sees only the forward solve: $mode, saveat = $saveat" for mode in MODES,
         saveat in ((), [0.3, 0.7, 1.0, 1.5, 1.9])
 
@@ -327,9 +430,10 @@ end
     @test values.t == plain.t
     @test values.saveval == plain.saveval
     @test est / abs(RESET_EXACT - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
-    # Global error control: only the values of the final solve.
+    # Global error control: only the values of the final solve, which repeats the accepted
+    # one (no warning).
     values = SavedValues(Float64, Float64)
-    sol = solve(
+    sol = @test_logs min_level = Base.CoreLogging.Warn solve(
         make_prob(), GlobalErrorEstimation(Tsit5(); mode, gtol = 1.0e-7);
         callback = saving(values), abstol = 1.0e-3, reltol = 1.0e-3
     )
@@ -337,6 +441,25 @@ end
     # The solution saves an event time twice (before and after the affect), the
     # SavingCallback once.
     @test values.t == (saveat == () ? unique(sol.t) : saveat)
+end
+
+@testset "A final forward solve that does not repeat the accepted one" begin
+    # The branch for a callback with state outside of it, or a solve that is not
+    # deterministic: an accepted solve that the forward solve does not repeat. (A global
+    # counter in an affect gives another state in each solve, but also another true event
+    # in the companion, so that the control loop does not meet gtol.)
+    accepted = (; estimate = 0.0, sol = (; t = [0.0], u = [[1.0]]))
+    values = SavedValues(Float64, Float64)
+    callback = CallbackSet(reset_callback(), SavingCallback((u, t, i) -> u[1], values))
+    sol = @test_logs (:warn, r"does not repeat the accepted one") GlobalDiffEq._final_solve(
+        ODEProblem(decay!, [1.0], (0.0, T)), GlobalErrorEstimation(Tsit5()), accepted;
+        callback, abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    @test length(sol.global_error) == length(sol.t)
+    # The new estimate ran on a copy of the callbacks made before the forward solve: the
+    # user's SavingCallback has the values of that one solve.
+    @test values.t == unique(sol.t)
+    @test sol.global_error[end][1] / (RESET_EXACT - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
 end
 
 @testset "Error trajectory with events: $mode" for mode in MODES

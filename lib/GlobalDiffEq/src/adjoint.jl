@@ -79,7 +79,11 @@ When solved with a `gtol`, the returned solution carries the estimate in its
 `global_error` field (`SciMLBase.has_global_error` is `true` for `GlobalAdjoint`).
 `scope` ([`GlobalAdjointScope`](@ref)) selects what is estimated:
 [`EndpointError`](@ref) (default) fills only `sol.global_error[end]`, while
-[`TrajectoryError`](@ref) fills `sol.global_error[i]` at every saved time.
+[`TrajectoryError`](@ref) fills `sol.global_error[i]` at every saved time. The
+`TrajectoryError` solution is dense and saved at each step; an event time is saved twice
+(the error before and after the event), and the state after each event that changes the
+state is saved also when the callback does not save it (`save_positions`), because the
+estimate needs it.
 `control` ([`GlobalAdjointControl`](@ref)) selects how `gtol` is met:
 [`ToleranceRefinement`](@ref) (default) tightens tolerances and re-solves
 adaptively, while [`StepGridRefinement`](@ref) re-solves non-adaptively on the
@@ -116,7 +120,11 @@ differentiable by ReverseDiff and ForwardDiff; an event where they are not uses 
 differences, with a warning. With `autojacvec = false`, and for every event of a DAE, `S` is
 computed by finite differences of the user callbacks: about `n` trial runs of the affect
 and of the condition per event, and an `n × n` matrix. An affect can change the parameters: the adjoint uses the parameters of the
-forward solve on each interval between events. Like the rest of the estimate this is a
+forward solve on each interval between events. As in SciMLSensitivity, an affect must be a
+function of the state, the parameters and the time: the trial runs use one copy of the
+callbacks for the whole solve, not the state of the callback at each event. An affect that
+depends on state kept in the callback (for example a counter) gives an `ArgumentError`;
+[`GlobalErrorEstimation`](@ref) supports such affects. Like the rest of the estimate this is a
 linearization at the forward solution, so it assumes that the true solution has the same sequence of events (an event
 that the forward solve misses or adds is not seen). For a DAE, only the differential
 components of the error enter the identity; an algebraic component of a projection
@@ -211,9 +219,18 @@ function _event_vjp(alg::GlobalAdjoint)
     return !hasproperty(sensealg, :autojacvec) || sensealg.autojacvec !== false
 end
 
+# Whether the adjoint method supports DAEs and events that change the state: the default and
+# InterpolatingAdjoint (the extension adds that method); the others go through
+# `adjoint_sensitivities` without the event terms.
+_supports_events(sensealg) = sensealg === nothing
+
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
 SciMLBase.allowscomplex(::GlobalAdjoint) = false
 SciMLBase.isautodifferentiable(::GlobalAdjoint) = false
+# As for GlobalErrorEstimation: an implicit inner solver (needed for a DAE) finds no dual
+# signature in the wrapper of `f` without these traits.
+SciMLBase.forwarddiffs_model(alg::GlobalAdjoint) = SciMLBase.forwarddiffs_model(alg.alg)
+SciMLBase.forwarddiff_chunksize(alg::GlobalAdjoint) = SciMLBase.forwarddiff_chunksize(alg.alg)
 SciMLBase.has_global_error(::GlobalAdjoint) = true
 
 function _validate_adjoint_problem(prob)
@@ -278,23 +295,41 @@ end
 # `data` is the recorded forward solve (`_recorded_forward_solve`): the solution, its knots
 # with the jumps of the dense output, and its events. `terminal_index` is the saved entry
 # whose error is estimated.
-function _adjoint_error_estimate(
+function _adjoint_error_estimate(data, alg, directions; kwargs...)
+    return _adjoint_projections(data, alg, directions; kwargs...).estimate
+end
+
+# The estimate and the projections. Each projection is `(; value, refine)`: with an
+# `error_floor` (in the global error control loop), the value can be accurate only against
+# that floor, and `refine()` then gives the accurate value (`_refine_estimate`).
+function _adjoint_projections(
         data, alg, directions;
-        adjoint_abstol, adjoint_reltol, terminal_index = lastindex(data.sol.t)
+        adjoint_abstol, adjoint_reltol, terminal_index = lastindex(data.sol.t),
+        error_floor = zero(adjoint_abstol)
     )
     sol = data.sol
     sensealg = _resolve_sensealg(alg)
-    projections = map(directions) do direction
-        _adjoint_defect_projection(
-            data, sensealg, alg.adjoint_alg, direction;
-            abstol = adjoint_abstol, reltol = adjoint_reltol, terminal_index
-        )
-    end
     T = eltype(sol.prob.u0)
     sample_count = length(directions)
     factor = _sphere_projection_expectation(sample_count, T) /
         _sphere_projection_expectation(length(sol.prob.u0), T)
-    return factor * LinearAlgebra.norm(projections)
+    # The estimate is factor times the norm of the projections, so an error δ in each
+    # projection gives up to factor·sqrt(samples)·δ: the floor of one projection is smaller.
+    projection_floor = error_floor / (factor * sqrt(T(sample_count)))
+    projections = map(directions) do direction
+        _adjoint_defect_projection(
+            data, sensealg, alg.adjoint_alg, direction;
+            abstol = adjoint_abstol, reltol = adjoint_reltol, terminal_index,
+            error_floor = projection_floor
+        )
+    end
+    return (; estimate = factor * LinearAlgebra.norm(map(p -> p.value, projections)), factor, projections)
+end
+
+# The accurate estimate from the projections of an estimate with an error floor.
+function _refine_estimate(result)
+    values = [p.refine === nothing ? p.value : p.refine() for p in result.projections]
+    return result.factor * LinearAlgebra.norm(values)
 end
 
 # Per-time global error along the trajectory: the estimate at each saved time,
@@ -368,10 +403,7 @@ function adjoint_error_estimate(
     )
     _require_adjoint_ext()
     _validate_adjoint_problem(prob)
-    data = _recorded_forward_solve(
-        prob, alg.alg, "GlobalAdjoint", args...;
-        abstol, reltol, event_vjp = _event_vjp(alg), kwargs...
-    )
+    data = _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     _validate_adjoint_solution(data.sol)
     directions = _orthogonal_directions(prob.u0, alg.samples, alg.rng)
     return _adjoint_error_estimate(data, alg, directions; adjoint_abstol, adjoint_reltol)
@@ -413,17 +445,24 @@ function SciMLBase.__solve(
 
     for _ in 1:options.maxiters
         trial = _recorded_forward_solve(
-            prob, alg.alg, "GlobalAdjoint", args...;
-            abstol = local_abstol, reltol = local_reltol, event_vjp = _event_vjp(alg),
-            _with_copied_callback(kwargs)...
+            prob, alg, args...;
+            abstol = local_abstol, reltol = local_reltol, _with_copied_callback(kwargs)...
         )
         trial_sol = trial.sol
         _validate_adjoint_solution(trial_sol)
-        last_estimate = _adjoint_error_estimate(
+        # The estimates of the loop only have to be accurate against gtol: to about gtol / 10
+        # plus 0.5 % of the value (see the second adjoint solve in the extension). The
+        # accurate estimate decides near gtol, and it is the reported endpoint error. (The
+        # reported trajectory below is accurate relative to each value.)
+        loop_projections = _adjoint_projections(
             trial, alg, directions;
             adjoint_abstol = options.adjoint_abstol,
-            adjoint_reltol = options.adjoint_reltol
+            adjoint_reltol = options.adjoint_reltol, error_floor = gtol
         )
+        last_estimate = loop_projections.estimate
+        near = isfinite(last_estimate) && abs(last_estimate - gtol) <= gtol / 10 + 0.005 * last_estimate
+        reported = alg.scope === EndpointError && last_estimate <= gtol
+        (near || reported) && (last_estimate = _refine_estimate(loop_projections))
         isfinite(last_estimate) ||
             throw(ErrorException("the adjoint global error estimate is not finite"))
 
@@ -440,9 +479,7 @@ function SciMLBase.__solve(
                 )
             elseif alg.scope === TrajectoryError
                 final_data = _recorded_forward_solve(
-                    prob, alg.alg, "GlobalAdjoint", args...;
-                    abstol = local_abstol, reltol = local_reltol,
-                    event_vjp = _event_vjp(alg), kwargs...
+                    prob, alg, args...; abstol = local_abstol, reltol = local_reltol, kwargs...
                 )
                 final_data.sol
             else

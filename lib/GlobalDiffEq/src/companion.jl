@@ -138,19 +138,12 @@ Stores no dense solution (`O(1)` extra memory) and runs no second solve. Gives a
 estimate closely agreeing with [`InterpolatingMode`](@ref).
 """ SimultaneousMode
 
-# Out-of-place view of the (possibly in-place) user RHS, safe for dual numbers.
+# Out-of-place view of the (possibly in-place) user RHS, safe for dual numbers (`_rhs`).
 function _oop_rhs(prob)
     f = SciMLBase.unwrapped_f(prob.f)
-    if SciMLBase.isinplace(prob)
-        return let f = f
-            function (u, p, t)
-                du = similar(u)
-                f(du, u, p, t)
-                return du
-            end
-        end
-    else
-        return f
+    SciMLBase.isinplace(prob) || return f
+    return let f = f
+        (u, p, t) -> _rhs(f, true, u, p, t)
     end
 end
 
@@ -203,8 +196,9 @@ const _DENSE_SOLVE_KWARGS = (;
 
 # Endpoint-error refinement loop: solve, estimate the endpoint global error, and
 # tighten the local tolerances until the estimate is at most gtol; then redo the
-# solve, with `final_solve(abstol, reltol)` if given, else with the user's original
-# saving options.
+# solve, with `final_solve(abstol, reltol, result)` if given, else with the user's original
+# saving options. The estimator returns the estimate, or `(; estimate, ...)`; that `result`
+# of the accepted tolerances goes to `final_solve`.
 function _refine_to_gtol(
         estimator, prob, inner_alg, gtol, options, args...;
         final_solve = nothing, abstol, reltol, kwargs...
@@ -214,12 +208,13 @@ function _refine_to_gtol(
     last_estimate = oftype(float(gtol), Inf)
 
     for _ in 1:options.maxiters
-        last_estimate = estimator(local_abstol, local_reltol)
+        result = estimator(local_abstol, local_reltol)
+        last_estimate = result isa Number ? result : result.estimate
         isfinite(last_estimate) ||
             throw(ErrorException("the global error estimate is not finite"))
 
         if last_estimate <= gtol
-            final_solve === nothing || return final_solve(local_abstol, local_reltol)
+            final_solve === nothing || return final_solve(local_abstol, local_reltol, result)
             return SciMLBase.solve(
                 prob, inner_alg, args...;
                 abstol = local_abstol, reltol = local_reltol, kwargs...

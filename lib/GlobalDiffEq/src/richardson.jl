@@ -25,6 +25,9 @@ function SciMLBase.__solve(
         alg::GlobalRichardson, args...;
         dt, kwargs...
     )
+    # The solve pipeline has merged the problem's callback into `kwargs`, so it is removed
+    # from the problem: the inner solves would merge it a second time.
+    prob = @set prob.kwargs = _without_callback(prob.kwargs)
     opt = Dict(kwargs)
     otheropts = delete!(copy(opt), :dt)
     tstops = get(opt, :tstops, range(prob.tspan[1], stop = prob.tspan[2], step = dt))

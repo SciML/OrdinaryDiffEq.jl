@@ -1,10 +1,16 @@
 using GlobalDiffEq, OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqNonlinearSolve
 using SciMLSensitivity, LinearAlgebra, Test
+using Random: Xoshiro
 using DiffEqCallbacks: PresetTimeCallback, PeriodicCallback, SavingCallback, SavedValues,
     TerminateSteadyState
-import ADTypes
+import ADTypes, SciMLBase
 
 relerr(estimate, actual) = abs(estimate - actual) / abs(actual)
+
+# A parameter struct without `==` (`isequal` of two copies is false).
+mutable struct RateParameter
+    k::Vector{Float64}
+end
 
 # The estimate with one projection per state (the 2-norm of the linearized estimate, with
 # no sampling error) and the actual error of a plain solve at its final time (on a copy: an
@@ -79,6 +85,17 @@ end
     )
     exact = t -> (x = 2exp(-(t - fld(t, per) * per)); [x, cubic_z(x)])
     @test relerr(compare(reset, Rodas5P(), 1.0e-4, exact; adjoint_alg = fd)...) < 1.0e-3
+    # Global error control through the solve pipeline: the wrapper of `f` needs the dual
+    # signatures for the Jacobian of Rodas5P.
+    controlled = solve(smooth, GlobalAdjoint(Rodas5P(); gtol = 1.0e-4, adjoint_alg = fd))
+    @test SciMLBase.successful_retcode(controlled)
+    controlled_error = norm(controlled.u[end] .- [2exp(-5.0), cubic_z(2exp(-5.0))])
+    @test controlled_error < 1.0e-4
+    @test relerr(controlled.global_error[end], controlled_error) < 1.0e-4
+    # An explicit `1.0I` is the identity.
+    scaled_identity = ODEProblem(ODEFunction((u, p, t) -> -u; mass_matrix = 1.0I), [1.0, 1.0], (0.0, 1.0))
+    @test adjoint_error_estimate(scaled_identity, GlobalAdjoint(Tsit5(); rng = Xoshiro(4))) ≈
+        adjoint_error_estimate(ODEProblem((u, p, t) -> -u, [1.0, 1.0], (0.0, 1.0)), GlobalAdjoint(Tsit5(); rng = Xoshiro(4))) rtol = 1.0e-6
 end
 
 @testset "GlobalAdjoint: events that change the parameters" begin
@@ -170,6 +187,137 @@ end
         doublings = [round(Int, log2(u[1] / exp(-t))) for (t, u) in zip(sol.t, sol.u)]
         actual = [2.0^k * exp(-t) - u[1] for (k, t, u) in zip(doublings, sol.t, sol.u)]
         @test all(abs(e - abs(a)) <= 1.0e-2 * abs(a) + 1.0e-14 for (e, a) in zip(sol.global_error, actual))
+    end
+end
+
+@testset "GlobalAdjoint: a later call at one time is linearized after the earlier ones" begin
+    # At t = 1 the first callback doubles x and the second adds x² to y: the derivative of
+    # the second affect is 2x at the state after the doubling (at the state before it, the
+    # estimate was 0.89 of the error). Both the VJP and the finite-difference saltation.
+    pair = () -> CallbackSet(
+        DiscreteCallback((u, t, i) -> t == 1.0, i -> (i.u[1] *= 2; nothing)),
+        DiscreteCallback((u, t, i) -> t == 1.0, i -> (i.u[2] += i.u[1]^2; nothing))
+    )
+    prob = ODEProblem((u, p, t) -> [-u[1], -u[2]], [1.0, 1.0], (0.0, 2.0))
+    tol = 1.0e-6
+    ref = solve(prob, Tsit5(); callback = pair(), tstops = [1.0], abstol = 1.0e-13, reltol = 1.0e-13)
+    sol = solve(prob, Tsit5(); callback = pair(), tstops = [1.0], abstol = tol, reltol = tol)
+    actual = norm(ref.u[end] .- sol.u[end])
+    for sensealg in (nothing, InterpolatingAdjoint(autojacvec = false))
+        ga = GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), sensealg)
+        estimate = adjoint_error_estimate(
+            prob, ga; callback = pair(), tstops = [1.0], abstol = tol, reltol = tol
+        )
+        @test relerr(estimate, actual) < 1.0e-3
+    end
+end
+
+@testset "GlobalAdjoint: a DiscreteCallback that a continuous event triggers" begin
+    # x' = -x, y' = -y. At x = 0.5 the continuous event doubles x and sets a flag; at the
+    # same step end (the event ends a step in every solve) a DiscreteCallback adds x² to y
+    # and clears it. The discrete affect moves with the event time: one saltation matrix for
+    # both affects (in sequence the estimate was 0.64 / 1.68 of the error).
+    tied = () -> CallbackSet(
+        ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] *= 2; i.p[1] = 1.0; nothing)),
+        DiscreteCallback((u, t, i) -> i.p[1] == 1.0, i -> (i.u[2] += i.u[1]^2; i.p[1] = 0.0; nothing))
+    )
+    prob = () -> ODEProblem((u, p, t) -> [-u[1], -u[2]], [1.0, 1.0], (0.0, 2.0), [0.0])
+    tol = 1.0e-6
+    ref = solve(prob(), Tsit5(); callback = tied(), abstol = 1.0e-13, reltol = 1.0e-13)
+    sol = solve(prob(), Tsit5(); callback = tied(), abstol = tol, reltol = tol)
+    actual = norm(ref.u[end] .- sol.u[end])
+    for sensealg in (nothing, InterpolatingAdjoint(autojacvec = false))
+        ga = GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), sensealg)
+        estimate = adjoint_error_estimate(prob(), ga; callback = tied(), abstol = tol, reltol = tol)
+        @test relerr(estimate, actual) < 1.0e-3
+    end
+    # The four entries at the first event time (both callbacks save before and after their
+    # affects): the linearized error against the branch of the exact solution before the
+    # event, between the two affects, and after both, each continued to the event time.
+    trajectory = solve(
+        prob(), GlobalAdjoint(Tsit5(); gtol = 1.0, scope = TrajectoryError, samples = 2, adjoint_alg = Tsit5());
+        callback = tied(), abstol = tol, reltol = tol
+    )
+    at_event = findall(t -> abs(t - log(2)) < 1.0e-5, trajectory.t)
+    @test length(at_event) == 4
+    te = trajectory.t[first(at_event)]
+    branches = (
+        [exp(-te), exp(-te)], [2exp(-te), exp(-te)], [2exp(-te), exp(-te)],
+        [2exp(-te), exp(-te) + exp(-(te - log(2)))],
+    )
+    for (j, branch) in zip(at_event, branches)
+        @test relerr(trajectory.global_error[j], norm(branch .- trajectory.u[j])) < 1.0e-3
+    end
+end
+
+@testset "GlobalAdjoint: parameter structs without ==, a SavingCallback at an event" begin
+    # The affect resets x and sets the rate k = 2. With a struct without `==`, or a vector of
+    # such structs, the trial run of the affect is compared field by field (`isequal` of two
+    # copies is false).
+    rate(p::RateParameter) = p.k[1]
+    rate(p::Vector{RateParameter}) = rate(only(p))
+    rate(p) = p[1]
+    set_rate!(p::RateParameter) = (p.k[1] = 2.0)
+    set_rate!(p::Vector{RateParameter}) = set_rate!(only(p))
+    set_rate!(p) = (p[1] = 2.0)
+    reset = () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; set_rate!(i.p); nothing))
+    prob = p -> ODEProblem((u, p, t) -> [-rate(p) * u[1], -u[2]], [1.0, 1.0], (0.0, 2.0), p)
+    # The same directions in each estimate.
+    ga = () -> GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), rng = Xoshiro(5))
+    tol = 1.0e-6
+    vector = adjoint_error_estimate(prob([1.0]), ga(); callback = reset(), abstol = tol, reltol = tol)
+    for p in (RateParameter([1.0]), [RateParameter([1.0])])
+        @test adjoint_error_estimate(prob(p), ga(); callback = reset(), abstol = tol, reltol = tol) ≈
+            vector rtol = 1.0e-6
+    end
+    # A SavingCallback with such a struct changes nothing: no event for another adjoint method.
+    saving = () -> SavingCallback((u, t, i) -> copy(u), SavedValues(Float64, Vector{Float64}))
+    quadrature = () -> GlobalAdjoint(Tsit5(); sensealg = QuadratureAdjoint(), rng = Xoshiro(5))
+    @test adjoint_error_estimate(prob(RateParameter([1.0])), quadrature(); callback = saving()) ≈
+        adjoint_error_estimate(prob(RateParameter([1.0])), quadrature()) rtol = 1.0e-6
+    # The SavingCallback acts at the step end of the event too; its affect is not in the
+    # saltation matrix of the event (it cannot take the dual numbers of the VJP, which then
+    # used finite differences, with a warning).
+    both = CallbackSet(reset(), saving())
+    estimate = @test_logs min_level = Base.CoreLogging.Warn adjoint_error_estimate(
+        prob([1.0]), ga(); callback = both, abstol = tol, reltol = tol
+    )
+    @test estimate ≈ vector rtol = 1.0e-6
+end
+
+@testset "GlobalAdjoint: affects that read the derivative, integer time span" begin
+    # An affect that reads get_du is a function of u, p and t; the trial run gives f(u), which
+    # differs from the forward derivative by about the local error, so the check of the trial
+    # affect accepts it, and the difference is an error of the forward affect in the source
+    # term (without it the estimate was 1.6 % off).
+    kick = ContinuousCallback(
+        (u, t, i) -> u[1], i -> (i.u[2] = -0.8 * i.u[2] + 0.1 * SciMLBase.get_du(i)[1]; nothing)
+    )
+    osc = ODEProblem((u, p, t) -> [u[2], -u[1]], [1.0, 0.0], (0.0, 6.0); callback = kick)
+    ref = solve(osc, Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
+    estimate, actual = compare(osc, Tsit5(), 1.0e-7, t -> ref(t))
+    @test relerr(estimate, actual) < 1.0e-4
+    # An integer time span with an event.
+    reset = () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; nothing))
+    ga = GlobalAdjoint(Tsit5(); samples = 1, adjoint_alg = Tsit5())
+    @test adjoint_error_estimate(ODEProblem((u, p, t) -> -u, [1.0], (0, 2)), ga; callback = reset()) ≈
+        adjoint_error_estimate(ODEProblem((u, p, t) -> -u, [1.0], (0.0, 2.0)), ga; callback = reset()) rtol = 1.0e-6
+end
+
+@testset "GlobalAdjoint: callbacks that do not save after the affect" begin
+    # Without a save after the affect, the dense output of the next step starts from the
+    # state before it; the recorded solve saves the state after the event (the estimate was
+    # 3 to 5 times too large).
+    prob = ODEProblem((u, p, t) -> [-u[1], -u[2]], [1.0, 1.0], (0.0, 2.0))
+    xexact(t) = 2.0^floor(t / log(2)) * exp(-t)
+    for save_positions in ((true, true), (false, true), (true, false), (false, false))
+        callback = () -> ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] *= 2; nothing); save_positions)
+        sol = solve(prob, Tsit5(); callback = callback(), abstol = 1.0e-7, reltol = 1.0e-7)
+        estimate = adjoint_error_estimate(
+            prob, GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5());
+            callback = callback(), abstol = 1.0e-7, reltol = 1.0e-7
+        )
+        @test relerr(estimate, norm([xexact(2.0), exp(-2.0)] .- sol.u[end])) < 1.0e-3
     end
 end
 
@@ -292,23 +440,39 @@ end
     wallref = solve(walls(), Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
     @test relerr(compare(walls(), Tsit5(), 1.0e-6, wallref)...) < 1.0e-4
 
-    # An affect with internal state: it halves the velocity only at its second call. The trial
-    # runs use the state of the callback before each call. (Each solve gets a new problem:
-    # the forward solve advances the user's counter.)
-    counted = function ()
-        calls = Ref(0)
-        affect! = i -> (calls[] += 1; calls[] == 2 && (i.u[2] *= 0.5); nothing)
-        return ODEProblem(
-            (u, p, t) -> [u[2], -u[1]], [1.0, 0.0], (0.0, 10.0);
-            callback = ContinuousCallback((u, t, i) -> u[1], affect!)
+    # An affect with internal state: it halves the velocity only at its second call. As in
+    # SciMLSensitivity, the trial runs use one copy of the callback for the whole solve, so
+    # such an affect is not supported; the check finds it.
+    calls = Ref(0)
+    counted = ODEProblem(
+        (u, p, t) -> [u[2], -u[1]], [1.0, 0.0], (0.0, 10.0);
+        callback = ContinuousCallback(
+            (u, t, i) -> u[1], i -> (calls[] += 1; calls[] == 2 && (i.u[2] *= 0.5); nothing)
         )
-    end
-    countref = solve(counted(), Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
-    counted_estimate = adjoint_error_estimate(
-        counted(), GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5()); abstol = 1.0e-6, reltol = 1.0e-6
     )
-    counted_actual = norm(countref.u[end] .- solve(counted(), Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6).u[end])
-    @test relerr(counted_estimate, counted_actual) < 1.0e-4
+    @test_throws ArgumentError adjoint_error_estimate(
+        counted, GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5()); abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    # An affect that halves the velocity when its flag is true and flips the flag. The calls
+    # that change the state all have the flag true, as the trial copy of the callback; the
+    # others change nothing and are not checked. This is not support for affects with state
+    # in the callback (see the counter above), but the trial runs must not change that
+    # state: each one starts from its own copy of the trial callback, so the finite
+    # differences of one saltation matrix all see the same flag.
+    toggling = () -> (
+        flag = Ref(true);
+        ContinuousCallback((u, t, i) -> u[1], i -> (flag[] && (i.u[2] *= 0.5); flag[] = !flag[]; nothing))
+    )
+    swing = ODEProblem((u, p, t) -> [u[2], -u[1]], [1.0, 0.0], (0.0, 10.0))
+    swing_ref = solve(swing, Tsit5(); callback = toggling(), abstol = 1.0e-13, reltol = 1.0e-13)
+    swing_sol = solve(swing, Tsit5(); callback = toggling(), abstol = 1.0e-6, reltol = 1.0e-6)
+    for sensealg in (nothing, InterpolatingAdjoint(autojacvec = false))
+        estimate = adjoint_error_estimate(
+            swing, GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), sensealg);
+            callback = toggling(), abstol = 1.0e-6, reltol = 1.0e-6
+        )
+        @test relerr(estimate, norm(swing_ref.u[end] .- swing_sol.u[end])) < 1.0e-4
+    end
 
     # An affect at the initialization: the true solution starts with it too.
     initial = ODEProblem(
@@ -325,13 +489,38 @@ end
         cached, Tsit5(), 1.0e-6, t -> [exp(-t), exp(-2t)]
     )
     @test relerr(estimate, actual) < 1.0e-4
+    # The same for a DAE: the Jacobian at the final time uses finite differences, and the
+    # numerical VJP an in-place right-hand side (SciMLSensitivity's finite-difference
+    # Jacobian of an out-of-place DAE fails).
+    dae_cached = ODEProblem(
+        ODEFunction((u, p, t) -> (cache .= (-u[1], u[2] - 2u[1]); copy(cache)); mass_matrix = Diagonal([1.0, 0.0])),
+        [1.0, 2.0], (0.0, 1.0)
+    )
+    fd = Rodas5P(autodiff = ADTypes.AutoFiniteDiff())
+    estimate, actual = @test_logs (:warn, r"numerical VJP") match_mode = :any compare(
+        dae_cached, fd, 1.0e-6, t -> [exp(-t), 2exp(-t)]; adjoint_alg = fd
+    )
+    @test relerr(estimate, actual) < 1.0e-3
 end
 
 @testset "GlobalAdjoint: unsupported combinations" begin
     cb = ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> nothing)
     prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0); callback = cb)
     @test_throws ArgumentError solve(prob, GlobalAdjoint(Tsit5(); gtol = 1.0e-4, control = StepGridRefinement))
-    @test_throws ArgumentError adjoint_error_estimate(prob, GlobalAdjoint(Tsit5(); sensealg = QuadratureAdjoint()))
+    # Another adjoint method: an event that changes the state, or a DAE, fails (the event at
+    # its call, the DAE before the solve); a call that changes nothing (a SavingCallback) is
+    # no event.
+    quadrature = GlobalAdjoint(Tsit5(); sensealg = QuadratureAdjoint(), samples = 1)
+    reset = ContinuousCallback((u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; nothing))
+    decay = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
+    @test_throws ArgumentError adjoint_error_estimate(decay, quadrature; callback = reset)
+    @test_throws ArgumentError adjoint_error_estimate(
+        ODEProblem(ODEFunction((u, p, t) -> [-u[1], u[2] - u[1]]; mass_matrix = Diagonal([1.0, 0.0])), [1.0, 1.0], (0.0, 1.0)),
+        GlobalAdjoint(Rodas5P(); sensealg = QuadratureAdjoint())
+    )
+    saving = SavingCallback((u, t, i) -> copy(u), SavedValues(Float64, Vector{Float64}))
+    @test adjoint_error_estimate(decay, quadrature; callback = saving) ≈
+        adjoint_error_estimate(decay, quadrature) rtol = 1.0e-6
     @test_throws ArgumentError adjoint_error_estimate(
         prob, GlobalAdjoint(Tsit5(); sensealg = InterpolatingAdjoint(checkpointing = true))
     )
@@ -339,4 +528,8 @@ end
         ODEFunction((u, p, t) -> -u; mass_matrix = [1.0 0.5; 0.0 0.0]), [1.0, 1.0], (0.0, 1.0)
     )
     @test_throws ArgumentError adjoint_error_estimate(full, GlobalAdjoint(Rodas5P()))
+    # A multiple of the identity is not the identity: the error identity assumes M = I.
+    scaled = ODEProblem(ODEFunction((u, p, t) -> -u; mass_matrix = 2.0I), [1.0, 1.0], (0.0, 1.0))
+    @test_throws ArgumentError adjoint_error_estimate(scaled, GlobalAdjoint(Rodas5P()))
+    @test_throws ArgumentError solve(scaled, GlobalAdjoint(Rodas5P(); gtol = 1.0e-4))
 end

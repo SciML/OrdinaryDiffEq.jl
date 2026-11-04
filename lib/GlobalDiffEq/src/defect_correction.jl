@@ -19,7 +19,8 @@
 #
 # A DiscreteCallback with a state condition is checked only at the knots of P, where the
 # forward solve checked it, so that the true solution has a definition that does not
-# depend on the step grid of the companion.
+# depend on the step grid of the companion; and at the true event times, which end a step
+# in every solve (a DiscreteCallback that a continuous event triggers acts there).
 #
 # InterpolatingMode integrates the companion after the forward solve, against its stored
 # dense output (`_IntervalInterp`). SimultaneousMode advances one persistent companion
@@ -118,14 +119,17 @@ function _record_true_state!(records, P, integrator, first = false)
 end
 
 # The recorders, or nothing without a trajectory: the first one runs after the knot update
-# and before the user callbacks, the hook after each companion DiscreteCallback call, and
-# the last recorder after all of them.
+# and before the user callbacks, the hook after each companion DiscreteCallback call at a
+# knot (the trajectory has entries only there), and the last recorder after all of them.
 function _trajectory_recorders(P, trajectory, T)
     trajectory || return nothing, (), (), nothing
     records = Dict{T, Any}()
+    after_call = function (integrator)
+        _is_step_end(P, integrator.t) && _record_true_state!(records, P, integrator)
+        return nothing
+    end
     return records, (_true_state_recorder(P, records, true),),
-        (_true_state_recorder(P, records, false),),
-        integrator -> _record_true_state!(records, P, integrator)
+        (_true_state_recorder(P, records, false),), after_call
 end
 
 # The global error y(tᵢ) - uᵢ of each saved state of the forward solution. A callback can
@@ -137,10 +141,15 @@ end
 # state.
 function _trajectory_errors(sol, records, calls)
     t = sol.t
+    # The number of saves before each DiscreteCallback call, by time (one pass over the calls).
+    discrete_saves = Dict{eltype(t), Vector{Int}}()
+    for c in calls
+        c.discrete && push!(get!(discrete_saves, c.t, Int[]), c.saves)
+    end
     return map(eachindex(t)) do i
         t[i] == t[begin] && return zero(sol.u[i])
-        discrete = [c for c in calls if c.t == t[i] && c.discrete]
-        k = count(c -> c.saves < i, discrete)
+        discrete = get(discrete_saves, t[i], Int[])
+        k = count(<(i), discrete)
         states = records[t[i]]
         true_state = k == length(discrete) && k > 0 ? states[end] : states[min(1 + k, end)]
         return true_state .- sol.u[i]
@@ -152,7 +161,7 @@ end
 function _forward_call_saves(marks, events)
     calls = _forward_calls([(t, n) for (t, n, _) in marks], events)
     return [
-        (; t, discrete = last(first(labels)) == 0, saves = marks[k][3])
+        (; t, discrete = _is_discrete(first(labels)), saves = marks[k][3])
             for (k, (t, labels)) in enumerate(calls)
     ]
 end
@@ -168,6 +177,11 @@ mutable struct _TrueStateIntegrator{U, P, T, I, S, C}
     parent::I
     sol::S
     interp::C
+    # Whether the user callback called `terminate!` (see below).
+    terminated::Bool
+end
+function _TrueStateIntegrator(u, p, t, parent, sol, interp)
+    return _TrueStateIntegrator(u, p, t, parent, sol, interp, false)
 end
 
 # The true state at a time in the current forward interval (a SavingCallback with `saveat`
@@ -224,8 +238,13 @@ end
 # PeriodicCallback reads the last tstop before it adds the next one.
 DiffEqBase.get_tstops_max(integrator::_TrueStateIntegrator) = DiffEqBase.get_tstops_max(integrator.parent)
 # A terminating affect ends the forward solve at its event; the estimate is the error at that
-# time, so the true state goes on to it (the companion ends with the forward solve).
-SciMLBase.terminate!(::_TrueStateIntegrator, args...; kwargs...) = nothing
+# time, so the true state goes on to it (the companion ends with the forward solve). The
+# companion records the call, to compare the decision with the forward solve
+# (`_warn_if_events_differ`).
+function SciMLBase.terminate!(integrator::_TrueStateIntegrator, args...; kwargs...)
+    integrator.terminated = true
+    return nothing
+end
 # The derivative of the true state of an ODE is f(u, p, t) (TerminateSteadyState reads it).
 # For a DAE it has no value in the algebraic components.
 function SciMLBase.get_du(integrator::_TrueStateIntegrator)
@@ -263,13 +282,14 @@ function _true_state_integrator(ũ, integrator, P)
 end
 
 # Run `f!(true_state_integrator, args...)` on u = P(t) + e and write the result back to e.
+# Returns whether `f!` called `terminate!`.
 function _run_on_true_state!(f!, integrator, P, args...)
     Pt = P(integrator.t)
     true_state = _true_state_integrator(Pt .+ integrator.u, integrator, P)
     f!(true_state, args...)
     integrator.u .= true_state.u .- Pt
     true_state.p === integrator.p || (integrator.p = true_state.p)
-    return nothing
+    return true_state.terminated
 end
 
 function _true_state_initialize(callback, P)
@@ -286,6 +306,10 @@ end
 # fired component or a mask of all the components that fired at the same time.
 _fired_components(index::Integer) = (index,)
 _fired_components(mask) = findall(!iszero, mask)
+
+# Whether a label is the one of a DiscreteCallback (the kind of a VectorContinuousCallback
+# before `_record_event!` is `nothing`).
+_is_discrete(label) = last(label) === 0
 
 function _record_event!(events, label, args...)
     callback_number, kind = label
@@ -348,13 +372,17 @@ end
 # The condition and the affects of a user callback, applied to the true state. The
 # companion callbacks save nothing (the companion saves only its final value);
 # `after_call(integrator)` runs after each call (the error trajectory records the true state).
+# `record` holds the companion events, the times of the calls that terminate, and the time
+# of the last continuous event.
 function _recording_true_state_affect(
-        affect!, P, events, label, reinit, after_call = nothing
+        affect!, P, record, label, reinit, after_call = nothing
     )
     affect! === nothing && return nothing
     return function (integrator, args...)
-        _record_event!(events, label, args...)
-        _run_on_true_state!(affect!, integrator, P, args...)
+        _record_event!(record.events, label, args...)
+        _run_on_true_state!(affect!, integrator, P, args...) &&
+            push!(record.terminations, integrator.t)
+        _is_discrete(label) || (record.event_time[] = integrator.t)
         _reinitialize_true_state!(integrator, reinit)
         after_call === nothing || after_call(integrator)
         return nothing
@@ -368,7 +396,7 @@ _true_state_view(ũ, ::Nothing) = ũ
 _true_state_view(ũ, idxs) = view(ũ, idxs)
 
 function _companion_callback(
-        callback::SciMLBase.ContinuousCallback, P, events, number, reinit, _ = nothing
+        callback::SciMLBase.ContinuousCallback, P, record, number, reinit, _ = nothing
     )
     condition = function (e, t, integrator)
         ũ = P(t) .+ e
@@ -378,8 +406,8 @@ function _companion_callback(
     end
     return SciMLBase.ContinuousCallback(
         condition,
-        _recording_true_state_affect(callback.affect!, P, events, (number, 1), reinit),
-        _recording_true_state_affect(callback.affect_neg!, P, events, (number, -1), reinit),
+        _recording_true_state_affect(callback.affect!, P, record, (number, 1), reinit),
+        _recording_true_state_affect(callback.affect_neg!, P, record, (number, -1), reinit),
         _true_state_initialize(callback, P), _finalize_nothing, nothing,
         callback.rootfind, callback.interp_points, (false, false), callback.dtrelax,
         callback.abstol, callback.reltol, callback.repeat_nudge, SciMLBase.NoInit(),
@@ -388,7 +416,7 @@ function _companion_callback(
 end
 
 function _companion_callback(
-        callback::SciMLBase.VectorContinuousCallback, P, events, number, reinit, _ = nothing
+        callback::SciMLBase.VectorContinuousCallback, P, record, number, reinit, _ = nothing
     )
     condition = function (out, e, t, integrator)
         ũ = P(t) .+ e
@@ -399,7 +427,7 @@ function _companion_callback(
     end
     return SciMLBase.VectorContinuousCallback(
         condition,
-        _recording_true_state_affect(callback.affect!, P, events, (number, nothing), reinit),
+        _recording_true_state_affect(callback.affect!, P, record, (number, nothing), reinit),
         callback.len,
         _true_state_initialize(callback, P), _finalize_nothing, nothing,
         callback.rootfind, callback.interp_points, (false, false), callback.dtrelax,
@@ -411,17 +439,22 @@ end
 # The forward solve checks a DiscreteCallback only at its own step ends, so the
 # companion checks it only at the knots of P and at the final time, not at the step ends
 # of the companion. P(t) + e is the true state there on either side of the knot update.
+# A continuous event ends a step in every solve, so the true solution has a step end at its
+# own event time (`record.event_time`, the last continuous event of the companion), and not
+# at the time of the forward event (`record.event_knots`): the companion checks it there
+# instead.
 function _companion_callback(
-        callback::SciMLBase.DiscreteCallback, P, events, number, reinit, after_call = nothing
+        callback::SciMLBase.DiscreteCallback, P, record, number, reinit, after_call = nothing
     )
     condition = function (e, t, integrator)
-        _is_step_end(P, t) || return false
+        knot = _is_step_end(P, t) && !(t in record.event_knots)
+        knot || record.event_time[] == t || return false
         ũ = P(t) .+ e
         return callback.condition(ũ, t, _true_state_integrator(ũ, integrator, P))
     end
     return SciMLBase.DiscreteCallback(
         condition,
-        _recording_true_state_affect(callback.affect!, P, events, (number, 0), reinit, after_call),
+        _recording_true_state_affect(callback.affect!, P, record, (number, 0), reinit, after_call),
         _true_state_initialize(callback, P), _finalize_nothing, (false, false),
         SciMLBase.NoInit(), (), false
     )
@@ -557,13 +590,14 @@ end
 # starts again from the beginning, and the user's callback objects see only the forward
 # solve. `reinit` gives the companion reinitialization for the initialization algorithm
 # of a callback (see `_companion_reinit`); `after_call` goes to the DiscreteCallbacks.
+# `record` gets the companion events and the times of the terminating calls.
 function _companion_callbacks(
-        callback_list, P, companion_events, reinit, extra...; after_call = nothing
+        callback_list, P, record, reinit, extra...; after_call = nothing
     )
     return SciMLBase.CallbackSet(
         extra...,
         (
-            _companion_callback(c, P, companion_events, n, reinit(c.initializealg), after_call)
+            _companion_callback(c, P, record, n, reinit(c.initializealg), after_call)
                 for (n, c) in enumerate(callback_list)
         )...
     )
@@ -576,62 +610,139 @@ function _check_companion_retcode(retcode)
     return nothing
 end
 
-function _warn_if_events_differ(name, forward_events, companion_events)
-    sort(companion_events) == sort(forward_events) || @warn(
+# Warn if the events of the forward solve and of the true solution, as the companion
+# computes it, differ. `marks` holds the forward calls as (t, number of events before,
+# number of saves before). If the forward solve terminates, its continuous events at its
+# end time can be absent in the companion: the true event can come after that time, where
+# the companion does not go; so can the DiscreteCallback events after them, which the event
+# triggers at its step end. Other DiscreteCallback events at that time are checked at the
+# same time in both, so they must agree. Also warn if one of the two terminates at an event
+# and the other not.
+function _warn_if_events_differ(name, forward_events, record, marks, retcode, t_end)
+    companion_events = record.events
+    terminated = retcode == SciMLBase.ReturnCode.Terminated
+    final_call = findfirst(m -> m[1] == t_end, marks)
+    first_final = final_call === nothing ? length(forward_events) + 1 : marks[final_call][2] + 1
+    final = forward_events[first_final:end]
+    first_continuous = something(findfirst(!_is_discrete, final), length(final) + 1)
+    required = terminated ?
+        [forward_events[1:(first_final - 1)]; final[1:(first_continuous - 1)]] : forward_events
+    same = sort(companion_events) == sort(forward_events)
+    same || sort(companion_events) == sort(required) || @warn(
         "$name: the events of the forward solve and of the true solution, as the " *
             "companion computes it, are different (forward: $(length(forward_events)), " *
             "true: $(length(companion_events))). The estimate includes the difference, " *
             "but it is sensitive to the event times."
     )
+    if !terminated && !isempty(record.terminations)
+        @warn(
+            "$name: the true solution, as the companion computes it, terminates at " *
+                "t = $(first(record.terminations)), but the forward solve does not. The " *
+                "estimate is the error at the end time of the forward solve."
+        )
+    elseif terminated && same && isempty(record.terminations)
+        @warn(
+            "$name: the forward solve terminates at t = $t_end, but the true solution, as " *
+                "the companion computes it, does not terminate at the same event. The " *
+                "estimate is the error at the end time of the forward solve."
+        )
+    end
     return nothing
 end
 
+# The parts of a DefectCorrection estimate that both modes share. First the forward setup:
+# the user callbacks, the companion's copy of them (made before the forward solve changes
+# them), the forward events, the marks of the forward calls (`_mark_call!`), the times of
+# the forward continuous events (`event_knots`), and the forward problem and callbacks.
+# `hook(marks, events)` gives the rest of the `before` function of the forward affects
+# (`_forward_setup`). The times are floats, also for an integer time span.
+function _defect_correction_forward(name, prob, kwargs, hook)
+    _validate_estimation_problem(prob, name; events = true)
+    callback_list = _callback_list(_user_callbacks(prob, kwargs))
+    companion_list = deepcopy(callback_list)
+    events = Tuple{Int, Int}[]
+    T = float(eltype(prob.tspan))
+    marks = Tuple{T, Int, Int}[]
+    event_knots = Set{T}()
+    rest = hook(marks, events)
+    before = function (integrator, label, args...)
+        _is_discrete(label) || push!(event_knots, integrator.t)
+        return rest(integrator, label, args...)
+    end
+    forward_prob, forward_callbacks = _forward_setup(prob, callback_list, events, before)
+    return (; companion_list, events, marks, event_knots, forward_prob, forward_callbacks)
+end
+
+# The companion callbacks: the user callbacks on the true state, `extra` callbacks (the knot
+# update of InterpolatingMode) and, with `trajectory`, the recorders of the true state.
+# `record` gets the companion events and terminations, and has the times of the forward
+# continuous events (see `_companion_callback` for a DiscreteCallback).
+function _defect_correction_callbacks(forward, P, prob, kwargs, companion_abstol, trajectory, extra...)
+    T = float(eltype(prob.tspan))
+    record = (;
+        events = Tuple{Int, Int}[], terminations = T[], event_time = Ref(T(NaN)),
+        forward.event_knots,
+    )
+    records, first_recorder, last_recorder, after_call = _trajectory_recorders(P, trajectory, T)
+    callback = SciMLBase.CallbackSet(
+        _companion_callbacks(
+            forward.companion_list, P, record,
+            alg -> _companion_reinit(alg, prob, kwargs, companion_abstol),
+            extra..., first_recorder...; after_call
+        ),
+        last_recorder...
+    )
+    return (; record, records, callback)
+end
+
+# The result: the warning about the events, and the 2-norm of the endpoint error, or with
+# `trajectory` also the forward solution with the error of each saved state in
+# `global_error`, as `(; estimate, sol)`. `t_end` is the end time of the forward solve (a
+# solution that saves only some steps can end before it).
+function _defect_correction_result(
+        name, forward, callbacks, sol, endpoint_error, trajectory; t_end = sol.t[end]
+    )
+    _warn_if_events_differ(name, forward.events, callbacks.record, forward.marks, sol.retcode, t_end)
+    estimate = LinearAlgebra.norm(endpoint_error)
+    trajectory || return estimate
+    calls = _forward_call_saves(forward.marks, forward.events)
+    return (; estimate, sol = @set sol.global_error = _trajectory_errors(sol, callbacks.records, calls))
+end
+
 # InterpolatingMode: dense forward solve, then the companion against its interpolant.
-# Returns the 2-norm of the endpoint error estimate, or with `trajectory = true` the
-# forward solution with the error of each saved state in `global_error`.
+# Returns the 2-norm of the endpoint error estimate, or with `trajectory = true` also the
+# forward solution with the error of each saved state (`_defect_correction_result`).
 function _defect_correction_estimate(
         name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, trajectory = false, kwargs...
     )
-    _validate_estimation_problem(prob, name; events = true)
-    callback_list = _callback_list(_user_callbacks(prob, kwargs))
-    companion_list = deepcopy(callback_list)
-    forward_events = Tuple{Int, Int}[]
-    marks = Tuple{eltype(prob.tspan), Int, Int}[]
-    record_call = trajectory ?
-        (integrator, _...) -> _mark_call!(marks, forward_events, integrator) : nothing
-    forward_prob, forward_callbacks = _forward_setup(prob, callback_list, forward_events, record_call)
-    solve_kwargs = merge(_without_callback(kwargs), _DENSE_SOLVE_KWARGS)
-    forward = SciMLBase.init(
-        forward_prob, inner_alg, args...;
-        abstol, reltol, callback = forward_callbacks, solve_kwargs...
+    forward = _defect_correction_forward(
+        name, prob, kwargs,
+        (marks, events) -> (integrator, _...) -> _mark_call!(marks, events, integrator)
     )
-    u_init = copy(forward.u)
-    sol = SciMLBase.solve!(forward)
+    integrator = SciMLBase.init(
+        forward.forward_prob, inner_alg, args...;
+        abstol, reltol, callback = forward.forward_callbacks,
+        merge(_without_callback(kwargs), _DENSE_SOLVE_KWARGS)...
+    )
+    u_init = copy(integrator.u)
+    sol = SciMLBase.solve!(integrator)
     _validate_estimation_solution(sol, name)
 
     knots, jumps = _knot_jumps(sol)
     T = sol.t[end]
     P = _IntervalInterp(sol, [knots; T], 1)
-    companion_events = Tuple{Int, Int}[]
     knot_callback = SciMLBase.DiscreteCallback(
         (e, t, integrator) -> insorted(t, knots),
         integrator -> _knot_update!(integrator, P, knots, jumps);
         save_positions = (false, false), initializealg = SciMLBase.NoInit()
     )
-    records, first_recorder, last_recorder, after_call =
-        _trajectory_recorders(P, trajectory, eltype(sol.t))
+    callbacks = _defect_correction_callbacks(
+        forward, P, prob, kwargs, companion_abstol, trajectory, knot_callback
+    )
     companion = SciMLBase.init(
         _companion_problem(prob, P, (prob.tspan[1], T)), companion_alg;
-        abstol = companion_abstol, reltol = companion_reltol,
-        callback = SciMLBase.CallbackSet(
-            _companion_callbacks(
-                companion_list, P, companion_events,
-                alg -> _companion_reinit(alg, prob, kwargs, companion_abstol),
-                knot_callback, first_recorder...; after_call
-            ),
-            last_recorder...
-        ),
+        abstol = companion_abstol, reltol = companion_reltol, callbacks.callback,
         tstops = knots, dense = false, save_everystep = false, save_start = false,
         save_end = true, initializealg = SciMLBase.NoInit()
     )
@@ -642,14 +753,11 @@ function _defect_correction_estimate(
     SciMLBase.set_u!(companion, u_init .- P(prob.tspan[1]))
     companion_sol = SciMLBase.solve!(companion)
     _check_companion_retcode(companion_sol.retcode)
-    _warn_if_events_differ(name, forward_events, companion_events)
 
     # The companion gives the error against P(T⁻); the saved state u(T) can differ from
     # P(T⁻), for example after an event at the final time.
     endpoint_error = companion_sol.u[end] .- (sol.u[end] .- sol(T; continuity = :left))
-    trajectory || return LinearAlgebra.norm(endpoint_error)
-    calls = _forward_call_saves(marks, forward_events)
-    return @set sol.global_error = _trajectory_errors(sol, records, calls)
+    return _defect_correction_result(name, forward, callbacks, sol, endpoint_error, trajectory)
 end
 
 # Record a forward call: its time, the number of events before it, and the number of saved
@@ -726,10 +834,23 @@ function _advance_streaming_companion!(state, forward)
     if state.started
         SciMLBase.set_u!(companion, companion.u .- (forward(forward.tprev) .- state.last_end))
     end
-    _with_companion_keys(() -> SciMLBase.step!(companion, t - companion.t, true), state.storage)
+    _with_companion_keys(() -> _step_to!(companion, t), state.storage)
     _check_companion_retcode(SciMLBase.check_error(companion))
     state.last_end = forward(t)
     state.started = true
+    return nothing
+end
+
+# Step the integrator to exactly t, with a tstop at t. `step!(integrator, t - integrator.t,
+# true)` stops at integrator.t + (t - integrator.t), which differs from t in the last bit
+# when t > 2 integrator.t; the companion must stop at the forward step end itself.
+function _step_to!(integrator, t)
+    SciMLBase.add_tstop!(integrator, t)
+    while integrator.t < t
+        SciMLBase.step!(integrator)
+        integrator.sol.retcode in (SciMLBase.ReturnCode.Default, SciMLBase.ReturnCode.Success) ||
+            break
+    end
     return nothing
 end
 
@@ -737,51 +858,40 @@ function _defect_correction_estimate_streaming(
         name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, trajectory = false, kwargs...
     )
-    _validate_estimation_problem(prob, name; events = true)
-    callback_list = _callback_list(_user_callbacks(prob, kwargs))
-    companion_list = deepcopy(callback_list)
-    forward_events = Tuple{Int, Int}[]
-    companion_events = Tuple{Int, Int}[]
-    state_ref = Ref{Any}(nothing)
     # A forward affect advances the companion to the event time first. An affect during
     # the forward initialization (before the companion exists) needs no advance.
-    marks = Tuple{eltype(prob.tspan), Int, Int}[]
-    before = function (forward, _...)
-        trajectory && _mark_call!(marks, forward_events, forward)
-        state_ref[] === nothing || _advance_streaming_companion!(state_ref[], forward)
-        return nothing
-    end
-    forward_prob, forward_callbacks = _forward_setup(prob, callback_list, forward_events, before)
+    state_ref = Ref{Any}(nothing)
+    forward = _defect_correction_forward(
+        name, prob, kwargs,
+        (marks, events) -> function (integrator, _...)
+            # Without a trajectory only the marks of the latest call time are needed (the
+            # calls at the end time, `_warn_if_events_differ`), so the memory stays O(1).
+            trajectory || isempty(marks) || first(last(marks)) == integrator.t || empty!(marks)
+            _mark_call!(marks, events, integrator)
+            state_ref[] === nothing || _advance_streaming_companion!(state_ref[], integrator)
+            return nothing
+        end
+    )
     # The error trajectory needs the saved state at each forward step.
     save_kwargs = trajectory ? merge(_without_callback(kwargs), _DENSE_SOLVE_KWARGS) :
         (;
             dense = true, save_everystep = false, save_start = true, save_end = true,
             _without_callback(kwargs)...,
         )
-    forward = SciMLBase.init(
-        forward_prob, inner_alg, args...;
-        abstol, reltol, callback = forward_callbacks, save_kwargs...
+    integrator = SciMLBase.init(
+        forward.forward_prob, inner_alg, args...;
+        abstol, reltol, callback = forward.forward_callbacks, save_kwargs...
     )
-    _validate_streaming_interpolation(forward.sol, name)
+    _validate_streaming_interpolation(integrator.sol, name)
 
-    P = _LiveInterp(forward)
-    records, first_recorder, last_recorder, after_call = _trajectory_recorders(
-        P, trajectory, eltype(forward.sol.t)
-    )
+    P = _LiveInterp(integrator)
+    callbacks = _defect_correction_callbacks(forward, P, prob, kwargs, companion_abstol, trajectory)
     storage = IdDict{Any, Any}()
     companion = _with_task_storage(storage) do
         SciMLBase.init(
             _companion_problem(prob, P, prob.tspan), companion_alg;
-            abstol = companion_abstol, reltol = companion_reltol,
-            callback = SciMLBase.CallbackSet(
-                _companion_callbacks(
-                    companion_list, P, companion_events,
-                    alg -> _companion_reinit(alg, prob, kwargs, companion_abstol),
-                    first_recorder...; after_call
-                ),
-                last_recorder...
-            ), dense = false,
-            save_everystep = false, save_start = false, save_end = false,
+            abstol = companion_abstol, reltol = companion_reltol, callbacks.callback,
+            dense = false, save_everystep = false, save_start = false, save_end = false,
             initializealg = SciMLBase.NoInit()
         )
     end
@@ -790,17 +900,15 @@ function _defect_correction_estimate_streaming(
     SciMLBase.set_u!(companion, zero(companion.u))
     state = _StreamingCompanion(companion, copy(prob.u0), false, storage)
     state_ref[] = state
-    for _ in forward
-        _advance_streaming_companion!(state, forward)
+    for _ in integrator
+        _advance_streaming_companion!(state, integrator)
     end
-    SciMLBase.successful_retcode(forward.sol) ||
-        throw(ErrorException("the forward solve failed with retcode $(forward.sol.retcode)"))
-    _warn_if_events_differ(name, forward_events, companion_events)
+    SciMLBase.successful_retcode(integrator.sol) ||
+        throw(ErrorException("the forward solve failed with retcode $(integrator.sol.retcode)"))
 
     # As in InterpolatingMode: the error against P(T⁻), corrected to the saved state.
-    endpoint_error = companion.u .- (forward.u .- state.last_end)
-    trajectory || return LinearAlgebra.norm(endpoint_error)
-    sol = forward.sol
-    calls = _forward_call_saves(marks, forward_events)
-    return @set sol.global_error = _trajectory_errors(sol, records, calls)
+    endpoint_error = companion.u .- (integrator.u .- state.last_end)
+    return _defect_correction_result(
+        name, forward, callbacks, integrator.sol, endpoint_error, trajectory; t_end = integrator.t
+    )
 end
