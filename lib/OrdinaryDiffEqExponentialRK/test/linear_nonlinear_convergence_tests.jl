@@ -321,4 +321,17 @@ end
         @test norm(sol_partial.u[end] - exact(1.0), Inf) < 1.0e-10
         @test norm(sol_partial(0.55) - exact(0.55), Inf) < 1.0e-4
     end
+
+    # the embedded pairs reuse their stage buffers as scratch as well, and their second
+    # estimate reads the nonlinearity at the new solution, which only runs while the
+    # step size is adapting
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+        prob_partial = SplitODEProblem(A, f2_partial!, u0, tspan)
+        prob_full = SplitODEProblem(A, f2_full!, u0, tspan)
+        sol_partial = solve(prob_partial, Alg(; krylov); abstol = 1.0e-9, reltol = 1.0e-9)
+        sol_full = solve(prob_full, Alg(; krylov); abstol = 1.0e-9, reltol = 1.0e-9)
+        @test sol_partial.t == sol_full.t
+        @test sol_partial.u[end] ≈ sol_full.u[end]
+        @test norm(sol_partial.u[end] - exact(1.0), Inf) < 1.0e-10
+    end
 end

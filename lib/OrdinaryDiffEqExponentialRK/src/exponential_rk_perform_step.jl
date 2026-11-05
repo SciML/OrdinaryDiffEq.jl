@@ -1095,14 +1095,14 @@ function perform_step!(integrator, cache::ERK32ZBCache, repeat_step = false)
         # stage 2
         mul!(rtmp, A21, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
-        f.f2(F2, tmp, p, t + halfdt)
+        _f2!(f, F2, tmp, p, t + halfdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A31, F1)
         mul!(rtmp2, A32, F2)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
-        f.f2(F3, tmp, p, t + threequarterdt)
+        _f2!(f, F3, tmp, p, t + threequarterdt)
         F3 .+= Au
         # update u with the third order estimate
         mul!(rtmp, B1, F1)
@@ -1113,7 +1113,7 @@ function perform_step!(integrator, cache::ERK32ZBCache, repeat_step = false)
         @muladd @.. broadcast = false u = uprev + dt * rtmp
         if integrator.opts.adaptive
             # the second order estimate uses the nonlinearity at the new solution
-            f.f2(F4, u, p, t + dt)
+            _f2!(f, F4, u, p, t + dt)
             F4 .+= Au
             nf2 += 1
             mul!(rtmp, E1, F1)
@@ -1394,14 +1394,14 @@ function perform_step!(integrator, cache::ERK43ZBCache, repeat_step = false)
         # stage 2
         mul!(rtmp, A21, F1)
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U2
-        f.f2(F2, tmp, p, t + sixthdt)
+        _f2!(f, F2, tmp, p, t + sixthdt)
         F2 .+= Au
         # stage 3
         mul!(rtmp, A31, F1)
         mul!(rtmp2, A32, F2)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U3
-        f.f2(F3, tmp, p, t + halfdt)
+        _f2!(f, F3, tmp, p, t + halfdt)
         F3 .+= Au
         # stage 4
         mul!(rtmp, A41, F1)
@@ -1410,7 +1410,7 @@ function perform_step!(integrator, cache::ERK43ZBCache, repeat_step = false)
         mul!(rtmp2, A43, F3)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U4
-        f.f2(F4, tmp, p, t + halfdt)
+        _f2!(f, F4, tmp, p, t + halfdt)
         F4 .+= Au
         # stage 5 is the third order estimate
         mul!(rtmp, A51, F1)
@@ -1421,7 +1421,7 @@ function perform_step!(integrator, cache::ERK43ZBCache, repeat_step = false)
         mul!(rtmp2, A54, F4)
         rtmp .+= rtmp2
         @muladd @.. broadcast = false tmp = uprev + dt * rtmp # tmp is U5
-        f.f2(F5, tmp, p, t + dt)
+        _f2!(f, F5, tmp, p, t + dt)
         F5 .+= Au
         integrator.stats.nf2 += 4
         # update u with the fourth order estimate
