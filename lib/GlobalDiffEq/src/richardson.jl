@@ -20,6 +20,8 @@ SciMLBase.forwarddiffs_model(alg::GlobalRichardson) =
 SciMLBase.forwarddiff_chunksize(alg::GlobalRichardson) =
     SciMLBase.forwarddiff_chunksize(alg.alg)
 
+_without_callback(kwargs) = (; (k => v for (k, v) in pairs(kwargs) if k !== :callback)...)
+
 function SciMLBase.__solve(
         prob::Union{SciMLBase.AbstractODEProblem, SciMLBase.AbstractDAEProblem},
         alg::GlobalRichardson, args...;

@@ -522,7 +522,6 @@ function _user_callbacks(prob, kwargs)
     return SciMLBase.CallbackSet(from_problem, from_solve)
 end
 
-_without_callback(kwargs) = (; (k => v for (k, v) in pairs(kwargs) if k !== :callback)...)
 _with_copied_callback(kwargs) =
     haskey(kwargs, :callback) ? (; kwargs..., callback = deepcopy(kwargs[:callback])) : kwargs
 
