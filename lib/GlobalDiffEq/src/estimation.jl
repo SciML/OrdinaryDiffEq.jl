@@ -97,6 +97,10 @@ end
 SciMLBase.allows_arbitrary_number_types(::GlobalErrorEstimation) = false
 SciMLBase.allowscomplex(::GlobalErrorEstimation) = false
 SciMLBase.isautodifferentiable(::GlobalErrorEstimation) = false
+# The outer solve wraps `f` based on these traits, and the inner solves keep that wrapper.
+# Without them, an implicit solver finds no dual signature.
+SciMLBase.forwarddiffs_model(alg::GlobalErrorEstimation) = SciMLBase.forwarddiffs_model(alg.alg)
+SciMLBase.forwarddiff_chunksize(alg::GlobalErrorEstimation) = SciMLBase.forwarddiff_chunksize(alg.alg)
 
 """
     global_error_estimate(prob, alg::GlobalErrorEstimation; abstol=1e-6, reltol=1e-3, kwargs...)
