@@ -28,6 +28,8 @@ TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+# ForwardDiff (MIT license): used only in tests to differentiate through the
+# AdaptiveOrder solve with a Dual-typed tspan.
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
 # DiffEqDevTools brings Latexify; releases compatible with Symbolics 7 require OrderedCollections 1.
