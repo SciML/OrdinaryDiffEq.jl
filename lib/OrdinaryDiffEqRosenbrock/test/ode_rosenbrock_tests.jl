@@ -364,6 +364,20 @@ end
     @test sim.𝒪est[:final] ≈ 3 atol = testTol
 end
 
+@testset "Rosenbrock23 and Rosenbrock32 with a time-dependent right-hand side" begin
+    analytic = (u0, p, t) -> u0 * exp(t^2 / 2)
+    prob_oop = ODEProblem(ODEFunction((u, p, t) -> t * u; analytic), 1.0, (0.0, 1.0))
+    prob_iip = ODEProblem(
+        ODEFunction((du, u, p, t) -> (du[1] = t * u[1]); analytic), [1.0], (0.0, 1.0)
+    )
+    for prob in (prob_oop, prob_iip)
+        sim = test_convergence((1 / 2) .^ (8:-1:5), prob, Rosenbrock32())
+        @test sim.𝒪est[:final] ≈ 3 atol = 0.2
+        sol = solve(prob, Rosenbrock23(); abstol = 1.0e-6, reltol = 1.0e-6)
+        @test length(sol.t) < 60
+    end
+end
+
 @testset "ADTypes" begin
     for T in [
             Rosenbrock23,
