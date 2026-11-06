@@ -204,6 +204,9 @@ instead, at the cost of one more interpolation.
 # Example
 
 ```julia
+using OrdinaryDiffEqTsit5
+using DiffEqBase: ConditionWithDerivative
+
 # u' = -u from u(0) = 1, so u[1] reaches 1/2 at t = log(2).
 function dudt!(du, u, p, t)
     du[1] = -u[1]
@@ -233,21 +236,28 @@ end
 
 # Condition of `callback` for the root finder, which also keeps the derivative at the last
 # time. `NewtonBisection` asks for the derivative right after the condition at the same
-# time, so both come from one interpolation of the state.
-mutable struct ConditionAndDerivative{I, C, T, D}
+# time, so both come from one interpolation of the state. The condition at the start of
+# the step is already known from the event detection, so it is kept with its derivative.
+mutable struct ConditionAndDerivative{I, C, T, G, D}
     const integrator::I
     const callback::C
+    const bottom_t::T
+    const bottom_condition::G
+    const bottom_derivative::D
     t::T
     derivative::D
 end
 
-function ConditionAndDerivative(integrator, callback, t)
+function ConditionAndDerivative(integrator, callback, bottom_t, bottom_condition)
+    bottom_derivative = get_condition_derivative(integrator, callback, bottom_t)
     return ConditionAndDerivative(
-        integrator, callback, t, get_condition_derivative(integrator, callback, t)
+        integrator, callback, bottom_t, bottom_condition, bottom_derivative,
+        bottom_t, bottom_derivative
     )
 end
 
 function (c::ConditionAndDerivative)(abst, p = nothing)
+    abst == c.bottom_t && return c.bottom_condition
     (; integrator, callback) = c
     u = condition_state(integrator, callback, abst)
     integrator.sol.stats.ncondition += 1
@@ -257,6 +267,7 @@ function (c::ConditionAndDerivative)(abst, p = nothing)
 end
 
 function condition_derivative(c::ConditionAndDerivative, abst)
+    abst == c.bottom_t && return c.bottom_derivative
     abst == c.t && return c.derivative
     return get_condition_derivative(c.integrator, c.callback, abst)
 end
@@ -604,7 +615,7 @@ end
         residual = zero(bottom_condition)
     elseif callback.condition isa ConditionWithDerivative
         # Find callback time with Newton steps
-        condition = ConditionAndDerivative(integrator, callback, bottom_t)
+        condition = ConditionAndDerivative(integrator, callback, bottom_t, bottom_condition)
         derivative = ConditionDerivative(condition)
         callback_t = find_root(condition, derivative, (bottom_t, top_t), callback.rootfind)
         residual = condition(callback_t)
