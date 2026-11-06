@@ -39,8 +39,9 @@ an explicit algorithm for an ODE problem.
 `DefaultODEAlgorithm` starts with explicit nonstiff methods and switches to stiff
 methods when stiffness is detected. It chooses among `Tsit5`, `Vern7`,
 `Rosenbrock23`, `Rodas5P`, and `FBDF`. Stiff systems with more than 500 states use
-Krylov-based (matrix-free) `FBDF`, unless `f.jac_prototype` is a sparse or structured
-(non-dense) matrix, in which case `FBDF` factorizes the Jacobian built from that prototype.
+Krylov-based (matrix-free) `FBDF`, unless `f.jac_prototype` is a CPU `SparseMatrixCSC`,
+or a `Diagonal` or `Tridiagonal` backed by a CPU `Vector`. These prototypes use
+`FBDF` with a factorized Jacobian.
 
 # Keywords
 
@@ -153,7 +154,9 @@ function nonstiffchoice(reltol)
     return Int(x)
 end
 
-has_structured_jac_prototype(jac_prototype::AbstractMatrix) = !(jac_prototype isa DenseMatrix)
+has_structured_jac_prototype(
+    ::Union{SparseMatrixCSC, Diagonal{<:Any, <:Vector}, Tridiagonal{<:Any, <:Vector}}
+) = true
 has_structured_jac_prototype(jac_prototype) = false
 
 function stiffchoice(reltol, len, mass_matrix, structured_jac_prototype = false)

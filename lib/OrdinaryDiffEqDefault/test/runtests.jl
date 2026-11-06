@@ -33,6 +33,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test !any(Base.isexported.(Ref(OrdinaryDiffEqDefault), internal))
     end
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
+    @time @safetestset "Jacobian prototype storage" include("jac_prototype_tests.jl")
 end
 
 # Run QA tests (JET, Aqua)
