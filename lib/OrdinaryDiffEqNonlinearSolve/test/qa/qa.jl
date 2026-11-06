@@ -60,7 +60,7 @@ run_qa(
                 # OrdinaryDiffEqDifferentiation W-operator types (attributed to SciMLOperators).
                 :WOperator, :StaticWOperator,
                 # OrdinaryDiffEqDifferentiation:
-                :build_J_W, :build_jac_config, :build_uf, :dolinsolve,
+                :build_J_W, :build_uf, :dolinsolve,
                 :is_always_new, :jacobian!, :jacobian2W!, :resize_jac_config!,
                 :update_W!, :wrapprecs,
                 # ForwardDiff / StaticArraysCore internals.
