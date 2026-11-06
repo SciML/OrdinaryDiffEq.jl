@@ -62,3 +62,38 @@ using Test
         @test jac_points[end] ≈ integrator.u rtol = 1.0e-3
     end
 end
+
+@testset "NLNewton(always_new = true) analytic decay" begin
+    decay(u, p, t) = -u .^ 2
+    decay!(du, u, p, t) = (du .= -u .^ 2; nothing)
+    residual(du, u, p, t) = du + u .^ 2
+    residual!(res, du, u, p, t) = (res .= du + u .^ 2; nothing)
+
+    @testset "$(nameof(alg)) $(iip ? "iip" : "oop")" for alg in (FBDF, QNDF, TRBDF2, ImplicitEuler),
+            iip in (true, false)
+        prob = ODEProblem{iip}(iip ? decay! : decay, [1.0], (0.0, 1.0))
+        integrator = init(
+            prob, alg(nlsolve = NLNewton(always_new = true)),
+            abstol = 1.0e-9, reltol = 1.0e-9
+        )
+        sol = solve!(integrator)
+        @test SciMLBase.successful_retcode(sol)
+        @test only(sol.u[end]) ≈ 1 / 2 atol = 1.0e-4 rtol = 0
+
+        reinit!(integrator, [2.0])
+        sol = solve!(integrator)
+        @test SciMLBase.successful_retcode(sol)
+        @test only(sol.u[end]) ≈ 2 / 3 atol = 1.0e-4 rtol = 0
+    end
+
+    @testset "$(nameof(alg)) $(iip ? "iip" : "oop")" for alg in (DImplicitEuler, DABDF2, DFBDF),
+            iip in (true, false)
+        prob = DAEProblem{iip}(iip ? residual! : residual, [-1.0], [1.0], (0.0, 1.0))
+        sol = solve(
+            prob, alg(nlsolve = NLNewton(always_new = true)),
+            abstol = 1.0e-9, reltol = 1.0e-9
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test only(sol.u[end]) ≈ 1 / 2 atol = 1.0e-4 rtol = 0
+    end
+end
