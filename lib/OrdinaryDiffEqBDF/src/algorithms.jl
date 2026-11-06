@@ -576,7 +576,8 @@ end
 Performs a single BDF3 nonlinear solve per step, then applies two cheap linear
 time-filter post-processing steps to produce embedded solutions at orders 2 and 4.
 This yields error estimates at three orders, enabling VSVO behavior at the cost of
-a single implicit solve per step.",
+a single implicit solve per step. Requires adaptive stepping (`adaptive = true`);
+initialization with `adaptive = false` throws an `ArgumentError`.",
     "MOOSE234",
     references = """@article{decaria2018variable,
     title={A variable stepsize, variable order family of low complexity},

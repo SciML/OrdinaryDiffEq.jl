@@ -805,6 +805,7 @@ end
 # ============================================================================
 
 function initialize!(integrator, cache::MOOSE234ConstantCache)
+    integrator.opts.adaptive || throw(ArgumentError("MOOSE234 requires adaptive=true."))
     integrator.kshortsize = 5 # max_order(4) + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -1053,6 +1054,7 @@ function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = f
 end
 
 function initialize!(integrator, cache::MOOSE234Cache)
+    integrator.opts.adaptive || throw(ArgumentError("MOOSE234 requires adaptive=true."))
     integrator.kshortsize = 5 # max_order(4) + 1
 
     resize!(integrator.k, integrator.kshortsize)

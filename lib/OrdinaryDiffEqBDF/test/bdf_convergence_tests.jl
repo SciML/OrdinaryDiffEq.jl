@@ -117,7 +117,6 @@ end
     #FBDF
     @test_nowarn solve(prob, FBDF())
 
-    # MOOSE234 — VSVO method, test_convergence with fixed dt is not applicable
     @test_nowarn solve(prob, MOOSE234())
 
     sol = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)

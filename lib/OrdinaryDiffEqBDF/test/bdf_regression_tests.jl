@@ -144,6 +144,22 @@ if VERSION >= v"1.11"
     end
 end
 
+@testset "MOOSE234 requires adaptive stepping" begin
+    problems = (
+        ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0)),
+        ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0)),
+        ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0)),
+    )
+    for prob in problems
+        @test_throws ArgumentError("MOOSE234 requires adaptive=true.") init(
+            prob, MOOSE234(); adaptive = false, dt = 0.1
+        )
+        @test_throws ArgumentError("MOOSE234 requires adaptive=true.") solve(
+            prob, MOOSE234(); adaptive = false, dt = 0.1
+        )
+    end
+end
+
 @testset "MOOSE234 reinit" begin
     foop_m = (u, p, t) -> p * u
     proboop_m = ODEProblem(foop_m, ones(2), (0.0, 10.0), -1.0)
