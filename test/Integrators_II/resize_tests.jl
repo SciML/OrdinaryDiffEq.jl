@@ -318,4 +318,22 @@ end
         callback = cb3, tstops = [0.5], reltol = 1.0e-4, abstol = 1.0e-6
     )
     @test sol3.retcode == ReturnCode.Success
+
+    for (alg, callback) in ((ImplicitEuler(), cb), (Trapezoid(), cb3))
+        grew[] = false
+        decay = solve(
+            ODEProblem(fdecay!, ones(10), (0.0, 1.0), 1.0), alg;
+            callback, tstops = [0.5], dtmax = 0.01, reltol = 1.0e-8, abstol = 1.0e-10
+        )
+        @test decay.retcode == ReturnCode.Success
+        expected = vcat(fill(exp(-1.0), 10), fill(exp(-0.5), 5))
+        hmax = maximum(diff(decay.t))
+        # Stability-factor bounds include 1e-8 for floating-point and nonlinear-solve error.
+        bound = if alg isa ImplicitEuler
+            expm1(hmax / 2) + 1.0e-8
+        else
+            expm1(hmax^2 / (12 * (1 - hmax^2 / 4))) + 1.0e-8
+        end
+        @test maximum(abs.(decay.u[end] .- expected)) <= bound
+    end
 end
