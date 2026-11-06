@@ -6,6 +6,11 @@ import ODEProblemLibrary: prob_ode_bigfloatlinear,
     prob_ode_bigfloat2Dlinear,
     prob_ode_2Dlinear
 
+@testset "alg_adaptive_order extends OrdinaryDiffEqCore" begin
+    @test OrdinaryDiffEqFeagin.OrdinaryDiffEqCore.alg_adaptive_order(Feagin10()) == 8
+    @test OrdinaryDiffEqFeagin.OrdinaryDiffEqCore.alg_adaptive_order(Feagin14()) == 12
+end
+
 ## Convergence Testing
 println("Convergence Test on Linear")
 

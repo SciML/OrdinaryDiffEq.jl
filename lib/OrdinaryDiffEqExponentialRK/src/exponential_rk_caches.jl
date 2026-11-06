@@ -60,6 +60,68 @@ function expRK_operators(::HochOst4, dt, A)
     B5 = 4P[3] - 8P[4]
     return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
+function expRK_operators(::ERK32ZB, dt, A)
+    P = phi(dt * A, 3)
+    Ph = phi(dt * A / 2, 3)
+    Pq = phi(3 * dt * A / 4, 2)
+    A21 = (1 // 2) * Ph[2]
+    A31 = -(3 // 8) * Ph[3] + (3 // 4) * Pq[2] - (9 // 8) * Pq[3]
+    A32 = (3 // 8) * Ph[3] + (9 // 8) * Pq[3]
+    B1 = P[2] - (19 // 12) * P[3] + (1 // 12) * P[4]
+    B2 = (3 // 4) * P[3] - (1 // 4) * P[4]
+    B3 = (5 // 6) * P[3] + (1 // 6) * P[4]
+    # weights of the high minus the low order estimate, so the error estimate is
+    # formed without building the second solution
+    E1 = -(11 // 18) * P[2] - (7 // 3) * P[3] + (1353 // 70) * P[4] -
+        (9 // 14) * Ph[2] - (1 // 12) * Ph[3] - (11 // 30) * Ph[4] -
+        (7 // 6) * Pq[2] - (2 // 7) * Pq[3]
+    E2 = (1 // 9) * P[2] + (5 // 4) * P[3] - (5 // 12) * P[4] +
+        (1 // 3) * Ph[3] - (1 // 6) * Ph[4] + (1 // 6) * Pq[2] + (1 // 7) * Pq[3]
+    E3 = -(2 // 3) * P[2] + (1 // 2) * P[3] + (1 // 6) * P[4] +
+        (1 // 7) * Ph[2] + (1 // 5) * Ph[4] + (1 // 2) * Pq[2] + (1 // 7) * Pq[3]
+    E4 = (7 // 6) * P[2] + (7 // 12) * P[3] - (2671 // 140) * P[4] +
+        (1 // 2) * Ph[2] - (1 // 4) * Ph[3] + (1 // 3) * Ph[4] + (1 // 2) * Pq[2]
+    return A21, A31, A32, B1, B2, B3, E1, E2, E3, E4
+end
+function expRK_operators(::ERK43ZB, dt, A)
+    P = phi(dt * A, 3)
+    Ph = phi(dt * A / 2, 3)
+    Ps = phi(dt * A / 6, 2)
+    A21 = (1 // 6) * Ps[2]
+    A31 = (1 // 2) * Ph[2] - (3 // 2) * Ph[3] - (1 // 2) * Ps[3]
+    A32 = (3 // 2) * Ph[3] + (1 // 2) * Ps[3]
+    A41 = -(19 // 90) * P[2] + (1 // 6) * Ph[2] - (11 // 6) * Ph[3] -
+        (2 // 5) * Ph[4] - (1 // 3) * Ps[2] - (41 // 18) * Ps[3]
+    A42 = (19 // 60) * P[2] + (1 // 2) * Ph[2] + 2 * Ph[3] + (3 // 5) * Ph[4] +
+        (1 // 2) * Ps[2] + (13 // 6) * Ps[3]
+    A43 = -(19 // 180) * P[2] - (1 // 6) * Ph[2] - (1 // 6) * Ph[3] -
+        (1 // 5) * Ph[4] - (1 // 6) * Ps[2] + (1 // 9) * Ps[3]
+    A51 = (71 // 90) * P[2] - 8 * P[3] + 24 * P[4] - (1 // 3) * Ph[2] -
+        (7 // 3) * Ph[3] + (58 // 5) * Ph[4] - (1 // 3) * Ps[2] + (2 // 9) * Ps[3]
+    A52 = (19 // 60) * P[2] + 9 * P[3] - 36 * P[4] + (1 // 2) * Ph[2] +
+        (7 // 2) * Ph[3] - (87 // 5) * Ph[4] + (1 // 2) * Ps[2] - (1 // 3) * Ps[3]
+    A53 = -(19 // 180) * P[2] - 2 * P[3] + 18 * P[4] - (1 // 6) * Ph[2] -
+        (13 // 6) * Ph[3] + (44 // 5) * Ph[4] - (1 // 6) * Ps[2] + (1 // 9) * Ps[3]
+    A54 = P[3] - 6 * P[4] + Ph[3] - 3 * Ph[4]
+    B1 = P[2] - (67 // 9) * P[3] + (52 // 3) * P[4]
+    B2 = 8 * P[3] - 24 * P[4]
+    B3 = -(11 // 9) * P[3] + (26 // 3) * P[4]
+    B4 = (7 // 9) * P[3] - (10 // 3) * P[4]
+    B5 = -(1 // 9) * P[3] + (4 // 3) * P[4]
+    # weights of the high minus the low order estimate
+    E1 = (19 // 90) * P[2] + (5 // 9) * P[3] - (20 // 3) * P[4] +
+        (1 // 3) * Ph[2] + (7 // 3) * Ph[3] - (58 // 5) * Ph[4] +
+        (1 // 3) * Ps[2] - (2 // 9) * Ps[3]
+    E2 = -(19 // 60) * P[2] - P[3] + 12 * P[4] - (1 // 2) * Ph[2] -
+        (7 // 2) * Ph[3] + (87 // 5) * Ph[4] - (1 // 2) * Ps[2] + (1 // 3) * Ps[3]
+    E3 = (19 // 180) * P[2] + (7 // 9) * P[3] - (28 // 3) * P[4] +
+        (1 // 6) * Ph[2] + (13 // 6) * Ph[3] - (44 // 5) * Ph[4] +
+        (1 // 6) * Ps[2] - (1 // 9) * Ps[3]
+    E4 = -(2 // 9) * P[3] + (8 // 3) * P[4] - Ph[3] + 3 * Ph[4]
+    E5 = B5
+    return A21, A31, A32, A41, A42, A43, A51, A52, A53, A54,
+        B1, B2, B3, B4, B5, E1, E2, E3, E4, E5
+end
 function expRK_operators(::Friedli, dt, A)
     P = phi(dt * A, 3)
     Phalf = phi(dt / 2 * A, 2)
@@ -185,7 +247,7 @@ Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 call in `perform_step!`.
 """
 function alg_cache_expRK(
-        alg::OrdinaryDiffEqExponentialAlgorithm, u, ::Type{uEltypeNoUnits},
+        alg::ExponentialAlgorithm, u, ::Type{uEltypeNoUnits},
         uprev, f, t, dt, p, du1, tmp, dz, plist
     ) where {uEltypeNoUnits}
     n = length(u)
@@ -513,6 +575,158 @@ function alg_cache(
         u, uprev, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, du1, jac_config, uf,
         J, ops, KsCache
     )
+end
+
+####################################
+# Embedded ExpRK pair caches
+#
+# These pairs step adaptively, so dt moves between steps and the cached
+# operators cannot be built once at cache construction the way the fixed-step
+# ExpRK caches are. Each cache carries the dt its operators were built for and
+# rebuilds them when dt moves.
+
+for (Alg, Cache) in [
+        (:ERK32ZB, :ERK32ZBConstantCache),
+        (:ERK43ZB, :ERK43ZBConstantCache),
+    ]
+    @eval mutable struct $Cache{opType, FType, tType} <: ExpRKConstantCache
+        ops::opType # operators for the step size in `dtcache`
+        uf::FType   # derivative wrapper
+        dtcache::tType
+    end
+
+    @eval function alg_cache(
+            alg::$Alg, u, rate_prototype, ::Type{uEltypeNoUnits},
+            ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
+            uprev2, f, t, dt, reltol, p, calck,
+            ::Val{false}, verbose
+        ) where {
+            uEltypeNoUnits, uBottomEltypeNoUnits,
+            tTypeNoUnits,
+        }
+        if alg.krylov
+            ops = nothing # no caching
+        else
+            isa(f, SplitFunction) ||
+                throw(ArgumentError("Caching can only be used with SplitFunction"))
+            ops = expRK_operators(alg, dt, _expRK_linear_operator(f))
+        end
+        if isa(f, SplitFunction) || SciMLBase.has_jac(f)
+            uf = nothing
+        else
+            uf = UDerivativeWrapper(f, t, p)
+        end
+        return $Cache(ops, uf, dt)
+    end
+end
+
+@cache mutable struct ERK32ZBCache{
+        uType, rateType, JCType, FType, JType, opType, KsType, tType,
+    } <: ExpRKCache
+    u::uType
+    uprev::uType
+    utilde::uType
+    tmp::uType
+    dz::uType
+    rtmp::rateType
+    rtmp2::rateType
+    Au::rateType
+    F2::rateType
+    F3::rateType
+    F4::rateType
+    du1::rateType
+    jac_config::JCType
+    uf::FType
+    J::JType
+    ops::opType
+    KsCache::KsType
+    dtcache::tType
+end
+
+function alg_cache(
+        alg::ERK32ZB, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    utilde, tmp, dz = (zero(u) for i in 1:3)                             # uType caches
+    rtmp, rtmp2, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i in 1:7) # rateType caches
+    plist = (3, 3, 2, 3, 3, 2, 3, 3, 2, 3, 3, 2)
+    uf, jac_config,
+        J,
+        ops,
+        KsCache = alg_cache_expRK(
+        alg, u, uEltypeNoUnits, uprev, f, t,
+        dt, p, du1, tmp, dz, plist
+    ) # other caches
+    return ERK32ZBCache(
+        u, uprev, utilde, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, du1, jac_config,
+        uf, J, ops, KsCache, dt
+    )
+end
+
+@cache mutable struct ERK43ZBCache{
+        uType, rateType, JCType, FType, JType, opType, KsType, tType,
+    } <: ExpRKCache
+    u::uType
+    uprev::uType
+    utilde::uType
+    tmp::uType
+    dz::uType
+    rtmp::rateType
+    rtmp2::rateType
+    Au::rateType
+    F2::rateType
+    F3::rateType
+    F4::rateType
+    F5::rateType
+    du1::rateType
+    jac_config::JCType
+    uf::FType
+    J::JType
+    ops::opType
+    KsCache::KsType
+    dtcache::tType
+end
+
+function alg_cache(
+        alg::ERK43ZB, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    utilde, tmp, dz = (zero(u) for i in 1:3)                                  # uType caches
+    rtmp, rtmp2, Au, F2, F3, F4, F5, du1 = (zero(rate_prototype) for i in 1:8) # rateType caches
+    plist = (3, 3, 2, 3, 3, 2, 3, 3, 2, 3, 3, 3)
+    uf, jac_config,
+        J,
+        ops,
+        KsCache = alg_cache_expRK(
+        alg, u, uEltypeNoUnits, uprev, f, t,
+        dt, p, du1, tmp, dz, plist
+    ) # other caches
+    return ERK43ZBCache(
+        u, uprev, utilde, tmp, dz, rtmp, rtmp2, Au, F2, F3, F4, F5, du1,
+        jac_config, uf, J, ops, KsCache, dt
+    )
+end
+
+_expRK_linear_operator(f) = size(f.f1.f) == () ? convert(Number, f.f1.f) :
+    convert(AbstractMatrix, f.f1.f)
+
+"""
+    update_expRK_operators!(cache, alg, f, dt)
+
+Rebuild an embedded ExpRK pair's cached operators for the current `dt`. A no-op
+when the operators are already built for `dt`, and when the algorithm runs in
+Krylov mode, where no operators are cached.
+"""
+@inline function update_expRK_operators!(cache, alg, f, dt)
+    cache.ops === nothing && return nothing
+    dt == cache.dtcache && return nothing
+    cache.ops = expRK_operators(alg, dt, _expRK_linear_operator(f))
+    cache.dtcache = dt
+    return nothing
 end
 
 ####################################
