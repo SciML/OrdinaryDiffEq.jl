@@ -275,9 +275,10 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
     (; c₀, c₁, A₀, A₁, B₀, B₁, α, β₁, β₂, β₃, β₄, stages, H0, H1, error_terms) = cache
     sqrt3 = sqrt(3one(eltype(W.dW)))
-    chi1 = 0.5 * (W.dW .^ 2 - abs(dt)) / integrator.sqdt #I_(1,1)/sqrt(h)
-    chi2 = 0.5 * (W.dW + W.dZ / sqrt3) #I_(1,0)/h
-    chi3 = 1 / 6 * (W.dW .^ 3 - 3 * W.dW * dt) / dt #I_(1,1,1)/h
+    half = oftype(dt, 1 // 2)
+    chi1 = half * (W.dW .^ 2 .- abs(dt)) / integrator.sqdt #I_(1,1)/sqrt(h)
+    chi2 = half * (W.dW + W.dZ / sqrt3) #I_(1,0)/h
+    chi3 = oftype(dt, 1 // 6) * (W.dW .^ 3 - 3 * W.dW * dt) / dt #I_(1,1,1)/h
 
     fill!(H0, zero(u))
     fill!(H1, zero(u))

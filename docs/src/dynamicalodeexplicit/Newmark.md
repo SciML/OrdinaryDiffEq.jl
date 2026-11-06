@@ -76,10 +76,10 @@ you will need to install some of the other libraries listed in the navigation ba
 ```julia
 using OrdinaryDiffEqNewmark
 function f1!(dv, v, u, p, t)
-    dv .= -u
+    return dv .= -u
 end
 function f2!(du, v, u, p, t)
-    du .= v
+    return du .= v
 end
 v0 = ones(2)
 u0 = zeros(2)

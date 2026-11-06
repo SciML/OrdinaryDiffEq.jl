@@ -1,5 +1,7 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, RecursiveFactorization, DiffEqDevTools, Test, Random
+using CommonSolve: solve
+using SciMLBase: SciMLBase, ODEFunction, ODEProblem
 using OrdinaryDiffEqCore: Sequential, BaseThreads, PolyesterThreads
 using Polyester
 

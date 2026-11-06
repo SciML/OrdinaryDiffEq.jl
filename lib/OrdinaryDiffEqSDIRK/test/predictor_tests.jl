@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSDIRK
+using SciMLBase
 using Test
 
 vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 1.0e3 * (1 - u[1]^2) * u[2] - u[1]; nothing)
@@ -93,7 +94,65 @@ end
 
 # deprecated `extrapolant` keyword still maps onto a predictor
 @testset "extrapolant deprecation" begin
-    @test ImplicitEuler(extrapolant = :linear).predictor == Predictor.Linear
-    @test ImplicitEuler(extrapolant = :constant).predictor == Predictor.Trivial
-    @test KenCarp4(extrapolant = :interpolant).predictor == Predictor.MaxOrder
+    mappings = (
+        (ImplicitEuler, :linear, Predictor.Linear),
+        (ImplicitEuler, :constant, Predictor.Trivial),
+        (KenCarp4, :interpolant, Predictor.MaxOrder),
+    )
+    depwarn_error = Base.JLOptions().depwarn == 2
+    for (M, extra, pred) in mappings
+        if depwarn_error
+            @test_deprecated M(extrapolant = extra)
+        else
+            alg = @test_deprecated M(extrapolant = extra)
+            @test alg.predictor == pred
+        end
+    end
+    # `--depwarn=error` makes `@test_deprecated` a throw-check before the mapping
+    # return, so the value checks run in a `--depwarn=yes` child using the same
+    # expected predictors as above.
+    if depwarn_error
+        checks = join(
+            (
+                "@test $(nameof(M))(extrapolant = :$extra).predictor == Predictor.$(pred)"
+                    for (M, extra, pred) in mappings
+            ),
+            "; ",
+        )
+        code = "using OrdinaryDiffEqSDIRK, Test; @testset \"extrapolant mapping\" begin $checks end"
+        cmd = Cmd(
+            [
+                first(Base.julia_cmd()),
+                "--startup-file=no",
+                "--project=$(Base.active_project())",
+                "--depwarn=yes",
+                "-e",
+                code,
+            ]
+        )
+        @test success(pipeline(cmd; stdout, stderr))
+    end
+end
+
+@testset "interpolant predictors survive a rejected step (#4472)" begin
+    function rober!(du, u, p, t)
+        du[1] = -0.04u[1] + 1.0e4 * u[2] * u[3]
+        du[2] = 0.04u[1] - 1.0e4 * u[2] * u[3] - 3.0e7 * u[2]^2
+        du[3] = 3.0e7 * u[2]^2
+        return nothing
+    end
+    rober = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    lotka! = (du, u, p, t) -> (
+        du[1] = 1.5u[1] - u[1] * u[2];
+        du[2] = -3.0u[2] + u[1] * u[2]; nothing
+    )
+    lotka = ODEProblem(lotka!, [1.0, 1.0], (0.0, 30.0))
+
+    interp_predictors = (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
+    @testset "$(nameof(M)) $p" for (M, prob) in ((KenCarp4, rober), (TRBDF2, lotka)),
+            p in interp_predictors
+
+        sol = solve(prob, M(predictor = p); abstol = 1.0e-8, reltol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+    end
 end

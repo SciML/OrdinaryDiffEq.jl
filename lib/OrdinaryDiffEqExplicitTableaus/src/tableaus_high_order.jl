@@ -718,14 +718,14 @@ function Baker10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     c = map(T_time, c)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 10, αEEst = αEEst, adaptiveorder = 9,
+            A, c, α, 10; αEEst, adaptiveorder = 9,
             stability_size = 5.827746350596612
         )
     )
 end
 
 """
-Ono10
+    Ono10
 """
 function Ono10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     A = zeros(T, 17, 17)
@@ -6350,7 +6350,7 @@ function Feagin14(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
 end
 
 """
-MSRK10
+MSRK10()
 
 Misha Stepanov's explicit 15-stage Runge-Kutta method of order 10 with an embedded
 order-8 estimator. Reference: Misha Stepanov, "On Runge-Kutta methods of order 10",
@@ -6481,7 +6481,7 @@ function MSRK10(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     c = map(T_time, c)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 10; αEEst = αEEst, adaptiveorder = 8, fsal = false,
+            A, c, α, 10; αEEst, adaptiveorder = 8, fsal = false,
             stability_size = 4.429318010987123
         )
     )

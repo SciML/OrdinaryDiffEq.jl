@@ -38,6 +38,10 @@ function SDIRK_docstring(
 end
 
 abstract type OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm <: OrdinaryDiffEqNewtonAlgorithm end
+const OrdinaryDiffEqNewtonESDIRKAlgorithm = Union{
+    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm, OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm,
+}
 abstract type OrdinaryDiffEqNewtonNonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAlgorithm end
 abstract type OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm <: OrdinaryDiffEqNewtonAdaptiveAlgorithm end
 
@@ -1489,7 +1493,7 @@ end
     """
 )
 struct ARS343{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -1539,7 +1543,7 @@ end
     """
 )
 struct ARS222{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -1589,7 +1593,7 @@ end
     """
 )
 struct ARS232{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -1639,7 +1643,7 @@ end
     """
 )
 struct ARS443{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool
@@ -1713,7 +1717,7 @@ for (name, desc) in (
             """
         )
         struct $name{AD, F, F2, StepLimiter, CJ} <:
-            OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+            OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
             linsolve::F
             nlsolve::F2
             smooth_est::Bool
@@ -1764,7 +1768,7 @@ end
     """
 )
 struct BHR553{AD, F, F2, StepLimiter, CJ} <:
-    OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm
+    OrdinaryDiffEqNewtonNonAdaptiveESDIRKAlgorithm
     linsolve::F
     nlsolve::F2
     smooth_est::Bool

@@ -44,6 +44,18 @@ get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
 Cache used by [`CompositeAlgorithm`](@ref). Holds the tuple of sub-`caches`, the
 `choice_function` that selects the active algorithm, and the index `current` of
 the currently-active sub-cache.
+
+# Fields
+
+- `caches`: Tuple of caches for the component algorithms.
+- `choice_function`: Function selecting the active component algorithm.
+- `current`: Index of the active component cache.
+
+# Developer API
+
+This is a solver-developer extension type for shared composite-cache machinery.
+End-user code should call `solve` and use solution APIs, rather than construct
+`CompositeCache` values or access cache fields.
 """
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
@@ -92,6 +104,15 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     end
 end
 
+# The `alg_cache` arguments stored in `DefaultCache.args`, which holds the three element types as `Val`s so
+# that the field type is concrete.
+@inline function default_cache_args(
+        u, rate_prototype, ::Val{uEltypeNoUnits}, ::Val{uBottomEltypeNoUnits},
+        ::Val{tTypeNoUnits}, rest...
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return (u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, rest...)
+end
+
 function get_fsalfirstlast(cache::DefaultCache, u)
     return (cache.u, cache.u) # will be overwritten by the cache choice
 end
@@ -121,10 +142,13 @@ Solver packages extend `alg_cache` for their algorithm type:
 ```julia
 import OrdinaryDiffEqCore: alg_cache
 
-function alg_cache(alg::MyAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(
+        alg::MyAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck, ::Val{iip}, verbose) where {
-        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, iip}
+        dt, reltol, p, calck, ::Val{iip}, verbose
+    ) where {
+        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, iip,
+    }
     return MyAlgorithmCache(u, rate_prototype)
 end
 ```
@@ -163,8 +187,13 @@ function alg_cache(
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
+    stored_args = (
+        u, rate_prototype, Val(uEltypeNoUnits),
+        Val(uBottomEltypeNoUnits), Val(tTypeNoUnits), uprev, uprev2, f, t, dt,
+        reltol, p, calck, Val(V), verbose,
+    )
     cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
-        args, alg.choice_function, 1, u
+        stored_args, alg.choice_function, 1, u
     )
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.

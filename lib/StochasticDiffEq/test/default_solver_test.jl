@@ -37,7 +37,8 @@ g = function (du, u, p, t)
     du[2, 1] = 1.2u[1]
     du[2, 2] = 0.2u[2]
     du[2, 3] = 0.3u[2]
-    return du[2, 4] = 1.8u[2]
+    du[2, 4] = 1.8u[2]
+    return
 end
 prob = SDEProblem(f, g, ones(2), (0.0, 1.0), noise_rate_prototype = zeros(2, 4))
 

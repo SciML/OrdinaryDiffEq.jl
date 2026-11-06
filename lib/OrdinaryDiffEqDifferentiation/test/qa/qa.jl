@@ -8,8 +8,6 @@ using SciMLTesting, OrdinaryDiffEqDifferentiation, Test
 # tracked in SciML/OrdinaryDiffEq.jl#3776).
 run_qa(
     OrdinaryDiffEqDifferentiation;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
     aqua_kwargs = (; piracies = false, ambiguities = false),
     explicit_imports = true,
     ei_kwargs = (;
@@ -37,8 +35,11 @@ run_qa(
                 Symbol("@set"),          # Accessors macro re-exported by SciMLBase
                 :AbstractSciMLOperator,  # SciMLOperators
                 # LinearSolve internals
-                :DefaultLinearSolver, :InvPreconditioner, :LinearCache,
+                :DefaultLinearSolver, :LinearCache,
                 :init_cacheval, :needs_concrete_A,
+                # documented in the LinearSolve manual but not yet declared
+                # `public` there (SciML/LinearSolve.jl make-public follow-up)
+                Symbol("update_tolerances!"),
                 # ForwardDiff internals
                 :JacobianConfig, :Tag, :pickchunksize,
                 # OrdinaryDiffEqCore internal not yet in its public block
@@ -50,7 +51,7 @@ run_qa(
                 # this sublib's own internal sparse-handling API, accessed
                 # qualified from OrdinaryDiffEqDifferentiationSparseArraysExt
                 :get_nzval, :is_sparse, :is_sparse_csc, :nonzeros,
-                Symbol("set_all_nzval!"), :spzeros,
+                Symbol("set_all_nzval!"), :spzeros, :_update_sparse_diagonal!,
             ),
         ),
     ),

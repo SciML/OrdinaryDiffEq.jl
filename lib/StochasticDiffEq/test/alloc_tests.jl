@@ -1,5 +1,6 @@
 using Test
 using StochasticDiffEq
+using OrdinaryDiffEqCore
 using Random
 using AllocCheck
 
@@ -16,6 +17,12 @@ don't allocate memory during stepping, which is critical for performance.
 # avoids measuring return-value boxing as a false positive.
 @inline function step_void!(integrator)
     step!(integrator)
+    return nothing
+end
+
+# Same barrier as step_void!: `@testset` does not infer the wrapped integrator.
+@inline function perform_step_void!(integrator, cache)
+    OrdinaryDiffEqCore.perform_step!(integrator, cache)
     return nothing
 end
 
@@ -115,12 +122,12 @@ end
 
         # Warm up
         for _ in 1:10
-            StochasticDiffEq.perform_step!(integrator, cache)
+            perform_step_void!(integrator, cache)
             # Manually update t to avoid going past tspan
             integrator.t = mod(integrator.t, 9.0)
         end
 
-        allocs = @allocated StochasticDiffEq.perform_step!(integrator, cache)
+        allocs = @allocated perform_step_void!(integrator, cache)
         @test allocs == 0
     end
 
@@ -129,10 +136,10 @@ end
 
         # Warm up
         for _ in 1:10
-            StochasticDiffEq.loopheader!(integrator)
+            OrdinaryDiffEqCore.loopheader!(integrator)
         end
 
-        allocs = @allocated StochasticDiffEq.loopheader!(integrator)
+        allocs = @allocated OrdinaryDiffEqCore.loopheader!(integrator)
         @test allocs == 0
     end
 
@@ -141,10 +148,10 @@ end
 
         # Warm up
         for _ in 1:10
-            StochasticDiffEq.loopfooter!(integrator)
+            OrdinaryDiffEqCore.loopfooter!(integrator)
         end
 
-        allocs = @allocated StochasticDiffEq.loopfooter!(integrator)
+        allocs = @allocated OrdinaryDiffEqCore.loopfooter!(integrator)
         @test allocs == 0
     end
 end

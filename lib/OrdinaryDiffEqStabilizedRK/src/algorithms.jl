@@ -410,3 +410,10 @@ function RKG2(; min_stages = 3, max_stages = 200, eigen_est = nothing)
     max_s = max(max_stages, min_s)
     return RKG2(min_s, max_s, eigen_est)
 end
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
+        RKL1, RKL2, RKG1, RKG2,
+    },
+) = true

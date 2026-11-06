@@ -18,4 +18,5 @@ pages = [
     "Misc Solvers" => [
         "misc.md",
     ],
+    "Developer API" => "developer_api.md",
 ]

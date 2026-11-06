@@ -219,7 +219,7 @@ end
     stage_limiter! = integrator.opts.stage_limiter!
     halfdt = dt / 2
     @.. broadcast = false thread = thread tmp = uprev + halfdt * fsalfirst
-    stage_limiter!(k, tmp, p, t + halfdt)
+    stage_limiter!(tmp, integrator, p, t + halfdt)
     f(k, tmp, p, t + halfdt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     @.. broadcast = false thread = thread u = uprev + dt * k

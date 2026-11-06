@@ -1,6 +1,7 @@
 using OrdinaryDiffEqIMEXMultistep
 using OrdinaryDiffEqCore
-using SciMLBase: FullSpecialize, SplitFunction, ODEFunction
+using CommonSolve: init, step!
+using SciMLBase: FullSpecialize, SplitFunction, ODEFunction, SplitODEProblem
 using AllocCheck
 using Test
 

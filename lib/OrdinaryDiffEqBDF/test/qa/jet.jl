@@ -2,6 +2,7 @@ import OrdinaryDiffEqBDF
 using OrdinaryDiffEqBDF
 using OrdinaryDiffEqCore
 using DiffEqBase: SplitODEProblem, DAEProblem
+using SciMLBase: FullSpecialize, SplitFunction
 using JET
 using Test
 
@@ -14,10 +15,16 @@ using Test
     # Test individual solver type stability
     @testset "Solver Type Stability Tests" begin
         # Test problem - use a simple linear problem for stiff solvers
-        linear_prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+        # `FullSpecialize`: on Julia 1.12+ the default specialization erases callback types on
+        # purpose, and that dispatch belongs to the callback machinery, not to the solver.
+        linear_prob = ODEProblem{false, FullSpecialize}((u, p, t) -> -u, 1.0, (0.0, 1.0))
 
         # Split problem for SBDF solvers (which require SplitODEProblem)
-        split_prob = SplitODEProblem((u, p, t) -> -u, (u, p, t) -> 0.0, 1.0, (0.0, 1.0))
+        split_f = SplitFunction{false, FullSpecialize}(
+            ODEFunction{false, FullSpecialize}((u, p, t) -> -u),
+            ODEFunction{false, FullSpecialize}((u, p, t) -> 0.0)
+        )
+        split_prob = SplitODEProblem(split_f, 1.0, (0.0, 1.0))
 
         # DAE problem for DAE solvers
         function simple_dae!(resid, du, u, p, t)

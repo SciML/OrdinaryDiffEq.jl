@@ -275,17 +275,17 @@ end
         if dW isa Number || is_diagonal_noise(integrator.sol.prob)
             J = J .- 1 // 2 .* abs(dt)
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            J = J - UniformScaling(abs(dt) / 2)
         end
     end
 
     du1 = integrator.f(uprev, p, t)
     L = integrator.f.g(uprev, p, t)
+    K = @.. uprev + dt * du1
     mil_correction = zero(u)
     ggprime_norm = zero(eltype(u))
 
     if dW isa Number || is_diagonal_noise(integrator.sol.prob)
-        K = @.. uprev + dt * du1
         utilde = (
             SciMLBase.alg_interpretation(integrator.alg) ==
                 SciMLBase.AlgorithmInterpretation.Ito ? K : uprev
@@ -295,8 +295,8 @@ end
         u = K + L .* dW + mil_correction
     else
         for i in 1:length(dW)
-            K = uprev + dt * du1 + integrator.sqdt * @view(L[:, i])
-            gtmp = integrator.f.g(K, p, t)
+            Ktmp = K + integrator.sqdt * @view(L[:, i])
+            gtmp = integrator.f.g(Ktmp, p, t)
             ggprime = @.. (gtmp - L) / integrator.sqdt
             ggprime_norm = zero(eltype(u))
             if integrator.opts.adaptive
@@ -304,12 +304,7 @@ end
             end
             mil_correction += ggprime * @view(J[i, :])
         end
-        if integrator.opts.adaptive
-            K = @.. uprev + dt * du1
-            u = K + L * dW + mil_correction
-        else
-            u = uprev + dt * du1 + L * dW + mil_correction
-        end
+        u = K + L * dW + mil_correction
     end
 
     if integrator.opts.adaptive
@@ -356,10 +351,16 @@ end
     ggprime_norm = zero(eltype(ggprime))
 
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
-        if dW isa Number || is_diagonal_noise(integrator.sol.prob)
+        if dW isa Number
+            J -= abs(dt) / 2
+        elseif is_diagonal_noise(integrator.sol.prob)
             @.. J -= 1 // 2 * abs(dt)
+        elseif ArrayInterface.fast_scalar_indexing(J)
+            @inbounds for i in diagind(J)
+                J[i] -= abs(dt) / 2
+            end
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            view(J, diagind(J)) .-= abs(dt) / 2
         end
     end
 

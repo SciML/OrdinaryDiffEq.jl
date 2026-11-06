@@ -87,7 +87,7 @@ function TrapezoidalRule(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_ti
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 2, αEEst = αEEst, adaptiveorder = 1))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 2; αEEst, adaptiveorder = 1))
 end
 
 """
@@ -106,7 +106,7 @@ function LobattoIIIA4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4, αEEst = αEEst, adaptiveorder = 2))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4; αEEst, adaptiveorder = 2))
 end
 
 """
@@ -124,7 +124,7 @@ function LobattoIIIB2(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 2, αEEst = αEEst, adaptiveorder = 1))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 2; αEEst, adaptiveorder = 1))
 end
 
 """
@@ -144,7 +144,7 @@ function LobattoIIIB4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4, αEEst = αEEst, adaptiveorder = 2))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4; αEEst, adaptiveorder = 2))
 end
 
 """
@@ -163,7 +163,7 @@ function LobattoIIIC2(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 2, αEEst = αEEst, adaptiveorder = 1))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 2; αEEst, adaptiveorder = 1))
 end
 
 """
@@ -183,7 +183,7 @@ function LobattoIIIC4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4, αEEst = αEEst, adaptiveorder = 2))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4; αEEst, adaptiveorder = 2))
 end
 
 """
@@ -203,7 +203,7 @@ function LobattoIIICStar4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_t
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4, αEEst = αEEst, adaptiveorder = 2))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4; αEEst, adaptiveorder = 2))
 end
 
 """
@@ -240,7 +240,7 @@ function LobattoIIID4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     α = map(T, α)
     c = map(T_time, c)
     αEEst = map(T, αEEst)
-    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4, αEEst = αEEst, adaptiveorder = 2))
+    return (DiffEqBase.ImplicitRKTableau(A, c, α, 4; αEEst, adaptiveorder = 2))
 end
 
 """

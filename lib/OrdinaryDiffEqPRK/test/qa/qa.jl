@@ -1,10 +1,12 @@
-using SciMLTesting, OrdinaryDiffEqPRK, Test
+using SciMLTesting, OrdinaryDiffEqPRK, SciMLBase, Test
+
+# `public` on a name another package owns counts as a public reexport to
+# SciMLTesting, so the threading options need approving here too.
+const THREADING_PUBLIC = (:Sequential, :BaseThreads, :PolyesterThreads)
 
 run_qa(
     OrdinaryDiffEqPRK;
-    # No docs/ tree here; the umbrella manual renders this package's API.
-    api_docs_kwargs = (; rendered = false),
-    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
+    reexports_allow = vcat(intersect(names(SciMLBase), names(OrdinaryDiffEqPRK)), collect(THREADING_PUBLIC)),
     explicit_imports = true,
     ei_kwargs = (;
         all_explicit_imports_are_public = (;

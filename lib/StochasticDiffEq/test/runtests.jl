@@ -1,5 +1,6 @@
 using SafeTestsets
 using Pkg
+using Test
 
 function activate_gpu_env()
     Pkg.activate("gpu")
@@ -21,6 +22,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
 
 @time begin
     if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface1"
+        @time @safetestset "Precompile Workload Tests" begin
+            include("precompilation_tests.jl")
+        end
         @time @safetestset "Default Solver Tests" begin
             include("default_solver_test.jl")
         end
@@ -60,6 +64,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         @time @safetestset "Callable tstops Tests" begin
             include("callable_tstops_tests.jl")
         end
+        @time @safetestset "SDE stats nf Tests" begin
+            include("stats_tests.jl")
+        end
         @time @safetestset "Integrator RNG Tests" begin
             include("rng_integrator_tests.jl")
         end
@@ -89,6 +96,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Element-wise Tolerances Tests" begin
             include("tolerances_tests.jl")
+        end
+        @time @safetestset "SDE Default Tolerance Equality" begin
+            include("sde_tolerance_default_equality_tests.jl")
         end
         @time @safetestset "Zeroed Noise Tests" begin
             include("zeroed_noise_test.jl")
@@ -161,6 +171,9 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         end
         @time @safetestset "Dynamical SDE Tests" begin
             include("sde/sde_dynamical.jl")
+        end
+        @time @safetestset "RODE Convergence Tests" begin
+            include("rode_convergence_tests.jl")
         end
     end
 
@@ -244,6 +257,16 @@ const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")
         activate_nopre_env()
         @time @safetestset "JET Static Analysis Tests" begin
             include("nopre/jet_tests.jl")
+        end
+    end
+
+    # QA last, in a subprocess: loading the QA dependency tree under
+    # --code-coverage pushes the test process past CI runner memory, so the
+    # group env is activated and run_qa is run without coverage instrumentation.
+    if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+        qa_cmd = `$(Base.julia_cmd()) --project=$(Base.active_project()) --startup-file=no $(joinpath(@__DIR__, "qa", "run.jl"))`
+        @time @testset "QA (Aqua, ExplicitImports, JET)" begin
+            @test success(run(ignorestatus(qa_cmd)))
         end
     end
 end

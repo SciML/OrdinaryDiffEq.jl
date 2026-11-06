@@ -39,6 +39,16 @@ struct_eq(A, B) = getcolptr(A) == getcolptr(B) && rowvals(A) == rowvals(B)
         @test struct_eq(J, Jref) && nonzeros(J) == nonzeros(Jref)
     end
 
+    @testset "nonzero stored-value sentinel" begin
+        J = similar(proto)
+
+        prepare_sparse_jac!(J, proto; nzval = one(eltype(J)))
+
+        @test all(isone, nonzeros(J))
+        dropzeros!(J)
+        @test struct_eq(J, proto)
+    end
+
     @testset "mismatched structure (rebuild path)" begin
         # J starts with a different (sparser) pattern than the prototype.
         J = sparse([1, 2], [1, 2], [9.0, 9.0], 3, 3)

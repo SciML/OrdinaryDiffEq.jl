@@ -82,7 +82,7 @@ end
 @testset "set u0 with save_idxs" begin
     save_idxs = [1]
     prob = prob_ode_2Dlinear
-    integrator = init(prob, Tsit5(); save_idxs = save_idxs)
+    integrator = init(prob, Tsit5(); save_idxs)
     u0 = prob.u0 .+ 1  # just make it different
     @test u0 != prob.u0
     reinit!(integrator, u0)
@@ -96,7 +96,7 @@ end
     integrator = init(prob, Tsit5())
     t0 = prob.tspan[1] - 1  # just make it different
     @test t0 != prob.tspan[1]
-    reinit!(integrator; t0 = t0)
+    reinit!(integrator; t0)
     @test integrator.t == t0
     @test integrator.sol.t[1] == t0
     @test integrator.sol.interp.ts[1] == t0
@@ -132,6 +132,26 @@ end
     @test 3 // 8 ∈ integrator.sol.t
     @test 5 // 8 ∈ integrator.sol.t
     @test 7 // 8 ∈ integrator.sol.t
+end
+
+@testset "reinit with new tf and numeric saveat" begin
+    for tdir in (1.0, -1.0), save_end in (nothing, false, true)
+        prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, tdir))
+        integrator = init(prob, Tsit5(); saveat = 3 / 8, save_end)
+        solve!(integrator)
+
+        reinit!(integrator; tf = 2 * tdir)
+        solve!(integrator)
+
+        expected_t = collect(0.0:(3 / 8):2.0)
+        if save_end !== false
+            push!(expected_t, 2.0)
+        end
+        expected_t .*= tdir
+        @test integrator.t == 2 * tdir
+        @test integrator.sol.t == expected_t
+        @test integrator.sol.u[end] ≈ expected_t[end]
+    end
 end
 
 @testset "reinit with new d_discontinuities" begin

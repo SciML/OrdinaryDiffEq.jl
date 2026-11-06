@@ -17,6 +17,15 @@ end
 
 HistoryFunction(h, integrator) = HistoryFunction(h, integrator, false)
 
+# Ordinary wrappers honor problem tspan: save_start=false may omit t0 from sol.t.
+@inline history_start_time(integrator::DEIntegrator) = integrator.sol.prob.tspan[1]
+
+# HistoryODEIntegrator always stores its initial point; after reinit! that is the new t0.
+@inline function history_start_time(integrator::HistoryODEIntegrator)
+    sol = integrator.sol
+    return isempty(sol.t) ? sol.prob.tspan[1] : sol.t[1]
+end
+
 function (f::HistoryFunction)(
         p, t, ::Type{Val{deriv}} = Val{0};
         idxs = nothing
@@ -25,16 +34,17 @@ function (f::HistoryFunction)(
     (; tdir, sol) = integrator
 
     tdir_t = tdir * t
+    tstart = history_start_time(integrator)
 
-    if tdir_t < tdir * sol.prob.tspan[1]
+    if tdir_t < tdir * tstart
         if deriv == 0 && idxs === nothing
             return f.h(p, t)
         elseif idxs === nothing
             return f.h(p, t, Val{deriv})
         elseif deriv == 0
-            return f.h(p, t; idxs = idxs)
+            return f.h(p, t; idxs)
         else
-            return f.h(p, t, Val{deriv}; idxs = idxs)
+            return f.h(p, t, Val{deriv}; idxs)
         end
     end
 
@@ -53,11 +63,11 @@ function (f::HistoryFunction)(
         f.isout = true
     end
 
-    if integrator.t == sol.prob.tspan[1]
+    if integrator.t == tstart
         # handle extrapolations at initial time point
         return constant_extrapolant(t, integrator, idxs, Val{deriv})
     else
-        return integrator(t, Val{deriv}; idxs = idxs)
+        return integrator(t, Val{deriv}; idxs)
     end
 end
 
@@ -69,16 +79,17 @@ function (f::HistoryFunction)(
     (; tdir, sol) = integrator
 
     tdir_t = tdir * t
+    tstart = history_start_time(integrator)
 
-    if tdir_t < tdir * sol.prob.tspan[1]
+    if tdir_t < tdir * tstart
         if deriv == 0 && idxs === nothing
             return f.h(val, p, t)
         elseif idxs === nothing
             return f.h(val, p, t, Val{deriv})
         elseif deriv == 0
-            return f.h(val, p, t; idxs = idxs)
+            return f.h(val, p, t; idxs)
         else
-            return f.h(val, p, t, Val{deriv}; idxs = idxs)
+            return f.h(val, p, t, Val{deriv}; idxs)
         end
     end
 
@@ -97,10 +108,10 @@ function (f::HistoryFunction)(
         f.isout = true
     end
 
-    if integrator.t == sol.prob.tspan[1]
+    if integrator.t == tstart
         # handle extrapolations at initial time point
         return constant_extrapolant!(val, t, integrator, idxs, Val{deriv})
     else
-        return integrator(val, t, Val{deriv}; idxs = idxs)
+        return integrator(val, t, Val{deriv}; idxs)
     end
 end

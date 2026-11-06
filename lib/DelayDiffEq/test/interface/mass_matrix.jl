@@ -72,7 +72,7 @@ using Test
             (QNDF(), 1.0e-6),
             (Trapezoid(), 1.0e-6),
         )
-        sol_ddae = solve(prob_ddae, MethodOfSteps(alg); reltol = reltol)
+        sol_ddae = solve(prob_ddae, MethodOfSteps(alg); reltol)
         sol = appxtrue(sol_ddae, sol_dde)
         @test sol.errors[:L∞] < 5.0e-3
     end

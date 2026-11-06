@@ -101,8 +101,23 @@ These are high-order L-stable implicit methods where the first stage is explicit
 
 ```@docs
 ESDIRK54I8L2SA
+ESDIRK325L2SA
 ESDIRK436L2SA2
 ESDIRK437L2SA
 ESDIRK547L2SA2
 ESDIRK659L2SA
+BHR553
+```
+
+## IMEX solvers
+
+```@docs
+ARS222
+ARS232
+ARS343
+ARS443
+IMEXSSP222
+IMEXSSP2322
+IMEXSSP3332
+IMEXSSP3433
 ```

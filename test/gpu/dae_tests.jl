@@ -11,7 +11,8 @@ using Test
 using CUDSS
 using Printf
 using OrdinaryDiffEqNonlinearSolve.LinearSolve: KrylovJL_GMRES
-using SciMLBase: ReturnCode, FullSpecialize
+using SciMLBase: ReturnCode, FullSpecialize, successful_retcode
+using OrdinaryDiffEqNonlinearSolve: NewtonRaphson, AutoFiniteDiff
 
 #=
 Test goal: exercise GPU code paths for stiff/DAE solvers with mass matrices.
@@ -68,7 +69,7 @@ SOLVE_KWARGS = (; maxiters = 10_000)
 make_odef(; mass_matrix, jac_prototype) =
     ODEFunction{true, FullSpecialize}(
     dae!;
-    mass_matrix = mass_matrix, jac_prototype = jac_prototype
+    mass_matrix, jac_prototype
 )
 
 # ── CPU reference ────────────────────────────────────────────────────────────
@@ -242,6 +243,17 @@ function build_cases(;
     return cases
 end
 
+function solve_kwargs(case::TestCase)
+    # These cases amplify roundoff to O(reltol) at default tolerances (Hairer/Krylov
+    # stage predictors; QNDF/QBDF order selection), so a 1e-14 perturbation alone moves
+    # the solution past GPU_MATCH_TOL. Converged solves make the CPU/GPU match meaningful.
+    (
+        case.solver ∈ (QNDF, QBDF) ||
+            case.jac_name == "CSC" && case.solver ∈ (Hairer4, Hairer42)
+    ) && return (; SOLVE_KWARGS..., reltol = 1.0e-8, abstol = 1.0e-6)
+    return SOLVE_KWARGS
+end
+
 function maxerrs(sol_a, sol_b)
     max_abs = 0.0
     max_rel = 0.0
@@ -285,10 +297,11 @@ function run_case(case::TestCase)
     cpu_alg = case.needs_krylov_cpu ?
         case.solver(linsolve = KrylovJL_GMRES()) :
         case.solver()
+    kwargs = solve_kwargs(case)
 
     sol_cpu = nothing
     try
-        sol_cpu = solve(PROB_CPU, cpu_alg; SOLVE_KWARGS...)
+        sol_cpu = solve(PROB_CPU, cpu_alg; kwargs...)
         result.cpu_retcode = sol_cpu.retcode
         if ok(sol_cpu.retcode)
             result.cpu_abs, result.cpu_rel = maxerrs(sol_cpu, ref)
@@ -301,11 +314,11 @@ function run_case(case::TestCase)
     sol_gpu = nothing
     try
         odef_d = make_odef(;
-            mass_matrix = case.mass_matrix,
-            jac_prototype = case.jac_prototype
+            case.mass_matrix,
+            case.jac_prototype
         )
         prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
-        sol_gpu = solve(prob_d, cpu_alg; SOLVE_KWARGS...)
+        sol_gpu = solve(prob_d, cpu_alg; kwargs...)
         result.gpu_retcode = sol_gpu.retcode
         if ok(sol_gpu.retcode) && sol_cpu !== nothing && ok(sol_cpu.retcode)
             result.gpu_abs, result.gpu_rel = maxerrs(sol_gpu, sol_cpu)
@@ -419,7 +432,7 @@ end
 # ── Convenience for interactive debugging ────────────────────────────────────
 
 """
-    debug_case(solver; jac="none", mass="diag_cu")
+    debug_case(solver; jac = "none", mass = "diag_cu")
 
 Run a single case interactively. Throws instead of catching so you can inspect
 the stack trace.
@@ -434,17 +447,18 @@ function debug_case(solver::Type; jac = "none", mass = "diag_cu")
     cpu_alg = case.needs_krylov_cpu ?
         case.solver(linsolve = KrylovJL_GMRES()) :
         case.solver()
+    kwargs = solve_kwargs(case)
 
     @info "CPU solve"
-    sol_cpu = solve(PROB_CPU, cpu_alg; SOLVE_KWARGS...)
+    sol_cpu = solve(PROB_CPU, cpu_alg; kwargs...)
     @info "CPU retcode" sol_cpu.retcode
     @info "GPU solve"
     odef_d = make_odef(;
-        mass_matrix = case.mass_matrix,
-        jac_prototype = case.jac_prototype
+        case.mass_matrix,
+        case.jac_prototype
     )
     prob_d = ODEProblem(odef_d, U0_D, TSPAN, P_D; initializealg = INITALG)
-    sol_gpu = solve(prob_d, case.solver(); SOLVE_KWARGS...)
+    sol_gpu = solve(prob_d, case.solver(); kwargs...)
     @info "GPU retcode" sol_gpu.retcode
 
     cpu_abs, cpu_rel = maxerrs(sol_cpu, ref)
@@ -476,3 +490,29 @@ end
 
 # res = debug_case(Rodas5P; jac = "CSR");
 # res = debug_case(Rosenbrock23; jac = "CSC");)
+
+# In-place BrownFullBasicInit on a CuArray state, with the default nonlinear solver and an
+# explicit NewtonRaphson, without scalar indexing. du₁ = -u₁ + u₂, 0 = u₁ + u₂: the
+# consistent algebraic value is -u₁, and u₁(t) = u₁(0) exp(-2t).
+function brown_gpu!(du, u, P, t)
+    mul!(du, P, u)
+    return nothing
+end
+@testset "GPU BrownFullBasicInit, nlsolve = $nl" for nl in (
+        nothing, NewtonRaphson(autodiff = AutoFiniteDiff()),
+    )
+    CUDA.allowscalar(false)
+    P = CuArray([-1.0 1.0; 1.0 1.0])
+    fn = ODEFunction{true, FullSpecialize}(
+        brown_gpu!; mass_matrix = Diagonal(CuArray([1.0, 0.0]))
+    )
+    prob = ODEProblem(fn, CuArray([1.0, 0.5]), (0.0, 0.1), P)
+    ia = BrownFullBasicInit(nlsolve = nl)
+    alg = Rodas5P(autodiff = AutoFiniteDiff())
+    integ = init(prob, alg; initializealg = ia)
+    @test Array(integ.u) ≈ [1.0, -1.0] atol = 1.0e-9
+    @test Array(prob.u0) == [1.0, 0.5]
+    sol = solve(prob, alg; initializealg = ia, abstol = 1.0e-10, reltol = 1.0e-10)
+    @test successful_retcode(sol)
+    @test Array(sol.u[end]) ≈ [exp(-0.2), -exp(-0.2)] atol = 1.0e-7
+end

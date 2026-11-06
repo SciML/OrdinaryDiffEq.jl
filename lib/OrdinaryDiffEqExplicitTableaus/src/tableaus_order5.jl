@@ -30,7 +30,7 @@ function DormandPrince(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time
     c = map(T_time, c)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             fsal = true, stability_size = 3.3066
         )
     )
@@ -57,7 +57,7 @@ function RKF5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.6777066213218945
         )
     )
@@ -376,7 +376,7 @@ function PapakostasPapaGeorgiou5(::Type{T} = Float64, ::Type{T_time} = T) where 
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4, fsal = true,
+            A, c, α, 5; αEEst, adaptiveorder = 4, fsal = true,
             stability_size = 3.306567892634947
         )
     )
@@ -444,7 +444,7 @@ function PapakostasPapaGeorgiou52(::Type{T} = Float64, ::Type{T_time} = T) where
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4, fsal = true,
+            A, c, α, 5; αEEst, adaptiveorder = 4, fsal = true,
             stability_size = 3.4272251630453394
         )
     )
@@ -598,7 +598,7 @@ function Tsitouras5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4, fsal = true,
+            A, c, α, 5; αEEst, adaptiveorder = 4, fsal = true,
             stability_size = 3.5068469938049547
         )
     )
@@ -675,7 +675,7 @@ function BogakiShampine5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_ti
     αEEst2[8] = 3293 // 556956
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.9879271987261333
         )
     )
@@ -739,7 +739,7 @@ function SharpSmart5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.9156746135081772
         )
     )
@@ -766,7 +766,7 @@ function BogakiShampine3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_ti
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 3, αEEst = αEEst, adaptiveorder = 2,
+            A, c, α, 3; αEEst, adaptiveorder = 2,
             stability_size = 2.5127453266183286
         )
     )
@@ -795,7 +795,7 @@ function CashKarp(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.7343596072347225
         )
     )
@@ -821,7 +821,7 @@ function RKF4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 4, αEEst = αEEst, adaptiveorder = 3,
+            A, c, α, 4; αEEst, adaptiveorder = 3,
             stability_size = 4.109222736949077
         )
     )

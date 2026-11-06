@@ -2,15 +2,14 @@ module OrdinaryDiffEqStabilizedRK
 
 import OrdinaryDiffEqCore: alg_adaptive_order,
     gamma_default, qmax_default, alg_extrapolates,
-    fac_default_gamma, has_dtnew_modification,
+    fac_default_gamma, has_dtnew_modification, dtnew_modification,
     perform_step!, unwrap_alg,
     default_controller, PredictiveController,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm,
     alg_cache, @cache,
-    constvalue, full_cache, get_fsalfirstlast,
-    generic_solver_docstring,
-    trivial_limiter!
+    constvalue, get_fsalfirstlast,
+    generic_solver_docstring
 import OrdinaryDiffEqCore
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
@@ -22,7 +21,7 @@ import DiffEqBase: initialize!
 using DiffEqBase: calculate_residuals, calculate_residuals!
 
 using SciMLBase: SciMLBase
-import SciMLBase: alg_order, _vec, value
+import SciMLBase: alg_order, _vec, value, full_cache
 using Reexport: Reexport, @reexport
 @reexport using SciMLBase
 

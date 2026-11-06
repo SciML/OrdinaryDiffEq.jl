@@ -87,8 +87,10 @@ sol2 = solve(prob2, FBDF(autodiff = AutoFiniteDiff(), nlsolve = nlalg));
 # the number of saved points even when every component is close.
 @test maximum_saved_trajectory_delta(sol1, sol2) < 5.0e-4
 
-sol1 = solve(prob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg));
-sol2 = solve(prob2, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg));
+# NLStep cannot supply the full-state W solve used by the smoothed estimate, so
+# compare both nonlinear-solve paths with the raw estimator.
+sol1 = solve(prob, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg, smooth_est = false));
+sol2 = solve(prob2, TRBDF2(autodiff = AutoFiniteDiff(), nlsolve = nlalg, smooth_est = false));
 
 @test sol1.t != sol2.t
 @test sol1 != sol2

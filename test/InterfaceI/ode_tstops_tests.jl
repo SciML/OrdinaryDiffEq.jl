@@ -18,7 +18,7 @@ Random.seed!(100)
         prob, RK4(), dt = 1 // 3, tstops = [1 / 2],
         d_discontinuities = [-1 / 2, 1 / 2, 3 / 2], adaptive = false
     )
-    @test sol.t == [0, 1 / 3, 1 / 2, 1 / 3 + 1 / 2, 1]
+    @test sol.t == [0, 1 / 3, 1 / 2, nextfloat(1 / 2) + 1 / 3, 1]
 
     # TODO
     integrator = init(
@@ -76,7 +76,7 @@ end
     callback = DiscreteCallback(condition, affect!)
 
     prob = ODEProblem(de, zeros(2), (-1, 3.0), rand(2))
-    sol = solve(prob, Tsit5(), saveat = saveat, tstops = tstop, callback = callback)
+    sol = solve(prob, Tsit5(); saveat, tstops = tstop, callback)
     @test sol.t[end] == 1.5574
 end
 
@@ -132,7 +132,7 @@ end
     prob_static = ODEProblem(precise_dynamics, u0_static, tspan)
     sol_static = solve(
         prob_static, Vern9(); reltol = 1.0e-12, abstol = 1.0e-15,
-        tstops = tstops
+        tstops
     )
     @test successful_retcode(sol_static)
     for tstop in tstops
@@ -142,7 +142,7 @@ end
     prob_array = ODEProblem(precise_dynamics_array!, u0_array, tspan)
     sol_array = solve(
         prob_array, Vern9(); reltol = 1.0e-12, abstol = 1.0e-15,
-        tstops = tstops
+        tstops
     )
     @test successful_retcode(sol_array)
     for tstop in tstops
@@ -162,7 +162,7 @@ end
     tstops = [1.5, 1.0, 0.5]
 
     prob = ODEProblem(decay_ode, u0, tspan)
-    sol = solve(prob, Vern9(); tstops = tstops, reltol = 1.0e-12, abstol = 1.0e-15)
+    sol = solve(prob, Vern9(); tstops, reltol = 1.0e-12, abstol = 1.0e-15)
     @test successful_retcode(sol)
     for tstop in tstops
         @test tstop ∈ sol.t

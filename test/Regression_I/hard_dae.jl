@@ -255,7 +255,8 @@ function hardstop!(du, u, p, t)
     y, f_wall, dy = u
     du[1] = dy
     du[2] = ifelse(y <= 0, y, f_wall)
-    return du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
+    du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
+    return
 end
 
 hardstop!(u, p, t) = (du = similar(u); hardstop!(du, u, p, t); du)

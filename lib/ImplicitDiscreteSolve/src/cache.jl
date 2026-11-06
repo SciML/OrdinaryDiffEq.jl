@@ -75,7 +75,7 @@ function alg_cache(
     nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(u))
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
-            NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
+            NonlinearFunction(f_nl; f.resid_prototype),
             u, state
         )
     else
@@ -106,7 +106,7 @@ function alg_cache(
     nlls = !isnothing(f.resid_prototype) && (length(f.resid_prototype) != length(u))
     prob = if nlls
         NonlinearLeastSquaresProblem{isinplace(f)}(
-            NonlinearFunction(f_nl; resid_prototype = f.resid_prototype),
+            NonlinearFunction(f_nl; f.resid_prototype),
             u, state
         )
     else

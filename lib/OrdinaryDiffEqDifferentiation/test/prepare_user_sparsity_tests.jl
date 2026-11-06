@@ -70,3 +70,34 @@ end
     OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob)
     @test Matrix(prob.f.jac_prototype) == Matrix(M)
 end
+
+# Matrix-free `jac_prototype` is copied into `sparsity` by `ODEFunction`; it is not a
+# sparsity pattern and must not enter the `KnownJacobianSparsityDetector` path (#4302).
+@testset "Matrix-free FunctionOperator jac_prototype skips sparsity prep" begin
+    using LinearAlgebra: mul!
+    A = [1.0 2.0; 0.0 1.0]
+    jv(v, u, p, t) = A * v
+    jv(w, v, u, p, t) = mul!(w, A, v)
+    Jop = FunctionOperator(jv, zeros(2), zeros(2); islinear = true)
+    odef = ODEFunction(f!; jac_prototype = Jop)
+    prob = ODEProblem(odef, ones(2), (0.0, 1.0))
+
+    @test prob.f.sparsity === Jop
+    @test OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob) === ad_alg
+end
+
+# A `DAEFunction` is fully implicit and has no `mass_matrix` field at all; the seeding must
+# be skipped for it rather than reaching for the missing field
+# (SciML/OrdinaryDiffEq.jl#1966).
+@testset "DAEFunction has no mass matrix" begin
+    dae_f!(res, du, u, p, t) = (res .= du .- u; nothing)
+    jac_prototype = sparse([0.0 1.0; 1.0 0.0])
+    daef = DAEFunction(dae_f!; jac_prototype)
+    prob = DAEProblem(daef, ones(2), ones(2), (0.0, 1.0))
+
+    prepped = OrdinaryDiffEqDifferentiation.prepare_user_sparsity(ad_alg, prob)
+    @test prepped isa ADTypes.AutoSparse
+    # Nothing is seeded: a DAE `jac_prototype` is used as given, so it must already be the
+    # complete pattern of `∂F/∂u + γ ∂F/∂(du)`, including the `du` coefficients.
+    @test Matrix(prob.f.jac_prototype) == [0.0 1.0; 1.0 0.0]
+end

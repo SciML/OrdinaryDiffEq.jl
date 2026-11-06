@@ -1,5 +1,5 @@
 """
-    IIF1M(;nlsolve=NLSOLVEJL_SETUP())
+    IIF1M(; nlsolve = NLSOLVEJL_SETUP())
 
 **IIF1M: Integrating Factor Method 1 (Semi-Linear)**
 
@@ -38,7 +38,7 @@ end
 IIF1M(; nlsolve = NLSOLVEJL_SETUP()) = IIF1M{typeof(nlsolve)}(nlsolve)
 
 """
-    IIF2M(;nlsolve=NLSOLVEJL_SETUP())
+    IIF2M(; nlsolve = NLSOLVEJL_SETUP())
 
 **IIF2M: Integrating Factor Method 2 (Semi-Linear)**
 
@@ -72,7 +72,7 @@ end
 IIF2M(; nlsolve = NLSOLVEJL_SETUP()) = IIF2M{typeof(nlsolve)}(nlsolve)
 
 """
-    IIF1Mil(;nlsolve=NLSOLVEJL_SETUP())
+    IIF1Mil(; nlsolve = NLSOLVEJL_SETUP())
 
 **IIF1Mil: Integrating Factor Milstein Method (Semi-Linear)**
 

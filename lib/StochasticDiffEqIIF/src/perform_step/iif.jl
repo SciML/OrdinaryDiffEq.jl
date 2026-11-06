@@ -7,7 +7,8 @@ mutable struct RHS_IIF1M_Scalar{F, CType, tType, P} <: Function
 end
 
 function (f::RHS_IIF1M_Scalar)(resid, u)
-    return resid[1] = u[1] - f.tmp - f.dt * f.f.f2(u[1], f.p, f.t + f.dt)[1]
+    resid[1] = u[1] - f.tmp - f.dt * f.f.f2(u[1], f.p, f.t + f.dt)[1]
+    return
 end
 
 mutable struct RHS_IIF2M_Scalar{F, CType, tType, P} <: Function
@@ -19,7 +20,8 @@ mutable struct RHS_IIF2M_Scalar{F, CType, tType, P} <: Function
 end
 
 function (f::RHS_IIF2M_Scalar)(resid, u)
-    return resid[1] = u[1] - f.tmp - 0.5f.dt * f.f.f2(u[1], f.p, f.t + f.dt)[1]
+    resid[1] = u[1] - f.tmp - 0.5f.dt * f.f.f2(u[1], f.p, f.t + f.dt)[1]
+    return
 end
 
 @muladd function initialize!(

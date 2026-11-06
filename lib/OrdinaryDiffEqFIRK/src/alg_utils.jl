@@ -21,6 +21,14 @@ alg_adaptive_order(alg::RadauIIA9) = 5
 
 get_current_alg_order(alg::AdaptiveRadau, cache) = cache.num_stages * 2 - 1
 get_current_adaptive_order(alg::AdaptiveRadau, cache) = cache.num_stages
+current_num_stages(cache) = cache.num_stages
+function current_num_stages(cache::CompositeCache)
+    return _eval_index(current_num_stages, cache.caches, cache.current)::Int
+end
+get_current_alg_order(alg::AdaptiveRadau, cache::CompositeCache) =
+    2 * current_num_stages(cache) - 1
+get_current_adaptive_order(alg::AdaptiveRadau, cache::CompositeCache) =
+    current_num_stages(cache)
 
 function has_stiff_interpolation(::Union{RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau})
     return true
@@ -34,10 +42,10 @@ default_controller(QT, alg::GaussLegendre) = PIController(QT, alg)
 
 isfirk(alg::GaussLegendre) = true
 
-# Richardson step-doubling controller
+# Embedded error estimate controller using s-1 stages
 isadaptive(alg::GaussLegendre) = alg.num_stages >= 2
-alg_adaptive_order(alg::GaussLegendre) = 2 * alg.num_stages
+alg_adaptive_order(alg::GaussLegendre) = alg.num_stages - 1
 has_stiff_interpolation(::GaussLegendre) = false
 
 get_current_alg_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
-get_current_adaptive_order(alg::GaussLegendre, cache) = 2 * alg.num_stages
+get_current_adaptive_order(alg::GaussLegendre, cache) = alg.num_stages - 1

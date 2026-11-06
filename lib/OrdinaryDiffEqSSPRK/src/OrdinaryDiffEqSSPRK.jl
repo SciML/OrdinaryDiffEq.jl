@@ -4,13 +4,13 @@ import OrdinaryDiffEqCore: perform_step!, ssp_coefficient,
     OrdinaryDiffEqAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm,
-    alg_cache, @cache, isfsal, full_cache,
+    alg_cache, @cache, isfsal,
     constvalue,
     explicit_rk_docstring, trivial_limiter!,
     _ode_interpolant, _ode_interpolant!,
     _ode_addsteps!, get_fsalfirstlast
 import OrdinaryDiffEqCore
-import SciMLBase: alg_order
+import SciMLBase: alg_order, full_cache
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 using RecursiveArrayTools: RecursiveArrayTools, copyat_or_push!, recursivefill!
 using FastBroadcast: FastBroadcast, @.., Serial
@@ -75,14 +75,14 @@ PrecompileTools.@compile_workload begin
     if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
             )
         )
         push!(
             prob_list,
-            ODEProblem{true, OrdinaryDiffEqCore.AutoDePSpecialize}(
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
                 OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
                 (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
             )

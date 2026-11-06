@@ -49,7 +49,7 @@ DiffEqBase.calculate_ensemble_errors(sim)
 output_func = function (sol, ctx)
     return last(last(sol))^2, false
 end
-prob2 = EnsembleProblem(prob, output_func = output_func)
+prob2 = EnsembleProblem(prob; output_func)
 sim = solve(prob2, SRA1(), dt = 1 // 2^(3), trajectories = 10)
 
 prob = prob_sde_lorenz
@@ -74,8 +74,8 @@ reduction = function (u, batch, I)
 end
 
 prob2 = EnsembleProblem(
-    prob, prob_func = prob_func, output_func = output_func,
-    reduction = reduction, u_init = Vector{Float64}(),
+    prob; prob_func, output_func,
+    reduction, u_init = Vector{Float64}(),
     safetycopy = false
 )
 sim = solve(prob2, Tsit5(), trajectories = 10000, batch_size = 20)
@@ -92,8 +92,8 @@ reduction = function (u, batch, I)
 end
 
 prob2 = EnsembleProblem(
-    prob, prob_func = prob_func, output_func = output_func,
-    reduction = reduction, u_init = Vector{Float64}()
+    prob; prob_func, output_func,
+    reduction, u_init = Vector{Float64}()
 )
 sim = solve(prob2, Tsit5(), trajectories = 100, batch_size = 20)
 @test sim.converged == false
@@ -102,8 +102,8 @@ reduction = function (u, batch, I)
     return u + sum(batch), false
 end
 prob2 = EnsembleProblem(
-    prob, prob_func = prob_func, output_func = output_func,
-    reduction = reduction, u_init = 0.0
+    prob; prob_func, output_func,
+    reduction, u_init = 0.0
 )
 sim2 = solve(prob2, Tsit5(), trajectories = 100, batch_size = 20)
 @test sim2.converged == false
@@ -113,6 +113,6 @@ struct SomeUserType end
 output_func = function (sol, ctx)
     return (SomeUserType(), false)
 end
-prob2 = EnsembleProblem(prob, prob_func = prob_func, output_func = output_func)
+prob2 = EnsembleProblem(prob; prob_func, output_func)
 sim2 = solve(prob2, Tsit5(), trajectories = 2)
 @test sim2.converged && typeof(sim2.u) == Vector{SomeUserType}

@@ -16,17 +16,7 @@ end
 
 run_qa(
     OrdinaryDiffEqCore;
-    reexports_allow = union(
-        public_api_names(SciMLBase), (:SciMLBase,),
-        # `last_step_failed`/`postamble!` are SciMLBase-owned generic functions that
-        # OrdinaryDiffEqCore imports, extends, and re-declares `public` as part of the
-        # documented solver-author surface (docs/src/devtools/internals/public_api.md).
-        # SciMLBase has not declared them `public` yet, so `public_reexports` sees them
-        # as owned outside this package; drop these once SciMLBase marks them public.
-        (:last_step_failed, :postamble!),
-    ),
     aqua_kwargs = (; piracies = false, unbound_args = false),
-    explicit_imports = true,
     ei_kwargs = (;
         no_implicit_imports = (; allow_unanalyzable = UNANALYZABLE),
         # These names are not used by OrdinaryDiffEqCore itself, but are imported
@@ -39,7 +29,8 @@ run_qa(
             ignore = (
                 :BrownFullBasicInit, :ShampineCollocationInit, :DEVerbosity,
                 :Minimal, :_vec, :_reshape, :unwrap_cache, :_unwrap_val,
-                :calculate_residuals, :calculate_residuals!,
+                :calculate_residuals, :calculate_residuals!, :DynamicalODEProblem,
+                :ODEFunction,
             ),
         ),
         # Internal (non-`public`) names of upstream packages that OrdinaryDiffEqCore
@@ -50,15 +41,14 @@ run_qa(
                 :NAN_CHECK,
                 # Base / Core internals
                 Symbol("@max_methods"), :Experimental, :Typeof, :promote_op,
-                # SciMLOperators internal
-                :AbstractSciMLOperator,
                 # EnzymeCore / EnzymeCore.EnzymeRules internals
-                :EnzymeRules, :inactive_noinl,
+                :EnzymeRules, :inactive_noinl, :inactive,
                 # SciMLBase internals with no public replacement yet
                 :enable_interpolation_sensitivitymode,
                 :forwarddiff_chunksize, :get_root_indp,
                 :get_save_idxs_and_saved_subsystem, :has_initializeprob,
-                :has_lazy_interpolation, :late_binding_update_u0_p, :remaker_of,
+                :has_lazy_interpolation, :has_mtk_sys, :late_binding_update_u0_p,
+                :log_numerical_instability, :remaker_of,
                 :save_discretes_if_enabled!, :save_final_discretes!,
                 :strip_interpolation, :struct_as_namedtuple, :unitfulvalue,
                 :unwrap_cache, :value,
@@ -70,13 +60,13 @@ run_qa(
                 # DiffEqBase — owner-internal, no public alternative
                 :NAN_CHECK,
                 # TruncatedStacktraces internals
-                Symbol("@truncate_stacktrace"), :VERBOSE_MSG,
+                Symbol("@truncate_stacktrace"),
                 # FunctionWrappers internal
                 :FunctionWrapper,
                 # FastPower internal
                 :fastpower,
                 # SciMLBase internals
-                :SENSITIVITY_INTERP_MESSAGE, :_unwrap_val, :last_step_failed,
+                :SENSITIVITY_INTERP_MESSAGE, :last_step_failed,
                 :postamble!,
                 # DiffEqBase internal
                 :_process_verbose_param,
@@ -85,10 +75,5 @@ run_qa(
                 :_vec, :_reshape, :unwrap_cache,
             ),
         ),
-    ),
-    api_docs_kwargs = (;
-        rendered = false,
-        # Reexported upstream SciMLOperators names are documented at their owner.
-        ignore = (:StaticWOperator, :has_concretization),
     ),
 )

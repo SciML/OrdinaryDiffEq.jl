@@ -952,8 +952,8 @@ end
     if integrator.opts.adaptive
         utilde = dt *
             (
-            β1tilde * k1 + β4tilde * k4 + β5tilde * k5 + β6tilde * k6 + β7tilde * k7 +
-                β8tilde * k8 + β9tilde * k9
+            β1tilde * k1 + (β4 - β4tilde) * k4 + (β5 - β5tilde) * k5 +
+                (β6 - β6tilde) * k6 + β7tilde * k7 + β8tilde * k8 + β9tilde * k9
         )
         atmp = calculate_residuals(
             utilde, uprev, u, integrator.opts.abstol,
@@ -1053,11 +1053,10 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 8)
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (
-            β1tilde * k1 + β4tilde * k4 +
-                β5tilde * k5 +
-                β6tilde * k6 + β7tilde * k7 +
-                β8tilde * k8 +
-                β9tilde * k9
+            β1tilde * k1 + (β4 - β4tilde) * k4 +
+                (β5 - β5tilde) * k5 +
+                (β6 - β6tilde) * k6 + β7tilde * k7 +
+                β8tilde * k8 + β9tilde * k9
         )
         calculate_residuals!(
             atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -1938,7 +1937,7 @@ end
 
 function perform_step!(integrator, cache::Alshina2ConstantCache, repeat_step = false)
     (; u, uprev, f, p, dt, t) = integrator
-    (; a21, b1, b2, b1tilde, c2) = cache
+    (; a21, b1, b2, b1tilde, b2tilde, c2) = cache
 
     k1 = f(uprev, p, t)
     tmp = uprev + dt * (a21 * k1)
@@ -1946,7 +1945,7 @@ function perform_step!(integrator, cache::Alshina2ConstantCache, repeat_step = f
     u = uprev + dt * (b1 * k1 + b2 * k2)
 
     if integrator.opts.adaptive
-        utilde = dt * (b1tilde * k1)
+        utilde = dt * (b1tilde * k1 + b2tilde * k2)
         atmp = calculate_residuals(
             utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t
@@ -1980,7 +1979,7 @@ end
 function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
     (; k1, k2, utilde, tmp, atmp, thread) = cache
     stage_limiter! = integrator.opts.stage_limiter!
-    (; a21, b1, b2, b1tilde, c2) = cache.tab
+    (; a21, b1, b2, b1tilde, b2tilde, c2) = cache.tab
     (; u, uprev, t, dt, f, p) = integrator
 
     f(k1, uprev, p, t)
@@ -1993,7 +1992,7 @@ function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
     stage_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
-        @.. broadcast = false thread = thread utilde = dt * (b1tilde * k1)
+        @.. broadcast = false thread = thread utilde = dt * (b1tilde * k1 + b2tilde * k2)
         calculate_residuals!(
             atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t,

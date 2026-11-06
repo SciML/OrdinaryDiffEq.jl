@@ -35,7 +35,7 @@ OrdinaryDiffEqRosenbrock = "2"
 OrdinaryDiffEqSDIRK = "2"
 OrdinaryDiffEqSSPRK = "2"
 SafeTestsets = "0.1, 1"
-SciMLTesting = "2.1"
+SciMLTesting = "2.8"
 StaticArrays = "1"
 StochasticDiffEq = "7"
 

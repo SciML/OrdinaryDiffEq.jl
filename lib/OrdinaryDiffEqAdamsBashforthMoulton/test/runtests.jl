@@ -9,14 +9,14 @@ function activate_qa_env()
 end
 
 function activate_threaded_env()
-    Pkg.activate(joinpath(@__DIR__, "threaded"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "threaded"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "ABM Convergence Tests" include("abm_convergence_tests.jl")
     @time @safetestset "Adams Variable Coefficients Tests" include("adams_tests.jl")
+    @time @safetestset "ABM Discontinuity Restart Tests" include("abm_discontinuity_restart_tests.jl")
 end
 
 # Threaded tests require Polyester.jl (for FastBroadcast.Threaded() support).

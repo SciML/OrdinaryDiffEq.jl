@@ -28,8 +28,8 @@ using Test
 
     # define problems
     prob = DDEProblem(DDEFunction{true}(f), [1.0], h, (0.0, 40.0); constant_lags = [1])
-    prob_jac = remake(prob; f = DDEFunction{true}(f; jac = jac))
-    prob_Wfact_t = remake(prob; f = DDEFunction{true}(f; Wfact_t = Wfact_t))
+    prob_jac = remake(prob; f = DDEFunction{true}(f; jac))
+    prob_Wfact_t = remake(prob; f = DDEFunction{true}(f; Wfact_t))
 
     # compute solutions
     for alg in (Rodas5P(), TRBDF2())
@@ -94,8 +94,8 @@ end
 
     # define problems
     prob = DDEProblem(DDEFunction{false}(f), [1.0], h, (0.0, 40.0); constant_lags = [1])
-    prob_jac = remake(prob; f = DDEFunction{false}(f; jac = jac))
-    prob_Wfact_t = remake(prob; f = DDEFunction{false}(f; Wfact_t = Wfact_t))
+    prob_jac = remake(prob; f = DDEFunction{false}(f; jac))
+    prob_Wfact_t = remake(prob; f = DDEFunction{false}(f; Wfact_t))
 
     # compute solutions
     # Only test Rodas5P: OOP TRBDF2 hangs with OrdinaryDiffEqCore >= 3.10

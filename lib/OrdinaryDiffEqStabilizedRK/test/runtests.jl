@@ -22,6 +22,8 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "RKC Tests" include("rkc_tests.jl")
+    @time @safetestset "Stage Limiter Tests" include("stage_limiter_tests.jl")
+    @time @safetestset "dtnew Cap Direction Tests" include("dtnew_cap_direction_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua)

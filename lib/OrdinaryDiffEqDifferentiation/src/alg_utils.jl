@@ -32,6 +32,7 @@ function DiffEqBase.prepare_alg(
             OrdinaryDiffEqImplicitAlgorithm,
             DAEAlgorithm,
             OrdinaryDiffEqExponentialAlgorithm,
+            OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         },
         u0::AbstractArray{T},
         p, prob
@@ -54,7 +55,7 @@ function DiffEqBase.prepare_alg(
         autodiff = sparse_prepped_AD
     end
 
-    return remake(alg, autodiff = autodiff)
+    return remake(alg; autodiff)
 end
 
 function prepare_ADType(autodiff_alg::AutoSparse, prob, u0, p, standardtag)
@@ -67,6 +68,17 @@ function prepare_ADType(autodiff_alg::AutoForwardDiff, prob, u0, p, standardtag:
     return prepare_ADType(autodiff_alg, prob, u0, p, Val(standardtag))
 end
 
+# A residual wrapped by AutoSpecialize/AutoDespecialize carries only `Float64` and
+# one-chunk dual signatures, so it has to be differentiated with chunk size 1 whatever
+# `length(u)` is; that is also what keeps the integrator type independent of the model.
+_has_wrapped_f(f::Union{ODEFunction, DAEFunction}) =
+    f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
+_has_wrapped_f(f) = false
+# NoSpecialize takes the same fixed chunk, or its compiled code would change with the problem.
+_is_nospecialize(f::SciMLBase.AbstractSciMLFunction) =
+    SciMLBase.specialization(f) === SciMLBase.NoSpecialize
+_is_nospecialize(f) = false
+
 function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
     T = eltype(u0)
 
@@ -74,13 +86,8 @@ function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
 
     cs = fwd_cs == 0 ? nothing : fwd_cs
 
-    if (
-            (
-                prob.f isa ODEFunction &&
-                    prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
-            ) ||
-                (isbitstype(T) && sizeof(T) > 24)
-        ) && (cs == 0 || isnothing(cs))
+    if (_has_wrapped_f(prob.f) || _is_nospecialize(prob.f) || (isbitstype(T) && sizeof(T) > 24)) &&
+            (cs == 0 || isnothing(cs))
         return AutoForwardDiff{1}(tag)
     else
         return AutoForwardDiff{cs}(tag)
@@ -99,10 +106,7 @@ end
 function prepare_ADType(alg::AutoFiniteDiff, prob, u0, p, standardtag)
     # If the autodiff alg is AutoFiniteDiff, prob.f.f isa FunctionWrappersWrapper,
     # and fdtype is complex, fdtype needs to change to something not complex
-    if alg.fdtype == Val{:complex}() && (
-            prob.f isa ODEFunction &&
-                prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
-        )
+    if alg.fdtype == Val{:complex}() && _has_wrapped_f(prob.f)
         @warn "AutoFiniteDiff fdtype complex is not compatible with this function"
         return AutoFiniteDiff(fdtype = Val{:forward}())
     end
@@ -113,8 +117,15 @@ function prepare_user_sparsity(ad_alg, prob)
     jac_prototype = prob.f.jac_prototype
     sparsity = prob.f.sparsity
 
+    # `ODEFunction` defaults `sparsity` to `jac_prototype`. A matrix-free operator
+    # carries no sparsity pattern, so `KnownJacobianSparsityDetector` must not see it
+    # (that path needs an `AbstractMatrix` via `concrete_mass_matrix`).
+    if sparsity isa AbstractSciMLOperator && !SciMLOperators.isconvertible(sparsity)
+        return ad_alg
+    end
+
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
-        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
+        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f) && has_mass_matrix(prob.f)
             if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
                 @. @view(sparsity[idxs]) = 1
@@ -148,7 +159,7 @@ function prepare_user_sparsity(ad_alg, prob)
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(sparsity)
 
         return AutoSparse(
-            ad_alg, sparsity_detector = sparsity_detector, coloring_algorithm = color_alg
+            ad_alg; sparsity_detector, coloring_algorithm = color_alg
         )
     else
         return ad_alg

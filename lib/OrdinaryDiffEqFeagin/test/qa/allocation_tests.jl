@@ -1,6 +1,6 @@
 using OrdinaryDiffEqFeagin
 using OrdinaryDiffEqCore
-using SciMLBase: FullSpecialize
+using SciMLBase: FullSpecialize, ODEProblem, init, step!
 using AllocCheck
 using Test
 

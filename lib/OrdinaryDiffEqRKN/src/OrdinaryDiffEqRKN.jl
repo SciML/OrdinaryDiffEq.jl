@@ -7,12 +7,12 @@ import OrdinaryDiffEqCore: perform_step!,
     OrdinaryDiffEqAdaptivePartitionedAlgorithm,
     OrdinaryDiffEqPartitionedAlgorithm,
     CompiledFloats,
-    alg_cache, @cache, full_cache,
+    alg_cache, @cache,
     constvalue, _ode_interpolant,
     get_fsalfirstlast,
     _ode_interpolant!,
     generic_solver_docstring
-import SciMLBase: alg_order, @def
+import SciMLBase: alg_order, @def, full_cache
 using SciMLBase: SciMLBase
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!,
     @tight_loop_macros

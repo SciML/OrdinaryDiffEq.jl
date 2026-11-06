@@ -83,7 +83,7 @@ mutable struct JCommute_iip{JType} <: AbstractJCommute
 end
 
 """
-    get_iterated_I(dt, dW, dZ, alg, p = nothing, c = 1, γ = 1//1)
+    get_iterated_I(dt, dW, dZ, alg, p = nothing, c = 1, γ = 1 // 1)
 
 Evaluate and return the Stratonovich iterated stochastic integrals for the step, out
 of place.
@@ -106,7 +106,7 @@ function get_iterated_I(dt, dW, dZ, alg::JDiagonal_oop, p = nothing, c = 1, γ =
 end
 
 """
-    get_iterated_I!(dt, dW, dZ, alg, p = nothing, c = 1, γ = 1//1)
+    get_iterated_I!(dt, dW, dZ, alg, p = nothing, c = 1, γ = 1 // 1)
 
 In-place form of [`get_iterated_I`](@ref): compute the Stratonovich iterated
 stochastic integrals for the step and store them in `alg.J`, returning `nothing`.

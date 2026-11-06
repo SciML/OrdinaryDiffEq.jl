@@ -2,6 +2,7 @@
     sub_specifiers = (:linear_verbosity, :nonlinear_verbosity)
     toggles = (
         :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
+        :symbolic_diagnostic,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
@@ -29,6 +30,7 @@
             max_iters = Silent(),
             dt_min_unstable = Silent(),
             instability = Silent(),
+            symbolic_diagnostic = Silent(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -67,6 +69,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = Silent(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -105,6 +108,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -143,6 +147,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -181,6 +186,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -215,7 +221,7 @@
     groups = (
         error_control = (
             :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable,
-            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
+            :instability, :symbolic_diagnostic, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         ),
         performance = (
             :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
@@ -309,7 +315,7 @@ Create an `DEVerbosity` using a preset configuration:
 - `SciMLLogging.Detailed()`: Comprehensive debugging information
 - `SciMLLogging.All()`: Maximum verbosity
 
-    DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
+    DEVerbosity(; preset = nothing, error_control = nothing, performance = nothing, numerical = nothing, sde_specific = nothing, dde_specific = nothing, kwargs...)
 
 Create an `DEVerbosity` with group-level or individual field control.
 
@@ -347,7 +353,18 @@ const DEFAULT_VERBOSE = DEVerbosity()
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
+    throw(
+        ArgumentError(
+            """
+            Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7: `verbose` now takes a verbosity object.
+
+                solve(prob, alg; verbose = DEVerbosity(SciMLLogging.None()))  # was verbose = false
+                solve(prob, alg; verbose = DEVerbosity())                     # was verbose = true
+
+            `DEVerbosity` and `SciMLLogging` are both exported by OrdinaryDiffEq, so no extra `using` is needed; from another solver package add `using DiffEqBase, SciMLLogging`. Per-message control is documented at https://docs.sciml.ai/OrdinaryDiffEq/stable/verbosity/
+            """
+        )
+    )
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose

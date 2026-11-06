@@ -1,6 +1,8 @@
 using StochasticDiffEq, DiffEqNoiseProcess, SparseArrays, LinearAlgebra,
     AllocCheck
+using OrdinaryDiffEqCore
 using DiffEqBase: @..
+using SciMLBase: FullSpecialize
 
 @testset "EulerHeun sparse noise: no per-step alloc" begin
 
@@ -74,14 +76,15 @@ using DiffEqBase: @..
         A = sparse_proto(N)
         p = (; N)
         W = SimpleWienerProcess!(0.0, zeros(2N); save_everystep = false)
-        prob = SDEProblem(
+        # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise
+        prob = SDEProblem{true, FullSpecialize}(
             f!, g!, ones(2N), (0.0, 1.0), p; noise_rate_prototype = A, noise = W
         )
         integ = init(prob, EulerHeun(); dt = 0.01, adaptive = false, save_on = false)
 
         cache = integ.cache
         allocs = AllocCheck.check_allocs(
-            StochasticDiffEq.perform_step!, (typeof(integ), typeof(cache))
+            OrdinaryDiffEqCore.perform_step!, (typeof(integ), typeof(cache))
         )
         @test isempty(allocs)
     end
@@ -101,8 +104,8 @@ using DiffEqBase: @..
         # `check_allocs` flags throw-only branches in LinearAlgebra’s generic gemv!/mul!,
         # while the BLAS hot path is allocation-free at runtime. We keep `check_allocs`
         # for the sparse/non-diagonal tests.
-        StochasticDiffEq.perform_step!(integ, cache) # warm-up
-        @test @allocated(StochasticDiffEq.perform_step!(integ, cache)) == 0
+        OrdinaryDiffEqCore.perform_step!(integ, cache) # warm-up
+        @test @allocated(OrdinaryDiffEqCore.perform_step!(integ, cache)) == 0
     end
 
     make_integrator_dense(16)

@@ -12,12 +12,12 @@ const _PureSDIRKAlg = Union{
 }
 
 # step_limiter! accessor — only some pure SDIRK algorithms have the field
-_esdirk_step_limiter!(alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm) = alg.step_limiter!
+_esdirk_step_limiter!(alg::OrdinaryDiffEqNewtonESDIRKAlgorithm) = alg.step_limiter!
 _esdirk_step_limiter!(alg::Union{ImplicitMidpoint, SDIRK2, TRBDF2, ImplicitEuler, Trapezoid}) = alg.step_limiter!
 _esdirk_step_limiter!(alg) = trivial_limiter!
 
 # smooth_est accessor — only adaptive algorithms carry this flag
-_esdirk_smooth_est(alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm) = alg.smooth_est
+_esdirk_smooth_est(alg::OrdinaryDiffEqNewtonESDIRKAlgorithm) = alg.smooth_est
 _esdirk_smooth_est(alg::OrdinaryDiffEqNewtonAdaptiveSDIRKAlgorithm) = alg.smooth_est
 _esdirk_smooth_est(alg) = false
 
@@ -98,7 +98,7 @@ function OrdinaryDiffEqCore.strip_cache(cache::ESDIRKIMEXCache)
 end
 
 function alg_cache(
-        alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::OrdinaryDiffEqNewtonESDIRKAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}, verbose
@@ -114,7 +114,7 @@ function alg_cache(
 end
 
 function alg_cache(
-        alg::OrdinaryDiffEqNewtonAdaptiveESDIRKAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        alg::OrdinaryDiffEqNewtonESDIRKAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}, verbose

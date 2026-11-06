@@ -151,12 +151,12 @@ end
 
     for dt in (1 / 2^6, 1 / 2^12)
         expected = terms_needed(mm, dt, dt^(3 // 2), MronRoe(), MaxL2())
-        sol = solve(prob, RKMilGeneral(), dt = dt, adaptive = false, save_noise = true)
+        sol = solve(prob, RKMilGeneral(); dt, adaptive = false, save_noise = true)
         @test implied_terms(sol) == expected
         # `p = true` used to bake floor(1/dt) + 1 terms into the algorithm object, so
         # the truncation neither tracked the solver's step size nor the noise dimension.
         sol_ptrue = solve(
-            prob, RKMilGeneral(p = true, dt = 1 / 2^12), dt = dt,
+            prob, RKMilGeneral(p = true, dt = 1 / 2^12); dt,
             adaptive = false, save_noise = true
         )
         @test implied_terms(sol_ptrue) == expected
@@ -185,17 +185,17 @@ end
     prob = SDEProblem(f, g, u₀, (0.0, 1.0); noise_rate_prototype = zeros(3, 2))
     prob! = SDEProblem(f!, g!, u₀, (0.0, 1.0); noise_rate_prototype = zeros(3, 2))
 
-    sol = solve(prob, RKMilGeneral(; ii_approx = IICommutative()), dt = dt, adaptive = false)
+    sol = solve(prob, RKMilGeneral(; ii_approx = IICommutative()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob, RKMilGeneral(; ii_approx = IILevyArea()), dt = dt, adaptive = false)
+    sol = solve(prob, RKMilGeneral(; ii_approx = IILevyArea()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob, RKMilGeneral(ii_approx = Fourier()), dt = dt, adaptive = false)
+    sol = solve(prob, RKMilGeneral(ii_approx = Fourier()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
 
-    sol = solve(prob!, RKMilGeneral(; ii_approx = IICommutative()), dt = dt, adaptive = false)
+    sol = solve(prob!, RKMilGeneral(; ii_approx = IICommutative()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob!, RKMilGeneral(; ii_approx = IILevyArea()), dt = dt, adaptive = false)
+    sol = solve(prob!, RKMilGeneral(; ii_approx = IILevyArea()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob!, RKMilGeneral(ii_approx = Fourier()), dt = dt, adaptive = false)
+    sol = solve(prob!, RKMilGeneral(ii_approx = Fourier()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
 end

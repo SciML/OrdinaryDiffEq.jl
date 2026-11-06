@@ -44,7 +44,7 @@ function Dverk(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, αEEst = αEEst, adaptiveorder = 5,
+            A, c, α, 6; αEEst, adaptiveorder = 5,
             stability_size = 4.064777441244461
         )
     )
@@ -74,7 +74,7 @@ function ClassicVerner6(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_tim
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 6, αEEst = αEEst, adaptiveorder = 5,
+            A, c, α, 6; αEEst, adaptiveorder = 5,
             stability_size = 4.457242953908324
         )
     )
@@ -109,7 +109,7 @@ function ClassicVerner7(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_tim
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 7, αEEst = αEEst, adaptiveorder = 6,
+            A, c, α, 7; αEEst, adaptiveorder = 6,
             stability_size = 5.062347991796731
         )
     )
@@ -153,7 +153,7 @@ function ClassicVerner8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_tim
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 8, αEEst = αEEst, adaptiveorder = 7,
+            A, c, α, 8; αEEst, adaptiveorder = 7,
             stability_size = 5.076743619212314
         )
     )
@@ -198,7 +198,7 @@ function RKF8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 8, αEEst = αEEst, adaptiveorder = 7,
+            A, c, α, 8; αEEst, adaptiveorder = 7,
             stability_size = 5.007588848940572
         )
     )
@@ -247,7 +247,7 @@ function DormandPrince8_64bit(::Type{T} = Float64, ::Type{T_time} = T) where {T,
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 8, αEEst = αEEst, adaptiveorder = 7,
+            A, c, α, 8; αEEst, adaptiveorder = 7,
             stability_size = 5.166633619968106
         )
     )
@@ -312,7 +312,7 @@ function DormandPrince8(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_tim
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 8, αEEst = αEEst, adaptiveorder = 7,
+            A, c, α, 8; αEEst, adaptiveorder = 7,
             stability_size = 5.166633619968108
         )
     )

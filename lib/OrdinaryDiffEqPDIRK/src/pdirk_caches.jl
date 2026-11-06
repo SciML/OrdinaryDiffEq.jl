@@ -10,6 +10,23 @@ end
 # Non-FSAL
 get_fsalfirstlast(cache::PDIRK44Cache, u) = (nothing, nothing)
 
+function SciMLBase.get_tmp_cache(integrator, ::PDIRK44, cache::PDIRK44Cache)
+    return (first(cache.nlsolver).tmp, first(cache.nlsolver).z)
+end
+
+# Stage vectors and nested nlsolvers are not in `full_cache`.
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::PDIRK44Cache, i)
+    for x in Iterators.flatten((cache.k1, cache.k2))
+        resize!(x, i)
+    end
+    for nls in cache.nlsolver
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+        isnewton(nls) && (nls.cache.firstcall = true)
+    end
+    return nothing
+end
+
 struct PDIRK44ConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
     nlsolver::N
     tab::TabType
@@ -55,7 +72,7 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    if alg.threading
+    if isthreaded(alg.threading)
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
@@ -88,7 +105,7 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1.0, 1.0
-    if alg.threading
+    if isthreaded(alg.threading)
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,

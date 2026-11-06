@@ -4,5 +4,5 @@ StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-JET = "0.9, 0.10, 0.11"
+JET = "0.9, 0.10, 0.11, 0.12"
 StochasticDiffEq = "7"

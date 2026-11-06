@@ -15,7 +15,7 @@ du₀ = LVector(x = -0.04, y = 0.04, z = 0.0)
 tspan = (0.0, 100000.0)
 
 differential_vars = LVector(x = true, y = true, z = false)
-prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
+prob = DAEProblem(f, du₀, u₀, tspan; differential_vars)
 
 sol = solve(prob, DImplicitEuler())
 

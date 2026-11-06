@@ -26,8 +26,7 @@ function test_step_limiter(alg_type)
 
     sol = solve(prob, alg_type(), dt = 0.1; step_limiter = step_limiter!)
 
-    n = sol.stats.naccept + sol.stats.nreject
-    return @test n == STEP_LIMITER_VAR[]
+    return @test sol.stats.naccept == STEP_LIMITER_VAR[]
 end
 
 @testset "Step_limiter Test" begin
@@ -68,8 +67,13 @@ end
 
     STEP_LIMITER_VAR[] = 0
     prob = ODEProblem((du, u, p, t) -> du .= u, [1.0], (0.0, 1.0))
-    sol = solve(prob, Tsit5(), dt = 0.1; step_limiter = step_limiter!)
-    @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+    integrator = init(
+        prob, Tsit5(); dt = 1.0, abstol = 1.0e-12, reltol = 1.0e-12,
+        step_limiter = step_limiter!, save_everystep = false
+    )
+    step!(integrator)
+    @test integrator.stats.nreject > 0
+    @test integrator.stats.naccept == STEP_LIMITER_VAR[]
 
     # Supplying `stage_limiter` to a method that does not apply stage limiters
     # errors (by default) rather than silently dropping it.
@@ -97,8 +101,58 @@ end
     for alg in (AB3(), VCAB3(), AitkenNeville())
         STEP_LIMITER_VAR[] = 0
         sol = solve(prob, alg, dt = 0.1; step_limiter = step_limiter!)
-        @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+        @test sol.stats.naccept == STEP_LIMITER_VAR[]
     end
+end
+
+@testset "Solve-level step_limiter refreshes FSAL derivatives" begin
+    f!(du, u, p, t) = (du .= -u)
+    prob = ODEProblem(f!, [1.0], (0.0, 1.0))
+    function clamp_endpoint!(u, integrator, p, t)
+        u[1] = min(u[1], 0.5)
+        return nothing
+    end
+
+    # The projection is deliberately not part of the embedded error estimate, but
+    # it must invalidate an FSAL value computed at the unprojected endpoint.
+    for alg in (TRBDF2(), Tsit5())
+        integrator = init(
+            prob, alg; dt = 0.1, adaptive = true, abstol = 1.0e-8,
+            reltol = 1.0e-8, step_limiter = clamp_endpoint!, save_everystep = false
+        )
+        step!(integrator)
+        step!(integrator)
+
+        expected_fsal = similar(integrator.fsalfirst)
+        integrator.f(expected_fsal, integrator.uprev, integrator.p, integrator.tprev)
+        @test integrator.fsalfirst ≈ expected_fsal
+    end
+
+    oop_prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
+    integrator = init(
+        oop_prob, Tsit5(); dt = 0.1, adaptive = true, abstol = 1.0e-8,
+        reltol = 1.0e-8, step_limiter = clamp_endpoint!, save_everystep = false
+    )
+    step!(integrator)
+    step!(integrator)
+    @test integrator.fsalfirst ≈ integrator.f(
+        integrator.uprev, integrator.p, integrator.tprev
+    )
+end
+
+@testset "Non-trivial step_limiter refresh cost" begin
+    prob = ODEProblem((du, u, p, t) -> du .= -u, [1.0], (0.0, 0.3))
+    no_op_limiter!(u, integrator, p, t) = nothing
+
+    baseline = solve(prob, Tsit5(); dt = 0.1, adaptive = false, save_everystep = false)
+    limited = solve(
+        prob, Tsit5(); dt = 0.1, adaptive = false,
+        step_limiter = no_op_limiter!, save_everystep = false
+    )
+
+    @test limited.stats.naccept == baseline.stats.naccept
+    # The terminal endpoint needs no refresh because no subsequent step uses it.
+    @test limited.stats.nf == baseline.stats.nf + limited.stats.naccept - 1
 end
 
 @testset "ExponentialRK step_limiter Test" begin
@@ -116,8 +170,51 @@ end
         )
         STEP_LIMITER_VAR[] = 0
         sol = solve(split_prob, alg_type(), dt = 0.1; step_limiter = step_limiter!)
-        @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+        @test sol.stats.naccept == STEP_LIMITER_VAR[]
     end
+
+    function clamp_split_endpoint!(u, integrator, p, t)
+        u[1] = min(u[1], 0.5)
+        return nothing
+    end
+    integrator = init(
+        split_prob, ETD2(); dt = 0.1, step_limiter = clamp_split_endpoint!,
+        save_everystep = false
+    )
+    step!(integrator)
+    step!(integrator)
+    @test integrator.fsalfirst.lin ≈ A * integrator.uprev
+    @test iszero(integrator.fsalfirst.nl)
+
+    nonlinear_oop(u, p, t) = 0.1 .* u
+    oop_split_prob = SplitODEProblem(
+        SplitFunction(L, nonlinear_oop), [1.0, 1.0], (0.0, 0.2)
+    )
+    integrator = init(
+        oop_split_prob, ETD2(); dt = 0.1, step_limiter = clamp_split_endpoint!,
+        save_everystep = false
+    )
+    step!(integrator)
+    step!(integrator)
+    @test integrator.fsalfirst.lin ≈ A * integrator.uprev
+    @test integrator.fsalfirst.nl ≈ nonlinear_oop(
+        integrator.uprev, nothing, integrator.tprev
+    )
+    @test integrator.fsalfirst.nlprev ≈ nonlinear_oop(oop_split_prob.u0, nothing, 0.0)
+
+    callback = DiscreteCallback(
+        (u, t, integrator) -> true,
+        integrator -> (integrator.u .= min.(integrator.u, 0.5));
+        save_positions = (false, false)
+    )
+    integrator = init(
+        split_prob, ETD2(); dt = 0.1, callback,
+        save_everystep = false, dense = false
+    )
+    step!(integrator)
+    step!(integrator)
+    @test integrator.fsalfirst.lin ≈ A * integrator.uprev
+    @test iszero(integrator.fsalfirst.nl)
 
     function linear_f!(du, u, p, t)
         mul!(du, A, u)
@@ -135,7 +232,7 @@ end
     for alg_type in (Exprb32, Exprb43)
         STEP_LIMITER_VAR[] = 0
         sol = solve(exprb_prob, alg_type(), dt = 0.1; step_limiter = step_limiter!)
-        @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+        @test sol.stats.naccept == STEP_LIMITER_VAR[]
     end
 end
 
@@ -147,7 +244,7 @@ end
     STEP_LIMITER_VAR[] = 0
     sol = solve(prob, SSPRK43(; step_limiter! = step_limiter!), dt = 0.1)
     @test STEP_LIMITER_VAR[] > 0
-    @test sol.stats.naccept + sol.stats.nreject == STEP_LIMITER_VAR[]
+    @test sol.stats.naccept == STEP_LIMITER_VAR[]
 
     # A non-trivial `stage_limiter!` field (old API) is still applied.
     STEP_LIMITER_VAR[] = 0
@@ -170,6 +267,8 @@ end
         SSPRK22, SSPRK43, SSPRK104, SSPRK932,
         CarpenterKennedy2N54, ORK256, RDPK3Sp35, NDBLSRK124,
         Rosenbrock23, Rosenbrock32, ROS3P, Rodas4, Rodas5P,
+        ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
+        RKL1, RKL2, RKG1, RKG2,
     ]
     for A in supported
         alg = A()
@@ -182,7 +281,7 @@ end
     # Methods that do not apply stage limiters (including ones that merely carry a
     # vestigial `stage_limiter!` field) must reject the keyword.
     unsupported = [
-        FunctionMap, ImplicitEuler, KenCarp4, ROCK2, RKC, ESERK4, RKL1,
+        FunctionMap, ImplicitEuler, KenCarp4,
         AB3, AitkenNeville, CKLLSRK54_3C, ParsaniKetchesonDeconinck3S32,
     ]
     for A in unsupported
@@ -190,4 +289,56 @@ end
         @test !OrdinaryDiffEqCore.has_stage_limiter(alg)
         @test_throws ErrorException solve(prob, alg, dt = 0.1; stage_limiter = slim!)
     end
+end
+
+const LIMITER_ALGS = [
+    Euler, Heun, Ralston, Midpoint, RK4, BS3, OwrenZen3, DP5, Tsit5,
+    Vern6, Vern9, DP8, TanYam7, TsitPap8, QPRK98,
+    SSPRK22, SSPRK43, SSPRK104, SSPRK932,
+    CarpenterKennedy2N54, ORK256, RDPK3Sp35, NDBLSRK124,
+    Rosenbrock23, ROS3P, Rodas4, Rodas5P,
+    ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
+    RKL1, RKL2, RKG1, RKG2,
+]
+
+@testset "stage limiter receives the integrator" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [1.0, 1.0], (0.0, 1.0))
+    for A in LIMITER_ALGS
+        ok = Ref(true)
+        calls = Ref(0)
+        limiter! = function (u, integrator, p, t)
+            calls[] += 1
+            integrator isa SciMLBase.DEIntegrator || (ok[] = false)
+            return nothing
+        end
+        solve(prob, A(), dt = 0.1; stage_limiter = limiter!)
+        @test calls[] > 0
+        @test ok[]
+    end
+end
+
+@testset "stage limiter is never handed uprev" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [1.0, 1.0], (0.0, 1.0))
+    for A in LIMITER_ALGS
+        ok = Ref(true)
+        limiter! = function (u, integrator, p, t)
+            u === integrator.uprev && (ok[] = false)
+            return nothing
+        end
+        solve(prob, A(), dt = 0.1; stage_limiter = limiter!)
+        @test ok[]
+    end
+end
+
+@testset "uprev is stable across one step" begin
+    prob = ODEProblem((du, u, p, t) -> du .= u, [-1.0], (0.0, 0.1))
+    seen = Float64[]
+    positivity! = function (u, integrator, p, t)
+        push!(seen, integrator.uprev[1])
+        @. u = max(u, 0.0)
+        return nothing
+    end
+    solve(prob, QPRK98(), dt = 0.1, adaptive = false; stage_limiter = positivity!)
+    @test !isempty(seen)
+    @test all(==(seen[1]), seen)
 end

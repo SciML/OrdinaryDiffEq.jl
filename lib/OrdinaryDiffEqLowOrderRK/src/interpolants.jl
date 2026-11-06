@@ -1,4 +1,4 @@
-RK_WITH_SPECIAL_INTERPOLATIONS = Union{
+const RK_WITH_SPECIAL_INTERPOLATIONS = Union{
     DP5ConstantCache, DP5Cache,
     OwrenZen3ConstantCache, OwrenZen3Cache,
     OwrenZen4ConstantCache, OwrenZen4Cache,

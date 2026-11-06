@@ -11,7 +11,8 @@ import FunctionWrappersWrappers
 import DiffEqBase
 
 import LinearAlgebra
-import LinearAlgebra: Diagonal, I, UniformScaling, diagind, opnorm
+import LinearAlgebra: Bidiagonal, Diagonal, I, SymTridiagonal, Tridiagonal,
+    UniformScaling, diagind, opnorm
 import LinearAlgebra: LowerTriangular
 import ArrayInterface
 
@@ -23,7 +24,7 @@ import StaticArraysCore: StaticArray, StaticMatrix
 using SciMLBase: UJacobianWrapper, UDerivativeWrapper, _vec, _unwrap_val
 import SciMLBase: SciMLBase, @set, DEIntegrator, ODEFunction, SplitFunction, DAEFunction, remake, solve!
 import SciMLOperators: SciMLOperators, update_coefficients, update_coefficients!, MatrixOperator, AbstractSciMLOperator,
-    islinear, isconstant
+    islinear, isconstant, ScalarOperator
 import SparseMatrixColorings: ConstantColoringAlgorithm, GreedyColoringAlgorithm, ColoringProblem,
     ncolors, column_colors, coloring, sparsity_pattern
 import OrdinaryDiffEqCore
@@ -37,11 +38,11 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     isnewton,
     set_new_W!, set_W_γdt!, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff, isWmethod,
+    get_new_W_γdt_cutoff, isWmethod, _current_alg,
     TryAgain,
     Divergence, constvalue, @SciMLMessage
 
-import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff
+import OrdinaryDiffEqCore: get_chunksize, resize_J_W!, alg_autodiff, get_fresh_jacobian
 
 import ConstructionBase
 
@@ -65,6 +66,16 @@ is_sparse_csc(::Any) = false
 concrete_mass_matrix(mm) = mm
 concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
 
+"""
+    has_mass_matrix(f)
+
+Whether `f` is a function type that carries a `mass_matrix` field. `DAEFunction` is fully
+implicit — its residual already contains the `du` coefficients — so it has none, and the
+mass-matrix seeding below is skipped for it entirely: a DAE `jac_prototype` must already
+be the complete pattern of `∂F/∂u + γ ∂F/∂(du)`.
+"""
+has_mass_matrix(f) = hasfield(typeof(f), :mass_matrix)
+
 # These will error if called without the extension, but should never be called
 # on non-sparse types due to the is_sparse checks
 function nonzeros end
@@ -77,6 +88,15 @@ nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays
 spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+
+# `fill!` on LinearAlgebra's banded structured matrices throws for nonzero
+# values since the off-band entries are constrained to zero, so write the
+# stored bands directly instead.
+fill_stored!(A, v) = fill!(A, v)
+fill_stored!(A::Diagonal, v) = (fill!(A.diag, v); A)
+fill_stored!(A::Bidiagonal, v) = (fill!(A.dv, v); fill!(A.ev, v); A)
+fill_stored!(A::Tridiagonal, v) = (fill!(A.dl, v); fill!(A.d, v); fill!(A.du, v); A)
+fill_stored!(A::SymTridiagonal, v) = (fill!(A.dv, v); fill!(A.ev, v); A)
 
 include("alg_utils.jl")
 include("linsolve_utils.jl")
@@ -96,7 +116,8 @@ include("operators.jl")
             :calc_rosenbrock_differentiation, :calc_rosenbrock_differentiation!,
             :jacobian!, :jacobian2W!, :update_W!,
             :resize_grad_config!, :resize_jac_config!,
-            :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W
+            :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W,
+            :drain_jvp_count!, :jvp_counter, :set_linear_reltol!
         )
     )
 end

@@ -11,7 +11,13 @@ where h = Θ·dt and Θ ∈ [0,1].
 """
 
 const ExplicitTaylor2Caches = Union{ExplicitTaylor2Cache, ExplicitTaylor2ConstantCache}
-const ExplicitTaylorCaches = Union{ExplicitTaylorCache, ExplicitTaylorConstantCache}
+const ExplicitTaylorConstantCaches = Union{
+    ExplicitTaylorConstantCache, ExplicitTaylorAdaptiveOrderConstantCache,
+}
+const ExplicitTaylorMutableCaches = Union{
+    ExplicitTaylorCache, ExplicitTaylorAdaptiveOrderCache,
+}
+const ExplicitTaylorCaches = Union{ExplicitTaylorConstantCaches, ExplicitTaylorMutableCaches}
 const AllTaylorCaches = Union{ExplicitTaylor2Caches, ExplicitTaylorCaches}
 
 # ============================================================================
@@ -161,9 +167,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorConstantCache{P},
+        cache::ExplicitTaylorConstantCaches,
         idxs::Nothing, T::Type{Val{0}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     # Horner's method: y₀ + h*(k[1] + h*(k[2] + ... + h*k[P]))
     @inbounds begin
@@ -177,9 +184,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorConstantCache{P},
+        cache::ExplicitTaylorConstantCaches,
         idxs, T::Type{Val{0}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = k[P][idxs]
@@ -192,9 +200,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorCache{P},
+        cache::ExplicitTaylorMutableCaches,
         idxs::Nothing, T::Type{Val{0}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = copy(k[P])
@@ -207,9 +216,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorCache{P},
+        cache::ExplicitTaylorMutableCaches,
         idxs, T::Type{Val{0}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = k[P][idxs]
@@ -260,9 +270,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorConstantCache{P},
+        cache::ExplicitTaylorConstantCaches,
         idxs::Nothing, T::Type{Val{1}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = @.. P * k[P]
@@ -275,9 +286,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorConstantCache{P},
+        cache::ExplicitTaylorConstantCaches,
         idxs, T::Type{Val{1}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = @.. P * k[P][idxs]
@@ -290,9 +302,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorCache{P},
+        cache::ExplicitTaylorMutableCaches,
         idxs::Nothing, T::Type{Val{1}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = @.. P * k[P]
@@ -305,9 +318,10 @@ end
 
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k,
-        cache::ExplicitTaylorCache{P},
+        cache::ExplicitTaylorMutableCaches,
         idxs, T::Type{Val{1}}, differential_vars
-    ) where {P}
+    )
+    P = _taylor_order(cache)
     h = Θ * dt
     @inbounds begin
         result = @.. P * k[P][idxs]
@@ -374,3 +388,7 @@ end
 
 _taylor_order(::ExplicitTaylorCache{P}) where {P} = P
 _taylor_order(::ExplicitTaylorConstantCache{P}) where {P} = P
+# The adaptive-order caches carry `max_order` coefficients; the ones above the
+# order actually used on a step are zero, so a fixed-length Horner is exact.
+_taylor_order(::ExplicitTaylorAdaptiveOrderCache{P, Q}) where {P, Q} = Q
+_taylor_order(::ExplicitTaylorAdaptiveOrderConstantCache{P, Q}) where {P, Q} = Q

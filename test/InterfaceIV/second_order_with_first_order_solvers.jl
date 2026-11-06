@@ -2,7 +2,8 @@ using OrdinaryDiffEq
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqStabilizedRK
 
 function SinCosDiffEqToSolve!(ddu, du, u, p, t)
-    return ddu[1] = -u[1]
+    ddu[1] = -u[1]
+    return
 end
 
 prob = SecondOrderODEProblem(SinCosDiffEqToSolve!, [2.0], [3.0], (0.0, 1.0))

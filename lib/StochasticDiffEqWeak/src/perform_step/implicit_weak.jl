@@ -28,12 +28,7 @@ based on the RI1 scheme with theta-method implicitization of the drift.
     _dW = map(x -> calc_threepoint_random(sq3dt, NORMAL_ONESIX_QUANTILE, x), dW_scaled)
     chi1 = map(x -> (x^2 - dt) / 2, _dW)  # diagonal of Ihat2
 
-    if !(W.dW isa Number)
-        m = length(W.dW)
-        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
-    else
-        m = 1
-    end
+    m = length(W.dW)
 
     # Stage 1: Compute k1 implicitly
     # For implicit treatment: k1 = f(Y1) where Y1 = uprev + theta*dt*k1
@@ -109,11 +104,17 @@ based on the RI1 scheme with theta-method implicitization of the drift.
         end
     end
 
-    # Compute g2 and g3 at H12 and H13
+    # Final update: combine drift (implicit) and diffusion (explicit)
+    u = uprev + α1 * k1 * dt + α2 * k2 * dt + α3 * k3 * dt
+
+    # Compute g2 and g3 at H12 and H13, then add noise contribution (same as explicit RI1)
     if W.dW isa Number
         g2 = integrator.f.g(H12, p, t + c12 * dt)
         g3 = integrator.f.g(H13, p, t + c13 * dt)
+        u += g1 * (_dW * beta11) + g2 * (_dW * beta12 + chi1 * beta22 / integrator.sqdt) +
+            g3 * (_dW * beta13 + chi1 * beta23 / integrator.sqdt)
     else
+        _dZ = map(x -> calc_twopoint_random(integrator.sqdt, x), W.dZ)
         g2 = [integrator.f.g(H12[k], p, t + c12 * dt) for k in 1:m]
         g3 = [integrator.f.g(H13[k], p, t + c13 * dt) for k in 1:m]
         H22 = [copy(uprev) for k in 1:m]
@@ -132,16 +133,6 @@ based on the RI1 scheme with theta-method implicitization of the drift.
                     integrator.sqdt
             end
         end
-    end
-
-    # Final update: combine drift (implicit) and diffusion (explicit)
-    u = uprev + α1 * k1 * dt + α2 * k2 * dt + α3 * k3 * dt
-
-    # Add noise contribution (same as explicit RI1)
-    if W.dW isa Number
-        u += g1 * (_dW * beta11) + g2 * (_dW * beta12 + chi1 * beta22 / integrator.sqdt) +
-            g3 * (_dW * beta13 + chi1 * beta23 / integrator.sqdt)
-    else
         if is_diagonal_noise(integrator.sol.prob)
             u += g1 .* _dW * beta11
             for k in 1:m

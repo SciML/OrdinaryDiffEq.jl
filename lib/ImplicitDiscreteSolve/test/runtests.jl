@@ -3,6 +3,8 @@ using Test
 using ImplicitDiscreteSolve
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
+using NonlinearSolve
+using SimpleNonlinearSolve
 using SciMLBase
 using SafeTestsets
 using SciMLTesting
@@ -303,6 +305,27 @@ if TEST_GROUP != "QA"
         @test SciMLBase.successful_retcode(sol)
     end
 
+    @testset "nlsolve accepts polyalgorithms and SimpleNonlinearSolve" begin
+        function halving!(resid, u_next, u, p, t)
+            resid[1] = u_next[1] - u[1] / 2
+            return nothing
+        end
+        idprob = ImplicitDiscreteProblem(halving!, [1.0], (0, 5), nothing)
+
+        reference = solve(idprob, IDSolve())
+        @test SciMLBase.successful_retcode(reference)
+
+        for nlsolve in (
+                RobustMultiNewton(), FastShortcutNonlinearPolyalg(),
+                SimpleNewtonRaphson(), SimpleTrustRegion(),
+            )
+            sol = solve(idprob, IDSolve(nlsolve = nlsolve))
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t == reference.t
+            @test sol.u[end] ≈ reference.u[end]
+        end
+    end
+
     @testset "InitialFailure thrown" begin
         function bad(u_next, u, p, t)
             [u_next[1] - u_next[2], u_next[1] - 3, u_next[2] - 4]
@@ -315,6 +338,33 @@ if TEST_GROUP != "QA"
         sol = solve(idprob, IDSolve())
         @test length(sol.u) == 1
         @test !SciMLBase.successful_retcode(sol)
+    end
+
+    @testset "Nonlinear solve runs at the integrator's tolerances" begin
+        # Terms of magnitude 1e7 put the smallest residual any `Float64` can achieve at
+        # 1.2e-9: above NonlinearSolve's default Float64 `abstol` of 3e-13, below any
+        # tolerance a caller would ask for.
+        function floored!(resid, u_next, u, p, t)
+            resid[1] = 1.0e7 * (u_next[1]^2 - 1.5) - 0.5785
+            return nothing
+        end
+
+        u0 = [sqrt(1.5)]
+        root = sqrt(1.5 + 0.5785e-7)
+
+        idprob = ImplicitDiscreteProblem(floored!, u0, (0, 0), [])
+        @test check_error(init(idprob, IDSolve())) == ReturnCode.InitialFailure
+
+        integ = init(idprob, IDSolve(); abstol = 1.0e-8)
+        @test check_error(integ) != ReturnCode.InitialFailure
+        @test integ.u[1] ≈ root
+
+        # ... and the same for a step rather than the initialization.
+        stepprob = ImplicitDiscreteProblem(floored!, u0, (0, 2), []; dt = 1.0)
+        @test !SciMLBase.successful_retcode(solve(stepprob, IDSolve(); adaptive = false))
+        sol = solve(stepprob, IDSolve(); adaptive = false, abstol = 1.0e-8)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ root
     end
 end
 

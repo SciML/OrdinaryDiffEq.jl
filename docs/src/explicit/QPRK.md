@@ -76,12 +76,14 @@ For ultra-high precision, also consider:
 ## Usage Example
 
 ```julia
-using OrdinaryDiffEqQPRK
+using OrdinaryDiffEqQPRK: ODEProblem, solve, QPRK98
+
+f(u, p, t) = [u[2], -u[1]]
 # Ensure using Float128 for ultra-high precision
 u0 = Float128[1.0, 0.0]
 tspan = (Float128(0.0), Float128(10.0))
 prob = ODEProblem(f, u0, tspan)
-sol = solve(prob, QPRK98(), abstol = 1e-25, reltol = 1e-25)
+sol = solve(prob, QPRK98(), abstol = 1.0e-25, reltol = 1.0e-25)
 ```
 
 ```@eval

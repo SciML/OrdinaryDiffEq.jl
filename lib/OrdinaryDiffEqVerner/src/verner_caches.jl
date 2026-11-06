@@ -347,9 +347,9 @@ function alg_cache(
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
-    k8 = k3
+    k8 = zero(rate_prototype)
     k9 = zero(rate_prototype)
-    k10 = k4
+    k10 = zero(rate_prototype)
     utilde = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)

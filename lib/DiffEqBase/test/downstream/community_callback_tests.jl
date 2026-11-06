@@ -217,7 +217,8 @@ end
 function f!(out, u, p, t)
     out[1] = 0
     out[2] = u[3]
-    return out[3] = -1.0 * (u[2] - u[1])
+    out[3] = -1.0 * (u[2] - u[1])
+    return
 end
 u0 = [0, 0, 1.0]
 function cond!(out, u, t, i)
@@ -225,14 +226,14 @@ function cond!(out, u, t, i)
     return nothing
 end
 function terminate_affect!(int, events)
-    return any(isone, events) && terminate!(int)
+    return any(!iszero, events) && terminate!(int)
 end
 cb = VectorContinuousCallback(cond!, terminate_affect!, 1)
 
 u0 = [0.0, 0.0, 1.0]
 prob = ODEProblem(f!, u0, (0.0, 10.0); callback = cb)
 soln = solve(prob, Tsit5())
-@test soln.t[end] ≈ 4.712347213360699 atol = 1.0e-4
+@test soln.t[end] ≈ pi / 2 atol = 1.0e-4
 
 odefun = ODEFunction((u, p, t) -> [u[2], u[2] - p]; mass_matrix = [1 0; 0 0])
 callback = PresetTimeCallback(0.5, integ -> (integ.p = -integ.p))

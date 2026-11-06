@@ -30,7 +30,7 @@ function SciMLBase.__solve(
         merge_callbacks = true, kwargs...
     )
     kwargs = DiffEqBase.merge_problem_kwargs(prob; merge_callbacks, kwargs...)
-    integrator = SciMLBase.__init(prob, alg; kwargs...)
+    integrator = _sde_init(prob, alg; kwargs...)
     solve!(integrator)
     if concrete_prob(prob) isa SciMLBase.AbstractRODEProblem &&
             typeof(concrete_prob(prob).noise) == typeof(integrator.sol.W) &&
@@ -127,8 +127,20 @@ function _z_prototype(alg, rand_prototype, iip::Bool, dt)
     return _z_prototype(alg, rand_prototype, iip)
 end
 
+# Separate methods (rather than one over the Union) so they are more specific than
+# JumpProcesses' `__init(::JumpProblem, ::Union{StochasticDiffEqAlgorithm,
+# StochasticDiffEqRODEAlgorithm})`, which merges `prob.kwargs` a second time after
+# `init_call` has already merged them.
+function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqAlgorithm; kwargs...)
+    return _sde_init(_prob, alg; kwargs...)
+end
+
+function SciMLBase.__init(_prob::JumpProblem, alg::StochasticDiffEqRODEAlgorithm; kwargs...)
+    return _sde_init(_prob, alg; kwargs...)
+end
+
 function SciMLBase.__init(
-        _prob::Union{SciMLBase.AbstractRODEProblem, JumpProblem},
+        _prob::SciMLBase.AbstractRODEProblem,
         alg::Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm};
         kwargs...
     )
@@ -246,10 +258,11 @@ function _sde_init(
 
     # ── SDE-specific validation ──────────────────────────────────────────
     if typeof(prob.f) <: Tuple
-        if any(mm != I for mm in prob.f.mass_matrix)
+        if any(!OrdinaryDiffEqCore._is_identity_massmatrix, prob.f.mass_matrix)
             error("This solver is not able to use mass matrices.")
         end
-    elseif prob isa SciMLBase.AbstractRODEProblem && prob.f.mass_matrix != I &&
+    elseif prob isa SciMLBase.AbstractRODEProblem &&
+            !OrdinaryDiffEqCore._is_identity_massmatrix(prob.f.mass_matrix) &&
             !alg_mass_matrix_compatible(alg)
         error("This solver is not able to use mass matrices.")
     end
@@ -318,9 +331,16 @@ function _sde_init(
     # ── Type computations (needed for cache) ─────────────────────────────
     tType = eltype(prob.tspan)
     uType = typeof(u)
-    uBottomEltype = recursive_bottom_eltype(u)
-    uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
-    uEltypeNoUnits = recursive_unitless_eltype(u)
+    # A nothing state has no eltype; tolerances use scalar Float64.
+    if u === nothing
+        uBottomEltype = Float64
+        uBottomEltypeNoUnits = Float64
+        uEltypeNoUnits = Float64
+    else
+        uBottomEltype = recursive_bottom_eltype(u)
+        uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+        uEltypeNoUnits = recursive_unitless_eltype(u)
+    end
     tTypeNoUnits = typeof(one(tType))
     noise = prob isa SciMLBase.AbstractRODEProblem ? prob.noise : nothing
     tspan = prob.tspan
@@ -346,6 +366,12 @@ function _sde_init(
             reltol = 0
         end
     end
+
+    # Normalize user-supplied tolerances with `real.(...)`. Defaults above already
+    # use `real(...)`; this covers complex abstol/reltol kwargs so
+    # DiffEqBase.calculate_residuals does not StackOverflow.
+    abstol = real.(abstol)
+    reltol = real.(reltol)
 
     # ── rate_prototype / noise_rate_prototype (needed for cache) ─────────
     if isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
@@ -528,7 +554,18 @@ function _sde_init(
     dW, dZ = isnothing(W) ? (nothing, nothing) : (W.dW, W.dZ)
 
     verbose_internal = if verbose isa Bool
-        throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
+        throw(
+            ArgumentError(
+                """
+                Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7: `verbose` now takes a verbosity object.
+
+                    solve(prob, alg; verbose = DEVerbosity(SciMLLogging.None()))  # was verbose = false
+                    solve(prob, alg; verbose = DEVerbosity())                     # was verbose = true
+
+                `DEVerbosity` and `SciMLLogging` are both exported by OrdinaryDiffEq, so no extra `using` is needed; from another solver package add `using DiffEqBase, SciMLLogging`. Per-message control is documented at https://docs.sciml.ai/OrdinaryDiffEq/stable/verbosity/
+                """
+            )
+        )
     elseif verbose isa AbstractVerbosityPreset
         DEVerbosity(verbose)
     elseif verbose isa DEVerbosity
@@ -543,7 +580,10 @@ function _sde_init(
         tTypeNoUnits, uprev, f, t, dt, Val{isinplace(_prob)}, verbose_internal
     )
 
-    # ── Delegate to ODE's _ode_init directly ─────────────────────────────
+    # ── Delegate to public ODE `_ode_init` (concrete abstol/reltol already set) ─
+    # Call public `_ode_init` after SDE defaults + `real.(...)`.
+    # Pre-resolved Float64 kwargs keep a single kwcall layer so `@inferred solve`
+    # stays concrete (OrdinaryDiffEq Core `__init` pre-resolves the same way).
     ode_alias = ODEAliasSpecifier(alias_u0 = true, alias_f = true, alias_p = true)
 
     tType = eltype(prob.tspan)
@@ -554,9 +594,9 @@ function _sde_init(
         _cache = cache,
         _u = u,
         _uprev = uprev,
-        W = W, P = P,
+        W, P,
         sqdt = tType(dt),
-        noise = noise, c = c, rate_constants = rate_constants,
+        noise, c, rate_constants,
         seed = _seed,
         rng = _rng,
         controller,

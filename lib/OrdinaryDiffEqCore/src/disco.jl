@@ -19,6 +19,13 @@ get_disco_probs(cache::AbstractControllerCache) = cache.controller.basic.disco_p
 get_disco_probs(cache::DummyControllerCache) = cache.disco_probs
 get_disco_probs(cache::CompositeControllerCache) = get_disco_probs(first(cache.caches))
 
+_discontinuity_detection_enabled(cache::AbstractControllerCache) =
+    cache.controller.basic.discontinuity_detection
+_discontinuity_detection_enabled(cache::DummyControllerCache) =
+    cache.discontinuity_detection
+_discontinuity_detection_enabled(cache::CompositeControllerCache) =
+    _discontinuity_detection_enabled(first(cache.caches))
+
 function find_discontinuity(integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
@@ -35,19 +42,14 @@ function find_discontinuity(integrator)
     idx = 1
     addsteps_called = false
     for i in cb.continuous_callbacks
-        if (!(i.maybe_discontinuity))
+        if (!(i.maybe_discontinuity::Bool))
             continue
         end
         disco_prob = disco_probs[idx]
         disco_zero = disco_prob.f.f.obj.x
-        disco_zero.dt = dt
-        disco_zero.uprev = uprev
-        disco_zero.u = u
-        disco_zero.k = k
-        disco_zero.tprev = t
-        disco_zero.p = p
+        _load_disco_state!(disco_zero, dt, uprev, u, k, t, p)
         if (i isa VectorContinuousCallback)
-            len_cb = i.len
+            len_cb = i.len::Int
             i.condition(disco_zero.out_low, uprev, t, integrator)
             i.condition(disco_zero.out_high, u, t + dt, integrator)
             for j in 1:len_cb
@@ -59,11 +61,11 @@ function find_discontinuity(integrator)
                             disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false
                         )
                     end
-                    disco_zero.ind = j
+                    _set_disco_index!(disco_zero, j)
                     disco_prob.tspan[2] = breakpointθ
                     sol = solve(disco_prob)
                     tmp = sol[]
-                    if (!isnan(tmp) && tmp < breakpointθ)
+                    if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
                         integrator.is_disco_step = true
                         integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step too far past this
@@ -84,7 +86,7 @@ function find_discontinuity(integrator)
                 disco_prob.tspan[2] = breakpointθ
                 sol = solve(disco_prob)
                 tmp = sol[]
-                if (!isnan(tmp) && tmp < breakpointθ)
+                if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp
                     integrator.is_disco_step = true
                     integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step past this

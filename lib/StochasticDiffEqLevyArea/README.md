@@ -42,7 +42,7 @@ W = sqrt(h) * randn(m)
 II = iterated_integrals(W, h)
 
 # With explicit algorithm
-II = iterated_integrals(W, h; alg=MronRoe())
+II = iterated_integrals(W, h; alg = MronRoe())
 
 # With explicit precision
 II = iterated_integrals(W, h, 0.05)
@@ -55,18 +55,18 @@ using Random
 
 # Generate and store Fourier coefficients
 rng = Xoshiro(42)
-n = terms_needed(m, h, h^(3/2), MronRoe(), MaxL2())
+n = terms_needed(m, h, h^(3 / 2), MronRoe(), MaxL2())
 coeffs = generate_coefficients(m, n, MronRoe(), rng)
 
 # Deterministic computation from stored coefficients
 II = levyarea(W / sqrt(h), n, MronRoe(), coeffs)
 
 # Reconstruct the Brownian path at arbitrary times
-t_points = [0.0, h/4, h/2, 3h/4, h]
+t_points = [0.0, h / 4, h / 2, 3h / 4, h]
 W_values = reconstruct_path(W, h, coeffs, t_points)
 
 # Compute iterated integrals over a sub-interval
-II_sub = iterated_integrals_subinterval(W, h, coeffs, 0.0, h/2)
+II_sub = iterated_integrals_subinterval(W, h, coeffs, 0.0, h / 2)
 ```
 
 ## Available Algorithms

@@ -252,9 +252,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -273,12 +273,27 @@ function alg_cache(
     )
 end
 
+# Rosenbrock32 amplifies algebraic constraint drift every step on DAEs (#4650).
+function _check_rosenbrock32_mass_matrix(f)
+    mm = f.mass_matrix
+    singular = mm isa UniformScaling ? iszero(mm.λ) : any(find_algebraic_vars_eqs(mm)[1])
+    if singular
+        throw(
+            ArgumentError(
+                "Rosenbrock32 is unstable on DAEs (singular mass matrix). Use Rosenbrock23 or Rodas5P instead."
+            )
+        )
+    end
+    return nothing
+end
+
 function alg_cache(
         alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    _check_rosenbrock32_mass_matrix(f)
     k₁ = zero(rate_prototype)
     k₂ = zero(rate_prototype)
     k₃ = zero(rate_prototype)
@@ -307,9 +322,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -384,6 +399,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    _check_rosenbrock32_mass_matrix(f)
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, nothing, uEltypeNoUnits, Val(false))
@@ -558,9 +574,9 @@ function alg_cache(
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
 
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -700,9 +716,9 @@ function alg_cache(
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
-        linprob, wrapprecs(alg.linsolve, W, weight),
+        linprob, wrapprecs(alg.linsolve, W, weight);
         alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol = reltol,
+        abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
     )
@@ -714,8 +730,7 @@ function alg_cache(
         diff_vars = collect(1:n)
         alg_vars = Int[]
     else
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
     end
     n_g = length(alg_vars)
     n_f = length(diff_vars)

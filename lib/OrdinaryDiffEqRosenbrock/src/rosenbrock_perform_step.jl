@@ -61,9 +61,9 @@ end
     )
 
     if repeat_step || !new_W
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
     vecu = _vec(linres.u)
@@ -85,7 +85,7 @@ end
 
     @.. linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -109,7 +109,7 @@ end
                 dt * dT
         end
 
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
         vecu = _vec(linres.u)
         veck3 = _vec(k₃)
         @.. veck3 = vecu * neginvdtγ
@@ -138,8 +138,8 @@ end
         # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
         if cache.algebraic_vars !== nothing
             algvar = reshape(cache.algebraic_vars, size(u))
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(algvar, fsallast, false) * invatol
+            # Divide in-place so vector abstol does not allocate a temporary reciprocal.
+            @.. atmp = ifelse(algvar, fsallast, false) / integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -175,9 +175,9 @@ end
     )
 
     if repeat_step || !new_W
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
     vecu = _vec(linres.u)
@@ -199,7 +199,7 @@ end
 
     @.. broadcast = false linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -220,7 +220,7 @@ end
         @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
     end
 
-    linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
 
@@ -239,8 +239,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if cache.algebraic_vars !== nothing
-            invatol = inv(integrator.opts.abstol)
-            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) * invatol
+            # Divide in-place so vector abstol does not allocate a temporary reciprocal.
+            @.. atmp = ifelse(cache.algebraic_vars, fsallast, false) / integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -319,9 +319,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) *
-                invatol
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -402,9 +401,10 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            invatol = inv(integrator.opts.abstol)
-            atmp = ifelse(integrator.differential_vars, false, integrator.fsallast) .*
-                invatol
+            # Also broadcasts ifelse over differential_vars (master used unbroadcasted
+            # ifelse(::BitVector, ...), which MethodErrors for any mass-matrix DAE).
+            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+                integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
     end
@@ -435,9 +435,7 @@ end
     (; tf, uf) = cache
     (; A, C, gamma, c, d, H) = cache.tab
 
-    # Precalculations
-    dtC = C ./ dt
-    dtd = dt .* d
+    invdt = inv(dt)
     dtgamma = dt * gamma
 
     mass_matrix = integrator.f.mass_matrix
@@ -454,7 +452,7 @@ end
     du = f(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
-    linsolve_tmp = @.. du + dtd[1] * dT
+    linsolve_tmp = @.. du + (dt * d[1]) * dT
     k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
@@ -480,15 +478,15 @@ end
         linsolve_tmp = zero(du)
         if mass_matrix === I
             for i in 1:(stage - 1)
-                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
             end
         else
             for i in 1:(stage - 1)
-                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
             end
             linsolve_tmp = mass_matrix * linsolve_tmp
         end
-        linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
+        linsolve_tmp = @.. du + (dt * d[stage]) * dT + linsolve_tmp
 
         ks = Base.setindex(ks, _restructure_state(uprev, W \ -_vec(linsolve_tmp)), stage)
         integrator.stats.nsolve += 1
@@ -579,10 +577,15 @@ end
 # Rodas6P's late stages) the fallback path is used as well.
 
 @inline function _madd_terms(acc, idx, cs::Tuple, karrs::Tuple)
-    return _madd_terms(
-        muladd(first(cs), (@inbounds first(karrs)[idx]), acc),
-        idx, Base.tail(cs), Base.tail(karrs)
-    )
+    c = first(cs)
+    # Exact-zero coefficients (e.g. Rodas5P's btilde = [0,0,0,0,0,0,0,1]) must
+    # skip their term rather than multiply through: 0 * NaN/Inf is NaN, so a
+    # transient non-finite value in an unrelated, zero-weighted stage (from an
+    # ill-conditioned early-stage solve, e.g. right after a callback-driven
+    # parameter jump) would otherwise silently poison the whole accumulation
+    # even though the mathematically correct result never depends on that term.
+    newacc = iszero(c) ? acc : muladd(c, (@inbounds first(karrs)[idx]), acc)
+    return _madd_terms(newacc, idx, Base.tail(cs), Base.tail(karrs))
 end
 @inline _madd_terms(acc, idx, ::Tuple{}, ::Tuple{}) = acc
 
@@ -757,9 +760,9 @@ end
     )
 
     if repeat_step || !new_W
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
     else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
     @.. $(_vec(ks[1])) = -linres.u
@@ -788,7 +791,7 @@ end
             @.. linsolve_tmp = du + dtd[stage] * dT + du2
         end
 
-        linres = dolinsolve(integrator, cache.linsolve; b = _vec(linsolve_tmp))
+        linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
@@ -877,8 +880,7 @@ end
         diff_vars = Int[]
     else
         n = length(uprev)
-        diff_vars = findall(i -> mass_matrix[i, i] != 0, 1:n)
-        alg_vars = findall(i -> mass_matrix[i, i] == 0, 1:n)
+        diff_vars, alg_vars = _diff_alg_vars(mass_matrix, n)
         has_alg = !isempty(alg_vars)
     end
 

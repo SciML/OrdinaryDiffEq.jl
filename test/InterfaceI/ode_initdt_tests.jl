@@ -25,11 +25,11 @@ T = Float32
 u0 = T.([1.0; 0.0; 0.0])
 
 tspan = T.((0, 70))
-prob = remake(prob, u0 = u0, tspan = tspan)
+prob = remake(prob; u0, tspan)
 @test_nowarn solve(prob, Euler(); dt = T(0.0001))
 
 tspan = T.((2000, 2100))
-prob = remake(prob, tspan = tspan)
+prob = remake(prob; tspan)
 # set maxiters to prevent infinite loop on test failure
 @test solve(prob, Euler(); dt = T(0.0001), maxiters = 10).retcode ==
     SciMLBase.ReturnCode.MaxIters
@@ -54,7 +54,8 @@ using LinearAlgebra
 function f(du, u, p, t)
     du[1] = -p[1] * u[1] + p[2] * u[2] * u[3]
     du[2] = p[1] * u[1] - p[2] * u[2] * u[3] - p[3] * u[2] * u[2]
-    return du[3] = u[1] + u[2] + u[3] - 1.0
+    du[3] = u[1] + u[2] + u[3] - 1.0
+    return
 end
 M = Diagonal([1, 1, 0])
 p = [0.04, 10^4, 3.0e7]
@@ -130,3 +131,41 @@ end
     sol_ok = solve(ODEProblem(f_ok, [1.0], (0.0, 1.0)), Tsit5())
     @test SciMLBase.successful_retcode(sol_ok)
 end
+
+@testset "Initial dt probe respects the first tstop" begin
+    for (tspan, tstop) in (((0.0, 10.0), 1.0e-3), ((10.0, 0.0), 9.999))
+        tdir = sign(tspan[2] - tspan[1])
+        for stop_keyword in (:tstops, :d_discontinuities)
+            options = NamedTuple{(stop_keyword,)}(([tstop],))
+            for isinplace in (false, true)
+                evaluated = Float64[]
+                f = if isinplace
+                    (du, u, p, t) -> (push!(p, t); du .= -u)
+                else
+                    (u, p, t) -> (push!(p, t); -u)
+                end
+                prob = ODEProblem(f, [1.0], tspan, evaluated)
+                init(prob, Tsit5(); options...)
+                @test maximum(tdir .* (evaluated .- tstop)) <= 0
+            end
+        end
+    end
+end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4601
+function lorenz!(du, u, p, t)
+    du[1] = 10 * (u[2] - u[1])
+    du[2] = u[1] * (28 - u[3]) - u[2]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return nothing
+end
+dt32 = init(ODEProblem(lorenz!, Float32[1, 0, 0], (0.0f0, 1.0f0)), Tsit5()).dt
+dt64 = init(ODEProblem(lorenz!, [1.0, 0.0, 0.0], (0.0, 1.0)), Tsit5()).dt
+@test dt32 ≈ dt64 rtol = 1.0e-4
+relax!(du, u, p, t) = (du .= 1 .- u; nothing)
+dt32 = init(ODEProblem(relax!, Float32[0], (0.0f0, 1.0f0)), Tsit5()).dt
+dt64 = init(ODEProblem(relax!, [0.0], (0.0, 1.0)), Tsit5()).dt
+@test dt32 ≈ dt64 rtol = 1.0e-4
+# A refined step still below machine epsilon falls back to the default.
+stiff_decay = ODEProblem((du, u, p, t) -> (du .= -1.0e16 .* u; nothing), [1.0], (0.0, 1.0))
+@test init(stiff_decay, Rodas5P()).dt == 1.0e-6

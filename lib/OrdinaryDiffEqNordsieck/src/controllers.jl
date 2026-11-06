@@ -1,8 +1,10 @@
 # JVODE
 
 """
-    JVODEController(; qmin, qmax, qsteady_min, qsteady_max, gamma,
-                    qmax_first_step, failfactor)
+    JVODEController(;
+        qmin, qmax, qsteady_min, qsteady_max, gamma,
+        qmax_first_step, failfactor
+    )
 
 Step-size controller for the variable-order Nordsieck-form `JVODE` family.
 Composes the standard step-size knobs via [`CommonControllerOptions`](@ref); the
@@ -70,4 +72,9 @@ end
 
 function step_reject_controller!(integrator, alg::JVODE)
     return integrator.dt *= integrator.cache.η
+end
+
+function post_newton_controller!(integrator, ::JVODE)
+    integrator.dt /= get_failfactor(integrator)
+    return nothing
 end

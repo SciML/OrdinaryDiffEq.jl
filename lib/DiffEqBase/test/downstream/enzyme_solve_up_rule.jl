@@ -23,7 +23,7 @@ solve_kwargs = (; saveat = 0.25, abstol = 1.0e-8, reltol = 1.0e-8)
     # `setsym_oop`/`remake` pattern of MTK loss functions.
     function loss_aliased(p, q)
         prob = q[1]
-        prob2 = remake(prob; u0 = prob.u0, p = p)
+        prob2 = remake(prob; prob.u0, p)
         sol = solve(prob2, Vern7(); sensealg = GaussAdjoint(), solve_kwargs...)
         return sum(abs2, Array(sol))
     end
@@ -54,4 +54,44 @@ end
 
     g = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_active, copy(x0), Const(q))[1]
     @test g ≈ g_ref rtol = 1.0e-5
+end
+
+@testset "AutoSpecialize problem keeps GC-tracked fields in solve_up rule" begin
+    # With `AutoSpecialize`, `get_concrete_problem` wraps `prob.f` in a
+    # `FunctionWrappersWrapper`, folding `f_promote === prob.f` to `false` so the
+    # primal body of `solve_up` never reads `prob.u0` or `prob.p` from `prob`.
+    # The `solve_up` custom rule must still receive valid `prob` roots rather
+    # than having them dropped as `readnone` (e.g. when `prob` arrives as
+    # `MixedDuplicated` under `set_runtime_activity`).
+    function f_iip!(du, u, p, t)
+        du[1] = p[1] * u[1]
+        du[2] = p[2] * u[2]
+        return nothing
+    end
+
+    function loss_autospec(p)
+        prob_local = ODEProblem{true, DiffEqBase.SciMLBase.AutoSpecialize}(
+            f_iip!, copy(u0_init), (0.0, 1.0), p
+        )
+        sol = solve(prob_local, Vern7(); sensealg = GaussAdjoint(), solve_kwargs...)
+        return sum(abs2, Array(sol))
+    end
+
+    function loss_autospec_barrier(p)
+        prob_local = ODEProblem{true, DiffEqBase.SciMLBase.AutoSpecialize}(
+            f_iip!, copy(u0_init), (0.0, 1.0), p
+        )
+        sol = Base.inferencebarrier(
+            pr -> solve(pr, Vern7(); sensealg = GaussAdjoint(), solve_kwargs...)
+        )(prob_local)
+        return sum(abs2, Array(sol))
+    end
+
+    g_ref = ForwardDiff.gradient(loss_autospec, p_init)
+    g1 = Enzyme.gradient(Enzyme.Reverse, loss_autospec, copy(p_init))[1]
+    @test g1 ≈ g_ref rtol = 1.0e-5
+    g2 = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_autospec, copy(p_init))[1]
+    @test g2 ≈ g_ref rtol = 1.0e-5
+    g3 = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_autospec_barrier, copy(p_init))[1]
+    @test g3 ≈ g_ref rtol = 1.0e-5
 end

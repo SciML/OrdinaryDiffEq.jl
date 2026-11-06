@@ -1,9 +1,12 @@
 using OrdinaryDiffEqExplicitRK
-using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince
+using OrdinaryDiffEqExplicitRK: constructTsit5ExplicitRK, constructDormandPrince,
+    ExplicitRKConstantCache
 using OrdinaryDiffEqCore
 using DiffEqBase
+using ForwardDiff
 using Test
 import SciMLBase
+import JLArrays
 
 # ============================================================================
 # Test Problems
@@ -17,7 +20,8 @@ prob_ode_linear = ODEProblem(
 
 function f_2Dlinear!(du, u, p, t)
     du[1] = 1.01 * u[1]
-    return du[2] = 1.01 * u[2]
+    du[2] = 1.01 * u[2]
+    return
 end
 prob_ode_2Dlinear = ODEProblem(
     ODEFunction(f_2Dlinear!; analytic = (u0, p, t) -> u0 .* exp(1.01t)),
@@ -38,6 +42,24 @@ prob_ode_2Dlinear = ODEProblem(
         @test length(sol.t) < 20
         @test SciMLBase.successful_retcode(sol)
     end
+end
+
+@testset "Float32 in-place ExplicitRK" begin
+    function f32!(du, u, p, t)
+        du[1] = 1.01f0 * u[1]
+        return nothing
+    end
+    prob = ODEProblem(f32!, Float32[0.5], (0.0f0, 1.0f0))
+    sol = solve(prob, ExplicitRK())
+    @test SciMLBase.successful_retcode(sol)
+    @test eltype(sol.u[end]) === Float32
+    @test eltype(sol.t) === Float32
+end
+
+@testset "ExplicitRKConstantCache c eltype inference" begin
+    tab = constructDormandPrince(BigFloat)
+    cache = @inferred ExplicitRKConstantCache(tab, [1.0], Float64)
+    @test eltype(cache.c) === BigFloat
 end
 
 # ============================================================================
@@ -119,7 +141,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         push!(errors, compute_midstep_error(sol, exact_scalar))
     end
@@ -146,7 +168,7 @@ end
 
     for dt in dts
         sol = solve(
-            prob_conv_vec, ExplicitRK(tableau = tableau); dt = dt, adaptive = false, dense = true
+            prob_conv_vec, ExplicitRK(; tableau); dt, adaptive = false, dense = true
         )
         err = compute_midstep_error(sol, exact_vector)
         push!(errors, err)
@@ -155,4 +177,143 @@ end
     orders = estimate_order(errors, dts)
     avg_order = sum(orders) / length(orders)
     @test avg_order > 3.5
+end
+
+@testset "interpolating before the first step" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
+
+    integ = init(prob, ExplicitRK(); dt = 0.1)
+    @test integ.sol(0.0) ≈ [1.0, 2.0]
+
+    integ.sol(0.0, Val{1})
+    @test integ.sol.k[1][1] ≈ [-1.0, -2.0]
+    @test integ.sol.k[1][2] ≈ [-1.0, -2.0]
+
+    integ2 = init(prob, ExplicitRK(); dt = 0.1)
+    out = zeros(2)
+    integ2.sol(out, 0.0, Val{1})
+    @test integ2.sol.k[1][1] ≈ [-1.0, -2.0]
+    @test integ2.sol.k[1][2] ≈ [-1.0, -2.0]
+end
+
+@testset "fallback compute_stages! (>17 stages) on JLArray" begin
+    n = 19
+    A = zeros(n, n)
+    for i in 2:n, j in 1:(i - 1)
+        A[i, j] = 1 / (i - 1)
+    end
+    c = [0; fill(0.5, n - 1)]
+    α = zeros(n)
+    α[end] = 1.0
+    αEEst = zeros(n)
+    αEEst[end] = 0.5
+    αEEst[1] = -0.5
+    tab = DiffEqBase.ExplicitRKTableau(A, c, α, 2; αEEst, adaptiveorder = 1)
+    alg = ExplicitRK(tableau = tab)
+    f_jl!(du, u, p, t) = (du .= -0.5 .* u; nothing)
+
+    sol_cpu = solve(
+        ODEProblem(f_jl!, ones(10), (0.0, 1.0)), alg;
+        adaptive = false, dt = 0.1, dense = false,
+    )
+    @test SciMLBase.successful_retcode(sol_cpu)
+
+    JLArrays.allowscalar(false)
+    try
+        sol_jl = solve(
+            ODEProblem(f_jl!, JLArrays.JLVector(ones(10)), (0.0, 1.0)), alg;
+            adaptive = false, dt = 0.1, dense = false,
+        )
+        @test SciMLBase.successful_retcode(sol_jl)
+        @test Array(sol_jl.u[end]) == sol_cpu.u[end]
+    finally
+        JLArrays.allowscalar(true)
+    end
+end
+
+@testset "idxs interpolation under ForwardDiff Dual times" begin
+    function f_vec!(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = -2 * u[2]
+        return nothing
+    end
+    prob = ODEProblem(f_vec!, [1.0, 1.0], (0.0, 1.0))
+    sol = solve(prob, ExplicitRK(tableau = constructTsit5ExplicitRK()); dense = true)
+    @test SciMLBase.successful_retcode(sol)
+
+    t0 = sol.t[3]
+    expected_d1 = [-exp(-t0), -2 * exp(-2t0)]
+    # Reference for the derivative-of-derivative check: idxs must select the
+    # same components as the full-state interpolant derivative.
+    expected_d2 = ForwardDiff.derivative(t -> sol(t, Val{1}), t0)
+
+    # sol(t; idxs) with an index vector routes through the in-place kernel
+    # internally, so it exercises the same code path as sol(out, t; idxs).
+    @test ForwardDiff.derivative(t -> sol(t; idxs = 1), t0) ≈ expected_d1[1] atol = 1.0e-6
+    @test ForwardDiff.derivative(t -> sol(t; idxs = [1, 2]), t0) ≈ expected_d1 atol = 1.0e-6
+    @test ForwardDiff.derivative(t -> sol(t, Val{1}; idxs = [1, 2]), t0) ≈ expected_d2
+
+    @test ForwardDiff.derivative(t0) do t
+        out = zeros(typeof(t), 2)
+        sol(out, t; idxs = [1, 2])
+        out
+    end ≈ expected_d1 atol = 1.0e-6
+
+    @test ForwardDiff.derivative(t0) do t
+        out = zeros(typeof(t), 1)
+        sol(out, t; idxs = 1)
+        out[1]
+    end ≈ expected_d1[1] atol = 1.0e-6
+
+    @test ForwardDiff.derivative(t0) do t
+        out = zeros(typeof(t), 2)
+        sol(out, t, Val{1}; idxs = [1, 2])
+        out
+    end ≈ expected_d2
+end
+
+@testset "generic_rk_interpolant! validates idxs" begin
+    # Direct callers reach the scalar-indexed kernel without an upstream
+    # idxs bounds check, so the kernel must validate idxs itself before its
+    # @inbounds loops.
+    B_interp = constructTsit5ExplicitRK().B_interp
+    y0 = [1.0, 2.0, 3.0]
+    k = [fill(Float64(i), 3) for i in 1:size(B_interp, 1)]
+    out = zeros(2)
+
+    ref = OrdinaryDiffEqExplicitRK.generic_rk_interpolant(
+        0.5, 0.1, y0, k, B_interp; idxs = [3, 1]
+    )
+    @test OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        out, 0.5, 0.1, y0, k, B_interp; idxs = [3, 1]
+    ) ≈ ref
+
+    child_script = """
+        using OrdinaryDiffEqExplicitRK
+        B_interp = OrdinaryDiffEqExplicitRK.constructTsit5ExplicitRK().B_interp
+        y0 = [1.0, 2.0, 3.0]
+        k = [fill(Float64(i), 3) for i in 1:size(B_interp, 1)]
+        try
+            OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+                zeros(2), 0.5, 0.1, y0, k, B_interp; idxs = [1, 4]
+            )
+        catch err
+            err isa BoundsError || rethrow()
+            exit(0)
+        end
+        exit(1)
+    """
+    child = `$(Base.julia_cmd()) --check-bounds=auto --project=$(Base.active_project()) -e $child_script`
+    @test success(run(pipeline(ignorestatus(child), stdout = devnull, stderr = devnull)))
+
+    @test_throws BoundsError OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        out, 0.5, 0.1, y0, k, B_interp; idxs = [1, 4]
+    )
+    @test_throws BoundsError OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        out, 0.5, 0.1, y0, k, B_interp; idxs = [1, 4], order = 1
+    )
+    @test_throws DimensionMismatch OrdinaryDiffEqExplicitRK.generic_rk_interpolant!(
+        zeros(3), 0.5, 0.1, y0, k, B_interp; idxs = [1, 2]
+    )
 end

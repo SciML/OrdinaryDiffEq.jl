@@ -3,6 +3,12 @@
 
 Return whether `cache` is an out-of-place ([`OrdinaryDiffEqConstantCache`](@ref))
 cache. For composite/default caches it reflects the active constituent cache.
+
+# Developer API
+
+This inspection trait is for solver implementations extending cache machinery.
+End-user code should call `solve` and use solution APIs, rather than inspect
+cache constructors or fields.
 """
 is_constant_cache(::OrdinaryDiffEqConstantCache) = true
 is_constant_cache(::OrdinaryDiffEqCache) = false

@@ -1,6 +1,6 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve
-using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg
+using OrdinaryDiffEqNonlinearSolve: NonlinearSolveAlg, NLNewton
 using NonlinearSolve: NewtonRaphson, TrustRegion
 using ADTypes, LinearAlgebra, SciMLBase
 using Test
@@ -99,4 +99,18 @@ end
     sol_def = solve(prob, FBDF(nlsolve = nsa_tr))
     @test SciMLBase.successful_retcode(sol_def)
     @test norm(sol_def.u[end] .- refsol.u[end]) / norm(refsol.u[end]) < 1.0e-3
+end
+
+@testset "non-adaptive solves do not freeze the Jacobian" begin
+    # `do_newJW` returns `(true, true)` whenever `adaptive = false`: with a prescribed
+    # step sequence there is no error test to catch the step a stale Jacobian degrades
+    # and no way to pull it back. `NonlinearSolveAlg` has to make the same call —
+    # freezing `J` for the whole solve here would silently diverge from `NLNewton`.
+    fixedprob = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1.0), [0.04, 3.0e7, 1.0e4])
+    for nl in (NLNewton(), nsa)
+        JAC_CALLS[] = 0
+        sol = solve(fixedprob, TRBDF2(nlsolve = nl); dt = 1.0e-4, adaptive = false)
+        @test SciMLBase.successful_retcode(sol)
+        @test JAC_CALLS[] >= sol.stats.naccept
+    end
 end

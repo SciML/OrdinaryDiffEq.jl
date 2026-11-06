@@ -13,7 +13,8 @@ object = SomeObject(0, 1, nothing)
 # Current dynamics don't involve the object for the sake of MWE, but they could.
 function dynamics(du, u, p, t)
     du[1] = u[2]
-    return du[2] = -u[2]
+    du[2] = -u[2]
+    return
 end
 
 for i in 1:2

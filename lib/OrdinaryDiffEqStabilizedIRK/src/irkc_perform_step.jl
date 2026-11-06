@@ -169,7 +169,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     Bⱼ₋₁ = 1 / ω₀
 
     #stage-1
-    f1ⱼ₋₂ = du₁
+    @.. broadcast = false f1ⱼ₋₂ = du₁
     @.. broadcast = false gprev2 = uprev
     μs = ω₁ * Bⱼ₋₁
     μs₁ = μs

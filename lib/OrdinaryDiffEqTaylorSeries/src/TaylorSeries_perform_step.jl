@@ -58,7 +58,7 @@ end
     f(k1, uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
-    out1 = make_taylor(k1, k2)
+    out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
@@ -108,9 +108,9 @@ end
         integrator, cache::ExplicitTaylorCache{P}, repeat_step = false
     ) where {P}
     (; t, dt, uprev, u, f, p) = integrator
-    (; jet, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jet, coeffs, utaylor, utilde, tmp, atmp, thread) = cache
 
-    jet(utaylor, uprev, t)
+    jet(utaylor, coeffs, uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end
@@ -133,6 +133,14 @@ end
 end
 
 function initialize!(integrator, cache::ExplicitTaylorAdaptiveOrderCache)
+    max_order_value = get_value(cache.max_order)
+    integrator.kshortsize = max_order_value
+    resize!(integrator.k, max_order_value)
+    # Setup k pointers
+    for i in 1:max_order_value
+        integrator.k[i] = TaylorDiff.get_coefficient(cache.utaylor, i)
+    end
+    return nothing
 end
 
 @muladd function perform_step!(
@@ -140,19 +148,23 @@ end
     )
     (; t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    (; jets, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
+    (; jets, coeffs, current_order, min_order, max_order, utaylor, utilde, tmp, atmp, thread) = cache
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)
-    push!(cache.order_history, current_order[])
     jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
-    jet(utaylor, uprev, t)
+    jet(utaylor, coeffs[jet_index + 1], uprev, t)
     for i in eachindex(utaylor)
         u[i] = @inline evaluate_polynomial(utaylor[i], dt)
     end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    # Copy Taylor coefficients into k for dense output interpolation.
+    # Coefficients above the order of this step's jet are zero.
+    for i in 1:max_order_value
+        map!(ts -> TaylorDiff.get_coefficient(ts, i), integrator.k[i], utaylor)
+    end
     if integrator.opts.adaptive
         min_work = Inf
         start_order = max(min_order_value, current_order[] - 1)
@@ -169,20 +181,14 @@ end
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            # backup — pseudo-step the controller to estimate the work at
-            # this order without leaking state back out.
             saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
-            saved_cache = deepcopy(integrator.controller_cache)
-            # calculate dt
+            snap = snapshot_controller(integrator.controller_cache)
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            # restore
-            OrdinaryDiffEqCore.sync_controllers!(
-                integrator.controller_cache, saved_cache
-            )
+            restore_controller!(integrator.controller_cache, snap)
             OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose
@@ -217,12 +223,19 @@ end
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
     utaylor = jet(uprev, t)
-    u = map(x -> evaluate_polynomial(x, dt), utaylor)
+    u = eval_taylor_polynomial(utaylor, dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, current_order[] + 1)
+    # Save Taylor coefficients for dense output interpolation.
+    # Coefficients above the order of this step's jet are zero.
+    for i in 1:max_order_value
+        integrator.k[i] = _taylor_get_coefficient(utaylor, i)
+    end
     if integrator.opts.adaptive
         min_work = Inf
         start_order = max(min_order_value, current_order[] - 1)
-        end_order = min(max_order_value, current_order[] + 1)
+        # one order above `current_order` is still jetted next step, so it has to stay
+        # within `jets`
+        end_order = min(max_order_value - 1, current_order[] + 1)
         for i in start_order:end_order
             A = i * i
             utilde = TaylorDiff.get_coefficient(utaylor, i) * dt^i
@@ -232,20 +245,14 @@ end
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            # backup — pseudo-step the controller to estimate the work at
-            # this order without leaking state back out.
             saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
-            saved_cache = deepcopy(integrator.controller_cache)
-            # calculate dt
+            snap = snapshot_controller(integrator.controller_cache)
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            # restore
-            OrdinaryDiffEqCore.sync_controllers!(
-                integrator.controller_cache, saved_cache
-            )
+            restore_controller!(integrator.controller_cache, snap)
             OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose
@@ -256,5 +263,6 @@ end
             end
         end
     end
+    integrator.u = u
     return nothing
 end

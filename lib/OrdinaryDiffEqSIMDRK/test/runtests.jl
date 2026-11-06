@@ -15,6 +15,9 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Adaptivity Tests" begin
         include("adaptivity_tests.jl")
     end
+    @time @safetestset "Despecialized Parameters" begin
+        include("despecialized_parameters_tests.jl")
+    end
 end
 
 # Run QA tests (AllocCheck, JET) - skip on pre-release Julia

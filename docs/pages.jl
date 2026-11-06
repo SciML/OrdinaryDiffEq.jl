@@ -48,19 +48,23 @@ pages = [
         "massmatrixdae/BDF.md",
     ],
     "Stochastic Utilities" => [
+        "stochastic/Algorithms.md",
         "stochastic/LevyArea.md",
+        "stochastic/Weak.md",
     ],
     "Fully Implicit DAE Solvers" => [
         "fullyimplicitdae/BDF.md",
     ],
     "Misc Solvers" => [
         "misc.md",
+        "misc/DelayDiffEq.md",
     ],
     "Global Error Control" => [
         "globalerrorcontrol/GlobalDiffEq.md",
     ],
     "APIs" => [
         "api/common_interface.md",
+        "api/reexports.md",
         "api/diffeqbase.md",
         "api/ordinarydiffeqcore.md",
         "api/controllers.md",

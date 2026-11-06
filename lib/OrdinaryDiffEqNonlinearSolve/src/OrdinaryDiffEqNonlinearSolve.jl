@@ -1,9 +1,10 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+using CommonSolve: init, solve, solve!, step!
 
 import SciMLBase
-import SciMLBase: init, solve, remake
+import SciMLBase: remake
 using SciMLOperators: update_coefficients!
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
@@ -16,13 +17,19 @@ import DiffEqBase: OrdinaryDiffEqTag, calculate_residuals, calculate_residuals!,
 import ConstructionBase
 import PreallocationTools: DiffCache, get_tmp
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
-using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson,
-    HomotopySweep, HomotopyPolyAlgorithm, ArcLengthContinuation, step!
+using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson
+using SciMLPublic: @public
 # The operator Jacobian path is implemented in NonlinearSolveBase and needs its own floor.
 import NonlinearSolveBase
 # `get_u`/`get_fu` are the only inner-state reads that hold for every inner cache type:
 # polyalgorithm caches keep `u`/`fu` on the active branch, not as top-level fields.
-using NonlinearSolveBase: get_linear_cache, get_u, get_fu
+# `NonlinearSolveNoInitCache` is the fallback cache for algorithms with no `__init` (every
+# SimpleNonlinearSolve algorithm): it holds no iteration state, so `step!`, `get_fu`,
+# `.stats` and `not_terminated` are all off-limits and it can only be driven by `solve!`.
+using NonlinearSolveBase:
+    ArcLengthContinuation, HomotopyPolyAlgorithm, HomotopySweep, KantorovichHomotopy,
+    NonlinearSolveNoInitCache,
+    get_linear_cache, get_u, get_fu
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 import FastClosures: @closure
@@ -33,10 +40,10 @@ import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
 using ForwardDiff: Dual
-using RecursiveArrayTools: recursivecopy!
 import OrdinaryDiffEqCore
 
-import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator
+import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator,
+    mark_jacobian_updated!
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
 import OrdinaryDiffEqCore: default_nlsolve
@@ -50,7 +57,7 @@ using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
     Convergence,
     Divergence, NLStatus,
     MethodType, error_constant,
-    alg_extrapolates, resize_J_W!, alg_autodiff,
+    resize_J_W!, alg_autodiff,
     find_algebraic_vars_eqs
 
 import OrdinaryDiffEqCore: _initialize_dae!,
@@ -60,8 +67,8 @@ import OrdinaryDiffEqCore: _initialize_dae!,
 
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
-    build_jac_config, dolinsolve,
-    resize_jac_config!, jacobian2W!, jacobian!
+    build_jac_config, dolinsolve, set_linear_reltol!,
+    resize_jac_config!, jacobian2W!, jacobian!, calc_J
 
 import StaticArraysCore: StaticArray
 
@@ -75,18 +82,10 @@ include("initialize_dae.jl")
 
 export BrownFullBasicInit, ShampineCollocationInit
 
-# Nonlinear-solver algorithms accepted by OrdinaryDiffEq implicit methods and the
-# solver-author hooks extended by sibling integrator packages.
-# The `public` keyword is only parseable on Julia >= 1.11.0-DEV.469, so it is
-# gated to keep the 1.10 floor parsing.
-@static if VERSION >= v"1.11.0-DEV.469"
-    eval(
-        Expr(
-            :public,
-            :NLNewton, :NLFunctional, :NLAnderson, :HomotopyNonlinearSolveAlg,
-            :nlsolve!, :nlsolvefail, :compute_step!, :initial_η, :anderson, :anderson!
-        )
-    )
-end
+@public NLNewton, NLFunctional, NLAnderson, HomotopyNonlinearSolveAlg, NonlinearSolveAlg
+
+# Solver-author interface called or extended by sibling integrator packages.
+@public build_nlsolver, nlsolve!, nlsolvefail, markfirststage!, du_alias_or_new
+@public can_smooth_est, compute_step!, initial_η, anderson, anderson!
 
 end

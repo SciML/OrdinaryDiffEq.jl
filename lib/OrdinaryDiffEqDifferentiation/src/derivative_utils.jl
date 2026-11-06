@@ -1,4 +1,4 @@
-using SciMLOperators: StaticWOperator, WOperator
+using SciMLOperators: StaticWOperator, WOperator, mark_jacobian_updated!
 
 """
     get_jac_reuse(cache)
@@ -18,7 +18,7 @@ does not have a `jac_reuse` field.
 end
 
 """
-    _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2,Bool}
+    _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma) -> NTuple{2, Bool}
 
 Decide whether to recompute the Jacobian and/or W matrix for Rosenbrock methods.
 All Rosenbrock/W-method J/W logic lives here — no delegation to `do_newJW`.
@@ -44,7 +44,12 @@ strict Rosenbrock methods, linear problems, mass-matrix (DAE) problems,
 CompositeAlgorithm, non-adaptive solves, and first iteration.
 """
 function _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-    alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
+    return _rosenbrock_jac_reuse_decision_alg(
+        _current_alg(cache, integrator), integrator, cache, dtgamma
+    )::NTuple{2, Bool}
+end
+
+function _rosenbrock_jac_reuse_decision_alg(alg, integrator, cache, dtgamma)
 
     # Non-W-methods always recompute
     if !isWmethod(alg)
@@ -179,6 +184,10 @@ side `linsolve_tmp = fsalfirst + dtd1·dT` on the cache. Skipped when `repeat_st
 is `true`.
 """
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
+    return _calc_tderivative!(_current_alg(cache, integrator), integrator, cache, dtd1, repeat_step)
+end
+
+function _calc_tderivative!(alg, integrator, cache, dtd1, repeat_step)
     return @inbounds begin
         (; t, dt, uprev, u, f, p) = integrator
         (; du2, fsalfirst, dT, tf, linsolve_tmp) = cache
@@ -190,8 +199,6 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
             else
                 tf.uprev = uprev
                 tf.p = p
-                alg = unwrap_alg(integrator, true)
-
                 autodiff_alg = gpu_safe_autodiff(ADTypes.dense_ad(alg_autodiff(alg)), u)
 
                 # Convert t to eltype(dT) if using ForwardDiff, to make FunctionWrappers work
@@ -245,7 +252,7 @@ function calc_tderivative(integrator, cache)
 
         autodiff_alg = gpu_safe_autodiff(ADTypes.dense_ad(alg_autodiff(alg)), u)
 
-        if alg_autodiff isa AutoFiniteDiff
+        if autodiff_alg isa AutoFiniteDiff
             autodiff_alg = SciMLBase.@set autodiff_alg.dir = diffdir(integrator)
         end
 
@@ -265,10 +272,10 @@ function calc_tderivative(integrator, cache)
 end
 
 """
-    prepare_sparse_jac!(J, jac_prototype)
+    prepare_sparse_jac!(J, jac_prototype; nzval = false)
 
-Give `J` the sparsity structure of `jac_prototype` with all stored values zeroed,
-ready for a user-supplied `f.jac` to write into.
+Give `J` the sparsity structure of `jac_prototype` and fill its stored entries with
+`nzval`. By default, the entries are zeroed for a user-supplied `f.jac` to write into.
 
 `f.jac` only assigns into already-stored entries, so `J`'s structure is invariant
 across the solve and the (O(nnz), allocating) structural rebuild is only needed when
@@ -279,15 +286,15 @@ strict Rosenbrock methods (e.g. `Rodas5P`) that re-evaluate `J` every step.
 See https://github.com/SciML/OrdinaryDiffEq.jl/issues/2653 for why the structure must
 track `jac_prototype` rather than whatever `f.jac` happens to fill in.
 """
-function prepare_sparse_jac!(J, jac_prototype)
+function prepare_sparse_jac!(J, jac_prototype; nzval = false)
     if ArrayInterface.same_sparsity_structure(J, jac_prototype)
-        set_all_nzval!(J, false)
+        set_all_nzval!(J, nzval)
     else
         # `jac_prototype`'s stored values must be made nonzero first: the broadcast
         # below prunes numerical zeros, which would drop those entries from `J`.
         set_all_nzval!(jac_prototype, true)
         J .= true .* jac_prototype
-        set_all_nzval!(J, false)
+        set_all_nzval!(J, nzval)
     end
     return J
 end
@@ -354,6 +361,28 @@ function calc_J(integrator, cache, next_step::Bool = false)
     return J
 end
 
+function get_fresh_jacobian(integrator, cache::OrdinaryDiffEqCache)
+    (; stats) = integrator
+    njacs, nf = stats.njacs, stats.nf
+    J = if SciMLBase.isinplace(integrator.sol.prob) && cache.J isa AbstractMatrix
+        Jfresh = if is_sparse(cache.J)
+            prepare_sparse_jac!(
+                similar(cache.J), cache.J; nzval = one(eltype(cache.J))
+            )
+        else
+            zero(cache.J)
+        end
+        calc_J!(Jfresh, integrator, cache)
+        Jfresh
+    elseif SciMLBase.isinplace(integrator.sol.prob)
+        nothing
+    else
+        calc_J(integrator, cache)
+    end
+    stats.njacs, stats.nf = njacs, nf #fix stats after call
+    return J
+end
+
 """
     calc_J!(J, integrator, cache, next_step::Bool = false) -> J
 
@@ -364,6 +393,10 @@ either automatic or finite differencing will be used depending on the `cache`.
 If `next_step`, then it will evaluate the Jacobian at the next step.
 """
 function calc_J!(J, integrator, cache, next_step::Bool = false)
+    return _calc_J!(_current_alg(cache, integrator), integrator, J, cache, next_step)::Nothing
+end
+
+function _calc_J!(alg_member, integrator, J, cache, next_step)
     (; dt, t, uprev, f, p, alg) = integrator
     if next_step
         t = t + dt
@@ -387,7 +420,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             x = cache.dz
             uf.t = t
             fill!(x, zero(eltype(x)))
-            jacobian!(J, uf, x, du1, integrator, jac_config)
+            _jacobian!(alg_member, integrator, J, uf, x, du1, jac_config)
         end
     else
         if SciMLBase.has_jac(f)
@@ -405,7 +438,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             if !(p isa SciMLBase.NullParameters)
                 uf.p = p
             end
-            jacobian!(J, uf, uprev, du1, integrator, jac_config)
+            _jacobian!(alg_member, integrator, J, uf, uprev, du1, jac_config)
         end
     end
 
@@ -425,6 +458,10 @@ For user-provided Jacobians, extracts via f.jac(cj=0) and f.jac(cj=1).
 For AD/FD, uses separate wrapper functions.
 """
 function calc_J_dae!(J_u, J_du, integrator, cache)
+    return _calc_J_dae!(_current_alg(cache, integrator), integrator, J_u, J_du, cache)::Nothing
+end
+
+function _calc_J_dae!(alg_member, integrator, J_u, J_du, cache)
     (; t, uprev, f, p) = integrator
 
     if SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f)
@@ -457,10 +494,10 @@ function calc_J_dae!(J_u, J_du, integrator, cache)
         du1 = cache.du1
 
         # Compute J_u = dF/du at (du_fixed, uprev)
-        jacobian!(J_u, uf_u, uprev, du1, integrator, jac_config_u)
+        _jacobian!(alg_member, integrator, J_u, uf_u, uprev, du1, jac_config_u)
 
         # Compute J_du = dF/d(du) at (du_eval, u_fixed)
-        jacobian!(J_du, uf_du, uf_u.du_fixed, du1, integrator, jac_config_du)
+        _jacobian!(alg_member, integrator, J_du, uf_du, uf_u.du_fixed, du1, jac_config_du)
     end
 
     integrator.stats.njacs += 1
@@ -499,14 +536,14 @@ function calc_J_dae(integrator, cache)
 end
 
 """
-    islinearfunction(integrator) -> Tuple{Bool,Bool}
+    islinearfunction(integrator) -> Tuple{Bool, Bool}
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
 islinearfunction(integrator) = islinearfunction(integrator.f, integrator.alg)
 
 """
-    islinearfunction(f, alg) -> Tuple{Bool,Bool}
+    islinearfunction(f, alg) -> Tuple{Bool, Bool}
 
 return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
@@ -521,15 +558,15 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     repeat_step && return false, false
     islin, _ = islinearfunction(integrator)
     if islin
-        # J is constant for a linear function, but W = J - M/(γdt) still depends
-        # on γdt: W must be rebuilt/refactorized when the step size has drifted
-        # past the cutoff, otherwise concrete-A linear solvers keep a stale
-        # factorization from the first step's (possibly tiny) dt.
+        # J never changes for a linear function, so W = J - M/(γdt) has to track γdt and
+        # the rebuild is cheap: LHL, which `defaultalg` picks for this split W, absorbs a
+        # new γdt by re-shifting the Hessenberg form in O(n²) and leaves the reduction
+        # alone. Nothing is left for `new_W_dt_cutoff` to amortize (a pinned factorization
+        # pays its O(n³) instead).
         isnewton(nlsolver) || return false, true
         W_iγdt = inv(nlsolver.cache.W_γdt)
         iγdt = inv(nlsolver.γ * integrator.dt)
-        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
-        return false, !smallstepchange
+        return false, iγdt != W_iγdt
     end
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
     errorfail = OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
@@ -578,6 +615,15 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     end
 end
 
+# `ScalarOperator` (λ·I) reports `axes(mm) == ()` like `UniformScaling`, but unlike
+# `UniformScaling` it isn't matched by `isa UniformScaling` -- treat both as the same
+# scalar-times-identity case rather than requiring `axes(mm) == axes(W)`.
+_is_scalar_massmatrix(mm) = false
+_is_scalar_massmatrix(::UniformScaling) = true
+_is_scalar_massmatrix(::ScalarOperator) = true
+_scalar_massmatrix_λ(mm::UniformScaling) = mm.λ
+_scalar_massmatrix_λ(mm::ScalarOperator) = convert(Number, mm)
+
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
 @noinline function _throwWMerror(W, mass_matrix)
     throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
@@ -594,6 +640,8 @@ end
 @inline _use_allocating_sparse_W_path(W) =
     is_sparse(W) && !ArrayInterface.fast_scalar_indexing(nonzeros(W))
 
+_update_sparse_diagonal!(W, λ, invdtgamma, J) = false
+
 
 """
     jacobian2W!(W, mass_matrix, dtgamma, J) -> nothing
@@ -608,15 +656,25 @@ function jacobian2W!(
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
-    mass_matrix isa UniformScaling ||
+    _is_scalar_massmatrix(mass_matrix) ||
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if mass_matrix isa UniformScaling
+        if _is_scalar_massmatrix(mass_matrix) && _use_allocating_sparse_W_path(W)
+            # A sparse GPU `W` can be neither scalar-indexed nor broadcast into on its
+            # diagonal, so build the shifted matrix and copy it in. Without this the
+            # branch below reaches `@view(W[idxs])`, which falls back to
+            # `getindex(W, i, j)` and scalar-indexes the device storage.
+            # `dae_jacobian2W!` already guards its sparse-GPU case the same way.
+            λ = -_scalar_massmatrix_λ(mass_matrix)
+            copyto!(W, J + (λ * invdtgamma) * I)
+        elseif _is_scalar_massmatrix(mass_matrix)
             copyto!(W, J)
             idxs = diagind(W)
-            λ = -mass_matrix.λ
-            if ArrayInterface.fast_scalar_indexing(J) &&
+            λ = -_scalar_massmatrix_λ(mass_matrix)
+            if is_sparse_csc(W) && _update_sparse_diagonal!(W, λ, invdtgamma, J)
+                nothing
+            elseif ArrayInterface.fast_scalar_indexing(J) &&
                     ArrayInterface.fast_scalar_indexing(W)
                 @inbounds for i in 1:size(J, 1)
                     W[i, i] = muladd(λ, invdtgamma, J[i, i])
@@ -639,14 +697,14 @@ function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix)::Nothin
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
-    mass_matrix isa UniformScaling ||
+    _is_scalar_massmatrix(mass_matrix) ||
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if mass_matrix isa UniformScaling
+        if _is_scalar_massmatrix(mass_matrix)
             copyto!(W, J)
             idxs = diagind(W)
-            λ = -mass_matrix.λ
+            λ = -_scalar_massmatrix_λ(mass_matrix)
             @inbounds for i in 1:size(J, 1)
                 W[i, i] = muladd(λ, invdtgamma, J[i, i])
             end
@@ -659,14 +717,58 @@ function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix)::Nothin
     return nothing
 end
 
+"""
+    _uses_split_W(alg, f) -> Bool
+
+Whether `alg`'s linear solver wants `W` left split as `J` and `gamma` (a `WOperator`)
+instead of assembled. True only for `LHLFactorization`, whose whole point is that a new
+`dtgamma` must not touch `J`, and only when the mass matrix is a multiple of `I` — a
+general one would need a Hessenberg–triangular reduction of the pencil, which is not
+implemented.
+
+Throws rather than degrading quietly on the combinations the reduction cannot serve.
+"""
+function _uses_split_W(alg, f)
+    alg isa DAEAlgorithm && return false
+    hasproperty(alg, :linsolve) || return false
+    alg.linsolve isa LinearSolve.LHLFactorization || return false
+    if !_is_scalar_massmatrix(f.mass_matrix)
+        throw(
+            ArgumentError(
+                "LHLFactorization needs a mass matrix that is a multiple of I; got $(typeof(f.mass_matrix)). Reducing a general pencil to Hessenberg–triangular form is not implemented."
+            )
+        )
+    end
+    if !(
+            f.jac_prototype === nothing || f.jac_prototype isa Matrix ||
+                is_sparse_csc(f.jac_prototype)
+        )
+        throw(
+            ArgumentError(
+                "LHLFactorization needs a dense or `SparseMatrixCSC` Jacobian; got a jac_prototype of type $(typeof(f.jac_prototype))."
+            )
+        )
+    end
+    return true
+end
+
+# A split `W` needs no assembly: `update_coefficients!` writing `gamma` is the whole
+# update, and `J` is aliased so `calc_J!` has already refreshed it.
+function jacobian2W!(
+        W::WOperator, mass_matrix, dtgamma::Number, J::AbstractMatrix
+    )::Nothing
+    update_coefficients!(W; gamma = dtgamma)
+    return nothing
+end
+
 function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix)
     # check size and dimension
-    mass_matrix isa UniformScaling ||
+    _is_scalar_massmatrix(mass_matrix) ||
         @boundscheck axes(mass_matrix) == axes(J) || _throwJMerror(J, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if mass_matrix isa UniformScaling
-            λ = -mass_matrix.λ
+        if _is_scalar_massmatrix(mass_matrix)
+            λ = -_scalar_massmatrix_λ(mass_matrix)
             W = J + (λ * invdtgamma) * I
         else
             W = muladd(-mass_matrix, invdtgamma, J)
@@ -674,6 +776,11 @@ function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix)
     end
     return W
 end
+
+# DAE residual uses du = (tmp + α z)/(γ dt). cj = ∂du/∂z = α/(γ dt).
+# Do not use α/dtgamma: COEFFICIENT_MULTISTEP already puts /α in dtgamma.
+@inline dae_invγdt(nlsolver, integrator) = inv(nlsolver.γ * integrator.dt)
+@inline dae_cj(nlsolver, integrator) = nlsolver.α * dae_invγdt(nlsolver, integrator)
 
 """
     dae_jacobian2W!(W, J_u, J_du, cj)
@@ -735,6 +842,13 @@ function calc_W!(
         W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, newJW = nothing
     )
+    return _calc_W!(
+        _current_alg(cache, integrator), integrator, W, nlsolver, cache, dtgamma,
+        repeat_step, newJW
+    )::NTuple{2, Bool}
+end
+
+function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, newJW)
     (; t, dt, uprev, u, f, p) = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
@@ -745,7 +859,6 @@ function calc_W!(
 
     (; J) = lcache
     isdae = integrator.alg isa DAEAlgorithm
-    alg = unwrap_alg(integrator, true)
     mass_matrix = nothing
     if !isdae
         mass_matrix = integrator.f.mass_matrix
@@ -775,18 +888,18 @@ function calc_W!(
     if new_jac && isnewton(lcache)
         lcache.J_t = t
         if isdae
+            invγdt = dae_invγdt(nlsolver, integrator)
             # Update the combined DAE wrapper (still used by NonlinearSolveAlg path)
             if lcache.uf !== nothing
                 lcache.uf.α = nlsolver.α
-                lcache.uf.invγdt = inv(dtgamma)
+                lcache.uf.invγdt = invγdt
                 lcache.uf.tmp = nlsolver.tmp
             end
             # Update separated DAE Jacobian wrappers
             dae_jac = lcache.dae_jacobians
             if dae_jac !== nothing
-                invgdt = inv(dtgamma)
                 # du at z=0 evaluation point: du = tmp * invγdt
-                du_pred = nlsolver.tmp .* invgdt
+                du_pred = nlsolver.tmp .* invγdt
                 if dae_jac.uf_u !== nothing
                     dae_jac.uf_u.du_fixed .= du_pred
                     dae_jac.uf_u.p = p
@@ -809,11 +922,19 @@ function calc_W!(
         else
             update_coefficients!(W, uprev, p, t; gamma = dtgamma)
         end
-        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
+        if W.J isa AbstractSciMLOperator
+            # update_coefficients! moves J in place, so a solver caching its factorization cannot see the change.
+            mark_jacobian_updated!(W)
+        elseif W.J !== nothing
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-                (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
-            new_W && !isdae &&
+                (new_jac && (_calc_J!(alg, integrator, W.J, lcache, next_step)))
+            # A linear solver caching a factorization of J across steps needs to know when
+            # J moved; `gamma` it can see for itself.
+            new_jac && mark_jacobian_updated!(W)
+            # Assembling `_concrete_form` is the O(n²) the split form exists to avoid, and
+            # a solver consuming the split never reads it.
+            new_W && !isdae && !_uses_split_W(alg, f) &&
                 jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J)
         end
     elseif W isa AbstractSciMLOperator && !(W isa StaticWOperator)
@@ -823,23 +944,23 @@ function calc_W!(
             dae_jac = isnewton(lcache) ? lcache.dae_jacobians : nothing
             if dae_jac !== nothing
                 if new_jac
-                    calc_J_dae!(J, dae_jac.J_du, integrator, lcache)
+                    _calc_J_dae!(alg, integrator, J, dae_jac.J_du, lcache)
                 end
                 if new_W
-                    cj = nlsolver.α * inv(dtgamma)
+                    cj = dae_cj(nlsolver, integrator)
                     dae_jacobian2W!(W, J, dae_jac.J_du, cj)
                 end
             else
                 # Fallback: no separated Jacobians available
                 islin, isode = islinearfunction(integrator)
                 islin ? (J = isode ? f.f : f.f1.f) :
-                    (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+                    (new_jac && (_calc_J!(alg, integrator, J, lcache, next_step)))
                 new_W && copyto!(W, J)
             end
         else
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
-                (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+                (new_jac && (_calc_J!(alg, integrator, J, lcache, next_step)))
             new_W && jacobian2W!(W, mass_matrix, dtgamma, J)
         end
     end
@@ -848,7 +969,7 @@ function calc_W!(
         if isdae && new_W
             # For DAE, W_γdt stores cj = α/(γ*dt). Update whenever W is
             # reconstructed since it now has the exact current cj.
-            set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
+            set_W_γdt!(nlsolver, dae_cj(nlsolver, integrator))
         elseif !isdae && new_W
             set_W_γdt!(nlsolver, dtgamma)
         end
@@ -903,7 +1024,7 @@ end
             cache.J = J_u
             dae_jac = typeof(dae_jac)(J_du, dae_jac.uf_u, dae_jac.uf_du)
             cache.dae_jacobians = dae_jac
-            cj = nlsolver.α * inv(dtgamma)
+            cj = dae_cj(nlsolver, integrator)
             W = dae_jacobian2W(J_u, J_du, cj)
             J = J_u
         elseif isdae
@@ -933,17 +1054,22 @@ time derivative needed by a Rosenbrock step, honoring Jacobian reuse for W-metho
 Returns whether a fresh `W` was formed. Skips the work on a repeated step.
 """
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
+    return _calc_rosenbrock_differentiation!(
+        _current_alg(cache, integrator), integrator, cache, dtd1, dtgamma, repeat_step
+    )::Bool
+end
+
+function _calc_rosenbrock_differentiation!(alg, integrator, cache, dtd1, dtgamma, repeat_step)
     nlsolver = nothing
-    alg = OrdinaryDiffEqCore.unwrap_alg(integrator, true)
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step
         jac_reuse = get_jac_reuse(cache)
         if isWmethod(alg) && jac_reuse !== nothing
             # W-methods with reuse enabled: use CVODE-inspired reuse logic
-            newJW = _rosenbrock_jac_reuse_decision(integrator, cache, dtgamma)
-            new_jac, new_W = calc_W!(
-                cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, newJW
+            newJW = _rosenbrock_jac_reuse_decision_alg(alg, integrator, cache, dtgamma)
+            new_jac, new_W = _calc_W!(
+                alg, integrator, cache.W, nlsolver, cache, dtgamma, repeat_step, newJW
             )
             jac_reuse.last_step_iter = integrator.iter
             if new_jac
@@ -954,13 +1080,14 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
             # Strict Rosenbrock, or W-method with reuse disabled (jac_reuse ===
             # nothing). Defer to do_newJW inside calc_W! so that the errorfail
             # branch reuses J across step rejections (matches master).
-            new_jac, new_W = calc_W!(
-                cache.W, integrator, nlsolver, cache, dtgamma, repeat_step
+            new_jac, new_W = _calc_W!(
+                alg, integrator, cache.W, nlsolver, cache, dtgamma, repeat_step,
+                nothing
             )
         end
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
-    calc_tderivative!(integrator, cache, dtd1, repeat_step || !new_jac)
+    _calc_tderivative!(alg, integrator, cache, dtd1, repeat_step || !new_jac)
     return new_W
 end
 
@@ -1081,19 +1208,19 @@ function update_W!(
         lcache = nlsolver.cache
         if isdae
             if new_jac
+                invγdt = dae_invγdt(nlsolver, integrator)
                 # Update combined DAE wrapper
                 if lcache.uf !== nothing
                     lcache.uf.α = nlsolver.α
-                    lcache.uf.invγdt = inv(dtgamma)
+                    lcache.uf.invγdt = invγdt
                     lcache.uf.tmp = @. nlsolver.tmp
                     lcache.uf.uprev = @. integrator.uprev
                 end
                 # Update separated wrappers and compute J_u, J_du
                 dae_jac = lcache.dae_jacobians
                 if dae_jac !== nothing
+                    du_pred = @. nlsolver.tmp * invγdt
                     if dae_jac.uf_u !== nothing
-                        invgdt = inv(dtgamma)
-                        du_pred = @. nlsolver.tmp * invgdt
                         dae_jac.uf_u.du_fixed = du_pred
                         dae_jac.uf_u.p = integrator.p
                         dae_jac.uf_u.t = integrator.t
@@ -1113,7 +1240,7 @@ function update_W!(
             if new_W
                 dae_jac = lcache.dae_jacobians
                 if dae_jac !== nothing
-                    cj = nlsolver.α * inv(dtgamma)
+                    cj = dae_cj(nlsolver, integrator)
                     if lcache.W isa StaticWOperator
                         W = StaticWOperator(
                             dae_jacobian2W(lcache.J, dae_jac.J_du, cj)
@@ -1144,7 +1271,7 @@ function update_W!(
         end
         set_new_W!(nlsolver, new_W)
         if isdae && new_W
-            set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
+            set_W_γdt!(nlsolver, dae_cj(nlsolver, integrator))
         elseif !isdae && new_W
             set_W_γdt!(nlsolver, dtgamma)
         end
@@ -1218,6 +1345,12 @@ function build_J_W(
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
+    elseif IIP && _uses_split_W(alg, f)
+        # `LHLFactorization` reduces J once and absorbs each new dtgamma in O(n²), so W is
+        # kept split as the `J - M/dtgamma` a `WOperator` already represents.
+        J = f.jac_prototype === nothing ? ArrayInterface.zeromatrix(u) :
+            deepcopy(f.jac_prototype)
+        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u))
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
             (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))
 
@@ -1228,8 +1361,8 @@ function build_J_W(
             set_all_nzval!(J, one(eltype(J)))
             set_all_nzval!(W, one(eltype(W)))
         else
-            fill!(J, one(eltype(J)))
-            fill!(W, one(eltype(W)))
+            fill_stored!(J, one(eltype(J)))
+            fill_stored!(W, one(eltype(W)))
         end
     elseif (
             IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&

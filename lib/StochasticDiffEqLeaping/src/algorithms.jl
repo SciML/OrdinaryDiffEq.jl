@@ -82,7 +82,7 @@ Automatically adjusts tau based on:
 end
 
 """
-    ImplicitTauLeaping(; nlsolve=NLFunctional())
+    ImplicitTauLeaping(; nlsolve = NLFunctional())
 
 **ImplicitTauLeaping: First Order Implicit Tau-Leaping Method (Jump-Diffusion)**
 
@@ -129,14 +129,14 @@ This corresponds to `ThetaTrapezoidalTauLeaping` with θ = 1 (fully implicit).
 using StochasticDiffEq, JumpProcesses
 
 # Define rate function and stoichiometry
-rate(out, u, p, t) = (out[1] = 0.1*u[1]; out[2] = 0.05*u[2])
+rate(out, u, p, t) = (out[1] = 0.1 * u[1]; out[2] = 0.05 * u[2])
 c(du, u, p, t, counts, mark) = (du[1] = -counts[1] + counts[2]; du[2] = counts[1] - counts[2])
 
 rj = RegularJump(rate, c, 2)
 prob = DiscreteProblem([100.0, 0.0], (0.0, 10.0))
 jprob = JumpProblem(prob, Direct(), rj)
 
-sol = solve(jprob, ImplicitTauLeaping(); dt=0.1)
+sol = solve(jprob, ImplicitTauLeaping(); dt = 0.1)
 ```
 
 ## References
@@ -153,7 +153,7 @@ function ImplicitTauLeaping(; nlsolve = NLFunctional())
 end
 
 """
-    ThetaTrapezoidalTauLeaping(; theta=0.5, max_iters=10, abstol=1e-8, reltol=1e-6)
+    ThetaTrapezoidalTauLeaping(; theta = 0.5, max_iters = 10, abstol = 1.0e-8, reltol = 1.0e-6)
 
 **ThetaTrapezoidalTauLeaping: Implicit Weak Second Order Tau-Leaping Method (Jump-Diffusion)**
 

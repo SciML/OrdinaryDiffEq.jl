@@ -210,24 +210,24 @@ end
     stage_limiter! = integrator.opts.stage_limiter!
     a = dt * a21
     @.. broadcast = false thread = thread tmp = uprev + a * k1
-    stage_limiter!(tmp, f, p, t + c1 * dt)
+    stage_limiter!(tmp, integrator, p, t + c1 * dt)
     f(k2, tmp, p, t + c1 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a31 * k1 + a32 * k2)
-    stage_limiter!(tmp, f, p, t + c2 * dt)
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k3, tmp, p, t + c2 * dt)
     @.. broadcast = false thread = thread tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
-    stage_limiter!(tmp, f, p, t + c3 * dt)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
     f(k4, tmp, p, t + c3 * dt)
     @.. broadcast = false thread = thread tmp = uprev +
         dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
-    stage_limiter!(tmp, f, p, t + c4 * dt)
+    stage_limiter!(tmp, integrator, p, t + c4 * dt)
     f(k5, tmp, p, t + c4 * dt)
     @.. broadcast = false thread = thread tmp = uprev +
         dt * (
         a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 +
             a65 * k5
     )
-    stage_limiter!(tmp, f, p, t + dt)
+    stage_limiter!(tmp, integrator, p, t + dt)
     f(k6, tmp, p, t + dt)
     @.. broadcast = false thread = thread u = uprev +
         dt * (

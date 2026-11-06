@@ -11,14 +11,14 @@ import OrdinaryDiffEqCore: qmax_default, qmin_default, beta2_default,
     CompiledFloats,
     get_fsalfirstlast,
     unwrap_alg, _ode_interpolant, _ode_interpolant!,
-    DerivativeOrderNotPossibleError, full_cache, isdp8
+    DerivativeOrderNotPossibleError, isdp8
 using FastBroadcast: Serial
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, copyat_or_push!
 import DiffEqBase: @tight_loop_macros, calculate_residuals, calculate_residuals!,
     initialize!
-import SciMLBase: alg_order
+import SciMLBase: alg_order, full_cache
 import OrdinaryDiffEqCore
 
 using Reexport

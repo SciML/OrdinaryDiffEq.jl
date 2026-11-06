@@ -11,7 +11,7 @@ errcoeff(m, h, ::Fourier, ::MaxLp{2}) = h * √3 / (√2 * π)
 norv(m, n, ::Fourier) = 2 * m * n
 
 """
-    levyarea(W, n, alg; rng=default_rng())
+    levyarea(W, n, alg; rng = default_rng())
     levyarea(W, n, alg, coeffs)
 
 Approximate the antisymmetric Lévy-area matrix for the normalized Wiener

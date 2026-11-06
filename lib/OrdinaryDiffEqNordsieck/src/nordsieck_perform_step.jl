@@ -28,15 +28,15 @@ end
         z[1] = integrator.uprev
         z[2] = integrator.k[1] * dt
         z[3] = ode_interpolant(
-            t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
+            zero(t), dt, nothing, nothing, integrator.k, tsit5tab, nothing,
             Val{2}, differential_vars
         ) * dt^2 / 2
         z[4] = ode_interpolant(
-            t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
+            zero(t), dt, nothing, nothing, integrator.k, tsit5tab, nothing,
             Val{3}, differential_vars
         ) * dt^3 / 6
         z[5] = ode_interpolant(
-            t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
+            zero(t), dt, nothing, nothing, integrator.k, tsit5tab, nothing,
             Val{4}, differential_vars
         ) * dt^4 / 24
         z[6] = zero(cache.z[6])
@@ -120,21 +120,27 @@ end
     # Nordsieck form needs to build the history vector
     if cache.order == 1
         ## Start the Nordsieck vector in two shots!
+        if cache.resize_restart
+            copyto!(integrator.uprev, integrator.u)
+            f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+            increment_nf!(integrator.stats, 1)
+            cache.resize_restart = false
+        end
         perform_step!(integrator, tsit5cache, repeat_step)
         copyto!(tmp, integrator.u)
         cache.order = 4
         @.. broadcast = false z[1] = integrator.uprev
         @.. broadcast = false z[2] = integrator.k[1] * dt
         ode_interpolant!(
-            z[3], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
+            z[3], zero(t), dt, nothing, nothing, integrator.k, tsit5cache, nothing,
             Val{2}, differential_vars
         )
         ode_interpolant!(
-            z[4], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
+            z[4], zero(t), dt, nothing, nothing, integrator.k, tsit5cache, nothing,
             Val{3}, differential_vars
         )
         ode_interpolant!(
-            z[5], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
+            z[5], zero(t), dt, nothing, nothing, integrator.k, tsit5cache, nothing,
             Val{4}, differential_vars
         )
         @.. broadcast = false z[3] = z[3] * dt^2 / 2
@@ -217,6 +223,7 @@ end
     # handle callbacks, rewind back to order one.
     if integrator.derivative_discontinuity || integrator.iter == 1
         cache.order = 1
+        cache.nextorder = 1
         z[1] = integrator.uprev
         z[2] = f(uprev, p, t) * dt
         increment_nf!(integrator.stats, 1)
@@ -228,16 +235,16 @@ end
         dts[i + 1] = dts[i]
     end
     dts[1] = dt
-    dt != dts[2] && nordsieck_adjust!(integrator, cache)
+    nordsieck_needs_adjust(integrator, cache) && nordsieck_adjust!(integrator, cache)
     integrator.k[1] = z[2] / dt
 
     perform_predict!(cache)
-    calc_coeff!(cache)
+    is_bdf(integrator.alg) ? calc_coeff_bdf!(cache) : calc_coeff!(cache)
     isucceed = nlsolve_functional!(integrator, cache)
     if !isucceed
         # rewind Nordsieck vector
         integrator.force_stepfail = true
-        nordsieck_rewind!(cache)
+        nordsieck_restore_failed_step!(cache, tmp)
         return nothing
     end
 
@@ -248,17 +255,10 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-        if get_EEst(integrator) > one(get_EEst(integrator))
-            for i in 1:12
-                dts[i] = dts[i + 1]
-            end
-            dts[13] = tmp
-        end
     end
 
     ################################### Finalize
-    nordsieck_finalize!(integrator, cache)
-    nordsieck_prepare_next!(integrator, cache)
+    nordsieck_complete_step!(integrator, cache, tmp)
     integrator.k[2] = cache.z[2] / dt
     return nothing
 end
@@ -282,8 +282,13 @@ end
     (; t, dt, uprev, u, f, p, uprev2, differential_vars) = integrator
     (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
     # handle callbacks, rewind back to order one.
-    if integrator.derivative_discontinuity || integrator.iter == 1
+    if integrator.derivative_discontinuity || integrator.iter == 1 || cache.resize_restart
+        if cache.resize_restart
+            copyto!(integrator.uprev, integrator.u)
+            cache.resize_restart = false
+        end
         cache.order = 1
+        cache.nextorder = 1
         @.. broadcast = false z[1] = integrator.uprev
         f(z[2], uprev, p, t)
         increment_nf!(integrator.stats, 1)
@@ -297,17 +302,17 @@ end
     end
     dts[1] = dt
     # Rescale
-    dt != dts[2] && nordsieck_adjust!(integrator, cache)
+    nordsieck_needs_adjust(integrator, cache) && nordsieck_adjust!(integrator, cache)
     @.. broadcast = false integrator.k[1] = z[2] / dt
 
     perform_predict!(cache)
-    calc_coeff!(cache)
+    is_bdf(integrator.alg) ? calc_coeff_bdf!(cache) : calc_coeff!(cache)
     isucceed = nlsolve_functional!(integrator, cache)
     # TODO: Handle NLsolve better
     if !isucceed
         integrator.force_stepfail = true
         # rewind Nordsieck vector
-        nordsieck_rewind!(cache)
+        nordsieck_restore_failed_step!(cache, tmp)
         return nothing
     end
 
@@ -319,18 +324,11 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t
         )
         set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-        if get_EEst(integrator) > one(get_EEst(integrator))
-            for i in 1:12
-                dts[i] = dts[i + 1]
-            end
-            dts[13] = tmp
-        end
     end
 
     ################################### Finalize
 
-    nordsieck_finalize!(integrator, cache)
-    nordsieck_prepare_next!(integrator, cache)
+    nordsieck_complete_step!(integrator, cache, tmp)
     @.. broadcast = false integrator.k[2] = cache.z[2] / dt
     return nothing
 end

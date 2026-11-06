@@ -43,8 +43,6 @@ using Adapt: Adapt, adapt
 import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN,
     ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-using SciMLOperators: MatrixOperator, WOperator
-
 using Logging: Logging
 using SparseArrays: SparseArrays, issparse
 
@@ -53,7 +51,7 @@ using SparseArrays: SparseArrays, issparse
 using DiffEqBase: DEVerbosity
 using SciMLLogging: AbstractVerbosityPreset, Standard
 
-using LinearAlgebra: LinearAlgebra, I, mul!
+using LinearAlgebra: LinearAlgebra, mul!
 using Random: Random
 
 import ForwardDiff.Dual

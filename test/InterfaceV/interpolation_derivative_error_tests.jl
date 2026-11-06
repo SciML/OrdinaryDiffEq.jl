@@ -3,7 +3,8 @@ using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -21,3 +22,11 @@ for alg in [
     @test_throws OrdinaryDiffEqCore.DerivativeOrderNotPossibleError sol(0.5, Val{10})
     @test_throws OrdinaryDiffEqCore.DerivativeOrderNotPossibleError sol(out, 0.5, Val{10})
 end
+
+sol = solve(prob, Rosenbrock23())
+err = try
+    sol(0.5, Val{10})
+catch e
+    e
+end
+@test sprint(showerror, err) == OrdinaryDiffEqCore.DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE
