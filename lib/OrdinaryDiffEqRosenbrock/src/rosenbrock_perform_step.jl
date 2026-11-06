@@ -454,6 +454,7 @@ end
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
     linsolve_tmp = @.. du + (dt * d[1]) * dT
     k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
+    integrator.stats.nsolve += 1
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
 
