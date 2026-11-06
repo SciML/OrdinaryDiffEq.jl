@@ -1882,7 +1882,9 @@ end
                 z[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalue
             end
         else
-            z = mass_matrix * w #standard multiplication
+            for i in 1:num_stages
+                z[i] = mass_matrix * w[i]
+            end
         end
 
         rhs = Vector{typeof(u)}(undef, num_stages)
