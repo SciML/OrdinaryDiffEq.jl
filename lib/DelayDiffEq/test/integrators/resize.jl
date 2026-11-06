@@ -110,3 +110,18 @@ end
         @test integ.sol.retcode == ReturnCode.Success
     end
 end
+
+@testset "resize! with a Rosenbrock member of a composite algorithm (#4952)" begin
+    f!(du, u, h, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
+    prob = DDEProblem(f!, [1.0], (p, t) -> [0.5], (0.0, 3.0); constant_lags = [1.0])
+    integ = init(prob, MethodOfSteps(AutoTsit5(Rosenbrock23())))
+    while integ.cache.current == 1
+        step!(integ)
+    end
+    step!(integ)
+    resize!(integ, 2)
+    integ.u[2] = 1.0
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    @test integ.u ≈ [0.5, 0.5]
+end
