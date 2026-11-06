@@ -289,6 +289,7 @@ Provided by `OrdinaryDiffEqDifferentiation`.
 OrdinaryDiffEqDifferentiation.build_J_W
 OrdinaryDiffEqDifferentiation.build_uf
 OrdinaryDiffEqDifferentiation.build_jac_config
+OrdinaryDiffEqDifferentiation.build_resize_jac_config
 OrdinaryDiffEqDifferentiation.build_grad_config
 OrdinaryDiffEqDifferentiation.calc_J
 OrdinaryDiffEqDifferentiation.calc_J!

@@ -101,7 +101,7 @@ include("operators.jl")
     eval(
         Expr(
             :public,
-            :build_J_W, :build_grad_config, :build_jac_config, :build_uf,
+            :build_J_W, :build_grad_config, :build_jac_config, :build_resize_jac_config, :build_uf,
             :calc_J, :calc_J!, :calc_tderivative, :calc_tderivative!,
             :calc_rosenbrock_differentiation, :calc_rosenbrock_differentiation!,
             :jacobian!, :jacobian2W!, :update_W!,

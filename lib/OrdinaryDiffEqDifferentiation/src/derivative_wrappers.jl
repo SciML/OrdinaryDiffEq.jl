@@ -266,7 +266,7 @@ Return `nothing` when the prepared Jacobian config can differentiate at `x`, and
 an `AutoForwardDiff` backend with chunk size `length(x)`.
 
 The chunk of a ForwardDiff config is part of its type, so `resize_jac_config!` keeps the
-chunk that `build_jac_config` prepared and recorded in `jac_config[3]`. ForwardDiff rejects
+chunk that `build_resize_jac_config` prepared and recorded in `jac_config[3]`. ForwardDiff rejects
 a chunk longer than the input, so once the state shrinks below that chunk the Jacobian is
 computed without the prepared config. An automatic chunk never exceeds ForwardDiff's chunk
 threshold, so `ForwardDiff.pickchunksize(length(x))` is `length(x)` in that case too.
@@ -301,9 +301,7 @@ Construct the differentiation configuration used to compute the state Jacobian o
 `f` via [`jacobian!`](@ref) (a DifferentiationInterface preparation, or `nothing`
 when the problem supplies its own `jac`/`Wfact`). The state Jacobian perturbs
 `u`, not `t`, so the finite-difference direction does not depend on the
-integration direction; the returned tuple holds the same config twice. A prepared config
-is followed by the chunk size of a dense ForwardDiff config (`nothing` for other
-backends), which `jacobian!` checks against the state length after a `resize!`.
+integration direction; the returned tuple holds the same config twice.
 """
 function build_jac_config(
         alg, f::F1, uf::F2, du1, uprev,
@@ -341,13 +339,31 @@ function build_jac_config(
         dense = autodiff_alg isa AutoSparse ? ADTypes.dense_ad(autodiff_alg) : autodiff_alg
 
         jac_config1 = DI.prepare_jacobian(uf, du1, autodiff_alg, u, strict = Val(false))
-        jac_config = (jac_config1, jac_config1, prepared_chunksize(autodiff_alg, u))
+        jac_config = (jac_config1, jac_config1)
 
     else
         jac_config = (nothing, nothing)
     end
 
     return jac_config
+end
+
+"""
+    build_resize_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+
+Construct a Jacobian configuration for a solver cache that supports state resizing.
+The first two entries are the preparations returned by [`build_jac_config`](@ref).
+For prepared configurations, a third entry records the dense ForwardDiff chunk size
+(`nothing` for other backends), so [`jacobian!`](@ref) can select a fitting chunk
+after the state shrinks. The no-configuration value is `(nothing, nothing)`.
+
+Use [`resize_jac_config!`](@ref) to resize these configurations with the cache.
+"""
+function build_resize_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    isnothing(config[1]) && return config
+    backend = gpu_safe_autodiff(alg_autodiff(alg), u)
+    return (config..., prepared_chunksize(backend, u))
 end
 
 function get_chunksize(
