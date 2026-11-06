@@ -480,6 +480,21 @@ Capture the per-solve state of the controller cache `cache` so that
 pseudo-step the controller, e.g. to compare the step size each candidate
 order would get, without leaking that state into the real step.
 
+The snapshot covers controller scratch state only (`q11`, `qold`, error
+history, …). It does **not** include the integrator's error estimate
+`EEst`, which lives on the integrator rather than in the controller cache.
+Callers that set `EEst` while pseudo-stepping must save and restore it
+themselves:
+
+```julia
+saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+snap = snapshot_controller(integrator.controller_cache)
+OrdinaryDiffEqCore.set_EEst!(integrator, trial_EEst)
+dtpropose = step_accept_controller!(integrator, alg, stepsize_controller!(integrator, alg))
+restore_controller!(integrator.controller_cache, snap)
+OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
+```
+
 The default returns `deepcopy(cache)`, which `restore_controller!` writes
 back with [`sync_controllers!`](@ref), so a custom controller only has to
 implement `sync_controllers!` for its state to be restored. The built-in
@@ -496,6 +511,9 @@ snapshot_controller(cache) = deepcopy(cache)
 Write `snapshot`, taken from `cache` by [`snapshot_controller`](@ref), back
 into `cache`. The default calls `sync_controllers!(cache, snapshot)`.
 Returns `nothing`.
+
+Only controller scratch state is restored; `EEst` is not touched. See
+[`snapshot_controller`](@ref) for how callers should preserve `EEst`.
 """
 function restore_controller!(cache, snapshot)
     sync_controllers!(cache, snapshot)
