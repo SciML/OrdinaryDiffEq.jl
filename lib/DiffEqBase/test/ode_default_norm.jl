@@ -62,3 +62,15 @@ r = RaggedVectorOfArray([ones(3), ones(3)])  # 6 ones
 @test ODE_DEFAULT_NORM(r, 0.0) ≈ 1.0
 # Unnormalised Euclidean norm would be sqrt(6) ≈ 2.449 — make sure we don't get that
 @test ODE_DEFAULT_NORM(r, 0.0) < 2.0
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4595
+# `@fastmath`/`sqrt_fast` let LLVM fold `isnan`/`isfinite` on the norm result. The check
+# must live inside a compiled function — a top-level assertion does not reproduce the fold.
+@testset "ODE_DEFAULT_NORM preserves NaN/Inf through isnan/isfinite" begin
+    isnan_norm(u) = isnan(ODE_DEFAULT_NORM(u, 0.0))
+    isfinite_norm(u) = isfinite(ODE_DEFAULT_NORM(u, 0.0))
+    @test isnan_norm([NaN, 0.5])
+    @test !isfinite_norm([Inf, 0.5])
+    @test isnan_norm(SA[NaN, 0.5])
+    @test !isfinite_norm(SA[Inf, 0.5])
+end
