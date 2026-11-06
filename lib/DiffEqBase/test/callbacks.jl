@@ -196,3 +196,17 @@ end
         @test partials(r)[2] ≈ -2 * droot rtol = 16 * eps()
     end
 end
+
+@testset "Dual rootfinding without partials" begin
+    using ForwardDiff: Dual, value, partials
+    D = Dual{:empty, Float64, 0}
+    zero_func(t, p = nothing) = sin(t) - D(0.4)
+    for tspan in ((D(0.0), D(2.0)), (D(2.0), D(0.0))),
+            rootfind in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        r = DiffEqBase.find_root(zero_func, tspan, rootfind)
+        @test r isa D
+        @test value(r) == DiffEqBase.find_root((t, p = nothing) -> sin(t) - 0.4, value.(tspan), rootfind)
+        @test value(r) ≈ asin(0.4) atol = 4 * eps(asin(0.4))
+        @test isempty(partials(r))
+    end
+end

@@ -266,6 +266,7 @@ function DiffEqBase.find_root(
     primal(t, p = nothing) = ForwardDiff.value(f(D(t)))
     t0, t1 = ForwardDiff.value(tup[1]), ForwardDiff.value(tup[2])
     tv = DiffEqBase.find_root(primal, (t0, t1), rootfind)
+    N == 0 && return D(tv)
     te = tv
     if te == t0 || te == t1
         other = rootfind == SciMLBase.LeftRootFind ? SciMLBase.RightRootFind :
