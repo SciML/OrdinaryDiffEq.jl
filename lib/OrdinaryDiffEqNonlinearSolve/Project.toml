@@ -5,6 +5,7 @@ version = "2.9.9"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 NonlinearSolveBase = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -50,6 +51,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 SciMLTesting = "2.4"
 CommonSolve = "0.2.6"
+DifferentiationInterface = "0.7.21"
 Pkg = "1"
 NonlinearSolve = "4.25"
 NonlinearSolveBase = "2.45"

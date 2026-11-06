@@ -480,38 +480,17 @@ end
 """
     StageConvergenceMode(norm, κ, owner, correction)
 
-Termination mode for a complete inner solve on a `NonlinearSolveNoInitCache` that applies,
-to every inner iteration, the test `nlsolve!` applies to every outer one: with `ndz` the
-iteration's displacement in the integrator's weighted `norm`, a later iteration converges when
-`θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` (or `θ ≈ 1` at `ndz ≤ 1`, the floating-point
-limit).
+Apply the integrator's κ/η criterion to each iteration of a complete no-init Newton solve.
+For the correction's weighted norm `ndz`, convergence requires `ndz < 1e-5` on the first
+iteration, or `θ = ndz/ndzprev < 1` and `θ/(1 - θ)⋅ndz < κ` on later iterations. The
+floating-point limit `θ ≈ 1` also permits convergence at `ndz ≤ 1`.
 
-A no-init cache cannot be stepped, so each outer iteration is a whole inner solve, and it
-ends on the inner solver's own criterion. Left at its default, `max|r| ≤ eps^(4/5)` on a
-residual that carries a `1/(γΔt)` factor, that criterion is unrelated to the integrator's
-tolerances: on a problem of small magnitude it accepts a stage the `κ`/`η` test would
-reject, and on one of large magnitude it lies below roundoff, so every solve returns
-`MaxIters` and the step is rejected until `dt` collapses. A residual bound in the weighted
-norm is not enough either: on a stiff, non-normal Jacobian a small weighted residual can
-still leave a large weighted displacement.
-
-With no rate yet, the first iteration converges on `nlsolve!`'s own first-iteration test,
-`ndz < 1e-5`.
-
-`ndz` must be the Newton correction the inner solver computed, as it is for `NLNewton`, not
-just the change in the stored iterate: a correction below half an ulp of the iterate rounds
-away, and a zero displacement would then certify a stage however far it is from the root.
-The displacement stands in for the correction while half an ulp of the iterate is under 1% of
-it in the weighted norm, which bounds their difference. Otherwise `correction(fu, uprev)`
-recomputes the step from the residual at the previous iterate, with the Jacobian the inner
-solver used, so the mode is only used where the adapter can reproduce that Jacobian (see
-`stage_convergence_correction`).
-
-The test is only meaningful for an inner solver whose every step is a full Newton step, so
-that the displacement estimates the distance to the root (see `StageConvergenceAlgorithm`).
-The residual alone cannot stand in for it: neither a weighted residual bound nor a residual at
-the roundoff floor bounds the Newton correction when `W` is ill-conditioned, or when one large
-component sets the floor for all of them.
+The displacement estimates the Newton correction only when half an ulp of the iterate is
+under 1% of it in the weighted norm. Otherwise `correction(fu, uprev)` recomputes the step
+with the inner solver's Jacobian: a correction that rounds away can leave a motionless
+iterate far from the root. This mode requires full Newton steps and a reproducible Jacobian
+(see `stage_convergence_correction`); a residual bound cannot certify the correction for an
+ill-conditioned Jacobian.
 """
 struct StageConvergenceMode{N, K, O, C} <: NonlinearSolveBase.AbstractNonlinearTerminationMode
     norm::N
@@ -520,8 +499,7 @@ struct StageConvergenceMode{N, K, O, C} <: NonlinearSolveBase.AbstractNonlinearT
     correction::C
 end
 
-# The previous displacement lives in the owning `NonlinearSolveCache`, so that neither the mode
-# nor this cache is heap-allocated per inner solve.
+# Owning the displacement history in `NonlinearSolveCache` avoids per-solve allocation.
 struct StageConvergenceCache{M}
     mode::M
 end
@@ -562,12 +540,8 @@ function (n::StageDisplacementNorm)(dz)
     return n.internalnorm(atmp, n.t)
 end
 
-# Inner algorithms whose every step is a full Newton step with the true (or reused `W`)
-# Jacobian. A trust-region solver can never certify a stage this way: at the root its
-# reduction ratio is all roundoff, it rejects every further step, and it stops on
-# `ShrinkThresholdExceeded`. Quasi-Newton solvers (`SimpleBroyden`, `SimpleKlement`, ...)
-# restart each solve from a scaled identity, and their steps can be small far from the root.
-# External wrappers reject a custom mode outright.
+# Only full Newton steps certify distance to the root; trust-region and quasi-Newton
+# displacements can be small far from the root.
 const StageConvergenceAlgorithm = SimpleNewtonRaphson
 
 """
@@ -594,8 +568,8 @@ struct ForwardDiffCorrection{F, P}
 end
 function (c::ForwardDiffCorrection)(fu, x)
     g = Base.Fix2(c.f, c.p)
-    x isa Number && return fu / ForwardDiff.derivative(g, x)
-    δ = ForwardDiff.jacobian(g, x) \ _vec(fu)
+    x isa Number && return fu / DI.derivative(g, AutoForwardDiff(), x)
+    δ = DI.jacobian(g, AutoForwardDiff(), x) \ _vec(fu)
     return x isa AbstractVector ? δ : reshape(δ, size(x))
 end
 

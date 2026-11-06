@@ -13,6 +13,17 @@ using NonlinearSolveBase
 using SciMLBase, LinearAlgebra
 using Test
 
+@testset "ForwardDiff Newton correction shapes" begin
+    f(x, p) = p .* x .^ 2 .- 1
+    correction = OrdinaryDiffEqNonlinearSolve.ForwardDiffCorrection(f, 3.0)
+    for x in (2.0, [2.0, 3.0], [2.0 3.0; 4.0 5.0])
+        fu = f(x, 3.0)
+        δ = correction(fu, x)
+        @test size(δ) == size(x)
+        @test δ ≈ fu ./ (6 .* x)
+    end
+end
+
 prob_scalar = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
 
 function vdp!(du, u, p, t)

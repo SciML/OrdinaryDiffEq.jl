@@ -2,6 +2,7 @@ module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
 import CommonSolve
+import DifferentiationInterface as DI
 using CommonSolve: init, solve, solve!, step!
 
 import SciMLBase
