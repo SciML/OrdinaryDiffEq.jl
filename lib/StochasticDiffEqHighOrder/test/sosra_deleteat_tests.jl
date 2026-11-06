@@ -9,6 +9,7 @@ prob = SDEProblem(f, g, ones(2), (0.0, 1.0))
     integ = init(prob, alg)
     @test integ.cache.tmp !== integ.cache.k1
     resize!(integ, 3)
+    integ.u[3] = 1.0
     @test all(length(c) == 3 for c in full_cache(integ.cache))
     step!(integ)
     @test length(integ.u) == 3

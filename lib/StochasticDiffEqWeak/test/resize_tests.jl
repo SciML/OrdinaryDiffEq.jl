@@ -39,13 +39,32 @@ end
     resize!(integ, 3)
     step_and_check!(integ, 3)
 
-    # IRI1's nonlinear solver buffers are only resized by `resize!`
-    alg isa IRI1 && continue
-
     deleteat!(integ, 1)
     step_and_check!(integ, 2)
 
     addat!(integ, 3:3)
     integ.u[3] = 1.0
     step_and_check!(integ, 3)
+end
+
+@testset "PL1WM diagonal-noise stage dimensions" begin
+    integ = init(prob, PL1WM(); dt = 0.01, adaptive = false)
+    for field in (:Yp, :Ym)
+        @test length(getproperty(integ.cache, field)) == 2
+    end
+    check_stage_lengths(integ.cache, 2)
+
+    resize!(integ, 4)
+    integ.u[3:4] .= 1.0
+    check_stage_lengths(integ.cache, 4)
+
+    resize!(integ, 3)
+    check_stage_lengths(integ.cache, 3)
+
+    deleteat!(integ, 1)
+    check_stage_lengths(integ.cache, 2)
+
+    addat!(integ, 3:3)
+    integ.u[3] = 1.0
+    check_stage_lengths(integ.cache, 3)
 end
