@@ -33,6 +33,12 @@ BDF methods are recommended for:
   - **`QNDF`**: Adaptive order quasi-constant timestep BDF, best general choice for large systems
   - **`FBDF`**: Fixed-leading coefficient BDF, often more efficient than QNDF
 
+## MOOSE234 adaptive stepping
+
+`MOOSE234()` is a variable-stepsize, variable-order method with embedded solutions
+at orders 2, 3, and 4. It requires adaptive stepping (`adaptive = true`, the default).
+Calling `init` or `solve` with `adaptive = false` throws an `ArgumentError`.
+
 ## Optional FBDF time filtering
 
 `FBDF(time_filter = true)` adds embedded candidates to the fixed-coefficient
@@ -107,6 +113,7 @@ QBDF1
 QBDF2
 MEBDF2
 FBDF
+MOOSE234
 NordsieckBDF
 DNordsieckBDF
 ```

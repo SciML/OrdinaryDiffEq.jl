@@ -46,7 +46,7 @@ alg_order(alg::DFBDF) = 1 #dummy value
 
 isfsal(alg::DImplicitEuler) = false
 
-has_stiff_interpolation(::Union{QNDF, FBDF, DFBDF}) = true
+has_stiff_interpolation(::Union{QNDF, FBDF, DFBDF, MOOSE234}) = true
 
 ############################################ NordsieckBDF / DNordsieckBDF
 alg_order(alg::NordsieckBDF) = 1  # dummy: the running order lives in the cache
@@ -63,3 +63,11 @@ has_special_newton_error(alg::NordsieckBDFAlgs) = true
 
 
 # The step-size logic is CVODE's (`cvSetEta` keeps h unless eta >= 1.5), so the
+
+alg_extrapolates(alg::MOOSE234) = true
+alg_order(alg::MOOSE234) = 2
+isfsal(alg::MOOSE234) = false
+get_current_alg_order(alg::MOOSE234, cache) = cache.order
+get_current_adaptive_order(alg::MOOSE234, cache) = cache.order
+qsteady_min_default(alg::MOOSE234) = 9 // 10
+qsteady_max_default(alg::MOOSE234) = 2 // 1
