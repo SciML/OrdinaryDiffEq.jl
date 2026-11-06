@@ -1,7 +1,9 @@
 using OrdinaryDiffEq, Test, ADTypes
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
 import ODEProblemLibrary: prob_ode_vanderpol
-using ForwardDiff: Dual
+using ForwardDiff: Dual, Tag
+using LinearAlgebra: mul!
+import OrdinaryDiffEqCore
 
 # Create Van der Pol problem with same structure as the new ODEProblemLibrary implementation
 # New implementation uses: u[1] = x, u[2] = y, p[1] = μ
@@ -100,4 +102,76 @@ for (i, prob) in enumerate(probArr)
     @test length(sol.t) < 570
     @test SciMLBase.successful_retcode(sol)
     @test is_switching_fb(sol)
+end
+
+# Stiffness detection must not depend on the partials of dual numbers (#4776):
+# the forward sensitivity system has the same eigenvalues as the primal problem
+@testset "Stiffness detection ignores dual partials" begin
+    stiffalg = Rosenbrock23(autodiff = AutoFiniteDiff())
+    algs = (
+        AutoTsit5(stiffalg), AutoDP5(stiffalg), AutoVern6(stiffalg),
+        AutoVern7(stiffalg), AutoVern8(stiffalg), AutoVern9(stiffalg),
+    )
+    seed = 1.0e3
+    k1 = Dual{typeof(Tag(identity, Float64))}(0.25, seed)
+    k2 = Dual{typeof(Tag(abs, typeof(k1)))}(k1, Dual{typeof(Tag(identity, Float64))}(seed, seed))
+    # `|p| = 0.25` for real and complex `p`; `[one(p), zero(p)]` also covers #4878
+    for k in (k1, k2), p in (k, complex(0.6, 0.8) * k), u0 in ([one(p)], [one(p), zero(p)])
+        prob_iip = ODEProblem((du, u, p, t) -> (du .= -p .* u), u0, (0.0, 40.0), p)
+        prob_oop = ODEProblem((u, p, t) -> -p .* u, u0, (0.0, 40.0), p)
+        for prob in (prob_iip, prob_oop)
+            for alg in algs
+                sol = solve(prob, alg; abstol = 1.0e-12, reltol = 1.0e-8)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.stats.maxeig ≈ 0.25 rtol = 1.0e-2
+                @test all(==(1), sol.alg_choice)
+            end
+
+            # The default solver switches via its own logic and does not record `maxeig`
+            sol = solve(prob; abstol = 1.0e-12, reltol = 1.0e-8)
+            @test SciMLBase.successful_retcode(sol)
+            @test allequal(sol.alg_choice)
+        end
+    end
+end
+
+# Components with identical stage values must not give `0/0 = NaN`, which is treated as stiff (#4878)
+@testset "Stiffness detection skips components with identical stage values" begin
+    @test OrdinaryDiffEqCore.eigen_est_from_stages([1.0, 0.0], zeros(2), [4.0, 0.0], zeros(2)) == 0.25
+    @test OrdinaryDiffEqCore.eigen_est_from_stages([1.0, 1.0], zeros(2), [4.0, 0.0], zeros(2)) == Inf
+    x = Dual{typeof(Tag(identity, Float64))}(1.0, 1.0)
+    z = [zero(complex(x))]
+    est = OrdinaryDiffEqCore.eigen_est_from_stages([complex(0.6x, 0.8x)], z, [complex(4x)], z)
+    @test est isa Float64
+    @test est ≈ 0.25
+
+    # ForwardDiff does not support complex in-place problems
+    stiffalg = Rosenbrock23(autodiff = AutoFiniteDiff())
+    algs = (
+        AutoTsit5(stiffalg), AutoDP5(stiffalg), AutoVern6(stiffalg),
+        AutoVern7(stiffalg), AutoVern8(stiffalg), AutoVern9(stiffalg),
+    )
+    # `u' = A u` with dominant eigenvalue `λ`
+    linear_problems(λ) = (
+        ([λ 0; 0 λ], [1, 0]), # identically zero component
+        ([λ 0; 0 0], [1, 5]), # component in steady state
+        ([-0.1 0; 0.1 λ], [0, 1]), # empty depot compartment
+    )
+    for λ in (-0.25, complex(-0.15, 0.2)), (A, u0) in linear_problems(λ)
+        u0 = convert(Vector{eltype(A)}, u0)
+        prob_iip = ODEProblem((du, u, A, t) -> mul!(du, A, u), u0, (0.0, 40.0), A)
+        prob_oop = ODEProblem((u, A, t) -> A * u, u0, (0.0, 40.0), A)
+        for prob in (prob_iip, prob_oop)
+            for alg in algs
+                sol = solve(prob, alg; abstol = 1.0e-12, reltol = 1.0e-8)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.stats.maxeig ≈ 0.25 rtol = 1.0e-2
+                @test all(==(1), sol.alg_choice)
+            end
+
+            sol = solve(prob; abstol = 1.0e-12, reltol = 1.0e-8)
+            @test SciMLBase.successful_retcode(sol)
+            @test allequal(sol.alg_choice)
+        end
+    end
 end

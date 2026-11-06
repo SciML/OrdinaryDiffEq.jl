@@ -9,7 +9,7 @@ import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default,
     OrdinaryDiffEqAdaptiveAlgorithm,
     unwrap_alg, perform_step!,
     _ode_addsteps!, @OnDemandTableauExtract,
-    constvalue,
+    constvalue, eigen_est_from_stages,
     OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache, @fold,
     @cache, CompiledFloats, alg_cache, CompositeAlgorithm,
@@ -20,7 +20,6 @@ using SciMLBase: SciMLBase
 import SciMLBase: alg_order, @def, _unwrap_val, du_cache, full_cache, u_cache
 import MuladdMacro: @muladd
 import FastBroadcast: @..
-import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype,
     copyat_or_push!
 using FastBroadcast: Serial

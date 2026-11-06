@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order, alg_stability_size,
     @cache, alg_cache, OrdinaryDiffEqConstantCache,
     unwrap_alg,
     OrdinaryDiffEqMutableCache, perform_step!, isfsal,
-    CompositeAlgorithm,
+    CompositeAlgorithm, eigen_est_from_stages,
     trivial_limiter!,
     get_fsalfirstlast,
     _ode_interpolant, _ode_interpolant!,
@@ -18,7 +18,6 @@ using RecursiveArrayTools: RecursiveArrayTools, copyat_or_push!, recursivefill!
 using FastBroadcast: FastBroadcast, @..
 using MuladdMacro: MuladdMacro, @muladd
 using DiffEqBase: DiffEqBase
-import LinearAlgebra: norm
 import OrdinaryDiffEqCore
 using SciMLBase: SciMLBase
 

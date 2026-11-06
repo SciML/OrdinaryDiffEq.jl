@@ -30,7 +30,7 @@ import FastBroadcast: @..
 
 using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
-    alg_extrapolates, alg_maximum_order
+    alg_extrapolates, alg_maximum_order, constvalue
 using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
     StochasticDiffEqRODEAlgorithm
 using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
