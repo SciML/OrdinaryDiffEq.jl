@@ -301,6 +301,8 @@ end
     uprev3::uType
     dtₙ₋₁::dtType
     dtₙ₋₂::dtType
+    iter_at_event::Int
+    success_iter_at_event::Int
 end
 
 @cache mutable struct QNDF2Cache{
@@ -320,6 +322,8 @@ end
     nlsolver::N
     dtₙ₋₁::dtType
     dtₙ₋₂::dtType
+    iter_at_event::Int
+    success_iter_at_event::Int
     step_limiter!::StepLimiter
 end
 
@@ -347,7 +351,7 @@ function alg_cache(
 
     U!(2, U)
 
-    return QNDF2ConstantCache(nlsolver, D, D2, R, U, uprev2, uprev3, dtₙ₋₁, dtₙ₋₂)
+    return QNDF2ConstantCache(nlsolver, D, D2, R, U, uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, 0, 0)
 end
 
 function alg_cache(
@@ -389,7 +393,7 @@ function alg_cache(
 
     return QNDF2Cache(
         uprev2, uprev3, fsalfirst, D, Dtmp, D2, R, U, atmp,
-        utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!
+        utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, 0, 0, alg.step_limiter!
     )
 end
 

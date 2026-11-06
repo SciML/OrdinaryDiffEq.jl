@@ -1,7 +1,7 @@
 # DAE Initialization Algorithms
 # The base types are in SciMLBase, we just add the specific algorithms here
 
-import SciMLBase: DAEInitializationAlgorithm, initialize_dae!, CheckInit, NoInit, OverrideInit
+import SciMLBase: CheckInit, NoInit, OverrideInit
 
 # Re-export the SciMLBase initialization algorithms for convenience
 # Note: Docstrings for these types should be added in SciMLBase where they are defined
@@ -40,7 +40,8 @@ variables.
 
 ## Parameters
 
-- `abstol`: Absolute tolerance for the nonlinear solver (default: 1e-10)
+- `abstol`: Absolute tolerance for the nonlinear solver (default: 1e-10). Pass `nothing` to
+  use the `abstol` given to `solve` instead.
 - `nlsolve`: Custom nonlinear solver to use (optional)
 """
 struct BrownFullBasicInit{T, F} <: DAEInitializationAlgorithm
