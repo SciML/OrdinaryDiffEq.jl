@@ -339,3 +339,15 @@ end
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end
+
+@testset "Dense output with extrapolant = :constant" begin
+    f!(du, u, p, t) = (du .= cos(t) .* u; nothing)
+    f(u, p, t) = cos(t) .* u
+    exact(t) = exp(sin(t)) .* [1.0, 2.0]
+    for prob in (ODEProblem(f!, [1.0, 2.0], (0.0, 4.0)), ODEProblem(f, [1.0, 2.0], (0.0, 4.0))),
+            alg in (RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau, GaussLegendre)
+
+        sol = solve(prob, alg(extrapolant = :constant); reltol = 1.0e-8, abstol = 1.0e-10, saveat = 0.01)
+        @test maximum(maximum(abs.(u .- exact(t))) for (t, u) in zip(sol.t, sol.u)) < 1.0e-5
+    end
+end
