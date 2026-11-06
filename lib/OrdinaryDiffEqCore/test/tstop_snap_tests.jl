@@ -80,3 +80,32 @@ end
     @test counts[1] == counts[2]
     @test counts[1] >= length([0.25, 0.5, 0.75])
 end
+
+@testset "First-step rejection near a tstop" begin
+    t0 = 1.5f0
+    span = 8 * eps(t0)
+    for factor in (1.2f0, 1.4f0, 1.6f0), direction in (1, -1)
+        tspan = direction > 0 ? (t0, t0 + span) : (t0 + span, t0)
+        prob = ODEProblem((u, p, t) -> -p * u, 1.0f0, tspan, direction * factor / span)
+        sol = solve(prob, Tsit5(); dt = direction * 6 * eps(t0), maxiters = 30)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject > 0
+        @test sol.t[end] == tspan[2]
+        @test sol.u[end] ≈ exp(-factor) rtol = 2.0f-3
+    end
+end
+
+@testset "Snapped steps respect dtmax" begin
+    t0 = 1.5f0
+    tf = t0 + 8 * eps(t0)
+    dtmax = 6 * eps(t0)
+    for adaptive in (false, true), direction in (1, -1), dt in (dtmax, 10 * eps(t0))
+        tspan = direction > 0 ? (t0, tf) : (tf, t0)
+        prob = ODEProblem((u, p, t) -> one(u), 0.0f0, tspan)
+        sol = solve(prob, Tsit5(); adaptive, dt = direction * dt, dtmax)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == tspan[2]
+        @test maximum(abs, diff(sol.t)) <= dtmax
+        @test sol.u[end] ≈ tspan[2] - tspan[1]
+    end
+end

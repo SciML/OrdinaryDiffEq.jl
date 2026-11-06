@@ -288,11 +288,20 @@ function modify_dt_for_tstops!(integrator)
 
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
-            integrator.dtpropose = integrator.tdir * original_dt
             step_tol = min(tstop_tol, original_dt / 2)
-            # Do not re-lengthen after a rejection (else forever); first step exempt (10x shrink).
-            reject_retry = !integrator.accept_step && integrator.success_iter > 0
-            if original_dt + step_tol < distance_to_tstop ||
+            reject_retry = !integrator.accept_step && integrator.stats.nreject > 0
+            if reject_retry && original_dt < distance_to_tstop <= original_dt + step_tol &&
+                    integrator.t isa AbstractFloat && integrator.dt isa AbstractFloat
+                # Round toward t so the retry integrates its clock interval without growing.
+                retry_t = integrator.t + integrator.dt
+                if abs(retry_t - integrator.t) > original_dt
+                    retry_t = integrator.tdir > 0 ? prevfloat(retry_t) : nextfloat(retry_t)
+                end
+                original_dt = abs(retry_t - integrator.t)
+            end
+            integrator.dtpropose = integrator.tdir * original_dt
+            if distance_to_tstop > abs(integrator.opts.dtmax) ||
+                    original_dt + step_tol < distance_to_tstop ||
                     (reject_retry && original_dt < distance_to_tstop)
                 _set_tstop_flag!(integrator, false)
                 integrator.dt = integrator.tdir * original_dt
@@ -310,9 +319,10 @@ function modify_dt_for_tstops!(integrator)
         elseif integrator.dtchangeable && !integrator.force_stepfail
             # always try to step! with dtcache, but lower if a tstop
             # however, if force_stepfail then don't set to dtcache, and no tstop worry
-            dtcache_abs = abs(integrator.dtcache)
+            dtcache_abs = min(abs(integrator.dtcache), abs(integrator.opts.dtmax))
             step_tol = min(tstop_tol, dtcache_abs / 2)
-            if dtcache_abs + step_tol < distance_to_tstop
+            if distance_to_tstop > abs(integrator.opts.dtmax) ||
+                    dtcache_abs + step_tol < distance_to_tstop
                 _set_tstop_flag!(integrator, false)
                 integrator.dt = integrator.tdir * dtcache_abs
             else
