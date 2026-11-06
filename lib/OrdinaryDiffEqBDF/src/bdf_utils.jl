@@ -1,3 +1,42 @@
+# W maps the startup defect to state error without requiring an invertible mass matrix.
+function bdf_startup_error(integrator, cache, u, defect)
+    nlsolver = cache.nlsolver
+    if can_smooth_est(nlsolver)
+        err = get_W(nlsolver) \ ArrayInterface.safevec(defect)
+        integrator.stats.nsolve += 1
+        return (defect isa Number ? err : ArrayInterface.restructure(defect, err)) / integrator.dt
+    end
+    tmp = nlsolver.tmp
+    nlsolver.tmp = @.. broadcast = false tmp + defect / integrator.dt
+    nlsolver.z = copy(u)
+    corrected = nlsolve!(nlsolver, integrator, cache)
+    nlsolver.tmp = tmp
+    return u - corrected
+end
+
+function bdf_startup_error!(defect, integrator, cache, u)
+    nlsolver = cache.nlsolver
+    if can_smooth_est(nlsolver)
+        linres = dolinsolve(
+            integrator, nlsolver.cache.linsolve;
+            b = ArrayInterface.safevec(defect), linu = ArrayInterface.safevec(nlsolver.cache.dz)
+        )
+        integrator.stats.nsolve += 1
+        integrator.force_stepfail = !SciMLBase.successful_retcode(linres.retcode) &&
+            linres.retcode != SciMLBase.ReturnCode.Default
+        err = ArrayInterface.restructure(defect, linres.u)
+        @.. broadcast = false defect = err / integrator.dt
+    else
+        tmp = copy(nlsolver.tmp)
+        @.. broadcast = false nlsolver.tmp = tmp + defect / integrator.dt
+        nlsolver.z .= u
+        corrected = nlsolve!(nlsolver, integrator, cache)
+        nlsolver.tmp .= tmp
+        @.. broadcast = false defect = u - corrected
+    end
+    return defect
+end
+
 @inline function U!(k, U)
     @inbounds for r in 1:k
         U[1, r] = -r

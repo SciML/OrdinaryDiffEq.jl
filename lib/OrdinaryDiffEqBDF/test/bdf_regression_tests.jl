@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
-using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton, NonlinearSolveAlg
 using RecursiveArrayTools: ArrayPartition
 
 foop = (u, p, t) -> u * p
@@ -338,5 +338,57 @@ end
         )
         step!(integ)
         @test 0 < integ.t < 1.0e-2
+    end
+end
+
+@testset "Fixed-order BDF startup with scaled mass matrices" begin
+    for alg in (QNDF1(), QBDF1(), QNDF2(), QBDF2()), iip in (false, true),
+            (scale, t0, dt, tol) in ((1.0e-8, 0.0, 0.1, 1.0e-8), (1.0e16, 1.0e6, 1.0e-3, 1.0e-6)),
+            kind in (:uniform, :dense, :singular)
+        mass = if kind === :uniform
+            scale * I
+        elseif kind === :dense
+            scale * [2.0 1.0; 1.0 2.0]
+        else
+            Diagonal([scale, 0.0])
+        end
+        f = if kind === :singular
+            (u, p, t) -> [-scale * u[1], scale * (u[2] - u[1])]
+        else
+            (u, p, t) -> -(mass * u)
+        end
+        f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+        prob = ODEProblem(
+            ODEFunction{iip}(iip ? f! : f; mass_matrix = mass),
+            ones(2), (t0, t0 + 0.1)
+        )
+        integ = init(prob, alg; dt, abstol = tol, reltol = tol)
+        step!(integ)
+        @test integ.t > t0
+        @test maximum(abs, integ.u .- exp(-(integ.t - t0))) < 10tol
+        sol = solve!(integ)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(abs, sol.u[end] .- exp(-0.1)) < 1.0e-3
+    end
+end
+
+@testset "Fixed-order BDF mass-matrix startup with NonlinearSolveAlg" begin
+    f(u, p, t) = [-2u[1], 2(u[2] - u[1])]
+    f!(du, u, p, t) = (du .= f(u, p, t); nothing)
+    for alg in (QNDF1, QBDF1, QNDF2, QBDF2), iip in (false, true)
+        prob = ODEProblem(
+            ODEFunction{iip}(iip ? f! : f; mass_matrix = Diagonal([2.0, 0.0])),
+            ones(2), (0.0, 0.1)
+        )
+        integ = init(
+            prob, alg(; nlsolve = NonlinearSolveAlg());
+            dt = 0.1, abstol = 1.0e-8, reltol = 1.0e-8
+        )
+        step!(integ)
+        @test 0 < integ.t < 0.05
+        @test maximum(abs, integ.u .- exp(-integ.t)) < 1.0e-6
+        sol = solve!(integ)
+        @test sol.retcode == ReturnCode.Success
+        @test maximum(abs, sol.u[end] .- exp(-0.1)) < 1.0e-3
     end
 end

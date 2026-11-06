@@ -447,8 +447,13 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
         D2[1] = u - uprev
         if integrator.success_iter == 0
             # Explicit-Euler predictor: startup analogue of the success_iter == 1 estimate.
-            D2[2] = mass_matrix === I ? D2[1] - dt * integrator.fsalfirst :
-                mass_matrix * D2[1] - dt * integrator.fsalfirst
+            if mass_matrix === I
+                D2[2] = D2[1] - dt * integrator.fsalfirst
+            else
+                defect = mass_matrix * D2[1] - dt * integrator.fsalfirst
+                D2[2] = bdf_startup_error(integrator, cache, u, defect)
+                integrator.force_stepfail && return
+            end
         else
             D2[2] = D2[1] - D[1]
         end
@@ -545,6 +550,8 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
             else
                 mul!(utilde, mass_matrix, D2[1])
                 @.. broadcast = false D2[2] = utilde - dt * integrator.fsalfirst
+                bdf_startup_error!(D2[2], integrator, cache, u)
+                integrator.force_stepfail && return
             end
         else
             @.. broadcast = false D2[2] = D2[1] - D[1]
@@ -640,8 +647,13 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     if integrator.opts.adaptive
         if integrator.success_iter == 0
             Δu = u - uprev
-            utilde = mass_matrix === I ? Δu - dt * integrator.fsalfirst :
-                mass_matrix * Δu - dt * integrator.fsalfirst
+            if mass_matrix === I
+                utilde = Δu - dt * integrator.fsalfirst
+            else
+                defect = mass_matrix * Δu - dt * integrator.fsalfirst
+                utilde = bdf_startup_error(integrator, cache, u, defect)
+                integrator.force_stepfail && return
+            end
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
@@ -770,6 +782,8 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
                 @.. broadcast = false D2[1] = u - uprev
                 mul!(utilde, mass_matrix, D2[1])
                 @.. broadcast = false utilde = utilde - dt * integrator.fsalfirst
+                bdf_startup_error!(utilde, integrator, cache, u)
+                integrator.force_stepfail && return
             end
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,

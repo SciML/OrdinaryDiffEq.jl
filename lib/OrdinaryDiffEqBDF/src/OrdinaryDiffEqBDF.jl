@@ -26,7 +26,7 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     get_fsalfirstlast, generic_solver_docstring, _fixup_ad,
     _ode_interpolant, _ode_interpolant!, has_stiff_interpolation,
     _ode_addsteps!, DerivativeOrderNotPossibleError, set_discontinuity,
-    DIRK, COEFFICIENT_MULTISTEP, isnewton, set_new_W!,
+    DIRK, COEFFICIENT_MULTISTEP, isnewton, get_W, set_new_W!,
     find_algebraic_vars_eqs
 import SciMLBase: alg_order, isadaptive, _unwrap_val, full_cache
 import DiffEqBase: calculate_residuals, calculate_residuals!, initialize!
@@ -54,7 +54,8 @@ else
 end
 
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
-    nlsolve!, nlsolvefail, markfirststage!
+    nlsolve!, nlsolvefail, markfirststage!, can_smooth_est
+using OrdinaryDiffEqDifferentiation: dolinsolve
 import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport
