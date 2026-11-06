@@ -48,6 +48,18 @@ DiffEqBase.ODE_DEFAULT_UNSTABLE_CHECK
 DiffEqBase.NAN_CHECK
 ```
 
+## Event location with a derivative
+
+By default, the time of a `ContinuousCallback` event is found with `ModAB`, which uses
+only the condition. When the time derivative of the condition is cheap compared with the
+condition itself, for example when each evaluation of the condition interpolates an
+expensive dense output, wrapping the condition in `ConditionWithDerivative` finds the event
+time with Newton's method safeguarded by bisection, in fewer evaluations of the condition.
+
+```@docs
+DiffEqBase.ConditionWithDerivative
+```
+
 ## Runge-Kutta tableau types
 
 ```@docs

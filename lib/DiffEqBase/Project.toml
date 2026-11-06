@@ -1,7 +1,7 @@
 name = "DiffEqBase"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "7.21.7"
+version = "7.22.0"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -70,7 +70,7 @@ DiffEqBaseUnitfulExt = "Unitful"
 [compat]
 ADTypes = "1.22.0"
 ArrayInterface = "7.28"
-BracketingNonlinearSolve = "1.12.1"
+BracketingNonlinearSolve = "1.13"
 CUDA = "6"
 ChainRulesCore = "1"
 DiffEqCallbacks = "4"
@@ -109,7 +109,7 @@ RespecializeParams = "1"
 ReverseDiff = "1"
 RecursiveArrayToolsRaggedArrays = "1"
 SafeTestsets = "0.1"
-SciMLBase = "3.49.2"
+SciMLBase = "3.57"
 SciMLLogging = "2.0"
 SciMLTesting = "2.8"
 SciMLOperators = "1.7.0"
