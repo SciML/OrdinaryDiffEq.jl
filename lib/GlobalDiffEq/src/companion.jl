@@ -25,10 +25,8 @@ function _validate_estimation_problem(prob, name)
         throw(ArgumentError("$name requires a forward-time ODEProblem"))
     prob.f.mass_matrix == LinearAlgebra.I ||
         throw(ArgumentError("$name currently requires the standard mass matrix"))
-    problem_kwargs = values(prob.kwargs)
-    if haskey(problem_kwargs, :callback) && problem_kwargs.callback !== nothing
+    _has_callbacks(values(prob.kwargs)) &&
         throw(ArgumentError("$name does not currently support callbacks"))
-    end
     return nothing
 end
 
@@ -264,7 +262,7 @@ function _companion_error_estimate(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    haskey(kwargs, :callback) &&
+    _has_callbacks(kwargs) &&
         throw(ArgumentError("$name does not currently support callbacks"))
     _validate_estimation_problem(prob, name)
     solve_kwargs = merge((; kwargs...), _DENSE_SOLVE_KWARGS)
@@ -285,7 +283,7 @@ function _companion_error_estimate_streaming(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    haskey(kwargs, :callback) &&
+    _has_callbacks(kwargs) &&
         throw(ArgumentError("$name does not currently support callbacks"))
     _validate_estimation_problem(prob, name)
     integrator = SciMLBase.init(

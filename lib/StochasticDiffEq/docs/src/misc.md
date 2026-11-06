@@ -10,6 +10,16 @@ This page covers specialized methods for particular types of problems or applica
 StochasticCompositeAlgorithm
 ```
 
+### AutoSOSRI2 / AutoSOSRA2 - Automatic Stiffness Switching
+
+```@docs
+AutoSOSRI2
+```
+
+```@docs
+AutoSOSRA2
+```
+
 ## RODE Methods (Random ODEs)
 
 ### RandomEM - Random Euler Method
@@ -28,6 +38,12 @@ RandomHeun
 
 ```@docs
 RandomTamedEM
+```
+
+### RandomTaylor15 - Derivative-Free Order 1.5 Taylor Method
+
+```@docs
+RandomTaylor15
 ```
 
 ## Langevin Dynamics

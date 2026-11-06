@@ -3,7 +3,7 @@ module OrdinaryDiffEqFeagin
 import OrdinaryDiffEqCore: perform_step!,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats,
-    alg_cache, @cache,
+    alg_adaptive_order, alg_cache, @cache,
     constvalue, get_fsalfirstlast,
     trivial_limiter!
 import SciMLBase: alg_order
@@ -11,7 +11,6 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import FastBroadcast: @..
 import MuladdMacro: @muladd
 import RecursiveArrayTools: recursivefill!
-using DiffEqBase: @tight_loop_macros
 import OrdinaryDiffEqCore
 
 using Reexport: Reexport, @reexport

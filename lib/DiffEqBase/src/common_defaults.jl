@@ -14,8 +14,20 @@ end
 function UNITLESS_ABS2(x::RecursiveArrayTools.AbstractVectorOfArray)
     return mapreduce(UNITLESS_ABS2, abs2_and_sum, x.u, init = zero(real(value(eltype(x)))))
 end
+
+@generated function _partition_mapreduce(f, op, xs::T, init) where {T <: Tuple}
+    N = length(T.parameters)
+    expr = :(init)
+    for i in 1:N
+        expr = :(op($expr, f(xs[$i])))
+    end
+    return expr
+end
+
 function UNITLESS_ABS2(x::RecursiveArrayTools.ArrayPartition)
-    return mapreduce(UNITLESS_ABS2, abs2_and_sum, x.x, init = zero(real(value(eltype(x)))))
+    return _partition_mapreduce(
+        UNITLESS_ABS2, abs2_and_sum, x.x, zero(real(value(eltype(x))))
+    )
 end
 
 function UNITLESS_ABS2(x::RecursiveArrayTools.AbstractRaggedVectorOfArray)
@@ -30,9 +42,8 @@ function UNITLESS_ABS2(f::F, x::AbstractArray) where {F}
     )
 end
 function UNITLESS_ABS2(f::F, x::RecursiveArrayTools.ArrayPartition) where {F}
-    return mapreduce(
-        UNITLESS_ABS2 ∘ f, abs2_and_sum, x.x;
-        init = zero(real(value(eltype(x))))
+    return _partition_mapreduce(
+        UNITLESS_ABS2 ∘ f, abs2_and_sum, x.x, zero(real(value(eltype(x))))
     )
 end
 

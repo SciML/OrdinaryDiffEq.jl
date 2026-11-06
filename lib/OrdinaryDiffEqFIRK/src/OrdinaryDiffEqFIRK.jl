@@ -20,7 +20,7 @@ import OrdinaryDiffEqCore: unwrap_alg,
     VerySlowConvergence, Divergence, get_new_W_γdt_cutoff,
     _is_identity_massmatrix
 import SciMLBase
-import SciMLBase: alg_order, _vec, _reshape, _unwrap_val, LinearAliasSpecifier,
+import SciMLBase: alg_order, isadaptive, _vec, _reshape, _unwrap_val, LinearAliasSpecifier,
     UDerivativeWrapper, UJacobianWrapper, value,
     LinearProblem, get_tmp_cache, init
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
@@ -28,7 +28,7 @@ using MuladdMacro: @muladd
 using RecursiveArrayTools: recursivefill!
 import Polyester
 import LinearAlgebra
-using LinearAlgebra: I, UniformScaling, mul!, lu, dot
+using LinearAlgebra: I, Diagonal, UniformScaling, mul!, lu, dot
 import LinearSolve
 import FastBroadcast: @..
 import OrdinaryDiffEqCore
@@ -42,6 +42,7 @@ import OrdinaryDiffEqDifferentiation: jvp_counter, JVPCache
 import ADTypes: AutoForwardDiff
 import SciMLOperators
 import SciMLOperators: AbstractSciMLOperator
+import SparseArrays: SparseMatrixCSC, nonzeros, nnz, rowvals, nzrange
 # Load-bearing runtime dependency: provides the nonlinear-solver machinery the FIRK
 # integrators dispatch into. The convergence-state names FIRK uses are owned by
 # OrdinaryDiffEqCore (imported above), so this is a module-only import to keep the

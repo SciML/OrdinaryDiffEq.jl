@@ -26,6 +26,112 @@ function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # for FIRK
     return !smallstepchange
 end
 
+function firk_W!(W, J, mass_matrix, scale)
+    @inbounds for II in CartesianIndices(J)
+        W[II] = muladd(scale, mass_matrix[Tuple(II)...], J[II])
+    end
+    return W
+end
+
+# Sparse W: merge J's stored pattern with the mass matrix's contribution column by
+# column. Positions in J's pattern are always kept (matching entrywise setindex!,
+# which stores the computed value even when it is zero); positions only in the mass
+# pattern are kept when `v !== zero(v)`, the same predicate `setindex!` uses to
+# insert into an unstored position (`-0.0` counts as nonzero). Values are computed
+# with `muladd`, so every stored entry is bitwise identical to the entrywise loop.
+function firk_W!(
+        W::SparseMatrixCSC, J::SparseMatrixCSC,
+        mass_matrix::Union{UniformScaling, Diagonal}, scale
+    )
+    m, n = size(J)
+    jr = rowvals(J)
+    jv = nonzeros(J)
+    colptr = Vector{Int}(undef, n + 1)
+    rowval = Vector{Int}(undef, nnz(J) + n)
+    nzval = Vector{eltype(W)}(undef, nnz(J) + n)
+    idx = 1
+    @inbounds for col in 1:n
+        colptr[col] = idx
+        mval = mass_matrix[col, col]
+        emitted = false
+        for k in nzrange(J, col)
+            row = jr[k]
+            if !emitted && row > col
+                v = muladd(scale, mval, zero(eltype(J)))
+                if v !== zero(v)
+                    rowval[idx] = col
+                    nzval[idx] = v
+                    idx += 1
+                end
+                emitted = true
+            end
+            rowval[idx] = row
+            nzval[idx] = muladd(scale, mass_matrix[row, col], jv[k])
+            emitted |= row == col
+            idx += 1
+        end
+        if !emitted
+            v = muladd(scale, mval, zero(eltype(J)))
+            if v !== zero(v)
+                rowval[idx] = col
+                nzval[idx] = v
+                idx += 1
+            end
+        end
+    end
+    colptr[n + 1] = idx
+    return copyto!(
+        W,
+        SparseMatrixCSC(m, n, colptr, resize!(rowval, idx - 1), resize!(nzval, idx - 1))
+    )
+end
+
+function firk_W!(W::SparseMatrixCSC, J::SparseMatrixCSC, mass_matrix::SparseMatrixCSC, scale)
+    m, n = size(J)
+    jr = rowvals(J)
+    jv = nonzeros(J)
+    mr = rowvals(mass_matrix)
+    mv = nonzeros(mass_matrix)
+    colptr = Vector{Int}(undef, n + 1)
+    rowval = Vector{Int}(undef, nnz(J) + nnz(mass_matrix))
+    nzval = Vector{eltype(W)}(undef, nnz(J) + nnz(mass_matrix))
+    idx = 1
+    @inbounds for col in 1:n
+        colptr[col] = idx
+        j = first(nzrange(J, col))
+        jend = last(nzrange(J, col))
+        a = first(nzrange(mass_matrix, col))
+        aend = last(nzrange(mass_matrix, col))
+        while j <= jend || a <= aend
+            if a > aend || (j <= jend && jr[j] < mr[a])
+                rowval[idx] = jr[j]
+                nzval[idx] = muladd(scale, zero(eltype(mass_matrix)), jv[j])
+                idx += 1
+                j += 1
+            elseif j > jend || mr[a] < jr[j]
+                v = muladd(scale, mv[a], zero(eltype(J)))
+                if v !== zero(v)
+                    rowval[idx] = mr[a]
+                    nzval[idx] = v
+                    idx += 1
+                end
+                a += 1
+            else
+                rowval[idx] = jr[j]
+                nzval[idx] = muladd(scale, mv[a], jv[j])
+                idx += 1
+                j += 1
+                a += 1
+            end
+        end
+    end
+    colptr[n + 1] = idx
+    return copyto!(
+        W,
+        SparseMatrixCSC(m, n, colptr, resize!(rowval, idx - 1), resize!(nzval, idx - 1))
+    )
+end
+
 function initialize!(integrator, cache::RadauIIA3ConstantCache)
     integrator.kshortsize = 4
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -345,9 +451,7 @@ end
         set_W_gamma!(W1, αdt + βdt * im)
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -(αdt + βdt * im))
         integrator.stats.nw += 1
     end
 
@@ -726,10 +830,8 @@ end
         set_W_gamma!(W2, αdt + βdt * im)
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -γdt)
+        firk_W!(W2, J, mass_matrix, -(αdt + βdt * im))
         integrator.stats.nw += 1
     end
 
@@ -1307,11 +1409,9 @@ end
         set_W_gamma!(W3, α2dt + β2dt * im)
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            W2[II] = -(α1dt + β1dt * im) * mass_matrix[Tuple(II)...] + J[II]
-            W3[II] = -(α2dt + β2dt * im) * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -γdt)
+        firk_W!(W2, J, mass_matrix, -(α1dt + β1dt * im))
+        firk_W!(W3, J, mass_matrix, -(α2dt + β2dt * im))
         integrator.stats.nw += 1
     end
 
@@ -1959,24 +2059,16 @@ end
         end
         integrator.stats.nw += 1
     elseif new_W
-        @inbounds for II in CartesianIndices(J)
-            W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-        end
+        firk_W!(W1, J, mass_matrix, -γdt)
         if !isthreaded(alg.threading)
-            @inbounds for II in CartesianIndices(J)
-                for i in 1:((num_stages - 1) ÷ 2)
-                    W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] + J[II]
-                end
+            for i in 1:((num_stages - 1) ÷ 2)
+                firk_W!(W2[i], J, mass_matrix, -(αdt[i] + βdt[i] * im))
             end
         else
-            let W1 = W1, W2 = W2, γdt = γdt, αdt = αdt, βdt = βdt,
-                    mass_matrix = mass_matrix, num_stages = num_stages, J = J
+            let W2 = W2, αdt = αdt, βdt = βdt, mass_matrix = mass_matrix, J = J
 
-                @inbounds @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
-                    for II in CartesianIndices(J)
-                        W2[i][II] = -(αdt[i] + βdt[i] * im) * mass_matrix[Tuple(II)...] +
-                            J[II]
-                    end
+                @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
+                    firk_W!(W2[i], J, mass_matrix, -(αdt[i] + βdt[i] * im))
                 end
             end
         end

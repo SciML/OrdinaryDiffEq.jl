@@ -48,3 +48,59 @@ end
     integrator.f(rtmp2, tmp, p, t + dt, wtmp)
     @.. u = uprev + (dt / 2) * (rtmp1 + rtmp2)
 end
+
+function path_integrals(W, t, dt, w0)
+    tend = t + dt
+    tdir = dt < zero(dt) ? -one(dt) : one(dt)
+    rev = length(W.t) > 1 && W.t[2] < W.t[1]
+    ilo = searchsortedfirst(W.t, t, rev = rev)
+    ihi = searchsortedlast(W.t, tend, rev = rev)
+    I1 = zero(w0) * dt
+    I2 = zero(w0) * zero(w0) * dt
+    tprev = t
+    vprev = zero(w0)
+    @inbounds for i in ilo:ihi
+        ti = W.t[i]
+        tdir * (ti - tprev) <= zero(dt) && continue
+        vi = W.W[i] - w0
+        I1 += (ti - tprev) * (vprev + vi) / 2
+        I2 += (ti - tprev) * (vprev^2 + vprev * vi + vi^2) / 3
+        tprev = ti
+        vprev = vi
+    end
+    vend = W.dW
+    return I1 + (tend - tprev) * (vprev + vend) / 2,
+        I2 + (tend - tprev) * (vprev^2 + vprev * vend + vend^2) / 3
+end
+
+@muladd function perform_step!(integrator, cache::RandomTaylor15ConstantCache)
+    (; t, dt, uprev, u, W, p, f) = integrator
+    w0 = W.curW
+    adt = abs(dt)
+    h = sqrt(adt)
+    I1, I2 = path_integrals(W, t, dt, w0)
+    ftmp = integrator.f(uprev, p, t, w0)
+    utilde = uprev .+ dt .* ftmp
+    f0 = integrator.f(utilde, p, t + dt, w0)
+    fp = integrator.f(utilde, p, t + dt, w0 + h)
+    fm = integrator.f(utilde, p, t + dt, w0 - h)
+    u = uprev .+ (dt / 2) .* (ftmp .+ f0) .+ (I1 / (2 * h)) .* (fp .- fm) .+
+        (I2 / (2 * adt)) .* (fp .- 2 .* f0 .+ fm)
+    integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::RandomTaylor15Cache)
+    (; tmp, rtmp, rtmp0, rtmpp, rtmpm) = cache
+    (; t, dt, uprev, u, W, p, f) = integrator
+    w0 = W.curW
+    adt = abs(dt)
+    h = sqrt(adt)
+    I1, I2 = path_integrals(W, t, dt, w0)
+    integrator.f(rtmp, uprev, p, t, w0)
+    @.. tmp = uprev + dt * rtmp
+    integrator.f(rtmp0, tmp, p, t + dt, w0)
+    integrator.f(rtmpp, tmp, p, t + dt, w0 + h)
+    integrator.f(rtmpm, tmp, p, t + dt, w0 - h)
+    @.. u = uprev + (dt / 2) * (rtmp + rtmp0) + (I1 / (2 * h)) * (rtmpp - rtmpm) +
+        (I2 / (2 * adt)) * (rtmpp - 2 * rtmp0 + rtmpm)
+end

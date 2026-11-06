@@ -31,6 +31,7 @@ using OrdinaryDiffEqAdamsBashforthMoulton
 using OrdinaryDiffEqBDF
 using OrdinaryDiffEqDefault
 using OrdinaryDiffEqExplicitRK
+using OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqExponentialRK
 using OrdinaryDiffEqExtrapolation
 using OrdinaryDiffEqFeagin
@@ -79,6 +80,7 @@ makedocs(;
         OrdinaryDiffEqBDF,
         OrdinaryDiffEqDefault,
         OrdinaryDiffEqExplicitRK,
+        OrdinaryDiffEqExplicitTableaus,
         OrdinaryDiffEqExponentialRK,
         OrdinaryDiffEqExtrapolation,
         OrdinaryDiffEqFeagin,

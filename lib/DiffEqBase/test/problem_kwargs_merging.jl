@@ -11,7 +11,11 @@ import SciMLBase
 
     # The despecializing levels (the default `AutoSpecialize` included) rewrite `callback`
     # into a type-erased CallbackSet, so identity checks become membership checks.
-    erased_callbacks(cb) = vcat(cb.continuous_callbacks, cb.discrete_callbacks)
+    # Erasure only runs on Julia >= 1.12; before that the callback stays as given.
+    erased_callbacks(kwargs) = _callback_list(get(kwargs, :callback, nothing))
+    _callback_list(::Nothing) = Any[]
+    _callback_list(cb::DiffEqBase.CallbackSet) = vcat(cb.continuous_callbacks, cb.discrete_callbacks)
+    _callback_list(cb) = Any[cb]
     without_callback(kwargs) = Base.structdiff((; kwargs...), (; callback = nothing))
 
     # Test 1: Problem with no kwargs
@@ -19,13 +23,13 @@ import SciMLBase
     kwargs_in = (abstol = 1.0e-6, reltol = 1.0e-6)
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_no_kwargs; kwargs_in...)
     @test without_callback(kwargs_out) == kwargs_in
-    @test isempty(erased_callbacks(kwargs_out.callback))
+    @test isempty(erased_callbacks(kwargs_out))
 
     # Test 2: Problem with empty kwargs
     prob_empty_kwargs = ODEProblem(f, [1.0], (0.0, 1.0); Dict{Symbol, Any}()...)
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_empty_kwargs; kwargs_in...)
     @test without_callback(kwargs_out) == kwargs_in
-    @test isempty(erased_callbacks(kwargs_out.callback))
+    @test isempty(erased_callbacks(kwargs_out))
 
     # Test 3: Problem kwargs are preserved, passed kwargs take precedence
     prob_with_kwargs = ODEProblem(f, [1.0], (0.0, 1.0); abstol = 1.0e-8, reltol = 1.0e-8)
@@ -52,7 +56,7 @@ import SciMLBase
         prob_with_cb; merge_callbacks = false,
         (callback = cb2,)...
     )
-    @test only(erased_callbacks(kwargs_out.callback)) === cb2  # cb2 should override cb1
+    @test only(erased_callbacks(kwargs_out)) === cb2  # cb2 should override cb1
 
     # Test 6: Callback merging enabled (default)
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_with_cb; (callback = cb2,)...)
@@ -68,13 +72,13 @@ import SciMLBase
 
     # Test 8: Only problem has callback
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_with_cb; (abstol = 1.0e-6,)...)
-    @test only(erased_callbacks(kwargs_out.callback)) === cb1
+    @test only(erased_callbacks(kwargs_out)) === cb1
     @test kwargs_out.abstol == 1.0e-6
 
     # Test 9: Only passed kwargs have callback
     prob_no_cb = ODEProblem(f, [1.0], (0.0, 1.0); abstol = 1.0e-8)
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_no_cb; (callback = cb2, reltol = 1.0e-6)...)
-    @test only(erased_callbacks(kwargs_out.callback)) === cb2
+    @test only(erased_callbacks(kwargs_out)) === cb2
     @test kwargs_out.abstol == 1.0e-8
     @test kwargs_out.reltol == 1.0e-6
 

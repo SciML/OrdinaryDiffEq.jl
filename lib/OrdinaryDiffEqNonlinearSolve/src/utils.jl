@@ -1362,18 +1362,13 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
 
     (; nlsolver) = integrator.cache
 
-    if nlsolver isa AbstractArray
-        for idx in eachindex(nlsolver)
-            resize!(nlsolver[idx], integrator, i)
-        end
-    else
-        resize!(nlsolver, integrator, i)
+    for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+
+        # make it reset everything since the caches changed size!
+        isnewton(nls) && (nls.cache.firstcall = true)
     end
-
-    nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve, i)
-
-    # make it reset everything since the caches changed size!
-    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
 
     return nothing
 end
@@ -1410,7 +1405,7 @@ function qrdelete!(Q::AbstractMatrix, R::AbstractMatrix, k::Int)
     end
 
     # move columns of R
-    @inbounds for j in 1:(k - 1)
+    for j in 1:(k - 1)
         for i in 1:(k - 1)
             R[i, j] = R[i, j + 1]
         end
@@ -1432,7 +1427,7 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
     m == LinearAlgebra.checksquare(R) || throw(DimensionMismatch())
     1 ≤ k ≤ m || throw(ArgumentError())
 
-    @inbounds for i in 1:(k - 1)
+    for i in 1:(k - 1)
         q = view(Q, :, i)
         r = dot(q, v)
 
@@ -1440,11 +1435,9 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
         axpy!(-r, q, v)
     end
 
-    @inbounds begin
-        d = norm(v)
-        R[k, k] = d
-        @.. broadcast = false @view(Q[:, k]) = v / d
-    end
+    d = norm(v)
+    R[k, k] = d
+    @.. broadcast = false @view(Q[:, k]) = v / d
 
     return Q, R
 end

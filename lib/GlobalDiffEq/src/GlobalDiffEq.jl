@@ -15,6 +15,15 @@ using PrecompileTools: @setup_workload, @compile_workload
 
 abstract type GlobalDiffEqAlgorithm <: SciMLBase.AbstractODEAlgorithm end
 
+# DiffEqBase gives despecialized problems an empty type-erased `callback` kwarg even
+# when the user passed none, so the presence of the key alone does not mean callbacks.
+_has_callbacks(kwargs) = haskey(kwargs, :callback) && !_is_empty_callback(kwargs[:callback])
+_is_empty_callback(::Nothing) = true
+function _is_empty_callback(cb::SciMLBase.CallbackSet)
+    return isempty(cb.continuous_callbacks) && isempty(cb.discrete_callbacks)
+end
+_is_empty_callback(cb) = false
+
 include("richardson.jl")
 include("companion.jl")
 include("estimation.jl")

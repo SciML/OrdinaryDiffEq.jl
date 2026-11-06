@@ -74,6 +74,10 @@ end
 _has_wrapped_f(f::Union{ODEFunction, DAEFunction}) =
     f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
 _has_wrapped_f(f) = false
+# NoSpecialize takes the same fixed chunk, or its compiled code would change with the problem.
+_is_nospecialize(f::SciMLBase.AbstractSciMLFunction) =
+    SciMLBase.specialization(f) === SciMLBase.NoSpecialize
+_is_nospecialize(f) = false
 
 function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
     T = eltype(u0)
@@ -82,7 +86,7 @@ function _prepare_ADType_fwd(autodiff_alg::AutoForwardDiff, prob, u0, tag)
 
     cs = fwd_cs == 0 ? nothing : fwd_cs
 
-    if (_has_wrapped_f(prob.f) || (isbitstype(T) && sizeof(T) > 24)) &&
+    if (_has_wrapped_f(prob.f) || _is_nospecialize(prob.f) || (isbitstype(T) && sizeof(T) > 24)) &&
             (cs == 0 || isnothing(cs))
         return AutoForwardDiff{1}(tag)
     else
@@ -121,7 +125,7 @@ function prepare_user_sparsity(ad_alg, prob)
     end
 
     if !isnothing(sparsity) && !(ad_alg isa AutoSparse)
-        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f)
+        if is_sparse_csc(sparsity) && !SciMLBase.has_jac(prob.f) && has_mass_matrix(prob.f)
             if prob.f.mass_matrix isa UniformScaling
                 idxs = diagind(sparsity)
                 @. @view(sparsity[idxs]) = 1

@@ -9,6 +9,7 @@ struct SDCConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
     nlsolvers::N
     tab::TabType
     solver_index::Vector{Int}
+    split::Bool
 end
 
 @cache mutable struct SDCCache{uType, rateType, uNoUnitsType, N, TabType} <:
@@ -29,9 +30,33 @@ end
     nlsolvers::N
     tab::TabType
     solver_index::Vector{Int}
+    # `Δt f2` at each node and its per-node evaluation count, for a split problem.
+    # Empty otherwise.
+    zE::Vector{uType}
+    zE_new::Vector{uType}
+    k2::Vector{rateType}
+    nf2::Vector{Int}
+    split::Bool
+    # `integrator.k` aliases these, so regrowing it after `post_savevalues!` trims it
+    # does not allocate.
+    kdense::Vector{rateType}
 end
 
 get_fsalfirstlast(cache::SDCCache, u) = (nothing, nothing)
+
+# The per-node vectors and solvers are not in `full_cache`, so `resize!` reaches them here.
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::SDCCache, i)
+    (; tmp, ubuf, k, z, znew, zE, zE_new, k2, kdense) = cache
+    for x in Iterators.flatten((tmp, ubuf, k, z, znew, zE, zE_new, k2, kdense))
+        resize!(x, i)
+    end
+    for nls in cache.nlsolvers
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+        isnewton(nls) && (nls.cache.firstcall = true)
+    end
+    return nothing
+end
 
 """
     sdc_solver_index(QΔ)
@@ -63,8 +88,10 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = SDCTableau(
         constvalue(uBottomEltypeNoUnits), alg.num_nodes, alg.node_type,
-        alg.quad_type, alg.sweeper, alg.num_sweeps
+        alg.quad_type, alg.sweeper, alg.num_sweeps;
+        explicit_sweeper = alg.explicit_sweeper
     )
+    split = f isa SplitFunction
     M = alg.num_nodes
     solver_index = sdc_solver_index(tab.QΔ)
     nlsolvers = [
@@ -76,13 +103,25 @@ function alg_cache(
     ]
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    if split && isthreaded(alg.threading) && alg.explicit_sweeper !== SDCSweeper.Picard
+        throw(
+            ArgumentError(
+                "SDC: threading a split problem needs `explicit_sweeper = SDCSweeper.Picard`, " *
+                    "since $(alg.explicit_sweeper) couples each node to the ones before it"
+            )
+        )
+    end
+    nsplit = split ? M : 0
     return SDCCache(
         u, uprev, zero(u), atmp,
         [zero(u) for _ in 1:M], [zero(u) for _ in 1:M],
         [zero(rate_prototype) for _ in 1:M],
         [zero(u) for _ in 1:M], [zero(u) for _ in 1:M],
         fill(false, M), zeros(Int, M),
-        nlsolvers, tab, solver_index
+        nlsolvers, tab, solver_index,
+        [zero(u) for _ in 1:nsplit], [zero(u) for _ in 1:nsplit],
+        [zero(rate_prototype) for _ in 1:nsplit], zeros(Int, nsplit), split,
+        [zero(rate_prototype) for _ in 1:(M + 2)]
     )
 end
 
@@ -94,8 +133,10 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = SDCTableau(
         constvalue(uBottomEltypeNoUnits), alg.num_nodes, alg.node_type,
-        alg.quad_type, alg.sweeper, alg.num_sweeps
+        alg.quad_type, alg.sweeper, alg.num_sweeps;
+        explicit_sweeper = alg.explicit_sweeper
     )
+    split = f isa SplitFunction
     solver_index = sdc_solver_index(tab.QΔ)
     nlsolvers = [
         build_nlsolver(
@@ -104,7 +145,7 @@ function alg_cache(
             Val(false), verbose
         ) for m in 1:(alg.num_nodes) if !iszero(solver_index[m])
     ]
-    return SDCConstantCache(nlsolvers, tab, solver_index)
+    return SDCConstantCache(nlsolvers, tab, solver_index, split)
 end
 
 # Needed because the generic `OrdinaryDiffEqNewtonAdaptiveAlgorithm` fallback
