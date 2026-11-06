@@ -84,6 +84,9 @@ end
 function loopheader!(integrator)
     # Apply right after iterators / callbacks
 
+    _has_ks(integrator) && length(integrator.k) > integrator.kshortsize &&
+        resize!(integrator.k, integrator.kshortsize)
+
     # Manual derivative_discontinuity! (any iter, including after the first step)
     # must reinit DAEs *before* accept/update_uprev, otherwise a broken u is
     # committed into uprev (#3932). Callbacks already call initialize_dae! via
@@ -342,10 +345,7 @@ end
 
 function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
     saved, savedexactly = false, false
-    if !integrator.opts.save_on
-        post_savevalues!(integrator, reduce_size)
-        return saved, savedexactly
-    end
+    !integrator.opts.save_on && return saved, savedexactly
     tdir_t = integrator.tdir * integrator.t
     saveat = integrator.opts.saveat
     while !isempty(saveat) && first(saveat) <= tdir_t # Perform saveat
