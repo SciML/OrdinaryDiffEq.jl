@@ -38,6 +38,40 @@ Private = false
 Filter = x -> x === SciMLBase.AutoRespecialize
 ```
 
+### What each level reuses
+
+For an in-place `ODEProblem` solved with OrdinaryDiffEq, the table shows which changes
+between two problems keep the integrator type, so the second solve reuses the solver
+compiled for the first. "Recompiles" means the second problem compiles a new solver.
+
+| Level | New `f` | New parameter type | New callback type | New `sys` type |
+|---|---|---|---|---|
+| `FullSpecialize` | recompiles | recompiles | recompiles | recompiles |
+| `AutoSpecialize` | reused | recompiles | reused on Julia 1.12+ | recompiles |
+| `AutoDespecialize` | reused | reused | reused on Julia 1.12+ | recompiles |
+| `AutoRespecialize` | reused | reused among `isbits` types and among other types | recompiles | recompiles |
+| `FunctionWrapperSpecialize` | reused | recompiles | recompiles | recompiles |
+| `NoSpecialize` | reused | recompiles | reused on Julia 1.12+ | recompiles |
+
+The automatic levels only wrap `f` when `u0` is an array of unitless numbers, not a
+`SubArray`, `t` is unitless and `f` is not a SciMLOperator. With solvers that do not use
+ForwardDiff, such as `Tsit5`, `f` must also have no analytic `jac`. Other problems
+specialize on `f` as `FullSpecialize` does, and under `AutoRespecialize` on the parameter
+type as well.
+
+`AutoRespecialize` packs `isbits` parameters into one container type and all other
+parameters into another, so a change from one kind to the other compiles a new solver. It
+leaves the parameters alone when `f` has a `sys`, where every new parameter type
+recompiles.
+
+Callback types are erased only on Julia 1.12 and later. On older versions every level
+compiles a new solver for each new callback type. Where callbacks are erased, the first
+solve with a callback still compiles the callback handling once, and later callback types
+compile only their own condition and affect functions.
+
+A new `sys` type, the symbolic container used for symbolic indexing, compiles a new solver
+at every level.
+
 ## Default callback behavior
 
 ```@docs
