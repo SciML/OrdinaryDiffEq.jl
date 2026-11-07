@@ -13,16 +13,43 @@
 ####################################################################
 # QNDF: Rebuild backward differences for interpolation
 #
-# Layout: k[1..max_order] = backward differences D[j]
-# Interpolation: p(Θ) = y₁ + Σ φ_j(Θ-1) * k[j]
-# where y₁ = u (step endpoint).
+# Layout: k[1..max_order] = backward differences D[j] on the grid of the
+# completed step, of length h = cache.dtprev:
+#     p(Θ) = y_h + Σ_{m=1}^{order} φ_m(Θ-1) D[m],   Θ = (t - tprev) / h,
+# with y_h = uprev + D[1] the end of the completed step and
+# φ_m(σ) = σ (σ+1) ⋯ (σ+m-1) / m!.
 #
-# After a callback truncates the step and modifies u, we rebuild k
-# using the cache's D matrix for higher-order accuracy. The first
-# difference k[1] is updated to u - uprev so that the interpolant
-# passes through the correct endpoints; higher differences D[j≥2]
-# are preserved from the completed step.
+# A callback truncates the step to dt = θ h (θ = dt / h). The interpolant
+# over the truncated step is the same polynomial in Θ' = (t - tprev) / dt,
+# p(θ Θ'), whose backward differences on the grid of spacing dt ending at
+# the new endpoint are
+#     k[j] = Σ_{i=0}^{j} (-1)^i C(j, i) p(θ (1 - i))
+#          = Σ_{m=j}^{order} T(θ, m, j) D[m],
+#     T(θ, m, j) = Σ_{i=0}^{j} (-1)^i C(j, i) φ_m(θ (1 - i) - 1)
+# (the j-th difference of a polynomial of degree m < j vanishes; T = I at
+# θ = 1). The first difference is k[1] = u - uprev, which is p(θ) - p(0)
+# unless the callback modified u: the interpolant then passes through the
+# modified endpoint.
 ####################################################################
+
+# φ_m(σ) = σ (σ+1) ⋯ (σ+m-1) / m!
+function _qndf_phi(σ, m)
+    φ = one(σ)
+    for j in 1:m
+        φ *= (σ + j - 1) / j
+    end
+    return φ
+end
+
+# The coefficient of D[m] in the j-th backward difference of the step truncated to
+# θ of the completed one, T(θ, m, j)
+function _qndf_rebase_coefficient(θ, m, j)
+    c = zero(θ)
+    for i in 0:j
+        c += (-1)^i * binomial(j, i) * _qndf_phi(θ * (1 - i) - 1, m)
+    end
+    return c
+end
 
 # QNDF ConstantCache: out-of-place k entries
 function _ode_addsteps!(
@@ -32,14 +59,20 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     always_calc_begin || return nothing
-    (; D, order) = cache
+    (; D, order, dtprev) = cache
+    θ = dt / dtprev
     for j in eachindex(k)
         if j == 1
             # First difference must match new endpoints: k[1] = u - uprev
             k[j] = u isa Number ? (u - uprev) : @.. u - uprev
         elseif j <= order
-            # Preserve higher-order differences from the completed step
-            k[j] = D[j]
+            # The completed step's polynomial on the truncated step
+            kj = zero(u)
+            for m in j:order
+                c = _qndf_rebase_coefficient(θ, m, j)
+                kj = u isa Number ? kj + c * D[m] : @.. kj + c * D[m]
+            end
+            k[j] = kj
         else
             k[j] = zero(u)
         end
@@ -55,13 +88,16 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     always_calc_begin || return nothing
-    (; D, order) = cache
+    (; D, order, dtprev) = cache
+    θ = dt / dtprev
     @.. broadcast = false k[1] = u - uprev
     for j in 2:length(k)
-        if j <= order
-            copyto!(k[j], D[j])
-        else
-            fill!(k[j], zero(eltype(u)))
+        fill!(k[j], zero(eltype(u)))
+        j <= order || continue
+        # The completed step's polynomial on the truncated step
+        for m in j:order
+            c = _qndf_rebase_coefficient(θ, m, j)
+            @.. broadcast = false k[j] += c * D[m]
         end
     end
     return nothing
