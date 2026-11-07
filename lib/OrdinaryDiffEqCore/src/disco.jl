@@ -26,6 +26,49 @@ _discontinuity_detection_enabled(cache::DummyControllerCache) =
 _discontinuity_detection_enabled(cache::CompositeControllerCache) =
     _discontinuity_detection_enabled(first(cache.caches))
 
+# Buffers of a discontinuity problem's zero function; `_disco_zero` derives their types from these.
+# `u₁` is the interpolation target of a mutable state; an immutable state is interpolated by value.
+_disco_u1(u) = u isa AbstractArray && ArrayInterface.ismutable(u) ? similar(u) : zero(u)
+function _disco_outs(u, cb)
+    if cb isa VectorContinuousCallback
+        arr = u isa AbstractArray ? similar(u, cb.len) : zeros(typeof(u), cb.len)
+        return arr, similar(arr), similar(arr)
+    else
+        return nothing, 0.0, 0.0
+    end
+end
+
+"""
+    _disco_zero(disco_prob, integrator, cb)
+
+The zero function of `cb`'s discontinuity problem. It sits behind an untyped `FunctionWrapper`
+payload; for tuple-held callbacks its concrete type follows from `integrator` and `cb` and is
+asserted, so the field reads in `find_discontinuity` are static.
+"""
+@inline function _disco_zero(disco_prob, integrator, cb)
+    integrator.opts.callback.continuous_callbacks isa Tuple || return disco_prob.f.f.obj.x
+    uT = typeof(integrator.u)
+    O = Base.promote_op(_disco_outs, uT, typeof(cb))
+    U1 = Base.promote_op(_disco_u1, uT)
+    (isconcretetype(O) && isconcretetype(U1)) || return disco_prob.f.f.obj.x
+    Z = zero_func_struct{
+        U1, uT, typeof(integrator.dt), typeof(integrator.k),
+        typeof(integrator.cache), typeof(integrator.opts.save_idxs),
+        typeof(integrator.differential_vars), typeof(cb), fieldtype(O, 1), fieldtype(O, 2),
+        typeof(integrator.f), typeof(integrator.tprev), typeof(integrator.p),
+    }
+    return (disco_prob.f.f.obj::typeof(Ref{Z}()))[]
+end
+
+"""
+    _disco_bracket(disco_prob, θ)
+
+`disco_prob` with the tuple bracket `(0, θ)`; the stored problem is not mutated.
+"""
+@inline function _disco_bracket(disco_prob, θ)
+    return IntervalNonlinearProblem{false}(disco_prob.f, (zero(θ), θ), disco_prob.p)
+end
+
 function find_discontinuity(integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
@@ -46,7 +89,7 @@ function find_discontinuity(integrator)
             continue
         end
         disco_prob = disco_probs[idx]
-        disco_zero = disco_prob.f.f.obj.x
+        disco_zero = _disco_zero(disco_prob, integrator, i)
         _load_disco_state!(disco_zero, dt, uprev, u, k, t, p)
         if (i isa VectorContinuousCallback)
             len_cb = i.len::Int
@@ -62,8 +105,7 @@ function find_discontinuity(integrator)
                         )
                     end
                     _set_disco_index!(disco_zero, j)
-                    disco_prob.tspan[2] = breakpointθ
-                    sol = solve(disco_prob)
+                    sol = solve(_disco_bracket(disco_prob, breakpointθ))
                     tmp = sol[]
                     if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
@@ -73,9 +115,10 @@ function find_discontinuity(integrator)
                 end
             end
         else
-            disco_zero.out_low[1] = i.condition(uprev, t, integrator)
-            disco_zero.out_high[1] = i.condition(u, t + dt, integrator)
-            if (disco_zero.out_low[1] * disco_zero.out_high[1] < zero(disco_zero.out_low[1]))
+            _set_disco_outs!(
+                disco_zero, i.condition(uprev, t, integrator), i.condition(u, t + dt, integrator)
+            )
+            if (disco_zero.out_low * disco_zero.out_high < zero(disco_zero.out_low))
                 if (!addsteps_called)
                     addsteps_called = true
                     _ode_addsteps!(
@@ -83,8 +126,7 @@ function find_discontinuity(integrator)
                         disco_zero.dt, disco_zero.f, disco_zero.p, disco_zero.cache, false, true, false
                     )
                 end
-                disco_prob.tspan[2] = breakpointθ
-                sol = solve(disco_prob)
+                sol = solve(_disco_bracket(disco_prob, breakpointθ))
                 tmp = sol[]
                 if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp
