@@ -2,6 +2,8 @@ alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
 
+ismultistep(::Union{QNDF1, QNDF2, QNDF}) = true
+
 alg_order(alg::ABDF2) = 2
 alg_order(alg::SBDF) = alg.order
 alg_order(alg::QNDF1) = 1
