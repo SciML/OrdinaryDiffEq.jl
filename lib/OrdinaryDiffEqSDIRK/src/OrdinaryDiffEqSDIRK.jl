@@ -174,7 +174,7 @@ end
         Expr(
             :public,
             :ESDIRKIMEXCache, :ESDIRKIMEXConstantCache,
-            :ImplicitEulerESDIRKIMEXTableau
+            :ImplicitEulerESDIRKIMEXTableau, :AlexanderSDIRK2ESDIRKIMEXTableau
         )
     )
 end
