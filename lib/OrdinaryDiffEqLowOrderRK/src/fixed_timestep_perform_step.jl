@@ -37,7 +37,8 @@ end
 
 function perform_step!(integrator, cache::EulerCache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    @muladd @.. broadcast = false u = uprev + dt * integrator.fsalfirst
+    (; thread) = cache
+    @muladd @.. broadcast = false thread = thread u = uprev + dt * integrator.fsalfirst
     integrator.opts.stage_limiter!(u, integrator, p, t + dt)
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
