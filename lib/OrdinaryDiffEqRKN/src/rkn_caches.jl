@@ -136,6 +136,36 @@ function alg_cache(
     )
 end
 
+function alg_cache(
+        alg::SharpFineRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    tab = SharpFineRKN6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    nstages = length(tab.b)
+    k1 = zero(rate_prototype)
+    ks = [zero(reduced_rate_prototype) for _ in 2:nstages]
+    k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tmp = zero(u)
+    return NystromVDCache(u, uprev, k1, ks, k, utilde, tmp, atmp, tab)
+end
+
+function alg_cache(
+        alg::SharpFineRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return NystromVDConstantCache(
+        SharpFineRKN6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    )
+end
+
 @cache struct Nystrom4VelocityIndependentCache{uType, rateType, reducedRateType} <:
     NystromMutableCache
     u::uType
