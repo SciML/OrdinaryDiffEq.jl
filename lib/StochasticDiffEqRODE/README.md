@@ -15,6 +15,7 @@ StochasticDiffEqRODE.jl is a component of the [OrdinaryDiffEq.jl](https://github
 - `RandomHeun` - Random Heun method for RODEProblems
 - `RandomTamedEM` - Tamed Euler-Maruyama for RODEProblems with superlinear growth
 - `RandomTaylor15` - Derivative-free order 1.5 Taylor method for RODEProblems on a resolved Wiener path
+- `RandomTaylor25` - Derivative-free order 2.5 Taylor method for RODEProblems on a resolved Wiener path
 
 ### Langevin Dynamics
 - `BAOAB` - BAOAB splitting integrator for Langevin dynamics (second-order ODEs with friction and noise)
