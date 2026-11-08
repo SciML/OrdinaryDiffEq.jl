@@ -2,6 +2,7 @@ using OrdinaryDiffEqDifferentiation, OrdinaryDiffEqCore
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF
 using LinearAlgebra
 using SparseArrays
+using SciMLBase: successful_retcode
 using Test
 
 # `jacobian2W!` forms W = J - M/dtgamma. With a scalar mass matrix it writes the
@@ -68,6 +69,21 @@ Wpartial = copy(Jpartial)
 OrdinaryDiffEqDifferentiation.jacobian2W!(Wpartial, I, dtgamma, Jpartial)
 @test Matrix(Wpartial) ≈ Matrix(Jpartial) - invdtgamma * Matrix(I, 2, 2)
 @test nnz(Wpartial) == nnz(Jpartial) + 1
+
+@testset "Aliased sparse Jacobian with missing diagonal entries" begin
+    for mm in (I, 3.5I, Diagonal([2.0, 1.0]))
+        for (rows, cols) in (
+                ([1, 1, 2], [1, 2, 1]),
+                ([1, 2, 2], [2, 1, 2]),
+                ([1, 2], [2, 1]),
+            )
+            Jalias = sparse(rows, cols, collect(1.0:length(rows)), 2, 2)
+            expected = Matrix(Jalias) - mm / dtgamma
+            OrdinaryDiffEqDifferentiation.jacobian2W!(Jalias, mm, dtgamma, Jalias)
+            @test Matrix(Jalias) == expected
+        end
+    end
+end
 
 # A `Diagonal` mass matrix only needs its nonzero diagonal slots (nz(M)).
 Jdiag = sparse([1, 2, 1, 2], [1, 1, 2, 2], [1.0, 2.0, 0.5, 0.5], 2, 2)
@@ -147,7 +163,7 @@ OrdinaryDiffEqDifferentiation.jacobian2W!(Wd, I, dtgamma, Jd)
         for _ in integrator
             push!(nnzs, nnz(get_W(integrator)))
         end
-        return nnzs
+        return nnzs, integrator.sol
     end
 
     # `always_new` forces FBDF to rebuild W on every nonlinear solve so its
@@ -162,8 +178,13 @@ OrdinaryDiffEqDifferentiation.jacobian2W!(Wd, I, dtgamma, Jd)
                 integ -> integ.cache.nlsolver.cache.W,
             ),
         )
-        nnzs = nnz_over_steps(alg, get_W)
+        nnzs, sol = nnz_over_steps(alg, get_W)
         @testset "$name" begin
+            @test successful_retcode(sol)
+            @test sol.t[end] == last(prob.tspan)
+            u2 = -sin(0.5) * exp(0.5)
+            u1 = cos(0.5) - sin(0.5) * (exp(0.5) - 1)
+            @test sol.u[end] ≈ [u1, u2, u1 + u2] rtol = 1.0e-6
             @test length(nnzs) > 1
             @test allequal(nnzs)
         end

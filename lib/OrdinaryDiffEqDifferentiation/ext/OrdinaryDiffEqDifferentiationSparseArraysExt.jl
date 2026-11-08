@@ -18,25 +18,8 @@ OrdinaryDiffEqDifferentiation.spzeros(T::Type, m::Integer, n::Integer) = spzeros
 OrdinaryDiffEqDifferentiation.get_nzval(A::AbstractSparseMatrix) = nonzeros(A)
 OrdinaryDiffEqDifferentiation.set_all_nzval!(A::AbstractSparseMatrix, val) = (nonzeros(A) .= val; A)
 
-# ---------------------------------------------------------------------------
-# Pattern-stable W assembly for CPU `SparseMatrixCSC`.
-#
-# Broadcasting `W = muladd(-M, invdtgamma, J)` into a sparse `W` drops exact
-# zeros, so `nnz(W)` fluctuates with the Jacobian's *values* and KLU/UMFPACK
-# re-run symbolic analysis nearly every step. These methods keep `W`'s pattern
-# fixed instead: the first call widens it to `W ∪ J ∪ nz(M)` (or
-# `W ∪ J_u ∪ J_du`), and every call rewrites `nonzeros(W)` over the sorted row
-# indices — positionally when `W` and `J` already share a pattern, by a merge
-# pass otherwise. Values use the same `muladd` operands as the broadcast path,
-# so they are bitwise identical.
-#
-# Loss regime: with a `Diagonal` mass matrix and an over-approximated
-# `jac_prototype` (many stored entries that are always zero), the kept zeros
-# increase LU fill — ~+11% fill and +12–23% per refactorization for KLU on a
-# n=1002 benchmark; UMFPACK is unaffected. The remedy is a tighter prototype.
-# The scalar/`I` mass-matrix path already kept J's stored zeros, so this makes
-# `Diagonal` consistent with it.
-# ---------------------------------------------------------------------------
+# CPU sparse W assembly preserves stored zeros and widens the pattern to cover
+# the Jacobian and required mass-matrix entries before filling values.
 
 const _ScalarOrDiagonalMassMatrix = Union{UniformScaling, ScalarOperator, Diagonal}
 
@@ -322,7 +305,7 @@ function OrdinaryDiffEqDifferentiation.jacobian2W!(
         OrdinaryDiffEqDifferentiation._throwWMerror(W, mass_matrix)
     @inbounds begin
         invdtgamma = inv(dtgamma)
-        if _same_pattern(W, J) &&
+        if W !== J && _same_pattern(W, J) &&
                 _fill_same_pattern!(W, mass_matrix, invdtgamma, J)
             return nothing
         end
