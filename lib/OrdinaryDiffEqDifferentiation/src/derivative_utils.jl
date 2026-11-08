@@ -1212,11 +1212,11 @@ function update_W!(
         isdae = integrator.alg isa DAEAlgorithm
         if newJW === nothing
             new_jac, new_W = do_newJW(integrator, integrator.alg, nlsolver, repeat_step)
-            t = integrator.t
+            t = constvalue(integrator.t)
             alg = unwrap_alg(integrator, true)
             if !repeat_step && alg isa OrdinaryDiffEqCore.NewtonAlgorithm &&
                     SciMLBase.alg_order(alg) > 1 && t isa AbstractFloat &&
-                    abs(integrator.dt) <= sqrt(eps(typeof(t))) * max(abs(t), one(t))
+                    abs(constvalue(integrator.dt)) <= sqrt(eps(typeof(t))) * max(abs(t), one(t))
                 new_jac, new_W = true, true
             end
         else

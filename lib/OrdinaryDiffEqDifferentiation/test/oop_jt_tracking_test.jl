@@ -1,6 +1,7 @@
 using OrdinaryDiffEqSDIRK, Test, SparseArrays, LinearAlgebra
 using OrdinaryDiffEqTsit5: AutoTsit5
 using OrdinaryDiffEqCore: CompositeAlgorithm
+using ForwardDiff
 
 f_oop(u, p, t) = -1000 * u
 prob = ODEProblem(f_oop, 1.0, (0.0, 1.0))
@@ -83,6 +84,20 @@ bertolazzi_iip!(du, u, p, t) = (du .= bertolazzi_rhs(SVector{3}(u), p, t); nothi
     sol = solve(svprob, ImplicitEuler(); dt = 1.0e-3)
     @test sol.retcode == ReturnCode.Success
     @test abs(sum(sol.u[end]) - 3.0) < 1.0e-6
+end
+
+@testset "OOP conservation with dual-valued time" begin
+    for (f, u0) in ((bertolazzi_rhs, SA[0.0, 1.0, 2.0]), (bertolazzi_vec, [0.0, 1.0, 2.0]))
+        mass_derivative = ForwardDiff.derivative(1.0) do endpoint
+            prob = ODEProblem(f, u0, (zero(endpoint), endpoint))
+            sol = solve(prob, TRBDF2(); dt = 1.0e-3, maxiters = 100000)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.t[end] == endpoint
+            @test abs(sum(sol.u[end]) - 3.0) < 1.0e-6
+            return sum(sol.u[end])
+        end
+        @test abs(mass_derivative) < 1.0e-6
+    end
 end
 
 @testset "OOP conservation through algorithm wrappers" begin
