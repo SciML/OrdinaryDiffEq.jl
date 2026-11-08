@@ -45,6 +45,13 @@ Base.all(f::typeof(isfinite), A::NoScalarMatrix) = all(f, A.data)
     @test !isfinite_W(NoScalarMatrix([1.0 NaN; 3.0 4.0]))
 
     for wrap in (transpose, adjoint)
+        for T in (Float64, ComplexF64)
+            @test isfinite_W(wrap(T[1, 2]))
+            for bad in (Inf, -Inf, NaN)
+                @test !isfinite_W(wrap(T[1, bad]))
+            end
+        end
+        @test !isfinite_W(wrap(ComplexF64[1, complex(0, Inf)]))
         @test isfinite_W(wrap([1.0 2.0; 3.0 4.0]))
         @test !isfinite_W(wrap([1.0 NaN; 3.0 4.0]))
         @test !isfinite_W(wrap(ComplexF64[1 2; complex(0, Inf) 4]))

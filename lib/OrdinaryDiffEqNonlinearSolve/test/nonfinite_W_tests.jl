@@ -21,3 +21,22 @@ linsolves = (LUFactorization(), GenericFactorization(lu!))
         @test sol.u[end] == prob.u0
     end
 end
+
+@testset "Finite W with generic factorization" begin
+    finite_prob = ODEProblem(f!, copy(prob.u0), prob.tspan)
+    for alg in algs
+        reference = solve(
+            finite_prob, alg(; linsolve = LUFactorization()); adaptive = false, dt = 0.1
+        )
+        sol = solve(
+            finite_prob, alg(; linsolve = GenericFactorization(lu!)); adaptive = false,
+            dt = 0.1
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t == reference.t
+        @test all(
+            isapprox(u, v; rtol = 1.0e-12, atol = 1.0e-14)
+                for (u, v) in zip(sol.u, reference.u)
+        )
+    end
+end
