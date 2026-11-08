@@ -1,29 +1,31 @@
 module StochasticDiffEqROCK
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
+import OrdinaryDiffEqCore: perform_step!
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
-    alg_needs_extra_process, is_split_step,
+    alg_needs_extra_process, is_split_step, unwrap_alg,
     StochasticDiffEqAlgorithm, StochasticDiffEqAdaptiveAlgorithm,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
-import DiffEqBase: calculate_residuals, calculate_residuals!
+import DiffEqBase
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+import SciMLBase: is_diagonal_noise
+import FastBroadcast: @..
 
 import MuladdMacro: @muladd
 import SciMLBase
 
 import Random
 
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
+using LinearAlgebra: LinearAlgebra, mul!
+using StaticArrays: StaticArrays, SArray
+using RecursiveArrayTools: RecursiveArrayTools
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -113,7 +113,6 @@ end
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}
-    order_history::Vector{Int}
     jets::Vector{FunctionWrapper{Nothing, Tuple{taylorType, coeffType, uType, tType}}}
     coeffs::Vector{coeffType}
     u::uType
@@ -150,9 +149,8 @@ function alg_cache(
     recursivefill!(atmp, false)
     tmp = zero(u)
     current_order = Ref(max_order_value - 1)
-    order_history = Vector{Int}()
     return ExplicitTaylorAdaptiveOrderCache(
-        alg.min_order, alg.max_order, current_order, order_history,
+        alg.min_order, alg.max_order, current_order,
         jets, coeffs, u, uprev, utaylor, utilde, tmp, atmp,
         alg.stage_limiter!, alg.step_limiter!, alg.thread
     )
@@ -160,8 +158,9 @@ end
 
 get_fsalfirstlast(cache::ExplicitTaylorAdaptiveOrderCache, u) = (nothing, nothing)
 
-struct ExplicitTaylorAdaptiveOrderConstantCache{P, Q, taylorType, uType, tType} <:
-    OrdinaryDiffEqConstantCache
+struct ExplicitTaylorAdaptiveOrderConstantCache{
+        P, Q, taylorType, uType, tType,
+    } <: OrdinaryDiffEqConstantCache
     min_order::Val{P}
     max_order::Val{Q}
     current_order::Base.RefValue{Int}

@@ -60,7 +60,6 @@ end
     # Unwrap FunctionWrappers since TaylorDiff types don't match wrapper signatures
     f = unwrapped_f(integrator.f)
 
-    # The following code is written to be fully non-allocating
     f(k1, uprev, p, t)
     u1 = make_taylor(uprev, k1)
     t1 = TaylorScalar{1}(t, one(t))
@@ -163,7 +162,6 @@ end
 
     min_order_value = get_value(min_order)
     max_order_value = get_value(max_order)
-    push!(cache.order_history, current_order[])
     jet_index = current_order[] - min_order_value + 1
     # compute one additional order for adaptive order
     jet = jets[jet_index + 1]
@@ -193,20 +191,14 @@ end
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            # backup — pseudo-step the controller to estimate the work at
-            # this order without leaking state back out.
             saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
-            saved_cache = deepcopy(integrator.controller_cache)
-            # calculate dt
+            snap = snapshot_controller(integrator.controller_cache)
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            # restore
-            OrdinaryDiffEqCore.sync_controllers!(
-                integrator.controller_cache, saved_cache
-            )
+            restore_controller!(integrator.controller_cache, snap)
             OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose
@@ -263,20 +255,14 @@ end
             )
             EEst = integrator.opts.internalnorm(atmp, t)
 
-            # backup — pseudo-step the controller to estimate the work at
-            # this order without leaking state back out.
             saved_EEst = OrdinaryDiffEqCore.get_EEst(integrator)
-            saved_cache = deepcopy(integrator.controller_cache)
-            # calculate dt
+            snap = snapshot_controller(integrator.controller_cache)
             OrdinaryDiffEqCore.set_EEst!(integrator, EEst)
             dtpropose = step_accept_controller!(
                 integrator, alg,
                 stepsize_controller!(integrator, alg)
             )
-            # restore
-            OrdinaryDiffEqCore.sync_controllers!(
-                integrator.controller_cache, saved_cache
-            )
+            restore_controller!(integrator.controller_cache, snap)
             OrdinaryDiffEqCore.set_EEst!(integrator, saved_EEst)
 
             work = A / dtpropose

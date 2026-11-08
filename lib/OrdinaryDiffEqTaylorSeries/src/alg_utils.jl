@@ -121,6 +121,7 @@ function build_jet(
     end
     if iip
         @assert state isa AbstractArray
+        u0 = copyto!(similar(u0), u0)
         f0 = similar(u0)
         f(f0, u0, p, t0)
     else
