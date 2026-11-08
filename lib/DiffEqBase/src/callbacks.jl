@@ -177,11 +177,18 @@ end
 # Use a generated function for type stability even when many callbacks are given
 """
     find_first_continuous_callback(integrator, callbacks...)
+    find_first_continuous_callback(integrator, callbacks::AbstractVector, concrete::Val = Val(false))
 
 Scan the given continuous `callbacks` and return the bookkeeping for the one whose event
 fires earliest in the current step: the event time, crossing sign, whether an event occurred,
 the (vector-callback) event index, the identified callback index, and the number of callbacks.
 A generated method keeps the result type-stable for an arbitrary number of callbacks.
+
+For an `AbstractVector`, `Val(false)` preserves the callback's crossing sign and event
+index types, including a sign view for vector callbacks. `Val(true)` returns a concrete
+`Tuple{typeof(integrator.t), Int8, Bool, Int, Int, Int}`: scalar crossing signs are
+normalized to -1, 0 or 1 (unordered values map to 0), and vector crossing signs are 0.
+Vector event directions are stored in `integrator.callback_cache.simultaneous_events`.
 """
 @inline function find_first_continuous_callback(
         integrator,
@@ -267,10 +274,6 @@ end
 end
 
 
-# Map a signed crossing value to Int8 via comparisons (not `sign`/`Int8(sign(...))`).
-# Matches master semantics for event direction (`prev_sign < 0` / `> 0`): NaN and other
-# unordered values become 0 (no event branch), and Dual/Unitful/Measurements that compare
-# with zero but cannot convert through `Int8(sign(...))` stay usable.
 @inline function _crossing_int8(s)
     return s < 0 ? Int8(-1) : s > 0 ? Int8(1) : Int8(0)
 end
@@ -278,24 +281,28 @@ end
 # A type-erased callback is called through `Base.invokelatest`, so the compiled loop holds
 # a plain dynamic dispatch instead of a method instance specialised on `Any` whose
 # abstract call edges a later-loaded extension (such as `value(::Dual)`) would invalidate.
-# The callee runs on the concrete callback and hands back the four values the loop needs
-# typed: event time, crossing sign (`Int8`), event index (`Int`), and residual (already
-# reduced and converted).
-function _find_callback_time_erased(integrator, callback, callback_idx)
+function _find_callback_time_erased(integrator, callback, callback_idx, ::Val{C}) where {C}
     tmin, upcrossing, event_occurred, event_idx, residual =
         find_callback_time(integrator, callback, callback_idx)
-    upc = upcrossing isa Number ? _crossing_int8(value(upcrossing)) : Int8(0)
+    if C
+        upcrossing = upcrossing isa Number ? _crossing_int8(value(upcrossing)) : Int8(0)
+        event_idx = Int(event_idx)
+    end
     return (
-        convert(typeof(integrator.t), tmin), upc, event_occurred::Bool, Int(event_idx),
+        convert(typeof(integrator.t), tmin), upcrossing, event_occurred::Bool, event_idx,
         convert(typeof(integrator.last_event_error), value(residual)),
     )
 end
 
-function find_first_continuous_callback(integrator, callbacks::AbstractVector)
+function find_first_continuous_callback(
+        integrator, callbacks::AbstractVector, concrete::Val{C} = Val(false)
+    ) where {C}
     callback_count = length(callbacks)
     callback_count > 0 || throw(ArgumentError("at least one continuous callback is required"))
     tType = typeof(integrator.t)
     errType = typeof(integrator.last_event_error)
+    crossingType = C ? Int8 : Any
+    indexType = C ? Int : Any
 
     has_vector_callback = any(callback -> callback isa VectorContinuousCallback, callbacks)
     if has_vector_callback
@@ -305,7 +312,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     end
 
     tmin, upcrossing, event_occurred, event_idx, residual =
-        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1)::Tuple{tType, Int8, Bool, Int, errType}
+        Base.invokelatest(_find_callback_time_erased, integrator, callbacks[1], 1, concrete)::Tuple{tType, crossingType, Bool, indexType, errType}
     identified_idx = 1
     if has_vector_callback && event_occurred && callbacks[1] isa VectorContinuousCallback
         copyto!(
@@ -317,7 +324,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
     for callback_idx in 2:callback_count
         callback = callbacks[callback_idx]
         tmin2, upcrossing2, event_occurred2, event_idx2, residual2 =
-            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx)::Tuple{tType, Int8, Bool, Int, errType}
+            Base.invokelatest(_find_callback_time_erased, integrator, callback, callback_idx, concrete)::Tuple{tType, crossingType, Bool, indexType, errType}
         if event_occurred2 &&
                 (!event_occurred || integrator.tdir * tmin2 < integrator.tdir * tmin)
             tmin = tmin2
@@ -345,7 +352,7 @@ function find_first_continuous_callback(integrator, callbacks::AbstractVector)
         integrator.last_event_error = residual
     end
     return (tmin, upcrossing, event_occurred, event_idx, identified_idx, callback_count)::Tuple{
-        tType, Int8, Bool, Int, Int, Int,
+        tType, crossingType, Bool, indexType, Int, Int,
     }
 end
 
