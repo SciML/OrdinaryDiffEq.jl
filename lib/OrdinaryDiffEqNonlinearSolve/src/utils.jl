@@ -981,7 +981,7 @@ function build_nlsolver(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
                 linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians, true
             )
         end
     elseif nlalg isa NLFunctional

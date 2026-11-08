@@ -567,6 +567,7 @@ mutable struct NLNewtonCache{
     new_W_γdt_cutoff::tType
     J_t::tType
     dae_jacobians::DC
+    allow_convergence::Bool
 end
 
 mutable struct NLNewtonConstantCache{tType, tType2, J, W, ufType, DC} <: AbstractNLSolverCache

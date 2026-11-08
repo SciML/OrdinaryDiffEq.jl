@@ -1,5 +1,7 @@
 @inline eps_around_one(θ::T) where {T} = 100sqrt(eps(one(θ)))
 
+_check_linesearch_convergence(::AbstractNLSolver) = nothing
+
 # A globalized inner solver can return from `step!` with the iterate all but unmoved: a
 # TrustRegion that rejected its trial step and only shrank its radius (#3817), a line search
 # that collapsed to a near-zero step length. The convergence tests below would read that
@@ -271,6 +273,7 @@ function nlsolve!(
         always_new || @goto REDO
     end
 
+    nlsolver.status == Convergence && _check_linesearch_convergence(nlsolver)
     nlsolver.ηold = η
     return postamble!(nlsolver, integrator)
 end

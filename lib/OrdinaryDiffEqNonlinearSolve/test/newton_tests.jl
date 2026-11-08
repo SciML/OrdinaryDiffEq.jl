@@ -176,3 +176,27 @@ end
         end
     end
 end
+
+@testset "collapsed line-search displacement has an unsolved stage" for a in (1.0e17, 8.0e10), check_div in (true, false)
+    g(u) = (1 - 2 * (a * u) + 10 * (a * u)^2) * (1 - u / 2)
+    @test (2a)^2 < 40a^2
+    @test iszero(g(2.0))
+    function rhs!(du, u, p, t)
+        du[1] = p[1] ? 10 * (1 + (t / 0.1) * (g(u[1]) + u[1] - 1)) : 1.0
+    end
+    prob = ODEProblem(rhs!, [0.0], (0.0, 0.1), [true])
+    integrator = init(
+        prob, ImplicitEuler(nlsolve = NLNewton(; relax = BackTracking(), check_div));
+        dt = 0.1, adaptive = false, abstol = 1.0e-12, reltol = 0.0
+    )
+    @test_throws ErrorException solve!(integrator)
+    @test integrator.t == 0.0
+    @test prob.u0 == [0.0]
+
+    integrator.p[1] = false
+    reinit!(integrator, [0.0])
+    reused = solve!(integrator)
+    @test SciMLBase.successful_retcode(reused)
+    @test reused.u[end][1] ≈ 0.1
+    @test abs(reused.u[end][1] - 0.1) < 1.0e-12
+end

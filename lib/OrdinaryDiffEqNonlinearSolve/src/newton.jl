@@ -759,6 +759,7 @@ end
     (; uprev, t, p, dt, opts) = integrator
     (; z, tmp, ztmp, γ, α, iter, cache, method) = nlsolver
     (; W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
+    cache.allow_convergence = true
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -986,6 +987,12 @@ end
 
 ## relax!
 
+function _check_linesearch_convergence(nlsolver::NLSolver{<:NLNewton, true})
+    nlsolver.cache.allow_convergence ||
+        error("Line search failed: a small correction leaves an unsolved stage.")
+    return nothing
+end
+
 # A step that leaves the iterate unchanged can neither be measured nor make progress.
 _movesiterate(z::Number, dz::Number, α) = z - α * dz != z
 function _movesiterate(z, dz, α)
@@ -1097,8 +1104,20 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        α = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0, z, dz)
-        @.. dz = dz * α
+        step_length = linesearch_step(linesearch, ϕ, dϕ, ϕdϕ, α0, z, dz)
+        if step_length < one(step_length)
+            calculate_residuals!(
+                atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
+            )
+            ndz = opts.internalnorm(atmp, t)
+            cutoff = max(nlsolver.κ, oftype(ndz, 1.0e-5))
+            if ndz > cutoff
+                # Damping can make the correction small without solving the stage.
+                residual = ϕ(step_length) * abs(residual_to_z_scale(nlsolver, isdae))
+                cache.allow_convergence = residual <= one(residual)
+            end
+        end
+        @.. dz = dz * step_length
         return dz
     end
 end
