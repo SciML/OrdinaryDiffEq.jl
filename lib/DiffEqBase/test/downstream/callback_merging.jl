@@ -212,3 +212,36 @@ end
     @test solve(prob, Tsit5(); callback = CallbackSet(flag_false, flag_true)).retcode ==
         ReturnCode.Success
 end
+
+# Holds at the `n`-th step; `instantiate_callback` gives each integrator its own counter
+struct NthStep
+    n::Int
+    count::Base.RefValue{Int}
+end
+NthStep(n) = NthStep(n, Ref(0))
+(c::NthStep)(u, t, integrator) = (c.count[] += 1) == c.n
+
+function SciMLBase.instantiate_callback(cb::DiscreteCallback{<:NthStep})
+    return remake(cb; condition = NthStep(cb.condition.n))
+end
+
+@testset "Integrators get their own callback state" begin
+    stop = DiscreteCallback(NthStep(5), terminate!)
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0); callback = stop)
+
+    # Integrators alive at the same time each stop at their own 5th step
+    integrators = (init(prob, Euler(); dt = 0.01), init(prob, Euler(); dt = 0.01))
+    for _ in 1:3
+        foreach(step!, integrators)
+    end
+    foreach(solve!, integrators)
+    @test all(integrator -> integrator.iter == 5, integrators)
+
+    # So do repeated solves, with the callback passed to `solve`
+    plain_prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    sols = [solve(plain_prob, Euler(); dt = 0.01, callback = stop) for _ in 1:2]
+    @test all(sol -> sol.t[end] ≈ 0.05, sols)
+
+    # The callback passed in is never used itself
+    @test stop.condition.count[] == 0
+end
