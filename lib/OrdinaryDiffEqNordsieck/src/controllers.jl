@@ -73,3 +73,8 @@ end
 function step_reject_controller!(integrator, alg::JVODE)
     return integrator.dt *= integrator.cache.η
 end
+
+function post_newton_controller!(integrator, ::JVODE)
+    integrator.dt /= get_failfactor(integrator)
+    return nothing
+end
