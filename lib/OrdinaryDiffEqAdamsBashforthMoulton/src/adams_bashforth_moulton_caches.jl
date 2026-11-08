@@ -1153,11 +1153,16 @@ function alg_cache(
 end
 
 # `ϕ_*` / nested BS3/RK4 caches are not `rateType`, so `@cache` skips them in `full_cache`.
-function _resize_adams_history!(bufs, i)
-    for buf in bufs
+function _resize_adams_history!(cache, i)
+    for buf in _adams_ϕ_bufs(cache)
         for x in buf
             resize!(x, i)
+            recursivefill!(x, false)
         end
+    end
+    cache.step = 1
+    if cache isa VCABMCache
+        cache.order = 1
     end
     return nothing
 end
@@ -1177,7 +1182,7 @@ _adams_ϕ_bufs(cache::Union{VCABM3Cache, VCABM4Cache, VCABM5Cache, VCABMCache}) 
 function resize_non_user_cache!(
         integrator::ODEIntegrator, cache::Union{VCAB3Cache, VCABM3Cache}, i
     )
-    _resize_adams_history!(_adams_ϕ_bufs(cache), i)
+    _resize_adams_history!(cache, i)
     return _resize_nested_cache!(cache.bs3cache, i)
 end
 
@@ -1185,10 +1190,10 @@ function resize_non_user_cache!(
         integrator::ODEIntegrator,
         cache::Union{VCAB4Cache, VCAB5Cache, VCABM4Cache, VCABM5Cache}, i
     )
-    _resize_adams_history!(_adams_ϕ_bufs(cache), i)
+    _resize_adams_history!(cache, i)
     return _resize_nested_cache!(cache.rk4cache, i)
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator, cache::VCABMCache, i)
-    return _resize_adams_history!(_adams_ϕ_bufs(cache), i)
+    return _resize_adams_history!(cache, i)
 end

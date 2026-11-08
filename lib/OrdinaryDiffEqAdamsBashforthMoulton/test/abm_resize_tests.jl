@@ -125,3 +125,28 @@ end
     @test length(sol.u[end]) == 2
     @test norm(sol.u[end] - ex, Inf) < 1.0e-7
 end
+
+@testset "BigFloat growth: $(nameof(typeof(alg)))" for alg in (
+        VCAB3(), VCAB4(), VCAB5(), VCABM3(), VCABM4(), VCABM5(), VCABM(),
+    )
+    function f_big!(du, u, p, t)
+        du .= -u
+        return nothing
+    end
+    function affect!(integrator)
+        resize!(integrator, 4)
+        integrator.u[4] = big"1"
+        return nothing
+    end
+    cb = DiscreteCallback(
+        (u, t, integrator) -> t == 0.5, affect!;
+        save_positions = (false, false)
+    )
+    sol = solve(
+        ODEProblem(f_big!, BigFloat[1, 2, 3], (0.0, 2.0)), alg;
+        callback = cb, tstops = [0.5], abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    exact = vcat(BigFloat[1, 2, 3] .* exp(big"-2"), exp(big"-1.5"))
+    @test SciMLBase.successful_retcode(sol)
+    @test maximum(abs, sol.u[end] .- exact) < 1.0e-7
+end
