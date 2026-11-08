@@ -39,11 +39,16 @@ Return whether the noise process `W` supports saving its trajectory
 is_noise_saveable(::Nothing) = false
 """
     reinit_noise!(W, dt)
+    reinit_noise!(W, dt, u, p)
 
 Reset the noise process `W` to its initial state for a fresh integration with step
 `dt` (used by `reinit!`). No-op when `W` is `nothing`.
+
+The four-argument form also prepares the pending increment using the current
+state `u` and parameters `p`, so it can be consumed or bridged to a shorter step.
 """
 reinit_noise!(::Nothing, dt) = nothing
+reinit_noise!(W, dt, u, p) = reinit_noise!(W, dt)
 
 # Noise field accessors — safe for any integrator type.
 # ODEIntegrator has W/P/sqdt; other integrators (DDEIntegrator) don't.

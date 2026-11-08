@@ -715,13 +715,10 @@ function SciMLBase.reinit!(
     end
 
     W = _get_W(integrator)
-    noise_dt = integrator.dt
     if !isnothing(W) && !integrator.opts.adaptive && !iszero(integrator.dtcache)
-        noise_dt = integrator.dtpropose
-    end
-    reinit_noise!(W, noise_dt)
-    if !isnothing(W) && abs(integrator.dt) < abs(noise_dt)
-        shrink_noise_to_integrator_dt!(integrator)
+        reinit_noise!(W, integrator.dt, integrator.u, integrator.p)
+    else
+        reinit_noise!(W, integrator.dt)
     end
 
     # Starting-time discontinuity handling: mirrors `__init`.

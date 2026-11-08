@@ -171,3 +171,24 @@ end
         @test all(isfinite, integrator.u)
     end
 end
+
+@testset "Fixed-step Wiener reinit preserves increment variance" begin
+    n = 10_000
+    for tdir in (-1.0, 1.0)
+        h = 0.003
+        prob = SDEProblem((u, p, t) -> 0.0, (u, p, t) -> 1.0, 0.0, (0.0, tdir * 0.1))
+        before = 0.0
+        after = 0.0
+        for seed in 1:n
+            integrator = init(prob, EM(); dt = 0.01, tstops = [tdir * h], seed)
+            before += abs2(integrator.W.dW)
+            reinit!(integrator)
+            step!(integrator)
+            after += abs2(integrator.u)
+        end
+        # For a Wiener increment, E[dW²] = h and Var(dW²) = 2h².
+        bound = 6h * sqrt(2 / n)
+        @test abs(before / n - h) < bound
+        @test abs(after / n - h) < bound
+    end
+end

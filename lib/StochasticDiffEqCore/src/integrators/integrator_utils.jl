@@ -122,6 +122,11 @@ function OrdinaryDiffEqCore.reinit_noise!(W::SciMLBase.AbstractNoiseProcess, dt)
     return SciMLBase.reinit!(W, dt)
 end
 
+function OrdinaryDiffEqCore.reinit_noise!(W::SciMLBase.AbstractNoiseProcess, dt, u, p)
+    SciMLBase.reinit!(W, dt)
+    return DiffEqNoiseProcess.setup_next_step!(W, u, p)
+end
+
 # _determine_initdt: SDE extension (called from ODE's auto_dt_reset!)
 function OrdinaryDiffEqCore._determine_initdt(integrator::SDEIntegrator)
     prob = integrator.sol.prob
