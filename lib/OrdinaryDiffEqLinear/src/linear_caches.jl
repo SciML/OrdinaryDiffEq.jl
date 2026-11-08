@@ -401,7 +401,42 @@ function alg_cache(
     return MagnusGL8ConstantCache()
 end
 
-@cache struct MagnusNC6Cache{uType, rateType, WType, expType} <: LinearMutableCache
+# Preallocated stage buffers only for a dense operator matrix whose element type survives
+# the stage arithmetic (`Float64` coefficients, `dt` scaling). Otherwise `nothing`: the
+# stages are then formed out of place and keep the operator's own matrix type.
+function magnus_dense_stages(::Type{S}, f, dt) where {S}
+    A = convert(AbstractMatrix, f.f)
+    T = eltype(A)
+    if A isa StridedMatrix && T <: Number && promote_type(T, Float64, typeof(dt)) === T
+        return S(A)
+    end
+    return nothing
+end
+
+struct MagnusNC6Stages{M}
+    A0::M
+    A1::M
+    A2::M
+    A3::M
+    B0::M
+    B1::M
+    B2::M
+    C1::M
+    D::M
+    E::M
+    F::M
+    G::M
+    P1::M
+    P2::M
+    Ω2::M
+    Ω3_4::M
+    Ωtot::M
+end
+
+MagnusNC6Stages(A::AbstractMatrix) = MagnusNC6Stages(ntuple(_ -> zero(A), Val(17))...)
+
+@cache struct MagnusNC6Cache{uType, rateType, WType, expType, stagesType} <:
+    LinearMutableCache
     u::uType
     uprev::uType
     uprev2::uType
@@ -410,6 +445,7 @@ end
     W::WType
     k::rateType
     exp_cache::expType
+    stages::stagesType
 end
 
 function alg_cache(
@@ -422,7 +458,10 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusNC6Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    stages = magnus_dense_stages(MagnusNC6Stages, f, dt)
+    return MagnusNC6Cache(
+        u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache, stages
+    )
 end
 
 struct MagnusNC6ConstantCache <: OrdinaryDiffEqConstantCache
@@ -472,7 +511,16 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     return MagnusGL6ConstantCache()
 end
-@cache struct MagnusGauss4Cache{uType, rateType, WType, expType} <:
+struct MagnusGauss4Stages{M}
+    A::M
+    P1::M
+    P2::M
+    G::M
+end
+
+MagnusGauss4Stages(A::AbstractMatrix) = MagnusGauss4Stages(zero(A), zero(A), zero(A), zero(A))
+
+@cache struct MagnusGauss4Cache{uType, rateType, WType, expType, stagesType} <:
     LinearMutableCache
     u::uType
     uprev::uType
@@ -482,6 +530,7 @@ end
     W::WType
     k::rateType
     exp_cache::expType
+    stages::stagesType
 end
 
 function alg_cache(
@@ -494,7 +543,10 @@ function alg_cache(
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
-    return MagnusGauss4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
+    stages = magnus_dense_stages(MagnusGauss4Stages, f, dt)
+    return MagnusGauss4Cache(
+        u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache, stages
+    )
 end
 
 struct MagnusGauss4ConstantCache <: OrdinaryDiffEqConstantCache
