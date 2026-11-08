@@ -124,4 +124,32 @@ import SciMLBase
             same_callbacks(merged.continuous_callbacks, expected.continuous_callbacks) &&
             same_callbacks(merged.discrete_callbacks, expected.discrete_callbacks)
     end
+
+    if VERSION >= v"1.12"
+        @testset "Merged callback storage is independent" begin
+            for specialize in (SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.NoSpecialize),
+                    nonempty in (false, true),
+                    solve_cb in (nothing, CallbackSet(), CallbackSet(Any[], Any[]), erased_set(CallbackSet(cb2, dcb2)))
+
+                prob_cb = nonempty ? erased_set(CallbackSet(cb1, dcb1)) : CallbackSet(Any[], Any[])
+                prob = ODEProblem{true, specialize}(f, [1.0], (0.0, 1.0); callback = prob_cb)
+                merged = DiffEqBase.merge_problem_kwargs(prob; callback = solve_cb).callback
+                other = DiffEqBase.merge_problem_kwargs(prob; callback = solve_cb).callback
+                for field in (:continuous_callbacks, :discrete_callbacks)
+                    containers = (getproperty(prob_cb, field), getproperty(other, field))
+                    if solve_cb isa CallbackSet
+                        containers = (containers..., getproperty(solve_cb, field))
+                    end
+                    snapshots = map(collect, containers)
+                    callbacks = getproperty(merged, field)
+                    empty!(callbacks)
+                    push!(callbacks, field === :continuous_callbacks ? cb3 : dcb2)
+                    for (container, snapshot) in zip(containers, snapshots)
+                        @test same_callbacks(container, snapshot)
+                    end
+                end
+            end
+        end
+    end
+
 end

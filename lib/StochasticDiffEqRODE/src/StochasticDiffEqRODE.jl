@@ -1,10 +1,11 @@
 module StochasticDiffEqRODE
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
+import OrdinaryDiffEqCore: perform_step!
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, is_split_step,
@@ -13,8 +14,10 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     StochasticDiffEqCache, StochasticDiffEqConstantCache, StochasticDiffEqMutableCache,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
-import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+import DiffEqBase
+import DiffEqBase: initialize!, full_cache, rand_cache, ratenoise_cache
+import SciMLBase: is_diagonal_noise
+import FastBroadcast: @..
 
 import MuladdMacro: @muladd
 
@@ -22,9 +25,9 @@ import SciMLBase
 
 import DiffEqNoiseProcess
 
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
+using LinearAlgebra: LinearAlgebra, norm
+using StaticArrays: StaticArrays
+using RecursiveArrayTools: RecursiveArrayTools, ArrayPartition
 
 include("algorithms.jl")
 include("alg_utils.jl")

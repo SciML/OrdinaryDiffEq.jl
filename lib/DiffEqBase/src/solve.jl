@@ -12,12 +12,6 @@ struct EvalFunc{F} <: Function
 end
 (f::EvalFunc)(args...) = f.f(args...)
 
-NO_TSPAN_PROBS = Union{
-    AbstractLinearProblem, AbstractNonlinearProblem,
-    AbstractIntegralProblem, AbstractSteadyStateProblem,
-    AbstractJumpProblem,
-}
-
 """
     has_callbacks(kwargs)
 
@@ -53,24 +47,18 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     if has_kwargs(prob)
         if merge_callbacks && haskey(prob.kwargs, :callback) && haskey(kwargs, :callback)
             pcb = prob.kwargs[:callback]
-            # The erased fast paths match `CallbackSet(pcb, callback)` only because the
-            # erasure below normalizes the result; an empty erased set then lets the
-            # solve-time callback override, as if the problem had no callback.
-            erased_pcb = erases && pcb isa CallbackSet{Vector{Any}, Vector{Any}}
-            if !(erased_pcb && isempty(pcb))
-                kwargs_temp = NamedTuple{
-                    Base.diff_names(
-                        Base._nt_names(values(kwargs)),
-                        (:callback,)
-                    ),
-                }(values(kwargs))
-                merged_callback = if erased_pcb
-                    _merge_erased_callbacks(pcb, values(kwargs).callback)
-                else
-                    DiffEqBase.CallbackSet(pcb, values(kwargs).callback)
-                end
-                kwargs = merge(kwargs_temp, NamedTuple{(:callback,)}((merged_callback,)))
+            kwargs_temp = NamedTuple{
+                Base.diff_names(
+                    Base._nt_names(values(kwargs)),
+                    (:callback,)
+                ),
+            }(values(kwargs))
+            merged_callback = if erases && pcb isa CallbackSet{Vector{Any}, Vector{Any}}
+                _merge_erased_callbacks(pcb, values(kwargs).callback)
+            else
+                CallbackSet(pcb, values(kwargs).callback)
             end
+            kwargs = merge(kwargs_temp, NamedTuple{(:callback,)}((merged_callback,)))
         end
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
