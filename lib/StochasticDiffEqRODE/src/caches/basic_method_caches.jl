@@ -98,6 +98,24 @@ struct RandomTaylor15ConstantCache <: StochasticDiffEqConstantCache end
     rtmpm::rateType
 end
 
+struct RandomTaylor15VectorConstantCache <: StochasticDiffEqConstantCache end
+@cache struct RandomTaylor15VectorCache{uType, rateType, randType, matType} <:
+    StochasticDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    rtmp::rateType
+    rtmp0::rateType
+    rtmpp::rateType
+    rtmpm::rateType
+    rdiag::Vector{rateType}
+    wtmp::randType
+    vprev::randType
+    vcur::randType
+    I1::randType
+    I2::matType
+end
+
 function warn_unresolved_grid(prob, t, dt)
     lo, hi = minmax(t, t + dt)
     if count(ti -> lo < ti < hi, prob.noise.t) == 0
@@ -115,7 +133,7 @@ function alg_cache(
         ::Type{Val{false}}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     warn_unresolved_grid(prob, t, dt)
-    return RandomTaylor15ConstantCache()
+    return ΔW isa Number ? RandomTaylor15ConstantCache() : RandomTaylor15VectorConstantCache()
 end
 
 function alg_cache(
@@ -130,5 +148,13 @@ function alg_cache(
     rtmp0 = zero(rate_prototype)
     rtmpp = zero(rate_prototype)
     rtmpm = zero(rate_prototype)
-    return RandomTaylor15Cache(u, uprev, tmp, rtmp, rtmp0, rtmpp, rtmpm)
+    ΔW isa Number && return RandomTaylor15Cache(u, uprev, tmp, rtmp, rtmp0, rtmpp, rtmpm)
+    m = length(ΔW)
+    rdiag = [zero(rate_prototype) for _ in 1:m]
+    wtmp = collect(ΔW)
+    I2 = zeros(eltype(wtmp), m, m)
+    return RandomTaylor15VectorCache(
+        u, uprev, tmp, rtmp, rtmp0, rtmpp, rtmpm, rdiag, wtmp, zero(wtmp), zero(wtmp),
+        zero(wtmp), I2
+    )
 end
