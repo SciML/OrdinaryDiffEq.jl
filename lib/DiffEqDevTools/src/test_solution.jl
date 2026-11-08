@@ -23,17 +23,20 @@ function TestSolution(t, u, interp)
     T = eltype(eltype(u))
     N = length((size(u[1])..., length(u)))
     return TestSolution{T, N, true, typeof(t), typeof(u), typeof(interp)}(
-        t, u, interp, true,
+        t, u, interp, is_dense_interp(interp),
         ReturnCode.Success
     )
 end
 function TestSolution(interp::AbstractTimeseriesSolution)
     return TestSolution{Nothing, 0, true, Nothing, Nothing, typeof(interp)}(
         nothing, nothing,
-        interp, true,
+        interp, interp.dense,
         ReturnCode.Success
     )
 end
+
+is_dense_interp(interp) = hasproperty(interp, :dense) ? interp.dense : true
+
 function hasinterp(
         ::TestSolution{
             T, N, hi, tType, uType, iType,
