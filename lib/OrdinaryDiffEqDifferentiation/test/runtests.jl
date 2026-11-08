@@ -22,6 +22,7 @@ end
 
 # Run functional tests
 if TEST_GROUP ∉ ("QA", "Sparse", "ModelingToolkit")
+    @time @safetestset "Implicit Jacobian dispatch" include("jacobian_dispatch_tests.jl")
     @time @safetestset "DAE jacobian2W sparse" include("dae_jacobian2w_sparse_tests.jl")
     @time @safetestset "jacobian2W sparse" include("jacobian2w_sparse_tests.jl")
     @time @safetestset "prepare_user_sparsity mass matrix" include("prepare_user_sparsity_tests.jl")

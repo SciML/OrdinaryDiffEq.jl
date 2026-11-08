@@ -22,5 +22,6 @@ end
 # invalidates compiled code and causes spurious runtime allocations.
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     activate_qa_env()
+    @time @safetestset "QA" include("qa/qa.jl")
     @time @safetestset "Allocation Tests" include("qa/allocation_tests.jl")
 end
