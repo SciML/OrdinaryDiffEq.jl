@@ -95,14 +95,14 @@ function appxtrue(sol::AbstractODESolution, sol2::TestSolution)
         )
         errors = merge(errors, interp_errors)
     else
-        timeseries_analytic = sol2.u
-        if sol.t == sol2.t
-            errors[:l∞] = maximum(vecvecapply((x) -> abs.(x), sol - timeseries_analytic))
+        timeseries_analytic = _sol.u
+        if sol.t == _sol.t
+            errors[:l∞] = maximum(vecvecapply((x) -> abs.(x), sol.u - timeseries_analytic))
             errors[:l2] = sqrt(
                 recursive_mean(
                     vecvecapply(
                         (x) -> float(x) .^ 2,
-                        sol - timeseries_analytic
+                        sol.u - timeseries_analytic
                     )
                 )
             )
