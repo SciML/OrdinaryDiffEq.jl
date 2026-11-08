@@ -2,7 +2,7 @@ using SafeTestsets
 
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface"
     @time @safetestset "AD Tests" begin
         include("interface/ad.jl")
     end
@@ -98,6 +98,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     end
     @time @safetestset "Nordsieck Tests" begin
         include("integrators/nordsieck.jl")
+    end
+    @time @safetestset "FBDF Tests" begin
+        include("integrators/fbdf.jl")
     end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
