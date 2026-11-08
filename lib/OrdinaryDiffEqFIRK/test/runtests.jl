@@ -11,6 +11,7 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "FIRK Tests" include("ode_firk_tests.jl")
     @time @safetestset "FIRK Newton Convergence Tests" include("firk_newton_convergence_tests.jl")
+    @time @safetestset "FIRK Rejected Step Interpolation Tests" include("firk_rejected_step_interpolation_tests.jl")
     @time @safetestset "FIRK Time Reversal Tests" include("firk_time_reversal_tests.jl")
     @time @safetestset "FIRK Krylov Tests" include("firk_krylov_tests.jl")
     @time @safetestset "FIRK LHL Factorization Tests" include("lhl_factorization_tests.jl")
