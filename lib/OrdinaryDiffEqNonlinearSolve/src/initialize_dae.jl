@@ -596,6 +596,17 @@ function algebraic_jacobian(
     return jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
+# `abstol = nothing` makes Brown follow the solver's abstol. NonlinearSolve only takes scalar
+# tolerances, so a per-state tolerance is reduced to the tightest entry among the states the
+# nonlinear solve works on.
+function _brown_tols(alg, integrator, idxs)
+    abstol = _scalar_tol(something(alg.abstol, integrator.opts.abstol), idxs)
+    reltol = _scalar_tol(integrator.opts.reltol, idxs)
+    return abstol, reltol
+end
+_scalar_tol(tol::Number, idxs) = tol
+_scalar_tol(tol, idxs) = minimum(tol[idxs])
+
 function _initialize_dae!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator, prob::ODEProblem,
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true}
@@ -609,13 +620,15 @@ function _initialize_dae!(
     algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
 
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
+
+    abstol, reltol = _brown_tols(alg, integrator, algebraic_vars)
     tmp = get_tmp_cache(integrator)[1]
 
     f(tmp, u, p, t)
 
     tmp .= ArrayInterface.restructure(tmp, algebraic_eqs .* _vec(tmp))
 
-    check_dae_tolerance(integrator, tmp, alg.abstol, t, isinplace) && return
+    check_dae_tolerance(integrator, tmp, abstol, t, isinplace) && return
     alg_u = @view u[algebraic_vars]
 
     # These non-dual values are thus used to make the caches
@@ -662,11 +675,13 @@ function _initialize_dae!(
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
         nlequation!; jac_prototype = J
     )
-    nlprob = NonlinearProblem(nlfunc, alg_u, p)
+    # A dense copy of the algebraic variables, so the nonlinear cache has one concrete
+    # iterate type whether or not the solver aliases `u0`; the solution is written back below.
+    nlprob = NonlinearProblem(nlfunc, u[algebraic_vars], p)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
 
     nlsol = solve(
-        nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
+        nlprob, nlsolve; abstol, reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
     alg_u .= nlsol.u
@@ -692,11 +707,12 @@ function _initialize_dae!(
     update_coefficients!(M, u0, p, t)
     algebraic_vars, algebraic_eqs = find_algebraic_vars_eqs(M)
     (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
+    abstol, reltol = _brown_tols(alg, integrator, algebraic_vars)
 
     du = f(u0, p, t)
     resid = _vec(du)[algebraic_eqs]
 
-    check_dae_tolerance(integrator, resid, alg.abstol, t, isinplace) && return
+    check_dae_tolerance(integrator, resid, abstol, t, isinplace) && return
 
     isAD = _isforwarddiff_alg(integrator.alg)
     if isAD
@@ -710,13 +726,6 @@ function _initialize_dae!(
         _tmp = similar(u0)
         # This was called anyway as an argument to default_nlsolve
         nlchunk = SciMLBase.forwarddiff_chunksize(integrator.alg)
-    end
-
-    if u0 isa Number
-        # This doesn't fix static arrays!
-        u = [u0]
-    else
-        u = u0
     end
 
     nlequation = @closure (x, _) -> begin
@@ -736,15 +745,20 @@ function _initialize_dae!(
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
 
-    nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
-
-    u[algebraic_vars] .= nlsol.u
+    nlsol = solve(
+        nlprob, nlsolve; abstol, reltol,
+        verbose = integrator.opts.verbose.nonlinear_verbosity
+    )
 
     if u0 isa Number
-        # This doesn't fix static arrays!
-        integrator.u = first(u)
+        integrator.u = first(nlsol.u)
+    elseif ArrayInterface.ismutable(u0)
+        u0[algebraic_vars] .= nlsol.u
     else
-        integrator.u = u
+        u = similar(u0)
+        copyto!(u, u0)
+        u[algebraic_vars] .= nlsol.u
+        integrator.u = convert(typeof(u0), u)
     end
 
 
@@ -762,6 +776,7 @@ function _initialize_dae!(
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{true}
     )
     (; p, t, f) = integrator
+    abstol, reltol = _brown_tols(alg, integrator, :)
     differential_vars = prob.differential_vars
     u = integrator.u
     du = integrator.du
@@ -784,7 +799,7 @@ function _initialize_dae!(
     normtmp = get_tmp_cache(integrator)[1]
     f(normtmp, du, u, p, t)
 
-    if check_dae_tolerance(integrator, normtmp, alg.abstol, t, isinplace)
+    if check_dae_tolerance(integrator, normtmp, abstol, t, isinplace)
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
@@ -819,7 +834,7 @@ function _initialize_dae!(
     if nlsolve_alg !== nothing
         nlsolve = nlsolve_alg
     else
-        nlsolve = NewtonRaphson(autodiff = alg_autodiff(integrator.alg))
+        nlsolve = NewtonRaphson(autodiff = ADTypes.dense_ad(alg_autodiff(integrator.alg)))
     end
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
@@ -827,7 +842,7 @@ function _initialize_dae!(
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     nlsol = solve(
-        nlprob, nlsolve; alg.abstol, integrator.opts.reltol,
+        nlprob, nlsolve; abstol, reltol,
         verbose = integrator.opts.verbose.nonlinear_verbosity
     )
 
@@ -849,10 +864,11 @@ function _initialize_dae!(
         alg::DiffEqBase.BrownFullBasicInit, isinplace::Val{false}
     )
     (; p, t, f) = integrator
+    abstol, reltol = _brown_tols(alg, integrator, :)
     differential_vars = prob.differential_vars
 
     if check_dae_tolerance(
-            integrator, f(integrator.du, integrator.u, p, t), alg.abstol, t, isinplace
+            integrator, f(integrator.du, integrator.u, p, t), abstol, t, isinplace
         )
         return
     elseif differential_vars === nothing
@@ -885,7 +901,10 @@ function _initialize_dae!(
         SciMLBase.forwarddiff_chunksize(integrator.alg)
     )
 
-    nlsol = solve(nlprob, nlsolve, verbose = integrator.opts.verbose.nonlinear_verbosity)
+    nlsol = solve(
+        nlprob, nlsolve; abstol, reltol,
+        verbose = integrator.opts.verbose.nonlinear_verbosity
+    )
 
     du = ifelse.(differential_vars, nlsol.u, du)
     u = ifelse.(differential_vars, u, nlsol.u)
