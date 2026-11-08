@@ -3,6 +3,26 @@ using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
 using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
 import SciMLBase
 
+@testset "Default FBDF analytic accuracy" begin
+    rates = 10.0 .^ range(0, 3; length = 51)
+    rates[1:3] .= 0
+    u0 = sin.(1:51) .+ 2
+    decay!(du, u, p, t) = (du .= -p .* u; nothing)
+    prob = ODEProblem(decay!, u0, (0.0, 1.0), rates)
+    abstol, reltol = 1.0e-12, 1.0e-9
+    for alg in (DefaultODEAlgorithm(), DefaultODEAlgorithm(stiffalgfirst = true))
+        sol = solve(prob, alg; abstol, reltol, saveat = 0:0.001:1)
+        @test sol.retcode == ReturnCode.Success
+        @test 5 in sol.alg_choice
+        # Local tolerances do not bound global error; allow a factor of 100 for accumulation.
+        @test all(
+            maximum(abs.(u .- u0 .* exp.(-rates .* t))) <
+                100 * (abstol + reltol * maximum(abs, u0))
+                for (u, t) in zip(sol.u, sol.t)
+        )
+    end
+end
+
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
 prob_ode_2Dlinear = ODEProblem(f_2dlinear, rand(4, 2), (0.0, 1.0), 1.01)

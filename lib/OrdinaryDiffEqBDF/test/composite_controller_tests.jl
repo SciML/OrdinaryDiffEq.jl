@@ -37,6 +37,10 @@ end
             @test integrator.stats.nreject == reference.stats.nreject
             @test integrator.sol.t == reference.sol.t
             @test integrator.sol.u == reference.sol.u
+            @test all(
+                maximum(abs.(u .- exp.(-rates .* t))) < 1.0e-7
+                    for (u, t) in zip(integrator.sol.u, integrator.sol.t)
+            )
         end
     end
 end
