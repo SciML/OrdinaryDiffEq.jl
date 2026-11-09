@@ -334,3 +334,16 @@ end
         @test all(isapprox(sum(u[1:3]), 1; atol = 1.0e-8) for u in sol.u)
     end
 end
+
+@testset "FBDF steps by the increment it commits at large t (#4909)" begin
+    λ = 1.0e4
+    f!(du, u, p, t) = (du[1] = -λ * (u[1] - cos(t - p)); du[2] = cos(t - p) - u[2] + u[1]; nothing)
+    f(u, p, t) = [-λ * (u[1] - cos(t - p)), cos(t - p) - u[2] + u[1]]
+    for rhs in (f!, f)
+        ref = solve(ODEProblem(rhs, [1.0, 0.0], (0.0, 1.0), 0.0), FBDF(); reltol = 1.0e-10, abstol = 1.0e-12)
+        t0 = 1.0e6
+        sol = solve(ODEProblem(rhs, [1.0, 0.0], (t0, t0 + 1), t0), FBDF(); reltol = 1.0e-10, abstol = 1.0e-12)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end] ≈ ref.u[end] rtol = 1.0e-8
+    end
+end
