@@ -15,12 +15,21 @@ SciMLBase.allowscomplex(alg::GlobalRichardson) =
     SciMLBase.allowscomplex(alg.alg)
 SciMLBase.isautodifferentiable(alg::GlobalRichardson) =
     SciMLBase.isautodifferentiable(alg.alg)
+SciMLBase.forwarddiffs_model(alg::GlobalRichardson) =
+    SciMLBase.forwarddiffs_model(alg.alg)
+SciMLBase.forwarddiff_chunksize(alg::GlobalRichardson) =
+    SciMLBase.forwarddiff_chunksize(alg.alg)
+
+_without_callback(kwargs) = (; (k => v for (k, v) in pairs(kwargs) if k !== :callback)...)
 
 function SciMLBase.__solve(
         prob::Union{SciMLBase.AbstractODEProblem, SciMLBase.AbstractDAEProblem},
         alg::GlobalRichardson, args...;
         dt, kwargs...
     )
+    # The solve pipeline has already merged the problem's callback into `kwargs`. Remove it
+    # from the problem, or the inner solves merge it a second time.
+    prob = @set prob.kwargs = _without_callback(prob.kwargs)
     opt = Dict(kwargs)
     otheropts = delete!(copy(opt), :dt)
     tstops = get(opt, :tstops, range(prob.tspan[1], stop = prob.tspan[2], step = dt))
