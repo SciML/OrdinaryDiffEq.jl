@@ -461,9 +461,9 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
             # of a SavingCallback cannot take AD dual numbers.
             tied = [
                 (;
-                        callback = trial_callbacks[first(first(calls[i][2]))], labels = calls[i][2],
-                        snapshots[i].parent, snapshots[i].args,
-                    ) for i in part[2:end] if after_states[i].changed
+                    callback = trial_callbacks[first(first(calls[i][2]))], labels = calls[i][2],
+                    snapshots[i].parent, snapshots[i].args,
+                ) for i in part[2:end] if after_states[i].changed
             ]
             changed = any(i -> after_states[i].changed, part)
             next = last(part) < length(calls) && first(calls[last(part) + 1]) == tf ?
