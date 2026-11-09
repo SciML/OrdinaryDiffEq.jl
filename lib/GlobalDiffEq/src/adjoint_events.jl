@@ -183,8 +183,10 @@ function _event_saltation(
     γ = x -> _trial_condition(callback, labels, full(x), t, parent, p, sol, P)
     ∇γ = vec(_fd_jacobian(x -> [γ(x)], xm))
     h = sqrt(eps(typeof(t))) * max(1, abs(t))
-    γt = (_trial_condition(callback, labels, Pm, t + h, parent, p, sol, P) -
-        _trial_condition(callback, labels, Pm, t - h, parent, p, sol, P)) / (2h)
+    γt = (
+        _trial_condition(callback, labels, Pm, t + h, parent, p, sol, P) -
+            _trial_condition(callback, labels, Pm, t - h, parent, p, sol, P)
+    ) / (2h)
     φm = fu(full(xm))[dif]
     φp = rhs_with(p_after)(Pp)[dif]
     jump = (φp .- A * φm) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
@@ -212,15 +214,60 @@ end
 # x ↦ S x to carry the source of an earlier call at the same time through this call.
 _saltation_maps(S) = (z -> S' * z, x -> S * x)
 
-# The matrix-free form of `_event_saltation` (see `_event_vjp`), for ODEs only. With
+# The solver and the adjoint method of the algebraic projection in `_saltation_vjp`. The
+# solver comes from the SimpleNonlinearSolve extension; the DAE initialization
+# (OrdinaryDiffEqNonlinearSolve) loads SimpleNonlinearSolve. Without it, a DAE uses the
+# finite-difference saltation matrix. The adjoint method comes from the SciMLSensitivity
+# extension: the residual writes into arrays (an in-place f), so it needs ReverseDiff, not
+# the default Zygote VJP.
+function _algebraic_solver()
+    solver = Base.get_extension(@__MODULE__, :GlobalDiffEqSimpleNonlinearSolveExt)
+    adjoint = Base.get_extension(@__MODULE__, :GlobalDiffEqSciMLSensitivityExt)
+    (solver === nothing || adjoint === nothing) && return nothing
+    return (; alg = solver.algebraic_solver(), sensealg = adjoint.projection_sensealg())
+end
+
+# The algebraic projection of a semi-explicit DAE: the state with the differential
+# components x and the algebraic components z that solve f_a(x, z) = 0 with parameters q.
+# The solve is a NonlinearProblem in z with x as its parameters, so AD through it uses the
+# implicit function theorem (the rules of NonlinearSolveBase and SciMLSensitivity),
+# dz/dx = -(∂f_a/∂z)⁻¹ ∂f_a/∂x, not the Newton iterations. Newton starts from the values of
+# z0; z0 is only a start value, so AD does not go through it.
+function _algebraic_projection(f, iip, t, dif, alg_idx, solver)
+    n = length(dif) + length(alg_idx)
+    function assemble(x, z)
+        u = Vector{promote_type(eltype(x), eltype(z))}(undef, n)
+        u[dif] .= x
+        u[alg_idx] .= z
+        return u
+    end
+    return function (x, z0, q)
+        residual = (z, x) -> _rhs(f, iip, assemble(x, z), q, t)[alg_idx]
+        nlsol = SciMLBase.solve(
+            SciMLBase.NonlinearProblem(residual, SciMLBase.value.(z0), x), solver.alg;
+            solver.sensealg, abstol = 1.0e-13, reltol = 1.0e-13
+        )
+        # Under ReverseDiff, the solve returns the tracked solution vector itself.
+        if nlsol isa SciMLBase.AbstractNonlinearSolution
+            SciMLBase.successful_retcode(nlsol) ||
+                error("the algebraic projection did not converge ($(nlsol.retcode))")
+            return assemble(x, nlsol.u)
+        end
+        return assemble(x, nlsol)
+    end
+end
+
+# The matrix-free form of `_event_saltation` (see `_event_vjp`). With
 # j = (φ⁺ - A φ⁻) / (∇γ ⋅ φ⁻ + γ_t):
 #     Sᵀz = Aᵀz + ∇γ (j ⋅ z),   S x = A x + j (∇γ ⋅ x),   c = j γ₀.
 # Aᵀz uses ReverseDiff (a tracked-real state lets an affect write into it); A x uses
-# ForwardDiff. The cost per event does not grow with the state size. Returns nothing if the
-# AD fails on the user callback: the trial products below catch that here, not in the
-# adjoint solve.
+# ForwardDiff. For a DAE, the maps act on the differential components, and the algebraic
+# projection (`_algebraic_projection`) comes before the affects and after each of them, as
+# in `_event_saltation`. The cost per event does not grow with the state size. Returns
+# nothing if the AD fails on the user callback: the trial products below catch that here,
+# not in the adjoint solve.
 function _saltation_vjp(
-        callback, labels, t, p, parent, P, sol, prob;
+        callback, labels, t, p, parent, P, sol, prob, dif, alg_idx;
         u_event, p_after, u_after = nothing, u_before = nothing, args = nothing, tied = (),
         verbose = DEVerbosity()
     )
@@ -229,30 +276,39 @@ function _saltation_vjp(
     p = deepcopy(p)
     Pm = u_before === nothing ? sol(t; continuity = :left) : u_before
     Pp = u_after === nothing ? sol(t; continuity = :right) : u_after
-    affect_all = _tied_affects(callback, labels, t, parent, args, tied, sol, P, (u, q) -> u)
-    affect = x -> first(affect_all(x, p))
-    condition = (x, s) -> _trial_condition(callback, labels, x, s, parent, p, sol, P)
+    if isempty(alg_idx)
+        reinit, full, restrict, x0 = (u, q) -> u, identity, identity, Pm
+    else
+        project = _algebraic_projection(f, iip, t, dif, alg_idx, _algebraic_solver())
+        reinit = (u, q) -> project(u[dif], u[alg_idx], q)
+        full = x -> project(x, Pm[alg_idx], p)
+        restrict = u -> u[dif]
+        x0 = Pm[dif]
+    end
+    affect_all = _tied_affects(callback, labels, t, parent, args, tied, sol, P, reinit)
+    affect = x -> restrict(first(affect_all(full(x), p)))
+    condition = (u, s) -> _trial_condition(callback, labels, u, s, parent, p, sol, P)
     Atz = z -> DifferentiationInterface.gradient(
-        x -> LinearAlgebra.dot(z, affect(collect(x))), ADTypes.AutoReverseDiff(), Pm
+        x -> LinearAlgebra.dot(z, affect(collect(x))), ADTypes.AutoReverseDiff(), x0
     )
     Ax = x -> DifferentiationInterface.derivative(
-        h -> affect(Pm .+ h .* x), ADTypes.AutoForwardDiff(), zero(t)
+        h -> affect(x0 .+ h .* x), ADTypes.AutoForwardDiff(), zero(t)
     )
     return try
-        Atz(one.(Pm))
-        Ax(one.(Pm))
-        callback isa SciMLBase.DiscreteCallback && return Atz, Ax, zero(Pm)
-        φm = _rhs(f, iip, Pm, p, t)
-        φp = _rhs(f, iip, Pp, p_after, t)
+        Atz(one.(x0))
+        Ax(one.(x0))
+        callback isa SciMLBase.DiscreteCallback && return Atz, Ax, zero(x0)
+        φm = restrict(_rhs(f, iip, full(x0), p, t))
+        φp = restrict(_rhs(f, iip, Pp, p_after, t))
         ∇γ = DifferentiationInterface.gradient(
-            x -> condition(collect(x), t), ADTypes.AutoReverseDiff(), Pm
+            x -> condition(full(collect(x)), t), ADTypes.AutoReverseDiff(), x0
         )
         h = sqrt(eps(typeof(t))) * max(1, abs(t))
         γt = (condition(Pm, t + h) - condition(Pm, t - h)) / (2h)
         j = (φp .- Ax(φm)) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
-        all(isfinite, j) || return (_grazing_message(t, verbose); (Atz, Ax, zero(Pm)))
+        all(isfinite, j) || return (_grazing_message(t, verbose); (Atz, Ax, zero(x0)))
         (z -> Atz(z) .+ ∇γ .* LinearAlgebra.dot(j, z)),
-            (x -> Ax(x) .+ j .* LinearAlgebra.dot(∇γ, x)), j .* condition(u_event, t)
+            (x -> Ax(x) .+ j .* LinearAlgebra.dot(∇γ, x)), j .* condition(full(restrict(u_event)), t)
     catch err
         err isa InterruptException && rethrow()
         nothing
@@ -405,21 +461,21 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
             # of a SavingCallback cannot take AD dual numbers.
             tied = [
                 (;
-                    callback = trial_callbacks[first(first(calls[i][2]))], labels = calls[i][2],
-                    snapshots[i].parent, snapshots[i].args,
-                ) for i in part[2:end] if after_states[i].changed
+                        callback = trial_callbacks[first(first(calls[i][2]))], labels = calls[i][2],
+                        snapshots[i].parent, snapshots[i].args,
+                    ) for i in part[2:end] if after_states[i].changed
             ]
             changed = any(i -> after_states[i].changed, part)
             next = last(part) < length(calls) && first(calls[last(part) + 1]) == tf ?
                 snapshots[last(part) + 1] : nothing
             p_after = next === nothing ? _parameters_at(params, tf, :right) : next.p
             u_after = next === nothing ? nothing : next.u
-            vjp = event_vjp && isempty(alg_idx) && changed
+            vjp = event_vjp && changed && (isempty(alg_idx) || _algebraic_solver() !== nothing)
             maps = if !changed
                 identity, identity, zero(u_f[dif])
             elseif vjp
                 _saltation_vjp(
-                    callback, labels, tf, p, parent, P, sol, prob;
+                    callback, labels, tf, p, parent, P, sol, prob, dif, alg_idx;
                     u_event = u_f, p_after, u_after, u_before, args, tied, verbose
                 )
             else
@@ -428,7 +484,8 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
             if maps === nothing
                 vjp && @SciMLMessage(
                     "GlobalAdjoint uses the finite-difference saltation matrix at the event at " *
-                        "t = $tf: ReverseDiff and ForwardDiff cannot differentiate the callback. " *
+                        "t = $tf: ReverseDiff and ForwardDiff cannot differentiate the callback (or, for a " *
+                        "DAE, the algebraic projection). " *
                         "Set `autojacvec = false` in the `sensealg` to use finite differences " *
                         "without this warning.",
                     verbose, :global_error_ad_fallback, maxlog = 1

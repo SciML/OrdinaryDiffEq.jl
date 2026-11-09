@@ -415,6 +415,57 @@ end
     @test fallback ≈ estimate(rigid, false) rtol = 1.0e-6
 end
 
+@testset "GlobalAdjoint: VJP through the events of a DAE" begin
+    # The VJP form goes through the algebraic projection after each affect with the implicit
+    # function theorem. It agrees with the finite-difference saltation matrix. Without a
+    # warning, no event fell back to finite differences.
+    @test GlobalDiffEq._algebraic_solver() !== nothing
+    estimate(prob, autojacvec) = adjoint_error_estimate(
+        prob, GlobalAdjoint(
+            Rodas5P(); samples = 1, adjoint_alg = fd, rng = Xoshiro(6),
+            sensealg = InterpolatingAdjoint(; autojacvec)
+        );
+        abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    problems = (
+        # A reset of x, with the reinitialization of z.
+        cubic_dae(
+            [2.0, 1.0], (0.0, 3.0);
+            callback = ContinuousCallback(
+                below_half, nothing, i -> (i.u[1] = 2.0; nothing); initializealg = BrownFullBasicInit()
+            )
+        ),
+        # The rate changes at the event.
+        cubic_dae(
+            [2.0, cubic_z(2.0)], (0.0, 2.0);
+            callback = ContinuousCallback(
+                (u, t, i) -> u[1] - 1.0, i -> (i.p[1] = 3.0; nothing); initializealg = BrownFullBasicInit()
+            )
+        ),
+        # Two calls at one time: the second sees the state after the first.
+        cubic_dae(
+            [2.0, cubic_z(2.0)], (0.0, 2.0);
+            callback = CallbackSet(
+                DiscreteCallback((u, t, i) -> t == 1.0, double!; initializealg = BrownFullBasicInit()),
+                DiscreteCallback(
+                    (u, t, i) -> t == 1.0, i -> (i.p[1] = 3.0; nothing); initializealg = BrownFullBasicInit()
+                )
+            ), tstops = [1.0]
+        ),
+        # The affect reads the algebraic variable, so A contains dz/dx.
+        cubic_dae(
+            [2.0, cubic_z(2.0)], (0.0, 2.0);
+            callback = ContinuousCallback(
+                below_half, i -> (i.u[1] = 1.0 + i.u[2]; nothing); initializealg = BrownFullBasicInit()
+            )
+        ),
+    )
+    for prob in problems
+        vjp = @test_logs min_level = Base.CoreLogging.Warn estimate(prob, ReverseDiffVJP())
+        @test relerr(vjp, estimate(prob, false)) < 1.0e-5
+    end
+end
+
 @testset "GlobalAdjoint: affect arguments, callback state, initialization, default VJP" begin
     # The affect of a VectorContinuousCallback gets the fired components with their signs,
     # as in the forward solve.

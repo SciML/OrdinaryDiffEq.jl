@@ -25,9 +25,11 @@ SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 
 [weakdeps]
 SciMLSensitivity = "1ed8b502-d754-442c-8d5d-10ac956f44a1"
+SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
 
 [extensions]
 GlobalDiffEqSciMLSensitivityExt = "SciMLSensitivity"
+GlobalDiffEqSimpleNonlinearSolveExt = "SimpleNonlinearSolve"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
@@ -61,6 +63,7 @@ SciMLBase = "3.49"
 SciMLLogging = "2"
 SciMLSensitivity = "7.116"
 SciMLTesting = "2.4"
+SimpleNonlinearSolve = "2.11.1"
 SymbolicIndexingInterface = "0.3.43"
 Test = "1"
 julia = "1.10"

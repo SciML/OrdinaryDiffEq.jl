@@ -116,9 +116,13 @@ As in SciMLSensitivity's callback adjoints, the `autojacvec` of the `sensealg` s
 `Sᵀλ` is computed. With a VJP choice (the default `ReverseDiffVJP()`), ReverseDiff and
 ForwardDiff products through the affect and the condition give `Sᵀλ` without `S`. The cost
 per event then does not grow with the number of states `n`. An event where the affect or
-the condition is not differentiable uses finite differences, with a warning. With
-`autojacvec = false`, and for every event of a DAE, finite differences of the callbacks
-give `S`: about `n` runs of the affect and the condition per event, and an `n × n` matrix.
+the condition is not differentiable uses finite differences, with a warning. For a DAE,
+the products also go through the algebraic projection after each affect, as a nonlinear
+solve that AD differentiates with the implicit function theorem. This needs
+SimpleNonlinearSolve, which the DAE initialization of OrdinaryDiffEqNonlinearSolve loads;
+without it, a DAE uses finite differences. With `autojacvec = false`, finite differences
+of the callbacks give `S`: about `n` runs of the affect and the condition per event, and an
+`n × n` matrix.
 
 An affect can change the parameters; the adjoint uses the forward parameters on each
 interval between events. As in SciMLSensitivity, an affect must be a function of the

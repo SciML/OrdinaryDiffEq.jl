@@ -5,6 +5,11 @@ import Accessors: @set
 using SciMLLogging: @SciMLMessage
 import LinearAlgebra: dot
 
+# The adjoint method of the algebraic projection in the DAE saltation products
+# (`GlobalDiffEq._algebraic_solver`).
+projection_sensealg() =
+    SciMLSensitivity.SteadyStateAdjoint(autojacvec = SciMLSensitivity.ReverseDiffVJP())
+
 # The adjoint error identity of GlobalAdjoint. For the dual -Mᵀ ż = Jᵀ z along the forward
 # solution, with z(T) = v,
 #
@@ -155,8 +160,8 @@ function GlobalDiffEq._adjoint_defect_projection(
     # of F; with `autodiff = true` the view gives the same result.
     F! = (du, u, εp, t) -> (du .= F(u, εp, t); nothing)
     forced_inplace = isempty(alg_idx) ? nothing : SciMLBase.ODEProblem(
-        SciMLBase.ODEFunction{true}(F!; mass_matrix = M), forced.u0, forced.tspan, forced.p
-    )
+            SciMLBase.ODEFunction{true}(F!; mass_matrix = M), forced.u0, forced.tspan, forced.p
+        )
     # `before_entry` holds the event calls at the terminal time that act before the saved
     # entry. With none, the entry is the state on the left side. Otherwise the dual first
     # crosses these calls in reverse order, with their pair terms, as the bridge does. The
