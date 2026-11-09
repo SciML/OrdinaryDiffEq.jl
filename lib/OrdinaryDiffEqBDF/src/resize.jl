@@ -43,21 +43,21 @@ function resize_non_user_cache!(
     return nothing
 end
 
-# `FBDFCache` holds no `u`/`uprev` and keeps its history in vectors of state-sized
-# arrays, none of which `full_cache` reaches. `deleteat!`/`addat!` are not idempotent, so
-# each array is edited once and arrays the generic pass already edited are skipped.
+# FBDF histories contain state-sized arrays that `full_cache` does not reach.
 function edit_fbdf_state!(edit!, integrator, cache)
     seen = Any[integrator.fsalfirst, integrator.fsallast]
     append!(seen, full_cache(integrator))
+    # Scratch buffers carry the new length before any composite hook edits shared state.
+    target_length = length(cache.u₀)
     for a in Iterators.flatten(
-            (
-                (integrator.u, integrator.uprev),
-                cache.u_history, cache.u_corrector, cache.dense,
-            )
+            ((integrator.u, integrator.uprev), cache.u_history, cache.u_corrector, cache.dense)
         )
         (a isa AbstractArray && ArrayInterface.ismutable(a)) || continue
         any(s -> s === a, seen) && continue
         push!(seen, a)
+        if (a === integrator.u || a === integrator.uprev) && length(a) == target_length
+            continue
+        end
         edit!(a)
     end
     return nothing
