@@ -137,7 +137,12 @@ function nlsolve!(
     apply_predictor!(nlsolver, integrator)
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence
-    η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
+    new_W = get_new_W!(nlsolver)
+    η = new_W ? initial_η(nlsolver, integrator) : nlsolver.ηold
+    # Restart the convergence rate on a new W, as CVODE does.
+    if new_W && isnewton(nlsolver) && !always_new && hasfield(NL, :prev_θ)
+        nlsolver.prev_θ = one(nlsolver.prev_θ)
+    end
 
     ndz = one(η)
     for iter in 1:maxiters
