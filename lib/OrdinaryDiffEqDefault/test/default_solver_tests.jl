@@ -29,6 +29,21 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1.0e-10)
 @test all(isequal(2), sol.alg_choice)
 @test sol(0.5) == only(sol([0.5]).u) == vernsol(0.5)
 
+@testset "Identity mass matrix given as a matrix" begin
+    f!(du, u, p, t) = (du[1] = u[2]; du[2] = -u[1]; nothing)
+    for (reltol, choice, atol) in ((1.0e-3, 1, 1.0e-4), (1.0e-10, 2, 1.0e-8)),
+            mm in (Matrix(1.0I, 2, 2), Diagonal(ones(2)))
+
+        ref = solve(ODEProblem(f!, [1.0, 0.0], (0.0, 5.0)); reltol)
+        prob = ODEProblem(ODEFunction(f!; mass_matrix = mm), [1.0, 0.0], (0.0, 5.0))
+        sol = solve(prob; reltol)
+        @test all(isequal(choice), sol.alg_choice)
+        @test sol(2.3) ≈ ref(2.3)
+        @test sol(2.3) ≈ [cos(2.3), -sin(2.3)] atol = atol
+        @test sol(2.3, Val{1}) ≈ [-sin(2.3), -cos(2.3)] atol = atol
+    end
+end
+
 sol_implicit = @inferred solve(prob_ode_2Dlinear, DefaultImplicitODEAlgorithm(), reltol = 1.0e-10)
 @test all(isequal(4), sol_implicit.alg_choice)
 @test sol(0.5) ≈ sol_implicit(0.5) rtol = 1.0e-10 atol = 1.0e-6
