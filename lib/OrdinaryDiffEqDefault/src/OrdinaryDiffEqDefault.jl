@@ -125,7 +125,7 @@ PrecompileTools.@compile_workload begin
         solve(dae_prob)
     end
 
-    if Preferences.@load_preference("PrecompileAutoDePSpecialize", true)
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
         push!(
             parameter_generic_prob_list,
             ODEProblem{true, SciMLBase.AutoDePSpecialize}(
