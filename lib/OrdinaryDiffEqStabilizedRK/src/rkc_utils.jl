@@ -1,6 +1,6 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-const RKCAlgs = Union{RKC, TSRKC2, TSRKC3, ESERK4, ESERK5, SERK2, ROCK2, ROCK4, RKL1, RKL2, RKG1, RKG2}
+const RKCAlgs = Union{RKC, TSRKC2, TSRKC3, ESERK4, ESERK5, SERK2, ROCK2, ROCK4, RKL1, RKL2, RKG1, RKG2, DUMKA3}
 
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     isfirst = integrator.iter == 1 || integrator.derivative_discontinuity
@@ -278,5 +278,24 @@ function choosedeg_SERK!(integrator, cache::T) where {T}
     if integrator.alg isa SERK2
         cache.internal_deg = cache.mdeg ÷ 10
     end
+    return nothing
+end
+
+"""
+    choosedeg_DUMKA3!(integrator, cache) -> nothing
+
+Set `deg_index` to the smallest allowed tabulated DUMKA3 degree whose real stability
+interval covers `abs(dt) * eigen_est`, or to the largest allowed degree if none does
+(`dtnew_modification` keeps dt within that degree's interval).
+"""
+function choosedeg_DUMKA3!(integrator, cache::T) where {T}
+    isconst = T <: OrdinaryDiffEqConstantCache
+    isconst || (cache = cache.constantcache)
+    z = abs(integrator.dt) * integrator.eigen_est
+    i = cache.min_index
+    while i < cache.max_index && z > DUMKA3_stab_reg[i]
+        i += 1
+    end
+    cache.deg_index = i
     return nothing
 end

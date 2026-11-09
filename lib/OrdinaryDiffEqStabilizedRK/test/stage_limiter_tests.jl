@@ -4,7 +4,7 @@ using SciMLBase: DEIntegrator, ReturnCode
 
 const STABILIZED_ALGS = (
     ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
-    RKL1, RKL2, RKG1, RKG2,
+    RKL1, RKL2, RKG1, RKG2, DUMKA3,
 )
 
 @testset "has_stage_limiter opt-in" begin
