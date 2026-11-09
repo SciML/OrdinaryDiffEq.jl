@@ -585,6 +585,7 @@ end
 # `tmp = zn[1]/l1` and `u₀ = ypred`; then `cj = l1/dt`, exactly IDA's leading
 # coefficient.
 function initialize!(integrator, cache::DNordsieckBDFCache)
+    reset_nordsieck_history!(cache)
     integrator.kshortsize = cache.max_order_int + 1
     resize!(integrator.k, integrator.kshortsize)
     @inbounds for i in 1:(integrator.kshortsize)
@@ -595,6 +596,7 @@ function initialize!(integrator, cache::DNordsieckBDFCache)
 end
 
 function initialize!(integrator, cache::DNordsieckBDFConstantCache)
+    reset_nordsieck_history!(cache)
     integrator.kshortsize = cache.max_order_int + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     @inbounds for i in 1:(integrator.kshortsize)
