@@ -100,15 +100,16 @@ Gauss–Kronrod quadrature of the error integral on each adjoint step. If Revers
 cannot run the model, it uses a numerical VJP with a warning, as `adjoint_sensitivities`
 does. The `sensealg` also selects the quadrature:
 
-  - `GaussKronrodAdjoint(...)`: Gauss–Kronrod on each adjoint step, with subdivision.
-  - `GaussAdjoint(...)`: Gauss–Legendre on each adjoint step, a little cheaper. The rule has
-    `(p + 1) ÷ 2` points for an `adjoint_alg` of order `p`, so it needs an adjoint solver
-    of order 5 or higher: with a low-order solver (for example Rosenbrock23, the midpoint
-    rule), the estimate can be wrong by much more than the tolerance.
-  - `InterpolatingAdjoint(...)`: the integral is a component of the adjoint state, so the
-    error control of the adjoint solve applies to it. Its absolute accuracy is then about
-    `adjoint_abstol`, and it is less accurate for global errors below about
-    `1e4 * adjoint_abstol`.
+  - `GaussKronrodAdjoint(...)`: Gauss–Kronrod on each adjoint step (DiffEqCallbacks'
+    `IntegratingGKSumCallback`).
+  - `GaussAdjoint(...)`: Gauss–Legendre on each adjoint step (`IntegratingSumCallback`), a
+    little cheaper. The rule has `(p + 1) ÷ 2` points for `p = alg_order(adjoint_alg)`, so
+    it needs an adjoint solver of a fixed order of 5 or higher; otherwise (a lower order, or
+    a variable-order solver such as FBDF, which reports order 1) it gives an `ArgumentError`
+    before the forward solve. With Rosenbrock23 (the midpoint rule), the
+    estimate can be wrong by much more than the tolerance.
+  - `InterpolatingAdjoint(...)`: the same as `GaussKronrodAdjoint` with the same settings.
+    Its dual is the same, and its own parameter integral is not used.
 
 The adjoint steps stop at each step end of the forward solve, so the integrand is smooth on
 each adjoint step and the fixed quadrature rules are accurate relative to the integral.
@@ -149,11 +150,8 @@ Like the rest of the estimate, this is a linearization at the forward solution. 
 that the true solution has the same sequence of events, so it does not see an event that
 the forward solve misses or adds. For a DAE, only the differential components of the error
 enter the identity. The constraint at the final time moves an algebraic component of a
-projection direction to the differential ones. With a Gauss adjoint, the adjoint problem
-has the exact Jacobian, so any implicit `adjoint_alg` works for a DAE. With an
-`InterpolatingAdjoint`, the adjoint solver of a DAE needs a Jacobian that does not
-differentiate through the ReverseDiff adjoint (for example
-`Rodas5P(autodiff = AutoFiniteDiff())` as `adjoint_alg`).
+projection direction to the differential ones. The adjoint problem has the exact
+Jacobian, so any implicit `adjoint_alg` works for a DAE.
 
 Events, DAEs and the jump terms need a `GaussKronrodAdjoint` (the default), `GaussAdjoint`
 or `InterpolatingAdjoint` `sensealg` without `checkpointing`, because the adjoint must
@@ -251,8 +249,13 @@ function _event_vjp(alg::GlobalAdjoint)
 end
 
 # Only the default, GaussAdjoint, GaussKronrodAdjoint and InterpolatingAdjoint (methods in
-# the extension) support DAEs and events that change the state. The others use `adjoint_sensitivities` without event terms.
+# the extension) support DAEs and events that change the state. The others use
+# `adjoint_sensitivities` without event terms.
 _supports_events(sensealg) = sensealg === nothing
+
+# A check of the sensealg against the adjoint solver, before the forward solve. The
+# extension adds a method for GaussAdjoint.
+_check_sensealg(sensealg, adjoint_alg) = nothing
 
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
 SciMLBase.allowscomplex(::GlobalAdjoint) = false

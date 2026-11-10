@@ -417,19 +417,30 @@ end
 end
 
 @testset "GlobalAdjoint: the quadrature of the error integral" begin
-    # The sensealg selects the quadrature: Gauss-Kronrod (the default), Gauss-Legendre, or
-    # the integral as a component of the InterpolatingAdjoint state. All three estimate the
-    # error; the two Gauss rules also do so for a small error, relative to its size. A fixed
-    # rng gives the same directions in each estimate.
+    # The sensealg selects the quadrature of the error integral: Gauss-Kronrod (the
+    # default) or Gauss-Legendre. An InterpolatingAdjoint is the GaussKronrodAdjoint with
+    # the same settings. All estimate the error relative to its size, also for a small
+    # error, with events and for a DAE. A fixed rng gives the same directions in each
+    # estimate.
     lv = lotka_volterra_problem()
     lvref = solve(lv, Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
     small = ODEProblem(decay, [1.0], (0.0, 3.0), [1.0])
-    for (prob, alg, tol, exact) in (
-            (lv, Tsit5(), 1.0e-6, lvref), (small, Rosenbrock32(), 1.0e-8, t -> [exp(-t)]),
+    dae = cubic_dae(
+        [2.0, 1.0], (0.0, 5.0);
+        callback = ContinuousCallback(
+            (u, t, i) -> u[1] - 0.5, nothing, i -> (i.u[1] = 2.0; nothing);
+            initializealg = BrownFullBasicInit()
+        )
+    )
+    dae_exact = t -> (x = 2exp(-(t - fld(t, log(4.0)) * log(4.0))); [x, cubic_z(x)])
+    for (prob, alg, adjoint_alg, tol, exact) in (
+            (lv, Tsit5(), Tsit5(), 1.0e-6, lvref),
+            (small, Rosenbrock32(), Tsit5(), 1.0e-8, t -> [exp(-t)]),
+            (dae, Rodas5P(), fd, 1.0e-6, dae_exact),
         )
         sol = solve(deepcopy(prob), alg; abstol = tol, reltol = tol)
         actual = norm(exact(sol.t[end]) .- sol.u[end])
-        estimate(sensealg, adjoint_alg = Tsit5()) = adjoint_error_estimate(
+        estimate(sensealg, adjoint_alg = adjoint_alg) = adjoint_error_estimate(
             prob, GlobalAdjoint(alg; samples = length(prob.u0), adjoint_alg, rng = Xoshiro(8), sensealg);
             abstol = tol, reltol = tol
         )
@@ -437,11 +448,15 @@ end
         @test kronrod == estimate(GaussKronrodAdjoint(autojacvec = ReverseDiffVJP()))
         @test relerr(kronrod, actual) < 1.0e-3
         @test relerr(estimate(GaussAdjoint(autojacvec = ReverseDiffVJP())), kronrod) < 1.0e-4
-        @test relerr(estimate(InterpolatingAdjoint(autojacvec = ReverseDiffVJP())), actual) < 1.0e-2
-        # With the forward solver as adjoint solver (the default `adjoint_alg`), Gauss-Kronrod
-        # stays accurate also for a solver of low order.
+        @test estimate(InterpolatingAdjoint(autojacvec = ReverseDiffVJP())) == kronrod
+        # With the forward solver as adjoint solver (the default `adjoint_alg`),
+        # Gauss-Kronrod stays accurate also for a solver of low order.
         @test relerr(estimate(nothing, alg), kronrod) < 1.0e-4
     end
+    # Gauss-Legendre with an adjoint solver of order below 5 is too coarse, so it fails.
+    @test_throws ArgumentError adjoint_error_estimate(
+        small, GlobalAdjoint(Rosenbrock32(); sensealg = GaussAdjoint(autojacvec = ReverseDiffVJP()))
+    )
 end
 
 @testset "GlobalAdjoint: VJP through the events of a DAE" begin

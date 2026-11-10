@@ -350,12 +350,13 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     inner_alg = alg.alg
     event_vjp = _event_vjp(alg)
     supports_events = _supports_events(alg.sensealg)
+    _check_sensealg(alg.sensealg, alg.adjoint_alg)
     verbose = _verbosity(kwargs)
     dif, alg_idx = _semiexplicit_components(prob, name)
     # Without event support (a sensealg other than the Gauss adjoints and
-    # InterpolatingAdjoint), fail before the
-    # solve for a DAE, and at the first call that changes u or p. A call that changes
-    # nothing (such as a SavingCallback) is not an event.
+    # InterpolatingAdjoint), fail before the solve for a DAE, and at the first call that
+    # changes u or p. A call that changes nothing (such as a SavingCallback) is not an
+    # event.
     supports_events || isempty(alg_idx) || throw(_unsupported_events_error())
     callback_list = _callback_list(_user_callbacks(prob, kwargs))
     events = Tuple{Int, Int}[]

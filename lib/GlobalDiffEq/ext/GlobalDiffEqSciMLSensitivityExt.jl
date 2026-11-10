@@ -46,49 +46,49 @@ function _terminal_value(v, A, fa, dif, alg_idx)
     return vterm, -dot(w, fa[alg_idx])
 end
 
-# One backward solve of the dual along `forced_sol` (whose problem has the forced right-hand
-# side), with the events of the forward solve. With a GaussAdjoint or GaussKronrodAdjoint
-# `sensealg`, the state is z only, and a quadrature callback integrates zᵀ r on each adjoint
-# step. The adjoint steps stop at each knot, so zᵀ r is smooth on each step, and the fixed
-# rule is accurate relative to the integral. The quadrature callback comes before the
-# bridge, so it reads each step before the bridge changes z. With an InterpolatingAdjoint,
-# the integral is the last component of the adjoint state, and the error control of the
-# solve applies to it (an absolute accuracy of about the abstol). At each knot before the
-# terminal time, a
-# callback records z and skips one ulp. The next step then reads the forward state and P on
-# its own side, and an FSAL solver does not reuse the evaluation at the knot. At the end b
-# of each event window, the callback records the pair term, applies z_d ← Sᵀ z_d, and skips
-# to just before a, so the dual never enters the window. If the new time is also a stop, the
-# same call handles it. For a DAE, the callback initialization makes z_a consistent.
+# One backward solve of the dual along `forced_sol` (whose problem has the forced
+# right-hand side), with the events of the forward solve. `sensealg` is a Gauss adjoint, so
+# the adjoint state is λ only. A quadrature callback of DiffEqCallbacks integrates -λᵀ r on
+# each adjoint step: Gauss–Legendre for a GaussAdjoint, Gauss–Kronrod for a
+# GaussKronrodAdjoint. The adjoint steps stop at each knot, so the integrand is smooth on
+# each step and the quadrature is accurate relative to the integral. The callbacks act in
+# the order of SciMLSensitivity's Gauss adjoints: the quadrature reads each step before the
+# terminal cost and the bridge change the state.
+#
+# At each knot before the terminal time, the bridge records z and skips one ulp. The next
+# step then reads the forward state and P on its own side, and an FSAL solver does not reuse
+# the evaluation at the knot. At the end b of each event window, the bridge records the pair
+# term, applies z_d ← Sᵀ z_d, and skips to just before a, so the dual never enters the
+# window. If the new time is also a stop, the same call handles it. For a DAE, the callback
+# initialization makes z_a consistent.
 function _bridged_adjoint(
         forced_sol, sensealg, adjoint_alg, vterm, terminal_time;
         M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol, defect
     )
     n = length(vterm)
     isdae = !isempty(alg_idx)
+    T = eltype(vterm)
     terminal! = (out, u, p, t, i) -> (copyto!(out, vterm); nothing)
-    gauss = sensealg isa GaussAdjoints
-    if gauss
-        # The integrand is -λᵀ r with r = ∂F/∂ε exact (the sign of SciMLSensitivity's
-        # adjoint convention). SciMLSensitivity's own integrand (`GaussIntegrand`) gets
-        # λᵀ ∂F/∂ε as a VJP; with `autojacvec = false` that is a finite difference in ε,
-        # which loses the small r against the large f(u). The method of `ODEAdjointProblem`
-        # for a Gauss adjoint still needs a `GaussIntegrand`.
-        integrand = SciMLSensitivity.GaussIntegrand(forced_sol, sensealg, forced_sol.t, nothing)
-        quad_values = DiffEqCallbacks.IntegrandValuesSum(zeros(eltype(vterm), 1))
-        quad_f = (out, u, t, integrator) -> (out[1] = -dot(u, defect(t)); nothing)
-        quad = sensealg isa SciMLSensitivity.GaussAdjoint ?
-            DiffEqCallbacks.IntegratingSumCallback(quad_f, quad_values, zeros(eltype(vterm), 1); integrand_inplace = true) :
-            DiffEqCallbacks.IntegratingGKSumCallback(quad_f, quad_values, zeros(eltype(vterm), 1); integrand_inplace = true)
-        aprob, _, _ = SciMLSensitivity.ODEAdjointProblem(
-            forced_sol, sensealg, adjoint_alg, integrand, quad, [terminal_time], terminal!,
-            nothing, nothing, nothing, nothing, Val(false); abstol, reltol
-        )
-        extra = (quad,)
-    else
-        aprob = SciMLSensitivity.ODEAdjointProblem(forced_sol, sensealg, adjoint_alg, [terminal_time], terminal!)
-        extra = ()
-    end
+    # The integrand uses the exact r = ∂F/∂ε, with the sign of SciMLSensitivity's adjoint
+    # convention. A VJP through F (SciMLSensitivity's `GaussIntegrand`) is a finite
+    # difference in ε for `autojacvec = false`, which loses the small r against f(u).
+    quad_values = DiffEqCallbacks.IntegrandValuesSum(zeros(T, 1))
+    quad_f = (out, u, t, integrator) -> (out[1] = -dot(u, defect(t)); nothing)
+    # The Gauss–Kronrod callback keeps its default absolute subdivision tolerance (1e-7).
+    # Below it, it is a fixed Kronrod rule, which the validation catalog shows to be
+    # sufficient; a tolerance near the roundoff of the integrand would never stop.
+    quad = sensealg isa SciMLSensitivity.GaussAdjoint ?
+        DiffEqCallbacks.IntegratingSumCallback(quad_f, quad_values, zeros(T, 1); integrand_inplace = true) :
+        DiffEqCallbacks.IntegratingGKSumCallback(quad_f, quad_values, zeros(T, 1); integrand_inplace = true)
+    # The Gauss method of `ODEAdjointProblem` needs a `GaussIntegrand`, but only uses it for
+    # checkpointing. `autojacvec = false` builds it without a ReverseDiff tape of f.
+    integrand = SciMLSensitivity.GaussIntegrand(
+        forced_sol, SciMLSensitivity.GaussAdjoint(autojacvec = false), forced_sol.t, nothing
+    )
+    aprob, cost, _ = SciMLSensitivity.ODEAdjointProblem(
+        forced_sol, sensealg, adjoint_alg, integrand, quad, [terminal_time], terminal!,
+        nothing, nothing, nothing, nothing, Val(true); abstol, reltol
+    )
     # The windows are sorted and do not overlap, so a binary search finds the window of a
     # time. A linear search costs O(N²) for a callback that acts at each step.
     starts = [w.a for w in windows]
@@ -98,7 +98,7 @@ function _bridged_adjoint(
     ends = [w.b for w in active]
     stops = sort(unique([outer_knots; ends]))
     z_at_knots = Dict{eltype(knots), typeof(vterm)}()
-    pair_terms = eltype(vterm)[]
+    pair_terms = T[]
     # Handle the stop `t` (knot record and bridges); return the time to skip to, or nothing.
     cross! = function (integrator, t)
         target = nothing
@@ -130,13 +130,13 @@ function _bridged_adjoint(
         initializealg = isdae ? GlobalDiffEq.BrownFullBasicInit(abstol = reinit_abstol) : SciMLBase.NoInit()
     )
     asol = SciMLBase.solve(
-        aprob, adjoint_alg; callback = SciMLBase.CallbackSet(extra..., bridge), tstops = stops,
+        aprob, adjoint_alg; callback = SciMLBase.CallbackSet(quad, cost, bridge), tstops = stops,
         save_everystep = false, save_start = false, save_end = true, abstol, reltol
     )
     SciMLBase.successful_retcode(asol) || throw(
         ErrorException("the adjoint solve failed with retcode $(asol.retcode) at t = $(asol.t[end])")
     )
-    integral = gauss ? quad_values.integrand[1] : asol.u[end][end]
+    integral = quad_values.integrand[1]
     knot_terms = [-dot(z_at_knots[t][dif], (M * J)[dif]) for (t, J) in zip(knots, jumps) if t in keys(z_at_knots)]
     return (; integral, knot_terms, pair_terms, z0 = asol.u[end][1:n])
 end
@@ -168,6 +168,7 @@ function GlobalDiffEq._adjoint_defect_projection(
                 "adjoint must follow the stored forward solution"
         )
     )
+    sensealg isa SciMLSensitivity.InterpolatingAdjoint && (sensealg = _as_gauss_kronrod(sensealg))
     f = SciMLBase.unwrapped_f(prob.f)
     iip = SciMLBase.isinplace(prob)
     # `_semiexplicit_components` allows only the identity as a UniformScaling mass matrix,
@@ -261,6 +262,36 @@ function GlobalDiffEq._adjoint_defect_projection(
         fallback === nothing && rethrow()
         fallback
     end
+end
+
+# The dual of an InterpolatingAdjoint is the dual of the Gauss adjoints; only its own
+# parameter integral differs, and GlobalAdjoint does not use it. So it maps to the
+# GaussKronrodAdjoint with the same settings, which has no such state component.
+_as_gauss_kronrod(s::SciMLSensitivity.InterpolatingAdjoint{CS, AD, FDT}) where {CS, AD, FDT} =
+    SciMLSensitivity.GaussKronrodAdjoint(;
+    chunk_size = CS, autodiff = AD, diff_type = FDT, autojacvec = s.autojacvec,
+    checkpointing = s.checkpointing
+)
+
+# DiffEqCallbacks' `IntegratingSumCallback` (GaussAdjoint) uses (p + 1) ÷ 2 Gauss points
+# for p = `alg_order(adjoint_alg)`. The integrand has much cancellation inside a step, so
+# below p = 5 the rule is too coarse: with Rosenbrock23 (the midpoint rule), the estimate
+# was wrong by up to 100 %. A variable-order solver (FBDF, QNDF) reports p = 1, so the
+# callback uses the midpoint rule for it too. Checked before the forward solve; a solver
+# without `alg_order` fails here as it would in the callback.
+function GlobalDiffEq._check_sensealg(::SciMLSensitivity.GaussAdjoint, adjoint_alg)
+    order = SciMLBase.alg_order(adjoint_alg)
+    order >= 5 && return nothing
+    throw(
+        ArgumentError(
+            "GlobalAdjoint: a GaussAdjoint sensealg integrates the error with " *
+                "DiffEqCallbacks' IntegratingSumCallback, which uses (p + 1) ÷ 2 Gauss points " *
+                "for p = alg_order(adjoint_alg), so it needs an `adjoint_alg` of a fixed order " *
+                "of 5 or higher; $(nameof(typeof(adjoint_alg))) has `alg_order` $order (a " *
+                "variable-order solver reports its lowest order). Use GaussKronrodAdjoint (the " *
+                "default) or another `adjoint_alg`."
+        )
+    )
 end
 
 GlobalDiffEq._supports_events(::SciMLSensitivity.InterpolatingAdjoint) = true
