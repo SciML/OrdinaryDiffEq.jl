@@ -1,9 +1,12 @@
 module GlobalDiffEqSciMLSensitivityExt
 
-import GlobalDiffEq, LinearAlgebra, SciMLBase, SciMLSensitivity
+import DiffEqCallbacks, GlobalDiffEq, LinearAlgebra, SciMLBase, SciMLSensitivity
 import Accessors: @set
 using SciMLLogging: @SciMLMessage
 import LinearAlgebra: dot
+
+# The adjoint methods that integrate the error integral with a quadrature callback.
+const GaussAdjoints = Union{SciMLSensitivity.GaussAdjoint, SciMLSensitivity.GaussKronrodAdjoint}
 
 # The adjoint method of the algebraic projection in the DAE saltation products
 # (`GlobalDiffEq._algebraic_solver`).
@@ -44,7 +47,14 @@ function _terminal_value(v, A, fa, dif, alg_idx)
 end
 
 # One backward solve of the dual along `forced_sol` (whose problem has the forced right-hand
-# side), with the events of the forward solve. At each knot before the terminal time, a
+# side), with the events of the forward solve. With a GaussAdjoint or GaussKronrodAdjoint
+# `sensealg`, the state is z only, and a quadrature callback integrates zᵀ r on each adjoint
+# step. The adjoint steps stop at each knot, so zᵀ r is smooth on each step, and the fixed
+# rule is accurate relative to the integral. The quadrature callback comes before the
+# bridge, so it reads each step before the bridge changes z. With an InterpolatingAdjoint,
+# the integral is the last component of the adjoint state, and the error control of the
+# solve applies to it (an absolute accuracy of about the abstol). At each knot before the
+# terminal time, a
 # callback records z and skips one ulp. The next step then reads the forward state and P on
 # its own side, and an FSAL solver does not reuse the evaluation at the knot. At the end b
 # of each event window, the callback records the pair term, applies z_d ← Sᵀ z_d, and skips
@@ -52,12 +62,33 @@ end
 # same call handles it. For a DAE, the callback initialization makes z_a consistent.
 function _bridged_adjoint(
         forced_sol, sensealg, adjoint_alg, vterm, terminal_time;
-        M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol
+        M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol, defect
     )
     n = length(vterm)
     isdae = !isempty(alg_idx)
     terminal! = (out, u, p, t, i) -> (copyto!(out, vterm); nothing)
-    aprob = SciMLSensitivity.ODEAdjointProblem(forced_sol, sensealg, adjoint_alg, [terminal_time], terminal!)
+    gauss = sensealg isa GaussAdjoints
+    if gauss
+        # The integrand is -λᵀ r with r = ∂F/∂ε exact (the sign of SciMLSensitivity's
+        # adjoint convention). SciMLSensitivity's own integrand (`GaussIntegrand`) gets
+        # λᵀ ∂F/∂ε as a VJP; with `autojacvec = false` that is a finite difference in ε,
+        # which loses the small r against the large f(u). The method of `ODEAdjointProblem`
+        # for a Gauss adjoint still needs a `GaussIntegrand`.
+        integrand = SciMLSensitivity.GaussIntegrand(forced_sol, sensealg, forced_sol.t, nothing)
+        quad_values = DiffEqCallbacks.IntegrandValuesSum(zeros(eltype(vterm), 1))
+        quad_f = (out, u, t, integrator) -> (out[1] = -dot(u, defect(t)); nothing)
+        quad = sensealg isa SciMLSensitivity.GaussAdjoint ?
+            DiffEqCallbacks.IntegratingSumCallback(quad_f, quad_values, zeros(eltype(vterm), 1); integrand_inplace = true) :
+            DiffEqCallbacks.IntegratingGKSumCallback(quad_f, quad_values, zeros(eltype(vterm), 1); integrand_inplace = true)
+        aprob, _, _ = SciMLSensitivity.ODEAdjointProblem(
+            forced_sol, sensealg, adjoint_alg, integrand, quad, [terminal_time], terminal!,
+            nothing, nothing, nothing, nothing, Val(false); abstol, reltol
+        )
+        extra = (quad,)
+    else
+        aprob = SciMLSensitivity.ODEAdjointProblem(forced_sol, sensealg, adjoint_alg, [terminal_time], terminal!)
+        extra = ()
+    end
     # The windows are sorted and do not overlap, so a binary search finds the window of a
     # time. A linear search costs O(N²) for a callback that acts at each step.
     starts = [w.a for w in windows]
@@ -99,13 +130,13 @@ function _bridged_adjoint(
         initializealg = isdae ? GlobalDiffEq.BrownFullBasicInit(abstol = reinit_abstol) : SciMLBase.NoInit()
     )
     asol = SciMLBase.solve(
-        aprob, adjoint_alg; callback = bridge, tstops = stops,
+        aprob, adjoint_alg; callback = SciMLBase.CallbackSet(extra..., bridge), tstops = stops,
         save_everystep = false, save_start = false, save_end = true, abstol, reltol
     )
     SciMLBase.successful_retcode(asol) || throw(
         ErrorException("the adjoint solve failed with retcode $(asol.retcode) at t = $(asol.t[end])")
     )
-    integral = asol.u[end][end]
+    integral = gauss ? quad_values.integrand[1] : asol.u[end][end]
     knot_terms = [-dot(z_at_knots[t][dif], (M * J)[dif]) for (t, J) in zip(knots, jumps) if t in keys(z_at_knots)]
     return (; integral, knot_terms, pair_terms, z0 = asol.u[end][1:n])
 end
@@ -116,23 +147,24 @@ end
 # twice; for the second entry (after the event), the dual crosses the event first.
 function GlobalDiffEq._adjoint_defect_projection(
         data, sensealg, adjoint_alg, direction;
-        abstol, reltol, terminal_index = lastindex(data.sol.t), error_floor = zero(abstol)
+        abstol, reltol, terminal_index = lastindex(data.sol.t)
     )
     (; prob, sol, knots, jumps, windows, dif, alg_idx, params) = data
     terminal_time = sol.t[terminal_index]
     sensealg === nothing ||
         sensealg isa SciMLSensitivity.InterpolatingAdjoint ||
+        sensealg isa GaussAdjoints ||
         return _plain_adjoint_projection(data, sensealg, adjoint_alg, direction; abstol, reltol, terminal_time)
     # The default is a ReverseDiff VJP, with a numerical VJP if ReverseDiff cannot run the
     # model. `adjoint_sensitivities` makes the same choice for an out-of-place problem with
     # callbacks.
     automatic = sensealg === nothing
-    sensealg = something(sensealg, SciMLSensitivity.InterpolatingAdjoint(autojacvec = SciMLSensitivity.ReverseDiffVJP()))
+    sensealg = something(sensealg, SciMLSensitivity.GaussKronrodAdjoint(autojacvec = SciMLSensitivity.ReverseDiffVJP()))
     # The dual must follow the dense output P. A checkpointed adjoint solves the forward
     # problem again between checkpoints and so follows another curve.
     sensealg.checkpointing && throw(
         ArgumentError(
-            "GlobalAdjoint does not support InterpolatingAdjoint(checkpointing = true): the " *
+            "GlobalAdjoint does not support an adjoint with `checkpointing = true`: the " *
                 "adjoint must follow the stored forward solution"
         )
     )
@@ -186,13 +218,14 @@ function GlobalDiffEq._adjoint_defect_projection(
     # The dual starts one ulp before an interior terminal time, so that its first step reads
     # the forward solution and the parameters before the knot (as at the other knots).
     start = terminal_time < T ? prevfloat(terminal_time) : terminal_time
-    solve_with(problem, sensealg, tol) = _bridged_adjoint(
+    solve_with(problem, sensealg) = _bridged_adjoint(
         (@set sol.prob = problem), sensealg, adjoint_alg, vterm, start;
-        M, dif, alg_idx, knots, jumps, windows, abstol = tol, reltol, reinit_abstol = abstol
+        M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol = abstol,
+        defect = r,
     )
     # One call per problem type, so that each adjoint solve has a concrete type.
-    solve_terms(sensealg, tol) = !isempty(alg_idx) && sensealg.autojacvec === false ?
-        solve_with(forced_inplace, sensealg, tol) : solve_with(forced, sensealg, tol)
+    solve_terms(sensealg) = !isempty(alg_idx) && sensealg.autojacvec === false ?
+        solve_with(forced_inplace, sensealg) : solve_with(forced, sensealg)
     # The term z(t₀)ᵀ M e(t₀) is nonzero if a callback initialization changes the state at
     # t₀ without a save, so that the dense output starts at another state.
     e0 = data.e0
@@ -201,13 +234,8 @@ function GlobalDiffEq._adjoint_defect_projection(
     total(terms) = terms.integral + sum(terms.knot_terms; init = zero(terms.integral)) +
         sum(terms.pair_terms; init = zero(terms.integral)) + fixed_terms +
         dot(terms.z0[dif], (M * e0)[dif])
-    # The second adjoint solve: if the first value is below 1e4 times the abstol, solve
-    # again with an abstol of 1e-6 times the value for the integral. In the control loop,
-    # defer it to `refine` if 50·abstol ≤ `error_floor` (the share of gtol for one
-    # projection). The reason: the integral is a quadrature of an error of unknown size,
-    # and below 1e4 times the abstol the first value has up to 0.5 % error plus 5·abstol.
-    first_value, used = try
-        total(solve_terms(sensealg, abstol)), sensealg
+    return try
+        total(solve_terms(sensealg))
     catch err
         (automatic && !(err isa InterruptException)) || rethrow()
         @SciMLMessage(
@@ -215,12 +243,12 @@ function GlobalDiffEq._adjoint_defect_projection(
                 "numerical VJP (pass a `sensealg` to choose)",
             data.verbose, :global_error_ad_fallback, maxlog = 1
         )
-        numerical = SciMLSensitivity.InterpolatingAdjoint(autojacvec = false, autodiff = false)
+        numerical = SciMLSensitivity.GaussKronrodAdjoint(autojacvec = false, autodiff = false)
         # If the numerical VJP fails too, the first error is the likely cause (for example a
         # missing package for the DAE reinitialization). `rethrow()` throws it with its own
         # backtrace, and the second error goes to a warning.
         fallback = try
-            total(solve_terms(numerical, abstol))
+            total(solve_terms(numerical))
         catch second
             second isa InterruptException && rethrow()
             @SciMLMessage(
@@ -231,18 +259,12 @@ function GlobalDiffEq._adjoint_defect_projection(
             nothing
         end
         fallback === nothing && rethrow()
-        fallback, numerical
+        fallback
     end
-    abs(first_value) < 1.0e4 * abstol || return (; value = first_value, refine = nothing)
-    # Keep the integral abstol at least 1e-6 times the abstol: a value near zero (an almost
-    # exact solver) has no relative accuracy to reach, and a smaller abstol hits MaxIters.
-    integral_abstol = max(1.0e-6 * abs(first_value), 1.0e-6 * abstol)
-    refine = () -> total(solve_terms(used, [fill(abstol, length(direction)); integral_abstol]))
-    iszero(error_floor) || 50 * abstol > error_floor || return (; value = first_value, refine)
-    return (; value = refine(), refine = nothing)
 end
 
 GlobalDiffEq._supports_events(::SciMLSensitivity.InterpolatingAdjoint) = true
+GlobalDiffEq._supports_events(::GaussAdjoints) = true
 
 # Any other adjoint method uses SciMLSensitivity's `adjoint_sensitivities`, without events
 # or mass matrices. It has no knot terms, so it is accurate only for a dense output that is
@@ -291,7 +313,7 @@ function _plain_adjoint_projection(data, sensealg, adjoint_alg, direction; absto
         forced_sol, adjoint_alg;
         sensealg, t = [terminal_time], dgdu_discrete = terminal_gradient!, abstol, reltol
     )
-    return (; value = only(defect_gradient), refine = nothing)
+    return only(defect_gradient)
 end
 
 end

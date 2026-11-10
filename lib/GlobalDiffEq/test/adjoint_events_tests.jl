@@ -117,7 +117,8 @@ end
 
 @testset "GlobalAdjoint: DAEs" begin
     smooth = cubic_dae([2.0, 1.0], (0.0, 5.0))
-    estimate, actual = compare(smooth, Rodas5P(), 1.0e-4, t -> (x = 2exp(-t); [x, cubic_z(x)]); adjoint_alg = fd)
+    # The Gauss adjoint problem has the exact Jacobian, so the adjoint solver can use AD.
+    estimate, actual = compare(smooth, Rodas5P(), 1.0e-4, t -> (x = 2exp(-t); [x, cubic_z(x)]); adjoint_alg = Rodas5P())
     @test relerr(estimate, actual) < 1.0e-4
     per = log(4.0)
     reset = cubic_dae(
@@ -225,7 +226,7 @@ end
     ref = solve(prob, Tsit5(); callback = pair(), tstops = [1.0], abstol = 1.0e-13, reltol = 1.0e-13)
     sol = solve(prob, Tsit5(); callback = pair(), tstops = [1.0], abstol = tol, reltol = tol)
     actual = norm(ref.u[end] .- sol.u[end])
-    for sensealg in (nothing, InterpolatingAdjoint(autojacvec = false))
+    for sensealg in (nothing, GaussKronrodAdjoint(autojacvec = false))
         ga = GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), sensealg)
         estimate = adjoint_error_estimate(
             prob, ga; callback = pair(), tstops = [1.0], abstol = tol, reltol = tol
@@ -247,7 +248,7 @@ end
     ref = solve(prob(), Tsit5(); callback = tied(), abstol = 1.0e-13, reltol = 1.0e-13)
     sol = solve(prob(), Tsit5(); callback = tied(), abstol = tol, reltol = tol)
     actual = norm(ref.u[end] .- sol.u[end])
-    for sensealg in (nothing, InterpolatingAdjoint(autojacvec = false))
+    for sensealg in (nothing, GaussKronrodAdjoint(autojacvec = false))
         ga = GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), sensealg)
         estimate = adjoint_error_estimate(prob(), ga; callback = tied(), abstol = tol, reltol = tol)
         @test relerr(estimate, actual) < 1.0e-3
@@ -391,7 +392,7 @@ end
     estimate(prob, autojacvec; tol = 1.0e-6) = adjoint_error_estimate(
         prob, GlobalAdjoint(
             Tsit5(); samples = length(prob.u0), adjoint_alg = Tsit5(),
-            sensealg = InterpolatingAdjoint(; autojacvec)
+            sensealg = GaussKronrodAdjoint(; autojacvec)
         );
         abstol = tol, reltol = tol
     )
@@ -415,6 +416,34 @@ end
     @test fallback ≈ estimate(rigid, false) rtol = 1.0e-6
 end
 
+@testset "GlobalAdjoint: the quadrature of the error integral" begin
+    # The sensealg selects the quadrature: Gauss-Kronrod (the default), Gauss-Legendre, or
+    # the integral as a component of the InterpolatingAdjoint state. All three estimate the
+    # error; the two Gauss rules also do so for a small error, relative to its size. A fixed
+    # rng gives the same directions in each estimate.
+    lv = lotka_volterra_problem()
+    lvref = solve(lv, Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
+    small = ODEProblem(decay, [1.0], (0.0, 3.0), [1.0])
+    for (prob, alg, tol, exact) in (
+            (lv, Tsit5(), 1.0e-6, lvref), (small, Rosenbrock32(), 1.0e-8, t -> [exp(-t)]),
+        )
+        sol = solve(deepcopy(prob), alg; abstol = tol, reltol = tol)
+        actual = norm(exact(sol.t[end]) .- sol.u[end])
+        estimate(sensealg, adjoint_alg = Tsit5()) = adjoint_error_estimate(
+            prob, GlobalAdjoint(alg; samples = length(prob.u0), adjoint_alg, rng = Xoshiro(8), sensealg);
+            abstol = tol, reltol = tol
+        )
+        kronrod = estimate(nothing)
+        @test kronrod == estimate(GaussKronrodAdjoint(autojacvec = ReverseDiffVJP()))
+        @test relerr(kronrod, actual) < 1.0e-3
+        @test relerr(estimate(GaussAdjoint(autojacvec = ReverseDiffVJP())), kronrod) < 1.0e-4
+        @test relerr(estimate(InterpolatingAdjoint(autojacvec = ReverseDiffVJP())), actual) < 1.0e-2
+        # With the forward solver as adjoint solver (the default `adjoint_alg`), Gauss-Kronrod
+        # stays accurate also for a solver of low order.
+        @test relerr(estimate(nothing, alg), kronrod) < 1.0e-4
+    end
+end
+
 @testset "GlobalAdjoint: VJP through the events of a DAE" begin
     # The VJP form goes through the algebraic projection after each affect with the implicit
     # function theorem. It agrees with the finite-difference saltation matrix. Without a
@@ -423,7 +452,7 @@ end
     estimate(prob, autojacvec) = adjoint_error_estimate(
         prob, GlobalAdjoint(
             Rodas5P(); samples = 1, adjoint_alg = fd, rng = Xoshiro(6),
-            sensealg = InterpolatingAdjoint(; autojacvec)
+            sensealg = GaussKronrodAdjoint(; autojacvec)
         );
         abstol = 1.0e-6, reltol = 1.0e-6
     )
@@ -503,7 +532,7 @@ end
     swing = ODEProblem(oscillator, [1.0, 0.0], (0.0, 10.0))
     swing_ref = solve(swing, Tsit5(); callback = toggling(), abstol = 1.0e-13, reltol = 1.0e-13)
     swing_sol = solve(swing, Tsit5(); callback = toggling(), abstol = 1.0e-6, reltol = 1.0e-6)
-    for sensealg in (nothing, InterpolatingAdjoint(autojacvec = false))
+    for sensealg in (nothing, GaussKronrodAdjoint(autojacvec = false))
         estimate = adjoint_error_estimate(
             swing, GlobalAdjoint(Tsit5(); samples = 2, adjoint_alg = Tsit5(), sensealg);
             callback = toggling(), abstol = 1.0e-6, reltol = 1.0e-6

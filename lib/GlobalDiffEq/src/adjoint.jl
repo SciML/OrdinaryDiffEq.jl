@@ -94,12 +94,26 @@ controls each local-tolerance reduction. The `adjoint_abstol` and
 
 The adjoint machinery lives in a package extension: SciMLSensitivity must be
 loaded to solve with `GlobalAdjoint`. `sensealg` selects the adjoint sensitivity
-algorithm. The default (`nothing`) is `InterpolatingAdjoint(autojacvec = ReverseDiffVJP())`
-in one backward solve with the jump terms of the knots and the events. If ReverseDiff
+algorithm. The default (`nothing`) is `GaussKronrodAdjoint(autojacvec = ReverseDiffVJP())`:
+one backward solve of the dual with the jump terms of the knots and the events, and a
+Gauss–Kronrod quadrature of the error integral on each adjoint step. If ReverseDiff
 cannot run the model, it uses a numerical VJP with a warning, as `adjoint_sensitivities`
-does. Any other `InterpolatingAdjoint` works the same way. Other adjoint methods go to
-`SciMLSensitivity.adjoint_sensitivities`, without jump terms, events or DAEs.
-`adjoint_alg` selects the solver for the reverse-time adjoint problems.
+does. The `sensealg` also selects the quadrature:
+
+  - `GaussKronrodAdjoint(...)`: Gauss–Kronrod on each adjoint step, with subdivision.
+  - `GaussAdjoint(...)`: Gauss–Legendre on each adjoint step, a little cheaper. The rule has
+    `(p + 1) ÷ 2` points for an `adjoint_alg` of order `p`, so it needs an adjoint solver
+    of order 5 or higher: with a low-order solver (for example Rosenbrock23, the midpoint
+    rule), the estimate can be wrong by much more than the tolerance.
+  - `InterpolatingAdjoint(...)`: the integral is a component of the adjoint state, so the
+    error control of the adjoint solve applies to it. Its absolute accuracy is then about
+    `adjoint_abstol`, and it is less accurate for global errors below about
+    `1e4 * adjoint_abstol`.
+
+The adjoint steps stop at each step end of the forward solve, so the integrand is smooth on
+each adjoint step and the fixed quadrature rules are accurate relative to the integral.
+Other adjoint methods go to `SciMLSensitivity.adjoint_sensitivities`, without jump terms,
+events or DAEs. `adjoint_alg` selects the solver for the reverse-time adjoint problems.
 
 The identity also has a term `-⟨λ(tⱼ), M [P]ⱼ⟩` for each jump of the dense output at a
 step end. So solvers with a dense output that is not continuous between steps (for
@@ -135,12 +149,15 @@ Like the rest of the estimate, this is a linearization at the forward solution. 
 that the true solution has the same sequence of events, so it does not see an event that
 the forward solve misses or adds. For a DAE, only the differential components of the error
 enter the identity. The constraint at the final time moves an algebraic component of a
-projection direction to the differential ones. The adjoint solver of a DAE needs a
-Jacobian that does not differentiate through the ReverseDiff adjoint (for example
+projection direction to the differential ones. With a Gauss adjoint, the adjoint problem
+has the exact Jacobian, so any implicit `adjoint_alg` works for a DAE. With an
+`InterpolatingAdjoint`, the adjoint solver of a DAE needs a Jacobian that does not
+differentiate through the ReverseDiff adjoint (for example
 `Rodas5P(autodiff = AutoFiniteDiff())` as `adjoint_alg`).
 
-Events, DAEs and the jump terms need an `InterpolatingAdjoint` `sensealg` (the default)
-without `checkpointing`, because the adjoint must follow the stored forward solution.
+Events, DAEs and the jump terms need a `GaussKronrodAdjoint` (the default), `GaussAdjoint`
+or `InterpolatingAdjoint` `sensealg` without `checkpointing`, because the adjoint must
+follow the stored forward solution.
 `StepGridRefinement` does not support callbacks.
 
 This implementation supports forward-time problems with real vector states. The wrapped
@@ -233,8 +250,8 @@ function _event_vjp(alg::GlobalAdjoint)
     return !hasproperty(sensealg, :autojacvec) || sensealg.autojacvec !== false
 end
 
-# Only the default and InterpolatingAdjoint (a method in the extension) support DAEs and
-# events that change the state. The others use `adjoint_sensitivities` without event terms.
+# Only the default, GaussAdjoint, GaussKronrodAdjoint and InterpolatingAdjoint (methods in
+# the extension) support DAEs and events that change the state. The others use `adjoint_sensitivities` without event terms.
 _supports_events(sensealg) = sensealg === nothing
 
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
@@ -307,16 +324,9 @@ end
 
 # `data` is the recorded forward solve (`_recorded_forward_solve`). `terminal_index` is the
 # saved entry whose error is estimated.
-function _adjoint_error_estimate(data, alg, directions; kwargs...)
-    return _adjoint_projections(data, alg, directions; kwargs...).estimate
-end
-
-# Each projection is `(; value, refine)`. With an `error_floor` (in the control loop), the
-# value can be accurate only relative to that floor; `refine()` then gives the full value.
-function _adjoint_projections(
+function _adjoint_error_estimate(
         data, alg, directions;
-        adjoint_abstol, adjoint_reltol, terminal_index = lastindex(data.sol.t),
-        error_floor = zero(adjoint_abstol)
+        adjoint_abstol, adjoint_reltol, terminal_index = lastindex(data.sol.t)
     )
     sol = data.sol
     sensealg = _resolve_sensealg(alg)
@@ -324,22 +334,13 @@ function _adjoint_projections(
     sample_count = length(directions)
     factor = _sphere_projection_expectation(sample_count, T) /
         _sphere_projection_expectation(length(sol.prob.u0), T)
-    # An error δ in each projection gives up to factor·sqrt(samples)·δ in the estimate.
-    projection_floor = error_floor / (factor * sqrt(T(sample_count)))
     projections = map(directions) do direction
         _adjoint_defect_projection(
             data, sensealg, alg.adjoint_alg, direction;
-            abstol = adjoint_abstol, reltol = adjoint_reltol, terminal_index,
-            error_floor = projection_floor
+            abstol = adjoint_abstol, reltol = adjoint_reltol, terminal_index
         )
     end
-    return (; estimate = factor * LinearAlgebra.norm(map(p -> p.value, projections)), factor, projections)
-end
-
-# The accurate estimate from projections computed with an error floor.
-function _refine_estimate(result)
-    values = [p.refine === nothing ? p.value : p.refine() for p in result.projections]
-    return result.factor * LinearAlgebra.norm(values)
+    return factor * LinearAlgebra.norm(projections)
 end
 
 # Per-time global error along the trajectory: the estimate at each saved time,
@@ -461,18 +462,10 @@ function SciMLBase.__solve(
         )
         trial_sol = trial.sol
         _validate_adjoint_solution(trial_sol)
-        # The loop estimate is accurate to about gtol / 10 plus 0.5 % of the value (see the
-        # second adjoint solve in the extension). Refine it near gtol and for the reported
-        # endpoint error.
-        loop_projections = _adjoint_projections(
+        last_estimate = _adjoint_error_estimate(
             trial, alg, directions;
-            adjoint_abstol = options.adjoint_abstol,
-            adjoint_reltol = options.adjoint_reltol, error_floor = gtol
+            adjoint_abstol = options.adjoint_abstol, adjoint_reltol = options.adjoint_reltol
         )
-        last_estimate = loop_projections.estimate
-        near = isfinite(last_estimate) && abs(last_estimate - gtol) <= gtol / 10 + 0.005 * last_estimate
-        reported = alg.scope === EndpointError && last_estimate <= gtol
-        (near || reported) && (last_estimate = _refine_estimate(loop_projections))
         isfinite(last_estimate) ||
             throw(ErrorException("the adjoint global error estimate is not finite"))
 

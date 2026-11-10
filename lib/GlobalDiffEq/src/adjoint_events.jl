@@ -352,7 +352,8 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     supports_events = _supports_events(alg.sensealg)
     verbose = _verbosity(kwargs)
     dif, alg_idx = _semiexplicit_components(prob, name)
-    # Without event support (a sensealg other than InterpolatingAdjoint), fail before the
+    # Without event support (a sensealg other than the Gauss adjoints and
+    # InterpolatingAdjoint), fail before the
     # solve for a DAE, and at the first call that changes u or p. A call that changes
     # nothing (such as a SavingCallback) is not an event.
     supports_events || isempty(alg_idx) || throw(_unsupported_events_error())
@@ -577,7 +578,7 @@ end
 function _unsupported_events_error()
     return ArgumentError(
         "GlobalAdjoint supports DAEs and events that change the state or the parameters only " *
-            "with an InterpolatingAdjoint sensealg (the default)"
+            "with a GaussKronrodAdjoint (the default), GaussAdjoint or InterpolatingAdjoint sensealg"
     )
 end
 
