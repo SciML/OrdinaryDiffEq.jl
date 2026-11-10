@@ -2,6 +2,8 @@ using DelayDiffEq, DDEProblemLibrary, RecursiveArrayTools
 using OrdinaryDiffEqLowOrderRK
 using Test
 
+include("reinit_history_boundary.jl")
+
 const prob_ip = prob_dde_constant_1delay_ip
 const prob_scalar = prob_dde_constant_1delay_scalar
 
