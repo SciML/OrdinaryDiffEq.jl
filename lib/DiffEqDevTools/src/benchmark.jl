@@ -1248,7 +1248,8 @@ function get_sample_errors(
                 for tmp_solutions in tmp_solutions_full
         ]
     )
-    return numruns isa Number ? sample_error(numruns) : map(sample_error, numruns)
+    return numruns isa Number ? sample_error(numruns) :
+        map(i -> sample_error(numruns[i]), 1:length(numruns))
 end
 
 function _sample_mean_spread(means)

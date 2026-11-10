@@ -27,3 +27,15 @@ vector_prob = SDEProblem(brownian, zeros(2), (0.0, T))
 halfwidth_vec = 1.96 * sqrt(sum(abs2, s) * T) ./ sqrt.(Ns)
 se_vec = get_sample_errors(vector_prob, setup, numruns = Ns, solution_runs = 200)
 @test all(0.8 .< se_vec ./ halfwidth_vec .< 1.2)
+
+@testset "Sample count containers" begin
+    counts = [2, 4]
+    Random.seed!(101)
+    expected = get_sample_errors(scalar_prob, setup; numruns = counts, solution_runs = 8)
+    for numruns in (counts, Tuple(counts), reshape(counts, 1, 2))
+        Random.seed!(101)
+        errors = get_sample_errors(scalar_prob, setup; numruns, solution_runs = 8)
+        @test errors isa Vector
+        @test errors == expected
+    end
+end
