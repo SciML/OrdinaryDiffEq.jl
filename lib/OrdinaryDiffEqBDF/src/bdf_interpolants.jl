@@ -45,7 +45,8 @@ end
     num_k = length(k) - 1
     φ = σ
     c = Θ == 1 ? zero(Θ) : one(Θ)
-    out = @.. y₁ - c * k[end] + φ * k[1]
+    endpoint_jump = k[end]
+    out = @.. y₁ - c * endpoint_jump + φ * k[1]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         out = @.. out + φ * k[j]
@@ -63,7 +64,8 @@ end
     num_k = length(k) - 1
     φ = σ
     c = Θ == 1 ? zero(Θ) : one(Θ)
-    out = @.. y₁[idxs] - c * k[end][idxs] + φ * k[1][idxs]
+    endpoint_jump = k[end]
+    out = @.. y₁[idxs] - c * endpoint_jump[idxs] + φ * k[1][idxs]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         out = @.. out + φ * k[j][idxs]
@@ -81,7 +83,8 @@ end
     num_k = length(k) - 1
     φ = σ
     c = Θ == 1 ? zero(Θ) : one(Θ)
-    @.. out = y₁ - c * k[end] + φ * k[1]
+    endpoint_jump = k[end]
+    @.. out = y₁ - c * endpoint_jump + φ * k[1]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         @.. out = out + φ * k[j]
@@ -99,7 +102,8 @@ end
     num_k = length(k) - 1
     φ = σ
     c = Θ == 1 ? zero(Θ) : one(Θ)
-    @views @.. out = y₁[idxs] - c * k[end][idxs] + φ * k[1][idxs]
+    endpoint_jump = k[end]
+    @views @.. out = y₁[idxs] - c * endpoint_jump[idxs] + φ * k[1][idxs]
     for j in 2:num_k
         φ *= (σ + j - 1) / j
         @views @.. out = out + φ * k[j][idxs]

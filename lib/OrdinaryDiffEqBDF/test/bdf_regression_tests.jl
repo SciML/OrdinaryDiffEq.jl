@@ -324,6 +324,8 @@ end
             out = zeros(2)
             sol(out, t)
             @test out[2] ≈ exact(t) atol = 1.0e-9
+            selected = zeros(1)
+            @test sol(selected, t; idxs = 2:2) ≈ [exact(t)] atol = 1.0e-9
         end
         saved = solve(prob, alg; kw..., saveat = times)
         @test saved.retcode == ReturnCode.Success

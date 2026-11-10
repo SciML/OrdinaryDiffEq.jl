@@ -880,6 +880,7 @@ function perform_step!(
     dd = u - u₀
     update_D!(D, dd, k)
 
+    rows = nothing
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
         if cache.consfailcnt > 1 && mass_matrix !== I
@@ -1033,6 +1034,7 @@ function perform_step!(
     update_D!(D, dd, k)
 
 
+    rows = nothing
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
         if cache.consfailcnt > 1 && mass_matrix !== I
@@ -1355,6 +1357,7 @@ function perform_step!(
     end
     lte *= terkp1
 
+    rows = nothing
     if integrator.opts.adaptive
         for i in 1:(k + 1)
             ts_tmp[i + 1] = ts[i]
@@ -1576,6 +1579,7 @@ function perform_step!(
         lte -= bdf_coeffs[k, j] * r[j]
     end
     @.. broadcast = false terk_tmp = lte * terkp1_tmp
+    rows = nothing
     if integrator.opts.adaptive
         (; abstol, reltol, internalnorm) = integrator.opts
         for i in 1:(k + 1)
