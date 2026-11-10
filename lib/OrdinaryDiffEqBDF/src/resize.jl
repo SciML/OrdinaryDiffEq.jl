@@ -35,6 +35,9 @@ function resize_non_user_cache!(
     resize_bdf_buffers!(cache.Dtmp, i)
     resize_bdf_buffers!(cache.prevD, i)
     resize_bdf_buffers!(cache.dense, i)
+    # A callback may clear `derivative_discontinuity` afterwards, so the history is cleared here.
+    foreach(d -> recursivefill!(d, false), cache.D)
+    foreach(d -> recursivefill!(d, false), cache.prevD)
     cache.order = 1
     cache.prevorder = 1
     cache.nconsteps = 0
