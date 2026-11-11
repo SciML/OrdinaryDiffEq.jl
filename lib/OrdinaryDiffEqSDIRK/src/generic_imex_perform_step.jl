@@ -1331,7 +1331,6 @@ end
                 # Hairer–Wanner / Shampine DAE form: W ERR = W_γdt⁻¹ (M err).
                 # Use the γdt stored with (possibly reused) W; premultiply by M so
                 # algebraic rows (M=0) stay filtered rather than growing like err/c (#2902).
-                # M·err goes into atmp — not dz — so Krylov warm-start in linu is preserved.
                 est = nlsolver.cache.dz
                 mass_matrix = integrator.f.mass_matrix
                 if _is_identity_massmatrix(mass_matrix)
@@ -1341,6 +1340,8 @@ end
                     mul!(_vec(atmp), mass_matrix, _vec(tmp))
                     @.. broadcast = false tmp = atmp * inv(nlsolver.cache.W_γdt)
                 end
+                # The estimator has no Newton iteration to absorb warm-start error.
+                recursivefill!(est, false)
                 linres = dolinsolve(
                     integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                     linu = _vec(est)
