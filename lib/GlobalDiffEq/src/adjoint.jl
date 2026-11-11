@@ -103,11 +103,12 @@ does. The `sensealg` also selects the quadrature:
   - `GaussKronrodAdjoint(...)`: Gauss–Kronrod on each adjoint step (DiffEqCallbacks'
     `IntegratingGKSumCallback`).
   - `GaussAdjoint(...)`: Gauss–Legendre on each adjoint step (`IntegratingSumCallback`), a
-    little cheaper. The rule has `(p + 1) ÷ 2` points for `p = alg_order(adjoint_alg)`, so
-    it needs an adjoint solver of a fixed order of 5 or higher; otherwise (a lower order, or
-    a variable-order solver such as FBDF, which reports order 1) it gives an `ArgumentError`
-    before the forward solve. With Rosenbrock23 (the midpoint rule), the
-    estimate can be wrong by much more than the tolerance.
+    little cheaper. The rule has `(p + 1) ÷ 2` points for `p = alg_order(adjoint_alg)` and
+    no error control, so its accuracy depends on the adjoint solver. Use an adjoint solver
+    of a fixed order of 5 or higher. With a lower order the estimate is less accurate: with
+    Rosenbrock23 (the midpoint rule), it can be wrong by much more than the tolerance. A
+    variable-order solver such as FBDF reports order 1, so it also gets the midpoint rule.
+    The solve warns about an adjoint solver of an order below 5.
   - `InterpolatingAdjoint(...)`: the same as `GaussKronrodAdjoint` with the same settings.
     Its dual is the same, and its own parameter integral is not used.
 
@@ -165,7 +166,9 @@ Warnings follow the `verbose` keyword of `solve` (a [`DEVerbosity`](@ref)). The 
 `global_error_ad_fallback` controls the message when ReverseDiff or ForwardDiff cannot run
 the model or a callback, and finite differences or a numerical VJP replace it. The toggle
 `global_error_grazing_event` controls the message at an event where the vector field is
-tangent to the event surface; the saltation matrix then has no time-shift term.
+tangent to the event surface; the saltation matrix then has no time-shift term. The toggle
+`global_error_companion_order` controls the message about a `GaussAdjoint` with an adjoint
+solver of an order below 5.
 
 ## References
 
@@ -253,9 +256,28 @@ end
 # `adjoint_sensitivities` without event terms.
 _supports_events(sensealg) = sensealg === nothing
 
-# A check of the sensealg against the adjoint solver, before the forward solve. The
-# extension adds a method for GaussAdjoint.
-_check_sensealg(sensealg, adjoint_alg) = nothing
+# The order `p` that sets the Gauss rule of the error integral, or `nothing` for a rule with
+# error control. The extension adds a method for GaussAdjoint.
+_gauss_rule_order(sensealg, adjoint_alg) = nothing
+
+# GaussAdjoint integrates the error with DiffEqCallbacks' `IntegratingSumCallback`, which
+# uses (p + 1) ÷ 2 Gauss points for p = `alg_order(adjoint_alg)` and has no error control.
+# The integrand has much cancellation inside a step, so below p = 5 the estimate can be much
+# less accurate: with Rosenbrock23 (the midpoint rule), it was wrong by up to 100 %. A
+# variable-order solver (FBDF, QNDF) reports p = 1, so it gets the midpoint rule too.
+function _warn_if_low_order_quadrature(alg::GlobalAdjoint, kwargs)
+    order = _gauss_rule_order(alg.sensealg, alg.adjoint_alg)
+    (order === nothing || order >= 5) && return nothing
+    @SciMLMessage(
+        "GlobalAdjoint: GaussAdjoint integrates the error with (p + 1) ÷ 2 Gauss points for " *
+            "p = alg_order(adjoint_alg), and $(nameof(typeof(alg.adjoint_alg))) has order " *
+            "$order (a variable-order solver reports its lowest order), which can give a poor " *
+            "estimate. Use GaussKronrodAdjoint (the default) or an `adjoint_alg` of a fixed " *
+            "order of 5 or higher.",
+        _verbosity(kwargs), :global_error_companion_order
+    )
+    return nothing
+end
 
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
 SciMLBase.allowscomplex(::GlobalAdjoint) = false
@@ -418,6 +440,7 @@ function adjoint_error_estimate(
     )
     _require_adjoint_ext()
     _validate_adjoint_problem(prob)
+    _warn_if_low_order_quadrature(alg, kwargs)
     data = _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     _validate_adjoint_solution(data.sol)
     directions = _orthogonal_directions(prob.u0, alg.samples, alg.rng)
@@ -444,6 +467,7 @@ function SciMLBase.__solve(
     _require_adjoint_ext()
     _validate_tolerances(abstol, reltol, "local")
     _validate_adjoint_problem(prob)
+    _warn_if_low_order_quadrature(alg, kwargs)
 
     alg.control === StepGridRefinement && _has_callbacks(kwargs) && throw(
         ArgumentError("GlobalAdjoint does not support StepGridRefinement with callbacks")

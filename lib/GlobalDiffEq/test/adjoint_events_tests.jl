@@ -453,9 +453,17 @@ end
         # Gauss-Kronrod stays accurate also for a solver of low order.
         @test relerr(estimate(nothing, alg), kronrod) < 1.0e-4
     end
-    # Gauss-Legendre with an adjoint solver of order below 5 is too coarse, so it fails.
-    @test_throws ArgumentError adjoint_error_estimate(
-        small, GlobalAdjoint(Rosenbrock32(); sensealg = GaussAdjoint(autojacvec = ReverseDiffVJP()))
+    # Gauss-Legendre with an adjoint solver of order below 5 is allowed, but less accurate,
+    # so the solve warns. The `global_error_companion_order` toggle controls the warning.
+    coarse = GlobalAdjoint(Rosenbrock32(); sensealg = GaussAdjoint(autojacvec = ReverseDiffVJP()))
+    @test_logs (:warn, r"GaussAdjoint integrates the error") match_mode = :any @test(
+        isfinite(adjoint_error_estimate(small, coarse))
+    )
+    @test_logs min_level = Base.CoreLogging.Warn adjoint_error_estimate(
+        small, coarse; verbose = DEVerbosity(global_error_companion_order = SciMLLogging.Silent())
+    )
+    @test_logs min_level = Base.CoreLogging.Warn adjoint_error_estimate(
+        small, GlobalAdjoint(Rosenbrock32(); sensealg = GaussAdjoint(autojacvec = ReverseDiffVJP()), adjoint_alg = Tsit5())
     )
 end
 

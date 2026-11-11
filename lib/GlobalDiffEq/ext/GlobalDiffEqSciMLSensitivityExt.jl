@@ -273,26 +273,8 @@ _as_gauss_kronrod(s::SciMLSensitivity.InterpolatingAdjoint{CS, AD, FDT}) where {
     checkpointing = s.checkpointing
 )
 
-# DiffEqCallbacks' `IntegratingSumCallback` (GaussAdjoint) uses (p + 1) ÷ 2 Gauss points
-# for p = `alg_order(adjoint_alg)`. The integrand has much cancellation inside a step, so
-# below p = 5 the rule is too coarse: with Rosenbrock23 (the midpoint rule), the estimate
-# was wrong by up to 100 %. A variable-order solver (FBDF, QNDF) reports p = 1, so the
-# callback uses the midpoint rule for it too. Checked before the forward solve; a solver
-# without `alg_order` fails here as it would in the callback.
-function GlobalDiffEq._check_sensealg(::SciMLSensitivity.GaussAdjoint, adjoint_alg)
-    order = SciMLBase.alg_order(adjoint_alg)
-    order >= 5 && return nothing
-    throw(
-        ArgumentError(
-            "GlobalAdjoint: a GaussAdjoint sensealg integrates the error with " *
-                "DiffEqCallbacks' IntegratingSumCallback, which uses (p + 1) ÷ 2 Gauss points " *
-                "for p = alg_order(adjoint_alg), so it needs an `adjoint_alg` of a fixed order " *
-                "of 5 or higher; $(nameof(typeof(adjoint_alg))) has `alg_order` $order (a " *
-                "variable-order solver reports its lowest order). Use GaussKronrodAdjoint (the " *
-                "default) or another `adjoint_alg`."
-        )
-    )
-end
+GlobalDiffEq._gauss_rule_order(::SciMLSensitivity.GaussAdjoint, adjoint_alg) =
+    SciMLBase.alg_order(adjoint_alg)
 
 GlobalDiffEq._supports_events(::SciMLSensitivity.InterpolatingAdjoint) = true
 GlobalDiffEq._supports_events(::GaussAdjoints) = true
