@@ -31,7 +31,7 @@ function _skip_to!(integrator, t)
         SciMLBase.pop_tstop!(integrator)
     end
     SciMLBase.set_t!(integrator, t)
-    SciMLBase.u_modified!(integrator, true)
+    SciMLBase.derivative_discontinuity!(integrator, true)
     return nothing
 end
 

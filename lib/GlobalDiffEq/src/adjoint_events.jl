@@ -595,7 +595,7 @@ function _save_after_events(changed_here)
             sol = integrator.sol
             sol.t[end] == integrator.t && sol.u[end] == integrator.u ||
                 SciMLBase.savevalues!(integrator, true)
-            SciMLBase.u_modified!(integrator, false)
+            SciMLBase.derivative_discontinuity!(integrator, false)
             return nothing
         end;
         save_positions = (false, false), initializealg = SciMLBase.NoInit()

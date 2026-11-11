@@ -98,7 +98,7 @@ end
 function _true_state_recorder(P, records, first::Bool)
     affect! = function (integrator)
         _record_true_state!(records, P, integrator, first)
-        SciMLBase.u_modified!(integrator, false)
+        SciMLBase.derivative_discontinuity!(integrator, false)
         return nothing
     end
     return SciMLBase.DiscreteCallback(
