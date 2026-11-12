@@ -97,7 +97,8 @@ using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     isdiscrete,
     wrap_sol,
     BVProblem, CallbackSet, ContinuousCallback, DAEFunction, DAEProblem,
-    DDEProblem, DiscreteCallback, DiscreteProblem, IntervalNonlinearProblem,
+    DDEProblem, DiscreteCallback, DiscreteProblem, IntervalNonlinearFunction,
+    IntervalNonlinearProblem,
     ODEFunction, ODEProblem, PDEProblem, ReturnCode, SDDEProblem, SDEFunction,
     SDEProblem, SplitFunction, SteadyStateProblem, VectorContinuousCallback,
     addsteps!, change_t_via_interpolation!, get_tmp_cache,
@@ -126,7 +127,7 @@ using Reexport: @reexport
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
 # Rootfinder for callbacks
-using BracketingNonlinearSolve: ModAB
+using BracketingNonlinearSolve: ModAB, NewtonBisection
 
 import SymbolicIndexingInterface as SII
 
@@ -200,6 +201,8 @@ end
 
 export DEVerbosity
 export initialize!, finalize!
+
+export ConditionWithDerivative
 
 export SensitivityADPassThrough
 
