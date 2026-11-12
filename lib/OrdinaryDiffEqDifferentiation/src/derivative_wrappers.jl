@@ -194,7 +194,13 @@ function jacobian!(
         return nothing
     end
 
-    alg = unwrap_alg(integrator, true)
+    return _jacobian!(unwrap_alg(integrator, true), integrator, J, f, x, fx, jac_config)
+end
+
+function _jacobian!(alg, integrator, J, f, x, fx, jac_config)
+    if isempty(x)
+        return nothing
+    end
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
 
@@ -278,7 +284,7 @@ function build_jac_config(
         )
         jac_prototype = f.jac_prototype
 
-        if is_sparse_csc(jac_prototype)
+        if is_sparse_csc(jac_prototype) && has_mass_matrix(f)
             if f.mass_matrix isa UniformScaling
                 idxs = diagind(jac_prototype)
                 @. @view(jac_prototype[idxs]) = 1
@@ -442,7 +448,7 @@ end
 function sparsity_colorvec(f::F, x) where {F}
     sparsity = f.sparsity
 
-    if is_sparse_csc(sparsity)
+    if is_sparse_csc(sparsity) && has_mass_matrix(f)
         if f.mass_matrix isa UniformScaling
             idxs = diagind(sparsity)
             @. @view(sparsity[idxs]) = 1

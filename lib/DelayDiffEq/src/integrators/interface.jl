@@ -550,7 +550,9 @@ function DiffEqBase.auto_dt_reset!(integrator::DDEIntegrator)
 
     # determine maximal time step
     if has_constant_lags(prob)
-        dtmax = tdir * min(abs(opts.dtmax), minimum(abs, prob.constant_lags))
+        dtmax = tdir * minimum(
+            abs, Iterators.filter(!iszero, prob.constant_lags); init = abs(opts.dtmax)
+        )
     else
         dtmax = opts.dtmax
     end
