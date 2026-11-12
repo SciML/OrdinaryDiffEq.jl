@@ -1369,7 +1369,9 @@ end
     # ---------------- fsallast ----------------
     if is_imex
         integrator.f(integrator.fsallast, u, p, t + dt)
-    elseif tab.explicit_fsallast
+        # Under a mass matrix `f(u)` is not `du/dt`, so keep `z_s/dt` for Hermite.
+        # IE keeps `f(u)`: its DAE error estimate reads the algebraic residual.
+    elseif tab.explicit_fsallast && (integrator.f.mass_matrix === I || E === :ie_dd2)
         integrator.f(integrator.fsallast, u, p, t + tab.fsallast_c * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     else
@@ -2425,7 +2427,7 @@ end
         integrator.k[1] = integrator.fsalfirst
         integrator.fsallast = integrator.f(u, p, t + dt)
         integrator.k[2] = integrator.fsallast
-    elseif tab.explicit_fsallast
+    elseif tab.explicit_fsallast && (integrator.f.mass_matrix === I || E === :ie_dd2)
         integrator.fsallast = integrator.f(u, p, t + tab.fsallast_c * dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         integrator.k[1] = integrator.fsalfirst
