@@ -420,8 +420,9 @@ function stage_unsolved(nlcache, γΔt)
     fu = get_fu(nlcache)
     u = get_u(nlcache)
     resid = abs(γΔt) * maxabs(fu)
+    isfinite(resid) || return true
     scale = max(maxabs_axpy(γΔt, u, fu), maxabs(u))
-    return resid > roundoff_level(typeof(resid)) * scale
+    return !(resid <= roundoff_level(typeof(resid)) * scale)
 end
 
 # Displacement-only outer tests are a Newton inference. Quasi-Newton inner steps can hold
@@ -452,6 +453,10 @@ function unconverged_nlsolvealg_stage(
     γΔt = residual_to_z_scale(nlsolver, false)
     fu = get_fu(nlcache)
     z = get_u(nlcache)
+    # A non-finite residual or iterate is never a solved stage; the weighted
+    # comparisons below would read `Inf`/`NaN` as convergence.
+    isfinite(maxabs(fu)) || return true
+    isfinite(maxabs(z)) || return true
     atmp = cache.atmp
     if atmp === nothing
         atmp = @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z)
@@ -461,17 +466,28 @@ function unconverged_nlsolvealg_stage(
     end
     ustep = cache.ustep === nothing ? compute_ustep(tmp, γ, z, method) :
         compute_ustep!(cache.ustep, tmp, γ, z, method)
-    weighted = calculate_residuals(
-        atmp, integrator.uprev, ustep, integrator.opts.abstol, integrator.opts.reltol,
-        integrator.opts.internalnorm, integrator.t
-    )
-    return integrator.opts.internalnorm(weighted, integrator.t) > 1
+    weighted_norm = if cache.atmp === nothing
+        weighted = calculate_residuals(
+            atmp, integrator.uprev, ustep, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, integrator.t
+        )
+        integrator.opts.internalnorm(weighted, integrator.t)
+    else
+        calculate_residuals!(
+            atmp, atmp, integrator.uprev, ustep, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, integrator.t
+        )
+        integrator.opts.internalnorm(atmp, integrator.t)
+    end
+    return !(weighted_norm <= 1)
 end
 
 # A residual component at the cancellation floor of the terms it is the difference of
-# (`z` and `z + r` for the stage equation in `z` units) carries no information.
+# (`z` and `z + r` for the stage equation in `z` units) carries no information. A
+# non-finite component is never at that floor.
 function _stage_resid_or_zero(r, z)
-    return abs(r) <= roundoff_level(typeof(r)) * max(abs(z), abs(z + r)) ? zero(r) : r
+    return isfinite(r) &&
+        abs(r) <= roundoff_level(typeof(r)) * max(abs(z), abs(z + r)) ? zero(r) : r
 end
 
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small

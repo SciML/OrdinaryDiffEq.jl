@@ -174,6 +174,38 @@ end
     @test !veto(integ.cache.nlsolver, integ)
 end
 
+# A non-finite residual must not read as convergence through `Inf <= eps * Inf` or `NaN > 1`.
+@testset "a non-finite residual is not a solved stage" begin
+    prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 1.0], (0.0, 1.0))
+    integ = init(
+        prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(TrustRegion()));
+        dt = 0.1, abstol = 1.0e-6, reltol = 1.0e-3
+    )
+    OrdinaryDiffEqNonlinearSolve.initialize!(integ.cache.nlsolver, integ)
+    nc = integ.cache.nlsolver.cache.cache
+    OrdinaryDiffEqNonlinearSolve.get_u(nc) .= [0.0, 1.0]
+    veto = OrdinaryDiffEqNonlinearSolve.unconverged_nlsolvealg_stage
+    for bad in (Inf, -Inf, NaN)
+        OrdinaryDiffEqNonlinearSolve.get_fu(nc) .= [bad, 0.0]
+        @test veto(integ.cache.nlsolver, integ)
+    end
+
+    # One implicit-Euler step of `u' = -u`, `u0 = 1`, `dt = 1` has stage root `1 / 2`.
+    for bad in (Inf, NaN)
+        f! = let bad = bad
+            (du, u, p, t) -> (du[1] = u[1] > 1 ? bad : -u[1]; nothing)
+        end
+        prob = ODEProblem(f!, [1.0], (0.0, 1.0))
+        sol = solve(
+            prob,
+            ImplicitEuler(nlsolve = NonlinearSolveAlg(Broyden(alpha = 1.0e12)));
+            dt = 1.0, adaptive = false, abstol = 1.0e-6, reltol = 1.0e-3
+        )
+        @test !SciMLBase.successful_retcode(sol) ||
+            isapprox(sol.u[end][1], 0.5; atol = 1.0e-3)
+    end
+end
+
 @testset "a solvable stage still converges" begin
     for prob in (rober_prob, hires_prob), ODEAlg in (FBDF, KenCarp4)
         ref = reference(prob)
