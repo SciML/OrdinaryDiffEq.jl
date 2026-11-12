@@ -1,6 +1,6 @@
 using OrdinaryDiffEqLinear, Test, DiffEqDevTools
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner, OrdinaryDiffEqTsit5
-using LinearAlgebra, Random
+using LinearAlgebra, Random, SparseArrays, Unitful
 using SciMLOperators: MatrixOperator
 
 # Linear exponential solvers
@@ -188,6 +188,32 @@ sim = analyticless_test_convergence(dts, prob, MagnusGauss4(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusGauss4(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol = 0.2
 
+# The A(t) = cos(t) I + sin(t) J above commutes with itself, so it cannot see the sign of
+# MagnusGauss4's commutator term (#4965). A(t) = R(t) A0 R(t)ᵀ with R(t) = exp(tJ) and
+# A0 = [1 0; 0 -1] does not commute; in the frame rotating with R(t) the generator is the
+# nilpotent A0 - J, so u(t) = R(t) (I + t (A0 - J)) u0. Dense operators use the preallocated
+# stages and `Tridiagonal`/sparse ones the out-of-place path.
+function gauss4_noncommuting!(A, u, p, t)
+    A[1, 1] = cos(2t)
+    A[2, 1] = sin(2t)
+    A[1, 2] = sin(2t)
+    A[2, 2] = -cos(2t)
+    return
+end
+gauss4_analytic(u0, p, t) = [cos(t) -sin(t); sin(t) cos(t)] * [1 + t t; -t 1 - t] * u0
+dts = 1 ./ 2 .^ (6:-1:2)
+@testset "MagnusGauss4 order, non-commuting A(t), $(nameof(M)) krylov=$(alg.krylov)" for (M, alg) in (
+        (Matrix, MagnusGauss4()),
+        (Matrix, MagnusGauss4(krylov = true)),
+        (Tridiagonal, MagnusGauss4()),
+        (sparse, MagnusGauss4(krylov = true)),
+    )
+    A = MatrixOperator(M(ones(2, 2)); update_func! = gauss4_noncommuting!)
+    prob = ODEProblem(ODEFunction(A; analytic = gauss4_analytic), ones(2), (0.0, 2.0))
+    sim = test_convergence(dts, prob, alg)
+    @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+end
+
 A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (1.0, 6.0))
 dts = 1 ./ 2 .^ (4:-1:1)
@@ -308,3 +334,41 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 
 sim = analyticless_test_convergence(dts, prob, CayleyEuler(), test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol = 0.2
+
+@testset "MagnusNC6 and MagnusGauss4 operator matrix types" begin
+    Au = [-0.1 0.0; 0.0 -0.2]
+    prob_unitful = ODEProblem(MatrixOperator(Au), [1.0, 2.0]u"m", (0.0, 1.0))
+    @testset "unitful state, $(nameof(typeof(alg)))" for alg in (MagnusNC6(), MagnusGauss4())
+        sol = solve(prob_unitful, alg; dt = 0.1, adaptive = false)
+        @test sol.retcode == ReturnCode.Success
+        @test ustrip.(u"m", sol.u[end]) ≈ exp(Au) * [1.0, 2.0]
+    end
+
+    function tridiag_update!(A, u, p, t)
+        for j in axes(A, 2), i in max(1, j - 1):min(size(A, 1), j + 1)
+            A[i, j] = i == j ? -0.1 * i : (i < j ? 0.01 : 0.01 * sin(t))
+        end
+        return nothing
+    end
+    N = 300
+    pattern = spdiagm(-1 => ones(N - 1), 0 => ones(N), 1 => ones(N - 1))
+    tridiag_prob(A) = ODEProblem(
+        MatrixOperator(A; update_func! = tridiag_update!), ones(N), (0.0, 0.1)
+    )
+    prob_dense = tridiag_prob(Matrix(pattern))
+    @testset "$(nameof(typeof(A))) operator, $(nameof(typeof(alg))) krylov=$(alg.krylov)" for (A, alg) in (
+            (pattern, MagnusNC6(krylov = true)),
+            (pattern, MagnusGauss4(krylov = true)),
+            (Tridiagonal(Matrix(pattern)), MagnusNC6()),
+            (Tridiagonal(Matrix(pattern)), MagnusGauss4()),
+        )
+        integrator = init(tridiag_prob(A), alg; dt = 0.01, adaptive = false)
+        if A isa SparseMatrixCSC
+            # The cache already holds one dense N×N matrix (`W`); the stages must not add more.
+            @test Base.summarysize(integrator.cache) < 2 * N^2 * sizeof(Float64)
+        end
+        solve!(integrator)
+        sol_dense = solve(prob_dense, alg; dt = 0.01, adaptive = false)
+        @test integrator.sol.u[end] ≈ sol_dense.u[end] rtol = 1.0e-12
+    end
+end

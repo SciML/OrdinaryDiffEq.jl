@@ -55,5 +55,5 @@ macro threaded(option, ex)
 end
 
 @inline function _thread_storage_size()
-    return Threads.threadpoolsize(:default) + Threads.threadpoolsize(:interactive)
+    return Threads.nthreads(:default) + Threads.nthreads(:interactive)
 end

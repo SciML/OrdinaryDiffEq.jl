@@ -10,6 +10,7 @@ For more information on JET.jl, see: https://aviatesk.github.io/JET.jl/stable/
 
 using Test
 using StochasticDiffEq
+using OrdinaryDiffEqCore
 using JET
 
 # Helper to filter JET reports to only show StochasticDiffEq issues
@@ -50,17 +51,17 @@ end
         cache = integrator.cache
 
         # Test perform_step!
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
 
         # Test loopheader!
-        rep = JET.report_call(StochasticDiffEq.loopheader!, (typeof(integrator),))
+        rep = JET.report_call(OrdinaryDiffEqCore.loopheader!, (typeof(integrator),))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
 
         # Test loopfooter!
-        rep = JET.report_call(StochasticDiffEq.loopfooter!, (typeof(integrator),))
+        rep = JET.report_call(OrdinaryDiffEqCore.loopfooter!, (typeof(integrator),))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
@@ -69,7 +70,7 @@ end
         integrator = init(prob_iip, EulerHeun(), dt = 0.01)
         cache = integrator.cache
 
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
@@ -78,7 +79,7 @@ end
         integrator = init(prob_iip, RKMil(), dt = 0.01)
         cache = integrator.cache
 
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
@@ -87,7 +88,7 @@ end
         integrator = init(prob_iip, SOSRI())
         cache = integrator.cache
 
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
@@ -96,7 +97,7 @@ end
         integrator = init(prob_iip, SOSRA())
         cache = integrator.cache
 
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
@@ -105,7 +106,7 @@ end
         integrator = init(prob_iip, SRA1())
         cache = integrator.cache
 
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
@@ -114,7 +115,7 @@ end
         integrator = init(prob_scalar, EM(), dt = 0.01)
         cache = integrator.cache
 
-        rep = JET.report_call(StochasticDiffEq.perform_step!, (typeof(integrator), typeof(cache)))
+        rep = JET.report_call(OrdinaryDiffEqCore.perform_step!, (typeof(integrator), typeof(cache)))
         stochastic_issues = filter_stochastic_reports(JET.get_reports(rep))
         @test isempty(stochastic_issues)
     end
