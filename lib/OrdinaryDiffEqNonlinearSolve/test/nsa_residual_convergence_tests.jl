@@ -123,13 +123,16 @@ end
     for _ in 1:8
         ref = 2ref / (1 + sqrt(1 + 4 * (1 / 8) * ref))
     end
+    # A residual-based trust radius shrinks with `s`, making an unsolved stage look
+    # stationary at small scales. Fix the radius in state units to test the veto.
+    inner = TrustRegion(max_trust_radius = 1.0, initial_trust_radius = 1.0)
     for s in (1.0e-12, 1.0, 1.0e12, 1.0e24)
         G = let s = s
             (fu, u, p) -> s .* fu
         end
         sol = solve(
             prob,
-            ImplicitEuler(nlsolve = NonlinearSolveAlg(TrustRegion(); precondition = G));
+            ImplicitEuler(nlsolve = NonlinearSolveAlg(inner; precondition = G));
             dt = 1 / 8, adaptive = false, abstol = 1.0e-8, reltol = 1.0e-8
         )
         @test SciMLBase.successful_retcode(sol)
@@ -203,6 +206,34 @@ end
         )
         @test !SciMLBase.successful_retcode(sol) ||
             isapprox(sol.u[end][1], 0.5; atol = 1.0e-3)
+    end
+end
+
+@testset "finite stage terms do not overflow the roundoff floor" begin
+    residual_or_zero = OrdinaryDiffEqNonlinearSolve._stage_resid_or_zero
+    for T in (Float32, Float64)
+        z = floatmax(T) * T(0.75)
+        for r in (z, -z)
+            @test residual_or_zero(r, r) == r
+            @test residual_or_zero(r, -r) == r
+            @test iszero(residual_or_zero(eps(T) * r, r))
+        end
+    end
+
+    for inplace in (false, true)
+        f = inplace ? (du, u, p, t) -> (du .= -u) : (u, p, t) -> -u
+        prob = ODEProblem{inplace}(f, [1.0], (0.0, 1.0))
+        integ = init(
+            prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(TrustRegion()));
+            dt = 1.0, abstol = 1.0e-6, reltol = 1.0e-3
+        )
+        OrdinaryDiffEqNonlinearSolve.initialize!(integ.cache.nlsolver, integ)
+        nc = integ.cache.nlsolver.cache.cache
+        OrdinaryDiffEqNonlinearSolve.get_u(nc) .= 1.0e308
+        OrdinaryDiffEqNonlinearSolve.get_fu(nc) .= 1.0e308
+        @test OrdinaryDiffEqNonlinearSolve.unconverged_nlsolvealg_stage(
+            integ.cache.nlsolver, integ
+        )
     end
 end
 

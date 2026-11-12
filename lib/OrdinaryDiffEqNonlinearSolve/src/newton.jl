@@ -486,8 +486,10 @@ end
 # (`z` and `z + r` for the stage equation in `z` units) carries no information. A
 # non-finite component is never at that floor.
 function _stage_resid_or_zero(r, z)
+    level = roundoff_level(typeof(r))
+    # Scaling each term before addition keeps the cancellation floor finite.
     return isfinite(r) &&
-        abs(r) <= roundoff_level(typeof(r)) * max(abs(z), abs(z + r)) ? zero(r) : r
+        abs(r) <= max(level * abs(z), abs(level * z + level * r)) ? zero(r) : r
 end
 
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small
