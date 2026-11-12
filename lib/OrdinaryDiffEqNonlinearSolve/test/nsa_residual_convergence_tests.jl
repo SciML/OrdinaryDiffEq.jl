@@ -68,17 +68,13 @@ relerr(sol, ref) = norm(sol.u[end] .- ref) / norm(ref)
     end
 end
 
-# Issue #4283: displacement-only Convergence (θ ≈ 1) with a large residual. The
-# maintainer-approved fix is a residual veto only — not nested inner stepping. With that
-# veto alone, TRBDF2 + Broyden/Klement on u′ = -u still return Unstable near u0 (same
-# retcode family as master); they must not be turned into a silent Success at u0, and
-# Newton-type inners must keep solving.
+# Quasi-Newton inners that cannot solve the stage must not report Success at `u0`;
+# Newton-type inners solve it to `exp(-1)`.
 @testset "quasi-Newton residual veto does not claim Success at u0" begin
     exact = exp(-1)
     prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0))
     for inner in (Broyden(), Klement())
         sol = solve(prob, TRBDF2(nlsolve = NonlinearSolveAlg(inner)))
-        # Veto-only: still Unstable stuck at u0. A false Success at u0 would be the bug.
         @test !SciMLBase.successful_retcode(sol)
         @test sol.u[end][1] ≈ 1.0 atol = 1.0e-6
     end
@@ -89,7 +85,7 @@ end
     end
 end
 
-# Nested inner stepping must not bypass NonlinearSolveAlg.max_iter or under-count work.
+# `max_iter` bounds the inner steps of a stage and the iterations reported for it.
 @testset "NonlinearSolveAlg.max_iter bounds inner steps and reported iterations" begin
     prob = ODEProblem((du, u, p, t) -> (du .= -u .^ 3), [1.0], (0.0, 1.0))
     for inner in (Broyden(), NewtonRaphson(), TrustRegion())
@@ -102,6 +98,80 @@ end
         @test nc.nsteps <= 1
         @test integ.stats.nnonliniter <= 1
     end
+end
+
+# A back-tracking Broyden step moves the iterate by almost nothing on this stage, so
+# the displacement test alone accepts every step at `u0` and the solve reports Success
+# with `u = u0`. The residual veto makes the failure reach the step controller.
+@testset "a collapsed quasi-Newton step is not a false Success at u0" begin
+    prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0))
+    sol = solve(
+        prob,
+        ImplicitEuler(nlsolve = NonlinearSolveAlg(Broyden(; linesearch = BackTracking())));
+        maxiters = 100
+    )
+    @test !SciMLBase.successful_retcode(sol) ||
+        isapprox(sol.u[end][1], exp(-1); rtol = 1.0e-2)
+end
+
+# Scaling the residual by a constant, through `precondition` or through a mass matrix
+# with the right-hand side scaled to match, preserves every stage root. The veto must
+# not read such a scaled residual against state tolerances.
+@testset "root-preserving residual scaling keeps the stage root" begin
+    prob = ODEProblem((u, p, t) -> -u .^ 2, [1.0], (0.0, 1.0))
+    ref = 1.0
+    for _ in 1:8
+        ref = 2ref / (1 + sqrt(1 + 4 * (1 / 8) * ref))
+    end
+    for s in (1.0e-12, 1.0, 1.0e12, 1.0e24)
+        G = let s = s
+            (fu, u, p) -> s .* fu
+        end
+        sol = solve(
+            prob,
+            ImplicitEuler(nlsolve = NonlinearSolveAlg(TrustRegion(); precondition = G));
+            dt = 1 / 8, adaptive = false, abstol = 1.0e-8, reltol = 1.0e-8
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ ref atol = 1.0e-6
+    end
+
+    alg = TRBDF2(nlsolve = NonlinearSolveAlg(TrustRegion()))
+    plain = ODEProblem((du, u, p, t) -> (du .= -u .^ 3), [1.0], (0.0, 1.0))
+    scaled = ODEProblem(
+        ODEFunction(
+            (du, u, p, t) -> (du .= -1.0e18 .* u .^ 3);
+            mass_matrix = Diagonal([1.0e18])
+        ),
+        [1.0], (0.0, 1.0)
+    )
+    sol_plain = solve(plain, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+    sol_scaled = solve(scaled, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+    @test SciMLBase.successful_retcode(sol_scaled)
+    @test sol_scaled.u[end][1] ≈ 1 / sqrt(3) atol = 1.0e-5
+    @test sol_scaled.stats.nf <= 2 * sol_plain.stats.nf
+end
+
+# Each component of the residual is weighed against its own tolerance: a component
+# with a loose tolerance does not lend it to a component with a tight one.
+@testset "the residual veto weights components by their own tolerances" begin
+    prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 1.0], (0.0, 1.0))
+    integ = init(
+        prob, ImplicitEuler(nlsolve = NonlinearSolveAlg(TrustRegion()));
+        dt = 0.1, abstol = [1.0e-12, 1.0], reltol = 1.0e-10
+    )
+    OrdinaryDiffEqNonlinearSolve.initialize!(integ.cache.nlsolver, integ)
+    nc = integ.cache.nlsolver.cache.cache
+    OrdinaryDiffEqNonlinearSolve.get_u(nc) .= [0.0, 1.0]
+    # `γΔt = 0.1` for this stage, so an `fu` entry of `1e-3` is a `1e-4` residual in
+    # `z` units: far above the first component's tolerance, far below the second's.
+    veto = OrdinaryDiffEqNonlinearSolve.unconverged_nlsolvealg_stage
+    OrdinaryDiffEqNonlinearSolve.get_fu(nc) .= [1.0e-3, 0.0]
+    @test veto(integ.cache.nlsolver, integ)
+    OrdinaryDiffEqNonlinearSolve.get_fu(nc) .= [0.0, 1.0e-3]
+    @test !veto(integ.cache.nlsolver, integ)
+    OrdinaryDiffEqNonlinearSolve.get_fu(nc) .= [0.0, 0.0]
+    @test !veto(integ.cache.nlsolver, integ)
 end
 
 @testset "a solvable stage still converges" begin

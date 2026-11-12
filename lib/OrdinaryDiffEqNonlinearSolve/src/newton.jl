@@ -429,24 +429,49 @@ end
 # equation; accepting that iterate as Convergence leaves the stage unsolved.
 # Newton caches defer the terminal residual evaluation; do not force it here — the
 # displacement is then a true Newton correction and the stats tests require the deferral.
-# `stage_unsolved` is a roundoff floor; the integrator's `abstol`/`reltol` are the stage
-# tolerance the `step!` path is supposed to meet.
+# The veto reads `γΔt · fu` as an increment in `z`, in the integrator's componentwise
+# weights. That reading needs the raw stage residual in state units: a `precondition`
+# composes an arbitrary root-preserving transform into `fu`, a non-identity mass matrix
+# and a DAE residual carry their own units, and the `nlstep_data` path already measures
+# its residual directly. None of those residuals is vetoed here.
 unconverged_nlsolvealg_stage(::AbstractNLSolver, ::SciMLBase.DEIntegrator) = false
 function unconverged_nlsolvealg_stage(
         nlsolver::NLSolver{<:NonlinearSolveAlg}, integrator::SciMLBase.DEIntegrator
     )
-    nlcache = nlsolver.cache.cache
+    (; tmp, γ, cache, method) = nlsolver
+    nlcache = cache.cache
     nlcache isa NonlinearSolveNoInitCache && return false
     defers_residual(nlcache) && return false
+    cache.precondition !== nothing && return false
+    get_nlstep_data(integrator.f) !== nothing && return false
+    f = nlsolve_f(integrator)
+    f isa DAEFunction && return false
+    mass_matrix = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
+    mass_matrix === I || return false
     sync_inner_residual!(nlcache)
-    γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
+    γΔt = residual_to_z_scale(nlsolver, false)
     fu = get_fu(nlcache)
-    u = get_u(nlcache)
-    resid = abs(γΔt) * maxabs(fu)
-    scale = max(maxabs_axpy(γΔt, u, fu), maxabs(u))
-    atol = maxabs(integrator.opts.abstol)
-    rtol = maxabs(integrator.opts.reltol)
-    return resid > max(roundoff_level(typeof(resid)) * scale, atol + rtol * scale)
+    z = get_u(nlcache)
+    atmp = cache.atmp
+    if atmp === nothing
+        atmp = @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z)
+    else
+        @.. broadcast = false atmp = γΔt * fu
+        @.. broadcast = false atmp = _stage_resid_or_zero(atmp, z)
+    end
+    ustep = cache.ustep === nothing ? compute_ustep(tmp, γ, z, method) :
+        compute_ustep!(cache.ustep, tmp, γ, z, method)
+    weighted = calculate_residuals(
+        atmp, integrator.uprev, ustep, integrator.opts.abstol, integrator.opts.reltol,
+        integrator.opts.internalnorm, integrator.t
+    )
+    return integrator.opts.internalnorm(weighted, integrator.t) > 1
+end
+
+# A residual component at the cancellation floor of the terms it is the difference of
+# (`z` and `z + r` for the stage equation in `z` units) carries no information.
+function _stage_resid_or_zero(r, z)
+    return abs(r) <= roundoff_level(typeof(r)) * max(abs(z), abs(z + r)) ? zero(r) : r
 end
 
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small
