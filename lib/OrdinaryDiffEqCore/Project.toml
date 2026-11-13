@@ -96,6 +96,7 @@ SciMLLogging = "2"
 SciMLOperators = "1.24.3"
 SciMLStructures = "1.7"
 SparseArrays = "1"
+StaticArrays = "1.9"
 SymbolicIndexingInterface = "0.3.43"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4"
@@ -114,11 +115,12 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["DiffEqDevTools", "Enzyme", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting", "Unitful"]
+test = ["DiffEqDevTools", "Enzyme", "SafeTestsets", "SparseArrays", "Test", "Pkg", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "DifferentiationInterface", "SciMLTesting", "StaticArrays", "Unitful"]
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
