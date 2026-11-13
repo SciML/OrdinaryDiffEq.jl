@@ -103,4 +103,53 @@ import SciMLBase
     @test kwargs_out.callback === cb1
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_full; kwargs_in...)
     @test kwargs_out.callback === cb1
+
+    # Test 13: a problem callback that is already a `Vector{Any}`-backed CallbackSet
+    # merges into `CallbackSet(prob_cb, solve_cb)`, erased only where erasure runs
+    erased_set(cs) = CallbackSet(collect(Any, cs.continuous_callbacks), collect(Any, cs.discrete_callbacks))
+    same_callbacks(a, b) = length(a) == length(b) && all(splat(===), zip(a, b))
+    prob_cbs = (CallbackSet(Any[], Any[]), CallbackSet(Any[cb1], Any[dcb1]), cb1)
+    solve_cbs = (dcb2, nothing, CallbackSet(cb2, dcb2))
+    for specialize in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize, SciMLBase.NoSpecialize),
+            prob_cb in prob_cbs, solve_cb in solve_cbs
+
+        prob = ODEProblem{true, specialize}(f, [1.0], (0.0, 1.0); callback = prob_cb)
+        expected = CallbackSet(prob_cb, solve_cb)
+        if VERSION >= v"1.12" && specialize !== SciMLBase.FullSpecialize
+            expected = erased_set(expected)
+        end
+        merged = DiffEqBase.merge_problem_kwargs(prob; callback = solve_cb).callback
+        @test typeof(merged) === typeof(expected)
+        @test merged isa CallbackSet &&
+            same_callbacks(merged.continuous_callbacks, expected.continuous_callbacks) &&
+            same_callbacks(merged.discrete_callbacks, expected.discrete_callbacks)
+    end
+
+    if VERSION >= v"1.12"
+        @testset "Merged callback storage is independent" begin
+            for specialize in (SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.NoSpecialize),
+                    nonempty in (false, true),
+                    solve_cb in (nothing, CallbackSet(), CallbackSet(Any[], Any[]), erased_set(CallbackSet(cb2, dcb2)))
+
+                prob_cb = nonempty ? erased_set(CallbackSet(cb1, dcb1)) : CallbackSet(Any[], Any[])
+                prob = ODEProblem{true, specialize}(f, [1.0], (0.0, 1.0); callback = prob_cb)
+                merged = DiffEqBase.merge_problem_kwargs(prob; callback = solve_cb).callback
+                other = DiffEqBase.merge_problem_kwargs(prob; callback = solve_cb).callback
+                for field in (:continuous_callbacks, :discrete_callbacks)
+                    containers = (getproperty(prob_cb, field), getproperty(other, field))
+                    if solve_cb isa CallbackSet
+                        containers = (containers..., getproperty(solve_cb, field))
+                    end
+                    snapshots = map(collect, containers)
+                    callbacks = getproperty(merged, field)
+                    empty!(callbacks)
+                    push!(callbacks, field === :continuous_callbacks ? cb3 : dcb2)
+                    for (container, snapshot) in zip(containers, snapshots)
+                        @test same_callbacks(container, snapshot)
+                    end
+                end
+            end
+        end
+    end
+
 end
