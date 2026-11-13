@@ -136,7 +136,8 @@ end
     global_error_estimate(sol, i)
 
 Extract the global error estimate from a solution computed with a GLEE method
-([`GLEE23`](@ref), [`GLEE24`](@ref), [`GLEE35`](@ref), [`MM5GEE`](@ref)).
+([`GLEE23`](@ref), [`GLEE24`](@ref), [`GLEE35`](@ref), [`MM5GEE`](@ref)) or with
+[`GlobalErrorEstimation`](@ref) and `equation = DefectCorrection`.
 
 These solvers report the global error through the standard SciMLBase interface:
 `sol.global_error` is a vector matching `sol.u`, with `sol.global_error[i]` the
@@ -147,7 +148,8 @@ vector and `global_error_estimate(sol, i)` its `i`-th element.
 function global_error_estimate(sol::SciMLBase.AbstractODESolution)
     sol.global_error === nothing && throw(
         ArgumentError(
-            "global_error_estimate expects a solution produced by a GLEE method"
+            "global_error_estimate expects a solution produced by a GLEE method or " *
+                "by GlobalErrorEstimation with equation = DefectCorrection"
         )
     )
     return sol.global_error

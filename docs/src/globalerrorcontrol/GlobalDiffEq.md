@@ -34,7 +34,8 @@ and [`GlobalErrorMode`](@ref) selects how it is integrated — [`InterpolatingMo
 (store the dense solution, integrate the companion in a second pass) or
 [`SimultaneousMode`](@ref) (advance the companion inline over each step for `O(1)`
 extra memory and no second solve). [`global_error_estimate`](@ref)`(prob, alg)`
-exposes the standalone estimator.
+exposes the standalone estimator. With `DefectCorrection`, `solve` returns the estimated
+error of each saved state in `sol.global_error`.
 
 To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
 solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
@@ -45,6 +46,15 @@ the whole trajectory ([`TrajectoryError`](@ref), filling `sol.global_error` at
 every saved time), and its [`GlobalAdjointControl`](@ref) selects whether `gtol`
 is met by tolerance tightening ([`ToleranceRefinement`](@ref)) or by re-solving
 non-adaptively on the accepted step grid ([`StepGridRefinement`](@ref)).
+
+`DefectCorrection` and `GlobalAdjoint` support callbacks (`ContinuousCallback`,
+`VectorContinuousCallback`, `DiscreteCallback`) and semi-explicit mass-matrix DAEs, for
+example ModelingToolkit models with events. `DefectCorrection` applies the callbacks to
+the true solution, so its estimate includes a change of the event times, and it supports
+affects with state of their own. `GlobalAdjoint` linearizes at the computed solution: at
+each event the adjoint jumps with the saltation matrix of the event, and an affect must be
+a function of the state, the parameters and the time. The warnings of these methods are
+the `global_error` group of [`DEVerbosity`](@ref) (the `verbose` keyword of `solve`).
 
 [`GlobalRichardson`](@ref) wraps any fixed-step method in global Richardson
 extrapolation over whole solves, interpreting `abstol` and `reltol` as global

@@ -27,4 +27,10 @@ using Test
         prob, GlobalRichardson(SSPRK33()), dt = 0.2, reltol = 1.0e-12, abstol = 0
     ).(1:10)
     @test norm(ve - v0) / norm(v0) < 1.0e-10
+
+    # The callback of the problem acts once, not a second time through the solve keywords.
+    double = DiscreteCallback((u, t, i) -> t == 0.5, i -> (i.u[1] *= 2; nothing))
+    decay = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0); callback = double, tstops = [0.5])
+    sol = solve(decay, GlobalRichardson(SSPRK33()); dt = 0.05, reltol = 1.0e-10, abstol = 0)
+    @test sol.u[end][1] ≈ 2exp(-1.0) rtol = 1.0e-6
 end
