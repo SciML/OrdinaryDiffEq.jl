@@ -704,19 +704,20 @@ function initialize!(integrator, cache::MagnusGauss4Cache)
     return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 end
 
+# `A` is the later Gauss node and `B` the earlier one, so the commutator is `A * B - B * A`.
 # The Krylov path takes the generator scaled by `1/dt`, since `expv` applies the `dt`.
 function magnus_gauss4_exponent!(::Nothing, A, B, dt, krylov)
     if krylov
-        return (A + B) ./ 2 + (dt * sqrt(3)) .* (B * A - A * B) ./ 12
+        return (A + B) ./ 2 + (dt * sqrt(3)) .* (A * B - B * A) ./ 12
     else
-        return (dt / 2) .* (A + B) + ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B)
+        return (dt / 2) .* (A + B) + ((dt^2) * (sqrt(3) / 12)) .* (A * B - B * A)
     end
 end
 
 function magnus_gauss4_exponent!(stages::MagnusGauss4Stages, A, B, dt, krylov)
     (; P1, P2, G) = stages
-    mul!(P1, B, A)
-    mul!(P2, A, B)
+    mul!(P1, A, B)
+    mul!(P2, B, A)
     if krylov
         @. G = (A + B) / 2 + (dt * sqrt(3)) * (P1 - P2) / 12
     else

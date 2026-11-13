@@ -240,6 +240,32 @@ sim = analyticless_test_convergence(dts, prob, MagnusGauss4(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusGauss4(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol = 0.2
 
+# The A(t) = cos(t) I + sin(t) J above commutes with itself, so it cannot see the sign of
+# MagnusGauss4's commutator term (#4965). A(t) = R(t) A0 R(t)ᵀ with R(t) = exp(tJ) and
+# A0 = [1 0; 0 -1] does not commute; in the frame rotating with R(t) the generator is the
+# nilpotent A0 - J, so u(t) = R(t) (I + t (A0 - J)) u0. Dense operators use the preallocated
+# stages and `Tridiagonal`/sparse ones the out-of-place path.
+function gauss4_noncommuting!(A, u, p, t)
+    A[1, 1] = cos(2t)
+    A[2, 1] = sin(2t)
+    A[1, 2] = sin(2t)
+    A[2, 2] = -cos(2t)
+    return
+end
+gauss4_analytic(u0, p, t) = [cos(t) -sin(t); sin(t) cos(t)] * [1 + t t; -t 1 - t] * u0
+dts = 1 ./ 2 .^ (6:-1:2)
+@testset "MagnusGauss4 order, non-commuting A(t), $(nameof(M)) krylov=$(alg.krylov)" for (M, alg) in (
+        (Matrix, MagnusGauss4()),
+        (Matrix, MagnusGauss4(krylov = true)),
+        (Tridiagonal, MagnusGauss4()),
+        (sparse, MagnusGauss4(krylov = true)),
+    )
+    A = MatrixOperator(M(ones(2, 2)); update_func! = gauss4_noncommuting!)
+    prob = ODEProblem(ODEFunction(A; analytic = gauss4_analytic), ones(2), (0.0, 2.0))
+    sim = test_convergence(dts, prob, alg)
+    @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+end
+
 A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (1.0, 6.0))
 dts = 1 ./ 2 .^ (4:-1:1)
