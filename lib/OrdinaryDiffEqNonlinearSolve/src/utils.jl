@@ -398,7 +398,7 @@ is_split_W(W) = W isa WOperator && W.J isa AbstractMatrix
 """
     build_nlsolver(alg, [nlalg,] u, uprev, p, t, dt, f, rate_prototype,
                    uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c, [α,]
-                   iip, verbose) -> AbstractNLSolver
+                   iip, verbose; stats_delta = nothing) -> AbstractNLSolver
 
 Construct the nonlinear solver used by an implicit integrator algorithm.
 
@@ -420,6 +420,17 @@ Construct the nonlinear solver used by an implicit integrator algorithm.
   - `iip`: `Val(true)` for an in-place problem and `Val(false)` for an
     out-of-place problem.
   - `verbose`: the integrator's differential-equation verbosity configuration.
+
+# Keyword arguments
+
+  - `stats_delta`: `nothing` (default) to update `integrator.stats` and
+    `integrator.force_stepfail` directly, or a `StatsDelta()` to buffer the
+    solver's statistics privately. The caller of a buffered solver must merge
+    the buffer with `merge_stats_deltas!` after its worker joins and set
+    `integrator.force_stepfail` itself. Unbuffered calls forward no keywords
+    to custom factories. For buffered calls, factories accepting `stats_delta`
+    receive the keyword and must honor the private-buffer contract. A positional-only
+    factory returning a built-in nonlinear solver has its cache buffered after construction.
 
 # Returns
 
@@ -454,12 +465,13 @@ function build_nlsolver(
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c,
-        iip, verbose
+        iip, verbose; stats_delta = nothing
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    kwargs = stats_delta === nothing ? (;) : (; stats_delta)
     return build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
-        tTypeNoUnits, γ, c, 1, iip, verbose
+        tTypeNoUnits, γ, c, 1, iip, verbose; kwargs...
     )
 end
 
@@ -468,11 +480,30 @@ function build_nlsolver(
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c, α,
-        iip, verbose
+        iip, verbose; stats_delta = nothing
     ) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return build_nlsolver(
+    args = (
         alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip, verbose,
+    )
+    stats_delta === nothing && return build_nlsolver(args...)
+    argtypes = Tuple{map(arg -> arg isa Type ? Type{arg} : typeof(arg), args)...}
+    if hasmethod(build_nlsolver, argtypes, (:stats_delta,))
+        return build_nlsolver(args...; stats_delta)
+    end
+    return with_stats_delta(build_nlsolver(args...), stats_delta)
+end
+
+function with_stats_delta(nlsolver::NLSolver{A, iip}, stats_delta) where {A, iip}
+    cache = ConstructionBase.setproperties(nlsolver.cache, (; stats_delta))
+    return NLSolver{
+        A, iip, typeof(nlsolver.z), typeof(nlsolver.γ), typeof(nlsolver.tmp2),
+        typeof(nlsolver.c), typeof(cache), typeof(nlsolver.prev_θ),
+    }(
+        nlsolver.z, nlsolver.tmp, nlsolver.tmp2, nlsolver.ztmp, nlsolver.γ,
+        nlsolver.c, nlsolver.α, nlsolver.alg, nlsolver.κ, nlsolver.fast_convergence_cutoff,
+        nlsolver.ηold, nlsolver.iter, nlsolver.maxiters, nlsolver.status, cache,
+        nlsolver.method, nlsolver.nfails, nlsolver.prev_θ
     )
 end
 
@@ -759,7 +790,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{true}, verbose
+        ::Val{true}, verbose; stats_delta = nothing
     ) where {
         F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits,
@@ -805,7 +836,7 @@ function build_nlsolver(
             prob, nlalg, cache_abstol, verbose.nonlinear_verbosity
         )
         nlcache = HomotopyNonlinearSolveCache(
-            ustep, tstep, k, invγdt, nlfunc, nf, verbose.nonlinear_verbosity, cache, false
+            ustep, tstep, k, invγdt, nlfunc, nf, verbose.nonlinear_verbosity, cache, false, stats_delta
         )
     elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
@@ -929,7 +960,7 @@ function build_nlsolver(
                 weight,
                 dz,
                 est_linsolve,
-                zero(tstep), true, t, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition, stats_delta
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
@@ -981,11 +1012,11 @@ function build_nlsolver(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
                 linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians, stats_delta
             )
         end
     elseif nlalg isa NLFunctional
-        nlcache = NLFunctionalCache(ustep, tstep, k, atmp, dz)
+        nlcache = NLFunctionalCache(ustep, tstep, k, atmp, dz, stats_delta)
     elseif nlalg isa NLAnderson
         max_history = min(nlalg.max_history, nlalg.max_iter, length(z))
         Δz₊s = [zero(z) for i in 1:max_history]
@@ -999,7 +1030,7 @@ function build_nlsolver(
         nlcache = NLAndersonCache(
             ustep, tstep, atmp, k, dz, dzold, z₊old, Δz₊s, Q, R, γs,
             0,
-            nlalg.aa_start, nlalg.droptol
+            nlalg.aa_start, nlalg.droptol, stats_delta
         )
     end
 
@@ -1034,7 +1065,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{false}, verbose
+        ::Val{false}, verbose; stats_delta = nothing
     ) where {
         F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits,
@@ -1076,7 +1107,7 @@ function build_nlsolver(
         )
         nlcache = HomotopyNonlinearSolveCache(
             nothing, tstep, nothing, invγdt, nlfunc, nf,
-            verbose.nonlinear_verbosity, cache, false
+            verbose.nonlinear_verbosity, cache, false, stats_delta
         )
     elseif nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
@@ -1149,7 +1180,7 @@ function build_nlsolver(
                 W_ref === nothing ? nothing : J, W_ref,
                 W_ref === nothing ? nothing : uf,
                 nothing, nothing, nothing, nothing, nothing,
-                zero(tstep), true, t, false, precondition, postcondition
+                zero(tstep), true, t, false, precondition, postcondition, stats_delta
             )
         else
             # Build separated DAE Jacobian cache if applicable
@@ -1173,11 +1204,11 @@ function build_nlsolver(
             nlcache = NLNewtonConstantCache(
                 tstep, J, W, true, true, true, tType(dt), uf,
                 invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians, stats_delta
             )
         end
     elseif nlalg isa NLFunctional
-        nlcache = NLFunctionalConstantCache(tstep)
+        nlcache = NLFunctionalConstantCache(tstep, stats_delta)
     elseif nlalg isa NLAnderson
         max_history = min(nlalg.max_history, nlalg.max_iter, length(z))
         Δz₊s = Vector{typeof(z)}(undef, max_history)
@@ -1191,7 +1222,7 @@ function build_nlsolver(
 
         nlcache = NLAndersonConstantCache(
             tstep, dz, dzold, z₊old, Δz₊s, Q, R, γs, 0,
-            nlalg.aa_start, nlalg.droptol
+            nlalg.aa_start, nlalg.droptol, stats_delta
         )
     end
 

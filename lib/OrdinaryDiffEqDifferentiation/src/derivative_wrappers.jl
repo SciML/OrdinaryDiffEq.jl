@@ -75,7 +75,7 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
     Base.showerror(io, e.e)
 end
 
-function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
+function jacobian(f::F, x::AbstractArray{<:Number}, integrator; stats_sink = nothing) where {F}
     alg = unwrap_alg(integrator, true)
 
     # Update stats.nf
@@ -94,19 +94,19 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
             RoundUp
         )
 
-        integrator.stats.nf += num_of_chunks
+        charge_nf!(integrator, stats_sink, num_of_chunks)
 
     elseif dense isa AutoFiniteDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         if dense.fdtype == Val(:forward)
-            integrator.stats.nf += maximum(colorvec) + 1
+            charge_nf!(integrator, stats_sink, maximum(colorvec) + 1)
         elseif dense.fdtype == Val(:central)
-            integrator.stats.nf += 2 * maximum(colorvec)
+            charge_nf!(integrator, stats_sink, 2 * maximum(colorvec))
         elseif dense.fdtype == Val(:complex)
-            integrator.stats.nf += maximum(colorvec)
+            charge_nf!(integrator, stats_sink, maximum(colorvec))
         end
     else
-        integrator.stats.nf += 1
+        charge_nf!(integrator, stats_sink, 1)
     end
 
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
@@ -134,23 +134,23 @@ function jacobian(f::F, x::AbstractArray{<:Number}, integrator) where {F}
 end
 
 # fallback for scalar x, is needed for calc_J to work
-function jacobian(f::F, x, integrator) where {F}
+function jacobian(f::F, x, integrator; stats_sink = nothing) where {F}
     alg = unwrap_alg(integrator, true)
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
 
     if dense isa AutoForwardDiff
-        integrator.stats.nf += 1
+        charge_nf!(integrator, stats_sink, 1)
     elseif dense isa AutoFiniteDiff
         if dense.fdtype == Val(:forward)
-            integrator.stats.nf += 2
+            charge_nf!(integrator, stats_sink, 2)
         elseif dense.fdtype == Val(:central)
-            integrator.stats.nf += 2
+            charge_nf!(integrator, stats_sink, 2)
         elseif dense.fdtype == Val(:complex)
-            integrator.stats.nf += 1
+            charge_nf!(integrator, stats_sink, 1)
         end
     else
-        integrator.stats.nf += 1
+        charge_nf!(integrator, stats_sink, 1)
     end
 
     # Apply GPU-safe wrapping for AutoForwardDiff when dealing with GPU arrays
@@ -187,17 +187,19 @@ direction). `fx` is a preallocated RHS buffer. No-op for an empty state.
 function jacobian!(
         J::AbstractMatrix{<:Number}, f::F, x::AbstractArray{<:Number},
         fx::AbstractArray{<:Number}, integrator::SciMLBase.DEIntegrator,
-        jac_config
+        jac_config; stats_sink = nothing
     ) where {F}
     # Handle empty state vector - nothing to compute
     if isempty(x)
         return nothing
     end
 
-    return _jacobian!(unwrap_alg(integrator, true), integrator, J, f, x, fx, jac_config)
+    return _jacobian!(
+        unwrap_alg(integrator, true), integrator, J, f, x, fx, jac_config; stats_sink
+    )
 end
 
-function _jacobian!(alg, integrator, J, f, x, fx, jac_config)
+function _jacobian!(alg, integrator, J, f, x, fx, jac_config; stats_sink = nothing)
     if isempty(x)
         return nothing
     end
@@ -206,7 +208,7 @@ function _jacobian!(alg, integrator, J, f, x, fx, jac_config)
 
     if dense isa AutoForwardDiff
         if alg_autodiff(alg) isa AutoSparse
-            integrator.stats.nf += maximum(ncolors(jac_config[1]))
+            charge_nf!(integrator, stats_sink, maximum(ncolors(jac_config[1])))
         else
             sparsity, colorvec = sparsity_colorvec(integrator.f, x)
             maxcolor = maximum(colorvec)
@@ -223,20 +225,20 @@ function _jacobian!(alg, integrator, J, f, x, fx, jac_config)
                 ) :
                 Int(ceil(maxcolor / _unwrap_val(chunk_size)))
 
-            integrator.stats.nf += num_of_chunks
+            charge_nf!(integrator, stats_sink, num_of_chunks)
         end
 
     elseif dense isa AutoFiniteDiff
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         if dense.fdtype == Val(:forward)
-            integrator.stats.nf += maximum(colorvec) + 1
+            charge_nf!(integrator, stats_sink, maximum(colorvec) + 1)
         elseif dense.fdtype == Val(:central)
-            integrator.stats.nf += 2 * maximum(colorvec)
+            charge_nf!(integrator, stats_sink, 2 * maximum(colorvec))
         elseif dense.fdtype == Val(:complex)
-            integrator.stats.nf += maximum(colorvec)
+            charge_nf!(integrator, stats_sink, maximum(colorvec))
         end
     else
-        integrator.stats.nf += 1
+        charge_nf!(integrator, stats_sink, 1)
     end
 
     config = jac_config[1]

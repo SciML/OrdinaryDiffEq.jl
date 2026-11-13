@@ -20,3 +20,6 @@ OrdinaryDiffEqNonlinearSolve = "2"
 OrdinaryDiffEqRosenbrock = "2"
 SciMLTesting = "2.4"
 julia = "1.10"
+
+[sources.OrdinaryDiffEqCore]
+path = "../../../OrdinaryDiffEqCore"

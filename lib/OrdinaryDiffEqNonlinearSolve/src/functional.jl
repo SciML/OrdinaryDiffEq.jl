@@ -64,9 +64,7 @@ end
     elseif previter > aa_start
         # actually perform Anderson acceleration
         nlsolver.z = anderson(nlsolver.z, cache)
-        if SciMLBase.has_stats(integrator)
-            integrator.stats.nsolve += 1
-        end
+        charge_nsolve!(integrator, cache, 1)
     end
 
     # compute next step
@@ -86,9 +84,7 @@ end
     elseif previter > aa_start
         # actually perform Anderson acceleration
         anderson!(nlsolver.z, cache)
-        if SciMLBase.has_stats(integrator)
-            integrator.stats.nsolve += 1
-        end
+        charge_nsolve!(integrator, cache, 1)
     end
 
     # compute next step
@@ -142,9 +138,7 @@ end
             end
         end
     end
-    if SciMLBase.has_stats(integrator)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
+    charge_nf!(integrator, cache, 1)
 
     # compute norm of residuals
     atmp = calculate_residuals(
@@ -214,9 +208,7 @@ end
         end
     end
 
-    if SciMLBase.has_stats(integrator)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
+    charge_nf!(integrator, cache, 1)
 
     # compute norm of residuals
     calculate_residuals!(
