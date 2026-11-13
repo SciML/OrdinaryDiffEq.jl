@@ -7,6 +7,11 @@ function activate_qa_env()
     return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
+# Run functional tests
+if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "Tsit5 Tests" include("tsit5_tests.jl")
+end
+
 # Run QA tests (AllocCheck, JET, Aqua)
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.

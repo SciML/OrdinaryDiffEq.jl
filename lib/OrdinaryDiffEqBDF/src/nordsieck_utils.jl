@@ -508,6 +508,13 @@ function _nordsieck_start_common!(cache, dt)
     return nothing
 end
 
+# `order` is read by the initial `dt` estimate, which runs before the first step.
+function reset_nordsieck_history!(cache)
+    cache.nst = 0
+    cache.order = 1
+    return nothing
+end
+
 @inline function nordsieck_needs_start(integrator, cache)
     return cache.nst == 0 || integrator.derivative_discontinuity
 end
