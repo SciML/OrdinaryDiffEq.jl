@@ -1362,8 +1362,9 @@ function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
 end
 
 function resize_nlsolver_cache!(integrator, cache::OrdinaryDiffEqCore.CompositeCache, i)
-    for subcache in cache.caches
-        resize_nlsolver_cache!(integrator, subcache, i)
+    for (subcache, alg) in zip(cache.caches, integrator.alg.algs)
+        context = (; alg, integrator.u, integrator.f, integrator.sol, integrator.dt)
+        resize_nlsolver_cache!(context, subcache, i)
     end
     return nothing
 end
