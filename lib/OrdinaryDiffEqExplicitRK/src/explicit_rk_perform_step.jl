@@ -31,12 +31,15 @@ end
     kk[1] = integrator.fsalfirst
 
     # Calc Middle
+    # `g_penultimate` is the stage value at which `kk[end - 1]` is evaluated
+    g_penultimate = uprev
     for i in 2:(stages - 1)
         utilde = zero(kk[1])
         for j in 1:(i - 1)
             utilde = utilde + A[j, i] * kk[j]
         end
-        kk[i] = f(uprev + dt * utilde, p, t + c[i] * dt)
+        g_penultimate = uprev + dt * utilde
+        kk[i] = f(g_penultimate, p, t + c[i] * dt)
     end
 
     #Calc Last
@@ -57,9 +60,10 @@ end
     u = uprev + dt * accum
 
     if integrator.alg isa CompositeAlgorithm
-        # Hairer II, page 22 modified to use Inf norm
-        n = maximum(abs.((kk[end] .- kk[end - 1]) / (u .- u_beforefinal)))
-        integrator.eigen_est = integrator.opts.internalnorm(n, t)
+        # `kk[end]` is evaluated at `u_beforefinal`, not at the solution `u`
+        integrator.eigen_est = eigen_est_from_stages(
+            kk[end], kk[end - 1], u_beforefinal, g_penultimate
+        )
     end
 
     has_limiter = integrator.opts.stage_limiter! !== trivial_limiter!
@@ -278,15 +282,17 @@ end
     runtime_split_stages!(f, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages)
     integrator.stats.nf += stages - 1
 
+    # `kk[end]` and `kk[end - 1]` are evaluated at the stage values in `u` and `tmp`
+    # (`uprev` if there are no middle stages, since `tmp` is not written then).
+    # Compute the estimate before `u` is overwritten with the solution.
+    if integrator.alg isa CompositeAlgorithm
+        g_penultimate = stages == 2 ? uprev : tmp
+        integrator.eigen_est = eigen_est_from_stages(kk[end], kk[end - 1], u, g_penultimate)
+    end
+
     #Accumulate
     if !isfsal(alg.tableau)
         runtime_split_fsal!(u, α, utilde, uprev, kk, dt, stages)
-    end
-
-    if integrator.alg isa CompositeAlgorithm
-        # Hairer II, page 22 modified to use Inf norm
-        @.. broadcast = false utilde = abs((kk[end] - kk[end - 1]) / (u - tmp))
-        integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
 
     has_limiter = integrator.opts.stage_limiter! !== trivial_limiter!

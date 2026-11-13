@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Unitful
 using LinearAlgebra, Test, ADTypes
+import OrdinaryDiffEqCore
 using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
     OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
 
@@ -41,6 +42,25 @@ using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
 end
 
 @testset "Mixed units" begin
+    @testset "Stiffness estimate" begin
+        # Heterogeneous units give a non-concrete eltype
+        for (k, g) in (
+                (ArrayPartition([1.0u"m/s"], [1.0u"m/s^2"]), ArrayPartition([4.0u"m"], [4.0u"m/s"])),
+                ([1.0u"m/s", 1.0u"m/s^2"], [4.0u"m", 4.0u"m/s"]),
+            )
+            @test @inferred(OrdinaryDiffEqCore.eigen_est_from_stages(k, zero(k), g, zero(g))) == 0.25
+        end
+        for (k, g) in (
+                (
+                    ArrayPartition(typeof(1.0u"m/s")[], typeof(1.0u"m/s^2")[]),
+                    ArrayPartition(typeof(1.0u"m")[], typeof(1.0u"m/s")[]),
+                ),
+                (Quantity{Float64}[], Quantity{Float64}[]),
+            )
+            @test @inferred(OrdinaryDiffEqCore.eigen_est_from_stages(k, k, g, g)) == 0
+        end
+    end
+
     @testset "With ArrayPartition" begin
         r0 = [1131.34, -2282.343, 6672.423]u"km"
         v0 = [-5.64305, 4.30333, 2.42879]u"km/s"
