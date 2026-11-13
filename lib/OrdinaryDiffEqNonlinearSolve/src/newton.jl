@@ -736,8 +736,10 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     if SciMLBase.has_stats(integrator)
         integrator.stats.nsolve += 1
     end
-    dz = relax(dz, nlsolver, integrator, f)
-    dz === nothing && return convert(eltype(ztmp), Inf)
+    fixed_relaxation = relax(nlsolver) isa Union{Nothing, Number}
+    if fixed_relaxation
+        dz = relax(dz, nlsolver, integrator, f)
+    end
 
     atmp = calculate_residuals(
         dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -748,6 +750,11 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # proportional to the total displacement.
     if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
+    end
+
+    # A line search controls progress, while the full correction estimates stage error.
+    if !fixed_relaxation
+        dz = relax(dz, nlsolver, integrator, f)
     end
 
     # compute next iterate
@@ -819,7 +826,10 @@ end
     γdt = isdae ? α * invγdt : γ * dt
 
     !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
-    relax!(dz, nlsolver, integrator, f) === nothing && return convert(eltype(atmp), Inf)
+    fixed_relaxation = relax(nlsolver) isa Union{Nothing, Number}
+    if fixed_relaxation
+        relax!(dz, nlsolver, integrator, f)
+    end
 
     calculate_residuals!(
         atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -831,6 +841,10 @@ end
     # proportional to the total displacement.
     if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
+    end
+
+    if !fixed_relaxation
+        relax!(dz, nlsolver, integrator, f)
     end
 
     # compute next iterate
@@ -1065,21 +1079,7 @@ function relax!(
         ϕ0 = ϕ(zero(α0))
         # The Newton model has norm derivative -ϕ0; a stale W can disagree with it.
         dϕ0 = -ϕ0
-        # Coefficient-multistep ODEs keep their current state in z.
-        norm_ustep = !isdae && method === COEFFICIENT_MULTISTEP ? z : ustep
-        calculate_residuals!(
-            atmp, dz, uprev, norm_ustep, opts.abstol, opts.reltol,
-            opts.internalnorm, t
-        )
-        ndz_undamped = opts.internalnorm(atmp, t)
-        if has_special_newton_error(integrator.alg)
-            ndz_undamped *= error_constant(integrator, alg_order(integrator.alg))
-        end
-        α, ϕ_accepted = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        # Armijo can round to equality at a tiny α despite an unconverged correction.
-        if α < 1 && ϕ_accepted >= ϕ0 && ndz_undamped > 1
-            return nothing
-        end
+        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
     end
@@ -1151,16 +1151,9 @@ function relax(
         end
         α0 = one(eltype(dz))
         ϕ0 = ϕ(zero(α0))
-        # See the matching Newton model and convergence scaling in `relax!`.
+        # See the matching Newton model in `relax!`.
         dϕ0 = -ϕ0
-        ndz_undamped = opts.internalnorm(dz .* weight, t)
-        if has_special_newton_error(integrator.alg)
-            ndz_undamped *= error_constant(integrator, alg_order(integrator.alg))
-        end
-        α, ϕ_accepted = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        if α < 1 && ϕ_accepted >= ϕ0 && ndz_undamped > 1
-            return nothing
-        end
+        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         dz = dz * α
         return dz
     end

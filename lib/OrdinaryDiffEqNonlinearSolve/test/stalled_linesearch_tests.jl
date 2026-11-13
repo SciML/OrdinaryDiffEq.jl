@@ -81,3 +81,61 @@ end
     @test sol.retcode == SciMLBase.ReturnCode.Success
     @test sol.u[end][1] ≈ 1 / 1.1 rtol = 1.0e-12
 end
+
+@testset "Strictly decreasing stalled Newton line search" begin
+    h(x) = x <= 0.25 ? 0.0 : x >= 0.75 ? 1.0 : (y = 2 * (x - 0.25); y * y * (3 - 2y))
+    function rhs!(du, u, p, t)
+        du[1] = -2
+        du[2] = -1 + 1.0e6 * (u[1] - h(u[2]) * (u[1] - 1))
+        return du
+    end
+    rhs(u, p, t) = rhs!(similar(u), u, p, t)
+    predictor!(u, uprev, p, t, dt) = fill!(u, 0)
+    predictor(uprev, p, t, dt) = zero(uprev)
+    for iip in (true, false), always_new in (false, true)
+        @testset "iip=$iip fresh=$always_new" begin
+            accepted = Tuple{Float64, Float64, Float64}[]
+            function linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+                α, merit = BackTracking()(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+                push!(accepted, (α, ϕ0, merit))
+                return α, merit
+            end
+            prob = ODEProblem{iip}(iip ? rhs! : rhs, ones(2), (0.0, 1.0))
+            alg = ImplicitEuler(
+                nlsolve = NLNewton(;
+                    relax = linesearch, predictor = iip ? predictor! : predictor,
+                    always_new, max_iter = 50
+                )
+            )
+            sol = solve(prob, alg; dt = 1.0, adaptive = false, abstol = 1.0e-3, reltol = 0.0)
+            expected = always_new ? SciMLBase.ReturnCode.Success : SciMLBase.ReturnCode.ConvergenceFailure
+            @test sol.retcode == expected
+            if always_new
+                @test sol.u[end][1] ≈ -1 atol = 1.0e-3 rtol = 0
+                @test norm(sol.u[end] - ones(2) - rhs(sol.u[end], nothing, 1.0), Inf) <= 1.0e-3
+            else
+                α, initial, merit = first(accepted)
+                @test α < 1.0e-10
+                @test merit < initial
+            end
+        end
+    end
+end
+
+@testset "Tiny undamped Newton corrections" begin
+    rhs!(du, u, p, t) = (du[1] = 2 * (u[1] - 1) + p; du)
+    rhs(u, p, t) = rhs!(similar(u), u, p, t)
+    predictor!(u, uprev, p, t, dt) = (u .= prevfloat.(uprev))
+    predictor(uprev, p, t, dt) = prevfloat.(uprev)
+    for iip in (true, false), c in (0.0, 1.0e-10), always_new in (false, true)
+        prob = ODEProblem{iip}(iip ? rhs! : rhs, [1.0], (0.0, 1.0), c)
+        alg = ImplicitEuler(
+            nlsolve = NLNewton(;
+                relax = BackTracking(), predictor = iip ? predictor! : predictor, always_new
+            )
+        )
+        sol = solve(prob, alg; dt = 1.0, adaptive = false, abstol = 1.0e-12, reltol = 0.0)
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end][1] ≈ 1 - c atol = 1.0e-12 rtol = 0
+    end
+end
