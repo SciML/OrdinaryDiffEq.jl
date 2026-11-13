@@ -4,6 +4,8 @@ using DiffEqBase
 using DynamicQuantities
 using LinearAlgebra
 import DiffEqBase: default_factorize
+import SciMLBase: value, unitfulvalue
+import RecursiveArrayTools: recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
 @inline DiffEqBase.ODE_DEFAULT_NORM(u::UnionAbstractQuantity, t) = abs(ustrip(u))
 @inline function DiffEqBase.UNITLESS_ABS2(x::UnionAbstractQuantity)
@@ -11,6 +13,24 @@ import DiffEqBase: default_factorize
 end
 
 DiffEqBase.stripunits(x::UnionAbstractQuantity) = ustrip(x)
+
+# `value` strips everything (units + AD/uncertainty) by recursing on the stripped
+# numeric value; `unitfulvalue` strips AD but keeps units. Parallels the Unitful
+# and FlexUnits extensions. Without these, `DiffEqBase.value(t::Quantity)` was the
+# identity default from SciMLBase and `eps(value(t))` in initdt.jl hit
+# `MethodError: no method matching eps(::Quantity)`.
+value(x::Type{<:UnionAbstractQuantity}) = value(DynamicQuantities.value_type(x))
+value(x::UnionAbstractQuantity) = value(ustrip(x))
+unitfulvalue(x::Type{T}) where {T <: UnionAbstractQuantity} = T
+unitfulvalue(x::UnionAbstractQuantity) = x
+
+# RecursiveArrayTools' generic `Number` dispatch uses `typeof(one(T))`, but DynamicQuantities'
+# `one(::Type{<:Quantity})` returns a dimensionless Quantity, so units survive. Recurse into
+# the value type instead so downstream `zero(uBottomEltypeNoUnits)` lands on a bare scalar.
+recursive_unitless_bottom_eltype(::Type{T}) where {T <: UnionAbstractQuantity} =
+    recursive_unitless_bottom_eltype(DynamicQuantities.value_type(T))
+recursive_unitless_eltype(::Type{T}) where {T <: UnionAbstractQuantity} =
+    recursive_unitless_eltype(DynamicQuantities.value_type(T))
 
 DiffEqBase._rate_prototype(u, t::UnionAbstractQuantity, onet) = u / oneunit(t)
 DiffEqBase.timedepentdtmin(t::UnionAbstractQuantity, dtmin) =
