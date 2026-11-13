@@ -648,7 +648,7 @@ mutable struct HomotopyNonlinearSolveCache{uType, tType, rateType, tType2, F, R,
     needs_rebuild::Bool
 end
 
-mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType, dzType, lsType, preType, postType} <:
+mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, WType, ufType, jcType, du1Type, weightType, dzType, lsType, preType, postType, ndzType} <:
     AbstractNLSolverCache
     ustep::uType
     tstep::tType
@@ -682,4 +682,7 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C, JType, 
     # `postcondition` is additionally applied to the stage predictor in `initialize!`.
     precondition::preType
     postcondition::postType
+    # Previous inner displacement of the current no-init inner solve (see
+    # `StageConvergenceMode`); negative before its first step.
+    inner_ndzprev::ndzType
 end
