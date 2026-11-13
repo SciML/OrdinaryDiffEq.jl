@@ -62,6 +62,9 @@ end
 
     if repeat_step || !new_W
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+    elseif !isfinite_W(W)
+        integrator.force_stepfail = true
+        return nothing
     else
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
@@ -176,6 +179,9 @@ end
 
     if repeat_step || !new_W
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+    elseif !isfinite_W(W)
+        integrator.force_stepfail = true
+        return nothing
     else
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
@@ -761,6 +767,9 @@ end
 
     if repeat_step || !new_W
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+    elseif !isfinite_W(W)
+        integrator.force_stepfail = true
+        return nothing
     else
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end

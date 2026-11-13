@@ -25,6 +25,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Callback-truncated interpolation" include("callback_truncated_interpolation.jl")
     @time @safetestset "Rosenbrock AD Tests" include("rosenbrock_ad_tests.jl")
     @time @safetestset "Rosenbrock Convergence Tests" include("ode_rosenbrock_tests.jl")
+    @time @safetestset "Non-finite W Tests" include("nonfinite_W_tests.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua)
