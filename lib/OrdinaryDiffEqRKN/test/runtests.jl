@@ -10,6 +10,7 @@ end
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Nystrom Convergence Tests" include("nystrom_convergence_tests.jl")
+    @time @safetestset "ArrayPartition Error Norm Allocation" include("arraypartition_norm_alloc.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
