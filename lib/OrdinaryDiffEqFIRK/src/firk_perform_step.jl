@@ -397,7 +397,7 @@ end
         z2 = @. T21 * w1 + T22 * w2
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -562,7 +562,7 @@ end
         @. z2 = T21 * w1 + T22 * w2
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -634,7 +634,7 @@ end
     integrator.stats.nw += 1
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
+    if integrator.iter == 1 || !integrator.accept_step || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = map(zero, u)
         z1 = @.. uzero
@@ -742,7 +742,7 @@ end
         z3 = @.. T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -785,14 +785,10 @@ end
         end
     end
 
-    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
-        cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-            integrator.k[5] = z3
-        end
-    end
+    cache.dtprev = dt
+    integrator.k[3] = z1
+    integrator.k[4] = z2
+    integrator.k[5] = z3
 
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -836,7 +832,7 @@ end
     end
 
     # TODO better initial guess
-    if integrator.iter == 1 || integrator.derivative_discontinuity || alg.extrapolant == :constant
+    if integrator.iter == 1 || !integrator.accept_step || integrator.derivative_discontinuity || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
         @.. z1 = uzero
@@ -995,7 +991,7 @@ end
         @.. z3 = T31 * w1 + w2           # T32 = 1, T33 = 0
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -1053,14 +1049,10 @@ end
         end
     end
 
-    if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
-        cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-            integrator.k[5] .= z3
-        end
-    end
+    cache.dtprev = dt
+    integrator.k[3] .= z1
+    integrator.k[4] .= z2
+    integrator.k[5] .= z3
 
     f(fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -1302,7 +1294,7 @@ end
         z5 = @.. T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -1677,7 +1669,7 @@ end
         @.. z5 = T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -1947,7 +1939,7 @@ end
         end
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -2274,7 +2266,7 @@ end
         end
 
         # check stopping criterion
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                 Convergence
@@ -2482,7 +2474,7 @@ end
             z[i] = @.. z[i] - dw[i]
         end
 
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
             success = true
             break
@@ -2676,7 +2668,7 @@ end
             @.. z[i] = z[i] - dw[i]
         end
 
-        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+        if η * ndw < κ && (iter > 1 || iszero(ndw))
             cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
             success = true
             break
