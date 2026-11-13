@@ -1044,14 +1044,17 @@ function relax!(
             res = resid(z)
             return res
         end
-        function dϕ(α)
-            # Small Newton corrections can round away a sqrt(eps()) perturbation in α.
-            ϵ = cbrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
-        end
+        # Scale the forward probe to resolve small corrections without reversing direction.
+        # Cap it at a fraction of the full Newton step to keep the derivative local.
+        normdz = opts.internalnorm(dz, t)
+        ϵ = iszero(normdz) ? cbrt(eps()) : clamp(
+                sqrt(eps()) * opts.internalnorm(z, t) / normdz, cbrt(eps()), 0.1
+            )
         function ϕdϕ(α)
-            return ϕ(α), dϕ(α)
+            ϕα = ϕ(α)
+            return ϕα, (ϕ(α + ϵ) - ϕα) / ϵ
         end
+        dϕ(α) = last(ϕdϕ(α))
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
@@ -1109,13 +1112,15 @@ function relax(
             local z = @.. nlsolver.z - dz * α
             return resid(z)
         end
-        function dϕ(α)
-            ϵ = cbrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
-        end
+        normdz = opts.internalnorm(dz, t)
+        ϵ = iszero(normdz) ? cbrt(eps()) : clamp(
+                sqrt(eps()) * opts.internalnorm(z, t) / normdz, cbrt(eps()), 0.1
+            )
         function ϕdϕ(α)
-            return ϕ(α), dϕ(α)
+            ϕα = ϕ(α)
+            return ϕα, (ϕ(α + ϵ) - ϕα) / ϵ
         end
+        dϕ(α) = last(ϕdϕ(α))
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
