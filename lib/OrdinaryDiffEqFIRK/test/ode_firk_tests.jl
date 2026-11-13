@@ -339,3 +339,13 @@ end
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
 end
+
+@testset "Out-of-place AdaptiveRadau with a mass matrix" begin
+    M = Diagonal([2.0, 0.5])
+    fiip = ODEFunction((du, u, p, t) -> (du .= [-u[1] + cos(t), -u[2] + u[1]]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + cos(t), -u[2] + u[1]]; mass_matrix = M)
+    iip = solve(ODEProblem(fiip, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    oop = solve(ODEProblem(foop, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test oop.retcode == ReturnCode.Success
+    @test oop.u[end] ≈ iip.u[end] rtol = 1.0e-8
+end
