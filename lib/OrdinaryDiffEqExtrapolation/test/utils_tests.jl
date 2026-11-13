@@ -27,5 +27,5 @@ const ODEX = OrdinaryDiffEqExtrapolation
     @test ODEX._controller_scalar_type((; qmax = Float32(2))) === Float32
 
     @test ODEX._thread_storage_size() ==
-        Threads.threadpoolsize(:default) + Threads.threadpoolsize(:interactive)
+        Threads.nthreads(:default) + Threads.nthreads(:interactive)
 end

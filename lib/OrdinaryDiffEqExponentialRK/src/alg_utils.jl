@@ -21,9 +21,13 @@ alg_order(alg::EPIRK5P1) = 5
 alg_order(alg::EPIRK5P2) = 5
 alg_order(alg::EXPRB53s3) = 5
 alg_order(alg::ETD2) = 2
+alg_order(alg::ERK32ZB) = 3
+alg_order(alg::ERK43ZB) = 4
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 
+alg_adaptive_order(alg::ERK32ZB) = 2
+alg_adaptive_order(alg::ERK43ZB) = 3
 alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 
