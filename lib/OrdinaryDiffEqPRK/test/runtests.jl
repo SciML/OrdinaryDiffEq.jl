@@ -23,6 +23,20 @@ end
     @test !any(Base.isexported.(Ref(OrdinaryDiffEqPRK), internal))
 end
 
+@time @safetestset "Threaded stages inside another threaded loop" begin
+    using OrdinaryDiffEqPRK, Test
+    prob_iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    prob_oop = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    for prob in (prob_iip, prob_oop)
+        threaded = solve(prob, KuttaPRK2p5(threading = true); dt = 0.1)
+        sols = Vector{Any}(undef, 2)
+        Threads.@threads for i in 1:2
+            sols[i] = solve(prob, KuttaPRK2p5(threading = true); dt = 0.1)
+        end
+        @test all(sol -> sol.u == threaded.u, sols)
+    end
+end
+
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
 # Allocation tests must run before JET because JET's static analysis
 # invalidates compiled code and causes spurious runtime allocations.
