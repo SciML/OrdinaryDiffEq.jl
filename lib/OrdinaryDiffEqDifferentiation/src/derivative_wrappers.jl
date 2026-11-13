@@ -194,7 +194,15 @@ function jacobian!(
         return nothing
     end
 
-    alg = unwrap_alg(integrator, true)
+    return _jacobian!(
+        unwrap_alg(integrator, true), integrator, J, f, x, fx, jac_config; stats_sink
+    )
+end
+
+function _jacobian!(alg, integrator, J, f, x, fx, jac_config; stats_sink = nothing)
+    if isempty(x)
+        return nothing
+    end
 
     dense = ADTypes.dense_ad(alg_autodiff(alg))
 

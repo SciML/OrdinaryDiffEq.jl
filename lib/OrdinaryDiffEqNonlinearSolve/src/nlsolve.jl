@@ -335,6 +335,32 @@ function _z_of_stage_guess!(nlsolver, integrator, upred)
     return z
 end
 
+# The stage value the residual evaluates at the current iterate `z`: the
+# inverse of `_z_of_stage_guess`.
+function _stage_of_z(nlsolver, integrator)
+    (; z, tmp, γ) = nlsolver
+    if integrator.f isa DAEFunction
+        return get_dae_uprev(integrator, integrator.uprev) + z
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        return z
+    else
+        return @.. tmp + γ * z
+    end
+end
+
+function _stage_of_z!(u, nlsolver, integrator)
+    (; z, tmp, γ) = nlsolver
+    if integrator.f isa DAEFunction
+        _uprev = get_dae_uprev(integrator, integrator.uprev)
+        @.. broadcast = false u = _uprev + z
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        copyto!(u, z)
+    else
+        @.. broadcast = false u = tmp + γ * z
+    end
+    return u
+end
+
 """
     initial_η(nlsolver, integrator) -> η
 
@@ -380,10 +406,9 @@ end
 
 # Step history can alias integrator.u, so Jacobian iterations need private storage.
 function newton_jacobian_state!(integrator, nlsolver::NLSolver{<:NLNewton, true})
-    @.. nlsolver.cache.ustep = integrator.uprev + nlsolver.γ * nlsolver.z
-    return nlsolver.cache.ustep
+    return _stage_of_z!(nlsolver.cache.ustep, nlsolver, integrator)
 end
 
 function newton_jacobian_state!(integrator, nlsolver::NLSolver{<:NLNewton, false})
-    return @.. integrator.uprev + nlsolver.γ * nlsolver.z
+    return _stage_of_z(nlsolver, integrator)
 end

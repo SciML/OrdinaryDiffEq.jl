@@ -36,24 +36,30 @@ function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
 end
 
 """
-    dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing, reltol = …,
+    dolinsolve(integrator, linsolve; alg = unwrap_alg(integrator, true), A = nothing, linu = nothing, b = nothing, reltol = …,
                stats_sink = nothing) -> linres
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
 resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerance
-`reltol` (see `set_linear_reltol!`). Charges `stats.nf`, or `stats_sink` when it is a
-`StatsDelta`, for the Jacobian-vector products the solve applied (see
-`drain_jvp_count!`) and returns the LinearSolve result.
+`reltol` (see `set_linear_reltol!`). `alg` is the integrator's concrete member
+algorithm; callers holding a cache that stores it (e.g. `cache.alg`) should
+pass it so the call stays a static dispatch. Charges `stats.nf`, or
+`stats_sink` when it is a `StatsDelta`, for the Jacobian-vector products the
+solve applied (see `drain_jvp_count!`) and returns the LinearSolve result.
 """
 function dolinsolve(
-        integrator, linsolve; A = nothing, linu = nothing, b = nothing,
+        integrator, linsolve;
+        alg = integrator === nothing ? nothing : unwrap_alg(integrator, true),
+        A = nothing, linu = nothing, b = nothing,
         reltol = integrator === nothing ? nothing : integrator.opts.reltol,
         stats_sink = nothing
     )
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
+    return _dolinsolve(alg, integrator, linsolve, A, reltol, stats_sink)
+end
 
-    _alg = unwrap_alg(integrator, true)
+function _dolinsolve(_alg, integrator, linsolve, A, reltol, stats_sink = nothing)
     if !isnothing(A)
         if integrator isa DEIntegrator
             (; u, p, t) = integrator

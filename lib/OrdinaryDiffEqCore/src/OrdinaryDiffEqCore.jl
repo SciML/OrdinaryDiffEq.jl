@@ -52,7 +52,7 @@ import RecursiveArrayTools
 using BinaryHeaps: BinaryHeap, FasterForward
 using ArrayInterface: ArrayInterface
 
-import TruncatedStacktraces: @truncate_stacktrace, VERBOSE_MSG
+import TruncatedStacktraces: @truncate_stacktrace
 
 # Integrator Interface
 import Base: resize!, deleteat!
@@ -448,13 +448,13 @@ include("precompilation_setup.jl")
             :OrdinaryDiffEqImplicitSecondOrderAlgorithm, :OrdinaryDiffEqInterpolation, :OrdinaryDiffEqLinearExponentialAlgorithm, :OrdinaryDiffEqMutableCache, :OrdinaryDiffEqNewtonAdaptiveAlgorithm, :OrdinaryDiffEqNewtonAlgorithm,
             :OrdinaryDiffEqPartitionedAlgorithm, :OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, :OrdinaryDiffEqRosenbrockAlgorithm, :PartitionedAlgorithm, :perform_step!, :PIController,
             :PIDController, :PolyesterThreads, :post_newton_controller!, :PredictiveController,
-            :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!,
+            :qmax_default, :qmin_default, :reinit_controller!, :resize_J_W!, :resize_nlsolver!, :restore_controller!,
             :RosenbrockAlgorithm, :Sequential, :set_EEst!, :set_new_W!, :setup_controller_cache, :set_W_γdt!,
-            :SlowConvergence, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
+            :SlowConvergence, :snapshot_controller, :step_accept_controller!, :step_reject_controller!, :stepsize_controller!, :StochasticDiffEqAdaptiveAlgorithm, :StochasticDiffEqAlgorithm,
             :StochasticDiffEqCompositeAlgorithm, :StochasticDiffEqJumpAdaptiveAlgorithm, :StochasticDiffEqJumpAlgorithm, :StochasticDiffEqJumpDiffusionAdaptiveAlgorithm,
             :StochasticDiffEqJumpDiffusionAlgorithm, :StochasticDiffEqJumpNewtonAdaptiveAlgorithm, :StochasticDiffEqJumpNewtonDiffusionAdaptiveAlgorithm, :StochasticDiffEqNewtonAdaptiveAlgorithm, :StochasticDiffEqNewtonAlgorithm,
             :StochasticDiffEqRODEAdaptiveAlgorithm, :StochasticDiffEqRODEAlgorithm, :StochasticDiffEqRODECompositeAlgorithm, :sync_controllers!, :TryAgain,
-            :unwrap_alg, :uses_uprev, :VerySlowConvergence,
+            :unwrap_alg, :uses_uprev, :VerySlowConvergence, :_current_alg,
             # Round 2: remaining cross-sublib / extension surface owned by OrdinaryDiffEqCore.
             # Error / sentinel / dispatch-helper types shared across solver sublibs.
             :CompiledFloats, :DerivativeOrderNotPossibleError, :DifferentialVarsUndefined,

@@ -39,7 +39,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     set_new_W!, set_W_γdt!, diffdir,
     charge_nw!, charge_njacs!, charge_nf!, stats_sink, stats_owner,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff, isWmethod,
+    get_new_W_γdt_cutoff, isWmethod, _current_alg,
     TryAgain,
     Divergence, constvalue, @SciMLMessage
 
