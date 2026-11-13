@@ -677,7 +677,16 @@ function SciMLBase.reinit!(
     # as in `__init`, the callbacks and the cache are initialized with dt = 0, and the initial dt is
     # chosen after them (for a composite algorithm, with the algorithm `initialize!` selects) unless
     # one of them set it or terminated the integration
-    reset_dt && (integrator.dt = zero(integrator.dt))
+    if reset_dt
+        integrator.dt = zero(integrator.dt)
+    elseif !integrator.opts.adaptive && !iszero(integrator.dtcache)
+        integrator.dt = integrator.tdir * abs(integrator.dtcache)
+        integrator.dtpropose = integrator.dt
+        if !isnothing(_get_W(integrator))
+            modify_dt_for_tstops!(integrator)
+            integrator.sqdt = integrator.tdir * sqrt(abs(integrator.dt))
+        end
+    end
 
     if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
@@ -705,7 +714,12 @@ function SciMLBase.reinit!(
         auto_dt_reset!(integrator)
     end
 
-    reinit_noise!(_get_W(integrator), integrator.dt)
+    W = _get_W(integrator)
+    if !isnothing(W) && !integrator.opts.adaptive && !iszero(integrator.dtcache)
+        reinit_noise!(W, integrator.dt, integrator.u, integrator.p)
+    else
+        reinit_noise!(W, integrator.dt)
+    end
 
     # Starting-time discontinuity handling: mirrors `__init`.
     handle_starting_time_discontinuity!(integrator)
