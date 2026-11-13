@@ -125,6 +125,7 @@ end
     @test g2 ≈ g_ref rtol = 1.0e-5
     g3 = Enzyme.gradient(set_runtime_activity(Enzyme.Reverse), loss_autospec_barrier, copy(p_init))[1]
     @test g3 ≈ g_ref rtol = 1.0e-5
+end
 
 # The case from SciML/SciMLSensitivity.jl#1714: an MTK observed variable read from the
 # solution. MTK problems default to `AutoDespecialize`, so the shadow of `sol.prob.p` is a
