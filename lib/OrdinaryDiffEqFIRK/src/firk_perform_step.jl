@@ -419,10 +419,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-        end
+        integrator.k[3] = z1
+        integrator.k[4] = z2
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -589,10 +587,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-        end
+        integrator.k[3] .= z1
+        integrator.k[4] .= z2
     end
 
     f(fsallast, u, p, t + dt)
@@ -787,11 +783,9 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-            integrator.k[5] = z3
-        end
+        integrator.k[3] = z1
+        integrator.k[4] = z2
+        integrator.k[5] = z3
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -1055,11 +1049,9 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-            integrator.k[5] .= z3
-        end
+        integrator.k[3] .= z1
+        integrator.k[4] .= z2
+        integrator.k[5] .= z3
     end
 
     f(fsallast, u, p, t + dt)
@@ -1346,13 +1338,11 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-            integrator.k[5] = z3
-            integrator.k[6] = z4
-            integrator.k[7] = z5
-        end
+        integrator.k[3] = z1
+        integrator.k[4] = z2
+        integrator.k[5] = z3
+        integrator.k[6] = z4
+        integrator.k[7] = z5
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -1739,13 +1729,11 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-            integrator.k[5] .= z3
-            integrator.k[6] .= z4
-            integrator.k[7] .= z5
-        end
+        integrator.k[3] .= z1
+        integrator.k[4] .= z2
+        integrator.k[5] .= z3
+        integrator.k[6] .= z4
+        integrator.k[7] .= z5
     end
 
     f(fsallast, u, p, t + dt)
@@ -1998,10 +1986,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] = @.. z[i]
-            end
+        for i in 1:num_stages
+            integrator.k[i + 2] = @.. z[i]
         end
     end
 
@@ -2340,10 +2326,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] .= z[i]
-            end
+        for i in 1:num_stages
+            integrator.k[i + 2] .= z[i]
         end
     end
 
@@ -2584,10 +2568,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] = z[i]
-            end
+        for i in 1:num_stages
+            integrator.k[i + 2] = z[i]
         end
     end
 
@@ -2772,10 +2754,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] .= z[i]
-            end
+        for i in 1:num_stages
+            integrator.k[i + 2] .= z[i]
         end
     end
 
