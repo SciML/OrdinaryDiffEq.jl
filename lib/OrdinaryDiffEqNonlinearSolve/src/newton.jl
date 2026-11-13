@@ -1110,14 +1110,17 @@ function relax!(
                 (ϕ(α + ϵ) - ϕ_1) / ϵ
             return ϕ_1, ∂ϕ∂α
         end
-        α0 = αone
+        α0 = convert(promote_type(typeof(αone), Float64), αone)
         ϕ0 = ϕ(zero(α0))
         # At the representable floor the merit cannot decrease; the full
         # correction is judged by the outer convergence test instead.
         ϕ(α0) == ϕ0 && iszero(dϕ(zero(α0))) && return dz
+        @.. atmp = stage * lsweight
+        ϕ0 <= 4 * eps(float(real(αone))) * opts.internalnorm(atmp, t) && return dz
         # The Newton model has norm derivative -ϕ0; a stale W can disagree with it.
         dϕ0 = -ϕ0
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = oftype(αone, α)
         @.. dz = dz * α
         return dz
     end
@@ -1192,14 +1195,16 @@ function relax(
                 (ϕ(α + ϵ) - ϕ_1) / ϵ
             return ϕ_1, ∂ϕ∂α
         end
-        α0 = αone
+        α0 = convert(promote_type(typeof(αone), Float64), αone)
         ϕ0 = ϕ(zero(α0))
         # See the matching representable-floor check in `relax!`.
         ϕ(α0) == ϕ0 && iszero(dϕ(zero(α0))) && return dz
+        ϕ0 <= 4 * eps(float(real(αone))) * opts.internalnorm(ustep .* weight, t) &&
+            return dz
         # See the matching Newton model in `relax!`.
         dϕ0 = -ϕ0
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
-        dz = dz * α
+        dz = dz * oftype(αone, α)
         return dz
     end
 end

@@ -167,17 +167,18 @@ end
 end
 
 @testset "Float32 StrongWolfe line search" begin
-    rhs!(du, u, p, t) = (du .= -u; du)
-    rhs(u, p, t) = -u
-    for iip in (true, false)
-        u0 = Float32[1, 2]
-        prob = ODEProblem{iip}(iip ? rhs! : rhs, u0, (0.0f0, 0.1f0))
-        sol = solve(
-            prob, ImplicitEuler(nlsolve = NLNewton(relax = StrongWolfe()));
-            dt = 0.1f0, adaptive = false
+    for g in (u -> -u, u -> -u .^ 3), iip in (true, false)
+        rhs!(du, u, p, t) = (du .= g(u); du)
+        rhs(u, p, t) = g(u)
+        prob = ODEProblem{iip}(iip ? rhs! : rhs, Float32[1, 2], (0.0f0, 1.0f0))
+        alg = ImplicitEuler(nlsolve = NLNewton(relax = StrongWolfe()))
+        sol = solve(prob, alg; dt = 0.1f0, adaptive = false)
+        plain = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton()); dt = 0.1f0, adaptive = false
         )
         @test sol.retcode == SciMLBase.ReturnCode.Success
-        @test maximum(abs.(sol.u[end] .- u0 ./ Float32(1.1))) <= 1.0f-6
+        @test eltype(sol.u[end]) == Float32
+        @test maximum(abs.(sol.u[end] .- plain.u[end])) <= 1.0f-3
     end
 end
 

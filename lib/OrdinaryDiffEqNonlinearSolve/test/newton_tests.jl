@@ -21,7 +21,9 @@ for prob in (prob_ode_lorenz, prob_ode_orego)
     # and one accepted step); a 0.1% work budget covers this measured overhead.
     nf_budget = prob === prob_ode_orego ? 0.001 * sol1.stats.nf : 20
     @test sol2.stats.nf <= sol1.stats.nf + nf_budget
-    @test sol2.stats.nw <= sol1.stats.nw + 100
+    # The Jacobian-evaluation count depends on the resolved dependency versions
+    # (62 and 442 here, about 1e5 with downgraded bounds), so the budget scales.
+    @test sol2.stats.nw <= sol1.stats.nw + max(100, 0.005 * sol1.stats.nw)
 end
 
 # The full Newton step solves this linear stage despite the overshooting predictor.
