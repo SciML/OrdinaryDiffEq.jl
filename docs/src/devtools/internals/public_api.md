@@ -16,6 +16,12 @@ documented under the API section.
 
 ## DiffEqBase solver hooks
 
+`DiffEqBase.find_first_continuous_callback(integrator, callbacks, Val(true))` provides
+concrete callback bookkeeping for integrators that store callbacks in an `AbstractVector`.
+Its crossing sign is an `Int8` and its event index is an `Int`; vector callback directions
+are read from `integrator.callback_cache.simultaneous_events`. The two-argument method
+preserves each callback's crossing sign and event index types.
+
 ```@docs
 DiffEqBase.CallbackCache
 DiffEqBase.EvalFunc
