@@ -139,10 +139,10 @@ version = "7.30.2"
 
 [[deps.ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra", "StaticArrays"]
-git-tree-sha1 = "8fde25d92e917350570f1203e47c933d16b77dce"
+git-tree-sha1 = "1e73ed09dfb0df4de9b3e41e7ce92d39a51f69cb"
 registries = "General"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "1.16.0"
+version = "1.16.1"
 weakdeps = ["SparseArrays"]
 
     [deps.ArrayLayouts.extensions]
@@ -730,10 +730,10 @@ version = "1.3.7"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
-git-tree-sha1 = "a55669aa77ae8bbdc7310c4027112500ff5ec874"
+git-tree-sha1 = "d05cff742a91d2c7aff386962aee5982bf57c096"
 registries = "General"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "1.4.7"
+version = "1.4.8"
 weakdeps = ["StaticArrays"]
 
     [deps.ForwardDiff.extensions]
@@ -1218,10 +1218,10 @@ version = "5.18.3"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "52702dc5aba6392de19d734750c37ffb08515dc0"
+git-tree-sha1 = "52847246e86dd3dd88c39716748c57fd2bc43dce"
 registries = "General"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "1.0.5"
+version = "1.0.6"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"
