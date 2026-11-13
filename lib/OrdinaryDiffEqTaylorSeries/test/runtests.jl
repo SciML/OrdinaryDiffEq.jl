@@ -12,6 +12,74 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @testset "Taylor methods with mutable static states" begin
+        using StaticArrays
+
+        decay!(du, u, p, t) = (du .= -u; nothing)
+        u0 = MVector(1.0, 2.0)
+        prob = ODEProblem{true, SciMLBase.FullSpecialize}(decay!, u0, (0.0, 0.1))
+        for alg in (
+                ExplicitTaylor2(), ExplicitTaylor(order = Val(5)),
+                ExplicitTaylorAdaptiveOrder(min_order = Val(3), max_order = Val(5)),
+            )
+            sol = solve(prob, alg; dt = 0.001, adaptive = false)
+            @test SciMLBase.successful_retcode(sol)
+            @test typeof(sol.u[end]) == typeof(u0)
+            @test sol.u[end] ≈ exp(-0.1) .* u0 rtol = 1.0e-6
+        end
+    end
+
+    @testset "Taylor jet cache distinguishes state axes" begin
+        using OffsetArrays
+
+        decay(u, p, t) = -(firstindex(u) + 2) .* u
+        states = (
+            [1.0, 2.0], [1.0, 2.0, 3.0],
+            OffsetArray([1.0, 2.0], 0:1), OffsetArray([1.0, 2.0], 2:3),
+            OffsetArray([1.0, 2.0, 3.0], 0:2), [1.0, 2.0],
+            OffsetArray([1.0, 2.0], 0:1),
+        )
+        for alg in (
+                    ExplicitTaylor2(), ExplicitTaylor(order = Val(5)),
+                    ExplicitTaylorAdaptiveOrder(min_order = Val(3), max_order = Val(5)),
+                ), u0 in states
+            prob = ODEProblem{false, SciMLBase.FullSpecialize}(decay, u0, (0.0, 0.1))
+            sol = solve(prob, alg; dt = 0.0005, adaptive = false)
+            @test SciMLBase.successful_retcode(sol)
+            @test axes(sol.u[end]) == axes(u0)
+            @test sol.u[end] ≈ exp(-(firstindex(u0) + 2) * 0.1) .* u0 rtol = 1.0e-6
+        end
+    end
+
+    @testset "Taylor methods preserve array axes and structure" begin
+        using OffsetArrays, StaticArrays, ComponentArrays
+
+        offset_iip!(du, u, p, t) = (du[0] = -u[0]; du[1] = -u[1]; nothing)
+        offset_oop(u, p, t) = OffsetArray([-u[0], -u[1]], axes(u, 1))
+        component_iip!(du, u, p, t) = (du.x = -u.x; du.y = -u.y; nothing)
+        component_oop(u, p, t) = ComponentArray(x = -u.x, y = -u.y)
+        static_oop(u, p, t) = -u
+
+        cases = (
+            (OffsetArray([1.0, 2.0], 0:1), offset_iip!, true),
+            (OffsetArray([1.0, 2.0], 0:1), offset_oop, false),
+            (Vector([1.0, 2.0]), static_oop, false),
+            (SVector(1.0, 2.0), static_oop, false),
+            (ComponentArray(x = 1.0, y = 2.0), component_iip!, true),
+            (ComponentArray(x = 1.0, y = 2.0), component_oop, false),
+        )
+        for (u0, f, iip) in cases
+            prob = ODEProblem{iip, SciMLBase.FullSpecialize}(f, u0, (0.0, 0.1))
+            for alg in (ExplicitTaylor2(), ExplicitTaylor(order = Val(5)))
+                sol = solve(prob, alg; dt = 0.01, adaptive = false)
+                @test SciMLBase.successful_retcode(sol)
+                @test typeof(sol.u[end]) == typeof(u0)
+                @test axes(sol.u[end]) == axes(u0)
+                @test parent(sol.u[end]) ≈ exp(-0.1) .* parent(u0) rtol = 2.0e-6
+            end
+        end
+    end
+
     using ForwardDiff
     import OrdinaryDiffEqCore
     using OrdinaryDiffEqCore: PIDController
