@@ -755,6 +755,17 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # A line search controls progress, while the full correction estimates stage error.
     if !fixed_relaxation
         dz = relax(dz, nlsolver, integrator, f)
+        satmp = calculate_residuals(
+            dz, uprev, ustep, opts.abstol, opts.reltol,
+            opts.internalnorm, t
+        )
+        step_ndz = opts.internalnorm(satmp, t)
+        if has_special_newton_error(integrator.alg)
+            step_ndz *= error_constant(integrator, alg_order(integrator.alg))
+        end
+        nlsolver.step_ndz = step_ndz
+    else
+        nlsolver.step_ndz = ndz
     end
 
     # compute next iterate
@@ -845,6 +856,23 @@ end
 
     if !fixed_relaxation
         relax!(dz, nlsolver, integrator, f)
+        ustep = if isdae
+            _uprev = get_dae_uprev(integrator, uprev)
+            @.. broadcast = false ustep = _uprev + z
+        else
+            compute_ustep!(ustep, tmp, γ, z, method)
+        end
+        calculate_residuals!(
+            atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
+            opts.internalnorm, t
+        )
+        step_ndz = opts.internalnorm(atmp, t)
+        if has_special_newton_error(integrator.alg)
+            step_ndz *= error_constant(integrator, alg_order(integrator.alg))
+        end
+        nlsolver.step_ndz = step_ndz
+    else
+        nlsolver.step_ndz = ndz
     end
 
     # compute next iterate
@@ -1035,10 +1063,12 @@ function relax!(
         (; uprev, t, p, dt, opts, isdae) = integrator
         (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt, lsweight) = cache
+        αone = one(eltype(ustep))
+        stage = isdae ? ustep : compute_ustep!(ustep, tmp, γ, z, method)
         # Keep the merit's weights fixed during the search, independently of the
         # Krylov preconditioner's cache.weight buffer.
         calculate_residuals!(
-            lsweight, fill!(lsweight, one(eltype(ustep))), uprev, ustep,
+            lsweight, fill!(lsweight, one(eltype(ustep))), uprev, stage,
             opts.abstol, opts.reltol, opts.internalnorm, t
         )
         function compute_b_ustep(z)
@@ -1055,28 +1085,36 @@ function relax!(
         end
         function resid(z)
             b, ustep2 = compute_b_ustep(z)
-            @.. atmp = b * lsweight
+            br = _restructure_state(atmp, b)
+            @.. atmp = br * lsweight
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
         function ϕ(α)
+            α = oftype(αone, α)
             local z = @.. atmp = nlsolver.z - dz * α
             res = resid(z)
             return res
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            α = oftype(αone, α)
+            ϵ = sqrt(eps(float(real(αone)))) * max(αone, abs(α))
+            return α >= ϵ ? (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2ϵ) :
+                (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
+            α = oftype(αone, α)
+            ϵ = sqrt(eps(float(real(αone)))) * max(αone, abs(α))
             ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
+            ∂ϕ∂α = α >= ϵ ? (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2ϵ) :
+                (ϕ(α + ϵ) - ϕ_1) / ϵ
             return ϕ_1, ∂ϕ∂α
         end
-        α0 = one(eltype(ustep))
+        α0 = αone
         ϕ0 = ϕ(zero(α0))
+        # At the representable floor the merit cannot decrease; the full
+        # correction is judged by the outer convergence test instead.
+        ϕ(α0) == ϕ0 && iszero(dϕ(zero(α0))) && return dz
         # The Newton model has norm derivative -ϕ0; a stale W can disagree with it.
         dϕ0 = -ϕ0
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
@@ -1134,23 +1172,30 @@ function relax(
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
+        αone = one(eltype(dz))
         function ϕ(α)
+            α = oftype(αone, α)
             local z = @.. nlsolver.z - dz * α
             return resid(z)
         end
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            α = oftype(αone, α)
+            ϵ = sqrt(eps(float(real(αone)))) * max(αone, abs(α))
+            return α >= ϵ ? (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2ϵ) :
+                (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
+            α = oftype(αone, α)
+            ϵ = sqrt(eps(float(real(αone)))) * max(αone, abs(α))
             ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
+            ∂ϕ∂α = α >= ϵ ? (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2ϵ) :
+                (ϕ(α + ϵ) - ϕ_1) / ϵ
             return ϕ_1, ∂ϕ∂α
         end
-        α0 = one(eltype(dz))
+        α0 = αone
         ϕ0 = ϕ(zero(α0))
+        # See the matching representable-floor check in `relax!`.
+        ϕ(α0) == ϕ0 && iszero(dϕ(zero(α0))) && return dz
         # See the matching Newton model in `relax!`.
         dϕ0 = -ϕ0
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)

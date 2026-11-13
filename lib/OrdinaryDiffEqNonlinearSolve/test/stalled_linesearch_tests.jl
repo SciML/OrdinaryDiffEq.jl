@@ -122,6 +122,92 @@ end
     end
 end
 
+@testset "Multidimensional in-place line search" begin
+    rhs!(du, u, p, t) = (du .= -u; du)
+    rhs(u, p, t) = -u
+    for dims in ((2, 2), (2, 1, 2)), iip in (true, false)
+        u0 = reshape(collect(1.0:prod(dims)), dims)
+        prob = ODEProblem{iip}(iip ? rhs! : rhs, u0, (0.0, 0.1))
+        sol = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton(relax = BackTracking()));
+            dt = 0.1, adaptive = false
+        )
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end] ≈ u0 ./ 1.1 rtol = 1.0e-12
+    end
+end
+
+@testset "Damped Newton progress with growing full corrections" begin
+    Fmono(x) = x + 0.99 * sin(x) - 2π
+    rhs!(du, u, p, t) = (du[1] = u[1] - 1 - Fmono(u[1]); du)
+    rhs(u, p, t) = rhs!(similar(u), u, p, t)
+    predictor!(u, uprev, p, t, dt) = fill!(u, 0.0)
+    predictor(uprev, p, t, dt) = zero(uprev)
+    for iip in (true, false)
+        accepted = Tuple{Float64, Float64, Float64}[]
+        function linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+            α, merit = BackTracking()(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+            push!(accepted, (α, ϕ0, merit))
+            return α, merit
+        end
+        prob = ODEProblem{iip}(iip ? rhs! : rhs, [1.0], (0.0, 1.0))
+        alg = ImplicitEuler(
+            nlsolve = NLNewton(;
+                relax = linesearch, predictor = iip ? predictor! : predictor,
+                always_new = true, max_iter = 50
+            )
+        )
+        sol = solve(prob, alg; dt = 1.0, adaptive = false, abstol = 1.0e-9, reltol = 0.0)
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end][1] ≈ 2π rtol = 1.0e-12
+        @test length(accepted) >= 3
+        @test accepted[2][1] ≈ 0.01
+        @test accepted[2][3] < accepted[2][2]
+    end
+end
+
+@testset "Float32 StrongWolfe line search" begin
+    rhs!(du, u, p, t) = (du .= -u; du)
+    rhs(u, p, t) = -u
+    for iip in (true, false)
+        u0 = Float32[1, 2]
+        prob = ODEProblem{iip}(iip ? rhs! : rhs, u0, (0.0f0, 0.1f0))
+        sol = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton(relax = StrongWolfe()));
+            dt = 0.1f0, adaptive = false
+        )
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test maximum(abs.(sol.u[end] .- u0 ./ Float32(1.1))) <= 1.0f-6
+    end
+end
+
+@testset "Coefficient-multistep line-search weights" begin
+    rhs!(du, u, p, t) = (du .= -u; du)
+    rhs(u, p, t) = -u
+    predictor!(u, uprev, p, t, dt) = (u .= (1000.0, 0.0); u)
+    predictor(uprev, p, t, dt) = [1000.0, 0.0]
+    first_merits = Float64[]
+    for iip in (true, false)
+        first_merit = Ref{Union{Nothing, Float64}}(nothing)
+        function linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+            first_merit[] === nothing && (first_merit[] = ϕ0)
+            return BackTracking()(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        end
+        prob = ODEProblem{iip}(iip ? rhs! : rhs, [1.0, 1.0], (0.0, 1.0))
+        alg = QBDF(
+            nlsolve = NLNewton(;
+                relax = linesearch, predictor = iip ? predictor! : predictor
+            )
+        )
+        sol = solve(prob, alg; dt = 1.0, adaptive = false, abstol = 1.0e-6, reltol = 1.0e-3)
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end] ≈ [0.5, 0.5]
+        push!(first_merits, something(first_merit[]))
+    end
+    @test first_merits[1] ≈ first_merits[2] rtol = 1.0e-12
+    @test first_merits[1] ≈ 1580.1892298099906 rtol = 1.0e-12
+end
+
 @testset "Tiny undamped Newton corrections" begin
     rhs!(du, u, p, t) = (du[1] = 2 * (u[1] - 1) + p; du)
     rhs(u, p, t) = rhs!(similar(u), u, p, t)
