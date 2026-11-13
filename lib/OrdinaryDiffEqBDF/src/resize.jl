@@ -42,3 +42,39 @@ function resize_non_user_cache!(
     integrator.derivative_discontinuity = true
     return nothing
 end
+
+# FBDF histories contain state-sized arrays that `full_cache` does not reach.
+function edit_fbdf_state!(edit!, integrator, cache)
+    seen = Any[integrator.fsalfirst, integrator.fsallast]
+    append!(seen, full_cache(integrator))
+    # Scratch buffers carry the new length before any composite hook edits shared state.
+    target_length = length(cache.u₀)
+    for a in Iterators.flatten(
+            ((integrator.u, integrator.uprev), cache.u_history, cache.u_corrector, cache.dense)
+        )
+        (a isa AbstractArray && ArrayInterface.ismutable(a)) || continue
+        any(s -> s === a, seen) && continue
+        push!(seen, a)
+        if (a === integrator.u || a === integrator.uprev) && length(a) == target_length
+            continue
+        end
+        edit!(a)
+    end
+    return nothing
+end
+
+function deleteat_non_user_cache!(
+        integrator::OrdinaryDiffEqCore.ODEIntegrator,
+        cache::FBDFCache, idxs
+    )
+    edit_fbdf_state!(a -> deleteat!(a, idxs), integrator, cache)
+    return resize_non_user_cache!(integrator, cache, length(integrator.u))
+end
+
+function addat_non_user_cache!(
+        integrator::OrdinaryDiffEqCore.ODEIntegrator,
+        cache::FBDFCache, idxs
+    )
+    edit_fbdf_state!(a -> SciMLBase.addat!(a, idxs), integrator, cache)
+    return resize_non_user_cache!(integrator, cache, length(integrator.u))
+end

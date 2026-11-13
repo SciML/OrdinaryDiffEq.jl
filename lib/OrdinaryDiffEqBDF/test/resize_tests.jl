@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, LinearAlgebra, Test
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 const A = [-1.0 0.35 0.1; 0.2 -1.4 0.25; 0.15 0.3 -1.2]
 const U0 = [1.0, -0.5]
@@ -46,5 +47,58 @@ end
         @test sol(0.75) ≈ exact(0.75) rtol = 1.0e-7 atol = 1.0e-10
         @test sol.u[end] ≈ exact(TF) rtol = 1.0e-7 atol = 1.0e-10
         @test restart_orders == [1, 1]
+    end
+end
+
+const ACTIVE = Ref([1, 3])
+const ACTIVE_A = Ref(A)
+# Every principal submatrix squares to zero, making fixed-step BDF1 exact.
+const NILPOTENT_A = [0.0 0.35 0.1; 0.0 0.0 0.0; 0.0 0.0 0.0]
+f_active!(du, u, p, t) = (mul!(du, view(ACTIVE_A[], ACTIVE[], ACTIVE[]), u); nothing)
+
+@testset "BDF deleteat!/addat! mid-solve" begin
+    cases = (
+        ([1, 3], [1, 3, 2], integ -> (addat!(integ, [2]); integ.u[3] = UNEW)),
+        ([1, 2, 3], [1, 3], integ -> deleteat!(integ, [2])),
+    )
+    algs = (
+        FBDF(), QNDF(),
+        CompositeAlgorithm((FBDF(), FBDF(time_filter = true)), i -> 1),
+        CompositeAlgorithm((FBDF(), FBDF(time_filter = true)), i -> 2),
+        CompositeAlgorithm((FBDF(), QNDF()), i -> 1),
+        CompositeAlgorithm((QNDF(), FBDF()), i -> 1),
+    )
+    @testset "$(nameof(typeof(alg))) $before => $after" for alg in algs, (before, after, edit!) in cases
+        ACTIVE[] = before
+        ACTIVE_A[] = alg isa CompositeAlgorithm ? NILPOTENT_A : A
+        stepping = if alg isa CompositeAlgorithm
+            # Fixed-step QNDF needs a finer step for the analytic comparison.
+            dt = first(alg.algs) isa QNDF ? 1 / 2^20 : 1 / 64
+            (; adaptive = false, dt, maxiters = 10^7)
+        else
+            (;)
+        end
+        integ = init(
+            ODEProblem(f_active!, [1.0, -0.5, 0.2][1:length(before)], (0.0, TF)), alg;
+            tstops = [TG], reltol = 1.0e-10, abstol = 1.0e-12, stepping...
+        )
+        step!(integ, TG, true)
+        @test integ.t == TG
+        u_before = copy(integ.u)
+        edit!(integ)
+        expected = length(after) > length(before) ? vcat(u_before, UNEW) : u_before[[1, 3]]
+        @test integ.u == expected
+        ACTIVE[] = after
+        u_edit = copy(integ.u)
+        @test length(u_edit) == length(after)
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+
+        fresh = solve(
+            ODEProblem(f_active!, u_edit, (TG, TF)), alg;
+            reltol = 1.0e-10, abstol = 1.0e-12, stepping...
+        )
+        @test integ.u ≈ fresh.u[end] rtol = 1.0e-7 atol = 1.0e-10
+        @test integ.u ≈ exp(ACTIVE_A[][after, after] * (TF - TG)) * u_edit rtol = 1.0e-7 atol = 1.0e-10
     end
 end
