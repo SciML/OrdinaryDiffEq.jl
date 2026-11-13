@@ -110,8 +110,11 @@ module DiffEqBaseEnzymeExt
         return nothing
     end
 
-    # Parameter types not handled below (tuples, plain structs, ...) keep the previous
-    # behavior: this part of the gradient is not propagated.
+    # Only numeric arrays and the tunable buffer of an aliasing SciMLStructure (e.g.
+    # `MTKParameters`) are handled. For other parameter types (tuples, plain structs,
+    # arrays of arrays, non-aliasing SciMLStructures), and for the non-tunable parts of a
+    # SciMLStructure, the part of the gradient that reaches `p` through `sol.prob.p` is
+    # still dropped, as before this rule handled it.
     function _accumulate_shadow!(dp, ds)
         if dp isa AbstractArray{<:Number} && ds isa AbstractArray{<:Number}
             dp .+= ds
