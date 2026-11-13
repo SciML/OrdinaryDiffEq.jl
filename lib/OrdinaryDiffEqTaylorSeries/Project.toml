@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEqTaylorSeries"
 uuid = "9c7f1690-dd92-42a3-8318-297ee24d8d39"
 authors = ["Songchen Tan <i@tansongchen.com>"]
-version = "2.5.0"
+version = "2.5.1"
 
 [sources]
 DiffEqBase = {path = "../DiffEqBase"}
@@ -67,7 +67,7 @@ SciMLBase = "3.39"
 StaticArrays = "1"
 SymbolicUtils = "4.10.0"
 Symbolics = "7.6.0"
-TaylorDiff = "0.3.5"
+TaylorDiff = "0.3.6"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4"
 julia = "1.10"
