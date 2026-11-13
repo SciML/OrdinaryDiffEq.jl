@@ -300,6 +300,17 @@ end
     @test integ.kshortsize == bare.kshortsize
 end
 
+@testset "AdaptiveRadau dense output across stage-count changes" begin
+    f!(du, u, p, t) = (du .= cos(t) .* u; nothing)
+    f(u, p, t) = cos(t) .* u
+    exact(t) = exp(sin(t)) .* [1.0, 2.0]
+    for prob in (ODEProblem(f!, [1.0, 2.0], (0.0, 4.0)), ODEProblem(f, [1.0, 2.0], (0.0, 4.0)))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+        @test maximum(maximum(abs.(sol(t) - exact(t))) for t in 0:0.01:4) < 1.0e-5
+        @test sol.stats.naccept < 40
+    end
+end
+
 @testset "AdaptiveRadau Newton tolerance follows the stage count" begin
     prob = prob_ode_rober
     ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
@@ -310,6 +321,10 @@ end
         @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
         @test abs(sum(sol.u[end]) - 1) < 1.0e-8
     end
+    vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 100 * ((1 - u[1]^2) * u[2] - u[1]); nothing)
+    vdp = ODEProblem(vdp!, [2.0, 0.0], (0.0, 2.0))
+    scalar = solve(vdp, AdaptiveRadau(); reltol = 1.0e-6, abstol = 1.0e-7)
+    @test solve(vdp, AdaptiveRadau(); reltol = [1.0e-6, 1.0e-6], abstol = [1.0e-7, 1.0e-7]).u == scalar.u
 end
 
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
