@@ -115,6 +115,60 @@ function alg_cache(
     return ROCK4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), u)
 end
 
+mutable struct DUMKA3ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
+    coef::Vector{NTuple{6, T}}
+    zprev::zType
+    deg_index::Int
+    min_index::Int
+    max_index::Int
+    eig_age::Int
+end
+
+@cache struct DUMKA3Cache{uType, rateType, uNoUnitsType, C <: DUMKA3ConstantCache} <:
+    StabilizedRKMutableCache
+    u::uType
+    uprev::uType
+    ustage::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    fsalfirst::rateType
+    k::rateType
+    z0::rateType
+    z1::rateType
+    constantcache::C
+end
+
+function alg_cache(
+        alg::DUMKA3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    constantcache = DUMKA3ConstantCache(
+        constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits),
+        copy(u)
+    )
+    ustage = zero(u)
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    fsalfirst = zero(rate_prototype)
+    k = zero(rate_prototype)
+    z0 = zero(rate_prototype)
+    z1 = zero(rate_prototype)
+    return DUMKA3Cache(u, uprev, ustage, tmp, atmp, fsalfirst, k, z0, z1, constantcache)
+end
+
+function alg_cache(
+        alg::DUMKA3, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return DUMKA3ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), u)
+end
+
 mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
     #to match the types to call maxeig!
     zprev::zType

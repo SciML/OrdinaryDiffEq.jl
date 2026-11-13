@@ -80,6 +80,22 @@ function dtnew_modification(integrator, alg::RKMC2, dtnew)
 end
 
 
+alg_order(alg::DUMKA3) = 3
+
+# indices into DUMKA3_degrees allowed by min_stages and max_stages (the degrees are sorted)
+function _dumka3_index_range(alg::DUMKA3)
+    imax = max(count(<=(alg.max_stages), DUMKA3_degrees), 1)
+    imin = min(count(<(alg.min_stages), DUMKA3_degrees) + 1, imax)
+    return imin, imax
+end
+
+# cap dt so that the largest allowed degree still covers dt * eigen_est
+has_dtnew_modification(alg::DUMKA3) = true
+function dtnew_modification(integrator, alg::DUMKA3, dtnew)
+    _, imax = _dumka3_index_range(alg)
+    return _cap(dtnew, typeof(dtnew)(DUMKA3_stab_reg[imax] / integrator.eigen_est))
+end
+
 alg_order(alg::RKL1) = 1
 alg_order(alg::RKL2) = 2
 

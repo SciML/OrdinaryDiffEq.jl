@@ -456,6 +456,143 @@ end
     integrator.u = u
 end
 
+function initialize!(integrator, cache::DUMKA3ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    alg = unwrap_alg(integrator, true)
+    cache.min_index, cache.max_index = _dumka3_index_range(alg)
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    return integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::DUMKA3ConstantCache, repeat_step = false)
+    (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    (; coef) = cache
+    alg = unwrap_alg(integrator, true)
+    maybe_maxeig!(integrator, cache, alg)
+    choosedeg_DUMKA3!(integrator, cache)
+    r₁, r₂ = DUMKA3_first[cache.deg_index], DUMKA3_last[cache.deg_index]
+    # each row is a three-stage substep starting from u with z0 = f(u):
+    # Y2 = u + a21 z0, Y3 = u + a31 z0 + a32 f(Y2), u <- Y3 + a43 f(Y3)
+    u = uprev
+    z0 = fsalfirst
+    tₛ = t
+    τ₁ = τ₂ = zero(dt)
+    tmp = zero(u)
+    for row in r₁:r₂
+        c = coef[row]
+        a₂₁, a₃₁, a₃₂, a₄₃ = dt * c[1], dt * c[2], dt * c[3], dt * c[6]
+        c₂, c₃, c₄ = a₂₁, a₃₁ + a₃₂, dt * (c[4] + c[5] + c[6])
+        Y = u + a₂₁ * z0
+        z1 = f(Y, p, tₛ + c₂)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        Y = u + a₃₁ * z0 + a₃₂ * z1
+        # embedded second order estimate, built from the stages of the last substep
+        if row == r₂ && integrator.opts.adaptive
+            τ₁, τ₂ = c₃ / 2, (c₄ - c₂) / 2
+            tmp = τ₁ * z1 - τ₂ * z0
+        end
+        z0 = f(Y, p, tₛ + c₃)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        if row == r₂ && integrator.opts.adaptive
+            tmp += τ₂ * z0
+        end
+        u = Y + a₄₃ * z0
+        tₛ = row == r₂ ? t + dt : tₛ + c₄
+        z0 = f(u, p, tₛ)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    #Error estimate (embedded method of order 2)
+    if integrator.opts.adaptive
+        tmp -= τ₁ * z0
+        atmp = calculate_residuals(
+            tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast = z0
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::DUMKA3Cache)
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+
+    alg = unwrap_alg(integrator, true)
+    ccache = cache.constantcache
+    ccache.min_index, ccache.max_index = _dumka3_index_range(alg)
+
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    return OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+end
+
+@muladd function perform_step!(integrator, cache::DUMKA3Cache, repeat_step = false)
+    (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    (; ustage, tmp, atmp, k, z0, z1) = cache
+    ccache = cache.constantcache
+    (; coef) = ccache
+    stage_limiter! = integrator.opts.stage_limiter!
+    alg = unwrap_alg(integrator, true)
+    maybe_maxeig!(integrator, cache, alg)
+    choosedeg_DUMKA3!(integrator, cache)
+    r₁, r₂ = DUMKA3_first[ccache.deg_index], DUMKA3_last[ccache.deg_index]
+    # each row is a three-stage substep starting from u with z0 = f(u):
+    # Y2 = u + a21 z0, Y3 = u + a31 z0 + a32 f(Y2), u <- Y3 + a43 f(Y3)
+    @.. broadcast = false u = uprev
+    @.. broadcast = false z0 = fsalfirst
+    tₛ = t
+    τ₁ = τ₂ = zero(dt)
+    for row in r₁:r₂
+        c = coef[row]
+        a₂₁, a₃₁, a₃₂, a₄₃ = dt * c[1], dt * c[2], dt * c[3], dt * c[6]
+        c₂, c₃, c₄ = a₂₁, a₃₁ + a₃₂, dt * (c[4] + c[5] + c[6])
+        @.. broadcast = false ustage = u + a₂₁ * z0
+        stage_limiter!(ustage, integrator, p, tₛ + c₂)
+        f(z1, ustage, p, tₛ + c₂)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        @.. broadcast = false ustage = u + a₃₁ * z0 + a₃₂ * z1
+        # embedded second order estimate, built from the stages of the last substep
+        if row == r₂ && integrator.opts.adaptive
+            τ₁, τ₂ = c₃ / 2, (c₄ - c₂) / 2
+            @.. broadcast = false tmp = τ₁ * z1 - τ₂ * z0
+        end
+        stage_limiter!(ustage, integrator, p, tₛ + c₃)
+        f(z0, ustage, p, tₛ + c₃)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        if row == r₂ && integrator.opts.adaptive
+            @.. broadcast = false tmp += τ₂ * z0
+        end
+        @.. broadcast = false u = ustage + a₄₃ * z0
+        tₛ = row == r₂ ? t + dt : tₛ + c₄
+        stage_limiter!(u, integrator, p, tₛ)
+        f(row == r₂ ? k : z0, u, p, tₛ)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+
+    #Error estimate (embedded method of order 2)
+    if integrator.opts.adaptive
+        @.. broadcast = false tmp -= τ₁ * k
+        calculate_residuals!(
+            atmp, tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t
+        )
+        OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
+    end
+    @.. broadcast = false integrator.fsallast = k
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+end
+
 function initialize!(integrator, cache::RKCConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
