@@ -246,7 +246,7 @@ function alg_cache(
     linsolve_tmp = zero(rate_prototype)
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    jac_config = build_resize_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
@@ -316,7 +316,7 @@ function alg_cache(
     linsolve_tmp = zero(rate_prototype)
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    jac_config = build_resize_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
@@ -566,7 +566,7 @@ function alg_cache(
     uf = UJacobianWrapper(f, t, p)
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    jac_config = build_resize_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
 
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
@@ -711,7 +711,7 @@ function alg_cache(
     uf = UJacobianWrapper(f, t, p)
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
+    jac_config = build_resize_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))

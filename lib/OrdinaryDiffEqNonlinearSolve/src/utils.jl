@@ -825,7 +825,7 @@ function build_nlsolver(
             else
                 uf = build_uf(alg, nf, t, p, Val(true))
             end
-            jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
+            jac_config = build_resize_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, jac_config, uEltypeNoUnits, Val(true))
 
@@ -962,10 +962,10 @@ function build_nlsolver(
                 else
                     uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
                     uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
-                    jac_config_u = build_jac_config(
+                    jac_config_u = build_resize_jac_config(
                         alg, nf, uf_u, du1, uprev, u, ztmp, dz
                     )
-                    jac_config_du = build_jac_config(
+                    jac_config_du = build_resize_jac_config(
                         alg, nf, uf_du, du1, uprev, u, ztmp, dz
                     )
                     J_du = fill!(similar(J), false)
