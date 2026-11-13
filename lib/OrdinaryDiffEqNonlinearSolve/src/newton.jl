@@ -1044,15 +1044,20 @@ function relax!(
             res = resid(z)
             return res
         end
-        # Scale the forward probe to resolve small corrections without reversing direction.
-        # Cap it at a fraction of the full Newton step to keep the derivative local.
-        normdz = opts.internalnorm(dz, t)
+        normdz = norm(dz, Inf)
         ϵ = iszero(normdz) ? cbrt(eps()) : clamp(
-                sqrt(eps()) * opts.internalnorm(z, t) / normdz, cbrt(eps()), 0.1
+                sqrt(eps()) * norm(z, Inf) / normdz, cbrt(eps()), 0.1
             )
         function ϕdϕ(α)
             ϕα = ϕ(α)
-            return ϕα, (ϕ(α + ϵ) - ϕα) / ϵ
+            h = ϵ
+            slope = (ϕ(α + h) - ϕα) / h
+            # Resolve curvature at a smaller forward step before rejecting descent.
+            while slope > 0 && h > sqrt(eps())
+                h = max(h / 10, sqrt(eps()))
+                slope = (ϕ(α + h) - ϕα) / h
+            end
+            return ϕα, slope
         end
         dϕ(α) = last(ϕdϕ(α))
         α0 = one(eltype(ustep))
@@ -1112,13 +1117,20 @@ function relax(
             local z = @.. nlsolver.z - dz * α
             return resid(z)
         end
-        normdz = opts.internalnorm(dz, t)
+        normdz = norm(dz, Inf)
         ϵ = iszero(normdz) ? cbrt(eps()) : clamp(
-                sqrt(eps()) * opts.internalnorm(z, t) / normdz, cbrt(eps()), 0.1
+                sqrt(eps()) * norm(z, Inf) / normdz, cbrt(eps()), 0.1
             )
         function ϕdϕ(α)
             ϕα = ϕ(α)
-            return ϕα, (ϕ(α + ϵ) - ϕα) / ϵ
+            h = ϵ
+            slope = (ϕ(α + h) - ϕα) / h
+            # Resolve curvature at a smaller forward step before rejecting descent.
+            while slope > 0 && h > sqrt(eps())
+                h = max(h / 10, sqrt(eps()))
+                slope = (ϕ(α + h) - ϕα) / h
+            end
+            return ϕα, slope
         end
         dϕ(α) = last(ϕdϕ(α))
         α0 = one(eltype(dz))

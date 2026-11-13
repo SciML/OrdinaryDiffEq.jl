@@ -45,3 +45,41 @@ end
     @test SciMLBase.successful_retcode(sol)
     @test only(sol.u[end]) ≈ reference atol = 1.0e-12 rtol = 0
 end
+
+@testset "Local Newton line-search slope" begin
+    @testset "forcing $forcing" for forcing in (100.0, 1000.0)
+        f!(du, u, p, t) = (du[1] = p - u[1]^3)
+        jac!(J, u, p, t) = (J[1, 1] = -3u[1]^2)
+        prob = ODEProblem(ODEFunction(f!; jac = jac!), [0.0], (0.0, 1.0), forcing)
+        sol = solve(
+            prob, ImplicitEuler(
+                nlsolve = NLNewton(
+                    relax = BackTracking(), max_iter = 100, check_div = false
+                )
+            );
+            dt = 1.0, adaptive = false, abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        reference = setprecision(256) do
+            u = cbrt(big(forcing))
+            for _ in 1:20
+                u -= (u + u^3 - forcing) / (1 + 3u^2)
+            end
+            u
+        end
+        @test SciMLBase.successful_retcode(sol)
+        @test only(sol.u[end]) ≈ reference atol = 1.0e-8 rtol = 0
+    end
+end
+
+@testset "Large finite Newton line search" begin
+    f!(du, u, p, t) = (du[1] = -u[1])
+    jac!(J, u, p, t) = (J[1, 1] = -1)
+    prob = ODEProblem(ODEFunction(f!; jac = jac!), [1.0e200], (0.0, 0.1))
+    sol = solve(
+        prob, ImplicitEuler(nlsolve = NLNewton(relax = BackTracking()));
+        dt = 0.1, adaptive = false, abstol = 1.0e194, reltol = 1.0e-6
+    )
+    reference = big(1.0e200) / (1 + big(0.1))
+    @test SciMLBase.successful_retcode(sol)
+    @test only(sol.u[end]) ≈ reference rtol = 1.0e-12
+end
