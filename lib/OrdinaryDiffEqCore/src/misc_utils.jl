@@ -36,8 +36,6 @@ macro cache(expr)
     end
 end
 
-# Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
-# value should recurse for anything else.
 """
     constvalue(x)
 
@@ -45,10 +43,14 @@ Strip any ForwardDiff/unit wrapper from `x` (or a type `T`) down to its underlyi
 numeric value, taking the real part for `Complex` so that a scalar constant can be
 compared/used unambiguously. Used e.g. for eigenvalue estimates.
 """
+# `SciMLBase.value` strips only one layer from a type (but all layers from a value),
+# so unwrap until the type no longer changes (#4996)
 function constvalue(::Type{T}) where {T}
     _T = SciMLBase.value(T)
-    return _T <: Complex ? SciMLBase.value(real(_T)) : SciMLBase.value(_T)
+    _T = _T <: Complex ? real(_T) : _T
+    return _T === T ? T : constvalue(_T)
 end
+# `SciMLBase.value` strips all layers from a value; one more call handles `Complex{<:Dual}`
 function constvalue(x)
     _x = SciMLBase.value(x)
     return _x isa Complex ? SciMLBase.value(real(_x)) : SciMLBase.value(_x)

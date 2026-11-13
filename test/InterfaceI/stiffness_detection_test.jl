@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, Test, ADTypes
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqExplicitRK
+import OrdinaryDiffEqExplicitTableaus
 import ODEProblemLibrary: prob_ode_vanderpol
 using ForwardDiff: Dual, Tag
 using LinearAlgebra: mul!
@@ -111,6 +113,9 @@ end
     algs = (
         AutoTsit5(stiffalg), AutoDP5(stiffalg), AutoVern6(stiffalg),
         AutoVern7(stiffalg), AutoVern8(stiffalg), AutoVern9(stiffalg),
+        # FSAL (`DormandPrince`) and non-FSAL tableau (#4995)
+        OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(), stiffalg),
+        OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner7()), stiffalg),
     )
     seed = 1.0e3
     k1 = Dual{typeof(Tag(identity, Float64))}(0.25, seed)
@@ -150,6 +155,9 @@ end
     algs = (
         AutoTsit5(stiffalg), AutoDP5(stiffalg), AutoVern6(stiffalg),
         AutoVern7(stiffalg), AutoVern8(stiffalg), AutoVern9(stiffalg),
+        # FSAL (`DormandPrince`) and non-FSAL tableau (#4995)
+        OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(), stiffalg),
+        OrdinaryDiffEqCore.AutoAlgSwitch(ExplicitRK(tableau = OrdinaryDiffEqExplicitTableaus.Verner7()), stiffalg),
     )
     # `u' = A u` with dominant eigenvalue `λ`
     linear_problems(λ) = (
@@ -172,6 +180,19 @@ end
             sol = solve(prob; abstol = 1.0e-12, reltol = 1.0e-8)
             @test SciMLBase.successful_retcode(sol)
             @test allequal(sol.alg_choice)
+        end
+    end
+end
+
+# `constvalue` strips all dual layers from types, which e.g. determine the type of `eigen_est` (#4996)
+@testset "constvalue strips nested dual types" begin
+    for B in (Float32, Float64)
+        D1 = Dual{typeof(Tag(identity, B)), B, 1}
+        D2 = Dual{typeof(Tag(abs, D1)), D1, 1}
+        D3 = Dual{typeof(Tag(sin, D2)), D2, 1}
+        for T in (B, D1, D2, D3), S in (T, Complex{T})
+            @test OrdinaryDiffEqCore.constvalue(S) === B
+            @test OrdinaryDiffEqCore.constvalue(one(S)) isa B
         end
     end
 end
