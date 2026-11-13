@@ -43,7 +43,9 @@ end
 end
 
 @testset "Default Solution Stripping" begin
-    stripped_sol = SciMLBase.strip_solution(default_sol)
+    @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(default_sol)
+    eager_sol = solve(prob, DefaultODEAlgorithm(lazy = Val(false)))
+    stripped_sol = SciMLBase.strip_solution(eager_sol)
     @test isnothing(stripped_sol.interp.cache.args)
 end
 
