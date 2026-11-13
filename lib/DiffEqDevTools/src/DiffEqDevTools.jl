@@ -23,7 +23,7 @@ import RootedTrees
 using RootedTrees: RootedTreeIterator, RungeKuttaMethod, residual_order_condition
 import Distributed
 import Statistics
-using Statistics: mean, std
+using Statistics: mean, var
 
 import Base: length
 
