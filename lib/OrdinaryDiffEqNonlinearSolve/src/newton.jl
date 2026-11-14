@@ -457,39 +457,82 @@ function unconverged_nlsolvealg_stage(
     # comparisons below would read `Inf`/`NaN` as convergence.
     isfinite(maxabs(fu)) || return true
     isfinite(maxabs(z)) || return true
+    _weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, nothing) <= 1 &&
+        return false
+    # A stiff stage's residual floor is how far `γΔt · fu` moves under a roundoff-sized
+    # change of the iterate, far above `z`'s own; measure it with `f`.
+    (; p) = integrator
+    tstep = cache.tstep
+    c = method === COEFFICIENT_MULTISTEP ? γΔt : integrator.dt
+    if cache.atmp === nothing
+        f0 = integrator.f(compute_ustep(tmp, γ, z, method), p, tstep)
+        zp = @.. broadcast = false z + _roundoff_shift(z, tmp, γ, method)
+        f1 = integrator.f(compute_ustep(tmp, γ, zp, method), p, tstep)
+        d = @.. broadcast = false c * (f1 - f0) - _roundoff_shift(z, tmp, γ, method)
+    else
+        (; ustep, k) = cache
+        d = cache.dz === nothing ? similar(z) : cache.dz
+        integrator.f(k, compute_ustep!(ustep, tmp, γ, z, method), p, tstep)
+        if method === COEFFICIENT_MULTISTEP
+            @.. broadcast = false ustep = z + _roundoff_shift(z, tmp, γ, method)
+        else
+            @.. broadcast = false ustep = tmp + γ * (z + _roundoff_shift(z, tmp, γ, method))
+        end
+        integrator.f(d, ustep, p, tstep)
+        @.. broadcast = false d = c * (d - k) - _roundoff_shift(z, tmp, γ, method)
+    end
+    SciMLBase.has_stats(integrator) && (integrator.stats.nf += 2)
+    return !(_weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, d) <= 1)
+end
+
+# Weighted norm of `γΔt · fu` with components at their roundoff floor (see below) zeroed.
+function _weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, d)
+    (; tmp, γ, cache, method) = nlsolver
+    (; uprev, t, opts) = integrator
     atmp = cache.atmp
     if atmp === nothing
-        atmp = @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z)
-    else
-        @.. broadcast = false atmp = γΔt * fu
-        @.. broadcast = false atmp = _stage_resid_or_zero(atmp, z)
-    end
-    ustep = cache.ustep === nothing ? compute_ustep(tmp, γ, z, method) :
-        compute_ustep!(cache.ustep, tmp, γ, z, method)
-    weighted_norm = if cache.atmp === nothing
+        atmp = if d === nothing
+            @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z)
+        else
+            @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z, d)
+        end
+        ustep = compute_ustep(tmp, γ, z, method)
         weighted = calculate_residuals(
-            atmp, integrator.uprev, ustep, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, integrator.t
+            atmp, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
         )
-        integrator.opts.internalnorm(weighted, integrator.t)
-    else
-        calculate_residuals!(
-            atmp, atmp, integrator.uprev, ustep, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, integrator.t
-        )
-        integrator.opts.internalnorm(atmp, integrator.t)
+        return opts.internalnorm(weighted, t)
     end
-    return !(weighted_norm <= 1)
+    if d === nothing
+        @.. broadcast = false atmp = _stage_resid_or_zero(γΔt * fu, z)
+    else
+        @.. broadcast = false atmp = _stage_resid_or_zero(γΔt * fu, z, d)
+    end
+    ustep = compute_ustep!(cache.ustep, tmp, γ, z, method)
+    calculate_residuals!(
+        atmp, atmp, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
+    )
+    return opts.internalnorm(atmp, t)
 end
 
 # A residual component at the cancellation floor of the terms it is the difference of
-# (`z` and `z + r` for the stage equation in `z` units) carries no information. A
-# non-finite component is never at that floor.
-function _stage_resid_or_zero(r, z)
+# (`z` and `z + r` for the stage equation in `z` units), or no larger than its change `d`
+# under a roundoff-sized change of the iterate, carries no information. A non-finite
+# component is never at that floor, and a non-finite `d` measures nothing.
+function _stage_resid_or_zero(r, z, d = zero(r))
     level = roundoff_level(typeof(r))
     # Scaling each term before addition keeps the cancellation floor finite.
     return isfinite(r) &&
-        abs(r) <= max(level * abs(z), abs(level * z + level * r)) ? zero(r) : r
+        (
+            abs(r) <= max(level * abs(z), abs(level * z + level * r)) ||
+            (isfinite(d) && abs(r) <= abs(d))
+        ) ? zero(r) : r
+end
+
+# The stage state `tmp + γ·z` resolves `z` no finer than the larger of its terms allows.
+function _roundoff_shift(z, tmp, γ, method)
+    level = roundoff_level(typeof(z))
+    method === COEFFICIENT_MULTISTEP && return level * abs(z)
+    return level * max(abs(z), abs(tmp / γ))
 end
 
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small
