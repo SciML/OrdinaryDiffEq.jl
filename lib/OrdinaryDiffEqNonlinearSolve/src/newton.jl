@@ -420,8 +420,132 @@ function stage_unsolved(nlcache, γΔt)
     fu = get_fu(nlcache)
     u = get_u(nlcache)
     resid = abs(γΔt) * maxabs(fu)
+    isfinite(resid) || return true
     scale = max(maxabs_axpy(γΔt, u, fu), maxabs(u))
-    return resid > roundoff_level(typeof(resid)) * scale
+    return !(resid <= roundoff_level(typeof(resid)) * scale)
+end
+
+# Displacement-only outer tests are a Newton inference. Quasi-Newton inner steps can hold
+# `ndz` nearly constant (θ ≈ 1, ndz ≤ 1) with a residual that still misses the stage
+# equation; accepting that iterate as Convergence leaves the stage unsolved.
+# Newton caches defer the terminal residual evaluation; do not force it here — the
+# displacement is then a true Newton correction and the stats tests require the deferral.
+# The veto reads `γΔt · fu` as an increment in `z`, in the integrator's componentwise
+# weights. That reading needs the raw stage residual in state units: a `precondition`
+# composes an arbitrary root-preserving transform into `fu`, a non-identity mass matrix
+# and a DAE residual carry their own units, and the `nlstep_data` path already measures
+# its residual directly. None of those residuals is vetoed here.
+unconverged_nlsolvealg_stage(::AbstractNLSolver, ::SciMLBase.DEIntegrator) = false
+function unconverged_nlsolvealg_stage(
+        nlsolver::NLSolver{<:NonlinearSolveAlg}, integrator::SciMLBase.DEIntegrator
+    )
+    (; tmp, γ, cache, method) = nlsolver
+    nlcache = cache.cache
+    nlcache isa NonlinearSolveNoInitCache && return false
+    defers_residual(nlcache) && return false
+    cache.precondition !== nothing && return false
+    get_nlstep_data(integrator.f) !== nothing && return false
+    f = nlsolve_f(integrator)
+    f isa DAEFunction && return false
+    mass_matrix = hasproperty(f, :mass_matrix) ? f.mass_matrix : I
+    mass_matrix === I || return false
+    sync_inner_residual!(nlcache)
+    γΔt = residual_to_z_scale(nlsolver, false)
+    fu = get_fu(nlcache)
+    z = get_u(nlcache)
+    # A non-finite residual or iterate is never a solved stage; the weighted
+    # comparisons below would read `Inf`/`NaN` as convergence.
+    isfinite(maxabs(fu)) || return true
+    isfinite(maxabs(z)) || return true
+    _weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, nothing) <= 1 &&
+        return false
+    # A stiff stage's residual floor is how far `γΔt · fu` moves under a roundoff-sized
+    # change of the iterate, far above `z`'s own; measure it with `f`.
+    (; p) = integrator
+    tstep = cache.tstep
+    c = method === COEFFICIENT_MULTISTEP ? γΔt : integrator.dt
+    if cache.atmp === nothing
+        δz = _alternate_signs!!(@.. broadcast = false _roundoff_shift(z, tmp, γ, method))
+        f0 = integrator.f(compute_ustep(tmp, γ, z, method), p, tstep)
+        f1 = integrator.f(compute_ustep(tmp, γ, z + δz, method), p, tstep)
+        d = @.. broadcast = false c * (f1 - f0) - δz
+    else
+        (; ustep, k) = cache
+        δz = cache.atmp
+        @.. broadcast = false δz = _roundoff_shift(z, tmp, γ, method)
+        _alternate_signs!!(δz)
+        d = cache.dz === nothing ? similar(z) : cache.dz
+        integrator.f(k, compute_ustep!(ustep, tmp, γ, z, method), p, tstep)
+        if method === COEFFICIENT_MULTISTEP
+            @.. broadcast = false ustep = z + δz
+        else
+            @.. broadcast = false ustep = tmp + γ * (z + δz)
+        end
+        integrator.f(d, ustep, p, tstep)
+        @.. broadcast = false d = c * (d - k) - δz
+    end
+    SciMLBase.has_stats(integrator) && (integrator.stats.nf += 2)
+    return !(_weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, d) <= 1)
+end
+
+# Weighted norm of `γΔt · fu` with components at their roundoff floor (see below) zeroed.
+function _weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, d)
+    (; tmp, γ, cache, method) = nlsolver
+    (; uprev, t, opts) = integrator
+    atmp = cache.atmp
+    if atmp === nothing
+        atmp = if d === nothing
+            @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z)
+        else
+            @.. broadcast = false _stage_resid_or_zero(γΔt * fu, z, d)
+        end
+        ustep = compute_ustep(tmp, γ, z, method)
+        weighted = calculate_residuals(
+            atmp, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
+        )
+        return opts.internalnorm(weighted, t)
+    end
+    if d === nothing
+        @.. broadcast = false atmp = _stage_resid_or_zero(γΔt * fu, z)
+    else
+        @.. broadcast = false atmp = _stage_resid_or_zero(γΔt * fu, z, d)
+    end
+    ustep = compute_ustep!(cache.ustep, tmp, γ, z, method)
+    calculate_residuals!(
+        atmp, atmp, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t
+    )
+    return opts.internalnorm(atmp, t)
+end
+
+# A residual component at the cancellation floor of the terms it is the difference of
+# (`z` and `z + r` for the stage equation in `z` units), or no larger than its change `d`
+# under a roundoff-sized change of the iterate, carries no information. A non-finite
+# component is never at that floor, and a non-finite `d` measures nothing.
+function _stage_resid_or_zero(r, z, d = zero(r))
+    level = roundoff_level(typeof(r))
+    # Scaling each term before addition keeps the cancellation floor finite.
+    return isfinite(r) &&
+        (
+            abs(r) <= max(level * abs(z), abs(level * z + level * r)) ||
+            (isfinite(d) && abs(r) <= abs(d))
+        ) ? zero(r) : r
+end
+
+# A shift of one sign is smooth, and a difference operator nearly cancels it; alternating
+# signs is the shift such an operator amplifies most.
+_alternate_signs!!(δz) = δz
+function _alternate_signs!!(δz::DenseArray)
+    ArrayInterface.ismutable(δz) || return δz
+    v = vec(δz)
+    @views v[2:2:end] .*= -1
+    return δz
+end
+
+# The stage state `tmp + γ·z` resolves `z` no finer than the larger of its terms allows.
+function _roundoff_shift(z, tmp, γ, method)
+    level = roundoff_level(typeof(z))
+    method === COEFFICIENT_MULTISTEP && return level * abs(z)
+    return level * max(abs(z), abs(tmp / γ))
 end
 
 # A step that moves the iterate by no more than a handful of ulps, and a residual that small
