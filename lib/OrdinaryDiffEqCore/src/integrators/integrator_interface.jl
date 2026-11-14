@@ -498,10 +498,37 @@ function deleteat!(integrator::ODEIntegrator, idxs)
     return deleteat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
-function addat!(integrator::ODEIntegrator, idxs)
-    foreach_unique_state_buffer(c -> addat!(c, idxs), integrator)
+# `addat!` on the state buffers appends, so `idxs` must name the indices after the end.
+function appended_range(integrator, idxs)
+    n = length(integrator.u)
+    r = (n + 1):(n + length(idxs))
+    vec(collect(idxs)) == r ||
+        throw(ArgumentError("`addat!` appends components, so `idxs` must be $r, got $idxs"))
+    return r
+end
+
+# The next step starts from the step history, so it gets `val` as well, and the
+# discontinuity refreshes the FSAL derivative outside callbacks too.
+function set_added_components!(integrator, r, val)
+    cache = integrator.cache
+    uprev3 = hasfield(typeof(cache), :uprev3) ? cache.uprev3 : nothing
+    for v in (integrator.u, integrator.uprev, integrator.uprev2, uprev3)
+        v isa AbstractArray && (v[r] .= val)
+    end
+    derivative_discontinuity!(integrator, true)
+    return nothing
+end
+
+function addat!(integrator::ODEIntegrator, idxs, val = zero(eltype(integrator.u)))
+    r = appended_range(integrator, idxs)
+    isempty(r) && return nothing
+    # Converting first means a bad `val` throws before any buffer is grown.
+    added = similar(integrator.u, length(r)) .= val
+    foreach_unique_state_buffer(c -> addat!(c, r), integrator)
     resize_solver_internals!(integrator)
-    return addat_non_user_cache!(integrator, integrator.cache, idxs)
+    addat_non_user_cache!(integrator, integrator.cache, r)
+    set_added_components!(integrator, r, added)
+    return nothing
 end
 
 function terminate!(integrator::ODEIntegrator, retcode = ReturnCode.Terminated)
