@@ -1246,7 +1246,7 @@ function Kvaerno3ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.4358665215)
     c_vec[3] = c3
     c_vec[4] = one(T2)
 
@@ -1331,7 +1331,7 @@ function Kvaerno4ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.4358665215)
     c_vec[3] = c3
     c_vec[4] = c4
     c_vec[5] = one(T2)
@@ -1451,7 +1451,7 @@ function Kvaerno5ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.26)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.26)
     c_vec[3] = c3
     c_vec[4] = c4
     c_vec[5] = c5
@@ -2654,8 +2654,8 @@ function SSPSDIRK2ESDIRKIMEXTableau(T, T2)
     Ai[2, 1] = convert(T, 1 // 2)
     Ai[2, 2] = γT
     bi = T[convert(T, 1 // 2), convert(T, 1 // 2)]
-    c = T2[one(T2), one(T2)]
     c2 = convert(T2, 3 // 4)
+    c = T2[γ, c2]
     return ESDIRKIMEXTableau(
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, T[], T[], Vector{T2}[],
         2, s, true, Int[], γ; explicit_first_stage = false, fsal = false, stiffly_accurate = false,

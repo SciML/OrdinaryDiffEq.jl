@@ -301,3 +301,20 @@ end
         @test solve(prob, alg; dt = 0.1).retcode == ReturnCode.Success
     end
 end
+
+@testset "Stage times on a forced problem" begin
+    forced = (u0, p, t) -> (2cos(t) + sin(t)) / 5 .+ (u0 .- 2 / 5) .* exp(-2t)
+    prob_oop = ODEProblem(ODEFunction((u, p, t) -> -2u + cos(t); analytic = forced), 1.0, (0.0, 1.0))
+    prob_iip = ODEProblem(
+        ODEFunction((du, u, p, t) -> (du .= -2 .* u .+ cos(t)); analytic = forced),
+        [1.0, 0.5], (0.0, 1.0)
+    )
+    for (alg, expected, finest) in (
+                (Kvaerno3(), 3, 7), (Kvaerno4(), 4, 8), (Kvaerno5(), 5, 6),
+                (SSPSDIRK2(), 2, 6), (ESDIRK547L2SA2(), 5, 6),
+            ), prob in (prob_oop, prob_iip)
+        dts = 1 .// 2 .^ (finest:-1:(finest - 4))
+        sim = test_convergence(dts, prob, alg; reltol = 1.0e-14, abstol = 1.0e-14)
+        @test sim.𝒪est[:final] ≈ expected atol = testTol
+    end
+end
