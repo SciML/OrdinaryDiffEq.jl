@@ -262,6 +262,28 @@ end
         @test sol.u[end][1] ≈ 1 - 1 / λ atol = 1.0e-8
         @test sol.stats.nf <= 1000
     end
+
+    # A smooth state shift nearly cancels in a discrete Laplacian, whose roundoff floor
+    # is set by its largest entries.
+    N = 2000
+    dx = 1 / (N + 1)
+    lap! = (du, u, p, t) -> begin
+        for i in 1:N
+            l = i > 1 ? u[i - 1] : 0.0
+            r = i < N ? u[i + 1] : 0.0
+            du[i] = (l - 2u[i] + r) / dx^2
+        end
+        nothing
+    end
+    u0 = [sin(pi * i * dx) + 1.0 for i in 1:N]
+    A = SymTridiagonal(fill(-2.0, N), ones(N - 1)) / dx^2
+    sol = solve(
+        ODEProblem(lap!, u0, (0.0, 1.0)),
+        ImplicitEuler(nlsolve = NonlinearSolveAlg(TrustRegion()));
+        dt = 1.0, adaptive = false, abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.u[end] ≈ (I - A) \ u0 atol = 1.0e-8
 end
 
 @testset "a solvable stage still converges" begin

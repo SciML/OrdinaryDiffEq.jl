@@ -465,21 +465,24 @@ function unconverged_nlsolvealg_stage(
     tstep = cache.tstep
     c = method === COEFFICIENT_MULTISTEP ? γΔt : integrator.dt
     if cache.atmp === nothing
+        δz = _alternate_signs!!(@.. broadcast = false _roundoff_shift(z, tmp, γ, method))
         f0 = integrator.f(compute_ustep(tmp, γ, z, method), p, tstep)
-        zp = @.. broadcast = false z + _roundoff_shift(z, tmp, γ, method)
-        f1 = integrator.f(compute_ustep(tmp, γ, zp, method), p, tstep)
-        d = @.. broadcast = false c * (f1 - f0) - _roundoff_shift(z, tmp, γ, method)
+        f1 = integrator.f(compute_ustep(tmp, γ, z + δz, method), p, tstep)
+        d = @.. broadcast = false c * (f1 - f0) - δz
     else
         (; ustep, k) = cache
+        δz = cache.atmp
+        @.. broadcast = false δz = _roundoff_shift(z, tmp, γ, method)
+        _alternate_signs!!(δz)
         d = cache.dz === nothing ? similar(z) : cache.dz
         integrator.f(k, compute_ustep!(ustep, tmp, γ, z, method), p, tstep)
         if method === COEFFICIENT_MULTISTEP
-            @.. broadcast = false ustep = z + _roundoff_shift(z, tmp, γ, method)
+            @.. broadcast = false ustep = z + δz
         else
-            @.. broadcast = false ustep = tmp + γ * (z + _roundoff_shift(z, tmp, γ, method))
+            @.. broadcast = false ustep = tmp + γ * (z + δz)
         end
         integrator.f(d, ustep, p, tstep)
-        @.. broadcast = false d = c * (d - k) - _roundoff_shift(z, tmp, γ, method)
+        @.. broadcast = false d = c * (d - k) - δz
     end
     SciMLBase.has_stats(integrator) && (integrator.stats.nf += 2)
     return !(_weighted_stage_residual(nlsolver, integrator, γΔt, fu, z, d) <= 1)
@@ -526,6 +529,16 @@ function _stage_resid_or_zero(r, z, d = zero(r))
             abs(r) <= max(level * abs(z), abs(level * z + level * r)) ||
             (isfinite(d) && abs(r) <= abs(d))
         ) ? zero(r) : r
+end
+
+# A shift of one sign is smooth, and a difference operator nearly cancels it; alternating
+# signs is the shift such an operator amplifies most.
+_alternate_signs!!(δz) = δz
+function _alternate_signs!!(δz::DenseArray)
+    ArrayInterface.ismutable(δz) || return δz
+    v = vec(δz)
+    @views v[2:2:end] .*= -1
+    return δz
 end
 
 # The stage state `tmp + γ·z` resolves `z` no finer than the larger of its terms allows.
