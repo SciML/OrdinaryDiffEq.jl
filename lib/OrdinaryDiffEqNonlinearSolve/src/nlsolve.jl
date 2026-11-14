@@ -139,8 +139,10 @@ function nlsolve!(
     nlsolver.status = check_div′ ? Divergence : Convergence
     new_W = get_new_W!(nlsolver)
     η = new_W ? initial_η(nlsolver, integrator) : nlsolver.ηold
-    # Restart the convergence rate on a new W, as CVODE does.
-    if new_W && isnewton(nlsolver) && !always_new && hasfield(NL, :prev_θ)
+    # Restart the convergence rate on a new W, as CVODE does. For a linear function the
+    # rate does not depend on the state, so it carries over.
+    if new_W && isnewton(nlsolver) && !always_new && hasfield(NL, :prev_θ) &&
+            !first(islinearfunction(integrator))
         nlsolver.prev_θ = one(nlsolver.prev_θ)
     end
 
