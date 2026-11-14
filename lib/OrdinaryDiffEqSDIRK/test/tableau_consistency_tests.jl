@@ -43,3 +43,19 @@ end
         end
     end
 end
+
+@testset "Tableau builders specialize on the element types" begin
+    # Julia does not specialize on a `Type` argument that is only passed on to other calls,
+    # so an untyped `(T, T2)` builder dispatches its array construction at run time and
+    # compiles it on the first solve instead of in the package image.
+    builders = [
+        getfield(SDIRK, name) for name in names(SDIRK; all = true)
+            if endswith(string(name), "Tableau") && name !== :ESDIRKIMEXTableau &&
+            getfield(SDIRK, name) isa Function
+    ]
+    @test !isempty(builders)
+    for builder in builders, m in methods(builder)
+        nargs = length(Base.unwrap_unionall(m.sig).parameters)
+        @test m.sig <: Tuple{ntuple(_ -> Any, nargs - 2)..., Type, Type}
+    end
+end
