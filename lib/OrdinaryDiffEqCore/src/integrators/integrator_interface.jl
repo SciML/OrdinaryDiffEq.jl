@@ -426,6 +426,36 @@ function addat_non_user_cache!(integrator::ODEIntegrator, cache::CompositeCache,
     return
 end
 
+# `full_cache(integrator)` builds every sub-cache before any resize reaches these.
+function default_subcaches(cache::DefaultCache)
+    return (cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
+end
+
+# Only the default solver's composite algorithm builds a `DefaultCache`. Restricting the
+# integrator type keeps these methods from overlapping the SDE integrator methods.
+const DefaultSolverIntegrator = ODEIntegrator{<:OrdinaryDiffEqCompositeAlgorithm}
+
+function resize_non_user_cache!(integrator::DefaultSolverIntegrator, cache::DefaultCache, i)
+    for _cache in default_subcaches(cache)
+        resize_non_user_cache!(integrator, _cache, i)
+    end
+    return
+end
+
+function deleteat_non_user_cache!(integrator::DefaultSolverIntegrator, cache::DefaultCache, i)
+    for _cache in default_subcaches(cache)
+        deleteat_non_user_cache!(integrator, _cache, i)
+    end
+    return
+end
+
+function addat_non_user_cache!(integrator::DefaultSolverIntegrator, cache::DefaultCache, i)
+    for _cache in default_subcaches(cache)
+        addat_non_user_cache!(integrator, _cache, i)
+    end
+    return
+end
+
 function deleteat_non_user_cache!(integrator::ODEIntegrator, cache, idxs)
     # ordering doesn't matter in deterministic cache, so just resize
     # to match the size of u
