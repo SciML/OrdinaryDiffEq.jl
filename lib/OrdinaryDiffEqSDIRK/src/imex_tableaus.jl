@@ -27,6 +27,10 @@ struct ESDIRKIMEXTableau{T, T2, E}
     fsallast_c::T2
     const_stage_guess::Vector{T2}
     stage1_extrapolation::Bool
+    # Overrides for callers that run the step body under an algorithm other than the
+    # tableau's own (e.g. FBDF's restart step); `nothing` defers to the algorithm.
+    predictor::Union{Nothing, Predictor.T}
+    smooth_est::Union{Nothing, Bool}
 end
 
 # Default-flavor ctor: errors-as-`:standard`. Equivalent to the explicit ::Val(:standard).
@@ -47,7 +51,7 @@ function ESDIRKIMEXTableau(
         nlsolver_init_c; explicit_first_stage = true, fsal = true, stiffly_accurate = true,
         explicit_fsallast = false, fsallast_c = one(eltype(c)),
         const_stage_guess = eltype(c)[], stage1_extrapolation = true,
-        ce = nothing
+        ce = nothing, predictor = nothing, smooth_est = nothing
     ) where {E}
     s > MAX_ESDIRKIMEX_STAGES && throw(
         ArgumentError(
@@ -61,7 +65,8 @@ function ESDIRKIMEXTableau(
     return ESDIRKIMEXTableau{eltype(bi), eltype(c), E}(
         Ai, bi, Ae, be, c, ce_vec, btilde, ebtilde, α, order, s, reuse_W_at_stage2,
         split_guess, nlsolver_init_c, explicit_first_stage, fsal, stiffly_accurate,
-        explicit_fsallast, fsallast_c, const_stage_guess, stage1_extrapolation
+        explicit_fsallast, fsallast_c, const_stage_guess, stage1_extrapolation,
+        predictor, smooth_est
     )
 end
 
@@ -2592,6 +2597,26 @@ function TRBDF2ESDIRKIMEXTableau(T, T2)
     return ESDIRKIMEXTableau(
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], α,
         2, s, true, Int[], tab.γ; explicit_first_stage = true, fsal = true, stiffly_accurate = true
+    )
+end
+
+# Alexander's 2-stage SDIRK (order 2, L-stable, stiffly accurate) with the embedded
+# order-1 pair b̂ = [1, 0]. Neither the method nor its estimate evaluates f(uprev),
+# which suits restarts after a state jump, where f(uprev) is off the slow manifold.
+function AlexanderSDIRK2ESDIRKIMEXTableau(T, T2; kwargs...)
+    s = 2
+    γ = convert(T, 1 - sqrt(2) / 2)
+    Ai = zeros(T, s, s)
+    Ai[1, 1] = γ
+    Ai[2, 1] = 1 - γ
+    Ai[2, 2] = γ
+    bi = T[1 - γ, γ]
+    c = T2[convert(T2, 1 - sqrt(2) / 2), one(T2)]
+    btilde = T[-γ, γ]
+    return ESDIRKIMEXTableau(
+        Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], Vector{T2}[],
+        2, s, true, Int[], c[1]; explicit_first_stage = false, fsal = false,
+        stiffly_accurate = true, stage1_extrapolation = false, kwargs...
     )
 end
 
