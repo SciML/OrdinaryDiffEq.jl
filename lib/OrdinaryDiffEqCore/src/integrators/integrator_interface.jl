@@ -507,6 +507,27 @@ function SciMLBase.set_rng!(integrator::ODEIntegrator, rng)
     return nothing
 end
 
+function reinit_nlsolver!(cache)
+    isdefined(cache, :nlsolver) || return nothing
+    nlsolver = cache.nlsolver
+    for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
+        hasfield(typeof(nls), :prev_θ) && (nls.prev_θ = one(nls.prev_θ))
+        hasfield(typeof(nls), :cache) && hasfield(typeof(nls.cache), :firstcall) &&
+            (nls.cache.firstcall = true)
+    end
+    return nothing
+end
+reinit_nlsolver!(cache::CompositeCache) = foreach(reinit_nlsolver!, cache.caches)
+function reinit_nlsolver!(cache::DefaultCache)
+    isdefined(cache, :cache1) && reinit_nlsolver!(cache.cache1)
+    isdefined(cache, :cache2) && reinit_nlsolver!(cache.cache2)
+    isdefined(cache, :cache3) && reinit_nlsolver!(cache.cache3)
+    isdefined(cache, :cache4) && reinit_nlsolver!(cache.cache4)
+    isdefined(cache, :cache5) && reinit_nlsolver!(cache.cache5)
+    isdefined(cache, :cache6) && reinit_nlsolver!(cache.cache6)
+    return nothing
+end
+
 SciMLBase.has_reinit(integrator::ODEIntegrator) = true
 function SciMLBase.reinit!(integrator::ODEIntegrator; kwargs...)
     prob = integrator.sol.prob
@@ -646,15 +667,17 @@ function SciMLBase.reinit!(
     # full re-initialize the controller in timestepping
     if reinit_controller
         reinit_controller!(integrator, integrator.controller_cache)
+        set_EEst!(integrator, oneunit(get_EEst(integrator)))
     end
 
     if rng !== nothing
         SciMLBase.set_rng!(integrator, rng)
     end
 
-    if reset_dt
-        auto_dt_reset!(integrator)
-    end
+    # as in `__init`, the callbacks and the cache are initialized with dt = 0, and the initial dt is
+    # chosen after them (for a composite algorithm, with the algorithm `initialize!` selects) unless
+    # one of them set it or terminated the integration
+    reset_dt && (integrator.dt = zero(integrator.dt))
 
     if reinit_dae && !implicit_discrete &&
             (integrator.isdae || SciMLBase.has_initializeprob(integrator.sol.prob.f))
@@ -662,16 +685,24 @@ function SciMLBase.reinit!(
         update_uprev!(integrator)
     end
 
+    # before the callbacks are initialized, so that a status one of them sets (`terminate!`) is kept
+    if reinit_retcode && !(reinit_dae && implicit_discrete)
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
+    end
+
     if reinit_callbacks
         initialize_callbacks!(integrator, initialize_save)
     end
 
     if reinit_cache
+        integrator.eigen_est = inv(one(integrator.eigen_est))
+        reinit_choice_function!(integrator.alg)
+        reinit_nlsolver!(integrator.cache)
         initialize!(integrator, integrator.cache)
     end
 
-    if reinit_retcode && !(reinit_dae && implicit_discrete)
-        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
+    if reset_dt && iszero(integrator.dt) && !isempty(integrator.opts.tstops)
+        auto_dt_reset!(integrator)
     end
 
     reinit_noise!(_get_W(integrator), integrator.dt)
