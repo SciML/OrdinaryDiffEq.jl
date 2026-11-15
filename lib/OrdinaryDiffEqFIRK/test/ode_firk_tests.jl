@@ -358,4 +358,11 @@ end
             @test solve(prob, alg; reltol, abstol = [1.0e-7, 1.0e-7]).u == scalar.u
         end
     end
+    noop!(du, u, p, t) = nothing
+    prob = ODEProblem(noop!, Float64[], (0.0, 1.0))
+    for alg in (RadauIIA3(), RadauIIA5(), RadauIIA9(), AdaptiveRadau(), GaussLegendre()),
+            adaptive in (false, true)
+
+        @test solve(prob, alg; dt = 0.1, adaptive).retcode == ReturnCode.Success
+    end
 end

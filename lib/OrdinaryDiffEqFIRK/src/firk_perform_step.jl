@@ -2048,8 +2048,7 @@ end
         end
         κ = cache.κ
     end
-    rtol = cache.rtol
-    atol = reltol isa Number && abstol isa Number ? first(cache.atol) : cache.atol
+    (; rtol, atol) = cache
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)

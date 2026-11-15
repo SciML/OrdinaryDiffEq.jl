@@ -111,10 +111,10 @@ function alg_cache(
     W1 = build_complex_W(alg, f, u, J, W1)
 
     linprob = LinearProblem(W1, _vec(cubuff), (nothing, u, p, t); u0 = _vec(dw12))
-    linsolve_tols = reltol isa Number ? (; abstol = reltol, reltol) : (;)
+    linsolve_tol = reltol isa Number ? reltol : minimum(reltol)
     linsolve = init(
         linprob, alg.linsolve; alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        linsolve_tols...,
+        abstol = linsolve_tol, reltol = linsolve_tol,
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
