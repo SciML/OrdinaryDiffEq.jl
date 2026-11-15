@@ -423,12 +423,14 @@ section at the end of this page for some example usage.
   ```
   and for a backward solve (`tspan[2] < tspan[1]`) the new regime is `t < t_d`.
   With `t >= t_d` instead, the step that lands on `t_d` sees the new regime at its
-  end, which costs many rejected steps or, with a fixed `dt`, gives a wrong solution.
-  Even the strict form is not exact: the last stage of that step is evaluated at
+  end; depending on the method this costs many rejected steps, or gives a wrong
+  solution without any rejected step.
+  Even the strict form is not exact: stages at the end of that step are evaluated at
   `t + (t_d - t)`, which can round past `t_d` (e.g. `t_d = 0.3` from `t = -10.0`
   gives `0.3000000000000007`), and shifting `t_d` by `prevfloat`/`nextfloat` has
-  the same problem. Adaptive solves recover through rejected steps, but fixed-step
-  methods such as `RK4` or `Tsit5` can return a wrong solution without any warning.
+  the same problem. Explicit adaptive methods such as `Tsit5` usually recover
+  through rejected steps, but fixed-step solves (`adaptive = false`) can return a
+  wrong solution without any warning.
   When the switch must be exact, keep the regime in a parameter and flip it from a
   `DiscreteCallback` at `t_d` (with `tstops = [t_d]`) instead of testing `t` in `f`.
   A `d_discontinuities` entry at `tspan[1]` is supported (the starting-time case),
