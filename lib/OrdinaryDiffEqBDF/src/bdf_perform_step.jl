@@ -382,6 +382,7 @@ end
 # QNDF1
 
 function initialize!(integrator, cache::QNDF1ConstantCache)
+    reset_qndf1_history!(integrator, cache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -472,6 +473,7 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF1Cache)
+    reset_qndf1_history!(integrator, cache)
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
@@ -560,6 +562,11 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
+    # The anchors stay at 0 so that a member entered at a composite switch keeps its
+    # error test on the first step, whose `dt` comes from the previous member.
+    cache.iter_at_event = 0
+    cache.success_iter_at_event = 0
+    clear_qndf2_history!(integrator, cache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -572,10 +579,21 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = false)
+    if integrator.derivative_discontinuity
+        reset_qndf2_history!(integrator, cache)
+    elseif integrator.iter <= cache.iter_at_event
+        # `reinit!(; reinit_cache=false)` zeroes `iter` without calling `initialize!`,
+        # so re-anchor here instead of letting `cnt` go negative and skip startup.
+        cache.iter_at_event = 0
+        cache.success_iter_at_event = 0
+    end
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver) = cache
     alg = unwrap_alg(integrator, true)
-    cnt = integrator.iter
+    # Attempts since the last history reset; the first two use BDF1 coefficients.
+    cnt = integrator.iter - cache.iter_at_event
+    # Accepted steps since the last history reset, for the error estimator.
+    success_cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
     # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
     # step must be BDF1 however many attempts were rejected.
@@ -631,9 +649,9 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0
+        if success_cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
-        elseif integrator.success_iter == 1
+        elseif success_cnt == 1
             utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
@@ -660,7 +678,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 
     Δ = u - uprev
     cache.D[1] = Δ
-    cache.D[2] = integrator.success_iter == 0 ? zero(Δ) : Δ - d₁
+    cache.D[2] = success_cnt == 0 ? zero(Δ) : Δ - d₁
     cache.uprev3 = uprev2
     cache.uprev2 = uprev
     cache.dtₙ₋₂ = dtₙ₋₁
@@ -674,6 +692,11 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF2Cache)
+    # The anchors stay at 0 so that a member entered at a composite switch keeps its
+    # error test on the first step, whose `dt` comes from the previous member.
+    cache.iter_at_event = 0
+    cache.success_iter_at_event = 0
+    clear_qndf2_history!(integrator, cache)
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
@@ -684,11 +707,22 @@ function initialize!(integrator, cache::QNDF2Cache)
 end
 
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
+    if integrator.derivative_discontinuity
+        reset_qndf2_history!(integrator, cache)
+    elseif integrator.iter <= cache.iter_at_event
+        # `reinit!(; reinit_cache=false)` zeroes `iter` without calling `initialize!`,
+        # so re-anchor here instead of letting `cnt` go negative and skip startup.
+        cache.iter_at_event = 0
+        cache.success_iter_at_event = 0
+    end
     (; t, dt, uprev, u, f, p) = integrator
     (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, Dtmp, D2, R, U, utilde, atmp, nlsolver) = cache
     (; z, tmp, ztmp) = nlsolver
     alg = unwrap_alg(integrator, true)
-    cnt = integrator.iter
+    # Attempts since the last history reset; the first two use BDF1 coefficients.
+    cnt = integrator.iter - cache.iter_at_event
+    # Accepted steps since the last history reset, for the error estimator.
+    success_cnt = integrator.success_iter - cache.success_iter_at_event
     k = 2
     # `dtₙ₋₁ == 0` means no step has been accepted, so `D` is empty and the
     # step must be BDF1 however many attempts were rejected.
@@ -748,9 +782,9 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0
+        if success_cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
-        elseif integrator.success_iter == 1
+        elseif success_cnt == 1
             @.. broadcast = false utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -773,7 +807,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
         return
     end
 
-    if integrator.success_iter == 0
+    if success_cnt == 0
         @.. broadcast = false D[2] = false
     else
         @.. broadcast = false D[2] = (u - uprev) - Dtmp[1]
@@ -789,6 +823,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max_order}
+    reset_qndf_history!(cache)
     integrator.kshortsize = max_order
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -934,6 +969,7 @@ function perform_step!(
 end
 
 function initialize!(integrator, cache::QNDFCache{max_order}) where {max_order}
+    reset_qndf_history!(cache)
     integrator.kshortsize = max_order
 
     resize!(integrator.k, integrator.kshortsize)
@@ -1663,6 +1699,7 @@ end
 ############################################ NordsieckBDF
 # ================================================================= perform_step!
 function initialize!(integrator, cache::NordsieckBDFCache)
+    reset_nordsieck_history!(cache)
     integrator.kshortsize = cache.max_order_int + 1
     resize!(integrator.k, integrator.kshortsize)
     @inbounds for i in 1:(integrator.kshortsize)
@@ -1674,6 +1711,7 @@ function initialize!(integrator, cache::NordsieckBDFCache)
 end
 
 function initialize!(integrator, cache::NordsieckBDFConstantCache)
+    reset_nordsieck_history!(cache)
     integrator.kshortsize = cache.max_order_int + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     @inbounds for i in 1:(integrator.kshortsize)

@@ -134,6 +134,26 @@ end
     @test 7 // 8 ∈ integrator.sol.t
 end
 
+@testset "reinit with new tf and numeric saveat" begin
+    for tdir in (1.0, -1.0), save_end in (nothing, false, true)
+        prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, tdir))
+        integrator = init(prob, Tsit5(); saveat = 3 / 8, save_end)
+        solve!(integrator)
+
+        reinit!(integrator; tf = 2 * tdir)
+        solve!(integrator)
+
+        expected_t = collect(0.0:(3 / 8):2.0)
+        if save_end !== false
+            push!(expected_t, 2.0)
+        end
+        expected_t .*= tdir
+        @test integrator.t == 2 * tdir
+        @test integrator.sol.t == expected_t
+        @test integrator.sol.u[end] ≈ expected_t[end]
+    end
+end
+
 @testset "reinit with new d_discontinuities" begin
     prob = prob_ode_2Dlinear
     integrator = init(prob, Tsit5(); dt = 1 // 2^(4), d_discontinuities = [1 // 2])

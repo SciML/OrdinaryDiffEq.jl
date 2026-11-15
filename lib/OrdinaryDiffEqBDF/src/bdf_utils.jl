@@ -602,3 +602,63 @@ function _fbdf_finish_fixed_step!(integrator, cache)
     end
     return nothing
 end
+
+function reset_qndf1_history!(integrator, cache)
+    cache.dtₙ₋₁ = zero(cache.dtₙ₋₁)
+    if cache isa QNDF1Cache
+        copyto!(cache.uprev2, integrator.uprev)
+        recursivefill!(cache.D, false)
+        recursivefill!(cache.D2, false)
+    else
+        cache.uprev2 = copy(integrator.uprev)
+        for D in (cache.D, cache.D2), i in eachindex(D)
+            D[i] = zero(integrator.uprev)
+        end
+    end
+    return nothing
+end
+
+function reset_qndf_history!(cache)
+    cache.order = 1
+    cache.prevorder = 1
+    cache.dtprev = one(cache.dtprev)
+    cache.nconsteps = 0
+    cache.consfailcnt = 0
+    cache.EEst1 = one(cache.EEst1)
+    cache.EEst2 = one(cache.EEst2)
+    for D in (cache.D, cache.prevD), i in eachindex(D)
+        if cache isa QNDFCache
+            recursivefill!(D[i], false)
+        else
+            D[i] = zero(D[i])
+        end
+    end
+    return nothing
+end
+
+function reset_qndf2_history!(integrator, cache)
+    # Anchor attempt counting so the next `perform_step!` sees `cnt == 1` (BDF1
+    # startup). Mid-solve, `iter` already counts the current attempt, so subtract
+    # one; before the first step `iter` is 0.
+    cache.iter_at_event = max(integrator.iter - 1, 0)
+    cache.success_iter_at_event = integrator.success_iter
+    return clear_qndf2_history!(integrator, cache)
+end
+
+function clear_qndf2_history!(integrator, cache)
+    cache.dtₙ₋₁ = zero(integrator.dt)
+    cache.dtₙ₋₂ = zero(integrator.dt)
+    if cache isa QNDF2Cache
+        copyto!(cache.uprev2, integrator.uprev)
+        copyto!(cache.uprev3, integrator.uprev)
+        recursivefill!(cache.D, false)
+        recursivefill!(cache.D2, false)
+    else
+        cache.uprev2 = copy(integrator.uprev)
+        cache.uprev3 = copy(integrator.uprev)
+        for D in (cache.D, cache.D2), i in eachindex(D)
+            D[i] = zero(integrator.uprev)
+        end
+    end
+    return nothing
+end
