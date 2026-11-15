@@ -29,7 +29,9 @@ using SciMLOperators: MatrixOperator, ScalarOperator
             KenCarp3,
             CFNLIRK3,
         ]
-        sim = test_convergence(dts, prob, Alg())
+        # Sixth-order errors reach roundoff on the smaller steps used above.
+        alg_dts = Alg === ExpRK6s16 ? 1 ./ 2 .^ (5:-1:2) : dts
+        sim = test_convergence(alg_dts, prob, Alg())
         @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.2
     end
 
@@ -63,7 +65,8 @@ end
             ExpRK6s16(),
             ETD2(),
         ]
-        sim = test_convergence(dts, prob, Alg)
+        alg_dts = Alg isa ExpRK6s16 ? 1 ./ 2 .^ (5:-1:2) : dts
+        sim = test_convergence(alg_dts, prob, Alg)
         @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol = 0.15
     end
 
@@ -92,7 +95,7 @@ end
     prob = SplitODEProblem(SplitFunction(MatrixOperator(A), f2), exact(0), (0.0, 1.0))
 
     dts = 1 ./ 2 .^ (2:5)
-    errors = [norm(solve(prob, ExpRK6s16(), dt, adaptive = false).u[end] - exact(1)) for dt in dts]
+    errors = [norm(solve(prob, ExpRK6s16(); dt, adaptive = false).u[end] - exact(1)) for dt in dts]
     orders = log2.(errors[1:(end - 1)] ./ errors[2:end])
     @test all(orders .> 5.4)
 end
