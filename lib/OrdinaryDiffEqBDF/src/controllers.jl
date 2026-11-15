@@ -48,7 +48,7 @@ end
     post_newton_controller!(integrator, alg)
 @inline OrdinaryDiffEqCore.accept_step_controller(
     integrator, cache::BDFControllerCache, alg,
-) = get_EEst(cache) <= 1
+) = get_EEst(integrator) <= 1
 
 # Per-algorithm defaults for `CommonControllerOptions` knobs that don't match the
 # generic IController defaults. These match the historical alg-struct kwargs

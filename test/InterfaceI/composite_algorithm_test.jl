@@ -4,7 +4,7 @@ using DiffEqDevTools, ADTypes
 using OrdinaryDiffEqAdamsBashforthMoulton, OrdinaryDiffEqExplicitRK, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqFIRK
 using OrdinaryDiffEqLowOrderRK
-using OrdinaryDiffEqBDF: QNDF
+using OrdinaryDiffEqBDF: QNDF, FBDF
 import OrdinaryDiffEqExplicitTableaus
 using OrdinaryDiffEqCore: CompositeAlgorithm
 
@@ -159,4 +159,21 @@ end
         @test 2 in sol.alg_choice
         @test all(i -> abs(sol.u[i][1] - (0.5 + 0.5exp(-1000 * sol.t[i]))) < 1.0e-2, eachindex(sol.t))
     end
+
+    vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = p * ((1 - u[1]^2) * u[2] - u[1]); nothing)
+    vdp(u, p, t) = [u[2], p * ((1 - u[1]^2) * u[2] - u[1])]
+    vdp_iip = ODEProblem(vdp!, [2.0, 0.0], (0.0, 6.3), 1.0e3)
+    vdp_oop = ODEProblem(vdp, [2.0, 0.0], (0.0, 6.3), 1.0e3)
+    ref = solve(vdp_iip, Rodas5P(); reltol = 1.0e-12, abstol = 1.0e-14).u[end]
+    for prob in (vdp_iip, vdp_oop)
+        sol = solve(prob, AutoTsit5(QNDF()); reltol = 1.0e-6, abstol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test count(i -> sol.alg_choice[i] != sol.alg_choice[i - 1], 2:length(sol.alg_choice)) > 5
+        @test norm(sol.u[end] - ref) / norm(ref) < 1.0e-3
+    end
+
+    sol1 = solve(vdp_iip, CompositeAlgorithm((FBDF(), Tsit5()), integrator -> 1))
+    sol2 = solve(vdp_iip, FBDF())
+    @test sol1.t == sol2.t
+    @test sol1.u == sol2.u
 end
