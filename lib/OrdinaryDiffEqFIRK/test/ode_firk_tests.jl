@@ -282,6 +282,9 @@ end
     kw = (; reltol = 1.0e-4, abstol = 1.0e-4)
     iip = solve(ODEProblem(vdp!, [2.0, 0.0], (0.0, 10.0)), RadauIIA3(); kw...)
     oop = solve(ODEProblem(vdp, [2.0, 0.0], (0.0, 10.0)), RadauIIA3(); kw...)
+    @test SciMLBase.successful_retcode(iip)
+    @test SciMLBase.successful_retcode(oop)
+    @test iip.t[end] == oop.t[end] == 10.0
     @test abs(iip.stats.naccept - oop.stats.naccept) < 0.05 * oop.stats.naccept
 end
 
