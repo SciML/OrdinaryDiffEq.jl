@@ -382,6 +382,7 @@ end
 # QNDF1
 
 function initialize!(integrator, cache::QNDF1ConstantCache)
+    reset_qndf1_history!(integrator, cache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -472,6 +473,7 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF1Cache)
+    reset_qndf1_history!(integrator, cache)
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
@@ -560,12 +562,11 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
-    # Only reset the event anchors; the multistep history is left as master leaves it.
-    # On a fresh `init` that history is still empty from the cache constructor; on
-    # `reinit!` it is leftover from the previous solve. `cnt` / `success_cnt` count
-    # from these anchors.
+    # The anchors stay at 0 so that a member entered at a composite switch keeps its
+    # error test on the first step, whose `dt` comes from the previous member.
     cache.iter_at_event = 0
     cache.success_iter_at_event = 0
+    clear_qndf2_history!(integrator, cache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -691,12 +692,11 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::QNDF2Cache)
-    # Only reset the event anchors; the multistep history is left as master leaves it.
-    # On a fresh `init` that history is still empty from the cache constructor; on
-    # `reinit!` it is leftover from the previous solve. `cnt` / `success_cnt` count
-    # from these anchors.
+    # The anchors stay at 0 so that a member entered at a composite switch keeps its
+    # error test on the first step, whose `dt` comes from the previous member.
     cache.iter_at_event = 0
     cache.success_iter_at_event = 0
+    clear_qndf2_history!(integrator, cache)
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
@@ -823,6 +823,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 end
 
 function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max_order}
+    reset_qndf_history!(cache)
     integrator.kshortsize = max_order
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -968,6 +969,7 @@ function perform_step!(
 end
 
 function initialize!(integrator, cache::QNDFCache{max_order}) where {max_order}
+    reset_qndf_history!(cache)
     integrator.kshortsize = max_order
 
     resize!(integrator.k, integrator.kshortsize)
@@ -1697,6 +1699,7 @@ end
 ############################################ NordsieckBDF
 # ================================================================= perform_step!
 function initialize!(integrator, cache::NordsieckBDFCache)
+    reset_nordsieck_history!(cache)
     integrator.kshortsize = cache.max_order_int + 1
     resize!(integrator.k, integrator.kshortsize)
     @inbounds for i in 1:(integrator.kshortsize)
@@ -1708,6 +1711,7 @@ function initialize!(integrator, cache::NordsieckBDFCache)
 end
 
 function initialize!(integrator, cache::NordsieckBDFConstantCache)
+    reset_nordsieck_history!(cache)
     integrator.kshortsize = cache.max_order_int + 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     @inbounds for i in 1:(integrator.kshortsize)

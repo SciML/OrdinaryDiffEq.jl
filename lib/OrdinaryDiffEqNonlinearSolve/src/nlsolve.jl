@@ -142,10 +142,11 @@ function nlsolve!(
     ndz = one(η)
     for iter in 1:maxiters
         if always_new && isnewton(nlsolver)
-            if ArrayInterface.ismutable(integrator.u)
-                @.. integrator.u = integrator.uprev + nlsolver.γ * nlsolver.z
+            # An out-of-place integrator's `u` may alias `uprev`, so it is rebound, never written.
+            if integrator isa SciMLBase.DEIntegrator{<:Any, true}
+                _stage_of_z!(integrator.u, nlsolver, integrator)
             else
-                integrator.u = @.. integrator.uprev + nlsolver.γ * nlsolver.z
+                integrator.u = _stage_of_z(nlsolver, integrator)
             end
             update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
         end
@@ -337,6 +338,32 @@ function _z_of_stage_guess!(nlsolver, integrator, upred)
         @.. broadcast = false z = (upred - nlsolver.tmp) * invγ
     end
     return z
+end
+
+# The stage value the residual evaluates at the current iterate `z`: the
+# inverse of `_z_of_stage_guess`.
+function _stage_of_z(nlsolver, integrator)
+    (; z, tmp, γ) = nlsolver
+    if integrator.f isa DAEFunction
+        return get_dae_uprev(integrator, integrator.uprev) + z
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        return z
+    else
+        return @.. tmp + γ * z
+    end
+end
+
+function _stage_of_z!(u, nlsolver, integrator)
+    (; z, tmp, γ) = nlsolver
+    if integrator.f isa DAEFunction
+        _uprev = get_dae_uprev(integrator, integrator.uprev)
+        @.. broadcast = false u = _uprev + z
+    elseif nlsolver.method === COEFFICIENT_MULTISTEP
+        copyto!(u, z)
+    else
+        @.. broadcast = false u = tmp + γ * z
+    end
+    return u
 end
 
 """
