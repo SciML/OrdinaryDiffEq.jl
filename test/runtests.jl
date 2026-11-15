@@ -24,6 +24,7 @@ function interface_i()
         @time @safetestset "Null u0 Callbacks Tests" include("InterfaceI/null_u0_callbacks_test.jl")
     end
     @time @safetestset "Tstops Tests" include("InterfaceI/ode_tstops_tests.jl")
+    @time @safetestset "Tstop Callback Interpolation Tests" include("InterfaceI/tstop_callback_interpolation.jl")
     @time @safetestset "Backwards Tests" include("InterfaceI/ode_backwards_test.jl")
     @time @safetestset "Initdt Tests" include("InterfaceI/ode_initdt_tests.jl")
     @time @safetestset "Linear Tests" include("InterfaceI/ode_twodimlinear_tests.jl")

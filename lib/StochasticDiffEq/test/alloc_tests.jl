@@ -1,5 +1,6 @@
 using Test
 using StochasticDiffEq
+using OrdinaryDiffEqCore
 using Random
 using AllocCheck
 
@@ -21,7 +22,7 @@ end
 
 # Same barrier as step_void!: `@testset` does not infer the wrapped integrator.
 @inline function perform_step_void!(integrator, cache)
-    StochasticDiffEq.perform_step!(integrator, cache)
+    OrdinaryDiffEqCore.perform_step!(integrator, cache)
     return nothing
 end
 
@@ -135,10 +136,10 @@ end
 
         # Warm up
         for _ in 1:10
-            StochasticDiffEq.loopheader!(integrator)
+            OrdinaryDiffEqCore.loopheader!(integrator)
         end
 
-        allocs = @allocated StochasticDiffEq.loopheader!(integrator)
+        allocs = @allocated OrdinaryDiffEqCore.loopheader!(integrator)
         @test allocs == 0
     end
 
@@ -147,10 +148,10 @@ end
 
         # Warm up
         for _ in 1:10
-            StochasticDiffEq.loopfooter!(integrator)
+            OrdinaryDiffEqCore.loopfooter!(integrator)
         end
 
-        allocs = @allocated StochasticDiffEq.loopfooter!(integrator)
+        allocs = @allocated OrdinaryDiffEqCore.loopfooter!(integrator)
         @test allocs == 0
     end
 end
