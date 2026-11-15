@@ -925,21 +925,21 @@ function perform_step!(
         else
             atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
         end
-        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
+        OrdinaryDiffEqCore.set_EEst!(integrator, qndf_error_constant(alg, γₖ, k) * internalnorm(atmp, t))
         if k > 1
             atmpm1 = calculate_residuals(
                 D[k],
                 uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
-            cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
+            cache.EEst1 = qndf_error_constant(alg, γₖ, k - 1) * internalnorm(atmpm1, t)
         end
         if k < max_order
             atmpp1 = calculate_residuals(
                 D[k + 2],
                 uprev, u, abstol, reltol, internalnorm, t
             )
-            cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
+            cache.EEst2 = qndf_error_constant(alg, γₖ, k + 1) * internalnorm(atmpp1, t)
         end
     end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
@@ -1074,20 +1074,20 @@ function perform_step!(
         else
             calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
         end
-        OrdinaryDiffEqCore.set_EEst!(integrator, error_constant(integrator, k) * internalnorm(atmp, t))
+        OrdinaryDiffEqCore.set_EEst!(integrator, qndf_error_constant(alg, γₖ, k) * internalnorm(atmp, t))
         if k > 1
             calculate_residuals!(
                 atmpm1, D[k], uprev, u, abstol,
                 reltol, internalnorm, t
             )
-            cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
+            cache.EEst1 = qndf_error_constant(alg, γₖ, k - 1) * internalnorm(atmpm1, t)
         end
         if k < max_order
             calculate_residuals!(
                 atmpp1, D[k + 2], uprev, u, abstol,
                 reltol, internalnorm, t
             )
-            cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
+            cache.EEst2 = qndf_error_constant(alg, γₖ, k + 1) * internalnorm(atmpp1, t)
         end
     end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))

@@ -157,5 +157,6 @@ end
         sol = solve(prob, AutoTsit5(QNDF()))
         @test sol.retcode == ReturnCode.Success
         @test 2 in sol.alg_choice
+        @test all(i -> abs(sol.u[i][1] - (0.5 + 0.5exp(-1000 * sol.t[i]))) < 1.0e-2, eachindex(sol.t))
     end
 end
