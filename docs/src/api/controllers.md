@@ -166,6 +166,8 @@ OrdinaryDiffEqCore.accept_step_controller
 OrdinaryDiffEqCore.post_newton_controller!
 OrdinaryDiffEqCore.reinit_controller!
 OrdinaryDiffEqCore.sync_controllers!
+OrdinaryDiffEqCore.snapshot_controller
+OrdinaryDiffEqCore.restore_controller!
 OrdinaryDiffEqCore.reset_alg_dependent_opts!
 ```
 
@@ -175,6 +177,7 @@ OrdinaryDiffEqCore.reset_alg_dependent_opts!
 | `post_newton_controller!(integrator, cache, alg)` | Shrinks `integrator.dt` by `get_failfactor(integrator)` | Implicit-solver controllers that also reduce the BDF order on Newton failure (`BDFController`, `JVODEController`). |
 | `reinit_controller!(integrator, cache)` | no-op | Stateful controllers that need to reset `q11`, `qold`, `dtacc`, etc. on `reinit!`. |
 | `sync_controllers!(cache1, cache2)` | no-op | Composite-alg switching, when state must transfer between sub-controllers. |
+| `snapshot_controller(cache)` / `restore_controller!(cache, snapshot)` | `deepcopy(cache)`, restored with `sync_controllers!` | Caches that can save and restore their state without allocating. Solvers such as `ExplicitTaylorAdaptiveOrder` pseudo-step the controller once per candidate order and roll it back with this pair. |
 | `reset_alg_dependent_opts!(cache, alg1, alg2)` | no-op | Re-derive `beta1` / `beta2` etc. when a composite algorithm switches between branches. |
 | `get_qmin(integrator, cache)` (and `get_qmax` / `get_gamma` / `get_qsteady_min` / `get_qsteady_max` / `get_qmax_first_step` / `get_failfactor`) | Reads `cache.controller.basic.X` | Controllers that don't embed a [`CommonControllerOptions`](@ref) or store the knobs somewhere other than `cache.controller.basic`. |
 | `get_EEst(cache)` / `set_EEst!(cache, val)` | Read/write the `EEst` field on the cache | Caches that store the error differently (vector, per-stage, …). |
