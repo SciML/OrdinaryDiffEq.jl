@@ -7,6 +7,7 @@ using OrdinaryDiffEqRosenbrock
 using SciMLBase: ReturnCode
 using ADTypes: AutoFiniteDiff
 using DiffEqBase: full_cache
+using OrdinaryDiffEqCore: CompositeAlgorithm
 
 ddef!(du, u, h, p, t) = (du .= -50 .* (u .- 0.5 .* h(p, t - 0.1; idxs = 1)); nothing)
 h0(p, t; idxs = nothing) = idxs === nothing ? ones(3) : 1.0
@@ -115,13 +116,30 @@ end
     f!(du, u, h, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
     prob = DDEProblem(f!, [1.0], (p, t) -> [0.5], (0.0, 3.0); constant_lags = [1.0])
     integ = init(prob, MethodOfSteps(AutoTsit5(Rosenbrock23())))
-    while integ.cache.current == 1
+    while integ.cache.current == 1 && integ.t < 1
         step!(integ)
     end
+    @test integ.cache.current == 2
     step!(integ)
     resize!(integ, 2)
     integ.u[2] = 1.0
     solve!(integ)
     @test integ.sol.retcode == ReturnCode.Success
     @test integ.u ≈ [0.5, 0.5]
+end
+
+@testset "resize! with composite members on different AD backends" begin
+    f!(du, u, h, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
+    prob = DDEProblem(f!, [1.0], (p, t) -> [0.5], (0.0, 0.1); constant_lags = [1.0])
+    fd = Rosenbrock23(autodiff = AutoFiniteDiff())
+    for algs in ((fd, Rosenbrock23()), (Rosenbrock23(), fd))
+        integ = init(prob, MethodOfSteps(CompositeAlgorithm(algs, _ -> 1)))
+        step!(integ)
+        resize!(integ, 2)
+        integ.u[2] = 1.0
+        u_modified!(integ, true)
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+        @test integ.u ≈ [0.5, 0.5]
+    end
 end

@@ -302,8 +302,8 @@ function DiffEqBase.resize_non_user_cache!(
     # jac and grad configs after DI integration are Tuples, and resizing needs cache
     # before DI integration, these just need the config and the integrator
     if cache.jac_config isa Tuple
-        OrdinaryDiffEqDifferentiation.resize_jac_config!(cache, integrator)
-        OrdinaryDiffEqDifferentiation.resize_grad_config!(cache, integrator)
+        OrdinaryDiffEqDifferentiation.resize_jac_config!(cache, integrator, cache.alg)
+        OrdinaryDiffEqDifferentiation.resize_grad_config!(cache, integrator, cache.alg)
     else
         OrdinaryDiffEqDifferentiation.resize_jac_config!(cache.jac_config, i)
         OrdinaryDiffEqDifferentiation.resize_grad_config!(cache.grad_config, i)

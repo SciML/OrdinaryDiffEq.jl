@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase, LinearSolve
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using PreallocationTools: get_tmp
+using OrdinaryDiffEqCore: CompositeAlgorithm
 import OrdinaryDiffEqDifferentiation.DI
 
 f(du, u, p, t) = du .= u
@@ -253,4 +254,21 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     u_modified!(integrator, true)
     @test_nowarn step!(integrator)
     @test length(integrator.u) == 2
+end
+
+@testset "resize! with composite members on different AD backends" begin
+    f!(du, u, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
+    prob = ODEProblem(f!, [1.0], (0.0, 0.1))
+    fd = Rosenbrock23(autodiff = AutoFiniteDiff())
+    for algs in ((fd, Rosenbrock23()), (Rosenbrock23(), fd))
+        integ = init(prob, CompositeAlgorithm(algs, _ -> 1))
+        step!(integ)
+        resize!(integ, 2)
+        integ.u[2] = 1.0
+        integ.uprev[2] = 1.0
+        u_modified!(integ, true)
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+        @test integ.u ≈ [0.5, 0.5]
+    end
 end
