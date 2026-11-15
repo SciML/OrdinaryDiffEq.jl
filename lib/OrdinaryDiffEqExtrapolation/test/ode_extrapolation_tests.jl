@@ -340,5 +340,8 @@ end
             sols[i] = solve(prob, Alg(threading = true))
         end
         @test all(sol -> sol.u == serial.u, sols)
+        @test all(SciMLBase.successful_retcode, sols)
+        @test all(sol -> sol.t[end] == 1.0, sols)
+        @test serial.u[end] ≈ prob.u0 .* exp(-1) rtol = 1.0e-4
     end
 end
