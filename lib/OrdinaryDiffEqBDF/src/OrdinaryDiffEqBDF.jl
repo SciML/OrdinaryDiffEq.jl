@@ -55,7 +55,7 @@ else
 end
 
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
-    nlsolve!, nlsolvefail, markfirststage!
+    nlsolve!, nlsolvefail, markfirststage!, can_smooth_est
 import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport

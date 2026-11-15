@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
-using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton, NonlinearSolveAlg
 using RecursiveArrayTools: ArrayPartition
 
 foop = (u, p, t) -> u * p
@@ -367,9 +367,14 @@ end
     # Same solution with M = m * I and f scaled by m.
     m = 1.0e-9
     fm!(du, u, p, t) = (du[1] = m * (-3 * u[1] + c(t)); nothing)
-    mprob = ODEProblem(ODEFunction(fm!; mass_matrix = [m;;]), [0.0], (0.0, 3.0))
-    sol = solve(mprob, QNDF2(); reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
-    @test sol.retcode == ReturnCode.Success
-    @test sol.t[end] == 3.0
-    @test err(sol) < 1.0e-5
+    fm(u, p, t) = m .* (-3 .* u .+ c(t))
+    for fun in (ODEFunction(fm!; mass_matrix = [m;;]), ODEFunction(fm; mass_matrix = [m;;]))
+        mprob = ODEProblem(fun, [0.0], (0.0, 3.0))
+        for alg in (QNDF2(), QNDF2(nlsolve = NonlinearSolveAlg()))
+            sol = solve(mprob, alg; reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.t[end] == 3.0
+            @test err(sol) < 1.0e-5
+        end
+    end
 end

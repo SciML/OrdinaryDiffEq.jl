@@ -579,7 +579,10 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = false)
-    if integrator.derivative_discontinuity
+    # Without a reusable `W` a mass-matrix restart step has no usable error estimate,
+    # so keep the history as before restarts were added.
+    if integrator.derivative_discontinuity &&
+            (integrator.f.mass_matrix === I || can_smooth_est(cache.nlsolver))
         reset_qndf2_history!(integrator, cache)
     elseif integrator.iter <= cache.iter_at_event
         # `reinit!(; reinit_cache=false)` zeroes `iter` without calling `initialize!`,
@@ -649,8 +652,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0 ||
-                (success_cnt == 0 && mass_matrix !== I && !isnewton(nlsolver))
+        if integrator.success_iter == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         elseif success_cnt == 0
             # After a restart `dt` is carried over from before it, so estimate the
@@ -661,6 +663,7 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
                 # Back to the units of `u`: (M - γdt J) \ r = -(W \ r) / γdt.
                 r = (mass_matrix * (u - uprev) - dt * integrator.fsalfirst) / 2
                 utilde = _reshape(nlsolver.cache.W \ _vec(r), axes(r)) / -nlsolver.cache.W_γdt
+                integrator.stats.nsolve += 1
             end
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
@@ -724,7 +727,10 @@ function initialize!(integrator, cache::QNDF2Cache)
 end
 
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
-    if integrator.derivative_discontinuity
+    # Without a reusable `W` a mass-matrix restart step has no usable error estimate,
+    # so keep the history as before restarts were added.
+    if integrator.derivative_discontinuity &&
+            (integrator.f.mass_matrix === I || can_smooth_est(cache.nlsolver))
         reset_qndf2_history!(integrator, cache)
     elseif integrator.iter <= cache.iter_at_event
         # `reinit!(; reinit_cache=false)` zeroes `iter` without calling `initialize!`,
@@ -799,8 +805,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0 ||
-                (success_cnt == 0 && mass_matrix !== I && !isnewton(nlsolver))
+        if integrator.success_iter == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         elseif success_cnt == 0
             # After a restart `dt` is carried over from before it, so estimate the
@@ -815,6 +820,7 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
                 dolinsolve(
                     integrator, nlsolver.cache.linsolve; b = _vec(ztmp), linu = _vec(utilde)
                 )
+                integrator.stats.nsolve += 1
                 @.. broadcast = false utilde = utilde / -nlsolver.cache.W_γdt
             end
             calculate_residuals!(
