@@ -435,9 +435,7 @@ end
     (; tf, uf) = cache
     (; A, C, gamma, c, d, H) = cache.tab
 
-    # Precalculations
-    dtC = C ./ dt
-    dtd = dt .* d
+    invdt = inv(dt)
     dtgamma = dt * gamma
 
     mass_matrix = integrator.f.mass_matrix
@@ -454,7 +452,7 @@ end
     du = f(uprev, p, t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
-    linsolve_tmp = @.. du + dtd[1] * dT
+    linsolve_tmp = @.. du + (dt * d[1]) * dT
     k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
@@ -480,15 +478,15 @@ end
         linsolve_tmp = zero(du)
         if mass_matrix === I
             for i in 1:(stage - 1)
-                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
             end
         else
             for i in 1:(stage - 1)
-                linsolve_tmp = @.. linsolve_tmp + dtC[stage, i] * ks[i]
+                linsolve_tmp = @.. linsolve_tmp + (C[stage, i] * invdt) * ks[i]
             end
             linsolve_tmp = mass_matrix * linsolve_tmp
         end
-        linsolve_tmp = @.. du + dtd[stage] * dT + linsolve_tmp
+        linsolve_tmp = @.. du + (dt * d[stage]) * dT + linsolve_tmp
 
         ks = Base.setindex(ks, _restructure_state(uprev, W \ -_vec(linsolve_tmp)), stage)
         integrator.stats.nsolve += 1

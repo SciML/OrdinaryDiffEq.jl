@@ -547,6 +547,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 integrator.sol.t[integrator.saveiter] != integrator.t &&
                 (
                 (integrator.opts.save_end_user isa Bool && integrator.opts.save_end_user) ||
+                    integrator.opts.saveat_cache isa Number ||
                     integrator.t ∈ integrator.opts.saveat_cache ||
                     integrator.t == integrator.sol.prob.tspan[2] ||
                     isempty(integrator.opts.saveat_cache)
