@@ -589,6 +589,7 @@ end
     ϕ_and_ϕstar!(cache, k1, k)
     if k == 1 || k == 2
         perform_step!(integrator, tab)
+        startup_step_rejected!(integrator, cache, k) && return nothing
     else
         g_coefs!(cache, k)
         u = uprev
@@ -656,6 +657,7 @@ end
     ϕ_and_ϕstar!(cache, k1, k)
     if k == 1 || k == 2
         perform_step!(integrator, bs3cache)
+        startup_step_rejected!(integrator, cache, k) && return nothing
         (; k4) = bs3cache
         integrator.fsallast .= k4
     else
@@ -728,6 +730,7 @@ end
     ϕ_and_ϕstar!(cache, k1, k)
     if k == 1 || k == 2 || k == 3
         perform_step!(integrator, rk4constcache)
+        startup_step_rejected!(integrator, cache, k) && return nothing
     else
         g_coefs!(cache, k)
         u = uprev
@@ -805,6 +808,7 @@ end
     if k == 1 || k == 2 || k == 3
         rk4cache.fsalfirst .= k1
         perform_step!(integrator, rk4cache)
+        startup_step_rejected!(integrator, cache, k) && return nothing
         integrator.fsallast .= rk4cache.k
     else
         g_coefs!(cache, k)
@@ -885,6 +889,7 @@ end
     ϕ_and_ϕstar!(cache, k1, k)
     if k == 1 || k == 2 || k == 3 || k == 4
         perform_step!(integrator, rk4constcache)
+        startup_step_rejected!(integrator, cache, k) && return nothing
     else
         g_coefs!(cache, k)
         u = uprev
@@ -969,6 +974,7 @@ end
     if k == 1 || k == 2 || k == 3 || k == 4
         rk4cache.fsalfirst .= k1
         perform_step!(integrator, rk4cache)
+        startup_step_rejected!(integrator, cache, k) && return nothing
         integrator.fsallast .= rk4cache.k
     else
         g_coefs!(cache, k)

@@ -649,8 +649,19 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
 
     if integrator.opts.adaptive
-        if success_cnt == 0
+        if integrator.success_iter == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
+        elseif success_cnt == 0
+            # After a restart `dt` is carried over from before it, so estimate the
+            # backward Euler error from the derivative at the start of the step.
+            Δ = mass_matrix === I ? u - uprev : mass_matrix * (u - uprev)
+            utilde = (Δ - dt * integrator.fsalfirst) / 2
+            atmp = calculate_residuals(
+                utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         elseif success_cnt == 1
             utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             atmp = calculate_residuals(
@@ -782,8 +793,23 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
-        if success_cnt == 0
+        if integrator.success_iter == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
+        elseif success_cnt == 0
+            # After a restart `dt` is carried over from before it, so estimate the
+            # backward Euler error from the derivative at the start of the step.
+            if mass_matrix === I
+                @.. broadcast = false utilde = ((u - uprev) - dt * integrator.fsalfirst) / 2
+            else
+                @.. broadcast = false ztmp = u - uprev
+                mul!(utilde, mass_matrix, ztmp)
+                @.. broadcast = false utilde = (utilde - dt * integrator.fsalfirst) / 2
+            end
+            calculate_residuals!(
+                atmp, utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t
+            )
+            OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         elseif success_cnt == 1
             @.. broadcast = false utilde = (u - uprev) - ((uprev - uprev2) * dt / dtₙ₋₁)
             calculate_residuals!(
