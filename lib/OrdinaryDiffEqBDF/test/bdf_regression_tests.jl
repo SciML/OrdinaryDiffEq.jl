@@ -335,6 +335,7 @@ end
     end
 end
 
+# QNDF2 with a mass matrix and no reusable W keeps its history instead of restarting.
 @testset "d_discontinuities restart the history as a callback does" begin
     sw = [0.5, 1.0, 1.5, 2.0, 2.5]
     c(t) = isodd(count(<(t), sw))

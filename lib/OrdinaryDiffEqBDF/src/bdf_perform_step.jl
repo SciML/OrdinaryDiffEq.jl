@@ -579,8 +579,7 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = false)
-    # Without a reusable `W` a mass-matrix restart step has no usable error estimate,
-    # so keep the history as before restarts were added.
+    # Without a reusable `W` a mass-matrix restart step has no error estimate, so keep the history.
     if integrator.derivative_discontinuity &&
             (integrator.f.mass_matrix === I || can_smooth_est(cache.nlsolver))
         reset_qndf2_history!(integrator, cache)
@@ -727,8 +726,7 @@ function initialize!(integrator, cache::QNDF2Cache)
 end
 
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
-    # Without a reusable `W` a mass-matrix restart step has no usable error estimate,
-    # so keep the history as before restarts were added.
+    # Without a reusable `W` a mass-matrix restart step has no error estimate, so keep the history.
     if integrator.derivative_discontinuity &&
             (integrator.f.mass_matrix === I || can_smooth_est(cache.nlsolver))
         reset_qndf2_history!(integrator, cache)
