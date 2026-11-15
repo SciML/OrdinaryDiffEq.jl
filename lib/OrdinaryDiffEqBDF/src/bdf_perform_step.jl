@@ -649,13 +649,19 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     nlsolvefail(nlsolver) && return
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0
+        if integrator.success_iter == 0 ||
+                (success_cnt == 0 && mass_matrix !== I && !isnewton(nlsolver))
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         elseif success_cnt == 0
             # After a restart `dt` is carried over from before it, so estimate the
             # backward Euler error from the derivative at the start of the step.
-            Δ = mass_matrix === I ? u - uprev : mass_matrix * (u - uprev)
-            utilde = (Δ - dt * integrator.fsalfirst) / 2
+            if mass_matrix === I
+                utilde = (u - uprev - dt * integrator.fsalfirst) / 2
+            else
+                # Back to the units of `u`: (M - γdt J) \ r = -(W \ r) / γdt.
+                r = (mass_matrix * (u - uprev) - dt * integrator.fsalfirst) / 2
+                utilde = _reshape(nlsolver.cache.W \ _vec(r), axes(r)) / -nlsolver.cache.W_γdt
+            end
             atmp = calculate_residuals(
                 utilde, uprev, u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
@@ -793,7 +799,8 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
 
 
     if integrator.opts.adaptive
-        if integrator.success_iter == 0
+        if integrator.success_iter == 0 ||
+                (success_cnt == 0 && mass_matrix !== I && !isnewton(nlsolver))
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
         elseif success_cnt == 0
             # After a restart `dt` is carried over from before it, so estimate the
@@ -801,9 +808,14 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
             if mass_matrix === I
                 @.. broadcast = false utilde = ((u - uprev) - dt * integrator.fsalfirst) / 2
             else
-                @.. broadcast = false ztmp = u - uprev
-                mul!(utilde, mass_matrix, ztmp)
-                @.. broadcast = false utilde = (utilde - dt * integrator.fsalfirst) / 2
+                # Back to the units of `u`: (M - γdt J) \ r = -(W \ r) / γdt.
+                @.. broadcast = false utilde = u - uprev
+                mul!(ztmp, mass_matrix, utilde)
+                @.. broadcast = false ztmp = (ztmp - dt * integrator.fsalfirst) / 2
+                dolinsolve(
+                    integrator, nlsolver.cache.linsolve; b = _vec(ztmp), linu = _vec(utilde)
+                )
+                @.. broadcast = false utilde = utilde / -nlsolver.cache.W_γdt
             end
             calculate_residuals!(
                 atmp, utilde, uprev, u, integrator.opts.abstol,

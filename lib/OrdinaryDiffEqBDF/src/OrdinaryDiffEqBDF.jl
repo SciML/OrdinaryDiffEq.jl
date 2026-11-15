@@ -61,7 +61,8 @@ import ADTypes: AutoForwardDiff
 using Reexport: Reexport, @reexport
 import SciMLBase
 using SciMLBase: DAEFunction, DAEProblem, ODEProblem, ODEFunction,
-    derivative_discontinuity!, solve
+    derivative_discontinuity!, solve, _vec, _reshape
+using OrdinaryDiffEqDifferentiation: dolinsolve
 @reexport using SciMLBase
 
 include("algorithms.jl")

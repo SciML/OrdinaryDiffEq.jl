@@ -113,7 +113,7 @@ end
         @test sol.t[end] == 3.0
         @test err(sol) < 1.0e-6
     end
-    for alg in (VCAB3(), VCAB4(), VCAB5())
+    for alg in (VCAB3(), VCAB4(), VCAB5(), VCABM3(), VCABM4(), VCABM5())
         sol = solve(prob, alg; reltol = 1.0e-8, abstol = 1.0e-11, tstops = sw, callback = cb)
         @test sol.retcode == ReturnCode.Success
         @test sol.t[end] == 3.0

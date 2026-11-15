@@ -364,4 +364,12 @@ end
         @test sol.t[end] == 3.0
         @test err(sol) < 1.0e-5
     end
+    # Same solution with M = m * I and f scaled by m.
+    m = 1.0e-9
+    fm!(du, u, p, t) = (du[1] = m * (-3 * u[1] + c(t)); nothing)
+    mprob = ODEProblem(ODEFunction(fm!; mass_matrix = [m;;]), [0.0], (0.0, 3.0))
+    sol = solve(mprob, QNDF2(); reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == 3.0
+    @test err(sol) < 1.0e-5
 end
