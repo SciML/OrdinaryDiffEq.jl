@@ -51,6 +51,11 @@ For problems `du/dt = Au + f(u,t)`, exponential methods compute the exact soluti
   - **`ExpRK6s16`**: Sixth-order exponential RK scheme with stiff order 6
   - **`Exp4`**: Fourth-order EPIRK scheme
 
+### Embedded exponential RK pairs
+
+  - **`ERK32ZB`**: Third-order pair with an embedded second-order estimate
+  - **`ERK43ZB`**: Fourth-order pair with an embedded third-order estimate
+
 ### Adaptive exponential Rosenbrock
 
   - **`Exprb32`**: Third-order adaptive method with error control
@@ -111,6 +116,13 @@ ETDRK4
 HochOst4
 Friedli
 ExpRK6s16
+```
+
+### Embedded Exponential Runge-Kutta Pairs
+
+```@docs; canonical=false
+ERK32ZB
+ERK43ZB
 ```
 
 ### Adaptive Exponential Rosenbrock Methods
