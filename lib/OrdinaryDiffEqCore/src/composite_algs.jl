@@ -51,6 +51,17 @@ default-solver sublibrary; the generic method is only a stub.
 """
 function default_autoswitch end
 
+reinit_choice_function!(alg) = nothing
+function reinit_choice_function!(alg::CompositeAlgorithm)
+    AS = alg.choice_function
+    AS isa AutoSwitchCache || return nothing
+    AS.count = 0
+    AS.successive_switches = 0
+    AS.is_stiffalg = AS.stiffalgfirst
+    AS.current = 0
+    return nothing
+end
+
 function (AS::AutoSwitchCache)(integrator)
     #horrible awful hack
     isdefault = isdefaultalg(integrator.alg)

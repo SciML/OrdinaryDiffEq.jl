@@ -27,7 +27,11 @@ module DiffEqBaseEnzymeExt
 
     Enzyme.EnzymeRules.inactive_kwarg(::typeof(DiffEqBase.solve_up), prob, sensalg::Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}, u0, p, args...; kwargs...) = nothing
 
-    Enzyme.EnzymeRules.has_easy_rule(::typeof(DiffEqBase.solve_up), prob, sensalg::Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}, u0, p, args...; kwargs...) = nothing
+    if isdefined(Enzyme.EnzymeRules, :has_readonly_rule)
+        Enzyme.EnzymeRules.has_readonly_rule(::typeof(DiffEqBase.solve_up), prob, sensalg::Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}, u0, p, args...; kwargs...) = nothing
+    elseif isdefined(Enzyme.EnzymeRules, :has_easy_rule) && pkgversion(Enzyme) < v"0.13.209"
+        Enzyme.EnzymeRules.has_easy_rule(::typeof(DiffEqBase.solve_up), prob, sensalg::Union{Nothing, DiffEqBase.AbstractSensitivityAlgorithm}, u0, p, args...; kwargs...) = nothing
+    end
 
     # `sensealg` is semantically inactive (a configuration token, not a value
     # whose tangent has meaning), but Enzyme's `set_runtime_activity(Reverse)`

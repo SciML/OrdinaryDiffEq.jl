@@ -6,6 +6,7 @@ import OrdinaryDiffEqCore: default_controller, IController,
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     alg_cache, @cache,
+    alg_can_repeat_jac,
     get_fsalfirstlast, increment_nf!, set_EEst!,
     generic_solver_docstring, _fixup_ad,
     get_W, isnewton
