@@ -1,9 +1,10 @@
-@cache struct EulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
+@cache struct EulerCache{uType, rateType, Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
     k::rateType
     fsalfirst::rateType
+    thread::Thread
 end
 
 @cache struct SplitEulerCache{uType, rateType} <: OrdinaryDiffEqMutableCache
@@ -40,7 +41,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return EulerCache(u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype))
+    return EulerCache(
+        u, uprev, zero(u), zero(rate_prototype), zero(rate_prototype), alg.thread
+    )
 end
 
 struct EulerConstantCache <: OrdinaryDiffEqConstantCache end
