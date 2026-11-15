@@ -1519,18 +1519,18 @@ for alg in [
     end
 end
 
-function resize_J_W!(cache, integrator, i)
+function resize_J_W!(cache, integrator, i, alg = integrator.alg)
     (isdefined(cache, :J) && isdefined(cache, :W)) || return
 
     (; f) = integrator
 
     if cache.W isa WOperator
-        nf = nlsolve_f(f, integrator.alg)
+        nf = nlsolve_f(f, alg)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
             if cache.J isa AbstractSciMLOperator
                 resize_JVPCache!(
-                    cache.J, f, cache.du1, integrator.u, alg_autodiff(integrator.alg)
+                    cache.J, f, cache.du1, integrator.u, alg_autodiff(alg)
                 )
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
@@ -1539,7 +1539,7 @@ function resize_J_W!(cache, integrator, i)
             if cache.W.jacvec isa AbstractSciMLOperator
                 resize_JVPCache!(
                     cache.W.jacvec, f, cache.du1, integrator.u,
-                    alg_autodiff(integrator.alg)
+                    alg_autodiff(alg)
                 )
             end
             cache.W = WOperator{SciMLBase.isinplace(integrator.sol.prob)}(
