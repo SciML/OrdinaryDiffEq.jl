@@ -60,7 +60,7 @@ run_qa(
                 # DiffEqBase — owner-internal, no public alternative
                 :NAN_CHECK,
                 # TruncatedStacktraces internals
-                Symbol("@truncate_stacktrace"), :VERBOSE_MSG,
+                Symbol("@truncate_stacktrace"),
                 # FunctionWrappers internal
                 :FunctionWrapper,
                 # FastPower internal

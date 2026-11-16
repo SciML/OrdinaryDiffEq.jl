@@ -13,23 +13,13 @@ end
         u::AbstractArray{<:ReverseDiff.TrackedReal, N},
         t
     ) where {N}
-    return sqrt(
-        sum(
-            x -> DiffEqBase.ODE_DEFAULT_NORM(x[1], x[2]),
-            zip((DiffEqBase.value(x) for x in u), Iterators.repeated(t))
-        ) / length(u)
-    )
+    return sqrt(sum(x -> abs2(DiffEqBase.value(x)), u) / max(length(u), 1))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::Array{<:ReverseDiff.TrackedReal, N},
         t
     ) where {N}
-    return sqrt(
-        sum(
-            x -> DiffEqBase.ODE_DEFAULT_NORM(x[1], x[2]),
-            zip((DiffEqBase.value(x) for x in u), Iterators.repeated(t))
-        ) / length(u)
-    )
+    return sqrt(sum(x -> abs2(DiffEqBase.value(x)), u) / max(length(u), 1))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::ReverseDiff.TrackedReal, t)
     return abs(DiffEqBase.value(u))
@@ -46,19 +36,13 @@ end
         u::AbstractArray{<:ReverseDiff.TrackedReal, N},
         t::ReverseDiff.TrackedReal
     ) where {N}
-    return sqrt(
-        sum(x -> DiffEqBase.ODE_DEFAULT_NORM(x[1], x[2]), zip(u, Iterators.repeated(t))) /
-            length(u)
-    )
+    return sqrt(sum(abs2, u) / max(length(u), 1))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::Array{<:ReverseDiff.TrackedReal, N},
         t::ReverseDiff.TrackedReal
     ) where {N}
-    return sqrt(
-        sum(x -> DiffEqBase.ODE_DEFAULT_NORM(x[1], x[2]), zip(u, Iterators.repeated(t))) /
-            length(u)
-    )
+    return sqrt(sum(abs2, u) / max(length(u), 1))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::ReverseDiff.TrackedReal,

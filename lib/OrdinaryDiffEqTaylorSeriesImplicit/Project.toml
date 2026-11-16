@@ -1,6 +1,6 @@
 name = "OrdinaryDiffEqTaylorSeriesImplicit"
 uuid = "06160f02-bfed-43d5-b530-ddc3951c4a2f"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Songchen Tan <i@tansongchen.com>"]
 
 [sources]
@@ -52,7 +52,7 @@ RecursiveArrayTools = "4"
 Reexport = "1.2.2"
 SafeTestsets = "0.1.0"
 SciMLBase = "3"
-TaylorDiff = "0.3.5"
+TaylorDiff = "0.3.6"
 Test = "<0.0.1, 1"
 TruncatedStacktraces = "1.4.0"
 julia = "1.10"

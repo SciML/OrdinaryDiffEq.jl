@@ -1,27 +1,28 @@
 function init_ith_default_cache(cache::DefaultCache, algs, i)
+    args = default_cache_args(cache.args...)
     return if i == 1
         if !isdefined(cache, :cache1)
-            cache.cache1 = alg_cache(algs[1], cache.args...)
+            cache.cache1 = alg_cache(algs[1], args...)
         end
     elseif i == 2
         if !isdefined(cache, :cache2)
-            cache.cache2 = alg_cache(algs[2], cache.args...)
+            cache.cache2 = alg_cache(algs[2], args...)
         end
     elseif i == 3
         if !isdefined(cache, :cache3)
-            cache.cache3 = alg_cache(algs[3], cache.args...)
+            cache.cache3 = alg_cache(algs[3], args...)
         end
     elseif i == 4
         if !isdefined(cache, :cache4)
-            cache.cache4 = alg_cache(algs[4], cache.args...)
+            cache.cache4 = alg_cache(algs[4], args...)
         end
     elseif i == 5
         if !isdefined(cache, :cache5)
-            cache.cache5 = alg_cache(algs[5], cache.args...)
+            cache.cache5 = alg_cache(algs[5], args...)
         end
     elseif i == 6
         if !isdefined(cache, :cache6)
-            cache.cache6 = alg_cache(algs[6], cache.args...)
+            cache.cache6 = alg_cache(algs[6], args...)
         end
     end
 end
