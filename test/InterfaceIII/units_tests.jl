@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, Unitful
+using OrdinaryDiffEq, OrdinaryDiffEqCore, RecursiveArrayTools, Unitful
 using LinearAlgebra, Test, ADTypes
 using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
     OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
@@ -98,4 +98,27 @@ end
             @test successful_retcode(solve(prob, Tsit5()))
         end
     end
+end
+
+@testset "Continuous callbacks" begin
+    f(u, p, t) = -u / (2.0u"s")
+    prob = ODEProblem(f, [1.0u"m", 2.0u"m"], (0.0u"s", 1.0u"s"))
+    cb = ContinuousCallback((u, t, integrator) -> u[1] - 0.5u"m", integrator -> nothing)
+    @test successful_retcode(solve(prob, Tsit5(); callback = cb))
+
+    g(u, p, t) = u[1] < 1 ? [5u[1]] : [-3u[1] + 5]
+    gu(u, p, t) = u[1] < 1u"m" ? [5u[1] / u"s"] : [(-3u[1] + 5u"m") / u"s"]
+    controller() = OrdinaryDiffEqCore.PIController(Tsit5(); discontinuity_detection = true)
+    sol = solve(
+        ODEProblem(g, [0.1], (0.0, 1.5)), Tsit5();
+        callback = ContinuousCallback((u, t, integrator) -> u[1] - 1, integrator -> nothing),
+        controller = controller()
+    )
+    solu = solve(
+        ODEProblem(gu, [0.1u"m"], (0.0u"s", 1.5u"s")), Tsit5();
+        callback = ContinuousCallback((u, t, integrator) -> ustrip(u"m", u[1]) - 1, integrator -> nothing),
+        controller = controller()
+    )
+    @test successful_retcode(solu)
+    @test solu.stats.nreject == sol.stats.nreject
 end
