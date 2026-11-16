@@ -1,6 +1,7 @@
 function isdtchangeable(
         alg::Union{
             LawsonEuler, NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2, Friedli,
+            ExpRK6s16,
         }
     )
     return false
@@ -13,6 +14,7 @@ alg_order(alg::ETDRK3) = 3
 alg_order(alg::ETDRK4) = 4
 alg_order(alg::HochOst4) = 4
 alg_order(alg::Friedli) = 4
+alg_order(alg::ExpRK6s16) = 6
 alg_order(alg::Exp4) = 4
 alg_order(alg::EPIRK4s3A) = 4
 alg_order(alg::EPIRK4s3B) = 4
